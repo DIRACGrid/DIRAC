@@ -41,23 +41,22 @@ class EmailAgent( AgentModule ):
 
   def execute( self ):
 
-    conn = sqlite3.connect(self.cacheFile)
+    with sqlite3.connect(self.cacheFile) as conn:
 
-    result = conn.execute("SELECT DISTINCT SiteName from ResourceStatusCache;")
-    for site in result:
-      cursor = conn.execute("SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache WHERE SiteName='"+ site[0] +"';")
+      result = conn.execute("SELECT DISTINCT SiteName from ResourceStatusCache;")
+      for site in result:
+        cursor = conn.execute("SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache WHERE SiteName='"+ site[0] +"';")
 
-      email_body = ""
-      for StatusType, ResourceName, Status, Time, PreviousStatus in cursor:
-        email_body += StatusType + " of " + ResourceName + " has been " + Status + " since " + Time + " (Previous status: " + PreviousStatus + ")\n"
+        email_body = ""
+        for StatusType, ResourceName, Status, Time, PreviousStatus in cursor:
+          email_body += StatusType + " of " + ResourceName + " has been " + Status + " since " + Time + " (Previous status: " + PreviousStatus + ")\n"
 
-      subject = "RSS actions taken for " + site[0] + "\n"
-      self._sendMail(subject, email_body)
+        subject = "RSS actions taken for " + site[0] + "\n"
+        self._sendMail(subject, email_body)
 
-    conn.execute("DELETE FROM ResourceStatusCache;")
-    conn.execute("VACUUM;")
+      conn.execute("DELETE FROM ResourceStatusCache;")
+      conn.execute("VACUUM;")
 
-    conn.close()
 
     return S_OK()
 

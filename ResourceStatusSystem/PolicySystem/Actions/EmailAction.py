@@ -64,24 +64,22 @@ class EmailAction( BaseAction ):
     else:
       siteName = siteName['Value'][0]
 
-    conn = sqlite3.connect(self.cacheFile)
+    with sqlite3.connect(self.cacheFile) as conn:
 
-    conn.execute('''CREATE TABLE IF NOT EXISTS ResourceStatusCache(
-                  SiteName VARCHAR(64) NOT NULL,
-                  ResourceName VARCHAR(64) NOT NULL,
-                  Status VARCHAR(8) NOT NULL DEFAULT "",
-                  PreviousStatus VARCHAR(8) NOT NULL DEFAULT "",
-                  StatusType VARCHAR(128) NOT NULL DEFAULT "all",
-                  Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                 );''')
+      conn.execute('''CREATE TABLE IF NOT EXISTS ResourceStatusCache(
+                    SiteName VARCHAR(64) NOT NULL,
+                    ResourceName VARCHAR(64) NOT NULL,
+                    Status VARCHAR(8) NOT NULL DEFAULT "",
+                    PreviousStatus VARCHAR(8) NOT NULL DEFAULT "",
+                    StatusType VARCHAR(128) NOT NULL DEFAULT "all",
+                    Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                   );''')
 
-    conn.execute("INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
-                 " VALUES ('" + siteName + "', '" + name + "', '" + status + "', '" + previousStatus + "', '" + statusType + "' ); "
-                )
+      conn.execute("INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
+                   " VALUES ('" + siteName + "', '" + name + "', '" + status + "', '" + previousStatus + "', '" + statusType + "' ); "
+                  )
 
-    conn.commit()
-
-    conn.close()
+      conn.commit()
 
     return S_OK()
 
