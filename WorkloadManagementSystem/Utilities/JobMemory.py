@@ -1,7 +1,7 @@
 """ DIRAC Workload Management System Client module to get available memory from mjf
 """
 import os
-import requests
+import urllib2
 
 __RCSID__ = "$Id$"
 
@@ -13,7 +13,7 @@ def getJobFeatures():
                 'jobstart_secs', 'mem_limit_MB', 'allocated_CPU ', 'shutdowntime_job' ):
     fname = os.path.join( os.environ['JOBFEATURES'], item )
     try:
-      val = requests.get( fname ).text
+      val = urllib2.urlopen( fname ).read()
     except:
       val = 0
     features[item] = val
