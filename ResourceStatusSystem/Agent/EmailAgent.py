@@ -48,8 +48,8 @@ class EmailAgent( AgentModule ):
       cursor = conn.execute("SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache WHERE SiteName='"+ site[0] +"';")
 
       email_body = ""
-      for row in cursor:
-        email_body += row[0] + " of " + row[1] + " has been " + row[2] + " since " + row[3] + " (Previous status: " + row[4] + ")\n"
+      for StatusType, ResourceName, Status, Time, PreviousStatus in cursor:
+        email_body += StatusType + " of " + ResourceName + " has been " + Status + " since " + Time + " (Previous status: " + PreviousStatus + ")\n"
 
       subject = "RSS actions taken for " + site[0] + "\n"
       self._sendMail(subject, email_body)
