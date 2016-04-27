@@ -12,6 +12,21 @@ from DIRAC.TransformationSystem.Client.Transformation         import Transformat
 
 #############################################################################
 
+
+class reqValFake_C(object):
+  def validate(self, opsInput):
+    for ops in opsInput:
+      if not len(ops):
+        return {'OK': False}
+      for f in ops:
+        try:
+          if not f.LFN:
+            return {'OK': False}
+        except:
+          return {'OK': False}
+    return {'OK': True}
+reqValFake = reqValFake_C()
+
 class ClientsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
   """
@@ -47,7 +62,8 @@ class ClientsTestCase( unittest.TestCase ):
                                   jobClass = self.jobMock )
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
                                       requestClient = self.mockReqClient,
-                                      requestValidator = self.reqValMock)
+                                      requestValidator = reqValFake
+                                      )
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
@@ -113,11 +129,24 @@ class WorkflowTasksSuccess( ClientsTestCase ):
 class RequestTasksSuccess( ClientsTestCase ):
 
   def test_prepareTranformationTasks( self ):
+
+    #No tasks in input
+    taskDict = {}
+    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
+    self.assert_( res['OK'] )
+    self.assertEqual( len( taskDict ), 0 )
+
+    #3 tasks, 1 task not OK (in second transformation)
+    taskDict = {123:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}}
+    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
+    self.assert_( res['OK'] )
+    # We should "lose" one of the task in the preparation
+    self.assertEqual( len( taskDict ), 0 )
+
     taskDict = {1:{'TransformationID':1, 'TargetSE':'SE1', 'b1':'bb1', 'Site':'MySite',
                    'InputData':['/this/is/a1.lfn', '/this/is/a2.lfn']},
                 2:{'TransformationID':1, 'TargetSE':'SE2', 'b2':'bb2', 'InputData':"/this/is/a1.lfn;/this/is/a2.lfn"},
-                3:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}
-                }
+                3:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}}
 
     res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
     self.assert_( res['OK'] )
