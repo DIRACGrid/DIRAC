@@ -26,10 +26,10 @@ class EmailAgent( AgentModule ):
     self.diracAdmin = None
     self.default_value = None
 
-    if os.getenv('DIRAC'):
-      self.cacheFile = os.getenv('DIRAC') + '/work/ResourceStatus/cache.db'
+    if 'DIRAC' in os.environ:
+      self.cacheFile = os.path.join( os.getenv('DIRAC'), 'work/ResourceStatus/cache.db' )
     else:
-      self.cacheFile = 'cache.db'
+      self.cacheFile = os.path.realpath('cache.db')
 
   def initialize( self ):
     ''' EmailAgent initialization

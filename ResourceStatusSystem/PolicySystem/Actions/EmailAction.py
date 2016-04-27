@@ -21,10 +21,10 @@ class EmailAction( BaseAction ):
     super( EmailAction, self ).__init__( name, decisionParams, enforcementResult,
                                          singlePolicyResults, clients )
 
-    if os.getenv('DIRAC'):
-      self.cacheFile = os.getenv('DIRAC') + '/work/ResourceStatus/cache.db'
+    if 'DIRAC' in os.environ:
+      self.cacheFile = os.path.join( os.getenv('DIRAC'), 'work/ResourceStatus/cache.db' )
     else:
-      self.cacheFile = 'cache.db'
+      self.cacheFile = os.path.realpath('cache.db')
 
   def run( self ):
     ''' Checks it has the parameters it needs and writes the date to a cache file.
