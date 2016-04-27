@@ -11,8 +11,6 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id$"
-
 from types import DictType, ListType, IntType, LongType, StringTypes, FloatType
 from tempfile import mkdtemp
 import shutil
@@ -28,6 +26,8 @@ from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFa
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
+
+__RCSID__ = "$Id$"
 
 # This is a global instance of the database classes
 jobDB = False
@@ -160,7 +160,7 @@ class WMSAdministratorHandler(RequestHandler):
       return result
     last_update = Time.dateTime() - Time.day
     resultDay = pilotDB.getCounters( 'PilotAgents',['Status'], attrDict, newer=last_update,
-                                   timeStamp='LastUpdateTime')
+                                     timeStamp='LastUpdateTime')
     if not resultDay['OK']:
       return resultDay
 
@@ -180,7 +180,7 @@ class WMSAdministratorHandler(RequestHandler):
 ##########################################################################################
   types_addPilotTQReference = [ ListType, [IntType, LongType], StringTypes, StringTypes ]
   def export_addPilotTQReference( self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
-                        gridType='DIRAC', requirements='Unknown',pilotStampDict={}):
+                                  gridType='DIRAC', requirements='Unknown',pilotStampDict={}):
     """ Add a new pilot job reference """
     return pilotDB.addPilotTQReference(pilotRef, taskQueueID,
                                        ownerDN, ownerGroup,

@@ -9,16 +9,15 @@ from DIRAC.Core.Utilities.List                     import breakListIntoChunks
 from DIRAC.Resources.Catalog.Utilities             import checkCatalogArguments
 from DIRAC.Resources.Catalog.FileCatalogClientBase import FileCatalogClientBase
 
-# List of common File Catalog methods implemented by this client
-READ_METHODS = []
-WRITE_METHODS = [ "addFile", "removeFile" ]
-NO_LFN_METHODS= []
-
 class TSCatalogClient( FileCatalogClientBase ):
 
   """ Exposes the catalog functionality available in the DIRAC/TransformationHandler
 
   """
+
+  # List of common File Catalog methods implemented by this client
+  WRITE_METHODS = FileCatalogClientBase.WRITE_METHODS + [ "addFile", "removeFile" ]
+
   def __init__( self, url = None, **kwargs ):
 
     self.__kwargs = kwargs
@@ -26,21 +25,6 @@ class TSCatalogClient( FileCatalogClientBase ):
     self.serverURL = "Transformation/TransformationManager"
     if url is not None:
       self.serverURL = url
-
-  def hasCatalogMethod( self, methodName ):
-    """ Check of a method with the given name is implemented
-    :param str methodName: the name of the method to check
-    :return: boolean Flag
-    """
-    return methodName in ( READ_METHODS + WRITE_METHODS + NO_LFN_METHODS )
-
-  @staticmethod
-  def getInterfaceMethods():
-    """ Get the methods implemented by the File Catalog client
-
-    :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
-    """
-    return ( READ_METHODS, WRITE_METHODS, NO_LFN_METHODS )
 
   @checkCatalogArguments
   def addFile( self, lfns, force = False ):

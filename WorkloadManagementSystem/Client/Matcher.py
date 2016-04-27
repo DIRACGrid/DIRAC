@@ -3,8 +3,6 @@
     Utilities and classes here are used by MatcherHandler
 """
 
-__RCSID__ = "$Id"
-
 import time
 
 from DIRAC import gLogger
@@ -23,6 +21,8 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, \
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+
+__RCSID__ = "$Id"
 
 
 class Matcher( object ):

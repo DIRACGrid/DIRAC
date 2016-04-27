@@ -8,10 +8,10 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-read = True
-write = True
-check = True
-remove = True
+read = False
+write = False
+check = False
+remove = False
 site = ''
 mute = False
 
@@ -34,25 +34,24 @@ Script.parseCommandLine( ignoreErrors = True )
 ses = Script.getPositionalArgs()
 for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "r" or switch[0].lower() == "allowread":
-    write = False
-    check = False
-    remove = False
+    read = True
   if switch[0].lower() == "w" or switch[0].lower() == "allowwrite":
-    read = False
-    check = False
-    remove = False
+    write = True
   if switch[0].lower() == "k" or switch[0].lower() == "allowcheck":
-    read = False
-    write = False
-    remove = False
+    check = True
   if switch[0].lower() == "v" or switch[0].lower() == "allowremove":
-    read = False
-    write = False
-    check = False
+    remove = True
   if switch[0].lower() == "m" or switch[0].lower() == "mute":
     mute = True
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
+
+if not ( read or write or check or remove ):
+  # No switch was specified, means we need all of them
+  read = True
+  write = True
+  check = True
+  remove = True
 
 # from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
@@ -92,10 +91,18 @@ if not ses:
   gLogger.error( 'There were no SEs provided' )
   DIRAC.exit()
 
-readAllowed = []
-writeAllowed = []
-checkAllowed = []
-removeAllowed = []
+STATUS_TYPES = [ "ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess" ]
+ALLOWED_STATUSES = [ "Unknown", "InActive", "Banned", "Probing", "Degraded" ]
+
+statusAllowedDict = {}
+for statusType in STATUS_TYPES:
+  statusAllowedDict[statusType] = []
+
+statusFlagDict = {}
+statusFlagDict['ReadAccess'] = read
+statusFlagDict['WriteAccess'] = write
+statusFlagDict['CheckAccess'] = check
+statusFlagDict['RemoveAccess'] = remove
 
 resourceStatus = ResourceStatus()
 
@@ -112,73 +119,36 @@ for se, seOptions in res[ 'Value' ].items():
 
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if read and seOptions.has_key( 'ReadAccess' ):
+  for statusType in STATUS_TYPES:
+    if statusFlagDict[statusType]:
+      if seOptions.get( statusType ) == "Active":
+        gLogger.notice( '%s status of %s is already Active' % ( statusType, se ) )
+        continue
+      if seOptions.has_key( statusType ):
+        if not seOptions[ statusType ] in ALLOWED_STATUSES:
+          gLogger.notice( '%s option for %s is %s, instead of %s' %
+                          ( statusType, se, seOptions[ 'ReadAccess' ], ALLOWED_STATUSES ) )
+          gLogger.notice( 'Try specifying the command switches' )
+          continue
 
-    if not seOptions[ 'ReadAccess' ] in [ "InActive", "Banned", "Probing", "Degraded" ]:
-      gLogger.notice( 'Read option for %s is %s, instead of %s' %
-                      ( se, seOptions[ 'ReadAccess' ], [ "InActive", "Banned", "Probing", "Degraded" ] ) )
-      gLogger.notice( 'Try specifying the command switches' )
-      continue
-
-    resR = resourceStatus.setStorageElementStatus( se, 'ReadAccess', 'Active', reason, userName )
-    if not resR['OK']:
-      gLogger.error( "Failed to update %s read access to Active" % se )
-    else:
-      gLogger.notice( "Successfully updated %s read access to Active" % se )
-      readAllowed.append( se )
-
-  # InActive is used on the CS model, Banned is the equivalent in RSS
-  if write and seOptions.has_key( 'WriteAccess' ):
-
-    if not seOptions[ 'WriteAccess' ] in [ "InActive", "Banned", "Probing", "Degraded" ]:
-      gLogger.notice( 'Write option for %s is %s, instead of %s' %
-                      ( se, seOptions[ 'WriteAccess' ], [ "InActive", "Banned", "Probing", "Degraded" ] ) )
-      gLogger.notice( 'Try specifying the command switches' )
-      continue
-
-    resW = resourceStatus.setStorageElementStatus( se, 'WriteAccess', 'Active', reason, userName )
-    if not resW['OK']:
-      gLogger.error( "Failed to update %s write access to Active" % se )
-    else:
-      gLogger.notice( "Successfully updated %s write access to Active" % se )
-      writeAllowed.append( se )
-
-  # InActive is used on the CS model, Banned is the equivalent in RSS
-  if check and seOptions.has_key( 'CheckAccess' ):
-
-    if not seOptions[ 'CheckAccess' ] in [ "InActive", "Banned", "Probing", "Degraded" ]:
-      gLogger.notice( 'Check option for %s is %s, instead of %s' %
-                      ( se, seOptions[ 'CheckAccess' ], [ "InActive", "Banned", "Probing", "Degraded" ] ) )
-      gLogger.notice( 'Try specifying the command switches' )
-      continue
-
-    resC = resourceStatus.setStorageElementStatus( se, 'CheckAccess', 'Active', reason, userName )
-    if not resC['OK']:
-      gLogger.error( "Failed to update %s check access to Active" % se )
-    else:
-      gLogger.notice( "Successfully updated %s check access to Active" % se )
-      checkAllowed.append( se )
-
-  # InActive is used on the CS model, Banned is the equivalent in RSS
-  if remove and seOptions.has_key( 'RemoveAccess' ):
-
-    if not seOptions[ 'RemoveAccess' ] in [ "InActive", "Banned", "Probing", "Degraded" ]:
-      gLogger.notice( 'Remove option for %s is %s, instead of %s' %
-                      ( se, seOptions[ 'RemoveAccess' ], [ "InActive", "Banned", "Probing", "Degraded" ] ) )
-      gLogger.notice( 'Try specifying the command switches' )
-      continue
-
-    resC = resourceStatus.setStorageElementStatus( se, 'RemoveAccess', 'Active', reason, userName )
-    if not resC['OK']:
-      gLogger.error( "Failed to update %s remove access to Active" % se )
-    else:
-      gLogger.notice( "Successfully updated %s remove access to Active" % se )
-      removeAllowed.append( se )
+        resR = resourceStatus.setStorageElementStatus( se, statusType, 'Active', reason, userName )
+        if not resR['OK']:
+          gLogger.error( "Failed to update %s %s to Active" % ( se, statusType ) )
+        else:
+          gLogger.notice( "Successfully updated %s %s to Active" % ( se, statusType ) )
+          statusAllowedDict[statusType].append( se )
 
   if not( resR['OK'] or resW['OK'] or resC['OK'] ):
     DIRAC.exit( -1 )
 
-if not ( writeAllowed or readAllowed or checkAllowed or removeAllowed ):
+totalAllowed = 0
+totalAllowedSEs = []
+for statusType in STATUS_TYPES:
+  totalAllowed += len( statusAllowedDict[statusType] )
+  totalAllowedSEs += statusAllowedDict[statusType]
+totalAllowedSEs = list( set( totalAllowedSEs ) )
+
+if not totalAllowed:
   gLogger.info( "No storage elements were allowed" )
   DIRAC.exit( -1 )
 
@@ -186,7 +156,7 @@ if mute:
   gLogger.notice( 'Email is muted by script switch' )
   DIRAC.exit( 0 )
 
-subject = '%s storage elements allowed for use' % len( writeAllowed + readAllowed + checkAllowed + removeAllowed )
+subject = '%s storage elements allowed for use' % len( totalAllowedSEs )
 addressPath = 'EMail/Production'
 address = Operations().getValue( addressPath, '' )
 
@@ -194,19 +164,19 @@ address = Operations().getValue( addressPath, '' )
 body = ''
 if read:
   body = "%s\n\nThe following storage elements were allowed for reading:" % body
-  for se in readAllowed:
+  for se in statusAllowedDict['ReadAccess']:
     body = "%s\n%s" % ( body, se )
 if write:
   body = "%s\n\nThe following storage elements were allowed for writing:" % body
-  for se in writeAllowed:
+  for se in statusAllowedDict['WriteAccess']:
     body = "%s\n%s" % ( body, se )
 if check:
   body = "%s\n\nThe following storage elements were allowed for checking:" % body
-  for se in checkAllowed:
+  for se in statusAllowedDict['CheckAccess']:
     body = "%s\n%s" % ( body, se )
 if remove:
   body = "%s\n\nThe following storage elements were allowed for removing:" % body
-  for se in removeAllowed:
+  for se in statusAllowedDict['RemoveAccess']:
     body = "%s\n%s" % ( body, se )
 
 if not address:

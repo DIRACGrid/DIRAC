@@ -1,4 +1,4 @@
-[v6r15-pre17]
+[v6r15-pre20]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
@@ -29,6 +29,10 @@ NEW: dirac-rss-policy-manager - allows to interactively modify and test only the
 FIX: XXXTimeLeft - do not mix CPU and WallTime values     
 FIX: InstallTools, ComponentInstaller - longer timeout for checking components PID (after restart)
 CHANGE: Proxy - in executeWithUserProxy() when multiple DNs are present, try all of them
+CHANGE: List utility - change uniqueElements() to be much faster
+NEW: Platform - added getPlatform() and getPlatformTuple() utilities to evaluate lazily the
+     DIRAC platform only when it is needed, this accelerates DIRAC commands not needing
+     the platform information. 
 
 *Configuration
 NEW: GOCDB2CSAgent agent to synchronize GOCDB and CS data about perfSONAR services
@@ -55,6 +59,8 @@ FIX: DataStoreClient - Synchronizer based decorators have been replaced with a s
 *RSS
 NEW: CE Availability policy, closing #2373
 CHANGE: Ported setStatus and setToken rpc calls to PublisherHandler from LHCb implementation
+NEW: E-mails generated while RSS actions are now aggregated to avoid avalanches of mails
+NEW: dirac-rss-sync is also synchronizing Sites now
 
 *DMS
 CHANGE: FileCatalogClient - make explicit methods for all service calls
@@ -73,6 +79,7 @@ NEW: FileCatalog - conditional FileCatalog instantiation based on the configured
 CHANGE: TransformationDB table TaskInputs: InputVector column from BLOB to MEDIUMTEXT
 FIX: TaskManager - fix bug in case there is no InputData for a task, the Request created 
      for the previous task was reassigned
+NEW: TaskManager - possibility to submit one bulk job for a series of tasks     
 
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
@@ -80,8 +87,18 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
 CHANGE: SiteDirector - flag to always download pilot output is set to False by default
+FIX: SiteDirector - using PilotRunDirectory as WorkingDirectory, if available at the CE 
+     level in the CS. Featire requested in issue #2746
 NEW: MultiProcessorSiteDirector - new director to experiment with the multiprocessor/
      wholeNode queues
+CHANGE: JobMemory utility renamed to JobParameters
+CHANGE: CheckWNCapabilities pilot command changed to get WN parameters from the
+        Machine Job Features (MJF) - NumberOfProcessors, MaxRAM    
+NEW: JobManager, ParametricJob - utilities and support for parametric jobs with multiple
+     parameter sequences      
+NEW: SiteDirector - added logic to send pilots to sites with no waiting pilots even if
+     the number of already sent pilots exceeds the number of waiting jobs. The functionality
+     is switched on/off by the AddPilotsToEmptySites option.        
 
 *RMS
 FIX: Request - fix for the case when one of the request is malformed, the rest of 
@@ -94,8 +111,64 @@ FIX: SRM2Storage - do not add accounting to the output structure as it is done i
      the container StorageElement class
 CHANGE: Add standard metadata in the output of all the Storage plugins     
 
+*Interfaces
+NEW: Job API - added setParameterSequence() to add an arbitrary number of parameter
+     sequences for parametric jobs, generate the corresponding JDL
+
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p27]
+
+*Core
+FIX: PlainTransport,SocketInfoFactory - fix for the IPv6 "Address family not supported 
+     by protocol" problems
+
+*Interfaces
+NEW: Dirac.py - in ping()/pingService() allow to ping a specific URL
+
+*Resources
+FIX: LcgFileCatalogClient - convert LFN into str in __fullLfn to allow LFNs
+     in a unicode encoding
+
+*WMS
+FIX: JobWrapper - set the job minor status to 'Failover Request Failed' 
+     if the failover request fails sending
+
+*TS
+FIX: TransformationDB - in getTransformationTasks(),getTaskInputVector 
+     forward error result to the callers
+FIX: TaskManager - in case there is no InputData for a task, the Request created 
+     for the previous task was reassigned. This fixes this bug.      
+
+*tests
+FIX: several fixes to satisfy on-the-fly unit tests with teh Travis CI service 
+
+[v6r14p26]
+
+NEW: Enabled on-the-fly tests using the Travis-CI service
+
+*Core
+FIX: Subprocess - fix two potential infinite loops which can result in indefinite
+     output buffer overflow
+
+*WMS
+FIX: JobScheduling executor - check properly if staging is allowed, it was always True before
+
+[v6r14p25]
+
+*Core
+FIX: Subprocess - more detailed error log message in case ov output buffer
+     overflow
+
+*DMS
+FIX: DataManager - fix for getActiveReplicas(): first check Active replicas before 
+     selecting disk SEs
+
+*Resources
+FIX: StorageElementCache - fixes to make this class thread safe
+FIX: StorageFactory - fix in getConfigStorageProtocols() to properly get options
+     for inheriting SE definitions
 
 [v6r14p24]
 

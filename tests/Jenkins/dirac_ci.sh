@@ -2,26 +2,74 @@
 #-------------------------------------------------------------------------------
 # dirac_ci
 #
-#  Several functions used for Jenkins style jobs
+# Several functions used for Jenkins style jobs
+# They may also work on other CI systems
 #
 #
 # fstagni@cern.ch
 # 09/12/2014
 #-------------------------------------------------------------------------------
 
-# first first: sourcing utility file
-source $WORKSPACE/DIRAC/tests/Jenkins/utilities.sh
+# A CI job needs:
+#
+# === environment variables (minimum set):
+# DEBUG
+# WORKSPACE
+# DIRACBRANCH
+#
+# === a default directory structure is created:
+# ~/TestCode
+# ~/ServerInstallDIR
+# ~/PilotInstallDIR
+
+
+
+
+# Def of environment variables:
+
+if [ ! -z "$DEBUG" ]
+then
+	echo 'Running in DEBUG mode'
+	DEBUG='-ddd'
+else
+	echo 'Running in non-DEBUG mode'
+fi
+
+if [ ! -z "$WORKSPACE" ]
+then
+	echo 'We are in Jenkins I guess'
+else
+  WORKSPACE=$PWD
+fi
+
+if [ ! -z "$DIRACBRANCH" ]
+then
+	echo 'Working on DIRAC branch ' $DIRACBRANCH
+else
+  DIRACBRANCH='integration'
+fi
+
+# Creating default structure
+mkdir -p $WORKSPACE/TestCode # Where the test code resides
+TESTCODE=$_
+mkdir -p $WORKSPACE/ServerInstallDIR # Where servers are installed
+SERVERINSTALLDIR=$_
+mkdir -p $WORKSPACE/PilotInstallDIR # Where pilots are installed
+PILOTINSTALLDIR=$_
+
+
+# Sourcing utility file
+source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
+
+
+
+
 
 
 ############################################
 # List URLs where to get scripts
 ############################################
-DIRAC_INSTALL='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py'
-DIRAC_PILOT='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/dirac-pilot.py'
-DIRAC_PILOT_TOOLS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotTools.py'
-DIRAC_PILOT_COMMANDS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotCommands.py'
 DIRAC_INSTALL_SITE='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh --no-check-certificate'
-
 DIRAC_RELEASES='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/releases.cfg'
 ############################################
 
@@ -91,12 +139,6 @@ function fullInstallDIRAC(){
 	echo '[fullInstallDIRAC]'
 
 	finalCleanup
-
-	if [ ! -z "$DEBUG" ]
-	then
-		echo 'Running in DEBUG mode'
-		export DEBUG='-ddd'
-	fi
 
 	#basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
 	installSite
@@ -206,8 +248,6 @@ function DIRACPilotInstall(){
 
 	default
 
-	#run the dirac-pilot script, the JobAgent won't necessarily match a job
-
 	findRelease
 
 	#Don't launch the JobAgent here
@@ -216,12 +256,6 @@ function DIRACPilotInstall(){
 
 
 function fullPilot(){
-
-	if [ ! -z "$DEBUG" ]
-	then
-		echo 'Running in DEBUG mode'
-		export DEBUG='-ddd'
-	fi
 
 	#first simply install via the pilot
 	DIRACPilotInstall

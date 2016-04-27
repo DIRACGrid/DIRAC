@@ -60,12 +60,7 @@ class WMSClient( object ):
     diskFiles = []
 
     for isFile in inputSandbox:
-      valid = True
-      for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s' ):  # in case of parametric input sandbox, there is %s passed, so have to ignore it also
-        if isFile.find( tag ) == 0:
-          valid = False
-          break
-      if valid:
+      if not isFile.startswith( ( 'lfn:', 'LFN:', 'SB:', '%s', '%(' ) ):
         realFiles.append( isFile )
 
     stringIOFiles = []
