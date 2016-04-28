@@ -164,7 +164,7 @@ class DataManager( object ):
     res = self.__getCatalogDirectoryContents( [ folder ] )
     if not res['OK']:
       return res
-    res = self.removeFile( res['Value'].keys() )
+    res = self.removeFile( res['Value'] )
     if not res['OK']:
       return res
     for lfn, reason in res['Value']['Failed'].iteritems():
@@ -329,7 +329,7 @@ class DataManager( object ):
       return res
     failed = res['Value']['Failed']
     lfnReplicas = res['Value']['Successful']
-    res = self.fc.getFileMetadata( lfnReplicas.keys() )
+    res = self.fc.getFileMetadata( lfnReplicas )
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -353,11 +353,10 @@ class DataManager( object ):
       log.debug( errStr )
       return S_ERROR( errStr )
     # Determine the best replicas
-    res = self._getSEProximity( replicas.keys() )
-    if not res['OK']:
-      return res
+    sortedSEs = self._getSEProximity( replicas )
     errTuple = ( "No SE", "found" )
-    for storageElementName in res['Value']:
+
+    for storageElementName in sortedSEs:
       se = StorageElement( storageElementName, vo = self.vo )
 
       oDataOperation = _initialiseAccountingObject( 'getFile', storageElementName, 1 )
@@ -402,18 +401,20 @@ class DataManager( object ):
 
     return S_ERROR( "Failed to get local copy from any replicas\n%s %s" % errTuple )
 
-  def _getSEProximity( self, ses ):
+  def _getSEProximity( self, replicas ):
     """ get SE proximity """
     siteName = DIRAC.siteName()
-    localSEs = [se for se in self.dmsHelper.getSEsAtSite( siteName ).get( 'Value', [] ) if se in ses]
+    self.__filterTapeSEs( replicas )
+    localSEs = [se for se in self.dmsHelper.getSEsAtSite( siteName ).get( 'Value', [] ) if se in replicas]
     countrySEs = []
     countryCode = str( siteName ).split( '.' )[-1]
     res = self.dmsHelper.getSEsAtCountry( countryCode )
     if res['OK']:
-      countrySEs = [se for se in res['Value'] if se in ses and se not in localSEs]
+      countrySEs = [se for se in res['Value'] if se in replicas and se not in localSEs]
     sortedSEs = randomize( localSEs ) + randomize( countrySEs )
-    sortedSEs += randomize( [se for se in ses if se not in sortedSEs] )
-    return S_OK( sortedSEs )
+    sortedSEs += randomize( se for se in replicas if se not in sortedSEs )
+
+    return sortedSEs
 
   def putAndRegister( self, lfn, fileName, diracSE, guid = None, path = None, checksum = None ):
     """ Put a local file to a Storage Element and register in the File Catalogues
@@ -749,7 +750,7 @@ class DataManager( object ):
     # If sourceSE is specified, then we consider this one only, otherwise
     # we consider them all
 
-    possibleSourceSEs = [sourceSEName] if sourceSEName else  lfnReplicas.keys()
+    possibleSourceSEs = [sourceSEName] if sourceSEName else lfnReplicas
 
     # We sort the possibileSourceSEs with the SEs that are on the same site than the destination first
     # reverse = True because True > False
@@ -1514,16 +1515,21 @@ class DataManager( object ):
     Check a replica dictionary for disk replicas:
     If there is a disk replica, removetape replicas, else keep all
     """
-    for replicas in replicaDict['Successful'].values():
-      for se in replicas:
-        if diskOnly or self.__SEActive( se, access = 'DiskSE' ):
-          # There is one disk replica, remove tape replicas and exit loop
-          for se in replicas.keys():
-            if self.__SEActive( se, access = 'TapeSE' ):
-              replicas.pop( se )
-          break
+    for lfn, replicas in replicaDict['Successful'].items():
+      self.__filterTapeSEs( replicas, diskOnly = diskOnly )
+      if not replicas:
+        del replicaDict['Successful'][lfn]
+        replicaDict['Failed'][lfn] = 'No disk replicas'
 
-    return S_OK( replicaDict )
+  def __filterTapeSEs( self, replicas, diskOnly = False ):
+    for se in replicas.keys():
+      if diskOnly or self.__SEActive( se, access = 'DiskSE' ):
+        # There is one disk replica, remove tape replicas and exit loop
+        for se in replicas.keys():
+          if self.__SEActive( se, access = 'TapeSE' ):
+            replicas.pop( se )
+        return
+    return
 
   def checkActiveReplicas( self, replicaDict ):
     """
@@ -1578,7 +1584,7 @@ class DataManager( object ):
         return res
     if not getUrl:
       for lfn in catalogReplicas:
-        catalogReplicas[lfn] = dict.fromkeys( catalogReplicas[lfn].keys(), True )
+        catalogReplicas[lfn] = dict.fromkeys( catalogReplicas[lfn], True )
     elif not self.useCatalogPFN:
       if res['OK']:
         se_lfn = {}
@@ -1599,9 +1605,8 @@ class DataManager( object ):
     if active:
       result = self.__checkActiveReplicas( result )['Value']
     if diskOnly or preferDisk:
-      return self.__filterTapeReplicas( result, diskOnly = diskOnly )
-    else:
-      return S_OK( result )
+      self.__filterTapeReplicas( result, diskOnly = diskOnly )
+    return S_OK( result )
 
 
   ##################################################################################################3
