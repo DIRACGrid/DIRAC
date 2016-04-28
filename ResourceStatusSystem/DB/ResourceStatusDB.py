@@ -1,4 +1,3 @@
-# $HeadURL $
 ''' ResourceStatusDB
 
   Module that provides basic methods to access the ResourceStatusDB.
@@ -167,7 +166,7 @@ class ResourceStatusDB( object ):
     sql statement desired is more complex, you can use kwargs to interact with
     the MySQL buildCondition parser and generate a more sophisticated query.
     There is only one forbidden query, with all parameters None ( this would
-    mean a query of the type `DELETE * from TableName` ). The usage of kwargs
+    mean a query of the type DELETE * from TableName ). The usage of kwargs
     is the same as in the get function.
 
     :Parameters:

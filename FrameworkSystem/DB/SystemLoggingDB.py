@@ -1,5 +1,3 @@
-# $HeadURL$
-# 
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -8,8 +6,6 @@
     getMessagesByFixedText()
     getMessages()
 """
-
-__RCSID__ = "$Id$"
 
 import re
 import os
@@ -20,11 +16,13 @@ from DIRAC                                     import gLogger, gConfig, S_OK, S_
 from DIRAC.Core.Base.DB                        import DB
 from DIRAC.Core.Utilities                      import Time, List
 
+__RCSID__ = "$Id$"
+
 DEBUG = 0
 
 ###########################################################
 class SystemLoggingDB( DB ):
-  """ .. class:: SystemLoggingDB 
+  """ .. class:: SystemLoggingDB
 
   Python interface to SystemLoggingDB.
 
@@ -53,7 +51,7 @@ CREATE  TABLE IF NOT EXISTS `SubSystems` (
   `SubSystemName` VARCHAR(128) NOT NULL DEFAULT 'Unknown' ,
   `SystemID` INT NOT NULL AUTO_INCREMENT ,
   PRIMARY KEY (`SubSystemID`) ) ENGINE=InnoDB;
-    FOREIGN KEY (`SystemID`) REFERENCES Systems(SystemID) ON UPDATE CASCADE ON DELETE CASCADE) 
+    FOREIGN KEY (`SystemID`) REFERENCES Systems(SystemID) ON UPDATE CASCADE ON DELETE CASCADE)
 
 CREATE  TABLE IF NOT EXISTS `Systems` (
   `SystemID` INT NOT NULL AUTO_INCREMENT ,
@@ -84,7 +82,7 @@ CREATE  TABLE IF NOT EXISTS `MessageRepository` (
   INDEX `UserIDX` (`UserDNID` ASC) ,
   INDEX `IPsIDX` (`ClientIPNumberID` ASC) ,
     FOREIGN KEY (`UserDNID` ) REFERENCES UserDNs(`UserDNID` ) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (`ClientIPNumberID` ) REFERENCES ClientIPs(`ClientIPNumberID` ) ON UPDATE CASCADE ON DELETE CASCADE, 
+    FOREIGN KEY (`ClientIPNumberID` ) REFERENCES ClientIPs(`ClientIPNumberID` ) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (`FixedTextID` ) REFERENCES FixedTextMessages (`FixedTextID` ) ON UPDATE CASCADE ON DELETE CASCADE )
     ENGINE=InnoDB;
 
@@ -183,58 +181,8 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
 
   def _checkTable( self ):
     """ Make sure the tables are created
-
     """
-    # To fix the schema SubSystem points to System and not System points SubSystem
-    result = self.__removeOldSchema()
-    if not result['OK']:
-      return result
     return self._createTables( self.tableDict, force = False )
-
-  def __removeOldSchema( self ):
-    """ remove the old schema if necessary
-    """
-    result = self._query( 'SHOW TABLES' )
-    if not result['OK']:
-      return result
-
-    tables = [row[0] for row in result['Value']]
-    if 'SubSystems' not in tables:
-      return S_OK()
-
-    if 'Systems' not in tables:
-      return S_ERROR( 'Wrong DB schema' )
-
-    result = self._query( 'DESCRIBE SubSystems' )
-    if not result['OK']:
-      return result
-
-    if 3 == len( result['Value'] ):
-      # the table has already the correct schema
-      return S_OK()
-
-    # We need to change the SubSystems table definition 
-    # and change the dependence from Systems pointing to SubSystems
-    # to SubSystems pointing to Systems
-    # Due to the Cascade Mechanism that was defined this can not be easily done
-    # thus, the tables are removed and new ones should be created.
-
-    for tableName in [ 'MessageRepository', 'FixedTextMessages', 'Systems', 'SubSystems',
-                       'AgentPersistentData', 'ClientIPs', 'Sites', 'UserDNs' ]:
-
-      result = self._update( 'DROP TABLE `%s`' % tableName )
-      if not result['OK']:
-        return result
-
-    return S_OK()
-
-
-  def _buildConditionTest( self, condDict, olderDate = None, newerDate = None ):
-    """ a wrapper to the private function __buildCondition so test programs
-        can access it
-    """
-    return self.buildCondition( condDict, older = olderDate,
-                                  newer = newerDate, timeStamp = 'MessageTime' )
 
   def __buildTableList( self, showFieldList ):
     """ build the SQL list of tables needed for the query
@@ -364,12 +312,12 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     #              'MessageRepository':'LogLevel',
     #              'FixedTextMessages':'FixedTextString',
     #              'FixedTextMessages':'ReviewedMessage',
-    #              'Systems':'SystemName', 
+    #              'Systems':'SystemName',
     #              'SubSystems':'SubSystemName',
-    #              'UserDNs':'OwnerDN', 
+    #              'UserDNs':'OwnerDN',
     #              'UserDNs':'OwnerGroup',
     #              'ClientIPs':'ClientIPNumberString',
-    #              'ClientIPs':'ClientFQDN', 
+    #              'ClientIPs':'ClientFQDN',
     #              'Sites':'SiteName'}
 
     # Check if the record is already there and get the rowID
@@ -534,127 +482,3 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     condDict = { 'AgentName': agentName }
 
     return self.getFields( 'AgentPersistentData', outFields, condDict )
-
-def testSystemLoggingDB():
-  """ Some test cases
-  """
-
-  # building up some fake CS values
-  gConfig.setOptionValue( 'DIRAC/Setup', 'Test' )
-  gConfig.setOptionValue( '/DIRAC/Setups/Test/Framework', 'Test' )
-
-  host = '127.0.0.1'
-  user = 'Dirac'
-  pwd = 'Dirac'
-  db = 'AccountingDB'
-
-  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/SystemLoggingDB/Host', host )
-  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/SystemLoggingDB/DBName', db )
-  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/SystemLoggingDB/User', user )
-  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/SystemLoggingDB/Password', pwd )
-
-  from DIRAC.FrameworkSystem.private.logging.Message import tupleToMessage
-
-  systemName = 'TestSystem'
-  subSystemName = 'TestSubSystem'
-  level = 10
-  time = Time.toString()
-  msgTest = 'Hello'
-  variableText = time
-  frameInfo = ""
-  message = tupleToMessage( ( systemName, level, time, msgTest, variableText, frameInfo, subSystemName ) )
-  site = 'somewehere'
-  longSite = 'somewehere1234567890123456789012345678901234567890123456789012345678901234567890'
-  nodeFQDN = '127.0.0.1'
-  userDN = 'Yo'
-  userGroup = 'Us'
-  remoteAddress = 'elsewhere'
-
-  records = 10
-
-  db = SystemLoggingDB()
-  assert db._connect()['OK']
-
-  try:
-    if False:
-      for tableName in db.tableDict.keys():
-        result = db._update( 'DROP TABLE  IF EXISTS `%s`' % tableName )
-        assert result['OK']
-
-      gLogger.info( '\n Creating Table\n' )
-      # Make sure it is there and it has been created for this test
-      result = db._checkTable()
-      assert result['OK']
-
-    result = db._checkTable()
-    assert not result['OK']
-    assert result['Message'] == 'The requested table already exist'
-
-    gLogger.info( '\n Inserting some records\n' )
-    for k in range( records ):
-      result = db.insertMessage( message, site, nodeFQDN,
-                                  userDN, userGroup, remoteAddress )
-      assert result['OK']
-      assert result['lastRowId'] == k + 1
-      assert result['Value'] == 1
-
-    result = db.insertMessage( message, longSite, nodeFQDN,
-                                  userDN, userGroup, remoteAddress )
-    assert not result['OK']
-
-    result = db._queryDB( showFieldList = [ 'SiteName' ] )
-    assert result['OK']
-    assert result['Value'][0][0] == site
-
-    result = db._queryDB( showFieldList = [ 'SystemName' ] )
-    assert result['OK']
-    assert result['Value'][0][0] == systemName
-
-    result = db._queryDB( showFieldList = [ 'SubSystemName' ] )
-    assert result['OK']
-    assert result['Value'][0][0] == subSystemName
-
-    result = db._queryDB( showFieldList = [ 'OwnerGroup' ] )
-    assert result['OK']
-    assert result['Value'][0][0] == userGroup
-
-    result = db._queryDB( showFieldList = [ 'FixedTextString' ] )
-    assert result['OK']
-    assert result['Value'][0][0] == msgTest
-
-    result = db._queryDB( showFieldList = [ 'VariableText', 'SiteName' ], count = True, groupColumn = 'VariableText' )
-    assert result['OK']
-    assert result['Value'][0][1] == site
-    assert result['Value'][0][2] == records
-
-
-    gLogger.info( '\n Removing Table\n' )
-    for tableName in [ 'MessageRepository', 'FixedTextMessages', 'SubSystems', 'Systems',
-                       'AgentPersistentData', 'ClientIPs', 'Sites', 'UserDNs' ]:
-      result = db._update( 'DROP TABLE `%s`' % tableName )
-      assert result['OK']
-
-    gLogger.info( '\n OK\n' )
-
-
-  except AssertionError:
-    print 'ERROR ',
-    if not result['OK']:
-      print result['Message']
-    else:
-      print result
-
-
-    sys.exit( 1 )
-
-
-if __name__ == '__main__':
-  from DIRAC.Core.Base import Script
-  Script.parseCommandLine()
-  gLogger.setLevel( 'VERBOSE' )
-
-  if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
-    gLogger.info( 'Unset pyhthon optimization "PYTHONOPTIMIZE"' )
-    sys.exit( 0 )
-
-  testSystemLoggingDB()
