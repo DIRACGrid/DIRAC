@@ -774,7 +774,7 @@ class DataManager( object ):
       log.debug( "Consider %s as a source" % candidateSEName )
 
       # Check that the candidate is active
-      if not self.__SEActive( candidateSEName, 'Read' ):
+      if not self.__checkSEStatus( candidateSEName, status = 'Read' ):
         log.debug( "%s is currently not allowed as a source." % candidateSEName )
         continue
       else:
@@ -1514,6 +1514,7 @@ class DataManager( object ):
     """
     Check a replica dictionary for disk replicas:
     If there is a disk replica, removetape replicas, else keep all
+    The input argument is modified
     """
     for lfn, replicas in replicaDict['Successful'].items():
       self.__filterTapeSEs( replicas, diskOnly = diskOnly )
@@ -1521,14 +1522,18 @@ class DataManager( object ):
       if diskOnly and not replicas:
         del replicaDict['Successful'][lfn]
         replicaDict['Failed'][lfn] = 'No disk replicas'
+    return
 
   def __filterTapeSEs( self, replicas, diskOnly = False ):
+    """ Remove the tape SEs as soon as there is one disk SE or diskOnly is requested
+    The input argument is modified
+    """
     for se in replicas.keys():
       # First find a disk replica, otherwise do nothing unless diskOnly is set
-      if diskOnly or self.__SEActive( se, access = 'DiskSE' ):
+      if diskOnly or self.__checkSEStatus( se, status = 'DiskSE' ):
         # There is one disk replica, remove tape replicas and exit loop
         for se in replicas.keys():
-          if self.__SEActive( se, access = 'TapeSE' ):
+          if self.__checkSEStatus( se, status = 'TapeSE' ):
             replicas.pop( se )
         return
     return
@@ -1546,26 +1551,29 @@ class DataManager( object ):
       if not isinstance( replicaDict[key], dict ):
         return S_ERROR( 'Wrong argument type %s, expected a dictionary' % type( replicaDict[key] ) )
 
-    for lfn, replicas in replicaDict['Successful'].items():
+    activeDict = {'Successful':{}, 'Failed':replicaDict['Failed'].copy()}
+    for lfn, replicas in replicaDict['Successful'].iteritems():
       if not isinstance( replicas, dict ):
-        del replicaDict['Successful'][ lfn ]
-        replicaDict['Failed'][lfn] = 'Wrong replica info'
-    return self.__checkActiveReplicas( replicaDict )
+        activeDict['Failed'][lfn] = 'Wrong replica info'
+      else:
+        activeDict['Successful'][lfn] = replicas.copy()
+    self.__checkActiveReplicas( activeDict )
+    return S_OK( activeDict )
 
   def __checkActiveReplicas( self, replicaDict ):
     """
     Check a replica dictionary for active replicas
+    The input dict is modified, no returned value
     """
-    for replicas in replicaDict['Successful'].values():
+    for replicas in replicaDict['Successful'].itervalues():
       for se in replicas.keys():
-        if not self.__SEActive( se, access = 'Read' ):
+        if not self.__checkSEStatus( se, status = 'Read' ):
           replicas.pop( se )
+    return
 
-    return S_OK( replicaDict )
-
-  def __SEActive( self, se, access = 'Read' ):
-    """ check is SE is active for a given access """
-    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( access, False )
+  def __checkSEStatus( self, se, status = 'Read' ):
+    """ returns the value of a certain SE status flag (access or other) """
+    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( status, False )
 
 ##########################################
   #
@@ -1605,7 +1613,7 @@ class DataManager( object ):
 
     result = {'Successful':catalogReplicas, 'Failed':failed}
     if active:
-      result = self.__checkActiveReplicas( result )['Value']
+      self.__checkActiveReplicas( result )
     if diskOnly or preferDisk:
       self.__filterTapeReplicas( result, diskOnly = diskOnly )
     return S_OK( result )
