@@ -52,9 +52,9 @@ class ResourceStatus( object ):
 
     example:
       >>> getElementStatus('CE42', 'ComputingElement')
-          S_OK( { 'CE42': { 'all': 'Active' } } } )
+          S_OK( { 'CE42': { ('ComputingElement', 'all'): 'Active' } } } )
       >>> getElementStatus('SE1', 'StorageElement', 'ReadAccess')
-          S_OK( { 'SE1': { 'ReadAccess': 'Banned' } } } )
+          S_OK( { 'SE1': { ('StorageElement', 'CheckAccess'): 'Banned' } } } )
       >>> getElementStatus('SE1', 'ThisIsAWrongElementType', 'ReadAccess')
           S_ERROR( xyz.. )
       >>> getElementStatus('ThisIsAWrongName', 'StorageElement', 'WriteAccess')
@@ -80,10 +80,10 @@ class ResourceStatus( object ):
           S_OK(  xyz.. )
     """
 
-    # if self.__getMode():
-    #return self.__setRSSElementStatus( elementName, elementType, statusType, status, reason, tokenOwner )
-    # else:
-    return self.__setCSElementStatus( elementName, elementType, statusType, status )
+    if self.__getMode():
+      return self.__setRSSElementStatus( elementName, elementType, statusType, status, reason, tokenOwner )
+    else:
+      return self.__setCSElementStatus( elementName, elementType, statusType, status )
 
 ################################################################################
 
