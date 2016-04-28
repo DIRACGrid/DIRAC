@@ -808,7 +808,7 @@ class ComponentInstaller( object ):
     gLogger.notice( 'Adding to CS', '%s/%s' % ( system, dbName ) )
     return self._addCfgToCS( databaseCfg )
 
-  def removeDatabaseOptionsFromCS( self, gConfig, system, dbName, mySetup = None ):
+  def removeDatabaseOptionsFromCS( self, gConfig_o, system, dbName, mySetup = None ):
     """
     Remove the section with database options from the CS, if possible
     """
@@ -823,8 +823,8 @@ class ComponentInstaller( object ):
     exists = result[ 'Value' ]
 
     instanceOption = cfgPath( 'DIRAC', 'Setups', mySetup, system )
-    if gConfig:
-      compInstance = gConfig.getValue( instanceOption, '' )
+    if gConfig_o:
+      compInstance = gConfig_o.getValue( instanceOption, '' )
     else:
       compInstance = self.localCfg.getOption( instanceOption, '' )
 
@@ -2540,7 +2540,7 @@ class ComponentInstaller( object ):
 
     return S_OK( dbFile.split( '/' )[-4:-2] )
 
-  def uninstallDatabase( self, gConfig, dbName ):
+  def uninstallDatabase( self, gConfig_o, dbName ):
     """
     Remove a database from DIRAC
     """
@@ -2550,7 +2550,7 @@ class ComponentInstaller( object ):
 
     dbSystem = result[ 'Value' ][ dbName ][ 'System' ]
 
-    result = self.removeDatabaseOptionsFromCS( gConfig, dbSystem, dbName )
+    result = self.removeDatabaseOptionsFromCS( gConfig_o, dbSystem, dbName )
     if not result [ 'OK' ]:
       return result
 
@@ -2624,7 +2624,6 @@ class ComponentInstaller( object ):
     Produce new dirac.cfg including configuration for new CE
     """
     from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
-    from DIRAC import gConfig
     cesCfg = ResourcesDefaults.getComputingElementDefaults( ceName, ceType, cfg, currentSectionPath )
     ceNameList = cesCfg.listSections()
     if not ceNameList:
