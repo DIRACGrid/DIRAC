@@ -1,8 +1,8 @@
-''' InfoGetter
+""" InfoGetter
 
   Module used to map the policies with the CS.
 
-'''
+"""
 
 import copy
 
@@ -11,9 +11,31 @@ from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration, Utils
 
 __RCSID__ = '$Id: $'
 
-class InfoGetter:
+
+def sanitizedecisionParams( decisionParams ):
+  """ Function that filters the input parameters. If the input parameter keys
+      are no present on the "params" tuple, are not taken into account.
   """
-    Class InfoGetter is in charge of getting information from the RSS Configurations
+
+  # active is a hook to disable the policy / action if needed
+  params = ( 'element', 'name', 'elementType', 'statusType', 'status',
+             'reason', 'tokenOwner', 'active' )
+
+  sanitizedParams = {}
+
+  for key in params:
+    if key in decisionParams:
+      # We can get rid of this now
+      # In CS names are with upper case, capitalize them here
+      # sanitizedParams[ key[0].upper() + key[1:] ] = decisionParams[ key ]
+      sanitizedParams[ key ] = decisionParams[ key ]
+
+  return sanitizedParams
+
+
+
+class InfoGetter(object):
+  """ Class InfoGetter is in charge of getting information from the RSS Configurations
   """
 
   def __init__( self ):
@@ -21,133 +43,15 @@ class InfoGetter:
     configModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.Configurations' )
     self.policies = copy.deepcopy( configModule.POLICIESMETA )
 
-  @staticmethod
-  def sanitizedecisionParams( decisionParams ):
-    '''
-      Method that filters the input parameters. If the input parameter keys
-      are no present on the "params" tuple, are not taken into account.
-    '''
-
-    # active is a hook to disable the policy / action if needed
-    params = ( 'element', 'name', 'elementType', 'statusType', 'status',
-               'reason', 'tokenOwner', 'active' )
-
-    sanitizedParams = {}
-
-    for key in params:
-      if key in decisionParams:
-
-        # We can get rid of this now
-        # In CS names are with upper case, capitalize them here
-        # sanitizedParams[ key[0].upper() + key[1:] ] = decisionParams[ key ]
-
-        sanitizedParams[ key ] = decisionParams[ key ]
-
-    return sanitizedParams
-
   def getPoliciesThatApply( self, decisionParams ):
-    '''
+    """
       Method that sanitizes the input parameters and returns the policies that
-      match them.
-    '''
-
-    decisionParams = self.sanitizedecisionParams( decisionParams )
-    return self.__getPoliciesThatApply( decisionParams )
-
-  def getPolicyActionsThatApply( self, decisionParams, singlePolicyResults,
-                                 policyCombinedResults ):
-    '''
-      Method that sanitizes the input parameters and returns the policies actions
-      that match them.
-    '''
-
-    decisionParams = self.sanitizedecisionParams( decisionParams )
-    return self.__getPolicyActionsThatApply( decisionParams, singlePolicyResults, policyCombinedResults )
-
-
-  def __getComputingElementsByDomainName( self , targetDomain = None ):
-    '''
-      WARNING: TO ADD TO CSHelpers
-      Gets all computing elements from /Resources/Sites/<>/<>/CE
-    '''
-
-    _basePath = 'Resources/Sites'
-
-    ces = []
-
-    domainNames = gConfig.getSections( _basePath )
-    if not domainNames[ 'OK' ]:
-      return S_ERROR("No domain names have been specified on the CS")
-    domainNames = domainNames[ 'Value' ]
-
-    unknownDomains = list( set(targetDomain) - set(domainNames) )
-    if len(unknownDomains) > 0:
-      gLogger.warn( "Domains %s belong to the policy parameters but not to the CS domains" % unknownDomains )
-
-    knownDomains = list( set(domainNames) & set(targetDomain) )
-    if len(knownDomains) == 0:
-      gLogger.warn("Policy parameters domain names do not match with any CS domain names")
-      return S_OK([])
-
-    for domainName in knownDomains:
-      gLogger.info( "Fetching the list of Computing Elements belonging to domain %s" % domainName )
-      domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
-      if not domainSites[ 'OK' ]:
-        return domainSites
-      domainSites = domainSites[ 'Value' ]
-
-      for site in domainSites:
-        siteCEs = gConfig.getSections( '%s/%s/%s/CEs' % ( _basePath, domainName, site ) )
-        if not siteCEs[ 'OK' ]:
-          #return siteCEs
-          gLogger.error( siteCEs[ 'Message' ] )
-          continue
-        siteCEs = siteCEs[ 'Value' ]
-        ces.extend( siteCEs )
-
-    # Remove duplicated ( just in case )
-    ces = list( set ( ces ) )
-    gLogger.info( "List of CEs: %s" % str( ces ) )
-
-    return S_OK( ces )
-
-
-
-  def __filterPolicies( self, decisionParams, policyMatchParams):
-    '''
-      Method that checks if the given policy doesn't meet certain conditions
-    '''
-
-
-    #some policies may apply or not also depending on the VO's domain
-    # 'CEAvailabilityPolicy' can be applied only if the CE is inside LCG
-    if 'elementType' in decisionParams and 'name' in decisionParams:
-      elementType = decisionParams['elementType']
-      name = decisionParams['name']
-      if elementType and elementType.upper() == 'CE' and 'domain' in policyMatchParams:
-        #WARNING: policyMatchParams['domain'] is a list of domains
-        domains = policyMatchParams['domain']
-        result = self.__getComputingElementsByDomainName( targetDomain = domains )
-        if result['OK']:
-          ces = result['Value']
-          #to verify that the given CE is in the list of the LCG CEs
-          if name not in ces:
-            gLogger.info( "ComputingElement %s NOT found in domains %s" % ( name, domains )  )
-            return False
-          else:
-            gLogger.info( "ComputingElement %s found in domains %s" % ( name, domains ) )
-        else:
-          gLogger.warn( "unable to verify if ComputingElement %s is in domains %s" % ( name, domains ) )
-
-    return True
-
-
-
-  def __getPoliciesThatApply( self, decisionParams ):
-    '''
-      Method that matches the input dictionary with the policies configuration in
+      match them. Matches the input dictionary with the policies configuration in
       the CS. It returns a list of policy dictionaries that matched.
-    '''
+    """
+
+    decisionParams = sanitizedecisionParams( decisionParams )
+    gLogger.debug("Sanitized decisionParams: %s" % str(decisionParams))
 
     policiesThatApply = []
 
@@ -156,6 +60,7 @@ class InfoGetter:
     if not policiesConfig[ 'OK' ]:
       return policiesConfig
     policiesConfig = policiesConfig[ 'Value' ]
+    gLogger.debug("All policies: %s" %str(policiesConfig))
 
     # Each policy, has the following format
     # <policyName>
@@ -168,7 +73,7 @@ class InfoGetter:
     #  \
     #   ...
 
-    # Get policies that match the given decissionParameters
+    # Get policies that match the given decisionParameters
     for policyName, policySetup in policiesConfig.items():
 
       # The parameter policyType replaces policyName, so if it is not present,
@@ -181,11 +86,13 @@ class InfoGetter:
 
       # The section matchParams is not mandatory, so we set {} as default.
       policyMatchParams  = policySetup.get( 'matchParams',  {} )
+      gLogger.debug("matchParams of %s: %s" %(policyName, str(policyMatchParams)))
 
       # FIXME: make sure the values in the policyConfigParams dictionary are typed !!
       policyConfigParams = {}
       #policyConfigParams = policySetup.get( 'configParams', {} )
       policyMatch = Utils.configMatch( decisionParams, policyMatchParams )
+      gLogger.debug("PolicyMatch for decisionParams %s: %s" %(decisionParams, str(policyMatch)))
       policyFilter = self.__filterPolicies( decisionParams, policyMatchParams )
 
       #WARNING: we need an additional filtering function when the matching
@@ -193,6 +100,8 @@ class InfoGetter:
       #the decisionParams has only the name of the element)
       if policyMatch and policyFilter:
         policiesThatApply.append( ( policyName, policyType, policyConfigParams ) )
+
+    gLogger.debug("policies that apply: %s" %str(policiesThatApply))
 
     policiesToBeLoaded = []
 
@@ -206,32 +115,29 @@ class InfoGetter:
 
       # We are not going to use name / type anymore, but we keep them for debugging
       # and future usage.
-      policyDict = {
-                     'name' : policyName,
+      policyDict = { 'name' : policyName,
                      'type' : policyType,
-                     'args' : {}
-                   }
+                     'args' : {} }
 
       # args is one of the parameters we are going to use on the policies. We copy
       # the defaults and then we update if with whatever comes from the CS.
       policyDict.update( policyMeta )
-      # FIXME: watch out, args can be None !
-      #policyDict[ 'args' ].update( policyConfigParams )
 
       policiesToBeLoaded.append( policyDict )
 
     return S_OK( policiesToBeLoaded )
 
 
-
-  @staticmethod
-  def __getPolicyActionsThatApply( decisionParams, singlePolicyResults,
-                                    policyCombinedResults ):
-    '''
-      Method that matches the input dictionary with the policy actions
+  def getPolicyActionsThatApply( self, decisionParams, singlePolicyResults,
+                                 policyCombinedResults ):
+    """
+      Method that sanitizes the input parameters and returns the policies actions
+      that match them. Matches the input dictionary with the policy actions
       configuration in the CS. It returns a list of policy actions names that
       matched.
-    '''
+    """
+
+    decisionParams = sanitizedecisionParams( decisionParams )
 
     policyActionsThatApply = []
 
@@ -289,5 +195,79 @@ class InfoGetter:
       policyActionsThatApply.append( ( policyActionName, policyActionType ) )
 
     return S_OK( policyActionsThatApply )
+
+  @staticmethod
+  def __getComputingElementsByDomainName( targetDomain = None ):
+    """
+      WARNING: TO ADD TO CSHelpers
+      Gets all computing elements from /Resources/Sites/<>/<>/CE
+    """
+
+    _basePath = 'Resources/Sites'
+    ces = []
+
+    domainNames = gConfig.getSections( _basePath )
+    if not domainNames[ 'OK' ]:
+      return S_ERROR("No domain names have been specified on the CS")
+    domainNames = domainNames[ 'Value' ]
+
+    unknownDomains = list( set(targetDomain) - set(domainNames) )
+    if len(unknownDomains) > 0:
+      gLogger.warn( "Domains %s belong to the policy parameters but not to the CS domains" % unknownDomains )
+
+    knownDomains = list( set(domainNames) & set(targetDomain) )
+    if len(knownDomains) == 0:
+      gLogger.warn("Policy parameters domain names do not match with any CS domain names")
+      return S_OK([])
+
+    for domainName in knownDomains:
+      gLogger.info( "Fetching the list of Computing Elements belonging to domain %s" % domainName )
+      domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
+      if not domainSites[ 'OK' ]:
+        return domainSites
+      domainSites = domainSites[ 'Value' ]
+
+      for site in domainSites:
+        siteCEs = gConfig.getSections( '%s/%s/%s/CEs' % ( _basePath, domainName, site ) )
+        if not siteCEs[ 'OK' ]:
+          #return siteCEs
+          gLogger.error( siteCEs[ 'Message' ] )
+          continue
+        siteCEs = siteCEs[ 'Value' ]
+        ces.extend( siteCEs )
+
+    # Remove duplicated ( just in case )
+    ces = list( set ( ces ) )
+    gLogger.info( "List of CEs: %s" % str( ces ) )
+
+    return S_OK( ces )
+
+
+
+  def __filterPolicies( self, decisionParams, policyMatchParams):
+    """
+      Method that checks if the given policy doesn't meet certain conditions
+    """
+    #some policies may apply or not also depending on the VO's domain
+    # 'CEAvailabilityPolicy' can be applied only if the CE is inside LCG
+    if 'elementType' in decisionParams and 'name' in decisionParams:
+      elementType = decisionParams['elementType']
+      name = decisionParams['name']
+      if elementType and elementType.upper() == 'CE' and 'domain' in policyMatchParams:
+        #WARNING: policyMatchParams['domain'] is a list of domains
+        domains = policyMatchParams['domain']
+        result = self.__getComputingElementsByDomainName( targetDomain = domains )
+        if result['OK']:
+          ces = result['Value']
+          #to verify that the given CE is in the list of the LCG CEs
+          if name not in ces:
+            gLogger.info( "ComputingElement %s NOT found in domains %s" % ( name, domains )  )
+            return False
+          else:
+            gLogger.info( "ComputingElement %s found in domains %s" % ( name, domains ) )
+        else:
+          gLogger.warn( "unable to verify if ComputingElement %s is in domains %s" % ( name, domains ) )
+
+    return True
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
