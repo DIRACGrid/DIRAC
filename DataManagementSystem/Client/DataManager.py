@@ -1053,7 +1053,7 @@ class DataManager( object ):
     log = self.log.getSubLogger( 'removeFile' )
     if not lfn:
       return S_OK( { 'Successful': {}, 'Failed': {} } )
-    if force == None:
+    if force is None:
       force = self.ignoreMissingInFC
     if isinstance( lfn, ( list, dict, set, tuple ) ):
       lfns = list( lfn )
