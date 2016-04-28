@@ -190,7 +190,7 @@ class ResourceStatus( object ):
 
     self.rssCache.acquireLock()
     try:
-      res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName,
+      res = self.rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = elementName,
                                                 elementType = elementType, status = status,
                                                 statusType = statusType, reason = reason,
                                                 tokenOwner = tokenOwner, tokenExpiration = expiration )
