@@ -324,12 +324,12 @@ class DataManager( object ):
       log.debug( errStr )
       return S_ERROR( errStr )
     log.debug( "Attempting to get %s files." % len( lfns ) )
-    res = self.getActiveReplicas( lfns )
+    res = self.getActiveReplicas( lfns, getUrl = False )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
     lfnReplicas = res['Value']['Successful']
-    res = self.fc.getFileMetadata( lfnReplicas )
+    res = self.fc.getFileMetadata( lfnReplicas.keys() )
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -1517,12 +1517,14 @@ class DataManager( object ):
     """
     for lfn, replicas in replicaDict['Successful'].items():
       self.__filterTapeSEs( replicas, diskOnly = diskOnly )
-      if not replicas:
+      # If diskOnly, one may not have any replica in the end, set Failed
+      if diskOnly and not replicas:
         del replicaDict['Successful'][lfn]
         replicaDict['Failed'][lfn] = 'No disk replicas'
 
   def __filterTapeSEs( self, replicas, diskOnly = False ):
     for se in replicas.keys():
+      # First find a disk replica, otherwise do nothing unless diskOnly is set
       if diskOnly or self.__SEActive( se, access = 'DiskSE' ):
         # There is one disk replica, remove tape replicas and exit loop
         for se in replicas.keys():
