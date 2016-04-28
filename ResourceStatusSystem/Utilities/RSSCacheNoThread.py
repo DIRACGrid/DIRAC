@@ -373,7 +373,7 @@ class RSSCache( Cache ):
 
       if not result.has_key( elementName ):
         result[ elementName ] = {}
-      result[ elementName ][ elementType, statusType ] = cacheValue
+      result[ elementName ][ statusType ] = cacheValue
 
     return result
 
