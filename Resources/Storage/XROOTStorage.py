@@ -452,7 +452,7 @@ class XROOTStorage( StorageBase ):
         remoteSize = res['Value']
       else:
         errMsg = "XROOTStorage.__putSingleFile: Could not get remote file size"
-        self.log.error( errMsg, res['Value'] )
+        self.log.error( errMsg, res['Message'] )
         return S_ERROR( "Could not get remote file size" )
 
       if sourceSize == remoteSize:
