@@ -1161,7 +1161,7 @@ class DataManager( object ):
     if isinstance( lfn, ( list, dict, set, tuple ) ):
       lfns = set( lfn )
     else:
-      lfns = set( [lfn] )
+      lfns = {lfn}
     for lfn in lfns:
       if not isinstance( lfn, basestring ):
         errStr = "Supplied lfns must be string or list of strings."
