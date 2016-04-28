@@ -466,7 +466,7 @@ class SiteDirector( AgentModule ):
         self.log.error( "Can not get the status of computing element %s: %s" % (siteName, result['Message']) )
         continue
       if result['Value']:
-        result = result['Value'][ceName]['ComputingElement', 'all']   #get the value of the status
+        result = result['Value'][ceName]['all']   #get the value of the status
 
       if result not in ('Active', 'Degraded'):
         self.log.verbose( "Skipping computing element %s at %s: resource not usable" % (ceName, siteName) )
