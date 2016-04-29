@@ -1,17 +1,18 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """
 Handling the download of the shifter Proxy
 """
-__RCSID__ = "$Id$"
 
 import os
+
 from DIRAC                                               import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers            import cfgPath
 from DIRAC.Core.Security                                 import CS
+
+__RCSID__ = "$Id$"
+
 
 def getShifterProxy( shifterType, fileName = False ):
   """
@@ -21,10 +22,7 @@ def getShifterProxy( shifterType, fileName = False ):
 
   """
   if fileName:
-    try:
-      os.makedirs( os.path.dirname( fileName ) )
-    except OSError:
-      pass
+    mkDir(os.path.dirname( fileName ))
   opsHelper = Operations()
   userName = opsHelper.getValue( cfgPath( 'Shifter', shifterType, 'User' ), '' )
   if not userName:

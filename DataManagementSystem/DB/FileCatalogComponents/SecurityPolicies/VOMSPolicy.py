@@ -583,7 +583,7 @@ class VOMSPolicy( SecurityManagerBase ):
     elif opType == 'removeFile':
       policyToExecute = self.__policyRemoveFile
 
-    elif opType in ['setFileMode', 'addFileAncestors', 'setFileStatus', 'addReplica',
+    elif opType in ['addFileAncestors', 'setFileStatus', 'addReplica',
                      'removeReplica', 'setReplicaStatus', 'setReplicaHost']:
       policyToExecute = self.__policyWriteOnFile
 
@@ -599,7 +599,7 @@ class VOMSPolicy( SecurityManagerBase ):
       policyToExecute = self.__policyReadForReplica
       
     # Only admin can do that, and if we are here, we are not admin
-    elif opType in ['changePathOwner', 'changePathGroup', 'setFileOwner', 'setFileGroup']:
+    elif opType in ['changePathOwner', 'changePathGroup']:
       policyToExecute = self.__policyDeny
 
     elif opType == 'changePathMode':

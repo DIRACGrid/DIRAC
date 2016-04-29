@@ -25,11 +25,12 @@ An timeInterval class provides a method to check
 if a give datetime is in the defined interval.
 
 """
-__RCSID__ = "$Id$"
-
 import time as nativetime
 import datetime
 from types import StringTypes
+
+__RCSID__ = "$Id$"
+
 
 # Some useful constants for time operations
 microsecond = datetime.timedelta( microseconds = 1 )
@@ -194,10 +195,9 @@ def fromString( myDate = None ):
         return ( datetime.datetime( year = int( dateTuple[0] ),
                                     month = int( dateTuple[1] ),
                                     day = int( dateTuple[2] ) ) +
-                fromString( dateTimeTuple[1] ) )
+                 fromString( dateTimeTuple[1] ) )
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
-        return None
     elif myDate.find( ':' ) > 0:
       timeTuple = myDate.replace( '.', ':' ).split( ':' )
       try:

@@ -1,8 +1,6 @@
 """ SandboxHandler is the implementation of the Sandbox service
     in the DISET framework
 """
-__RCSID__ = "$Id$"
-
 import os
 import time
 from types import StringTypes, ListType, DictType, TupleType
@@ -10,6 +8,7 @@ import threading
 import tempfile
 
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
@@ -19,6 +18,8 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Security import Properties
+
+__RCSID__ = "$Id$"
 
 sandboxDB = False
 
@@ -236,10 +237,7 @@ class SandboxStoreHandler( RequestHandler ):
         return S_ERROR( "Cannot create temporary file" )
 
     destFileName = os.path.realpath( destFileName )
-    try:
-      os.makedirs( os.path.dirname( destFileName ) )
-    except Exception as _e:
-      pass
+    mkDir( os.path.dirname( destFileName ) )
 
     try:
       if tfd is not None:
@@ -271,14 +269,10 @@ class SandboxStoreHandler( RequestHandler ):
         gLogger.info( "There was already a sandbox with that name, skipping copy", sbPath )
       else:
         hdDirPath = os.path.dirname( hdFilePath )
-        if not os.path.isdir( hdDirPath ):
-          try:
-            os.makedirs( hdDirPath )
-          except:
-            pass
+        mkDir(hdDirPath)
         try:
           os.rename( localFilePath, hdFilePath )
-        except Exception as e:
+        except OSError as e:
           errMsg = "Cannot move temporal file to final path"
           gLogger.error( errMsg, repr( e ).replace( ',)', ')' ) )
           result = S_ERROR( errMsg )

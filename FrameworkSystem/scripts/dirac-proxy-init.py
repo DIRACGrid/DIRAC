@@ -1,20 +1,19 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
-__RCSID__ = "$Id$"
 
 import sys
 import datetime
 import DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
+__RCSID__ = "$Id$"
 
 class Params( ProxyGeneration.CLIParams ):
 

@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-get-CAs
 # Author :  Ricardo Graciani
 ########################################################################
-__RCSID__ = "$Id$"
-import os
+
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
+__RCSID__ = "$Id$"
 Script.addDefaultOptionValue( '/DIRAC/Security/SkipCAChecks', 'yes' )
+
 Script.parseCommandLine( ignoreErrors = True )
 
 bdc = BundleDeliveryClient()

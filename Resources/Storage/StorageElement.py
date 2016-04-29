@@ -36,7 +36,7 @@ class StorageElementCache( object ):
   def __call__( self, name, plugins = None, vo = None, hideExceptions = False ):
     self.seCache.purgeExpired( expiredInSeconds = 60 )
     tId = threading.current_thread().ident
-    argTuple = ( tId, name, protocols, vo )
+    argTuple = ( tId, name, plugins, vo )
     seObj = self.seCache.get( argTuple )
 
     if not seObj:

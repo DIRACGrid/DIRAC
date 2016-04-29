@@ -5,6 +5,9 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
+import os
+import types
+
 import DIRAC
 from DIRAC.Core.Utilities.PromptUser                          import promptUser
 from DIRAC.Core.Base.API                                      import API
@@ -19,7 +22,7 @@ from DIRAC                                                    import gConfig, gL
 from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSE
 
-import os, types
+__RCSID__ = "$Id$"
 
 voName = ''
 ret = getProxyInfo( disableVOMS = True )

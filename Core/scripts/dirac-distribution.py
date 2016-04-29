@@ -10,6 +10,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import List, Distribution, Platform
 
@@ -142,10 +143,7 @@ class DistributionMaker:
     if not self.cliParams.destination:
       self.cliParams.destination = tempfile.mkdtemp( 'DiracDist' )
     else:
-      try:
-        os.makedirs( self.cliParams.destination )
-      except:
-        pass
+      mkDir(self.cliParams.destination)
     gLogger.notice( "Will generate tarballs in %s" % self.cliParams.destination )
     return True
 

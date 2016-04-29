@@ -5,8 +5,6 @@
     if necessary settings which were changed in the BDII recently
 """
 
-__RCSID__ = "$Id$"
-
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                        import AgentModule
 from DIRAC.Core.Utilities.Grid                          import getBdiiCEInfo, getBdiiSEInfo
@@ -16,6 +14,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOs, getVOOption
 from DIRAC.ConfigurationSystem.Client.Utilities         import getGridCEs, getSiteUpdates, getSRMUpdates, \
                                                                getCEsFromCS, getSEsFromCS, getGridSRMs
+
+__RCSID__ = "$Id$"
 
 class Bdii2CSAgent( AgentModule ):
 

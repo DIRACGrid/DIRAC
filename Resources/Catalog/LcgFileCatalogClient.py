@@ -1886,6 +1886,6 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
     return returnCode( lfc.lfc_chmod( self.__fullLfn( lfn ), mode ) )
 
   def __fullLfn( self, lfn ):
-    return self.prefix + lfn
+    return str( self.prefix + lfn )
 
   # THIS IS NOT YET WORKING

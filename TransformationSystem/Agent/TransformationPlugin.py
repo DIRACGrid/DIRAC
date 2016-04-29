@@ -1,8 +1,6 @@
 """  TransformationPlugin is a class wrapping the supported transformation plugins
 """
 
-__RCSID__ = "$Id$"
-
 import random
 import time
 
@@ -14,6 +12,8 @@ from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities, getFileGroups
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+
+__RCSID__ = "$Id$"
 
 
 class TransformationPlugin( PluginBase ):

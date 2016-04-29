@@ -3,7 +3,8 @@
 
 #pylint: disable=protected-access
 
-import unittest, types
+import unittest
+import types
 
 from mock import MagicMock
 from DIRAC import gLogger
@@ -13,13 +14,22 @@ from DIRAC.TransformationSystem.Client.TransformationClient   import Transformat
 from DIRAC.TransformationSystem.Client.Transformation         import Transformation
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 
-def getSitesForSE( ses ):
-  if ses == 'pippo':
-    return {'OK':True, 'Value':['Site2', 'Site3']}
-  else:
-    return {'OK':True, 'Value':['Site3']}
-
 #############################################################################
+
+
+class reqValFake_C(object):
+  def validate(self, opsInput):
+    for ops in opsInput:
+      if not len(ops):
+        return {'OK': False}
+      for f in ops:
+        try:
+          if not f.LFN:
+            return {'OK': False}
+        except:
+          return {'OK': False}
+    return {'OK': True}
+reqValFake = reqValFake_C()
 
 class ClientsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
@@ -57,7 +67,8 @@ class ClientsTestCase( unittest.TestCase ):
 
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
                                       requestClient = self.mockReqClient,
-                                      requestValidator = self.reqValidatorMock )
+                                      requestValidator = reqValFake
+                                      )
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
@@ -94,6 +105,14 @@ class PluginUtilitiesSuccess( ClientsTestCase ):
                                      ( 'SE2', ['/this/is/at_23', '/this/is/at.2'] ),
                                      ( 'SE4', ['/this/is/at_4'] )] )
 
+    res = self.pu.groupByReplicas( {'/this/is/at.123': ['SE1', 'SE2', 'SE3'],
+                                    '/this/is/at.12': ['SE1', 'SE2'],
+                                    '/this/is/at.134': ['SE1', 'SE3', 'SE4']},
+                                    'Flush' )
+    self.assert_( res['OK'] )
+    print res['Value']
+    self.assertEqual( res['Value'], [( 'SE1', ['/this/is/at.123', '/this/is/at.134', '/this/is/at.12'] ) ] )
+
 #############################################################################
 
 class WorkflowTasksSuccess( ClientsTestCase ):
@@ -104,7 +123,7 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
-
+    self.assertTrue(res['OK'])
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
                                           'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
@@ -116,6 +135,21 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                             }
                     )
 
+    taskDict = {1:{'TransformationID':1, 'a1':'aa1', 'b1':'bb1', 'Site':'MySite'},
+                2:{'TransformationID':1, 'a2':'aa2', 'b2':'bb2', 'InputData':['a1', 'a2']},
+                3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
+
+    res = self.wfTasks.prepareTransformationTasks( '', dict(taskDict), 'test_user', 'test_group', 'test_DN', bulkSubmissionFlag = True )
+    self.assertTrue(res['OK'])
+    self.assertEqual( res['Value'][1],
+                      {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'})
+    self.assertEqual( res['Value'][2],
+                      {'a2': 'aa2', 'TransformationID': 1, 'b2':'bb2', 'InputData':['a1', 'a2']})
+    self.assertEqual( res['Value'][3],
+                      {'TransformationID':2, 'a3':'aa3', 'b3':'bb3'})
+    self.assertTrue('BulkJobObject' in res['Value'])
+
+
   def test__handleDestination( self ):
     res = self.wfTasks._handleDestination( {'Site':'', 'TargetSE':''} )
     self.assertEqual( res, ['ANY'] )
@@ -123,23 +157,49 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     self.assertEqual( res, ['ANY'] )
     res = self.wfTasks._handleDestination( {'TargetSE':'Unknown'} )
     self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':''} )
-    self.assertEqual( res, ['Site1', 'Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':''} )
+    self.assertEqual( res, ['Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'} )
+    self.assertEqual( res, ['Site1','Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['Site1','Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['Site1', 'Site2', 'Site3'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['ANY'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'} )
+    self.assertEqual( res, ['Site1'] )
 
 #############################################################################
 
 class RequestTasksSuccess( ClientsTestCase ):
 
   def test_prepareTranformationTasks( self ):
+
+    #No tasks in input
+    taskDict = {}
+    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
+    self.assert_( res['OK'] )
+    self.assertEqual( len( taskDict ), 0 )
+
+    #3 tasks, 1 task not OK (in second transformation)
+    taskDict = {123:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}}
+    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
+    self.assert_( res['OK'] )
+    # We should "lose" one of the task in the preparation
+    self.assertEqual( len( taskDict ), 0 )
+
     taskDict = {1:{'TransformationID':1, 'TargetSE':'SE1', 'b1':'bb1', 'Site':'MySite',
                    'InputData':['/this/is/a1.lfn', '/this/is/a2.lfn']},
                 2:{'TransformationID':1, 'TargetSE':'SE2', 'b2':'bb2', 'InputData':"/this/is/a1.lfn;/this/is/a2.lfn"},
-                3:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}
-                }
+                3:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}}
 
     res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
     self.assert_( res['OK'] )
-    self.assertEqual( len( taskDict ), 3 )
+    # We should "lose" one of the task in the preparation
+    self.assertEqual( len( taskDict ), 2 )
     for task in res['Value'].values():
       self.assert_( isinstance( task['TaskObject'], Request ) )
       self.assertEqual( task['TaskObject'][0].Type, 'ReplicateAndRegister' )
