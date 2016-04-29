@@ -1538,7 +1538,7 @@ class DataManager( object ):
     The input dict is modified, no returned value
     """
     for replicas in replicaDict['Successful'].itervalues():
-      for se in replicas.keys():
+      for se in replicas.keys():  # Beware: there is a pop below
         if not self.__checkSEStatus( se, status = 'Read' ):
           replicas.pop( se )
     return
