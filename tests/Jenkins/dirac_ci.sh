@@ -198,6 +198,15 @@ function fullInstallDIRAC(){
 	echo '==> Restarting Configuration Server'
 	dirac-restart-component Configuration Server $DEBUG
 
+	echo '==> Restarting ResourceStatus ResourceStatus'
+	dirac-restart-component ResourceStatus ResourceStatus $DEBUG
+
+	echo '==> Restarting ResourceStatus ResourceManagement'
+	dirac-restart-component ResourceStatus ResourceManagement $DEBUG
+
+	echo '==> Restarting ResourceStatus Publisher'
+	dirac-restart-component ResourceStatus Publisher $DEBUG
+
 	#agents
 	findAgents
 	diracAgents
