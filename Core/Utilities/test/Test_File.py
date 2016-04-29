@@ -58,35 +58,35 @@ class FileTestCase(unittest.TestCase):
     guid = ""
     self.assertEqual( checkGuid( guid ), False, "empty guid" )
 
-    # wrong lenght in a 1st field
+    # wrong length in a 1st field
     guid = '012345678-0123-0123-0123-0123456789AB'
-    self.assertEqual( checkGuid( guid ), False, 'wrong lenght in 1st field' )
+    self.assertEqual( checkGuid( guid ), False, 'wrong length in 1st field' )
     guid = '0123456-0123-0123-0123-0123456789AB'
-    self.assertEqual( checkGuid( guid ), False, 'wrong lenght in 1st field')
+    self.assertEqual( checkGuid( guid ), False, 'wrong length in 1st field')
 
-    # wrong lenght in a 2nd field
+    # wrong length in a 2nd field
     guid = '01234567-01234-0123-0123-0123456789AB'
-    self.assertEqual( checkGuid( guid ), False, 'wrong lenght in 2nd field' )
+    self.assertEqual( checkGuid( guid ), False, 'wrong length in 2nd field' )
     guid = '01234567-012-0123-0123-0123456789AB'
-    self.assertEqual( checkGuid( guid ), False, 'wrong lenght in 2nd field' )
+    self.assertEqual( checkGuid( guid ), False, 'wrong length in 2nd field' )
 
-    # wrong lenght in a 3rd field
+    # wrong length in a 3rd field
     guid = '01234567-0123-01234-0123-0123456789AB'
-    self.assertEqual( checkGuid( guid ), False, 'wrong lenght in 3rd field' )
+    self.assertEqual( checkGuid( guid ), False, 'wrong length in 3rd field' )
     guid = '01234567-0123-012-0123-0123456789AB'
-    self.assertEqual( checkGuid( guid ), False, 'wrong lenght in 3rd field')
+    self.assertEqual( checkGuid( guid ), False, 'wrong length in 3rd field')
 
-    # wrong lenght in a 4th field
+    # wrong length in a 4th field
     guid = '01234567-0123-0123-01234-0123456789AB'
-    self.assertEqual( checkGuid( guid ), False, 'wrong lenght in 4th field' )
+    self.assertEqual( checkGuid( guid ), False, 'wrong length in 4th field' )
     guid = '01234567-0123-0123-012-0123456789AB'
-    self.assertEqual( checkGuid( guid ), False, 'wrong lenght in 4th field' )
+    self.assertEqual( checkGuid( guid ), False, 'wrong length in 4th field' )
 
-    # wrong lenght in a 5th field
+    # wrong length in a 5th field
     guid = '01234567-0123-0123-0123-0123-0123456789ABC'
-    self.assertEqual( checkGuid( guid ), False, 'wrong lenght in 5th field' )
+    self.assertEqual( checkGuid( guid ), False, 'wrong length in 5th field' )
     guid = '01234567-0123-0123-0123-0123-0123456789A'
-    self.assertEqual( checkGuid( guid ), False, 'wrong lenght in 5th field' )
+    self.assertEqual( checkGuid( guid ), False, 'wrong length in 5th field' )
 
     # small caps
     guid = '01234567-9ABC-0DEF-0123-456789ABCDEF'.lower()

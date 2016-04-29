@@ -211,6 +211,7 @@ class ReqClientMix( ReqClientTestCase ):
     loops = self.stressRequests // self.bulkRequest + ( 1 if ( self.stressRequests % self.bulkRequest ) else 0 )
     totalSuccessful = 0
 
+    time.sleep( 1 )
     startTime = time.time()
 
     for i in xrange( loops ):

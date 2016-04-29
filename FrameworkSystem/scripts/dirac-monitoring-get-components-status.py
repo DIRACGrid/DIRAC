@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__ = "$Id$"
 import sys
-import DIRAC
 from DIRAC.Core.Base import Script
+
+__RCSID__ = "$Id$"
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()

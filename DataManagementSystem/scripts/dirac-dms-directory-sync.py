@@ -12,8 +12,6 @@ If option --sync is used contend that is not in the source directory but is
 only in the target directory will be deleted.
 """
 
-__RCSID__ = "$Id$"
-
 import os
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -52,11 +50,14 @@ for switch in Script.getUnprocessedSwitches():
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gConfig, gLogger
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+
+__RCSID__ = "$Id$"
+
 
 def getSetOfLocalDirectoriesAndFiles( path ):
   """Return a set of all directories and subdirectories and a set of
@@ -300,11 +301,7 @@ def createLocalDirectory(directory):
   """
   Create local directory
   """
-  try:
-    os.makedirs(directory)
-  except OSError as e:
-    return S_ERROR('Directory creation failed: ' + e.strerror)
-
+  mkDir(directory)
   if not os.path.exists(directory):
     return S_ERROR('Directory creation failed')
   return S_OK('Created directory successfully')

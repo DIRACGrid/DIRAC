@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ###########################################################from DIRAC.Core.Base import Script#############
 __RCSID__ = "$Id$"
 
 import sys
-import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 

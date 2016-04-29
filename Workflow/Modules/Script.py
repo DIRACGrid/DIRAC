@@ -28,7 +28,8 @@ class Script( ModuleBase ):
     self.applicationVersion = ''
     self.applicationLog = ''
     self.arguments = ''
-    self.step_commons = {}
+    self.workflow_commons = None
+    self.step_commons = None
 
     self.environment = None
     self.callbackFunction = None
@@ -42,10 +43,9 @@ class Script( ModuleBase ):
     super( Script, self )._resolveInputVariables()
     super( Script, self )._resolveInputStep()
 
-    if self.step_commons.has_key( 'arguments' ):
-      self.arguments = self.step_commons['arguments']
-      if not self.arguments.strip() and 'arguments' in self.workflow_commons:
-        self.arguments = self.workflow_commons['arguments']
+    self.arguments = self.step_commons.get( 'arguments', self.arguments )
+    if not self.arguments.strip():
+      self.arguments = self.workflow_commons.get('arguments', self.arguments)
 
   #############################################################################
 

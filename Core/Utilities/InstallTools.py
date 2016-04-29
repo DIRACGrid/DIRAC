@@ -1,8 +1,3 @@
-########################################################################
-# File :    InstallTools.py
-# Author :  Ricardo Graciani
-########################################################################
-
 """
 Collection of Tools for installation of DIRAC components:
 MySQL, DB's, Services's, Agents
@@ -51,13 +46,13 @@ If a Master Configuration Server is being installed the following Options can be
 
 """
 
-__RCSID__ = "$Id$"
-
-#
-import datetime
-import os, re, glob, stat, time, shutil, socket
-
-gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
+import os
+import re
+import glob
+import stat
+import time
+import shutil
+import socket
 
 import DIRAC
 from DIRAC import rootPath
@@ -68,6 +63,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, \
                                                      cfgInstallSection, ResourcesDefaults, CSGlobals
@@ -85,6 +81,10 @@ from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.Platform import getPlatformString
+
+__RCSID__ = "$Id$"
+
+gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
 
 # On command line tools this can be set to True to abort after the first error.
@@ -567,8 +567,8 @@ def removeComponentOptionsFromCS( system, component, mySetup = setup ):
       isRenamed = True
 
     result = monitoringClient.getInstallations( { 'UnInstallationTime': None },
-                                                  { 'System': system, 'Module': installation[ 'Component' ][ 'Module' ] },
-                                                  {}, True )
+                                                { 'System': system, 'Module': installation[ 'Component' ][ 'Module' ] },
+                                                {}, True )
     if not result[ 'OK' ]:
       return result
     installations = result[ 'Value' ]
@@ -1477,22 +1477,7 @@ def setupSite( scriptCfg, cfg = None ):
 
   # Make sure the necessary directories are there
   if basePath != instancePath:
-    if not os.path.exists( instancePath ):
-      try:
-        os.makedirs( instancePath )
-      except Exception:
-        error = 'Can not create directory for instance %s' % instancePath
-        if exitOnError:
-          gLogger.exception( error )
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
-    if not os.path.isdir( instancePath ):
-      error = 'Instance directory %s is not valid' % instancePath
-      if exitOnError:
-        gLogger.error( error )
-        DIRAC.exit( -1 )
-      return S_ERROR( error )
-
+    mkDir(instancePath)
     instanceEtcDir = os.path.join( instancePath, 'etc' )
     etcDir = os.path.dirname( cfgFile )
     if not os.path.exists( instanceEtcDir ):
@@ -1514,15 +1499,7 @@ def setupSite( scriptCfg, cfg = None ):
 
   # if any server or agent needs to be install we need the startup directory and runsvdir running
   if setupServices or setupAgents or setupExecutors or setupWeb:
-    if not os.path.exists( startDir ):
-      try:
-        os.makedirs( startDir )
-      except Exception:
-        error = 'Can not create %s' % startDir
-        if exitOnError:
-          gLogger.exception( error )
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
+    mkDir(startDir)
     # And need to make sure runsvdir is running
     result = execCommand( 0, ['ps', '-ef'] )
     if not result['OK']:
@@ -1718,22 +1695,21 @@ def _getSectionName( compType ):
 
 def _createRunitLog( runitCompDir ):
   controlDir = os.path.join( runitCompDir, 'control' )
-  os.makedirs( controlDir )
+  mkDir( controlDir )
 
   logDir = os.path.join( runitCompDir, 'log' )
-  os.makedirs( logDir )
+  mkDir( logDir )
 
   logConfigFile = os.path.join( logDir, 'config' )
-  fd = open( logConfigFile, 'w' )
-  fd.write(
+  with open( logConfigFile, 'w' ) as fd:
+    fd.write(
 """s10000000
 n20
 """ )
-  fd.close()
 
   logRunFile = os.path.join( logDir, 'run' )
-  fd = open( logRunFile, 'w' )
-  fd.write(
+  with open( logRunFile, 'w' ) as fd:
+    fd.write(
 """#!/bin/bash
 #
 rcfile=%(bashrc)s
@@ -1742,7 +1718,6 @@ rcfile=%(bashrc)s
 exec svlogd .
 
 """ % { 'bashrc' : os.path.join( instancePath, 'bashrc' ) } )
-  fd.close()
 
   os.chmod( logRunFile, gDefaultPerms )
 
@@ -1873,8 +1848,7 @@ def setupComponent( componentType, system, component, extensions,
   # Create the startup entry now
   runitCompDir = result['Value']
   startCompDir = os.path.join( startDir, '%s_%s' % ( system, component ) )
-  if not os.path.exists( startDir ):
-    os.makedirs( startDir )
+  mkDir(startDir)
   if not os.path.lexists( startCompDir ):
     gLogger.notice( 'Creating startup link at', startCompDir )
     os.symlink( runitCompDir, startCompDir )
@@ -2040,8 +2014,7 @@ def setupPortal():
   startCompDir = [ os.path.join( startDir, 'Web_httpd' ),
                    os.path.join( startDir, 'Web_paster' ) ]
 
-  if not os.path.exists( startDir ):
-    os.makedirs( startDir )
+  mkDir(startDir)
 
   for i in range( 2 ):
     if not os.path.lexists( startCompDir[i] ):
@@ -2078,8 +2051,7 @@ def setupNewPortal():
   startCompDir = os.path.join( startDir, 'Web_WebApp' )
 
 
-  if not os.path.exists( startDir ):
-    os.makedirs( startDir )
+  mkDir( startDir )
 
   if not os.path.lexists( startCompDir ):
     gLogger.notice( 'Creating startup link at', startCompDir )
@@ -2308,15 +2280,8 @@ def installMySQL():
   if mysqlMode:
     gLogger.notice( 'This is a MySQl %s server' % mysqlMode )
 
-  try:
-    os.makedirs( mysqlDbDir )
-    os.makedirs( mysqlLogDir )
-  except Exception:
-    error = 'Can not create MySQL dirs'
-    gLogger.exception( error )
-    if exitOnError:
-      DIRAC.exit( -1 )
-    return S_ERROR( error )
+  mkDir(mysqlDbDir)
+  mkDir(mysqlLogDir)
 
   try:
     fd = open( mysqlMyOrg, 'r' )

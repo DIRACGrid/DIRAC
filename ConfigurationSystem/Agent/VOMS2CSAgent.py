@@ -275,6 +275,10 @@ def getUserName( dn, mail ):
   if len( dnName ) >= 12:
     return dnName[:11]
 
+  # May be the mail name is still more reasonable
+  if len( dnName ) < len( mailName ) and mailName.isalpha():
+    return mailName
+
   return dnName
 
 def getUserNameFromMail( mail ):
@@ -302,7 +306,11 @@ def getUserNameFromDN( dn ):
   for entry in dn.split( '/' ):
     if entry:
       key, value = entry.split( '=' )
-      if key == 'CN':
+      if key.upper() == 'CN':
+        ind = value.find( "(" )
+        # Strip of possible words in parenthesis in the name
+        if ind != -1:
+          value = value[:ind]
         names = value.split()
         if len( names ) == 1:
           nname = names[0].lower()
@@ -319,7 +327,7 @@ def getUserNameFromDN( dn ):
             names.pop( 0 )
             robot = True
           for name in list( names ):
-            if name.isdigit() or "@" in name:
+            if name[0].isdigit() or "@" in name:
               names.pop( names.index( name ) )
           if robot:
             nname = "robot-%s" % names[-1].lower()

@@ -2,8 +2,8 @@
 # $HeadURL $
 # File: StorageElementHandler.py
 ########################################################################
-""" 
-:mod: StorageElementHandler 
+"""
+:mod: StorageElementHandler
 
 .. module: StorageElementHandler
   :synopsis: StorageElementHandler is the implementation of a simple StorageElement
@@ -26,8 +26,6 @@ The class can be used as the basis for more advanced StorageElement implementati
 
 """
 
-__RCSID__ = "$Id$"
-
 ## imports
 import os
 import shutil
@@ -37,12 +35,16 @@ from stat import ST_MODE, ST_SIZE, ST_ATIME, ST_CTIME, ST_MTIME, S_ISDIR, S_IMOD
 from types import  StringTypes, ListType
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.Os import getDirectorySize
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.Adler            import fileAdler
 
 from DIRAC.Resources.Storage.StorageBase import StorageBase
+
+__RCSID__ = "$Id$"
+
 
 BASE_PATH = ""
 MAX_STORAGE_SIZE = 0
@@ -60,8 +62,7 @@ def initializeStorageElementHandler( serviceInfo ):
   if not BASE_PATH:
     gLogger.error( 'Failed to get the base path' )
     return S_ERROR( 'Failed to get the base path' )
-  if not os.path.exists( BASE_PATH ):
-    os.makedirs( BASE_PATH )
+  mkDir(BASE_PATH)
 
   USE_TOKENS = getServiceOption( serviceInfo, "%UseTokens", USE_TOKENS )
   MAX_STORAGE_SIZE = getServiceOption( serviceInfo, "MaxStorageSize", MAX_STORAGE_SIZE )
@@ -91,7 +92,7 @@ class StorageElementHandler( RequestHandler ):
     stats = os.statvfs( dpath )
     dsize = stats.f_bsize * stats.f_bavail
     maxStorageSizeBytes = MAX_STORAGE_SIZE * 1024 * 1024
-    return ( min( dsize, maxStorageSizeBytes ) > size )
+    return min( dsize, maxStorageSizeBytes ) > size
 
   def __resolveFileID( self, fileID ):
     """ get path to file for a given :fileID: """
@@ -150,13 +151,13 @@ class StorageElementHandler( RequestHandler ):
     resultDict['Lost'] = 0
     resultDict['Unavailable'] = 0
     resultDict['Mode'] = S_IMODE( mode )
-    
+
 
     if resultDict['File']:
       cks = fileAdler( path )
       resultDict['Checksum'] = cks
 
-    
+
     resultDict = StorageBase._addCommonMetadata( resultDict )
 
 
@@ -191,7 +192,7 @@ class StorageElementHandler( RequestHandler ):
         return S_OK()
     # Need to think about permissions.
     try:
-      os.makedirs( path )
+      mkDir(path)
       return S_OK()
     except Exception as x:
       errStr = "Exception creating directory."
@@ -254,9 +255,8 @@ class StorageElementHandler( RequestHandler ):
     if not self.__checkForDiskSpace( BASE_PATH, fileSize ):
       return S_ERROR( 'Not enough disk space' )
     file_path = self.__resolveFileID( fileID )
-    if not os.path.exists( os.path.dirname( file_path ) ):
-      os.makedirs( os.path.dirname( file_path ) )
     try:
+      mkDir(os.path.dirname( file_path ))
       fd = open( file_path, "wb" )
     except Exception, error:
       return S_ERROR( "Cannot open to write destination file %s: %s" % ( file_path, str( error ) ) )

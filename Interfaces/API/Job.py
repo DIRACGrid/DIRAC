@@ -22,8 +22,6 @@
 
    Note that several executables can be provided and wil be executed sequentially.
 """
-__RCSID__ = "$Id$"
-
 import re
 import os
 import urllib
@@ -45,6 +43,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers                 import Resources
 from DIRAC.Interfaces.API.Dirac                               import Dirac
 from DIRAC.Workflow.Utilities.Utils                           import getStepDefinition, addStepToWorkflow
 from DIRAC.Core.Utilities.DErrno                              import EWMSJDL
+
+__RCSID__ = "$Id$"
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 

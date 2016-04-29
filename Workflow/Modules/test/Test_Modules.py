@@ -1,4 +1,11 @@
-import unittest, itertools, os, copy, shutil
+""" Unit Test of Workflow Modules
+"""
+
+import unittest
+import itertools
+import os
+import copy
+import shutil
 
 from mock import MagicMock as Mock
 
@@ -75,8 +82,7 @@ class ModulesTestCase( unittest.TestCase ):
     self.workflowStatus = {'OK':True}
     self.stepStatus = {'OK':True}
 
-    self.wf_commons = [
-                       {'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ), 'eventType': '123456789', 'jobType': 'merge',
+    self.wf_commons = [{'PRODUCTION_ID': str( self.prod_id ), 'JOB_ID': str( self.prod_job_id ), 'eventType': '123456789', 'jobType': 'merge',
                         'configName': 'aConfigName', 'configVersion': 'aConfigVersion', 'outputDataFileMask':'',
                         'BookkeepingLFNs':'aa', 'ProductionOutputData':'ProductionOutputData', 'numberOfEvents':'100',
                         'JobReport':self.jr_mock, 'Request':rc_mock, 'AccountingReport': ar_mock, 'FileReport':self.fr_mock,
@@ -148,29 +154,28 @@ class ModulesTestCase( unittest.TestCase ):
                         'SystemConfig':'sys_config', 'LogFilePath':'someDir', 'LogTargetPath':'someOtherDir',
                         'runNumber':'Unknown', 'InputData': 'foo;bar', 'ParametricInputData':'pid1;pid2;pid3',
                         'appSteps': ['someApp_1']},
-                       ]
-    self.step_commons = [
+                      ]
+    self.step_commons = [{'applicationName':'someApp', 'applicationVersion':'v1r0', 'eventType': '123456789',
+                          'applicationLog':'appLog', 'extraPackages':'', 'XMLSummary':'XMLSummaryFile',
+                          'numberOfEvents':'100', 'BKStepID':'123', 'StepProcPass':'Sim123', 'outputFilePrefix':'pref_',
+                          'STEP_INSTANCE_NAME':'someApp_1',
+                          'listoutput':[{'outputDataName':str( self.prod_id ) + '_' + str( self.prod_job_id ) + '_', 'outputDataSE':'aaa',
+                                         'outputDataType':'bbb'}]},
                          {'applicationName':'someApp', 'applicationVersion':'v1r0', 'eventType': '123456789',
-                         'applicationLog':'appLog', 'extraPackages':'', 'XMLSummary':'XMLSummaryFile',
-                         'numberOfEvents':'100', 'BKStepID':'123', 'StepProcPass':'Sim123', 'outputFilePrefix':'pref_',
-                         'STEP_INSTANCE_NAME':'someApp_1',
-                         'listoutput':[{'outputDataName':str( self.prod_id ) + '_' + str( self.prod_job_id ) + '_', 'outputDataSE':'aaa',
-                                       'outputDataType':'bbb'}]},
+                          'applicationLog':'appLog', 'extraPackages':'', 'XMLSummary':'XMLSummaryFile',
+                          'numberOfEvents':'100', 'BKStepID':'123', 'StepProcPass':'Sim123', 'outputFilePrefix':'pref_',
+                          'optionsLine': '',
+                          'STEP_INSTANCE_NAME':'someApp_1',
+                          'listoutput':[{'outputDataName':str( self.prod_id ) + '_' + str( self.prod_job_id ) + '_', 'outputDataSE':'aaa',
+                                         'outputDataType':'bbb'}]},
                          {'applicationName':'someApp', 'applicationVersion':'v1r0', 'eventType': '123456789',
-                         'applicationLog':'appLog', 'extraPackages':'', 'XMLSummary':'XMLSummaryFile',
-                         'numberOfEvents':'100', 'BKStepID':'123', 'StepProcPass':'Sim123', 'outputFilePrefix':'pref_',
-                         'optionsLine': '',
-                         'STEP_INSTANCE_NAME':'someApp_1',
-                         'listoutput':[{'outputDataName':str( self.prod_id ) + '_' + str( self.prod_job_id ) + '_', 'outputDataSE':'aaa',
-                                       'outputDataType':'bbb'}]},
-                         {'applicationName':'someApp', 'applicationVersion':'v1r0', 'eventType': '123456789',
-                         'applicationLog':'appLog', 'extraPackages':'', 'XMLSummary':'XMLSummaryFile',
-                         'numberOfEvents':'100', 'BKStepID':'123', 'StepProcPass':'Sim123', 'outputFilePrefix':'pref_',
-                         'extraOptionsLine': 'blaBla',
-                         'STEP_INSTANCE_NAME':'someApp_1',
-                         'listoutput':[{'outputDataName':str( self.prod_id ) + '_' + str( self.prod_job_id ) + '_', 'outputDataSE':'aaa',
-                                       'outputDataType':'bbb'}]}
-                         ]
+                          'applicationLog':'appLog', 'extraPackages':'', 'XMLSummary':'XMLSummaryFile',
+                          'numberOfEvents':'100', 'BKStepID':'123', 'StepProcPass':'Sim123', 'outputFilePrefix':'pref_',
+                          'extraOptionsLine': 'blaBla',
+                          'STEP_INSTANCE_NAME':'someApp_1',
+                          'listoutput':[{'outputDataName':str( self.prod_id ) + '_' + str( self.prod_job_id ) + '_', 'outputDataSE':'aaa',
+                                         'outputDataType':'bbb'}]}
+                        ]
     self.step_number = '321'
     self.step_id = '%s_%s_%s' % ( self.prod_id, self.prod_job_id, self.step_number )
 
@@ -206,7 +211,7 @@ class ModulesTestCase( unittest.TestCase ):
                      'ErrorLogging_Step1_coredump.log', '123_00000456_request.xml', 'lfn1', 'lfn2',
                      'aaa.bhadron.dst', 'bbb.calibration.dst', 'ProductionOutputData', 'data.py',
                      '00000123_00000456.tar', 'someOtherDir', 'DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK',
-                     ]:
+                    ]:
       try:
         os.remove( fileProd )
       except OSError:
@@ -234,43 +239,37 @@ class ModuleBaseSuccess( ModulesTestCase ):
 
   def test__applyMask( self ):
 
-    candidateFiles = {
-                      '00012345_00012345_4.dst':
-                        {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_4.dst',
-                         'type': 'dst',
-                         'workflowSE': 'Tier1_MC_M-DST'},
+    candidateFiles = {'00012345_00012345_4.dst':
+                      {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_4.dst',
+                       'type': 'dst',
+                       'workflowSE': 'Tier1_MC_M-DST'},
                       '00012345_00012345_2.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
                       '00012345_00012345_3.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
                       '00012345_00012345_5.AllStreams.dst':
-                        {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_5.AllStreams.dst',
-                         'type': 'allstreams.dst',
-                         'workflowSE': 'Tier1_MC_M-DST'},
+                      {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_5.AllStreams.dst',
+                       'type': 'allstreams.dst',
+                       'workflowSE': 'Tier1_MC_M-DST'},
                       '00012345_00012345_1.sim': {'type': 'sim', 'workflowSE': 'Tier1-RDST'}}
 
 
     fileMasks = ( ['dst'], 'dst', ['sim'], ['digi'], ['digi', 'sim'], 'allstreams.dst' )
     stepMasks = ( '', '5', '', ['2'], ['1', '3'], '' )
 
-    results = ( 
-               {
-                '00012345_00012345_4.dst':
+    results = (
+               {'00012345_00012345_4.dst':
                   {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_4.dst',
                    'type': 'dst',
                    'workflowSE': 'Tier1_MC_M-DST'}
                 },
                {},
-                {
+                {'00012345_00012345_1.sim': {'type': 'sim', 'workflowSE': 'Tier1-RDST'}
+                },
+                {'00012345_00012345_2.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
+                },
+                {'00012345_00012345_3.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
                  '00012345_00012345_1.sim': {'type': 'sim', 'workflowSE': 'Tier1-RDST'}
                 },
-                {
-                 '00012345_00012345_2.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
-                },
-                {
-                 '00012345_00012345_3.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
-                 '00012345_00012345_1.sim': {'type': 'sim', 'workflowSE': 'Tier1-RDST'}
-                },
-                {
-                 '00012345_00012345_5.AllStreams.dst':
+                {'00012345_00012345_5.AllStreams.dst':
                   {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_5.AllStreams.dst',
                    'type': 'allstreams.dst',
                    'workflowSE': 'Tier1_MC_M-DST'}
@@ -287,8 +286,7 @@ class ModuleBaseSuccess( ModulesTestCase ):
 
   def test__checkSanity( self ):
 
-    candidateFiles = {
-                      '00012345_00012345_4.dst':
+    candidateFiles = {'00012345_00012345_4.dst':
                         {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_4.dst',
                          'type': 'dst',
                          'workflowSE': 'Tier1_MC_M-DST'},

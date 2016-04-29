@@ -28,8 +28,6 @@ for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "S", "setup" ):
     setup = unprocSw[1]
 
-import os
-
 from DIRAC.Core.Utilities.CFG import CFG
 
 localCfg = CFG()
@@ -56,4 +54,3 @@ if not sMod:
   localCfg.setOption( '/DIRAC/VOPolicy/%s/%s/SoftwareDistModule' % ( vo, setup ), '' )
 
 localCfg.writeToFile( localConfigFile )
-

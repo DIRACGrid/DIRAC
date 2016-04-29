@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
+
+__RCSID__ = "$Id$"
 
 host = None
 Script.registerSwitch( "H:", "host=", "   Target host" )

@@ -1,7 +1,7 @@
 """ DIRAC Workload Management System utility module to get available memory and processors from mjf
 """
 import os
-import requests
+import urllib2
 
 __RCSID__ = "$Id$"
 
@@ -14,7 +14,7 @@ def getJobFeatures():
                 'cpu_limit_secs', 'max_rss_bytes', 'max_swap_bytes', 'scratch_limit_bytes' ):
     fname = os.path.join( os.environ['JOBFEATURES'], item )
     try:
-      val = requests.get( fname ).text
+      val = urllib2.urlopen( fname ).read()
     except:
       val = 0
     features[item] = val

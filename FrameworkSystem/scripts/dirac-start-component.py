@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :   dirac-start-component
-# Author : Ricardo Graciani
-########################################################################
 """
 Start DIRAC component using runsvctrl utility
 """

@@ -6,14 +6,11 @@ This script assumes that the InstalledComponentsDB, the
 ComponentMonitoring service and the Notification service are installed and running
 """
 
-__RCSID__ = "$Id$"
 
-import sys
 from datetime import datetime
 from DIRAC import exit as DIRACexit
 from DIRAC import S_OK, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getSetup
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
@@ -23,6 +20,8 @@ from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient \
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+
+__RCSID__ = "$Id$"
 
 global excludedHosts
 excludedHosts = []
@@ -191,7 +190,7 @@ monitoringClient = ComponentMonitoringClient()
 
 # Add the installations to the database
 for record in records:
-  result = MonitoringUtilities.monitorInstallation( 
+  result = MonitoringUtilities.monitorInstallation(
       record[ 'Component' ][ 'Type' ], record[ 'Component' ][ 'System' ],
       record[ 'Component' ][ 'Module' ], record[ 'Installation' ][ 'Instance'],
       record[ 'Host' ][ 'CPU' ], record[ 'Host' ][ 'HostName' ] )
