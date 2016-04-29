@@ -59,7 +59,10 @@ def execute( arguments ):
   except Exception as e:
     gLogger.exception( 'JobWrapper failed the initialization phase', lException = e )
     rescheduleResult = rescheduleFailedJob( jobID, 'Job Wrapper Initialization', gJobReport )
-    job.sendJobAccounting( rescheduleResult, 'Job Wrapper Initialization' )
+    try:
+      job.sendJobAccounting( rescheduleResult, 'Job Wrapper Initialization' )
+    except Exception as e:
+      gLogger.exception( 'JobWrapper failed sending job accounting', lException = e )
     return 1
 
   if arguments['Job'].has_key( 'InputSandbox' ):
