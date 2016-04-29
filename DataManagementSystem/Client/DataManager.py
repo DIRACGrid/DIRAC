@@ -1488,7 +1488,7 @@ class DataManager( object ):
     If there is a disk replica, removetape replicas, else keep all
     The input argument is modified
     """
-    for lfn, replicas in replicaDict['Successful'].items():
+    for lfn, replicas in replicaDict['Successful'].items():  # Beware, tehre is a del below
       self.__filterTapeSEs( replicas, diskOnly = diskOnly )
       # If diskOnly, one may not have any replica in the end, set Failed
       if diskOnly and not replicas:
@@ -1500,11 +1500,11 @@ class DataManager( object ):
     """ Remove the tape SEs as soon as there is one disk SE or diskOnly is requested
     The input argument is modified
     """
-    for se in replicas.keys():
+    for se in replicas:  #  There is a del below but we then return!
       # First find a disk replica, otherwise do nothing unless diskOnly is set
       if diskOnly or self.__checkSEStatus( se, status = 'DiskSE' ):
         # There is one disk replica, remove tape replicas and exit loop
-        for se in replicas.keys():
+        for se in replicas.keys():  # Beware: there is a pop below
           if self.__checkSEStatus( se, status = 'TapeSE' ):
             replicas.pop( se )
         return
