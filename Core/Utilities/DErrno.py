@@ -88,6 +88,7 @@ EVOMS = 1121
 # Databases : 3X
 EDB = 1130
 EMYSQL = 1131
+ESQLA = 1132
 # Message Queues: 4X
 EMQUKN = 1140
 EMQNOM = 1141
@@ -154,6 +155,8 @@ dErrorCode = {
                # 113X: Databases
                1130 : 'EDB',
                1131 : 'EMYSQL',
+               1132 : 'ESQLA',
+
                # 114X: Message Queues
                1140 : 'EMQUKN',
                1141 : 'EMQNOM',
@@ -216,6 +219,8 @@ dStrError = {
               # 113X: Databases
               EDB : "Database Error",
               EMYSQL : "MySQL Error",
+              ESQLA : "SQLAlchemy Error",
+
               # 114X: Message Queues
               EMQUKN : "Unknown MQ Error",
               EMQNOM : "No messages",
