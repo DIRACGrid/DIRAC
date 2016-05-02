@@ -8,11 +8,8 @@
 """
 
 import re
-import os
-import sys
-from types import ListType, StringTypes
 
-from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                     import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                        import DB
 from DIRAC.Core.Utilities                      import Time, List
 
@@ -94,8 +91,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
 
 """
 
-  tableDict = { 'UserDNs': {
-                            'Fields': { 'UserDNID': 'INT NOT NULL AUTO_INCREMENT',
+  tableDict = { 'UserDNs': {'Fields': { 'UserDNID': 'INT NOT NULL AUTO_INCREMENT',
                                         'OwnerDN': "VARCHAR(255) NOT NULL DEFAULT 'unknown'",
                                         'OwnerGroup': "VARCHAR(128) NOT NULL DEFAULT 'nogroup'" },
                             'PrimaryKey': 'UserDNID',
@@ -117,15 +113,13 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                               'UniqueIndexes': { 'Client': ['ClientIPNumberString', 'ClientFQDN', 'SiteID' ] },
                               'Engine': 'InnoDB',
                               },
-                'Systems': {
-                             'Fields': { 'SystemID': 'INT NOT NULL AUTO_INCREMENT',
+                'Systems': { 'Fields': { 'SystemID': 'INT NOT NULL AUTO_INCREMENT',
                                          'SystemName': "VARCHAR(128) NOT NULL DEFAULT 'Unknown'" },
                              'PrimaryKey': 'SystemID',
                              'UniqueIndexes': { 'System': ['SystemName' ] },
                              'Engine': 'InnoDB',
                              },
-                'SubSystems': {
-                                'Fields': { 'SubSystemID': 'INT NOT NULL AUTO_INCREMENT',
+                'SubSystems': { 'Fields': { 'SubSystemID': 'INT NOT NULL AUTO_INCREMENT',
                                             'SubSystemName': "VARCHAR(128) NOT NULL DEFAULT 'Unknown'",
                                             'SystemID': 'INT NOT NULL', },
                                 'PrimaryKey': ['SubSystemID', 'SystemID'],
@@ -133,8 +127,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                 'UniqueIndexes': { 'SubSystem': ['SubSystemName', 'SystemID' ] },
                                 'Engine': 'InnoDB',
                                 },
-                'FixedTextMessages': {
-                                      'Fields': { 'FixedTextID': 'INT NOT NULL AUTO_INCREMENT',
+                'FixedTextMessages': {'Fields': { 'FixedTextID': 'INT NOT NULL AUTO_INCREMENT',
                                                   'FixedTextString': "VARCHAR( 767 ) NOT NULL DEFAULT 'Unknown'",
                                                   'ReviewedMessage': 'TINYINT( 1 ) NOT NULL DEFAULT FALSE',
                                                   'SubSystemID': 'INT NOT NULL', },
@@ -142,27 +135,25 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                       'UniqueIndexes': {'FixedText': ['FixedTextString', 'SubSystemID'] },
                                       'ForeignKeys': {'SubSystemID': 'SubSystems.SubSystemID' },
                                       'Engine': 'InnoDB',
-                                      },
-                'MessageRepository': {
-                                       'Fields': { 'MessageID': 'INT NOT NULL AUTO_INCREMENT',
-                                                   'MessageTime': 'DATETIME NOT NULL',
-                                                   'VariableText': 'VARCHAR(255) NOT NULL',
-                                                   'UserDNID': 'INT NOT NULL',
-                                                   'ClientIPNumberID': 'INT NOT NULL',
-                                                   'LogLevel': 'VARCHAR(15) NOT NULL',
-                                                   'FixedTextID': 'INT NOT NULL', },
-                                       'PrimaryKey': 'MessageID',
-                                       'Indexes': { 'TimeStampsIDX': ['MessageTime'],
-                                                    'FixTextIDX': ['FixedTextID'],
-                                                    'UserIDX': ['UserDNID'],
-                                                    'IPsIDX': ['ClientIPNumberID'], },
+                                     },
+                'MessageRepository': {'Fields': { 'MessageID': 'INT NOT NULL AUTO_INCREMENT',
+                                                  'MessageTime': 'DATETIME NOT NULL',
+                                                  'VariableText': 'VARCHAR(255) NOT NULL',
+                                                  'UserDNID': 'INT NOT NULL',
+                                                  'ClientIPNumberID': 'INT NOT NULL',
+                                                  'LogLevel': 'VARCHAR(15) NOT NULL',
+                                                  'FixedTextID': 'INT NOT NULL', },
+                                      'PrimaryKey': 'MessageID',
+                                      'Indexes': { 'TimeStampsIDX': ['MessageTime'],
+                                                   'FixTextIDX': ['FixedTextID'],
+                                                   'UserIDX': ['UserDNID'],
+                                                   'IPsIDX': ['ClientIPNumberID'], },
                                        'ForeignKeys': { 'UserDNID': 'UserDNs.UserDNID',
                                                         'ClientIPNumberID': 'ClientIPs.ClientIPNumberID',
-                                                        'FixedTextID': 'FixedTextMessages.FixedTextID', },
-                                       'Engine': 'InnoDB',
-                                },
-                'AgentPersistentData': {
-                                        'Fields': { 'AgentID': 'INT NOT NULL AUTO_INCREMENT',
+                                                        'Engine': 'InnoDB',},
+                                       'AgentPersistentData': {
+                                       'FixedTextID': 'FixedTextMessages.FixedTextID', },
+                                          'Fields': { 'AgentID': 'INT NOT NULL AUTO_INCREMENT',
                                                     'AgentName': "VARCHAR( 64 ) NOT NULL DEFAULT 'unkwown'",
                                                     'AgentData': 'VARCHAR( 512 ) NULL DEFAULT NULL' },
                                         'PrimaryKey': 'AgentID',
@@ -268,9 +259,9 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                      'VariableText', 'SystemName',
                      'SubSystemName', 'OwnerDN', 'OwnerGroup',
                      'ClientIPNumberString', 'SiteName']
-    elif type( showFieldList ) in StringTypes:
+    elif isinstance( showFieldList, basestring ):
       showFieldList = [ showFieldList ]
-    elif not type( showFieldList ) is ListType:
+    elif not isinstance( showFieldList, list ):
       errorString = 'The showFieldList variable should be a string or a list of strings'
       errorDesc = 'The type provided was: %s' % type ( showFieldList )
       self.log.warn( errorString, errorDesc )
@@ -290,14 +281,14 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     sortingFields = []
     if orderFields:
       for field in orderFields:
-        if type( field ) == ListType:
+        if isinstance( field, list ):
           sortingFields.append( ' '.join( field ) )
         else:
           sortingFields.append( field )
       ordering = 'ORDER BY %s' % ', '.join( sortingFields )
 
     cmd = 'SELECT %s FROM %s %s %s %s' % ( ','.join( showFieldList ),
-                                    tableList, condition, grouping, ordering )
+                                           tableList, condition, grouping, ordering )
 
     return self._query( cmd )
 
@@ -439,8 +430,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     inFields = [ 'FixedTextString' , 'SubSystemID' ]
     inValues = [ message.getFixedMessage(), subSystemIDKey ]
     outFields = [ 'FixedTextID' ]
-    result = self.__insertIntoAuxiliaryTable( 'FixedTextMessages', outFields, inFields,
-                              inValues )
+    result = self.__insertIntoAuxiliaryTable( 'FixedTextMessages', outFields, inFields, inValues )
     if not result['OK']:
       return result
     messageList.append( result['Value'] )

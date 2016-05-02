@@ -212,11 +212,11 @@ class InfoGetter(object):
     domainNames = domainNames[ 'Value' ]
 
     unknownDomains = list( set(targetDomain) - set(domainNames) )
-    if len(unknownDomains) > 0:
+    if unknownDomains:
       gLogger.warn( "Domains %s belong to the policy parameters but not to the CS domains" % unknownDomains )
 
     knownDomains = list( set(domainNames) & set(targetDomain) )
-    if len(knownDomains) == 0:
+    if not knownDomains:
       gLogger.warn("Policy parameters domain names do not match with any CS domain names")
       return S_OK([])
 
@@ -267,6 +267,7 @@ class InfoGetter(object):
             gLogger.info( "ComputingElement %s found in domains %s" % ( name, domains ) )
         else:
           gLogger.warn( "unable to verify if ComputingElement %s is in domains %s" % ( name, domains ) )
+          return False
 
     return True
 
