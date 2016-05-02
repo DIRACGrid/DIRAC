@@ -65,15 +65,6 @@ source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
 
 
 
-
-
-
-############################################
-# List URLs where to get scripts
-############################################
-DIRAC_RELEASES='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/releases.cfg'
-############################################
-
 #...............................................................................
 #
 # installSite:
@@ -255,7 +246,10 @@ function DIRACPilotInstall(){
 	findRelease
 
 	#Don't launch the JobAgent here
+	cwd=$PWD
+	cd $PILOTINSTALLDIR
 	python dirac-pilot.py -S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ -X GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements $DEBUG
+	cd $cwd
 }
 
 
@@ -265,7 +259,7 @@ function fullPilot(){
 	DIRACPilotInstall
 
 	#this should have been created, we source it so that we can continue
-	source bashrc
+	source $PILOTINSTALLDIR/bashrc
 
 	#Adding the LocalSE and the CPUTimeLeft, for the subsequent tests
 	dirac-configure -FDMH --UseServerCertificate -L $DIRACSE $DEBUG

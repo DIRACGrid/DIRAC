@@ -45,12 +45,19 @@ function findRelease(){
 
 	# store the current branch
 	currentBranch=`git --git-dir=$TESTCODE/DIRAC/.git rev-parse --abbrev-ref HEAD`
-	# get the releases.cfg file
-	git --git-dir=$TESTCODE/DIRAC/.git checkout integration
-	cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
-	# reset the branch
-	git --git-dir=$TESTCODE/DIRAC/.git checkout $currentBranch
 
+	if [ $currentBranch == 'integration' ]
+	then
+		echo 'we were already on integration, no need to change'
+		# get the releases.cfg file
+		cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
+	else
+		git --git-dir=$TESTCODE/DIRAC/.git checkout integration
+		# get the releases.cfg file
+		cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
+		# reset the branch
+		git --git-dir=$TESTCODE/DIRAC/.git checkout $currentBranch
+	fi
 
 	PRE='p[[:digit:]]*'
 
@@ -61,19 +68,15 @@ function findRelease(){
 		echo '==> Running on last one'
 	fi
 
-	# Create temporary directory where to store releases.cfg (will be deleted then)
-	tmp_dir=`mktemp -d -q`
-	wget --no-check-certificate -O $tmp_dir/releases.cfg $DIRAC_RELEASES
-
 	# Match project ( DIRAC ) version from releases.cfg
 
 	# If I don't specify a DIRACBRANCH, it will get the latest "production" release
   # First, try to find if we are on a production tag
 	if [ ! -z "$DIRACBRANCH" ]
 	then
-		projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+		projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
 	else
-		projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
+		projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
 	fi
 	# projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
 	# In case there are no production tags for the branch, look for pre-releases in that branch
@@ -81,25 +84,22 @@ function findRelease(){
 	then
 		if [ ! -z "$DIRACBRANCH" ]
 		then
-			projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+			projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
 		else
-			projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | head -1 | sed 's/ //g'`
+			projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | head -1 | sed 's/ //g'`
 		fi
 	fi
 
-	projectVersionLine=`cat $tmp_dir/releases.cfg | grep -n $projectVersion | cut -d ':' -f 1 | head -1`
+	projectVersionLine=`cat $TESTCODE/releases.cfg | grep -n $projectVersion | cut -d ':' -f 1 | head -1`
 	# start := line number after "{"
 	start=$(($projectVersionLine+2))
 	# end   := line number after "}"
 	end=$(($start+2))
 	# versions :=
-	versions=`sed -n "$start,$end p" $tmp_dir/releases.cfg`
+	versions=`sed -n "$start,$end p" $TESTCODE/releases.cfg`
 
 	# Extract Externals version
 	externalsVersion=`echo $versions | sed s/' = '/'='/g | tr ' ' '\n' | grep Externals | cut -d '=' -f2`
-
-	# Back to previous directory, and clean tmp_dir
-	rm -r $tmp_dir
 
 	# PrintOuts
 	echo DIRAC:$projectVersion && echo $projectVersion > $SERVERINSTALLDIR/dirac.version
