@@ -59,8 +59,8 @@ class PilotsLoggingDB(  ):
     self.dbPass = dbParameters[ 'Password' ]
     self.dbName = dbParameters[ 'DBName' ]
 
-    self.__initializeConnection('WorkloadManagement/PilotsLoggingDB')
-    resp = self.__initializeDB()
+    self.__initializeConnection( 'WorkloadManagement/PilotsLoggingDB' )
+    resp = self.__initializeDB( )
     if not resp['OK']:
       raise Exception( "Couldn't create tables: " + resp['Message'] )
 
