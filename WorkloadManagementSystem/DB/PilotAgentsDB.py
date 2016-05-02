@@ -387,11 +387,8 @@ class PilotAgentsDB( DB ):
       if not resp['OK']:
         failed.append( 'PilotsLogging' )
 
-<<<<<<< b33f510cc57820d20695d0070e5323c97662ec22
     failed = []
 
-=======
->>>>>>> Deleting PilotsLogging when deleting pilot - updated + error handling
     for table in ['PilotOutput', 'PilotRequirements', 'JobToPilotMapping', 'PilotAgents']:
       idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
@@ -1253,46 +1250,3 @@ class PilotAgentsDB( DB ):
     resultDict['Records'] = records
 
     return S_OK( resultDict )
-<<<<<<< 72ec75d17c9dc71a9297922d86d839bd9e2c270b
-=======
-
-
-class PilotsLogging( Base ):
-
-  __tablename__ = 'PilotsLogging'
-  __table_args__ = {
-                    'mysql_engine': 'InnoDB',
-                    'mysql_charset': 'utf8'
-                    }
-
-  logID = Column( 'LogID', Integer, primary_key = True, autoincrement = True )
-  pilotUUID = Column( 'PilotUUID', String(255), ForeignKey( 'PilotsUUIDtoID.PilotUUID', ondelete='CASCADE' ), nullable = False)
-  status = Column( 'Status', String( 32 ), default = '', nullable = False )
-  minorStatus = Column( 'MinorStatus', String( 128 ), default = '', nullable = False )
-  timeStamp = Column( 'TimeStamp', DateTime, nullable = False )
-  source = Column( 'Source', String(32), default = 'Unknown', nullable = False )
-
-  def __init__(self, pilotUUID, status, minorStatus, timeStamp, source):
-    self.pilotUUID = pilotUUID
-    self.status = status
-    self.minorStatus = minorStatus
-    self.timeStamp = datetime.datetime.fromtimestamp(timeStamp)
-    self.source = source
-
-class PilotsUUIDtoID( Base ):
-
-  __tablename__ = 'PilotsUUIDtoID'
-  __table_args__ = {
-                    'mysql_engine': 'InnoDB',
-                    'mysql_charset': 'utf8'
-                    }
-
-
-  pilotUUID = Column( 'PilotUUID', String(255), primary_key = True )
-  pilotID = Column ( 'PilotID', Integer, nullable = True )
-  pilotLogs = relationship("PilotsLogging", backref="UUIDtoID")
-
-  def __init__(self, pilotUUID, pilotID = None):
-    self.pilotUUID = pilotUUID
-    self.pilotID = pilotID
->>>>>>> Changes to PilotAgentsDB:
