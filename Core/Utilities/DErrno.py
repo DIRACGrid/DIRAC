@@ -87,6 +87,7 @@ EVOMS = 1121
 # Databases : 3X
 EDB = 1130
 EMYSQL = 1131
+ESQLA = 1132
 
 # ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
@@ -132,6 +133,7 @@ dErrorCode = {
                # 113X: Databases
                1130 : 'EDB',
                1131 : 'EMYSQL',
+               1132 : 'ESQLA',
 
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
@@ -176,6 +178,7 @@ dStrError = {
               # 113X: Databases
               EDB : "Database Error",
               EMYSQL : "MySQL Error",
+              ESQLA : "SQLAlchemy Error",
 
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
