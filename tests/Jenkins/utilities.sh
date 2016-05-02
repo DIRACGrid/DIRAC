@@ -278,25 +278,25 @@ finalCleanup(){
 
 function diracReplace(){
 	echo '==> [diracReplace]'
-	cd $SERVERINSTALLDIR/
+
 	if [[ -z $DIRAC_ALTERNATIVE_SRC_ZIP ]]
 	then
 		echo '==> Variable $DIRAC_ALTERNATIVE_SRC_ZIP not defined';
 		return
 	fi
 
-	wget $DIRAC_ALTERNATIVE_SRC_ZIP
+	wget $DIRAC_ALTERNATIVE_SRC_ZIP $SERVERINSTALLDIR/
 	zipName=$(basename $DIRAC_ALTERNATIVE_SRC_ZIP)
 	unzip $zipName
 	dirName="DIRAC-$(echo $zipName | sed 's/\.zip//g')"
 	if [ -d "DIRAC" ];
 	then
-		mv DIRAC DIRAC.bak;
+		mv $SERVERINSTALLDIR/DIRAC $SERVERINSTALLDIR/DIRAC.bak;
 	else
 		echo "There is no previous DIRAC directory ??!!!"
 		ls
 	fi
-	mv $dirName DIRAC
+	mv $dirName $SERVERINSTALLDIR/DIRAC
 
 }
 
@@ -445,11 +445,9 @@ function generateUserCredentials(){
 function diracCredentials(){
 	echo '==> [diracCredentials]'
 
-	cd $SERVERINSTALLDIR
-
-	sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' etc/Configuration_Server.cfg
+	sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
 	dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
-	sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' etc/Configuration_Server.cfg
+	sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
 
 }
 
