@@ -52,11 +52,14 @@ function findRelease(){
 		# get the releases.cfg file
 		cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
 	else
-		git --git-dir=$TESTCODE/DIRAC/.git checkout integration
+		cwd=$PWD
+		cd $TESTCODE/DIRAC/
+		git checkout integration
 		# get the releases.cfg file
 		cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
 		# reset the branch
-		git --git-dir=$TESTCODE/DIRAC/.git checkout $currentBranch
+		git checkout $currentBranch
+		cd cwd
 	fi
 
 	PRE='p[[:digit:]]*'
