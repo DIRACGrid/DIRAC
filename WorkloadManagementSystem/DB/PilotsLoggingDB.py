@@ -43,12 +43,12 @@ class PilotsLoggingDB( object ):
     if not result['OK']:
       raise RuntimeError( 'Cannot get database parameters: %s' % result['Message'] )
 
-    dbParameters = result[ 'Value' ]
-    self.dbHost = dbParameters[ 'Host' ]
-    self.dbPort = dbParameters[ 'Port' ]
-    self.dbUser = dbParameters[ 'User' ]
-    self.dbPass = dbParameters[ 'Password' ]
-    self.dbName = dbParameters[ 'DBName' ]
+    dbParameters = result['Value']
+    self.dbHost = dbParameters['Host']
+    self.dbPort = dbParameters['Port']
+    self.dbUser = dbParameters['User']
+    self.dbPass = dbParameters['Password']
+    self.dbName = dbParameters['DBName']
 
     self.__initializeConnection( 'WorkloadManagement/PilotsLoggingDB' )
     resp = self.__initializeDB( )
@@ -82,7 +82,7 @@ class PilotsLoggingDB( object ):
 
     return S_OK( )
 
-    return S_OK()
+    return S_OK( )
 
 ##########################################################################################
   def addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
