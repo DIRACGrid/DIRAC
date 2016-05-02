@@ -43,6 +43,15 @@ function default(){
 function findRelease(){
 	echo '==> [findRelease]'
 
+	# store the current branch
+	currentBranch=`git --git-dir=$TESTCODE/DIRAC/.git rev-parse --abbrev-ref HEAD`
+	# get the releases.cfg file
+	git --git-dir=$TESTCODE/DIRAC/.git checkout integration
+	cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
+	# reset the branch
+	git --git-dir=$TESTCODE/DIRAC/.git checkout $currentBranch
+
+
 	PRE='p[[:digit:]]*'
 
 	if [ ! -z "$DIRACBRANCH" ]
