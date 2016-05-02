@@ -68,11 +68,12 @@ class QualityMapGraph( PlotBase ):
     self.cmap = LinearSegmentedColormap( 'quality_colormap', cdict, 256 )
     
     self.cmap = cm.RdYlGn
-    max_value = 100
-    
-    if prefs.get( 'maxValueFromData' ):
-      _, max_value, _, _ = self.gdata.getStats()
+        
+    max_value = prefs.get( 'maxValue' )
+    if max_value:
       self.cmap = cm.YlGnBu
+    else:
+      max_value = 100
     
     self.norms = Normalize( 0, max_value )
     mapper = cm.ScalarMappable( cmap = self.cmap, norm = self.norms )

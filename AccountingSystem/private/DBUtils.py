@@ -1,6 +1,8 @@
 import types
 from DIRAC.Core.Utilities import Time
 
+import numpy
+
 class DBUtils:
 
   def __init__( self, db, setup ):
@@ -314,3 +316,15 @@ class DBUtils:
           newData[ bt ] = 0.0
         newData[ bt ] += dataDict[ k ][ bt ]
     return newData
+  
+  def _getOverallMaxValue(self, dataDict):
+    """
+    :param dict dataDict it returns the maximum value in overall period.
+    
+    """
+    maxValue = 0.0
+    for i in dataDict.values():
+      currentMax =  numpy.max(i.values())
+      if maxValue < currentMax:
+          maxValue = currentMax
+    return maxValue
