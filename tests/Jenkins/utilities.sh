@@ -59,7 +59,7 @@ function findRelease(){
 		cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
 		# reset the branch
 		git checkout $currentBranch
-		cd cwd
+		cd $cwd
 	fi
 
 	PRE='p[[:digit:]]*'
