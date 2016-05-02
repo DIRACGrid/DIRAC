@@ -151,7 +151,8 @@ class PilotPlotter( BaseReporter ):
                                 reportRequest[ 'groupingFields' ],
                                 { 'checkNone' : True,
                                   'convertToGranularity' : 'sum',
-                                  'calculateProportionalGauges' : True } )
+                                  'calculateProportionalGauges' : False,
+                                  'consolidationFunction' : self._averageConsolidation } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
@@ -164,8 +165,9 @@ class PilotPlotter( BaseReporter ):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "jobs/pilot" }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+                 'ylabel' : "jobs/pilot",
+                 'maxValueFromData' : True }
+    return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportTotalNumberOfPilots( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)",
