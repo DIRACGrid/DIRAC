@@ -1,8 +1,5 @@
 """ Class that contains client access to the PilotsLogging handler. """
-########################################################################
-# $Id$
-# $HeadURL$
-########################################################################
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client import Client
