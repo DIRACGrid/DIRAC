@@ -17,12 +17,12 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
-from types import IntType, LongType, ListType
 import threading
 
 from sqlalchemy.sql.schema import ForeignKey, PrimaryKeyConstraint
@@ -82,16 +82,16 @@ class PilotsLoggingDB( ):
       try:
         PilotsUUIDtoID.__table__.create( self.engine )
       except SQLAlchemyError as e:
-        return S_ERROR(e)
+        return S_ERROR( DErrno.ESQLA, e )
     else:
-      gLogger.debug("Table PilotsUUIDtoID exists")
-      return S_OK()
+      gLogger.debug( "Table PilotsUUIDtoID exists" )
+      return S_OK( )
 
     if not 'PilotsLogging' in tablesInDB:
       try:
         PilotsLogging.__table__.create( self.engine )
       except SQLAlchemyError as e:
-        return S_ERROR(e)
+        return S_ERROR( DErrno.ESQLA, e )
     else:
       gLogger.debug( "Table PilotsLogging exists" )
 
@@ -114,9 +114,9 @@ class PilotsLoggingDB( ):
     try:
       session.commit( )
     except SQLAlchemyError as e:
-      return S_ERROR("Failed to commit PilotsLogging: " + e.message)
       session.rollback( )
       session.close( )
+      return S_ERROR( DErrno.ESQLA, "Failed to commit PilotsLogging: " + e.message )
 
     return S_OK( )
 
@@ -157,9 +157,9 @@ class PilotsLoggingDB( ):
     try:
       session.commit( )
     except SQLAlchemyError as e:
-      return S_ERROR("Failed to commit: " + e.message)
       session.rollback( )
       session.close( )
+      return S_ERROR( DErrno.ESQLA, "Failed to commit: " + e.message )
 
     return S_OK( )
 
@@ -177,16 +177,16 @@ class PilotsLoggingDB( ):
     try:
       session.add( uuid2id )
     except SQLAlchemyError as e:
-      return S_ERROR("Failed to add PilotsUUIDtoID: " + e.message)
       session.rollback( )
       session.close( )
+      return S_ERROR( DErrno.ESQLA, "Failed to add PilotsUUIDtoID: " + e.message )
 
     try:
       session.commit( )
     except SQLAlchemyError as e:
-      return S_ERROR("Failed to commit PilotsUUIDtoID: " + e.message)
       session.rollback( )
       session.close( )
+      return S_ERROR( DErrno.ESQLA, "Failed to commit PilotsUUIDtoID: " + e.message )
 
     return S_OK( )
 
@@ -201,9 +201,9 @@ class PilotsLoggingDB( ):
     try:
       session.commit( )
     except SQLAlchemyError as e:
-      return S_ERROR("Failed to commit PilotsUUIDtoID mapping: " + e.message)
       session.rollback( )
       session.close( )
+      return S_ERROR( DErrno.ESQLA, "Failed to commit PilotsUUIDtoID mapping: " + e.message )
 
     return S_OK( )
 
@@ -217,16 +217,16 @@ class PilotsLoggingDB( ):
     try:
       session.add( uuid2id )
     except SQLAlchemyError as e:
-      return S_ERROR("Failed to add PilotsUUIDtoID: " + e.message)
       session.rollback( )
       session.close( )
+      return S_ERROR( DErrno.ESQLA, "Failed to add PilotsUUIDtoID: " + e.message )
 
     try:
       session.commit( )
     except SQLAlchemyError as e:
-      return S_ERROR("Failed to commit PilotsUUIDtoID: " + e.message)
       session.rollback( )
       session.close( )
+      return S_ERROR( DErrno.ESQLA, "Failed to commit PilotsUUIDtoID: " + e.message )
 
     return S_OK( )
 
