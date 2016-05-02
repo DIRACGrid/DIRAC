@@ -319,7 +319,7 @@ class DBUtils:
   
   def _getOverallMaxValue(self, dataDict):
     """
-    :param dict dataDict it returns the maximum value in overall period.
+    :param dict dataDict it returns the maximum value in the overall period.
     
     """
     maxValue = 0.0
