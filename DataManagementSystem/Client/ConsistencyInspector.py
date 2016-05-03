@@ -518,7 +518,7 @@ class ConsistencyInspector( object ):
     res = self.__getCatalogDirectoryContents( lfnDir )
     if not res['OK']:
       return res
-    replicas = res['Value']['Replicas']
+    replicas = res['Value']
     catalogMetadata = res['Value']['Metadata']
     res = self.__checkPhysicalFiles( replicas, catalogMetadata )
     if not res['OK']:
@@ -755,49 +755,65 @@ class ConsistencyInspector( object ):
     gLogger.info( 'Obtained at total of %s files for directories at %s' % ( len( allFiles ), storageElement ) )
     return S_OK( allFiles )
 
-  def __getCatalogDirectoryContents( self, lfnDir ):
-    """ Obtain the contents of the supplied directory
+  def __getCatalogDirectoryContents( self, lfnDirs ):
+    """ Obtain the contents of the supplied directory, recursively
     """
-    gLogger.info( 'Obtaining the catalog contents for %d directories' % len( lfnDir ) )
 
-    activeDirs = list(lfnDir)
-    allFiles = {}
-    while len( activeDirs ):
-      currentDir = activeDirs.pop()
-      res = self.fc.listDirectory( currentDir )
+    def _getDirectoryContent( directory ):
+      """ Recursively scan a directory
+      """
+      # filesInDirectory = set()
+      filesInDirectory = {}
+
+      gLogger.debug("Examining %s" %directory)
+
+      res = self.fc.listDirectory( directory )
       if not res['OK']:
         gLogger.error( 'Failed to get directory contents', res['Message'] )
         return res
-      elif res['Value']['Failed'].has_key( currentDir ):
-        gLogger.error( 'Failed to get directory contents', '%s %s' % ( currentDir, res['Value']['Failed'][currentDir] ) )
-      else:
-        dirContents = res['Value']['Successful'][currentDir]
-        activeDirs.extend( dirContents['SubDirs'] )
-        allFiles.update( dirContents['Files'] )
+      if directory in res['Value']['Failed']:
+        gLogger.error( 'Failed to get directory content', '%s %s' % ( directory, res['Value']['Failed'][directory] ) )
+        return S_ERROR( 'Failed to get directory content' )
+      if directory not in res['Value']['Successful']:
+        return S_ERROR( 'Directory not existing?' )
 
-    zeroReplicaFiles = []
-    zeroSizeFiles = []
-    allReplicaDict = {}
-    allMetadataDict = {}
-    for lfn, lfnDict in allFiles.iteritems():
-      lfnReplicas = {}
-      for se, replicaDict in lfnDict['Replicas'].iteritems():
-        lfnReplicas[se] = replicaDict['PFN']
-      if not lfnReplicas:
-        zeroReplicaFiles.append( lfn )
-      allReplicaDict[lfn] = lfnReplicas
-      allMetadataDict[lfn] = lfnDict['MetaData']
-      if not lfnDict['MetaData']['Size']:
-        zeroSizeFiles.append( lfn )
-    if zeroReplicaFiles:
-      if not self.interactive:
-        self.__reportProblematicFiles( zeroReplicaFiles, 'LFNZeroReplicas' )
-    if zeroSizeFiles:
-      if not self.interactive:
-        self.__reportProblematicFiles( zeroSizeFiles, 'LFNZeroSize' )
-    gLogger.info( 'Obtained at total of %s files for the supplied directories' % len( allMetadataDict ) )
-    resDict = {'Metadata':allMetadataDict, 'Replicas':allReplicaDict}
-    return S_OK( resDict )
+      # first, adding the files found in the current directory
+      gLogger.debug("Files in %s: %d" %(directory, len(res['Value']['Successful'][directory]['Files'])))
+      filesInDirectory.update(res['Value']['Successful'][directory]['Files'])
+
+      #then, looking for subDirectories content
+      if res['Value']['Successful'][directory]['SubDirs']:
+        for l_dir in res['Value']['Successful'][directory]['SubDirs']:
+          subDirContent = _getDirectoryContent(l_dir)
+          if not subDirContent['OK']:
+            return subDirContent
+          else:
+            filesInDirectory.update(subDirContent['Value'])
+
+      return S_OK(filesInDirectory)
+
+
+    gLogger.info( 'Obtaining the catalog contents for %d directories' % len( lfnDirs ) )
+
+    allFiles = {}
+    for lfnDir in lfnDirs:
+      dirContent = _getDirectoryContent(lfnDir)
+      if not dirContent['OK']:
+        return dirContent
+      else:
+        gLogger.debug("Content of directory %s: %d files" %(lfnDir, len(dirContent['Value'])))
+        allFiles.update(dirContent['Value'])
+
+    gLogger.debug( "Content of directories examined: %d files" %len(allFiles) )
+
+    replicas = self.fc.getReplicas(list(allFiles))
+    if not replicas['OK']:
+      return replicas
+    if replicas['Value']['Failed']:
+      return S_ERROR("Failures in replicas discovery")
+
+    return S_OK( {'Metadata':allFiles, 'Replicas':replicas['Value']['Successful']} )
+
 
   def __getCatalogReplicas( self, lfns ):
     """ Obtain the file replicas from the catalog while checking that there are replicas
