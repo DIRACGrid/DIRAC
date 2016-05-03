@@ -27,7 +27,7 @@ from DIRAC.Core.Utilities.Adler                             import compareAdler
 class ConsistencyInspector( object ):
   """ A class for handling some consistency checks
   """
-  def __init__( self, interactive = True, transClient = None, dm = None, fc = None ):
+  def __init__( self, interactive = True, transClient = None, dm = None, fc = None, dic = None ):
     """ c'tor
         interactive: Data Manager (True) or DIRAC Agente (False)
         transClient: TransformationClient() if None, else transClient params
@@ -39,7 +39,7 @@ class ConsistencyInspector( object ):
     self.transClient = TransformationClient() if transClient is None else transClient
     self.dm = dm if dm else DataManager()
     self.fc = fc if fc else FileCatalog()
-    self.dic = DataIntegrityClient()
+    self.dic = dic if dic else DataIntegrityClient()
     self.dirac = Dirac()
 
     # Base elements from which to start the consistency checks
@@ -94,7 +94,7 @@ class ConsistencyInspector( object ):
     for chunk in breakListIntoChunks( lfns, chunkSize ):
       if printProgress:
         self.__write( '.' )
-      for _ in range( 1, 10 ):
+      for _ in xrange( 1, 10 ):
         res = self.fc.getReplicas( chunk )
         if res['OK']:
           present.update( res['Value']['Successful'] )
@@ -114,7 +114,7 @@ class ConsistencyInspector( object ):
   def getReplicasPresenceFromDirectoryScan( self, lfns ):
     """ Get replicas scanning the directories. Might be faster.
     """
-    
+
     lfns = checkArgumentFormat(lfns)
     dirs = {}
     present = []
@@ -256,7 +256,7 @@ class ConsistencyInspector( object ):
       if printout:
         gLogger.always( 'Expanded list of %d directories:\n%s' % ( len( directories ), '\n'.join( directories ) ) )
       return directories
-    else:                                                     
+    else:
       return S_ERROR(errno.ENOENT, 'Need to specify the directories')  #DError(errno.ENOENT, 'Need to specify the directories')
   ################################################################################
 
@@ -345,7 +345,7 @@ class ConsistencyInspector( object ):
         replicasRes = self.fc.getReplicas( lfnChunk )
         if not replicasRes['OK']:
           gLogger.error( "error:  %s" % replicasRes['Message'] )
-          return S_ERROR(errno.ENOENT, "error:  %s" % replicasRes['Message'])          
+          return S_ERROR(errno.ENOENT, "error:  %s" % replicasRes['Message'])
         replicasRes = replicasRes['Value']
         if replicasRes['Failed']:
           retDict['NoReplicas'].update( replicasRes['Failed'] )
@@ -358,7 +358,7 @@ class ConsistencyInspector( object ):
       self.__write( '.' )
       res = self.fc.getFileMetadata( lfnChunk )
       if not res['OK']:
-        return S_ERROR(errno.ENOENT, "error %s" % res['Message'])        
+        return S_ERROR(errno.ENOENT, "error %s" % res['Message'])
       metadata.update( res['Value']['Successful'] )
     self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
 
@@ -389,7 +389,7 @@ class ConsistencyInspector( object ):
         surlRes = oSe.getFileMetadata( surlChunk )
         if not surlRes['OK']:
           gLogger.error( "error StorageElement.getFileMetadata returns %s" % ( surlRes['Message'] ) )
-          return S_ERROR(errno.ENOENT, 'error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) ) #DError(errno.ENOENT, 'error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) ) 
+          return S_ERROR(errno.ENOENT, 'error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) )
         surlRes = surlRes['Value']
         for surl in surlRes['Failed']:
           lfn = surlLfn[surl]
@@ -456,7 +456,7 @@ class ConsistencyInspector( object ):
       value = int( value )
       res = self.transClient.getTransformation( value, extraParams = False )
       if not res['OK']:
-        S_ERROR(errno.ENOENT, "Couldn't find transformation %d: %s" % ( value, res['Message'] ))     
+        S_ERROR(errno.ENOENT, "Couldn't find transformation %d: %s" % ( value, res['Message'] ))
       else:
         self.transType = res['Value']['Type']
       if self.interactive:
@@ -472,7 +472,7 @@ class ConsistencyInspector( object ):
   def set_fileType( self, value ):
     """ Setter """
     self._fileType = [ft.upper() for ft in value]
-    
+
   def get_fileType( self ):
     """ Getter """
     return self._fileType
@@ -481,7 +481,7 @@ class ConsistencyInspector( object ):
   def set_fileTypesExcluded( self, value ):
     """ Setter """
     self._fileTypesExcluded = [ft.upper() for ft in value]
-    
+
   def get_fileTypesExcluded( self ):
     """ Getter """
     return self._fileTypesExcluded
@@ -497,7 +497,7 @@ class ConsistencyInspector( object ):
     """ Getter """
     return self._lfns
   lfns = property( get_lfns, set_lfns )
-  
+
   ###############################################################################################
   #
   #  This part was backported from DataIntegrityClient
@@ -507,12 +507,13 @@ class ConsistencyInspector( object ):
   #
 
   def catalogDirectoryToSE( self, lfnDir ):
-    """ This obtains the replica and metadata information from the catalog for the supplied directory and checks against the storage elements.
+    """ This obtains the replica and metadata information from the catalog
+        for the supplied directory and checks against the storage elements.
     """
     gLogger.info( "-" * 40 )
     gLogger.info( "Performing the FC->SE check" )
     gLogger.info( "-" * 40 )
-    if isinstance( lfnDir, basestring):
+    if isinstance( lfnDir, basestring ):
       lfnDir = [lfnDir]
     res = self.__getCatalogDirectoryContents( lfnDir )
     if not res['OK']:
@@ -580,7 +581,7 @@ class ConsistencyInspector( object ):
         return res
       for lfn, metadata in res['Value'].iteritems():
         if lfn in catalogMetadata:
-          if ( metadata['Size'] != catalogMetadata[lfn]['Size'] ):                # and ( metadata['Size'] != 0 ):
+          if metadata['Size'] != catalogMetadata[lfn]['Size']:                # and ( metadata['Size'] != 0 ):
             sizeMismatch.append( ( lfn, 'deprecatedUrl', se, 'CatalogPFNSizeMismatch' ) )
       if sizeMismatch:
         self.dic.reportProblematicReplicas( sizeMismatch, se, 'CatalogPFNSizeMismatch' )
@@ -657,9 +658,9 @@ class ConsistencyInspector( object ):
     failedLfns = res['Value']['Failed']
     successfulLfns = res['Value']['Successful']
     notRegisteredLfns = []
-    
+
     for lfn in storageMetadata:
-      if lfn in failedLfns: 
+      if lfn in failedLfns:
         if 'No such file or directory' in failedLfns[lfn]:
           notRegisteredLfns.append( ( lfn, 'deprecatedUrl', storageElement, 'LFNNotRegistered' ) )
           failedLfns.pop( lfn )
@@ -757,14 +758,13 @@ class ConsistencyInspector( object ):
   def __getCatalogDirectoryContents( self, lfnDir ):
     """ Obtain the contents of the supplied directory
     """
-    gLogger.info( 'Obtaining the catalog contents for %s directories' % len( lfnDir ) )
+    gLogger.info( 'Obtaining the catalog contents for %d directories' % len( lfnDir ) )
 
-    activeDirs = lfnDir
+    activeDirs = list(lfnDir)
     allFiles = {}
-    while len( activeDirs ) > 0:
-      currentDir = activeDirs[0]
+    while len( activeDirs ):
+      currentDir = activeDirs.pop()
       res = self.fc.listDirectory( currentDir )
-      activeDirs.remove( currentDir )
       if not res['OK']:
         gLogger.error( 'Failed to get directory contents', res['Message'] )
         return res
@@ -857,9 +857,4 @@ class ConsistencyInspector( object ):
     if not res['OK']:
       gLogger.info( 'Failed to update integrity DB with files', res['Message'] )
     else:
-      gLogger.info( 'Successfully updated integrity DB with files' )  
-  
-  
-  
-  
-  
+      gLogger.info( 'Successfully updated integrity DB with files' )
