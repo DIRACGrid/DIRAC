@@ -161,7 +161,7 @@ class PilotPlotter( BaseReporter ):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotJobsPerPilot( self, reportRequest, plotInfo, filename ):
-    maxValue = self._getOverallMaxValue(plotInfo[ 'data' ])
+    maxValue = self._getOverallMaxValue( plotInfo[ 'data' ] )
     metadata = { 'title' : 'Jobs per pilot by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
