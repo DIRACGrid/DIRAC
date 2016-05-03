@@ -5,6 +5,9 @@ import unittest
 from mock import MagicMock
 
 from DIRAC import gLogger
+from DIRAC.Resources.Catalog.test.mock_FC import fileCatalogMock
+
+# sut
 from DIRAC.DataManagementSystem.Client.ConsistencyInspector import ConsistencyInspector
 
 class UtilitiesTestCase( unittest.TestCase ):
@@ -20,15 +23,9 @@ class UtilitiesTestCase( unittest.TestCase ):
                    }
 
     dmMock = MagicMock()
-    fcMock = MagicMock()
-    fcMock.getReplicas.return_value = {'OK': True,
-                                       'Value':{'Successful':{'aa.raw':{'RunNumber': 97019, 'FileType': 'RAW'},
-                                                              '/lhcb/1_2_1.Semileptonic.dst': {'FileType': 'SEMILEPTONIC.DST'}},
-                                                'Failed':{}}}
-    fcMock.listDirectory.return_value = {}
     dicMock = MagicMock()
 
-    self.ci = ConsistencyInspector( transClient = MagicMock(), dm = dmMock, fc = fcMock, dic = dicMock )
+    self.ci = ConsistencyInspector( transClient = MagicMock(), dm = dmMock, fc = fileCatalogMock, dic = dicMock )
     self.ci.fileType = ['SEMILEPTONIC.DST', 'LOG', 'RAW']
     self.ci.fileTypesExcluded = ['LOG']
     self.ci.prod = 0

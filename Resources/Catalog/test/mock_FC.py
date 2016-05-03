@@ -17,3 +17,11 @@ fileCatalogMock.listDirectory.return_value = {'OK': True,
                                                                                           'SubDirs': {}}}
                                                        }
                                              }
+
+
+fileCatalogMock.getReplicas.return_value = {'OK': True,
+                                            'Value':{'Failed':{},
+                                                     'Successful':{'/this/is/file1.txt':{'FileType': 'TXT'},
+                                                                   '/this/is/file2.foo.bar': {'FileType': 'FOO.BAR'}},
+                                                    }
+                                           }
