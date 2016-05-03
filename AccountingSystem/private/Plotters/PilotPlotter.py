@@ -167,7 +167,7 @@ class PilotPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "jobs/pilot",
-                 'maxValue' : maxValue }
+                 'normalization' : maxValue }
     return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportTotalNumberOfPilots( self, reportRequest ):

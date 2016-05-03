@@ -69,7 +69,7 @@ class QualityMapGraph( PlotBase ):
     
     self.cmap = cm.RdYlGn
         
-    max_value = prefs.get( 'maxValue' )
+    max_value = prefs.get( 'normalization' )
     if max_value:
       self.cmap = cm.YlGnBu
     else:
