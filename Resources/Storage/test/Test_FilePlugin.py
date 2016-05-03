@@ -1,12 +1,14 @@
+""" test File Plugin
+"""
+
 import mock
 import unittest
-import tempfile 
+import tempfile
 import os
 import shutil
 import errno
 
-from DIRAC import S_OK, gLogger
-# gLogger.setLevel( 'DEBUG' )
+from DIRAC import S_OK
 from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 
 
@@ -98,7 +100,7 @@ class TestBase( unittest.TestCase ):
     shutil.rmtree( self.srcPath )
     shutil.rmtree( self.destPath )
     pass
-    
+
 
 
   def walkAll( self ):
@@ -122,7 +124,7 @@ class TestBase( unittest.TestCase ):
                 return_value = None )  # Don't send accounting
   def test_01_getURL( self, mk_isLocalSE, mk_addAccounting ):
     """Testing getURL"""
-    # Testing the getURL 
+    # Testing the getURL
     res = self.se.getURL( self.ALL )
     self.assert_( res['OK'], res )
     self.assert_( not res['Value']['Failed'], res['Value']['Failed'] )
@@ -277,7 +279,7 @@ class TestBase( unittest.TestCase ):
     self.assert_( res['OK'], res )
     self.assert_( '/lhcb' in res['Value']['Failed'], res )
     self.assertEqual( res['Value']['Failed']['/lhcb'], {'Files': 0, 'Size': 0} )
-    
+
 
     res = self.se.exists( self.DIRECTORIES + localdirs )
     self.assert_( res['OK'], res )
@@ -370,7 +372,7 @@ class TestBase( unittest.TestCase ):
 
 
 
-   
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestBase )
 

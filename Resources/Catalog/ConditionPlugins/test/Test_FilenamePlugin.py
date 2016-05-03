@@ -1,26 +1,24 @@
 """ Test the FilenamePlugin class"""
 
-__RCSID__ = "$Id $"
-
 import unittest
-
 from DIRAC.Resources.Catalog.ConditionPlugins.FilenamePlugin import FilenamePlugin
 
-          
+__RCSID__ = "$Id $"
+
 class TestfilenamePlugin( unittest.TestCase ):
   """ Test the FilenamePlugin class"""
-  
+
   def setUp(self):
     self.lfns = [ '/lhcb/lfn1', '/lhcb/anotherlfn', '/otherVo/name']
-  
+
   def test_01_endswith(self):
     """ Testing endswith (method with argument"""
-    
+
     fnp = FilenamePlugin("endswith('n')")
-    
+
     self.assert_( not fnp.eval( lfn = '/lhcb/lfn1' ) )
     self.assert_( fnp.eval( lfn = '/lhcb/lfn' ) )
-    
+
   def test_02_find( self ):
     """ Testing special case of find"""
 

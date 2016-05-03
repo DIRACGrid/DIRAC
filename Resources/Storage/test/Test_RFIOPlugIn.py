@@ -1,11 +1,19 @@
-__RCSID__ = "$Id$"
+""" test for RFIO plugin
+"""
 
 # FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to tests directory
 
 
-import unittest, time, os, shutil
+import unittest
+import time
+import os
+import shutil
+
 from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
 from DIRAC.Core.Utilities.File                  import getSize
+
+__RCSID__ = "$Id$"
+
 
 class StoragePlugInTestCase( unittest.TestCase ):
   """ Base class for the StoragePlugin test cases

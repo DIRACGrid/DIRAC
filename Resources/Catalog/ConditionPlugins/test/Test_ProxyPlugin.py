@@ -1,12 +1,12 @@
 """ Test the ProxyPlugin class"""
 
-__RCSID__ = "$Id $"
-
 
 import unittest
 import mock
 from DIRAC import S_OK
 from DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin import ProxyPlugin
+
+__RCSID__ = "$Id $"
 
 
 def mock_getProxyInfo():
@@ -29,7 +29,7 @@ def mock_getProxyInfo():
 
 class TestProxyPlugin( unittest.TestCase ):
   """ Test the FilenamePlugin class"""
-  
+
 
   @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getProxyInfo )
   def test_01_username( self, _mockProxyInfo ):
