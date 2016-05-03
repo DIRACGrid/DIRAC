@@ -4,8 +4,8 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Script                         import parseCommandLine, getPositionalArgs
-parseCommandLine()
+# from DIRAC.Core.Base.Script                         import parseCommandLine, getPositionalArgs
+# parseCommandLine()
 from DIRAC.Resources.Storage.StorageElement         import StorageElement
 from DIRAC.Core.Utilities.ReturnValues              import returnSingleResult
 from DIRAC.Core.Utilities.File                      import getSize

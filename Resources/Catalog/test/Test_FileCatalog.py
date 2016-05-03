@@ -1,15 +1,18 @@
 """
    Testing the FileCatalog logic
 """
-__RCSID__ = "$Id $"
 
+import sys
 import unittest
 import mock
+
 import DIRAC
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 from DIRAC import S_OK, S_ERROR
-import sys
+
+__RCSID__ = "$Id $"
+
 current_module = sys.modules[__name__]
 
 class GenericCatalog( object ):
@@ -21,15 +24,15 @@ class GenericCatalog( object ):
     self.r_method = []
     self.no_lfn = []
     self.name = name
-    
+
 
     self.__generateMethods("read", self.r_method, nb_read, nb_read_no_lfn)
     self.__generateMethods("write", self.w_method, nb_write, nb_write_no_lfn)
-    
+
   def hasCatalogMethod(self, methName):
     return methName in self.w_method or methName in self.r_method
 
-      
+
   def __generateMethods( self, mType, methodList, nb_method, nb_method_no_lfn ):
     """ Generates methods, read or write, and adds them to the appropriate list,
         including no_lfn if needed.
@@ -54,14 +57,14 @@ class GenericCatalog( object ):
 
   def generic( self, *args, **kwargs ):
     """ Returns a status depending on the input.
-        For a normal read or write method, it looks for the catalog 
+        For a normal read or write method, it looks for the catalog
         name in the LFN. If it is there, it looks at which status it is
-        supposed to return: S_Error, or put the LFN in the Failed dict. 
+        supposed to return: S_Error, or put the LFN in the Failed dict.
     """
-        
+
     successful = {}
     failed = {}
-    
+
     if self.call in self.no_lfn:
       if not args:
         return S_OK( "yeah" )
@@ -70,9 +73,9 @@ class GenericCatalog( object ):
         return S_ERROR( "%s.%s did not go well" % ( self.name, self.call ) )
       else:
         return S_OK( "yeah" )
-      
+
     lfns = args[0]
-    
+
 
     for lfn in lfns:
       lfnSplit = lfn.split('/')
@@ -85,7 +88,7 @@ class GenericCatalog( object ):
           failed[lfn] = "%s.%s failed for %s" % ( self.name, self.call, lfn )
       except ValueError:
         successful[lfn] = "yeah"
-        
+
     return S_OK( {'Successful' : successful, 'Failed': failed} )
 
 
@@ -105,7 +108,7 @@ def mock_fc_getSelectedCatalogs( self, desiredCatalogs ):
         * nb of write op
         * nb of write no lfn
        """
-      
+
   for catalogDescription in desiredCatalogs:
     name, master, read, write, nb_read, nb_read_no_lfn, nb_write, nb_write_no_lfn = catalogDescription.split( '_' )
     master = eval(master)
@@ -160,21 +163,21 @@ class TestInitialization( unittest.TestCase ):
   """ Tests the logic of the init mechanism
   """
 
-  
-    
-    
+
+
+
 
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getSelectedCatalogs',
-                side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
+                      side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getEligibleCatalogs',
-                side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
+                      side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
   def test_01_init( self, mk_getSelectedCatalogs, mk_getEligibleCatalogs ):
     """ Check logic of init"""
-    
+
     # We should not be able to have 2 masters
     twoMastersFc = FileCatalog( catalogs = ['c1_True_True_True_5_2_2_0', 'c2_True_True_True_5_2_2_0'] )
     self.assert_( not twoMastersFc.isOK() )
-    
+
     # One master should be ok
     oneMasterFc = FileCatalog( catalogs = ['c1_True_True_True_2_0_2_2', 'c2_False_True_True_3_1_4_2'] )
     self.assert_( oneMasterFc.isOK() )
@@ -203,13 +206,13 @@ class TestWrite(unittest.TestCase):
   """ Tests of the w_execute method"""
 
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getSelectedCatalogs',
-                side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
+                      side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getEligibleCatalogs',
-                side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
+                      side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
   def test_01_Normal( self, mk_getSelectedCatalogs, mk_getEligibleCatalogs ):
     """Test behavior with one master and only standard write methods"""
 
-    
+
     fc = FileCatalog( catalogs = ['c1_True_True_True_2_0_2_0', 'c2_False_True_True_3_0_1_0'] )
 
     # Test a write method which is not in the master catalog
@@ -267,9 +270,9 @@ class TestWrite(unittest.TestCase):
 
 
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getSelectedCatalogs',
-                side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
+                      side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getEligibleCatalogs',
-                side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
+                      side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
   def test_02_condParser( self, mk_getSelectedCatalogs, mk_getEligibleCatalogs ):
     """Test behavior of write methode when using FCConditionParser"""
 
@@ -278,13 +281,13 @@ class TestWrite(unittest.TestCase):
     # No condition for c3, so it should always pass
     fcConditions = { 'c1' : "Filename=find('c1_pass')",
                      'c2' : "Filename=find('c2_pass')"}
-    
+
 
     # Everything pass everywhere
     lfn1 = '/lhcb/c1_pass/c2_pass/lfn1'
     lfn2 = '/lhcb/c1_pass/c2_pass/lfn2'
     res = fc.write1( [lfn1, lfn2],
-                      fcConditions = fcConditions )
+                     fcConditions = fcConditions )
     self.assert_( res['OK'] )
     self.assertEqual( sorted( res['Value']['Successful'] ), sorted( [lfn1, lfn2] ) )
     self.assertEqual( sorted( res['Value']['Successful'][lfn1] ), sorted( ['c1', 'c2', 'c3'] ) )
@@ -295,7 +298,7 @@ class TestWrite(unittest.TestCase):
     lfn1 = '/lhcb/c1_pass/lfn1'
     lfn2 = '/lhcb/c1_pass/c2_pass/lfn2'
     res = fc.write1( [lfn1, lfn2],
-                      fcConditions = fcConditions )
+                     fcConditions = fcConditions )
     self.assert_( res['OK'] )
     self.assertEqual( sorted( res['Value']['Successful'] ), sorted( [lfn1, lfn2] ) )
     self.assertEqual( sorted( res['Value']['Successful'][lfn1] ) , ['c1', 'c3'] )
@@ -307,14 +310,14 @@ class TestWrite(unittest.TestCase):
     lfn1 = '/lhcb/c2_pass/lfn1'
     lfn2 = '/lhcb/c1_pass/c2_pass/lfn2'
     res = fc.write1( [lfn1, lfn2],
-                      fcConditions = fcConditions )
+                     fcConditions = fcConditions )
     self.assert_( not res['OK'] )
-    
-    
+
+
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getSelectedCatalogs',
-                side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
+                      side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getEligibleCatalogs',
-                side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
+                      side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
   def test_03_noLFN( self, mk_getSelectedCatalogs, mk_getEligibleCatalogs ):
     """ Test the no_lfn methods """
 
@@ -345,9 +348,9 @@ class TestRead( unittest.TestCase ):
   """ Tests of the w_execute method"""
 
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getSelectedCatalogs',
-                side_effect = mock_fc_getSelectedCatalogs, autospec = True )  # autospec is for the binding of the method...
+                      side_effect = mock_fc_getSelectedCatalogs, autospec = True )  # autospec is for the binding of the method...
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getEligibleCatalogs',
-                side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
+                      side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
   def test_01_oneMasterNormal( self, mk_getSelectedCatalogs, mk_getEligibleCatalogs ):
     """Test behavior with one master and only standard read methods"""
 
