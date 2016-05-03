@@ -248,8 +248,18 @@ function DIRACPilotInstall(){
 	#Don't launch the JobAgent here
 	cwd=$PWD
 	cd $PILOTINSTALLDIR
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $PILOTINSTALLDIR
+		return
+	fi
 	python dirac-pilot.py -S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ -X GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements $DEBUG
 	cd $cwd
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $cwd
+		return
+	fi
 }
 
 

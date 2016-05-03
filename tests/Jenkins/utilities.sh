@@ -54,12 +54,22 @@ function findRelease(){
 	else
 		cwd=$PWD
 		cd $TESTCODE/DIRAC/
+		if [ $? -ne 0 ]
+		then
+			echo 'ERROR: cannot change to ' $TESTCODE/DIRAC
+			return
+		fi
 		git checkout integration
 		# get the releases.cfg file
 		cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
 		# reset the branch
 		git checkout $currentBranch
 		cd $cwd
+		if [ $? -ne 0 ]
+		then
+			echo 'ERROR: cannot change to ' $cwd
+			return
+		fi
 	fi
 
 	PRE='p[[:digit:]]*'
@@ -123,6 +133,11 @@ function findSystems(){
 	echo '==> [findSystems]'
 
 	cd $TESTCODE
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $TESTCODE
+		return
+	fi
 	find *DIRAC/ -name *System  | cut -d '/' -f 2 | sort | uniq > systems
 
 	echo found `wc -l systems`
@@ -156,6 +171,11 @@ function findDatabases(){
 	fi
 
 	cd $TESTCODE
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $TESTCODE
+		return
+	fi
 	#
 	# HACK ALERT:
 	#
@@ -199,6 +219,11 @@ findServices(){
 	fi
 
 	cd $TESTCODE
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $TESTCODE
+		return
+	fi
 	if [ ! -z "$ServicestoExclude" ]
 	then
 		find *DIRAC/*/Service/ -name *Handler.py | grep -v test | awk -F "/" '{print $2,$4}' | grep -v $ServicestoExclude | sort | uniq > services
@@ -227,6 +252,11 @@ findAgents(){
 	fi
 
 	cd $TESTCODE
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $TESTCODE
+		return
+	fi
 	if [ ! -z "$AgentstoExclude" ]
 	then
 		find *DIRAC/*/Agent/ -name *Agent.py | grep -v test | awk -F "/" '{print $2,$4}' | grep -v $AgentstoExclude | sort | uniq > agents
@@ -389,6 +419,11 @@ function generateCertificates(){
 
 	mkdir -p $SERVERINSTALLDIR/etc/grid-security/certificates
 	cd $SERVERINSTALLDIR/etc/grid-security
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/etc/grid-security
+		return
+	fi
 
   # Generate private RSA key
   openssl genrsa -out hostkey.pem 2048 2&>1 /dev/null
@@ -431,6 +466,12 @@ function generateUserCredentials(){
     # Generate directory where to store credentials
     mkdir -p $SERVERINSTALLDIR/user
     cd $SERVERINSTALLDIR/user
+		cd $TESTCODE/DIRAC/
+		if [ $? -ne 0 ]
+		then
+			echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
+			return
+		fi
 
     cp $CI_CONFIG/openssl_config openssl_config
     sed -i 's/#hostname#/ciuser/g' openssl_config
