@@ -11,7 +11,7 @@ from DIRAC                                                import gLogger, S_OK, 
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
 from DIRAC.ResourceStatusSystem.Utilities                 import RssConfiguration
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import getPolicyActionsThatApply, getPoliciesThatApply
 
 __RCSID__ = '$Id: $'
 
@@ -38,7 +38,6 @@ class PDP( object ):
     self.decisionParams = None
 
     # Helpers to discover policies and RSS metadata in CS
-    self.iGetter = InfoGetter()
     self.pCaller = PolicyCaller( clients )
 
     # RSS State Machine, used to calculate most penalizing state while merging them
@@ -136,7 +135,7 @@ class PDP( object ):
     # Policies..................................................................
 
     # Get policies that match self.decisionParams
-    policiesThatApply = self.iGetter.getPoliciesThatApply( self.decisionParams )
+    policiesThatApply = getPoliciesThatApply( self.decisionParams )
     if not policiesThatApply[ 'OK' ]:
       return policiesThatApply
     policiesThatApply = policiesThatApply[ 'Value' ]
@@ -159,9 +158,9 @@ class PDP( object ):
 
     # Actions...................................................................
 
-    policyActionsThatApply = self.iGetter.getPolicyActionsThatApply( self.decisionParams,
-                                                                     singlePolicyResults,
-                                                                     policyCombinedResults )
+    policyActionsThatApply = getPolicyActionsThatApply( self.decisionParams,
+                                                        singlePolicyResults,
+                                                        policyCombinedResults )
     if not policyActionsThatApply[ 'OK' ]:
       return policyActionsThatApply
     policyActionsThatApply = policyActionsThatApply[ 'Value' ]
