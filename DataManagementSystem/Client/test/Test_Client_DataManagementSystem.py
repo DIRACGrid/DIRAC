@@ -2,6 +2,7 @@
 """
 
 import unittest
+import datetime
 from mock import MagicMock
 
 from DIRAC import gLogger
@@ -83,11 +84,69 @@ class ConsistencyInspectorSuccess( UtilitiesTestCase ):
     self.assertEqual( res, resExpected )
 
 
-  def test__catalogDirectoryToSE(self):
-    lfnDir = ['/this/is/dir1/', '/this/is/dir2/']
+  # def test__catalogDirectoryToSE(self):
+  #   lfnDir = ['/this/is/dir1/', '/this/is/dir2/']
+  #
+  #   res = self.ci.catalogDirectoryToSE(lfnDir)
+  #   self.assertTrue(res['OK'])
 
-    res = self.ci.catalogDirectoryToSE(lfnDir)
+
+  def test__getCatalogDirectoryContents(self):
+    lfnDirs = ['/this/is/dir1/', '/this/is/dir2/']
+
+    res = self.ci._getCatalogDirectoryContents(lfnDirs)
     self.assertTrue(res['OK'])
+
+    resExpected = {'Metadata': {'/this/is/dir1/file1.txt': { 'MetaData': { 'Checksum': '7149ed85',
+                                                                           'ChecksumType': 'Adler32',
+                                                                           'CreationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
+                                                                           'FileID': 156301805L,
+                                                                           'GID': 2695L,
+                                                                           'GUID': '6A5C6C86-AD7B-E411-9EDB-AC162DA8C2B0',
+                                                                           'Mode': 436,
+                                                                           'ModificationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
+                                                                           'Owner': 'phicharp',
+                                                                           'OwnerGroup': 'lhcb_prod',
+                                                                           'Size': 206380531L,
+                                                                           'Status': 'AprioriGood',
+                                                                           'Type': 'File',
+                                                                           'UID': 19503L}},
+                                '/this/is/dir1/file2.foo.bar': {'MetaData': {'Checksum': '7149ed86',
+                                                                             'ChecksumType': 'Adler32',
+                                                                             'CreationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
+                                                                             'FileID': 156301805L,
+                                                                             'GID': 2695L,
+                                                                             'GUID': '6A5C6C86-AD7B-E411-9EDB-AC162DA8C2B1',
+                                                                             'Mode': 436,
+                                                                             'ModificationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
+                                                                             'Owner': 'phicharp',
+                                                                             'OwnerGroup': 'lhcb_prod',
+                                                                             'Size': 206380532L,
+                                                                             'Status': 'AprioriGood',
+                                                                             'Type': 'File',
+                                                                             'UID': 19503L}},
+                                '/this/is/dir2/subdir1/file3.pippo': {'MetaData': {'Checksum': '7149ed86',
+                                                                                   'ChecksumType': 'Adler32',
+                                                                                   'CreationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
+                                                                                   'FileID': 156301805L,
+                                                                                   'GID': 2695L,
+                                                                                   'GUID': '6A5C6C86-AD7B-E411-9EDB-AC162DA8C2B1',
+                                                                                   'Mode': 436,
+                                                                                   'ModificationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
+                                                                                   'Owner': 'phicharp',
+                                                                                   'OwnerGroup': 'lhcb_prod',
+                                                                                   'Size': 206380532L,
+                                                                                   'Status': 'AprioriGood',
+                                                                                   'Type': 'File',
+                                                                                   'UID': 19503L}}},
+                   'Replicas': {'/this/is/dir1/file1.txt': {'SE1': 'smr://srm.SE1.ch:8443/srm/v2/server?SFN=/this/is/dir1/file1.txt',
+                                                            'SE2': 'smr://srm.SE2.fr:8443/srm/v2/server?SFN=/this/is/dir1/file1.txt'},
+                                '/this/is/dir1/file2.foo.bar': {'SE1': 'smr://srm.SE1.ch:8443/srm/v2/server?SFN=/this/is/dir1/file2.foo.bar',
+                                                                'SE3': 'smr://srm.SE3.es:8443/srm/v2/server?SFN=/this/is/dir1/file2.foo.bar'}}}
+
+
+    self.assertEqual(res['Value'], resExpected)
+
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( UtilitiesTestCase )

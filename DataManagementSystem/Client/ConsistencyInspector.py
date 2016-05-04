@@ -87,6 +87,14 @@ class ConsistencyInspector( object ):
 
   ################################################################################
 
+  def checkFC2SE( self ):
+    repDict = self.compareChecksum( self.lfns )
+    self.existLFNsNoSE = repDict['MissingReplica']
+    self.existLFNsNotExisting = repDict['MissingAllReplicas']
+    self.existLFNsBadReplicas = repDict['SomeReplicasCorrupted']
+    self.existLFNsBadFiles = repDict['AllReplicasCorrupted']
+
+
   def getReplicasPresence( self, lfns ):
     """ get the replicas using the standard FileCatalog.getReplicas()
     """
@@ -379,13 +387,12 @@ class ConsistencyInspector( object ):
     for num, se in enumerate( sorted( seFiles ) ):
       self.__write( '\n%d. At %s (%d files): ' % ( num, se, len( seFiles[se] ) ) )
       oSe = StorageElement( se )
-      errMsg = None
       notFound = 0
       for surlChunk in breakListIntoChunks( seFiles[se], chunkSize ):
         self.__write( '.' )
         metadata = oSe.getFileMetadata( surlChunk )
         if not metadata['OK']:
-          errMsg = "Error: getFileMetadata returns %s. Ignore those replicas" % ( metadata['Message'] )
+          gLogger.error( "Error: getFileMetadata returns %s. Ignore those replicas" % ( metadata['Message'] ) )
           # Remove from list of replicas as we don't know whether it is OK or not
           for lfn in seFiles[se]:
             lfnNoInfo.setdefault( lfn, [] ).append( se )
@@ -512,12 +519,12 @@ class ConsistencyInspector( object ):
     gLogger.info( "-" * 40 )
     if isinstance( lfnDir, basestring ):
       lfnDir = [lfnDir]
-    res = self.__getCatalogDirectoryContents( lfnDir )
+    res = self._getCatalogDirectoryContents( lfnDir )
     if not res['OK']:
       return res
-    replicas = res['Value']
+    replicas = res['Value']['Replicas']
     catalogMetadata = res['Value']['Metadata']
-    res = self.__checkPhysicalFiles( replicas, catalogMetadata )
+    res = self.checkPhysicalFiles( replicas, catalogMetadata )
     if not res['OK']:
       return res
     resDict = {'CatalogMetadata':catalogMetadata, 'CatalogReplicas':replicas}
@@ -539,7 +546,7 @@ class ConsistencyInspector( object ):
     if not res['OK']:
       return res
     replicas = res['Value']
-    res = self.__checkPhysicalFiles( replicas, catalogMetadata )
+    res = self.checkPhysicalFiles( replicas, catalogMetadata )
     if not res['OK']:
       return res
     resDict = {'CatalogMetadata':catalogMetadata, 'CatalogReplicas':replicas}
@@ -548,14 +555,12 @@ class ConsistencyInspector( object ):
   def checkPhysicalFiles( self, replicas, catalogMetadata, ses = None ):
     """ This obtains takes the supplied replica and metadata information obtained from the catalog and checks against the storage elements.
     """
+
+    #FIXME: we better use the compareChecksum function instead of this one! or maybe directly checkFC2SE
+
     gLogger.info( "-" * 40 )
     gLogger.info( "Performing the LFC->SE check" )
     gLogger.info( "-" * 40 )
-    return self.__checkPhysicalFiles( replicas, catalogMetadata, ses = ses )
-
-  def __checkPhysicalFiles( self, replicas, catalogMetadata, ses = None ):
-    """ This obtains the physical file metadata and checks the metadata against the catalog entries
-    """
     seLfns = {}
     for lfn, replicaDict in replicas.iteritems():
       for se, _url in replicaDict.iteritems():
@@ -563,8 +568,6 @@ class ConsistencyInspector( object ):
           continue
         seLfns.setdefault( se, [] ).append( lfn )
     gLogger.info( '%s %s' % ( 'Storage Element'.ljust( 20 ), 'Replicas'.rjust( 20 ) ) )
-
-
 
     for se in sorted( seLfns ):
       files = len( seLfns[se] )
@@ -752,14 +755,13 @@ class ConsistencyInspector( object ):
     gLogger.info( 'Obtained at total of %s files for directories at %s' % ( len( allFiles ), storageElement ) )
     return S_OK( allFiles )
 
-  def __getCatalogDirectoryContents( self, lfnDirs ):
+  def _getCatalogDirectoryContents( self, lfnDirs ):
     """ Obtain the contents of the supplied directory, recursively
     """
 
     def _getDirectoryContent( directory ):
-      """ Recursively scan a directory
+      """ Inner function: recursively scan a directory, returns list of LFNs
       """
-      # filesInDirectory = set()
       filesInDirectory = {}
 
       gLogger.debug("Examining %s" %directory)
@@ -781,6 +783,7 @@ class ConsistencyInspector( object ):
       #then, looking for subDirectories content
       if res['Value']['Successful'][directory]['SubDirs']:
         for l_dir in res['Value']['Successful'][directory]['SubDirs']:
+          #recursion here
           subDirContent = _getDirectoryContent(l_dir)
           if not subDirContent['OK']:
             return subDirContent
@@ -788,6 +791,7 @@ class ConsistencyInspector( object ):
             filesInDirectory.update(subDirContent['Value'])
 
       return S_OK(filesInDirectory)
+
 
 
     gLogger.info( 'Obtaining the catalog contents for %d directories' % len( lfnDirs ) )
