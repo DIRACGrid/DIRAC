@@ -19,10 +19,8 @@ from DIRAC.Resources.Catalog.FileCatalog                    import FileCatalog
 from DIRAC.Core.Utilities.List                              import breakListIntoChunks
 from DIRAC.Interfaces.API.Dirac                             import Dirac
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient  import DataIntegrityClient
-from DIRAC.Resources.Storage.Utilities                      import checkArgumentFormat
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Core.Utilities.Adler                             import compareAdler
-#from DIRAC.Core.Utilities                                   import DError
 
 class ConsistencyInspector( object ):
   """ A class for handling some consistency checks
@@ -159,8 +157,7 @@ class ConsistencyInspector( object ):
 
   ################################################################################
 
-  @staticmethod
-  def __compareLFNLists( lfns, lfnsFound ):
+  def __compareLFNLists( self, lfns, lfnsFound ):
     """ return files in both lists and files in lfns and not in lfnsFound
     """
     present = []
@@ -361,7 +358,6 @@ class ConsistencyInspector( object ):
       if not res['OK']:
         return S_ERROR(errno.ENOENT, "error %s" % res['Message'])
       metadata.update( res['Value']['Successful'] )
-    self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
 
     gLogger.notice( "Check existence and compare checksum file by file..." )
     csDict = {}
@@ -394,7 +390,6 @@ class ConsistencyInspector( object ):
           for lfn in seFiles[se]:
             lfnNoInfo.setdefault( lfn, [] ).append( se )
         else:
-          return S_ERROR(errno.ENOENT, 'error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) )
           metadata = metadata['Value']
           notFound += len( metadata['Failed'] )
           for lfn in metadata['Failed']:
