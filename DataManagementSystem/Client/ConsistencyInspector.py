@@ -72,21 +72,30 @@ class ConsistencyInspector( object ):
     self.existLFNsNoSE = {}
     self.existLFNsBadReplicas = {}
     self.existLFNsBadFiles = {}
-
+    self.existLFNsNotExisting = {}
     self.commonAncestors = {}
     self.multipleDescendants = {}
     self.ancestors = {}
+
+    self._verbose = False
+
+  def __logVerbose( self, msg, msg1 = '' ):
+    if self._verbose:
+      newMsg = '[ConsistencyChecks] ' + ( '[%s] ' % str( self.prod ) ) if self.prod else ''
+      newMsg += msg
+      gLogger.notice( newMsg, msg1 )
+    else:
+      gLogger.verbose( msg, msg1 )
 
   ################################################################################
 
   def getReplicasPresence( self, lfns ):
     """ get the replicas using the standard FileCatalog.getReplicas()
     """
-    lfns = checkArgumentFormat(lfns)
     present = set()
     notPresent = set()
 
-    chunkSize = 1000
+    chunkSize = 100
     printProgress = ( len( lfns ) > chunkSize )
     startTime = time.time()
     self.__write( "Checking replicas for %d files%s" %
@@ -102,11 +111,11 @@ class ConsistencyInspector( object ):
           notPresent.update( res['Value']['Failed'] )
           break
         else:
-          gLogger.error( "\nError getting replicas from FC, retry", res['Message'] )
           time.sleep( 0.1 )
     self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
 
-    gLogger.info( "Found %d files with replicas and %d without" % ( len( present ), len( notPresent ) ) )
+    if notPresent:
+      self.__logVerbose( "Files without replicas:", '\n'.join( [''] + sorted( notPresent ) ) )
     return list( present ), list( notPresent )
 
   ################################################################################
@@ -115,7 +124,6 @@ class ConsistencyInspector( object ):
     """ Get replicas scanning the directories. Might be faster.
     """
 
-    lfns = checkArgumentFormat(lfns)
     dirs = {}
     present = []
     notPresent = []
@@ -155,18 +163,16 @@ class ConsistencyInspector( object ):
   def __compareLFNLists( lfns, lfnsFound ):
     """ return files in both lists and files in lfns and not in lfnsFound
     """
-    lfns = checkArgumentFormat(lfns)
     present = []
     notPresent = lfns
     startTime = time.time()
-    gLogger.verbose( "Comparing list of %d LFNs with second list of %d" % ( len( lfns ), len( lfnsFound ) ) )
+    self.__logVerbose( "Comparing list of %d LFNs with second list of %d" % ( len( lfns ), len( lfnsFound ) ) )
     if lfnsFound:
       setLfns = set( lfns )
       setLfnsFound = set( lfnsFound )
       present = list( setLfns & setLfnsFound )
       notPresent = list( setLfns - setLfnsFound )
-
-    gLogger.verbose( "End of comparison: %.1f seconds" % ( time.time() - startTime ) )
+    self.__logVerbose( "End of comparison: %.1f seconds" % ( time.time() - startTime ) )
     return present, notPresent
 
   def _getFilesFromDirectoryScan( self, dirs ):
@@ -204,9 +210,9 @@ class ConsistencyInspector( object ):
       else:
         if res['Value']:
           self.runsList.extend( [run['RunNumber'] for run in res['Value'] if run['RunNumber'] not in self.runsList] )
-          gLogger.always( "%d runs selected" % len( res['Value'] ) )
+          gLogger.notice( "%d runs selected" % len( res['Value'] ) )
         elif not self.runsList:
-          gLogger.always( "No runs selected, check completed" )
+          gLogger.notice( "No runs selected, check completed" )
           DIRAC.exit( 0 )
     if not self._lfns and self.runsList:
       selectDict['RunNumber'] = self.runsList
@@ -217,7 +223,7 @@ class ConsistencyInspector( object ):
       return [], [], []
     status = res['Value']['Status']
     if status not in ( 'Active', 'Stopped', 'Completed', 'Idle' ):
-      gLogger.always( "Transformation %s in status %s, will not check if files are processed" % ( self.prod, status ) )
+      gLogger.notice( "Transformation %s in status %s, will not check if files are processed" % ( self.prod, status ) )
       processedLFNs = []
       nonProcessedLFNs = []
       nonProcessedStatuses = []
@@ -231,7 +237,7 @@ class ConsistencyInspector( object ):
       else:
         processedLFNs = [item['LFN'] for item in res['Value'] if item['Status'] == 'Processed']
         nonProcessedLFNs = [item['LFN'] for item in res['Value'] if item['Status'] != 'Processed']
-        nonProcessedStatuses = list( set( [item['Status'] for item in res['Value'] if item['Status'] != 'Processed'] ) )
+        nonProcessedStatuses = list( set( item['Status'] for item in res['Value'] if item['Status'] != 'Processed' ) )
 
     return processedLFNs, nonProcessedLFNs, nonProcessedStatuses
 
@@ -315,11 +321,8 @@ class ConsistencyInspector( object ):
           dirName += '/'
         directories.append( dirName )
       present, notPresent = self.getReplicasPresenceFromDirectoryScan( directories )
-      gLogger.always( '%d files found in the FC' % len( present ) )
     else:
       present, notPresent = self.getReplicasPresence( self.lfns )
-      gLogger.always( 'Out of %d files, %d are in the FC, %d are not' \
-                      % ( len( self.lfns ), len( present ), len( notPresent ) ) )
     return present, notPresent
 
   def compareChecksum( self, lfns ):
@@ -328,16 +331,15 @@ class ConsistencyInspector( object ):
        files with all replicas corrupted, and one with files with some replicas corrupted and at least
        one good replica
     """
-    retDict = {'AllReplicasCorrupted' : {}, 'SomeReplicasCorrupted': {}, 'MissingPFN':{}, 'NoReplicas':{}}
+    retDict = {'AllReplicasCorrupted' : {}, 'SomeReplicasCorrupted': {}, 'MissingReplica':{}, 'MissingAllReplicas':{}, 'NoReplicas':{}}
 
-    chunkSize = 1000
+    chunkSize = 100
     replicas = {}
     setLfns = set( lfns )
     cachedLfns = setLfns & set( self.cachedReplicas )
     for lfn in cachedLfns:
       replicas[lfn] = self.cachedReplicas[lfn]
     lfnsLeft = list( setLfns - cachedLfns )
-    startTime = time.time()
     if lfnsLeft:
       self.__write( "Get replicas for %d files (chunks of %d): " % ( len( lfnsLeft ), chunkSize ) )
       for lfnChunk in breakListIntoChunks( lfnsLeft, chunkSize ):
@@ -350,7 +352,6 @@ class ConsistencyInspector( object ):
         if replicasRes['Failed']:
           retDict['NoReplicas'].update( replicasRes['Failed'] )
         replicas.update( replicasRes['Successful'] )
-      self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
 
     self.__write( "Get FC metadata for %d files to be checked: " % len( lfns ) )
     metadata = {}
@@ -362,89 +363,90 @@ class ConsistencyInspector( object ):
       metadata.update( res['Value']['Successful'] )
     self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
 
-    gLogger.always( "Check existence and compare checksum file by file..." )
+    gLogger.notice( "Check existence and compare checksum file by file..." )
     csDict = {}
     seFiles = {}
-    surlLfn = {}
-    startTime = time.time()
     # Reverse the LFN->SE dictionary
+    nReps = 0
     for lfn in replicas:
       csDict.setdefault( lfn, {} )[ 'LFCChecksum' ] = metadata.get( lfn, {} ).get( 'Checksum' )
-      replicaDict = replicas[ lfn ]
-      for se in replicaDict:
-        surl = replicaDict[ se ]
-        surlLfn[surl] = lfn
-        seFiles.setdefault( se, [] ).append( surl )
+      for se in replicas[ lfn ]:
+        seFiles.setdefault( se, [] ).append( lfn )
+        nReps += 1
 
+    gLogger.notice( 'Getting checksum of %d replicas in %d SEs' % ( nReps, len( seFiles ) ) )
     checkSum = {}
-    self.__write( 'Getting checksum of %d replicas in %d SEs (chunks of %d): ' % ( len( surlLfn ), len( seFiles ), chunkSize ) )
-    pfnNotAvailable = {}
+    lfnNotExisting = {}
+    lfnNoInfo = {}
     logLevel = gLogger.getLevel()
     gLogger.setLevel( 'FATAL' )
     for num, se in enumerate( sorted( seFiles ) ):
       self.__write( '\n%d. At %s (%d files): ' % ( num, se, len( seFiles[se] ) ) )
       oSe = StorageElement( se )
+      errMsg = None
+      notFound = 0
       for surlChunk in breakListIntoChunks( seFiles[se], chunkSize ):
         self.__write( '.' )
-        surlRes = oSe.getFileMetadata( surlChunk )
-        if not surlRes['OK']:
-          gLogger.error( "error StorageElement.getFileMetadata returns %s" % ( surlRes['Message'] ) )
+        metadata = oSe.getFileMetadata( surlChunk )
+        if not metadata['OK']:
+          errMsg = "Error: getFileMetadata returns %s. Ignore those replicas" % ( metadata['Message'] )
+          # Remove from list of replicas as we don't know whether it is OK or not
+          for lfn in seFiles[se]:
+            lfnNoInfo.setdefault( lfn, [] ).append( se )
+        else:
           return S_ERROR(errno.ENOENT, 'error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) )
-        surlRes = surlRes['Value']
-        for surl in surlRes['Failed']:
-          lfn = surlLfn[surl]
-          gLogger.info( "SURL was not found at %s! %s " % ( se, surl ) )
-          pfnNotAvailable.setdefault( lfn, [] ).append( se )
-        for surl in surlRes['Successful']:
-          lfn = surlLfn[surl]
-          checkSum.setdefault( lfn, {} )[se] = surlRes['Successful'][ surl ]['Checksum']
-    self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
+          metadata = metadata['Value']
+          notFound += len( metadata['Failed'] )
+          for lfn in metadata['Failed']:
+            lfnNotExisting.setdefault( lfn, [] ).append( se )
+          for lfn in metadata['Successful']:
+            checkSum.setdefault( lfn, {} )[se] = metadata['Successful'][ lfn ]['Checksum']
+      if notFound:
+        gLogger.error('%d files not found' % notFound)
+
     gLogger.setLevel( logLevel )
-    retDict[ 'MissingPFN'] = {}
 
-    startTime = time.time()
-    self.__write( 'Verifying checksum of %d files (chunks of %d) ' % ( len( replicas ), chunkSize ) )
-    for num, lfn in enumerate( replicas ):
-      # get the file catalog checksum   #lfn checksum from the LFC
-      if not num % chunkSize:
-        self.__write( '.' )
-
+    gLogger.notice( 'Verifying checksum of %d files' % len( replicas ) )
+    for lfn in replicas:
+      # get the lfn checksum from the LFC
       replicaDict = replicas[ lfn ]
       oneGoodReplica = False
       allGoodReplicas = True
       lfcChecksum = csDict[ lfn ].pop( 'LFCChecksum' )
       for se in replicaDict:
         # If replica doesn't exist skip check
-        if se in pfnNotAvailable.get( lfn, [] ):
+        if se in lfnNotExisting.get( lfn, [] ):
           allGoodReplicas = False
           continue
-        surl = replicaDict[ se ]
+        if se in lfnNoInfo.get( lfn, [] ):
+          # If there is no info, a priori it could be good
+          oneGoodReplica = True
+          continue
         # get the surls metadata and compare the checksum
         surlChecksum = checkSum.get( lfn, {} ).get( se, '' )
         if not surlChecksum or not compareAdler( lfcChecksum , surlChecksum ):
           # if lfcChecksum does not match surlChecksum
-          csDict[ lfn ][ se ] = {'SURL':surl, 'PFNChecksum': surlChecksum}
+          csDict[ lfn ][ se ] = {'PFNChecksum': surlChecksum}
           gLogger.info( "ERROR!! checksum mismatch at %s for LFN %s:  LFC checksum: %s , PFN checksum : %s "
                         % ( se, lfn, lfcChecksum, surlChecksum ) )
           allGoodReplicas = False
         else:
           oneGoodReplica = True
       if not oneGoodReplica:
-        if lfn in pfnNotAvailable:
-          gLogger.info( "=> All replicas are missing" )
-          retDict['MissingPFN'][ lfn] = 'All'
+        if lfn in lfnNotExisting:
+          gLogger.info( "=> All replicas are missing", lfn )
+          retDict['MissingAllReplicas'][ lfn] = 'All'
         else:
-          gLogger.info( "=> All replicas have bad checksum" )
+          gLogger.info( "=> All replicas have bad checksum", lfn )
           retDict['AllReplicasCorrupted'][ lfn ] = csDict[ lfn ]
       elif not allGoodReplicas:
-        if lfn in pfnNotAvailable:
-          gLogger.info( "=> At least one replica missing" )
-          retDict['MissingPFN'][lfn] = pfnNotAvailable[lfn]
+        if lfn in lfnNotExisting:
+          gLogger.info( "=> At least one replica missing", lfn )
+          retDict['MissingReplica'][lfn] = lfnNotExisting[lfn]
         else:
-          gLogger.info( "=> At least one replica with good Checksum" )
+          gLogger.info( "=> At least one replica with good Checksum", lfn )
           retDict['SomeReplicasCorrupted'][ lfn ] = csDict[ lfn ]
 
-    self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
     return S_OK(retDict)
 
   ################################################################################

@@ -47,22 +47,23 @@ class ConsistencyInspectorSuccess( UtilitiesTestCase ):
                           'bb.log':{'FileType': 'LOG'},
                           '/bb/pippo/aa.dst':{'FileType': 'LOG'},
                           '/lhcb/1_1.semileptonic.dst':{'FileType': 'SEMILEPTONIC.DST'}}
-               }
+              }
 
     res = self.ci._selectByFileType( lfnDict )
 
-    lfnDictExpected = {'aa.raw':
-                       {'/lhcb/1_2_1.Semileptonic.dst': {'FileType': 'SEMILEPTONIC.DST'},
-                        'bb.raw': {'RunNumber': 97019, 'FileType': 'RAW'}},
-                       'cc.raw':
-                       {'dd.raw': {'RunNumber': 97019, 'FileType': 'RAW'},
-                        '/lhcb/1_1.semileptonic.dst': {'FileType': 'SEMILEPTONIC.DST'}}}
+    lfnDictExpected = {'aa.raw': {'/lhcb/1_2_1.Semileptonic.dst': {'FileType': 'SEMILEPTONIC.DST'},
+                                  'bb.raw': {'RunNumber': 97019, 'FileType': 'RAW'}
+                                 },
+                       'cc.raw': {'dd.raw': {'RunNumber': 97019, 'FileType': 'RAW'},
+                                  '/lhcb/1_1.semileptonic.dst': {'FileType': 'SEMILEPTONIC.DST'}
+                                 }
+                      }
     self.assertEqual( res, lfnDictExpected )
 
     lfnDict = {'aa.raw': {'/bb/pippo/aa.dst':{'FileType': 'LOG'},
                           'bb.log':{'FileType': 'LOG'}
-                          }
-               }
+                         }
+              }
     res = self.ci._selectByFileType( lfnDict )
     lfnDictExpected = {}
     self.assertEqual( res, lfnDictExpected )
