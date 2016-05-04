@@ -315,15 +315,3 @@ class DBUtils:
         newData[ bt ] += dataDict[ k ][ bt ]
     return newData
   
-  def _getOverallMaxValue(self, dataDict):
-    """
-    It returns the maximum value in the overall period.
-    :param dict dataDict the format is { key: { time : [value1, value2, ...valueN] } } where key is the parameter what we want to plot, time is the certain period
-    and value1,...valueN is the value.
-    """
-    maxValue = 0.0
-    for i in dataDict.values():
-      currentMax = max( i.values() )
-      if maxValue < currentMax:
-          maxValue = currentMax
-    return maxValue

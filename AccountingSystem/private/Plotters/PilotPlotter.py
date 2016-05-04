@@ -161,13 +161,12 @@ class PilotPlotter( BaseReporter ):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotJobsPerPilot( self, reportRequest, plotInfo, filename ):
-    maxValue = self._getOverallMaxValue( plotInfo[ 'data' ] )
     metadata = { 'title' : 'Jobs per pilot by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "jobs/pilot",
-                 'normalization' : maxValue }
+                 'normalization' : max( x for y in plotInfo[ 'data' ].itervalues() for x in y.itervalues() ) }
     return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportTotalNumberOfPilots( self, reportRequest ):
