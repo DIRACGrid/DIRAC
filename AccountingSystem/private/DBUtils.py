@@ -314,4 +314,3 @@ class DBUtils:
           newData[ bt ] = 0.0
         newData[ bt ] += dataDict[ k ][ bt ]
     return newData
-  
