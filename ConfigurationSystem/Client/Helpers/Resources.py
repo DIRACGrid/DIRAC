@@ -190,7 +190,7 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
       ces = result['Value']
       for ce in ces:
         if mode:
-          ceMode = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/SubmissionMode' % ( grid, site, ce ), 'InDirect' )
+          ceMode = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/SubmissionMode' % ( grid, site, ce ), 'Direct' )
           if not ceMode or ceMode != mode:
             continue
         if ceTypeList:
