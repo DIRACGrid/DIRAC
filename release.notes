@@ -123,6 +123,24 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p29]
+
+*Core
+FIX: Time - skip the effect of timeThis decorator if not running interractively
+
+*DMS
+FIX: DataManager - in getFile(), select preferentially local disk replicas, if none disk replicas, 
+     if none tape replicas
+FIX: DataManager - avoid changing argument of public method checkActiveReplicas()
+FIX: FTSAgent - wait 3 times longer for monitoring FTS jobs if Staging
+
+*Accounting
+CHANGE: Jobs per pilot plot is presented as Quality plot rather than a histogram
+
+*WMS
+CHANGE: dirac-wms-cpu-normalization - reduce memory usage by using xrange() instead of range()
+        in the large test loop
+
 [v6r14p28]
 
 *TS
