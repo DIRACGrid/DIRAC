@@ -15,7 +15,7 @@ from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.BarGraph import BarGraph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 from pylab import setp
-from matplotlib.colors import normalize, LinearSegmentedColormap
+from matplotlib.colors import Normalize, LinearSegmentedColormap
 import matplotlib.cm as cm
 from matplotlib.colorbar import make_axes, ColorbarBase
 from matplotlib.dates import date2num
@@ -65,11 +65,17 @@ class QualityMapGraph( PlotBase ):
         self.width = ( max( self.gdata.all_keys ) - min( self.gdata.all_keys ) ) / nKeys
 
     # Setup the colormapper to get the right colors
-    self.cmap = LinearSegmentedColormap( 'quality_colormap', cdict, 256 )
-    #self.cmap = cm.RdYlGn
-    self.norms = normalize( 0, 100 )
+    self.cmap = None 
+          
+    max_value = prefs.get( 'normalization' )
+    if max_value:
+      self.cmap = cm.YlGnBu
+    else:
+      max_value = 100
+      self.cmap = cm.RdYlGn
+    
+    self.norms = Normalize( 0, max_value )
     mapper = cm.ScalarMappable( cmap = self.cmap, norm = self.norms )
-    mapper = cm.ScalarMappable( cmap = cm.RdYlGn, norm = self.norms )
     def get_alpha( *args, **kw ):
       return 1.0
     mapper.get_alpha = get_alpha
@@ -150,7 +156,7 @@ class QualityMapGraph( PlotBase ):
     setp( self.ax.get_yticklines(), markersize = 0. )
 
     cax, kw = make_axes( self.ax, orientation = 'vertical', fraction = 0.07 )
-    cb = ColorbarBase( cax, cmap = cm.RdYlGn, norm = self.norms )
+    cb = ColorbarBase( cax, cmap = self.cmap, norm = self.norms )
     cb.draw_all()
     #cb = self.ax.colorbar( self.mapper, format="%d%%", 
     #  orientation='horizontal', fraction=0.04, pad=0.1, aspect=40  )
