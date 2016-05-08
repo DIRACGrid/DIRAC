@@ -1,10 +1,10 @@
+""" Testing the FCConditionPaserClass
 """
-   Testing the FCConditionPaserClass
-"""
-__RCSID__ = "$Id $"
 
 import unittest
 from DIRAC.Resources.Catalog.FCConditionParser import FCConditionParser
+
+__RCSID__ = "$Id $"
 
 class TestLogicEvaluation( unittest.TestCase ):
   """ Tests all the logic evaluation
@@ -13,8 +13,8 @@ class TestLogicEvaluation( unittest.TestCase ):
   def setUp( self ):
     self.fcp = FCConditionParser()
     self.lfns = ['/lhcb/lfn1', '/lhcb/lfn2']
-    
-  
+
+
   def test_01_simpleParse( self ):
     """Test the parse of a single plugin"""
 
@@ -211,7 +211,7 @@ class TestLogicEvaluation( unittest.TestCase ):
 
   def test_06_errors( self ):
     """Testing different error situation"""
-    
+
     # Error in the plugin
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "Dummy=CantParse" )
 
@@ -260,5 +260,5 @@ class TestLogicEvaluation( unittest.TestCase ):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestLogicEvaluation )
-  
+
   unittest.TextTestRunner( verbosity = 2 ).run( suite )

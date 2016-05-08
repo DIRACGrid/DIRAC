@@ -1,22 +1,65 @@
-__RCSID__ = "$Id$"
+""" test for RFIO plugin
+"""
 
 # FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to tests directory
 
 
-import unittest, time, os, shutil
-from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
+import unittest
+import time
+import os
+import shutil
+import mock
+
+from DIRAC import S_OK
+
+from DIRAC.Resources.Storage.test.Test_FilePlugin import mock_StorageFactory_getConfigStorageOptions, mock_StorageFactory_getConfigStorageProtocols, mock_StorageFactory_getConfigStorageName
+# from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
+from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 from DIRAC.Core.Utilities.File                  import getSize
 
-class StoragePlugInTestCase( unittest.TestCase ):
-  """ Base class for the StoragePlugin test cases
+def mock_StorageFactory_getCurrentURL( storageName, derivedStorageName ):
+  """ Get the options associated to the StorageElement as defined in the CS
   """
-  def setUp( self ):
-    factory = StorageFactory()
-    res = factory.getStorages( 'CERN-RAW', ['RFIO'] )
-    self.assert_( res['OK'] )
-    storageDetails = res['Value']
-    self.storage = storageDetails['StorageObjects'][0]
-    self.storage.changeDirectory( 'lhcb/test/unit-test/Storage/RFIOStorage' )
+  optionsDict = {'BackendType': 'local',
+                 'ReadAccess': 'Active',
+                 'WriteAccess': 'Active'}
+
+  return S_OK( optionsDict )
+
+__RCSID__ = "$Id$"
+
+
+# class StoragePlugInTestCase( unittest.TestCase ):
+#   """ Base class for the StoragePlugin test cases
+#   """
+#   def setUp( self ):
+#     factory = StorageFactory()
+#     res = factory.getStorages( 'CERN-RAW', ['RFIO'] )
+#     self.assert_( res['OK'] )
+#     storageDetails = res['Value']
+
+class StoragePlugInTestCase( unittest.TestCase ):
+  """ Base test class. Defines all the method to test
+  """
+
+  @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageName',
+                side_effect = mock_StorageFactory_getConfigStorageName )
+  @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageOptions',
+                side_effect = mock_StorageFactory_getConfigStorageOptions )
+  @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageProtocols',
+                side_effect = mock_StorageFactory_getConfigStorageProtocols )
+  @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
+                return_value = S_OK( True ) )  # Pretend it's local
+  @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
+                return_value = None )  # Don't send accounting
+  @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getCurrentURL',
+                side_effect = mock_StorageFactory_getCurrentURL_getCurrentURL )
+  def setUp( self, mk_getConfigStorageName, mk_getConfigStorageOptions, mk_getConfigStorageProtocols, mk_isLocalSE, mk_addAccountingOperation ):
+    self.storage = StorageElementItem( 'FAKE' )
+    self.storage.vo = 'test'
+
+    # self.storage = storageDetails['StorageObjects'][0]
+    # self.storage.changeDirectory( 'lhcb/test/unit-test/Storage/RFIOStorage' )
 
   def test_createUnitTestDir( self ):
     print '\n\n#########################################################################\n\n\t\t\tCreate Directory test\n'

@@ -148,7 +148,9 @@
 """
 
 import MySQLdb
-
+import collections
+import time
+import threading
 
 from DIRAC                      import gLogger
 from DIRAC                      import S_OK, S_ERROR
@@ -164,11 +166,6 @@ except MySQLdb.ProgrammingError:
 gInstancesCount = 0
 gDebugFile = None
 
-import collections
-import time
-import threading
-from types import DictType, ListType
-
 __RCSID__ = "$Id$"
 
 
@@ -179,7 +176,7 @@ def _checkFields( inFields, inValues ):
     Helper to check match between inFields and inValues lengths
   """
 
-  if inFields == None and inValues == None:
+  if inFields is None and inValues is None:
     return S_OK()
 
   try:
@@ -196,7 +193,7 @@ def _quotedList( fieldList = None ):
 
     To be use for Table and Field Names
   """
-  if fieldList == None:
+  if fieldList is None:
     return None
   quotedFields = []
   try:
@@ -815,7 +812,7 @@ class MySQL( object ):
     """
 
     # First check consistency of request
-    if type( tableDict ) != DictType:
+    if not isinstance( tableDict, dict ):
       return S_ERROR( DErrno.EMYSQL, 'Argument is not a dictionary: %s( %s )'
                       % ( type( tableDict ), tableDict ) )
 
@@ -1064,7 +1061,7 @@ class MySQL( object ):
       return S_ERROR( DErrno.EMYSQL, error )
 
     attrNames = _quotedList( attrList )
-    if attrNames == None:
+    if attrNames is None:
       error = 'Invalid updateFields argument'
       self.log.debug( 'getCounters:', error )
       return S_ERROR( DErrno.EMYSQL, error )
@@ -1249,7 +1246,7 @@ class MySQL( object ):
     if not isinstance( orderAttrList, list ):
       orderAttrList = [ orderAttribute ]
     for orderAttr in orderAttrList:
-      if orderAttr == None:
+      if orderAttr is None:
         continue
       if not isinstance( orderAttr, basestring ):
         error = 'Invalid orderAttribute argument'
@@ -1295,7 +1292,7 @@ class MySQL( object ):
       Select "outFields" from "tableName" with condDict
       N records can match the condition
       return S_OK( tuple(Field,Value) )
-      if outFields == None all fields in "tableName" are returned
+      if outFields is None all fields in "tableName" are returned
       if limit is not False, the given limit is set
       inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
     """
@@ -1308,7 +1305,7 @@ class MySQL( object ):
     quotedOutFields = '*'
     if outFields:
       quotedOutFields = _quotedList( outFields )
-      if quotedOutFields == None:
+      if quotedOutFields is None:
         error = 'Invalid outFields arguments'
         self.log.warn( 'getFields:', error )
         return S_ERROR( DErrno.EMYSQL, error )
@@ -1316,7 +1313,7 @@ class MySQL( object ):
     self.log.verbose( 'getFields:', 'selecting fields %s from table %s.' %
                           ( quotedOutFields, table ) )
 
-    if condDict == None:
+    if condDict is None:
       condDict = {}
 
     try:
@@ -1397,7 +1394,7 @@ class MySQL( object ):
       self.log.warn( 'updateFields:', error )
       return S_ERROR( DErrno.EMYSQL, error )
 
-    if updateFields == None:
+    if updateFields is None:
       updateFields = []
       updateValues = []
 
@@ -1454,7 +1451,7 @@ class MySQL( object ):
       self.log.warn( 'insertFields:', retDict['Message'] )
       return retDict
 
-    if inFields == None:
+    if inFields is None:
       inFields = []
       inValues = []
 
@@ -1472,7 +1469,7 @@ class MySQL( object ):
         return S_ERROR( DErrno.EMYSQL, error )
 
     inFieldString = _quotedList( inFields )
-    if inFieldString == None:
+    if inFieldString is None:
       error = 'Invalid inFields arguments'
       self.log.warn( 'insertFields:', error )
       return S_ERROR( DErrno.EMYSQL, error )

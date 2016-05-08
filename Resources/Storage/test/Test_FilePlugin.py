@@ -1,12 +1,14 @@
+""" test File Plugin
+"""
+
 import mock
 import unittest
-import tempfile 
+import tempfile
 import os
 import shutil
 import errno
 
-from DIRAC import S_OK, gLogger
-# gLogger.setLevel( 'DEBUG' )
+from DIRAC import S_OK
 from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 
 
@@ -55,6 +57,7 @@ class TestBase( unittest.TestCase ):
                 return_value = None )  # Don't send accounting
   def setUp( self, mk_getConfigStorageName, mk_getConfigStorageOptions, mk_getConfigStorageProtocols, mk_isLocalSE, mk_addAccountingOperation ):
     self.se = StorageElementItem( 'FAKE' )
+    self.se.vo = 'test'
 
     self.basePath = tempfile.mkdtemp( dir = '/tmp' )
     # Update the basePath of the plugin
@@ -65,11 +68,11 @@ class TestBase( unittest.TestCase ):
     self.destPath = tempfile.mkdtemp( dir = '/tmp' )
 
 
-    self.existingFile = '/lhcb/file.txt'
+    self.existingFile = '/test/file.txt'
     self.existingFileSize = 0
 
-    self.nonExistingFile = '/lhcb/nonExistingFile.txt'
-    self.subDir = '/lhcb/subDir'
+    self.nonExistingFile = '/test/nonExistingFile.txt'
+    self.subDir = '/test/subDir'
     self.subFile = os.path.join( self.subDir, 'subFile.txt' )
     self.subFileSize = 0
 
@@ -78,17 +81,17 @@ class TestBase( unittest.TestCase ):
     self.ALL = self.FILES + self.DIRECTORIES
 
 
-    with open( os.path.join( self.srcPath, self.existingFile.replace( '/lhcb/', '' ) ), 'w' ) as f:
+    with open( os.path.join( self.srcPath, self.existingFile.replace( '/test/', '' ) ), 'w' ) as f:
       f.write( "I put something in the file so that it has a size\n" )
-    self.existingFileSize = os.path.getsize( os.path.join( self.srcPath, self.existingFile.replace( '/lhcb/', '' ) ) )
+    self.existingFileSize = os.path.getsize( os.path.join( self.srcPath, self.existingFile.replace( '/test/', '' ) ) )
 
     assert self.existingFileSize
 
     os.mkdir( os.path.join( self.srcPath, os.path.basename( self.subDir ) ) )
 
-    with open( os.path.join( self.srcPath, self.subFile.replace( '/lhcb/', '' ) ), 'w' ) as f:
+    with open( os.path.join( self.srcPath, self.subFile.replace( '/test/', '' ) ), 'w' ) as f:
       f.write( "This one should have a size as well\n" )
-    self.subFileSize = os.path.getsize( os.path.join( self.srcPath, self.subFile.replace( '/lhcb/', '' ) ) )
+    self.subFileSize = os.path.getsize( os.path.join( self.srcPath, self.subFile.replace( '/test/', '' ) ) )
 
     assert self.subFileSize
 
@@ -98,7 +101,7 @@ class TestBase( unittest.TestCase ):
     shutil.rmtree( self.srcPath )
     shutil.rmtree( self.destPath )
     pass
-    
+
 
 
   def walkAll( self ):
@@ -122,7 +125,7 @@ class TestBase( unittest.TestCase ):
                 return_value = None )  # Don't send accounting
   def test_01_getURL( self, mk_isLocalSE, mk_addAccounting ):
     """Testing getURL"""
-    # Testing the getURL 
+    # Testing the getURL
     res = self.se.getURL( self.ALL )
     self.assert_( res['OK'], res )
     self.assert_( not res['Value']['Failed'], res['Value']['Failed'] )
@@ -141,10 +144,10 @@ class TestBase( unittest.TestCase ):
     # Putting the files
 
     def localPutFile( fn, size = 0 ):
-      """If fn is '/lhcb/fn.txt', it calls
-        { '/lhcb/fn.txt' : /tmp/generatedPath/fn.txt}
+      """If fn is '/test/fn.txt', it calls
+        { '/test/fn.txt' : /tmp/generatedPath/fn.txt}
       """
-      transfDic = { fn  : os.path.join( self.srcPath, fn.replace( '/lhcb/', '' ) )}
+      transfDic = { fn  : os.path.join( self.srcPath, fn.replace( '/test/', '' ) )}
       return self.se.putFile( transfDic, sourceSize = size )
 
     # wrong size
@@ -253,31 +256,31 @@ class TestBase( unittest.TestCase ):
   def test_04_putDirectory( self, mk_isLocalSE, mk_addAccounting ):
     """Testing putDirectory"""
 
-    nonExistingDir = '/lhcb/forsuredoesnotexist'
-    localdirs = ['/lhcb', nonExistingDir]
+    nonExistingDir = '/test/forsuredoesnotexist'
+    localdirs = ['/test', nonExistingDir]
 
     # Correct size
-    res = self.se.putDirectory( { '/lhcb' : self.srcPath} )
+    res = self.se.putDirectory( { '/test' : self.srcPath} )
     self.assert_( res['OK'], res )
-    self.assert_( '/lhcb' in res['Value']['Successful'], res )
-    self.assertEqual( res['Value']['Successful']['/lhcb'], {'Files': 2, 'Size': self.existingFileSize + self.subFileSize} )
-    self.assert_( os.path.exists( self.basePath + '/lhcb' ) )
+    self.assert_( '/test' in res['Value']['Successful'], res )
+    self.assertEqual( res['Value']['Successful']['/test'], {'Files': 2, 'Size': self.existingFileSize + self.subFileSize} )
+    self.assert_( os.path.exists( self.basePath + '/test' ) )
     self.assert_( os.path.exists( self.basePath + self.existingFile ) )
     self.assert_( os.path.exists( self.basePath + self.subFile ) )
 
 
     # No existing source directory
-    res = self.se.putDirectory( { '/lhcb' : nonExistingDir} )
+    res = self.se.putDirectory( { '/test' : nonExistingDir} )
     self.assert_( res['OK'], res )
-    self.assert_( '/lhcb' in res['Value']['Failed'], res )
-    self.assertEqual( res['Value']['Failed']['/lhcb'], {'Files': 0, 'Size': 0} )
+    self.assert_( '/test' in res['Value']['Failed'], res )
+    self.assertEqual( res['Value']['Failed']['/test'], {'Files': 0, 'Size': 0} )
 
     # sub file
-    res = self.se.putDirectory( { '/lhcb' : self.existingFile} )
+    res = self.se.putDirectory( { '/test' : self.existingFile} )
     self.assert_( res['OK'], res )
-    self.assert_( '/lhcb' in res['Value']['Failed'], res )
-    self.assertEqual( res['Value']['Failed']['/lhcb'], {'Files': 0, 'Size': 0} )
-    
+    self.assert_( '/test' in res['Value']['Failed'], res )
+    self.assertEqual( res['Value']['Failed']['/test'], {'Files': 0, 'Size': 0} )
+
 
     res = self.se.exists( self.DIRECTORIES + localdirs )
     self.assert_( res['OK'], res )
@@ -288,7 +291,7 @@ class TestBase( unittest.TestCase ):
     res = self.se.getDirectorySize( self.ALL + localdirs )
     self.assert_( res['OK'], res )
     self.assertEqual( res['Value']['Successful'][self.subDir], { 'Files' : 1, 'Size' : self.subFileSize, 'SubDirs' : 0 } )
-    self.assertEqual( res['Value']['Successful']['/lhcb'], { 'Files' : 1, 'Size' : self.existingFileSize, 'SubDirs' : 1 } )
+    self.assertEqual( res['Value']['Successful']['/test'], { 'Files' : 1, 'Size' : self.existingFileSize, 'SubDirs' : 1 } )
     self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
     self.assert_( os.strerror( errno.ENOTDIR ) in res['Value']['Failed'][self.existingFile], res )
     self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][nonExistingDir], res )
@@ -312,7 +315,7 @@ class TestBase( unittest.TestCase ):
     res = self.se.listDirectory( self.ALL + localdirs )
     self.assert_( res['OK'], res )
     self.assertEqual( res['Value']['Successful'][self.subDir], {'Files': [self.subFile], 'SubDirs': []} )
-    self.assertEqual( res['Value']['Successful']['/lhcb'], {'Files': [self.existingFile], 'SubDirs': [self.subDir]} )
+    self.assertEqual( res['Value']['Successful']['/test'], {'Files': [self.existingFile], 'SubDirs': [self.subDir]} )
     self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
     self.assert_( os.strerror( errno.ENOTDIR ) in res['Value']['Failed'][self.existingFile], res )
     self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][nonExistingDir], res )
@@ -320,11 +323,11 @@ class TestBase( unittest.TestCase ):
 
     res = self.se.getDirectory( self.ALL + localdirs, localPath = self.destPath )
     self.assert_( res['OK'], res )
-    self.assertEqual( res['Value']['Successful']['/lhcb'], {'Files' : 2, 'Size' : self.existingFileSize + self.subFileSize} )
+    self.assertEqual( res['Value']['Successful']['/test'], {'Files' : 2, 'Size' : self.existingFileSize + self.subFileSize} )
     self.assert_( os.path.exists( self.destPath + self.existingFile ) )
     self.assert_( os.path.exists( self.destPath + self.subFile ) )
     self.assertEqual( res['Value']['Successful'][self.subDir], {'Files' : 1, 'Size' : self.subFileSize} )
-    self.assert_( os.path.exists( self.destPath + self.subFile.replace( '/lhcb', '' ) ) )
+    self.assert_( os.path.exists( self.destPath + self.subFile.replace( '/test', '' ) ) )
     self.assertEqual( res['Value']['Failed'][self.nonExistingFile], {'Files': 0, 'Size': 0} )
     self.assertEqual( res['Value']['Failed'][self.existingFile], {'Files': 0, 'Size': 0} )
     self.assertEqual( res['Value']['Failed'][nonExistingDir], {'Files': 0, 'Size': 0} )
@@ -357,20 +360,20 @@ class TestBase( unittest.TestCase ):
     self.assertEqual( res['Value']['Failed'][self.existingFile], {'FilesRemoved':0, 'SizeRemoved':0} )
 
 
-    res = self.se.removeDirectory( '/lhcb', recursive = False )
+    res = self.se.removeDirectory( '/test', recursive = False )
     self.assert_( res['OK'], res )
-    self.assertEqual( res['Value']['Successful']['/lhcb'], True )
+    self.assertEqual( res['Value']['Successful']['/test'], True )
     self.assert_( not os.path.exists( self.basePath + self.existingFile ) )
     self.assert_( os.path.exists( self.basePath + self.subFile ) )
 
-    res = self.se.removeDirectory( '/lhcb', recursive = True )
+    res = self.se.removeDirectory( '/test', recursive = True )
     self.assert_( res['OK'], res )
-    self.assertEqual( res['Value']['Successful']['/lhcb'], {'FilesRemoved':1, 'SizeRemoved':self.subFileSize} )
-    self.assert_( not os.path.exists( self.basePath + '/lhcb' ) )
+    self.assertEqual( res['Value']['Successful']['/test'], {'FilesRemoved':1, 'SizeRemoved':self.subFileSize} )
+    self.assert_( not os.path.exists( self.basePath + '/test' ) )
 
 
 
-   
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestBase )
 
