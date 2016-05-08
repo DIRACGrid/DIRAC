@@ -1,11 +1,11 @@
-# $HeadURL:  $
 ''' SMSAction
-
 '''
+
+#FIXME: not ready
 
 from DIRAC                                                      import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
-#from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
+#from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import getNotificationsThatApply
 
 __RCSID__ = '$Id:  $'
 
@@ -67,7 +67,7 @@ class SMSAction( BaseAction ):
 #    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 #    diracAdmin = DiracAdmin()
 #
-#    address = InfoGetter().getNotificationsThatApply( self.decisionParams, self.actionName )
+#    address = getNotificationsThatApply( self.decisionParams, self.actionName )
 #    if not address[ 'OK' ]:
 #      return address
 #    address = address[ 'Value' ]

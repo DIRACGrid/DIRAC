@@ -1,9 +1,5 @@
-########################################################################
-# $HeadURL$
-########################################################################
-""" The FileCatalogClient is a class representing the client of the DIRAC File Catalog  """
-
-__RCSID__ = "$Id$"
+""" The FileCatalogClient is a class representing the client of the DIRAC File Catalog
+"""
 
 import os
 
@@ -11,6 +7,9 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.Resources.Catalog.Utilities                 import checkCatalogArguments
 from DIRAC.Resources.Catalog.FileCatalogClientBase     import FileCatalogClientBase
+
+__RCSID__ = "$Id$"
+
 
 class FileCatalogClient( FileCatalogClientBase ):
   """ Client code to the DIRAC File Catalogue
@@ -223,7 +222,7 @@ class FileCatalogClient( FileCatalogClientBase ):
       for dir_, fList in result['Value'].items():
         for fi in fList:
           fileList.append( dir_ + '/' + fi )
-      result['Value'] = fileList    
+      result['Value'] = fileList
       return result
     else:
       return S_ERROR( 'Illegal return value type %s' % type( result['Value'] ) )
@@ -243,7 +242,7 @@ class FileCatalogClient( FileCatalogClientBase ):
     if not result['OK']:
       return result
     fmeta.update(result['Value'])
-    
+
     return S_OK(fmeta)
 
   ########################################################################
@@ -641,6 +640,3 @@ class FileCatalogClient( FileCatalogClientBase ):
     two lines !
     """
     return self._getRPC( timeout = timeout ).getDatasetFiles( datasets )
-
-
-

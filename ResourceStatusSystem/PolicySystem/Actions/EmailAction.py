@@ -6,11 +6,8 @@
 '''
 
 import os
-import json
-from datetime import datetime
+import sqlite3
 from DIRAC                                                      import gConfig, S_ERROR, S_OK
-from DIRAC.Core.Utilities                                       import DErrno
-from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.Core.Utilities.SiteSEMapping                         import getSitesForSE
 
@@ -24,7 +21,10 @@ class EmailAction( BaseAction ):
     super( EmailAction, self ).__init__( name, decisionParams, enforcementResult,
                                          singlePolicyResults, clients )
 
-    self.cacheFile = os.getenv('DIRAC') + 'work/ResourceStatus/' + 'cache.json'
+    if 'DIRAC' in os.environ:
+      self.cacheFile = os.path.join( os.getenv('DIRAC'), 'work/ResourceStatus/cache.db' )
+    else:
+      self.cacheFile = os.path.realpath('cache.db')
 
   def run( self ):
     ''' Checks it has the parameters it needs and writes the date to a cache file.
@@ -55,47 +55,34 @@ class EmailAction( BaseAction ):
     if reason is None:
       return S_ERROR( 'reason should not be None' )
 
-    siteName = getSitesForSE(name)['Value'][0]
-    time     = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    dict    = { 'name': name, 'statusType': statusType, 'status': status, 'time': time, 'previousStatus': previousStatus }
+    siteName = getSitesForSE(name)
 
-    actionResult = self._addtoJSON(siteName, dict)
+    if not siteName['OK']:
+      siteName = "Unassigned Resources"
+      self.log.error('Resource %s does not exist to any site: %s' % (name, siteName['Message']))
+    elif not siteName['Value']:
+      siteName = "Unassigned Resources"
+    else:
+      siteName = siteName['Value'][0]
 
-    #returns S_OK() if the record was added successfully using addtoJSON
-    return actionResult
+    with sqlite3.connect(self.cacheFile) as conn:
 
+      conn.execute('''CREATE TABLE IF NOT EXISTS ResourceStatusCache(
+                    SiteName VARCHAR(64) NOT NULL,
+                    ResourceName VARCHAR(64) NOT NULL,
+                    Status VARCHAR(8) NOT NULL DEFAULT "",
+                    PreviousStatus VARCHAR(8) NOT NULL DEFAULT "",
+                    StatusType VARCHAR(128) NOT NULL DEFAULT "all",
+                    Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                   );''')
 
-  def _addtoJSON(self, siteName, record):
-    ''' Adds a record of a banned element to a local JSON file grouped by site name.
-    '''
+      conn.execute("INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
+                   " VALUES ('" + siteName + "', '" + name + "', '" + status + "', '" + previousStatus + "', '" + statusType + "' ); "
+                  )
 
-    try:
+      conn.commit()
 
-      if not os.path.isfile(self.cacheFile) or (os.stat(self.cacheFile).st_size == 0):
-        #if the file is empty or it does not exist create it and write the first element of the group
-        with open(self.cacheFile, 'w') as f:
-          json.dump({ siteName: [record] }, f)
-
-      else:
-        #otherwise load the file
-        with open(self.cacheFile, 'r') as f:
-          new_dict = json.load(f)
-
-        #if the site's name is in there just append the group
-        if siteName in new_dict:
-          new_dict[siteName].append(record)
-        else:
-          #if it is not there, create a new group
-          new_dict.update( { siteName: [record] } )
-
-        #write the file again with the modified contents
-        with open(self.cacheFile, 'w') as f:
-          json.dump(new_dict, f)
-
-      return S_OK()
-
-    except ValueError as e:
-      return S_ERROR(DErrno.EWF, "Error %s" % repr(e))
+    return S_OK()
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

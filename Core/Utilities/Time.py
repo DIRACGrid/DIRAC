@@ -28,6 +28,7 @@ if a give datetime is in the defined interval.
 import time as nativetime
 import datetime
 from types import StringTypes
+import sys
 
 __RCSID__ = "$Id$"
 
@@ -52,6 +53,8 @@ def timeThis( method ):
 
     ts = nativetime.time()
     result = method( *args, **kw )
+    if sys.stdout.isatty():
+      return result
     te = nativetime.time()
 
     pre = dt.utcnow().strftime( "%Y-%m-%d %H:%M:%S UTC " )

@@ -18,6 +18,7 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.ReturnValues import S_OK
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
 
+
 class FileCatalogClientBase( Client ):
   """ Client code to the DIRAC File Catalogue
   """

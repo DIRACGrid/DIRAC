@@ -43,6 +43,35 @@ function default(){
 function findRelease(){
 	echo '==> [findRelease]'
 
+	# store the current branch
+	currentBranch=`git --git-dir=$TESTCODE/DIRAC/.git rev-parse --abbrev-ref HEAD`
+
+	if [ $currentBranch == 'integration' ]
+	then
+		echo 'we were already on integration, no need to change'
+		# get the releases.cfg file
+		cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
+	else
+		cwd=$PWD
+		cd $TESTCODE/DIRAC/
+		if [ $? -ne 0 ]
+		then
+			echo 'ERROR: cannot change to ' $TESTCODE/DIRAC
+			return
+		fi
+		git checkout integration
+		# get the releases.cfg file
+		cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
+		# reset the branch
+		git checkout $currentBranch
+		cd $cwd
+		if [ $? -ne 0 ]
+		then
+			echo 'ERROR: cannot change to ' $cwd
+			return
+		fi
+	fi
+
 	PRE='p[[:digit:]]*'
 
 	if [ ! -z "$DIRACBRANCH" ]
@@ -52,19 +81,15 @@ function findRelease(){
 		echo '==> Running on last one'
 	fi
 
-	# Create temporary directory where to store releases.cfg (will be deleted then)
-	tmp_dir=`mktemp -d -q`
-	wget --no-check-certificate -O $tmp_dir/releases.cfg $DIRAC_RELEASES
-
 	# Match project ( DIRAC ) version from releases.cfg
 
 	# If I don't specify a DIRACBRANCH, it will get the latest "production" release
   # First, try to find if we are on a production tag
 	if [ ! -z "$DIRACBRANCH" ]
 	then
-		projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+		projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
 	else
-		projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
+		projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
 	fi
 	# projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
 	# In case there are no production tags for the branch, look for pre-releases in that branch
@@ -72,25 +97,22 @@ function findRelease(){
 	then
 		if [ ! -z "$DIRACBRANCH" ]
 		then
-			projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+			projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
 		else
-			projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | head -1 | sed 's/ //g'`
+			projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | head -1 | sed 's/ //g'`
 		fi
 	fi
 
-	projectVersionLine=`cat $tmp_dir/releases.cfg | grep -n $projectVersion | cut -d ':' -f 1 | head -1`
+	projectVersionLine=`cat $TESTCODE/releases.cfg | grep -n $projectVersion | cut -d ':' -f 1 | head -1`
 	# start := line number after "{"
 	start=$(($projectVersionLine+2))
 	# end   := line number after "}"
 	end=$(($start+2))
 	# versions :=
-	versions=`sed -n "$start,$end p" $tmp_dir/releases.cfg`
+	versions=`sed -n "$start,$end p" $TESTCODE/releases.cfg`
 
 	# Extract Externals version
 	externalsVersion=`echo $versions | sed s/' = '/'='/g | tr ' ' '\n' | grep Externals | cut -d '=' -f2`
-
-	# Back to previous directory, and clean tmp_dir
-	rm -r $tmp_dir
 
 	# PrintOuts
 	echo DIRAC:$projectVersion && echo $projectVersion > $SERVERINSTALLDIR/dirac.version
@@ -111,6 +133,11 @@ function findSystems(){
 	echo '==> [findSystems]'
 
 	cd $TESTCODE
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $TESTCODE
+		return
+	fi
 	find *DIRAC/ -name *System  | cut -d '/' -f 2 | sort | uniq > systems
 
 	echo found `wc -l systems`
@@ -144,6 +171,11 @@ function findDatabases(){
 	fi
 
 	cd $TESTCODE
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $TESTCODE
+		return
+	fi
 	#
 	# HACK ALERT:
 	#
@@ -187,6 +219,11 @@ findServices(){
 	fi
 
 	cd $TESTCODE
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $TESTCODE
+		return
+	fi
 	if [ ! -z "$ServicestoExclude" ]
 	then
 		find *DIRAC/*/Service/ -name *Handler.py | grep -v test | awk -F "/" '{print $2,$4}' | grep -v $ServicestoExclude | sort | uniq > services
@@ -215,6 +252,11 @@ findAgents(){
 	fi
 
 	cd $TESTCODE
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $TESTCODE
+		return
+	fi
 	if [ ! -z "$AgentstoExclude" ]
 	then
 		find *DIRAC/*/Agent/ -name *Agent.py | grep -v test | awk -F "/" '{print $2,$4}' | grep -v $AgentstoExclude | sort | uniq > agents
@@ -278,25 +320,25 @@ finalCleanup(){
 
 function diracReplace(){
 	echo '==> [diracReplace]'
-	cd $SERVERINSTALLDIR/
+
 	if [[ -z $DIRAC_ALTERNATIVE_SRC_ZIP ]]
 	then
 		echo '==> Variable $DIRAC_ALTERNATIVE_SRC_ZIP not defined';
 		return
 	fi
 
-	wget $DIRAC_ALTERNATIVE_SRC_ZIP
+	wget $DIRAC_ALTERNATIVE_SRC_ZIP $SERVERINSTALLDIR/
 	zipName=$(basename $DIRAC_ALTERNATIVE_SRC_ZIP)
 	unzip $zipName
 	dirName="DIRAC-$(echo $zipName | sed 's/\.zip//g')"
 	if [ -d "DIRAC" ];
 	then
-		mv DIRAC DIRAC.bak;
+		mv $SERVERINSTALLDIR/DIRAC $SERVERINSTALLDIR/DIRAC.bak;
 	else
 		echo "There is no previous DIRAC directory ??!!!"
 		ls
 	fi
-	mv $dirName DIRAC
+	mv $dirName $SERVERINSTALLDIR/DIRAC
 
 }
 
@@ -377,6 +419,11 @@ function generateCertificates(){
 
 	mkdir -p $SERVERINSTALLDIR/etc/grid-security/certificates
 	cd $SERVERINSTALLDIR/etc/grid-security
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/etc/grid-security
+		return
+	fi
 
   # Generate private RSA key
   openssl genrsa -out hostkey.pem 2048 2&>1 /dev/null
@@ -419,6 +466,12 @@ function generateUserCredentials(){
     # Generate directory where to store credentials
     mkdir -p $SERVERINSTALLDIR/user
     cd $SERVERINSTALLDIR/user
+		cd $TESTCODE/DIRAC/
+		if [ $? -ne 0 ]
+		then
+			echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
+			return
+		fi
 
     cp $CI_CONFIG/openssl_config openssl_config
     sed -i 's/#hostname#/ciuser/g' openssl_config
@@ -445,11 +498,9 @@ function generateUserCredentials(){
 function diracCredentials(){
 	echo '==> [diracCredentials]'
 
-	cd $SERVERINSTALLDIR
-
-	sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' etc/Configuration_Server.cfg
+	sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
 	dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
-	sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' etc/Configuration_Server.cfg
+	sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
 
 }
 

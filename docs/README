@@ -1,0 +1,11 @@
+How to build DIRAC documentation
+=================================
+
+1. Create DIRAC client environment by an appropriate
+   source bashrc
+
+2. Go to the Tools directory of the DIRAC source code repository
+   cd DIRAC/docs/Tools
+
+3. Run the documentation building script
+   ./makeDocs.sh

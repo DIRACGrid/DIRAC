@@ -467,7 +467,8 @@ class FTSAgent( AgentModule ):
       # # dict keeping info about files to reschedule, submit, fail and register
       ftsFilesDict = dict( ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) )
 
-      jobsToMonitor = [ftsJob for ftsJob in ftsJobs if ( datetime.datetime.utcnow() - ftsJob.LastUpdate ).seconds > self.MONITORING_INTERVAL]
+      now = datetime.datetime.utcnow()
+      jobsToMonitor = [job for job in ftsJobs if ( now - job.LastUpdate ).seconds > ( self.MONITORING_INTERVAL * ( 3. if job.Status == 'Staging' else 1. ) )]
       if jobsToMonitor:
         log.info( "==> found %s FTSJobs to monitor" % len( jobsToMonitor ) )
         # # PHASE 0 = monitor active FTSJobs
