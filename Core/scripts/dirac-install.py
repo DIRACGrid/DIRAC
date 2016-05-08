@@ -802,12 +802,12 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
       else:
         urlData += data
       data = remoteFD.read( 16384 )
-      if count % 20 == 0:
+      if count % 20 == 0 and sys.stdout.isatty():
         print '\033[1D' + ".",
         sys.stdout.flush()
         progressBar = True
       count += 1
-    if progressBar:
+    if progressBar and sys.stdout.isatty():
       # return cursor to the beginning of the line
       print '\033[1K',
       print '\033[1A'

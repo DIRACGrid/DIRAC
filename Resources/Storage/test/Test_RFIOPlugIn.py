@@ -12,7 +12,9 @@ import mock
 
 from DIRAC import S_OK
 
-from DIRAC.Resources.Storage.test.Test_FilePlugin import mock_StorageFactory_getConfigStorageOptions, mock_StorageFactory_getConfigStorageProtocols, mock_StorageFactory_getConfigStorageName
+from DIRAC.Resources.Storage.test.Test_FilePlugin import mock_StorageFactory_getConfigStorageOptions, \
+                                                         mock_StorageFactory_getConfigStorageProtocols, \
+                                                         mock_StorageFactory_getConfigStorageName
 # from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
 from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 from DIRAC.Core.Utilities.File                  import getSize
@@ -52,8 +54,6 @@ class StoragePlugInTestCase( unittest.TestCase ):
                 return_value = S_OK( True ) )  # Pretend it's local
   @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
                 return_value = None )  # Don't send accounting
-  @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getCurrentURL',
-                side_effect = mock_StorageFactory_getCurrentURL_getCurrentURL )
   def setUp( self, mk_getConfigStorageName, mk_getConfigStorageOptions, mk_getConfigStorageProtocols, mk_isLocalSE, mk_addAccountingOperation ):
     self.storage = StorageElementItem( 'FAKE' )
     self.storage.vo = 'test'
