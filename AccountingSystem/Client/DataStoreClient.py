@@ -81,7 +81,6 @@ class DataStoreClient(object):
     """
     rpcClient = self.__getRPCClient()
     sent = 0
-<<<<<<< HEAD
 
     # create a local reference and prevent other running commits
     # to take the same data second time
@@ -96,21 +95,8 @@ class DataStoreClient(object):
         retVal = rpcClient.commitRegisters( registersToSend )
         if retVal[ 'OK' ]:
           self.__lastSuccessfulCommit = time.time()
-=======
-    while len( self.__registersList ) > 0:
-      registersToSend = self.__registersList[ :self.__maxRecordsInABundle ]
-      retVal = rpcClient.commitRegisters( registersToSend )
-      if retVal[ 'OK' ]:
-        self.__lastSuccessfulCommit = time.time()
-      else:
-        gLogger.error( 'Error sending accounting record', retVal['Message'] )
-        if self.__failoverEnabled and time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
-          gLogger.verbose( "Sending accounting records to failover" )
-          result = _sendToFailover( retVal[ 'rpcStub' ] )
-          if not result[ 'OK' ]:
-            return result
->>>>>>> rel-v6r14
         else:
+          gLogger.error( 'Error sending accounting record', retVal['Message'] )
           if self.__failoverEnabled and time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
             gLogger.verbose( "Sending accounting records to failover" )
             result = _sendToFailover( retVal[ 'rpcStub' ] )
