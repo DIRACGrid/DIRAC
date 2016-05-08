@@ -30,6 +30,7 @@ __RCSID__ = "$Id$"
 import time as nativetime
 import datetime
 from types import StringTypes
+import sys
 
 # Some useful constants for time operations
 microsecond = datetime.timedelta( microseconds = 1 )
@@ -49,6 +50,8 @@ def timeThis( method ):
 
     ts = nativetime.time()
     result = method( *args, **kw )
+    if sys.stdout.isatty():
+      return result
     te = nativetime.time()
 
     pre = dt.utcnow().strftime( "%Y-%m-%d %H:%M:%S UTC " )
@@ -78,7 +81,6 @@ def timeThis( method ):
               argsLen = "arguments len: %d" % len( kw.items()[0][1] )
           except IndexError:
             argsLen = ''
-
     print( "%s Exec time ===> function %r %s -> %2.2f sec" % ( pre, method.__name__, argsLen, te - ts ) )
     return result
 
