@@ -14,8 +14,7 @@ from DIRAC import S_OK
 
 from DIRAC.Resources.Storage.test.Test_FilePlugin import mock_StorageFactory_getConfigStorageOptions, \
                                                          mock_StorageFactory_getConfigStorageProtocols, \
-                                                         mock_StorageFactory_getConfigStorageName, \
-                                                         mock_StorageFactory_getCurrentURL
+                                                         mock_StorageFactory_getConfigStorageName
 # from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
 from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 from DIRAC.Core.Utilities.File                  import getSize
