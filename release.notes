@@ -1,7 +1,11 @@
-[v6r15-pre21]
+[v6r15-pre22]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
+
 Made service handlers systematically working with unicode string arguments
+
+DIRAC documentation moved to the "docs" directory if the DIRAC project from the
+DIRACDocs separate project.
 
 *Accounting
 CHANGE: INTEGER -> BIGINT for "id" in "in" accountingDB tables
@@ -27,7 +31,7 @@ CHANGE: DISET components - improved logic of service URL retries to speedup quer
 NEW: dirac-rss-policy-manager - allows to interactively modify and test only the 
      policy section of Dirac.cfg     
 FIX: XXXTimeLeft - do not mix CPU and WallTime values     
-FIX: InstallTools, ComponentInstaller - longer timeout for checking components PID (after restart)
+FIX: ComponentInstaller - longer timeout for checking components PID (after restart)
 CHANGE: Proxy - in executeWithUserProxy() when multiple DNs are present, try all of them
 CHANGE: List utility - change uniqueElements() to be much faster
 NEW: Platform - added getPlatform() and getPlatformTuple() utilities to evaluate lazily the
@@ -51,6 +55,7 @@ NEW: SystemAdministratorClientCLI - added show ports command
 NEW: SystemAdministratorHandler - added getUsedPorts() interface
 NEW: SystemAdministratorHandler - show host command shows also versions of the Extensions
 NEW: InstalledComponentsDB - added Extension field to the HostLogging table 
+FIX: SystemLoggingDB - fixed double creation of db tables
 
 *Accounting
 FIX: DataStoreClient - Synchronizer based decorators have been replaced with a simple 
