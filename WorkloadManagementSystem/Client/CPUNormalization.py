@@ -140,7 +140,7 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
     if i == 1:
       start = os.times()
     # Now the iterations
-    for _j in range( n ):
+    for _j in xrange( n ):
       t = random.normalvariate( 10, 1 )
       m += t
       m2 += t * t
