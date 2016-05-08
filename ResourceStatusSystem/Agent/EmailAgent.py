@@ -8,7 +8,7 @@
 
 
 import os
-import json
+import sqlite3
 from DIRAC                                                       import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                 import AgentModule
 from DIRAC.ResourceStatusSystem.Utilities                        import RssConfiguration
@@ -25,8 +25,11 @@ class EmailAgent( AgentModule ):
     AgentModule.__init__( self, *args, **kwargs )
     self.diracAdmin = None
     self.default_value = None
-    self.cacheFile = None
-    self.cacheFile = os.getenv('DIRAC') + 'work/ResourceStatus/cache.json'
+
+    if 'DIRAC' in os.environ:
+      self.cacheFile = os.path.join( os.getenv('DIRAC'), 'work/ResourceStatus/cache.db' )
+    else:
+      self.cacheFile = os.path.realpath('cache.db')
 
   def initialize( self ):
     ''' EmailAgent initialization
@@ -38,55 +41,24 @@ class EmailAgent( AgentModule ):
 
   def execute( self ):
 
-    #if the file exists and it is not empty
-    if os.path.isfile(self.cacheFile) and os.stat(self.cacheFile).st_size:
+    if os.path.isfile(self.cacheFile):
+      with sqlite3.connect(self.cacheFile) as conn:
 
-      #rename the file and work with it in order to avoid race condition
-      os.rename(self.cacheFile, self.cacheFile + ".send")
-      self.cacheFile += ".send"
+        result = conn.execute("SELECT DISTINCT SiteName from ResourceStatusCache;")
+        for site in result:
+          cursor = conn.execute("SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache WHERE SiteName='"+ site[0] +"';")
 
-      #load the file
-      with open(self.cacheFile, 'r') as f:
-        new_dict = json.load(f)
+          email_body = ""
+          for StatusType, ResourceName, Status, Time, PreviousStatus in cursor:
+            email_body += StatusType + " of " + ResourceName + " has been " + Status + " since " + Time + " (Previous status: " + PreviousStatus + ")\n"
 
-      #read all the name elements of a site
-      for site in new_dict:
-        subject = "RSS actions taken for " + site
-        body = self._emailBodyGenerator(new_dict, site)
-        self._sendMail(subject, body)
-        self._deleteCacheFile()
+          subject = "RSS actions taken for " + site[0] + "\n"
+          self._sendMail(subject, email_body)
+
+        conn.execute("DELETE FROM ResourceStatusCache;")
+        conn.execute("VACUUM;")
 
     return S_OK()
-
-
-  def _emailBodyGenerator(self, site_dict, siteName):
-    ''' Returns a string with all the elements that have been banned from a given site.
-    '''
-
-    if site_dict:
-
-      #if the site's name is in the file
-      if siteName in site_dict:
-        #read all the name elements of a site
-        email_body = ""
-        for data in site_dict[siteName]:
-          email_body += data['statusType'] + " of " + data['name'] + " has been " + \
-                        data['status'] + " since " + data['time'] + \
-                        " (Previous status: " + data['previousStatus'] + ")\n"
-
-        return email_body
-
-    else:
-      return S_ERROR("Site dictionary is empty")
-
-  def _deleteCacheFile(self):
-    ''' Deletes the cache file
-    '''
-    try:
-      os.remove(self.cacheFile)
-      return S_OK()
-    except OSError as e:
-      return S_ERROR("Error %s" % repr(e))
 
   def _sendMail( self, subject, body ):
 
