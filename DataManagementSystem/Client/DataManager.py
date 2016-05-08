@@ -1155,7 +1155,7 @@ class DataManager( object ):
     if isinstance( lfn, ( list, dict, set, tuple ) ):
       lfns = set( lfn )
     else:
-      lfns = {lfn}
+      lfns = set( [lfn] )
     for lfn in lfns:
       if not isinstance( lfn, basestring ):
         errStr = "Supplied lfns must be string or list of strings."
@@ -1180,39 +1180,6 @@ class DataManager( object ):
 
     if not lfns:
       log.debug( 'Permission denied for all files' )
-<<<<<<< HEAD
-      return S_OK( { 'Successful' : successful, 'Failed' : failed } )
-
-    log.debug( "Will remove catalogue entry for %s lfns at %s." % ( len( lfns ), storageElementName ) )
-    res = self.fc.getReplicas( lfns, True )
-    if not res['OK']:
-      errStr = "Completely failed to get replicas for lfns."
-      log.debug( errStr, res['Message'] )
-      return res
-    failed.update( res['Value']['Failed'] )
-    replicaDict = res['Value']['Successful']
-    lfnsToRemove = []
-    for lfn, repDict in replicaDict.iteritems():
-      if storageElementName not in repDict:
-        # The file doesn't exist at the storage element so don't have to remove it
-        successful[lfn] = True
-      elif len( repDict ) == 1:
-        # The file has only a single replica so don't remove
-        log.debug( "The replica you are trying to remove is the only one.", "%s @ %s" % ( lfn,
-                                                                                          storageElementName ) )
-        failed[lfn] = "Failed to remove sole replica"
-      else:
-        lfnsToRemove.append( lfn )
-    if not lfnsToRemove:
-      return S_OK( { 'Successful' : successful, 'Failed' : failed } )
-    res = self.__removeReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
-    if not res['OK']:
-      log.debug( "Failed in __removeReplica", res['Message'] )
-      return res
-    failed.update( res['Value']['Failed'] )
-    successful.update( res['Value']['Successful'] )
-    gDataStoreClient.commit()
-=======
     else:
       log.debug( "Will remove %s lfns at %s." % ( len( lfns ), storageElementName ) )
       res = self.fc.getReplicas( list( lfns ), allStatus = True )
@@ -1241,7 +1208,6 @@ class DataManager( object ):
         failed.update( res['Value']['Failed'] )
         successful.update( res['Value']['Successful'] )
         gDataStoreClient.commit()
->>>>>>> rel-v6r14
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
 
@@ -1402,12 +1368,7 @@ class DataManager( object ):
         :param replicaDict : cache of fc.getReplicas, to be passed to the SE
      """
     log = self.log.getSubLogger( '__removePhysicalReplica' )
-<<<<<<< HEAD
-    log.debug( "Attempting to remove %s pfns at %s." % ( len( lfnsToRemove ),
-                                                         storageElementName ) )
-=======
     log.debug( "Attempting to remove %s pfns at %s." % ( len( lfnsToRemove ), storageElementName ) )
->>>>>>> rel-v6r14
     storageElement = StorageElement( storageElementName, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
