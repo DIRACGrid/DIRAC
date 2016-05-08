@@ -38,9 +38,6 @@ def mkLink( src, dst ):
     else:
       raise
 
-__RCSID__ = "$Id$"
-
-
 def makeGuid( fileName = None ):
   """Utility to create GUID. If a filename is provided the
      GUID will correspond to its content's hexadecimal md5 checksum.

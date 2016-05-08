@@ -1,8 +1,6 @@
 """ SystemAdministrator service is a tool to control and monitor the DIRAC services and agents
 """
 
-__RCSID__ = "$Id$"
-
 import datetime
 import socket
 import os
@@ -28,6 +26,9 @@ from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
+
+__RCSID__ = "$Id$"
+
 
 class SystemAdministratorHandler( RequestHandler ):
 
