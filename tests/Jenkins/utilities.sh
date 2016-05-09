@@ -471,6 +471,7 @@ function generateUserCredentials(){
 			echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
 			return
 		fi
+		echo $PWD
 
     cp $CI_CONFIG/openssl_config openssl_config .
     sed -i 's/#hostname#/ciuser/g' openssl_config
@@ -481,7 +482,7 @@ function generateUserCredentials(){
 
     CA=$SERVERINSTALLDIR/etc/grid-security/certificates
 
-    openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out client.pem
+    openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out $SERVERINSTALLDIR/user/client.pem
 }
 
 
