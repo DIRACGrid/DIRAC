@@ -53,6 +53,5 @@ class PilotsLoggingHandler( RequestHandler ):
 
   types_deletePilotsLogging = [ [int, long,  list] ]
   def export_deletePilotsLogging( self, pilotID ):
-  auth_detelePilotsLogging = [ 'Operator' ]
 
     return self.pilotsLogging.deletePilotsLogging( pilotID )
