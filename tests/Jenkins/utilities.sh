@@ -505,7 +505,7 @@ function diracCredentials(){
 	fi
 
 #	sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
-	python DIRAC/FrameworkSystem/scripts/dirac-proxy-init.py -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+	PYTHONPATH=$WORKSPACE/TestCode:$PYTHONPATH python DIRAC/FrameworkSystem/scripts/dirac-proxy-init.py -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
 #	sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
 
 }
