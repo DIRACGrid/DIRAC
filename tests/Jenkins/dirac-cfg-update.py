@@ -20,6 +20,8 @@ args = Script.getPositionalArgs()
 cFile = ''
 sMod = ''
 vo = ''
+setup = ''
+
 for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "F", "file" ):
     cFile = unprocSw[1]
@@ -54,8 +56,9 @@ localCfg.setOption( '/LocalSite/CPUTimeLeft', 5000 )
 localCfg.setOption( '/DIRAC/Security/UseServerCertificate', False )
 
 if not sMod:
-  if not localCfg.isSection( '/DIRAC' ):
-    localCfg.createNewSection( '/DIRAC' )
+  if not setup:
+    setup = localCfg.getOption('/DIRAC/Setup')
+
   if not localCfg.isSection( '/DIRAC/VOPolicy' ):
     localCfg.createNewSection( '/DIRAC/VOPolicy' )
   if not localCfg.isSection( '/DIRAC/VOPolicy/%s' % vo ):
