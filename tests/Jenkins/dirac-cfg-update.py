@@ -37,12 +37,10 @@ if cFile:
   localConfigFile = cFile
 else:
   print "WORKSPACE: %s" % os.path.expandvars('$WORKSPACE')
-  print "PILOTINSTALLDIR: %s" % os.path.expandvars('$PILOTINSTALLDIR')
-  print "SERVERINSTALLDIR: %s" % os.path.expandvars('$SERVERINSTALLDIR')
-  if os.path.isfile( os.path.expandvars('$PILOTINSTALLDIR')+'/etc/dirac.cfg' ):
-    localConfigFile = os.path.expandvars('$PILOTINSTALLDIR')+'/etc/dirac.cfg'
-  elif os.path.isfile( os.path.expandvars('$SERVERINSTALLDIR')+'/etc/dirac.cfg' ):
-    localConfigFile = os.path.expandvars('$SERVERINSTALLDIR')+'/etc/dirac.cfg'
+  if os.path.isfile( os.path.expandvars('$WORKSPACE')+'/PilotInstallDIR/etc/dirac.cfg' ):
+    localConfigFile = os.path.expandvars('$WORKSPACE')+'/PilotInstallDIR/etc/dirac.cfg'
+  elif os.path.isfile( os.path.expandvars('$WORKSPACE')+'/ServerInstallDIR/etc/dirac.cfg' ):
+    localConfigFile = os.path.expandvars('$WORKSPACE')+'/ServerInstallDIR/etc/dirac.cfg'
   elif os.path.isfile( './etc/dirac.cfg' ):
     localConfigFile = './etc/dirac.cfg'
   else:
