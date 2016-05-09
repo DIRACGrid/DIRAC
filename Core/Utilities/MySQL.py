@@ -147,10 +147,10 @@
 
 """
 
-import MySQLdb
 import collections
 import time
 import threading
+import MySQLdb
 
 from DIRAC                      import gLogger
 from DIRAC                      import S_OK, S_ERROR
@@ -430,7 +430,7 @@ class MySQL( object ):
       raise x
     except MySQLdb.Error, e:
       self.log.debug( '%s: %s' % ( methodName, err ),
-                     '%d: %s' % ( e.args[0], e.args[1] ) )
+                      '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( DErrno.EMYSQL, '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
     except Exception, e:
       self.log.debug( '%s: %s' % ( methodName, err ), str( e ) )
@@ -704,7 +704,7 @@ class MySQL( object ):
 
     :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR
     """
-    if type( cmdList ) != ListType:
+    if not isinstance( cmdList, list ):
       return S_ERROR( DErrno.EMYSQL, "_transaction: wrong type (%s) for cmdList" % type( cmdList ) )
 
     # # get connection
@@ -748,7 +748,7 @@ class MySQL( object ):
         viewQuery = [ "CREATE OR REPLACE VIEW `%s`.`%s` AS" % ( self.__dbName, viewName ) ]
 
         columns = ",".join( [ "%s AS %s" % ( colDef, colName )
-                             for colName, colDef in  viewDict.get( "Fields", {} ).iteritems() ] )
+                              for colName, colDef in  viewDict.get( "Fields", {} ).iteritems() ] )
         tables = viewDict.get( "SelectFrom", "" )
         if columns and tables:
           viewQuery.append( "SELECT %s FROM %s" % ( columns, tables ) )
@@ -922,8 +922,7 @@ class MySQL( object ):
         else:
           charset = 'latin1'
 
-        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % (
-               table, ',\n'.join( cmdList ), engine, charset )
+        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % ( table, ',\n'.join( cmdList ), engine, charset )
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
           return retDict
@@ -1184,9 +1183,9 @@ class MySQL( object ):
         else:
           escapeInValue = retDict['Value'][0]
           condition = ' %s %s %s >= %s' % ( condition,
-                                              conjunction,
-                                              timeStamp,
-                                              escapeInValue )
+                                            conjunction,
+                                            timeStamp,
+                                            escapeInValue )
           conjunction = "AND"
       if older:
         retDict = self._escapeValues( [ older ] )
@@ -1196,9 +1195,9 @@ class MySQL( object ):
         else:
           escapeInValue = retDict['Value'][0]
           condition = ' %s %s %s < %s' % ( condition,
-                                             conjunction,
-                                             timeStamp,
-                                             escapeInValue )
+                                           conjunction,
+                                           timeStamp,
+                                           escapeInValue )
 
     if isinstance( greater, dict ):
       for attrName, attrValue in greater.iteritems():
@@ -1215,9 +1214,9 @@ class MySQL( object ):
         else:
           escapeInValue = retDict['Value'][0]
           condition = ' %s %s %s >= %s' % ( condition,
-                                             conjunction,
-                                             attrName,
-                                             escapeInValue )
+                                            conjunction,
+                                            attrName,
+                                            escapeInValue )
           conjunction = "AND"
 
     if isinstance( smaller, dict ):
@@ -1235,9 +1234,9 @@ class MySQL( object ):
         else:
           escapeInValue = retDict['Value'][0]
           condition = ' %s %s %s < %s' % ( condition,
-                                             conjunction,
-                                             attrName,
-                                             escapeInValue )
+                                           conjunction,
+                                           attrName,
+                                           escapeInValue )
           conjunction = "AND"
 
 
@@ -1310,8 +1309,7 @@ class MySQL( object ):
         self.log.warn( 'getFields:', error )
         return S_ERROR( DErrno.EMYSQL, error )
 
-    self.log.verbose( 'getFields:', 'selecting fields %s from table %s.' %
-                          ( quotedOutFields, table ) )
+    self.log.verbose( 'getFields:', 'selecting fields %s from table %s.' % ( quotedOutFields, table ) )
 
     if condDict is None:
       condDict = {}
@@ -1324,8 +1322,8 @@ class MySQL( object ):
         mylimit = limit
         myoffset = None
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
-                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = mylimit,
-                        greater = None, smaller = None, offset = myoffset )
+                                       timeStamp = timeStamp, orderAttribute = orderAttribute, limit = mylimit,
+                                       greater = None, smaller = None, offset = myoffset )
     except Exception, x:
       return S_ERROR( DErrno.EMYSQL, x )
 
@@ -1399,7 +1397,7 @@ class MySQL( object ):
       updateValues = []
 
     if updateDict:
-      if type( updateDict ) != DictType:
+      if not isinstance( updateDict, dict ):
         error = 'updateDict must be a of Type DictType'
         self.log.warn( 'updateFields:', error )
         return S_ERROR( DErrno.EMYSQL, error )
@@ -1417,14 +1415,13 @@ class MySQL( object ):
       return updateValues
     updateValues = updateValues['Value']
 
-    self.log.verbose( 'updateFields:', 'updating fields %s from table %s.' %
-                          ( ', '.join( updateFields ), table ) )
+    self.log.verbose( 'updateFields:', 'updating fields %s from table %s.' %( ', '.join( updateFields ), table ) )
 
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
                         timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
                         greater = None, smaller = None )
-    except Exception, x:
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     updateString = ','.join( ['%s = %s' % ( _quotedList( [updateFields[k]] ),
@@ -1456,7 +1453,7 @@ class MySQL( object ):
       inValues = []
 
     if inDict:
-      if type( inDict ) != DictType:
+      if not isinstance( inDict, dict ):
         error = 'inDict must be a of Type DictType'
         self.log.warn( 'insertFields:', error )
         return S_ERROR( DErrno.EMYSQL, error )
@@ -1533,7 +1530,7 @@ class MySQL( object ):
       cursor.execute( execStr )
       rows = cursor.fetchall()
       retDict = S_OK( rows )
-    except  Exception , x:
+    except  Exception as x:
       retDict = self._except( '_query', x, 'Execution failed.' )
       connection.rollback()
     try:
@@ -1576,9 +1573,9 @@ if __name__ == '__main__':
                                            'Count'   : "INTEGER NOT NULL DEFAULT 0",
                                            'Time'    : "DATETIME",
                                          },
-                                'PrimaryKey': 'ID'
+                               'PrimaryKey': 'ID'
                              }
-              }
+             }
 
   NAME = 'TestTable'
   FIELDS = [ 'Name', 'Surname' ]
