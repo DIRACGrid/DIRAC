@@ -251,18 +251,18 @@ class JobManagerHandler( RequestHandler ):
     if not result['OK']:
       return result
     for pilot in result['Value']:
-        res = gPilotAgentsDB.getJobsForPilot( pilot[ 'PilotID' ] )
-        if not res['OK']:
-            return res
-        if not res['Value']: # if list of jobs for pilot is empty, delete pilot and pilotslogging
-            ret = gPilotAgentsDB.deletePilot( pilot[ 'PilotID' ] )
-            if not ret['OK']:
-                return ret
-            ret = gPilotsLoggingDB.deletePilotsLogging( pilot[ 'PilotID' ] )
-            if not ret['OK']:
-                return ret
+      res = gPilotAgentsDB.getJobsForPilot( pilot['PilotID'] )
+      if not res['OK']:
+        return res
+      if not res['Value']:  # if list of jobs for pilot is empty, delete pilot and pilotslogging
+        ret = gPilotAgentsDB.deletePilot( pilot['PilotID'] )
+        if not ret['OK']:
+          return ret
+        ret = gPilotsLoggingDB.deletePilotsLogging( pilot['PilotID'] )
+        if not ret['OK']:
+          return ret
 
-    return S_OK()
+    return S_OK( )
 
   def __killJob( self, jobID, sendKillCommand = True ):
     """  Kill one job
