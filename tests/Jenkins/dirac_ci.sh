@@ -82,7 +82,7 @@ function installSite(){
 	killRunsv
 	findRelease
 
-	generateCertificates
+	#generateCertificates
 
 	getCFGFile
 
@@ -127,6 +127,7 @@ function fullInstallDIRAC(){
 	finalCleanup
 
 	#Dealing with security stuff
+	generateCertificates
 	generateUserCredentials
 	diracCredentials
 
