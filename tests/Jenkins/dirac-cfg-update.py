@@ -2,6 +2,8 @@
 """ update local cfg
 """
 
+import os
+
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -34,7 +36,15 @@ localCfg = CFG()
 if cFile:
   localConfigFile = cFile
 else:
-  localConfigFile = './etc/dirac.cfg'
+  if os.path.isfile( os.path.expandvars('$PILOTINSTALLDIR')+'/etc/dirac.cfg' ):
+    localConfigFile = os.path.expandvars('$PILOTINSTALLDIR')+'/etc/dirac.cfg'
+  elif os.path.isfile( os.path.expandvars('$SERVERINSTALLDIR')+'/etc/dirac.cfg' ):
+    localConfigFile = os.path.expandvars('$SERVERINSTALLDIR')+'/etc/dirac.cfg'
+  elif os.path.isfile( './etc/dirac.cfg' ):
+    localConfigFile = './etc/dirac.cfg'
+  else:
+    print "Local CFG file not found"
+    exit( 2 )
 
 localCfg.loadFromFile( localConfigFile )
 if not localCfg.isSection( '/LocalSite' ):
