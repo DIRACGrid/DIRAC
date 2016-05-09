@@ -287,7 +287,7 @@ function fullPilot(){
 	fi
 
 	#Configure for CPUTimeLeft and more
-	python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py -V $VO -S $DIRACSETUP -o /DIRAC/Security/UseServerCertificate=True $DEBUG
+	python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py -o /DIRAC/Security/UseServerCertificate=True $DEBUG
 	if [ $? -ne 0 ]
 	then
 		echo 'ERROR: cannot update the CFG'

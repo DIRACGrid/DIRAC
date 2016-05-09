@@ -17,6 +17,8 @@ Script.registerSwitch( 'D:', 'softwareDistModule=', "set the software dist modul
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 
+from DIRAC import gConfig
+
 cFile = ''
 sMod = ''
 vo = ''
@@ -57,7 +59,13 @@ localCfg.setOption( '/DIRAC/Security/UseServerCertificate', False )
 
 if not sMod:
   if not setup:
-    setup = localCfg.getOption('/DIRAC/Setup')
+    setup = gConfig.getValue('/DIRAC/Setup')
+    if not setup:
+      setup = 'JenkinsSetup'
+  if not vo:
+    vo = gConfig.getValue('/DIRAC/VirtualOrganization')
+    if not vo:
+      vo = 'dirac'
 
   if not localCfg.isSection( '/DIRAC/VOPolicy' ):
     localCfg.createNewSection( '/DIRAC/VOPolicy' )
