@@ -126,15 +126,15 @@ function fullInstallDIRAC(){
 
 	finalCleanup
 
+	#Dealing with security stuff
+	generateUserCredentials
+	diracCredentials
+
 	#basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
 	installSite
 
 	#replace the sources with custom ones if defined
 	diracReplace
-
-	#Dealing with security stuff
-	generateUserCredentials
-	diracCredentials
 
 	#just add a site
 	diracAddSite

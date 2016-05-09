@@ -471,7 +471,6 @@ function generateUserCredentials(){
 			echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
 			return
 		fi
-		echo $PWD
 
     cp $CI_CONFIG/openssl_config openssl_config .
     sed -i 's/#hostname#/ciuser/g' openssl_config
@@ -498,8 +497,15 @@ function generateUserCredentials(){
 function diracCredentials(){
 	echo '==> [diracCredentials]'
 
+	cd $TESTCODE
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot change to ' $TESTCODE
+		return
+	fi
+
 	sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
-	dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+	./FrameworkSystem/scripts/dirac-proxy-init.py -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
 	sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
 
 }
