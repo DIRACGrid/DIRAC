@@ -40,26 +40,26 @@ import os
 class StorageBase( object ):
   """
   .. class:: StorageBase
-  
+
   """
 
   PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ]
 
   def __init__( self, name, parameterDict ):
-        
+
     self.name = name
     self.pluginName = ''
     self.protocolParameters = {}
-    
+
     self.__updateParameters( parameterDict )
-    
+
     self.basePath = parameterDict['Path']
     self.cwd = self.basePath
     self.se = None
     self.isok = True
-    
+
   def setStorageElement( self, se ):
-    self.se = se  
+    self.se = se
 
   def setParameters( self, parameterDict ):
     """ Set standard parameters, method can be overriden in subclasses
@@ -72,14 +72,14 @@ class StorageBase( object ):
     """
     for item in self.PROTOCOL_PARAMETERS:
       self.protocolParameters[item] = parameterDict.get( item, '' )
-  
+
   def getParameters( self ):
     """ Get the parameters with which the storage was instantiated
     """
     parameterDict = dict( self.protocolParameters )
     parameterDict["StorageName"] = self.name
     parameterDict["PluginName"] = self.pluginName
-    return parameterDict    
+    return parameterDict
 
   def exists( self, *parms, **kws ):
     """Check if the given path exists
@@ -216,7 +216,7 @@ class StorageBase( object ):
     """ Get the current directory
     """
     return self.cwd
-  
+
   def getCurrentURL( self, fileName ):
     """ Obtain the current file URL from the current working directory and the filename
 
@@ -233,7 +233,7 @@ class StorageBase( object ):
     cwdUrl = result['Value']
     fullUrl = '%s%s' % ( cwdUrl, fileName )
     return S_OK( fullUrl )
-    
+
   def getName( self ):
     """ The name with which the storage was instantiated
     """
@@ -248,9 +248,9 @@ class StorageBase( object ):
     """
     urlDict = dict( self.protocolParameters )
     if not withWSUrl:
-      urlDict['WSUrl'] = ''  
+      urlDict['WSUrl'] = ''
     return pfnunparse( urlDict )
-  
+
   def isURL( self, path ):
     """ Guess if the path looks like a URL
 
@@ -272,15 +272,15 @@ class StorageBase( object ):
       return S_OK( True )
 
     return S_OK( False )
-        
+
   def getTransportURL( self, pathDict, protocols ):
     """ Get a transport URL for a given URL. For a simple storage plugin
-    it is just returning input URL if the plugin protocol is one of the 
+    it is just returning input URL if the plugin protocol is one of the
     requested protocols
-    
+
     :param dict pathDict: URL obtained from File Catalog or constructed according
                     to convention
-    :param list protocols: a list of acceptable transport protocols in priority order                
+    :param list protocols: a list of acceptable transport protocols in priority order
     """
     res = checkArgumentFormat( pathDict )
     if not res['OK']:
@@ -288,42 +288,42 @@ class StorageBase( object ):
     urls = res['Value']
     successful = {}
     failed = {}
-    
+
     if protocols and not self.protocolParameters['Protocol'] in protocols:
-      return S_ERROR( 'No native protocol requested' )  
-    
+      return S_ERROR( 'No native protocol requested' )
+
     for url in urls:
       successful[url] = url
-      
-    resDict = {'Failed':failed, 'Successful':successful}    
+
+    resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
-  
+
   def constructURLFromLFN( self, lfn, withWSUrl = False ):
     """ Construct URL from the given LFN according to the VO convention for the
     primary protocol of the storage plagin
-    
+
     :param str lfn: file LFN
     :param boolean withWSUrl: flag to include the web service part into the resulting URL
-    :return result: result['Value'] - resulting URL     
+    :return result: result['Value'] - resulting URL
     """
-  
+
     # Check the LFN convention:
     # 1. LFN must start with the VO name as the top level directory
     # 2. VO name must not appear as any subdirectory or file name
     lfnSplitList = lfn.split( '/' )
     voLFN = lfnSplitList[1]
     # TODO comparison to Sandbox below is for backward compatibility, should be removed in the next release
-    if ( voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox" ):
-      
+    if voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox":
+
       return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
-    
+
     result = self.getURLBase( withWSUrl = withWSUrl )
     if not result['OK']:
       return result
     urlBase = result['Value']
     url = os.path.join( urlBase, lfn.lstrip( '/' ) )
-    return S_OK( url )    
-  
+    return S_OK( url )
+
   def updateURL( self, url, withWSUrl = False ):
     """ Update the URL according to the current SE parameters
     """
@@ -331,16 +331,16 @@ class StorageBase( object ):
     if not result['OK']:
       return result
     urlDict = result['Value']
-    
+
     urlDict['Protocol'] = self.protocolParameters['Protocol']
     urlDict['Host'] = self.protocolParameters['Host']
     urlDict['Port'] = self.protocolParameters['Port']
     urlDict['WSUrl'] = ''
     if withWSUrl:
       urlDict['WSUrl'] = self.protocolParameters['WSUrl']
-      
+
     return pfnunparse( urlDict )
-  
+
   def isNativeURL( self, url ):
     """ Check if URL :url: is valid for :self.protocol:
 
@@ -352,7 +352,7 @@ class StorageBase( object ):
       return res
     urlDict = res['Value']
     return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
-  
+
   @staticmethod
   def _addCommonMetadata( metadataDict ):
     """ To make the output of getFileMetadata uniform throughout the protocols
@@ -374,5 +374,3 @@ class StorageBase( object ):
     commonMetadata.update( metadataDict )
 
     return commonMetadata
-
-

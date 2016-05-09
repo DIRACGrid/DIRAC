@@ -64,11 +64,17 @@ class QualityMapGraph( PlotBase ):
         self.width = ( max( self.gdata.all_keys ) - min( self.gdata.all_keys ) ) / nKeys
 
     # Setup the colormapper to get the right colors
-    self.cmap = LinearSegmentedColormap( 'quality_colormap', cdict, 256 )
-    #self.cmap = cm.RdYlGn
-    self.norms = Normalize( 0, 100 )
+    self.cmap = None 
+          
+    max_value = prefs.get( 'normalization' )
+    if max_value:
+      self.cmap = cm.YlGnBu
+    else:
+      max_value = 100
+      self.cmap = cm.RdYlGn
+    
+    self.norms = Normalize( 0, max_value )
     mapper = cm.ScalarMappable( cmap = self.cmap, norm = self.norms )
-    mapper = cm.ScalarMappable( cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=no-member
     def get_alpha( *args, **kw ):
       return 1.0
     mapper.get_alpha = get_alpha
@@ -147,7 +153,11 @@ class QualityMapGraph( PlotBase ):
     setp( self.ax.get_yticklines(), markersize = 0. )
 
     cax, kw = make_axes( self.ax, orientation = 'vertical', fraction = 0.07 )
+<<<<<<< HEAD
     cb = ColorbarBase( cax, cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=no-member
+=======
+    cb = ColorbarBase( cax, cmap = self.cmap, norm = self.norms )
+>>>>>>> rel-v6r14
     cb.draw_all()
     #cb = self.ax.colorbar( self.mapper, format="%d%%",
     #  orientation='horizontal', fraction=0.04, pad=0.1, aspect=40  )

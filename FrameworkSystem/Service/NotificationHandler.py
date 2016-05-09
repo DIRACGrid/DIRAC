@@ -8,12 +8,10 @@
     Another use-case is for users to request an email notification for the
     completion of their jobs.  When output data files are uploaded to the
     Grid, an email could be sent by default with the metadata of the file.
-    
-    It can also be used to set alarms to be promptly forwarded to those
-    subscribing to them. 
-"""
 
-__RCSID__ = "$Id$"
+    It can also be used to set alarms to be promptly forwarded to those
+    subscribing to them.
+"""
 
 from types import IntType, LongType, StringTypes, ListType, DictType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -23,6 +21,8 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
 from DIRAC.Core.Security import Properties
+
+__RCSID__ = "$Id$"
 
 gNotDB = None
 
