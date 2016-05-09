@@ -465,8 +465,7 @@ function generateUserCredentials(){
 
     # Generate directory where to store credentials
     mkdir -p $SERVERINSTALLDIR/user
-    cd $SERVERINSTALLDIR/user
-		cd $TESTCODE/DIRAC/
+		cd $SERVERINSTALLDIR/user
 		if [ $? -ne 0 ]
 		then
 			echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
