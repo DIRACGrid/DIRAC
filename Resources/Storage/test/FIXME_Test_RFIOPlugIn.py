@@ -1,7 +1,7 @@
 """ test for RFIO plugin
 """
 
-# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to tests directory
+#FIXME: doesn't work ATM
 
 
 import unittest
@@ -12,10 +12,14 @@ import mock
 
 from DIRAC import S_OK
 
-from DIRAC.Resources.Storage.test.Test_FilePlugin import mock_StorageFactory_getConfigStorageOptions, mock_StorageFactory_getConfigStorageProtocols, mock_StorageFactory_getConfigStorageName
+from DIRAC.Resources.Storage.test.Test_FilePlugin import mock_StorageFactory_getConfigStorageOptions, \
+                                                         mock_StorageFactory_getConfigStorageProtocols, \
+                                                         mock_StorageFactory_getConfigStorageName
 # from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
 from DIRAC.Resources.Storage.StorageElement import StorageElementItem
-from DIRAC.Core.Utilities.File                  import getSize
+from DIRAC.Core.Utilities.File import getSize
+
+__RCSID__ = "$Id$"
 
 def mock_StorageFactory_getCurrentURL( storageName, derivedStorageName ):
   """ Get the options associated to the StorageElement as defined in the CS
@@ -25,8 +29,6 @@ def mock_StorageFactory_getCurrentURL( storageName, derivedStorageName ):
                  'WriteAccess': 'Active'}
 
   return S_OK( optionsDict )
-
-__RCSID__ = "$Id$"
 
 
 # class StoragePlugInTestCase( unittest.TestCase ):
@@ -43,18 +45,19 @@ class StoragePlugInTestCase( unittest.TestCase ):
   """
 
   @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageName',
-                side_effect = mock_StorageFactory_getConfigStorageName )
+               side_effect = mock_StorageFactory_getConfigStorageName )
   @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageOptions',
-                side_effect = mock_StorageFactory_getConfigStorageOptions )
+               side_effect = mock_StorageFactory_getConfigStorageOptions )
   @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageProtocols',
-                side_effect = mock_StorageFactory_getConfigStorageProtocols )
+               side_effect = mock_StorageFactory_getConfigStorageProtocols )
   @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-                return_value = S_OK( True ) )  # Pretend it's local
+               return_value = S_OK( True ) )  # Pretend it's local
   @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-                return_value = None )  # Don't send accounting
-  @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getCurrentURL',
-                side_effect = mock_StorageFactory_getCurrentURL_getCurrentURL )
-  def setUp( self, mk_getConfigStorageName, mk_getConfigStorageOptions, mk_getConfigStorageProtocols, mk_isLocalSE, mk_addAccountingOperation ):
+               return_value = None )  # Don't send accounting
+  # @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getCurrentURL',
+  #              side_effect = mock_StorageFactory_getCurrentURL_getCurrentURL )
+  def setUp( self, mk_getConfigStorageName, mk_getConfigStorageOptions, mk_getConfigStorageProtocols,
+             mk_isLocalSE, mk_addAccountingOperation ):
     self.storage = StorageElementItem( 'FAKE' )
     self.storage.vo = 'test'
 
@@ -63,8 +66,10 @@ class StoragePlugInTestCase( unittest.TestCase ):
 
   def test_createUnitTestDir( self ):
     print '\n\n#########################################################################\n\n\t\t\tCreate Directory test\n'
-    destDir = self.storage.getCurrentURL( '' )['Value']
+    # destDir = self.storage.getCurrentURL( '' )['Value']
+    destDir = '/bla/'
     res = self.storage.createDirectory( destDir )
+    print res
     self.assert_( res['OK'] )
     self.assert_( res['Value']['Successful'].has_key( destDir ) )
     self.assert_( res['Value']['Successful'][destDir] )
@@ -636,6 +641,7 @@ class FileTestCase( StoragePlugInTestCase ):
     self.assertEqual( failedGetTurlRes['Value']['Failed'][destFile], expectedError )
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( FileTestCase )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( StoragePlugInTestCase )
+  # suite = unittest.defaultTestLoader.loadTestsFromTestCase( FileTestCase )
   #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )

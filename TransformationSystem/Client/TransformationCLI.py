@@ -500,7 +500,7 @@ that the username provided to the function.
     if not res['OK']:
       print "Failed to reset file status: %s" % res['Message']
     else:
-      if res['Value']['Failed']:
+      if 'Failed' in res['Value'] and res['Value']['Failed']:
         print "Could not reset some files: "
         for lfn, reason in res['Value']['Failed'].items():
           print lfn, reason

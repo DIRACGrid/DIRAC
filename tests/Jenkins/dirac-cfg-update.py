@@ -2,6 +2,8 @@
 """ update local cfg
 """
 
+import os
+
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -15,9 +17,13 @@ Script.registerSwitch( 'D:', 'softwareDistModule=', "set the software dist modul
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 
+from DIRAC import gConfig
+
 cFile = ''
 sMod = ''
 vo = ''
+setup = ''
+
 for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "F", "file" ):
     cFile = unprocSw[1]
@@ -34,7 +40,16 @@ localCfg = CFG()
 if cFile:
   localConfigFile = cFile
 else:
-  localConfigFile = './etc/dirac.cfg'
+  print "WORKSPACE: %s" % os.path.expandvars('$WORKSPACE')
+  if os.path.isfile( os.path.expandvars('$WORKSPACE')+'/PilotInstallDIR/etc/dirac.cfg' ):
+    localConfigFile = os.path.expandvars('$WORKSPACE')+'/PilotInstallDIR/etc/dirac.cfg'
+  elif os.path.isfile( os.path.expandvars('$WORKSPACE')+'/ServerInstallDIR/etc/dirac.cfg' ):
+    localConfigFile = os.path.expandvars('$WORKSPACE')+'/ServerInstallDIR/etc/dirac.cfg'
+  elif os.path.isfile( './etc/dirac.cfg' ):
+    localConfigFile = './etc/dirac.cfg'
+  else:
+    print "Local CFG file not found"
+    exit( 2 )
 
 localCfg.loadFromFile( localConfigFile )
 if not localCfg.isSection( '/LocalSite' ):
@@ -43,8 +58,15 @@ localCfg.setOption( '/LocalSite/CPUTimeLeft', 5000 )
 localCfg.setOption( '/DIRAC/Security/UseServerCertificate', False )
 
 if not sMod:
-  if not localCfg.isSection( '/DIRAC' ):
-    localCfg.createNewSection( '/DIRAC' )
+  if not setup:
+    setup = gConfig.getValue('/DIRAC/Setup')
+    if not setup:
+      setup = 'JenkinsSetup'
+  if not vo:
+    vo = gConfig.getValue('/DIRAC/VirtualOrganization')
+    if not vo:
+      vo = 'dirac'
+
   if not localCfg.isSection( '/DIRAC/VOPolicy' ):
     localCfg.createNewSection( '/DIRAC/VOPolicy' )
   if not localCfg.isSection( '/DIRAC/VOPolicy/%s' % vo ):

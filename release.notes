@@ -1,4 +1,4 @@
-[v6r15-pre22]
+[v6r15-pre23]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
@@ -124,6 +124,22 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p30]
+
+*Framework
+BUGFIX: MonitoringHandler - in deleteActivities() use retVal['Message'] if result is not OK
+
+*Resources
+FIX: XROOTStorage - in getFile() evalute file URL without URL parameters
+                    in __putSingleFile() use result['Message'] in case of error
+                    
+*RMS
+FIX: dirac-rms-cancel-request - fixed crash because of gLogger object was not imported
+
+*TS
+FIX: TransformationCLI - in resetProcessedFile() added check that the Failed dictionary
+     is present in the result of a call                    
 
 [v6r14p29]
 

@@ -237,7 +237,7 @@ exit 0
 
     resultDict = {}
 
-    MANDATORY_PARAMETERS = [ 'InfoDir', 'WorkDir', 'OutputDir', 
+    MANDATORY_PARAMETERS = [ 'InfoDir', 'WorkDir', 'OutputDir',
                              'ErrorDir', 'JobIDList', 'User' ]
 
     for argument in MANDATORY_PARAMETERS:
