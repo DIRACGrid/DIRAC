@@ -91,81 +91,82 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
 
 """
 
-  tableDict = { 'UserDNs': {'Fields': { 'UserDNID': 'INT NOT NULL AUTO_INCREMENT',
-                                        'OwnerDN': "VARCHAR(255) NOT NULL DEFAULT 'unknown'",
-                                        'OwnerGroup': "VARCHAR(128) NOT NULL DEFAULT 'nogroup'" },
-                            'PrimaryKey': 'UserDNID',
-                            'UniqueIndexes': { 'Owner': ['OwnerDN', 'OwnerGroup'] },
-                            'Engine': 'InnoDB',
-                            },
-                'Sites' : { 'Fields': { 'SiteID': 'INT NOT NULL AUTO_INCREMENT',
-                                        'SiteName': "VARCHAR(64) NOT NULL DEFAULT 'Unknown'" },
-                            'PrimaryKey': 'SiteID',
-                            'UniqueIndexes': { 'Site': ['SiteName'] },
-                            'Engine': 'InnoDB',
-                            },
-                'ClientIPs':{ 'Fields': { 'ClientIPNumberID': 'INT NOT NULL AUTO_INCREMENT',
-                                          'ClientIPNumberString': "VARCHAR(45) NOT NULL DEFAULT '0.0.0.0'",
-                                          'ClientFQDN': "VARCHAR(128) NOT NULL DEFAULT 'unknown'",
-                                          'SiteID': 'INT NOT NULL' },
-                              'PrimaryKey': [ 'ClientIPNumberID', 'SiteID' ],
-                              'ForeignKeys': {'SiteID': 'Sites.SiteID' },
-                              'UniqueIndexes': { 'Client': ['ClientIPNumberString', 'ClientFQDN', 'SiteID' ] },
-                              'Engine': 'InnoDB',
-                              },
-                'Systems': { 'Fields': { 'SystemID': 'INT NOT NULL AUTO_INCREMENT',
-                                         'SystemName': "VARCHAR(128) NOT NULL DEFAULT 'Unknown'" },
-                             'PrimaryKey': 'SystemID',
-                             'UniqueIndexes': { 'System': ['SystemName' ] },
-                             'Engine': 'InnoDB',
-                             },
-                'SubSystems': { 'Fields': { 'SubSystemID': 'INT NOT NULL AUTO_INCREMENT',
-                                            'SubSystemName': "VARCHAR(128) NOT NULL DEFAULT 'Unknown'",
-                                            'SystemID': 'INT NOT NULL', },
-                                'PrimaryKey': ['SubSystemID', 'SystemID'],
-                                'ForeignKeys': {'SystemID': 'Systems.SystemID' },
-                                'UniqueIndexes': { 'SubSystem': ['SubSystemName', 'SystemID' ] },
-                                'Engine': 'InnoDB',
-                                },
-                'FixedTextMessages': {'Fields': { 'FixedTextID': 'INT NOT NULL AUTO_INCREMENT',
-                                                  'FixedTextString': "VARCHAR( 767 ) NOT NULL DEFAULT 'Unknown'",
-                                                  'ReviewedMessage': 'TINYINT( 1 ) NOT NULL DEFAULT FALSE',
-                                                  'SubSystemID': 'INT NOT NULL', },
-                                      'PrimaryKey': 'FixedTextID',
-                                      'UniqueIndexes': {'FixedText': ['FixedTextString', 'SubSystemID'] },
-                                      'ForeignKeys': {'SubSystemID': 'SubSystems.SubSystemID' },
-                                      'Engine': 'InnoDB',
-                                     },
-                'MessageRepository': {'Fields': { 'MessageID': 'INT NOT NULL AUTO_INCREMENT',
-                                                  'MessageTime': 'DATETIME NOT NULL',
-                                                  'VariableText': 'VARCHAR(255) NOT NULL',
-                                                  'UserDNID': 'INT NOT NULL',
-                                                  'ClientIPNumberID': 'INT NOT NULL',
-                                                  'LogLevel': 'VARCHAR(15) NOT NULL',
-                                                  'FixedTextID': 'INT NOT NULL', },
-                                      'PrimaryKey': 'MessageID',
-                                      'Indexes': { 'TimeStampsIDX': ['MessageTime'],
-                                                   'FixTextIDX': ['FixedTextID'],
-                                                   'UserIDX': ['UserDNID'],
-                                                   'IPsIDX': ['ClientIPNumberID'], },
-                                       'ForeignKeys': { 'UserDNID': 'UserDNs.UserDNID',
-                                                        'ClientIPNumberID': 'ClientIPs.ClientIPNumberID',
-                                                        'Engine': 'InnoDB',},
-                                       'AgentPersistentData': {
-                                       'FixedTextID': 'FixedTextMessages.FixedTextID', },
-                                          'Fields': { 'AgentID': 'INT NOT NULL AUTO_INCREMENT',
-                                                    'AgentName': "VARCHAR( 64 ) NOT NULL DEFAULT 'unkwown'",
-                                                    'AgentData': 'VARCHAR( 512 ) NULL DEFAULT NULL' },
-                                        'PrimaryKey': 'AgentID',
-                                        'Engine': 'InnoDB',
-                                        },
-               }
-
-
   def __init__( self ):
     """ Standard Constructor
     """
     DB.__init__( self, 'SystemLoggingDB', 'Framework/SystemLoggingDB', debug = DEBUG )
+    self.tableDict = {'UserDNs': {'Fields': { 'UserDNID': 'INT NOT NULL AUTO_INCREMENT',
+                                              'OwnerDN': "VARCHAR(255) NOT NULL DEFAULT 'unknown'",
+                                              'OwnerGroup': "VARCHAR(128) NOT NULL DEFAULT 'nogroup'" },
+                                  'PrimaryKey': 'UserDNID',
+                                  'UniqueIndexes': { 'Owner': ['OwnerDN', 'OwnerGroup'] },
+                                  'Engine': 'InnoDB',
+                                 },
+                      'Sites' : { 'Fields': { 'SiteID': 'INT NOT NULL AUTO_INCREMENT',
+                                              'SiteName': "VARCHAR(64) NOT NULL DEFAULT 'Unknown'" },
+                                  'PrimaryKey': 'SiteID',
+                                  'UniqueIndexes': { 'Site': ['SiteName'] },
+                                  'Engine': 'InnoDB',
+                                },
+                      'ClientIPs':{ 'Fields': { 'ClientIPNumberID': 'INT NOT NULL AUTO_INCREMENT',
+                                                'ClientIPNumberString': "VARCHAR(45) NOT NULL DEFAULT '0.0.0.0'",
+                                                'ClientFQDN': "VARCHAR(128) NOT NULL DEFAULT 'unknown'",
+                                                'SiteID': 'INT NOT NULL' },
+                                    'PrimaryKey': [ 'ClientIPNumberID', 'SiteID' ],
+                                    'ForeignKeys': {'SiteID': 'Sites.SiteID' },
+                                    'UniqueIndexes': { 'Client': ['ClientIPNumberString', 'ClientFQDN', 'SiteID' ] },
+                                    'Engine': 'InnoDB',
+                                  },
+                      'Systems': { 'Fields': { 'SystemID': 'INT NOT NULL AUTO_INCREMENT',
+                                               'SystemName': "VARCHAR(128) NOT NULL DEFAULT 'Unknown'" },
+                                   'PrimaryKey': 'SystemID',
+                                   'UniqueIndexes': { 'System': ['SystemName' ] },
+                                   'Engine': 'InnoDB',
+                                 },
+                      'SubSystems': { 'Fields': { 'SubSystemID': 'INT NOT NULL AUTO_INCREMENT',
+                                                  'SubSystemName': "VARCHAR(128) NOT NULL DEFAULT 'Unknown'",
+                                                  'SystemID': 'INT NOT NULL', },
+                                      'PrimaryKey': ['SubSystemID', 'SystemID'],
+                                      'ForeignKeys': {'SystemID': 'Systems.SystemID' },
+                                      'UniqueIndexes': { 'SubSystem': ['SubSystemName', 'SystemID' ] },
+                                      'Engine': 'InnoDB',
+                                    },
+                      'FixedTextMessages': {'Fields': { 'FixedTextID': 'INT NOT NULL AUTO_INCREMENT',
+                                                        'FixedTextString': "VARCHAR( 767 ) NOT NULL DEFAULT 'Unknown'",
+                                                        'ReviewedMessage': 'TINYINT( 1 ) NOT NULL DEFAULT FALSE',
+                                                        'SubSystemID': 'INT NOT NULL', },
+                                            'PrimaryKey': 'FixedTextID',
+                                            'UniqueIndexes': {'FixedText': ['FixedTextString', 'SubSystemID'] },
+                                            'ForeignKeys': {'SubSystemID': 'SubSystems.SubSystemID' },
+                                            'Engine': 'InnoDB',
+                                           },
+                      'MessageRepository': {'Fields': { 'MessageID': 'INT NOT NULL AUTO_INCREMENT',
+                                                        'MessageTime': 'DATETIME NOT NULL',
+                                                        'VariableText': 'VARCHAR(255) NOT NULL',
+                                                        'UserDNID': 'INT NOT NULL',
+                                                        'ClientIPNumberID': 'INT NOT NULL',
+                                                        'LogLevel': 'VARCHAR(15) NOT NULL',
+                                                        'FixedTextID': 'INT NOT NULL', },
+                                            'PrimaryKey': 'MessageID',
+                                            'Indexes': { 'TimeStampsIDX': ['MessageTime'],
+                                                         'FixTextIDX': ['FixedTextID'],
+                                                         'UserIDX': ['UserDNID'],
+                                                         'IPsIDX': ['ClientIPNumberID'], },
+                                            'ForeignKeys': { 'UserDNID': 'UserDNs.UserDNID',
+                                                             'ClientIPNumberID': 'ClientIPs.ClientIPNumberID',
+                                                             'FixedTextID': 'FixedTextMessages.FixedTextID',
+                                                           },
+                                            'Engine': 'InnoDB',
+                                           },
+                      'AgentPersistentData': {'Fields': { 'AgentID': 'INT NOT NULL AUTO_INCREMENT',
+                                                          'AgentName': "VARCHAR( 64 ) NOT NULL DEFAULT 'unkwown'",
+                                                          'AgentData': 'VARCHAR( 512 ) NULL DEFAULT NULL'
+                                                        },
+                                              'PrimaryKey': 'AgentID',
+                                              'Engine': 'InnoDB',
+                                             },
+                    }
+
     result = self._checkTable()
     if not result['OK']:
       gLogger.error( 'Failed to check/create the database tables', result['Message'] )
@@ -173,7 +174,18 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
   def _checkTable( self ):
     """ Make sure the tables are created
     """
-    return self._createTables( self.tableDict, force = False )
+    retVal = self._query( "show tables" )
+    if not retVal[ 'OK' ]:
+      return retVal
+
+    tablesInDB = [ t[0] for t in retVal[ 'Value' ] ]
+    tablesToCreate = {}
+    for table in self.tableDict:
+      if table not in tablesInDB:
+        tablesToCreate[table] = tablesInDB[table]
+
+    return self._createTables( tablesToCreate, force = False )
+
 
   def __buildTableList( self, showFieldList ):
     """ build the SQL list of tables needed for the query
@@ -232,7 +244,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
       if tableString and len( tableList ):
         tableString = '%s%s' % ( tableString, conjunction )
       tableString = '%s%s' % ( tableString,
-                                 conjunction.join( tableList ) )
+                               conjunction.join( tableList ) )
 
     else:
       tableString = conjunction.join( List.uniqueElements( tableDict.values() ) )
@@ -241,7 +253,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     return tableString
 
   def _queryDB( self, showFieldList = None, condDict = None, older = None,
-                 newer = None, count = False, groupColumn = None, orderFields = None ):
+                newer = None, count = False, groupColumn = None, orderFields = None ):
     """ This function composes the SQL query from the conditions provided and
         the desired columns and queries the SystemLoggingDB.
         If no list is provided the default is to use all the meaningful
@@ -252,13 +264,13 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer , timeStamp = 'MessageTime' )
     except Exception as x:
-      return S_ERROR ( str( x ) )
+      return S_ERROR( str( x ) )
 
     if not showFieldList:
       showFieldList = ['MessageTime', 'LogLevel', 'FixedTextString',
-                     'VariableText', 'SystemName',
-                     'SubSystemName', 'OwnerDN', 'OwnerGroup',
-                     'ClientIPNumberString', 'SiteName']
+                       'VariableText', 'SystemName',
+                       'SubSystemName', 'OwnerDN', 'OwnerGroup',
+                       'ClientIPNumberString', 'SiteName']
     elif isinstance( showFieldList, basestring ):
       showFieldList = [ showFieldList ]
     elif not isinstance( showFieldList, list ):
@@ -351,9 +363,9 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     outValues = result['Value'][0][:len( outFields )]
     insertedValues = result['Value'][0][len( outFields ):]
     error = ''
-    for i in range( len( inValues ) ):
-      if inValues[i] != insertedValues[i]:
-        error = 'Inserted Value does not match %s: "%s" != "%s"' % ( inFields[i], inValues[i], insertedValues[i] )
+    for i, item in enumerate(inValues):
+      if item != insertedValues[i]:
+        error = 'Inserted Value does not match %s: "%s" != "%s"' % ( inFields[i], item, insertedValues[i] )
         break
 
     if error:
