@@ -78,6 +78,7 @@ Checking out the source
 From now on we will call that directory *$DEVROOT*
 
 1. export DEVROOT=$PWD && export WORKSPACE=$PWD
+
 (persist this in the way you prefer)
 
 2. Check out DIRAC source code. DIRAC source is hosted on *github.com*. Fork it, then::
