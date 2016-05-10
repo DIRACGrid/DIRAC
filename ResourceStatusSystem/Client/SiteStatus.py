@@ -11,10 +11,7 @@ from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleto
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus       import getCacheDictFromRawData
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread  import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
-from DIRAC.ConfigurationSystem.Client.Helpers.Path          import cfgPath
 from DIRAC.Core.Utilities                                   import DErrno
 
 __RCSID__ = '$Id: $'
@@ -28,6 +25,7 @@ class SiteStatus( object ):
   * getSiteStatuses
   * isUsableSite
   * getUsableSites
+  * getSites
   """
 
   __metaclass__ = DIRACSingleton
@@ -41,7 +39,6 @@ class SiteStatus( object ):
     self.rssConfig = RssConfiguration()
     self.__opHelper = Operations()
     self.rssClient = None
-    self.infoGetter = InfoGetter()
     self.rsClient = ResourceStatusClient()
 
     # TODO: The RSSCache isn't working right now for sites
@@ -97,6 +94,7 @@ class SiteStatus( object ):
       result = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
 
       if not result['OK']:
+        print result
         return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
       elif not result['Value']:
         #if one of the listed elements does not exist continue
@@ -185,6 +183,43 @@ class SiteStatus( object ):
         siteStatusList.append(siteName)
 
     return S_OK( siteStatusList )
+
+
+  def getSites( self, siteState = 'Active' ):
+    """
+    By default, it gets the currently active site list
+
+    examples
+      >>> siteStatus.getSites()
+          S_OK( ['test1.test1.uk', 'test3.test3.org'] )
+      >>> siteStatus.getSites( 'Active' )
+          S_OK( ['test1.test1.uk', 'test3.test3.org'] )
+      >>> siteStatus.getSites( 'Banned' )
+          S_OK( ['test0.test0.uk', ... ] )
+      >>> siteStatus.getSites( None )
+          S_ERROR( ... )
+
+    :Parameters:
+      **siteState** - `String`
+        state of the sites to be matched
+
+    :return: S_OK() || S_ERROR()
+    """
+
+    if not siteState:
+      return S_ERROR(DErrno.ERESUNK, 'siteState is empty')
+
+    siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'name' ] } )
+
+    if not siteStatus['OK']:
+      return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
+    else:
+
+      siteList = []
+      for site in siteStatus[ 'Value' ]:
+        siteList.append(site[0])
+
+      return S_OK( siteList )
 
 
  ################################################################################
