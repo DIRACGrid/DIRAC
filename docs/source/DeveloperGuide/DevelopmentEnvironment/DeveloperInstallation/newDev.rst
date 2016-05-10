@@ -209,9 +209,9 @@ If you want to create an isolated installation just create a
 			Test = DevInstance
 		}
 	}
-}
-Systems
-{
+   }
+   Systems
+   {
 	Framework
 	{
 		DevInstance
@@ -236,9 +236,9 @@ Systems
 			}
 		}
 	}
-}
-Registry
-{
+   }
+   Registry
+   {
 	Users
 	{
 		yourusername
@@ -263,7 +263,7 @@ Registry
 			Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
 		}
 	}
-}
+   }
 
 
 Certificates
