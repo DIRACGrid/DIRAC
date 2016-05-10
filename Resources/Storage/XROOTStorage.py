@@ -215,7 +215,7 @@ class XROOTStorage( StorageBase ):
     failed = {}
     successful = {}
     for src_url in urls:
-      fileName = os.path.basename( src_url )
+      fileName = os.path.basename( src_url ).split("?")[0]
       if localPath:
         dest_file = "%s/%s" % ( localPath, fileName )
       else:
@@ -451,7 +451,7 @@ class XROOTStorage( StorageBase ):
         remoteSize = res['Value']
       else:
         errMsg = "XROOTStorage.__putSingleFile: Could not get remote file size"
-        self.log.error( errMsg, res['Value'] )
+        self.log.error( errMsg, res['Message'] )
         return S_ERROR( "Could not get remote file size" )
 
       if sourceSize == remoteSize:
