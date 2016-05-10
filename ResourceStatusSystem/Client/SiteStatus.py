@@ -94,7 +94,6 @@ class SiteStatus( object ):
       result = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
 
       if not result['OK']:
-        print result
         return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
       elif not result['Value']:
         #if one of the listed elements does not exist continue
