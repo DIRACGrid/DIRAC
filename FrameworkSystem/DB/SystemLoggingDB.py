@@ -165,7 +165,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                               'PrimaryKey': 'AgentID',
                                               'Engine': 'InnoDB',
                                              },
-                    }
+                     }
 
     result = self._checkTable()
     if not result['OK']:
@@ -180,9 +180,9 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
 
     tablesInDB = [ t[0] for t in retVal[ 'Value' ] ]
     tablesToCreate = {}
-    for table in self.tableDict:
-      if table not in tablesInDB:
-        tablesToCreate[table] = tablesInDB[table]
+    for tableName, tableDef in self.tableDict.iteritems():
+      if tableName not in tablesInDB:
+        tablesToCreate[tableName] = tableDef
 
     return self._createTables( tablesToCreate, force = False )
 
