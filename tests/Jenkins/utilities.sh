@@ -614,6 +614,8 @@ diracServices(){
 diracUninstallServices(){
 	echo '==> [diracUninstallServices]'
 
+	findServices
+
 	#TODO: revise this list
 	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
