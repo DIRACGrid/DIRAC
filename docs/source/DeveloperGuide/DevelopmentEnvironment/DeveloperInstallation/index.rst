@@ -206,7 +206,7 @@ will not be found, it will look for such info in the CS servers available.
 
 When you develop locally, you don't need to access any CS server: instead, you need to have total control. 
 So, you need to work a bit on the local dirac.cfg file. There is not much else needed, just create your own etc/dirac.cfg.
- The example that follows might not be easy to understand at a first sight, but it will become easy soon. 
+The example that follows might not be easy to understand at a first sight, but it will become easy soon. 
 The syntax is extremely simple, yet verbose: simply, only brackets and equalities are used.
 
 If you want to create an isolated installation just create a
