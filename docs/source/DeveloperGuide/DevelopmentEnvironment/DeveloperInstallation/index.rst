@@ -24,6 +24,7 @@ What is this NOT for?
 * This method will NOT work out of box if you need to contact non-DIRAC services
 
 
+
 Notes before continuing
 ------------------------
 
@@ -37,6 +38,11 @@ Any csh like tcsh should not pose a problem.
 *repository* and as already explained,
 DIRAC's GIT repositories are hosted on `GitHub <https://github.com/DIRACGrid>`_.
 for which you need to have an account before continuing.
+
+*OS, more notes*: a DIRAC server can be installed, as of today, only on SLC6/CC7 OS.
+The reason being some binaries are proved to work only there, 
+and this includes several DMS (Data Management) libraries.
+If you have to do many DMS development, you should consider using SLC6 or CC7.
 
 
 Stuff you need to have installed
