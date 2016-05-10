@@ -3,7 +3,7 @@ Systems / WorkloadManagement / <INSTANCE> / Agents / SiteDirector - Sub-subsecti
 
 Site director is in charge of submit pilot jobs to special Computing Elements.
  
- Special attributes for this agent are (updated for v6r12):
+Special attributes for this agent are (updated for v6r15):
  
 +---------------------------------+----------------------------------------+-------------------------------------------------------------------+
 | **Name**                        | **Description**                        | **Example**                                                       |
@@ -60,6 +60,9 @@ Site director is in charge of submit pilot jobs to special Computing Elements.
 +---------------------------------+----------------------------------------+-------------------------------------------------------------------+
 | *FailedQueueCycleFactor*        | How many cylces to skip if queue was   |                                                                   |
 |                                 | not working                            |                                                                   |
++---------------------------------+----------------------------------------+-------------------------------------------------------------------+
+| *AddPilotsToEmptySites*         | To submit pilots to empty sites        | AddPilotsToEmptySites = True                                      |
+|                                 | in any case (False by default)         |                                                                   |
 +---------------------------------+----------------------------------------+-------------------------------------------------------------------+
 | *PilotStatusUpdateCycleFactor*  |                                        |                                                                   |
 +---------------------------------+----------------------------------------+-------------------------------------------------------------------+
