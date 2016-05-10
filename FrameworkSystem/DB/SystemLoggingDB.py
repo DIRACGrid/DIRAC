@@ -177,6 +177,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     retVal = self._query( "show tables" )
     if not retVal[ 'OK' ]:
       return retVal
+    self.log.debug("Tables already created: %s" % str(retVal['Value']))
 
     tablesInDB = [ t[0] for t in retVal[ 'Value' ] ]
     tablesToCreate = {}
@@ -184,6 +185,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
       if tableName not in tablesInDB:
         tablesToCreate[tableName] = tableDef
 
+    self.log.debug("Tables that will be created: %s" % str(tablesToCreate))
     return self._createTables( tablesToCreate, force = False )
 
 
