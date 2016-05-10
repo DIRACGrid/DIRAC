@@ -12,7 +12,7 @@ for web developments.
 
 In this first installment, we'll do a step-by-step set up
 of what we call a developer installation.
-A developer installation is a "closed" installation: an installation that
+A developer installation is a *closed* installation: an installation that
 can even be used while being disconnected from the Internet.
 
 
@@ -48,7 +48,7 @@ libfreetype6-dev, libncurses5-dev, libjpeg-dev.
 The names above are OS-dependant, distribution dependant, and version dependant,
 so you'll need to figure it out by yourself how to install them.
 
-*Editor*: get your favourite one.
+*editor*: get your favourite one.
 Examples include IDE like Eclipse or PyCharm, or whatever you prefer
 (vim, sublime, atom...) - anyway you'll need some plugins!
 
@@ -65,30 +65,29 @@ you on setting up a development installation for DIRAC
 Checking out the source
 -------------------------
 
-  0. Go to a clean directory, e.g. $HOME/pyDevs/.
+0. Go to a clean directory, e.g. $HOME/pyDevs/.
 
-  From now on we will call that directory *$DEVROOT*
+From now on we will call that directory *$DEVROOT*
 
-  1. export DEVROOT=$PWD && export WORKSPACE=$PWD
-     (persist this in the way you prefer)
-   
-  2. Check out DIRAC source code. DIRAC source is hosted on *github.com*. Fork it, then::
+1. export DEVROOT=$PWD && export WORKSPACE=$PWD
+(persist this in the way you prefer)
 
-     git clone https://github.com/fstagni/DIRAC.git
+2. Check out DIRAC source code. DIRAC source is hosted on *github.com*. Fork it, then::
 
-  This will create a *$DEVROOT/DIRAC* for you and the git repository will be cloned in.
+   git clone https://github.com/fstagni/DIRAC.git
 
-    
-  3. This will create a *remote* pointer ( in git terms ) in the local git
-  repository called *origin* that points to your source repository on GitHub. 
-  In that repository you will publish your code to be released. But all the releases
-  will be done from the https://github.com/DIRACGrid/DIRAC repository. You
-  need to define a *remote* for that repository to be able to pull newly
-  released changes into your working repo. We will name that repository *release*::
+This will create a *$DEVROOT/DIRAC* for you and the git repository will be cloned in.
 
-     cd DIRAC
-     git remote add release https://github.com/DIRACGrid/DIRAC.git
-     git fetch release
+3. This will create a *remote* pointer ( in git terms ) in the local git
+repository called *origin* that points to your source repository on GitHub. 
+In that repository you will publish your code to be released. But all the releases
+will be done from the https://github.com/DIRACGrid/DIRAC repository. You
+need to define a *remote* for that repository to be able to pull newly
+released changes into your working repo. We will name that repository *release*::
+
+   cd DIRAC
+   git remote add release https://github.com/DIRACGrid/DIRAC.git
+   git fetch release
 
 
 Repository structure
@@ -96,7 +95,7 @@ Repository structure
 
 Just looking at the root directory::
 
-ls -al $DEVROOT/DIRAC/
+   ls -al $DEVROOT/DIRAC/
 
 will tell you a lot about the DIRAC code structure. Note that:
 
@@ -136,7 +135,7 @@ and for creating and deleting such environments::
    [sudo] pip install virtualenvwrapper
    export WORKON_HOME=~/Envs
    mkdir -p $WORKON_HOME
-    source /usr/local/bin/virtualenvwrapper.sh
+   source /usr/local/bin/virtualenvwrapper.sh
 
 Now, let's create the virtual environment, and populate it::
 
@@ -199,8 +198,8 @@ When you develop locally, you don't need to access any CS server: instead, you n
 If you want to create an isolated installation just create a
 *$DEVROOT/etc/dirac.cfg* file with (create the etc directory first)::
 
-DIRAC
-{
+   DIRAC
+   {
 	Setup = DeveloperSetup
      	Setups
 	{
