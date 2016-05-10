@@ -200,15 +200,15 @@ If you want to create an isolated installation just create a
 
    DIRAC
    {
-	Setup = DeveloperSetup
-     	Setups
-	{
-		DeveloperSetup
-		{
-			Framework = DevInstance
-			Test = DevInstance
-		}
-	}
+     Setup = DeveloperSetup
+     Setups
+     {
+       DeveloperSetup
+       {
+         Framework = DevInstance
+         Test = DevInstance
+       }
+     }
    }
    Systems
    {
