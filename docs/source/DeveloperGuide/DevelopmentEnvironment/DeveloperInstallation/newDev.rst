@@ -212,57 +212,57 @@ If you want to create an isolated installation just create a
    }
    Systems
    {
-	Framework
-	{
-		DevInstance
-		{
-			URLs
-			{
-			}
-			Services
-			{
-			}
-		}
-	}
-	Test
-	{
-		DevInstance
-		{
-			URLs
-			{
-			}
-			Services
-			{
-			}
-		}
-	}
+     Framework
+     {
+       DevInstance
+       {
+         URLs
+         {
+         }
+         Services
+         {
+         }
+       }
+     }
+     Test
+     {
+       DevInstance
+       {
+         URLs
+         {
+         }
+         Services
+         {
+         }
+       }
+     }
    }
    Registry
    {
-	Users
-	{
-		yourusername
-		{
-			DN = /your/dn/goes/here
-			Email = youremail@yourprovider.com
-		}
-	}
-	Groups
-	{
-		devGroup
-		{
-			Users = yourusername
-			Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
-		}
-	}
-	Hosts
-	{
-		mydevbox
-		{
-			DN = /your/box/dn/goes/here
-			Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
-		}
-	}
+     Users
+     {
+       yourusername
+       {
+         DN = /your/dn/goes/here
+         Email = youremail@yourprovider.com
+       }
+     }
+     Groups
+     {
+       devGroup
+       {
+         Users = yourusername
+         Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
+       }
+     }
+     Hosts
+     {
+       mydevbox
+       {
+         DN = /your/box/dn/goes/here
+         Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
+       }
+     }
    }
 
 
