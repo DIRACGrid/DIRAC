@@ -4,6 +4,8 @@
 # Date: 2013/04/16 07:18:51
 ########################################################################
 
+#TO-DO: in order to run this test, fts python library should be installed (NOT part of standard python packages)
+
 """ :mod: FTSJobTests
     =======================
 
@@ -121,4 +123,3 @@ if __name__ == "__main__":
   suite = testLoader.loadTestsFromTestCase( FTSJobTests )
   suite = unittest.TestSuite( [ suite ] )
   unittest.TextTestRunner( verbosity = 3 ).run( suite )
-

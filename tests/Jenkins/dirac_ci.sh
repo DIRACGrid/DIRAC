@@ -133,6 +133,7 @@ function fullInstallDIRAC(){
 	diracReplace
 
 	#Dealing with security stuff
+	# generateCertificates
 	generateUserCredentials
 	diracCredentials
 
@@ -253,7 +254,14 @@ function DIRACPilotInstall(){
 		echo 'ERROR: cannot change to ' $PILOTINSTALLDIR
 		return
 	fi
+
 	python dirac-pilot.py -S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ -X GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements $DEBUG
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: pilot failed'
+		return
+	fi
+
 	cd $cwd
 	if [ $? -ne 0 ]
 	then
@@ -273,12 +281,27 @@ function fullPilot(){
 
 	#Adding the LocalSE and the CPUTimeLeft, for the subsequent tests
 	dirac-configure -FDMH --UseServerCertificate -L $DIRACSE $DEBUG
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot configure'
+		return
+	fi
 
 	#Configure for CPUTimeLeft and more
-	python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py -V $VO -S $DIRACSETUP -o /DIRAC/Security/UseServerCertificate=True $DEBUG
+	python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py -o /DIRAC/Security/UseServerCertificate=True $DEBUG
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot update the CFG'
+		return
+	fi
 
 	#Getting a user proxy, so that we can run jobs
 	downloadProxy
 	#Set not to use the server certificate for running the jobs
 	dirac-configure -FDMH -o /DIRAC/Security/UseServerCertificate=False $DEBUG
+	if [ $? -ne 0 ]
+	then
+		echo 'ERROR: cannot run dirac-configure'
+		return
+	fi
 }

@@ -465,15 +465,14 @@ function generateUserCredentials(){
 
     # Generate directory where to store credentials
     mkdir -p $SERVERINSTALLDIR/user
-    cd $SERVERINSTALLDIR/user
-		cd $TESTCODE/DIRAC/
+		cd $SERVERINSTALLDIR/user
 		if [ $? -ne 0 ]
 		then
 			echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
 			return
 		fi
 
-    cp $CI_CONFIG/openssl_config openssl_config
+    cp $CI_CONFIG/openssl_config openssl_config .
     sed -i 's/#hostname#/ciuser/g' openssl_config
     openssl genrsa -out client.key 1024 2&>1 /dev/null
     openssl req -key client.key -new -out client.req -config openssl_config
@@ -482,7 +481,7 @@ function generateUserCredentials(){
 
     CA=$SERVERINSTALLDIR/etc/grid-security/certificates
 
-    openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out client.pem
+    openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out $SERVERINSTALLDIR/user/client.pem
 }
 
 
@@ -591,7 +590,7 @@ diracServices(){
 	echo '==> [diracServices]'
 
 	#TODO: revise this list
-	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
+	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
 	# group proxy, will be uploaded explicitly
 	#	echo '==> getting/uploading proxy for prod'
@@ -615,8 +614,10 @@ diracServices(){
 diracUninstallServices(){
 	echo '==> [diracUninstallServices]'
 
+	findServices
+
 	#TODO: revise this list
-	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
+	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
 	# group proxy, will be uploaded explicitly
 	#	echo '==> getting/uploading proxy for prod'
