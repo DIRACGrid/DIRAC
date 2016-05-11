@@ -64,7 +64,6 @@ csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1
 csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Path', '%s/sandboxes' % setupName )
 csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Access', 'remote' )
 
-
 # Now setting a FileCatalogs section as the following:
 #     FileCatalogs
 #     {
@@ -197,10 +196,25 @@ if not res['OK']:
   exit( 1 )
 res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams' )
 csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/policyType', 'AlwaysBanned' )
+csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element', 'Site' )
+
+
+# Now setting the catalog list in Operations/Defults/Services/Catalogs/CatalogList
+
+res = csAPI.createSection( 'Operations/Defaults/Services' )
 if not res['OK']:
   print res['Message']
   exit( 1 )
-csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element', 'Site' )
+res = csAPI.createSection( 'Operations/Defaults/Services/Catalogs' )
+if not res['OK']:
+  print res['Message']
+  exit( 1 )
+res = csAPI.createSection( 'Operations/Defaults/Services/Catalogs/CatalogList' )
+if not res['OK']:
+  print res['Message']
+  exit( 1 )
+csAPI.setOption('Operations/Defaults/Services/Catalogs/CatalogList', 'FileCatalog')
+
 
 
 # Final action: commit in CS
