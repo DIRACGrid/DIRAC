@@ -8,9 +8,10 @@ import math
 from time import sleep
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
+from DIRAC.WorkloadManagementSystem.DB.JobDB                import JobDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus       import getCacheDictFromRawData
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus       import ResourceStatus
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
 from DIRAC.Core.Utilities                                   import DErrno
 
@@ -38,17 +39,11 @@ class SiteStatus( object ):
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.rssConfig = RssConfiguration()
     self.__opHelper = Operations()
-    self.rssClient = None
+    self.jobClient = JobDB()
+    self.rssFlag = ResourceStatus().rssFlag
     self.rsClient = ResourceStatusClient()
 
-    # TODO: The RSSCache isn't working right now for sites
-    # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
-    # cacheLifeTime = int( self.rssConfig.getConfigCache() )
-
-    # RSSCache initialization
-    # self.siteCache  = RSSCache( 'Site', cacheLifeTime, self.__updateSiteCache )
-
-  def getSiteStatuses( self, siteNamesList ):
+  def getSiteStatuses( self, siteNamesList = None ):
     """
     Method that queries the database for status of the sites in a given list.
     If the input is None, it is interpreted as * ( all ).
@@ -79,19 +74,27 @@ class SiteStatus( object ):
     """
 
     if not siteNamesList:
-     siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )
 
-     if not siteStatusDict['OK']:
+      if self.rssFlag:
+        siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )
+      else:
+        siteStatusDict = self.jobClient.getSiteMaskStatus()
+
+      if not siteStatusDict['OK']:
        return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
-     else:
+      else:
        siteStatusDict = siteStatusDict['Value']
 
-     return S_OK( dict(siteStatusDict) )
+      return S_OK( dict(siteStatusDict) )
 
     siteStatusDict = {}
 
     for siteName in siteNamesList:
-      result = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
+
+      if self.rssFlag:
+        result = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
+      else:
+        result = self.jobClient.getSiteMaskStatus(siteName)
 
       if not result['OK']:
         return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
@@ -127,7 +130,10 @@ class SiteStatus( object ):
     :return: S_OK() || S_ERROR()
     """
 
-    siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
+    if self.rssFlag:
+      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Name', 'Status' ] } )
+    else:
+      siteStatus = self.jobClient.getSiteMaskStatus(siteName)
 
     if not siteStatus['OK']:
       return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
@@ -136,7 +142,12 @@ class SiteStatus( object ):
       #Site does not exist, so it is not usable
       return S_OK(False)
 
-    if siteStatus['Value'][0][0] in ('Active', 'Degraded'):
+    if self.rssFlag:
+      status = siteStatus['Value'][0][1]
+    else:
+      status = siteStatus['Value'][0][0]
+
+    if status in ('Active', 'Degraded'):
       return S_OK(True)
     else:
       return S_OK(False)
@@ -168,7 +179,11 @@ class SiteStatus( object ):
     siteStatusList = []
 
     for siteName in siteNamesList:
-      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
+
+      if self.rssFlag:
+        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )
+      else:
+        siteStatus = self.jobClient.getSiteMaskStatus()
 
       if not siteStatus['OK']:
         return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
@@ -208,40 +223,23 @@ class SiteStatus( object ):
     if not siteState:
       return S_ERROR(DErrno.ERESUNK, 'siteState is empty')
 
-    siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'name' ] } )
+    if self.rssFlag:
+      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'name' ] } )
+    else:
+      siteStatus = self.jobClient.getSiteMask(siteState)
 
     if not siteStatus['OK']:
       return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
     else:
+
+      if not self.rssFlag:
+        return S_OK( siteStatus[ 'Value' ] )
 
       siteList = []
       for site in siteStatus[ 'Value' ]:
         siteList.append(site[0])
 
       return S_OK( siteList )
-
-
- ################################################################################
-
-  def __updateSiteCache( self ):
-    """ Method used to update the Site Cache.
-
-        It will try 5 times to contact the RSS before giving up
-    """
-
-    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
-
-    for ti in range( 5 ):
-      rawCache = self.rssClient.selectStatusElement( 'Site', 'Status', meta = meta )
-      if rawCache['OK']:
-        break
-      self.log.warn( "Can't get Site status", rawCache['Message'] + "; trial %d" % ti )
-      sleep( math.pow( ti, 2 ) )
-      self.rssClient = ResourceStatusClient()
-
-    if not rawCache[ 'OK' ]:
-      return rawCache
-    return S_OK( getCacheDictFromRawData( rawCache[ 'Value' ] ) )
 
 #################################################################################
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
