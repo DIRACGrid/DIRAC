@@ -839,7 +839,7 @@ class SiteDirector( AgentModule ):
 
     return [ pilotOptions, pilotsToSubmit ]
 
-#####################################################################################
+####################################################################################
   def _writePilotScript( self, workingDirectory, pilotOptions, proxy = None,
                          httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
