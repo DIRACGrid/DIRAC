@@ -67,7 +67,7 @@ Script.registerSwitch( "v", "checkvalid", "Return error if the proxy is invalid"
 Script.registerSwitch( "x", "nocs", "Disable CS", params.disableCS )
 Script.registerSwitch( "e", "steps", "Show steps info", params.showSteps )
 Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", params.disableClockCheck )
-Script.registerSwitch( "m", "uploadedinto", "Show uploaded proxies info", params.setManagerInfo )
+Script.registerSwitch( "m", "uploadedinfo", "Show uploaded proxies info", params.setManagerInfo )
 
 Script.disableCS()
 Script.parseCommandLine()
