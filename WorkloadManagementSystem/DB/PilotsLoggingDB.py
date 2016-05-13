@@ -8,9 +8,6 @@
     addPilotsLogging()
     getPilotsLogging()
     deletePilotsLoggin()
-    addPilotsUUID()
-    setPilotsUUIDtoIDMapping()
-    addPilotsUUIDtoIDmapping()
     
 """
 
@@ -78,15 +75,6 @@ class PilotsLoggingDB( ):
 
     tablesInDB = self.inspector.get_table_names( )
 
-    if not 'PilotsUUIDtoID' in tablesInDB:
-      try:
-        PilotsUUIDtoID.__table__.create( self.engine )
-      except SQLAlchemyError as e:
-        return S_ERROR( DErrno.ESQLA, e )
-    else:
-      gLogger.debug( "Table PilotsUUIDtoID exists" )
-      return S_OK( )
-
     if not 'PilotsLogging' in tablesInDB:
       try:
         PilotsLogging.__table__.create( self.engine )
@@ -98,11 +86,11 @@ class PilotsLoggingDB( ):
     return S_OK( )
 
   ##########################################################################################
-  def addPilotsLogging( self, pilotUUID, status, minorStatus, timeStamp, source ):
+  def addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
     """Add new pilot logging entry"""
 
     session = self.sqlalchemySession( )
-    logging = PilotsLogging( pilotUUID, status, minorStatus, timeStamp, source )
+    logging = PilotsLogging( pilotRef, status, minorStatus, timeStamp, source )
 
     try:
       session.add( logging )
@@ -121,18 +109,16 @@ class PilotsLoggingDB( ):
     return S_OK( )
 
   ##########################################################################################
-  def getPilotsLogging( self, pilotID ):
+  def getPilotsLogging( self, pilotRef ):
     """Get list of logging entries for pilot"""
 
     session = self.sqlalchemySession( )
 
     pilotLogging = []
-    for pl in session.query( PilotsLogging ).join( PilotsUUIDtoID ).filter(
-            PilotsUUIDtoID.pilotID == pilotID ).order_by(
+    for pl in session.query( PilotsLogging ).filter(PilotsLogging.pilotRef == pilotRef ).order_by(
         PilotsLogging.timeStamp ).all( ):
       entry = {}
-      entry['PilotUUID'] = pl.pilotUUID
-      entry['PilotID'] = pilotID
+      entry['PilotRef'] = pl.pilotRef
       entry['Status'] = pl.status
       entry['MinorStatus'] = pl.minorStatus
       entry['TimeStamp'] = time.mktime( pl.timeStamp.timetuple( ) )
@@ -142,16 +128,15 @@ class PilotsLoggingDB( ):
     return S_OK( pilotLogging )
 
   ##########################################################################################
-  def deletePilotsLogging( self, pilotID ):
+  def deletePilotsLogging( self, pilotRef ):
     """Delete all logging entries for pilot"""
 
-    if isinstance( pilotID, ( int, long ) ):
-      pilotID = [pilotID, ]
+    if isinstance( pilotRef, basestring ):
+      pilotRef = [pilotRef, ]
 
     session = self.sqlalchemySession( )
 
-    # session.query(PilotsLogging).join(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID == pilotID).delete(synchronize_session = 'fetch')
-    session.query( PilotsUUIDtoID ).filter( PilotsUUIDtoID.pilotID.in_( pilotID ) ).delete(
+    session.query( PilotsLogging ).filter( PilotsLogging.pilotRef == pilotRef ).delete(
       synchronize_session = 'fetch' )
 
     try:
@@ -163,74 +148,6 @@ class PilotsLoggingDB( ):
 
     return S_OK( )
 
-  ##########################################################################################
-  def addPilotsUUID( self, pilotUUID ):
-    """Add new pilot UUID to UUID ID mapping, not knowing ID yet"""
-
-    session = self.sqlalchemySession( )
-
-    resp = session.query( PilotsUUIDtoID ).filter( PilotsUUIDtoID.pilotUUID == pilotUUID ).count( )
-    if resp > 0:
-      return S_OK( )
-
-    uuid2id = PilotsUUIDtoID( pilotUUID )
-    try:
-      session.add( uuid2id )
-    except SQLAlchemyError as e:
-      session.rollback( )
-      session.close( )
-      return S_ERROR( DErrno.ESQLA, "Failed to add PilotsUUIDtoID: " + e.message )
-
-    try:
-      session.commit( )
-    except SQLAlchemyError as e:
-      session.rollback( )
-      session.close( )
-      return S_ERROR( DErrno.ESQLA, "Failed to commit PilotsUUIDtoID: " + e.message )
-
-    return S_OK( )
-
-  ##########################################################################################
-  def setPilotsUUIDtoIDMapping( self, pilotUUID, pilotID ):
-    """Assign pilot ID to UUID"""
-
-    session = self.sqlalchemySession( )
-
-    mapping = session.query( PilotsUUIDtoID ).get( pilotUUID )
-    mapping.pilotID = pilotID
-    try:
-      session.commit( )
-    except SQLAlchemyError as e:
-      session.rollback( )
-      session.close( )
-      return S_ERROR( DErrno.ESQLA, "Failed to commit PilotsUUIDtoID mapping: " + e.message )
-
-    return S_OK( )
-
-  ##########################################################################################
-  def addPilotsUUIDtoIDmapping( self, pilotUUID, pilotID ):
-    """Add new pilot UUID to ID mapping"""
-
-    session = self.sqlalchemySession( )
-
-    uuid2id = PilotsUUIDtoID( pilotUUID, pilotID )
-    try:
-      session.add( uuid2id )
-    except SQLAlchemyError as e:
-      session.rollback( )
-      session.close( )
-      return S_ERROR( DErrno.ESQLA, "Failed to add PilotsUUIDtoID: " + e.message )
-
-    try:
-      session.commit( )
-    except SQLAlchemyError as e:
-      session.rollback( )
-      session.close( )
-      return S_ERROR( DErrno.ESQLA, "Failed to commit PilotsUUIDtoID: " + e.message )
-
-    return S_OK( )
-
-
 ##########################################################################################
 
 class PilotsLogging( Base ):
@@ -241,32 +158,17 @@ class PilotsLogging( Base ):
   }
 
   logID = Column( 'LogID', Integer, primary_key = True, autoincrement = True )
-  pilotUUID = Column( 'PilotUUID', String( 255 ), ForeignKey( 'PilotsUUIDtoID.PilotUUID', ondelete = 'CASCADE' ),
-                      nullable = False )
+  pilotRef = Column( 'PilotRef', String( 255 ), nullable = False )
   status = Column( 'Status', String( 32 ), default = '', nullable = False )
   minorStatus = Column( 'MinorStatus', String( 128 ), default = '', nullable = False )
   timeStamp = Column( 'TimeStamp', DateTime, nullable = False )
   source = Column( 'Source', String( 32 ), default = 'Unknown', nullable = False )
 
-  def __init__( self, pilotUUID, status, minorStatus, timeStamp, source ):
-    self.pilotUUID = pilotUUID
+  def __init__( self, pilotRef, status, minorStatus, timeStamp, source ):
+    self.pilotRef = pilotRef
     self.status = status
     self.minorStatus = minorStatus
     self.timeStamp = datetime.datetime.fromtimestamp( timeStamp )
     self.source = source
 
 
-class PilotsUUIDtoID( Base ):
-  __tablename__ = 'PilotsUUIDtoID'
-  __table_args__ = {
-    'mysql_engine': 'InnoDB',
-    'mysql_charset': 'utf8'
-  }
-
-  pilotUUID = Column( 'PilotUUID', String( 255 ), primary_key = True )
-  pilotID = Column( 'PilotID', Integer, nullable = True )
-  pilotLogs = relationship( "PilotsLogging", backref = "UUIDtoID" )
-
-  def __init__( self, pilotUUID, pilotID = None ):
-    self.pilotUUID = pilotUUID
-    self.pilotID = pilotID
