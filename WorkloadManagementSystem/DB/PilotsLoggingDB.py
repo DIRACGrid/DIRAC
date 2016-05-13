@@ -8,9 +8,6 @@
     addPilotsLogging()
     getPilotsLogging()
     deletePilotsLoggin()
-    addPilotsUUID()
-    setPilotsUUIDtoIDMapping()
-    addPilotsUUIDtoIDmapping()
     
 """
 
@@ -85,9 +82,7 @@ class PilotsLoggingDB( object ):
 
     return S_OK( )
 
-    return S_OK( )
-
-##########################################################################################
+  ##########################################################################################
   def addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
     """Add new pilot logging entry"""
 
@@ -110,7 +105,7 @@ class PilotsLoggingDB( object ):
 
     return S_OK( )
 
-##########################################################################################
+  ##########################################################################################
   def getPilotsLogging( self, pilotRef ):
     """Get list of logging entries for pilot"""
 
@@ -129,7 +124,7 @@ class PilotsLoggingDB( object ):
 
     return S_OK( pilotLogging )
 
-##########################################################################################
+  ##########################################################################################
   def deletePilotsLogging( self, pilotRef ):
     """Delete all logging entries for pilot"""
 
@@ -138,8 +133,8 @@ class PilotsLoggingDB( object ):
 
     session = self.sqlalchemySession( )
 
-    session.query( PilotsLogging ).filter( PilotsLogging.pilotRef._in( pilotRef ) ).delete(
-        synchronize_session = 'fetch' )
+    session.query( PilotsLogging ).filter( PilotsLogging.pilotRef == pilotRef ).delete(
+      synchronize_session = 'fetch' )
 
     try:
       session.commit( )
