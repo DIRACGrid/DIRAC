@@ -27,6 +27,7 @@ import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 from DIRAC.Core.Utilities import DErrno
+from datetime import datetime
 
 __RCSID__ = "$Id$"
 
