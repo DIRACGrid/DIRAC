@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-proxy-init.py
+# File :    dirac-proxy-info.py
 # Author :  Adrian Casajus
 ########################################################################
+
+from DIRAC.Core.Utilities.ReturnValues import S_OK
 
 class Params(object):
 
@@ -19,39 +21,39 @@ class Params(object):
     print "Version:"
     print " ", __RCSID__
     sys.exit( 0 )
-    return DIRAC.S_OK()
+    return S_OK()
 
   def setProxyLocation( self, arg ):
     self.proxyLoc = arg
-    return DIRAC.S_OK()
+    return S_OK()
 
   def checkExists( self, arg ):
     self.checkExists = True
-    return DIRAC.S_OK()
+    return S_OK()
 
   def disableVOMS( self, arg ):
     self.vomsEnabled = False
-    return DIRAC.S_OK()
+    return S_OK()
 
   def disableCS( self, arg ):
     self.csEnabled = False
-    return DIRAC.S_OK()
+    return S_OK()
 
   def showSteps( self, arg ):
     self.steps = True
-    return DIRAC.S_OK()
+    return S_OK()
 
   def validityCheck( self, arg ):
     self.checkValid = True
-    return DIRAC.S_OK()
+    return S_OK()
 
   def disableClockCheck( self, arg ):
     self.checkClock = False
-    return DIRAC.S_OK()
+    return S_OK()
 
   def setManagerInfo( self, arg ):
     self.uploadedInfo = True
-    return DIRAC.S_OK()
+    return S_OK()
 
 params = Params()
 
@@ -70,7 +72,6 @@ Script.registerSwitch( "m", "uploadedinto", "Show uploaded proxies info", params
 Script.disableCS()
 Script.parseCommandLine()
 
-import DIRAC
 from DIRAC.Core.Utilities.NTP import getClockDeviation
 from DIRAC import gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, getProxyStepsInfo, formatProxyInfoAsString, formatProxyStepsInfoAsString
