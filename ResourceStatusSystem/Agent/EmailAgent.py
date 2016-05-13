@@ -9,7 +9,7 @@
 
 import os
 import sqlite3
-from DIRAC                                                       import S_OK, S_ERROR
+from DIRAC                                                       import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                 import AgentModule
 from DIRAC.ResourceStatusSystem.Utilities                        import RssConfiguration
 from DIRAC.Interfaces.API.DiracAdmin                             import DiracAdmin
@@ -48,7 +48,7 @@ class EmailAgent( AgentModule ):
         for site in result:
           cursor = conn.execute("SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache WHERE SiteName='"+ site[0] +"';")
 
-          email_body = ""
+          email_body = "(" + gConfig.getValue('/DIRAC/Setup') + ")\n\n"
           for StatusType, ResourceName, Status, Time, PreviousStatus in cursor:
             email_body += StatusType + " of " + ResourceName + " has been " + Status + " since " + Time + " (Previous status: " + PreviousStatus + ")\n"
 
