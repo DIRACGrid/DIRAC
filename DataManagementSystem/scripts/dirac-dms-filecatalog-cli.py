@@ -2,10 +2,7 @@
 
 import sys
 
-from DIRAC import gConfig, exit as dexit
-
 from DIRAC.Core.Base import Script
-
 Script.setUsageMessage( """
 Launch the File Catalog shell
 
@@ -17,6 +14,7 @@ fcType = 'FileCatalog'
 Script.registerSwitch( "f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType )
 Script.parseCommandLine( ignoreErrors = False )
 
+from DIRAC import gConfig, exit as dexit
 from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 
 __RCSID__ = "$Id$"
