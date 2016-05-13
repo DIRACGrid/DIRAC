@@ -48,7 +48,11 @@ class EmailAgent( AgentModule ):
         for site in result:
           cursor = conn.execute("SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache WHERE SiteName='"+ site[0] +"';")
 
-          email_body = "(" + gConfig.getValue('/DIRAC/Setup') + ")\n\n"
+          if gConfig.getValue('/DIRAC/Setup'):
+            email_body = "(" + gConfig.getValue('/DIRAC/Setup') + ")\n\n"
+          else:
+            email_body = ""
+            
           for StatusType, ResourceName, Status, Time, PreviousStatus in cursor:
             email_body += StatusType + " of " + ResourceName + " has been " + Status + " since " + Time + " (Previous status: " + PreviousStatus + ")\n"
 
