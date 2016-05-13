@@ -31,19 +31,19 @@ class PilotsLoggingHandler( RequestHandler ):
   auth_addPilotsLogging = [ 'Operator' ]
   def export_addPilotsLogging( self, pilotUUID, status, minorStatus, timeStamp, source ):
 
-    return self.pilotsLogging.addPilotsLogging( pilotUUID, status, minorStatus, timeStamp, source )
+    return self.pilotsLogging.addPilotsLogging( pilotRef, status, minorStatus, timeStamp, source )
 
   types_getPilotsLogging = [ [int, long] ]
   auth_getPilotsLogging = [ 'authenticated' ]
   def export_getPilotsLogging( self, pilotID ):
 
-    return self.pilotsLogging.getPilotsLogging( pilotID )
+    return self.pilotsLogging.getPilotsLogging( pilotRef )
 
   types_setPilotsUUIDtoIDMapping = [ basestring, [int, long] ]
   auth_setPilotsUUIDtoIDMapping = [ 'Operator' ]
   def export_setPilotsUUIDtoIDMapping( self, pilotUUID, pilotID ):
 
-    return self.pilotsLogging.setPilotsUUIDtoIDMapping( pilotUUID, pilotID )
+    return self.pilotsLogging.deletePilotsLogging( pilotRef )
 
   types_addPilotsUUID = [ basestring ]
   auth_addPilotsUUID = [ 'Operator' ]
