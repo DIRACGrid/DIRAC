@@ -11,27 +11,14 @@ class PilotsLoggingClient( Client ):
     self.setServer( 'WorkloadManagement/PilotsLogging' )
     self.pilotsLoggingHandler = self._getRPC()
 
-  def addPilotsLogging( self, pilotUUID, status, minorStatus, timeStamp, source, pilotID ):
+  def addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
 
-    resp = self.pilotsLoggingHandler.addPilotsUUID( pilotUUID )
-    if not resp['OK']:
-      return resp
+    return self.pilotsLoggingHandler.addPilotsLogging(pilotRef, status, minorStatus, timeStamp, source)
 
-    if pilotID:
-      resp = self.pilotsLoggingHandler.setPilotsUUIDtoIDMapping( pilotUUID, pilotID )
-      if not resp['OK']:
-        return resp
+  def deletePilotsLogging( self, pilotRef ):
 
-    return self.pilotsLoggingHandler.addPilotsLogging(pilotUUID, status, minorStatus, timeStamp, source)
+    return self.pilotsLoggingHandler.detelePilotsLogging( pilotRef )
 
-  def setPilotsUUIDtoIDMapping( self, pilotUUID, pilotID ):
+  def getPilotsLogging( self, pilotRef ):
 
-    return self.pilotsLoggingHandler.setPilotsUUIDtoIDMapping( pilotUUID, pilotID )
-
-  def deletePilotsLogging( self, pilotID ):
-
-    return self.pilotsLoggingHandler.detelePilotsLogging( pilotID )
-
-  def getPilotsLogging( self, pilotID ):
-
-    return self.pilotsLoggingHandler.getPilotsLogging( pilotID )
+    return self.pilotsLoggingHandler.getPilotsLogging( pilotRef )
