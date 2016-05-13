@@ -27,6 +27,7 @@ import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 from DIRAC.Core.Utilities import DErrno
+from datetime import datetime
 
 __RCSID__ = "$Id$"
 
@@ -198,6 +199,7 @@ class WMSAdministratorHandler(RequestHandler):
   def export_addPilotTQReference( self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
                                   gridType='DIRAC', requirements='Unknown',pilotStampDict={}):
     """ Add a new pilot job reference """
+    pilotsLoggingDB.addPilotsLogging(pilotRef, 'Submitted', '', datetime.now(), 'WMSAdmin')
     return pilotDB.addPilotTQReference(pilotRef, taskQueueID,
                                        ownerDN, ownerGroup,
                                        broker, gridType, requirements,pilotStampDict)
