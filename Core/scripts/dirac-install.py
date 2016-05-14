@@ -973,8 +973,7 @@ def runExternalsPostInstall():
     return
   postInstallSuffix = "-postInstall"
   for scriptName in os.listdir( postInstallPath ):
-    suffixFindPos = scriptName.find( postInstallSuffix )
-    if suffixFindPos == -1 or not suffixFindPos == len( scriptName ) - len( postInstallSuffix ):
+    if not scriptName.endswith( postInstallSuffix ):
       logDEBUG( "%s does not have the %s suffix. Skipping.." % ( scriptName, postInstallSuffix ) )
       continue
     scriptPath = os.path.join( postInstallPath, scriptName )
