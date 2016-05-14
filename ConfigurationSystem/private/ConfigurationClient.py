@@ -59,10 +59,6 @@ class ConfigurationClient( object ):
   def useServerCertificate( self ):
     return gConfigurationData.useServerCertificate()
 
-  # FIXME: to be removed
-  def _useServerCertificate( self ):
-    return gConfigurationData.useServerCertificate()
-
   def getValue( self, optionPath, defaultValue = None ):
     retVal = self.getOption( optionPath, defaultValue )
     if retVal[ 'OK' ]:
