@@ -704,6 +704,11 @@ class ReleaseConfig( object ):
       except KeyError:
         modNames = []
       for extraMod in extraModules:
+        # Check if the version of the extension module is specified in the command line
+        extraVersion = None
+        if ":" in extraMod:
+          extraMod, extraVersion = extraMod.split( ":" )
+          modVersions[extraMod] = extraVersion
         if extraMod in modVersions:
           modNames.append( extraMod )
           extraFound.append( extraMod )
@@ -719,7 +724,7 @@ class ReleaseConfig( object ):
         modsOrder.insert( 0, modName )
 
     for modName in extraModules:
-      if modName not in extraFound:
+      if modName.split(":")[0] not in extraFound:
         return S_ERROR( "No module %s defined. You sure it's defined for this release?" % modName )
 
     return S_OK( ( modsOrder, modsToInstall ) )
