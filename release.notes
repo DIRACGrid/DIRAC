@@ -131,7 +131,7 @@ NEW: The contents of the TestDIRAC package is moved into the tests directory her
 BUGFIX: MonitoringHandler - in deleteActivities() use retVal['Message'] if result is not OK
 
 *Resources
-FIX: XROOTStorage - in getFile() evalute file URL without URL parameters
+FIX: XROOTStorage - in getFile() evaluate file URL without URL parameters
                     in __putSingleFile() use result['Message'] in case of error
                     
 *RMS
