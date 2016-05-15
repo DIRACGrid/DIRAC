@@ -590,7 +590,6 @@ class SiteDirector( AgentModule ):
         for tq in taskQueueDict:
           sumPriority += taskQueueDict[tq]['Priority']
           tqPriorityList.append( ( tq, sumPriority ) )
-        rndm = random.random()*sumPriority
         tqDict = {}
         for pilotID in pilotList:
           rndm = random.random() * sumPriority
