@@ -618,6 +618,11 @@ class ConfigureSite( CommandBase ):
       self.pp.flavour = 'ARC'
       pilotRef = os.environ['GRID_GLOBAL_JOBID']
 
+    # VMDIRAC case
+    if os.environ.has_key( 'VMDIRAC_VERSION' ):
+      self.pp.flavour = 'VMDIRAC'
+      pilotRef = 'vm://' + self.pp.ceName + '/' + os.environ['JOB_ID']
+
     # This is for BOINC case
     if os.environ.has_key( 'BOINC_JOB_ID' ):
       self.pp.flavour = 'BOINC'
