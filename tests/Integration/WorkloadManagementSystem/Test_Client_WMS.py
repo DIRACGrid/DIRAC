@@ -55,9 +55,8 @@ def helloWorldJob():
 def createFile( job ):
   tmpdir = tempfile.mkdtemp()
   jobDescription = tmpdir + '/jobDescription.xml'
-  fd = os.open( jobDescription, os.O_RDWR | os.O_CREAT )
-  os.write( fd, job._toXML() )
-  os.close( fd )
+  with os.open( jobDescription, os.O_RDWR | os.O_CREAT ) as fd:
+    os.write( fd, job._toXML() )
   return jobDescription
 
 

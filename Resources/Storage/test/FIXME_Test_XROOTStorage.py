@@ -94,15 +94,14 @@ def enum( **enums ):
 
 class xrootStatInfoMock:
 
-  StatInfoFlags = enum(
-  X_BIT_SET    = 1,
-  IS_DIR       = 2,
-  OTHER        = 4,
-  OFFLINE      = 8,
-  IS_READABLE  = 16,
-  IS_WRITABLE  = 32,
-  POSC_PENDING = 64
-  )
+  StatInfoFlags = enum( X_BIT_SET    = 1,
+                        IS_DIR       = 2,
+                        OTHER        = 4,
+                        OFFLINE      = 8,
+                        IS_READABLE  = 16,
+                        IS_WRITABLE  = 32,
+                        POSC_PENDING = 64
+                      )
 
   def __init__( self, ModTime = 0, ModTimeStr = "never", Id = 0, Size = 0, Executable = False,
                Directory = False, Other = False, Offline = False, PoscPending = False,
@@ -119,32 +118,32 @@ class xrootStatInfoMock:
     flags = 0
 
     if Executable:
-      flags |= xrootStatInfoMock.StatInfoFlags.X_BIT_SET
+      flags |= xrootStatInfoMock.StatInfoFlags.X_BIT_SET #pylint: disable=no-member
     if Directory:
-      flags |= xrootStatInfoMock.StatInfoFlags.IS_DIR
+      flags |= xrootStatInfoMock.StatInfoFlags.IS_DIR #pylint: disable=no-member
     if Other:
-      flags |= xrootStatInfoMock.StatInfoFlags.OTHER
+      flags |= xrootStatInfoMock.StatInfoFlags.OTHER #pylint: disable=no-member
     if Offline:
-      flags |= xrootStatInfoMock.StatInfoFlags.OFFLINE
+      flags |= xrootStatInfoMock.StatInfoFlags.OFFLINE #pylint: disable=no-member
     if PoscPending:
-      flags |= xrootStatInfoMock.StatInfoFlags.POSC_PENDING
+      flags |= xrootStatInfoMock.StatInfoFlags.POSC_PENDING #pylint: disable=no-member
     if Readable:
-      flags |= xrootStatInfoMock.StatInfoFlags.IS_READABLE
+      flags |= xrootStatInfoMock.StatInfoFlags.IS_READABLE #pylint: disable=no-member
     if Writable:
-      flags |= xrootStatInfoMock.StatInfoFlags.IS_WRITABLE
+      flags |= xrootStatInfoMock.StatInfoFlags.IS_WRITABLE #pylint: disable=no-member
 
 
     self.flags = flags
 
   def makeDir( self ):
     """ Set the other bit to false, and the dir bit to true """
-    self.flags &= ~xrootStatInfoMock.StatInfoFlags.OTHER
-    self.flags |= xrootStatInfoMock.StatInfoFlags.IS_DIR
+    self.flags &= ~xrootStatInfoMock.StatInfoFlags.OTHER #pylint: disable=no-member
+    self.flags |= xrootStatInfoMock.StatInfoFlags.IS_DIR #pylint: disable=no-member
 
   def makeFile( self ):
     """ set the other and dir bits to false"""
-    self.flags &= ~xrootStatInfoMock.StatInfoFlags.OTHER
-    self.flags &= ~xrootStatInfoMock.StatInfoFlags.IS_DIR
+    self.flags &= ~xrootStatInfoMock.StatInfoFlags.OTHER #pylint: disable=no-member
+    self.flags &= ~xrootStatInfoMock.StatInfoFlags.IS_DIR #pylint: disable=no-member
 
 
 

@@ -80,8 +80,10 @@ class ConsistencyInspector( object ):
   def __logVerbose( self, msg, msg1 = '' ):
     if self._verbose:
       newMsg = '[ConsistencyChecks] ' + ( '[%s] ' % str( self.prod ) ) if self.prod else ''
-      newMsg += msg
-      gLogger.notice( newMsg, msg1 )
+      # Add that prefix to all lines of the message
+      newMsg1 = msg1.replace( '\n', '\n' + newMsg )
+      newMsg += msg.replace( '\n', '\n' + newMsg )
+      gLogger.notice( newMsg, newMsg1 )
     else:
       gLogger.verbose( msg, msg1 )
 
