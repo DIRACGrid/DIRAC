@@ -13,7 +13,7 @@ class ConfigurationClient( object ):
 
   def __init__( self, fileToLoadList = None ):
     self.diracConfigFilePath = os.path.join( DIRAC.rootPath, "etc", "dirac.cfg" )
-    if fileToLoadList and type( fileToLoadList ) == types.ListType:
+    if fileToLoadList and isinstance( fileToLoadList, list ):
       for fileName in fileToLoadList:
         gConfigurationData.loadFile( fileName )
 
@@ -65,30 +65,6 @@ class ConfigurationClient( object ):
       return retVal[ 'Value' ]
     else:
       return defaultValue
-
-#  def getSpecialValue( self, optionPath, defaultValue = None, vo = None, setup = None ):
-#    """ Get a configuration option value for a specific vo and setup
-#    """
-#    voName = vo
-#    if not vo:
-#      voName = getVO()
-#    setupName = setup
-#    if not setup:
-#      setupName = self.getValue( '/DIRAC/Setup', '' )
-#
-#    # Get the most specific defined value now
-#    section = optionPath.split( '/' )[1]
-#    oPath = '/'.join( optionPath.split( '/' )[2:] )
-#    if voName:
-#      if setupName:
-#        value = self.getValue( section + '/' + voName + '/' + setupName + oPath, 'NotDefined' )
-#        if value != 'NotDefined':
-#          return value
-#      value = self.getValue( section + '/' + voName + oPath, 'NotDefined' )
-#      if value != 'NotDefined':
-#        return value
-#    value = self.getValue( optionPath, defaultValue )
-#    return value
 
   def getOption( self, optionPath, typeValue = None ):
     gRefresher.refreshConfigurationIfNeeded()
