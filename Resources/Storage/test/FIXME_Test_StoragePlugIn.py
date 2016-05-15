@@ -3,16 +3,20 @@
 # FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to tests directory
 
 
-__RCSID__ = "$Id$"
+import unittest
+import time
+import os
+import shutil
+import sys
+from types                                      import IntType, LongType, StringTypes
 
-# from DIRAC.Core.Base.Script                     import parseCommandLine, getPositionalArgs
-# parseCommandLine()
+from DIRAC.Core.Base.Script                     import parseCommandLine, getPositionalArgs
+parseCommandLine()
 from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
 from DIRAC.Core.Utilities.File                  import getSize
-from types                                      import *
-import unittest, time, os, shutil, sys
-
 positionalArgs = getPositionalArgs()
+
+__RCSID__ = "$Id$"
 
 if len( positionalArgs ) < 2:
   print 'Usage: TestStoragePlugIn.py StorageElement plugin'

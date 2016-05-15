@@ -2,18 +2,23 @@
 
 # FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to tests directory
 
-__RCSID__ = "$Id$"
+import unittest
+import time
+import os
+import shutil
+import sys
+import types
 
-# from DIRAC.Core.Base.Script                         import parseCommandLine, getPositionalArgs
-# parseCommandLine()
+from DIRAC.Core.Base.Script                         import parseCommandLine, getPositionalArgs
+parseCommandLine()
 from DIRAC.Resources.Storage.StorageElement         import StorageElement
 from DIRAC.Core.Utilities.ReturnValues              import returnSingleResult
 from DIRAC.Core.Utilities.File                      import getSize
 from DIRAC                                          import gLogger
 
-import unittest, time, os, shutil, sys, types
-
 positionalArgs = getPositionalArgs()
+
+__RCSID__ = "$Id$"
 
 if len( positionalArgs ) < 3:
   print 'Usage: TestStoragePlugIn.py StorageElement <lfnDir> <localFile>'

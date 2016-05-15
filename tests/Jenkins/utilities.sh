@@ -170,10 +170,10 @@ function findDatabases(){
 		DBstoExclude='notExcluding'
 	fi
 
-	cd $TESTCODE
+	cd $SERVERINSTALLDIR
 	if [ $? -ne 0 ]
 	then
-		echo 'ERROR: cannot change to ' $TESTCODE
+		echo 'ERROR: cannot change to ' $SERVERINSTALLDIR
 		return
 	fi
 	#
@@ -218,10 +218,10 @@ findServices(){
 		ServicestoExclude='notExcluding'
 	fi
 
-	cd $TESTCODE
+	cd $SERVERINSTALLDIR
 	if [ $? -ne 0 ]
 	then
-		echo 'ERROR: cannot change to ' $TESTCODE
+		echo 'ERROR: cannot change to ' $SERVERINSTALLDIR
 		return
 	fi
 	if [ ! -z "$ServicestoExclude" ]
@@ -251,10 +251,10 @@ findAgents(){
 		AgentstoExclude='notExcluding'
 	fi
 
-	cd $TESTCODE
+	cd $SERVERINSTALLDIR
 	if [ $? -ne 0 ]
 	then
-		echo 'ERROR: cannot change to ' $TESTCODE
+		echo 'ERROR: cannot change to ' $SERVERINSTALLDIR
 		return
 	fi
 	if [ ! -z "$AgentstoExclude" ]

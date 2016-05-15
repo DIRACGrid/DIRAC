@@ -68,10 +68,10 @@ class QualityMapGraph( PlotBase ):
 
     max_value = prefs.get( 'normalization' )
     if max_value:
-      self.cmap = cm.YlGnBu
+      self.cmap = cm.YlGnBu #pylint: disable=no-member
     else:
       max_value = 100
-      self.cmap = cm.RdYlGn
+      self.cmap = cm.RdYlGn #pylint: disable=no-member
 
     self.norms = Normalize( 0, max_value )
     mapper = cm.ScalarMappable( cmap = self.cmap, norm = self.norms )
@@ -187,7 +187,7 @@ class QualityMapGraph( PlotBase ):
       if self.log_xaxis:
         xmin = 0.001
       else:
-        xmin = 0
+        xmin = 0.
       ax.set_xlim( xmin = xmin, xmax = len( ticks ) )
     elif self.gdata.key_type == "time":
 

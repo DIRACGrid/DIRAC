@@ -119,22 +119,22 @@ class FileCatalog( object ):
     # Get the list of write methods
     if haveMaster:
       # All the write methods must be present in the master
-      catalogName, oCatalog, master = self.writeCatalogs[0]
+      _catalogName, oCatalog, _master = self.writeCatalogs[0]
       _roList, writeList, nolfnList = oCatalog.getInterfaceMethods()
       self.write_methods.update( writeList )
       self.no_lfn_methods.update( nolfnList )
     else:
-      for catalogName, oCatalog, master in self.writeCatalogs:
+      for _catalogName, oCatalog, _master in self.writeCatalogs:
         _roList, writeList, nolfnList = oCatalog.getInterfaceMethods()
         self.write_methods.update( writeList )
         self.no_lfn_methods.update( nolfnList )
 
     # Get the list of read methods
-    for catalogName, oCatalog, master in self.readCatalogs:
+    for _catalogName, oCatalog, _master in self.readCatalogs:
       roList, _writeList, nolfnList = oCatalog.getInterfaceMethods()
       self.ro_methods.update( roList )
       self.no_lfn_methods.update( nolfnList )
-      
+
     self.condParser = FCConditionParser( vo = self.vo, ro_methods = self.ro_methods )
 
   def isOK( self ):
@@ -228,14 +228,14 @@ class FileCatalog( object ):
           if any([not valid for valid in condEvals.values()]):
             gLogger.error( "The master catalog is not valid for some LFNS", condEvals )
             return S_ERROR( "The master catalog is not valid for some LFNS %s" % condEvals )
-        
+
         validLFNs = dict( ( lfn, fileInfo[lfn] ) for lfn in condEvals if condEvals[lfn] )
         invalidLFNs = [lfn for lfn in condEvals if not condEvals[lfn]]
         if invalidLFNs:
           gLogger.debug( "Some LFNs are not valid for operation '%s' on catalog '%s' : %s" % ( self.call, catalogName,
-                                                                                        invalidLFNs ) )
+                                                                                               invalidLFNs ) )
         result = method( validLFNs, *parms1, **kws )
-        
+
 
       if master:
         masterResult = result
@@ -244,7 +244,7 @@ class FileCatalog( object ):
         if master:
           # If this is the master catalog and it fails we don't want to continue with the other catalogs
           self.log.error( "Failed to execute call on master catalog",
-                     "%s on %s: %s" % ( self.call, catalogName, result['Message'] ) )
+                          "%s on %s: %s" % ( self.call, catalogName, result['Message'] ) )
           return result
         else:
           # Otherwise we keep the failed catalogs so we can update their state later
@@ -392,7 +392,7 @@ class FileCatalog( object ):
       else:
         res = gConfig.getSections( self.rootConfigPath, listOrdered = True )
         if not res['OK']:
-          errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
+          errStr = "FileCatalog._getEligibleCatalogs: Failed to get file catalog configuration."
           self.log.error( errStr, res['Message'] )
           return S_ERROR( errStr )
         fileCatalogs = res['Value']
@@ -400,6 +400,8 @@ class FileCatalog( object ):
     return S_OK( fileCatalogs )
 
   def _getCatalogs( self ):
+    """ Updates self.readCatalogs and self.writeCatalogs with list of catalog objects as found in the CS
+    """
 
     # Get the eligible catalogs first
     result = self._getEligibleCatalogs()
@@ -467,4 +469,3 @@ class FileCatalog( object ):
     if not useProxy:
       useProxy = self.opHelper.getValue( '/Services/Catalogs/%s/UseProxy' % catalogName, False )
     return FileCatalogFactory().createCatalog( catalogName, useProxy )
-
