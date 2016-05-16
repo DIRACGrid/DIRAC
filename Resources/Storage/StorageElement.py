@@ -36,6 +36,13 @@ class StorageElementCache( object ):
   def __call__( self, name, plugins = None, vo = None, hideExceptions = False ):
     self.seCache.purgeExpired( expiredInSeconds = 60 )
     tId = threading.current_thread().ident
+
+    if not vo:
+      result = getVOfromProxyGroup()
+      if not result['OK']:
+        return
+      vo = result['Value']
+
     argTuple = ( tId, name, plugins, vo )
     seObj = self.seCache.get( argTuple )
 
@@ -623,7 +630,7 @@ class StorageElementItem( object ):
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName
-        :param lfn : string, list or dictionnary
+        :param lfn : string, list or dictionary
         :param *args : variable amount of non-keyword arguments. SHOULD BE EMPTY
         :param **kwargs : keyword arguments
         :returns S_OK( { 'Failed': {lfn : reason} , 'Successful': {lfn : value} } )
