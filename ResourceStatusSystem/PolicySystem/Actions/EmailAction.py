@@ -1,6 +1,6 @@
 ''' EmailAction
 
-  This action writes all the necessary data to a cache file ( cache.json ) that
+  This action writes all the necessary data to a cache file ( cache.db ) that
   will be used later by the EmailAgent in order to send the emails for each site.
 
 '''
@@ -67,14 +67,18 @@ class EmailAction( BaseAction ):
 
     with sqlite3.connect(self.cacheFile) as conn:
 
-      conn.execute('''CREATE TABLE IF NOT EXISTS ResourceStatusCache(
-                    SiteName VARCHAR(64) NOT NULL,
-                    ResourceName VARCHAR(64) NOT NULL,
-                    Status VARCHAR(8) NOT NULL DEFAULT "",
-                    PreviousStatus VARCHAR(8) NOT NULL DEFAULT "",
-                    StatusType VARCHAR(128) NOT NULL DEFAULT "all",
-                    Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                   );''')
+      try:
+        conn.execute('''CREATE TABLE IF NOT EXISTS ResourceStatusCache(
+                      SiteName VARCHAR(64) NOT NULL,
+                      ResourceName VARCHAR(64) NOT NULL,
+                      Status VARCHAR(8) NOT NULL DEFAULT "",
+                      PreviousStatus VARCHAR(8) NOT NULL DEFAULT "",
+                      StatusType VARCHAR(128) NOT NULL DEFAULT "all",
+                      Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                     );''')
+                     
+      except sqlite3.OperationalError:
+        self.log.error('Email cache database is locked')
 
       conn.execute("INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
                    " VALUES ('" + siteName + "', '" + name + "', '" + status + "', '" + previousStatus + "', '" + statusType + "' ); "
