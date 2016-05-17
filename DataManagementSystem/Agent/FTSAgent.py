@@ -467,7 +467,10 @@ class FTSAgent( AgentModule ):
       ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
       now = datetime.datetime.utcnow()
-      jobsToMonitor = [job for job in ftsJobs if ( now - job.LastUpdate ).seconds > ( self.MONITORING_INTERVAL * ( 3. if job.Status == 'Staging' else 1. ) )]
+      jobsToMonitor = [job for job in ftsJobs if
+                       ( now - job.LastUpdate ).seconds >
+                       ( self.MONITORING_INTERVAL * ( 3. if StorageElement( job.SourceSE ).getStatus().get( 'Value', {} ).get( 'TapeSE' ) else 1. ) )
+                       ]
       if jobsToMonitor:
         log.info( "==> found %s FTSJobs to monitor" % len( jobsToMonitor ) )
         # # PHASE 0 = monitor active FTSJobs
@@ -485,6 +488,9 @@ class FTSAgent( AgentModule ):
             log.info( " => %d FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
       if len( ftsJobs ) != len( jobsToMonitor ):
         log.info( "==> found %d FTSJobs that were monitored recently" % ( len( ftsJobs ) - len( jobsToMonitor ) ) )
+        if not jobsToMonitor:
+          # Nothing to happen this time, escape
+          raise escapeTry
 
       # # PHASE ONE - check ready replicas
       missingReplicas = self.__checkReadyReplicas( request, operation )
@@ -559,11 +565,15 @@ class FTSAgent( AgentModule ):
 
             # If all transfers are finished for unregistered files and there is already a registration operation, set it Done
             for lfn in missingReplicas:
-              if not [f for f in ftsFiles if f.LFN == lfn and ( f.Status != 'Finished' or f in ftsFilesDict['toReschedule'] or f in ftsFilesDict['toRegister'] )]:
-                for opFile in operation:
-                  if opFile.LFN == lfn:
-                    opFile.Status = 'Done'
-                    break
+              # We make sure here that the file is being processed by FTS
+              if lfn in [f.LFN for f in ftsFiles]:
+                if not [f for f in ftsFiles if f.LFN == lfn and ( f.Status != 'Finished' or f in ftsFilesDict['toReschedule'] or f in ftsFilesDict['toRegister'] )]:
+                  for opFile in operation:
+                    if opFile.LFN == lfn:
+                      opFile.Status = 'Done'
+                      break
+              else:
+                log.warn( "File with missing replica not in FTS files", lfn )
           for key, ftsFiles in ftsFilesDict.iteritems():
             if ftsFiles:
               log.info( " => %d FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
@@ -664,6 +674,8 @@ class FTSAgent( AgentModule ):
 
     except escapeTry:
       # This clause is raised when one wants to return from within the try: clause
+      # only put back jobs that were monitored
+      ftsJobs = jobsToMonitor
       pass
     except Exception, exceptMessage:
       log.exception( "Exception in processRequest", lException = exceptMessage )
@@ -892,7 +904,7 @@ class FTSAgent( AgentModule ):
       return monitor
 
     monitor = monitor["Value"]
-    log.info( "FTSJob Status = %s Completeness = %s" % ( ftsJob.Status, ftsJob.Completeness ) )
+    log.info( "FTSJob Status = %s Completeness = %s%%" % ( ftsJob.Status, ftsJob.Completeness ) )
 
     # # monitor status change
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
