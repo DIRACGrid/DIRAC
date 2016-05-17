@@ -678,7 +678,7 @@ class FTSAgent( AgentModule ):
       # This clause is raised when one wants to return from within the try: clause
       # only put back jobs that were monitored
       ftsJobs = jobsToMonitor
-    except Exception, exceptMessage:
+    except Exception as exceptMessage:
       log.exception( "Exception in processRequest", lException = exceptMessage )
     finally:
       putRequest = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
