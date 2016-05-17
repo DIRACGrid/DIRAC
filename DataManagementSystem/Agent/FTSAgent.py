@@ -80,7 +80,7 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 # # agent base name
 AGENT_NAME = "DataManagement/FTSAgent"
 
-class escapeTry( Exception ):
+class EscapeTryException( Exception ):
   pass
 
 ########################################################################
@@ -490,7 +490,7 @@ class FTSAgent( AgentModule ):
         log.info( "==> found %d FTSJobs that were monitored recently" % ( len( ftsJobs ) - len( jobsToMonitor ) ) )
         if not jobsToMonitor:
           # Nothing to happen this time, escape
-          raise escapeTry
+          raise EscapeTryException
 
       # # PHASE ONE - check ready replicas
       missingReplicas = self.__checkReadyReplicas( request, operation )
@@ -600,7 +600,7 @@ class FTSAgent( AgentModule ):
           request.Error = "ReplicateAndRegister %s failed" % operation.Order
           log.error( "request is set to 'Failed'" )
           # # putRequest is done by the finally: clause... Not good to do it twice
-          raise escapeTry
+          raise EscapeTryException
 
       # # PHASE THREE - update Waiting#TargetSE FTSFiles
       if toUpdate:
@@ -674,11 +674,10 @@ class FTSAgent( AgentModule ):
       if request.Status != "Scheduled":
         log.info( "request no longer in 'Scheduled' state (%s), will put it back to RMS" % request.Status )
 
-    except escapeTry:
+    except EscapeTryException:
       # This clause is raised when one wants to return from within the try: clause
       # only put back jobs that were monitored
       ftsJobs = jobsToMonitor
-      pass
     except Exception, exceptMessage:
       log.exception( "Exception in processRequest", lException = exceptMessage )
     finally:
