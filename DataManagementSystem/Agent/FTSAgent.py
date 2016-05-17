@@ -564,9 +564,10 @@ class FTSAgent( AgentModule ):
                 ftsFilesDict['toSubmit'].append( ftsFile )
 
             # If all transfers are finished for unregistered files and there is already a registration operation, set it Done
+            ftsLFNs = [f.LFN for f in ftsFiles]
             for lfn in missingReplicas:
               # We make sure here that the file is being processed by FTS
-              if lfn in [f.LFN for f in ftsFiles]:
+              if lfn in ftsLFNs:
                 if not [f for f in ftsFiles if f.LFN == lfn and ( f.Status != 'Finished' or f in ftsFilesDict['toReschedule'] or f in ftsFilesDict['toRegister'] )]:
                   for opFile in operation:
                     if opFile.LFN == lfn:
