@@ -190,12 +190,12 @@ class WMSAdministratorHandler(RequestHandler):
 ##########################################################################################
   types_addPilotTQReference = [ list, [int, long], basestring, basestring ]
   def export_addPilotTQReference( self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
-                                  gridType='DIRAC', requirements='Unknown',pilotStampDict={}):
+                                  gridType='DIRAC', pilotStampDict={}):
     """ Add a new pilot job reference """
     pilotsLoggingDB.addPilotsLogging(pilotRef, 'Submitted', '', datetime.now(), 'WMSAdmin')
     return pilotDB.addPilotTQReference(pilotRef, taskQueueID,
                                        ownerDN, ownerGroup,
-                                       broker, gridType, requirements,pilotStampDict)
+                                       broker, gridType, pilotStampDict)
 
 
   ##############################################################################

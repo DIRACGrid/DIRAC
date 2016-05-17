@@ -40,15 +40,10 @@ class PilotAgentsDB( DB ):
 
 ##########################################################################################
   def addPilotTQReference( self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker = 'Unknown',
-                        gridType = 'DIRAC', requirements = 'Unknown', pilotStampDict = {} ):
+                        gridType = 'DIRAC', pilotStampDict = {} ):
     """ Add a new pilot job reference """
 
     err = 'PilotAgentsDB.addPilotTQReference: Failed to retrieve a new Id.'
-
-    result = self._escapeString( requirements )
-    if not result['OK']:
-      gLogger.warn( 'Failed to escape requirements string' )
-    e_requirements = result['Value']
 
     for ref in pilotRef:
       stamp = ''
@@ -73,11 +68,6 @@ class PilotAgentsDB( DB ):
         return S_ERROR( '%s' % err )
 
       pilotID = int( result['lastRowId'] )
-
-      req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % ( pilotID, e_requirements )
-      res = self._update( req )
-      if not res['OK']:
-        return res
 
     return S_OK()
 
@@ -348,23 +338,6 @@ class PilotAgentsDB( DB ):
     """
 
     req = "UPDATE PilotAgents SET AccountingSent='%s' WHERE PilotJobReference='%s'" % ( mark, pilotRef )
-    result = self._update( req )
-    return result
-
-##########################################################################################
-  def setPilotRequirements( self, pilotRef, requirements ):
-    """ Set the pilot agent grid requirements
-    """
-
-    pilotID = self.__getPilotID( pilotRef )
-    if not pilotID:
-      return S_ERROR( 'Pilot reference not found %s' % pilotRef )
-
-    result = self._escapeString( requirements )
-    if not result['OK']:
-      return S_ERROR( 'Failed to escape requirements string' )
-    e_requirements = result['Value']
-    req = "UPDATE PilotRequirements SET Requirements='%s' WHERE PilotID=%d" % ( e_requirements, pilotID )
     result = self._update( req )
     return result
 
