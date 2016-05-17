@@ -1,3 +1,12 @@
+[v6r14p31]
+
+*DMS
+FIX: FTSAgent - if a file was not Scheduled, the FTSAgent was setting it Done even if it had 
+     not been replicated.
+
+*Workflow
+FIX: FailoverRequest - forcing setting the input file Unused if it was already set Processed
+
 [v6r14p30]
 
 *Framework
