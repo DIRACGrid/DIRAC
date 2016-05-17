@@ -152,7 +152,10 @@ class JobScheduling( OptimizerExecutor ):
     siteCandidates = list( opData[ 'SiteCandidates' ] )
     self.jobLog.info( "Site candidates are %s" % siteCandidates )
 
-    siteCandidates = self._applySiteFilter( list( set( siteCandidates ) & set( userSites ) ), banned = userBannedSites )
+    if userSites:
+      siteCandidates = list( set( siteCandidates ) & set( userSites ) )
+
+    siteCandidates = self._applySiteFilter( siteCandidates, banned = userBannedSites )
     if not siteCandidates:
       return S_ERROR( "Impossible InputData * Site requirements" )
 

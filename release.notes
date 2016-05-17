@@ -1,4 +1,4 @@
-[v6r15-pre24]
+[v6r15]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
@@ -124,6 +124,15 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p31]
+
+*DMS
+FIX: FTSAgent - if a file was not Scheduled, the FTSAgent was setting it Done even if it had 
+     not been replicated.
+
+*Workflow
+FIX: FailoverRequest - forcing setting the input file Unused if it was already set Processed
 
 [v6r14p30]
 
