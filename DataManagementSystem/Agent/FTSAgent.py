@@ -574,6 +574,7 @@ class FTSAgent( AgentModule ):
                       opFile.Status = 'Done'
                       break
               else:
+                # Temporary log
                 log.warn( "File with missing replica not in FTS files", lfn )
           for key, ftsFiles in ftsFilesDict.iteritems():
             if ftsFiles:
