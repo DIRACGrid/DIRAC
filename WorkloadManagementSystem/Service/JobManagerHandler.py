@@ -258,7 +258,11 @@ class JobManagerHandler( RequestHandler ):
         ret = gPilotAgentsDB.deletePilot( pilot['PilotID'] )
         if not ret['OK']:
           return ret
-        ret = gPilotsLoggingDB.deletePilotsLogging( pilot['PilotID'] )
+        pilotRef = gPilotAgentsDB.getPilotRef( pilot['PilotID'] )
+        if not pilotRef['OK']:
+          return pilotRef
+        pilotRef = pilotRef['Value'][0][0]
+        ret = gPilotsLoggingDB.deletePilotsLogging( pilotRef )
         if not ret['OK']:
           return ret
 
