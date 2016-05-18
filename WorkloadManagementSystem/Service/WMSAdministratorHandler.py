@@ -652,15 +652,15 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_deletePilots = [ [list, int, long] ]
-  def export_deletePilots( self, pilotIDs ):
+  def export_deletePilots( self, pilotRefs ):
 
-    if isinstance( pilotIDs, (int, long ) ):
-      pilotIDs = [pilotIDs, ]
+    if isinstance( pilotRefs, (int, long ) ):
+      pilotRefs = [pilotRefs, ]
 
-    result = pilotDB.deletePilots( pilotIDs )
+    result = pilotDB.deletePilotRefs( pilotRefs )
     if not result['OK']:
       return result
-    result = pilotsLoggingDB.deletePilotsLogging( pilotIDs )
+    result = pilotsLoggingDB.deletePilotsLogging( pilotRefs )
     if not result['OK']:
       return result
 
@@ -674,7 +674,7 @@ class WMSAdministratorHandler(RequestHandler):
     if not result[ 'OK' ]:
       return result
 
-    pilotIDs = result[ 'Value' ]
-    result = pilotsLoggingDB.deletePilotsLogging( pilotIDs )
+    pilotRefs = result[ 'Value' ]
+    result = pilotsLoggingDB.deletePilotsLogging( pilotRefs )
 
-    return S_OK()
+    return result

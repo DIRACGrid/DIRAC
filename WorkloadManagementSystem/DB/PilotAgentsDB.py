@@ -188,12 +188,12 @@ class PilotAgentsDB( DB ):
   def deletePilots( self, pilotIDs, conn = False ):
     """ Delete Pilots with IDs in the given list from the PilotAgentsDB """
 
-    if type( pilotIDs ) != type( [] ):
-      return S_ERROR( 'Input argument is not a List' )
+    if not isinstance( pilotIDs, list ):
+      pilotIDs = [ pilotIDs, ]
 
     failed = []
 
-    for table in ['PilotOutput', 'PilotRequirements', 'JobToPilotMapping', 'PilotAgents']:
+    for table in ['PilotOutput', 'JobToPilotMapping', 'PilotAgents']:
       idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
       result = self._update( req, conn = conn )
@@ -217,14 +217,24 @@ class PilotAgentsDB( DB ):
     return self.deletePilots( [pilotID], conn = conn )
 
 ##########################################################################################
+  def deletePilotRefs( self, pilotRefs, conn = False ):
+    """ Delete Pilot with the given reference from the PilotAgentsDB """
+
+    ids = []
+    for pilotRef in pilotRefs:
+      ids.append( self.__getPilotID( pilotRef ) )
+
+    return self.deletePilots( ids, conn = conn )
+
+  ##########################################################################################
   def clearPilots( self, interval = 30, aborted_interval = 7 ):
     """ Delete all the pilot references submitted before <interval> days """
 
     reqList = []
-    reqList.append( "SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % interval )
-    reqList.append( "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % aborted_interval )
+    reqList.append( "SELECT PilotJobReference FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % interval )
+    reqList.append( "SELECT PilotJobReference FROM PilotAgents WHERE Status='Aborted' AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % aborted_interval )
 
-    idList = None
+    refList = None
 
     for req in reqList:
       result = self._query( req )
@@ -232,12 +242,12 @@ class PilotAgentsDB( DB ):
         gLogger.warn( 'Error while clearing up pilots' )
       else:
         if result['Value']:
-          idList = [ x[0] for x in result['Value'] ]
-          result = self.deletePilots( idList )
+          refList = [ x[0] for x in result['Value'] ]
+          result = self.deletePilotRefs( refList )
           if not result['OK']:
             gLogger.warn( 'Error while deleting pilots' )
 
-    return S_OK( idList )
+    return S_OK( refList )
 
 ##########################################################################################
   def getPilotInfo( self, pilotRef = False, parentId = False, conn = False, paramNames = [], pilotID = False ):
@@ -410,6 +420,15 @@ class PilotAgentsDB( DB ):
         return [ x[0] for x in result['Value'] ]
       else:
         return []
+
+##########################################################################################
+  def getPilotRef( self, pilotID ):
+    """ Get PilotRef for the given pilot reference or a list of references
+    """
+
+    req = "SELECT PilotJobReference from PilotAgents WHERE PilotID='%d'" % pilotID
+    result = self._query( req )
+    return S_OK( result['Value'] )
 
 ##########################################################################################
   def setJobForPilot( self, jobID, pilotRef, site = None, updateStatus = True ):
