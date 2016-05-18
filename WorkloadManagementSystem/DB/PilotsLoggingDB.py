@@ -134,7 +134,7 @@ class PilotsLoggingDB( object ):
 
     session = self.sqlalchemySession( )
 
-    session.query( PilotsLogging ).filter( PilotsLogging.pilotRef == pilotRef ).delete(
+    session.query( PilotsLogging ).filter( PilotsLogging.pilotRef._in( pilotRef ) ).delete(
       synchronize_session = 'fetch' )
 
     try:
