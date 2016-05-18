@@ -7,4 +7,4 @@ Workload Management System
    :maxdepth: 1
 
    JobPriorities/index
-   Pilots2
+   Pilots/index
