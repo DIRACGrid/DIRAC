@@ -13,6 +13,6 @@ JDLs are then matched by pilots running on the Worker Nodes.
 .. toctree::
    :maxdepth: 1
 
-   Jobs/index
    Pilots/index
+   Jobs/index
    JobPriorities/index

@@ -37,7 +37,7 @@ A pilot has to run on each and every computing resource type, provided that:
 
 The same pilot script can be used everywhere.
 
-.. image:: ../../../_static/Systems/WMS/Pilots.png
+.. image:: ../../../_static/Systems/WMS/Pilots2.png
    :alt: Pilots.
    :align: center
 

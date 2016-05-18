@@ -11,3 +11,5 @@ Some definitions for DIRAC jobs:
 - *JDL*: a container of payload requirements
 - *DIRAC job*: a JDL to which it is assigned a unique identifier inside the DIRAC WMS
 - *JobWrapper*: a software module for running a DIRACJob in a controlled way
+
+Applications properties are reflected in payload properties.
