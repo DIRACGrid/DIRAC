@@ -62,12 +62,39 @@ e.g. by supplying the proper contextualization to the VM.
 Administration
 ==============
 
-The following CS section is used for
+The following CS section is used for administering the version of DIRAC that the pilot will install::
+
+   Operations/<Setup>/Pilot
+
+Inside this section, you should define the following options, and give them a meaningful value (here, an example is give)::
+
+   #Needed by the SiteDirector:
+   Version = v6r15p31 #Version to install. Add the version of your extension if you have one.
+   Project = myVO #Your project name
+   Extensions = myVO #The Pilot extension (if any)
+   Installation = mycfg.cfg #For an optional configuration file
+   #For the Matcher
+   CheckVersion = False #True by default, if false any version would be accepted at matching level
+
+
+Pilot Commands
+==============
+
+The system works with "commands", as explained in the RFC. Any command can be added.
+If your command is executed before the "InstallDIRAC" command, pay attention that DIRAC functionalities won't be available.
+
+We have introduced a special command named "GetPilotVersion"
+in https://github.com/DIRACGrid/DIRAC/blob/rel-v6r12/WorkloadManagementSystem/PilotAgent/pilotCommands.py that you should use,
+and possibly extend, in case you want to send/start pilots that don't know beforehand the (VO)DIRAC version they are going to install.
+In this case, you have to provide a json file freely accessible that contains the pilot version.
+This is tipically the case for VMs in IAAS and IAAC.
+
+Beware that, to send pilots containing a specific list of commands via SiteDirector agents need a SiteDirector extension.
 
 
 
-Pilots 2.0
-===========
+Pilots started when not controlled by the SiteDirector
+======================================================
 
 In case your VO only uses Grid resources, and the pilots are only sent by SiteDirector and TaksQueueDirector agents,
 and you don't plan to have any specific pilot behaviour, you can stop reading here:
@@ -82,13 +109,4 @@ The main file in which you should look is
 https://github.com/DIRACGrid/DIRAC/blob/rel-v6r12/WorkloadManagementSystem/PilotAgent/dirac-pilot.py
 that also contains a good explanation on how the system works.
 
-The system works with "commands", as explained in the RFC. Any command can be added.
-If your command is executed before the "InstallDIRAC" command, pay attention that DIRAC functionalities won't be available.
-
-We have introduced a special command named "GetPilotVersion"
-in https://github.com/DIRACGrid/DIRAC/blob/rel-v6r12/WorkloadManagementSystem/PilotAgent/pilotCommands.py that you should use,
-and possibly extend, in case you want to send/start pilots that don't know beforehand the (VO)DIRAC version they are going to install.
-In this case, you have to provide a json file freely accessible that contains the pilot version.
-This is tipically the case for VMs in IAAS and IAAC.
-
-Beware that, to send pilots containing a specific list of commands via SiteDirector agents need a SiteDirector extension.
+!!!TO-DO!!!
