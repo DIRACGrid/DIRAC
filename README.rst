@@ -4,6 +4,9 @@ DIRAC
 =====
 .. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=rel-v6r14
     :target: https://travis-ci.org/DIRACGrid/DIRAC
+.. image:: https://img.shields.io/coveralls/DIRACGrid/DIRAC/rel-v6r14.svg?maxAge=2592000
+    :target: https://coveralls.io/github/DIRACGrid/DIRAC
+
 DIRAC (Distributed Infrastructure with Remote Agent Control) INTERWARE is a software framework for distributed computing providing a complete solution to one or more user community requiring access to distributed resources. DIRAC builds a layer between the users and the resources offering a common interface to a number of heterogeneous providers, integrating them in a seamless manner, providing interoperability, at the same time as an optimized, transparent and reliable usage of the resources.
 
 DIRAC has been started by the `LHCb collaboration <https://lhcb.web.cern.ch/lhcb/>`_ who still maintains it. It is now used by several communities (AKA VO=Virtual Organizations) for their distributed computing workflows.
