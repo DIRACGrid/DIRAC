@@ -80,33 +80,145 @@ Inside this section, you should define the following options, and give them a me
 Pilot Commands
 ==============
 
-The system works with "commands", as explained in the RFC. Any command can be added.
+The system works with "commands", as explained in the RFC 18. Any command can be added.
 If your command is executed before the "InstallDIRAC" command, pay attention that DIRAC functionalities won't be available.
 
-We have introduced a special command named "GetPilotVersion"
-in https://github.com/DIRACGrid/DIRAC/blob/rel-v6r12/WorkloadManagementSystem/PilotAgent/pilotCommands.py that you should use,
-and possibly extend, in case you want to send/start pilots that don't know beforehand the (VO)DIRAC version they are going to install.
-In this case, you have to provide a json file freely accessible that contains the pilot version.
-This is tipically the case for VMs in IAAS and IAAC.
+Beware that, to send pilot jobs containing a specific list of commands using the SiteDirector agents,
+you'll need a SiteDirector extension.
 
-Beware that, to send pilots containing a specific list of commands via SiteDirector agents need a SiteDirector extension.
+If no custom list of command is specified, then the following list will be run::
 
+   'GetPilotVersion', 'CheckWorkerNode', 'InstallDIRAC', 'ConfigureBasics', 'CheckCECapabilities',
+   'CheckWNCapabilities', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
+   'LaunchAgent'
+
+
+Pilot options
+=============
+
+The pilot can be configured to run in several ways.
+Please, refer to https://github.com/DIRACGrid/DIRAC/blob/rel-v6r15/WorkloadManagementSystem/PilotAgent/pilotTools.py#L395
+for the full list.
+
+Pilot extensions
+================
+
+In case your VO only uses Grid resources, and the pilots are only sent by SiteDirector or TaksQueueDirector agents,
+and you don't plan to have any specific pilot behaviour, you can stop reading here.
+
+Instead, in case you want, for example, to install DIRAC in a different way, or you want your pilot to have some VO specific action,
+you should carefully read the RFC 18, and what follows.
+
+Pilot commands can be extended. A custom list of commands can be added starting the pilot with the -X option.
 
 
 Pilots started when not controlled by the SiteDirector
 ======================================================
 
-In case your VO only uses Grid resources, and the pilots are only sent by SiteDirector and TaksQueueDirector agents,
-and you don't plan to have any specific pilot behaviour, you can stop reading here:
-the new pilot won't have anything different from the old pilot that you will notice.
+You should keep reading if your resources include IAAS and IAAC type of resources, like Virtual Machines.
 
-Instead, in case you want, for example, to install DIRAC in a different way, or you want your pilot to have some VO specific action,
-you should carefully read the RFC 18, and what follows.
-You should also keep reading if your resources include IAAS and IAAC type of resources, like Virtual Machines.
+We have introduced a special command named "GetPilotVersion" that you should use,
+and possibly extend, in case you want to send/start pilots that don't know beforehand the (VO)DIRAC version they are going to install.
+In this case, you have to provide a json file freely accessible that contains the pilot version.
+This is tipically the case for VMs in IAAS and IAAC.
 
-The files to consider are in https://github.com/DIRACGrid/DIRAC/tree/rel-v6r12/WorkloadManagementSystem/PilotAgent
+The files to consider are in https://github.com/DIRACGrid/DIRAC/blob/rel-v6r15/WorkloadManagementSystem/PilotAgent
 The main file in which you should look is
-https://github.com/DIRACGrid/DIRAC/blob/rel-v6r12/WorkloadManagementSystem/PilotAgent/dirac-pilot.py
+https://github.com/DIRACGrid/DIRAC/blob/rel-v6r15/WorkloadManagementSystem/PilotAgent/dirac-pilot.py
 that also contains a good explanation on how the system works.
 
-!!!TO-DO!!!
+You have to provide in this case a pilot wrapper script (which can be written in bash, for example) that will start your pilot script
+with the proper environment. If you are on a cloud site, often contextualization of your virtual machine is done by supplying
+a script like the following: https://gitlab.cern.ch/mcnab/temp-diracpilot/raw/master/user_data (this one is an example from LHCb)
+
+A simpler example is the following::
+
+  #!/bin/sh
+  #
+  # Runs as dirac. Sets up to run dirac-pilot.py
+  #
+
+  date --utc +"%Y-%m-%d %H:%M:%S %Z vm-pilot Start vm-pilot"
+
+  for i in "$@"
+  do
+  case $i in
+      --dirac-site=*)
+      DIRAC_SITE="${i#*=}"
+      shift
+      ;;
+      --lhcb-setup=*)
+      LHCBDIRAC_SETUP="${i#*=}"
+      shift
+      ;;
+      --ce-name=*)
+      CE_NAME="${i#*=}"
+      shift
+      ;;
+      --vm-uuid=*)
+      VM_UUID="${i#*=}"
+      shift
+      ;;
+      --vmtype=*)
+      VMTYPE="${i#*=}"
+      shift
+      ;;
+      *)
+      # unknown option
+      ;;
+  esac
+  done
+
+  # Default if not given explicitly
+  LHCBDIRAC_SETUP=${LHCBDIRAC_SETUP:-LHCb-Production}
+
+  # JOB_ID is used by when reporting LocalJobID by DIRAC watchdog
+  #export JOB_ID="$VMTYPE:$VM_UUID"
+
+  # We might be running from cvmfs or from /var/spool/checkout
+  export CONTEXTDIR=`readlink -f \`dirname $0\``
+
+  export TMPDIR=/scratch/
+  export EDG_WL_SCRATCH=$TMPDIR
+
+  # Needed to find software area
+  export VO_LHCB_SW_DIR=/cvmfs/lhcb.cern.ch
+
+  # Clear it to avoid problems ( be careful if there is more than one agent ! )
+  rm -rf /tmp/area/*
+
+  # URLs where to get scripts
+  DIRAC_INSTALL='https://raw.githubusercontent.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py'
+  DIRAC_PILOT='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/dirac-pilot.py'
+  DIRAC_PILOT_TOOLS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotTools.py'
+  DIRAC_PILOT_COMMANDS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotCommands.py'
+  LHCbDIRAC_PILOT_COMMANDS='http://svn.cern.ch/guest/dirac/LHCbDIRAC/trunk/LHCbDIRAC/WorkloadManagementSystem/PilotAgent/LHCbPilotCommands.py'
+
+  echo "Getting DIRAC Pilot 2.0 code from lhcbproject for now..."
+  DIRAC_INSTALL='https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilot2/dirac-install.py'
+  DIRAC_PILOT='https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilot2/dirac-pilot.py'
+  DIRAC_PILOT_TOOLS='https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilot2/pilotTools.py'
+  DIRAC_PILOT_COMMANDS='https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilot2/pilotCommands.py'
+
+  #
+  ##get the necessary scripts
+  wget --no-check-certificate -O dirac-install.py $DIRAC_INSTALL
+  wget --no-check-certificate -O dirac-pilot.py $DIRAC_PILOT
+  wget --no-check-certificate -O pilotTools.py $DIRAC_PILOT_TOOLS
+  wget --no-check-certificate -O pilotCommands.py $DIRAC_PILOT_COMMANDS
+  wget --no-check-certificate -O LHCbPilotCommands.py $LHCbDIRAC_PILOT_COMMANDS
+
+  #run the dirac-pilot script
+  python dirac-pilot.py \
+   --debug \
+   --setup $LHCBDIRAC_SETUP \
+   --project LHCb \
+   -o '/LocalSite/SubmitPool=Test' \
+   --configurationServer dips://lhcb-conf-dirac.cern.ch:9135/Configuration/Server \
+   --Name "$CE_NAME" \
+   --MaxCycles 1 \
+   --name "$1" \
+   --cert \
+   --certLocation=/scratch/dirac/etc/grid-security \
+   --commandExtensions LHCbPilot \
+   --commands LHCbGetPilotVersion,CheckWorkerNode,LHCbInstallDIRAC,LHCbConfigureBasics,LHCbConfigureSite,LHCbConfigureArchitecture,LHCbConfigureCPURequirements,LaunchAgent
