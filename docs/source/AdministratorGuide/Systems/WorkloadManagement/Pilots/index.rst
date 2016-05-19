@@ -37,7 +37,7 @@ A pilot has to run on each and every computing resource type, provided that:
 
 The same pilot script can be used everywhere.
 
-.. image:: ../../../_static/Systems/WMS/Pilots2.png
+.. image:: Pilots2.png
    :alt: Pilots.
    :align: center
 
@@ -86,11 +86,27 @@ If your command is executed before the "InstallDIRAC" command, pay attention tha
 Beware that, to send pilot jobs containing a specific list of commands using the SiteDirector agents,
 you'll need a SiteDirector extension.
 
-If no custom list of command is specified, then the following list will be run::
+Basically, pilot commands are an implementation of the command pattern.
+Commands define a toolbox of pilot capabilities available to the pilot script. Each command implements one function, like:
+
+- Check the environment
+- Get the pilot version to install
+- Install (VO)DIRAC
+- Configure (VO)DIRAC
+- In fact, there are several configuration commands
+- Configure CPU capabilities
+- the famous “dirac-wms-cpu-normalization”
+- Run the JobAgent
+
+A custom list of commands can be specified using the --commands option,
+but if nothing is selected then the following list will be run::
 
    'GetPilotVersion', 'CheckWorkerNode', 'InstallDIRAC', 'ConfigureBasics', 'CheckCECapabilities',
    'CheckWNCapabilities', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
    'LaunchAgent'
+
+Communities can easily extend the content of the toolbox, adding more commands.
+If necessary, different computing resources types can run different commands.
 
 
 Pilot options
@@ -99,6 +115,8 @@ Pilot options
 The pilot can be configured to run in several ways.
 Please, refer to https://github.com/DIRACGrid/DIRAC/blob/rel-v6r15/WorkloadManagementSystem/PilotAgent/pilotTools.py#L395
 for the full list.
+
+
 
 Pilot extensions
 ================
