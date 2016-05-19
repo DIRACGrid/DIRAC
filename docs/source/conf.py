@@ -13,14 +13,13 @@
 
 
 try:
-  import fakeEnvironment
+  import fakeEnv
 except:
   pass
 
 import datetime
 import os
 import sys
-import tempfile
 import subprocess
 
 try:
@@ -28,20 +27,7 @@ try:
 except KeyError:
   diracRelease = 'integration'
 
-diracRelease = subprocess.check_output( ["git", "rev-parse", "--abbrev-ref", "HEAD" ] ).strip()
-
 print 'conf.py: %s as DIRACVERSION' % diracRelease
-
-buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
-scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../build/scripts" ))
-print "command", buildCommand
-RES = subprocess.call( ["python",buildCommand, scriptdir ] )
-
-
-buildCommand = os.path.join( os.getcwd() , "../Tools/buildCodeDOC.py" )
-codedir = os.path.abspath(os.path.join( os.getcwd() , "../build/codes" ))
-print "command", buildCommand
-RES = subprocess.call( ["python",buildCommand, codedir ] )
 
 #...............................................................................
 # configuration
@@ -50,7 +36,40 @@ RES = subprocess.call( ["python",buildCommand, codedir ] )
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.append(os.path.abspath('.'))
+diracPath = os.path.abspath( os.path.join( os.getcwd(), "../..") )
+print "DiracPath",diracPath
 
+
+
+##We need to have the DIRAC module somewhere, or we cannot import it, as readtheDocs clones the repo into something based on the branchname
+RES = subprocess.check_output( ["ln","-sf",diracPath,"../../DIRAC"] )
+sys.path.insert(0, diracPath)
+RES = subprocess.check_output( ["ls",diracPath] )
+print "LS dirac",RES
+
+for path in sys.path:
+  os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')+":"+path
+
+print "Pythonpath",os.environ['PYTHONPATH']
+buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
+scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../build/scripts" ))
+print "command", buildCommand
+code = subprocess.Popen( ["python",buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+stdout , err = code.communicate()
+print "script",stdout
+print "script",err
+
+
+
+buildCommand = os.path.join( os.getcwd() , "../Tools/buildCodeDOC.py" )
+codedir = os.path.abspath(os.path.join( os.getcwd() , "../build/codes" ))
+print "command", buildCommand
+code = subprocess.Popen( ["python",buildCommand, codedir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+stdout , err = code.communicate()
+print "code",stdout
+print "code",err
+
+  
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
