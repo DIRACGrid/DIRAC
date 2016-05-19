@@ -21,13 +21,27 @@ import datetime
 import os
 import sys
 import tempfile
+import subprocess
 
 try:
   diracRelease = os.environ[ 'DIRACVERSION' ]
 except KeyError:
   diracRelease = 'integration'
 
+diracRelease = subprocess.check_output( ["git", "rev-parse", "--abbrev-ref", "HEAD" ] ).strip()
+
 print 'conf.py: %s as DIRACVERSION' % diracRelease
+
+buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
+scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../build/scripts" ))
+print "command", buildCommand
+RES = subprocess.call( ["python",buildCommand, scriptdir ] )
+
+
+buildCommand = os.path.join( os.getcwd() , "../Tools/buildCodeDOC.py" )
+codedir = os.path.abspath(os.path.join( os.getcwd() , "../build/codes" ))
+print "command", buildCommand
+RES = subprocess.call( ["python",buildCommand, codedir ] )
 
 #...............................................................................
 # configuration
