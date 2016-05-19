@@ -450,9 +450,8 @@ class RequestHandler( object ):
     dInfo[ 'time' ] = Time.dateTime()
     #Uptime
     try:
-      oFD = file( "/proc/uptime" )
-      iUptime = long( float( oFD.readline().split()[0].strip() ) )
-      oFD.close()
+      with open( "/proc/uptime" ) as oFD:
+        iUptime = long( float( oFD.readline().split()[0].strip() ) )
       dInfo[ 'host uptime' ] = iUptime
     except:
       pass
@@ -462,9 +461,8 @@ class RequestHandler( object ):
     dInfo[ 'service uptime' ] = serviceUptime.days * 3600 + serviceUptime.seconds
     #Load average
     try:
-      oFD = file( "/proc/loadavg" )
-      sLine = oFD.readline()
-      oFD.close()
+      with open( "/proc/loadavg" ) as oFD:
+        sLine = oFD.readline()
       dInfo[ 'load' ] = " ".join( sLine.split()[:3] )
     except:
       pass
