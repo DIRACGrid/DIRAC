@@ -8,7 +8,6 @@
     addPilotsLogging()
     getPilotsLogging()
     deletePilotsLoggin()
-    
 """
 
 __RCSID__ = "$Id$"
