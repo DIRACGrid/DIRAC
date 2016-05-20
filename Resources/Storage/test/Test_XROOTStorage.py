@@ -63,8 +63,10 @@ class XROOTStorage_TestCase( unittest.TestCase ):
     global mocked_xrootclient
     mocked_xrootclient.stat.return_value = sm, sim
     sm.makeOk()
-    mocked_xrootclient.stat.return_value = sm, sim
     updateStatMockReferences(sm, sim)
+    # Fixes the need to call makeOk at the end of the removeFile test (Fatal flag used to survive the test(cleanup))
+    mocked_xrootclient.rm.return_value = sm, sim
+    mocked_xrootclient.rm.side_effect = None
 
     self.parameterDict = dict(Protocol='protocol',
                               Path='path',
@@ -86,6 +88,8 @@ class XROOTStorage_TestCase( unittest.TestCase ):
     mocked_xrootclient.stat.side_effect = None
     mocked_xrootclient.dirlist.return_value = None
     mocked_xrootclient.dirlist.side_effect = None
+    mocked_xrootclient.rm.return_value = None
+    mocked_xrootclient.rm.side_effect = None
 
 # Mocks the first return value of a filesystem call (these return values are of the form (a,b) with a containing status information on the operations success and b containing information on the details of the operation (e.g. number of removed files/bytes in a removedir operation))
 class xrootStatusMock:
@@ -697,9 +701,6 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     statusMock.makeFatal()
     res = resource.removeFile( "A" )
     self.assertEqual( False, res['OK'] )
-
-    # Else the fatal flag might persist after this test is completed
-    statusMock.makeOk()
 
 
   def test_removeDirectory( self ):
