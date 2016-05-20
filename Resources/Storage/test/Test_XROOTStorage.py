@@ -925,31 +925,32 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     copymock = mock.Mock()
     copymock.run.return_value = (statusMock, None)
     mocked_xrootd.client.CopyProcess = mock.Mock(return_value = copymock)
-    res = resource.getDirectory( "A" )
-    self.assertEqual( True, res['OK'] )
-    self.assertEqual( {"A" : { "Files" : 3, "Size" :-3}}, res['Value']['Successful'] )
-    self.assertEqual( {}, res['Value']['Failed'] )
+    # Mock the os calls that access the filesystem and really create the directories locally.
+    with mock.patch('os.makedirs', new=MagicMock(return_value=True)), mock.patch('os.remove', new=MagicMock(return_value=True)):
+      res = resource.getDirectory( "A" )
+      self.assertEqual( True, res['OK'] )
+      self.assertEqual( {"A" : { "Files" : 3, "Size" :-3}}, res['Value']['Successful'] )
+      self.assertEqual( {}, res['Value']['Failed'] )
 
-    # The copy command is just in error
-    statusMock.makeError()
-    mocked_xrootclient.dirlist.side_effect =  [( statusStatDirMock, directoryListMock1 ), ( statusStatDirMock, directoryListMock2 ), ( statusStatDirMock, directoryListMock3 )]
-    mocked_xrootclient.stat.side_effect = [( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile ), ( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile ), ( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile )]
+      # The copy command is just in error
+      statusMock.makeError()
+      mocked_xrootclient.dirlist.side_effect =  [( statusStatDirMock, directoryListMock1 ), ( statusStatDirMock, directoryListMock2 ), ( statusStatDirMock, directoryListMock3 )]
+      mocked_xrootclient.stat.side_effect = [( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile ), ( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile ), ( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile )]
 
-    res = resource.getDirectory( "A" )
-    self.assertEqual( True, res['OK'] )
-    self.assertEqual( {}, res['Value']['Successful'] )
-    self.assertEqual( {"A" : { "Files" : 0, "Size" : 0}}, res['Value']['Failed'] )
+      res = resource.getDirectory( "A" )
+      self.assertEqual( True, res['OK'] )
+      self.assertEqual( {}, res['Value']['Successful'] )
+      self.assertEqual( {"A" : { "Files" : 0, "Size" : 0}}, res['Value']['Failed'] )
 
+      # The copy command is fatal
+      statusMock.makeFatal()
+      mocked_xrootclient.dirlist.side_effect = [( statusStatDirMock, directoryListMock1 ), ( statusStatDirMock, directoryListMock2 ), ( statusStatDirMock, directoryListMock3 )]
+      mocked_xrootclient.stat.side_effect =  [( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile ), ( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile ), ( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile )]
 
-    # The copy command is fatal
-    statusMock.makeFatal()
-    mocked_xrootclient.dirlist.side_effect = [( statusStatDirMock, directoryListMock1 ), ( statusStatDirMock, directoryListMock2 ), ( statusStatDirMock, directoryListMock3 )]
-    mocked_xrootclient.stat.side_effect =  [( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile ), ( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile ), ( statusStatDirMock, statInfoMockDir ), ( statusStatDirMock, statInfoMockFile )]
-
-    res = resource.getDirectory( "A" )
-    self.assertEqual( True, res['OK'] )
-    self.assertEqual( {}, res['Value']['Successful'] )
-    self.assertEqual( {"A" : { "Files" : 0, "Size" : 0}}, res['Value']['Failed'] )
+      res = resource.getDirectory( "A" )
+      self.assertEqual( True, res['OK'] )
+      self.assertEqual( {}, res['Value']['Successful'] )
+      self.assertEqual( {"A" : { "Files" : 0, "Size" : 0}}, res['Value']['Failed'] )
 
   @mock.patch('os.path.exists', new=MagicMock( return_value = True ))
   @mock.patch('DIRAC.Resources.Storage.XROOTStorage.getSize', new=MagicMock( return_value = 1 ))
