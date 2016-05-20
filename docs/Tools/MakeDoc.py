@@ -41,6 +41,7 @@ def mkRest( filename, modulename, fullmodulename, subpackages=None, modules=None
     lines.append("   :maxdepth: 1")
     lines.append("")
 
+  subpackages = [ s for s in subpackages if not s.endswith( ("scripts", ) ) ]
   if subpackages:
     print modulename, " subpackages ", subpackages
     lines.append( "SubPackages" )
@@ -137,8 +138,8 @@ def createDoc():
     if any( root.lower().endswith( f.lower() ) for f in ("/docs", ) ):
       #print "Skipping:", root
       continue
-    elif any( f.lower() in root.lower() for f in ("test", "scripts", "/db", "/AccountingDB", "/framework" ) ):
-      #print "Skipping:", root
+    elif any( f.lower() in root.lower() for f in ("test", "scripts",
+                                                 ) ):
       continue
     
     #print root, direc, files
