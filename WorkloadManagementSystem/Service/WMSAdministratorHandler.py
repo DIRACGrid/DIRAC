@@ -26,7 +26,6 @@ from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFa
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-from DIRAC.Core.Utilities import DErrno
 from datetime import datetime
 
 __RCSID__ = "$Id$"
@@ -46,6 +45,7 @@ def initializeWMSAdministratorHandler( serviceInfo ):
   global jobDB
   global pilotDB
   global taskQueueDB
+  global pilotsLoggingDB
 
   jobDB = JobDB()
   pilotDB = PilotAgentsDB()
@@ -651,10 +651,12 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK( statistics )
 
   ##############################################################################
-  types_deletePilots = [ [list, int, long] ]
+  types_deletePilots = [ [list, basestring] ]
   def export_deletePilots( self, pilotRefs ):
+    """Delete Pilots using PilotRef or list of PilotRefs
+    """
 
-    if isinstance( pilotRefs, (int, long ) ):
+    if isinstance( pilotRefs, basestring ):
       pilotRefs = [pilotRefs, ]
 
     result = pilotDB.deletePilotRefs( pilotRefs )
