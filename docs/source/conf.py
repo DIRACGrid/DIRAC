@@ -67,18 +67,19 @@ if os.environ.get('READTHEDOCS') == 'True':
   for path in sys.path:
     os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')+":"+path
 
-  print "Pythonpath",os.environ['PYTHONPATH']
-  buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
-  scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
-  try:
-    os.mkdir( scriptdir )
-  except:
-    pass
-  print "command", buildCommand
-  code = subprocess.Popen( ["python",buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  stdout , err = code.communicate()
-  print "script",stdout
-  print "script",err
+  ##  this is not working at the moment because the DIRAC folder is not found by the buildScriptsDOC script
+  # print "Pythonpath",os.environ['PYTHONPATH']
+  # buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
+  # scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
+  # try:
+  #   os.mkdir( scriptdir )
+  # except:
+  #   pass
+  # print "command", buildCommand
+  # code = subprocess.Popen( ["python", buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  # stdout , err = code.communicate()
+  # print "script",stdout
+  # print "script",err
 
   os.environ["DIRAC"] = diracPath
   print "DIRAC ENVIRON", os.environ["DIRAC"]
