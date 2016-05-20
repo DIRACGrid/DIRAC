@@ -11,16 +11,16 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-
-try:
-  import fakeEnv
-except:
-  pass
-
 import datetime
 import os
 import sys
 import subprocess
+
+sys.path.insert(0, ".")
+
+
+import fakeEnvironment
+import fakeEnv
 
 try:
   diracRelease = os.environ[ 'DIRACVERSION' ]
@@ -35,17 +35,20 @@ print 'conf.py: %s as DIRACVERSION' % diracRelease
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.append(os.path.abspath('.'))
+sys.path.append(os.path.abspath('.'))
 diracPath = os.path.abspath( os.path.join( os.getcwd(), "../..") )
 print "DiracPath",diracPath
 
-
-
 ##We need to have the DIRAC module somewhere, or we cannot import it, as readtheDocs clones the repo into something based on the branchname
-RES = subprocess.check_output( ["ln","-sf",diracPath,"../../DIRAC"] )
+if not os.path.exists( "../../DIRAC" ):
+  diracLink =  os.path.abspath( os.path.join( os.getcwd()  , "../build/DIRAC" ) )
+  print "DiracLink",diracLink
+  if not os.path.exists( diracLink ):
+    RES = subprocess.check_output( ["ln","-s", diracPath, diracLink ] )
+  diracPath = os.path.abspath( os.path.join( diracLink, ".." ) )
+
+
 sys.path.insert(0, diracPath)
-RES = subprocess.check_output( ["ls",diracPath] )
-print "LS dirac",RES
 
 for path in sys.path:
   os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')+":"+path
@@ -59,12 +62,20 @@ stdout , err = code.communicate()
 print "script",stdout
 print "script",err
 
+# buildCommand = os.path.join( os.getcwd() , "../Tools/buildCodeDOC.py" )
+# if not os.path.exists( codedir ):
+#   os.mkdir( codedir )
+# print "command", buildCommand
+#codedir = os.path.abspath(os.path.join( os.getcwd() , "../build/codes" ))
+# ##buildcodedoc needs a copy of DIRAC so we give it a link
+# codeLink = os.path.join( codedir, "DIRAC")
+# if not os.path.exists( codeLink ):
+#   RES = subprocess.check_output( ["ln","-sf",diracPath, codeLink ] )
 
-
-buildCommand = os.path.join( os.getcwd() , "../Tools/buildCodeDOC.py" )
-codedir = os.path.abspath(os.path.join( os.getcwd() , "../build/codes" ))
-print "command", buildCommand
-code = subprocess.Popen( ["python",buildCommand, codedir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+os.environ["DIRAC"] = diracPath
+print "DIRAC ENVIRON", os.environ["DIRAC"]
+buildCommand =os.path.join( os.getcwd() , "../Tools/MakeDoc.py" )
+code = subprocess.Popen( ["python",buildCommand], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 stdout , err = code.communicate()
 print "code",stdout
 print "code",err
