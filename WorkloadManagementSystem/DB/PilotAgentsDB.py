@@ -67,8 +67,6 @@ class PilotAgentsDB( DB ):
       if not 'lastRowId' in result:
         return S_ERROR( '%s' % err )
 
-      pilotID = int( result['lastRowId'] )
-
     return S_OK()
 
 ##########################################################################################

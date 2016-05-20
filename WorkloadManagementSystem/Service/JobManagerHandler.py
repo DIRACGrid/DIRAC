@@ -41,7 +41,7 @@ MAX_PARAMETRIC_JOBS = 20
 
 def initializeJobManagerHandler( serviceInfo ):
 
-  global gJobDB, gJobLoggingDB, gtaskQueueDB
+  global gJobDB, gJobLoggingDB, gtaskQueueDB, gPilotAgentsDB, gPilotsLoggingDB
   gJobDB = JobDB()
   gJobLoggingDB = JobLoggingDB()
   gtaskQueueDB = TaskQueueDB()
