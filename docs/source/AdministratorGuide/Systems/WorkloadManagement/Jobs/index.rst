@@ -13,3 +13,5 @@ Some definitions for DIRAC jobs:
 - *JobWrapper*: a software module for running a DIRACJob in a controlled way
 
 Applications properties are reflected in payload properties.
+
+The DIRAC APIs can be used to create and submit jobs.
