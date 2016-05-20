@@ -18,17 +18,22 @@ import subprocess
 
 sys.path.insert(0, ".")
 
-import fakeEnvironment
-import fakeEnv
-
 try:
-  diracRelease = os.environ[ 'DIRACVERSION' ]
-except KeyError:
-  diracRelease = 'integration'
+  import fakeEnvironment
+except ImportError:
+  pass
+try:
+  import fakeEnv
+except ImportError:
+  pass
 
+diracRelease = os.environ.get( 'DIRACVERSION', 'integration' )
+if os.environ.get('READTHEDOCS') == 'True':
+  diracRelease = os.path.basename( os.path.abspath( "../../" ) )
+  if diracRelease.startswith("rel-"):
+    diracRelease = diracRelease[4:]
 print 'conf.py: %s as DIRACVERSION' % diracRelease
 
-print os.getcwd()
 
 #...............................................................................
 # configuration
@@ -36,51 +41,48 @@ print os.getcwd()
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.append(os.path.abspath('.'))
-diracPath = os.path.abspath( os.path.join( os.getcwd(), "../..") )
-print "DiracPath",diracPath
 
-buildfolder = "build"
 if os.environ.get('READTHEDOCS') == 'True':
-  diracRelease = os.path.basename( os.path.abspath( "../../" ) )
-  if diracRelease.startswith("rel-"):
-    diracRelease = diracRelease[4:]
+  sys.path.append(os.path.abspath('.'))
+  diracPath = os.path.abspath( os.path.join( os.getcwd(), "../..") )
+  print "DiracPath",diracPath
+
   buildfolder ="_build"
   try:
     os.mkdir( os.path.abspath( "../"+buildfolder) )
   except:
     pass
 
-##We need to have the DIRAC module somewhere, or we cannot import it, as readtheDocs clones the repo into something based on the branchname
-if not os.path.exists( "../../DIRAC" ):
-  diracLink =  os.path.abspath( os.path.join( os.getcwd()  , "../" , buildfolder, "DIRAC" ) )
-  print "DiracLink",diracLink
-  if not os.path.exists( diracLink ):
-    RES = subprocess.check_output( ["ln","-s", diracPath, diracLink ] )
-  diracPath = os.path.abspath( os.path.join( diracLink, ".." ) )
+  ##We need to have the DIRAC module somewhere, or we cannot import it, as readtheDocs clones the repo into something based on the branchname
+  if not os.path.exists( "../../DIRAC" ):
+    diracLink =  os.path.abspath( os.path.join( os.getcwd()  , "../" , buildfolder, "DIRAC" ) )
+    print "DiracLink",diracLink
+    if not os.path.exists( diracLink ):
+      RES = subprocess.check_output( ["ln","-s", diracPath, diracLink ] )
+    diracPath = os.path.abspath( os.path.join( diracLink, ".." ) )
 
 
-sys.path.insert(0, diracPath)
+  sys.path.insert(0, diracPath)
 
-for path in sys.path:
-  os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')+":"+path
+  for path in sys.path:
+    os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')+":"+path
 
-print "Pythonpath",os.environ['PYTHONPATH']
-buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
-scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
-print "command", buildCommand
-code = subprocess.Popen( ["python",buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-stdout , err = code.communicate()
-print "script",stdout
-print "script",err
+  print "Pythonpath",os.environ['PYTHONPATH']
+  buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
+  scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
+  print "command", buildCommand
+  code = subprocess.Popen( ["python",buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  stdout , err = code.communicate()
+  print "script",stdout
+  print "script",err
 
-os.environ["DIRAC"] = diracPath
-print "DIRAC ENVIRON", os.environ["DIRAC"]
-buildCommand =os.path.join( os.getcwd() , "../Tools/MakeDoc.py" )
-code = subprocess.Popen( ["python",buildCommand], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-stdout , err = code.communicate()
-print "code",stdout
-print "code",err
+  os.environ["DIRAC"] = diracPath
+  print "DIRAC ENVIRON", os.environ["DIRAC"]
+  buildCommand =os.path.join( os.getcwd() , "../Tools/MakeDoc.py" )
+  code = subprocess.Popen( ["python",buildCommand], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  stdout , err = code.communicate()
+  print "code",stdout
+  print "code",err
 
   
 # -- General configuration -----------------------------------------------------
