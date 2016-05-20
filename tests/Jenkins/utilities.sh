@@ -92,6 +92,19 @@ function findRelease(){
 		projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
 	fi
 	# projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
+
+	# The special case is when there's no 'p'... (e.g. version v6r15)
+	if [ ! "$projectVersion" ]
+	then
+		if [ ! -z "$DIRACBRANCH" ]
+		then
+			projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+		else
+			projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]' | head -1 | sed 's/ //g'`
+		fi
+	fi
+
+
 	# In case there are no production tags for the branch, look for pre-releases in that branch
 	if [ ! "$projectVersion" ]
 	then
