@@ -2,9 +2,6 @@
 """ create rst files for documentation of DIRAC """
 import os
 
-import fakeEnvironment
-import fakeEnv
-
 def mkdir( folder ):
   """create a folder, ignore if it exists"""
   try:
@@ -29,7 +26,6 @@ def mkRest( filename, modulename, fullmodulename, subpackages=None, modules=None
   else:
     modulefinal = modulename
 
-  print fullmodulename, "\n++subpackages",subpackages, "\n++Modules",modules
   lines = []
   lines.append("%s" % modulefinal)
   lines.append("="*len(modulefinal))
@@ -104,11 +100,9 @@ def getsubpackages( abspath, direc):
   for dire in direc:
     if "test" in dire.lower():
       continue
-    #print os.path.join( DIRACPATH,abspath,dire, "__init__.py" )
     if os.path.exists( os.path.join( DIRACPATH,abspath,dire, "__init__.py" ) ):
       #packages.append( os.path.join( "DOC", abspath, dire) )
       packages.append( os.path.join( dire ) )
-  #print "packages",packages
   return packages
 
 def getmodules( _abspath, _direc, files ):
@@ -136,42 +130,38 @@ def createDoc():
       continue
 
     if any( root.lower().endswith( f.lower() ) for f in ("/docs", ) ):
-      #print "Skipping:", root
       continue
     elif any( f.lower() in root.lower() for f in ("test", "scripts",
                                                  ) ):
       continue
-    
-    #print root, direc, files
+
     modulename = root.split("/")[-1]
     abspath = root.split(DIRACPATH)[1].strip("/")
     fullmodulename = ".".join(abspath.split("/"))
     packages = getsubpackages(abspath,direc)
-    #print "packages for ", root, packages
     if abspath:
       mkdir( abspath )
       os.chdir( abspath )
-    #print "Making rst",modulename
     if modulename == "DIRAC":
       createCodeDocIndex(subpackages=packages, modules=getmodules(abspath, direc, files))
     else:
       mkRest( modulename+"_Module.rst", modulename, fullmodulename, subpackages=packages, modules=getmodules(abspath, direc, files) )
 
     for filename in files:
-      if filename.lower().startswith("test"):
-        continue
       ## Skip things that call parseCommandLine or similar issues
-      if any( f in filename for f in ("lfc_dfc_copy", "lfc_dfc_db_copy", "JobWrapperTemplate", "Refresher") ):
-        continue
-      if filename.endswith("CLI.py"):
-        continue
-      if filename == "__init__.py":
-        continue
-      if not filename.endswith(".py"):
+      if any( f in filename for f in ("lfc_dfc_copy", "lfc_dfc_db_copy", "JobWrapperTemplate",
+                                      "PlotCache", ## PlotCache creates a thread on import, which keeps sphinx from exiting
+                                      "PlottingHandler",
+                                      "__init__.py",
+                                     ) ) or \
+        not filename.endswith(".py") or \
+        filename.endswith("CLI.py") or \
+        filename.lower().startswith("test"):
         continue
       fullclassname = ".".join(abspath.split("/")+[filename])
       if not fullclassname.startswith( "DIRAC." ):
         fullclassname = "DIRAC."+fullclassname
+      ##Remove some FrameworkServices because things go weird
       mkModuleRest( filename.split(".py")[0], fullclassname.split(".py")[0] )
 
     os.chdir(BASEPATH)

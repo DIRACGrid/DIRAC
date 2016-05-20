@@ -36,6 +36,7 @@ sys.modules[ 'MySQLdb.cursors' ] = mock.Mock()
 #FIXME: do we need all them ??
 
 sys.modules[ 'suds' ]                            = mock.Mock()
+sys.modules[ 'suds.client' ]                     = mock.Mock()
 sys.modules[ 'irods' ]                           = mock.Mock()
 sys.modules[ 'pylab' ]                           = mock.Mock()
 sys.modules[ 'pytz' ]                            = mock.Mock()
@@ -49,6 +50,11 @@ sys.modules[ 'matplotlib.dates' ]                = mock.Mock()
 sys.modules[ 'matplotlib.text' ]                 = mock.Mock()
 sys.modules[ 'matplotlib.axes' ]                 = mock.Mock()
 sys.modules[ 'matplotlib.pylab' ]                = mock.Mock()
+sys.modules[ 'matplotlib.lines' ]                = mock.Mock()
+sys.modules[ 'matplotlib.cbook' ]                = mock.Mock()
+sys.modules[ 'matplotlib.colors' ]               = mock.Mock()
+sys.modules[ 'matplotlib.cm' ]                   = mock.Mock()
+sys.modules[ 'matplotlib.colorbar' ]             = mock.Mock()
 sys.modules[ 'cx_Oracle' ]                       = mock.Mock()
 sys.modules[ 'dateutil' ]                        = mock.Mock()
 sys.modules[ 'dateutil.relativedelta' ]          = mock.Mock()
@@ -59,6 +65,18 @@ sys.modules[ 'fts3.rest' ]                       = mock.Mock()
 sys.modules[ 'fts3.rest.client' ]                = mock.Mock()
 sys.modules[ 'fts3.rest.client.easy' ]           = mock.Mock()
 sys.modules[ 'pyparsing' ]                       = mock.MagicMock()
+
+sys.modules[ '_arc' ]                            = mock.Mock()
+sys.modules[ 'arc' ]                             = mock.Mock()
+sys.modules[ 'arc.common' ]                      = mock.Mock()
+sys.modules[ 'gfal2' ]                           = mock.Mock()
+sys.modules[ 'XRootD' ]                          = mock.Mock()
+sys.modules[ 'XRootD.client' ] = mock.Mock()
+sys.modules[ 'XRootD.client.flags' ] = mock.Mock()
+
+#PlotCache and PlottingHandler create a thread and prevent sphinx from exiting
+#sys.modules[ 'DIRAC.FrameworkSystem.Service.PlotCache' ] = mock.MagicMock()
+#sys.modules[ 'DIRAC.FrameworkSystem.Service.PlottingHandler' ] = mock.MagicMock()
 
 #...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
