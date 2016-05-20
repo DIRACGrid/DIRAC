@@ -18,7 +18,6 @@ import subprocess
 
 sys.path.insert(0, ".")
 
-
 import fakeEnvironment
 import fakeEnv
 
@@ -28,6 +27,8 @@ except KeyError:
   diracRelease = 'integration'
 
 print 'conf.py: %s as DIRACVERSION' % diracRelease
+
+print os.getcwd()
 
 #...............................................................................
 # configuration
@@ -39,9 +40,20 @@ sys.path.append(os.path.abspath('.'))
 diracPath = os.path.abspath( os.path.join( os.getcwd(), "../..") )
 print "DiracPath",diracPath
 
+buildfolder = "build"
+if os.environ.get('READTHEDOCS') == 'True':
+  diracRelease = os.path.basename( os.path.abspath( "../../" ) )
+  if diracRelease.startswith("rel-"):
+    diracRelease = diracRelease[4:]
+  buildfolder ="_build"
+  try:
+    os.mkdir( os.path.abspath( "../"+buildfolder) )
+  except:
+    pass
+
 ##We need to have the DIRAC module somewhere, or we cannot import it, as readtheDocs clones the repo into something based on the branchname
 if not os.path.exists( "../../DIRAC" ):
-  diracLink =  os.path.abspath( os.path.join( os.getcwd()  , "../build/DIRAC" ) )
+  diracLink =  os.path.abspath( os.path.join( os.getcwd()  , "../" , buildfolder, "DIRAC" ) )
   print "DiracLink",diracLink
   if not os.path.exists( diracLink ):
     RES = subprocess.check_output( ["ln","-s", diracPath, diracLink ] )
@@ -55,22 +67,12 @@ for path in sys.path:
 
 print "Pythonpath",os.environ['PYTHONPATH']
 buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
-scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../build/scripts" ))
+scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
 print "command", buildCommand
 code = subprocess.Popen( ["python",buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 stdout , err = code.communicate()
 print "script",stdout
 print "script",err
-
-# buildCommand = os.path.join( os.getcwd() , "../Tools/buildCodeDOC.py" )
-# if not os.path.exists( codedir ):
-#   os.mkdir( codedir )
-# print "command", buildCommand
-#codedir = os.path.abspath(os.path.join( os.getcwd() , "../build/codes" ))
-# ##buildcodedoc needs a copy of DIRAC so we give it a link
-# codeLink = os.path.join( codedir, "DIRAC")
-# if not os.path.exists( codeLink ):
-#   RES = subprocess.check_output( ["ln","-sf",diracPath, codeLink ] )
 
 os.environ["DIRAC"] = diracPath
 print "DIRAC ENVIRON", os.environ["DIRAC"]
