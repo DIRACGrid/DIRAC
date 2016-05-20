@@ -35,6 +35,9 @@ sys.modules[ 'MySQLdb.cursors' ] = mock.Mock()
 
 #FIXME: do we need all them ??
 
+sys.modules[ 'sqlalchemy' ]                      = mock.Mock()
+sys.modules[ 'sqlalchemy.orm.exc' ]              = mock.Mock()
+sys.modules[ 'lcg_util' ]                        = mock.Mock()
 sys.modules[ 'suds' ]                            = mock.Mock()
 sys.modules[ 'suds.client' ]                     = mock.Mock()
 sys.modules[ 'irods' ]                           = mock.Mock()

@@ -70,6 +70,10 @@ if os.environ.get('READTHEDOCS') == 'True':
   print "Pythonpath",os.environ['PYTHONPATH']
   buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
   scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
+  try:
+    os.mkdir( scriptdir )
+  except:
+    pass
   print "command", buildCommand
   code = subprocess.Popen( ["python",buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout , err = code.communicate()
