@@ -85,7 +85,9 @@ print "code",err
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
+              'sphinx.ext.intersphinx',
+             ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -261,5 +263,13 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_use_modindex = True
 
+
+## link with the python standard library docs
+intersphinx_mapping = {
+                        'python': ('https://docs.python.org/2.7', None),
+                      }
+
+
 #...............................................................................
+
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
