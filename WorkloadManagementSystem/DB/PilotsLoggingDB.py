@@ -8,7 +8,6 @@
     addPilotsLogging()
     getPilotsLogging()
     deletePilotsLoggin()
-    
 """
 
 __RCSID__ = "$Id$"
@@ -20,11 +19,10 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
-import threading
 
 from sqlalchemy.sql.schema import ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.sql.sqltypes import DateTime
-from sqlalchemy.orm import session, sessionmaker, scoped_session, mapper
+from sqlalchemy.orm import sessionmaker, scoped_session, mapper
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy import create_engine, Table, Column, MetaData, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
@@ -137,7 +135,7 @@ class PilotsLoggingDB( ):
     session = self.sqlalchemySession( )
 
     session.query( PilotsLogging ).filter( PilotsLogging.pilotRef._in( pilotRef ) ).delete(
-      synchronize_session = 'fetch' )
+        synchronize_session = 'fetch' )
 
     try:
       session.commit( )
@@ -153,8 +151,8 @@ class PilotsLoggingDB( ):
 class PilotsLogging( Base ):
   __tablename__ = 'PilotsLogging'
   __table_args__ = {
-    'mysql_engine': 'InnoDB',
-    'mysql_charset': 'utf8'
+      'mysql_engine': 'InnoDB',
+      'mysql_charset': 'utf8'
   }
 
   logID = Column( 'LogID', Integer, primary_key = True, autoincrement = True )
