@@ -61,6 +61,7 @@ openssl-devel (libssl-dev), mysql-client, libmysqlclient-dev,
 libfreetype6-dev, libncurses5-dev, libjpeg-dev.
 The names above are OS-dependant, distribution dependant, and version dependant,
 so you'll need to figure it out by yourself how to install them.
+Some equivalent packages for Fedora/CentOS: python-devel, openssl-devel, mysql, ncurses-libs freetype, libjpeg-devel, MySQL-python.
 
 *editor*: get your favourite one.
 Examples include IDE like Eclipse or PyCharm, or whatever you prefer
@@ -83,14 +84,17 @@ Checking out the source
 
 From now on we will call that directory *$DEVROOT*
 
-1. export DEVROOT=$PWD && export WORKSPACE=$PWD
+1.
+
+   export DEVROOT=$PWD && export WORKSPACE=$PWD
 
 (persist this in the way you prefer)
 
 2. Check out DIRAC source code. DIRAC source is hosted on *github.com*. Fork it, then::
 
-   git clone https://github.com/fstagni/DIRAC.git
+   git clone https://github.com/YOUR_GITHUB_USERNAME/DIRAC.git
 
+Obviously, you must replace 'YOUR_GITHUB_USERNAME' with the username that have registered on github. 
 This will create a *$DEVROOT/DIRAC* for you and the git repository will be cloned in.
 
 3. This will create a *remote* pointer ( in git terms ) in the local git
