@@ -94,7 +94,7 @@ From now on we will call that directory *$DEVROOT*
 
    git clone https://github.com/YOUR_GITHUB_USERNAME/DIRAC.git
 
-Obviously, you must replace 'YOUR_GITHUB_USERNAME' with the username that have registered on github. 
+Obviously, we must replace 'YOUR_GITHUB_USERNAME' with the username that we have registered on github. 
 This will create a *$DEVROOT/DIRAC* for you and the git repository will be cloned in.
 
 3. This will create a *remote* pointer ( in git terms ) in the local git
