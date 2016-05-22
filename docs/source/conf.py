@@ -11,23 +11,29 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-
-try:
-  import fakeEnvironment
-except:
-  pass
-
 import datetime
 import os
 import sys
-import tempfile
+import subprocess
+
+sys.path.insert(0, ".")
 
 try:
-  diracRelease = os.environ[ 'DIRACVERSION' ]
-except KeyError:
-  diracRelease = 'integration'
+  import fakeEnvironment
+except ImportError:
+  pass
+try:
+  import fakeEnv
+except ImportError:
+  pass
 
+diracRelease = os.environ.get( 'DIRACVERSION', 'integration' )
+if os.environ.get('READTHEDOCS') == 'True':
+  diracRelease = os.path.basename( os.path.abspath( "../../" ) )
+  if diracRelease.startswith("rel-"):
+    diracRelease = diracRelease[4:]
 print 'conf.py: %s as DIRACVERSION' % diracRelease
+
 
 #...............................................................................
 # configuration
@@ -35,13 +41,62 @@ print 'conf.py: %s as DIRACVERSION' % diracRelease
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.append(os.path.abspath('.'))
 
+if os.environ.get('READTHEDOCS') == 'True':
+  sys.path.append(os.path.abspath('.'))
+  diracPath = os.path.abspath( os.path.join( os.getcwd(), "../..") )
+  print "DiracPath",diracPath
+
+  buildfolder ="_build"
+  try:
+    os.mkdir( os.path.abspath( "../"+buildfolder) )
+  except:
+    pass
+
+  ##We need to have the DIRAC module somewhere, or we cannot import it, as readtheDocs clones the repo into something based on the branchname
+  if not os.path.exists( "../../DIRAC" ):
+    diracLink =  os.path.abspath( os.path.join( os.getcwd()  , "../" , buildfolder, "DIRAC" ) )
+    print "DiracLink",diracLink
+    if not os.path.exists( diracLink ):
+      RES = subprocess.check_output( ["ln","-s", diracPath, diracLink ] )
+    diracPath = os.path.abspath( os.path.join( diracLink, ".." ) )
+
+
+  sys.path.insert(0, diracPath)
+
+  for path in sys.path:
+    os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')+":"+path
+
+  ##  this is not working at the moment because the DIRAC folder is not found by the buildScriptsDOC script
+  # print "Pythonpath",os.environ['PYTHONPATH']
+  # buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
+  # scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
+  # try:
+  #   os.mkdir( scriptdir )
+  # except:
+  #   pass
+  # print "command", buildCommand
+  # code = subprocess.Popen( ["python", buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  # stdout , err = code.communicate()
+  # print "script",stdout
+  # print "script",err
+
+  os.environ["DIRAC"] = diracPath
+  print "DIRAC ENVIRON", os.environ["DIRAC"]
+  buildCommand =os.path.join( os.getcwd() , "../Tools/MakeDoc.py" )
+  code = subprocess.Popen( ["python",buildCommand], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  stdout , err = code.communicate()
+  print "code",stdout
+  print "code",err
+
+  
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
+              'sphinx.ext.intersphinx',
+             ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -217,5 +272,13 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_use_modindex = True
 
+
+## link with the python standard library docs
+intersphinx_mapping = {
+                        'python': ('https://docs.python.org/2.7', None),
+                      }
+
+
 #...............................................................................
+
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
