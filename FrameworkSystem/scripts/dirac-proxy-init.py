@@ -223,11 +223,11 @@ In any case, it will surely result in a brilliant
 physics paper (congrats in advance!).
 
 In order to be able to keep doing so
-and hense secure a full professorship position,
+and hence secure a full professorship position,
 please, show some support to DIRAC,
 and quote it (even better, praise it :-) ) in your superb paper.
 
-Look, I even spare you some time:
+Look, I even spare you some time with this BibTex entry that you can just use as a reference:
 
 @article{1742-6596-219-6-062029,
   author={A Tsaregorodtsev and N Brook and A Casajus Ramo and Ph Charpentier and J Closier and G Cowan and R Graciani Diaz and E
@@ -242,9 +242,9 @@ Miguelez and A Zhelezov},
   year={2010}
 }
 
-The DIRAC developpers (that, thanks to this quote
+The DIRAC developers (that, thanks to this quote
 will be able to pay their rent and feed their
-family (but probably not themselves yet) )
+family (but probably not themselves yet))
 thank you from the bottom of their heart"""
 
   piParams = Params()
