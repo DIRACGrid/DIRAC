@@ -22,11 +22,13 @@ NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to H
 UNITS = { 'HS06': 1. , 'SI00': 1. / 250. }
 
 def getMachineFeatures():
+  """ This uses the _old_ MJF information """
   features = {}
-  if 'MACHINEFEATURES' not in os.environ:
+  featuresDir = os.environ.get( "MACHINEFEATURES" )
+  if featuresDir is None:
     return features
   for item in ( 'hs06', 'jobslots', 'log_cores', 'phys_cores' ):
-    fname = os.path.join( os.environ['MACHINEFEATURES'], item )
+    fname = os.path.join( featuresDir, item )
     try:
       val = urllib.urlopen( fname ).read()
     except:
@@ -34,16 +36,39 @@ def getMachineFeatures():
     features[item] = val
   return features
 
+def getJobFeatures():
+  """ This uses the _new_ MJF information """
+  features = {}
+  featuresDir = os.environ.get( "JOBFEATURES" )
+  if featuresDir is None:
+    return features
+  for item in ( 'hs06_job', 'allocated_cpu' ):
+    fname = os.path.join( featuresDir, item )
+    try:
+      val = urllib.urlopen( fname ).read()
+    except:
+      val = 0
+    features[item] = val
+  return features
+
+
 def getPowerFromMJF():
-  features = getMachineFeatures()
-  totalPower = features.get( 'hs06' )
-  logCores = float( features.get( 'log_cores', 0 ) )
-  physCores = float( features.get( 'phys_cores', 0 ) )
-  jobSlots = float( features.get( 'jobslots', 0 ) )
-  denom = min( max( logCores, physCores ), jobSlots ) if ( logCores or physCores ) and jobSlots else None
-  if totalPower and denom:
-    return round( float( totalPower ) / denom , 2 )
-  else:
+  try:
+    features = getJobFeatures()
+    if 'hs06_job' in features:
+      return round( float( features['hs06_job'] ), 2 )
+    features = getMachineFeatures()
+    totalPower = float( features.get( 'hs06', 0 ) )
+    logCores = float( features.get( 'log_cores', 0 ) )
+    physCores = float( features.get( 'phys_cores', 0 ) )
+    jobSlots = float( features.get( 'jobslots', 0 ) )
+    denom = min( max( logCores, physCores ), jobSlots ) if ( logCores or physCores ) and jobSlots else None
+    if totalPower and denom:
+      return round( totalPower / denom , 2 )
+    else:
+      return None
+  except Exception as e:
+    gLogger.Exception( "Exception getting MJF information", lException = e )
     return None
 
 def queueNormalizedCPU( ceUniqueID ):
