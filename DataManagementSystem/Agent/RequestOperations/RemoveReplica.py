@@ -77,7 +77,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
     gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
 
     # # keep status for each targetSE
-    removalStatus = dict.fromkeys( toRemoveDict.keys(), None )
+    removalStatus = dict.fromkeys( toRemoveDict, None )
     for lfn in removalStatus:
       removalStatus[lfn] = dict.fromkeys( targetSEs, None )
 
