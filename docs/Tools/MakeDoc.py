@@ -131,7 +131,7 @@ def createDoc():
 
     if any( root.lower().endswith( f.lower() ) for f in ("/docs", ) ):
       continue
-    elif any( f.lower() in root.lower() for f in ("test", "scripts",
+    elif any( f.lower() in root.lower() for f in ("/test", "scripts",
                                                  ) ):
       continue
 
