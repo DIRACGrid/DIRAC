@@ -97,7 +97,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
       # # 2nd step - process the rest again
       toRetry = dict( ( lfn, opFile ) for lfn, opFile in toRemoveDict.iteritems() if opFile.Error )
       for lfn, opFile in toRetry.iteritems():
-        self.singleRemoval( opFile, targetSE )
+        self.removeWithOwnerProxy( opFile, targetSE )
         if opFile.Error:
           gMonitor.addMark( "RemoveReplicaFail", 1 )
           removalStatus[lfn][targetSE] = opFile.Error
@@ -140,8 +140,8 @@ class RemoveReplica( DMSRequestOperationsBase ):
         opFile.Error = str( removeReplicas["Failed"][lfn] )
     return S_OK()
 
-  def singleRemoval( self, opFile, targetSE ):
-    """ remove opFile replica from targetSE
+  def removeWithOwnerProxy( self, opFile, targetSE ):
+    """ remove opFile replica from targetSE using owner proxy
 
     :param File opFile: File instance
     :param str targetSE: target SE name
