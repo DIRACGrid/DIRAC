@@ -61,7 +61,6 @@ if os.environ.get('READTHEDOCS') == 'True':
       RES = subprocess.check_output( ["ln","-s", diracPath, diracLink ] )
     diracPath = os.path.abspath( os.path.join( diracLink, ".." ) )
 
-
   sys.path.insert(0, diracPath)
 
   for path in sys.path:
@@ -83,14 +82,15 @@ if os.environ.get('READTHEDOCS') == 'True':
 
   os.environ["DIRAC"] = diracPath
   print "DIRAC ENVIRON", os.environ["DIRAC"]
+  ##singlehtml build needs too much memory, so we need to create less code documentation
+  buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv ) else "full"
+  print "Chosing build type:", buildtype
   buildCommand =os.path.join( os.getcwd() , "../Tools/MakeDoc.py" )
-  code = subprocess.Popen( ["python",buildCommand], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  code = subprocess.Popen( ["python",buildCommand, buildtype], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout , err = code.communicate()
   print "code",stdout
   print "code",err
 
-  print "SYS ARGV",sys.argv
-  
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
