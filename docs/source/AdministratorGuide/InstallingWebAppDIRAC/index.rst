@@ -157,8 +157,8 @@ The required NGINX version has to be grater than 1.4.
        location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+\.(jpg|jpeg|gif|png|bmp|ico|pdf))$ {
          alias /opt/dirac/WebPrototype/;
          #Add one more for every static path. For instance for LHCbWebDIRAC:
-         try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
-         #try_files WebAppDIRAC/WebApp/static/$2 /;
+         #try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
+         try_files WebAppDIRAC/WebApp/static/$2 /;
          expires 10d;
          gzip_static on;
          gzip_disable "MSIE [1-6]\.";
@@ -169,8 +169,8 @@ The required NGINX version has to be grater than 1.4.
        location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+)$ {
          alias /opt/dirac/WebPrototype/;
          #Add one more for every static path. For instance for LHCbWebDIRAC:
-         try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
-         #try_files WebAppDIRAC/WebApp/static/$2 /;
+         #try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
+         try_files WebAppDIRAC/WebApp/static/$2 /;
          expires 1d;
          gzip_static on;
          gzip_disable "MSIE [1-6]\.";
@@ -227,8 +227,8 @@ The required NGINX version has to be grater than 1.4.
        location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+\.(jpg|jpeg|gif|png|bmp|ico|pdf))$ {
          alias /opt/dirac/WebPrototype/;
          #Add one more for every static path. For instance for LHCbWebDIRAC:
-         try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
-         #try_files WebAppDIRAC/WebApp/static/$2 /;
+         #try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
+         try_files WebAppDIRAC/WebApp/static/$2 /;
          expires 10d;
          gzip_static on;
          gzip_disable "MSIE [1-6]\.";
@@ -239,8 +239,8 @@ The required NGINX version has to be grater than 1.4.
        location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+)$ {
          alias /opt/dirac/WebPrototype/;
          #Add one more for every static path. For instance for LHCbWebDIRAC:
-         try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
-         #try_files WebAppDIRAC/WebApp/static/$2 /;
+         #try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
+         try_files WebAppDIRAC/WebApp/static/$2 /;
          expires 1d;
          gzip_static on;
          gzip_disable "MSIE [1-6]\.";
