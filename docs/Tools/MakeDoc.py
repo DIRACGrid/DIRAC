@@ -8,11 +8,11 @@ def mkdir( folder ):
     folder = os.path.join(os.getcwd(),folder)
     os.mkdir( folder )
   except OSError as e:
-    print "Exception for",folder,repr(e)
+    print "Exception %s when creating folder" %repr(e), folder
 
 
 BASEPATH = "docs/source/CodeDocumentation"
-DIRACPATH = os.environ.get("DIRAC") + "/DIRAC"
+DIRACPATH = os.environ.get("DIRAC","") + "/DIRAC"
 
 ORIGDIR = os.getcwd()
 
@@ -123,7 +123,7 @@ def createDoc():
   print "BASEPATH", BASEPATH
   mkdir(BASEPATH)
   os.chdir(BASEPATH)
-  
+  print "Now creating rst files"
   for root,direc,files in os.walk(DIRACPATH):
     files = [ _ for _ in files if _.endswith(".py") ]
     if "__init__.py" not in files:

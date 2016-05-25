@@ -89,6 +89,7 @@ if os.environ.get('READTHEDOCS') == 'True':
   print "code",stdout
   print "code",err
 
+  print "SYS ARGV",sys.argv
   
 # -- General configuration -----------------------------------------------------
 
