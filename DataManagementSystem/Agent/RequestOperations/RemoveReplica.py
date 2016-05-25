@@ -70,7 +70,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
     # # and prepare dict
-    toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
+    toRemoveDict = dict( ( opFile.LFN, opFile ) for opFile in waitingFiles )
 
     self.log.info( "Todo: %s replicas to delete from %s SEs" % ( len( toRemoveDict ), len( targetSEs ) ) )
     gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
@@ -95,7 +95,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
       gMonitor.addMark( "RemoveReplicaOK", len( [ opFile for opFile in toRemoveDict.itervalues() if not opFile.Error ] ) )
 
       # # 2nd step - process the rest again
-      toRetry = dict( [ ( lfn, opFile ) for lfn, opFile in toRemoveDict.iteritems() if opFile.Error ] )
+      toRetry = dict( ( lfn, opFile ) for lfn, opFile in toRemoveDict.iteritems() if opFile.Error )
       for lfn, opFile in toRetry.iteritems():
         self.singleRemoval( opFile, targetSE )
         if opFile.Error:
