@@ -67,7 +67,7 @@ def getPowerFromMJF():
       return round( totalPower / denom , 2 )
     else:
       return None
-  except Exception as e:
+  except ValueError as e:
     gLogger.Exception( "Exception getting MJF information", lException = e )
     return None
 
