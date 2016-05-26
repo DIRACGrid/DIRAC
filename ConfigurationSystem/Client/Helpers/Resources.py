@@ -307,4 +307,4 @@ def getRegistrationProtocols():
 
 def getThirdPartyProtocols():
   """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
-  return gConfig.getValue( '/Resources/FileCatalogs/ThirdPartyProtocols', ['srm', 'dips'] )
+  return gConfig.getValue( '/Resources/FileCatalogs/ThirdPartyProtocols', ['srm'] )
