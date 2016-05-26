@@ -102,6 +102,7 @@ def getsubpackages( abspath, direc):
   packages = []
   for dire in direc:
     if "/test" in dire.lower():
+      print "MakeDoc: skipping this directory", dire
       continue
     if os.path.exists( os.path.join( DIRACPATH,abspath,dire, "__init__.py" ) ):
       #packages.append( os.path.join( "DOC", abspath, dire) )
@@ -113,6 +114,7 @@ def getmodules( _abspath, _direc, files ):
   packages = []
   for filename in files:
     if "test" in filename.lower():
+      print "MakeDoc: Skipping this file", filename
       continue
     if filename != "__init__.py":
       packages.append( filename.split(".py")[0] )
@@ -140,6 +142,7 @@ def createDoc(buildtype = "full"):
       continue
     elif any( f.lower() in root.lower() for f in ("/test", "scripts",
                                                  ) ):
+      print "MakeDoc: Skipping this folder:", root
       continue
 
     modulename = root.split("/")[-1]
