@@ -15,18 +15,12 @@ __RCSID__ = "$Id$"
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
-import DIRAC.Core.Utilities.Time as Time
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 
-from sqlalchemy.sql.schema import ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.sql.sqltypes import DateTime
-from sqlalchemy.orm import sessionmaker, scoped_session, mapper
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.engine.reflection import Inspector
-from sqlalchemy import create_engine, Table, Column, MetaData, Integer, String
+from sqlalchemy import create_engine, Column, MetaData, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
 from sqlalchemy.exc import SQLAlchemyError
 
 import datetime
@@ -39,8 +33,14 @@ Base = declarative_base( )
 
 
 #############################################################################
+<<<<<<< d4361d92ad81fa80c6e537349fe3577773fe76d8
 class PilotsLoggingDB(  ):
 
+=======
+class PilotsLoggingDB( object ):
+  """Class for manipulation on Pilots Logging DB
+  """
+>>>>>>> More fixes for pylint
   def __init__( self ):
 
     result = getDBParameters( 'WorkloadManagement/PilotsLoggingDB' )
@@ -59,9 +59,10 @@ class PilotsLoggingDB(  ):
     if not resp['OK']:
       raise Exception( "Couldn't create tables: " + resp['Message'] )
 
-  ##########################################################################################
+##########################################################################################
 
   def __initializeConnection( self, dbPath ):
+    """Initializing connection with DB - creating SQLAlchemy engine, session and inspector"""
 
     self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s'
                                  % (self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName),
@@ -69,12 +70,13 @@ class PilotsLoggingDB(  ):
     self.sqlalchemySession = scoped_session( sessionmaker( bind = self.engine ) )
     self.inspector = Inspector.from_engine( self.engine )
 
-  ##########################################################################################
+##########################################################################################
   def __initializeDB( self ):
+    """DB initialization - creating tables if not existing"""
 
     tablesInDB = self.inspector.get_table_names( )
 
-    if not 'PilotsLogging' in tablesInDB:
+    if 'PilotsLogging' not in tablesInDB:
       try:
         PilotsLogging.__table__.create( self.engine )
       except SQLAlchemyError as e:
@@ -84,7 +86,7 @@ class PilotsLoggingDB(  ):
 
     return S_OK( )
 
-  ##########################################################################################
+##########################################################################################
   def addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
     """Add new pilot logging entry"""
 
@@ -107,7 +109,7 @@ class PilotsLoggingDB(  ):
 
     return S_OK( )
 
-  ##########################################################################################
+##########################################################################################
   def getPilotsLogging( self, pilotRef ):
     """Get list of logging entries for pilot"""
 
@@ -126,7 +128,7 @@ class PilotsLoggingDB(  ):
 
     return S_OK( pilotLogging )
 
-  ##########################################################################################
+##########################################################################################
   def deletePilotsLogging( self, pilotRef ):
     """Delete all logging entries for pilot"""
 
@@ -150,6 +152,8 @@ class PilotsLoggingDB(  ):
 ##########################################################################################
 
 class PilotsLogging( Base ):
+  """Pilots Logging class defining DB table using SQLAlchemy
+  """
   __tablename__ = 'PilotsLogging'
   __table_args__ = {
       'mysql_engine': 'InnoDB',
