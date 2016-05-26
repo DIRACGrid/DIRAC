@@ -86,7 +86,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
       self.log.info( "Removing replicas at %s" % targetSE )
 
       # # 1st step - bulk removal
-      bulkRemoval = self.bulkRemoval( toRemoveDict, targetSE )
+      bulkRemoval = self._bulkRemoval( toRemoveDict, targetSE )
       if not bulkRemoval["OK"]:
         self.log.error( 'Bulk replica removal failed', bulkRemoval["Message"] )
         return bulkRemoval
@@ -97,7 +97,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
       # # 2nd step - process the rest again
       toRetry = dict( ( lfn, opFile ) for lfn, opFile in toRemoveDict.iteritems() if opFile.Error )
       for lfn, opFile in toRetry.iteritems():
-        self.removeWithOwnerProxy( opFile, targetSE )
+        self._removeWithOwnerProxy( opFile, targetSE )
         if opFile.Error:
           gMonitor.addMark( "RemoveReplicaFail", 1 )
           removalStatus[lfn][targetSE] = opFile.Error
@@ -122,7 +122,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
 
     return S_OK()
 
-  def bulkRemoval( self, toRemoveDict, targetSE ):
+  def _bulkRemoval( self, toRemoveDict, targetSE ):
     """ remove replicas :toRemoveDict: at :targetSE:
 
     :param dict toRemoveDict: { lfn: opFile, ... }
@@ -140,7 +140,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
         opFile.Error = str( removeReplicas["Failed"][lfn] )
     return S_OK()
 
-  def removeWithOwnerProxy( self, opFile, targetSE ):
+  def _removeWithOwnerProxy( self, opFile, targetSE ):
     """ remove opFile replica from targetSE using owner proxy
 
     :param File opFile: File instance
