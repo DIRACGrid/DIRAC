@@ -9,12 +9,14 @@ from DIRAC.WorkloadManagementSystem.Agent.SiteDirector     import SiteDirector, 
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Resources
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 
 __RCSID__ = "$Id$"
 
 class MultiProcessorSiteDirector( SiteDirector ):
+
   def getQueues( self, resourceDict ):
     """ Get the list of relevant CEs and their descriptions
     """
@@ -122,8 +124,10 @@ class MultiProcessorSiteDirector( SiteDirector ):
     #  self.log.info( 'No more pilots to be submitted in this cycle' )
     #  return S_OK()
 
+    siteClient = SiteStatus()
+
     # Check if the site is allowed in the mask
-    result = jobDB.getSiteMask()
+    result = siteClient.getSites()
     if not result['OK']:
       return S_ERROR( 'Can not get the site mask' )
     siteMaskList = result['Value']

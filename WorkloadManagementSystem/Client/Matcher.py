@@ -21,6 +21,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, \
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.ResourceStatusSystem.Client.SiteStatus   import SiteStatus
 
 __RCSID__ = "$Id"
 
@@ -57,6 +58,8 @@ class Matcher( object ):
     self.log = gLogger.getSubLogger( "Matcher" )
 
     self.limiter = Limiter( jobDB = self.jobDB, opsHelper = self.opsHelper )
+
+    self.siteClient = SiteStatus()
 
 
   def selectJob( self, resourceDescription, credDict ):
@@ -258,7 +261,7 @@ class Matcher( object ):
       raise RuntimeError( "Missing Site Name in Resource JDL" )
 
     # Get common site mask and check the agent site
-    result = self.jobDB.getSiteMask( siteState = 'Active' )
+    result = self.siteClient.getSites( siteState = 'Active' )
     if not result['OK']:
       self.log.error( "Internal error", "getSiteMask: %s" % result['Message'] )
       raise RuntimeError( "Internal error" )
