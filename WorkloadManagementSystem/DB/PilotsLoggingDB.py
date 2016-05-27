@@ -73,7 +73,7 @@ class PilotsLoggingDB( object ):
 
     if 'PilotsLogging' not in tablesInDB:
       try:
-        PilotsLogging.__table__.create( self.engine )
+        PilotsLogging.__table__.create( self.engine )  #pylint: disable=no-member
       except SQLAlchemyError as e:
         return S_ERROR( DErrno.ESQLA, e )
     else:
