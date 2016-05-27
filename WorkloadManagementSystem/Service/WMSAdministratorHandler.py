@@ -83,6 +83,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     return jobDB.getSiteMaskStatus( sites )
 
+  ##############################################################################
   types_getAllSiteMaskStatus = []
   def export_getAllSiteMaskStatus(self):
     """ Get all the site parameters in the site mask
@@ -419,7 +420,7 @@ class WMSAdministratorHandler(RequestHandler):
     result = pilotDB.getPilotSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
 
-##############################################################################
+  ##############################################################################
   types_getSiteSummaryWeb = [ dict, list, [int, long], [int, long] ]
   def export_getSiteSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the jobs running on sites in a generic format
