@@ -57,7 +57,7 @@ def initializeWMSAdministratorHandler( serviceInfo ):
 class WMSAdministratorHandler(RequestHandler):
   #pylint: disable=no-self-use
 
-###########################################################################
+  ###########################################################################
   types_setSiteMask = [ list ]
   def export_setSiteMask( self, siteList ):
     """ Set the site mask for matching. The mask is given in a form of Classad string.
@@ -69,13 +69,14 @@ class WMSAdministratorHandler(RequestHandler):
     result = jobDB.setSiteMask( maskList, dn, 'No comment' )
     return result
 
-##############################################################################
+  ##############################################################################
   types_getSiteMask = []
   def export_getSiteMask( self ):
     """ Get the site mask
     """
     return jobDB.getSiteMask( 'Active' )
 
+  ##############################################################################
   types_getAllSiteMaskStatus = []
   def export_getAllSiteMaskStatus(self):
     """ Get all the site parameters in the site mask
@@ -98,7 +99,7 @@ class WMSAdministratorHandler(RequestHandler):
     result = jobDB.banSiteInMask(site,author,comment)
     return result
 
-##############################################################################
+  ##############################################################################
   types_allowSite = [ basestring ]
   def export_allowSite( self, site, comment = 'No comment' ):
     """ Allow the given site in the site mask
@@ -114,7 +115,7 @@ class WMSAdministratorHandler(RequestHandler):
     result = jobDB.allowSiteInMask(site,author,comment)
     return result
 
-##############################################################################
+  ##############################################################################
   types_clearMask = []
   def export_clearMask( self ):
     """ Clear up the entire site mask
@@ -122,7 +123,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     return jobDB.removeSiteFromMask( None )
 
-##############################################################################
+  ##############################################################################
   types_getSiteMaskLogging = [ [ basestring, list ] ]
   def export_getSiteMaskLogging( self, sites ):
     """ Get the site mask logging history
@@ -133,7 +134,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     return jobDB.getSiteMaskLogging( sites )
 
-##############################################################################
+  ##############################################################################
   types_getSiteMaskSummary = [ ]
   def export_getSiteMaskSummary( self ):
     """ Get the mask status for all the configured sites
@@ -160,7 +161,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     return S_OK(siteDict)
 
-##############################################################################
+  ##############################################################################
   types_getCurrentPilotCounters = [ dict ]
   def export_getCurrentPilotCounters( self, attrDict={}):
     """ Get pilot counters per Status with attrDict selection. Final statuses are given for
@@ -189,12 +190,12 @@ class WMSAdministratorHandler(RequestHandler):
 
     return S_OK(resultDict)
 
-##########################################################################################
+  ##########################################################################################
   types_addPilotTQReference = [ list, [int, long], basestring, basestring ]
   def export_addPilotTQReference( self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
                                   gridType='DIRAC', pilotStampDict={}):
     """ Add a new pilot job reference """
-    pilotsLoggingDB.addPilotsLogging(pilotRef, 'Submitted', '', datetime.now(), 'WMSAdmin')
+    pilotsLoggingDB.addPilotsLogging(pilotRef, 'Submitted', '', datetime.now(), 'WMSAdmin')  #pylint: disable=no-member
     return pilotDB.addPilotTQReference(pilotRef, taskQueueID,
                                        ownerDN, ownerGroup,
                                        broker, gridType, pilotStampDict)
@@ -412,7 +413,7 @@ class WMSAdministratorHandler(RequestHandler):
     result = pilotDB.getPilotSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
 
-##############################################################################
+  ##############################################################################
   types_getSiteSummaryWeb = [ dict, list, [int, long], [int, long] ]
   def export_getSiteSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the jobs running on sites in a generic format
@@ -661,10 +662,10 @@ class WMSAdministratorHandler(RequestHandler):
     if isinstance( pilotRefs, basestring ):
       pilotRefs = [pilotRefs, ]
 
-    result = pilotDB.deletePilotRefs( pilotRefs )
+    result = pilotDB.deletePilotRefs( pilotRefs )  #pylint: disable=no-member
     if not result['OK']:
       return result
-    result = pilotsLoggingDB.deletePilotsLogging( pilotRefs )
+    result = pilotsLoggingDB.deletePilotsLogging( pilotRefs )  #pylint: disable=no-member
     if not result['OK']:
       return result
 
@@ -676,11 +677,11 @@ class WMSAdministratorHandler(RequestHandler):
     """Clear Pilots using interval
     """
 
-    result = pilotDB.clearPilots( interval, aborted_interval )
+    result = pilotDB.clearPilots( interval, aborted_interval )  #pylint: disable=no-member
     if not result[ 'OK' ]:
       return result
 
     pilotRefs = result[ 'Value' ]
-    result = pilotsLoggingDB.deletePilotsLogging( pilotRefs )
+    result = pilotsLoggingDB.deletePilotsLogging( pilotRefs )  #pylint: disable=no-member
 
     return result
