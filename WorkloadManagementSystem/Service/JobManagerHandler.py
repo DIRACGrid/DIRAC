@@ -159,7 +159,7 @@ class JobManagerHandler( RequestHandler ):
     self.__sendJobsToOptimizationMind( jobIDList )
     return result
 
-###########################################################################
+  ###########################################################################
   def __checkIfProxyUploadIsRequired( self ):
     result = gProxyManager.userHasProxy( self.ownerDN, self.ownerGroup, validSeconds = 18000 )
     if not result[ 'OK' ]:
@@ -168,7 +168,7 @@ class JobManagerHandler( RequestHandler ):
     #Check if an upload is required
     return result[ 'Value' ] == False
 
-###########################################################################
+  ###########################################################################
   types_invalidateJob = [ IntType ]
   def invalidateJob( self, jobID ):
     """ Make job with jobID invalid, e.g. because of the sandbox submission
@@ -177,7 +177,7 @@ class JobManagerHandler( RequestHandler ):
 
     pass
 
-###########################################################################
+  ###########################################################################
   def __get_job_list( self, jobInput ):
     """ Evaluate the jobInput into a list of ints
     """
@@ -199,7 +199,7 @@ class JobManagerHandler( RequestHandler ):
 
     return []
 
-###########################################################################
+  ###########################################################################
   types_rescheduleJob = [ ]
   def export_rescheduleJob( self, jobIDs ):
     """  Reschedule a single job. If the optional proxy parameter is given
@@ -247,22 +247,22 @@ class JobManagerHandler( RequestHandler ):
       gLogger.warn( 'Failed to delete job from the TaskQueue' )
 
     # if it was the last job for the pilot, clear PilotsLogging about it
-    result = gPilotAgentsDB.getPilotsForJobID( jobID )
+    result = gPilotAgentsDB.getPilotsForJobID( jobID )  #pylint: disable=no-member
     if not result['OK']:
       return result
     for pilot in result['Value']:
-      res = gPilotAgentsDB.getJobsForPilot( pilot['PilotID'] )
+      res = gPilotAgentsDB.getJobsForPilot( pilot['PilotID'] )  #pylint: disable=no-member
       if not res['OK']:
         return res
       if not res['Value']:  # if list of jobs for pilot is empty, delete pilot and pilotslogging
-        ret = gPilotAgentsDB.deletePilot( pilot['PilotID'] )
+        ret = gPilotAgentsDB.deletePilot( pilot['PilotID'] )  #pylint: disable=no-member
         if not ret['OK']:
           return ret
-        pilotRef = gPilotAgentsDB.getPilotRef( pilot['PilotID'] )
+        pilotRef = gPilotAgentsDB.getPilotRef( pilot['PilotID'] )  #pylint: disable=no-member
         if not pilotRef['OK']:
           return pilotRef
         pilotRef = pilotRef['Value'][0][0]
-        ret = gPilotsLoggingDB.deletePilotsLogging( pilotRef )
+        ret = gPilotsLoggingDB.deletePilotsLogging( pilotRef )  #pylint: disable=no-member
         if not ret['OK']:
           return ret
 
@@ -354,7 +354,7 @@ class JobManagerHandler( RequestHandler ):
 
     return result
 
-###########################################################################
+  ###########################################################################
   types_deleteJob = [  ]
   def export_deleteJob( self, jobIDs ):
     """  Delete jobs specified in the jobIDs list
@@ -362,7 +362,7 @@ class JobManagerHandler( RequestHandler ):
 
     return self.__kill_delete_jobs( jobIDs, RIGHT_DELETE )
 
-###########################################################################
+  ###########################################################################
   types_killJob = [  ]
   def export_killJob( self, jobIDs ):
     """  Kill jobs specified in the jobIDs list
@@ -370,7 +370,7 @@ class JobManagerHandler( RequestHandler ):
 
     return self.__kill_delete_jobs( jobIDs, RIGHT_KILL )
 
-###########################################################################
+  ###########################################################################
   types_resetJob = [  ]
   def export_resetJob( self, jobIDs ):
     """  Reset jobs specified in the jobIDs list
