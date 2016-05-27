@@ -53,6 +53,7 @@ def getJobFeatures():
 
 
 def getPowerFromMJF():
+  """ Extracts the machine power from either JOBFEATURES or MACHINEFEATURES """
   try:
     features = getJobFeatures()
     if 'hs06_job' in features:
