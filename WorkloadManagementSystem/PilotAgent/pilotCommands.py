@@ -384,14 +384,15 @@ class CheckCECapabilities( CommandBase ):
                                                                         self.pp.queueName,
                                                                         " ".join( self.cfg ) )
     retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
+    if retCode:
+        self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
+        self.exitWithError( retCode )
     try:
       import json
       resourceDict = json.loads( resourceDict )
     except ValueError:
       self.log.error( "The pilot command output is not json compatible." )
       sys.exit( 1 )
-    if retCode:
-      self.log.warn( "Could not get resource parameters [ERROR %d]" % retCode )
     if resourceDict.get( 'Tag' ):
       self.pp.tags += resourceDict['Tag']
       self.cfg.append( '-FDMH' )
@@ -436,7 +437,8 @@ class CheckWNCapabilities( CommandBase ):
                                                                        " ".join( self.cfg ) )
     retCode, result = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
-      self.log.warn( "Could not get resource parameters [ERROR %d]" % retCode )
+      self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
+      self.exitWithError( retCode )
     try:
       result = result.split( ' ' )
       numberOfProcessor = int( result[0] )
@@ -467,8 +469,8 @@ class CheckWNCapabilities( CommandBase ):
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
       if retCode:
-        self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
-
+        self.log.error( "Could not configure DIRAC [ERROR %d]" % retCode )
+        self.exitWithError( retCode )
 
 
 class ConfigureSite( CommandBase ):
