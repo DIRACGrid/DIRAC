@@ -385,8 +385,8 @@ class CheckCECapabilities( CommandBase ):
                                                                         " ".join( self.cfg ) )
     retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
-        self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
-        self.exitWithError( retCode )
+      self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
+      self.exitWithError( retCode )
     try:
       import json
       resourceDict = json.loads( resourceDict )
