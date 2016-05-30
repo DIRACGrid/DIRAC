@@ -412,7 +412,8 @@ class CheckCECapabilities( CommandBase ):
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
       if retCode:
-        self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
+        self.log.error( "Could not configure DIRAC [ERROR %d]" % retCode )
+        self.exitWithError( retCode )
 
 class CheckWNCapabilities( CommandBase ):
   """ Used to get capabilities specific to the Worker Node.
