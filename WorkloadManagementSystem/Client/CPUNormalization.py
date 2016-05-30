@@ -46,7 +46,7 @@ def getJobFeatures():
     fname = os.path.join( featuresDir, item )
     try:
       val = urllib.urlopen( fname ).read()
-    except:
+    except IOError:
       val = 0
     features[item] = val
   return features
