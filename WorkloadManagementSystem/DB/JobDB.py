@@ -45,14 +45,15 @@ __RCSID__ = "$Id$"
 import sys
 import operator
 
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
-from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERROR
-from DIRAC.Core.Utilities                                    import Time
-from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
-from DIRAC.Core.Base.DB                                      import DB
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources      import getDIRACPlatform
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight                    import ClassAd
+from DIRAC.Core.Utilities.ReturnValues                            import S_OK, S_ERROR
+from DIRAC.Core.Utilities                                         import Time
+from DIRAC.ConfigurationSystem.Client.Config                      import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry            import getVOForGroup, getVOOption, getGroupOption
+from DIRAC.Core.Base.DB                                           import DB
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources           import getDIRACPlatform
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                 import SiteStatus
 
 #############################################################################
 
@@ -67,6 +68,8 @@ class JobDB( DB ):
     self.maxRescheduling = self.getCSOption( 'MaxRescheduling', 3 )
 
     self.jobAttributeNames = []
+
+    self.siteClient = SiteStatus()
 
     result = self.__getAttributeNames()
 
@@ -1466,10 +1469,31 @@ class JobDB( DB ):
     return S_OK( siteList )
 
 #############################################################################
-  def getSiteMaskStatus( self ):
+  def getSiteMaskStatus( self, sites = None ):
     """ Get the currently site mask status
     """
-    cmd = "SELECT Site,Status FROM SiteMask"
+    if type(sites) is list:
+
+      cmd = "SELECT Site, Status FROM SiteMask WHERE"
+      first = True
+      for siteName in sites:
+        if first:
+          first = False
+          cmd += " Site='" + siteName + "'"
+        else:
+          cmd += " OR Site='" + siteName + "'"
+
+      result = self._query( cmd )
+      return S_OK( dict(result['Value']) )
+
+    elif type(sites) is str:
+
+      cmd = "SELECT Status FROM SiteMask WHERE Site='%s'" % sites
+      result = self._query( cmd )
+      return S_OK( result['Value'][0][0] )
+
+    else:
+      cmd = "SELECT Site,Status FROM SiteMask"
 
     result = self._query( cmd )
     siteDict = {}
@@ -1721,15 +1745,15 @@ class JobDB( DB ):
 
     # Get the site mask status
     siteMask = {}
-    resultMask = self.getSiteMask( 'All' )
+    resultMask = self.siteClient.getSites( 'All' )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'NoMask'
-    resultMask = self.getSiteMask( 'Active' )
+    resultMask = self.siteClient.getSites( 'Active' )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'Active'
-    resultMask = self.getSiteMask( 'Banned' )
+    resultMask = self.siteClient.getSites( 'Banned' )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'Banned'
