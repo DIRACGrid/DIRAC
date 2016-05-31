@@ -4,11 +4,9 @@
 
 """
 
-import math
-from time import sleep
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
-from DIRAC.WorkloadManagementSystem.DB.JobDB                import JobDB
+from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus       import ResourceStatus
@@ -39,9 +37,9 @@ class SiteStatus( object ):
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.rssConfig = RssConfiguration()
     self.__opHelper = Operations()
-    self.jobClient = JobDB()
     self.rssFlag = ResourceStatus().rssFlag
     self.rsClient = ResourceStatusClient()
+    self.wmsAdministrator = RPCClient( 'WorkloadManagement/WMSAdministrator' )
 
   def getSiteStatuses( self, siteNamesList = None ):
     """
@@ -78,7 +76,7 @@ class SiteStatus( object ):
       if self.rssFlag:
         siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )
       else:
-        siteStatusDict = self.jobClient.getSiteMaskStatus()
+        siteStatusDict = self.wmsAdministrator.getSiteMask()
 
       if not siteStatusDict['OK']:
        return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
@@ -94,7 +92,7 @@ class SiteStatus( object ):
       if self.rssFlag:
         result = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
       else:
-        result = self.jobClient.getSiteMaskStatus(siteName)
+        result = self.wmsAdministrator.getSiteMaskStatus(siteName)
 
       if not result['OK']:
         return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
@@ -133,7 +131,7 @@ class SiteStatus( object ):
     if self.rssFlag:
       siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Name', 'Status' ] } )
     else:
-      siteStatus = self.jobClient.getSiteMaskStatus(siteName)
+      siteStatus = self.wmsAdministrator.getSiteMaskStatus(siteName)
 
     if not siteStatus['OK']:
       return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
@@ -183,7 +181,7 @@ class SiteStatus( object ):
       if self.rssFlag:
         siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )
       else:
-        siteStatus = self.jobClient.getSiteMaskStatus()
+        siteStatus = self.wmsAdministrator.getSiteMask()
 
       if not siteStatus['OK']:
         return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
@@ -226,7 +224,7 @@ class SiteStatus( object ):
     if self.rssFlag:
       siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'name' ] } )
     else:
-      siteStatus = self.jobClient.getSiteMask(siteState)
+      siteStatus = self.wmsAdministrator.getSiteMask(siteState)
 
     if not siteStatus['OK']:
       return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
