@@ -785,7 +785,7 @@ class SiteDirector( AgentModule ):
     #no more lazy hack
     # at this point if no listSubmitPools this point is not reached because first check at of the function
     if self.submitPool:
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.submitPool[0] )
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.submitPool )
     else:
       if self.listSubmitPools[0]:
         pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.listSubmitPools[0] )
