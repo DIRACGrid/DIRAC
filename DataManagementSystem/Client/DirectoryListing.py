@@ -168,8 +168,20 @@ class DirectoryListing( object ):
       pstring += '-'
 
     return pstring
+  
+  def humanReadableSize( self, num, suffix = 'B' ):
+    """ Translate file size in bytes to human readable
 
-  def printListing( self, reverse, timeorder ):
+        Powers of 2 are used (1Mi = 2^20 = 1048576 bytes).
+    """
+    num = int(num)
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+      if abs(num) < 1024.0:
+        return "%3.1f%s%s" % (num, unit, suffix)
+      num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
+
+  def printListing( self, reverse, timeorder, sizeorder, humanread ):
     """
     """
     if timeorder:
@@ -177,25 +189,38 @@ class DirectoryListing( object ):
         self.entries.sort(key=lambda x: x[5])
       else:
         self.entries.sort(key=lambda x: x[5],reverse=True)
-    else:
+    elif sizeorder:
       if reverse:
-        self.entries.sort(key=lambda x: x[6],reverse=True)
+        self.entries.sort(key=lambda x: x[4])
       else:
-        self.entries.sort(key=lambda x: x[6])
-
+        self.entries.sort(key=lambda x: x[4],reverse=True)
+    else:  
+      if reverse:
+        self.entries.sort(key=lambda x: x[6],reverse=True) 
+      else:  
+        self.entries.sort(key=lambda x: x[6]) 
+        
     # Determine the field widths
     wList = [0] * 7
     for d in self.entries:
       for i in range(7):
-        if len(str(d[i])) > wList[i]:
-          wList[i] = len(str(d[i]))
+        if humanread and i == 4:
+          humanreadlen = len(str(self.humanReadableSize(d[4])))
+          if humanreadlen > wList[4]:
+            wList[4] = humanreadlen
+        else:
+          if len(str(d[i])) > wList[i]:
+            wList[i] = len(str(d[i]))
 
     for e in self.entries:
+      size = e[4]
+      if humanread:
+        size = self.humanReadableSize(e[4])
       print str(e[0]),
       print str(e[1]).rjust(wList[1]),
       print str(e[2]).ljust(wList[2]),
       print str(e[3]).ljust(wList[3]),
-      print str(e[4]).rjust(wList[4]),
+      print str(size).rjust(wList[4]),
       print str(e[5]).rjust(wList[5]),
       print str(e[6])
 

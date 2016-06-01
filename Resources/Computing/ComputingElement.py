@@ -401,14 +401,14 @@ class ComputingElement(object):
 
     ceDict = {}
     for option, value in self.ceParameters.items():
-      if type( value ) == type( [] ):
+      if isinstance( value, list ):
         ceDict[option] = value
-      elif type( value ) == type( ' ' ):
+      elif isinstance( value, basestring ):
         try:
           ceDict[option] = int( value )
         except:
           ceDict[option] = value  
-      elif type( value ) == type( 1 ) or type( value ) == type( 1. ):
+      elif isinstance( value, ( int, long, float ) ):
         ceDict[option] = value
       else:
         self.log.warn( 'Type of option %s = %s not determined' % ( option, value ) )
@@ -425,10 +425,7 @@ class ComputingElement(object):
       if 'AvailableCores' in result:
         cores = result['AvailableCores']
         if cores > 1:
-          tagList = []
-          for i in range( 2, cores+1 ):
-            tagList.append( '%dCore' % i )
-          ceDict['Tag'] = tagList  
+          ceDict['NumberOfProcessors'] = cores
 
     return S_OK( ceDict )
 

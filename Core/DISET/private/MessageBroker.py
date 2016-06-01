@@ -66,8 +66,8 @@ class MessageBroker( object ):
     trid = self.__trPool.add( transport )
     try:
       result = self.addTransportId( trid, *args, **kwargs )
-    except Exception:
-      gLogger.exception( "Cannot add transport id" )
+    except Exception as e:
+      gLogger.exception( "Cannot add transport id", lException = e )
       result = S_ERROR( "Cannot add transport id" )
     if not result[ 'OK' ]:
       self.__trPool.remove( trid )
@@ -141,8 +141,8 @@ class MessageBroker( object ):
         except select.error:
           time.sleep( 0.001 )
           continue
-      except:
-        gLogger.exception( "Exception while selecting persistent connections" )
+      except Exception as e:
+        gLogger.exception( "Exception while selecting persistent connections", lException = e )
         continue
       for sock in inList:
         for iPos in range( len( sIdList ) ):
@@ -252,9 +252,9 @@ class MessageBroker( object ):
       if not isReturnStructure( result ):
         return S_ERROR( "Request function does not return a result structure" )
       return result
-    except Exception, e:
+    except Exception as e:
       #Whoops. Show exception and return
-      gLogger.exception( "Exception while processing message %s" % msg[ 'name' ] )
+      gLogger.exception( "Exception while processing message %s" % msg[ 'name' ], lException = e )
       return S_ERROR( "Exception while processing message %s: %s" % ( msg[ 'name' ], str( e ) ) )
 
   def __processIncomingResponse( self, trid, msg ):

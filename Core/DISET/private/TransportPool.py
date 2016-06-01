@@ -145,9 +145,9 @@ class TransportPool( object ):
       self.__transports[ trid ][0].close()
     except KeyError:
       return S_ERROR( "No transport with id %s defined" % trid )
-    self.__remove( trid )
+    self.remove( trid )
 
-  def __remove( self, trid ):
+  def remove( self, trid ):
     self.__modLock.acquire()
     try:
       if trid in self.__transports:

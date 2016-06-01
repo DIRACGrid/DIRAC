@@ -10,7 +10,8 @@ import datetime
 import copy
 import errno
 # # from DIRAC
-from DIRAC import gLogger, gConfig, DError, DErrno, siteName
+from DIRAC import gLogger, gConfig, siteName
+from DIRAC.Core.Utilities import DErrno, DError
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
@@ -18,7 +19,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Resources.Utilities import checkArgumentFormat
+from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
@@ -706,7 +707,7 @@ class StorageElementItem( object ):
         startTime = time.time()
         res = fcn( urlsToUse, *args, **kwargs )
         elapsedTime = time.time() - startTime
-        
+
 
         self.addAccountingOperation( urlsToUse, startDate, elapsedTime, storageParameters, res )
 

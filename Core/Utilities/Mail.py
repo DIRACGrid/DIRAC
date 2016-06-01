@@ -10,7 +10,7 @@ from email.mime.text import MIMEText
 from getpass import getuser
 from DIRAC import gLogger, S_OK, S_ERROR
 
-class Mail:
+class Mail( object ):
 
   def __init__( self ):
     self._subject = ''
@@ -48,4 +48,4 @@ class Mail:
       return S_ERROR( "Sending mail failed %s" % str( x ) )
 
     smtp.quit()
-    return S_OK( "The mail was succesfully sent" )
+    return S_OK( "The mail was successfully sent" )

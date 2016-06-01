@@ -1,38 +1,62 @@
 """ File catalog class. This is a simple dispatcher for the file catalog plug-ins.
     It ensures that all operations are performed on the desired catalogs.
+
+    The File Catalog plug-ins are supposed to implement a certain number of methods of
+    the File Catalog interface. The names of the implemented methods classified in
+    "read", "write" and "no_lfn" categories are reported by each plug-in using
+    getInterfaceMethods() call. The File Catalog collects and memorizes all the
+    method names from all the plug-ins and in each category. Only calls to these
+    methods will be attempted.
+
+    One plug-in can be declared to be a Master in the CS. If the Master plug-in is
+    declared it must implement all the methods collected in the "write" category.
+    When the FileCatalog is called with a given "write" method name, the Master plugin
+    is called first. If it fails, no other plug-in is called to preserve consistency
+    in the states of different catalogs. If no Master plug-in is declared, all the
+    plug-ins are called (in case they implement the method) for the "write" methods.
+
+    For the "read" methods plug-ins are called one by one, starting with the Master
+    plug-in if declared, until getting a successful result.
+
+    Most of the catalog plug-in methods are taking the first argument which represents
+    the required LFNS. The LFNs argument can have one of the following forms:
+
+    - string: just a single LFN itself
+    - list: a list of LFN strings
+    - dictionary: the keys are LFN strings, the values are LFN specific parameters
+                  needed by the method
+
+    All the methods taking the first LFNs argument are returning a standard DIRAC
+    bulk result structure. If the call is successful, the Successful and Failed
+    dictionaries have LFNs as keys and specific results of operation as values.
+    The LFNs argument before calling these methods is checked to conform to the
+    convention above and modified to take the "dictionary" form. The original LFN names
+    are memorized and restored in the final result.
+
+    Some methods implemented by plug-ins do not have LFNs as the first argument.
+    The names of those methods are reported by the plug-ins as "no_lfn" methods
+    in the getInterfaceMethods() call. For those methods there is obviously no
+    additional check of the structure of the LFNs argument and no corresponding
+    processing of the results.
+
+    For the actual methods that can be called vie the File Catalog object, see
+    the documentation of the respective FileCatalog plug-ins ( client classes )
+
 """
 
-import types, re
+import re
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
-from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
-from DIRAC.Resources.Utilities                              import checkArgumentFormat
-from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
+from DIRAC.Resources.Catalog.Utilities                   import checkArgumentFormat
+from DIRAC.Resources.Catalog.FileCatalogFactory          import FileCatalogFactory
 
 class FileCatalog( object ):
 
-  ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
-                'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
-                'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID']
-
-  ro_meta_methods = ['getFileUserMetadata', 'getMetadataFields', 'findFilesByMetadata',
-                     'getDirectoryUserMetadata', 'findDirectoriesByMetadata', 'getReplicasByMetadata',
-                     'findFilesByMetadataDetailed', 'findFilesByMetadataWeb', 'getCompatibleMetadata',
-                     'getMetadataSet']
-
-  ro_methods += ro_meta_methods
-
-  write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
-                   'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory', 'setDirectoryStatus',
-                   'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset', 'changePathMode',
-                   'changePathOwner', 'changePathGroup']
-
-  write_meta_methods = ['addMetadataField', 'deleteMetadataField', 'setMetadata', 'setMetadataBulk',
-                        'removeMetadata', 'addMetadataSet']
-
-  write_methods += write_meta_methods
+  ro_methods = set()
+  write_methods = set()
+  no_lfn_methods = set()
 
   def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
@@ -41,7 +65,6 @@ class FileCatalog( object ):
     self.timeout = 180
     self.readCatalogs = []
     self.writeCatalogs = []
-    self.metaCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
     self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
 
@@ -49,10 +72,10 @@ class FileCatalog( object ):
 
     if catalogs is None:
       catalogList = []
-    elif type( catalogs ) in types.StringTypes:
+    elif isinstance( catalogs, basestring ):
       catalogList = [catalogs]
-    else:
-      catalogList = catalogs
+    elif isinstance( catalogs, ( list, tuple ) ):
+      catalogList = list( catalogs )
 
     if catalogList:
       res = self._getSelectedCatalogs( catalogList )
@@ -62,6 +85,34 @@ class FileCatalog( object ):
       self.valid = False
     elif ( len( self.readCatalogs ) == 0 ) and ( len( self.writeCatalogs ) == 0 ):
       self.valid = False
+
+    result = self.getMasterCatalogNames()
+    masterCatalogs = result['Value']
+    # There can not be more than one master catalog
+    haveMaster = False
+    if len( masterCatalogs ) > 1:
+      self.valid = False
+    elif len( masterCatalogs ) == 1:
+      haveMaster = True
+
+    # Get the list of write methods
+    if haveMaster:
+      # All the write methods must be present in the master
+      catalogName, oCatalog, master = self.writeCatalogs[0]
+      _roList, writeList, nolfnList = oCatalog.getInterfaceMethods()
+      FileCatalog.write_methods.update( writeList )
+      FileCatalog.no_lfn_methods.update( nolfnList )
+    else:
+      for catalogName, oCatalog, master in self.writeCatalogs:
+        _roList, writeList, nolfnList = oCatalog.getInterfaceMethods()
+        FileCatalog.write_methods.update( writeList )
+        FileCatalog.no_lfn_methods.update( nolfnList )
+
+    # Get the list of read methods
+    for catalogName, oCatalog, master in self.readCatalogs:
+      roList, _writeList, nolfnList = oCatalog.getInterfaceMethods()
+      FileCatalog.ro_methods.update( roList )
+      FileCatalog.no_lfn_methods.update( nolfnList )
 
   def isOK( self ):
     return self.valid
@@ -93,57 +144,86 @@ class FileCatalog( object ):
     """
     successful = {}
     failed = {}
-    failedCatalogs = []
-    fileInfo = parms[0]
-    res = checkArgumentFormat( fileInfo )
-    if not res['OK']:
-      return res
-    fileInfo = res['Value']
-    allLfns = fileInfo.keys()
-    parms1 = parms[1:]
-    lfnsFlag = False
+    failedCatalogs = {}
+    successfulCatalogs = {}
+
+    allLfns = []
+    lfnMapDict = {}
+    masterResult = {}
+    if not self.call in FileCatalog.no_lfn_methods:
+      fileInfo = parms[0]
+      result = checkArgumentFormat( fileInfo, generateMap = True )
+      if not result['OK']:
+        return result
+      fileInfo, lfnMapDict = result['Value']
+      # No need to check the LFNs again in the clients
+      kws['LFNChecking'] = False
+      allLfns = fileInfo.keys()
+      parms1 = parms[1:]
+
     for catalogName, oCatalog, master in self.writeCatalogs:
 
-      # Skip if metadata related method on pure File Catalog
-      if self.call in FileCatalog.write_meta_methods and not catalogName in self.metaCatalogs:
-        continue
+      # Skip if the method is not implemented in this catalog
+      if not oCatalog.hasCatalogMethod( self.call ):
+        if master:
+          gLogger.error( "Master catalog does not implement the write method", self.call )
+          return S_ERROR( "Master catalog does not implement the write method %s" % self.call )
+        else:
+          continue
 
       method = getattr( oCatalog, self.call )
-      if self.call in FileCatalog.write_meta_methods:
-        res = method( *parms, **kws )
+      if self.call in FileCatalog.no_lfn_methods:
+        result = method( *parms, **kws )
       else:
-        res = method( fileInfo, *parms1, **kws )
-
-      if not res['OK']:
+        result = method( fileInfo, *parms1, **kws )
+      if master:
+        masterResult = result
+      if not result['OK']:
         if master:
           # If this is the master catalog and it fails we dont want to continue with the other catalogs
           gLogger.error( "FileCatalog.w_execute: Failed to execute call on master catalog",
-                         "%s on %s: %s" % ( self.call, catalogName, res['Message'] ) )
-          return res
+                         "%s on %s: %s" % ( self.call, catalogName, result['Message'] ) )
+          return result
         else:
           # Otherwise we keep the failed catalogs so we can update their state later
-          failedCatalogs.append( ( catalogName, res['Message'] ) )
+          failedCatalogs[catalogName] = result['Message']
       else:
-        if 'Failed' in res['Value']:
-          lfnsFlag = True
-          for lfn, message in res['Value']['Failed'].items():
+        successfulCatalogs[catalogName] = result['Value']
+
+      if allLfns:
+        if result['OK']:
+          for lfn, message in result['Value']['Failed'].items():
             # Save the error message for the failed operations
             failed.setdefault( lfn, {} )[catalogName] = message
             if master:
               # If this is the master catalog then we should not attempt the operation on other catalogs
               fileInfo.pop( lfn, None )
-          for lfn, result in res['Value']['Successful'].items():
+          for lfn, result in result['Value']['Successful'].items():
             # Save the result return for each file for the successful operations
             successful.setdefault( lfn, {} )[catalogName] = result
-    # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
-    if lfnsFlag:
-      for catalogName, errorMessage in failedCatalogs:
+
+    if allLfns:
+      # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
+      for catalogName, errorMessage in failedCatalogs.items():
         for lfn in allLfns:
           failed.setdefault( lfn, {} )[catalogName] = errorMessage
+      # Restore original lfns if they were changed by normalization
+      if lfnMapDict:
+        for lfn in failed:
+          failed[lfnMapDict.get( lfn, lfn )] = failed[lfn]
+        for lfn in successful:
+          successful[lfnMapDict.get( lfn, lfn )] = successful[lfn]
       resDict = {'Failed':failed, 'Successful':successful}
       return S_OK( resDict )
     else:
-      return res
+      if failedCatalogs:
+        result = S_ERROR( 'Failed to execute on some catalogs' )
+        resDict = {'Failed':failedCatalogs, 'Successful':successfulCatalogs}
+        result['Value'] = resDict
+        return result
+      else:
+        return masterResult
+
 
   def r_execute( self, *parms, **kws ):
     """ Read method executor.
@@ -152,8 +232,8 @@ class FileCatalog( object ):
     failed = {}
     for catalogName, oCatalog, _master in self.readCatalogs:
 
-      # Skip if metadata related method on pure File Catalog
-      if self.call in FileCatalog.ro_meta_methods and not catalogName in self.metaCatalogs:
+      # Skip if the method is not implemented in this catalog
+      if not oCatalog.hasCatalogMethod( self.call ):
         continue
 
       method = getattr( oCatalog, self.call )
@@ -230,22 +310,17 @@ class FileCatalog( object ):
       oCatalog = res['Value']
       self.readCatalogs.append( ( catalogName, oCatalog, True ) )
       self.writeCatalogs.append( ( catalogName, oCatalog, True ) )
-      if catalogConfig.get( 'MetaCatalog' ) == 'True':
-        self.metaCatalogs.append( catalogName )
     return S_OK()
 
   def _getCatalogs( self ):
 
     # Get the eligible catalogs first
     # First, look in the Operations, if nothing defined look in /Resources for backward compatibility
-    operationsFlag = False
     fileCatalogs = self.opHelper.getValue( '/Services/Catalogs/CatalogList', [] )
     if fileCatalogs:
       operationsFlag = True
     else:
-      fileCatalogs = self.opHelper.getSections( '/Services/Catalogs' )
       result = self.opHelper.getSections( '/Services/Catalogs' )
-      fileCatalogs = []
       operationsFlag = False
       if result['OK']:
         fileCatalogs = result['Value']
@@ -287,8 +362,6 @@ class FileCatalog( object ):
             self.writeCatalogs.insert( 0, ( catalogName, oCatalog, master ) )
           else:
             self.writeCatalogs.append( ( catalogName, oCatalog, master ) )
-      if catalogConfig.get( 'MetaCatalog' ) == 'True':
-        self.metaCatalogs.append( catalogName )
     return S_OK()
 
   def _getCatalogConfigDetails( self, catalogName ):

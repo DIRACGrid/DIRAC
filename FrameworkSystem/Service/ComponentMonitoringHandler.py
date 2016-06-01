@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 import types
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import InstalledComponentsDB, Component, Host, InstalledComponent
+from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import InstalledComponentsDB, Component, Host, InstalledComponent, HostLogging
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
 class ComponentMonitoringHandler( RequestHandler ):
@@ -299,3 +299,56 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return \
           ComponentMonitoringHandler.db.removeInstalledComponents( matchFields )
+
+  types_updateLog = [ types.StringTypes, types.DictType ]
+  def export_updateLog( self, host, fields ):
+    """
+    Updates the log entry for a given host in the database with the given fields
+    host is the name of the machine to which the logging information belongs
+    fields is a dictionary where the fields contain the logging information to be stored in the database
+    """
+    result = ComponentMonitoringHandler.db.exists( HostLogging, { 'hostName': host } )
+    if not result[ 'OK' ]:
+      return result
+
+    if result[ 'Value' ]:
+      result = ComponentMonitoringHandler.db.updateLogs( { 'hostName': host }, fields )
+    else:
+      fields[ 'hostName' ] = host
+      result = ComponentMonitoringHandler.db.addLog( fields )
+
+    if not result[ 'OK' ]:
+      return result
+
+    return S_OK( 'Logs updated correctly' )
+
+  types_getLog = [ types.StringTypes ]
+  def export_getLog( self, host ):
+    """
+    Retrieves the logging information currently stored for the given host
+    """
+    result = ComponentMonitoringHandler.db.exists( HostLogging, { 'hostName': host } )
+    if not result[ 'OK' ]:
+      return result
+    if not result[ 'Value' ]:
+      return S_ERROR( 'Host %s does not exist' % host )
+
+    result = ComponentMonitoringHandler.db.getLogs( { 'hostName': host } )
+    if not result[ 'OK' ]:
+      return result
+
+    return S_OK( result[ 'Value' ] )
+
+  types_removeLogs = [ types.DictType ]
+  def export_removeLogs( self, fields ):
+    """
+    Deletes all the matching logging information
+    fields is a dictionary containing the values for the fields such that any matching entries in the database should be deleted
+    """
+    result = ComponentMonitoringHandler.db.exists( HostLogging, fields )
+    if not result[ 'OK' ]:
+      return result
+    if not result[ 'Value' ]:
+      return S_ERROR( 'Host does not exist' )
+
+    return ComponentMonitoringHandler.db.removeLogs( fields )

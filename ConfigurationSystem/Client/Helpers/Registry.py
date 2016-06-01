@@ -107,6 +107,29 @@ def getUsersInGroup( groupName, defaultValue = None ):
   option = "%s/Groups/%s/Users" % ( gBaseRegistrySection, groupName )
   return gConfig.getValue( option, defaultValue )
 
+def getUsersInVO( vo, defaultValue = None ):
+  if defaultValue == None:
+    defaultValue = []
+  result = getGroupsForVO( vo )
+  if not result['OK']:
+    return defaultValue
+  groups = result['Value']
+  if not groups:
+    return defaultValue
+
+  userList = []
+  for group in groups:
+    userList += getUsersInGroup( group )
+  return userList
+
+def getDNsInVO( vo ):
+  DNs = []
+  for user in getUsersInVO( vo ):
+    result = getDNForUsername( user )
+    if result[ 'OK' ]:
+      DNs.extend( result[ 'Value' ] )
+  return DNs
+
 def getDNsInGroup( groupName ):
   DNs = []
   for user in getUsersInGroup( groupName ):
@@ -271,3 +294,34 @@ def getVOMSServerInfo( requestedVO = '' ):
 
   return S_OK( vomsDict )     
       
+def getVOMSRoleGroupMapping( vo = '' ):
+  """ Get mapping of the VOMS role to the DIRAC group
+
+  :param str vo: perform the operation for the given VO
+  :return: standard structure with two mappings: VOMS-DIRAC { <VOMS_Role>: [<DIRAC_Group>] }
+           and DIRAC-VOMS { <DIRAC_Group>: <VOMS_Role> } and a list of DIRAC groups without mapping
+  """
+  result = getGroupsForVO( vo )
+  if not result['OK']:
+    return result
+
+  groupList = result['Value']
+
+  vomsGroupDict = {}
+  groupVomsDict = {}
+  noVOMSGroupList = []
+
+  for group in groupList:
+    vomsRole = getGroupOption( group, 'VOMSRole' )
+    if vomsRole:
+      vomsGroupDict.setdefault( vomsRole, [] )
+      vomsGroupDict[vomsRole].append( group )
+      groupVomsDict[group] = vomsRole
+
+  for group in groupList:
+    if not group in groupVomsDict:
+      noVOMSGroupList.append(group)
+
+  return S_OK( { "VOMSDIRAC": vomsGroupDict, "DIRACVOMS": groupVomsDict, "NoVOMS": noVOMSGroupList } )
+
+

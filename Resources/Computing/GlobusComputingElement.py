@@ -22,10 +22,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getGroupOption
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_STATUS
-
+from DIRAC.Core.Utilities.File                           import makeGuid
 
 import os
-import tempfile
 
 CE_NAME = 'Globus'
 MANDATORY_PARAMETERS = [ 'Queue' ]
@@ -49,38 +48,6 @@ class GlobusComputingElement( ComputingElement ):
     self.gridEnv = ''
     self.proxyRenewal = 0
 
-  #############################################################################
-  def __writeRSL( self, executableFile ):
-    """ Create the RSL for submission
-
-    This function is not used except to get the diracStamp
-    """
-
-    workingDirectory = self.ceParameters['WorkingDirectory']
-    fd, name = tempfile.mkstemp( suffix = '.rsl', prefix = 'Globus_', dir = workingDirectory )
-    diracStamp = os.path.basename( name ).replace( '.rsl', '' ).replace( 'Globus_', '' )
-    jdlFile = os.fdopen( fd, 'w' )
-
-    jdl = """
-[
-  JobType = "Normal";
-  Executable = "%(executable)s";
-  StdOutput="%(diracStamp)s.out";
-  StdError="%(diracStamp)s.err";
-  InputSandbox={"%(executableFile)s"};
-  OutputSandbox={"%(diracStamp)s.out", "%(diracStamp)s.err"};
-  OutputSandboxBaseDestUri="%(outputURL)s";
-]
-    """ % { 'executableFile':executableFile,
-            'executable':os.path.basename( executableFile ),
-            'outputURL':self.outputURL,
-            'diracStamp':diracStamp
-          }
-
-    jdlFile.write( jdl )
-    jdlFile.close()
-    return name, diracStamp
-
   def _reset( self ):
     self.queue = self.ceParameters['Queue']
     self.outputURL = self.ceParameters.get( 'OutputURL', 'gsiftp://localhost' )
@@ -98,13 +65,12 @@ class GlobusComputingElement( ComputingElement ):
     batchIDList = []
     stampDict = {}
     for _i in xrange(numberOfJobs):
-      _jdlName, diracStamp = self.__writeRSL( executableFile )
+      diracStamp = makeGuid()[:8]
       queueName = '%s/%s' % ( self.ceName, self.queue )
       cmd = ['globus-job-submit', queueName, "-s", executableFile ]
       #cmd = ['globus-job-submit', '-r %s' % queueName, '-f %s' % jdlName ]
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
       self.log.verbose(result)
-      #os.unlink( jdlName )
       if result['OK']:
         if result['Value'][0]:
           # We have got a non-zero status code

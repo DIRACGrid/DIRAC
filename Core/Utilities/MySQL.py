@@ -209,7 +209,7 @@ def _quotedList( fieldList = None ):
   return ', '.join( quotedFields )
 
 
-class MySQL:
+class MySQL( object ):
   """
   Basic multithreaded DIRAC MySQL Client Class
   """
