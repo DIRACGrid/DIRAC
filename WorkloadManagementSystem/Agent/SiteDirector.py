@@ -12,6 +12,7 @@ import tempfile
 import random
 import socket
 import hashlib
+import re
 
 import DIRAC
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
@@ -32,7 +33,7 @@ from DIRAC.Core.Utilities.List                             import fromChar
 
 from collections import defaultdict
 
-__RCSID__ = "$Id$"
+__RCSID__ = "eb8b572 (2015-10-30 12:17:53 +0100) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
 
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
@@ -79,6 +80,8 @@ class SiteDirector( AgentModule ):
     self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
     # The SiteDirector is for a particular user community
     self.vo = self.am_getOption( "VO", '' )
+    # The SiteDirector is for a particular submitPool 
+    self.submitPool = self.am_getOption( "SubmitPool", '' )
     if not self.vo:
       self.vo = self.am_getOption( "Community", '' )
     if not self.vo:
@@ -110,11 +113,18 @@ class SiteDirector( AgentModule ):
 
     self.platforms = []
     self.sites = []
-    self.defaultSubmitPools = ''
+    self.listSubmitPools = []
+    # submitPools of the VO, and if not defined then the one of the group
+    defaultSubmitPools = ''
     if self.group:
-      self.defaultSubmitPools = Registry.getGroupOption( self.group, 'SubmitPools', '' )
+      defaultSubmitPools = Registry.getGroupOption( self.group, 'SubmitPools', '' )
     elif self.vo:
-      self.defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
+      defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
+
+    if defaultSubmitPools.find(',')==-1 :
+      self.listSubmitPools.append(defaultSubmitPools)
+    else:
+      self.listSubmitPools = defaultSubmitPools.split(',')
 
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
@@ -338,15 +348,31 @@ class SiteDirector( AgentModule ):
 
     return S_OK()
 
+
   def submitJobs( self ):
     """ Go through defined computing elements and submit jobs if necessary
     """
 
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
-    tqDict = { 'Setup':setup,
-               'CPUTime': 9999999,
-               'SubmitPool' : self.defaultSubmitPools }
+    # because tq_TQToSubmitPools has a Value filed which is SubmitPool, not SubmitPools
+    # the compromise solution in the current SiteDirector design, is to have a new SubmitPool (without s since it is a siteDirector)
+    # then to check if such SiteDirector SubmitPool is in the VOs self.listSubmitPools, if not inforn and continue
+    # if yes then match only this SubmitPool:
+    if not self.submitPool:
+      #this is for backward setup compatibility, then, just the first VO SubmitPools
+      tqDict = { 'Setup':setup,
+                 'CPUTime': 9999999,
+                 'SubmitPool' : self.listSubmitPools[0] }
+    else:
+      if self.submitPool in self.listSubmitPools:
+        tqDict = { 'Setup':setup,
+                   'CPUTime': 9999999,
+                   'SubmitPool' : self.submitPool }
+      else:
+        self.log.info( 'SiteDirector SubmitPool:%s not defined in per VO or group enabled SubmitPools' % ( self.submitPool ) )
+        return S_OK()
+
     if self.vo:
       tqDict['Community'] = self.vo
     if self.voGroups:
@@ -458,7 +484,20 @@ class SiteDirector( AgentModule ):
         ceDict['OwnerGroup'] = self.voGroups
 
       # This is a hack to get rid of !
-      ceDict['SubmitPool'] = self.defaultSubmitPools
+      # ceDict['SubmitPool'] = self.defaultSubmitPools
+      # this lazy hack brokes the matcher desing, matcher is not able to match multiple values in SubmitPool,
+      # because tq_TQToSubmitPools has a Value filed which is SubmitPool, not SubmitPools
+      # we neither can just process any submitPools of the VO, just those of the VO, and also of the siteDirector,
+      # the compromise solution in the current SiteDirector design, is to have a new SubmitPool (without s since it is a siteDirector)
+      # then to check if such SiteDirector SubmitPool is in the VOs self.listSubmitPools, if not inforn and continue
+      # if yes then match only this SubmitPool
+      #
+      if not self.submitPool:
+        #this is for backward setup compatibility, then, just the first VO SubmitPools
+        ceDict['SubmitPool'] = self.listSubmitPools[0] 
+      else:
+        #we don't check if siteDirector is in group or vo submitPools, because the check has been done above at  the begingin of this function
+        ceDict['SubmitPool'] = self.submitPool 
       
       result = Resources.getCompatiblePlatforms( platform )
       if not result['OK']:
@@ -622,6 +661,10 @@ class SiteDirector( AgentModule ):
           jobIDList = result['Value']
           
         result = ce.available( jobIDList )
+
+
+        print "AT >>> ce.available", result
+
         if not result['OK']:
           self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
           self.failedQueues[queue] += 1
@@ -738,8 +781,14 @@ class SiteDirector( AgentModule ):
       pilotOptions.append( queueDict['ExtraPilotOptions'] )
 
     # Hack
-    if self.defaultSubmitPools:
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
+    #if self.listSubmitPools:
+    #no more lazy hack
+    # at this point if no listSubmitPools this point is not reached because first check at of the function
+    if self.submitPool:
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.submitPool[0] )
+    else:
+      if self.listSubmitPools[0]:
+        pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.listSubmitPools[0] )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
