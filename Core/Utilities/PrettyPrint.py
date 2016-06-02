@@ -1,6 +1,6 @@
 #####################################################################
 #
-#  Utilities for pretty printing of table data
+#  Utilities for pretty printing table data and more
 #  Author: A.Tsaregorodtsev
 #
 #####################################################################
@@ -9,8 +9,13 @@ __RCSID__ = '$Id$'
 
 import StringIO
 
-def int_with_commas(i):
-  s = str(i)
+def int_with_commas( inputValue ):
+  """ Utility to make a string of a large integer with comma separated degrees
+      of thousand
+  :param int inputValue: value to be interpreted
+  :return: output string
+  """
+  s = str( inputValue )
   news = ''
   while len(s) > 0:
     news = s[-3:]+","+news
