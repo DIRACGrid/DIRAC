@@ -249,7 +249,7 @@ depending upon your OS version. For example::
       nginx.x86_64 0:1.10.1-1.el6.ngx
   
   
- * Configure NGINX
+* Configure NGINX
   
     You have to found the nginx.conf file. You can see which configuration used in /etc/init.d/nginx. For example::
     
