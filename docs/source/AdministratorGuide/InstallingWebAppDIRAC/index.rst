@@ -235,9 +235,7 @@ If your version is not grater than 1.4 you have to install NGinx manually.
       enabled=1
 
 Due to differences between how CentOS, RHEL, and Scientific Linux populate the $releasever variable, it is necessary to manually replace $releasever with either 5 (for 5.x) or 6 (for 6.x), 
-depending upon your OS version.
-
-For example::
+depending upon your OS version. For example::
    [nginx]
    name=nginx repo
    baseurl=http://nginx.org/packages/rhel/6/$basearch/
@@ -246,7 +244,6 @@ For example::
   
 If it is successful installed::
     Verifying  : nginx-1.10.1-1.el6.ngx.x86_64                                                                                                                                                                                                                    1/1
-
    Installed:
       nginx.x86_64 0:1.10.1-1.el6.ngx
   
@@ -421,8 +418,8 @@ You can start NGinx now.
        NumProcesses = 1
  
  You can try to use the web portal. For example: http://dzmathe.cern.ch/DIRAC/
- 
- If you get 502 Bad Gateway error, you need to generate rules for SE linus. You can see the error in tail -200f /var/log/nginx/error.log ::
+ If you get 502 Bad Gateway error, you need to generate rules for SE linus. You can see the error in tail -200f /var/log/nginx/error.lo::
+     
      016/06/02 15:55:24 [crit] 20317#20317: *4 connect() to 127.0.0.1:8000 failed (13: Permission denied) while connecting to upstream, client: 128.141.170.23, server: dzmathe.cern.ch, request: "GET /DIRAC/?view=tabs&theme=Grey&url_state=1| HTTP/1.1", upstream: "http://127.0.0.1:8000/DIRAC/?view=tabs&theme=Grey&url_state=1|", host: "dzmathe.cern.ch"
 
 * Generate the the rule::
