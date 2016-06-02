@@ -1,7 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The TimeLeft utility allows to calculate the amount of CPU time
     left for a given batch system slot.  This is essential for the 'Filling
     Mode' where several VO jobs may be executed in the same allocated slot.
@@ -15,14 +11,16 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import shellCall
+import os
 
 import DIRAC
 
-import os
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.Subprocess import shellCall
 
-class TimeLeft:
+class TimeLeft( object ):
+  """ This generally does not run alone
+  """
 
   #############################################################################
   def __init__( self ):
@@ -58,7 +56,16 @@ class TimeLeft:
     if not self.batchPlugin:
       return 0
 
-    return self.batchPlugin.getResourceUsage().get( 'Value', {} ).get( 'CPU', 0.0 ) * self.scaleFactor
+    resourceDict = self.batchPlugin.getResourceUsage()
+
+    if 'Value' in resourceDict:
+      if resourceDict['Value']['CPU']:
+        return resourceDict['Value']['CPU'] * self.scaleFactor
+      elif resourceDict['Value']['WallClock']:
+        # build a reasonable CPU value from WallClock
+        return resourceDict['Value']['WallClock'] * self.scaleFactor
+
+    return 0
 
   #############################################################################
   def getTimeLeft( self, cpuConsumed = 0.0 ):
@@ -78,9 +85,22 @@ class TimeLeft:
       return resourceDict
 
     resources = resourceDict['Value']
-    if not resources['CPULimit'] or not resources['WallClockLimit']:
+    self.log.debug( "self.batchPlugin.getResourceUsage(): %s" % str( resources ) )
+    if not resources['CPULimit'] and not resources['WallClockLimit']:
       # This should never happen
       return S_ERROR( 'No CPU or WallClock limit obtained' )
+
+    # if one of CPULimit or WallClockLimit is missing, compute a reasonable value
+    if not resources['CPULimit']:
+      resources['CPULimit'] = resources['WallClockLimit']
+    elif not resources['WallClockLimit']:
+      resources['WallClockLimit'] = resources['CPULimit']
+
+    # if one of CPU or WallClock is missing, compute a reasonable value
+    if not resources['CPU']:
+      resources['CPU'] = resources['WallClock']
+    elif not resources['WallClock']:
+      resources['WallClock'] = resources['CPU']
 
     timeLeft = 0.
     cpu = float( resources['CPU'] )
@@ -133,8 +153,7 @@ class TimeLeft:
 
   #############################################################################
   def __getBatchSystemPlugin( self ):
-    """Using the name of the batch system plugin, will return an instance
-       of the plugin class.
+    """ Using the name of the batch system plugin, will return an instance of the plugin class.
     """
     batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME', 'SGE':'SGE_TASK_ID'}  # more to be added later
     name = None
@@ -142,6 +161,10 @@ class TimeLeft:
       if envVar in os.environ:
         name = batchSystem
         break
+
+    if name == None and os.environ.has_key( 'MACHINEFEATURES' ) and os.environ.has_key( 'JOBFEATURES' ):
+      # Only use MJF if legacy batch system information not available for now
+      name = 'MJF'
 
     if name == None:
       self.log.warn( 'Batch system type for site %s is not currently supported' % DIRAC.siteName() )

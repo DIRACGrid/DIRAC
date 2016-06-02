@@ -12,6 +12,7 @@ import tempfile
 import random
 import socket
 import hashlib
+import re
 
 import DIRAC
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
@@ -32,7 +33,7 @@ from DIRAC.Core.Utilities.List                             import fromChar
 
 from collections import defaultdict
 
-__RCSID__ = "$Id$"
+__RCSID__ = "eb8b572 (2015-10-30 12:17:53 +0100) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
 
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
@@ -55,11 +56,10 @@ class SiteDirector( AgentModule ):
                  for the agent restart
   """
 
-  def initialize( self ):
-    """ Standard constructor
+  def __init__( self, *args, **kwargs ):
+    """ c'tor
     """
-    self.am_setOption( "PollingTime", 60.0 )
-    self.am_setOption( "maxPilotWaitingHours", 6 )
+    AgentModule.__init__( self, *args, **kwargs )
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
@@ -67,6 +67,12 @@ class SiteDirector( AgentModule ):
     self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
+
+  def initialize( self ):
+    """ Standard constructor
+    """
+    self.am_setOption( "PollingTime", 60.0 )
+    self.am_setOption( "maxPilotWaitingHours", 6 )
     return S_OK()
 
   def beginExecution( self ):
@@ -74,6 +80,8 @@ class SiteDirector( AgentModule ):
     self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
     # The SiteDirector is for a particular user community
     self.vo = self.am_getOption( "VO", '' )
+    # The SiteDirector is for a particular submitPool 
+    self.submitPool = self.am_getOption( "SubmitPool", '' )
     if not self.vo:
       self.vo = self.am_getOption( "Community", '' )
     if not self.vo:
@@ -105,11 +113,18 @@ class SiteDirector( AgentModule ):
 
     self.platforms = []
     self.sites = []
-    self.defaultSubmitPools = ''
+    self.listSubmitPools = []
+    # submitPools of the VO, and if not defined then the one of the group
+    defaultSubmitPools = ''
     if self.group:
-      self.defaultSubmitPools = Registry.getGroupOption( self.group, 'SubmitPools', '' )
+      defaultSubmitPools = Registry.getGroupOption( self.group, 'SubmitPools', '' )
     elif self.vo:
-      self.defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
+      defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
+
+    if defaultSubmitPools.find(',')==-1 :
+      self.listSubmitPools.append(defaultSubmitPools)
+    else:
+      self.listSubmitPools = defaultSubmitPools.split(',')
 
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
@@ -209,9 +224,10 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
-        ceTags = ceDict.get( 'Tag' )
+        ceTags = ceDict.get( 'Tag', [] )
         if isinstance( ceTags, basestring ):
           ceTags = fromChar( ceTags )
+        ceMaxRAM = ceDict.get( 'MaxRAM', None )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -232,6 +248,7 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
+
           queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
           if queueTags and isinstance( queueTags, basestring ):
             queueTags = fromChar( queueTags )
@@ -243,14 +260,11 @@ class SiteDirector( AgentModule ):
             else:
               self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
-          maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
-          if maxMemory:
-            # MaxRAM value is supposed to be in MB
-            maxMemoryList = range( 1, int( maxMemory )/1000 + 1 )
-            memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
-            if memoryTags:
-              self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
+          maxRAM = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM' )
+          maxRAM = ceMaxRAM if not maxRAM else maxRAM
+          if maxRAM:
+            self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
+
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
@@ -334,15 +348,31 @@ class SiteDirector( AgentModule ):
 
     return S_OK()
 
+
   def submitJobs( self ):
     """ Go through defined computing elements and submit jobs if necessary
     """
 
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
-    tqDict = { 'Setup':setup,
-               'CPUTime': 9999999,
-               'SubmitPool' : self.defaultSubmitPools }
+    # because tq_TQToSubmitPools has a Value filed which is SubmitPool, not SubmitPools
+    # the compromise solution in the current SiteDirector design, is to have a new SubmitPool (without s since it is a siteDirector)
+    # then to check if such SiteDirector SubmitPool is in the VOs self.listSubmitPools, if not inforn and continue
+    # if yes then match only this SubmitPool:
+    if not self.submitPool:
+      #this is for backward setup compatibility, then, just the first VO SubmitPools
+      tqDict = { 'Setup':setup,
+                 'CPUTime': 9999999,
+                 'SubmitPool' : self.listSubmitPools[0] }
+    else:
+      if self.submitPool in self.listSubmitPools:
+        tqDict = { 'Setup':setup,
+                   'CPUTime': 9999999,
+                   'SubmitPool' : self.submitPool }
+      else:
+        self.log.info( 'SiteDirector SubmitPool:%s not defined in per VO or group enabled SubmitPools' % ( self.submitPool ) )
+        return S_OK()
+
     if self.vo:
       tqDict['Community'] = self.vo
     if self.voGroups:
@@ -454,7 +484,20 @@ class SiteDirector( AgentModule ):
         ceDict['OwnerGroup'] = self.voGroups
 
       # This is a hack to get rid of !
-      ceDict['SubmitPool'] = self.defaultSubmitPools
+      # ceDict['SubmitPool'] = self.defaultSubmitPools
+      # this lazy hack brokes the matcher desing, matcher is not able to match multiple values in SubmitPool,
+      # because tq_TQToSubmitPools has a Value filed which is SubmitPool, not SubmitPools
+      # we neither can just process any submitPools of the VO, just those of the VO, and also of the siteDirector,
+      # the compromise solution in the current SiteDirector design, is to have a new SubmitPool (without s since it is a siteDirector)
+      # then to check if such SiteDirector SubmitPool is in the VOs self.listSubmitPools, if not inforn and continue
+      # if yes then match only this SubmitPool
+      #
+      if not self.submitPool:
+        #this is for backward setup compatibility, then, just the first VO SubmitPools
+        ceDict['SubmitPool'] = self.listSubmitPools[0] 
+      else:
+        #we don't check if siteDirector is in group or vo submitPools, because the check has been done above at  the begingin of this function
+        ceDict['SubmitPool'] = self.submitPool 
       
       result = Resources.getCompatiblePlatforms( platform )
       if not result['OK']:
@@ -618,6 +661,10 @@ class SiteDirector( AgentModule ):
           jobIDList = result['Value']
           
         result = ce.available( jobIDList )
+
+
+        print "AT >>> ce.available", result
+
         if not result['OK']:
           self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
           self.failedQueues[queue] += 1
@@ -729,32 +776,19 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-Q %s' % self.queueDict[queue]['QueueName'] )
     # SiteName
     pilotOptions.append( '-n %s' % queueDict['Site'] )
-    if 'ClientPlatform' in queueDict:
-      pilotOptions.append( "-p '%s'" % queueDict['ClientPlatform'] )
-
-    if 'SharedArea' in queueDict:
-      pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'] )
-
-#     if 'SI00' in queueDict:
-#       factor = float( queueDict['SI00'] ) / 250.
-#       pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % factor )
-#       pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % factor )
-#     else:
-#       if 'CPUScalingFactor' in queueDict:
-#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
-#       if 'CPUNormalizationFactor' in queueDict:
-#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
 
     if "ExtraPilotOptions" in queueDict:
       pilotOptions.append( queueDict['ExtraPilotOptions'] )
 
     # Hack
-    if self.defaultSubmitPools:
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
-
-    if "Tag" in queueDict:
-      tagString = ','.join( queueDict['Tag'] )
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
+    #if self.listSubmitPools:
+    #no more lazy hack
+    # at this point if no listSubmitPools this point is not reached because first check at of the function
+    if self.submitPool:
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.submitPool )
+    else:
+      if self.listSubmitPools[0]:
+        pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.listSubmitPools[0] )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )

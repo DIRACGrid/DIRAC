@@ -63,8 +63,8 @@ import DIRAC
 from DIRAC import rootPath
 from DIRAC import gConfig
 from DIRAC import gLogger
-from DIRAC import systemCall
-from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion

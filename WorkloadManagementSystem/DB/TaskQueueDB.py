@@ -258,7 +258,7 @@ class TaskQueueDB( DB ):
       tqMatchDict[ field ] = result[ 'Value' ]
     #Check multivalue
     for multiField in multiValueMatchFields:
-      for field in ( multiField, "Banned%s" % multiField ):
+      for field in ( multiField, "Banned%s" % multiField, "Required%s" % multiField ):
         if field in tqMatchDict:
           fieldValue = tqMatchDict[ field ]
           result = travelAndCheckType( fieldValue, ( types.StringType, types.UnicodeType ) )
@@ -691,12 +691,21 @@ class TaskQueueDB( DB ):
           # that the GridCE matches explicitly so the COUNT can not be 0. In this case we skip this
           # condition
         sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
+        rsql = None
         if field in tagMatchFields:
           if tqMatchDict[field] != '"Any"':
             csql = self.__generateTagSQLSubCond( fullTableN, tqMatchDict[field] )
+          # Add required tag condition
+          for field in tagMatchFields:
+            fieldName = "Required%s" % field
+            requiredTags = tqMatchDict.get( fieldName, '' )
+            if requiredTags:
+              rsql = self.__generateRequiredTagSQLSubCond( fullTableN, requiredTags )
         else:
           csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN, fullTableN, fullTableN ), tqMatchDict[ field ] )
         sqlMultiCondList.append( csql )
+        if rsql is not None:
+          sqlCondList.append( rsql )
         sqlCondList.append( "( %s )" % " OR ".join( sqlMultiCondList ) )
         #In case of Site, check it's not in job banned sites
         if field in bannedJobMatchFields:
@@ -722,10 +731,13 @@ class TaskQueueDB( DB ):
     # Add extra conditions
     if negativeCond:
       sqlCondList.append( self.__generateNotSQL( sqlTables, negativeCond ) )
+
     #Generate the final query string
     tqSqlCmd = "SELECT tq.TQId, tq.OwnerDN, tq.OwnerGroup FROM `tq_TaskQueues` tq WHERE %s" % ( " AND ".join( sqlCondList ) )
+
     #Apply priorities
     tqSqlCmd = "%s ORDER BY RAND() / tq.Priority ASC" % tqSqlCmd
+
     #Do we want a limit?
     if numQueuesToGet:
       tqSqlCmd = "%s LIMIT %s" % ( tqSqlCmd, numQueuesToGet )
@@ -736,11 +748,25 @@ class TaskQueueDB( DB ):
         present in the matching resource list
     """
     sql1 = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId=tq.TQId" % ( tableName, tableName, tableName )
-    if type( tagMatchList ) in [types.ListType, types.TupleType]:
+    if isinstance( tagMatchList, ( list, tuple ) ):
       sql2 = sql1 + " AND %s.Value in ( %s )" % ( tableName, ','.join( [ "%s" % v for v in tagMatchList] ) )
     else:
       sql2 = sql1 + " AND %s.Value=%s" % ( tableName, tagMatchList )
     sql = '( '+sql1+' ) = ('+sql2+' )'
+    return sql
+
+  def __generateRequiredTagSQLSubCond( self, tableName, tagMatchList ):
+    """ Generate SQL condition where the TQ corresponds to the requirements
+        of the resource
+    """
+    sql = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId=tq.TQId" % ( tableName, tableName, tableName )
+    if isinstance( tagMatchList, ( list, tuple ) ):
+      sql = sql + " AND %s.Value in ( %s )" % ( tableName, ','.join( [ "%s" % v for v in tagMatchList] ) )
+      nTags = len( tagMatchList )
+    else:
+      sql = sql + " AND %s.Value=%s" % ( tableName, tagMatchList )
+      nTags = 1
+    sql = '( %s ) = %s' % ( sql, nTags )
     return sql
 
   def deleteJob( self, jobId, connObj = False ):

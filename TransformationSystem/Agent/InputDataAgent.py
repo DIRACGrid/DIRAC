@@ -8,11 +8,12 @@ key set in the DIRAC FileCatalog.
 
 import time, datetime
 
-from DIRAC                                                                import S_OK, gLogger, gMonitor
-from DIRAC.Core.Base.AgentModule                                          import AgentModule
-from DIRAC.TransformationSystem.Client.TransformationClient               import TransformationClient
-from DIRAC.Resources.Catalog.FileCatalogClient                            import FileCatalogClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations                  import Operations
+from DIRAC                                                   import S_OK, gLogger
+from DIRAC.FrameworkSystem.Client.MonitoringClient           import gMonitor
+from DIRAC.Core.Base.AgentModule                             import AgentModule
+from DIRAC.TransformationSystem.Client.TransformationClient  import TransformationClient
+from DIRAC.Resources.Catalog.FileCatalogClient               import FileCatalogClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations     import Operations
 
 __RCSID__ = "$Id$"
 

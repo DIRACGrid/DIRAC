@@ -13,7 +13,8 @@ import threading
 import types
 import time
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor, rootPath
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv

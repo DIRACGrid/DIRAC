@@ -42,7 +42,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     if not result['Value']:
       return S_OK('')
     
-    res = S_OK(result['Value'][0][0])  
+    res = S_OK( result['Value'][0][0] )
     res['Level'] = result['Value'][0][1]
     return res
   
@@ -514,8 +514,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
           conDict = result['Value']
           uid = conDict['UID']
           gid = conDict['GID']
-          result = self._setDirectoryUid(parentID,uid)
-          result = self._setDirectoryGid(parentID,gid)
+          result = self._setDirectoryParameter( parentID, 'UID', uid )
+          result = self._setDirectoryParameter( parentID, 'GID', gid )
       
       dirString = ','.join( [ str(dirID) for dirID in dirIDList ] )                
       req = "UPDATE FC_DirectoryLevelTree SET Parent=%s WHERE DirID IN (%s)" % ( parentID, dirString )

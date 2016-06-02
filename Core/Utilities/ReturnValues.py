@@ -1,19 +1,27 @@
 # $HeadURL$
 """
    DIRAC return dictionary
+
    Message values are converted to string
+
    keys are converted to string
 """
 
 import types
 
 def S_ERROR( messageString = '' ):
-  """ return value on error confition
+  """ return value on error condition
+
   :param string messageString: error description
   """
   return { 'OK' : False, 'Message' : str( messageString )  }
 
 def S_OK( value = None ):
+  """ return value on success
+
+  :param value: value of the 'Value'
+  :return: dictionary { 'OK' : True, 'Value' : value }
+  """
   return { 'OK' : True, 'Value' : value }
 
 def isReturnStructure( unk ):
@@ -34,8 +42,8 @@ def returnSingleResult( dictRes ):
       an S_OK/S_ERROR return. To be used when a single returned entity
       is expected from a generally bulk call. 
 
-      :param dictRes S_ERROR or S_OK( "Failed" : {}, "Successful" : {})
-      :returns S_ERROR or S_OK(value)
+      :param dictRes: S_ERROR or S_OK( "Failed" : {}, "Successful" : {})
+      :returns: S_ERROR or S_OK(value)
 
       The following rules are applied:
       - if dictRes is an S_ERROR: returns it as is

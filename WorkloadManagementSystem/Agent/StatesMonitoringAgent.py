@@ -20,7 +20,7 @@ import json
 try:
   import pika
 except Exception, e:
-  from DIRAC import systemCall
+  from DIRAC.Core.Utilities.Subprocess import systemCall
   result = systemCall( False, ["pip", "install", "pika"] )
   if not result['OK']:
     raise RuntimeError( result['Message'] )

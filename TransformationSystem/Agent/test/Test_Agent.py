@@ -6,6 +6,7 @@ import unittest, importlib, datetime
 from mock import MagicMock
 
 from DIRAC import gLogger
+gLogger.setLevel( 'DEBUG' )
 
 #sut
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAgentBase

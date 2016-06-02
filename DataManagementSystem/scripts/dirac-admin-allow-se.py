@@ -120,17 +120,12 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switches' )
       continue
 
-    if 'ARCHIVE' in se:
-      gLogger.notice( '%s is not supposed to change Read status to Active' % se )
-      resR[ 'OK' ] = True
+    resR = resourceStatus.setStorageElementStatus( se, 'ReadAccess', 'Active', reason, userName )
+    if not resR['OK']:
+      gLogger.error( "Failed to update %s read access to Active" % se )
     else:
-
-      resR = resourceStatus.setStorageElementStatus( se, 'ReadAccess', 'Active', reason, userName )
-      if not resR['OK']:
-        gLogger.error( "Failed to update %s read access to Active" % se )
-      else:
-        gLogger.notice( "Successfully updated %s read access to Active" % se )
-        readAllowed.append( se )
+      gLogger.notice( "Successfully updated %s read access to Active" % se )
+      readAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if write and seOptions.has_key( 'WriteAccess' ):

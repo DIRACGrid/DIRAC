@@ -12,7 +12,9 @@ args = Script.getPositionalArgs()
 
 fieldsToShow = ( 'ComponentName', 'Type', 'Host', 'Port', 'Status', 'Message' )
 
-result = DIRAC.gMonitor.getComponentsStatusWebFormatted( sortingList = [ [ 'ComponentName', 'ASC' ] ] )
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
+
+result = gMonitor.getComponentsStatusWebFormatted( sortingList = [ [ 'ComponentName', 'ASC' ] ] )
 if not result[ 'OK' ]:
   print "ERROR: %s" % result[ 'Message' ]
   sys.exit( 1 )

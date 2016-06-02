@@ -25,7 +25,8 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 # # from DIRAC
-from DIRAC import S_OK, gMonitor
+from DIRAC import S_OK
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 

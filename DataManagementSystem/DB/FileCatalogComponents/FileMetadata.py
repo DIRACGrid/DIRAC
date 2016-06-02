@@ -10,7 +10,7 @@ __RCSID__ = "$Id$"
 
 from types import IntType, ListType, LongType, DictType, StringTypes, FloatType
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
+from DIRAC.Core.Utilities.Time import queryTime
 from DIRAC.Core.Utilities.List import intListToString
 from DIRAC.DataManagementSystem.Client.MetaQuery import FILE_STANDARD_METAKEYS, \
                                                         FILES_TABLE_METAKEYS, \

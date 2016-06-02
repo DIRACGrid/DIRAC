@@ -242,6 +242,14 @@ class JobMonitoringHandler( RequestHandler ):
     return gJobLoggingDB.getJobLoggingInfo( jobID )
 
 ##############################################################################
+  types_getJobsParameters = [ ListType, ListType ]
+  @staticmethod
+  def export_getJobsParameters ( jobIDs, parameters ):
+    if not ( jobIDs and parameters ) : 
+      return S_OK( {} )
+    return gJobDB.getAttributesForJobList( jobIDs, parameters )
+
+##############################################################################
   types_getJobsStatus = [ ListType ]
   @staticmethod
   def export_getJobsStatus ( jobIDs ):

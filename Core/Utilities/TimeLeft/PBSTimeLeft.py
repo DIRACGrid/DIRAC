@@ -1,19 +1,17 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The PBS TimeLeft utility interrogates the PBS batch system for the
     current CPU and Wallclock consumed, as well as their limits.
 """
 
+__RCSID__ = "$Id$"
+
+import os
+import re
+import time
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
-__RCSID__ = "$Id$"
-
-import os, re, time
-
-class PBSTimeLeft:
+class PBSTimeLeft( object ):
 
   #############################################################################
   def __init__( self ):
@@ -102,14 +100,8 @@ class PBSTimeLeft:
       return S_OK( consumed )
 
     if cpuLimit or wallClockLimit:
-      # We have got a partial result from PBS, assume that we ran for too short time
-      if not cpuLimit:
-        consumed['CPULimit'] = wallClockLimit
-      if not wallClockLimit:
-        consumed['WallClockLimit'] = cpuLimit
-      if not cpu:
-        consumed['CPU'] = int( time.time() - self.startTime )
-      if not wallClock:
+      # We have got a partial result from PBS, we can only restore WallClock
+      if not wallClock:  
         consumed['WallClock'] = int( time.time() - self.startTime )
       self.log.debug( "TimeLeft counters restored:", str( consumed ) )
       return S_OK( consumed )

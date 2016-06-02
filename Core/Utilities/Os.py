@@ -6,7 +6,6 @@
 
 __RCSID__ = "$Id$"
 
-from types                          import StringTypes
 import os
 import multiprocessing
 
@@ -22,8 +21,7 @@ def uniquePath( path = None ):
      Utility to squeeze the string containing a PATH-like value to
      leave only unique elements preserving the original order
   """
-
-  if not StringTypes.__contains__( type( path ) ):
+  if not isinstance( path, basestring ):
     return None
 
   try:

@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 
 import os, types
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
+from DIRAC.Core.Utilities.Time import queryTime
 
 class DirectoryMetadata:
 
@@ -336,7 +336,7 @@ class DirectoryMetadata:
       if not result['OK']:
         return result
       if len( result['Value'] ) > 1:
-        return S_ERROR( 'Metadata conflict for directory %s' % path )
+        return S_ERROR( 'Metadata conflict for %s for directory %s' % (meta, path) )
       if result['Value']:
         metaDict[meta] = result['Value'][0][0]
         if int( result['Value'][0][1] ) == dirID:
@@ -703,7 +703,7 @@ class DirectoryMetadata:
       return result
 
     dirList = result['Value']
-    return self.db.dtree.getFileIDsInDirectory( dirList, credDict, startItem, maxItems )
+    return self.db.dtree.getFileIDsInDirectoryWithLimits( dirList, credDict, startItem, maxItems )
 
 ################################################################################################
 #

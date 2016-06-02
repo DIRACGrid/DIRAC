@@ -92,9 +92,15 @@ class MatcherHandler( RequestHandler ):
     except RuntimeError, rte:
       self.log.error( "Error requesting job: ", rte )
       return S_ERROR( "Error requesting job" )
-    gMonitor.addMark( "matchesDone" )
-    gMonitor.addMark( "matchesOK" )
-    return S_OK( result )
+
+    # result can be empty, meaning that no job matched
+    if result:
+      gMonitor.addMark( "matchesDone" )
+      gMonitor.addMark( "matchesOK" )
+      return S_OK( result )
+    else:
+      # FIXME: This is correctly interpreted by the JobAgent, but DErrno should be used instead
+      return S_ERROR( "No match found" )
 
 ##############################################################################
   types_getActiveTaskQueues = []
