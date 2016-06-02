@@ -31,7 +31,6 @@ configuration file::
 But you can also use the following configuration file to install the web portal::
 
 $installCfg::
-   
    LocalInstallation
    {
      #
@@ -110,7 +109,7 @@ Make sure that the portal is listening in the correct port::
    2016-06-02 12:35:46 UTC WebApp/Web NOTICE: Configuring HTTP on port 8000
    2016-06-02 12:35:46 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
    
- If you are not using NGinx and the web server is listening on 8000, please open vim /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg
+If you are not using NGinx and the web server is listening on 8000, please open vim /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg
  and add Balancer=None.
 
 Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. It contains Extensions = WebApp. For example::
@@ -135,6 +134,7 @@ Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. I
      }
    }
    
+
 * Update using: **dirac-admin-sysadmin-cli**
   
          * dirac-admin-sysadmin-cli -H hostname
@@ -615,49 +615,3 @@ You have to add the **site.conf** the following line::
 
       ssl_crl file /opt/dirac/pro/etc/grid-security/allRevokedCerts.pem;
       
-Install WebAppDIRAC
--------------------
-
-* Install:
-      * python dirac-install -t server $installCfg
-      * source $installDir/bashrc
-      * dirac-configure $installCfg $DEBUG
-      * dirac-setup-site $DEBUG
-
-$installCfg::
-   
-   LocalInstallation
-   {
-     #
-     #   These are options for the installation of the DIRAC software
-     #
-     #  DIRAC release version (this is an example, you should find out the current
-     #  production release)
-     Release = v8r0p24
-     #  Python version of the installation
-     PythonVersion = 26
-     #  To install the Server version of DIRAC (the default is client)
-     InstallType = server
-     #  LCG python bindings for SEs and LFC. Specify this option only if your installation
-     #  uses those services
-     LcgVer = 2013-09-24
-     #  If this flag is set to yes, each DIRAC update will be installed
-     #  in a separate directory, not overriding the previous ones
-     UseVersionsDir = yes
-     #  The directory of the DIRAC software installation
-     TargetPath = /Users/zoltanmathe/newweb
-     #  DIRAC extra modules to be installed (Web is required if you are installing the Portal on
-     #  this server).
-     #  Only modules not defined as default to install in their projects need to be defined here:
-     #   i.e. LHCb, LHCbWeb for LHCb
-     ExtraModules = WebAppDIRAC,LHCb,LHCbWeb
-     Project = LHCb
-     WebApp = yes
-    }
-
-   
-* Update using: **dirac-admin-sysadmin-cli**
-  
-         * dirac-admin-sysadmin-cli -H hostname
-         * update version of DIRAC, for example v8r1
-       
