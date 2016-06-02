@@ -113,6 +113,27 @@ Make sure that the portal is listening in the correct port::
  If you are not using NGinx and the web server is listening on 8000, please open vim /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg
  and add Balancer=None.
 
+Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. It contains Extensions = WebApp. For example::
+   DIRAC
+   {
+     Setup = LHCb-Certification
+     Configuration
+     {
+       Servers = 
+     }
+     Security
+     {
+     }
+     Extensions = WebApp
+     Setups
+     {
+       LHCb-Certification
+       {
+         Configuration = LHCb-Certification
+         Framework = LHCb-Certification
+       }
+     }
+   }
    
 * Update using: **dirac-admin-sysadmin-cli**
   
