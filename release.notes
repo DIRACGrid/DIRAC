@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [v6r15p1]
 
 Included patches for v6r14p32
@@ -135,6 +136,24 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+=======
+[v6r14p32]
+
+*Core
+FIX: InstallTools - getStartupComponentStatus() uses "ps -p <pid>" variant of the
+     system call to be independent of the OS differences
+
+*DMS
+FIX: RemoveReplica - bulkRemoval() was modifying its input dict argument and returning it,
+     which was useless, only modify argument
+
+*WMS
+CHANGE: CPUNormalization - get HS'06 worker node value from JOBFEATURES if available
+
+*RMS
+FIX: ReqClient - bug fixed preventing the client to contact multiple instances of ReqManager
+     service
+>>>>>>> rel-v6r14
 
 [v6r14p31]
 

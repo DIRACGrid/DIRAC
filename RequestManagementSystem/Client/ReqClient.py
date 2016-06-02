@@ -28,34 +28,23 @@ class ReqClient( Client ):
   :param dict requestProxiesDict: RPC client to ReqestProxy
   :param RequestValidator requestValidator: RequestValidator instance
   """
-  __requestManager = None
+
   __requestProxiesDict = {}
   __requestValidator = None
 
-  def __init__( self ):
+  def __init__( self, url = None, **kwargs ):
     """c'tor
 
     :param self: self reference
+    :param url: url of the ReqManager
+    :param kwargs: forwarded to the Base Client class
     """
-    Client.__init__( self )
+
+    super( ReqClient, self ).__init__( **kwargs )
+    self.serverURL = 'RequestManagement/ReqManager' if not url else url
+
     self.log = gLogger.getSubLogger( "RequestManagement/ReqClient/pid_%s" % ( os.getpid() ) )
-    self.setServer( "RequestManagement/ReqManager" )
 
-
-  def setServer( self, url ):
-    Client.setServer( self, url )
-    self.__requestManager = None
-    self.requestManager()
-
-
-  def requestManager( self, timeout = 120 ):
-    """ facade for RequestManager RPC client """
-    if not self.__requestManager:
-      url = PathFinder.getServiceURL( self.serverURL )
-      if not url:
-        raise RuntimeError( "CS option %s URL is not set!" % self.serverURL )
-      self.__requestManager = RPCClient( url, timeout = timeout )
-    return self.__requestManager
 
   def requestProxies( self, timeout = 120 ):
     """ get request proxies dict """
@@ -100,7 +89,7 @@ class ReqClient( Client ):
 
     while retryMainService:
       retryMainService -= 1
-      setRequestMgr = self.requestManager().putRequest( requestJSON )
+      setRequestMgr = self._getRPC().putRequest( requestJSON )
       if setRequestMgr["OK"]:
         return setRequestMgr
       errorsDict["RequestManager"] = setRequestMgr["Message"]
@@ -139,7 +128,7 @@ class ReqClient( Client ):
       :return: S_OK( Request instance ) or S_OK() or S_ERROR
     """
     self.log.debug( "getRequest: attempting to get request." )
-    getRequest = self.requestManager().getRequest( requestID )
+    getRequest = self._getRPC().getRequest( requestID )
     if not getRequest["OK"]:
       self.log.error( "getRequest: unable to get request", "'%s' %s" % ( requestID, getRequest["Message"] ) )
       return getRequest
@@ -156,7 +145,7 @@ class ReqClient( Client ):
     :return: S_OK( Successful : { requestID, RequestInstance }, Failed : message  ) or S_ERROR
     """
     self.log.debug( "getRequests: attempting to get request." )
-    getRequests = self.requestManager().getBulkRequests( numberOfRequest, assigned )
+    getRequests = self._getRPC().getBulkRequests( numberOfRequest, assigned )
     if not getRequests["OK"]:
       self.log.error( "getRequests: unable to get '%s' requests: %s" % ( numberOfRequest, getRequests["Message"] ) )
       return getRequests
@@ -174,7 +163,7 @@ class ReqClient( Client ):
   def peekRequest( self, requestID ):
     """ peek request """
     self.log.debug( "peekRequest: attempting to get request." )
-    peekRequest = self.requestManager().peekRequest( int( requestID ) )
+    peekRequest = self._getRPC().peekRequest( int( requestID ) )
     if not peekRequest["OK"]:
       self.log.error( "peekRequest: unable to peek request", "request: '%s' %s" % ( requestID, peekRequest["Message"] ) )
       return peekRequest
@@ -190,7 +179,7 @@ class ReqClient( Client ):
     """
     requestID = int( requestID )
     self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestID )
-    deleteRequest = self.requestManager().deleteRequest( requestID )
+    deleteRequest = self._getRPC().deleteRequest( requestID )
     if not deleteRequest["OK"]:
       self.log.error( "deleteRequest: unable to delete request",
                       "'%s' request: %s" % ( requestID, deleteRequest["Message"] ) )
@@ -203,12 +192,12 @@ class ReqClient( Client ):
     since = since.strftime( '%Y-%m-%d' ) if since else ""
     until = until.strftime( '%Y-%m-%d' ) if until else ""
 
-    return self.requestManager().getRequestIDsList( statusList, limit, since, until )
+    return self._getRPC().getRequestIDsList( statusList, limit, since, until )
 
   def getScheduledRequest( self, operationID ):
     """ get scheduled request given its scheduled OperationID """
     self.log.debug( "getScheduledRequest: attempt to get scheduled request..." )
-    scheduled = self.requestManager().getScheduledRequest( operationID )
+    scheduled = self._getRPC().getScheduledRequest( operationID )
     if not scheduled["OK"]:
       self.log.error( "getScheduledRequest failed", scheduled["Message"] )
       return scheduled
@@ -219,7 +208,7 @@ class ReqClient( Client ):
   def getDBSummary( self ):
     """ Get the summary of requests in the RequestDBs. """
     self.log.debug( "getDBSummary: attempting to get RequestDB summary." )
-    dbSummary = self.requestManager().getDBSummary()
+    dbSummary = self._getRPC().getDBSummary()
     if not dbSummary["OK"]:
       self.log.error( "getDBSummary: unable to get RequestDB summary", dbSummary["Message"] )
     return dbSummary
@@ -231,7 +220,7 @@ class ReqClient( Client ):
     :param str requestID: request id
     """
     self.log.debug( "getDigest: attempting to get digest for '%s' request." % requestID )
-    digest = self.requestManager().getDigest( int( requestID ) )
+    digest = self._getRPC().getDigest( int( requestID ) )
     if not digest["OK"]:
       self.log.error( "getDigest: unable to get digest for request",
                       "request: '%s' %s" % ( requestID, digest["Message"] ) )
@@ -247,7 +236,7 @@ class ReqClient( Client ):
     if isinstance( requestID, basestring ):
       requestID = int( requestID )
     self.log.debug( "getRequestStatus: attempting to get status for '%d' request." % requestID )
-    requestStatus = self.requestManager().getRequestStatus( requestID )
+    requestStatus = self._getRPC().getRequestStatus( requestID )
     if not requestStatus["OK"]:
       self.log.error( "getRequestStatus: unable to get status for request",
                       "request: '%d' %s" % ( requestID, requestStatus["Message"] ) )
@@ -255,7 +244,7 @@ class ReqClient( Client ):
 
 #   def getRequestName( self, requestID ):
 #     """ get request name for a given requestID """
-#     return self.requestManager().getRequestName( requestID )
+#     return self._getRPC().getRequestName( requestID )
 
   def getRequestInfo( self, requestID ):
     """ The the request info given a request id.
@@ -264,7 +253,7 @@ class ReqClient( Client ):
     :param int requestID: request nid
     """
     self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestID )
-    requestInfo = self.requestManager().getRequestInfo( int( requestID ) )
+    requestInfo = self._getRPC().getRequestInfo( int( requestID ) )
     if not requestInfo["OK"]:
       self.log.error( "getRequestInfo: unable to get status for request",
                       "request: '%s' %s" % ( requestID, requestInfo["Message"] ) )
@@ -278,7 +267,7 @@ class ReqClient( Client ):
     :param list lfns: list of LFNs
     """
     self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestID )
-    fileStatus = self.requestManager().getRequestFileStatus( int( requestID ), lfns )
+    fileStatus = self._getRPC().getRequestFileStatus( int( requestID ), lfns )
     if not fileStatus["OK"]:
       self.log.verbose( "getRequestFileStatus: unable to get file status for request",
                       "request: '%s' %s" % ( requestID, fileStatus["Message"] ) )
@@ -362,7 +351,7 @@ class ReqClient( Client ):
                               "Failed" : { jobIDn: errMsg, jobIDm: errMsg, ...}  )
     """
     self.log.info( "getRequestIDsForJobs: attempt to get request(s) for job %s" % jobIDs )
-    requests = self.requestManager().getRequestIDsForJobs( jobIDs )
+    requests = self._getRPC().getRequestIDsForJobs( jobIDs )
     if not requests["OK"]:
       self.log.error( "getRequestIDsForJobs: unable to get request(s) for jobs",
                       "%s: %s" % ( jobIDs, requests["Message"] ) )
@@ -375,7 +364,7 @@ class ReqClient( Client ):
     :return: S_OK( { "Successful" : { jobID1 : Request, ... },
                      "Failed" : { jobIDn : "Fail reason" } } )
     """
-    readReqsForJobs = self.requestManager().readRequestsForJobs( jobIDs )
+    readReqsForJobs = self._getRPC().readRequestsForJobs( jobIDs )
     if not readReqsForJobs["OK"]:
       return readReqsForJobs
     ret = readReqsForJobs["Value"]
