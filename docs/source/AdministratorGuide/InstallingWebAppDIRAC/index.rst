@@ -28,8 +28,7 @@ You can use a standard configuration file for example :ref:`_install_primary_ser
 configuration file::
    ExtraModules = WebAppDIRAC
    WebApp = yes
-But you can also use the following configuration file to install the web portal::
-
+But you can also use the following configuration file to install the web portal.
 $installCfg::
    LocalInstallation
    {
