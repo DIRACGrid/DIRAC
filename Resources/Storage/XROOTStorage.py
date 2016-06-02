@@ -269,7 +269,7 @@ class XROOTStorage( StorageBase ):
     # Error getting the size
     if not res['OK']:
       errStr = "XROOTStorage.__getSingleFile: Error getting the file size."
-      self.log.exception( errStr, res['Message'] )
+      self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
 
     remoteSize = res['Value']
@@ -1187,6 +1187,9 @@ class XROOTStorage( StorageBase ):
     xFilePath = '/'.join( [pfnDict['Path'], pfnDict['FileName']] )
 
     status = self.xrootClient.mkdir( xFilePath, MkDirFlags.MAKEPATH )
+
+    # the API returns (status,None...)
+    status = status[0]
 
     if status.ok:
       return S_OK()
