@@ -242,7 +242,8 @@ depending upon your OS version. For example::
    gpgcheck=0
    enabled=1
   
-If it is successful installed::
+ If it is successful installed::
+ 
     Verifying  : nginx-1.10.1-1.el6.ngx.x86_64                                                                                                                                                                                                                    1/1
    Installed:
       nginx.x86_64 0:1.10.1-1.el6.ngx
@@ -250,8 +251,7 @@ If it is successful installed::
   
   * Configure NGINX
   
-    You have to found the nginx.conf file. You can see which configuration used in /etc/init.d/nginx.
-    For example::
+    You have to found the nginx.conf file. You can see which configuration used in /etc/init.d/nginx. For example::
     
     vim /etc/nginx/nginx.conf
    
@@ -411,14 +411,15 @@ You can start NGinx now.
    /etc/init.d/nginx start|stop|restart
   
   
- You have to add to the web.cfg the following lines in order to use NGinx::
+You have to add to the web.cfg the following lines in order to use NGinx::
   
        DevelopMode = False
        Balancer = nginx
        NumProcesses = 1
  
  You can try to use the web portal. For example: http://dzmathe.cern.ch/DIRAC/
- If you get 502 Bad Gateway error, you need to generate rules for SE linus. You can see the error in tail -200f /var/log/nginx/error.lo::
+ If you get 502 Bad Gateway error, you need to generate rules for SE linus. 
+ You can see the error in tail -200f /var/log/nginx/error.log::
      
      016/06/02 15:55:24 [crit] 20317#20317: *4 connect() to 127.0.0.1:8000 failed (13: Permission denied) while connecting to upstream, client: 128.141.170.23, server: dzmathe.cern.ch, request: "GET /DIRAC/?view=tabs&theme=Grey&url_state=1| HTTP/1.1", upstream: "http://127.0.0.1:8000/DIRAC/?view=tabs&theme=Grey&url_state=1|", host: "dzmathe.cern.ch"
 
