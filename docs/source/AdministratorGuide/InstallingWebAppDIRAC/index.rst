@@ -66,8 +66,8 @@ $installCfg::
      ConfigurationServer = your configuration service
    }
  
- Before you start the installation please make sure that you have the host certofocate /opt/dirac/etc directory... More infor in the Server Certificates 
- section in :ref:`_server_requirements` .
+
+Before you start the installation please make sure that you have the host certofocate /opt/dirac/etc directory... More infor in the Server Certificates section in :ref:`_server_requirements` .
  
  Create the configuration file::
    - vim /home/dirac/DIRAC/install.cfg
@@ -76,6 +76,7 @@ $installCfg::
    - chmod +x install_site.sh
    - ./install_site.sh install.cfg
    - source /opt/dirac/bashrc
+ 
  Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`_server_requirements` section. 
    
 
@@ -113,9 +114,8 @@ Make sure that the portal is listening in the correct port::
    2016-06-02 12:35:46 UTC WebApp/Web NOTICE: Configuring HTTP on port 8000
    2016-06-02 12:35:46 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
    
-If you are not using NGinx and the web server is listening on 8000, please open vim /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg
- and add Balancer=None.
 
+If you are not using NGinx and the web server is listening on 8000, please open vim /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg and add Balancer=None.
 Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. It contains Extensions = WebApp. For example::
 
    DIRAC
