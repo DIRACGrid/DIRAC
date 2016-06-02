@@ -10,6 +10,7 @@ from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrect
 from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.PrettyPrint import printDict
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
@@ -130,23 +131,6 @@ class TaskQueueDB( DB ):
     if not result[ 'OK' ]:
       return result
     return self._createTables( self.__tablesDesc )
-
-  def __strDict( self, dDict ):
-    lines = []
-    keyLength = 0
-    for key in dDict:
-      if len( key ) > keyLength:
-        keyLength = len( key )
-    for key in sorted( dDict ):
-      line = "%s: " % key
-      line = line.ljust( keyLength + 2 )
-      value = dDict[ key ]
-      if type( value ) in ( types.ListType, types.TupleType ):
-        line += ','.join( list( value ) )
-      else:
-        line += str( value )
-      lines.append( line )
-    return "{\n%s\n}" % "\n".join( lines )
 
   def fitCPUTimeToSegments( self, cpuTime ):
     """
@@ -371,7 +355,7 @@ class TaskQueueDB( DB ):
         return retVal
       tqDefDict = retVal[ 'Value' ]
     tqDefDict[ 'CPUTime' ] = self.fitCPUTimeToSegments( tqDefDict[ 'CPUTime' ] )
-    self.log.info( "Inserting job %s with requirements: %s" % ( jobId, self.__strDict( tqDefDict ) ) )
+    self.log.info( "Inserting job %s with requirements: %s" % ( jobId, printDict( tqDefDict ) ) )
     retVal = self.__findAndDisableTaskQueue( tqDefDict, skipDefinitionCheck = True, connObj = connObj )
     if not retVal[ 'OK' ]:
       return retVal
