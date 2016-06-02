@@ -4,11 +4,126 @@
 Install WebAppDIRAC
 ===================
 
+The first section describes the install procedure of the web framework. The configuration of the web will be presented in the next section.
+Nginx can be used to improve the performance of the web interface. It is not mandatory to use Nginx. The installation and configuration of NGinx will be presented in the last section.
+
+Install WebAppDIRAC
+-------------------
+
+Requirements
+------------
+
+It is required CERN provided OS (slc5,slc6, etc.) distribution. We recommend you to use a supported Linux distribution. 
+Please follow the :ref:`_server_requirements` instructions 
+to setup the machine. In principle there is no magic to install the web portal. It has to be installed as another DIRAC component...
+When the machine is ready you can start to install the portal. But before that you need the install_site.sh script and a configuration file.  
+
+Getting the install script
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+You can found the instruction about were to get the install_site.sh at the end of the :ref:`_server_requirements` section.
+
+Configuration file
+~~~~~~~~~~~~~~~~~~
+You can use a standard configuration file for example :ref:`_install_primary_server`. Please make sure that the following lines are exists in the 
+configuration file::
+   ExtraModules = WebAppDIRAC
+   WebApp = yes
+But you can also use the following configuration file to install the web portal::
+
+$installCfg::
+   
+   LocalInstallation
+   {
+     #
+     #   These are options for the installation of the DIRAC software
+     #
+     #  DIRAC release version (this is an example, you should find out the current
+     #  production release)
+     Release = v6r15
+     #  Python version of the installation
+     PythonVersion = 27
+     #  To install the Server version of DIRAC (the default is client)
+     InstallType = server
+     #  LCG python bindings for SEs and LFC. Specify this option only if your installation
+     #  uses those services
+     LcgVer = 2013-09-24
+     #  If this flag is set to yes, each DIRAC update will be installed
+     #  in a separate directory, not overriding the previous ones
+     UseVersionsDir = yes
+     #  The directory of the DIRAC software installation
+     TargetPath = /opt/dirac
+     #  DIRAC extra modules to be installed (Web is required if you are installing the Portal on
+     #  this server).
+     #  Only modules not defined as default to install in their projects need to be defined here:
+     #   i.e. LHCb, LHCbWeb for LHCb for example: ExtraModules = WebAppDIRAC,LHCb,LHCbWeb
+     ExtraModules = WebAppDIRAC
+     Project = DIRAC
+     WebPortal = yes
+     WebApp = yes
+     Services = Framework/SystemAdministrator
+     UseServerCertificate = yes
+     SkipCADownload = yes
+     Setup = your setup #for example: LHCb-Certification
+     ConfigurationMaster = no
+     ConfigurationServer = your configuration service
+   }
+ 
+ Before you start the installation please make sure that you have the host certofocate /opt/dirac/etc directory... More infor in the Server Certificates 
+ section in :ref:`_server_requirements`.
+ 
+ Create the configuration file::
+   - vim /home/dirac/DIRAC/install.cfg
+   - copy the lines above the this file...
+   - cd /home/dirac/DIRAC
+   - chmod +x install_site.sh
+   - ./install_site.sh install.cfg
+   - source /opt/dirac/bashrc
+ Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`_server_requirements` section. 
+   
+
+Checks after the installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If the installation is successful, you will see the following lines::
+   
+   Status of installed components:
+   
+      Name                          Runit Uptime PID
+   ====================================================
+    1 Web_WebApp                    Run   6      19887
+    2 Framework_SystemAdministrator Run   2      19941
+
+Make sure that the portal is listening in the correct port::
+   Without NGinx::
+   tail -200f /opt/dirac/runit/Web/WebApp/log/current
+   
+   2016-06-02 12:44:18 UTC WebApp/Web   INFO: Configuring in developer mode...
+   2016-06-02 12:44:18 UTC WebApp/Web NOTICE: Configuring HTTP on port 8080
+   2016-06-02 12:44:18 UTC WebApp/Web NOTICE: Configuring HTTPS on port 8443
+   2016-06-02 12:44:19 UTC WebApp/Web ALWAYS: Listening on https://0.0.0.0:8443/DIRAC/ and http://0.0.0.0:8080/DIRAC/
+   
+   
+   Using Nginx:: 
+   tail -200f /opt/dirac/runit/Web/WebApp/log/current
+   
+   The output of the command::   
+   2016-06-02 12:35:46 UTC WebApp/Web NOTICE: Configuring HTTP on port 8000
+   2016-06-02 12:35:46 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
+   
+ If you are not using NGinx and the web server is listening on 8000, please open vim /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg
+ and add Balancer=None.
+
+   
+* Update using: **dirac-admin-sysadmin-cli**
+  
+         * dirac-admin-sysadmin-cli -H hostname
+         * update version of DIRAC, for example v8r1
+         
 
 Web configuration file
 ----------------------
 
-We use **web.cfg** configuration file. The structure of the web.cfg file is the following::
+We use **web.cfg** configuration file. The location of the file is /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg The structure of the web.cfg file is the following::
 
       WebApp
       {
