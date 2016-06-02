@@ -493,7 +493,6 @@ class TaskQueueDB( DB ):
     """
     #Make a copy to avoid modification of original if escaping needs to be done
     tqMatchDict = dict( tqMatchDict )
-    self.log.info( "Starting match for requirements", self.__strDict( tqMatchDict ) )
     retVal = self._checkMatchDefinition( tqMatchDict )
     if not retVal[ 'OK' ]:
       self.log.error( "TQ match request check failed", retVal[ 'Message' ] )
