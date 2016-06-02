@@ -64,6 +64,7 @@ is running.::
 
   install service ResourceStatusSystem ResourceManagement
   install service ResourceStatusSystem ResourceStatus
+  install service ResourceStatusSystem Publisher
 
 In case of any errors, check that you have the information about DataBase 'Host' in the configuration file.
 
