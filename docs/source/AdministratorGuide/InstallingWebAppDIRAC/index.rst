@@ -214,7 +214,7 @@ The required NGINX version has to be grater than 1.4.
    
 If your version is not grater than 1.4 you have to install NGinx manually. 
   
-  * Manual install
+* Manual install
    
      vim /etc/yum.repos.d/nginx.repo
      
@@ -249,7 +249,7 @@ depending upon your OS version. For example::
       nginx.x86_64 0:1.10.1-1.el6.ngx
   
   
-  * Configure NGINX
+ * Configure NGINX
   
     You have to found the nginx.conf file. You can see which configuration used in /etc/init.d/nginx. For example::
     
