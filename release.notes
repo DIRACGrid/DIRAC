@@ -1,3 +1,16 @@
+[v6r15p1]
+
+Included patches for v6r14p32
+
+*Configuration
+CHANGE: Resources helper - remove "dips" protocol from the default list of third party
+        protocols
+
+*Resources
+FIX: XROOTStorage - bug fixed in __createSingleDirectory() - proper interpretation
+     of the xrootClient.mkdir return status
+FIX: XROOTStorage unit test reenabled by mocking the xrootd import      
+
 [v6r15]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
