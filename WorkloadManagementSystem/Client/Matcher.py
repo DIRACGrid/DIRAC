@@ -191,7 +191,7 @@ class Matcher( object ):
           resourceDict[name] = resourceDescription[name]
 
       for name in tagMatchFields:
-        if name in resourceDescription:
+        if name in resourceDescription and resourceDescription[name]:
           resourceDict[name] = resourceDescription[name]
         rname = 'Required%s' % name
         if rname in resourceDescription:
