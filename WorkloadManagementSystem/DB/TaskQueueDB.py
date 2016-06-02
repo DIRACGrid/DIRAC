@@ -717,9 +717,9 @@ class TaskQueueDB( DB ):
                                                                   fullTableN, fullTableN ), tqMatchDict[ bannedField ], boolOp = 'OR' )
         sqlCondList.append( csql )
 
-    #For certain fields, the require is strict. If it is not in the tqMatchDict, the job cannot require it
+    #For certain fields, the requirement is strict. If it is not in the tqMatchDict, the job cannot require it
     for field in strictRequireMatchFields:
-      if field in tqMatchDict:
+      if field in tqMatchDict and tqMatchDict[field]:
         continue
       fullTableN = '`tq_TQTo%ss`' % field
       sqlCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
