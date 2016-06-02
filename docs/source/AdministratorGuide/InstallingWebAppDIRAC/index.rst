@@ -67,7 +67,7 @@ $installCfg::
    }
  
  Before you start the installation please make sure that you have the host certofocate /opt/dirac/etc directory... More infor in the Server Certificates 
- section in :ref:`_server_requirements`.
+ section in :ref:`_server_requirements` .
  
  Create the configuration file::
    - vim /home/dirac/DIRAC/install.cfg
@@ -79,8 +79,8 @@ $installCfg::
  Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`_server_requirements` section. 
    
 
-Checks after the installation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checks to be done after the installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the installation is successful, you will see the following lines::
    
@@ -91,8 +91,11 @@ If the installation is successful, you will see the following lines::
     1 Web_WebApp                    Run   6      19887
     2 Framework_SystemAdministrator Run   2      19941
 
+
 Make sure that the portal is listening in the correct port::
+
    Without NGinx::
+
    tail -200f /opt/dirac/runit/Web/WebApp/log/current
    
    2016-06-02 12:44:18 UTC WebApp/Web   INFO: Configuring in developer mode...
@@ -102,9 +105,11 @@ Make sure that the portal is listening in the correct port::
    
    
    Using Nginx:: 
+
    tail -200f /opt/dirac/runit/Web/WebApp/log/current
    
    The output of the command::   
+
    2016-06-02 12:35:46 UTC WebApp/Web NOTICE: Configuring HTTP on port 8000
    2016-06-02 12:35:46 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
    
@@ -112,6 +117,7 @@ If you are not using NGinx and the web server is listening on 8000, please open 
  and add Balancer=None.
 
 Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. It contains Extensions = WebApp. For example::
+
    DIRAC
    {
      Setup = LHCb-Certification
