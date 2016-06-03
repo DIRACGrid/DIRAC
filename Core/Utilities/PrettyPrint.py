@@ -12,6 +12,7 @@ import StringIO
 def int_with_commas( inputValue ):
   """ Utility to make a string of a large integer with comma separated degrees
       of thousand
+
   :param int inputValue: value to be interpreted
   :return: output string
   """
