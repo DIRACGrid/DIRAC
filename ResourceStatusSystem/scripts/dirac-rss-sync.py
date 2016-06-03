@@ -19,13 +19,8 @@
 """
 
 from datetime import datetime, timedelta
-from DIRAC                                            import gConfig, gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Base                                  import Script
-from DIRAC.WorkloadManagementSystem.DB.JobDB          import JobDB
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB   import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.Utilities             import Synchronizer, CSHelpers, RssConfiguration
-from DIRAC.ResourceStatusSystem.Client                import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.PolicySystem          import StateMachine
+from DIRAC import version, gLogger, exit as DIRACExit, S_OK
+from DIRAC.Core.Base  import Script
 
 __RCSID__  = '$Id$'
 
@@ -92,7 +87,20 @@ def parseSwitches():
 
   return switches
 
-#...............................................................................
+#Script initialization
+subLogger  = gLogger.getSubLogger( __file__ )
+registerSwitches()
+registerUsageMessage()
+switchDict = parseSwitches()
+
+#############################################################################
+# We can define the script body now
+
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils import jobDB
+from DIRAC                                             import gConfig
+from DIRAC.ResourceStatusSystem.Utilities              import Synchronizer, CSHelpers, RssConfiguration
+from DIRAC.ResourceStatusSystem.Client                 import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.PolicySystem           import StateMachine
 
 def synchronize():
   '''
@@ -127,10 +135,9 @@ def initSites():
     Initializes Sites statuses taking their values from the "SiteMask" table of "JobDB" database.
   '''
 
-  jobClient = JobDB()
-  rssClient = ResourceStatusDB()
+  rssClient = ResourceStatusClient.ResourceStatusClient()
 
-  sites = jobClient.getAllSiteMaskStatus()
+  sites = jobDB.getAllSiteMaskStatus()
 
   if not sites[ 'OK' ]:
     subLogger.error( sites[ 'Message' ] )
@@ -256,13 +263,6 @@ def run():
 #...............................................................................
 
 if __name__ == "__main__":
-
-  subLogger  = gLogger.getSubLogger( __file__ )
-
-  #Script initialization
-  registerSwitches()
-  registerUsageMessage()
-  switchDict = parseSwitches()
 
   #Run script
   run()
