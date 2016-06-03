@@ -93,6 +93,8 @@ class JobAgent( AgentModule ):
     """The JobAgent execution method.
     """
     if self.jobCount:
+      if os.path.exists('/var/lib/dirac_drain'):
+        return self.__finish( 'Node is being drained by an operator' )
       # Only call timeLeft utility after a job has been picked up
       self.log.info( 'Attempting to check CPU time left for filling mode' )
       if self.fillingMode:
