@@ -1,20 +1,19 @@
-try:
-  import hashlib
-  md5 = hashlib
-except:
-  import md5
-import re  
+""" Accounting reporter
+"""
+
+import hashlib as md5
+import re
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter as myBaseReporter
 from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
 
-class PlottersList:
+class PlottersList( object ):
 
   def __init__( self ):
     objectsLoaded = loadObjects( 'AccountingSystem/private/Plotters',
-                                 re.compile( ".*[a-z1-9]Plotter\.py$" ),
+                                 re.compile( r".*[a-z1-9]Plotter\.py$" ),
                                  myBaseReporter )
     self.__plotters = {}
     for objName in objectsLoaded:
@@ -26,7 +25,7 @@ class PlottersList:
     except KeyError:
       return None
 
-class MainReporter:
+class MainReporter( object ):
 
   def __init__( self, db, setup ):
     self._db = db
@@ -52,9 +51,9 @@ class MainReporter:
       return S_ERROR( "There's no reporter registered for type %s" % typeName )
     if typeName in gPoliciesList:
       retVal = gPoliciesList[ typeName ].checkRequest( reportRequest[ 'reportName' ],
-                                                    credDict,
-                                                    reportRequest[ 'condDict' ],
-                                                    reportRequest[ 'grouping' ] )
+                                                       credDict,
+                                                       reportRequest[ 'condDict' ],
+                                                       reportRequest[ 'grouping' ] )
       if not retVal[ 'OK' ]:
         return retVal
     reportRequest[ 'hash' ] = self.__calculateReportHash( reportRequest )

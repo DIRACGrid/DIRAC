@@ -261,7 +261,7 @@ class Distribution:
         replStr = "%s = %s" % ( versionStrings[iP], verTup[iP] )
       else:
         replStr = "%s = 0" % versionStrings[iP]
-      reList.append( ( re.compile( "^(%s\s*=)\s*[0-9]+\s*" % versionStrings[iP] ), replStr ) )
+      reList.append( ( re.compile( r"^(%s\s*=)\s*[0-9]+\s*" % versionStrings[iP] ), replStr ) )
     for line in outData.split( "\n" ):
       for reCm, replStr in reList:
         line = reCm.sub( replStr, line )
@@ -304,7 +304,7 @@ def writeVersionToInit( rootPath, version ):
       replStr = "%s = %s" % ( versionStrings[iP], verTup[iP] )
     else:
       replStr = "%s = 0" % versionStrings[iP]
-    reList.append( ( re.compile( "^(%s\s*=)\s*[0-9]+\s*" % versionStrings[iP] ), replStr ) )
+    reList.append( ( re.compile( r"^(%s\s*=)\s*[0-9]+\s*" % versionStrings[iP] ), replStr ) )
   newData = []
   for line in fileData.split( "\n" ):
     for reCm, replStr in reList:

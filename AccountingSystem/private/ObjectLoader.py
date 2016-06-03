@@ -7,7 +7,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
 def loadObjects( path, reFilter = None, parentClass = None ):
   if not reFilter:
-    reFilter = re.compile( ".*[a-z1-9]\.py$" )
+    reFilter = re.compile( r".*[a-z1-9]\.py$" )
   pathList = List.fromChar( path, "/" )
 
   parentModuleList = [ "%sDIRAC" % ext for ext in CSGlobals.getCSExtensions() ] + [ 'DIRAC' ]
@@ -34,8 +34,8 @@ def loadObjects( path, reFilter = None, parentClass = None ):
       #And the python class name is.. well, the python class name
       objPythonPath = "%s.%s.%s" % ( parentModule, ".".join( pathList ), pythonClassName )
       objModule = __import__( objPythonPath,
-                               globals(),
-                               locals(), pythonClassName )
+                              globals(),
+                              locals(), pythonClassName )
       objClass = getattr( objModule, pythonClassName )
     except Exception as e:
       gLogger.error( "Can't load type", "%s/%s: %s" % ( parentModule, pythonClassName, str( e ) ) )

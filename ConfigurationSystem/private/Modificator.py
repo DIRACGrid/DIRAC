@@ -1,12 +1,13 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
 
-import zlib, difflib
+import zlib
+import difflib
 
 from DIRAC.Core.Utilities                               import List, Time
 from DIRAC.Core.Utilities.CFG                           import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
+
+__RCSID__ = "$Id$"
 
 class Modificator:
 

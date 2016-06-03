@@ -188,7 +188,7 @@ class ServiceInterface( threading.Thread ):
     return S_ERROR( "Version %s does not exist" % date )
 
   def __getCfgBackups( self, basePath, date = "", subPath = "" ):
-    rs = re.compile( "^%s\..*%s.*\.zip$" % ( gConfigurationData.getName(), date ) )
+    rs = re.compile( r"^%s\..*%s.*\.zip$" % ( gConfigurationData.getName(), date ) )
     fsEntries = os.listdir( "%s/%s" % ( basePath, subPath ) )
     fsEntries.sort( reverse = True )
     backupsList = []
