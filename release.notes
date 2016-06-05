@@ -1,3 +1,14 @@
+[v6r15p2]
+
+*WMS
+FIX: pilotCommands - protect calls to external commands in case of empty
+     or erroneous output
+FIX: Matcher - fixed bug in the tag matching logic: if a site presented an empty
+     Tag list instead of no Tag field at all, it was interpreted as site accepts
+     all the tags
+FIX: Matcher - matching parameters are printed out in the Matcher rather than
+     in the TaskQueueDB, MaxRAM and Processors are not expanded into tags           
+
 [v6r15p1]
 
 Included patches for v6r14p32
