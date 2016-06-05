@@ -138,6 +138,14 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p33]
+
+*WMS
+FIX: JobAgent - included a mechanism to stop JobAgent if the host operator
+     creates /var/lib/dirac_drain
+FIX: CPUNormalization - fixed a typo in getPowerFromMJF() in the name of the
+     exception log message           
+
 [v6r14p32]
 
 *Core

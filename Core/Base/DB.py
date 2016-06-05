@@ -2,14 +2,16 @@
     It uniforms the way the database objects are constructed
 """
 
-__RCSID__ = "$Id$"
-
 from DIRAC                                       import gLogger, gConfig
 from DIRAC.Core.Utilities.MySQL                  import MySQL
 from DIRAC.ConfigurationSystem.Client.Utilities  import getDBParameters
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
+__RCSID__ = "$Id$"
+
 class DB( MySQL ):
+  """ All DIRAC DB classes should inherit from this one (unless using sqlalchemy)
+  """
 
   def __init__( self, dbname, fullname, debug = False ):
 

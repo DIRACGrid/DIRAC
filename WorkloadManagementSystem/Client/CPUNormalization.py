@@ -6,7 +6,6 @@
 """ DIRAC Workload Management System Client module that encapsulates all the
     methods necessary to handle CPU normalization
 """
-__RCSID__ = "$Id$"
 
 import os
 import random
@@ -14,7 +13,9 @@ import urllib
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
+
+__RCSID__ = "$Id$"
 
 # TODO: This should come from some place in the configuration
 NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to HS06 (ie min * SI00 -> sec * HS06 )
@@ -31,7 +32,7 @@ def getMachineFeatures():
     fname = os.path.join( featuresDir, item )
     try:
       val = urllib.urlopen( fname ).read()
-    except:
+    except :
       val = 0
     features[item] = val
   return features
@@ -69,7 +70,7 @@ def getPowerFromMJF():
     else:
       return None
   except ValueError as e:
-    gLogger.Exception( "Exception getting MJF information", lException = e )
+    gLogger.exception( "Exception getting MJF information", lException = e )
     return None
 
 def queueNormalizedCPU( ceUniqueID ):
