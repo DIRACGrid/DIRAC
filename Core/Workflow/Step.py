@@ -9,7 +9,7 @@ from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC import S_OK, S_ERROR
 
-__RCSID__ = "$Id:$"
+__RCSID__ = "$Id$"
 
 class StepDefinition( AttributeCollection ):
 
