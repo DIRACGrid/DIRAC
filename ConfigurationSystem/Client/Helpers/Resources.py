@@ -1,14 +1,14 @@
 """ Helper for the CS Resources section
 """
 
-__RCSID__ = "$Id$"
-
 import re
 from distutils.version import LooseVersion
 
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.Core.Utilities.List                          import uniqueElements, fromChar
+
+__RCSID__ = "$Id$"
 
 
 gBaseResourcesSection = "/Resources"
@@ -30,7 +30,7 @@ def getSites():
 
   return S_OK( sites )
 
-def getStorageElementSiteMapping( siteList = [] ):
+def getStorageElementSiteMapping( siteList = None ):
   """ Get Storage Element belonging to the given sites
   """
   if not siteList:
@@ -47,7 +47,7 @@ def getStorageElementSiteMapping( siteList = [] ):
 
   return S_OK( siteDict )
 
-def getFTS2ServersForSites( self, siteList = None ):
+def getFTS2ServersForSites( siteList = None ):
   """ get FTSServers for sites
 
   :param list siteList: list of sites

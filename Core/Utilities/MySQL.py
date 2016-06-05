@@ -1419,8 +1419,8 @@ class MySQL( object ):
 
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
-                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
-                        greater = None, smaller = None )
+                                       timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
+                                       greater = None, smaller = None )
     except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
@@ -1482,7 +1482,7 @@ class MySQL( object ):
     inValueString = '(  %s )' % inValueString
 
     self.log.verbose( 'insertFields:', 'inserting %s into table %s'
-                          % ( inFieldString, table ) )
+                      % ( inFieldString, table ) )
 
     return self._update( 'INSERT INTO %s %s VALUES %s' %
                          ( table, inFieldString, inValueString ), conn, debug = True )
