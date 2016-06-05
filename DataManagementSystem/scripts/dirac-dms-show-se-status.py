@@ -18,14 +18,22 @@ def setVO( arg ):
   vo = arg
   return S_OK()
 
-allVOs = False
+allVOsFlag = False
 def setAllVO( arg ):
-  global allVOs
-  allVOs = True
+  global allVOsFlag
+  allVOsFlag = True
+  return S_OK()
+
+noVOFlag = False
+def setAllVO( arg ):
+  global noVOFlag, allVOsFlag
+  noVOFlag = True
+  allVOsFlag = False
   return S_OK()
 
 Script.registerSwitch( "V:", "vo=", "Virtual Organization", setVO )
 Script.registerSwitch( "a", "all", "All Virtual Organizations flag", setAllVO )
+Script.registerSwitch( "n", "noVO", "No Virtual Organizations assigned flag", setAllVO )
 
 Script.parseCommandLine()
 
@@ -67,8 +75,10 @@ if vo is None and not allVOs:
 for se, statusDict in res[ 'Value' ].items():
 
   # Check if the SE is allowed for the user VO
-  if not allVOs:
+  if not allVOsFlag:
     voList = gConfig.getValue( '/Resources/StorageElements/%s/VO' % se, [] )
+    if noVOFlag and voList:
+      continue
     if voList and not vo in voList:
       continue
   
