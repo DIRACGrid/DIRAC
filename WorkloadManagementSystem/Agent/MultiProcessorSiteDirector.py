@@ -270,7 +270,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
         ce.setProxy( self.proxy, cpuTime - 60 )
 
         # Get the number of available slots on the target site/queue
-        totalSlots = super( MultiProcessorSiteDirector, self ).getQueueSlots( queue )
+        totalSlots = self.getQueueSlots( queue, False )
         if totalSlots == 0:
           self.log.debug( '%s: No slots available' % queue )
           continue
