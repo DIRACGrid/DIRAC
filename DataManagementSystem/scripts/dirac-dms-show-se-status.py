@@ -65,7 +65,7 @@ if not res[ 'OK' ]:
 fields = ['SE','ReadAccess','WriteAccess','RemoveAccess','CheckAccess']  
 records = []
 
-if vo is None and not allVOs:
+if vo is None and not allVOsFlag:
   result = getVOfromProxyGroup()
   if not result['OK']:
     gLogger.error( 'Failed to determine the user VO' )
