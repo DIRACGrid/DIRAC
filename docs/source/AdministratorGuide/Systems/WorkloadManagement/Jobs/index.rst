@@ -11,6 +11,9 @@ Some definitions for DIRAC jobs:
 - *JDL*: a container of payload requirements
 - *DIRAC job*: a JDL to which it is assigned a unique identifier inside the DIRAC WMS
 - *JobWrapper*: a software module for running a DIRACJob in a controlled way
+- *multi-processor payload [job]*: a payload application that will try to use multiple cores on the same node
+- *computing slot*: resource allocated by a provider where a pilot wrapper is running (batch job)
+- *multi-processor [computing] slot*: allocated resource has more than one OS CPU core available in the same slot as opposed to a *single-processor [computing] slot*
 
 Applications properties are reflected in payload properties.
 
