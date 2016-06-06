@@ -25,7 +25,7 @@ def setAllVO( arg ):
   return S_OK()
 
 noVOFlag = False
-def setAllVO( arg ):
+def setNoVO( arg ):
   global noVOFlag, allVOsFlag
   noVOFlag = True
   allVOsFlag = False
@@ -33,7 +33,7 @@ def setAllVO( arg ):
 
 Script.registerSwitch( "V:", "vo=", "Virtual Organization", setVO )
 Script.registerSwitch( "a", "all", "All Virtual Organizations flag", setAllVO )
-Script.registerSwitch( "n", "noVO", "No Virtual Organizations assigned flag", setAllVO )
+Script.registerSwitch( "n", "noVO", "No Virtual Organizations assigned flag", setNoVO )
 
 Script.parseCommandLine()
 
@@ -71,6 +71,8 @@ if vo is None and not allVOsFlag:
     gLogger.error( 'Failed to determine the user VO' )
     DIRAC.exit( -1 )
   vo = result['Value']
+
+print allVOsFlag, noVOFlag, vo
 
 for se, statusDict in res[ 'Value' ].items():
 
