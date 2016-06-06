@@ -1472,7 +1472,7 @@ class JobDB( DB ):
   def getSiteMaskStatus( self, sites = None ):
     """ Get the currently site mask status
     """
-    if type(sites) is list:
+    if isinstance(sites, list):
 
       cmd = "SELECT Site, Status FROM SiteMask WHERE"
       first = True
@@ -1486,7 +1486,7 @@ class JobDB( DB ):
       result = self._query( cmd )
       return S_OK( dict(result['Value']) )
 
-    elif type(sites) is str:
+    elif isinstance(sites, str):
 
       cmd = "SELECT Status FROM SiteMask WHERE Site='%s'" % sites
       result = self._query( cmd )
