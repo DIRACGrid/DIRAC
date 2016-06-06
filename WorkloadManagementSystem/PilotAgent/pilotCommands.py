@@ -441,7 +441,7 @@ class CheckWNCapabilities( CommandBase ):
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
       self.exitWithError( retCode )
     try:
-      result = result.split( ' ' )
+      result = result.split()
       numberOfProcessor = int( result[0] )
       maxRAM = int( result[1] )
     except ValueError:
