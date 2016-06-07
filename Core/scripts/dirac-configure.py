@@ -88,6 +88,7 @@ vo = None
 update = False
 outputFile = ''
 skipVOMSDownload = False
+extensions = ''
 
 def setGateway( optionValue ):
   global gatewayServer
@@ -198,9 +199,17 @@ def forceUpdate( optionValue ):
   update = True
   return DIRAC.S_OK()
 
+def setExtensions( optionValue ):
+  global extensions
+  extensions = optionValue
+  DIRAC.gConfig.setOptionValue( '/DIRAC/Extensions', extensions )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'Extensions' ), extensions )
+  return DIRAC.S_OK()
+
 Script.disableCS()
 
 Script.registerSwitch( "S:", "Setup=", "Set <setup> as DIRAC setup", setSetup )
+Script.registerSwitch( "E:", "Extensions=", "Set <extensions> as DIRAC extensions", setExtensions )
 Script.registerSwitch( "C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", setServer )
 Script.registerSwitch( "I", "IncludeAllServers", "include all Configuration Servers", setAllServers )
 Script.registerSwitch( "n:", "SiteName=", "Set <sitename> as DIRAC Site Name", setSiteName )
@@ -302,6 +311,11 @@ if not vo:
   if newVO:
     setVO( newVO )
 
+if not extensions:
+  newExtensions = DIRAC.gConfig.getValue( cfgInstallPath( 'Extensions' ), '' )
+  if newExtensions:
+    setExtensions( newExtensions )
+    
 DIRAC.gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
 DIRAC.gLogger.notice( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 
