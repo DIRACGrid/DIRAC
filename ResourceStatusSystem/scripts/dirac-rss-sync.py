@@ -148,7 +148,7 @@ def initSites():
     insert = { 'Status': elements[0], 'Reason': 'Synchronized', 'Name': site, 'DateEffective': elements[1], 'TokenExpiration': Datetime,
              'ElementType': 'Site', 'StatusType': 'all', 'LastCheckTime': None, 'TokenOwner': elements[2] }
 
-    result = rssClient.addIfNotThere(insert, table)
+    result = rssClient.addIfNotThereStatusElement( insert, table )
 
     if not result[ 'OK' ]:
       subLogger.error( result[ 'Message' ] )
