@@ -209,7 +209,7 @@ def setExtensions( optionValue ):
 Script.disableCS()
 
 Script.registerSwitch( "S:", "Setup=", "Set <setup> as DIRAC setup", setSetup )
-Script.registerSwitch( "E:", "Extensions=", "Set <extensions> as DIRAC extensions", setExtensions )
+Script.registerSwitch( "e:", "Extensions=", "Set <extensions> as DIRAC extensions", setExtensions )
 Script.registerSwitch( "C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", setServer )
 Script.registerSwitch( "I", "IncludeAllServers", "include all Configuration Servers", setAllServers )
 Script.registerSwitch( "n:", "SiteName=", "Set <sitename> as DIRAC Site Name", setSiteName )
@@ -312,7 +312,14 @@ if not vo:
     setVO( newVO )
 
 if not extensions:
-  newExtensions = DIRAC.gConfig.getValue( cfgInstallPath( 'Extensions' ), '' )
+  newExtensions = None
+  extraModules = cfgInstallPath( 'ExtraModules' )
+  if extraModules:
+    DIRAC.gLogger.warn( "extraModules is deprecated please use extensions instead!" )
+    newExtensions = DIRAC.gConfig.getValue( extraModules, '' )
+  else:
+    newExtensions = DIRAC.gConfig.getValue( cfgInstallPath( 'Extensions' ), '' )
+  
   if newExtensions:
     setExtensions( newExtensions )
     
