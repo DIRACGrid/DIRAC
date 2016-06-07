@@ -42,9 +42,6 @@ $installCfg::
      PythonVersion = 27
      #  To install the Server version of DIRAC (the default is client)
      InstallType = server
-     #  LCG python bindings for SEs and LFC. Specify this option only if your installation
-     #  uses those services
-     LcgVer = 2013-09-24
      #  If this flag is set to yes, each DIRAC update will be installed
      #  in a separate directory, not overriding the previous ones
      UseVersionsDir = yes
