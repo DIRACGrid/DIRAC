@@ -60,6 +60,7 @@ class JobWrapper( object ):
     self.initialTiming = os.times()
     self.section = os.path.join( getSystemSection( 'WorkloadManagement/JobWrapper' ), 'JobWrapper' )
     self.log = gLogger
+    self.log.showHeaders( True )
     # Create the accounting report
     self.accountingReport = AccountingJob()
     # Initialize for accounting
