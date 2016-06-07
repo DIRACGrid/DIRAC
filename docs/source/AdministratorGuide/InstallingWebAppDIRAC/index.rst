@@ -14,17 +14,17 @@ Requirements
 ------------
 
 It is required CERN provided OS (slc5,slc6, etc.) distribution. We recommend you to use a supported Linux distribution. 
-Please follow the :ref:`_server_requirements` instructions 
+Please follow the :ref:`server_requirements` instructions 
 to setup the machine. In principle there is no magic to install the web portal. It has to be installed as another DIRAC component...
 When the machine is ready you can start to install the portal. But before that you need the install_site.sh script and a configuration file.  
 
 Getting the install script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-You can found the instruction about were to get the install_site.sh at the end of the :ref:`_server_requirements` section.
+You can found the instruction about were to get the install_site.sh at the end of the :ref:`server_requirements` section.
 
 Configuration file
 ~~~~~~~~~~~~~~~~~~
-You can use a standard configuration file for example :ref:`_install_primary_server`. Please make sure that the following lines are exists in the 
+You can use a standard configuration file for example :ref:`install_primary_server`. Please make sure that the following lines are exists in the 
 configuration file::
    ExtraModules = WebAppDIRAC
    WebApp = yes
@@ -67,7 +67,7 @@ $installCfg::
    }
  
 
-Before you start the installation please make sure that you have the host certofocate /opt/dirac/etc directory... More infor in the Server Certificates section in :ref:`_server_requirements` .
+Before you start the installation please make sure that you have the host certofocate /opt/dirac/etc directory... More infor in the Server Certificates section in :ref:`server_requirements` .
  
  Create the configuration file::
    - vim /home/dirac/DIRAC/install.cfg
@@ -77,7 +77,7 @@ Before you start the installation please make sure that you have the host certof
    - ./install_site.sh install.cfg
    - source /opt/dirac/bashrc
  
- Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`_server_requirements` section. 
+ Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`server_requirements` section. 
    
 
 Checks to be done after the installation
