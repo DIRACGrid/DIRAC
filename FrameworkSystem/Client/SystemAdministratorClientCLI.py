@@ -371,7 +371,7 @@ class SystemAdministratorClientCLI( CLI ):
         try:
           if argDict[ '-s' ]:
             size = int( argDict[ '-s' ] )
-        except Exception, e:
+        except ValueError as _ve:
           self.__errMsg( 'Argument \'size\' must be an integer' )
           return
         host = argDict[ '-h' ]
