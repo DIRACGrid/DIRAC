@@ -1027,7 +1027,6 @@ def installExternalRequirements( extType ):
 
 cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'l:', 'project=', 'Project to install' ),
-            #( 'e:', 'extraModules=', 'Extra modules to install (comma separated)' ),
             ( 'e:', 'extensions=', 'Extensions to install (comma separated)' ),
             ( 't:', 'installType=', 'Installation type (client/server)' ),
             ( 'i:', 'pythonVersion=', 'Python version to compile (27/26)' ),
