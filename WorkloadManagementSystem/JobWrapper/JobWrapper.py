@@ -102,7 +102,7 @@ class JobWrapper( object ):
     self.sandboxSizeLimit = gConfig.getValue( self.section + '/OutputSandboxLimit', 1024 * 1024 * 10 )
     self.cleanUpFlag = gConfig.getValue( self.section + '/CleanUpFlag', True )
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
-    self.userID = gConfig.getValue( '/LocalSite/BoincUserID', '' )
+    self.boincUserID = gConfig.getValue( '/LocalSite/BoincUserID', '' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
     self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
@@ -226,8 +226,8 @@ class JobWrapper( object ):
       parameters.append( ( 'CPUScalingFactor', self.ceArgs['CPUScalingFactor'] ) )
     if 'CPUNormalizationFactor' in self.ceArgs:
       parameters.append( ( 'CPUNormalizationFactor', self.ceArgs['CPUNormalizationFactor'] ) )
-    if self.userID:
-      parameters.append( ( 'BoincUserID', self.userID ) )
+    if self.boincUserID:
+      parameters.append( ( 'BoincUserID', self.boincUserID ) )
 
     parameters.append( ( 'PilotAgent', self.diracVersion ) )
     parameters.append( ( 'JobWrapperPID', self.currentPID ) )
