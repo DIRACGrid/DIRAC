@@ -588,6 +588,11 @@ class ConfigureSite( CommandBase ):
       self.pp.flavour = 'SSHLSF'
       pilotRef = 'sshlsf://' + self.pp.ceName + '/' + os.environ['LSB_BATCH_JID']
 
+    #  SLURM batch system
+    if os.environ.has_key( 'SLURM_JOBID' ):
+      self.pp.flavour = 'SSHSLURM'
+      pilotRef = 'sshslurm://' + self.pp.ceName + '/' + os.environ['SLURM_JOBID']
+      
     # This is the CREAM direct submission case
     if os.environ.has_key( 'CREAM_JOBID' ):
       self.pp.flavour = 'CREAM'

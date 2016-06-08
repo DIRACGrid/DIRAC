@@ -10,7 +10,7 @@
     LocalComputingElement and SSHComputingElement classes 
 """
 
-__RCSID__ = "$Id$"
+__RCSID__ = "482df59 (2015-06-16 13:59:13 +0200) Andre Sailer <andre.philippe.sailer@cern.ch>"
 
 import commands, os, re
 
@@ -50,7 +50,7 @@ class SLURM( object ):
     jobIDs = []   
     for _i in range( nJobs ):
       jid = ''
-      cmd = "sbatch -o %s/%%j.out --cluster=%s %s %s" % ( outputDir, queue, submitOptions, executable )
+      cmd = "sbatch -o %s/%%j.out --partition=%s %s %s" % ( outputDir, queue, submitOptions, executable )
       status, output = commands.getstatusoutput( cmd )
 
       if status != 0 or not output:
@@ -102,7 +102,7 @@ class SLURM( object ):
     successful = []
     failed = []
     for job in jobIDList:
-      cmd = 'scancel --cluster=%s %s' % ( queue, job )
+      cmd = 'scancel --partition=%s %s' % ( queue, job )
       status, output = commands.getstatusoutput( cmd )
        
       if status != 0:
@@ -147,7 +147,8 @@ class SLURM( object ):
     
     queue = kwargs['Queue']  
   
-    cmd = "squeue --cluster=%s --user=%s --format='%%j %%T' " % ( queue, user )
+#    cmd = "squeue --partition=%s --user=%s --format='%%j %%T' " % ( queue, user )
+    cmd = "squeue --partition=%s --user=%s --format='%%i %%T' " % ( queue, user )    
     status, output = commands.getstatusoutput( cmd )
     
     if status != 0:
@@ -207,7 +208,7 @@ class SLURM( object ):
     
     queue = kwargs['Queue']  
   
-    cmd = "squeue --cluster=%s --user=%s --format='%%j %%T' " % ( queue, user )
+    cmd = "squeue --partition=%s --user=%s --format='%%j %%T' " % ( queue, user )
     status, output = commands.getstatusoutput( cmd )
     
     if status != 0:
