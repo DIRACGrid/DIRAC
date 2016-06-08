@@ -35,7 +35,6 @@ def S_ERROR( msg = "" ):
 class Params( object ):
 
   def __init__( self ):
-    #self.extraModules = []
     self.extensions = []
     self.project = 'DIRAC'
     self.installation = 'DIRAC'
