@@ -10,7 +10,7 @@
     LocalComputingElement and SSHComputingElement classes 
 """
 
-__RCSID__ = "482df59 (2015-06-16 13:59:13 +0200) Andre Sailer <andre.philippe.sailer@cern.ch>"
+__RCSID__ = "$Id$"
 
 import commands, os, re
 
