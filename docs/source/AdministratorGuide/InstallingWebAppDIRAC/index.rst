@@ -26,7 +26,7 @@ Configuration file
 ~~~~~~~~~~~~~~~~~~
 You can use a standard configuration file for example :ref:`_install_primary_server`. Please make sure that the following lines are exists in the 
 configuration file::
-   ExtraModules = WebAppDIRAC
+   Externals = WebApp
    WebApp = yes
 But you can also use the following configuration file to install the web portal.
 $installCfg::
@@ -54,7 +54,7 @@ $installCfg::
      #  this server).
      #  Only modules not defined as default to install in their projects need to be defined here:
      #   i.e. LHCb, LHCbWeb for LHCb for example: ExtraModules = WebAppDIRAC,LHCb,LHCbWeb
-     ExtraModules = WebAppDIRAC
+     Externals = WebApp
      Project = DIRAC
      WebPortal = yes
      WebApp = yes

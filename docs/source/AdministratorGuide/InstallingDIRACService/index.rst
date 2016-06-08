@@ -1,8 +1,8 @@
 .. _server_installation:
 
-===================================
+=========================
 DIRAC Server Installation
-===================================
+=========================
 
 The procedure described here outlines the installation of the DIRAC components on a host machine, a 
 DIRAC server. There are two distinct cases of installations:
@@ -23,7 +23,7 @@ For all DIRAC installations any number of client installations is possible.
 .. _server_requirements:
 
 Requirements
------------------------------------------------
+------------
 
 *Server:*
 
@@ -63,7 +63,7 @@ Requirements
 .. _server_preparation:
 
 Server preparation
----------------------------------
+------------------
 
 Any host running DIRAC server components should be prepared before the installation of DIRAC following 
 the steps below. This procedure must be followed for the primary server and for any additional server installations.
@@ -105,7 +105,7 @@ the steps below. This procedure must be followed for the primary server and for 
       wget -np https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh --no-check-certificate
 
 Server Certificates
----------------------
+-------------------
 
 Server certificates are used for validating the identity of the host a given client is connecting to. By default 
 grid host certificate include host/ in the CN (common name) field. This is not a problem for DIRAC components 
@@ -139,7 +139,7 @@ where the output of the ``openssl`` command gives you the hash of the certificat
 .. _install_primary_server:
 
 Primary server installation
-----------------------------
+---------------------------
 
 The installation consists of setting up a set of services, agents and databases for the
 required DIRAC functionality. The SystemAdministrator interface can be used later to complete 
@@ -180,7 +180,7 @@ be taken:
         #  this server).
         #  Only modules not defined as default to install in their projects need to be defined here: 
         #   i.e. LHCb, LHCbWeb for LHCb
-        ExtraModules = Web
+        Externals = WebApp
 
         #
         #   These are options for the configuration of the installed DIRAC software
@@ -304,7 +304,7 @@ installation (for instance if you are testing your install .cfg) you should firs
 .. _install_additional_server:
 
 Additional server installation
-------------------------------------
+------------------------------
 
 To add a new server to an already existing DIRAC Installation the procedure is similar to the one above. 
 You should perform all the preliminary steps to prepare the host for the installation. One additional 
@@ -337,7 +337,7 @@ operation is the registration of the new host in the already functional Configur
         #  this server).
         #  For each User Community their extra package might be necessary here: 
         #   i.e. LHCb, LHCbWeb for LHCb
-        ExtraModules = 
+        Externals = 
 
         #
         #   These are options for the configuration of the previously installed DIRAC software
@@ -384,7 +384,7 @@ If the installation is successful, the SystemAdministrator service will be up an
 server. You can now set up the required components as described in :ref:`setting_with_CLI`
 
 Post-Installation step
----------------------------
+----------------------
 
 In order to make the DIRAC components running we use the *runit* mechanism (http://smarden.org/runit/). For each component that 
 must run permanently (services and agents) there is a directory created under */opt/dirac/startup* that is 
@@ -428,7 +428,7 @@ The same script can be used to restart all DIRAC components running on the machi
 .. _setting_with_CLI:
 
 Setting up DIRAC services and agents using the System Administrator Console
-----------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 To use the :ref:`system-admin-console`, you will need first to install the DIRAC Client software on some machine.
 To install the DIRAC Client, follow the procedure described in the User Guide.
