@@ -2,9 +2,8 @@
 Consumer in charge of reading from RabbitMQ and sending the information to Elasticsearch
 """
 
-from dateutil import parser
-import elasticsearch, time
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+import time
+from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities.RabbitMQ import RabbitConnection
 from DIRAC.FrameworkSystem.DB.DynamicMonitoringDB import DynamicMonitoringDB
 
