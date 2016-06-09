@@ -13,5 +13,5 @@ class DynamicMonitoringClient( Client ):
     Constructor function
     """
 
-    Client.__init__( self, **kwargs )
+    super( Client, self ).__init__( **kwargs )
     self.setServer( 'Framework/DynamicMonitoring' )

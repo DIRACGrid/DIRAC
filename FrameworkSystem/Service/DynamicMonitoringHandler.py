@@ -4,8 +4,6 @@ This Service provides functionality to read logging information from the Elastic
 
 __RCSID__ = "$Id$"
 
-import types
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.DB.DynamicMonitoringDB import DynamicMonitoringDB
 
@@ -19,7 +17,7 @@ class DynamicMonitoringHandler( RequestHandler ):
 
     DynamicMonitoringHandler.elasticDB = DynamicMonitoringDB()
 
-  types_getLastLog = [ types.StringTypes, types.StringTypes ]
+  types_getLastLog = [ basestring, basestring ]
   def export_getLastLog( self, host, component ):
     """
     Retrieves the last logging entry for the given component
@@ -28,7 +26,7 @@ class DynamicMonitoringHandler( RequestHandler ):
     """
     return DynamicMonitoringHandler.elasticDB.getLastLog( host, component )
 
-  types_getLogHistory = [ types.StringTypes, types.StringTypes, types.IntType ]
+  types_getLogHistory = [ basestring, basestring, int ]
   def export_getLogHistory( self, host, component, size ):
     """
     Retrieves the history of logging entries for the given component
@@ -38,7 +36,7 @@ class DynamicMonitoringHandler( RequestHandler ):
     """
     return DynamicMonitoringHandler.elasticDB.getLogHistory( host, component, size )
 
-  types_getLogsPeriod = [ types.StringTypes, types.StringTypes, types.StringTypes, types.StringTypes ]
+  types_getLogsPeriod = [ basestring, basestring, basestring, basestring ]
   def export_getLogsPeriod( self, host, component, initialDate, endDate ):
     """
     Retrieves the history of logging entries for the given component during a given given time periodtime period
