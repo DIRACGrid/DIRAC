@@ -6,6 +6,7 @@ import sys
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC import gLogger
 from DIRAC.Core.Base.ConsumerReactor import ConsumerReactor, loadConsumerModule
+from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 
 def main():
   """It launches DIRAC consumer
@@ -17,6 +18,9 @@ def main():
     sys.exit( 1 )
   if len(args) > 1:
     gLogger.warn( "You added more than one argument, only the first one will be used as consumer name!")
+
+  includeExtensionErrors()
+
   consumerModuleName = args[0]
   consumerReactor = ConsumerReactor( consumerModuleName )
   result = loadConsumerModule( consumerModuleName )
