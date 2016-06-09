@@ -170,31 +170,31 @@ class Profiler( object ):
     """
     data = {}
 
-    data[ 'datetime' ] = datetime.datetime.utcnow()
-    data[ 'stats' ] = {}
+    data['datetime'] = datetime.datetime.utcnow()
+    data['stats'] = {}
 
     result = self.pid()
-    if result[ 'OK' ]:
-      data[ 'stats' ][ 'pid' ] = result[ 'Value' ]
+    if result['OK']:
+      data['stats']['pid'] = result['Value']
 
     result = self.status()
-    if result[ 'OK' ]:
-      data[ 'stats' ][ 'status' ] = result[ 'Value' ]
+    if result['OK']:
+      data['stats']['status'] = result['Value']
 
     result = self.runningTime()
-    if result[ 'OK' ]:
-      data[ 'stats' ][ 'runningTime' ] = result[ 'Value' ]
+    if result['OK']:
+      data['stats']['runningTime'] = result['Value']
 
     result = self.memoryUsage()
-    if result[ 'OK' ]:
-      data[ 'stats' ][ 'memoryUsage' ] = result[ 'Value' ]
+    if result['OK']:
+      data['stats']['memoryUsage'] = result['Value']
 
     result = self.numThreads()
-    if result[ 'OK' ]:
-      data[ 'stats' ][ 'threads' ] = result[ 'Value' ]
+    if result['OK']:
+      data['stats']['threads'] = result['Value']
 
     result = self.cpuUsage()
-    if result[ 'OK' ]:
-      data[ 'stats' ][ 'cpuUsage' ] = result[ 'Value' ]
+    if result['OK']:
+      data['stats']['cpuUsage'] = result['Value']
 
     return S_OK( data )
