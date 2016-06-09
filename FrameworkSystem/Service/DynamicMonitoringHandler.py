@@ -23,6 +23,7 @@ class DynamicMonitoringHandler( RequestHandler ):
     Retrieves the last logging entry for the given component
     :param str host: Host where the component is installed
     :param str component: Name of the component
+    :return S_OK/S_ERROR
     """
     return DynamicMonitoringHandler.elasticDB.getLastLog( host, component )
 
@@ -33,6 +34,7 @@ class DynamicMonitoringHandler( RequestHandler ):
     :param str host: Host where the component is installed
     :param str component: Name of the component
     :param int size: Determines how many entries should be retrieved
+    :return S_OK/S_ERROR
     """
     return DynamicMonitoringHandler.elasticDB.getLogHistory( host, component, size )
 
@@ -44,5 +46,6 @@ class DynamicMonitoringHandler( RequestHandler ):
     :param str component: Name of the component
     :param str initialDate: String indicating the start of the time period, in the format 'DD/MM/YYYY hh:mm'
     :param str endDate: String indicating the end of the time period, in the format 'DD/MM/YYYY hh:mm'
+    :return S_OK/S_ERROR
     """
     return DynamicMonitoringHandler.elasticDB.getLogsPeriod( host, component, initialDate, endDate )

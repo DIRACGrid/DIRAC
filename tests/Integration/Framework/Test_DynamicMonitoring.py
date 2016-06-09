@@ -22,11 +22,6 @@ class TestDynamicMonitoringClient( unittest.TestCase ):
     """
     self.client = DynamicMonitoringClient()
 
-  def tearDown( self ):
-    """
-    Nothing is done on termination
-    """
-    pass
   
 class DynamicMonitoringClientChain( TestDynamicMonitoringClient ):
   """
