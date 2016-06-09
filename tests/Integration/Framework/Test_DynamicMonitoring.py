@@ -44,8 +44,5 @@ class DynamicMonitoringClientChain( TestDynamicMonitoringClient ):
 
 if __name__ == '__main__':
   
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase \
-                                              ( TestDynamicMonitoringClient )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase \
-                                            ( DynamicMonitoringClientChain ) )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( DynamicMonitoringClientChain ) 
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
