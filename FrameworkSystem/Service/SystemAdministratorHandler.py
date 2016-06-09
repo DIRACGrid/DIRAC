@@ -26,6 +26,7 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.Core.Utilities.RabbitMQ import RabbitConnection
 from DIRAC.Core.Utilities import Profiler
+from DIRAC.Core.Utilities import DErrno
 
 __RCSID__ = "$Id$"
 
@@ -61,12 +62,12 @@ class SystemAdministratorHandler( RequestHandler ):
       result = gConfig.getOption( 'DIRAC/Setups/%s/%s' % ( setup, system ) )
       if not result[ 'OK' ]:
         gLogger.error( 'DynamicMonitoring couldn\'t be enabled: %s' % result[ 'Message' ] )
-        return result
+        return S_ERROR( DErrno.ESECTION, result )
       sysSetup = result[ 'Value' ]
       result = gConfig.getOptionsDict( 'Systems/%s/%s/MessageQueueing/%s' % ( system, sysSetup, queueName ) )
       if not result[ 'OK' ]:
         gLogger.error( 'DynamicMonitoring couldn\'t be enabled: %s' % result[ 'Message' ] )
-        return result
+        return S_ERROR( DErrno.ESECTION, result )
       parameters = result[ 'Value' ]
 
       # Setup the RabbitMQ connection with the retrieved parameters

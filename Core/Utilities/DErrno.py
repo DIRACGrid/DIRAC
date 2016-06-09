@@ -110,6 +110,9 @@ ERMSUKN = 1700
 ETSUKN = 1900
 ETSDATA = 1901
 
+#config
+ESECTION = 1400
+
 # This translates the integer number into the name of the variable
 dErrorCode = {
                # ## Generic (10XX)
@@ -165,6 +168,8 @@ dErrorCode = {
                # TS
                1900 : "ETSUKN",
                1901 : "ETSDATA",
+               # Config
+               1400 : "ESECTION"
                }
 
 
@@ -220,6 +225,8 @@ dStrError = {
               # TS
               ETSUKN : "Unknown Transformation System Error",
               ETSDATA : "Invalid Input Data definition",
+              # Config
+              ESECTION : "Section is not found"
 }
 
 def strerror(code):
