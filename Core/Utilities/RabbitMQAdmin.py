@@ -26,15 +26,15 @@ def executeRabbitmqctl(arg, *argv):
   timeOut = 30
   result = Subprocess.systemCall(timeout = timeOut, cmdSeq = command)
   if result['OK']:
-    returncode, cmd_out, cmd_err = result['Value']
+    errorcode, cmd_out, cmd_err = result['Value']
   else:
     return DError(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
-                                (command, returncode, cmd_out, cmd_err) )
-  if returncode != 0:
+                                (command, errorcode, cmd_out, cmd_err) )
+  if errorcode:
     # No idea what errno code should be used here.
     # Maybe we should define some specific for rabbitmqctl
     return DError(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
-                                (command, returncode, cmd_out, cmd_err) )
+                                (command, errorcode, cmd_out, cmd_err) )
   return S_OK(cmd_out)
 
 def addUserWithoutPassword(user):
