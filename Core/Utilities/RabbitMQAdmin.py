@@ -101,7 +101,7 @@ def setUsersPermissions(users):
       successful[u] = ret['Value']
     else:
       print "Problem with permissions:%s" % ret['Message']
-      failed[u] = "Permission not set"
+      failed[u] = "Permission not set because of:%s"% ret['Message']
   return S_OK({'Successful': successful, 'Failed': failed})
 
 def addUsersWithoutPasswords(users):
