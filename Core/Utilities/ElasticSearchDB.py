@@ -18,6 +18,7 @@ from elasticsearch.helpers      import BulkIndexError
 from elasticsearch              import helpers
 from datetime                   import datetime
 from DIRAC.Core.Utilities       import Time
+from DIRAC.Core.Utilities       import DErrno
 
 class ElasticSearchDB( object ):
   
@@ -32,27 +33,13 @@ class ElasticSearchDB( object ):
   __url = ""
   __timeout = 120
   ########################################################################
-  def __init__( self, host, port, debug = False ):
+  def __init__( self, host, port ):
     """ c'tor
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
     :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
     :param bool debug: save the debug information to a file   
     """
-    global gDebugFile
-    
-    if not hasattr( self, 'log' ):
-      self.log = gLogger.getSubLogger( 'ElasticSearch' )
-    self.logger = self.log
-    
-    self.__url = "http://%s:%s" % ( host, port )
-        
-    if debug:
-      try:
-        gDebugFile = open( "%s.debug.log" % self.__dbName, "w" )
-      except IOError as e:
-        self.log.error( e )
-      
     self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
     self.__tryToConnect()
   
@@ -97,7 +84,7 @@ class ElasticSearchDB( object ):
   def _Q( self, name_or_query = 'match', **params ):
     """
     It is a wrapper to ElasticDSL Query module used to create a query object. 
-    :param name_or_query str is the type of the query
+    :param str name_or_query is the type of the query
     """
     return Q( name_or_query, **params )
   
@@ -115,6 +102,7 @@ class ElasticSearchDB( object ):
     """
     try:
       if self.__client.ping():
+        # Returns True if the cluster is running, False otherwise
         result = self.__client.info()
         self.setClusterName ( result.get( "cluster_name", " " ) )
         self.log.info( "Database info", result )
@@ -145,15 +133,16 @@ class ElasticSearchDB( object ):
     except Exception as e:
       gLogger.error( e )
     doctype = ''
-    for i in result:
-      if not result[i].get( 'mappings' ) :
+    for config in result:
+      if not result[config].get( 'mappings' ) :
+        # there is a case when the mapping exits and the value is None...
         return S_ERROR( "%s does not exists!" % indexName )
-      doctype = result[i]['mappings']
+      doctype = result[config]['mappings']
       break
     return S_OK( doctype ) 
   
   ########################################################################
-  def isExists( self, indexName ):
+  def exists( self, indexName ):
     """
     it checks the existance of an index
     :param str indexName: the name of the index
@@ -163,7 +152,7 @@ class ElasticSearchDB( object ):
   ########################################################################
   def _generateFullIndexName( self, indexName ):
     """
-    Given an index perfix we create the actual index name.
+    Given an index prefix we create the actual index name. Each day an index is created.
     :param str indexName: it is the name of the index
     """
     today = datetime.today().strftime( "%Y-%m-%d" )
@@ -177,7 +166,7 @@ class ElasticSearchDB( object ):
     """
     result = None
     fullIndex = self._generateFullIndexName( indexPrefix )  # we have to create the an index in each day...
-    if self.isExists( fullIndex ):
+    if self.exists( fullIndex ):
       result = S_OK( fullIndex )
     else:
       try:
@@ -195,26 +184,34 @@ class ElasticSearchDB( object ):
     """
     try:
       retVal = self.__client.indices.delete( indexName )
-    except NotFoundError as e:
-      return S_ERROR(e)
+    except  NotFoundError  as e:
+      return S_ERROR( DErrno.EELNOFOUND, e )
     except ValueError as e:
-      return S_ERROR(e)
+      return S_ERROR( DErrno.EVALUE, e )
     
     if retVal.get( 'acknowledged' ): 
-      return S_OK(indexName)
+      #if the value exists and the value is not None
+      return S_OK( indexName )
     else:
-      return S_ERROR(retVal)
+      return S_ERROR( retVal )
   
   def index( self, indexName, doc_type, body ):
+    """
+    :param str indexName the name of the index to be deleted...
+    :param str doc_type the type of the document
+    :param dict body the data which will be indexed
+    :return the index name in case of success.
+    """
     try:
       res = self.__client.index( index = indexName, doc_type = doc_type, body = body )
     except TransportError as e:
-      return S_ERROR(e)
+      return S_ERROR( e )
     
     if res.get( 'created' ):
-      return S_OK(indexName)
+      # the created is exists but the value can be None. 
+      return S_OK( indexName )
     else:
-      return S_ERROR(res)
+      return S_ERROR( res )
     
   
   def bulk_index( self, indexprefix, doc_type, data, mapping = {} ):
@@ -224,22 +221,22 @@ class ElasticSearchDB( object ):
     :param list data contains a list of dictionary 
     """
     indexName = self._generateFullIndexName( indexprefix )
-    if not self.isExists( indexName ):
+    if not self.exists( indexName ):
       retVal = self.createIndex( indexprefix, mapping )
       if not retVal['OK']:
         return retVal
     docs = []
-    for i in data:
+    for row in data:
       body = {
           '_index': indexName,
           '_type': doc_type,
           '_source': {}
       }
-      body['_source'] = i
+      body['_source'] = row
       try:
-        body['_source']['time'] = datetime.fromtimestamp( i.get( 'time', int( Time.toEpoch() ) ) )
+        body['_source']['time'] = datetime.fromtimestamp( row.get( 'time', int( Time.toEpoch() ) ) )
       except TypeError as e:
-        body['_source']['time'] = i.get( 'time' )
+        body['_source']['time'] = row.get( 'time' )
       docs += [body]
     try:
       res = helpers.bulk( self.__client, docs, chunk_size = self.__chunk_size )
@@ -247,7 +244,7 @@ class ElasticSearchDB( object ):
       return S_ERROR( e )
     
     if res[0] == len( docs ):
-      #we have inserted all documents...
+      # we have inserted all documents...
       return S_OK( len( docs ) )
     else:
       return S_ERROR( res )
@@ -260,20 +257,20 @@ class ElasticSearchDB( object ):
     It returns a list of unique value for a certain key from the dictionary.
     """
     
-    s = self._Search( indexName )
+    query = self._Search( indexName )
     if orderBy:
-      s.aggs.bucket( key, 'terms', field = key, size = 0, order = orderBy ).metric( key, 'cardinality', field = key )
+      query.aggs.bucket( key, 'terms', field = key, size = 0, order = orderBy ).metric( key, 'cardinality', field = key )
     else:
-      s.aggs.bucket( key, 'terms', field = key, size = 0 ).metric( key, 'cardinality', field = key )
+      query.aggs.bucket( key, 'terms', field = key, size = 0 ).metric( key, 'cardinality', field = key )
     
     try:
-      result = s.execute()
+      result = query.execute()
     except TransportError as e:
       return S_ERROR( e )
     
     values = []
-    for i in result.aggregations[key].buckets:
-      values += [i['key']]
-    del s
+    for bucket in result.aggregations[key].buckets:
+      values += [bucket['key']]
+    del query
     return S_OK( values )
   

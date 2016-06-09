@@ -6,11 +6,11 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                   import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Plotting           import gMonitoringDataCache
-from DIRAC.Core.Utilities                    import Time
 from DIRAC.MonitoringSystem.private.DBUtils  import DBUtils
 from DIRAC.Core.Utilities.Plotting.Plots     import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot, generateCumulativePlot, generatePiePlot, generateStackedLinePlot
 
-import time, copy, types
+import time
+import copy
 
 class BasePlotter( DBUtils ):
 
@@ -53,8 +53,8 @@ class BasePlotter( DBUtils ):
       self._extraArgs = {}
     reportsRevMap = {}
     for attr in dir( self ):
-      if attr.find( "_report" ) == 0:
-        if attr.find( 'Name', len( attr ) - 4 ) == len( attr ) - 4:
+      if attr.startswith( "_report" ):
+        if attr.endswith( 'Name' ):
           reportId = attr[ 7 :-4 ]
           reportName = getattr( self, attr )
           reportsRevMap[ reportId ] = reportName
@@ -105,11 +105,16 @@ class BasePlotter( DBUtils ):
     """
     It returns the list of available plots.
     """
-    return sorted( [ k for k in self.__reportNameMapping ] )
+    return sorted( self.__reportNameMapping )
 
   def __retrieveReportData( self, reportRequest, reportHash ):
     """
     It uses the appropriate Plotter to retrieve the data from the database. 
+    :param dict reportRequest the dictionary which contains the conditions used to create
+    the plot
+    :param str reportHash it is the unique identifier used to cache a plot
+    :return dict S_OK/S_ERROR if the data found in the cache it returns from it
+    otherwise it uses the cache.
     """
     funcName = "_report%s" % reportRequest[ 'reportName' ]
     if not hasattr( self, funcName ):
@@ -224,7 +229,7 @@ class BasePlotter( DBUtils ):
     if unit not in selectedUnits:
       raise AttributeError( "%s is not a known rate unit" % unit )
     baseUnitData = selectedUnits[ unit ][ 0 ]
-    if 'staticUnits' in self._extraArgs and self._extraArgs[ 'staticUnits' ]:
+    if self._extraArgs.get( 'staticUnits' ): 
       unitData = selectedUnits[ unit ][ 0 ]
     else:
       unitList = selectedUnits[ unit ]
@@ -247,7 +252,7 @@ class BasePlotter( DBUtils ):
     It check the plot metadata arguments
     :param dict metadata contains the plot metadata
     """
-    if self._EA_WIDTH in self._extraArgs and self._extraArgs[ self._EA_WIDTH ]:
+    if self._extraArgs.get( self._EA_WIDTH ):
       try:
         metadata[ self._EA_WIDTH ] = min( 1600, max( 200, int( self._extraArgs[ self._EA_WIDTH ] ) ) )
       except:
@@ -257,7 +262,7 @@ class BasePlotter( DBUtils ):
         metadata[ self._EA_HEIGHT ] = min( 1600, max( 200, int( self._extraArgs[ self._EA_HEIGHT ] ) ) )
       except:
         pass
-    if self._EA_TITLE in self._extraArgs and self._extraArgs[ self._EA_TITLE ]:
+    if self._extraArgs.get( self._EA_TITLE ):
       metadata[ 'title' ] = self._extraArgs[ self._EA_TITLE ]
 
   def __checkThumbnailMetadata( self, metadata ):

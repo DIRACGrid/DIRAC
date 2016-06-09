@@ -61,7 +61,7 @@ class MonitoringClient( object ):
     
     :return S_OK(str) or S_ERROR() it returns the encoded plot parameters
     """
-    if type( extraArgs ) != types.DictType:
+    if not isinstance( extraArgs, dict ):
       extraArgs = {}
     plotRequest = { 'typeName' : typeName,
                     'reportName' : reportName,

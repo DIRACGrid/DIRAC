@@ -62,6 +62,7 @@ ETYPE = 1000
 EIMPERR = 1001
 ENOMETH = 1002
 ECONF = 1003
+EVALUE = 1004
 # Files manipulation: 1X
 ECTMPF = 1010
 EOF = 1011
@@ -87,6 +88,8 @@ EVOMS = 1121
 # Databases : 3X
 EDB = 1130
 EMYSQL = 1131
+#Elasticsearch
+EELNOFOUND = 1140
 
 # ## WMS/Workflow
 EWMSUKN = 1500
@@ -113,6 +116,7 @@ dErrorCode = {
                1001 : 'EIMPERR',
                1002 : 'ENOMETH',
                1003 : 'ECONF',
+               1004 : 'EVALUE',
                # 101X: Files manipulation
                1010 : 'ECTMPF',
                1011 : 'EOF',
@@ -138,6 +142,8 @@ dErrorCode = {
                # 113X: Databases
                1130 : 'EDB',
                1131 : 'EMYSQL',
+               # Elasticsearch
+               1140 : 'EELNOFOUND',
                # WMS/Workflow
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
@@ -163,6 +169,7 @@ dStrError = {
               EIMPERR : "Failed to import library",
               ENOMETH : "No such method or function",
               ECONF : "Configuration error",
+              EVALUE: "Wrong value passed", 
               # 101X: Files manipulation
               ECTMPF : "Failed to create temporary file",
               EOF : "Cannot open file",
@@ -188,6 +195,8 @@ dStrError = {
               # 113X: Databases
               EDB : "Database Error",
               EMYSQL : "MySQL Error",
+              # 114X Elasticsearch
+              EELNOFOUND: "Index not found",
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid JDL",
