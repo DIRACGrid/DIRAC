@@ -30,8 +30,7 @@ def loadConsumerModule( consumerModuleName, hideExceptions = False ):
   #The function loadModules takes as the first argument, the list
   #of modules to load. Even that we actually have only one consumer
   #module we must transform it to a list.
-  moduleList = [ consumerModuleName ]
-  result = loader.loadModules( moduleList, hideExceptions = hideExceptions )
+  result = loader.loadModules( [ consumerModuleName ], hideExceptions = hideExceptions )
   if not result[ 'OK' ]:
     return result
   modules = loader.getModules()
