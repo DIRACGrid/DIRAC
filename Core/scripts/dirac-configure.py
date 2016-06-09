@@ -314,7 +314,7 @@ if not vo:
 if not extensions:
   newExtensions = DIRAC.gConfig.getValue( cfgInstallPath( 'ExtraModules' ) )
   if newExtensions:
-    DIRAC.gLogger.warn( "extraModules is deprecated please use extensions instead!" )
+    DIRAC.gLogger.warn( "ExtraModules option is deprecated, use Extensions option instead!" )
   else:
     newExtensions = DIRAC.gConfig.getValue( cfgInstallPath( 'Extensions' ), '' )
   
