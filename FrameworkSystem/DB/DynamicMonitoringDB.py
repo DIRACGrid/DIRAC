@@ -15,7 +15,7 @@ class DynamicMonitoringDB( ElasticDB ):
   """
 
   def __init__( self, name = 'Framework/ComponentMonitoringDB' ):
-    ElasticDB.__init__( self, 'ComponentMonitoringDB', name )
+    super( ElasticDB, self ).__init__( 'ComponentMonitoringDB', name )
     self.docType = 'ComponentMonitoring'
 
   def _dictToQuery( self, matchFieldsDict ):
