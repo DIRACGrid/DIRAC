@@ -98,8 +98,8 @@ class ElasticTestChain( ElasticTestCase ):
     self.assert_( result )
     self.assertDictEqual( result['Value'], {u'test': {u'properties': {u'Color': {u'type': u'string'}, u'Product': {u'type': u'string'}, u'time': {u'type': u'date', u'format': u'strict_date_optional_time||epoch_millis'}, u'quantity': {u'type': u'long'}}}} )
   
-  def test_isExists( self ):
-    result = self.el.isExists( self.index_name )
+  def test_exists( self ):
+    result = self.el.exists( self.index_name )
     self.assert_( result )
   
   def test_generateFullIndexName( self ):

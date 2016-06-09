@@ -17,16 +17,13 @@ class ElasticDB( ElasticSearchDB ):
   """
   .. class:: ElasticDB
 
-  :param str dbHost: the host name of the Elasticsearch database
-  :param str dbPort: The port where the Elasticsearch database is listening
-  :param str clusterName: The name of the cluster.
+  :param str __dbHost: the host name of the Elasticsearch database
+  :param str __dbPort: The port where the Elasticsearch database is listening
+  :param str __clusterName: The name of the cluster.
   """
-  __dbHost = None
-  __dbPort = None
-  __clusterName = ""
   
   ########################################################################
-  def __init__( self, dbname, fullName, debug = False ):
+  def __init__( self, dbname, fullName ):
     """ c'tor
 
     :param self: self reference
@@ -46,7 +43,7 @@ class ElasticDB( ElasticSearchDB ):
     self.__dbHost = dbParameters[ 'Host' ]
     self.__dbPort = dbParameters[ 'Port' ]
     
-    super( ElasticDB, self ).__init__( self.__dbHost, self.__dbPort, debug = debug )
+    super( ElasticDB, self ).__init__( self.__dbHost, self.__dbPort )
 
     if not self._connected:
       raise RuntimeError( 'Can not connect to DB %s, exiting...' % self.dbName )
@@ -63,8 +60,7 @@ class ElasticDB( ElasticSearchDB ):
     """
      It is used to set the cluster host
       
-      :param self: self reference
-      :param str requestName: request name
+      :param str hostname it is the host name of the elasticsearch
     """
     self.__dbHost = hostName
     
@@ -72,7 +68,6 @@ class ElasticDB( ElasticSearchDB ):
   def getDbHost( self ):
     """
      It returns the elasticsearch database host     
-    :param self: self reference
     """
     return self.__dbHost
   
@@ -82,7 +77,7 @@ class ElasticDB( ElasticSearchDB ):
      It is used to set the cluster port
       
       :param self: self reference
-      :param str requestName: request name
+      :param str port: the port of the elasticsearch.
     """
     self.__dbPort = port
   

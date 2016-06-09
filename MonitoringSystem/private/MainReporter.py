@@ -68,7 +68,7 @@ class MainReporter( object ):
     """
     It creates an unique identifier
     :param dict reportRequest plot attributes used to create the plot
-    
+    :return str it return an unique value 
     """
     requestToHash = dict( reportRequest )
     granularity = gConfig.getValue( "%s/CacheTimeGranularity" % self.__csSection, 300 )
@@ -86,6 +86,7 @@ class MainReporter( object ):
     :param dict reportRequest plot attributes used to create the plot
     
     Note: I know credDict is not used, but if we plan to add some policy, we need to use it!
+    :return dict S_OK/S_ERROR the values used to create the plot
     """
     typeName = reportRequest[ 'typeName' ]
     plotterClass = self.__plotterList.getPlotterClass( typeName )
@@ -100,6 +101,7 @@ class MainReporter( object ):
     """
     It returns the available plots
     :param str typeName monitoring type
+    :return dict S_OK/S_ERROR list of available reports (plots)
     """
     plotterClass = self.__plotterList.getPlotterClass( typeName )
     if not plotterClass:
