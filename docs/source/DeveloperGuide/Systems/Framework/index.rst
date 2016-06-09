@@ -1,9 +1,9 @@
 .. contents:: Table of contents
    :depth: 3
 
-================================
+==================
 Framework Overview
-================================
+==================
 
 Information regarding use of the DIRAC Framework to build new components
 
@@ -106,3 +106,17 @@ The MonitoringUtilities module provides the functionality needed to store or del
   result = MonitoringUtilities.monitorInstallation( 'service', 'Framework', 'SystemAdministrator' )
   if not result[ 'OK' ]:
     print 'Something went wrong'
+
+Dynamic Component Monitoring
+============================
+
+This system takes care of managing monitoring information of DIRAC component. It is based on ElasticSearch database. The queries made is the following way::
+
+
+result = self.query( indexName, { 'query': { 'filtered': {
+             'query': { 'bool' : { 'must': [ { 'match': { 'host': host } }, { 'match': { 'component': component } } ] } }, \
+             'filter': { 'range': { 'timestamp': { 'from': initialDateFormatted, 'to': endDateFormatted } } } } }, \
+             'sort': { 'timestamp': { 'order': 'desc' } }, 'size': nDocs } )
+
+
+If you want to modify or add new functionality use ElasticSerachDSL instead. 
