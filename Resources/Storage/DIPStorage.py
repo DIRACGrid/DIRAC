@@ -106,6 +106,7 @@ class DIPStorage( StorageBase ):
     localCache = False
     srcDict = res['Value']
     if srcDict['Protocol'] in ['dips', 'dip']:
+      # Make the service URL from the file URL by stripping off the file part
       serviceDict = dict( srcDict )
       serviceDict['Path'] = '/'.join( srcDict['Path'].split('/')[:3] )
       serviceDict['FileName'] = ''
