@@ -55,7 +55,7 @@ try:
   if 'group' in proxyInfo:
     vo = getVOForGroup( proxyInfo['group'] )
 
-  DESTINATION_PATH = '/%s/user/%s/%s' % ( vo, username[0], username )
+  DESTINATION_PATH = '/%s/user/%s/%s/gfaltests' % ( vo, username[0], username )
 
 except Exception as e:  # pylint: disable=broad-except
   print repr( e )
@@ -73,7 +73,6 @@ except Exception as e:  # pylint: disable=broad-except
 # File2
 # File3
 
-LOCAL_PATH = tempfile.mkdtemp()
 ### END OF GLOBAL VARIABLES ###########
 
 
@@ -81,12 +80,13 @@ class basicTest( unittest.TestCase ):
 
   def setUp( self ):
     gLogger.setLevel( 'DEBUG' )
+    self.LOCAL_PATH = tempfile.mkdtemp()
 
     self.storageName = STORAGE_NAME
     self.tbt = None
 
     # create the local structure
-    workPath = os.path.join( LOCAL_PATH, 'Workflow')
+    workPath = os.path.join( self.LOCAL_PATH, 'Workflow')
     os.mkdir( workPath )
 
     os.mkdir( os.path.join( workPath, 'FolderA' ) )
@@ -106,7 +106,7 @@ class basicTest( unittest.TestCase ):
         f.write( fn )
 
   def tearDown( self ):
-    shutil.rmtree( LOCAL_PATH )
+    shutil.rmtree( self.LOCAL_PATH )
 
 
   def clearDirectory( self ):
@@ -118,17 +118,17 @@ class basicTest( unittest.TestCase ):
 
   def testWorkflow( self ):
 
-    putDir = {DESTINATION_PATH + '/Workflow/FolderA' : LOCAL_PATH + '/Workflow/FolderA', \
-              DESTINATION_PATH + '/Workflow/FolderB' : LOCAL_PATH + '/Workflow/FolderB'}
+    putDir = {DESTINATION_PATH + '/Workflow/FolderA' : self.LOCAL_PATH + '/Workflow/FolderA', \
+              DESTINATION_PATH + '/Workflow/FolderB' : self.LOCAL_PATH + '/Workflow/FolderB'}
 
     createDir = [DESTINATION_PATH + '/Workflow/FolderA/FolderAA', DESTINATION_PATH + '/Workflow/FolderA/FolderABA', \
                  DESTINATION_PATH + '/Workflow/FolderA/FolderAAB' ]
 
-    putFile = {DESTINATION_PATH + '/Workflow/FolderA/File1' : LOCAL_PATH + '/Workflow/File1', \
-               DESTINATION_PATH + '/Workflow/FolderAA/File1': LOCAL_PATH + '/Workflow/File1', \
-               DESTINATION_PATH + '/Workflow/FolderBB/File2': LOCAL_PATH + '/Workflow/File2', \
-               DESTINATION_PATH + '/Workflow/FolderB/File2' : LOCAL_PATH + '/Workflow/File2', \
-               DESTINATION_PATH + '/Workflow/File3' : LOCAL_PATH + '/Workflow/File3' }
+    putFile = {DESTINATION_PATH + '/Workflow/FolderA/File1' : self.LOCAL_PATH + '/Workflow/File1', \
+               DESTINATION_PATH + '/Workflow/FolderAA/File1': self.LOCAL_PATH + '/Workflow/File1', \
+               DESTINATION_PATH + '/Workflow/FolderBB/File2': self.LOCAL_PATH + '/Workflow/File2', \
+               DESTINATION_PATH + '/Workflow/FolderB/File2' : self.LOCAL_PATH + '/Workflow/File2', \
+               DESTINATION_PATH + '/Workflow/File3' : self.LOCAL_PATH + '/Workflow/File3' }
 
     isFile = [DESTINATION_PATH + '/Workflow/FolderA/File1', DESTINATION_PATH + '/Workflow/FolderB/FileB']
 
@@ -178,7 +178,7 @@ class basicTest( unittest.TestCase ):
     self.assertEqual( any( path in resKey for path in isFile for resKey in res.keys() ), True )
 
     ####### getDirectory ######
-    res = self.tbt.getDirectory( getDir, LOCAL_PATH + '/getDir' )
+    res = self.tbt.getDirectory( getDir, self.LOCAL_PATH + '/getDir' )
     self.assertEqual( res['OK'], True )
     res = res['Value']
     self.assertEqual( any( getDir[0] in dictKey for dictKey in res['Successful'] ), True )
@@ -228,5 +228,5 @@ class XROOTTest( basicTest ):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Test )
-  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( XROOTTest ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( XROOTTest ) )
   unittest.TextTestRunner( verbosity = 2 ).run( suite )
