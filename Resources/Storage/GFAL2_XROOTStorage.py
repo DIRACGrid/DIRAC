@@ -57,8 +57,7 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
     # hard coding the attributes list for xroot because the plugin returns the wrong values
     # xrootd.* instead of xroot.* see: https://its.cern.ch/jira/browse/DMC-664
-    attributes = ['xroot.cksum', 'xroot.space']
-    res = super( GFAL2_XROOTStorage, self )._getExtendedAttributes( path, attributes )
+    res = super( GFAL2_XROOTStorage, self )._getExtendedAttributes( path, [ 'xroot.space'] )
     return res
 
 
