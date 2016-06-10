@@ -341,8 +341,9 @@ class GFAL2_StorageBase( StorageBase ):
       # ##
       # extended error message because otherwise we could only guess what the error could be when we copy
       # from another srm to our srm-SE '''
-      errStr = "GFAL2_StorageBase.__putSingleFile: Failed to copy file %s to destination url %s: [%d] %s" \
-                                                                % ( src_file, dest_url, e.code, e.message )
+      errStr = "GFAL2_StorageBase.__putSingleFile: Exception while copying"
+      self.log.error( errStr, "Failed to copy file %s to destination url %s: [%d] %s" \
+                                                                % ( src_file, dest_url, e.code, e.message ) )
       return S_ERROR( errStr )
 
 

@@ -21,18 +21,46 @@ from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 import unittest
-import pdb
+import sys
+import os
+import tempfile
+import shutil
 
 from DIRAC import gLogger
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOForGroup
 
 #### GLOBAL VARIABLES: ################
 
 # Name of the storage element that has to be tested
-STORAGE_NAME = 'CERN-GFAL2'
+
+if len( sys.argv ) < 2 :
+  print "Usage: %s <SE name>" % sys.argv[0]
+  sys.exit( 1 )
+
+STORAGE_NAME = sys.argv[1]
 
 # base path on the storage where the test files/folders will be created
-DESTINATION_PATH = '/lhcb/user/p/pgloor'
+DESTINATION_PATH = ''
+
+try:
+  res = getProxyInfo()
+  if not res['OK']:
+    gLogger.error( "Failed to get client proxy information.", res['Message'] )
+    sys.exit( 2 )
+  proxyInfo = res['Value']
+  username = proxyInfo['username']
+  vo = ''
+  if 'group' in proxyInfo:
+    vo = getVOForGroup( proxyInfo['group'] )
+
+  DESTINATION_PATH = '/%s/user/%s/%s' % ( vo, username[0], username )
+
+except Exception as e:  # pylint: disable=broad-except
+  print repr( e )
+  sys.exit( 2 )
+
 
 # local path containing test files. There should be a folder called Workflow containing (the files can be simple textfiles)
 # FolderA
@@ -45,8 +73,7 @@ DESTINATION_PATH = '/lhcb/user/p/pgloor'
 # File2
 # File3
 
-LOCAL_PATH = 'UnitTests'
-
+LOCAL_PATH = tempfile.mkdtemp()
 ### END OF GLOBAL VARIABLES ###########
 
 
@@ -57,6 +84,30 @@ class basicTest( unittest.TestCase ):
 
     self.storageName = STORAGE_NAME
     self.tbt = None
+
+    # create the local structure
+    workPath = os.path.join( LOCAL_PATH, 'Workflow')
+    os.mkdir( workPath )
+
+    os.mkdir( os.path.join( workPath, 'FolderA' ) )
+    with open( os.path.join( workPath, 'FolderA', 'FileA' ), 'w' ) as f:
+      f.write( 'FileA' )
+
+    os.mkdir( os.path.join( workPath, 'FolderA', 'FolderAA' ) )
+    with open( os.path.join( workPath, 'FolderA', 'FolderAA', 'FileAA' ), 'w' ) as f:
+      f.write( 'FileAA' )
+
+    os.mkdir( os.path.join( workPath, 'FolderB' ) )
+    with open( os.path.join( workPath, 'FolderB', 'FileB' ), 'w' ) as f:
+      f.write( 'FileB' )
+
+    for fn in ["File1", "File2", "File3"]:
+      with open( os.path.join( workPath, fn ), 'w' ) as f:
+        f.write( fn )
+
+  def tearDown( self ):
+    shutil.rmtree( LOCAL_PATH )
+
 
   def clearDirectory( self ):
     workflow_folder = DESTINATION_PATH + '/Workflow'
@@ -157,21 +208,21 @@ class SRM2V2Test( basicTest ):
 
   def setUp( self ):
     basicTest.setUp( self )
-    self.tbt = StorageElement( self.storageName, protocols = 'GFAL2_SRM2' )
+    self.tbt = StorageElement( self.storageName, plugins = 'GFAL2_SRM2' )
     basicTest.clearDirectory( self )
 
 class HTTPTest( basicTest ):
 
   def setUp( self ):
     basicTest.setUp( self )
-    self.tbt = StorageElement( self.storageName, protocols = 'GFAL2_HTTP' )
+    self.tbt = StorageElement( self.storageName, plugins = 'GFAL2_HTTP' )
     basicTest.clearDirectory( self )
 
 class XROOTTest( basicTest ):
 
   def setUp( self ):
     basicTest.setUp( self )
-    self.tbt = StorageElement( self.storageName, protocols = 'GFAL2_XROOT' )
+    self.tbt = StorageElement( self.storageName, plugins = 'GFAL2_XROOT' )
     basicTest.clearDirectory( self )
 
 
