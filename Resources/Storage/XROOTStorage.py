@@ -1099,6 +1099,7 @@ class XROOTStorage( StorageBase ):
 
     self.log.debug( "XROOTStorage.__putSingleDirectory: trying to upload %s to %s" % ( src_directory, dest_directory ) )
 
+    svcClassTxt = ( '?svcClass=%s' % self.protocolParameters['SpaceToken'] ) if 'SpaceToken' in self.protocolParameters else ''
     filesPut = 0
     sizePut = 0
     # Check the local directory exists
@@ -1114,7 +1115,13 @@ class XROOTStorage( StorageBase ):
     for fileName in contents:
       self.log.debug( "FILENAME %s" % fileName )
       localPath = '%s/%s' % ( src_directory, fileName )
-      remotePath = '%s/%s' % ( dest_directory, fileName )
+
+      # If there is a space token defined, it is at the end of the URL
+      # So we need to remove it and re-add it later
+
+      dest_directory = dest_directory.split( '?' )[0]
+      remotePath = '%s/%s%s' % ( dest_directory, fileName, svcClassTxt )
+
       if not os.path.isdir( localPath ):
         directoryFiles[remotePath] = localPath
       else:
@@ -1586,7 +1593,7 @@ class XROOTStorage( StorageBase ):
     urlDict = dict( self.protocolParameters )
     if not withWSUrl:
       urlDict['WSUrl'] = ''
-    if self.protocolParameters.get('Port', None):
+    if self.protocolParameters.get( 'Port', None ):
       url = "%(Protocol)s://%(Host)s:%(Port)s/%(Path)s" % urlDict
     else:
       url = "%(Protocol)s://%(Host)s/%(Path)s" % urlDict

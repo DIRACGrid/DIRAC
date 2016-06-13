@@ -60,7 +60,7 @@ class GFAL2_StorageBase( StorageBase ):
     # by default turn off BDII checks
     self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
     # spaceToken used for copying from and to the storage element
-    self.spaceToken = parameters['SpaceToken']
+    self.spaceToken = parameters.get( 'SpaceToken', '' )
     # stageTimeout, default timeout to try and stage/pin a file
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
     # gfal2Timeout, amount of time it takes until an operation times out
@@ -85,6 +85,11 @@ class GFAL2_StorageBase( StorageBase ):
     self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
     self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 )  # 0.5 MB/s ???
 
+    # This is the list of extended metadata to query the server for.
+    # It is used by getSingleMetadata.
+    # If set to None, No extended metadata will be queried
+    # If the list is empty, all of them will be queried
+    self._defaultExtendedAttributes = []
 
 
 
@@ -683,9 +688,10 @@ class GFAL2_StorageBase( StorageBase ):
 
     metadataDict = self._addCommonMetadata( metadataDict )
 
-    attributeDict = self._getExtendedAttributes( path ).get( 'Value' , {} )
-    # add extended attributes to the dict if available
-    self._updateMetadataDict( metadataDict, attributeDict )
+    if self._defaultExtendedAttributes is not None:
+      attributeDict = self._getExtendedAttributes( path, attributes = self._defaultExtendedAttributes ).get( 'Value' , {} )
+      # add extended attributes to the dict if available
+      self._updateMetadataDict( metadataDict, attributeDict )
 
 
     return S_OK ( metadataDict )
@@ -1420,7 +1426,6 @@ class GFAL2_StorageBase( StorageBase ):
                                     'Size': amount of data uploaded
     """
     self.log.debug( 'GFAL2_StorageBase.__putSingleDirectory: trying to upload %s to %s' % ( src_directory, dest_directory ) )
-
     filesPut = 0
     sizePut = 0
 
@@ -1434,7 +1439,11 @@ class GFAL2_StorageBase( StorageBase ):
     directoryFiles = {}
     for fileName in contents:
       localPath = '%s/%s' % ( src_directory, fileName )
-      remotePath = '%s/%s' % ( dest_directory, fileName )
+
+      if self.protocolParameters.get( 'SvcClass' ):
+        remotePath = '%s/%s?%s' % ( dest_directory.split( '?' )[0], fileName, self.protocolParameters['SvcClass'] )
+      else:
+        remotePath = '%s/%s' % ( dest_directory, fileName )
       # if localPath is not a directory put it to the files dict that needs to be uploaded
       if not os.path.isdir( localPath ):
         directoryFiles[remotePath] = localPath
@@ -1769,18 +1778,17 @@ class GFAL2_StorageBase( StorageBase ):
     :param str list attributes: list of extended attributes we want to receive
     :return: S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
     """
+
+    self.log.debug( "GFAL2_StorageBase._getExtendedAttributes: Checking %s attributes for %s" % ( attributes, path ) )
     attributeDict = {}
     # get all the extended attributes from path
     try:
       if not attributes:
         attributes = self.gfal2.listxattr( path )
-        # castor storages time out when file is not staged so we remove it for
-        # the metadata call since it's not used there anyway and only when we
-        # call getTransportURL we add it as keyword in the function parameters
-        attributes.remove( 'user.replicas' )
+
       # get all the respective values of the extended attributes of path
       for attribute in attributes:
-        self.log.debug( "GFAL2_StorageBase._getExtendedAttributes: Path is %s" % path )
+        self.log.debug( "GFAL2_StorageBase._getExtendedAttributes: fetching %s" % attribute )
         attributeDict[attribute] = self.gfal2.getxattr( path, attribute )
 
       return S_OK( attributeDict )

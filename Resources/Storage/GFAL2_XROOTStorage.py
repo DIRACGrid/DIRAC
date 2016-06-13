@@ -45,20 +45,10 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     self.protocolParameters['WSUrl'] = 0
     self.protocolParameters['SpaceToken'] = 0
 
+    # We don't need extended attributes for metadata
+    self._defaultExtendedAttributes = None
 
 
-  def _getExtendedAttributes( self, path, _attributes = None ):
-    """ Hard coding list of attributes and then call the base method of GFAL2_StorageBase
-
-    :param self: self reference
-    :param str path: path of which we want extended attributes
-    :return: S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
-    """
-
-    # hard coding the attributes list for xroot because the plugin returns the wrong values
-    # xrootd.* instead of xroot.* see: https://its.cern.ch/jira/browse/DMC-664
-    res = super( GFAL2_XROOTStorage, self )._getExtendedAttributes( path, [ 'xroot.space'] )
-    return res
 
 
   def _getSingleFile( self, src_url, dest_file ):
@@ -75,6 +65,24 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     self.log.debug( "GFAL2_XROOTStorage._getSingleFile: Calling base method with checksum disabled" )
     res = super( GFAL2_XROOTStorage, self )._getSingleFile( src_url, dest_file, disableChecksum = True )
     return res
+
+
+
+  def getURLBase( self, withWSUrl = False ):
+    """ This will get the URL base. This is then appended with the LFN in DIRAC convention.
+
+    :param self: self reference
+    :param bool withWSUrl: flag to include Web Service part of the url
+    :returns: URL
+    """
+    urlDict = dict( self.protocolParameters )
+    if not withWSUrl:
+      urlDict['WSUrl'] = ''
+    if self.protocolParameters.get( 'Port', None ):
+      url = "%(Protocol)s://%(Host)s:%(Port)s/%(Path)s" % urlDict
+    else:
+      url = "%(Protocol)s://%(Host)s/%(Path)s" % urlDict
+    return S_OK( url )
   
   def constructURLFromLFN( self, lfn, withWSUrl = False ):
     """ Extend the method defined in the base class to add the Service Class if defined
@@ -89,4 +97,6 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
       url += '?svcClass=%s'%svcClass
 
     return S_OK(url)
+
+
 
