@@ -28,7 +28,7 @@ def mkDir( path ):
       raise
 
 def mkLink( src, dst ):
-  """ Protected creation of simbolic link
+  """ Protected creation of symbolic link
   """
   try:
     os.symlink(src, dst)
