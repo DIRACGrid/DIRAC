@@ -87,6 +87,10 @@ EVOMS = 1121
 # Databases : 3X
 EDB = 1130
 EMYSQL = 1131
+# Message Queues: 4X
+EMQUKN = 1140
+EMQNOM = 1141
+EMQCONN = 1142
 
 # ## WMS/Workflow
 EWMSUKN = 1500
@@ -138,6 +142,10 @@ dErrorCode = {
                # 113X: Databases
                1130 : 'EDB',
                1131 : 'EMYSQL',
+               # 114X: Message Queues
+               1140 : 'EMQUKN',
+               1141 : 'EMQNOM',
+               1142 : 'EMQCONN',
                # WMS/Workflow
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
@@ -188,6 +196,10 @@ dStrError = {
               # 113X: Databases
               EDB : "Database Error",
               EMYSQL : "MySQL Error",
+              # 114X: Message Queues
+              EMQUKN : "Unknown MQ Error",
+              EMQNOM : "No messages",
+              EMQCONN : "MQ connection failure",
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid JDL",
