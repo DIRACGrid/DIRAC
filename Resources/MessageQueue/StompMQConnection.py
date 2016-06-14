@@ -20,6 +20,8 @@ class StompMQConnection( MQConnection ):
   The class also implements callback functions to be able to act as a listener and receive messages
   """
 
+  MANDATORY_PARAMETERS = [ 'Host', 'MQType' ]
+
   def __init__( self ):
 
     super( StompMQConnection, self ).__init__()
