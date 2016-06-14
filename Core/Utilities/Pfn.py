@@ -18,7 +18,15 @@ import os
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 
-def pfnunparse( pfnDict ):
+
+
+def pfnunparse( pfnDict, srmSpecific = True ):
+  if srmSpecific:
+    return srm_pfnunparse( pfnDict )
+  return default_pfnunparse( pfnDict )
+
+
+def srm_pfnunparse( pfnDict ):
   """ 
   Create PFN URI from pfnDict
 
@@ -33,7 +41,7 @@ def pfnunparse( pfnDict ):
 
   ## c
   ## /a/b/c
-  filePath = os.path.normpath( '/' + pfnDict["Path"] + '/' + pfnDict["FileName"] ).replace( '//','/' )
+  filePath = os.path.normpath( '/' + pfnDict["Path"] + '/' + pfnDict["FileName"] ).replace( '//', '/' )
     
   ## host
   uri = pfnDict["Host"]
@@ -62,6 +70,7 @@ def pfnunparse( pfnDict ):
       uri = "%s:" % pfnDict["Protocol"]
 
   pfn = "%s%s" % ( uri, filePath )
+
   # c
   # /a/b/c
   # proto:/a/b/c
@@ -70,7 +79,55 @@ def pfnunparse( pfnDict ):
   # proto://host:port/wsurl/a/b/c 
   return S_OK( pfn )
 
-def pfnparse( pfn ):
+
+def default_pfnunparse( pfnDict ):
+  """
+  Create PFN URI from pfnDict
+
+  :param dict pfnDict:
+  """
+
+  try:
+    from urlparse import ParseResult
+    if not isinstance( pfnDict, dict ):
+      return S_ERROR( "pfnunparse: wrong type for pfnDict argument, expected a dict, got %s" % type( pfnDict ) )
+    allDict = dict.fromkeys( [ 'Protocol', 'Host', 'Port', 'Path', 'FileName', 'Options' ], '' )
+    allDict.update( pfnDict )
+
+
+    scheme = allDict['Protocol']
+
+    netloc = allDict['Host']
+    if allDict['Port']:
+      netloc += ':%s'%allDict['Port']
+
+    path = os.path.join(allDict['Path'], allDict['FileName'])
+    query = allDict['Options']
+
+    pr = ParseResult( scheme = scheme, netloc = netloc, path = path, params = '', query = query, fragment = '' )
+
+    pfn = pr.geturl()
+
+    # c
+    # /a/b/c
+    # proto:/a/b/c
+    # proto://host/a/b/c
+    # proto://host:port/a/b/c
+    return S_OK( pfn )
+
+  except Exception as e:
+    errStr = "Pfn.default_pfnunparse: Exception while unparsing pfn: %s" % pfnDict
+    gLogger.exception( errStr, lException = e )
+    return S_ERROR( errStr )
+
+
+
+def pfnparse( pfn, srmSpecific = True ):
+  if srmSpecific:
+    return srm_pfnparse( pfn )
+  return default_pfnparse( pfn )
+
+def srm_pfnparse( pfn ):
   """ 
   Parse pfn and save all bits of information into dictionary
 
@@ -119,22 +176,52 @@ def pfnparse( pfn ):
           ## /a/b/c
           ## /wsurl?=/a/b/c
           pfn = pfn[ len(pfnDict["Port"]): ]
-          WSUrl = pfn.find("?")
-          WSUrlEnd = pfn.find("=")
+          WSUrl = pfn.find( "?" )
+          WSUrlEnd = pfn.find( "=" )
           if WSUrl == -1 and WSUrlEnd == -1:
             ## /a/b/c
             pfnDict["Path"] = os.path.dirname( pfn )
             pfnDict["FileName"] = os.path.basename( pfn )
           else:
             ## /wsurl?blah=/a/b/c
-            pfnDict["WSUrl"] = pfn[ 0:WSUrlEnd+1 ]
+            pfnDict["WSUrl"] = pfn[ 0:WSUrlEnd + 1 ]
             ## /a/b/c
             pfn = pfn[ len(pfnDict["WSUrl"]):]
             pfnDict["Path"] = os.path.dirname( pfn )
             pfnDict["FileName"] = os.path.basename( pfn )
     return S_OK( pfnDict )
   except Exception:
-    errStr = "Pfn.pfnparse: Exception while parsing pfn: " + str( pfn )
+    errStr = "Pfn.srm_pfnparse: Exception while parsing pfn: " + str( pfn )
     gLogger.exception( errStr )
     return S_ERROR( errStr )
 
+
+
+
+def default_pfnparse( pfn ):
+  """
+    Parse pfn and save all bits of information into dictionary
+
+  :param str pfn: pfn string
+  """
+  if not pfn:
+    return S_ERROR( "wrong 'pfn' argument value in function call, expected non-empty string, got %s" % str( pfn ) )
+  pfnDict = dict.fromkeys( [ "Protocol", "Host", "Port", "WSUrl", "Path", "FileName" ], "" )
+  try:
+    import urlparse
+
+    parse = urlparse.urlparse( pfn )
+    pfnDict['Protocol'] = parse.scheme
+    if ':' in parse.netloc:
+      pfnDict['Host'], pfnDict['Port'] = parse.netloc.split( ':' )
+    else:
+      pfnDict['Host'] = parse.netloc
+    pfnDict["Path"] = os.path.dirname( parse.path )
+    pfnDict["FileName"] = os.path.basename( parse.path )
+    if parse.query:
+      pfnDict['Options'] = parse.query
+    return S_OK( pfnDict )
+  except Exception:
+    errStr = "Pfn.default_pfnparse: Exception while parsing pfn: " + str( pfn )
+    gLogger.exception( errStr )
+    return S_ERROR( errStr )
