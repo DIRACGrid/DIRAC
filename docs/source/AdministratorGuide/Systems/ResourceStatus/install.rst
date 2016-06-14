@@ -62,7 +62,7 @@ ResourceStatusSystem/ResourceStatus, ResourceStatusSystem/ResourceManagement
 please install them using the dirac-admin-sysadmin-cli command, and make sure it
 is running.::
 
-  install service ResourceStatusSystem ResourceManagement
+  install service ResourceStatus ResourceManagement
   install service ResourceStatusSystem ResourceStatus
   install service ResourceStatusSystem Publisher
 
