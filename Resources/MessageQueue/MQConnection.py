@@ -19,6 +19,8 @@ class MQConnection( object ):
   Allows to both send and receive messages from a queue
   """
 
+  MANDATORY_PARAMETERS = [ 'Host', 'Port', 'User', 'VHost', 'MQType' ]
+
   def __init__( self ):
     """ Standard constructor
     """
@@ -36,14 +38,14 @@ class MQConnection( object ):
     """ Sets the parameters attribute
 
     :param dict parameters: dictionary with the parameters for the queue. It should include the following parameters:
-    'Host', 'Port', 'User', 'VH' and 'Type'. Otherwise, the function will return an error
+    'Host', 'Port', 'User', 'VH' and 'MQType'. Otherwise, the function will return an error
     """
 
     if not parameters:
       return S_ERROR( EMQUKN, 'Queue parameters are not provided' )
 
-    for param in [ 'Host', 'Port', 'User', 'VHost' and 'Type' ]:
-      if not param in parameters:
+    for param in self.MANDATORY_PARAMETERS:
+      if param not in parameters:
         return S_ERROR( EMQUKN, "Parameter %s not provided" % param )
 
     self.parameters = parameters
@@ -65,6 +67,7 @@ class MQConnection( object ):
   def run( self, parameters = {}, receive = True, messageCallback = None ):
     """
     Establishes a new blocking connection to the message queue
+
     :param dict parameters: dictionary with additional MQ parameters if any
     :param bool receive: flag to enable the MQ connection for getting message
     :param func messageCallback: function to be called when a new message is received from the queue

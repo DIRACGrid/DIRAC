@@ -50,7 +50,9 @@ class MQConnectionFactory( object ):
     ceClass = result['Value']
     try:
       mqConnection = ceClass()
-      mqConnection.setParameters( queueParameters )
+      result = mqConnection.setParameters( queueParameters )
+      if not result['OK']:
+        return result
 
     except Exception as x:
       msg = 'MQConnectionFactory could not instantiate %s object: %s' % ( subClassName, str( x ) )
