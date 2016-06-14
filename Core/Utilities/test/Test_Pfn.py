@@ -15,11 +15,11 @@
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2011/12/14 15:07:12
 
-## imports
+# # imports
 import unittest
 
 # sut
@@ -112,8 +112,8 @@ class PfnTests( unittest.TestCase ):
     self.assertEqual( pfnunparse( "Path" )['OK'], False )
 
 
-## test execution
+# # test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
   suite = testLoader.loadTestsFromTestCase( PfnTests )
-  unittest.TextTestRunner(verbosity=3).run(suite)
+  unittest.TextTestRunner( verbosity = 3 ).run( suite )

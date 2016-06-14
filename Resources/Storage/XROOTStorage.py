@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities          import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
-from DIRAC.Core.Utilities.Pfn                   import pfnparse
+from DIRAC.Core.Utilities.Pfn                   import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.File                  import getSize
 import os
 
@@ -39,6 +39,8 @@ class XROOTStorage( StorageBase ):
     # # init base class
     StorageBase.__init__( self, storageName, parameters )
     self.log = gLogger.getSubLogger( "XROOTStorage", True )
+
+    self.srmSpecificParse = False
 #     self.log.setLevel( "DEBUG" )
 
     self.pluginName = 'XROOT'
@@ -108,7 +110,7 @@ class XROOTStorage( StorageBase ):
 
     self.log.debug( "XROOTStorage.__singleExists: Determining whether %s exists." % path )
 
-    res = pfnparse( path )
+    res = pfnparse( path, srmSpecific = self.srmSpecificParse )
     if not res['OK']:
       return res
     pfnDict = res['Value']
@@ -337,11 +339,9 @@ class XROOTStorage( StorageBase ):
       else:
         urls = dict( [( url, False ) for url in path] )
     elif isinstance( path, dict ):
-      if len( path ) != 1:
-        return S_ERROR ( "XROOTStorage.putFile: path argument must be a dictionary (or a list of dictionary) { url : local path}" )
+      # if len( path ) != 1:
+      #  return S_ERROR ( "XROOTStorage.putFile: path argument must be a dictionary (or a list of dictionary) { url : local path}" )
       urls = path
-
-
 
 
     failed = {}
@@ -369,7 +369,7 @@ class XROOTStorage( StorageBase ):
     self.log.debug( "XROOTStorage.__putSingleFile: trying to upload %s to %s" % ( src_file, dest_url ) )
 
     # We create the folder first
-    res = pfnparse( dest_url )
+    res = pfnparse( dest_url, srmSpecific = self.srmSpecificParse )
     if not res['OK']:
       return res
     pfnDict = res['Value']
@@ -534,7 +534,7 @@ class XROOTStorage( StorageBase ):
                 S_OK (S_ERROR (errorMsg)) if there was a problem removing the file
     """
 
-    res = pfnparse( path )
+    res = pfnparse( path, srmSpecific = self.srmSpecificParse )
     if not res['OK']:
       return res
     pfnDict = res['Value']
@@ -619,7 +619,7 @@ class XROOTStorage( StorageBase ):
     if expectedType and expectedType not in ['File', 'Directory']:
       return S_ERROR( "XROOTStorage.__getSingleMetadata : the 'expectedType' argument must be either 'File' or 'Directory'" )
 
-    res = pfnparse( path )
+    res = pfnparse( path, srmSpecific = self.srmSpecificParse )
     if not res['OK']:
       return res
 
@@ -934,13 +934,19 @@ class XROOTStorage( StorageBase ):
     successful = {}
 
     for src_dir in urls:
-      dirName = os.path.basename( src_dir )
+      res = pfnparse( src_dir, srmSpecific = self.srmSpecificParse )
+      if not res['OK']:
+        self.log.error( "GFAL2_StorageBase.getDirectory: cannot parse src_url", res )
+        continue
+      srcUrlDict = res['Value']
+      dirName = srcUrlDict['FileName']
+
       if localPath:
-        dest_dir = "%s/%s" % ( localPath, dirName )
+        dest_dir = os.path.join( localPath, dirName )
       else:
         # The other storage objects use os.getcwd(), I think it is a bug
         # -> no, self.cwd is remote
-        dest_dir = "%s/%s" % ( os.getcwd(), dirName )
+        dest_dir = os.path.join( os.getcwd(), dirName )
 
       res = self.__getSingleDirectory( src_dir, dest_dir )
 
@@ -1006,7 +1012,7 @@ class XROOTStorage( StorageBase ):
         return S_ERROR( errStr )
 
     # Get the remote directory contents
-    res = self.__listSingleDirectory( src_dir )
+    res = self.__listSingleDirectory( src_dir, internalCall = True )
     if not res['OK']:
       errStr = "XROOTStorage.__getSingleDirectory: Failed to list the source directory."
       self.log.error( errStr, src_dir )
@@ -1019,8 +1025,14 @@ class XROOTStorage( StorageBase ):
     receivedAllFiles = True
     self.log.debug( "XROOTStorage.__getSingleDirectory: Trying to first download the %s files." % len( sFilesDict ) )
     for sFile in sFilesDict:
+      # Getting the last filename
+      res = pfnparse( sFile, srmSpecific = self.srmSpecificParse )
+      if not res['OK']:
+        self.log.error( "XROOTStorage.__getSingleDirectory: :Cannot unparse target file", res )
+        continue
+      filename = res['Value']['FileName']
       # Returns S__OK(Filesize) if it worked
-      res = self.__getSingleFile( sFile, "/".join( [ dest_dir, os.path.basename( sFile ) ] ) )
+      res = self.__getSingleFile( sFile, os.path.join( dest_dir, filename ) )
       if res['OK']:
         filesReceived += 1
         sizeReceived += res['Value']
@@ -1032,8 +1044,13 @@ class XROOTStorage( StorageBase ):
     receivedAllDirs = True
     self.log.debug( "XROOTStorage.__getSingleDirectory: Trying to recursively download the %s folder." % len( subDirsDict ) )
     for subDir in subDirsDict:
-      subDirName = os.path.basename( subDir )
-      localPath = '%s/%s' % ( dest_dir, subDirName )
+      # Getting the last filename
+      res = pfnparse( subDir, srmSpecific = self.srmSpecificParse )
+      if not res['OK']:
+        self.log.error( "XROOTStorage.__getSingleDirectory: Cannot unparse target dir", res )
+        continue
+      subDirName = res['Value']['FileName']
+      localPath = os.path.join( dest_dir, subDirName )
       res = self.__getSingleDirectory( subDir, localPath )
 
       if not res['OK']:
@@ -1099,7 +1116,6 @@ class XROOTStorage( StorageBase ):
 
     self.log.debug( "XROOTStorage.__putSingleDirectory: trying to upload %s to %s" % ( src_directory, dest_directory ) )
 
-    svcClassTxt = ( '?svcClass=%s' % self.protocolParameters['SpaceToken'] ) if 'SpaceToken' in self.protocolParameters else ''
     filesPut = 0
     sizePut = 0
     # Check the local directory exists
@@ -1112,20 +1128,28 @@ class XROOTStorage( StorageBase ):
     contents = os.listdir( src_directory )
     allSuccessful = True
     directoryFiles = {}
+
+    res = pfnparse( dest_directory, srmSpecific = self.srmSpecificParse )
+    if not res['OK']:
+      return res
+    destDirParse = res['Value']
     for fileName in contents:
       self.log.debug( "FILENAME %s" % fileName )
-      localPath = '%s/%s' % ( src_directory, fileName )
+      localPath = os.path.join( src_directory, fileName )
 
-      # If there is a space token defined, it is at the end of the URL
-      # So we need to remove it and re-add it later
+      nextUrlDict = dict( destDirParse )
+      nextUrlDict['FileName'] = os.path.join( destDirParse['FileName'], fileName )
+      res = pfnunparse( nextUrlDict, srmSpecific = self.srmSpecificParse )
+      if not res['OK']:
+        self.log.error( "GFAL2_StorageBase.__putSingleDirectory:Cannot unparse next url dict", res )
+        continue
+      remoteUrl = res['Value']
 
-      dest_directory = dest_directory.split( '?' )[0]
-      remotePath = '%s/%s%s' % ( dest_directory, fileName, svcClassTxt )
 
       if not os.path.isdir( localPath ):
-        directoryFiles[remotePath] = localPath
+        directoryFiles[remoteUrl] = localPath
       else:
-        res = self.__putSingleDirectory( localPath, remotePath )
+        res = self.__putSingleDirectory( localPath, remoteUrl )
         if not res['OK']:
           errStr = "XROOTStorage.__putSingleDirectory: Failed to put directory to storage."
           self.log.error( errStr, res['Message'] )
@@ -1187,11 +1211,11 @@ class XROOTStorage( StorageBase ):
               S_ERROR(errMsg) in case of any problem
     """
     self.log.debug( "XROOTStorage.__createSingleDirectory: Attempting to create directory %s." % path )
-    res = pfnparse( path )
+    res = pfnparse( path, srmSpecific = self.srmSpecificParse )
     if not res['OK']:
       return res
     pfnDict = res['Value']
-    xFilePath = '/'.join( [pfnDict['Path'], pfnDict['FileName']] )
+    xFilePath = os.path.join( pfnDict['Path'], pfnDict['FileName'] )
 
     status = self.xrootClient.mkdir( xFilePath, MkDirFlags.MAKEPATH )
 
@@ -1281,7 +1305,7 @@ class XROOTStorage( StorageBase ):
 
 
     # Get the remote directory contents
-    res = self.__listSingleDirectory( path )
+    res = self.__listSingleDirectory( path, internalCall = True )
     if not res['OK']:
       errStr = "XROOTStorage.__removeSingleDirectory: Failed to list the directory."
       self.log.error( errStr, path )
@@ -1296,12 +1320,11 @@ class XROOTStorage( StorageBase ):
 
     # if recursive, we call ourselves on all the subdirs
     if recursive:
-          # Recursively remove the sub directories
+      # Recursively remove the sub directories
       self.log.debug( "XROOTStorage.__removeSingleDirectory: Trying to recursively remove %s folder." % len( subDirsDict ) )
-      for subDir in subDirsDict:
-        subDirName = os.path.basename( subDir )
-        localPath = '%s/%s' % ( path, subDirName )
-        res = self.__removeSingleDirectory( localPath, recursive )  # recursive should be true..
+
+      for subDirUrl in subDirsDict:
+        res = self.__removeSingleDirectory( subDirUrl, recursive )  # recursive should be true..
 
         if not res['OK']:
           removedAllDirs = False
@@ -1342,7 +1365,7 @@ class XROOTStorage( StorageBase ):
     # - we don't go recursive, but we deleted all files and there are no subfolders
 
     if ( recursive and allRemoved ) or ( not recursive and removedAllFiles and ( len( subDirsDict ) == 0 ) ):
-      res = pfnparse( path )
+      res = pfnparse( path, srmSpecific = self.srmSpecificParse )
       if not res['OK']:
         return res
       pfnDict = res['Value']
@@ -1399,7 +1422,7 @@ class XROOTStorage( StorageBase ):
         failed[url] = errStr
 
     for directory in directories:
-      res = self.__listSingleDirectory( directory )
+      res = self.__listSingleDirectory( directory, internalCall = False )
       if not res['OK']:
         failed[directory] = res['Message']
         continue
@@ -1409,10 +1432,13 @@ class XROOTStorage( StorageBase ):
     return S_OK( resDict )
 
 
-  def __listSingleDirectory( self, path ):
+  def __listSingleDirectory( self, path, internalCall = False ):
     """List the content of a single directory, NOT RECURSIVE
       :param self: self reference
       :param path: single path on storage (pfn : root://...)
+      :param bool internalCall: if we call this method from another internal method we want
+                              to work with the full url. Used for __getSingleDirectory and
+                              __removeSingleDirectory
       :returns: A 2 level nested S_ structure :
           S_ERROR if there is an error (fatal or not)
           S_OK (dictionary)) The dictionnary has 2 keys : SubDirs and Files
@@ -1420,7 +1446,7 @@ class XROOTStorage( StorageBase ):
                              The values of SubDirs are just Dirname as key and True as value
     """
 
-    res = pfnparse( path )
+    res = pfnparse( path, srmSpecific = self.srmSpecificParse )
     if not res['OK']:
       return res
 
@@ -1439,9 +1465,37 @@ class XROOTStorage( StorageBase ):
     files = {}
     subDirs = {}
 
+    res = pfnparse( path, srmSpecific = self.srmSpecificParse )
+    if not res['OK']:
+      return res
+    pathDict = res['Value']
     for entry in listing:
-      fullPath = "root://%s/%s/%s" % ( self.host, xFilePath, entry.name )
       metadataDict = self.__parseStatInfoFromApiOutput( entry.statinfo )
+
+
+      nextEntry = dict( pathDict )
+      nextEntry['FileName'] = os.path.join( pathDict['FileName'], entry.name )
+      res = pfnunparse( nextEntry, srmSpecific = self.srmSpecificParse )
+      if not res['OK']:
+        self.log.error( "Cannot generate url for entry", res )
+        continue
+
+      nextUrl = res['Value']
+
+
+      if internalCall:
+        fullPath = nextUrl
+      else:
+        # If it is not an internal call, we return the LFN
+        # We cannot use a simple replace because of the double slash
+        # that might be at the start
+        basePath = os.path.normpath( self.protocolParameters['Path'] )
+        startBase = nextEntry['Path'].find(basePath)
+        lfnStart = nextEntry['Path'][startBase + len( basePath ):]
+        if not lfnStart:
+          lfnStart = '/'
+        fullPath = os.path.join( lfnStart , nextEntry['FileName'] )
+
       if metadataDict['Directory']:
         subDirs[fullPath] = True
         continue
@@ -1537,7 +1591,7 @@ class XROOTStorage( StorageBase ):
 
     self.log.debug( "XROOTStorage.__getSingleDirectorySize: Attempting to get the size of directory %s" % path )
 
-    res = self.__listSingleDirectory( path )
+    res = self.__listSingleDirectory( path, internalCall = True )
     if not res['OK']:
       return res
 

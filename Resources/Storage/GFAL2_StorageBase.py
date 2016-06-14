@@ -19,6 +19,7 @@ from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.File import getSize
+from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
 
 # # RCSID
@@ -42,11 +43,17 @@ class GFAL2_StorageBase( StorageBase ):
 
     self.log = gLogger.getSubLogger( "GFAL2_StorageBase", True )
 
+    # Some storages have problem to compute the checksum with xroot while getting the files
+    # This allows to disable the checksum calculation while transferring, and then we compare the
+    # file size
+    self.disableTransferChecksum = True if ( parameters.get( 'DisableChecksum' ) == 'True' ) else False
+
     # Different levels or verbosity:
     # gfal2.verbose_level.normal,
     # gfal2.verbose_level.verbose,
     # gfal2.verbose_level.debug,
     # gfal2.verbose_level.trace
+    
 
     dlevel = self.log.getLevel()
     if dlevel == 'DEBUG':
@@ -379,7 +386,7 @@ class GFAL2_StorageBase( StorageBase ):
         dest_file = '%s/%s' % ( localPath, fileName )
       else:
         dest_file = '%s/%s' % ( os.getcwd(), fileName )
-      res = self._getSingleFile( src_url, dest_file )
+      res = self._getSingleFile( src_url, dest_file, disableChecksum = self.disableTransferChecksum )
 
       if not res['OK']:
         failed[src_url] = res['Message']
@@ -403,6 +410,8 @@ class GFAL2_StorageBase( StorageBase ):
               S_OK( size of file ) if copying is successful
     """
     self.log.info( "GFAL2_StorageBase._getSingleFile: Trying to download %s to %s" % ( src_url, dest_file ) )
+    if disableChecksum:
+      self.log.warn( "GFAL2_StorageBase._getSingleFile: checksum calculation disabled for transfers!" )
 
     destDir = os.path.dirname( dest_file )
 
@@ -1227,22 +1236,49 @@ class GFAL2_StorageBase( StorageBase ):
 
     files = {}
     subDirs = {}
-    urlStart = self.getURLBase( withWSUrl = True )['Value']
+
+    res = pfnparse( path, srmSpecific = self.srmSpecificParse )
+    if not res['OK']:
+      return res
+    pathDict = res['Value']
+
     for entry in listing:
-      fullPath = os.path.join( path, entry )
-      self.log.debug( 'GFAL2_StorageBase.__listSingleDirectory: path: %s' % fullPath )
-      res = self.__getSingleMetadata( fullPath )
+
+      nextEntry = dict( pathDict )
+      nextEntry['FileName'] = os.path.join( pathDict['FileName'], entry )
+      res = pfnunparse( nextEntry, srmSpecific = self.srmSpecificParse )
+      if not res['OK']:
+        self.log.error( "Cannot generate url for entry", res )
+        continue
+
+      nextUrl = res['Value']
+
+
+      self.log.debug( 'GFAL2_StorageBase.__listSingleDirectory: path: %s' % nextUrl )
+      res = self.__getSingleMetadata( nextUrl )
       if res['OK']:
         metadataDict = res['Value']
-        subPathLFN = fullPath if internalCall else fullPath.replace( urlStart, '' )
+        if internalCall:
+          subPathLFN = nextUrl
+        else:
+          # If it is not an internal call, we return the LFN
+          # We cannot use a simple replace because of the double slash
+          # that might be at the start
+          basePath = os.path.normpath( self.protocolParameters['Path'] )
+          startBase = nextEntry['Path'].find( basePath )
+          lfnStart = nextEntry['Path'][startBase + len( basePath ):]
+          if not lfnStart:
+            lfnStart = '/'
+          subPathLFN = os.path.join( lfnStart , nextEntry['FileName'] )
+
         if metadataDict['Directory']:
           subDirs[subPathLFN] = metadataDict
         elif metadataDict['File']:
           files[subPathLFN] = metadataDict
         else:
-          self.log.debug( "GFAL2_StorageBase.__listSingleDirectory: found item which is neither file nor directory", fullPath )
+          self.log.debug( "GFAL2_StorageBase.__listSingleDirectory: found item which is neither file nor directory", nextUrl )
       else:
-        self.log.error( "GFAL2_StorageBase.__listSingleDirectory: could not stat content", "%s %s" % ( fullPath, res['Message'] ) )
+        self.log.error( "GFAL2_StorageBase.__listSingleDirectory: could not stat content", "%s %s" % ( nextUrl, res['Message'] ) )
 
     return S_OK( {'SubDirs' : subDirs, 'Files' : files} )
 
@@ -1269,7 +1305,13 @@ class GFAL2_StorageBase( StorageBase ):
     successful = {}
 
     for src_dir in urls:
-      dirName = os.path.basename( src_dir )
+      res = pfnparse( src_dir, srmSpecific = self.srmSpecificParse )
+      if not res['OK']:
+        self.log.error( "GFAL2_StorageBase.getDirectory: cannot parse src_url", res )
+        continue
+      srcUrlDict = res['Value']
+      dirName = srcUrlDict['FileName']
+
       if localPath:
         dest_dir = '%s/%s' % ( localPath, dirName )
       else:
@@ -1341,8 +1383,14 @@ class GFAL2_StorageBase( StorageBase ):
     receivedAllFiles = True
     self.log.debug( 'GFAL2_StorageBase.__getSingleDirectory: Trying to download the %s files' % len( sFilesDict ) )
     for sFile in sFilesDict:
+      # Getting the last filename
+      res = pfnparse( sFile, srmSpecific = self.srmSpecificParse )
+      if not res['OK']:
+        self.log.error( "GFAL2_StorageBase.__getSingleDirectory:Cannot unparse target file", res )
+        continue
+      filename = res['Value']['FileName']
       # Returns S_OK(fileSize) if successful
-      res = self._getSingleFile( sFile, os.path.join( dest_dir, os.path.basename( sFile ) ) )
+      res = self._getSingleFile( sFile, os.path.join( dest_dir, filename ), disableChecksum = self.disableTransferChecksum )
       if res['OK']:
         filesReceived += 1
         sizeReceived += res['Value']
@@ -1353,8 +1401,13 @@ class GFAL2_StorageBase( StorageBase ):
     receivedAllDirs = True
     self.log.debug( 'GFAL2_StorageBase.__getSingleDirectory: Trying to recursively download the %s directories' % len( subDirsDict ) )
     for subDir in subDirsDict:
-      subDirName = os.path.basename( subDir )
-      localPath = '%s/%s' % ( dest_dir, subDirName )
+      # Getting the last filename
+      res = pfnparse( subDir, srmSpecific = self.srmSpecificParse )
+      if not res['OK']:
+        self.log.error( "GFAL2_StorageBase.__getSingleDirectory:Cannot unparse target dir", res )
+        continue
+      subDirName = res['Value']['FileName']
+      localPath = os.path.join( dest_dir, subDirName )
       res = self.__getSingleDirectory( subDir, localPath )
 
       if not res['OK']:
@@ -1437,19 +1490,28 @@ class GFAL2_StorageBase( StorageBase ):
     contents = os.listdir( src_directory )
     allSuccessful = True
     directoryFiles = {}
-    for fileName in contents:
-      localPath = '%s/%s' % ( src_directory, fileName )
 
-      if self.protocolParameters.get( 'SvcClass' ):
-        remotePath = '%s/%s?%s' % ( dest_directory.split( '?' )[0], fileName, self.protocolParameters['SvcClass'] )
-      else:
-        remotePath = '%s/%s' % ( dest_directory, fileName )
+    res = pfnparse( dest_directory, srmSpecific = self.srmSpecificParse )
+    if not res['OK']:
+      return res
+    destDirParse = res['Value']
+    for fileName in contents:
+      localPath = os.path.join( src_directory, fileName )
+
+      nextUrlDict = dict( destDirParse )
+      nextUrlDict['FileName'] = os.path.join( destDirParse['FileName'], fileName )
+      res = pfnunparse( nextUrlDict, srmSpecific = self.srmSpecificParse )
+      if not res['OK']:
+        self.log.error( "GFAL2_StorageBase.__putSingleDirectory:Cannot unparse next url dict", res )
+        continue
+      remoteUrl = res['Value']
+
       # if localPath is not a directory put it to the files dict that needs to be uploaded
       if not os.path.isdir( localPath ):
-        directoryFiles[remotePath] = localPath
+        directoryFiles[remoteUrl] = localPath
       # localPath is another folder, start recursion
       else:
-        res = self.__putSingleDirectory( localPath, remotePath )
+        res = self.__putSingleDirectory( localPath, remoteUrl )
         if not res['OK']:
           errStr = 'GFAL2_StorageBase.__putSingleDirectory: Failed to put directory to storage.'
           self.log.error( errStr, res['Message'] )
@@ -1554,10 +1616,8 @@ class GFAL2_StorageBase( StorageBase ):
     if recursive:
       # Recursively remove the sub directories
       self.log.debug( "GFAL2_StorageBase.__removeSingleDirectory: Trying to recursively remove %s folder." % len( subDirsDict ) )
-      for subDir in subDirsDict:
-        subDirName = os.path.basename( subDir )
-        localPath = '%s/%s' % ( path, subDirName )
-        res = self.__removeSingleDirectory( localPath, recursive )
+      for subDirUrl in subDirsDict:
+        res = self.__removeSingleDirectory( subDirUrl, recursive )
 
         if not res['OK']:
           removedAllDirs = False

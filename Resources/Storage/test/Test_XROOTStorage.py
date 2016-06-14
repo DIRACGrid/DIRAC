@@ -481,16 +481,20 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
     setMockDirectory(directoryListMock)
 
+    resource.se = MagicMock()
+    voName = "A"
+    resource.se.vo = voName
     # We created a Directory which contains 2 subdir and 1 file
 
-    res = resource.listDirectory( "A" )
+    aUrl = resource.constructURLFromLFN( "/A" )['Value']
+    res = resource.listDirectory( aUrl )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {}, res['Value']['Failed'] )
-    SubDirs = res['Value']['Successful']["A"]["SubDirs"]
-    SubFiles = res['Value']['Successful']["A"]["Files"]
+    SubDirs = res['Value']['Successful'][aUrl]["SubDirs"]
+    SubFiles = res['Value']['Successful'][aUrl]["Files"]
     self.assertEqual( 2 , len( SubDirs ) )
     self.assertEqual( 1 , len( SubFiles ) )
-    self.assertEqual( SubFiles["root://host/A/file1"]["Size"], 4 )
+    self.assertEqual( SubFiles["/A/file1"]["Size"], 4 )
 
     #Cleanup old side effect
     mocked_xrootclient.stat.side_effect = None
@@ -499,10 +503,10 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     statInfoMock.makeFile()
     updateStatMockReferences( infoval = statInfoMock )
 
-    res = resource.listDirectory( "A" )
+    res = resource.listDirectory( aUrl )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {}, res['Value']['Successful'] )
-    self.assertEqual( "A" , res['Value']['Failed'].keys()[0] )
+    self.assertEqual( aUrl , res['Value']['Failed'].keys()[0] )
 
 
   def test_getFileMetadata( self ):
@@ -1169,9 +1173,12 @@ if __name__ == '__main__':
 
   # Shut up the gLogger
   # Uncomment this line and comment the next 2 if you want debug
-  # gLogger.setLevel( "DEBUG" )
+
+
   from DIRAC.FrameworkSystem.private.logging.Logger import Logger
   Logger.processMessage = MagicMock()
+#   from DIRAC import gLogger
+#   gLogger.setLevel( "DEBUG" )
 
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( XROOTStorage_Success )

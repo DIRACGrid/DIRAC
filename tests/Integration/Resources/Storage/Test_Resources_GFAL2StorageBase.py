@@ -1,19 +1,6 @@
 """
-This tests the new plugins for rel-v6r13: GFAL2_SRM2Storage and GFAL2_XROOTStorage.
-
-Plugins:
-
-To run the test following plugins are needed:
-
-gfal2-2.9.3
-gfal2-plugin-xrootd-0.4.0
-gfal2-python-1.8.3
-
-Storage element:
-Change self.storageName within the basicTest class to the name of the storageElement you wish to run this test against.
-This storage element needs to be supporting two access protocols, using the protocolName GFAL2_SRM2 and GFAL2_XROOT
-respectively. If you want to test only either SRM2 or XROOT remove the other testsuite in the unittest.
-
+This integration tests will perform basic operations on a storage element, depending on which protocols are available.
+It creates a local hierarchy, and then tries to upload, download, remove, get metadata etc
 """
 
 
@@ -36,7 +23,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOForGroup
 # Name of the storage element that has to be tested
 
 if len( sys.argv ) < 2 :
-  print "Usage: %s <SE name>" % sys.argv[0]
+  print "Usage: %s <SE name> <plugins>" % sys.argv[0]
+  print "\t<SE name>: mandatory"
+  print "\t <plugins>: comma separated list of plugin to test (defautl all)"
   sys.exit( 1 )
 
 STORAGE_NAME = sys.argv[1]
@@ -60,6 +49,14 @@ try:
 except Exception as e:  # pylint: disable=broad-except
   print repr( e )
   sys.exit( 2 )
+
+
+
+
+if len( sys.argv ) == 3:
+  AVAILABLE_PLUGINS = sys.argv[2].split( ',' )
+else:
+  AVAILABLE_PLUGINS = StorageElement( STORAGE_NAME ).getPlugins()['Value']
 
 
 # local path containing test files. There should be a folder called Workflow containing (the files can be simple textfiles)
@@ -86,7 +83,7 @@ class basicTest( unittest.TestCase ):
     self.tbt = None
 
     # create the local structure
-    workPath = os.path.join( self.LOCAL_PATH, 'Workflow')
+    workPath = os.path.join( self.LOCAL_PATH, 'Workflow' )
     os.mkdir( workPath )
 
     os.mkdir( os.path.join( workPath, 'FolderA' ) )
@@ -107,51 +104,62 @@ class basicTest( unittest.TestCase ):
 
   def tearDown( self ):
     shutil.rmtree( self.LOCAL_PATH )
+    self.clearDirectory()
 
 
   def clearDirectory( self ):
+    print "=================================================="
+    print "==== Removing the older Directory ================"
     workflow_folder = DESTINATION_PATH + '/Workflow'
     res = self.tbt.removeDirectory( workflow_folder )
     if not res['OK']:
       print "basicTest.clearDirectory: Workflow folder maybe not empty"
-
+    print "=================================================="
 
   def testWorkflow( self ):
 
-    putDir = {DESTINATION_PATH + '/Workflow/FolderA' : self.LOCAL_PATH + '/Workflow/FolderA', \
-              DESTINATION_PATH + '/Workflow/FolderB' : self.LOCAL_PATH + '/Workflow/FolderB'}
+    putDir = {os.path.join( DESTINATION_PATH, 'Workflow/FolderA' ) : os.path.join( self.LOCAL_PATH, 'Workflow/FolderA' ),
+              os.path.join( DESTINATION_PATH, 'Workflow/FolderB' ) : os.path.join( self.LOCAL_PATH, 'Workflow/FolderB' )
+              }
 
-    createDir = [DESTINATION_PATH + '/Workflow/FolderA/FolderAA', DESTINATION_PATH + '/Workflow/FolderA/FolderABA', \
-                 DESTINATION_PATH + '/Workflow/FolderA/FolderAAB' ]
+    createDir = [os.path.join( DESTINATION_PATH, 'Workflow/FolderA/FolderAA' ),
+                 os.path.join( DESTINATION_PATH, 'Workflow/FolderA/FolderABA' ),
+                 os.path.join( DESTINATION_PATH, 'Workflow/FolderA/FolderAAB' )
+                ]
 
-    putFile = {DESTINATION_PATH + '/Workflow/FolderA/File1' : self.LOCAL_PATH + '/Workflow/File1', \
-               DESTINATION_PATH + '/Workflow/FolderAA/File1': self.LOCAL_PATH + '/Workflow/File1', \
-               DESTINATION_PATH + '/Workflow/FolderBB/File2': self.LOCAL_PATH + '/Workflow/File2', \
-               DESTINATION_PATH + '/Workflow/FolderB/File2' : self.LOCAL_PATH + '/Workflow/File2', \
-               DESTINATION_PATH + '/Workflow/File3' : self.LOCAL_PATH + '/Workflow/File3' }
+    putFile = {os.path.join( DESTINATION_PATH, 'Workflow/FolderA/File1' ) : os.path.join( self.LOCAL_PATH, 'Workflow/File1' ),
+               os.path.join( DESTINATION_PATH, 'Workflow/FolderAA/File1' ): os.path.join( self.LOCAL_PATH, 'Workflow/File1' ),
+               os.path.join( DESTINATION_PATH, 'Workflow/FolderBB/File2' ): os.path.join( self.LOCAL_PATH, 'Workflow/File2' ),
+               os.path.join( DESTINATION_PATH, 'Workflow/FolderB/File2' ) : os.path.join( self.LOCAL_PATH, 'Workflow/File2' ),
+               os.path.join( DESTINATION_PATH, 'Workflow/File3' ) : os.path.join( self.LOCAL_PATH, 'Workflow/File3' )
+              }
 
-    isFile = [DESTINATION_PATH + '/Workflow/FolderA/File1', DESTINATION_PATH + '/Workflow/FolderB/FileB']
+    isFile = [os.path.join( DESTINATION_PATH, 'Workflow/FolderA/File1' ),
+              os.path.join( DESTINATION_PATH, 'Workflow/FolderB/FileB' )
+             ]
 
 
-    listDir = [DESTINATION_PATH + '/Workflow', \
-               DESTINATION_PATH + '/Workflow/FolderA', \
-               DESTINATION_PATH + '/Workflow/FolderB']
+    listDir = [os.path.join( DESTINATION_PATH, 'Workflow' ),
+               os.path.join( DESTINATION_PATH, 'Workflow/FolderA' ),
+               os.path.join( DESTINATION_PATH, 'Workflow/FolderB' )
+              ]
 
-    getDir = [DESTINATION_PATH + '/Workflow/FolderA', \
-           DESTINATION_PATH + '/Workflow/FolderB']
+    getDir = [os.path.join( DESTINATION_PATH, 'Workflow/FolderA' ),
+              os.path.join( DESTINATION_PATH, 'Workflow/FolderB' )
+             ]
 
-    removeFile = [DESTINATION_PATH + '/Workflow/FolderA/File1']
-    rmdir = [DESTINATION_PATH + '/Workflow']
+    removeFile = [os.path.join( DESTINATION_PATH, 'Workflow/FolderA/File1' )]
+    rmdir = [os.path.join( DESTINATION_PATH, 'Workflow' )]
 
 
     ########## uploading directory #############
     res = self.tbt.putDirectory( putDir )
     self.assertEqual( res['OK'], True )
     res = self.tbt.listDirectory( listDir )
-    self.assertEqual( any( DESTINATION_PATH + '/Workflow/FolderA/FileA' in dictKey for dictKey in \
-                  res['Value']['Successful'][DESTINATION_PATH + '/Workflow/FolderA']['Files'].keys() ), True )
-    self.assertEqual( any( DESTINATION_PATH + '/Workflow/FolderB/FileB' in dictKey for dictKey in \
-                      res['Value']['Successful'][DESTINATION_PATH + '/Workflow/FolderB']['Files'].keys() ), True )
+    self.assertEqual( any( os.path.join( DESTINATION_PATH, 'Workflow/FolderA/FileA' ) in dictKey for dictKey in \
+                  res['Value']['Successful'][os.path.join( DESTINATION_PATH, 'Workflow/FolderA' )]['Files'].keys() ), True )
+    self.assertEqual( any( os.path.join( DESTINATION_PATH, 'Workflow/FolderB/FileB' ) in dictKey for dictKey in \
+                      res['Value']['Successful'][os.path.join( DESTINATION_PATH , 'Workflow/FolderB' )]['Files'].keys() ), True )
 
 
     ########## createDir #############
@@ -178,7 +186,7 @@ class basicTest( unittest.TestCase ):
     self.assertEqual( any( path in resKey for path in isFile for resKey in res.keys() ), True )
 
     ####### getDirectory ######
-    res = self.tbt.getDirectory( getDir, self.LOCAL_PATH + '/getDir' )
+    res = self.tbt.getDirectory( getDir, os.path.join( self.LOCAL_PATH, 'getDir' ) )
     self.assertEqual( res['OK'], True )
     res = res['Value']
     self.assertEqual( any( getDir[0] in dictKey for dictKey in res['Successful'] ), True )
@@ -204,29 +212,47 @@ class basicTest( unittest.TestCase ):
     self.assertEqual( res['OK'], True )
     self.assertEqual( res['Value']['Successful'][rmdir[0]], False )
 
-class SRM2V2Test( basicTest ):
+@unittest.skipIf( 'GFAL2_SRM2' not in AVAILABLE_PLUGINS,
+                 "StorageElement %s does not have plugin GFAL2_SRM defined" % STORAGE_NAME )
+class GFAL2_SRM2_Test( basicTest ):
 
   def setUp( self ):
     basicTest.setUp( self )
     self.tbt = StorageElement( self.storageName, plugins = 'GFAL2_SRM2' )
     basicTest.clearDirectory( self )
 
-class HTTPTest( basicTest ):
+@unittest.skipIf( 'GFAL2_HTTP' not in AVAILABLE_PLUGINS,
+                   "StorageElement %s does not have plugin GFAL2_HTTP defined" % STORAGE_NAME )
+class GFAL2_HTTP_Test( basicTest ):
 
   def setUp( self ):
     basicTest.setUp( self )
     self.tbt = StorageElement( self.storageName, plugins = 'GFAL2_HTTP' )
     basicTest.clearDirectory( self )
 
-class XROOTTest( basicTest ):
+
+@unittest.skipIf( 'GFAL2_XROOT' not in AVAILABLE_PLUGINS,
+                  "StorageElement %s does not have plugin GFAL2_XROOT defined" % STORAGE_NAME )
+class GFAL2_XROOT_Test( basicTest ):
 
   def setUp( self ):
     basicTest.setUp( self )
     self.tbt = StorageElement( self.storageName, plugins = 'GFAL2_XROOT' )
     basicTest.clearDirectory( self )
 
+@unittest.skipIf( 'XROOT' not in AVAILABLE_PLUGINS,
+                  "StorageElement %s does not have plugin XROOT defined" % STORAGE_NAME )
+class XROOT_Test( basicTest ):
+
+  def setUp( self ):
+    basicTest.setUp( self )
+    self.tbt = StorageElement( self.storageName, plugins = 'XROOT' )
+    basicTest.clearDirectory( self )
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( SRM2V2Test )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( XROOTTest ) )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_SRM2_Test )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_XROOT_Test ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_HTTP_Test ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( XROOT_Test ) )
   unittest.TextTestRunner( verbosity = 2 ).run( suite )
+
