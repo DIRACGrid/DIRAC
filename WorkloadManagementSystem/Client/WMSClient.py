@@ -121,8 +121,16 @@ class WMSClient( object ):
       # If file JDL does not exist, assume that the JDL is passed as a string
       jdlString = jdl
 
-    # Check the validity of the input JDL
     jdlString = jdlString.strip()
+
+    # Strip of comments in the jdl string
+    newJdlList = []
+    for line in jdlString.split('\n'):
+      if not line.strip().startswith( '#' ):
+        newJdlList.append( line )
+    jdlString = '\n'.join( newJdlList )
+
+    # Check the validity of the input JDL
     if jdlString.find( "[" ) != 0:
       jdlString = "[%s]" % jdlString
     classAdJob = ClassAd( jdlString )
