@@ -63,8 +63,8 @@ please install them using the dirac-admin-sysadmin-cli command, and make sure it
 is running.::
 
   install service ResourceStatus ResourceManagement
-  install service ResourceStatusSystem ResourceStatus
-  install service ResourceStatusSystem Publisher
+  install service ResourceStatus ResourceStatus
+  install service ResourceStatus Publisher
 
 In case of any errors, check that you have the information about DataBase 'Host' in the configuration file.
 
