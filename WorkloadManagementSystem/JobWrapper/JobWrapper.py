@@ -60,6 +60,7 @@ class JobWrapper( object ):
     self.initialTiming = os.times()
     self.section = os.path.join( getSystemSection( 'WorkloadManagement/JobWrapper' ), 'JobWrapper' )
     self.log = gLogger
+    self.log.showHeaders( True )
     # Create the accounting report
     self.accountingReport = AccountingJob()
     # Initialize for accounting
@@ -100,6 +101,7 @@ class JobWrapper( object ):
     self.tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
     self.sandboxSizeLimit = gConfig.getValue( self.section + '/OutputSandboxLimit', 1024 * 1024 * 10 )
     self.cleanUpFlag = gConfig.getValue( self.section + '/CleanUpFlag', True )
+    self.boincUserID = gConfig.getValue( '/LocalSite/BoincUserID', 0 )
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
@@ -224,6 +226,8 @@ class JobWrapper( object ):
       parameters.append( ( 'CPUScalingFactor', self.ceArgs['CPUScalingFactor'] ) )
     if 'CPUNormalizationFactor' in self.ceArgs:
       parameters.append( ( 'CPUNormalizationFactor', self.ceArgs['CPUNormalizationFactor'] ) )
+    if self.boincUserID:
+      parameters.append( ( 'BoincUserID', self.boincUserID ) )
 
     parameters.append( ( 'PilotAgent', self.diracVersion ) )
     parameters.append( ( 'JobWrapperPID', self.currentPID ) )
