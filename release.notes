@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [v6r15p3]
 
 *Accounting
@@ -158,6 +159,25 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+=======
+[v6r14p34]
+
+*Configuration
+FIX: Bdii2CSAgent - reinitilize the BDII info cache at each cycle in order not to 
+     carry on obsoleted stuff. Fixes #2959
+
+*Resources
+FIX: Slurm.py - use --partition rather --cluster for passing the DIRAC queue name
+FIX: DIPStorage - fixed bug in putFile preventing third party-like transfer from
+     another DIPS Storage Element. Fixes #2413
+
+*WMS
+CHANGE: JobWrapper - added BOINC user ID to the job parameters
+FIX: pilotCommands - interpret SLURM_JOBID environment if present
+FIX: WMSClient - strip of comments in the job JDL before any processing.
+     Passing jdl with comments to the WMS could provoke errors in the
+     job checking.
+>>>>>>> rel-v6r14
 
 [v6r14p33]
 
