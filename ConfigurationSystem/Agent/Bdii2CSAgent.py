@@ -68,8 +68,6 @@ class Bdii2CSAgent( AgentModule ):
     else:
       self.log.fatal( "VirtualOrganization option not defined for agent" )
       return S_ERROR()
-    self.voBdiiCEDict = {}
-    self.voBdiiSEDict = {}
 
     self.csAPI = CSAPI()
     return self.csAPI.initialize()
@@ -77,7 +75,9 @@ class Bdii2CSAgent( AgentModule ):
   def execute( self ):
     """ General agent execution method
     """
-   
+    self.voBdiiCEDict = {}
+    self.voBdiiSEDict = {}
+
     # Get a "fresh" copy of the CS data
     result = self.csAPI.downloadCSData()
     if not result['OK']:
