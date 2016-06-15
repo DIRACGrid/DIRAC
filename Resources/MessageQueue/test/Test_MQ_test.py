@@ -66,6 +66,9 @@ Resources
 }
 """
 
+MQ_HOST = "mardirac3.in2p3.fr"
+MQ_PORT = 9165
+
 def checkHost( host, port ):
 
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -89,7 +92,7 @@ class MQTestCase( unittest.TestCase ):
     mqCFG.loadFromBuffer( TEST_BAD_CONFIG )
     gConfigurationData.mergeWithLocal( mqCFG )
 
-  @unittest.skipIf( not checkHost( 'mardirac3.in2p3.fr', 9165 ), "Test MQ host is not reachable" )
+  @unittest.skipIf( not checkHost( MQ_HOST, MQ_PORT ), "Test MQ host is not reachable" )
   def test_listener_publisher(self):
     """ Test simple fully predefined queue with a simple listener
     """
@@ -149,7 +152,7 @@ class MQTestCase( unittest.TestCase ):
     self.messageID = headers['message-id']
     return S_OK()
 
-  @unittest.skipIf( not checkHost( 'mardirac3.in2p3.fr', 9165 ), "Test MQ host is not reachable" )
+  @unittest.skipIf( not checkHost( MQ_HOST, MQ_PORT ), "Test MQ host is not reachable" )
   #@unittest.skip
   def test_consumer( self ):
     """ Test listener in a consumer mode
