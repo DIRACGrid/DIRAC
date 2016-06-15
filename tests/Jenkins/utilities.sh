@@ -430,11 +430,11 @@ function prepareForServer(){
 function generateCertificates(){
 	echo '==> [generateCertificates]'
 
-	mkdir -p $SERVERINSTALLDIR/etc/grid-security/certificates
-	cd $SERVERINSTALLDIR/etc/grid-security
+	mkdir -p $DEVROOT/etc/grid-security/certificates
+	cd $DEVROOT/etc/grid-security
 	if [ $? -ne 0 ]
 	then
-		echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/etc/grid-security
+		echo 'ERROR: cannot change to ' $DEVROOT/etc/grid-security
 		return
 	fi
 
@@ -443,7 +443,7 @@ function generateCertificates(){
 
   # Prepare OpenSSL config file, it contains extensions to put into place,
   # DN configuration, etc..
-  cp $CI_CONFIG/openssl_config openssl_config
+  cp $DEVROOT/DIRAC/tests/Jenkins/config/ci/openssl_config openssl_config
   fqdn=`hostname --fqdn`
   sed -i "s/#hostname#/$fqdn/g" openssl_config
 
@@ -477,24 +477,24 @@ function generateUserCredentials(){
     echo '==> [generateUserCredentials]'
 
     # Generate directory where to store credentials
-    mkdir -p $SERVERINSTALLDIR/user
-		cd $SERVERINSTALLDIR/user
+    mkdir -p $DEVROOT/user
+		cd $DEVROOT/user
 		if [ $? -ne 0 ]
 		then
-			echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
+			echo 'ERROR: cannot change to ' $DEVROOT/user
 			return
 		fi
 
-    cp $CI_CONFIG/openssl_config openssl_config .
+    cp $DEVROOT/DIRAC/tests/Jenkins/config/ci/openssl_config openssl_config .
     sed -i 's/#hostname#/ciuser/g' openssl_config
     openssl genrsa -out client.key 1024 2&>1 /dev/null
     openssl req -key client.key -new -out client.req -config openssl_config
     # This is a little hack to make OpenSSL happy...
     echo 00 > file.srl
 
-    CA=$SERVERINSTALLDIR/etc/grid-security/certificates
+    CA=$DEVROOT/etc/grid-security/certificates
 
-    openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out $SERVERINSTALLDIR/user/client.pem
+    openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out $DEVROOT/user/client.pem
 }
 
 
