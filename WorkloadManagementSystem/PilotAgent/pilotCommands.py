@@ -561,17 +561,17 @@ class ConfigureSite( CommandBase ):
       pilotRef = self.pp.pilotReference
 
     # Take the reference from the Torque batch system
-    if os.environ.has_key( 'PBS_JOBID' ):
+    if 'PBS_JOBID' in os.environ:
       self.pp.flavour = 'SSHTorque'
       pilotRef = 'sshtorque://' + self.pp.ceName + '/' + os.environ['PBS_JOBID']
 
     # Take the reference from the OAR batch system
-    if os.environ.has_key( 'OAR_JOBID' ):
+    if 'OAR_JOBID' in os.environ:
       self.pp.flavour = 'SSHOAR'
       pilotRef = 'sshoar://' + self.pp.ceName + '/' + os.environ['OAR_JOBID']
 
     # Grid Engine
-    if os.environ.has_key( 'JOB_ID' ) and os.environ.has_key( 'SGE_TASK_ID' ):
+    if 'JOB_ID' in os.environ and 'SGE_TASK_ID' in os.environ:
       self.pp.flavour = 'SSHGE'
       pilotRef = 'sshge://' + self.pp.ceName + '/' + os.environ['JOB_ID']
     # Generic JOB_ID
@@ -580,37 +580,42 @@ class ConfigureSite( CommandBase ):
       pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
 
     # Condor
-    if os.environ.has_key( 'CONDOR_JOBID' ):
+    if 'CONDOR_JOBID' in os.environ:
       self.pp.flavour = 'SSHCondor'
       pilotRef = 'sshcondor://' + self.pp.ceName + '/' + os.environ['CONDOR_JOBID']
 
     # HTCondor
-    if os.environ.has_key( 'HTCONDOR_JOBID' ):
+    if 'HTCONDOR_JOBID' in os.environ:
       self.pp.flavour = 'HTCondorCE'
       pilotRef = 'htcondorce://' + self.pp.ceName + '/' + os.environ['HTCONDOR_JOBID']
 
     # LSF
-    if os.environ.has_key( 'LSB_BATCH_JID' ):
+    if 'LSB_BATCH_JID' in os.environ:
       self.pp.flavour = 'SSHLSF'
       pilotRef = 'sshlsf://' + self.pp.ceName + '/' + os.environ['LSB_BATCH_JID']
 
+    #  SLURM batch system
+    if 'SLURM_JOBID' in os.environ:
+      self.pp.flavour = 'SSHSLURM'
+      pilotRef = 'sshslurm://' + self.pp.ceName + '/' + os.environ['SLURM_JOBID']
+      
     # This is the CREAM direct submission case
-    if os.environ.has_key( 'CREAM_JOBID' ):
+    if 'CREAM_JOBID' in os.environ:
       self.pp.flavour = 'CREAM'
       pilotRef = os.environ['CREAM_JOBID']
 
     # If we still have the GLITE_WMS_JOBID, it means that the submission
     # was through the WMS, take this reference then
-    if os.environ.has_key( 'EDG_WL_JOBID' ):
+    if 'EDG_WL_JOBID' in os.environ:
       self.pp.flavour = 'LCG'
       pilotRef = os.environ['EDG_WL_JOBID']
 
-    if os.environ.has_key( 'GLITE_WMS_JOBID' ):
+    if 'GLITE_WMS_JOBID' in os.environ:
       if os.environ['GLITE_WMS_JOBID'] != 'N/A':
         self.pp.flavour = 'gLite'
         pilotRef = os.environ['GLITE_WMS_JOBID']
 
-    if os.environ.has_key( 'OSG_WN_TMP' ):
+    if 'OSG_WN_TMP' in os.environ:
       self.pp.flavour = 'OSG'
 
     # GLOBUS Computing Elements
@@ -619,12 +624,12 @@ class ConfigureSite( CommandBase ):
       pilotRef = os.environ['GLOBUS_GRAM_JOB_CONTACT']
 
     # Direct SSH tunnel submission
-    if os.environ.has_key( 'SSHCE_JOBID' ):
+    if 'SSHCE_JOBID' in os.environ:
       self.pp.flavour = 'SSH'
       pilotRef = 'ssh://' + self.pp.ceName + '/' + os.environ['SSHCE_JOBID']
 
     # ARC case
-    if os.environ.has_key( 'GRID_GLOBAL_JOBID' ):
+    if 'GRID_GLOBAL_JOBID' in os.environ:
       self.pp.flavour = 'ARC'
       pilotRef = os.environ['GRID_GLOBAL_JOBID']
 
@@ -634,18 +639,18 @@ class ConfigureSite( CommandBase ):
       pilotRef = 'vm://' + self.pp.ceName + '/' + os.environ['JOB_ID']
 
     # This is for BOINC case
-    if os.environ.has_key( 'BOINC_JOB_ID' ):
+    if 'BOINC_JOB_ID' in os.environ:
       self.pp.flavour = 'BOINC'
       pilotRef = os.environ['BOINC_JOB_ID']
 
     if self.pp.flavour == 'BOINC':
-      if os.environ.has_key( 'BOINC_USER_ID' ):
+      if 'BOINC_USER_ID' in os.environ:
         self.boincUserID = os.environ['BOINC_USER_ID']
-      if os.environ.has_key( 'BOINC_HOST_ID' ):
+      if 'BOINC_HOST_ID' in os.environ:
         self.boincHostID = os.environ['BOINC_HOST_ID']
-      if os.environ.has_key( 'BOINC_HOST_PLATFORM' ):
+      if 'BOINC_HOST_PLATFORM' in os.environ:
         self.boincHostPlatform = os.environ['BOINC_HOST_PLATFORM']
-      if os.environ.has_key( 'BOINC_HOST_NAME' ):
+      if 'BOINC_HOST_NAME' in os.environ:
         self.boincHostName = os.environ['BOINC_HOST_NAME']
 
     self.log.debug( "Flavour: %s; pilot reference: %s " % ( self.pp.flavour, pilotRef ) )
@@ -661,7 +666,7 @@ class ConfigureSite( CommandBase ):
                                                   self.pp.installEnv )
       if retCode:
         self.log.warn( "Could not get CE name with 'glite-brokerinfo getCE' command [ERROR %d]" % retCode )
-        if os.environ.has_key( 'OSG_JOB_CONTACT' ):
+        if 'OSG_JOB_CONTACT' in os.environ:
           # OSG_JOB_CONTACT String specifying the endpoint to use within the job submission
           #                 for reaching the site (e.g. manager.mycluster.edu/jobmanager-pbs )
           CE = os.environ['OSG_JOB_CONTACT']
@@ -682,7 +687,7 @@ class ConfigureSite( CommandBase ):
       # configureOpts.append( '-N "%s"' % cliParams.ceName )
 
     elif self.pp.flavour == "CREAM":
-      if os.environ.has_key( 'CE_ID' ):
+      if 'CE_ID' in os.environ:
         self.log.debug( "Found CE %s" % os.environ['CE_ID'] )
         self.pp.ceName = os.environ['CE_ID'].split( ':' )[0]
         if os.environ['CE_ID'].count( "/" ):
