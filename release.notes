@@ -1,3 +1,17 @@
+[v6r15p3]
+
+Included changes from v6r14p34 patch release
+
+*Accounting
+FIX: DataStoreClient - catch all exceptions in sending failover accounting 
+     requests as it could disrupt the logic of the caller 
+
+*DMS
+CHANGE: dirac-dms-show-se-status - added switches to show SEs only accessible by
+        a given VO and SEs not assigned to any VO
+FIX: dirac-dms-replicate-and-register-request - prints out the new request IDs
+     to allow their monitoring by ID rather than possibly ambiguous request name      
+
 [v6r15p2]
 
 *WMS
@@ -148,6 +162,24 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p34]
+
+*Configuration
+FIX: Bdii2CSAgent - reinitilize the BDII info cache at each cycle in order not to 
+     carry on obsoleted stuff. Fixes #2959
+
+*Resources
+FIX: Slurm.py - use --partition rather --cluster for passing the DIRAC queue name
+FIX: DIPStorage - fixed bug in putFile preventing third party-like transfer from
+     another DIPS Storage Element. Fixes #2413
+
+*WMS
+CHANGE: JobWrapper - added BOINC user ID to the job parameters
+FIX: pilotCommands - interpret SLURM_JOBID environment if present
+FIX: WMSClient - strip of comments in the job JDL before any processing.
+     Passing jdl with comments to the WMS could provoke errors in the
+     job checking.
 
 [v6r14p33]
 
