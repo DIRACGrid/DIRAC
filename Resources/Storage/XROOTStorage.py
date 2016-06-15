@@ -22,8 +22,8 @@ class XROOTStorage( StorageBase ):
 
   Xroot interface to StorageElement using pyxrootd
   """
-  _InputProtocols = ['file', 'root']
-  _OutputProtocols = ['root']
+  _INPUT_PROTOCOLS = ['file', 'root']
+  _OUTPUT_PROTOCOLS = ['root']
 
   DYNAMIC_OPTIONS = {'SpaceToken' : 'svcClass'}
 
