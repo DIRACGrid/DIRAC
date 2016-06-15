@@ -10,8 +10,7 @@ from DIRAC.Core.Utilities.DErrno import EMQUKN
 __RCSID__ = "$Id$"
 
 class MQConnectionError( Exception ):
-    def __init__(self,*args,**kwargs):
-        Exception.__init__(self,*args,**kwargs)
+  pass
 
 class MQConnection( object ):
   """
@@ -52,7 +51,7 @@ class MQConnection( object ):
 
     return S_OK( 'Queue parameters set successfully' )
 
-  def setupConnection( self, parameters = {}, receive = False, messageCallback = None ):
+  def setupConnection( self, parameters = None, receive = False, messageCallback = None ):
     """
     Establishes a new non-blocking connection to the message queue
 
@@ -64,7 +63,7 @@ class MQConnection( object ):
     """
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def run( self, parameters = {}, receive = True, messageCallback = None ):
+  def run( self, parameters = None, receive = True, messageCallback = None ):
     """
     Establishes a new blocking connection to the message queue
 
