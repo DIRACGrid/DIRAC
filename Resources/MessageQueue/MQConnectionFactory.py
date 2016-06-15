@@ -3,6 +3,7 @@
 from DIRAC                 import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities  import ObjectLoader
 from DIRAC.Resources.MessageQueue.Utilities import getMQueue
+from DIRAC.Core.Utilities.DErrno import EMQUKN
 
 __RCSID__ = "$Id$"
 
@@ -16,7 +17,7 @@ class MQConnectionFactory( object ):
     self.log = gLogger.getSubLogger( self.mqType )
 
   #############################################################################
-  def __getMQConnection( self, queueName = None, parameters = {} ):
+  def __getMQConnection( self, queueName = None, parameters = None ):
     """ This method returns the MQConnection instance corresponding to the parameters and queue
 
        :param str queueName: name of the queue. Can be provided as just queueName or <MQServer>::<queueName>
@@ -31,14 +32,14 @@ class MQConnectionFactory( object ):
       if not result['OK']:
         return result
       queueParameters = result['Value']
-    if parameters:
+    if parameters is not None:
       queueParameters.update( parameters )
 
     mqType = queueParameters.get( 'MQType' )
     if not mqType:
       mqType = self.mqType
     if not mqType:
-      return S_ERROR( 'No MQType specified' )
+      return S_ERROR( EMQUKN, 'No MQType specified' )
 
     subClassName = mqType + 'MQConnection'
     objectLoader = ObjectLoader.ObjectLoader()
@@ -54,15 +55,15 @@ class MQConnectionFactory( object ):
       if not result['OK']:
         return result
 
-    except Exception as x:
-      msg = 'MQConnectionFactory could not instantiate %s object: %s' % ( subClassName, str( x ) )
-      self.log.exception()
+    except Exception as exc:
+      msg = 'MQConnectionFactory could not instantiate %s object: %s' % ( subClassName, str( exc ) )
+      self.log.exception( 'Could not instantiate MQConnection object', IException = exc )
       self.log.warn( msg )
       return S_ERROR( msg )
 
     return S_OK( mqConnection )
 
-  def getMQListener( self, queueName = None, parameters = {} ):
+  def getMQListener( self, queueName = None, parameters = None ):
     """ Get a MQConnection object in a Listener mode without connection
         initialized
 
@@ -78,7 +79,7 @@ class MQConnectionFactory( object ):
     mqConnection = result['Value']
     return S_OK( mqConnection )
 
-  def getMQPublisher( self, queueName = None, parameters = {} ):
+  def getMQPublisher( self, queueName = None, parameters = None ):
     """ Get a MQConnection object in a Publisher mode
 
     :param str queueName: queueName
