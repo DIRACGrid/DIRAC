@@ -22,8 +22,8 @@ class XROOTStorage( StorageBase ):
 
   Xroot interface to StorageElement using pyxrootd
   """
-  _InputProtocols = ['file', 'root']
-  _OutputProtocols = ['root']
+  _INPUT_PROTOCOLS = ['file', 'root']
+  _OUTPUT_PROTOCOLS = ['root']
 
   def __init__( self, storageName, parameters ):
     """ c'tor

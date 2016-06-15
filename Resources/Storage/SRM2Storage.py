@@ -31,8 +31,8 @@ class SRM2Storage( StorageBase ):
   SRM v2 interface to StorageElement using lcg_util and gfal
   """
 
-  _InputProtocols = ['file', 'srm']
-  _OutputProtocols = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm']
+  _INPUT_PROTOCOLS = ['file', 'srm']
+  _OUTPUT_PROTOCOLS = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm']
 
   def __init__( self, storageName, parameters ):
     """ c'tor

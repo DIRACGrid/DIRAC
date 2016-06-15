@@ -53,17 +53,17 @@ class StorageBase( object ):
 
     self.__updateParameters( parameterDict )
 
-    for protocolType in ['InputProtocols', 'OutputProtocols']:
-      if hasattr( self, '_%s' % protocolType ):
-        self.protocolParameters[protocolType] = getattr( self, '_%s' % protocolType )
-      else:
-        self.protocolParameters[protocolType] = [ self.protocolParameters['Protocol']]
-        if protocolType == 'InputProtocols':
-          self.protocolParameters[protocolType].append( 'file' )
 
+    if hasattr( self, '_INPUT_PROTOCOLS' ):
+      self.protocolParameters['InputProtocols'] = getattr( self, '_INPUT_PROTOCOLS' )
+    else:
+      self.protocolParameters['InputProtocols'] = [ self.protocolParameters['Protocol'], 'file']
 
-    
-    
+    if hasattr( self, '_OUTPUT_PROTOCOLS' ):
+      self.protocolParameters['OutputProtocols'] = getattr( self, '_OUTPUT_PROTOCOLS' )
+    else:
+      self.protocolParameters['OutputProtocols'] = [ self.protocolParameters['Protocol']]
+
     self.basePath = parameterDict['Path']
     self.cwd = self.basePath
     self.se = None
@@ -386,8 +386,8 @@ class StorageBase( object ):
 
     return commonMetadata
 
-  
-  def _isInputURL(self, url):
+
+  def _isInputURL( self, url ):
     """ Check if the given url can be taken as input
 
     :param self: self reference
@@ -400,8 +400,8 @@ class StorageBase( object ):
 
     # Special case of 'file' protocol which can be just a URL
     if not urlDict['Protocol'] and 'file' in self.protocolParameters['InputProtocols']:
-      return S_OK(True)
-    
+      return S_OK( True )
+
     return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
-  
+
 

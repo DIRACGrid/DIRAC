@@ -20,8 +20,8 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
   """
   
 
-  _InputProtocols = ['file', 'root']
-  _OutputProtocols = ['root']
+  _INPUT_PROTOCOLS = ['file', 'root']
+  _OUTPUT_PROTOCOLS = ['root']
 
 
 
