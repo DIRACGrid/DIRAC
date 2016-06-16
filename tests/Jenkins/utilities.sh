@@ -7,7 +7,6 @@ then
 	if [ -z $DEVROOT ]
 	then
 		echo 'Environmental variable "DEVROOT" is not set.'
-		read -rsp $'Script will now exit. Press any key to continue...\n' -n1 key
 		exit 1
 	else
 		SERVERINSTALLDIR=$DEVROOT
