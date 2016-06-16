@@ -44,6 +44,10 @@ class StorageBase( object ):
   """
 
   PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ]
+  # Options to be prepended in the URL
+  # keys are the name of the parameters in the CS
+  # values are the name of the options as they appear in the URL
+  DYNAMIC_OPTIONS = {}
 
   def __init__( self, name, parameterDict ):
 
@@ -320,12 +324,15 @@ class StorageBase( object ):
 
       return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
 
-    result = self.getURLBase( withWSUrl = withWSUrl )
-    if not result['OK']:
-      return result
-    urlBase = result['Value']
-    url = os.path.join( urlBase, lfn.lstrip( '/' ) )
-    return S_OK( url )
+    urlDict = dict( self.protocolParameters )
+    urlDict['Options'] = '&'.join( "%s=%s" % ( optionName, urlDict[paramName] )
+                                   for paramName, optionName in self.DYNAMIC_OPTIONS.iteritems()
+                                    if urlDict.get( paramName ) )
+    if not withWSUrl:
+      urlDict['WSUrl'] = ''
+    urlDict['FileName'] = lfn.lstrip( '/' )
+
+    return pfnunparse( urlDict, srmSpecific = self.srmSpecificParse )
 
   def updateURL( self, url, withWSUrl = False ):
     """ Update the URL according to the current SE parameters

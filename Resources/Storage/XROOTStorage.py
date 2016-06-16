@@ -23,6 +23,8 @@ class XROOTStorage( StorageBase ):
   Xroot interface to StorageElement using pyxrootd
   """
 
+  DYNAMIC_OPTIONS = {'SpaceToken' : 'svcClass'}
+
   def __init__( self, storageName, parameters ):
     """ c'tor
 
@@ -1637,51 +1639,30 @@ class XROOTStorage( StorageBase ):
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
+
+  def __addDoubleSlash( self, res ):
+    """ Utilities to add the double slash between the host(:port) and the path
+        :param res: DIRAC return structure which contains an URL if S_OK
+        :return: DIRAC structure with corrected URL
+    """
+    if not res['OK']:
+      return res
+    url = res['Value']
+    res = pfnparse( url, srmSpecific = self.srmSpecificParse )
+    if not res['OK']:
+      return res
+    urlDict = res['Value']
+    urlDict['Path'] = '/' + urlDict['Path']
+    return pfnunparse( urlDict, srmSpecific = self.srmSpecificParse )
+
   def getURLBase( self, withWSUrl = False ):
-    """ This will get the URL base. This is then appended with the LFN in DIRAC convention.
-
-    :param self: self reference
-    :param bool withWSUrl: flag to include Web Service part of the url
-    :returns: URL
-    """
-    urlDict = dict( self.protocolParameters )
-    if not withWSUrl:
-      urlDict['WSUrl'] = ''
-    if self.protocolParameters.get( 'Port', None ):
-      url = "%(Protocol)s://%(Host)s:%(Port)s/%(Path)s" % urlDict
-    else:
-      url = "%(Protocol)s://%(Host)s/%(Path)s" % urlDict
-    return S_OK(url)
-
-  def getCurrentURL( self, fileName ):
-    """ Obtain the current file URL from the current working directory and the filename
-
-    :param self: self reference
-    :param str fileName: path on storage
-    """
-    urlDict = dict( self.protocolParameters )
-    if not fileName.startswith( '/' ):
-      # Relative path is given
-      urlDict['Path'] = self.cwd
-    result = self.getURLBase( urlDict )
-    if not result['OK']:
-      return result
-    cwdUrl = result['Value']
-    fullUrl = '%s/%s' % ( cwdUrl, fileName )
-    return S_OK( fullUrl )
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash( super( XROOTStorage, self ).getURLBase( withWSUrl = withWSUrl ) )
 
   def constructURLFromLFN( self, lfn, withWSUrl = False ):
-    """ Calls :function:`StorageBase.constructURLFromLFN` and appends the svcClass addition to the URL
-    if spaceToken is set for this SE
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash( super( XROOTStorage, self ).constructURLFromLFN( lfn = lfn, withWSUrl = withWSUrl ) )
 
-    :param str lfn: file LFN
-    :param boolean withWSUrl: flag to include the web service part into the resulting URL
-    :return: result['Value'] - resulting URL
-    """
-    result = super( XROOTStorage, self ).constructURLFromLFN( lfn = lfn, withWSUrl = withWSUrl )
-    if not result['OK']:
-      return result
-    url = result['Value']
-    if self.protocolParameters.get('SpaceToken', None):
-      url += "?svcClass=%(SpaceToken)s" % self.protocolParameters
-    return S_OK( url )
+  def getCurrentURL( self, fileName ):
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash( super( XROOTStorage, self ).getCurrentURL( fileName ) )

@@ -7,10 +7,9 @@
 
 
 # from DIRAC
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
-
-
+from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
 class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
@@ -21,6 +20,7 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
 
   PROTOCOL_PARAMETERS = GFAL2_StorageBase.PROTOCOL_PARAMETERS + ['SvcClass']
+  DYNAMIC_OPTIONS = { 'SvcClass' : 'svcClass'}
 
   def __init__( self, storageName, parameters ):
     """ c'tor
@@ -34,6 +34,7 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     :param str spaceToken: space token
     :param str wspath: location of SRM on :host:
     """
+
     # # init base class
     super( GFAL2_XROOTStorage, self ).__init__( storageName, parameters )
     self.srmSpecificParse = False
@@ -46,40 +47,37 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     self.protocolParameters['WSUrl'] = 0
     self.protocolParameters['SpaceToken'] = 0
 
+
+
     # We don't need extended attributes for metadata
     self._defaultExtendedAttributes = None
 
 
-
-  def getURLBase( self, withWSUrl = False ):
-    """ This will get the URL base. This is then appended with the LFN in DIRAC convention.
-
-    :param self: self reference
-    :param bool withWSUrl: flag to include Web Service part of the url
-    :returns: URL
+  def __addDoubleSlash( self, res ):
+    """ Utilities to add the double slash between the host(:port) and the path
+        :param res: DIRAC return structure which contains an URL if S_OK
+        :return: DIRAC structure with corrected URL
     """
-    urlDict = dict( self.protocolParameters )
-    if not withWSUrl:
-      urlDict['WSUrl'] = ''
-    if self.protocolParameters.get( 'Port', None ):
-      url = "%(Protocol)s://%(Host)s:%(Port)s/%(Path)s" % urlDict
-    else:
-      url = "%(Protocol)s://%(Host)s/%(Path)s" % urlDict
-    return S_OK( url )
-
-  def constructURLFromLFN( self, lfn, withWSUrl = False ):
-    """ Extend the method defined in the base class to add the Service Class if defined
-    """
-
-    res = super( GFAL2_XROOTStorage, self ).constructURLFromLFN( lfn, withWSUrl = withWSUrl )
     if not res['OK']:
       return res
     url = res['Value']
-    svcClass = self.protocolParameters['SvcClass']
-    if svcClass:
-      url += '?svcClass=%s' % svcClass
+    res = pfnparse( url, srmSpecific = self.srmSpecificParse )
+    if not res['OK']:
+      return res
+    urlDict = res['Value']
+    urlDict['Path'] = '/' + urlDict['Path']
+    return pfnunparse( urlDict, srmSpecific = self.srmSpecificParse )
 
-    return S_OK( url )
+  def getURLBase( self, withWSUrl = False ):
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash( super( GFAL2_XROOTStorage, self ).getURLBase( withWSUrl = withWSUrl ) )
 
+  def constructURLFromLFN( self, lfn, withWSUrl = False ):
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash( super( GFAL2_XROOTStorage, self ).constructURLFromLFN( lfn = lfn, withWSUrl = withWSUrl ) )
+
+  def getCurrentURL( self, fileName ):
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash( super( GFAL2_XROOTStorage, self ).getCurrentURL( fileName ) )
 
 

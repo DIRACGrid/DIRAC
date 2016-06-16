@@ -249,6 +249,10 @@ class XROOT_Test( basicTest ):
     self.tbt = StorageElement( self.storageName, plugins = 'XROOT' )
     basicTest.clearDirectory( self )
 
+
+
+
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_SRM2_Test )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_XROOT_Test ) )
