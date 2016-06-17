@@ -20,7 +20,7 @@ class FileCatalogClient( FileCatalogClientBase ):
                  [ 'isFile', 'getFileMetadata',
                    'getReplicas', 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                    'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                   'getLFNForPFN', 'getLFNForGUID', 'findFilesByMetadata','getMetadataFields','getDirectoryUserMetadata',
+                   'getLFNForPFN', 'getLFNForGUID', 'findFilesByMetadata','getMetadataFields',
                    'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
                    'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet', 'getDatasets',
                    'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
@@ -35,7 +35,7 @@ class FileCatalogClient( FileCatalogClientBase ):
   NO_LFN_METHODS = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
                     'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
                     'getReplicasByMetadata','findFilesByMetadataDetailed','findFilesByMetadataWeb',
-                    'getCompatibleMetadata','addMetadataSet','getMetadataSet']
+                    'getCompatibleMetadata','addMetadataSet','getMetadataSet','getFileUserMetadata']
 
   ADMIN_METHODS = [ 'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'getUsers', 'getGroups',
                     'getCatalogCounters', 'repairCatalog', 'rebuildDirectoryUsage' ]
@@ -227,7 +227,6 @@ class FileCatalogClient( FileCatalogClientBase ):
     else:
       return S_ERROR( 'Illegal return value type %s' % type( result['Value'] ) )
 
-  @checkCatalogArguments
   def getFileUserMetadata( self, path, timeout = 120 ):
     """Get the meta data attached to a file, but also to
     the its corresponding directory
