@@ -279,8 +279,10 @@ class VOMS( BaseSecurity ):
     status, output, error = result['Value']
 
     if status:
-      self._unlinkFiles( newProxyLocation )
-      return S_ERROR( DErrno.EVOMS, 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % ( cmd, output, error ) )
+      # This warning is not avoiding of having an AC:
+      if not error.find("The validity of this VOMS AC in your proxy is shortened"):
+        self._unlinkFiles( newProxyLocation )
+        return S_ERROR( 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % ( cmd, output, error ) )
 
     newChain = X509Chain()
     retVal = newChain.loadProxyFromFile( newProxyLocation )
