@@ -57,7 +57,7 @@ class VOMS2CSAgent( AgentModule ):
 
       self.log.info( 'Performing VOMS sync for VO %s with credentials %s@%s' % ( vo, voAdminUser, voAdminGroup ) )
 
-      result = self.__syncCSWithVOMS( vo, proxyUserName = voAdminUser, proxyUserGroup = voAdminGroup ) #pylint: disable=unexpected-keyword-arg
+      result = self.__syncCSWithVOMS( vo, voAdminUser, voAdminGroup )  
       if not result['OK']:
         self.log.error( 'Failed to perform VOMS to CS synchronization:', 'VO %s: %s' % ( vo, result["Message"] ) )
         continue
@@ -81,7 +81,7 @@ class VOMS2CSAgent( AgentModule ):
     return S_OK()
 
   @executeWithUserProxy
-  def __syncCSWithVOMS( self, vo ):
+  def __syncCSWithVOMS( self, vo, proxyUserName, proxyUserGroup ):
     self.__adminMsgs = { 'Errors' : [], 'Info' : [] }
 
     # Get DIRAC group vs VOMS Role Mappings
