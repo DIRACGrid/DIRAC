@@ -583,23 +583,22 @@ class GFAL2_StorageBase( StorageBase ):
     log = self.log.getSubLogger( "GFAL2_StorageBase.__getSingleFileSize" )
     log.debug( "Determining file size of %s" % path )
 
-    res = self.__isSingleFile( path )
-    if not res['OK']:
-      return res
 
-    if not res['Value']:
-      errStr = "Path is not a file"
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
-    else:  # if this is true, path is a file
-      try:
-        statInfo = self.gfal2.stat( path )  # keeps info like size, mode.
-        self.log.debug( "File size successfully determined" )
-        return S_OK( long ( statInfo.st_size ) )
-      except gfal2.GError as e:
-        errStr = "Failed to determine file size."
-        self.log.error( errStr, repr( e ) )
-        return S_ERROR( e.code, "%s: %s" % ( errStr, repr( e ) ) )
+    try:
+      statInfo = self.gfal2.stat( path )  # keeps info like size, mode.
+
+      # If it is not a file
+      if not S_ISREG( statInfo.st_mode ):
+        errStr = "Path is not a file"
+        self.log.debug( errStr )
+        return S_ERROR( errno.EISDIR, errStr )
+
+      self.log.debug( "File size successfully determined %s" % statInfo.st_size )
+      return S_OK( long ( statInfo.st_size ) )
+    except gfal2.GError as e:
+      errStr = "Failed to determine file size."
+      self.log.error( errStr, repr( e ) )
+      return S_ERROR( e.code, "%s: %s" % ( errStr, repr( e ) ) )
 
 
 
