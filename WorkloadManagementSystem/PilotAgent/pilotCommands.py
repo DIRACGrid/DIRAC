@@ -561,7 +561,7 @@ class ConfigureSite( CommandBase ):
     # Take the reference from the Torque batch system
     if 'PBS_JOBID' in os.environ:
       self.pp.flavour = 'SSHTorque'
-      pilotRef = 'sshtorque://' + self.pp.ceName + '/' + os.environ['PBS_JOBID']
+      pilotRef = 'sshtorque://' + self.pp.ceName + '/' + os.environ['PBS_JOBID'].split('.')[0]
 
     # Take the reference from the OAR batch system
     if 'OAR_JOBID' in os.environ:

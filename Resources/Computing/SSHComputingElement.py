@@ -602,13 +602,6 @@ class SSHComputingElement( ComputingElement ):
     if 'OutputTemplate' in self.ceParameters:
       self.outputTemplate = self.ceParameters['OutputTemplate']
       self.errorTemplate = self.ceParameters['ErrorTemplate']
-
-    if self.batchSystem == 'Torque':
-      output = self.outputTemplate % jobStamp.split('.')[0]
-      error = self.errorTemplate % jobStamp.split('.')[0]
-    else:
-      output = self.outputTemplate % jobStamp
-      error = self.errorTemplate % jobStamp
       
     if self.outputTemplate:
       output = self.outputTemplate % jobStamp
