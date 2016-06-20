@@ -42,6 +42,19 @@ class FileStorage( StorageBase ):
   def getURLBase( self, withWSUrl = False ):
     return S_OK( self.basePath )
 
+  def constructURLFromLFN( self, lfn, withWSUrl = False ):
+    """ The URL of this file protocol is very special:
+       it has no protocol in front, etc. So we overwrite
+       the method
+    """
+
+    result = self.getURLBase( withWSUrl = withWSUrl )
+    if not result['OK']:
+      return result
+    urlBase = result['Value']
+    url = os.path.join( urlBase, lfn.lstrip( '/' ) )
+    return S_OK( url )
+
   def exists( self, path ):
     """Check if the given path exists.
 

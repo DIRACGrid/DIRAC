@@ -1,6 +1,14 @@
 """
 This integration tests will perform basic operations on a storage element, depending on which protocols are available.
 It creates a local hierarchy, and then tries to upload, download, remove, get metadata etc
+
+Note: it might seem a good idea to simply add tests for the old srm in it. It is not :-)
+      There is a deadlock between gfal and gfal2 libraries, you can't load both of them together
+
+Examples:
+<python Test_Resources_GFAL2StorageBase.py CERN-GFAL2>: will test all the gfal2 plugins defined for CERN-GFAL2
+<python Test_Resources_GFAL2StorageBase.py CERN-GFAL2 GFAL2_XROOT>: will test the GFAL2_XROOT plugins defined for CERN-GFAL2
+
 """
 
 
