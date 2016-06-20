@@ -145,10 +145,18 @@ def initSites():
 
   for site, elements in sites['Value'].iteritems():
     table  = { 'table': 'SiteStatus' }
-    insert = { 'Status': elements[0], 'Reason': 'Synchronized', 'Name': site, 'DateEffective': elements[1], 'TokenExpiration': Datetime,
-             'ElementType': 'Site', 'StatusType': 'all', 'LastCheckTime': None, 'TokenOwner': elements[2] }
+    parameters = { 'status': elements[0],
+                   'reason': 'Synchronized',
+                   'name': site,
+                   'dateEffective': elements[1],
+                   'tokenExpiration': Datetime,
+                   'elementType': 'Site',
+                   'statusType': 'all',
+                   'lastCheckTime': None,
+                   'tokenOwner': elements[2],
+                   'meta': table }
 
-    result = rssClient.addIfNotThereStatusElement( insert, table )
+    result = rssClient.addIfNotThereStatusElement( "Site", "Status", **parameters )
 
     if not result[ 'OK' ]:
       subLogger.error( result[ 'Message' ] )
