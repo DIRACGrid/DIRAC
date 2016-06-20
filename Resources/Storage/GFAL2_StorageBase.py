@@ -1107,7 +1107,7 @@ class GFAL2_StorageBase( StorageBase ):
     log = self.log.getSubLogger( "GFAL2_StorageBase.__createSingleDirectory" )
     try:
       log.debug( "Creating %s" % path )
-      status = self.gfal2.mkdir( path, 755 )
+      status = self.gfal2.mkdir_rec( path, 755 )
       if status >= 0:
         log.debug( 'Successfully created directory' )
         return S_OK()
