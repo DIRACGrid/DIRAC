@@ -658,14 +658,14 @@ class SSHComputingElement( ComputingElement ):
     result = ssh.scpCall( 30, localOutputFile, outputFile, upload = False )
     if not result['OK']:
       return result
-    output = result['Value']
+    output = result['Value'][1]
     if localDir:
       output = localOutputFile
 
     result = ssh.scpCall( 30, localErrorFile, errorFile, upload = False )
     if not result['OK']:
       return result
-    error = result['Value']
+    error = result['Value'][1]
     if localDir:
       error = localErrorFile
 

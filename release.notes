@@ -1,5 +1,7 @@
 [v6r15p4]
 
+Included fixes from v6r14p35 patch release
+
 *Core
 NEW: Added a new way of doing pfnparse and pfnunparse using the standard python library. 
      The two methods now contains a flag to know which method to use. By default, the old 
@@ -179,6 +181,28 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p35]
+
+*Core
+FIX: SOAPFactory - fixes for import statements of suds module to work with the
+     suds-jurko package that replaces the suds package
+
+*Resources
+FIX: BatchSystems.Torque - take into account that in some cases jobID includes
+     a host name that should be stripped off
+FIX: SSHComputingElement - in _getJobOutputFiles() fixed bug where the output
+     of scpCall() call was wrongly interpreted    
+FIX: ProxyStorage - evaluate the service url as simple /DataManagement/StorageElementProxy
+     to solve the problem with redundant StorageElementProxy services with multiple
+     possible urls       
+     
+*RSS
+CHANGE: Configurations.py - Added DTScheduled3 policy (3 hours before downtime)     
+     
+*WMS
+FIX: pilotCommands - take into account that in the case of Torque batch system
+     jobID includes a host name that should be stripped off   
+       
 [v6r14p34]
 
 *Configuration
