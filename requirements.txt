@@ -14,7 +14,7 @@ simplejson>=3.8.1
 six
 sqlalchemy>=1.0.9
 stomp.py>=3.1.5
-suds>=0.4
+suds-jurko>=0.6
 mock>=1.0.1
 pylint>=1.4.4
 pytest>=2.8.5

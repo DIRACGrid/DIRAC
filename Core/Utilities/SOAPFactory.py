@@ -2,6 +2,8 @@
 __RCSID__ = "$Id$"
 
 import suds
+import suds.client
+import suds.transport
 import urllib2
 from DIRAC.Core.DISET.HTTPDISETConnection import HTTPDISETConnection
 
