@@ -575,7 +575,7 @@ class ConfigureSite( CommandBase ):
       self.pp.flavour = 'SSHGE'
       pilotRef = 'sshge://' + self.pp.ceName + '/' + os.environ['JOB_ID']
     # Generic JOB_ID
-    elif os.environ.has_key( 'JOB_ID' ):
+    elif 'JOB_ID' in os.environ:
       self.pp.flavour = 'Generic'
       pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
 
@@ -598,7 +598,7 @@ class ConfigureSite( CommandBase ):
     if 'SLURM_JOBID' in os.environ:
       self.pp.flavour = 'SSHSLURM'
       pilotRef = 'sshslurm://' + self.pp.ceName + '/' + os.environ['SLURM_JOBID']
-      
+
     # This is the CREAM direct submission case
     if 'CREAM_JOBID' in os.environ:
       self.pp.flavour = 'CREAM'
@@ -634,7 +634,7 @@ class ConfigureSite( CommandBase ):
       pilotRef = os.environ['GRID_GLOBAL_JOBID']
 
     # VMDIRAC case
-    if os.environ.has_key( 'VMDIRAC_VERSION' ):
+    if 'VMDIRAC_VERSION' in os.environ:
       self.pp.flavour = 'VMDIRAC'
       pilotRef = 'vm://' + self.pp.ceName + '/' + os.environ['JOB_ID']
 
