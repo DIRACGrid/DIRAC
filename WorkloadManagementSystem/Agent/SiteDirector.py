@@ -608,7 +608,6 @@ class SiteDirector( AgentModule ):
                                                       self.pilotGroup,
                                                       self.localhost,
                                                       ceType,
-                                                      '',
                                                       stampDict )
           if not result['OK']:
             self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
