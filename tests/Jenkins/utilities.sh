@@ -2,8 +2,28 @@
 # General utility functions
 ############################################
 
-# Path to ci config files
-CI_CONFIG=$TESTCODE/DIRAC/tests/Jenkins/config/ci
+if [ -z $SERVERINSTALLDIR ]
+then
+	if [ -z $DEVROOT ]
+	then
+		echo 'Environmental variable "DEVROOT" is not set.'
+		exit 1
+	else
+		SERVERINSTALLDIR=$DEVROOT
+	fi
+fi
+
+if [ $DEVROOT ]
+then
+	# Path to ci config files
+	CI_CONFIG=$DEVROOT/DIRAC/tests/Jenkins/config/ci
+fi
+
+if [ $TESTCODE ]
+then
+	# Path to ci config files
+	CI_CONFIG=$TESTCODE/DIRAC/tests/Jenkins/config/ci
+fi
 
 # default: this function fixes some default values
 

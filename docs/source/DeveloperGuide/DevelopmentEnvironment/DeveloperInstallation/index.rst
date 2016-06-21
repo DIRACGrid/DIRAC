@@ -315,7 +315,7 @@ certificate DNs for you and your development box. For instance,
 to register the host replace "/your/box/dn/goes/here"
 (/Registry/Hosts/mydevbox/DN option) with the result of::
 
-   openssl x509 -noout -subject -in etc/grid-security/hostcert.pem | sed 's:^subject= ::g'
+   openssl x509 -noout -subject -in $DEVROOT/etc/grid-security/hostcert.pem | sed 's:^subject= ::g'
 
 You're ready for DIRAC development !
 
