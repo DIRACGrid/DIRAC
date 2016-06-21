@@ -19,13 +19,8 @@
 """
 
 from datetime import datetime, timedelta
-from DIRAC                                            import gConfig, gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Base                                  import Script
-from DIRAC.WorkloadManagementSystem.DB.JobDB          import JobDB
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB   import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.Utilities             import Synchronizer, CSHelpers, RssConfiguration
-from DIRAC.ResourceStatusSystem.Client                import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.PolicySystem          import StateMachine
+from DIRAC import version, gLogger, exit as DIRACExit, S_OK
+from DIRAC.Core.Base  import Script
 
 __RCSID__  = '$Id$'
 
@@ -92,7 +87,20 @@ def parseSwitches():
 
   return switches
 
-#...............................................................................
+#Script initialization
+subLogger  = gLogger.getSubLogger( __file__ )
+registerSwitches()
+registerUsageMessage()
+switchDict = parseSwitches()
+
+#############################################################################
+# We can define the script body now
+
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils import jobDB
+from DIRAC                                             import gConfig
+from DIRAC.ResourceStatusSystem.Utilities              import Synchronizer, CSHelpers, RssConfiguration
+from DIRAC.ResourceStatusSystem.Client                 import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.PolicySystem           import StateMachine
 
 def synchronize():
   '''
@@ -127,10 +135,9 @@ def initSites():
     Initializes Sites statuses taking their values from the "SiteMask" table of "JobDB" database.
   '''
 
-  jobClient = JobDB()
-  rssClient = ResourceStatusDB()
+  rssClient = ResourceStatusClient.ResourceStatusClient()
 
-  sites = jobClient.getAllSiteMaskStatus()
+  sites = jobDB.getAllSiteMaskStatus()
 
   if not sites[ 'OK' ]:
     subLogger.error( sites[ 'Message' ] )
@@ -138,10 +145,18 @@ def initSites():
 
   for site, elements in sites['Value'].iteritems():
     table  = { 'table': 'SiteStatus' }
-    insert = { 'Status': elements[0], 'Reason': 'Synchronized', 'Name': site, 'DateEffective': elements[1], 'TokenExpiration': Datetime,
-             'ElementType': 'Site', 'StatusType': 'all', 'LastCheckTime': None, 'TokenOwner': elements[2] }
+    parameters = { 'status': elements[0],
+                   'reason': 'Synchronized',
+                   'name': site,
+                   'dateEffective': elements[1],
+                   'tokenExpiration': Datetime,
+                   'elementType': 'Site',
+                   'statusType': 'all',
+                   'lastCheckTime': None,
+                   'tokenOwner': elements[2],
+                   'meta': table }
 
-    result = rssClient.addIfNotThere(insert, table)
+    result = rssClient.addIfNotThereStatusElement( "Site", "Status", **parameters )
 
     if not result[ 'OK' ]:
       subLogger.error( result[ 'Message' ] )
@@ -256,13 +271,6 @@ def run():
 #...............................................................................
 
 if __name__ == "__main__":
-
-  subLogger  = gLogger.getSubLogger( __file__ )
-
-  #Script initialization
-  registerSwitches()
-  registerUsageMessage()
-  switchDict = parseSwitches()
 
   #Run script
   run()
