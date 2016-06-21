@@ -131,6 +131,18 @@ class GFAL2_StorageBase( StorageBase ):
     return S_OK( resDict )
 
 
+  def _estimateTransferTimeout( self, fileSize ):
+    """ Dark magic to estimate the timeout for a transfer
+        The values are set empirically and seem to work fine.
+        They were evaluated with gfal1 and SRM.
+
+        :param fileSize: size of the file in bytes we want to transfer
+
+        :return: timeout in seconds
+    """
+
+    return int( fileSize / self.MIN_BANDWIDTH * 4 + 310 )
+
 
   def __singleExists( self, path ):
     """ Check if :path: exists on the storage
@@ -316,7 +328,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     # folder is created and file exists, setting known copy parameters
     params = self.gfal2.transfer_parameters()
-    params.timeout = int( sourceSize / self.MIN_BANDWIDTH + 300 )
+    params.timeout = self._estimateTransferTimeout( sourceSize )
     if sourceSize > self.MAX_SINGLE_STREAM_SIZE:
       params.nbstreams = 4
     else:
@@ -441,7 +453,7 @@ class GFAL2_StorageBase( StorageBase ):
     # Set gfal2 copy parameters
     # folder is created and file exists, setting known copy parameters
     params = self.gfal2.transfer_parameters()
-    params.timeout = 10 + int( remoteSize / self.MIN_BANDWIDTH * 4 + 300 )
+    params.timeout = self._estimateTransferTimeout( remoteSize )
     if remoteSize > self.MAX_SINGLE_STREAM_SIZE:
       params.nbstreams = 4
     else:
