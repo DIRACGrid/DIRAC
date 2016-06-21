@@ -1,3 +1,21 @@
+[v6r15p4]
+
+*Core
+NEW: Added a new way of doing pfnparse and pfnunparse using the standard python library. 
+     The two methods now contains a flag to know which method to use. By default, the old 
+     hand made one is used. The new one works perfectly for all standard protocols, except SRM
+
+*RSS
+FIX: dirac-rss-sync - command fixed to work with calling services rather than 
+     databases directly
+     
+*Resources     
+CHANGE: In multiple Storage classes use pfnparse and pfnunparse methods to manipulate
+        url strings instead of using just string operations
+NEW: A new attribute is added to the storage plugins: DYNAMIC_OPTIONS. This allows to construct 
+     URLs with attributes going at the end of the URL, in the form ?key1=value1&key2=value2 
+     This is useful for xroot and http.         
+
 [v6r15p3]
 
 Included changes from v6r14p34 patch release
