@@ -70,6 +70,12 @@ class WMSAdministratorHandler(RequestHandler):
     """
     return jobDB.getSiteMask( 'Active' )
 
+  types_getAllSiteMaskStatus = []
+  def export_getAllSiteMaskStatus(self):
+    """ Get all the site parameters in the site mask
+    """
+    return jobDB.getAllSiteMaskStatus()
+
 ##############################################################################
   types_banSite = [StringTypes]
   def export_banSite(self, site,comment='No comment'):
