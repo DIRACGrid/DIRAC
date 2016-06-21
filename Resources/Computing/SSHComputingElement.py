@@ -602,7 +602,7 @@ class SSHComputingElement( ComputingElement ):
     if 'OutputTemplate' in self.ceParameters:
       self.outputTemplate = self.ceParameters['OutputTemplate']
       self.errorTemplate = self.ceParameters['ErrorTemplate']
-    
+      
     if self.outputTemplate:
       output = self.outputTemplate % jobStamp
       error = self.errorTemplate % jobStamp
@@ -656,14 +656,14 @@ class SSHComputingElement( ComputingElement ):
     result = ssh.scpCall( 30, localOutputFile, outputFile, upload = False )
     if not result['OK']:
       return result
-    output = result['Value']
+    output = result['Value'][1]
     if localDir:
       output = localOutputFile
 
     result = ssh.scpCall( 30, localErrorFile, errorFile, upload = False )
     if not result['OK']:
       return result
-    error = result['Value']
+    error = result['Value'][1]
     if localDir:
       error = localErrorFile
       
