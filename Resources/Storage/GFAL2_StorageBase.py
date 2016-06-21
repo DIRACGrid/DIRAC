@@ -334,9 +334,12 @@ class GFAL2_StorageBase( StorageBase ):
       # no checksum check, compare file sizes for verfication
       else:
         res = self.__getSingleFileSize( dest_url )
+        # In case of failure, we set destSize to None
+        # so that the cleaning of the file happens
         if not res['OK']:
-          return res
-        destSize = res['Value']
+          destSize = None
+        else:
+          destSize = res['Value']
 
         log.debug( 'destSize: %s, sourceSize: %s' % ( destSize, sourceSize ) )
         if destSize == sourceSize:
@@ -697,7 +700,7 @@ class GFAL2_StorageBase( StorageBase ):
     if metadataDict['File'] and self.checksumType:
       res = self.__getChecksum( path, self.checksumType )
       if not res['OK']:
-        log.warning( "Could not get checksum:%s" % res['Message'] )
+        log.warn( "Could not get checksum:%s" % res['Message'] )
       metadataDict['Checksum'] = res.get( 'Value', '' )
 
     metadataDict = self._addCommonMetadata( metadataDict )
@@ -705,7 +708,7 @@ class GFAL2_StorageBase( StorageBase ):
     if self._defaultExtendedAttributes is not None:
       res = self._getExtendedAttributes( path, attributes = self._defaultExtendedAttributes )
       if not res['OK']:
-        log.warning( "Could not get extended attributes: %s" % res['Message'] )
+        log.warn( "Could not get extended attributes: %s" % res['Message'] )
       else:
         attributeDict = res['Value']
         # add extended attributes to the dict if available
@@ -1373,8 +1376,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     res = self.__isSingleDirectory( src_dir )
     if not res['OK']:
-      errStr = 'Failed to find the source directory'
-      log.debug( res['Message'], src_dir )
+      log.debug( "Failed to find the source directory: %s %s" % ( res['Message'], src_dir ) )
       return res
 
     # res['Value'] is False if it's not a directory

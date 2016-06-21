@@ -1030,7 +1030,7 @@ class XROOTStorage( StorageBase ):
       # Getting the last filename
       res = pfnparse( sFile, srmSpecific = self.srmSpecificParse )
       if not res['OK']:
-        self.log.error( "XROOTStorage.__getSingleDirectory: :Cannot unparse target file", res )
+        self.log.error( "XROOTStorage.__getSingleDirectory: Cannot unparse target file", res )
         continue
       filename = res['Value']['FileName']
       # Returns S__OK(Filesize) if it worked

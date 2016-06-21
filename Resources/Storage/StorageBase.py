@@ -327,7 +327,7 @@ class StorageBase( object ):
     urlDict = dict( self.protocolParameters )
     urlDict['Options'] = '&'.join( "%s=%s" % ( optionName, urlDict[paramName] )
                                    for paramName, optionName in self.DYNAMIC_OPTIONS.iteritems()
-                                    if urlDict.get( paramName ) )
+                                   if urlDict.get( paramName ) )
     if not withWSUrl:
       urlDict['WSUrl'] = ''
     urlDict['FileName'] = lfn.lstrip( '/' )

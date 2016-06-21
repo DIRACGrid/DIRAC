@@ -55,6 +55,7 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
   def __addDoubleSlash( self, res ):
     """ Utilities to add the double slash between the host(:port) and the path
+
         :param res: DIRAC return structure which contains an URL if S_OK
         :return: DIRAC structure with corrected URL
     """
