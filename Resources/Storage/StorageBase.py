@@ -44,6 +44,10 @@ class StorageBase( object ):
   """
 
   PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ]
+  # Options to be prepended in the URL
+  # keys are the name of the parameters in the CS
+  # values are the name of the options as they appear in the URL
+  DYNAMIC_OPTIONS = {}
 
   def __init__( self, name, parameterDict ):
 
@@ -57,6 +61,9 @@ class StorageBase( object ):
     self.cwd = self.basePath
     self.se = None
     self.isok = True
+
+    # use True for backward compatibility
+    self.srmSpecificParse = True
 
   def setStorageElement( self, se ):
     self.se = se
@@ -227,7 +234,7 @@ class StorageBase( object ):
     if not fileName.startswith( '/' ):
       # Relative path is given
       urlDict['Path'] = self.cwd
-    result = pfnunparse( urlDict )
+    result = pfnunparse( urlDict, srmSpecific = self.srmSpecificParse )
     if not result['OK']:
       return result
     cwdUrl = result['Value']
@@ -249,7 +256,7 @@ class StorageBase( object ):
     urlDict = dict( self.protocolParameters )
     if not withWSUrl:
       urlDict['WSUrl'] = ''
-    return pfnunparse( urlDict )
+    return pfnunparse( urlDict, srmSpecific = self.srmSpecificParse )
 
   def isURL( self, path ):
     """ Guess if the path looks like a URL
@@ -261,7 +268,7 @@ class StorageBase( object ):
     if self.basePath and path.startswith( self.basePath ):
       return S_OK( True )
 
-    result = pfnparse( path )
+    result = pfnparse( path, srmSpecific = self.srmSpecificParse )
     if not result['OK']:
       return result
 
@@ -317,17 +324,20 @@ class StorageBase( object ):
 
       return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
 
-    result = self.getURLBase( withWSUrl = withWSUrl )
-    if not result['OK']:
-      return result
-    urlBase = result['Value']
-    url = os.path.join( urlBase, lfn.lstrip( '/' ) )
-    return S_OK( url )
+    urlDict = dict( self.protocolParameters )
+    urlDict['Options'] = '&'.join( "%s=%s" % ( optionName, urlDict[paramName] )
+                                   for paramName, optionName in self.DYNAMIC_OPTIONS.iteritems()
+                                   if urlDict.get( paramName ) )
+    if not withWSUrl:
+      urlDict['WSUrl'] = ''
+    urlDict['FileName'] = lfn.lstrip( '/' )
+
+    return pfnunparse( urlDict, srmSpecific = self.srmSpecificParse )
 
   def updateURL( self, url, withWSUrl = False ):
     """ Update the URL according to the current SE parameters
     """
-    result = pfnparse( url )
+    result = pfnparse( url, srmSpecific = self.srmSpecificParse )
     if not result['OK']:
       return result
     urlDict = result['Value']
@@ -339,7 +349,7 @@ class StorageBase( object ):
     if withWSUrl:
       urlDict['WSUrl'] = self.protocolParameters['WSUrl']
 
-    return pfnunparse( urlDict )
+    return pfnunparse( urlDict, srmSpecific = self.srmSpecificParse )
 
   def isNativeURL( self, url ):
     """ Check if URL :url: is valid for :self.protocol:
@@ -347,7 +357,7 @@ class StorageBase( object ):
     :param self: self reference
     :param str url: URL
     """
-    res = pfnparse( url )
+    res = pfnparse( url, srmSpecific = self.srmSpecificParse )
     if not res['OK']:
       return res
     urlDict = res['Value']

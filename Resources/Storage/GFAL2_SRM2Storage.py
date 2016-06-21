@@ -24,6 +24,9 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     self.log.debug( "GFAL2_SRM2Storage.__init__: Initializing object" )
     self.pluginName = 'GFAL2_SRM2'
 
+    # This attribute is used to know the file status (OFFLINE,NEARLINE,ONLINE)
+    self._defaultExtendedAttributes = ['user.status']
+
     # ##
     #    Setting the default SRM parameters here. For methods where this
     #    is not the default there is a method defined in this class, setting
@@ -49,25 +52,6 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 #    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
     self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", ['gsiftp'] )
 
-
-  def _getExtendedAttributes( self, path, protocols = False, attributes = None ):
-    ''' Changing the TURL_PROTOCOLS option for SRM in case we ask for a specific
-        protocol
-
-        :param self: self reference
-        :param str path: path on the storage
-        :param str protocols: a list of protocols
-        :param list attributes: a list of extended attributes that we are interested in,
-                                default is None so we retrieve the list with listxattr via
-                                gfal2 and get them all.
-        :return: S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes
-                                      and values the respective values
-    '''
-    if protocols:
-      self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
-    res = super( GFAL2_SRM2Storage, self )._getExtendedAttributes( path, attributes = attributes )
-    self.__setSRMOptionsToDefault()
-    return res
 
   def _updateMetadataDict( self, metadataDict, attributeDict ):
     """ Updating the metadata dictionary with srm specific attributes
@@ -143,6 +127,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
 
 
+
   def __getSingleTransportURL( self, path, protocols = False ):
     """ Get the tURL from path with getxattr from gfal2
 
@@ -152,19 +137,17 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
               S_ERROR( errStr ) in case of a failure
     """
     self.log.debug( 'GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' % path )
-    res = self._getExtendedAttributes( path, protocols = protocols, attributes = ['user.replicas'] )
+    if protocols:
+      self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
+
+    res = self._getExtendedAttributes( path, attributes = ['user.replicas'] )
+    self.__setSRMOptionsToDefault()
+
     if res['OK']:
-      attributeDict = res['Value']
-      # 'user.replicas' is the extended attribute we are interested in
-      # It should always be in it I guess !
-      if 'user.replicas' in attributeDict:
-        turl = attributeDict['user.replicas']
-        return S_OK( turl )
-      else:
-        errStr = 'GFAL2_SRM2Storage.__getSingleTransportURL: Extended attribute tURL is not set.'
-        self.log.debug( errStr )
-        return S_ERROR( errStr )
+      return S_OK( res['Value']['user.replicas'] )
     else:
+      errStr = 'GFAL2_SRM2Storage.__getSingleTransportURL: Extended attribute tURL is not set.'
+      self.log.debug( errStr, res['Message'] )
       return res
 
 
