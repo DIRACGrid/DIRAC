@@ -8,6 +8,7 @@ import datetime
 import copy
 import errno
 import threading
+import sys
 
 # # from DIRAC
 from DIRAC import gLogger, gConfig, siteName
@@ -167,6 +168,7 @@ class StorageElementItem( object ):
       res = StorageFactory( useProxy = self.useProxy, vo = self.vo ).getStorages( name, pluginList = [], hideExceptions = hideExceptions )
     else:
       res = StorageFactory( useProxy = self.useProxy, vo = self.vo ).getStorages( name, pluginList = plugins, hideExceptions = hideExceptions )
+
 
     if not res['OK']:
       self.valid = False
@@ -500,7 +502,7 @@ class StorageElementItem( object ):
       return S_OK( [] )
 
     log = self.log.getSubLogger( 'negociateProtocolWithOtherSE', child = True )
-    
+
     log.debug( "Negociating protocols between %s and %s (protocols %s)" % ( sourceSE.name, self.name, protocols ) )
 
 
@@ -518,9 +520,10 @@ class StorageElementItem( object ):
 
     # If a restriction list is defined
     # take the intersection, and sort the commonProtocols
+    # based on the protocolList order
     if protocols:
       protocolList = list( protocols )
-      commonProtocols = sorted( commonProtocols & set( protocolList ), key = lambda x : protocolList )
+      commonProtocols = sorted( commonProtocols & set( protocolList ), key = lambda x : self.__getIndexInList( x, protocolList ) )
 
     log.debug( "Common protocols %s" % commonProtocols )
 
@@ -683,15 +686,33 @@ class StorageElementItem( object ):
 #     res['Failed'] = failed
     return res
 
+  @staticmethod
+  def __getIndexInList( x, l ):
+    """ Return the index of the element x in the list l
+        or sys.maxint if it does not exist
+
+        :param x: element to look for
+        :param l: list to look int
+
+        :return: the index or sys.maxint
+    """
+    try:
+      return l.index( x )
+    except ValueError:
+      return sys.maxint
 
   def __filterPlugins( self, methodName, protocols = None, inputProtocol = None ):
     """ Determine the list of plugins that
         can be used for a particular action
 
-        :param method: method to execute
-        :param protocol: specific protocols might be requested
-        :param inputProtocol: in case the method is putFile, this specifies
+        Args:
+          method(str): method to execute
+          protocols(list): specific protocols might be requested
+          inputProtocol(str): in case the method is putFile, this specifies
                               the protocol given as source
+
+       Returns:
+         list: list of storage plugins
     """
 
     log = self.log.getSubLogger( '__filterPlugins', child = True )
@@ -702,10 +723,10 @@ class StorageElementItem( object ):
       protocols = [protocols]
 
     pluginsToUse = []
-    
+
     potentialProtocols = []
     allowedProtocols = []
-    
+
     if methodName in self.readMethods + self.checkMethods:
       allowedProtocols = self.localAccessProtocolList
     elif methodName in self.removeMethods + self.writeMethods :
@@ -719,20 +740,24 @@ class StorageElementItem( object ):
         setProtocol = set( protocols )
         for plugin in self.storages:
           if set( plugin.protocolParameters.get( "OutputProtocols", [] ) ) & setProtocol:
+            log.debug( "Plugin %s can generate compatible protocol" % plugin.pluginName )
             pluginsToUse.append( plugin )
       else:
         pluginsToUse = self.storages
 
-      log.debug( "Plugins to be used for %s: %s" % ( methodName, [p.pluginName for p in self.storages] ) )
-      return self.storages
+      # The closest list for "OK" methods is the AccessProtocol preference, so we sort based on that
+      pluginsToUse.sort( key = lambda x: self.__getIndexInList( x.protocolParameters['Protocol'] , self.localAccessProtocolList ) )
+      log.debug( "Plugins to be used for %s: %s" % ( methodName, [p.pluginName for p in pluginsToUse] ) )
+      return pluginsToUse
 
-    
+    log.debug( "Allowed protocol: %s" % allowedProtocols )
+
     # if a list of protocol is specified, take it into account
     if protocols:
       potentialProtocols = list( set( allowedProtocols ) & set( protocols ) )
     else:
       potentialProtocols = allowedProtocols
-      
+
     log.debug( 'Potential protocols %s' % potentialProtocols )
 
     localSE = self.__isLocalSE()['Value']
@@ -750,7 +775,7 @@ class StorageElementItem( object ):
         # If the SE is not local then we can't use local protocols
         log.debug( "Local protocol not appropriate for remote use: %s." % pluginName )
         continue
-      
+
       if pluginParameters['Protocol'] not in potentialProtocols:
         log.debug( "Plugin %s not allowed for %s." % ( pluginName, methodName ) )
         continue
@@ -760,11 +785,11 @@ class StorageElementItem( object ):
         if inputProtocol not in pluginParameters['InputProtocols']:
           log.debug( "Plugin %s not appropriate for %s protocol as input." % ( pluginName, inputProtocol ) )
           continue
- 
+
       pluginsToUse.append( plugin )
 
     # sort the plugins according to the lists in the CS
-    pluginsToUse.sort( key = lambda x: allowedProtocols.index( x.protocolParameters['Protocol'] ) )
+    pluginsToUse.sort( key = lambda x: self.__getIndexInList( x.protocolParameters['Protocol'] , allowedProtocols ) )
 
     log.debug( "Plugins to be used for %s: %s" % ( methodName, [p.pluginName for p in pluginsToUse] ) )
 
@@ -833,13 +858,12 @@ class StorageElementItem( object ):
     else:
       if not self.valid:
         return S_ERROR( self.errorReason )
-
     # In case executing putFile, we can assume that all the source urls
     # are from the same protocol. This optional parameter, if defined
     # can be used to ignore some storage plugins and thus save time
     # and avoid fake failures showing in the accounting
     inputProtocol = kwargs.pop( 'inputProtocol', None )
-    
+
 
     successful = {}
     failed = {}
