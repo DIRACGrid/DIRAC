@@ -38,19 +38,19 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     self.__setSRMOptionsToDefault()
 
     if self.checksumType:
-      self.gfal2.set_opt_string( "SRM PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType )
+      self.ctx.set_opt_string( "SRM PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType )
 
 
   def __setSRMOptionsToDefault( self ):
     ''' Resetting the SRM options back to default
 
     '''
-    self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
-    self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-    self.gfal2.set_opt_integer( "SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime )
+    self.ctx.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
+    self.ctx.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
+    self.ctx.set_opt_integer( "SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime )
     # Setting the TURL protocol to gsiftp because with other protocols we have authorisation problems
-#    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
-    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", ['gsiftp'] )
+#    self.ctx.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+    self.ctx.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", ['gsiftp'] )
 
 
   def _updateMetadataDict( self, metadataDict, attributeDict ):
@@ -138,7 +138,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     """
     self.log.debug( 'GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' % path )
     if protocols:
-      self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
+      self.ctx.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
 
     res = self._getExtendedAttributes( path, attributes = ['user.replicas'] )
     self.__setSRMOptionsToDefault()
