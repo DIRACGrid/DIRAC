@@ -101,6 +101,13 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
 
 
+    # Compatibility because of castor returning a castor: url if you ask
+    # for a root URL, and a root: url if you ask for a xroot url...
+    if 'root' in listProtocols and 'xroot' not in listProtocols:
+      listProtocols.insert( listProtocols.index( 'root' ), 'xroot' )
+    elif 'xroot' in listProtocols and 'root' not in listProtocols:
+      listProtocols.insert( listProtocols.index( 'xroot' ) + 1, 'root' )
+
     # I doubt this can happen... 'srm' is not in the listProtocols,
     # it is normally, gsiftp, root, etc
     if self.protocolParameters['Protocol'] in listProtocols:

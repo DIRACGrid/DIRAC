@@ -67,7 +67,7 @@ class GFAL2_StorageBase( StorageBase ):
     # by default turn off BDII checks
     self.ctx.set_opt_boolean( "BDII", "ENABLE", False )
 
-    # Avoid caching because of a bug in globus (https://its.cern.ch/jira/browse/DMC-853)
+    # FIXME: Avoid caching because of a bug in globus (https://its.cern.ch/jira/browse/DMC-853)
     self.ctx.set_opt_boolean( "GRIDFTP PLUGIN", "SESSION_REUSE", False )
 
     # spaceToken used for copying from and to the storage element
