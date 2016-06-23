@@ -357,11 +357,6 @@ class JobScheduling( OptimizerExecutor ):
 
   def __preRequestStaging( self, jobState, stageSite, opData ):
     from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-    # Allow staging from SEs accessible by protocol
-    result = DMSHelpers().getSEsForSite( stageSite, connectionLevel = 'PROTOCOL' )
-    if not result['OK']:
-      return S_ERROR( 'Could not determine SEs for site %s' % stageSite )
-    siteSEs = result['Value']
 
     tapeSEs = []
     diskSEs = []
