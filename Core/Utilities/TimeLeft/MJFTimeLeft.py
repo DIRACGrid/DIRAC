@@ -1,7 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The Machine/Job Features TimeLeft utility interrogates the MJF values
     for the current CPU and Wallclock consumed, as well as their limits.
 """
@@ -15,6 +11,8 @@ from DIRAC import gLogger, S_OK, S_ERROR
 __RCSID__ = "$Id$"
 
 class MJFTimeLeft( object ):
+  """ Class for creating objects that deal with MJF
+  """
 
   #############################################################################
   def __init__( self ):
@@ -22,10 +20,10 @@ class MJFTimeLeft( object ):
     """
     self.log = gLogger.getSubLogger( 'MJFTimeLeft' )
     self.jobID = None
-    if os.environ.has_key( 'JOB_ID' ):
+    if 'JOB_ID' in os.environ:
       self.jobID = os.environ['JOB_ID']
     self.queue = None
-    if os.environ.has_key( 'QUEUE' ):
+    if 'QUEUE' in os.environ:
       self.queue = os.environ['QUEUE']
 
     self.cpuLimit = None
@@ -46,32 +44,40 @@ class MJFTimeLeft( object ):
       # We are not called from TimeLeft.py if these are not set
       jobFeaturesPath = os.environ['JOBFEATURES']
       machineFeaturesPath = os.environ['MACHINEFEATURES']
-    except:
-      self.log.warn( '$JOBFEATURES and $MACHINEFEATURES not set' )
+    except KeyError:
+      self.log.warn( '$JOBFEATURES and/or $MACHINEFEATURES is not set' )
 
     try:
       wallClockLimit = int( urllib.urlopen( jobFeaturesPath + '/wall_limit_secs' ).read() )
-    except:
-      self.log.warn( 'Could not determine wallclock limit from $JOBFEATURES/wall_limit_secs' )
+    except ValueError:
+      self.log.warn( "/wall_limit_secs is unreadable" )
+    except IOError:
+      self.log.warn( "Can't open wall_limit_secs" )
 
     try:
       jobStartSecs = int( urllib.urlopen( jobFeaturesPath + '/jobstart_secs' ).read() )
-    except:
-      self.log.warn( 'Could not determine job start time from $JOBFEATURES/jobstart_secs' )
+    except ValueError:
+      self.log.warn( "/jobstart_secs is unreadable, setting a default" )
+      jobStartSecs = self.startTime
+    except IOError:
+      self.log.warn( "Can't open jobstart_secs, setting a default" )
       jobStartSecs = self.startTime
 
     try:
       shutdownTime = int( urllib.urlopen( machineFeaturesPath + '/shutdowntime' ).read() )
-    except:
-      self.log.info( 'Could not determine a shutdowntime value from $MACHINEFEATURES/shutdowntime' )
-    else:
       if int( time.time() ) + wallClockLimit > shutdownTime:
         # reduce wallClockLimit if would overrun shutdownTime
         wallClockLimit = shutdownTime - jobStartSecs
+    except ValueError:
+      self.log.warn( "/shutdowntime is unreadable" )
+    except IOError:
+      self.log.info( 'Could not determine a shutdowntime value from $MACHINEFEATURES/shutdowntime' )
 
     try:
       cpuLimit = int( urllib.urlopen( jobFeaturesPath + '/cpu_limit_secs' ).read() )
-    except:
+    except ValueError:
+      self.log.warn( "/cpu_limit_secs is unreadable" )
+    except IOError:
       self.log.warn( 'Could not determine cpu limit from $JOBFEATURES/cpu_limit_secs' )
 
     wallClock = int( time.time() ) - jobStartSecs
