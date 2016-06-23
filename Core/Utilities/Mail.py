@@ -34,7 +34,7 @@ class Mail:
     mail = MIMEText( self._message , "plain" )
     addresses = self._mailAddress
     if isinstance( self._mailAddress, basestring):
-        addresses = self._mailAddress.split(", ")
+      addresses = self._mailAddress.split(", ")
     mail[ "Subject" ] = self._subject
     mail[ "From" ] = self._fromAddress
     mail[ "To" ] = ', '.join( addresses )
