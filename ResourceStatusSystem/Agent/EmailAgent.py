@@ -63,11 +63,11 @@ class EmailAgent( AgentModule ):
           <head>
           <meta charset='UTF-8'>
             <style>
-              table{color:#333;font-family:Helvetica,Arial,sans-serif;width:640px;border-collapse:collapse;border-spacing:0}
-              td,th{border:1px solid transparent;height:30px;transition:all .3s}th{background:#DFDFDF;font-weight:700}
-              td{background:#FAFAFA;text-align:center}.setup{font-size:150%;color:grey}.Banned{color:red}.Error{color:#8b0000}
-              .Degraded{color:gray}.Probing{color:#00f}.Active{color:green}tr:nth-child(even) td{background:#F1F1F1}tr:nth-child(odd)
-              td{background:#FEFEFE}tr td:hover{background:#666;color:#FFF}
+              table{{color:#333;font-family:Helvetica,Arial,sans-serif;width:640px;border-collapse:collapse;border-spacing:0}}
+              td,th{{border:1px solid transparent;height:30px;transition:all .3s}}th{{background:#DFDFDF;font-weight:700}}
+              td{{background:#FAFAFA;text-align:center}}.setup{{font-size:150%;color:grey}}.Banned{{color:red}}.Error{{color:#8b0000}}
+              .Degraded{{color:gray}}.Probing{{color:#00f}}.Active{{color:green}}tr:nth-child(even) td{{background:#F1F1F1}}tr:nth-child(odd)
+              td{{background:#FEFEFE}}tr td:hover{{background:#666;color:#FFF}}
             </style>
           </head>
           <body>
@@ -78,22 +78,22 @@ class EmailAgent( AgentModule ):
             html_elements += "<tr>" + \
                              "<td>" + StatusType + "</td>" + \
                              "<td>" + ResourceName + "</td>" + \
-                             "<td>" + Status + "</td>" + \
+                             "<td class='" + Status + "'>" + Status + "</td>" + \
                              "<td>" + Time + "</td>" + \
-                             "<td>" + PreviousStatus + "</td>" + \
+                             "<td class='" + PreviousStatus + "'>" + PreviousStatus + "</td>" + \
                              "</tr>"
 
           html_body = """\
-          <table>
-            <tr>
-                <th>Status Type</th>
-                <th>Resource Name</th>
-                <th>Status</th>
-                <th>Time</th>
-                <th>Previous Status</th>
-            </tr>
-            {html_elements}
-          </table>
+            <table>
+              <tr>
+                  <th>Status Type</th>
+                  <th>Resource Name</th>
+                  <th>Status</th>
+                  <th>Time</th>
+                  <th>Previous Status</th>
+              </tr>
+              {html_elements}
+            </table>
           </body>
           </html>
           """.format(html_elements=html_elements)
