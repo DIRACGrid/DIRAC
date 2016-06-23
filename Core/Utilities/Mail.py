@@ -1,16 +1,19 @@
-# $HeadURL$
 """
     Extremely simple utility class to send mails
 """
-__RCSID__ = "$Id$"
+
 import os
 import socket
+
 from smtplib import SMTP
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from getpass import getuser
+
 from DIRAC import gLogger, S_OK, S_ERROR
+
+__RCSID__ = "$Id$"
 
 class Mail( object ):
 
