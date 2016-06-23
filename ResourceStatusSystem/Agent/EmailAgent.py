@@ -63,7 +63,7 @@ class EmailAgent( AgentModule ):
           <head>
           <meta charset='UTF-8'>
             <style>
-              table{{color:#333;font-family:Helvetica,Arial,sans-serif;width:640px;border-collapse:collapse;border-spacing:0}}
+              table{{color:#333;font-family:Helvetica,Arial,sans-serif;min-width:700px;border-collapse:collapse;border-spacing:0}}
               td,th{{border:1px solid transparent;height:30px;transition:all .3s}}th{{background:#DFDFDF;font-weight:700}}
               td{{background:#FAFAFA;text-align:center}}.setup{{font-size:150%;color:grey}}.Banned{{color:red}}.Error{{color:#8b0000}}
               .Degraded{{color:gray}}.Probing{{color:#00f}}.Active{{color:green}}tr:nth-child(even) td{{background:#F1F1F1}}tr:nth-child(odd)
