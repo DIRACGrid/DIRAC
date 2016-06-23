@@ -65,11 +65,11 @@ def _getConnectionIndex( connectionLevel, default = None ):
 
 class DMSHelpers( object ):
 
-  def __init__( self ):
+  def __init__( self, vo = False ):
     self.siteSEMapping = {}
     self.storageElementSet = set()
     self.siteSet = set()
-    self.__opsHelper = Operations()
+    self.__opsHelper = Operations( vo = vo )
 
 
   def getSiteSEMapping( self ):
