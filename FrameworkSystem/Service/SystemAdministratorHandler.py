@@ -402,7 +402,7 @@ class SystemAdministratorHandler( RequestHandler ):
     result = shellCall( 60, command )
     return result
 
-  types_checkComponentLog = [ list( basestring ) + [list] ]
+  types_checkComponentLog = [ [basestring, list] ]
   def export_checkComponentLog( self, component ):
     """ Check component log for errors
     """
