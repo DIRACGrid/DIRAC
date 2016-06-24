@@ -16,6 +16,7 @@ class Mail( object ):
     self._subject = ''
     self._message = ''
     self._mailAddress = ''
+    self._html = False
     self._fromAddress = getuser() + '@' + socket.getfqdn()
     self.esmtp_features = {}
 
@@ -31,10 +32,14 @@ class Mail( object ):
         gLogger.warn( "Subject and body empty. Mail not sent" )
         return S_ERROR ( "Subject and body empty. Mail not sent" )
 
-    mail = MIMEText( self._message , "plain" )
+    if self._html:
+      mail = MIMEText( self._message , "html" )
+    else:
+      mail = MIMEText( self._message , "plain" )
+
     addresses = self._mailAddress
-    if not type( self._mailAddress ) == type( [] ):
-      addresses = [self._mailAddress]
+    if isinstance( self._mailAddress, basestring):
+      addresses = self._mailAddress.split(", ")
     mail[ "Subject" ] = self._subject
     mail[ "From" ] = self._fromAddress
     mail[ "To" ] = ', '.join( addresses )

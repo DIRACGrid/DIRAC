@@ -38,19 +38,19 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     self.__setSRMOptionsToDefault()
 
     if self.checksumType:
-      self.gfal2.set_opt_string( "SRM PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType )
+      self.ctx.set_opt_string( "SRM PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType )
 
 
   def __setSRMOptionsToDefault( self ):
     ''' Resetting the SRM options back to default
 
     '''
-    self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
-    self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-    self.gfal2.set_opt_integer( "SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime )
+    self.ctx.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
+    self.ctx.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
+    self.ctx.set_opt_integer( "SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime )
     # Setting the TURL protocol to gsiftp because with other protocols we have authorisation problems
-#    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
-    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", ['gsiftp'] )
+#    self.ctx.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+    self.ctx.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", ['gsiftp'] )
 
 
   def _updateMetadataDict( self, metadataDict, attributeDict ):
@@ -101,6 +101,13 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
 
 
+    # Compatibility because of castor returning a castor: url if you ask
+    # for a root URL, and a root: url if you ask for a xroot url...
+    if 'root' in listProtocols and 'xroot' not in listProtocols:
+      listProtocols.insert( listProtocols.index( 'root' ), 'xroot' )
+    elif 'xroot' in listProtocols and 'root' not in listProtocols:
+      listProtocols.insert( listProtocols.index( 'xroot' ) + 1, 'root' )
+
     # I doubt this can happen... 'srm' is not in the listProtocols,
     # it is normally, gsiftp, root, etc
     if self.protocolParameters['Protocol'] in listProtocols:
@@ -138,7 +145,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     """
     self.log.debug( 'GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' % path )
     if protocols:
-      self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
+      self.ctx.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
 
     res = self._getExtendedAttributes( path, attributes = ['user.replicas'] )
     self.__setSRMOptionsToDefault()

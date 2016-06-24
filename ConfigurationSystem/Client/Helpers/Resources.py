@@ -124,7 +124,7 @@ def getStorageElementOptions( seName ):
   # Help distinguishing storage type
   diskSE = True
   tapeSE = False
-  if options.has_key( 'SEType' ):
+  if 'SEType' in options:
     # Type should follow the convention TXDY
     seType = options['SEType']
     diskSE = re.search( 'D[1-9]', seType ) != None

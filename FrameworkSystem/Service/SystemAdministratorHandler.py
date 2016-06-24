@@ -1,15 +1,13 @@
 """ SystemAdministrator service is a tool to control and monitor the DIRAC services and agents
 """
 
-import datetime
 import socket
 import os
 import re
 import commands
 import getpass
 import importlib
-from datetime import timedelta
-from types import ListType, StringTypes, BooleanType
+from datetime import datetime, timedelta
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
@@ -29,6 +27,7 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdminis
 
 __RCSID__ = "$Id$"
 
+#pylint: disable=no-self-use
 
 class SystemAdministratorHandler( RequestHandler ):
 
@@ -94,20 +93,20 @@ class SystemAdministratorHandler( RequestHandler ):
             statusDict[compType][system][component]['Module'] = result['Value']
     return S_OK( statusDict )
 
-  types_getStartupComponentStatus = [ ListType ]
+  types_getStartupComponentStatus = [ list ]
   def export_getStartupComponentStatus( self, componentTupleList ):
     """  Get the list of all the components ( services and agents )
          set up for running with runsvdir in startup directory
     """
     return gComponentInstaller.getStartupComponentStatus( componentTupleList )
 
-  types_installComponent = [ StringTypes, StringTypes, StringTypes ]
+  types_installComponent = [ basestring, basestring, basestring ]
   def export_installComponent( self, componentType, system, component, componentModule = '' ):
     """ Install runit directory for the specified component
     """
     return gComponentInstaller.installComponent( componentType, system, component, getCSExtensions(), componentModule )
 
-  types_setupComponent = [ StringTypes, StringTypes, StringTypes ]
+  types_setupComponent = [ basestring, basestring, basestring ]
   def export_setupComponent( self, componentType, system, component, componentModule = '' ):
     """ Setup the specified component for running with the runsvdir daemon
         It implies installComponent
@@ -116,44 +115,44 @@ class SystemAdministratorHandler( RequestHandler ):
     gConfig.forceRefresh()
     return result
 
-  types_addDefaultOptionsToComponentCfg = [ StringTypes, StringTypes ]
+  types_addDefaultOptionsToComponentCfg = [ basestring, basestring ]
   def export_addDefaultOptionsToComponentCfg( self, componentType, system, component ):
     """ Add default component options local component cfg
     """
     return gComponentInstaller.addDefaultOptionsToComponentCfg( componentType, system, component, getCSExtensions() )
 
-  types_unsetupComponent = [ StringTypes, StringTypes ]
+  types_unsetupComponent = [ basestring, basestring ]
   def export_unsetupComponent( self, system, component ):
     """ Removed the specified component from running with the runsvdir daemon
     """
     return gComponentInstaller.unsetupComponent( system, component )
 
-  types_uninstallComponent = [ StringTypes, StringTypes, BooleanType ]
+  types_uninstallComponent = [ basestring, basestring, bool ]
   def export_uninstallComponent( self, system, component, removeLogs ):
     """ Remove runit directory for the specified component
         It implies unsetupComponent
     """
     return gComponentInstaller.uninstallComponent( system, component, removeLogs )
 
-  types_startComponent = [ StringTypes, StringTypes ]
+  types_startComponent = [ basestring, basestring ]
   def export_startComponent( self, system, component ):
     """ Start the specified component, running with the runsv daemon
     """
     return gComponentInstaller.runsvctrlComponent( system, component, 'u' )
 
-  types_restartComponent = [ StringTypes, StringTypes ]
+  types_restartComponent = [ basestring, basestring ]
   def export_restartComponent( self, system, component ):
     """ Restart the specified component, running with the runsv daemon
     """
     return gComponentInstaller.runsvctrlComponent( system, component, 't' )
 
-  types_stopComponent = [ StringTypes, StringTypes ]
+  types_stopComponent = [ basestring, basestring ]
   def export_stopComponent( self, system, component ):
     """ Stop the specified component, running with the runsv daemon
     """
     return gComponentInstaller.runsvctrlComponent( system, component, 'd' )
 
-  types_getLogTail = [ StringTypes, StringTypes ]
+  types_getLogTail = [ basestring, basestring ]
   def export_getLogTail( self, system, component, length = 100 ):
     """ Get the tail of the component log file
     """
@@ -198,7 +197,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     return S_OK( 'Successfully installed' )
 
-  types_installDatabase = [ StringTypes ]
+  types_installDatabase = [ basestring ]
   def export_installDatabase( self, dbName, mysqlPassword = None ):
     """ Install a DIRAC database named dbName
     """
@@ -206,7 +205,7 @@ class SystemAdministratorHandler( RequestHandler ):
       gComponentInstaller.setMySQLPasswords( mysqlPassword )
     return gComponentInstaller.installDatabase( dbName )
 
-  types_uninstallDatabase = [ StringTypes ]
+  types_uninstallDatabase = [ basestring ]
   def export_uninstallDatabase( self, dbName, mysqlPassword = None ):
     """ Uninstall a DIRAC database named dbName
     """
@@ -214,13 +213,13 @@ class SystemAdministratorHandler( RequestHandler ):
       gComponentInstaller.setMySQLPasswords( mysqlPassword )
     return gComponentInstaller.uninstallDatabase( gConfig, dbName )
 
-  types_addDatabaseOptionsToCS = [ StringTypes, StringTypes ]
+  types_addDatabaseOptionsToCS = [ basestring, basestring ]
   def export_addDatabaseOptionsToCS( self, system, database, overwrite = False ):
     """ Add the section with the database options to the CS
     """
     return gComponentInstaller.addDatabaseOptionsToCS( gConfig, system, database, overwrite = overwrite )
 
-  types_addDefaultOptionsToCS = [StringTypes, StringTypes, StringTypes]
+  types_addDefaultOptionsToCS = [basestring, basestring, basestring]
   def export_addDefaultOptionsToCS( self, componentType, system, component, overwrite = False ):
     """ Add default component options to the global CS or to the local options
     """
@@ -231,7 +230,7 @@ class SystemAdministratorHandler( RequestHandler ):
 #######################################################################################
 # General purpose methods
 #
-  types_updateSoftware = [ StringTypes ]
+  types_updateSoftware = [ basestring ]
   def export_updateSoftware( self, version, rootPath = "", gridVersion = "" ):
     """ Update the local DIRAC software installation to version
     """
@@ -367,7 +366,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     return S_OK( ( cfgPath, diracCFG ) )
 
-  types_setProject = [ StringTypes ]
+  types_setProject = [ basestring ]
   def export_setProject( self, projectName ):
     result = self.__loadDIRACCFG()
     if not result[ 'OK' ]:
@@ -390,20 +389,20 @@ class SystemAdministratorHandler( RequestHandler ):
     _cfgPath, diracCFG = result[ 'Value' ]
     return S_OK( diracCFG.getOption( "/LocalInstallation/Project", "DIRAC" ) )
 
-  types_addOptionToDiracCfg = [ StringTypes, StringTypes ]
+  types_addOptionToDiracCfg = [ basestring, basestring ]
   def export_addOptionToDiracCfg( self, option, value ):
     """ Set option in the local configuration file
     """
     return gComponentInstaller.addOptionToDiracCfg( option, value )
 
-  types_executeCommand = [ StringTypes ]
+  types_executeCommand = [ basestring ]
   def export_executeCommand( self, command ):
     """ Execute a command locally and return its output
     """
     result = shellCall( 60, command )
     return result
 
-  types_checkComponentLog = [ list( StringTypes ) + [ListType] ]
+  types_checkComponentLog = [ [basestring, list] ]
   def export_checkComponentLog( self, component ):
     """ Check component log for errors
     """
@@ -417,7 +416,7 @@ class SystemAdministratorHandler( RequestHandler ):
               for sname in result['Value'][ctype]:
                 for cname in result['Value'][ctype][sname]:
                   componentList.append( '/'.join( [sname, cname] ) )
-    elif type( component ) in StringTypes:
+    elif isinstance( component, basestring):
       componentList = [component]
     else:
       componentList = component
@@ -604,7 +603,7 @@ class SystemAdministratorHandler( RequestHandler ):
       ports[ system ] = {}
       for service in services[ system ]:
         url = PathFinder.getServiceURL( '%s/%s' % ( system, service ) )
-        port = re.search( ':(\d{4,5})/', url )
+        port = re.search( r':(\d{4,5})/', url )
         if port:
           ports[ system ][ service ] = port.group( 1 )
         else:
@@ -612,7 +611,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     return S_OK( ports )
 
-  types_getComponentDocumentation = [ StringTypes, StringTypes, StringTypes ]
+  types_getComponentDocumentation = [ basestring, basestring, basestring ]
   def export_getComponentDocumentation( self, cType, system, module ):
     if cType == 'service':
       module = '%sHandler' % module
@@ -645,7 +644,7 @@ class SystemAdministratorHandler( RequestHandler ):
       return S_ERROR( result[ 'Message' ] )
 
     fields = result[ 'Value' ]
-    fields[ 'Timestamp' ] = datetime.datetime.utcnow()
+    fields[ 'Timestamp' ] = datetime.utcnow()
     client = ComponentMonitoringClient()
     result = client.updateLog( socket.getfqdn(), fields )
     if not result[ 'OK' ]:
