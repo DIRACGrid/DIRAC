@@ -354,10 +354,7 @@ class JobScheduling( OptimizerExecutor ):
     return ( True, bestSites )
 
   def __preRequestStaging( self, jobState, stageSite, opData ):
-    result = getSEsForSite( stageSite )
-    if not result['OK']:
-      return S_ERROR( 'Could not determine SEs for site %s' % stageSite )
-    siteSEs = result['Value']
+    from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
     tapeSEs = []
     diskSEs = []
@@ -366,6 +363,14 @@ class JobScheduling( OptimizerExecutor ):
       return result
     manifest = result['Value']
     vo = manifest.getOption( 'VirtualOrganization' )
+    inputDataPolicy = manifest.getOption( 'InputDataPolicy', 'Protocol' )
+    connectionLevel = 'DOWNLOAD' if 'download' in inputDataPolicy.lower() else 'PROTOCOL'
+    # Allow staging from SEs accessible by protocol
+    result = DMSHelpers( vo = vo ).getSEsForSite( stageSite, connectionLevel = connectionLevel )
+    if not result['OK']:
+      return S_ERROR( 'Could not determine SEs for site %s' % stageSite )
+    siteSEs = result['Value']
+
     for seName in siteSEs:
       se = StorageElement( seName, vo = vo )
       result = se.getStatus()
