@@ -181,6 +181,16 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+
+[v6r14p36]
+
+*Core
+FIX: Sending mails to multiple recipients was not working
+
+*WMS
+FIX: Allow staging from SEs accessible by protocol
+
+
 [v6r14p35]
 
 *Core
