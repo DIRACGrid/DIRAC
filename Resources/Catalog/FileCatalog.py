@@ -230,10 +230,20 @@ class FileCatalog( object ):
             return S_ERROR( "The master catalog is not valid for some LFNS %s" % condEvals )
 
         validLFNs = dict( ( lfn, fileInfo[lfn] ) for lfn in condEvals if condEvals[lfn] )
+
+        # We can skip the execution without worry,
+        # since at this level it is for sure not a master catalog
+        if not validLFNs:
+          gLogger.debug( "No valid LFN, skipping the call" )
+          continue
+
         invalidLFNs = [lfn for lfn in condEvals if not condEvals[lfn]]
+
         if invalidLFNs:
           gLogger.debug( "Some LFNs are not valid for operation '%s' on catalog '%s' : %s" % ( self.call, catalogName,
                                                                                                invalidLFNs ) )
+
+
         result = method( validLFNs, *parms1, **kws )
 
 
