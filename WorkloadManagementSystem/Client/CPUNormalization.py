@@ -6,7 +6,6 @@
 """ DIRAC Workload Management System Client module that encapsulates all the
     methods necessary to handle CPU normalization
 """
-__RCSID__ = "$Id$"
 
 import os
 import random
@@ -14,7 +13,9 @@ import urllib
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
+
+__RCSID__ = "$Id$"
 
 # TODO: This should come from some place in the configuration
 NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to HS06 (ie min * SI00 -> sec * HS06 )
@@ -22,28 +23,54 @@ NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to H
 UNITS = { 'HS06': 1. , 'SI00': 1. / 250. }
 
 def getMachineFeatures():
+  """ This uses the _old_ MJF information """
   features = {}
-  if 'MACHINEFEATURES' not in os.environ:
+  featuresDir = os.environ.get( "MACHINEFEATURES" )
+  if featuresDir is None:
     return features
   for item in ( 'hs06', 'jobslots', 'log_cores', 'phys_cores' ):
-    fname = os.path.join( os.environ['MACHINEFEATURES'], item )
+    fname = os.path.join( featuresDir, item )
     try:
       val = urllib.urlopen( fname ).read()
-    except:
+    except :
       val = 0
     features[item] = val
   return features
 
+def getJobFeatures():
+  """ This uses the _new_ MJF information """
+  features = {}
+  featuresDir = os.environ.get( "JOBFEATURES" )
+  if featuresDir is None:
+    return features
+  for item in ( 'hs06_job', 'allocated_cpu' ):
+    fname = os.path.join( featuresDir, item )
+    try:
+      val = urllib.urlopen( fname ).read()
+    except IOError:
+      val = 0
+    features[item] = val
+  return features
+
+
 def getPowerFromMJF():
-  features = getMachineFeatures()
-  totalPower = features.get( 'hs06' )
-  logCores = float( features.get( 'log_cores', 0 ) )
-  physCores = float( features.get( 'phys_cores', 0 ) )
-  jobSlots = float( features.get( 'jobslots', 0 ) )
-  denom = min( max( logCores, physCores ), jobSlots ) if ( logCores or physCores ) and jobSlots else None
-  if totalPower and denom:
-    return round( float( totalPower ) / denom , 2 )
-  else:
+  """ Extracts the machine power from either JOBFEATURES or MACHINEFEATURES """
+  try:
+    features = getJobFeatures()
+    if 'hs06_job' in features:
+      return round( float( features['hs06_job'] ), 2 )
+    features = getMachineFeatures()
+    totalPower = float( features.get( 'hs06', 0 ) )
+    logCores = float( features.get( 'log_cores', 0 ) )
+    physCores = float( features.get( 'phys_cores', 0 ) )
+    jobSlots = float( features.get( 'jobslots', 0 ) )
+    denom = min( max( logCores, physCores ), jobSlots ) if ( logCores or physCores ) and jobSlots else None
+    if totalPower and denom:
+      return round( totalPower / denom , 2 )
+    else:
+      return None
+  except ValueError as e:
+    gLogger.exception( "Exception getting MJF information", lException = e )
     return None
 
 def queueNormalizedCPU( ceUniqueID ):

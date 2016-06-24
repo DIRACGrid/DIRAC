@@ -21,7 +21,6 @@ try:
 except Exception:
   #We're out of python, define required utilities
   import threading
-  from types import StringTypes
 
   def S_ERROR( messageString = '' ):
     return { 'OK' : False, 'Message' : str( messageString )  }
@@ -901,7 +900,7 @@ class CFG( object ):
     :param data: Contents of the CFG
     :return: This CFG
     """
-    commentRE = re.compile( "^\s*#" )
+    commentRE = re.compile( r"^\s*#" )
     self.reset()
     levelList = []
     currentLevel = self

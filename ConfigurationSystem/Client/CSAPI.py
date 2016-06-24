@@ -3,10 +3,6 @@
     Most of these functions can only be done by administrators
 """
 
-__RCSID__ = "$Id$"
-
-import types
-
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import List
@@ -15,6 +11,8 @@ from DIRAC.Core.Security import Locations
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
+__RCSID__ = "$Id$"
 
 
 class CSAPI( object ):
@@ -128,7 +126,8 @@ class CSAPI( object ):
     return S_OK( self.__describeEntity( users ) )
 
   def describeHosts( self, hosts = None ):
-    if hosts is None: hosts = []
+    if hosts is None:
+      hosts = []
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     return S_OK( self.__describeEntity( hosts, True ) )
@@ -752,5 +751,3 @@ class CSAPI( object ):
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     return S_OK( self.__csMod.getCFG() )
-
-

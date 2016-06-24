@@ -58,12 +58,13 @@ Run service(s)
 --------------
 
 RSS - basic - needs the following services to be up and running:
-ResourceStatusSystem/ResourceStatus, ResourceStatusSystem/ResourceManagement
+ResourceStatus/ResourceStatus, ResourceStatus/ResourceManagement
 please install them using the dirac-admin-sysadmin-cli command, and make sure it
 is running.::
 
-  install service ResourceStatusSystem ResourceManagement
-  install service ResourceStatusSystem ResourceStatus
+  install service ResourceStatus ResourceManagement
+  install service ResourceStatus ResourceStatus
+  install service ResourceStatus Publisher
 
 In case of any errors, check that you have the information about DataBase 'Host' in the configuration file.
 

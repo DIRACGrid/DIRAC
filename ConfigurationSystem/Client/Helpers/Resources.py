@@ -1,14 +1,14 @@
 """ Helper for the CS Resources section
 """
 
-__RCSID__ = "$Id$"
-
 import re
 from distutils.version import LooseVersion
 
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.Core.Utilities.List                          import uniqueElements, fromChar
+
+__RCSID__ = "$Id$"
 
 
 gBaseResourcesSection = "/Resources"
@@ -30,7 +30,7 @@ def getSites():
 
   return S_OK( sites )
 
-def getStorageElementSiteMapping( siteList = [] ):
+def getStorageElementSiteMapping( siteList = None ):
   """ Get Storage Element belonging to the given sites
   """
   if not siteList:
@@ -47,7 +47,7 @@ def getStorageElementSiteMapping( siteList = [] ):
 
   return S_OK( siteDict )
 
-def getFTS2ServersForSites( self, siteList = None ):
+def getFTS2ServersForSites( siteList = None ):
   """ get FTSServers for sites
 
   :param list siteList: list of sites
@@ -124,7 +124,7 @@ def getStorageElementOptions( seName ):
   # Help distinguishing storage type
   diskSE = True
   tapeSE = False
-  if options.has_key( 'SEType' ):
+  if 'SEType' in options:
     # Type should follow the convention TXDY
     seType = options['SEType']
     diskSE = re.search( 'D[1-9]', seType ) != None
@@ -190,7 +190,7 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
       ces = result['Value']
       for ce in ces:
         if mode:
-          ceMode = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/SubmissionMode' % ( grid, site, ce ), 'InDirect' )
+          ceMode = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/SubmissionMode' % ( grid, site, ce ), 'Direct' )
           if not ceMode or ceMode != mode:
             continue
         if ceTypeList:
@@ -307,4 +307,4 @@ def getRegistrationProtocols():
 
 def getThirdPartyProtocols():
   """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
-  return gConfig.getValue( '/Resources/FileCatalogs/ThirdPartyProtocols', ['srm', 'dips'] )
+  return gConfig.getValue( '/Resources/FileCatalogs/ThirdPartyProtocols', ['srm'] )

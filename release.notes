@@ -1,4 +1,62 @@
-[v6r15-pre22]
+[v6r15p4]
+
+Included fixes from v6r14p35 patch release
+
+*Core
+NEW: Added a new way of doing pfnparse and pfnunparse using the standard python library. 
+     The two methods now contains a flag to know which method to use. By default, the old 
+     hand made one is used. The new one works perfectly for all standard protocols, except SRM
+
+*RSS
+FIX: dirac-rss-sync - command fixed to work with calling services rather than 
+     databases directly
+     
+*Resources     
+CHANGE: In multiple Storage classes use pfnparse and pfnunparse methods to manipulate
+        url strings instead of using just string operations
+NEW: A new attribute is added to the storage plugins: DYNAMIC_OPTIONS. This allows to construct 
+     URLs with attributes going at the end of the URL, in the form ?key1=value1&key2=value2 
+     This is useful for xroot and http.         
+
+[v6r15p3]
+
+Included changes from v6r14p34 patch release
+
+*Accounting
+FIX: DataStoreClient - catch all exceptions in sending failover accounting 
+     requests as it could disrupt the logic of the caller 
+
+*DMS
+CHANGE: dirac-dms-show-se-status - added switches to show SEs only accessible by
+        a given VO and SEs not assigned to any VO
+FIX: dirac-dms-replicate-and-register-request - prints out the new request IDs
+     to allow their monitoring by ID rather than possibly ambiguous request name      
+
+[v6r15p2]
+
+*WMS
+FIX: pilotCommands - protect calls to external commands in case of empty
+     or erroneous output
+FIX: Matcher - fixed bug in the tag matching logic: if a site presented an empty
+     Tag list instead of no Tag field at all, it was interpreted as site accepts
+     all the tags
+FIX: Matcher - matching parameters are printed out in the Matcher rather than
+     in the TaskQueueDB, MaxRAM and Processors are not expanded into tags           
+
+[v6r15p1]
+
+Included patches for v6r14p32
+
+*Configuration
+CHANGE: Resources helper - remove "dips" protocol from the default list of third party
+        protocols
+
+*Resources
+FIX: XROOTStorage - bug fixed in __createSingleDirectory() - proper interpretation
+     of the xrootClient.mkdir return status
+FIX: XROOTStorage unit test reenabled by mocking the xrootd import      
+
+[v6r15]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
@@ -122,6 +180,96 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p35]
+
+*Core
+FIX: SOAPFactory - fixes for import statements of suds module to work with the
+     suds-jurko package that replaces the suds package
+
+*Resources
+FIX: BatchSystems.Torque - take into account that in some cases jobID includes
+     a host name that should be stripped off
+FIX: SSHComputingElement - in _getJobOutputFiles() fixed bug where the output
+     of scpCall() call was wrongly interpreted    
+FIX: ProxyStorage - evaluate the service url as simple /DataManagement/StorageElementProxy
+     to solve the problem with redundant StorageElementProxy services with multiple
+     possible urls       
+     
+*RSS
+CHANGE: Configurations.py - Added DTScheduled3 policy (3 hours before downtime)     
+     
+*WMS
+FIX: pilotCommands - take into account that in the case of Torque batch system
+     jobID includes a host name that should be stripped off   
+       
+[v6r14p34]
+
+*Configuration
+FIX: Bdii2CSAgent - reinitilize the BDII info cache at each cycle in order not to 
+     carry on obsoleted stuff. Fixes #2959
+
+*Resources
+FIX: Slurm.py - use --partition rather --cluster for passing the DIRAC queue name
+FIX: DIPStorage - fixed bug in putFile preventing third party-like transfer from
+     another DIPS Storage Element. Fixes #2413
+
+*WMS
+CHANGE: JobWrapper - added BOINC user ID to the job parameters
+FIX: pilotCommands - interpret SLURM_JOBID environment if present
+FIX: WMSClient - strip of comments in the job JDL before any processing.
+     Passing jdl with comments to the WMS could provoke errors in the
+     job checking.
+
+[v6r14p33]
+
+*WMS
+FIX: JobAgent - included a mechanism to stop JobAgent if the host operator
+     creates /var/lib/dirac_drain
+FIX: CPUNormalization - fixed a typo in getPowerFromMJF() in the name of the
+     exception log message           
+
+[v6r14p32]
+
+*Core
+FIX: InstallTools - getStartupComponentStatus() uses "ps -p <pid>" variant of the
+     system call to be independent of the OS differences
+
+*DMS
+FIX: RemoveReplica - bulkRemoval() was modifying its input dict argument and returning it,
+     which was useless, only modify argument
+
+*WMS
+CHANGE: CPUNormalization - get HS'06 worker node value from JOBFEATURES if available
+
+*RMS
+FIX: ReqClient - bug fixed preventing the client to contact multiple instances of ReqManager
+     service
+
+[v6r14p31]
+
+*DMS
+FIX: FTSAgent - if a file was not Scheduled, the FTSAgent was setting it Done even if it had 
+     not been replicated.
+
+*Workflow
+FIX: FailoverRequest - forcing setting the input file Unused if it was already set Processed
+
+[v6r14p30]
+
+*Framework
+BUGFIX: MonitoringHandler - in deleteActivities() use retVal['Message'] if result is not OK
+
+*Resources
+FIX: XROOTStorage - in getFile() evalute file URL without URL parameters
+                    in __putSingleFile() use result['Message'] in case of error
+                    
+*RMS
+FIX: dirac-rms-cancel-request - fixed crash because of gLogger object was not imported
+
+*TS
+FIX: TransformationCLI - in resetProcessedFile() added check that the Failed dictionary
+     is present in the result of a call                    
 
 [v6r14p29]
 

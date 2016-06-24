@@ -19,10 +19,7 @@ class ProxyStorage( StorageBase ):
     StorageBase.__init__( self, storageName, parameters )
     self.pluginName = 'Proxy'
     self.isok = True
-
-    self.url = PathFinder.getServiceURL( "DataManagement/StorageElementProxy" )
-    if not self.url:
-      self.isok = False
+    self.url = 'DataManagement/StorageElementProxy'
 
   ######################################
   # File transfer functionalities

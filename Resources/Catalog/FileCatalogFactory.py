@@ -1,5 +1,3 @@
-__RCSID__ = "$Id$"
-
 """ FileCatalogFactory class to create file catalog client objects according to the
     configuration description
 """
@@ -9,7 +7,11 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
 from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
 from DIRAC.Core.Utilities import ObjectLoader
 
-class FileCatalogFactory:
+__RCSID__ = "$Id$"
+
+class FileCatalogFactory(object):
+  """ Factory of file catalog objects. Only exposes createCatalog() method
+  """
 
   def __init__( self ):
     self.log = gLogger.getSubLogger( 'FileCatalogFactory' )

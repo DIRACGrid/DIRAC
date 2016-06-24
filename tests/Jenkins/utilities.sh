@@ -2,8 +2,28 @@
 # General utility functions
 ############################################
 
-# Path to ci config files
-CI_CONFIG=$TESTCODE/DIRAC/tests/Jenkins/config/ci
+if [ -z $SERVERINSTALLDIR ]
+then
+	if [ -z $DEVROOT ]
+	then
+		echo 'Environmental variable "DEVROOT" is not set.'
+		exit 1
+	else
+		SERVERINSTALLDIR=$DEVROOT
+	fi
+fi
+
+if [ $DEVROOT ]
+then
+	# Path to ci config files
+	CI_CONFIG=$DEVROOT/DIRAC/tests/Jenkins/config/ci
+fi
+
+if [ $TESTCODE ]
+then
+	# Path to ci config files
+	CI_CONFIG=$TESTCODE/DIRAC/tests/Jenkins/config/ci
+fi
 
 # default: this function fixes some default values
 
@@ -92,6 +112,19 @@ function findRelease(){
 		projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
 	fi
 	# projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
+
+	# The special case is when there's no 'p'... (e.g. version v6r15)
+	if [ ! "$projectVersion" ]
+	then
+		if [ ! -z "$DIRACBRANCH" ]
+		then
+			projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+		else
+			projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]' | head -1 | sed 's/ //g'`
+		fi
+	fi
+
+
 	# In case there are no production tags for the branch, look for pre-releases in that branch
 	if [ ! "$projectVersion" ]
 	then
@@ -170,10 +203,10 @@ function findDatabases(){
 		DBstoExclude='notExcluding'
 	fi
 
-	cd $TESTCODE
+	cd $SERVERINSTALLDIR
 	if [ $? -ne 0 ]
 	then
-		echo 'ERROR: cannot change to ' $TESTCODE
+		echo 'ERROR: cannot change to ' $SERVERINSTALLDIR
 		return
 	fi
 	#
@@ -218,10 +251,10 @@ findServices(){
 		ServicestoExclude='notExcluding'
 	fi
 
-	cd $TESTCODE
+	cd $SERVERINSTALLDIR
 	if [ $? -ne 0 ]
 	then
-		echo 'ERROR: cannot change to ' $TESTCODE
+		echo 'ERROR: cannot change to ' $SERVERINSTALLDIR
 		return
 	fi
 	if [ ! -z "$ServicestoExclude" ]
@@ -251,10 +284,10 @@ findAgents(){
 		AgentstoExclude='notExcluding'
 	fi
 
-	cd $TESTCODE
+	cd $SERVERINSTALLDIR
 	if [ $? -ne 0 ]
 	then
-		echo 'ERROR: cannot change to ' $TESTCODE
+		echo 'ERROR: cannot change to ' $SERVERINSTALLDIR
 		return
 	fi
 	if [ ! -z "$AgentstoExclude" ]
@@ -465,15 +498,14 @@ function generateUserCredentials(){
 
     # Generate directory where to store credentials
     mkdir -p $SERVERINSTALLDIR/user
-    cd $SERVERINSTALLDIR/user
-		cd $TESTCODE/DIRAC/
+		cd $SERVERINSTALLDIR/user
 		if [ $? -ne 0 ]
 		then
 			echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
 			return
 		fi
 
-    cp $CI_CONFIG/openssl_config openssl_config
+    cp $CI_CONFIG/openssl_config openssl_config .
     sed -i 's/#hostname#/ciuser/g' openssl_config
     openssl genrsa -out client.key 1024 2&>1 /dev/null
     openssl req -key client.key -new -out client.req -config openssl_config
@@ -482,7 +514,7 @@ function generateUserCredentials(){
 
     CA=$SERVERINSTALLDIR/etc/grid-security/certificates
 
-    openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out client.pem
+    openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out $SERVERINSTALLDIR/user/client.pem
 }
 
 
@@ -591,7 +623,7 @@ diracServices(){
 	echo '==> [diracServices]'
 
 	#TODO: revise this list
-	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
+	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
 	# group proxy, will be uploaded explicitly
 	#	echo '==> getting/uploading proxy for prod'
@@ -615,8 +647,10 @@ diracServices(){
 diracUninstallServices(){
 	echo '==> [diracUninstallServices]'
 
+	findServices
+
 	#TODO: revise this list
-	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
+	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
 	# group proxy, will be uploaded explicitly
 	#	echo '==> getting/uploading proxy for prod'
@@ -838,5 +872,5 @@ function prepareForPilot(){
 function downloadProxy(){
 	echo '==> [downloadProxy]'
 
-	python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTCFG $DEBUG
+	python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG
 }

@@ -313,7 +313,7 @@ class StorageElementProxyHandler(RequestHandler):
       return S_ERROR('Not enough disk space')
 
     file_path = "%s/%s" % ( BASE_PATH, fileID )
-    mkDir(file_path)
+    mkDir( os.path.dirname( file_path ) )
     result = fileHelper.getFileDescriptor( file_path, 'w' )
     if not result['OK']:
       return S_ERROR('Failed to get file descriptor')

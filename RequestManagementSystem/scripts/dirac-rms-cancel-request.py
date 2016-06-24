@@ -35,7 +35,7 @@ if __name__ == "__main__":
     except ValueError:
       reqID = reqClient.getRequestIDForName( requestID )
       if not reqID['OK']:
-        gLogger.always( reqID['Message'] )
+        DIRAC.gLogger.always( reqID['Message'] )
         continue
       reqID = reqID['Value']
     res = reqClient.cancelRequest( reqID )

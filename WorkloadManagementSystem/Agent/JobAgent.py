@@ -93,6 +93,9 @@ class JobAgent( AgentModule ):
     """The JobAgent execution method.
     """
     if self.jobCount:
+      # Temporary mechanism to pass a shutdown message to the agent
+      if os.path.exists('/var/lib/dirac_drain'):
+        return self.__finish( 'Node is being drained by an operator' )
       # Only call timeLeft utility after a job has been picked up
       self.log.info( 'Attempting to check CPU time left for filling mode' )
       if self.fillingMode:
@@ -464,9 +467,7 @@ class JobAgent( AgentModule ):
       else:
         if 'Value' in submission:
           self.log.error( 'Error in DIRAC JobWrapper:', 'exit code = %s' % ( str( submission['Value'] ) ) )
-        # make sure the Job is declared Failed
-        self.__report( jobID, 'Failed', submission['Message'] )
-      return S_ERROR( '%s CE Submission Error: %s' % ( self.ceName, submission['Message'] ) )
+      return S_ERROR( '%s CE Error: %s' % ( self.ceName, submission['Message'] ) )
 
     return ret
 

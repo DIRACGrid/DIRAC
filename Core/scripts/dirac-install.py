@@ -704,6 +704,11 @@ class ReleaseConfig( object ):
       except KeyError:
         modNames = []
       for extraMod in extraModules:
+        # Check if the version of the extension module is specified in the command line
+        extraVersion = None
+        if ":" in extraMod:
+          extraMod, extraVersion = extraMod.split( ":" )
+          modVersions[extraMod] = extraVersion
         if extraMod in modVersions:
           modNames.append( extraMod )
           extraFound.append( extraMod )
@@ -719,7 +724,7 @@ class ReleaseConfig( object ):
         modsOrder.insert( 0, modName )
 
     for modName in extraModules:
-      if modName not in extraFound:
+      if modName.split(":")[0] not in extraFound:
         return S_ERROR( "No module %s defined. You sure it's defined for this release?" % modName )
 
     return S_OK( ( modsOrder, modsToInstall ) )
@@ -802,12 +807,12 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
       else:
         urlData += data
       data = remoteFD.read( 16384 )
-      if count % 20 == 0:
+      if count % 20 == 0 and sys.stdout.isatty():
         print '\033[1D' + ".",
         sys.stdout.flush()
         progressBar = True
       count += 1
-    if progressBar:
+    if progressBar and sys.stdout.isatty():
       # return cursor to the beginning of the line
       print '\033[1K',
       print '\033[1A'
@@ -968,8 +973,7 @@ def runExternalsPostInstall():
     return
   postInstallSuffix = "-postInstall"
   for scriptName in os.listdir( postInstallPath ):
-    suffixFindPos = scriptName.find( postInstallSuffix )
-    if suffixFindPos == -1 or not suffixFindPos == len( scriptName ) - len( postInstallSuffix ):
+    if not scriptName.endswith( postInstallSuffix ):
       logDEBUG( "%s does not have the %s suffix. Skipping.." % ( scriptName, postInstallSuffix ) )
       continue
     scriptPath = os.path.join( postInstallPath, scriptName )

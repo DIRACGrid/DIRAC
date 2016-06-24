@@ -64,7 +64,6 @@ csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1
 csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Path', '%s/sandboxes' % setupName )
 csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Access', 'remote' )
 
-
 # Now setting a FileCatalogs section as the following:
 #     FileCatalogs
 #     {
@@ -120,7 +119,7 @@ if not res['OK']:
 csAPI.setOption( 'Resources/Sites/DIRAC/DIRAC.Jenkins.org/CEs/some.CE.org/CEType', 'SSH' )
 
 
-# Now setting a RSS section as the following inside operations:
+# Now setting a RSS section as the following inside /Operations/Defaults:
 #
 #     ResourceStatus
 #     {
@@ -156,47 +155,66 @@ res = csAPI.createSection( 'Operations/' )
 if not res['OK']:
   print res['Message']
   exit( 1 )
-res = csAPI.createSection( 'Operations/ResourceStatus' )
+res = csAPI.createSection( 'Operations/Defaults' )
 if not res['OK']:
   print res['Message']
   exit( 1 )
-res = csAPI.createSection( 'Operations/ResourceStatus/Policies' )
+res = csAPI.createSection( 'Operations/Defaults/ResourceStatus' )
+if not res['OK']:
+  print res['Message']
+  exit( 1 )
+res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies' )
 if not res['OK']:
   print res['Message']
   exit( 1 )
 
-res = csAPI.createSection( 'Operations/ResourceStatus/Policies/AlwaysActiveForResource' )
+res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource' )
 if not res['OK']:
   print res['Message']
   exit( 1 )
-csAPI.setOption( 'Operations/ResourceStatus/Policies/AlwaysActiveForResource/policyType', 'AlwaysActive' )
-res = csAPI.createSection( 'Operations/ResourceStatus/Policies/AlwaysActiveForResource/matchParams' )
+csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/policyType', 'AlwaysActive' )
+res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/matchParams' )
 if not res['OK']:
   print res['Message']
   exit( 1 )
-csAPI.setOption( 'Operations/ResourceStatus/Policies/AlwaysActiveForResource/matchParams/element', 'Resource' )
+csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/matchParams/element', 'Resource' )
 
-res = csAPI.createSection( 'Operations/ResourceStatus/Policies/AlwaysBannedForSE1SE2' )
+res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2' )
 if not res['OK']:
   print res['Message']
   exit( 1 )
-csAPI.setOption( 'Operations/ResourceStatus/Policies/AlwaysBannedForSE1SE2/policyType', 'AlwaysBanned' )
-res = csAPI.createSection( 'Operations/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams' )
+csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/policyType', 'AlwaysBanned' )
+res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams' )
 if not res['OK']:
   print res['Message']
   exit( 1 )
-csAPI.setOption( 'Operations/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams/name', 'SE1,SE2' )
+csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams/name', 'SE1,SE2' )
 
-res = csAPI.createSection( 'Operations/ResourceStatus/Policies/AlwaysBannedForSite' )
+res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite' )
 if not res['OK']:
   print res['Message']
   exit( 1 )
-res = csAPI.createSection( 'Operations/ResourceStatus/Policies/AlwaysBannedForSite/matchParams' )
-csAPI.setOption( 'Operations/ResourceStatus/Policies/AlwaysBannedForSite/policyType', 'AlwaysBanned' )
+res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams' )
+csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/policyType', 'AlwaysBanned' )
+csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element', 'Site' )
+
+
+# Now setting the catalog list in Operations/Defults/Services/Catalogs/CatalogList
+
+res = csAPI.createSection( 'Operations/Defaults/Services' )
 if not res['OK']:
   print res['Message']
   exit( 1 )
-csAPI.setOption( 'Operations/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element', 'Site' )
+res = csAPI.createSection( 'Operations/Defaults/Services/Catalogs' )
+if not res['OK']:
+  print res['Message']
+  exit( 1 )
+res = csAPI.createSection( 'Operations/Defaults/Services/Catalogs/CatalogList' )
+if not res['OK']:
+  print res['Message']
+  exit( 1 )
+csAPI.setOption('Operations/Defaults/Services/Catalogs/CatalogList', 'FileCatalog')
+
 
 
 # Final action: commit in CS

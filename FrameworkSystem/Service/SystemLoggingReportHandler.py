@@ -1,5 +1,3 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
 """
 SystemLoggingReportHandler allows a remote system to access the contest
 of the SystemLoggingDB
@@ -16,11 +14,12 @@ of the SystemLoggingDB
     getGroupedMessages()
     getMessages()
 """
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC import S_OK
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.FrameworkSystem.private.logging.Message import tupleToMessage
 from DIRAC.FrameworkSystem.DB.SystemLoggingDB import SystemLoggingDB
+
+__RCSID__ = "$Id$"
 
 def initializeSystemLoggingReportHandler( serviceInfo ):
 
@@ -33,7 +32,7 @@ class SystemLoggingReportHandler( RequestHandler ):
 
   types_getMessages=[]
 
-  def __getMessages( self, selectionDict = {}, sortList = [], 
+  def __getMessages( self, selectionDict = {}, sortList = [],
                      startItem = 0, maxItems = 0 ):
     """
     """
@@ -49,7 +48,7 @@ class SystemLoggingReportHandler( RequestHandler ):
       dateField = "DATE_FORMAT(MessageTime, '%Y-%m-%d %H:%i:%s')"
     else:
       dateField = 'MessageTime'
-      
+
     if selectionDict.has_key('count'):
       countMessages = selectionDict['count']
       del selectionDict['count']
@@ -68,7 +67,7 @@ class SystemLoggingReportHandler( RequestHandler ):
       endDate = None
 
     if not ( beginDate or endDate ):
-      beginDate= Time.date() - 1 * Time.day 
+      beginDate= Time.date() - 1 * Time.day
 
     if selectionDict.has_key('groupField'):
       groupField = selectionDict['groupField']
@@ -81,14 +80,14 @@ class SystemLoggingReportHandler( RequestHandler ):
       elif sortList:
         groupField = sortList[0][0]
       else:
-        groupField = 'FixedTextString'       
+        groupField = 'FixedTextString'
     else:
       groupField = None
-      
+
     if selectionDict:
       fieldList = selectionDict.keys()
       fieldList.append( dateField )
-      if not ( selectionDict.has_key( 'LogLevel' ) and 
+      if not ( selectionDict.has_key( 'LogLevel' ) and
                selectionDict['LogLevel'] ):
         selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL' ]
     else:
@@ -98,8 +97,8 @@ class SystemLoggingReportHandler( RequestHandler ):
                     'SiteName' ]
       selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL' ]
 
-    result = LogDB._queryDB( showFieldList = fieldList, condDict = selectionDict, 
-                             older = endDate, newer = beginDate, 
+    result = LogDB._queryDB( showFieldList = fieldList, condDict = selectionDict,
+                             older = endDate, newer = beginDate,
                              count = countMessages, groupColumn = groupField,
                              orderFields = sortList )
 
@@ -120,20 +119,19 @@ class SystemLoggingReportHandler( RequestHandler ):
       if 'count(*) as recordCount' in fieldList:
         fieldList.remove( 'count(*) as recordCount' )
       fieldList.append( 'Number of Errors' )
-    
+
     if convertDatesToStrings:
       for element in fieldList:
         if search( 'MessageTime',element ):
           index = fieldList.index( element )
       fieldList[index] = 'MessageTime'
-      
+
     retValue = { 'ParameterNames': fieldList, 'Records': records ,
                  'TotalRecords': len( result['Value'] ), 'Extras': {}}
-  
+
     return S_OK( retValue )
 
-  def export_getMessages( self, selectionDict = {}, sortList = [], 
-                          startItem = 0, maxItems = 0 ):
+  def export_getMessages( self, selectionDict = {}, sortList = [], startItem = 0, maxItems = 0 ):
     """ Query the database for all the messages between two given dates.
         If no date is provided then the records returned are those generated
         during the last 24 hours.
@@ -145,8 +143,7 @@ class SystemLoggingReportHandler( RequestHandler ):
 
   types_getCountMessages=[]
 
-  def export_getCountMessages( self, selectionDict = {}, sortList = [], 
-                           startItem = 0, maxItems = 0 ):
+  def export_getCountMessages( self, selectionDict = {}, sortList = [], startItem = 0, maxItems = 0 ):
     """ Query the database for the number of messages that match 'conds' and
         were generated between initialDate and endDate. If no condition is
         provided it returns the total number of messages present in the
@@ -154,31 +151,30 @@ class SystemLoggingReportHandler( RequestHandler ):
     """
     selectionDict['count'] = True
     selectionDict['groupField'] = None
-    
+
     return self.__getMessages( selectionDict, sortList, startItem, maxItems )
 
 
   types_getGroupedMessages = []
-  
-  def export_getGroupedMessages( self, selectionDict = {}, sortList = [], 
-                                 startItem = 0, maxItems = 0 ):
+
+  def export_getGroupedMessages( self, selectionDict = {}, sortList = [], startItem = 0, maxItems = 0 ):
     """  This function reports the number of messages per fixed text
-         string, system and subsystem that generated them using the 
-         DIRAC convention for communications between services and 
+         string, system and subsystem that generated them using the
+         DIRAC convention for communications between services and
          web pages
     """
     selectionDict['count'] = True
 
     return self.__getMessages( selectionDict, sortList, startItem, maxItems )
-  
+
   types_getSites = []
 
-  def export_getSites( self, selectionDict = {}, sortList = [], 
-                         startItem = 0, maxItems = 0 ):
+  def export_getSites( self, selectionDict = {}, sortList = [], startItem = 0, maxItems = 0 ):
     result = LogDB._queryDB( showFieldList = [ 'SiteName' ] )
-    
-    if not result['OK']: return result
-    
+
+    if not result['OK']:
+      return result
+
     if maxItems:
       records = result['Value'][ startItem:maxItems + startItem ]
     else:
@@ -191,12 +187,12 @@ class SystemLoggingReportHandler( RequestHandler ):
 
   types_getSystems = []
 
-  def export_getSystems( self , selectionDict = {}, sortList = [], 
+  def export_getSystems( self , selectionDict = {}, sortList = [],
                          startItem = 0, maxItems = 0 ):
     result = LogDB._queryDB( showFieldList = [ 'SystemName' ] )
-    
+
     if not result['OK']: return result
-    
+
     if maxItems:
       records = result['Value'][ startItem:maxItems + startItem ]
     else:
@@ -209,12 +205,12 @@ class SystemLoggingReportHandler( RequestHandler ):
 
   types_getSubSystems = []
 
-  def export_getSubSystems( self, selectionDict = {}, sortList = [], 
+  def export_getSubSystems( self, selectionDict = {}, sortList = [],
                             startItem = 0, maxItems = 0 ):
     result = LogDB._queryDB( showFieldList = [ 'SubSystemName' ] )
-    
+
     if not result['OK']: return result
-    
+
     if maxItems:
       records = result['Value'][ startItem:maxItems + startItem ]
     else:
@@ -227,13 +223,13 @@ class SystemLoggingReportHandler( RequestHandler ):
 
   types_getGroups = []
 
-  def export_getGroups( self, selectionDict = {}, sortList = [], 
+  def export_getGroups( self, selectionDict = {}, sortList = [],
                         startItem = 0, maxItems = 0 ):
 
     result = LogDB._queryDB( showFieldList = [ 'OwnerGroup' ] )
-    
+
     if not result['OK']: return result
-    
+
     if maxItems:
       records = result['Value'][ startItem:maxItems + startItem ]
     else:
@@ -241,17 +237,17 @@ class SystemLoggingReportHandler( RequestHandler ):
 
     retValue = { 'ParameterNames': [ 'OwnerGroup' ], 'Records': records,
                  'TotalRecords': len( result['Value'] ), 'Extras': {}}
-      
+
     return S_OK( retValue )
 
   types_getFixedTextStrings = []
 
-  def export_getFixedTextStrings( self, selectionDict = {}, sortList = [], 
+  def export_getFixedTextStrings( self, selectionDict = {}, sortList = [],
                                   startItem = 0, maxItems = 0 ):
     result = LogDB._queryDB( showFieldList = [ 'FixedTextString' ] )
-    
+
     if not result['OK']: return result
-    
+
     if maxItems:
       records = result['Value'][ startItem:maxItems + startItem ]
     else:
@@ -259,6 +255,5 @@ class SystemLoggingReportHandler( RequestHandler ):
 
     retValue = { 'ParameterNames': [ 'FixedTextString' ], 'Records': records,
                  'TotalRecords': len( result['Value'] ), 'Extras': {}}
-    
-    return S_OK( retValue )
 
+    return S_OK( retValue )

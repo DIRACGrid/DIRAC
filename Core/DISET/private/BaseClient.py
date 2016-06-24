@@ -130,7 +130,7 @@ class BaseClient:
     if self.KW_USE_CERTIFICATES in self.kwargs:
       self.useCertificates = self.kwargs[ self.KW_USE_CERTIFICATES ]
     else:
-      self.useCertificates = gConfig._useServerCertificate()
+      self.useCertificates = gConfig.useServerCertificate()
       self.kwargs[ self.KW_USE_CERTIFICATES ] = self.useCertificates
     if self.KW_SKIP_CA_CHECK not in self.kwargs:
       if self.useCertificates:

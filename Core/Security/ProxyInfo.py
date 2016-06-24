@@ -2,8 +2,6 @@
  Set of utilities to retrieve Information from proxy
 """
 
-__RCSID__ = "$Id$"
-
 import base64
 
 from DIRAC                                     import S_OK, S_ERROR
@@ -13,6 +11,8 @@ from DIRAC.Core.Security.VOMS                  import VOMS
 from DIRAC.Core.Security                       import Locations
 
 from DIRAC.ConfigurationSystem.Client.Helpers  import Registry
+
+__RCSID__ = "$Id$"
 
 
 def getProxyInfo( proxy = False, disableVOMS = False ):
@@ -175,4 +175,3 @@ def getVOfromProxyGroup():
   if 'group' in ret['Value']:
     voName = Registry.getVOForGroup( ret['Value']['group'] )
   return S_OK( voName )
-

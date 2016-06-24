@@ -8,3 +8,5 @@ script:
   - export PYTHONPATH=${PWD%/*}
   - ls $PYTHONPATH
   - py.test
+after_success:
+  - coveralls

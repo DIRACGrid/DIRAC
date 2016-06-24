@@ -3,13 +3,12 @@ This Service provides functionality to access and modify the
 InstalledComponentsDB database
 """
 
-__RCSID__ = "$Id$"
-
-import types
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import InstalledComponentsDB, Component, Host, InstalledComponent, HostLogging
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+
+__RCSID__ = "$Id$"
 
 class ComponentMonitoringHandler( RequestHandler ):
 
@@ -41,7 +40,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return S_OK( matchFields )
 
-  types_addComponent = [ types.DictType ]
+  types_addComponent = [ dict ]
   def export_addComponent( self, component ):
     """
     Creates a new Component object on the database
@@ -51,7 +50,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return ComponentMonitoringHandler.db.addComponent( component )
 
-  types_componentExists = [ types.DictType ]
+  types_componentExists = [ dict ]
   def export_componentExists( self, matchFields ):
     """
     Returns whether components matching the given criteria exist
@@ -62,7 +61,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return ComponentMonitoringHandler.db.exists( Component, matchFields )
 
-  types_getComponents = [ types.DictType, types.BooleanType, types.BooleanType ]
+  types_getComponents = [ dict, bool, bool ]
   def export_getComponents( self,
                             matchFields,
                             includeInstallations,
@@ -83,7 +82,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     return ComponentMonitoringHandler.db.getComponents \
                             ( matchFields, includeInstallations, includeHosts )
 
-  types_updateComponents = [ types.DictType, types.DictType ]
+  types_updateComponents = [ dict, dict ]
   def export_updateComponents( self, matchFields, updates ):
     """
     Updates Components objects on the database
@@ -99,7 +98,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     return ComponentMonitoringHandler.db.updateComponents \
                                                         ( matchFields, updates )
 
-  types_removeComponents = [ types.DictType ]
+  types_removeComponents = [ dict ]
   def export_removeComponents( self, matchFields ):
     """
     Removes from the database components that match the given fields
@@ -111,7 +110,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return ComponentMonitoringHandler.db.removeComponents( matchFields )
 
-  types_addHost = [ types.DictType ]
+  types_addHost = [ dict ]
   def export_addHost( self, host ):
     """
     Creates a new Host object on the database
@@ -120,7 +119,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return ComponentMonitoringHandler.db.addHost( host )
 
-  types_hostExists = [ types.DictType ]
+  types_hostExists = [ dict ]
   def export_hostExists( self, matchFields ):
     """
     Returns whether hosts matching the given criteria exist
@@ -131,7 +130,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return ComponentMonitoringHandler.db.exists( Host, matchFields )
 
-  types_getHosts = [ types.DictType, types.BooleanType, types.BooleanType ]
+  types_getHosts = [ dict, bool, bool ]
   def export_getHosts( self,
                        matchFields,
                        includeInstallations,
@@ -152,7 +151,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     return ComponentMonitoringHandler.db.getHosts \
                         ( matchFields, includeInstallations, includeComponents )
 
-  types_updateHosts = [ types.DictType, types.DictType ]
+  types_updateHosts = [ dict, dict ]
   def export_updateHosts( self, matchFields, updates ):
     """
     Updates Hosts objects on the database
@@ -168,7 +167,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return ComponentMonitoringHandler.db.updateHosts( matchFields, updates )
 
-  types_removeHosts = [ types.DictType ]
+  types_removeHosts = [ dict ]
   def export_removeHosts( self, matchFields ):
     """
     Removes from the database hosts that match the given fields
@@ -180,10 +179,10 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return ComponentMonitoringHandler.db.removeHosts( matchFields )
 
-  types_addInstallation = [ types.DictType,
-                            types.DictType,
-                            types.DictType,
-                            types.BooleanType ]
+  types_addInstallation = [ dict,
+                            dict,
+                            dict,
+                            bool ]
   def export_addInstallation( self,
                               installation,
                               componentDict,
@@ -204,7 +203,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     return ComponentMonitoringHandler.db.addInstalledComponent \
                           ( installation, componentDict, hostDict, forceCreate )
 
-  types_installationExists = [ types.DictType, types.DictType, types.DictType ]
+  types_installationExists = [ dict, dict, dict ]
   def export_installationExists( self,
                                  installationFields,
                                  componentFields,
@@ -225,10 +224,10 @@ class ComponentMonitoringHandler( RequestHandler ):
     return ComponentMonitoringHandler.db.exists \
                                             ( InstalledComponent, matchFields )
 
-  types_getInstallations = [ types.DictType,
-                             types.DictType,
-                             types.DictType,
-                             types.BooleanType ]
+  types_getInstallations = [ dict,
+                             dict,
+                             dict,
+                             bool ]
   def export_getInstallations( self,
                                installationFields,
                                componentFields,
@@ -252,10 +251,10 @@ class ComponentMonitoringHandler( RequestHandler ):
     return ComponentMonitoringHandler.db.getInstalledComponents \
                                               ( matchFields, installationsInfo )
 
-  types_updateInstallations = [ types.DictType,
-                                types.DictType,
-                                types.DictType,
-                                types.DictType ]
+  types_updateInstallations = [ dict,
+                                dict,
+                                dict,
+                                dict ]
   def export_updateInstallations( self,
                                   installationFields,
                                   componentFields,
@@ -280,7 +279,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     return ComponentMonitoringHandler.db.updateInstalledComponents \
                                                         ( matchFields, updates )
 
-  types_removeInstallations = [ types.DictType, types.DictType, types.DictType ]
+  types_removeInstallations = [ dict, dict, dict ]
   def export_removeInstallations( self,
                                   installationFields,
                                   componentFields,
@@ -301,7 +300,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     return \
           ComponentMonitoringHandler.db.removeInstalledComponents( matchFields )
 
-  types_updateLog = [ types.StringTypes, types.DictType ]
+  types_updateLog = [ basestring, dict ]
   def export_updateLog( self, host, fields ):
     """
     Updates the log entry for a given host in the database with the given fields
@@ -323,7 +322,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return S_OK( 'Logs updated correctly' )
 
-  types_getLog = [ types.StringTypes ]
+  types_getLog = [ basestring ]
   def export_getLog( self, host ):
     """
     Retrieves the logging information currently stored for the given host
@@ -340,7 +339,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return S_OK( result[ 'Value' ] )
 
-  types_removeLogs = [ types.DictType ]
+  types_removeLogs = [ dict ]
   def export_removeLogs( self, fields ):
     """
     Deletes all the matching logging information

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+from DIRAC import S_OK
 from DIRAC.Core.Base import Script
+
+__RCSID__ = "$Id$"
 
 Script.setUsageMessage( """
 Get status of the available Storage Elements
@@ -8,6 +11,29 @@ Get status of the available Storage Elements
 Usage:
   %s [<options>]
 """ % Script.scriptName )
+
+vo = None
+def setVO( arg ):
+  global vo
+  vo = arg
+  return S_OK()
+
+allVOsFlag = False
+def setAllVO( arg ):
+  global allVOsFlag
+  allVOsFlag = True
+  return S_OK()
+
+noVOFlag = False
+def setNoVO( arg ):
+  global noVOFlag, allVOsFlag
+  noVOFlag = True
+  allVOsFlag = False
+  return S_OK()
+
+Script.registerSwitch( "V:", "vo=", "Virtual Organization", setVO )
+Script.registerSwitch( "a", "all", "All Virtual Organizations flag", setAllVO )
+Script.registerSwitch( "n", "noVO", "No Virtual Organizations assigned flag", setNoVO )
 
 Script.parseCommandLine()
 
@@ -39,18 +65,24 @@ if not res[ 'OK' ]:
 fields = ['SE','ReadAccess','WriteAccess','RemoveAccess','CheckAccess']
 records = []
 
-result = getVOfromProxyGroup()
-if not result['OK']:
-  gLogger.error( 'Failed to determine the user VO' )
-  DIRAC.exit( -1 )
-vo = result['Value']
+if vo is None and not allVOsFlag:
+  result = getVOfromProxyGroup()
+  if not result['OK']:
+    gLogger.error( 'Failed to determine the user VO' )
+    DIRAC.exit( -1 )
+  vo = result['Value']
+
+print allVOsFlag, noVOFlag, vo
 
 for se, statusDict in res[ 'Value' ].items():
 
   # Check if the SE is allowed for the user VO
-  voList = gConfig.getValue( '/Resources/StorageElements/%s/VO' % se, [] )
-  if voList and not vo in voList:
-    continue
+  if not allVOsFlag:
+    voList = gConfig.getValue( '/Resources/StorageElements/%s/VO' % se, [] )
+    if noVOFlag and voList:
+      continue
+    if voList and not vo in voList:
+      continue
 
   record = [se]
   for status in fields[1:]:

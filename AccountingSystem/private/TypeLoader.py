@@ -10,11 +10,9 @@ class TypeLoader( object ):
     self.__loaded = {}
     self.__path = "AccountingSystem/Client/Types"
     self.__parentCls = BaseAccountingType
-    self.__reFilter = re.compile( ".*[a-z1-9]\.py$" )
+    self.__reFilter = re.compile( r".*[a-z1-9]\.py$" )
 
   def getTypes( self ):
     if not self.__loaded:
       self.__loaded = loadObjects( self.__path, self.__reFilter, self.__parentCls )
     return self.__loaded
-
-
