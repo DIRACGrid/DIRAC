@@ -35,7 +35,7 @@ class FileCatalogClient( FileCatalogClientBase ):
   NO_LFN_METHODS = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
                     'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
                     'getReplicasByMetadata','findFilesByMetadataDetailed','findFilesByMetadataWeb',
-                    'getCompatibleMetadata','addMetadataSet','getMetadataSet','getFileUserMetadata']
+                    'getCompatibleMetadata', 'addMetadataSet', 'getMetadataSet', 'getFileUserMetadata', 'getLFNForGUID']
 
   ADMIN_METHODS = [ 'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'getUsers', 'getGroups',
                     'getCatalogCounters', 'repairCatalog', 'rebuildDirectoryUsage' ]
@@ -419,7 +419,6 @@ class FileCatalogClient( FileCatalogClientBase ):
     """ Get the status for the supplied replicas """
     return self._getRPC( timeout = timeout ).getFileDescendents( lfns, depths )
 
-  @checkCatalogArguments
   def getLFNForGUID( self, guids, timeout = 120 ):
     """Get the matching lfns for given guids"""
     return self._getRPC( timeout = timeout ).getLFNForGUID( guids )
