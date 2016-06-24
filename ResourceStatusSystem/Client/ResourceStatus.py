@@ -31,11 +31,11 @@ class ResourceStatus( object ):
     """
     Constructor, initializes the rssClient.
     """
-
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.rssConfig = RssConfiguration()
     self.__opHelper = Operations()
     self.rssClient = ResourceStatusClient()
+    self.rssFlag = self.__getMode()
 
     # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
     cacheLifeTime = int( self.rssConfig.getConfigCache() )
@@ -61,7 +61,7 @@ class ResourceStatus( object ):
 
     """
 
-    if self.__getMode():
+    if self.rssFlag:
     #We do not apply defaults. If is not on the cache, S_ERROR is returned.
        return self.__getRSSElementStatus( elementName, elementType, statusType )
     else:
@@ -79,7 +79,7 @@ class ResourceStatus( object ):
           S_OK(  xyz.. )
     """
 
-    if self.__getMode():
+    if self.rssFlag:
       return self.__setRSSElementStatus( elementName, elementType, statusType, status, reason, tokenOwner )
     else:
       return self.__setCSElementStatus( elementName, elementType, statusType, status )
