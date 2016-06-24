@@ -3,6 +3,8 @@
     (Partially) tested here are SGE and LSF, PBS is TO-DO
 """
 
+#FIXME: remove use of importlib, use @mock.patch decorator instead
+
 # imports
 import unittest, importlib
 from mock import MagicMock
