@@ -1,3 +1,5 @@
+""" This is the guy that actually modifies the content of the CS
+"""
 
 import zlib
 import difflib
@@ -5,11 +7,11 @@ import difflib
 from DIRAC.Core.Utilities                               import List, Time
 from DIRAC.Core.Utilities.CFG                           import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo
 
 __RCSID__ = "$Id$"
 
-class Modificator:
+class Modificator( object ):
 
   def __init__( self, rpcClient = False, commiterId = "unknown" ):
     self.commiterTag = "@@-"

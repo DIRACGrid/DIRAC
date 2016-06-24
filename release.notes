@@ -1,3 +1,21 @@
+[v6r15p5]
+
+Included fixes from v6r14p36 patch release
+
+*Framework
+FIX: added GOCDB2CSAgent in template
+FIX: Fixed permissions for HostLogging
+
+*DMS
+FIX: Introduced hopefully temporary fix to circumvent globus bug in gfal2
+
+*WMS:
+FIX: added test for MJF and made code more robust
+
+*RSS
+NEW: HTML notification Emails
+
+
 [v6r15p4]
 
 Included fixes from v6r14p35 patch release
@@ -182,6 +200,16 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+
+[v6r14p36]
+
+*Core
+FIX: Sending mails to multiple recipients was not working
+
+*WMS
+FIX: Allow staging from SEs accessible by protocol
+
 
 [v6r14p35]
 

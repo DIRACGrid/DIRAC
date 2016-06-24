@@ -1,5 +1,3 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
 """
    DIRAC Logger client
 """
@@ -7,17 +5,20 @@ __RCSID__ = "$Id$"
 import sys
 import traceback
 import inspect
+
+import DIRAC
 from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.logging.Message import Message
 from DIRAC.Core.Utilities import Time, List
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure, reprReturnErrorStructure
 from DIRAC.FrameworkSystem.private.logging.backends.BackendIndex import gBackendIndex
 from DIRAC.Core.Utilities import ExitCallback
-import DIRAC
+
+__RCSID__ = "$Id$"
 
 DEBUG = 1
 
-class Logger:
+class Logger( object ):
 
   defaultLogLevel = 'NOTICE'
 

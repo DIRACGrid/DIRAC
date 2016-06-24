@@ -1,11 +1,14 @@
 """ DIRAC API Base Class """
 
+import pprint
+import sys
+
 from DIRAC                          import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo  import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry         import getDNForUsername
 from DIRAC.Core.Utilities.Version   import getCurrentVersion
 
-import pprint, sys
+__RCSID__ = '$Id: $'
 
 COMPONENT_NAME = 'API'
 
@@ -17,12 +20,12 @@ def _printFormattedDictList( dictList, fields, uniqueField, orderBy ):
   for myDict in dictList:
     for field in fields:
       fieldValue = myDict[field]
-      if not fieldWidths.has_key( field ):
+      if field not in fieldWidths:
         fieldWidths[field] = len( str( field ) )
       if len( str( fieldValue ) ) > fieldWidths[field]:
         fieldWidths[field] = len( str( fieldValue ) )
     orderValue = myDict[orderBy]
-    if not orderDict.has_key( orderValue ):
+    if orderValue not in orderDict:
       orderDict[orderValue] = []
     orderDict[orderValue].append( myDict[uniqueField] )
     dictFields[myDict[uniqueField]] = myDict
@@ -84,7 +87,7 @@ class API( object ):
       return self._errorReport( 'No proxy found in local environment', res['Message'] )
     proxyInfo = res['Value']
     gLogger.debug( formatProxyInfoAsString( proxyInfo ) )
-    if not proxyInfo.has_key( 'group' ):
+    if 'group 'not in proxyInfo:
       return self._errorReport( 'Proxy information does not contain the group', res['Message'] )
     res = getDNForUsername( proxyInfo['username'] )
     if not res['OK']:
@@ -110,7 +113,7 @@ class API( object ):
 Arguments: %s
 Message: %s
 """ % ( className, methodName, '/'.join( arguments ), message )
-    if self.errorDict.has_key( methodName ):
+    if methodName in self.errorDict:
       tmp = self.errorDict[methodName]
       tmp.append( finalReport )
       self.errorDict[methodName] = tmp
