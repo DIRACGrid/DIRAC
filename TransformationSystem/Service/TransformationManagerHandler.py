@@ -1,16 +1,15 @@
 """ DISET request handler base class for the TransformationDB.
 """
 
-__RCSID__ = "$Id$"
-
 from DIRAC                                               import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
 from DIRAC.TransformationSystem.DB.TransformationDB      import TransformationDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-from types import ListType, DictType, IntType, LongType, StringTypes, TupleType
+transTypes = [basestring, int, long]
 
-transTypes = list( StringTypes ) + [IntType, LongType]
+__RCSID__ = "$Id$"
+
 
 class TransformationManagerHandlerBase( RequestHandler ):
 
@@ -23,7 +22,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     global database
     database = oDatabase
 
-  types_getCounters = [StringTypes, ListType, DictType]
+  types_getCounters = [basestring, list, dict]
   def export_getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None ):
     res = database.getCounters( table, attrList, condDict, older = older, newer = newer, timeStamp = timeStamp )
     return self._parseRes( res )
@@ -33,15 +32,15 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods to manipulate the transformations table
   #
 
-  types_addTransformation = [ StringTypes, StringTypes, StringTypes, StringTypes, StringTypes, StringTypes, StringTypes]
+  types_addTransformation = [ basestring, basestring, basestring, basestring, basestring, basestring, basestring]
   def export_addTransformation( self, transName, description, longDescription, transType, plugin, agentType, fileMask,
-                                    transformationGroup = 'General',
-                                    groupSize = 1,
-                                    inheritedFrom = 0,
-                                    body = '',
-                                    maxTasks = 0,
-                                    eventsPerTask = 0,
-                                    addFiles = True ):
+                                transformationGroup = 'General',
+                                groupSize = 1,
+                                inheritedFrom = 0,
+                                body = '',
+                                maxTasks = 0,
+                                eventsPerTask = 0,
+                                addFiles = True ):
 #    authorDN = self._clientTransport.peerCredentials['DN']
 #    authorGroup = self._clientTransport.peerCredentials['group']
     credDict = self.getRemoteCredentials()
@@ -76,7 +75,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.cleanTransformation( transName, author = authorDN )
     return self._parseRes( res )
 
-  types_setTransformationParameter = [transTypes, StringTypes]
+  types_setTransformationParameter = [transTypes, basestring]
   def export_setTransformationParameter( self, transName, paramName, paramValue ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
@@ -84,7 +83,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.setTransformationParameter( transName, paramName, paramValue, author = authorDN )
     return self._parseRes( res )
 
-  types_deleteTransformationParameter = [transTypes, StringTypes]
+  types_deleteTransformationParameter = [transTypes, basestring]
   def export_deleteTransformationParameter( self, transName, paramName ):
     # credDict = self.getRemoteCredentials()
     # authorDN = credDict[ 'DN' ]
@@ -93,16 +92,18 @@ class TransformationManagerHandlerBase( RequestHandler ):
     return self._parseRes( res )
 
   types_getTransformations = []
-  def export_getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate',
+  def export_getTransformations( self, condDict = None, older = None, newer = None, timeStamp = 'CreationDate',
                                  orderAttribute = None, limit = None, extraParams = False, offset = None ):
+    if not condDict:
+      condDict = {}
     res = database.getTransformations( condDict = condDict,
-                                  older = older,
-                                  newer = newer,
-                                  timeStamp = timeStamp,
-                                  orderAttribute = orderAttribute,
-                                  limit = limit,
-                                  extraParams = extraParams,
-                                  offset = offset )
+                                       older = older,
+                                       newer = newer,
+                                       timeStamp = timeStamp,
+                                       orderAttribute = orderAttribute,
+                                       limit = limit,
+                                       extraParams = extraParams,
+                                       offset = offset )
     return self._parseRes( res )
 
   types_getTransformation = [transTypes]
@@ -110,12 +111,12 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.getTransformation( transName, extraParams = extraParams )
     return self._parseRes( res )
 
-  types_getTransformationParameters = [transTypes, list( StringTypes ) + [ListType, TupleType]]
+  types_getTransformationParameters = [transTypes, [basestring, list, tuple]]
   def export_getTransformationParameters( self, transName, parameters ):
     res = database.getTransformationParameters( transName, parameters )
     return self._parseRes( res )
 
-  types_getTransformationWithStatus = [list( StringTypes ) + [ListType, TupleType]]
+  types_getTransformationWithStatus = [[basestring, list, tuple]]
   def export_getTransformationWithStatus( self, status ):
     res = database.getTransformationWithStatus( status )
     return self._parseRes( res )
@@ -125,7 +126,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods to manipulate the TransformationFiles tables
   #
 
-  types_addFilesToTransformation = [transTypes, [ListType, TupleType]]
+  types_addFilesToTransformation = [transTypes, [list, tuple]]
   def export_addFilesToTransformation( self, transName, lfns ):
     res = database.addFilesToTransformation( transName, lfns )
     return self._parseRes( res )
@@ -135,7 +136,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [transTypes, list( StringTypes ) + [DictType]]
+  types_setFileStatusForTransformation = [transTypes, [basestring, dict]]
   def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus, lfns = [], force = False ):
     """ Sets the file status for the transformation.
 
@@ -176,14 +177,16 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.getTransformationStats( transName )
     return self._parseRes( res )
 
-  types_getTransformationFilesCount = [transTypes, StringTypes]
+  types_getTransformationFilesCount = [transTypes, basestring]
   def export_getTransformationFilesCount( self, transName, field, selection = {} ):
     res = database.getTransformationFilesCount( transName, field, selection = selection )
     return self._parseRes( res )
 
   types_getTransformationFiles = []
-  def export_getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
+  def export_getTransformationFiles( self, condDict = None, older = None, newer = None, timeStamp = 'LastUpdate',
                                      orderAttribute = None, limit = None, offset = None ):
+    if not condDict:
+      condDict = {}
     res = database.getTransformationFiles( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
                                            orderAttribute = orderAttribute, limit = limit, offset = offset,
                                            connection = False )
@@ -195,19 +198,21 @@ class TransformationManagerHandlerBase( RequestHandler ):
   #
 
   types_getTransformationTasks = []
-  def export_getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
+  def export_getTransformationTasks( self, condDict = None, older = None, newer = None, timeStamp = 'CreationTime',
                                      orderAttribute = None, limit = None, inputVector = False, offset = None ):
+    if not condDict:
+      condDict = {}
     res = database.getTransformationTasks( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
                                            orderAttribute = orderAttribute, limit = limit, inputVector = inputVector,
                                            offset = offset )
     return self._parseRes( res )
 
-  types_setTaskStatus = [transTypes, [ListType, IntType, LongType], StringTypes]
+  types_setTaskStatus = [transTypes, [list, int, long], basestring]
   def export_setTaskStatus( self, transName, taskID, status ):
     res = database.setTaskStatus( transName, taskID, status )
     return self._parseRes( res )
 
-  types_setTaskStatusAndWmsID = [ transTypes, [LongType, IntType], StringTypes, StringTypes]
+  types_setTaskStatusAndWmsID = [ transTypes, [long, int], basestring, basestring]
   def export_setTaskStatusAndWmsID( self, transName, taskID, status, taskWmsID ):
     res = database.setTaskStatusAndWmsID( transName, taskID, status, taskWmsID )
     return self._parseRes( res )
@@ -217,7 +222,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.getTransformationTaskStats( transName )
     return self._parseRes( res )
 
-  types_deleteTasks = [transTypes, [LongType, IntType], [LongType, IntType]]
+  types_deleteTasks = [transTypes, [long, int], [long, int]]
   def export_deleteTasks( self, transName, taskMin, taskMax ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
@@ -225,7 +230,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.deleteTasks( transName, taskMin, taskMax, author = authorDN )
     return self._parseRes( res )
 
-  types_extendTransformation = [transTypes, [LongType, IntType]]
+  types_extendTransformation = [transTypes, [long, int]]
   def export_extendTransformation( self, transName, nTasks ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
@@ -233,7 +238,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.extendTransformation( transName, nTasks, author = authorDN )
     return self._parseRes( res )
 
-  types_getTasksToSubmit = [transTypes, [LongType, IntType]]
+  types_getTasksToSubmit = [transTypes, [long, int]]
   def export_getTasksToSubmit( self, transName, numTasks, site = '' ):
     """ Get information necessary for submission for a given number of tasks for a given transformation """
     res = database.getTransformation( transName )
@@ -259,7 +264,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods for TransformationInputDataQuery table
   #
 
-  types_createTransformationInputDataQuery = [ list( StringTypes ) + [LongType, IntType], DictType ]
+  types_createTransformationInputDataQuery = [ transTypes, dict ]
   def export_createTransformationInputDataQuery( self, transName, queryDict ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
@@ -267,7 +272,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.createTransformationInputDataQuery( transName, queryDict, author = authorDN )
     return self._parseRes( res )
 
-  types_deleteTransformationInputDataQuery = [ list( StringTypes ) + [LongType, IntType] ]
+  types_deleteTransformationInputDataQuery = [ transTypes ]
   def export_deleteTransformationInputDataQuery( self, transName ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
@@ -275,7 +280,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.deleteTransformationInputDataQuery( transName, author = authorDN )
     return self._parseRes( res )
 
-  types_getTransformationInputDataQuery = [ list( StringTypes ) + [LongType, IntType] ]
+  types_getTransformationInputDataQuery = [ transTypes ]
   def export_getTransformationInputDataQuery( self, transName ):
     res = database.getTransformationInputDataQuery( transName )
     return self._parseRes( res )
@@ -305,29 +310,29 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods for file manipulation
   #
 
-  types_getFileSummary = [ListType]
+  types_getFileSummary = [list]
   def export_getFileSummary( self, lfns ):
     res = database.getFileSummary( lfns )
     return self._parseRes( res )
 
-  types_addDirectory = [StringTypes]
+  types_addDirectory = [basestring]
   def export_addDirectory( self, path, force = False ):
     res = database.addDirectory( path, force = force )
     return self._parseRes( res )
 
-  types_exists = [ListType]
+  types_exists = [list]
   def export_exists( self, lfns ):
     res = database.exists( lfns )
     return self._parseRes( res )
 
-  types_addFile = [ [ ListType, DictType ] + list( StringTypes ) ]
+  types_addFile = [ [ list, dict, basestring] ]
   def export_addFile( self, fileDicts, force = False ):
     """ Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
     """
     res = database.addFile( fileDicts, force = force )
     return self._parseRes( res )
 
-  types_removeFile = [[ListType,DictType]]
+  types_removeFile = [[list,dict]]
   def export_removeFile( self, lfns ):
     """ Interface provides [ LFN1, LFN2, ... ]
     """
@@ -342,14 +347,14 @@ class TransformationManagerHandlerBase( RequestHandler ):
   #
 
   # TODO Get rid of this (talk to Matvey)
-  types_getDistinctAttributeValues = [StringTypes, DictType]
+  types_getDistinctAttributeValues = [basestring, dict]
   def export_getDistinctAttributeValues( self, attribute, selectDict ):
     res = database.getTableDistinctAttributeValues( 'Transformations', [attribute], selectDict )
     if not res['OK']:
       return self._parseRes( res )
     return S_OK( res['Value'][attribute] )
 
-  types_getTableDistinctAttributeValues = [StringTypes, ListType, DictType]
+  types_getTableDistinctAttributeValues = [basestring, list, dict]
   def export_getTableDistinctAttributeValues( self, table, attributes, selectDict ):
     res = database.getTableDistinctAttributeValues( table, attributes, selectDict )
     return self._parseRes( res )
@@ -387,7 +392,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
       resultDict[transID] = transDict
     return S_OK( resultDict )
 
-  types_getTabbedSummaryWeb = [StringTypes, DictType, DictType, ListType, IntType, IntType]
+  types_getTabbedSummaryWeb = [basestring, dict, dict, list, int, int]
   def export_getTabbedSummaryWeb( self, table, requestedTables, selectDict, sortList, startItem, maxItems ):
     tableDestinations = {  'Transformations'      : { 'TransformationFiles' : ['TransformationID'],
                                                       'TransformationTasks' : ['TransformationID']           },
@@ -408,8 +413,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
                            'TransformationTasks'  : 'CreationTime' }
 
     tableStatusColumn = {   'Transformations'      : 'Status',
-                           'TransformationFiles'  : 'Status',
-                           'TransformationTasks'  : 'ExternalStatus' }
+                            'TransformationFiles'  : 'Status',
+                            'TransformationTasks'  : 'ExternalStatus' }
 
     resDict = {}
     res = self.__getTableSummaryWeb( table, selectDict, sortList, startItem, maxItems,
@@ -439,19 +444,19 @@ class TransformationManagerHandlerBase( RequestHandler ):
       resDict[table] = res['Value']
     return S_OK( resDict )
 
-  types_getTransformationsSummaryWeb = [DictType, ListType, IntType, IntType]
+  types_getTransformationsSummaryWeb = [dict, list, int, int]
   def export_getTransformationsSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     return self.__getTableSummaryWeb( 'Transformations', selectDict, sortList, startItem, maxItems,
                                       selectColumns = ['TransformationID', 'AgentType', 'Type', 'Group', 'Plugin'],
                                       timeStamp = 'CreationDate', statusColumn = 'Status' )
 
-  types_getTransformationTasksSummaryWeb = [DictType, ListType, IntType, IntType]
+  types_getTransformationTasksSummaryWeb = [dict, list, int, int]
   def export_getTransformationTasksSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     return self.__getTableSummaryWeb( 'TransformationTasks', selectDict, sortList, startItem, maxItems,
                                       selectColumns = ['TransformationID', 'ExternalStatus', 'TargetSE'],
                                       timeStamp = 'CreationTime', statusColumn = 'ExternalStatus' )
 
-  types_getTransformationFilesSummaryWeb = [DictType, ListType, IntType, IntType]
+  types_getTransformationFilesSummaryWeb = [dict, list, int, int]
   def export_getTransformationFilesSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     return self.__getTableSummaryWeb( 'TransformationFiles', selectDict, sortList, startItem, maxItems,
                                       selectColumns = ['TransformationID', 'Status', 'UsedSE', 'TargetSE'],
@@ -525,7 +530,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
     return S_OK( resultDict )
 
-  types_getTransformationSummaryWeb = [DictType, ListType, IntType, IntType]
+  types_getTransformationSummaryWeb = [dict, list, int, int]
   def export_getTransformationSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the transformation information for a given page in the generic format """
 
@@ -541,7 +546,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     toDate = selectDict.get( 'ToDate', None )
     if toDate:
       del selectDict['ToDate']
-    # Sorting instructions. Only one for the moment.  
+    # Sorting instructions. Only one for the moment.
     if sortList:
       orderAttribute = []
       for i in sortList:
@@ -586,11 +591,11 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
     statusDict = {}
     extendableTranfs = Operations().getValue( 'Transformations/ExtendableTransfTypes',
-                                                ['Simulation', 'MCsimulation'] )
+                                              ['Simulation', 'MCsimulation'] )
     givenUpFileStatus = Operations().getValue( 'Transformations/GivenUpFileStatus',
                                                ['NotProcessed', 'Removed', 'MissingInFC', 'MissingLFC'] )
     problematicStatuses = Operations().getValue( 'Transformations/ProblematicStatuses',
-                                               ['Problematic'] )
+                                                 ['Problematic'] )
     # Add specific information for each selected transformation
     for trans in transList:
       transDict = dict( zip( resultDict['ParameterNames'], trans ) )
