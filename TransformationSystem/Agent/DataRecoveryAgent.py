@@ -42,6 +42,8 @@ __RCSID__ = "$Id$"
 AGENT_NAME = 'ILCTransformation/DataRecoveryAgent'
 MAXRESET = 10
 
+ASSIGNEDSTATES = ['Assigned', 'Processed']
+
 
 class DataRecoveryAgent(AgentModule):
   """Data Recovery Agent"""
@@ -147,21 +149,21 @@ class DataRecoveryAgent(AgentModule):
                           ShortMessage="Max ErrorCount --> Input MaxReset",
                           Counter=0,
                           Check=lambda job: job.allFilesMissing(
-                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus == "Assigned" and job.inputFileExists and job.errorCount > MAXRESET,
+                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus in ASSIGNEDSTATES and job.inputFileExists and job.errorCount > MAXRESET,
                           Actions=lambda job, tInfo: [job.setInputMaxReset(tInfo)]
                           ),
                      dict(Message="Output Missing, job Failed, input Assigned --> Input Unused",
                           ShortMessage="Output Missing --> Input Unused",
                           Counter=0,
                           Check=lambda job: job.allFilesMissing(
-                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus == "Assigned" and job.inputFileExists,
+                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus in ASSIGNEDSTATES and job.inputFileExists,
                           Actions=lambda job, tInfo: [job.setInputUnused(tInfo)]
                           ),
                      dict(Message="Output Missing, job Done, input Assigned --> Job Failed, Input Unused",
                           ShortMessage="Output Missing --> Job Failed, Input Unused",
                           Counter=0,
                           Check=lambda job: job.allFilesMissing(
-                          ) and not job.otherTasks and job.status == 'Done' and job.fileStatus == "Assigned" and job.inputFileExists,
+                          ) and not job.otherTasks and job.status == 'Done' and job.fileStatus in ASSIGNEDSTATES and job.inputFileExists,
                           Actions=lambda job, tInfo: [job.setInputUnused(tInfo), job.setJobFailed(tInfo)]
                           ),
                      # some files missing, needing cleanup. Only checking for assigned, because
@@ -171,14 +173,14 @@ class DataRecoveryAgent(AgentModule):
                           ShortMessage="Output Missing --> Cleanup, Input Unused",
                           Counter=0,
                           Check=lambda job: job.someFilesMissing(
-                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus == "Assigned" and job.inputFileExists,
+                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus in ASSIGNEDSTATES and job.inputFileExists,
                           Actions=lambda job, tInfo: [job.cleanOutputs(tInfo), job.setInputUnused(tInfo)]
                           ),
                      dict(Message="Some missing, job Done, input Assigned --> cleanup, job Failed, Input 'Unused'",
                           ShortMessage="Output Missing --> Cleanup, Job Failed, Input Unused",
                           Counter=0,
                           Check=lambda job: job.someFilesMissing(
-                          ) and not job.otherTasks and job.status == 'Done' and job.fileStatus == "Assigned" and job.inputFileExists,
+                          ) and not job.otherTasks and job.status == 'Done' and job.fileStatus in ASSIGNEDSTATES and job.inputFileExists,
                           Actions=lambda job, tInfo: [
                               job.cleanOutputs(tInfo), job.setInputUnused(tInfo), job.setJobFailed(tInfo)]
                           ),
