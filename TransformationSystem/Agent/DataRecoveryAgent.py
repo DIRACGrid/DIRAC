@@ -166,9 +166,11 @@ class DataRecoveryAgent(AgentModule):
                           ) and not job.otherTasks and job.status == 'Done' and job.fileStatus in ASSIGNEDSTATES and job.inputFileExists,
                           Actions=lambda job, tInfo: [job.setInputUnused(tInfo), job.setJobFailed(tInfo)]
                           ),
-                     # some files missing, needing cleanup. Only checking for assigned, because
-                     # processed could mean an earlier job was succesful and this one is just
-                     # the duplucate that needed to be removed!
+                     # some files missing, needing cleanup. Only checking for
+                     # assigned, because processed could mean an earlier job was
+                     # succesful and this one is just the duplicate that needed
+                     # to be removed! But we check for other tasks earlier, so
+                     # this should not happen
                      dict(Message="Some missing, job Failed, input Assigned --> cleanup, Input 'Unused'",
                           ShortMessage="Output Missing --> Cleanup, Input Unused",
                           Counter=0,

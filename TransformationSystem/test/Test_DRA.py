@@ -565,7 +565,7 @@ class TestDRA(unittest.TestCase):
     testJob.otherTasks = False
     testJob.inputFile = "/my/inputfile.lfn"
     testJob.inputFileExists = True
-    testJob.fileStatus = "Processed"
+    testJob.fileStatus = "Unused"
     self.dra.inputFilesProcessed = set()
     self.dra.checkJob(testJob, tInfoMock)
     self.assertIn("setJobFailed", tInfoMock.method_calls[0])
@@ -590,6 +590,33 @@ class TestDRA(unittest.TestCase):
     testJob.outputFiles = ["/my/stupid/file.lfn", "/my/stupid/file2.lfn"]
     testJob.outputFileStatus = ["Missing", "Exists"]
     testJob.otherTasks = False
+    testJob.inputFile = "/my/inputfile.lfn"
+    testJob.inputFileExists = True
+    testJob.fileStatus = "Processed"
+    self.dra.inputFilesProcessed = set()
+    self.dra.checkJob(testJob, tInfoMock)
+    self.assertEqual([], tInfoMock.method_calls)
+    self.assertEqual(self.dra.todo["OtherProductions"][0]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][1]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][2]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][3]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][4]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][5]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][6]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][7]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][8]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][9]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][10]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][13]["Counter"], 1)
+
+    ### Test nothing triggers
+    tInfoMock.reset_mock()
+    testJob = JobInfo(jobID=1234567, status="Failed", tID=123, tType="MCSimulation")
+    testJob.outputFiles = ["/my/stupid/file.lfn", "/my/stupid/file2.lfn"]
+    testJob.outputFileStatus = ["Missing", "Missing"]
+    testJob.otherTasks = True
     testJob.inputFile = "/my/inputfile.lfn"
     testJob.inputFileExists = True
     testJob.fileStatus = "Processed"
