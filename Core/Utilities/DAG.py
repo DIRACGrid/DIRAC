@@ -5,6 +5,8 @@
 
 from DIRAC import gLogger
 
+__RCSID__ = "$Id $"
+
 class DAG( object ):
   """ a Direct Acyclic Graph (DAG)
 
