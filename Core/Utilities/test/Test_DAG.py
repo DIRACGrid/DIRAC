@@ -1,19 +1,15 @@
-""".. module:: ListTestCase
+""".. module:: Test_DAG
 
-Test cases for DIRAC.Core.Utilities.List module.
+Test cases for DIRAC.Core.Utilities.DAG module.
 
 """
-
-__RCSID__ = "$Id $"
-
-##
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2011/01/17 08:17:58
-
 import unittest
 
 # sut
 from  DIRAC.Core.Utilities.DAG import DAG
+
+__RCSID__ = "$Id $"
+
 
 ########################################################################
 class DAGTestCase( unittest.TestCase ):
