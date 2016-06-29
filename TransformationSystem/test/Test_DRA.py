@@ -15,6 +15,7 @@ from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
 
 __RCSID__ = "$Id$"
 
+MODULE_NAME = 'DIRAC.TransformationSystem.Agent.DataRecoveryAgent'
 
 
 class TestDRA(unittest.TestCase):
@@ -23,7 +24,7 @@ class TestDRA(unittest.TestCase):
 
   @patch("DIRAC.Core.Base.AgentModule.PathFinder", new=Mock())
   @patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=Mock())
-  @patch("DIRAC.TransformationSystem.Agent.DataRecoveryAgent.ReqClient", new=Mock())
+  @patch("%s.ReqClient" % MODULE_NAME, new=Mock())
   def setUp(self):
     self.dra = DataRecoveryAgent(agentName="ILCTransformationSystem/DataRecoveryAgent", loadName="TestDRA")
     self.dra.reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
@@ -58,7 +59,7 @@ class TestDRA(unittest.TestCase):
 
   @patch("DIRAC.Core.Base.AgentModule.PathFinder", new=Mock())
   @patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=Mock())
-  @patch("DIRAC.TransformationSystem.Agent.DataRecoveryAgent.ReqClient", new=Mock())
+  @patch("%s.ReqClient" % MODULE_NAME, new=Mock())
   def test_init(self):
     """test for DataRecoveryAgent initialisation...................................................."""
     res = DataRecoveryAgent(agentName="ILCTransformationSystem/DataRecoveryAgent", loadName="TestDRA")
@@ -116,8 +117,8 @@ class TestDRA(unittest.TestCase):
     transInfoDict = dict(TransformationID=1234, TransformationName="TestProd12", Type="MCSimulation",
                          AuthorDN='/some/cert/owner', AuthorGroup='Test_Prod')
     with patch("%s.TransformationInfo" % MODULE_NAME, new=tinfoMock):
-      self.dra.treatProduction(1234, transInfoDict)  # returns None
-    self.dra.log.notice.assert_any_call(MatchStringWith("Getting tasks..."))
+      self.dra.treatProduction(prodID=1234, transName="TestProd12", transType="MCReconstruction")  # returns None
+    self.assertIn("Getting tasks...", out.getvalue().strip().splitlines()[0])
 
   def test_treatProduction3(self):
     """test for DataRecoveryAgent treatProduction skip.............................................."""
@@ -711,7 +712,7 @@ class TestDRA(unittest.TestCase):
     sendmailMock = Mock()
     sendmailMock.sendMail.return_value = S_OK("Nice Card")
     notificationMock = Mock(return_value=sendmailMock)
-    with patch("DIRAC.TransformationSystem.Agent.DataRecoveryAgent.NotificationClient", new=notificationMock):
+    with patch("%s.NotificationClient" % MODULE_NAME, new=notificationMock):
       res = self.dra.execute()
     self.assertTrue(res["OK"])
     self.assertIn("Will ignore the following productions: [123, 456, 789]", out.getvalue())
@@ -727,7 +728,7 @@ class TestDRA(unittest.TestCase):
     sendmailMock = Mock()
     sendmailMock.sendMail.return_value = S_ERROR("No stamp")
     notificationMock = Mock(return_value=sendmailMock)
-    with patch("DIRAC.TransformationSystem.Agent.DataRecoveryAgent.NotificationClient", new=notificationMock):
+    with patch("%s.NotificationClient" % MODULE_NAME, new=notificationMock):
       res = self.dra.execute()
     self.assertTrue(res["OK"])
     self.assertNotIn(124, self.dra.jobCache)  # was popped
