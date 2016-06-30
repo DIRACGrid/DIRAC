@@ -6,7 +6,7 @@ import unittest
 import json
 import os
 
-from DIRAC.WorkloadManagementSystem.PilotAgent.pilotTools import PilotParams
+from DIRAC.WorkloadManagementSystem.PilotAgent.pilotTools import PilotParams, CommandBase
 from DIRAC.WorkloadManagementSystem.PilotAgent.pilotCommands import GetPilotVersion
 
 class PilotTestCase( unittest.TestCase ):
@@ -14,17 +14,22 @@ class PilotTestCase( unittest.TestCase ):
   """
   def setUp( self ):
     self.pp = PilotParams()
-  
+
   def tearDown( self ):
     try:
       os.remove('pilot.out')
       os.remove( 'pilot.json' )
       os.remove( 'pilot.json-local' )
-    except IOError:
+    except OSError:
       pass
 
 
 class CommandsTestCase( PilotTestCase ):
+
+  def test_commandBase(self):
+    cb = CommandBase(self.pp)
+    returnCode, _outputData = cb.executeAndGetOutput("ls")
+    self.assertEqual(returnCode, 0)
 
   def test_GetPilotVersion( self ):
 

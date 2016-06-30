@@ -1,7 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ Definitions of a standard set of pilot commands
 
     Each commands is represented by a class inheriting CommandBase class.
@@ -25,6 +21,7 @@ import sys
 import os
 import stat
 import socket
+import re
 
 from pilotTools import CommandBase, retrieveUrlTimeout
 
@@ -776,7 +773,7 @@ class ConfigureCPURequirements( CommandBase ):
       self.exitWithError( retCode )
 
     # HS06 benchmark
-    # FIXME: this is a hack!
+    # FIXME: this is a (necessary) hack!
     cpuNormalizationFactor = float( cpuNormalizationFactorOutput.split( '\n' )[0].replace( "Estimated CPU power is ",
                                                                                            '' ).replace( " HS06", '' ) )
     self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
@@ -787,9 +784,14 @@ class ConfigureCPURequirements( CommandBase ):
     retCode, cpuTimeOutput = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time %s %s' % ( configFileArg,
                                                                                                 self.pp.localConfigFile ),
                                                        self.pp.installEnv )
+
     if retCode:
       self.log.error( "Failed to determine cpu time left in the queue [ERROR %d]" % retCode )
       self.exitWithError( retCode )
+
+    for line in cpuTimeOutput.split( '\n' ):
+      if re.search( "CPU time left determined is *", line ):
+        cpuTime = int(line.replace("CPU time left determined is", '').strip())
     self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
 
     # HS06s = seconds * HS06
