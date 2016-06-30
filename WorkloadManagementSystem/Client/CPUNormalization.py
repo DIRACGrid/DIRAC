@@ -207,7 +207,6 @@ def getCPUTime( cpuNormalizationFactor ):
   if not cpuWorkLeft:
     # Try and get the information from the CPU left utility
     result = TimeLeft().getTimeLeft()
-    print result
     if result['OK']:
       cpuWorkLeft = result['Value']
 
