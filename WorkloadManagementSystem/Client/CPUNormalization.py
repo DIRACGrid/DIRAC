@@ -185,8 +185,21 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
 
 
 def getCPUTime( cpuNormalizationFactor ):
-  """ Trying to get CPUTime (in seconds) from the CS. The default is a large 9999999, that we may consider as "Infinite".
+  """ Trying to get CPUTime left for execution (in seconds).
+
+      It will first look to get the work left looking for batch system information useing the TimeLeft utility.
+      If it suceeds, it will convert it in real second, and return it.
+
+      If it fails, it tries to get it from the static info found in CS.
+      If it fails, it returns the default, which is a large 9999999, that we may consider as "Infinite".
+
       This is a generic method, independent from the middleware of the resource if TimeLeft doesn't return a value
+
+      args:
+        cpuNormalizationFactor (float): the CPU power of the current Worker Node. If not passed in, it's get from the local configuration
+
+      returns:
+        cpuTimeLeft (int): the CPU time left, in seconds
   """
   cpuTimeLeft = 0.
   cpuWorkLeft = gConfig.getValue( '/LocalSite/CPUTimeLeft', 0 )
@@ -194,6 +207,7 @@ def getCPUTime( cpuNormalizationFactor ):
   if not cpuWorkLeft:
     # Try and get the information from the CPU left utility
     result = TimeLeft().getTimeLeft()
+    print result
     if result['OK']:
       cpuWorkLeft = result['Value']
 

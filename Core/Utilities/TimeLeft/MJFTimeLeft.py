@@ -51,6 +51,7 @@ class MJFTimeLeft( object ):
     if jobFeaturesPath:
       try:
         wallClockLimit = int( urllib.urlopen( jobFeaturesPath + '/wall_limit_secs' ).read() )
+        self.log.verbose( "wallClockLimit from JF = %d" %wallClockLimit )
       except ValueError:
         self.log.warn( "/wall_limit_secs is unreadable" )
       except IOError as e:
@@ -59,6 +60,7 @@ class MJFTimeLeft( object ):
 
       try:
         jobStartSecs = int( urllib.urlopen( jobFeaturesPath + '/jobstart_secs' ).read() )
+        self.log.verbose( "jobStartSecs from JF = %d" %jobStartSecs )
       except ValueError:
         self.log.warn( "/jobstart_secs is unreadable, setting a default" )
         jobStartSecs = self.startTime
@@ -67,15 +69,16 @@ class MJFTimeLeft( object ):
         self.log.warn( "Can't open jobstart_secs, setting a default" )
         jobStartSecs = self.startTime
 
-        try:
-          cpuLimit = int( urllib.urlopen( jobFeaturesPath + '/cpu_limit_secs' ).read() )
-        except ValueError:
-          self.log.warn( "/cpu_limit_secs is unreadable" )
-        except IOError as e:
-          self.log.exception( "Issue with $JOBFEATURES/cpu_limit_secs", lException = e )
-          self.log.warn( 'Could not determine cpu limit from $JOBFEATURES/cpu_limit_secs' )
+      try:
+        cpuLimit = int( urllib.urlopen( jobFeaturesPath + '/cpu_limit_secs' ).read() )
+        self.log.verbose( "cpuLimit from JF = %d" %cpuLimit )
+      except ValueError:
+        self.log.warn( "/cpu_limit_secs is unreadable" )
+      except IOError as e:
+        self.log.exception( "Issue with $JOBFEATURES/cpu_limit_secs", lException = e )
+        self.log.warn( 'Could not determine cpu limit from $JOBFEATURES/cpu_limit_secs' )
 
-        wallClock = int( time.time() ) - jobStartSecs
+      wallClock = int( time.time() ) - jobStartSecs
 
 
 
@@ -89,6 +92,7 @@ class MJFTimeLeft( object ):
     if machineFeaturesPath and jobStartSecs:
       try:
         shutdownTime = int( urllib.urlopen( machineFeaturesPath + '/shutdowntime' ).read() )
+        self.log.verbose( "shutdownTime from MF = %d" %shutdownTime )
         if int( time.time() ) + wallClockLimit > shutdownTime:
           # reduce wallClockLimit if would overrun shutdownTime
           wallClockLimit = shutdownTime - jobStartSecs
@@ -96,7 +100,7 @@ class MJFTimeLeft( object ):
         self.log.warn( "/shutdowntime is unreadable" )
       except IOError as e:
         self.log.exception( "Issue with $MACHINEFEATURES/shutdowntime", lException = e )
-        self.log.info( 'Could not determine a shutdowntime value from $MACHINEFEATURES/shutdowntime' )
+        self.log.warn( 'Could not determine a shutdowntime value from $MACHINEFEATURES/shutdowntime' )
 
 
     #Reporting
