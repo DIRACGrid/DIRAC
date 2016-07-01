@@ -432,7 +432,7 @@ class CheckWNCapabilities( CommandBase ):
       self.cfg.append( self.pp.localConfigFile )  # this file is as input
 
     checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
-                                                                       " ".join( self.cfg ) )
+                                                                      " ".join( self.cfg ) )
     retCode, result = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
@@ -790,8 +790,8 @@ class ConfigureCPURequirements( CommandBase ):
       self.exitWithError( retCode )
 
     for line in cpuTimeOutput.split( '\n' ):
-      if re.search( "CPU time left determined is *", line ):
-        cpuTime = int(line.replace("CPU time left determined is", '').strip())
+      if re.search( "CPU time left determined as *", line ):
+        cpuTime = int(line.replace("CPU time left determined as", '').strip())
     self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
 
     # HS06s = seconds * HS06
