@@ -790,7 +790,7 @@ class ConfigureCPURequirements( CommandBase ):
       self.exitWithError( retCode )
 
     for line in cpuTimeOutput.split( '\n' ):
-      if re.search( "CPU time left determined as *", line ):
+      if "CPU time left determined as" in line:
         cpuTime = int(line.replace("CPU time left determined as", '').strip())
     self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
 

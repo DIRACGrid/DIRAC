@@ -188,7 +188,7 @@ def getCPUTime( cpuNormalizationFactor ):
   """ Trying to get CPUTime left for execution (in seconds).
 
       It will first look to get the work left looking for batch system information useing the TimeLeft utility.
-      If it suceeds, it will convert it in real second, and return it.
+      If it succeeds, it will convert it in real second, and return it.
 
       If it fails, it tries to get it from the static info found in CS.
       If it fails, it returns the default, which is a large 9999999, that we may consider as "Infinite".

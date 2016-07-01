@@ -21,9 +21,9 @@ python $DIRACROOT/WorkloadManagementSystem/scripts/dirac-wms-get-queue-cpu-time.
 
 if [ $? -eq 0 ]
 then
-  echo "\nSuccess\n\n"
+  echo -e "\nSuccess\n\n"
 else
-  echo "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n"
   exit 1
 fi
 
@@ -38,9 +38,9 @@ python $DIRACROOT/WorkloadManagementSystem/scripts/dirac-wms-get-queue-cpu-time.
 
 if [ $? -eq 0 ]
 then
-  echo "\nSuccess\n\n"
+  echo -e "\nSuccess\n\n"
 else
-  echo "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n"
   exit 1
 fi
 
@@ -55,9 +55,9 @@ python $DIRACROOT/WorkloadManagementSystem/scripts/dirac-wms-get-queue-cpu-time.
 
 if [ $? -eq 0 ]
 then
-  echo "\nSuccess\n\n"
+  echo -e "\nSuccess\n\n"
 else
-  echo "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n"
   exit 1
 fi
 
