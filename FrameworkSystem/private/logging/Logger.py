@@ -53,6 +53,8 @@ class Logger( object ):
         self._backendsDict[ backend ] = gBackendIndex[ backend ]( self.__backendOptions )
 
   def __preinitialize ( self ):
+    """ This sets some defaults
+    """
     self._systemName = "Framework"
     self.registerBackends( [ 'stdout' ] )
     self._minLevel = self._logLevels.getLevelValue( "NOTICE" )
@@ -91,7 +93,7 @@ class Logger( object ):
 
     self.__backendOptions.update( cfgBackOptsDict )
 
-    if not self.__backendOptions.has_key( 'Filename' ):
+    if 'FileName' not in self.__backendOptions:
       self.__backendOptions[ 'FileName' ] = 'Dirac-log_%s.log' % getpid()
 
     sleepTime = 150
@@ -329,8 +331,8 @@ class Logger( object ):
     for frame in stack:
       sExtendedException += "\n"
       sExtendedException += "Frame %s in %s at line %s\n" % ( frame.f_code.co_name,
-                                           frame.f_code.co_filename,
-                                           frame.f_lineno )
+                                                              frame.f_code.co_filename,
+                                                              frame.f_lineno )
       for key, value in frame.f_locals.iteritems():
         # We have to be careful not to cause a new error in our error
         # printer! Calling str() on an unknown object could cause an
