@@ -3,7 +3,7 @@
 
 import unittest
 import mock
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin import ProxyPlugin
 
 __RCSID__ = "$Id $"
@@ -26,6 +26,9 @@ def mock_getProxyInfo():
             'username': 'chaen',
             'validDN': True,
             'validGroup': True} )
+
+def mock_getNoProxyInfo():
+  return S_ERROR( "No proxy" )
 
 class TestProxyPlugin( unittest.TestCase ):
   """ Test the FilenamePlugin class"""
@@ -115,7 +118,14 @@ class TestProxyPlugin( unittest.TestCase ):
     with self.assertRaises( AttributeError ):
       ProxyPlugin( 'cannotbeparsed' ).eval()
 
+  @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getNoProxyInfo )
+  def test_05_withoutProxy( self, _mockProxyInfo ):
+    """ Testing without proxy, everything should be False"""
 
+    # A priori, not both of them can give the same result
+    # but since there is no proxy, it should !
+    self.assertFalse( ProxyPlugin( 'username.in(toto)' ).eval() )
+    self.assertFalse( ProxyPlugin( 'username.not_in(toto)' ).eval() )
 
 
 if __name__ == '__main__':
