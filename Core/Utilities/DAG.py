@@ -30,7 +30,7 @@ class DAG( object ):
     if fromNode not in self.graph:
       gLogger.error( "Missing node from where the edge start" )
       return
-    if fromNode not in self.graph:
+    if toNode not in self.graph:
       gLogger.error( "Missing node to where the edge lands" )
       return
 
