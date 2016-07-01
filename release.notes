@@ -199,6 +199,16 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p37]
+
+*Core
+NEW: Added soft implementation of a Direct Acyclic Graph
+
+*Configuration
+FIX: Bdii2CSAgent finds all CEs of a site (was finding only one)
+
+*Resources
+FIX: Make sure transferClient connects to the same ProxyStorage instance
 
 [v6r14p36]
 
