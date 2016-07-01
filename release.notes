@@ -1,3 +1,12 @@
+[v6r15p6]
+
+*Resources
+FIX: FCConditionParser: ProxyPlugin handles the case of having no proxy
+
+*WMS
+FIX: MJF messages correctly parsed from the pilot
+NEW: Added integration test for TimeLeft utility and script calling it
+
 [v6r15p5]
 
 Included fixes from v6r14p36 patch release
@@ -201,6 +210,16 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p37]
+
+*Core
+NEW: Added soft implementation of a Direct Acyclic Graph
+
+*Configuration
+FIX: Bdii2CSAgent finds all CEs of a site (was finding only one)
+
+*Resources
+FIX: Make sure transferClient connects to the same ProxyStorage instance
 
 [v6r14p36]
 

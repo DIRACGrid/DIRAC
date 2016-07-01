@@ -120,17 +120,17 @@ class Bdii2CSAgent( AgentModule ):
         for ce in newCEs:
           queueString = ''
           ceInfo = bdiiInfo[site]['CEs'][ce]
-          ceString = "CE: %s, GOCDB Site Name: %s" % ( ce, site )
+	  newCEString = "CE: %s, GOCDB Site Name: %s" % ( ce, site )
           systemTuple = siteDict[site][ce]['System']
           osString = "%s_%s_%s" % ( systemTuple )
-          newCEString = "\n%s\n%s\n" % ( ceString, osString )
+	  newCEString = "\n%s\n%s\n" % ( newCEString, osString )
           for queue in ceInfo['Queues']:
             queueStatus = ceInfo['Queues'][queue].get( 'GlueCEStateStatus', 'UnknownStatus' )
             if 'production' in queueStatus.lower():
               ceType = ceInfo['Queues'][queue].get( 'GlueCEImplementationName', '' )
               queueString += "   %s %s %s\n" % ( queue, queueStatus, ceType )
           if queueString:
-            ceString = newCEString
+	    ceString += newCEString
             ceString += "Queues:\n"
             ceString += queueString
 
