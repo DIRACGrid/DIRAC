@@ -1,3 +1,12 @@
+[v6r15p6]
+
+*Resources
+FIX: FCConditionParser: ProxyPlugin handles the case of having no proxy
+
+*WMS
+FIX: MJF messages correctly parsed from the pilot
+NEW: Added integration test for TimeLeft utility and script calling it
+
 [v6r15p5]
 
 Included fixes from v6r14p36 patch release
