@@ -33,7 +33,9 @@ class ProxyStorage( StorageBase ):
     failed = {}
     successful = {}
     client = RPCClient( self.url )
-    transferClient = TransferClient( self.url )
+    # Make sure transferClient uses the same ProxyStorage instance.
+    # Only the this one holds the file we want to transfer.
+    transferClient = TransferClient( client.serviceURL )
     for src_url in urls.keys():
       res = client.prepareFile( self.name, src_url )
       if not res['OK']:
@@ -79,8 +81,8 @@ class ProxyStorage( StorageBase ):
     urls = res['Value']
     failed = {}
     successful = {}
-    client = RPCClient( self.url )
-    transferClient = TransferClient( self.url )
+    # make sure transferClient uses the same ProxyStorage instance we uploaded the file to
+    transferClient = TransferClient( client.serviceURL )
     for dest_url, src_file in urls.items():
       fileName = os.path.basename( dest_url )
       res = transferClient.sendFile( src_file, 'putFile/%s' % fileName )
