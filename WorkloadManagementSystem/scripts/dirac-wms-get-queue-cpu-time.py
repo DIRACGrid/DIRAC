@@ -6,13 +6,13 @@
 """ Report CPU length of queue, in seconds
     This script is used by the dirac-pilot script to set the CPUTime left, which is a limit for the matching
 """
-__RCSID__ = "$Id$"
-
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.registerSwitch( "C:", "CPUNormalizationFactor=", "CPUNormalizationFactor, in case it is known" )
+__RCSID__ = "$Id$"
 
+
+Script.registerSwitch( "C:", "CPUNormalizationFactor=", "CPUNormalizationFactor, in case it is known" )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile]' % Script.scriptName ] ) )
@@ -28,5 +28,5 @@ if __name__ == "__main__":
   from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getCPUTime
   cpuTime = getCPUTime( CPUNormalizationFactor )
   # I hate this kind of output... PhC
-  print cpuTime
+  print "CPU time left determined as", cpuTime
   DIRAC.exit( 0 )
