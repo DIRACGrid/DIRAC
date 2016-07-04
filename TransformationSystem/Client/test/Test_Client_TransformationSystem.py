@@ -213,6 +213,15 @@ class RequestTasksSuccess( ClientsTestCase ):
       except IndexError:
         self.assertEqual( task['TaskObject'][0].Status, 'Waiting' )
 
+    ## test another (single) OperationType
+    res = self.requestTasks.prepareTransformationTasks( 'someType;LogUpload', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
+    self.assert_( res['OK'] )
+    # We should "lose" one of the task in the preparation
+    self.assertEqual( len( taskDict ), 2 )
+    for task in res['Value'].values():
+      self.assert_( isinstance( task['TaskObject'], Request ) )
+      self.assertEqual( task['TaskObject'][0].Type, 'LogUpload' )
+
     ### Multiple operations
     transBody = [ ("ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
                   ("RemoveReplica", { "TargetSE":"FOO-SRM" } ),
