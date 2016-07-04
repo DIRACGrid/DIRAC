@@ -150,7 +150,14 @@ class RequestTasks( TaskBase ):
   def _multiOperationsBody( self, transJson, taskDict, ownerDN, ownerGroup ):
     """ deal with a Request that has multiple operations
 
-    :param transJson: list of tuples of string and dictionaries
+    :param transJson: list of lists of string and dictionaries, e.g.:
+
+      .. code :: python
+
+        body = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
+                 ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
+               ]
+
     :param dict taskDict: dictionary of tasks, modified in this function
     :param str ownerDN: certificate DN used for the requests
     :param str onwerGroup: dirac group used for the requests
