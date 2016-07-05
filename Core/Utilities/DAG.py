@@ -63,7 +63,7 @@ class DAG( object ):
     return [unHashNode(inu) for inu in indexNodes]
 
 
-def checkNode(node):
+def checkNode( node ):
   """ Returns a hashable version of node
   """
   try:
@@ -71,21 +71,13 @@ def checkNode(node):
     return node
   except TypeError: #nodeName is not hashable, so it can't be a key in the graph (which is a dictionary)
     return makeFrozenSet(node)
-    # if isinstance(node, dict):
-    #   node = frozenset(node.items())
-    # elif isinstance(node, list):
-    #   node = frozenset(node)
-    # elif isinstance(node, set):
-    #   node = frozenset(node)
 
-  return node
-
-def unHashNode(node):
+def unHashNode( node ):
   """ Returns a dict or list, if node is frozenset
   """
   if isinstance(node, frozenset):
-    try: #it's a dictionary
-      return dict(node)
+    try:
+      return dict(node) # Is it a dictionary?
     except TypeError:
       return list(node)
     except ValueError:
@@ -94,19 +86,19 @@ def unHashNode(node):
     return node
 
 
-def makeFrozenSet(o):
+def makeFrozenSet( ob ):
   """
   Makes a hash from a dictionary, list, tuple or set to any level, that contains
   only other hashable types (including any lists, tuples, sets, and dictionaries).
   """
-  if isinstance(o, (set, tuple, list)):
-    return frozenset([makeFrozenSet(e) for e in o])
+  if isinstance(ob, (set, tuple, list)):
+    return frozenset([makeFrozenSet(e) for e in ob])
 
-  elif not isinstance(o, dict):
-    return o
+  elif not isinstance(ob, dict):
+    return ob
 
-  new_o = copy.deepcopy(o)
-  for k, v in new_o.items():
-    new_o[k] = makeFrozenSet(v)
+  new_ob = copy.deepcopy(ob)
+  for obk, obv in new_ob.items():
+    new_ob[obk] = makeFrozenSet(obv)
 
-  return frozenset(sorted(new_o.items()))
+  return frozenset(sorted(new_ob.items()))
