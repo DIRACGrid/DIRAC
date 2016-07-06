@@ -10,6 +10,7 @@ from DIRAC.Core.Base.API import API
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 COMPONENT_NAME = 'Transformation'
 
@@ -105,6 +106,7 @@ class Transformation( API ):
 
     :type body: string or list of tuples (or lists) of string and dictionaries
     :raises TypeError: If the structure is not as expected
+    :raises ValueError: If unknown attribute for the :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation` is used
     :returns: S_OK, S_ERROR
     """
     self.item_called = "Body"
@@ -125,6 +127,8 @@ class Transformation( API ):
       for par, val in tup[1].iteritems():
         if not isinstance( par, basestring ):
           raise TypeError( "Expected string, but key in dictionary %r is %s" % ( par, type( par ) ) )
+        if not par in Operation.ATTRIBUTE_NAMES:
+          raise ValueError( "Unknown attribute for Operation: %s" % par )
         if not isinstance( val, ( basestring, int, long, float, list, tuple, dict ) ):
           raise TypeError( "Cannot encode %r, in json" % ( val ) )
       return self.__setParam( json.dumps( body ) )

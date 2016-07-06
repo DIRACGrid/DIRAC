@@ -397,8 +397,10 @@ class TransformationSuccess( ClientsTestCase ):
       self.transformation.setBody( [ ("ReplicateAndRegister", "parameter=foo") ] )
     with self.assertRaisesRegexp( TypeError, "Expected string" ):
       self.transformation.setBody( [ ("ReplicateAndRegister", { 123: "foo" } ) ] )
+    with self.assertRaisesRegexp( ValueError, "Unknown attribute" ):
+      self.transformation.setBody( [ ("ReplicateAndRegister", { "Request": Request() } ) ] )
     with self.assertRaisesRegexp( TypeError, "Cannot encode" ):
-      self.transformation.setBody( [ ("ReplicateAndRegister", { "Request":  Request() } ) ] )
+      self.transformation.setBody( [ ("ReplicateAndRegister", { "Arguments": Request() } ) ] )
 
   def test_SetGetReset( self ):
     """ Testing of the set, get and reset methods.
