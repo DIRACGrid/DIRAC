@@ -110,7 +110,7 @@ class Transformation( API ):
     self.item_called = "Body"
     if isinstance( body, basestring ):
       return self.__setParam( body )
-    if not isinstance( body, list ):
+    if not isinstance( body, (list, tuple) ):
       raise TypeError( "Expected list or string, but %r is %s" % ( body, type( body ) ) )
 
     for tup in body:

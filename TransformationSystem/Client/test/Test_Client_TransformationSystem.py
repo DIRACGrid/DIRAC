@@ -386,7 +386,7 @@ class TransformationSuccess( ClientsTestCase ):
     self.assertEqual( json.loads( self.transformation.paramValues[ "Body" ] ), transBody )
 
     with self.assertRaisesRegexp( TypeError, "Expected list" ):
-      self.transformation.setBody( ( "ReplicateAndRegister", "RemoveReplica" ) )
+      self.transformation.setBody( {"ReplicateAndRegister":{"foo":"bar"} } )
     with self.assertRaisesRegexp( TypeError, "Expected tuple" ):
       self.transformation.setBody( [ "ReplicateAndRegister", "RemoveReplica" ] )
     with self.assertRaisesRegexp( TypeError, "Expected 2-tuple" ):
