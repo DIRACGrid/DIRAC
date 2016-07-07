@@ -36,8 +36,6 @@
 """
 
 import os
-import traceback
-import errno
 import imp
 import sys
 
@@ -212,7 +210,7 @@ def strerror(code):
     return "Undefined error"
 
   errMsg = "Unknown error %s" % code
-  
+
   try:
     errMsg = dStrError[code]
   except KeyError:
@@ -223,7 +221,7 @@ def strerror(code):
       # on others, it returns a message...
     except ValueError:
       pass
-  
+
   return errMsg
 
 def cmpError( inErr, candidate ):
@@ -311,4 +309,3 @@ def includeExtensionErrors():
 
     except:
       pass
-

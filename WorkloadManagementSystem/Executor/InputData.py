@@ -2,10 +2,9 @@
   The InputData Optimizer Executor queries the file catalog for specified job input data and adds the
   relevant information to the job optimizer parameters to be used during the scheduling decision.
 """
-__RCSID__ = "$Id$"
 
-import time
 import pprint
+import time
 
 from DIRAC                                                           import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
@@ -15,6 +14,8 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers                 import DMSH
 from DIRAC.DataManagementSystem.Client.DataManager                   import DataManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations             import Operations
 from DIRAC.Core.Utilities.Proxy                                      import executeWithUserProxy
+
+__RCSID__ = "$Id$"
 
 
 class InputData( OptimizerExecutor ):
@@ -55,7 +56,7 @@ class InputData( OptimizerExecutor ):
     else:
       try:
         self.__dataManDict[vo] = DataManager( vo = vo )
-      except Exception, _e:
+      except Exception as _e:
         msg = 'Failed to create DataManager'
         self.log.exception( msg )
         return None
@@ -67,7 +68,7 @@ class InputData( OptimizerExecutor ):
     else:
       try:
         self.__fcDict[vo] = FileCatalog( vo = vo )
-      except Exception, _e:
+      except Exception as _e:
         msg = 'Failed to create FileCatalog'
         self.log.exception( msg )
         return None

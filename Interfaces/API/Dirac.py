@@ -716,6 +716,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
+  #FIXME: this seems unused
   def _runInputDataResolution( self, inputData, site = None ):
     """ Run the VO plugin input data resolution mechanism.
     """
