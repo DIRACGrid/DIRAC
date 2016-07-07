@@ -166,7 +166,8 @@ class RequestTasks( TaskBase ):
 
     for taskID in sorted( taskDict ):
       paramDict = taskDict[taskID]
-      if not paramDict['InputData']:
+      if not paramDict.get('InputData'):
+        self.log.error( "Error creating request for task", "%s, No input data" % taskID )
         taskDict.pop( taskID )
         continue
       files = []
@@ -223,7 +224,7 @@ class RequestTasks( TaskBase ):
       transfer.TargetSE = paramDict['TargetSE']
 
       # If there are input files
-      if paramDict['InputData']:
+      if paramDict.get('InputData'):
         if isinstance( paramDict['InputData'], list ):
           files = paramDict['InputData']
         elif isinstance( paramDict['InputData'], basestring ):
