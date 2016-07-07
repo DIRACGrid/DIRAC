@@ -355,11 +355,46 @@ Generation of bulk data removal/replication requests from a fixed file list or a
 
 **Note:**
 
-* It's not needed to set a Plugin, the default is 'Standard'
-* It's mandatory to set the Body, otherwise the default operation is 'ReplicateAndRegister'
-* It's not needed to set a SourceSE nor a TargetSE
-* This script remove all replicas of each file. We should verify how to remove only a subset of replicas (SourceSE?)
-* If you add non existing files to a Transformation, you won't get any particular status, the Transformation just does not progress
+  * It's not needed to set a Plugin, the default is 'Standard'
+  * It's mandatory to set the Body, otherwise the default operation is 'ReplicateAndRegister'
+  * It's not needed to set a SourceSE nor a TargetSE
+  * This script remove all replicas of each file. We should verify how to remove only a subset of replicas (SourceSE?)
+  * If you add non existing files to a Transformation, you won't get any particular status, the Transformation just does not progress
+
+
+* Example for Multiple Operations
+
+
+  .. code:: python
+
+    from DIRAC.TransformationSystem.Client.Transformation import Transformation
+    from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+
+    infileList = []
+    ...
+
+    t = Transformation( )
+    tc = TransformationClient( )
+    t.setTransformationName("DM_Moving") # Must be unique
+    #t.setTransformationGroup("Moving")
+    t.setType("Moving")
+    t.setPlugin("Standard") # Not needed. The default is 'Standard'
+    t.setDescription("dataset1 Moving")
+    t.setLongDescription( "Long description of dataset1 Moving" ) # Mandatory
+    t.setGroupSize(2) # Here you specify how many files should be grouped within he same request, e.g. 100
+
+    transBody = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
+                  ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
+                ]
+
+    t.setBody ( transBody ) # Mandatory
+    t.addTransformation() # Transformation is created here
+    t.setStatus("Active")
+    t.setAgentType("Automatic")
+    transID = t.getTransformationID()
+    tc.addFilesToTransformation(transID['Value'],infileList) # Files are added here
+
+
 
 Data replication based on Catalog Query
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
