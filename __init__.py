@@ -1,4 +1,3 @@
-# $HeadURL$
 """
    DIRAC - Distributed Infrastructure with Remote Agent Control
 
@@ -77,8 +76,8 @@ import sys, os
 # Define Version
 
 majorVersion = 6
-minorVersion = 13
-patchLevel = 0
+minorVersion = 14
+patchLevel = 38
 preVersion = 0
 
 version = "v%sr%s" % ( majorVersion, minorVersion )

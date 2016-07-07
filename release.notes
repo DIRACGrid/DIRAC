@@ -1,3 +1,11 @@
+[v6r14p38]
+
+*Core
+CHANGE: Unhashable objects as DAG graph nodes
+
+*RMS
+CHANGE: Added possibility of constant delay for RMS operations
+
 [v6r14p37]
 
 *Core
