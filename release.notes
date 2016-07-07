@@ -1,3 +1,11 @@
+[v6r15p7]
+
+*Core
+CHANGE: Enabled attachments in the emails
+
+*TS
+*CHANGE: Added possibility for multiple operations in Data Operation Transformations
+
 [v6r15p6]
 
 *Resources
