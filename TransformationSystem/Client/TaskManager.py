@@ -193,7 +193,7 @@ class RequestTasks( TaskBase ):
 
         oRequest.addOperation( op )
 
-      self._addOrPop( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
+      self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
 
   def _singleOperationsBody(self, transBody, taskDict, ownerDN, ownerGroup ):
     """ deal with a Request that has just one operation, as it was sofar
@@ -236,9 +236,9 @@ class RequestTasks( TaskBase ):
           transfer.addFile( trFile )
 
       oRequest.addOperation( transfer )
-      self._addOrPop( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
+      self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
 
-  def _addOrPop( self, oRequest, taskDict, transID, taskID, ownerDN, ownerGroup ):
+  def _assignRequestToTask( self, oRequest, taskDict, transID, taskID, ownerDN, ownerGroup ):
     """set ownerDN and group to request, and add the request to taskDict if it is
     valid, otherwise remove the task from the taskDict
 
