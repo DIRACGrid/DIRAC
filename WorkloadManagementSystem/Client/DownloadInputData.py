@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    DownloadInputData.py
 # Author :  Stuart Paterson
 ########################################################################
@@ -9,14 +8,16 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id$"
+import os
+import tempfile
+import random
 
+from DIRAC                                                          import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.Core.Utilities.Os                                        import getDiskSpace
-from DIRAC                                                          import S_OK, S_ERROR, gLogger
 
-import os, tempfile, random
+__RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'DownloadInputData'
 
