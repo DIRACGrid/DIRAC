@@ -2,6 +2,7 @@
 """
 
 import types
+import json
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PromptUser import promptUser
@@ -9,6 +10,7 @@ from DIRAC.Core.Base.API import API
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 COMPONENT_NAME = 'Transformation'
 
@@ -90,6 +92,46 @@ class Transformation( API ):
 
   def setSourceSE( self, seList ):
     return self.__setSE( 'SourceSE', seList )
+
+  def setBody( self, body ):
+    """ check that the body is a string, or using the proper syntax for multiple operations
+
+    :param body: transformation body, for example
+
+      .. code :: python
+
+        body = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
+                 ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
+               ]
+
+    :type body: string or list of tuples (or lists) of string and dictionaries
+    :raises TypeError: If the structure is not as expected
+    :raises ValueError: If unknown attribute for the :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation` is used
+    :returns: S_OK, S_ERROR
+    """
+    self.item_called = "Body"
+    if isinstance( body, basestring ):
+      return self.__setParam( body )
+    if not isinstance( body, (list, tuple) ):
+      raise TypeError( "Expected list or string, but %r is %s" % ( body, type( body ) ) )
+
+    for tup in body:
+      if not isinstance( tup, (tuple, list) ):
+        raise TypeError( "Expected tuple or list, but %r is %s" % ( tup, type( tup ) ) )
+      if len(tup) != 2:
+        raise TypeError( "Expected 2-tuple, but %r is length %d" % ( tup, len( tup ) ) )
+      if not isinstance( tup[0], basestring ):
+        raise TypeError( "Expected string, but first entry in tuple %r is %s" % ( tup, type( tup[0] ) ) )
+      if not isinstance( tup[1], dict ):
+        raise TypeError( "Expected dictionary, but second entry in tuple %r is %s" % ( tup, type( tup[0] ) ) )
+      for par, val in tup[1].iteritems():
+        if not isinstance( par, basestring ):
+          raise TypeError( "Expected string, but key in dictionary %r is %s" % ( par, type( par ) ) )
+        if not par in Operation.ATTRIBUTE_NAMES:
+          raise ValueError( "Unknown attribute for Operation: %s" % par )
+        if not isinstance( val, ( basestring, int, long, float, list, tuple, dict ) ):
+          raise TypeError( "Cannot encode %r, in json" % ( val ) )
+      return self.__setParam( json.dumps( body ) )
 
   def __setSE( self, seParam, seList ):
     if isinstance( seList, basestring ):

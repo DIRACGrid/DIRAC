@@ -1,20 +1,8 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-# File :    dirac-install-db
-# Author :  Ricardo Graciani
-########################################################################
 """
 Create a new DB on the local MySQL server
 """
-__RCSID__ = "$Id$"
-#
-from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
-from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
-#
-from DIRAC import gConfig
-gComponentInstaller.exitOnError = True
-#
+# Script initialization and parseCommandLine
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -23,12 +11,18 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  DB: Name of the Database (mandatory)'] ) )
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
-#
-
 if len( args ) < 1:
   Script.showHelp()
   exit( -1 )
 
+# Script imports
+from DIRAC import gConfig
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
+
+__RCSID__ = "$Id$"
+
+gComponentInstaller.exitOnError = True
 gComponentInstaller.getMySQLPasswords()
 for db in args:
   result = gComponentInstaller.installDatabase( db )

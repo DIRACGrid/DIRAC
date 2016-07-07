@@ -9,7 +9,6 @@
       This Executor will fail affected jobs meaningfully.
 
 """
-__RCSID__ = "$Id: $"
 
 import random
 
@@ -27,6 +26,7 @@ from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import Optim
 from DIRAC.WorkloadManagementSystem.DB.JobDB                        import JobDB
 
 
+__RCSID__ = "$Id: $"
 
 class JobScheduling( OptimizerExecutor ):
   """

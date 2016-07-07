@@ -2,6 +2,7 @@
 """
 import time
 import StringIO
+import json
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
@@ -138,6 +139,72 @@ class RequestTasks( TaskBase ):
         return res
       ownerDN = res['Value'][0]
 
+    try:
+      transJson = json.loads(transBody)
+      self._multiOperationsBody( transJson, taskDict, ownerDN, ownerGroup )
+    except ValueError: ##json couldn't load
+      self._singleOperationsBody( transBody, taskDict, ownerDN, ownerGroup )
+
+    return S_OK( taskDict )
+
+  def _multiOperationsBody( self, transJson, taskDict, ownerDN, ownerGroup ):
+    """ deal with a Request that has multiple operations
+
+    :param transJson: list of lists of string and dictionaries, e.g.:
+
+      .. code :: python
+
+        body = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
+                 ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
+               ]
+
+    :param dict taskDict: dictionary of tasks, modified in this function
+    :param str ownerDN: certificate DN used for the requests
+    :param str onwerGroup: dirac group used for the requests
+    :returns: None
+    """
+
+    for taskID in sorted( taskDict ):
+      paramDict = taskDict[taskID]
+      if not paramDict.get('InputData'):
+        self.log.error( "Error creating request for task", "%s, No input data" % taskID )
+        taskDict.pop( taskID )
+        continue
+      files = []
+
+      transID = paramDict['TransformationID']
+      oRequest = Request()
+      if isinstance( paramDict['InputData'], list ):
+        files = paramDict['InputData']
+      elif isinstance( paramDict['InputData'], basestring ):
+        files = paramDict['InputData'].split( ';' )
+
+      # create the operations from the json structure
+      for operationTuple in transJson:
+        op = Operation()
+        op.Type = operationTuple[0]
+        for parameter, value in operationTuple[1].iteritems():
+          setattr( op, parameter, value )
+
+        for lfn in files:
+          opFile = File()
+          opFile.LFN = lfn
+          op.addFile( opFile )
+
+        oRequest.addOperation( op )
+
+      self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
+
+  def _singleOperationsBody(self, transBody, taskDict, ownerDN, ownerGroup ):
+    """ deal with a Request that has just one operation, as it was sofar
+
+    :param transBody: string, can be an empty string
+    :param dict taskDict: dictionary of tasks, modified in this function
+    :param str ownerDN: certificate DN used for the requests
+    :param str onwerGroup: dirac group used for the requests
+    :returns: None
+    """
+
     requestOperation = 'ReplicateAndRegister'
     if transBody:
       try:
@@ -157,7 +224,7 @@ class RequestTasks( TaskBase ):
       transfer.TargetSE = paramDict['TargetSE']
 
       # If there are input files
-      if paramDict['InputData']:
+      if paramDict.get('InputData'):
         if isinstance( paramDict['InputData'], list ):
           files = paramDict['InputData']
         elif isinstance( paramDict['InputData'], basestring ):
@@ -169,20 +236,34 @@ class RequestTasks( TaskBase ):
           transfer.addFile( trFile )
 
       oRequest.addOperation( transfer )
-      oRequest.RequestName = _requestName( transID, taskID )
-      oRequest.OwnerDN = ownerDN
-      oRequest.OwnerGroup = ownerGroup
+      self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
 
-      isValid = self.requestValidator.validate( oRequest )
-      if not isValid['OK']:
-        self.log.error( "Error creating request for task", "%s %s" % ( taskID, isValid ) )
-        # This works because we loop over a copy of the keys !
-        taskDict.pop( taskID )
-        continue
+  def _assignRequestToTask( self, oRequest, taskDict, transID, taskID, ownerDN, ownerGroup ):
+    """set ownerDN and group to request, and add the request to taskDict if it is
+    valid, otherwise remove the task from the taskDict
 
-      taskDict[taskID]['TaskObject'] = oRequest
+    :param oRequest: Request
+    :param dict taskDict: dictionary of tasks, modified in this function
+    :param int transID: Transformation ID
+    :param int taskID: Task ID
+    :param str ownerDN: certificate DN used for the requests
+    :param str onwerGroup: dirac group used for the requests
+    :returns: None
+    """
 
-    return S_OK( taskDict )
+    oRequest.RequestName = _requestName( transID, taskID )
+    oRequest.OwnerDN = ownerDN
+    oRequest.OwnerGroup = ownerGroup
+
+    isValid = self.requestValidator.validate( oRequest )
+    if not isValid['OK']:
+      self.log.error( "Error creating request for task", "%s %s" % ( taskID, isValid ) )
+      # This works because we loop over a copy of the keys !
+      taskDict.pop( taskID )
+      return
+    taskDict[taskID]['TaskObject'] = oRequest
+    return
+
 
   def submitTransformationTasks( self, taskDict ):
     """ Submit requests one by one

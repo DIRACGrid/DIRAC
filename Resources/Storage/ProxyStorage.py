@@ -1,6 +1,6 @@
 """ This is the Proxy storage element client """
 
-__RCSID__ = "$Id$"
+import os
 
 from DIRAC                                  import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities      import checkArgumentFormat
@@ -10,7 +10,8 @@ from DIRAC.Core.DISET.RPCClient             import RPCClient
 from DIRAC.Core.DISET.TransferClient        import TransferClient
 from DIRAC.Core.Utilities.File              import getSize
 
-import os
+
+__RCSID__ = "$Id$"
 
 class ProxyStorage( StorageBase ):
 

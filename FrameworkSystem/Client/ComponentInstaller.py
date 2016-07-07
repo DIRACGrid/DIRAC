@@ -1304,7 +1304,7 @@ class ComponentInstaller( object ):
       loader = ModuleLoader( "Agent", PathFinder.getAgentSection, AgentModule )
     elif componentType == 'service':
       loader = ModuleLoader( "Service", PathFinder.getServiceSection,
-                                        RequestHandler, moduleSuffix = "Handler" )
+                            RequestHandler, moduleSuffix = "Handler" )
     elif componentType == 'executor':
       loader = ModuleLoader( "Executor", PathFinder.getExecutorSection, ExecutorModule )
     else:
@@ -2123,7 +2123,7 @@ class ComponentInstaller( object ):
                                                              webappCompileScript,
                                                              webappCompileScript ) ):
         gLogger.error( "Compile script %s failed. Check %s.err" % ( webappCompileScript,
-                                                                         webappCompileScript ) )
+                                                                    webappCompileScript ) )
       else:
         prodMode = "-p"
 
@@ -2349,8 +2349,8 @@ class ComponentInstaller( object ):
 
     gLogger.notice( 'Initializing MySQL...' )
     result = self.execCommand( 0, ['mysql_install_db',
-                              '--defaults-file=%s' % self.mysqlMyCnf,
-                              '--datadir=%s' % self.mysqlDbDir ] )
+                                   '--defaults-file=%s' % self.mysqlMyCnf,
+                                   '--datadir=%s' % self.mysqlDbDir ] )
     if not result['OK']:
       return result
 

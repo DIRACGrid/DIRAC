@@ -54,6 +54,10 @@ class Operation( object ):
   ALL_STATES = ( "Queued", "Waiting", "Scheduled", "Assigned", "Failed", "Done", "Canceled" )
   # # final states
   FINAL_STATES = ( "Failed", "Done", "Canceled" )
+  # # valid attributes
+  ATTRIBUTE_NAMES = ['OperationID', 'RequestID', "Type", "Status", "Arguments",
+                     "Order", "SourceSE", "TargetSE", "Catalog", "Error",
+                     "CreationTime", "SubmitTime", "LastUpdate"]
 
   _datetimeFormat = '%Y-%m-%d %H:%M:%S'
 
@@ -328,12 +332,9 @@ class Operation( object ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ['OperationID', 'RequestID', "Type", "Status", "Arguments",
-                 "Order", "SourceSE", "TargetSE", "Catalog", "Error",
-                  "CreationTime", "SubmitTime", "LastUpdate"]
     jsonData = {}
 
-    for attrName in attrNames :
+    for attrName in Operation.ATTRIBUTE_NAMES:
 
       # RequestID and OperationID might not be set since they are managed by SQLAlchemy
       if not hasattr( self, attrName ):
