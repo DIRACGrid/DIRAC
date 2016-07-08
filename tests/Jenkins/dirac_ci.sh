@@ -27,7 +27,7 @@
 
 # Def of environment variables:
 
-if [ ! -z "$DEBUG" ]
+if [ "$DEBUG" ]
 then
   echo '==> Running in DEBUG mode'
   DEBUG='-ddd'
@@ -35,14 +35,14 @@ else
   echo '==> Running in non-DEBUG mode'
 fi
 
-if [ ! -z "$WORKSPACE" ]
+if [ "$WORKSPACE" ]
 then
   echo '==> We are in Jenkins I guess'
 else
   WORKSPACE=$PWD
 fi
 
-if [ ! -z "$DIRACBRANCH" ]
+if [ "$DIRACBRANCH" ]
 then
   echo '==> Working on DIRAC branch ' $DIRACBRANCH
 else
@@ -87,7 +87,7 @@ function installSite(){
   getCFGFile
 
   echo '==> Fixing install.cfg file'
-  if [ ! -z "$LcgVer" ]
+  if [ "$LcgVer" ]
   then
     echo '==> Fixing LcgVer to ' $LcgVer
     sed -i s/VAR_LcgVer/$LcgVer/g $SERVERINSTALLDIR/install.cfg

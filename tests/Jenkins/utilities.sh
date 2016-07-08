@@ -872,8 +872,15 @@ function prepareForPilot(){
 function downloadProxy(){
   echo '==> [downloadProxy]'
 
-  echo $( eval echo Executing python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
-  python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG
+  if [ $PILOTCFG ]
+  then
+    echo $( eval echo Executing python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
+    python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG
+  else
+    echo $( eval echo Executing python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $DEBUG)
+    python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $DEBUG
+  fi
+
   if [ $? -ne 0 ]
   then
     echo 'ERROR: cannot download proxy'
