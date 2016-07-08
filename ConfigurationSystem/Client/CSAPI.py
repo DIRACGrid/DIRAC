@@ -751,3 +751,11 @@ class CSAPI( object ):
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     return S_OK( self.__csMod.getCFG() )
+
+  def showDiff( self ):
+    """ Just shows the differences accumulated within the Modificator object
+    """
+    diffData = self.__csMod.showCurrentDiff()
+    gLogger.notice("Accumulated diff with master CS")
+    for line in diffData:
+      gLogger.notice( line )
