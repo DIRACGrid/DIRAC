@@ -258,7 +258,7 @@ function DIRACPilotInstall(){
   python dirac-pilot.py -S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ -X GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements $DEBUG
   if [ $? -ne 0 ]
   then
-    echo 'ERROR: pilot failed'
+    echo 'ERROR: pilot script failed'
     return
   fi
 
@@ -278,6 +278,11 @@ function fullPilot(){
 
   #this should have been created, we source it so that we can continue
   source $PILOTINSTALLDIR/bashrc
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot source bashrc'
+    return
+  fi
 
   #Adding the LocalSE and the CPUTimeLeft, for the subsequent tests
   dirac-configure -FDMH --UseServerCertificate -L $DIRACSE $DEBUG
