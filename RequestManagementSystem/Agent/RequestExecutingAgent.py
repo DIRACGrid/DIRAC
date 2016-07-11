@@ -206,6 +206,11 @@ class RequestExecutingAgent( AgentModule ):
       request = self.__requestCache.pop( requestID )
       if taskResult and taskResult['OK']:
         request = taskResult['Value']
+      # In case of timeout, we need to increment ourselves all the attempts
+      elif taskResult and not taskResult['OK'] and taskResult['Message'] == 'Timed out':
+        waitingOp = request.getWaiting()
+        for rmsFile in waitingOp.get( 'Value', [] ):
+          rmsFile.Attempt += 1
 
       reset = self.requestClient().putRequest( request, useFailoverProxy = False, retryMainService = 2 )
       if not reset["OK"]:
