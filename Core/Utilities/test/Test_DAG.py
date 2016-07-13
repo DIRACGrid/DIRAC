@@ -14,7 +14,7 @@ __RCSID__ = "$Id $"
 ########################################################################
 class DAGTestCase( unittest.TestCase ):
   """ Test case for DIRAC.Core.Utilities.DAG module
-	"""
+  """
   pass
 
 class DAGSimple(DAGTestCase):
@@ -103,60 +103,60 @@ class DAGFull(DAGTestCase):
     self.assertEqual(dag.graph, {'A': {'B', 'C', 'D'}, 'B': set(), 'C': set(), 'D': {'E'}, 'E': {'A'}, ft: set()} )
     dag.addEdge('B', ft)
     self.assertEqual( dag.graph,
-		      {'A': {'B', 'C', 'D'}, 'B': {ft}, 'C': set(), 'D': {'E'}, 'E': {'A'}, ft: set()}
-		    )
+                      {'A': {'B', 'C', 'D'}, 'B': {ft}, 'C': set(), 'D': {'E'}, 'E': {'A'}, ft: set()}
+                      )
 
     #now sets, dicts and lists as nodes
     d = dict(zip('ab', range(2)))
     dag.addNode(d)
     self.assertEqual( dag.graph,
-		      { 'A': {'B', 'C', 'D'},
-			'B': {ft},
-			'C': set(),
-			'D': {'E'},
-			'E': {'A'},
-			ft: set(),
-			frozenset({('a',0), ('b',1)}): set()
-		      }
-		    )
+                      { 'A': {'B', 'C', 'D'},
+                        'B': {ft},
+                        'C': set(),
+                        'D': {'E'},
+                        'E': {'A'},
+                        ft: set(),
+                        frozenset({('a',0), ('b',1)}): set()
+                      }
+                    )
     dag.addEdge(ft, d)
     self.assertEqual( dag.graph,
-		      { 'A': {'B', 'C', 'D'},
-			'B': {ft},
-			'C': set(),
-			'D': {'E'},
-			'E': {'A'},
-			ft: set([frozenset({('a',0), ('b',1)})]),
-			frozenset({('a',0), ('b',1)}): set()
-		      }
-		    )
+                      { 'A': {'B', 'C', 'D'},
+                        'B': {ft},
+                        'C': set(),
+                        'D': {'E'},
+                        'E': {'A'},
+                        ft: set([frozenset({('a',0), ('b',1)})]),
+                        frozenset({('a',0), ('b',1)}): set()
+                      }
+                    )
 
     l = list(range(2))
     dag.addNode(l)
     print dag.graph
     self.assertEqual( dag.graph,
-		      { 'A': {'B', 'C', 'D'},
-			'B': {ft},
-			'C': set(),
-			'D': {'E'},
-			'E': {'A'},
-			ft: set([frozenset({('a',0), ('b',1)})]), #ft -> d
-			frozenset({('a',0), ('b',1)}): set(), #d
-			frozenset({0,1}): set() #l
-		      }
-		    )
+                      { 'A': {'B', 'C', 'D'},
+                        'B': {ft},
+                        'C': set(),
+                        'D': {'E'},
+                        'E': {'A'},
+                        ft: set([frozenset({('a',0), ('b',1)})]), #ft -> d
+                        frozenset({('a',0), ('b',1)}): set(), #d
+                        frozenset({0,1}): set() #l
+                      }
+                    )
     dag.addEdge(d, l)
     self.assertEqual( dag.graph,
-		      { 'A': {'B', 'C', 'D'},
-			'B': {ft},
-			'C': set(),
-			'D': {'E'},
-			'E': {'A'},
-			ft: set([frozenset({('a',0), ('b',1)})]), #ft -> d
-			frozenset({('a',0), ('b',1)}): set([frozenset({0,1})]), #d->l
-			frozenset({0,1}): set() #l
-		      }
-		    )
+                      { 'A': {'B', 'C', 'D'},
+                        'B': {ft},
+                        'C': set(),
+                        'D': {'E'},
+                        'E': {'A'},
+                        ft: set([frozenset({('a',0), ('b',1)})]), #ft -> d
+                        frozenset({('a',0), ('b',1)}): set([frozenset({0,1})]), #d->l
+                        frozenset({0,1}): set() #l
+                      }
+                    )
 
     del dag.graph['E']
     del dag.graph['D']
@@ -165,12 +165,12 @@ class DAGFull(DAGTestCase):
     dag.graph['A'] = {'B', 'C'}
 
     self.assertEqual( dag.graph,
-		      { 'A': {'B', 'C'},
-			'B': {ft},
-			'C': set(),
-			frozenset({0,1}): set(), #l
-		      }
-		    )
+                      { 'A': {'B', 'C'},
+                        'B': {ft},
+                        'C': set(),
+                        frozenset({0,1}): set(), #l
+                      }
+                    )
 
     i_n = dag.getIndexNodes()
     self.assertEqual(i_n, ['A', l])
@@ -178,25 +178,25 @@ class DAGFull(DAGTestCase):
     d1 = {'a':'b'}
     dag.addNode(d1)
     self.assertEqual( dag.graph,
-		      { 'A': {'B', 'C'},
-			'B': {ft},
-			'C': set(),
-			frozenset({0,1}): set(), #l
-			frozenset({('a','b')}): set(), #d1
-		      }
-		    )
+                      { 'A': {'B', 'C'},
+                        'B': {ft},
+                        'C': set(),
+                        frozenset({0,1}): set(), #l
+                        frozenset({('a','b')}): set(), #d1
+                      }
+                    )
 
     l1 = ['a', 'b']
     dag.addNode(l1)
     self.assertEqual( dag.graph,
-		      { 'A': {'B', 'C'},
-			'B': {ft},
-			'C': set(),
-			frozenset({0,1}): set(), #l
-			frozenset({('a', 'b')}): set(), #d1
-			frozenset({'a', 'b'}): set() #l1
-		      }
-		    )
+                      { 'A': {'B', 'C'},
+                        'B': {ft},
+                        'C': set(),
+                        frozenset({0,1}): set(), #l
+                        frozenset({('a', 'b')}): set(), #d1
+                        frozenset({'a', 'b'}): set() #l1
+                      }
+                    )
 
     i_n = dag.getIndexNodes()
     self.assertEqual(sorted(i_n), sorted(['A', l, d1, l1]))
@@ -204,31 +204,30 @@ class DAGFull(DAGTestCase):
     s1 = set()
     dag.addNode(s1)
     self.assertEqual( dag.graph,
-		      { 'A': {'B', 'C'},
-			'B': {ft},
-			'C': set(),
-			frozenset({0,1}): set(), #l
-			frozenset({('a', 'b')}): set(), #d1
-			frozenset({'a', 'b'}): set(), #l1
-			frozenset({}): set() # s1
-		      }
-		    )
+                      { 'A': {'B', 'C'},
+                        'B': {ft},
+                        'C': set(),
+                        frozenset({0,1}): set(), #l
+                        frozenset({('a', 'b')}): set(), #d1
+                        frozenset({'a', 'b'}): set(), #l1
+                        frozenset({}): set() # s1
+                      }
+                    )
 
     #dict with frozenset in
     dFSet1 = {'a':frozenset()}
     dag.addNode(dFSet1)
     self.assertEqual( dag.graph,
-		      { 'A': {'B', 'C'},
-			'B': {ft},
-			'C': set(),
-			frozenset({0,1}): set(), #l
-			frozenset({('a', 'b')}): set(), #d1
-			frozenset({'a', 'b'}): set(), #l1
-			frozenset({}): set(), # s1
-			frozenset([('a', frozenset([]))]): set() #dFSet1
-		      }
-		    )
-
+                      { 'A': {'B', 'C'},
+                        'B': {ft},
+                        'C': set(),
+                        frozenset({0,1}): set(), #l
+                        frozenset({('a', 'b')}): set(), #d1
+                        frozenset({'a', 'b'}): set(), #l1
+                        frozenset({}): set(), # s1
+                        frozenset([('a', frozenset([]))]): set() #dFSet1
+                      }
+                    )
 
 
 if __name__ == '__main__':

@@ -22,8 +22,8 @@ class DAG( object ):
   def addNode( self, node ):
     """ add a node to graph
 
-	Args:
-	  node (object): Any type of object - if not hashable, it will be converted to a frozenset
+        Args:
+          node (object): Any type of object - if not hashable, it will be converted to a frozenset
     """
     node = checkNode(node)
     if node not in self.graph:
@@ -32,9 +32,9 @@ class DAG( object ):
   def addEdge( self, fromNode, toNode ):
     """ add an edge (checks if both nodes exist)
 
-	Args:
-	  fromNode (object)
-	  toNode (object)
+        Args:
+          fromNode (object)
+          toNode (object)
     """
     fromNode = checkNode(fromNode)
     toNode = checkNode(toNode)
@@ -49,8 +49,8 @@ class DAG( object ):
     for node, toNodes in self.graph.iteritems():
       #This is clearly not enough to assure that it's really acyclic...
       if toNode == node and fromNode in toNodes:
-	gLogger.error( "Can't insert this edge" )
-	return
+        gLogger.error( "Can't insert this edge" )
+        return
     self.graph[fromNode].add( toNode )
 
   def getIndexNodes( self ):
