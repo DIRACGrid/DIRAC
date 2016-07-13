@@ -133,7 +133,6 @@ class DAGFull(DAGTestCase):
 
     l = list(range(2))
     dag.addNode(l)
-    print dag.graph
     self.assertEqual( dag.graph,
                       { 'A': {'B', 'C', 'D'},
                         'B': {ft},
