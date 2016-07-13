@@ -32,6 +32,8 @@ from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
+from DIRAC.Core.Utilities.DErrno import cmpError
+import errno
 # # agent name
 AGENT_NAME = "RequestManagement/RequestExecutingAgent"
 
@@ -207,7 +209,7 @@ class RequestExecutingAgent( AgentModule ):
       if taskResult and taskResult['OK']:
         request = taskResult['Value']
       # In case of timeout, we need to increment ourselves all the attempts
-      elif taskResult and not taskResult['OK'] and taskResult['Message'] == 'Timed out':
+      elif taskResult and not taskResult['OK'] and cmpError( taskResult, errno.ETIME ):
         waitingOp = request.getWaiting()
         for rmsFile in waitingOp.get( 'Value', [] ):
           rmsFile.Attempt += 1
