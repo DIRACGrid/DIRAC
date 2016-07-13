@@ -23,6 +23,7 @@ class VOMS2CSAgent( AgentModule ):
   def __init__( self, *args, **kwargs ):
     """ Defines default parameters
     """
+    super(VOMS2CSAgent, self).__init__( self, *args, **kwargs )
 
     self.__voDict = {}
     self.__adminMsgs = {}
