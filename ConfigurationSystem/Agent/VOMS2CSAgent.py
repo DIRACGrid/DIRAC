@@ -29,7 +29,7 @@ class VOMS2CSAgent( AgentModule ):
     self.__adminMsgs = {}
     self.csapi = None
     self.voChanged = False
-    self.dryRun = True
+    self.dryRun = False
 
     self.autoAddUsers = False
     self.autoModifyUsers = False

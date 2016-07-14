@@ -39,7 +39,7 @@ class Bdii2CSAgent( AgentModule ):
     self.processCEs = True
     self.processSEs = False
     # Update the CS or not?
-    self.dryRun = True
+    self.dryRun = False
 
   def initialize( self ):
     """ Gets run paramaters from the configuration

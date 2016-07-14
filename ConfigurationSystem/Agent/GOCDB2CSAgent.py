@@ -26,7 +26,7 @@ class GOCDB2CSAgent ( AgentModule ):
     super(GOCDB2CSAgent, self).__init__( self, *args, **kwargs )
     self.GOCDBClient = None
     self.csAPI = None
-    self.dryRun = True
+    self.dryRun = False
 
   def initialize( self ):
 
