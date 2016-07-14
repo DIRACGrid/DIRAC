@@ -576,8 +576,8 @@ class MySQL( object ):
       return S_OK()
 
     self.log.debug( '_connect: Attempting to access DB',
-                    '[%s@%s] by user %s/%s.' %
-                    ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) )
+                    '[%s@%s] by user %s' %
+                    ( self.__dbName, self.__hostName, self.__userName ) )
     try:
       self.log.verbose( '_connect: Connected.' )
       self._connected = True
