@@ -432,7 +432,7 @@ class MySQL( object ):
       self.log.debug( '%s: %s' % ( methodName, err ),
                       '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( DErrno.EMYSQL, '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
-    except Exception, e:
+    except Exception as e:
       self.log.debug( '%s: %s' % ( methodName, err ), str( e ) )
       return S_ERROR( DErrno.EMYSQL, '%s: (%s)' % ( err, str( e ) ) )
 
@@ -458,7 +458,7 @@ class MySQL( object ):
     It also includes quotation marks " around the given string
     """
 
-    retDict = self.__getConnection()
+    retDict = self._getConnection()
     if not retDict['OK']:
       return retDict
     connection = retDict['Value']
@@ -605,7 +605,7 @@ class MySQL( object ):
     if gDebugFile:
       start = time.time()
 
-    retDict = self.__getConnection()
+    retDict = self._getConnection()
     if not retDict['OK']:
       return retDict
     connection = retDict[ 'Value' ]
@@ -632,7 +632,7 @@ class MySQL( object ):
           self.logger.verbose( '_query: %s ...' % str( res[:10] ) )
 
       retDict = S_OK( res )
-    except Exception , x:
+    except Exception as x:
       self.log.warn( '_query:', cmd )
       retDict = self._except( '_query', x, 'Execution failed.' )
 
@@ -664,7 +664,7 @@ class MySQL( object ):
     if gDebugFile:
       start = time.time()
 
-    retDict = self.__getConnection( conn = conn )
+    retDict = self._getConnection()
     if not retDict['OK']:
       return retDict
     connection = retDict['Value']
@@ -710,7 +710,7 @@ class MySQL( object ):
     # # get connection
     connection = conn
     if not connection:
-      retDict = self.__getConnection()
+      retDict = self._getConnection()
       if not retDict['OK']:
         return retDict
       connection = retDict[ 'Value' ]
@@ -722,7 +722,7 @@ class MySQL( object ):
       for cmd in cmdList:
         cmdRet.append( ( cmd, cursor.execute( cmd ) ) )
       connection.commit()
-    except Exception, error:
+    except Exception as error:
       self.logger.execption( error )
       # # rollback, put back connection to the pool
       connection.rollback()
@@ -948,7 +948,7 @@ class MySQL( object ):
     if inFields != None:
       try:
         condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
-      except Exception, x:
+      except Exception as x:
         return S_ERROR( DErrno.EMYSQL, x )
 
     return self.getFields( tableName, outFields, condDict, limit, conn, older, newer, timeStamp, orderAttribute )
@@ -974,24 +974,13 @@ class MySQL( object ):
     return param[0].tostring()
 
   def _getConnection( self ):
-    """
-    Return a new connection to the DB
-    It uses the private method __getConnection
+    """ Return  a new connection to the DB,
+
+        Try the Queue, if it is empty add a newConnection to the Queue and retry
+        it will retry MAXCONNECTRETRY to open a new connection and will return
+        an error if it fails.
     """
     self.log.debug( '_getConnection:' )
-
-    retDict = self.__getConnection( trial = 0 )
-    return retDict
-
-  def __getConnection( self, conn = None, trial = 0 ):
-    """
-    Return a new connection to the DB,
-    if conn is provided then just return it.
-    then try the Queue, if it is empty add a newConnection to the Queue and retry
-    it will retry MAXCONNECTRETRY to open a new connection and will return
-    an error if it fails.
-    """
-    self.log.debug( '__getConnection:' )
 
     if not self.__initialized:
       error = 'DB not properly initialized'
@@ -1035,8 +1024,8 @@ class MySQL( object ):
 
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
-                                  greater = None, smaller = None )
-    except Exception, x:
+                                  greater = greater, smaller = smaller )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     cmd = 'SELECT COUNT(*) FROM %s %s' % ( table, cond )
@@ -1067,8 +1056,8 @@ class MySQL( object ):
 
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
-                                  greater = None, smaller = None )
-    except Exception, x:
+                                  greater = greater, smaller = smaller )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     cmd = 'SELECT %s, COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
@@ -1106,8 +1095,8 @@ class MySQL( object ):
 
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
-                                  greater = None, smaller = None )
-    except Exception, x:
+                                  greater = greater, smaller = smaller )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     cmd = 'SELECT  DISTINCT( %s ) FROM %s %s ORDER BY %s' % ( attributeName, table, cond, attributeName )
@@ -1318,13 +1307,13 @@ class MySQL( object ):
       try:
         mylimit = limit[0]
         myoffset = limit[1]
-      except:
+      except TypeError:
         mylimit = limit
         myoffset = None
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
                                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = mylimit,
-                                       greater = None, smaller = None, offset = myoffset )
-    except Exception, x:
+                                       greater = greater, smaller = smaller, offset = myoffset )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     return self._query( 'SELECT %s FROM %s %s' %
@@ -1354,8 +1343,8 @@ class MySQL( object ):
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
                                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
-                                       greater = None, smaller = None )
-    except Exception, x:
+                                       greater = greater, smaller = smaller )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     return self._update( 'DELETE FROM %s %s' % ( table, condition ), conn, debug = True )
@@ -1420,7 +1409,7 @@ class MySQL( object ):
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
                                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
-                                       greater = None, smaller = None )
+                                       greater = greater, smaller = smaller )
     except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
@@ -1488,7 +1477,7 @@ class MySQL( object ):
                          ( table, inFieldString, inValueString ), conn, debug = True )
 
 
-  def executeStoredProcedure( self, packageName, parameters, outputIds, output = True, array = None, conn = False ):
+  def executeStoredProcedure( self, packageName, parameters, outputIds ):
     conDict = self._getConnection()
     if not conDict['OK']:
       return conDict
@@ -1503,7 +1492,7 @@ class MySQL( object ):
         cursor.execute( "SELECT %s" % resName )
         row.append( cursor.fetchone()[0] )
       retDict = S_OK( row )
-    except  Exception , x:
+    except Exception as x:
       retDict = self._except( '_query', x, 'Execution failed.' )
       connection.rollback()
 
@@ -1517,7 +1506,7 @@ class MySQL( object ):
 
 
   # For the procedures that execute a select without storing the result
-  def executeStoredProcedureWithCursor( self, packageName, parameters, output = True, array = None, conn = False ):
+  def executeStoredProcedureWithCursor( self, packageName, parameters ):
     conDict = self._getConnection()
     if not conDict['OK']:
       return conDict
@@ -1530,7 +1519,7 @@ class MySQL( object ):
       cursor.execute( execStr )
       rows = cursor.fetchall()
       retDict = S_OK( rows )
-    except  Exception as x:
+    except Exception as x:
       retDict = self._except( '_query', x, 'Execution failed.' )
       connection.rollback()
     try:
