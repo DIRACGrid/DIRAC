@@ -33,7 +33,6 @@ class VOMS2CSAgent( AgentModule ):
 
     self.autoAddUsers = False
     self.autoModifyUsers = False
-    self.autoSuspendUsers = False
 
 
   def initialize( self ):
@@ -55,7 +54,6 @@ class VOMS2CSAgent( AgentModule ):
     self.dryRun = self.am_getOption( 'DryRun', self.dryRun )
     self.autoAddUsers = self.am_getOption( 'AutoAddUsers', self.autoAddUsers )
     self.autoModifyUsers = self.am_getOption( 'AutoModifyUsers', self.autoModifyUsers )
-    self.autoSuspendUsers = self.am_getOption( 'AutoSuspendUsers', self.autoSuspendUsers )
 
     return S_OK()
 
