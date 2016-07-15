@@ -313,8 +313,8 @@ class InputData( OptimizerExecutor ):
       siteSet = set()
       for seName in replicas:
         result = self.__getSitesForSE( seName )
-        self.jobLog.warn( "Could not get sites for SE %s: %s" % ( seName, result[ 'Message' ] ) )
         if not result['OK']:
+          self.jobLog.warn( "Could not get sites for SE %s: %s" % ( seName, result[ 'Message' ] ) )
           return result
         siteSet.update( result['Value'] )
       lfnSEs[ lfn ] = siteSet
