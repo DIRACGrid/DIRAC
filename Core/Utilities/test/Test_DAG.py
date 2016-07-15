@@ -58,8 +58,51 @@ class DAGSimple(DAGTestCase):
 
 class DAGFull(DAGTestCase):
 
+  def test_getList(self):
+    """ test dag to list
+    """
+    dag = DAG()
+    dag.addNode('A')
+    l = dag.getList()
+    self.assertEqual(l, ['A'])
+
+    dag.addNode('C')
+    dag.addEdge('A', 'C')
+    l = dag.getList()
+    self.assertEqual(l, ['A', 'C'])
+
+    dag.addNode('B')
+    dag.addEdge('C', 'B')
+    l = dag.getList()
+    self.assertEqual(l, ['A', 'C', 'B'])
+
+    d = dict(zip('ab', range(2)))
+    dag.addNode(d)
+    dag.addEdge('B', d)
+    l = dag.getList()
+    self.assertEqual(l, ['A', 'C', 'B', d])
+
+    l1 = list(range(2))
+    dag.addNode(l1)
+    dag.addEdge(d, l1)
+    l = dag.getList()
+    self.assertEqual(l, ['A', 'C', 'B', d, l1])
+
+    dag.addNode('E')
+    dag.addEdge(l1, 'E')
+    l = dag.getList()
+    self.assertEqual(l, ['A', 'C', 'B', d, l1, 'E'])
+
+    dag1 = DAG()
+    dag1.addNode(d)
+    dag1.addNode(l1)
+    dag1.addEdge(d, l1)
+    l = dag1.getList()
+    self.assertEqual(l, [d, l1])
+
+
   def test_full(self):
-    """ test dag creation
+    """ test dag creation and more
     """
     dag = DAG()
     i_n = dag.getIndexNodes()
@@ -70,8 +113,12 @@ class DAGFull(DAGTestCase):
     self.assertEqual(dag.graph, {'A': set()})
     dag.addNode('B')
     self.assertEqual(dag.graph, {'A': set(), 'B': set()})
+    l = dag.getList()
+    self.assertEqual(l, [])
     dag.addEdge('A', 'B')
     self.assertEqual(dag.graph, {'A': {'B'}, 'B': set()})
+    l = dag.getList()
+    self.assertEqual(l, ['A', 'B'])
     dag.addEdge('A', 'B')
     self.assertEqual(dag.graph, {'A': {'B'}, 'B': set()})
     dag.addEdge('A', 'C')
@@ -79,6 +126,8 @@ class DAGFull(DAGTestCase):
     dag.addNode('C')
     dag.addEdge('A', 'C')
     self.assertEqual(dag.graph, {'A': {'B', 'C'}, 'B': set(), 'C': set()})
+    l = dag.getList()
+    self.assertEqual(l, ['A'])
     dag.addEdge('C', 'A') #this would be cyclic, so it should not change the graph
     self.assertEqual(dag.graph, {'A': {'B', 'C'}, 'B': set(), 'C': set()})
     dag.addNode('D')
@@ -104,7 +153,7 @@ class DAGFull(DAGTestCase):
     dag.addEdge('B', ft)
     self.assertEqual( dag.graph,
                       {'A': {'B', 'C', 'D'}, 'B': {ft}, 'C': set(), 'D': {'E'}, 'E': {'A'}, ft: set()}
-                      )
+                    )
 
     #now sets, dicts and lists as nodes
     d = dict(zip('ab', range(2)))
@@ -116,9 +165,7 @@ class DAGFull(DAGTestCase):
                         'D': {'E'},
                         'E': {'A'},
                         ft: set(),
-                        frozenset({('a',0), ('b',1)}): set()
-                      }
-                    )
+                        frozenset({('a',0), ('b',1)}): set()})
     dag.addEdge(ft, d)
     self.assertEqual( dag.graph,
                       { 'A': {'B', 'C', 'D'},

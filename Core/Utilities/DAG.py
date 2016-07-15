@@ -62,6 +62,28 @@ class DAG( object ):
     indexNodes = list(set(self.graph.keys()) - notIndexNodes)
     return [unHashNode(inu) for inu in indexNodes]
 
+  def getList( self ):
+    """ Returns a list out of the DAG, if possible
+    """
+    cDAG = copy.deepcopy(self)
+
+    l = []
+    while True:
+      try:
+        indexNodes = cDAG.getIndexNodes()
+        if len(indexNodes) != 1:
+          gLogger.warn("The DAG is not sequential")
+          break
+        ind = checkNode(indexNodes[0])
+        del cDAG.graph[ind]
+        l.append(unHashNode(ind))
+      except KeyError:
+        break
+      except IndexError:
+        break
+
+    return l
+
 
 def checkNode( node ):
   """ Returns a hashable version of node
