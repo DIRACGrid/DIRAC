@@ -22,8 +22,8 @@ class DAG( object ):
   def addNode( self, node ):
     """ add a node to graph
 
-	Args:
-	  node (object): Any type of object - if not hashable, it will be converted to a frozenset
+        Args:
+          node (object): Any type of object - if not hashable, it will be converted to a frozenset
     """
     node = checkNode(node)
     if node not in self.graph:
@@ -32,9 +32,9 @@ class DAG( object ):
   def addEdge( self, fromNode, toNode ):
     """ add an edge (checks if both nodes exist)
 
-	Args:
-	  fromNode (object)
-	  toNode (object)
+        Args:
+          fromNode (object)
+          toNode (object)
     """
     fromNode = checkNode(fromNode)
     toNode = checkNode(toNode)
@@ -49,8 +49,8 @@ class DAG( object ):
     for node, toNodes in self.graph.iteritems():
       #This is clearly not enough to assure that it's really acyclic...
       if toNode == node and fromNode in toNodes:
-	gLogger.error( "Can't insert this edge" )
-	return
+        gLogger.error( "Can't insert this edge" )
+        return
     self.graph[fromNode].add( toNode )
 
   def getIndexNodes( self ):
@@ -61,6 +61,28 @@ class DAG( object ):
       [notIndexNodes.add(depNode) for depNode in depNodes]
     indexNodes = list(set(self.graph.keys()) - notIndexNodes)
     return [unHashNode(inu) for inu in indexNodes]
+
+  def getList( self ):
+    """ Returns a list out of the DAG, if possible
+    """
+    cDAG = copy.deepcopy(self)
+
+    l = []
+    while True:
+      try:
+        indexNodes = cDAG.getIndexNodes()
+        if len(indexNodes) != 1:
+          gLogger.warn("The DAG is not sequential")
+          break
+        ind = checkNode(indexNodes[0])
+        del cDAG.graph[ind]
+        l.append(unHashNode(ind))
+      except KeyError:
+        break
+      except IndexError:
+        break
+
+    return l
 
 
 def checkNode( node ):
