@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic Oracle methods in a multithread-safe mode
     keeping used connections in a python Queue for further reuse.
@@ -50,24 +47,23 @@
 
 """
 
-__RCSID__ = "$Id$"
-
-
-from DIRAC                                  import gLogger
-from DIRAC                                  import S_OK, S_ERROR
-
 import cx_Oracle
 import types
-
-gInstancesCount = 0
-
 import Queue
 import time
 import threading
 
+from DIRAC                                  import gLogger
+from DIRAC                                  import S_OK, S_ERROR
+
+gInstancesCount = 0
+
+__RCSID__ = "$Id$"
+
 maxConnectRetry = 100
 maxArraysize = 5000 #max allowed
-class OracleDB:
+
+class OracleDB(object):
   """
   Basic multithreaded DIRAC Oracle Client Class
   """
@@ -201,7 +197,7 @@ class OracleDB:
         self.logger.debug( '_query: %s ...' % str( res[:10] ) )
 
       retDict = S_OK( res )
-    except Exception , x:
+    except Exception as x:
 
       self.logger.debug( '_query:', cmd )
       retDict = self._except( '_query', x, 'Execution failed.' )
@@ -250,7 +246,7 @@ class OracleDB:
       else:
         cursor.callproc( packageName, parameters )
       retDict = S_OK( results )
-    except Exception , x:
+    except Exception as x:
 
       self.logger.debug( '_query:', packageName + "(" + str( parameters ) + ")" )
       retDict = self._except( '_query', x, 'Execution failed.' )
@@ -280,7 +276,7 @@ class OracleDB:
       cursor.arraysize = maxArraysize
       result = cursor.callfunc( packageName, returnType, parameters )
       retDict = S_OK( result )
-    except Exception , x:
+    except Exception as x:
       self.logger.debug( '_query:', packageName + "(" + str( parameters ) + ")" )
       retDict = self._except( '_query', x, 'Excution failed.' )
       connection.rollback()
@@ -378,5 +374,3 @@ class OracleDB:
         return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
     except Exception as x:
       return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
-
-

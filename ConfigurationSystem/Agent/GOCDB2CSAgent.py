@@ -23,14 +23,16 @@ class GOCDB2CSAgent ( AgentModule ):
   def __init__( self, *args, **kwargs ):
     ''' c'tor
     '''
-    AgentModule.__init__( self, *args, **kwargs )
+    super(GOCDB2CSAgent, self).__init__( self, *args, **kwargs )
     self.GOCDBClient = None
     self.csAPI = None
+    self.dryRun = False
 
   def initialize( self ):
 
     # client to connect to GOCDB
     self.GOCDBClient = GOCDBClient()
+    self.dryRun = self.am_getOption( 'DryRun', self.dryRun )
 
     # API needed to update configuration stored by CS
     self.csAPI = CSAPI()
@@ -260,11 +262,17 @@ class GOCDB2CSAgent ( AgentModule ):
         if not result['OK']:
           log.warn( "delSection() failed with message: %s" % result['Message'] )
 
-    # update configuration stored by CS
-    result = self.csAPI.commit()
-    if not result['OK']:
-      log.error( "commit() failed with message: %s" % result['Message'] )
-      return S_ERROR( 'Could not commit changes to CS.' )
+    if self.dryRun:
+      log.info( "Dry Run: CS won't be updated" )
+      self.csAPI.showDiff()
+    else:
+      # update configuration stored by CS
+      result = self.csAPI.commit()
+      if not result['OK']:
+        log.error( "commit() failed with message: %s" % result['Message'] )
+        return S_ERROR( "Could not commit changes to CS." )
+      else:
+        log.info("Committed changes to CS")
 
     log.debug( 'End function.' )
     return S_OK()

@@ -1,9 +1,9 @@
-Systems / Configuration / <INSTANCE> / Agents /CE2CSAgent - Sub-subsection
-==========================================================================
+Systems / Configuration / <INSTANCE> / Agents /Bdii2CSAgent - Sub-subsection
+============================================================================
 
-CE2CSAgent is the agent in charge of update sites parameters configuration for a specific VO.
-- Queries BDII for unknown CE.
-- Queries BDII for CE information and put it to CS.
+Bdii2CSAgent is the agent in charge of updating sites parameters configuration for a specific VO.
+- Queries BDII for Computing Elements (CEs) information and update the CS.
+- Queries BDII for Storage Elements (SEs) information and update the CS.
 
 The attributes of this agent are shown in the table below:
 
@@ -12,7 +12,9 @@ The attributes of this agent are shown in the table below:
 +-----------------------+-----------------------------------+-------------------------------------------------+
 | *AlternativeBDIIs*    | List of alternatives BDIIs        | AlternativeBDIIs = bdii01.in2p3.fr              |
 +-----------------------+-----------------------------------+-------------------------------------------------+
-| *BannedCEs*           | Banned Computing Elements         | BannedCEs = []                                  |
+| *ProcessCEs*          | Process Computing Elements        | ProcessCEs = True                               |
++-----------------------+-----------------------------------+-------------------------------------------------+
+| *ProcessSEs*          | Process Storage Elements          | ProcessSEs = True                               |
 +-----------------------+-----------------------------------+-------------------------------------------------+
 | *MailTo*              | E-mail of the person in charge of | MailTo = hamar@cppm.in2p3.fr                    |
 |                       | update the Sites configuration    |                                                 |
@@ -22,4 +24,3 @@ The attributes of this agent are shown in the table below:
 +-----------------------+-----------------------------------+-------------------------------------------------+
 | *VirtualOrganization* | Name of the VO                    | VirtualOrganization = vo.formation.idgrilles.fr |
 +-----------------------+-----------------------------------+-------------------------------------------------+
-
