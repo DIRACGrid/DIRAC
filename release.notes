@@ -1,3 +1,8 @@
+[v6r15p8]
+
+*Configuration
+NEW: Added DryRun option for CS agents (false by default, True for new installations)
+
 [v6r15p7]
 
 *Core
