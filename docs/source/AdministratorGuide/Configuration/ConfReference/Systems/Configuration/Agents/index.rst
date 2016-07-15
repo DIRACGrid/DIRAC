@@ -31,6 +31,9 @@ Common options for all the agents:
 | *Status*            | Agent Status, possible values Active  | Status = Active              |
 |                     | or Inactive                           |                              |
 +---------------------+---------------------------------------+------------------------------+
+| *DryRun*            | If True, the agent won't change       | DryRun = False               |
+|                     | the CS                                |                              |
++---------------------+---------------------------------------+------------------------------+
 
 
 
@@ -38,9 +41,7 @@ Agents associated with Configuration System:
 
 .. toctree::
    :maxdepth: 2
-   
-   CE2CSAgent/index
-   UsersAndGroups/index
 
-
-
+   Bdii2CSAgent/index
+   VOMS2CSAgent/index
+   GOCDB2CSAgent/index

@@ -302,9 +302,9 @@ class InputData( OptimizerExecutor ):
 
   #############################################################################
   def __getSiteCandidates( self, okReplicas, vo ):
-    """This method returns a list of possible site candidates based on the
-       job input data requirement.  For each site candidate, the number of files
-       on disk and tape is resolved.
+    """ This method returns a list of possible site candidates based on the job input data requirement.
+
+        For each site candidate, the number of files on disk and tape is resolved.
     """
 
     lfnSEs = {}
@@ -313,8 +313,10 @@ class InputData( OptimizerExecutor ):
       siteSet = set()
       for seName in replicas:
         result = self.__getSitesForSE( seName )
-        if result['OK']:
-          siteSet.update( result['Value'] )
+        if not result['OK']:
+          self.jobLog.warn( "Could not get sites for SE %s: %s" % ( seName, result[ 'Message' ] ) )
+          return result
+        siteSet.update( result['Value'] )
       lfnSEs[ lfn ] = siteSet
 
     if not lfnSEs:
