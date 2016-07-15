@@ -52,7 +52,8 @@ class TaskBase( TransformationAgentsUtilities ):
     self.transInThread = {}
     self.debug = False
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '',
+                                  bulkSubmissionFlag = False):
     return S_ERROR( "Not implemented" )
 
   def submitTransformationTasks( self, taskDict ):
@@ -119,7 +120,8 @@ class RequestTasks( TaskBase ):
       self.requestValidator = requestValidator
 
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '',
+                                  bulkSubmissionFlag = False):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
     if not taskDict:
