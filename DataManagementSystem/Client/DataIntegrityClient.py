@@ -437,3 +437,16 @@ class DataIntegrityClient( Client ):
         gLogger.info( "LFNZeroReplicas file (%d) removed from catalog" % fileID )
     # If we get here the problem is solved so we can update the integrityDB
     return self.__updateCompletedFiles( 'LFNZeroReplicas', fileID )
+
+
+  def _reportProblematicFiles( self, lfns, reason ):
+    """ Simple wrapper function around setFileProblematic
+    """
+    gLogger.info( 'The following %s files were found with %s' % ( len( lfns ), reason ) )
+    for lfn in sorted( lfns ):
+      gLogger.info( lfn )
+    res = self.setFileProblematic( lfns, reason, sourceComponent = 'DataIntegrityClient' )
+    if not res['OK']:
+      gLogger.info( 'Failed to update integrity DB with files', res['Message'] )
+    else:
+      gLogger.info( 'Successfully updated integrity DB with files' )
