@@ -8,9 +8,7 @@ Elasticsearch database.
 
 """
 
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities import DErrno
+from datetime import datetime
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q, A
@@ -18,7 +16,9 @@ from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundEr
 from elasticsearch.helpers import BulkIndexError
 from elasticsearch import helpers
 
-from datetime import datetime
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import DErrno
 
 __RCSID__ = "$Id$"
 
