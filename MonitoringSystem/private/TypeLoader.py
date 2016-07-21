@@ -7,14 +7,13 @@ It is used to load the monitoring types.
 
 """
 
-__RCSID__ = "$Id$"
-
-
-from DIRAC.Core.Utilities                           import DIRACSingleton
-from DIRAC.MonitoringSystem.Client.Types.BaseType   import BaseType
-from DIRAC.Core.Utilities.Plotting.ObjectLoader     import loadObjects
+from DIRAC.Core.Utilities import DIRACSingleton
+from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
+from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
 
 import re
+
+__RCSID__ = "$Id$"
 
 ########################################################################
 class TypeLoader( object ):

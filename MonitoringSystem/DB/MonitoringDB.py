@@ -5,11 +5,12 @@
 """
 It is a wrapper on top of Elasticsearch. It is used to manage the DIRAC monitoring types. 
 """
-__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.MonitoringSystem.private.TypeLoader import TypeLoader
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+
+__RCSID__ = "$Id$"
 
 ########################################################################
 class MonitoringDB( ElasticDB ):
@@ -39,7 +40,9 @@ class MonitoringDB( ElasticDB ):
         doc_type = typeClass()._getDocType() 
         mapping = typeClass().getMapping()
         monfields = typeClass().getMonitoringFields()
-        self.__documents[doc_type] = {"indexName": indexName, "mapping":mapping, 'monitoringFields':monfields}
+        self.__documents[doc_type] = {'indexName': indexName,
+                                      'mapping':mapping,
+                                      'monitoringFields':monfields}
         if self.__readonly:
           gLogger.info( "Read only mode is okay" )
         else:
@@ -138,7 +141,9 @@ class MonitoringDB( ElasticDB ):
       isAvgAgg = True
     
     indexName = "%s*" % ( retVal['Value'] )
-    q = [self._Q( 'range', time = {'lte':endTime * 1000, 'gte': startTime * 1000} )]
+    q = [self._Q( 'range',
+                  time = {'lte':endTime * 1000,
+                          'gte': startTime * 1000} )]
     for cond in condDict:
       kwargs = {cond: condDict[cond][0]}
       query = self._Q( 'match', **kwargs )
@@ -147,9 +152,18 @@ class MonitoringDB( ElasticDB ):
     a1 = self._A( 'terms', field = grouping, size = 0 )
     a2 = self._A( 'terms', field = 'time' )
     a2.metric( 'total_jobs', 'sum', field = selectFields[0] )
-    a1.bucket( 'end_data', 'date_histogram', field = 'time', interval = interval ).metric( 'tt', a2 ).pipeline( 'avg_monthly_sales', 'avg_bucket', buckets_path = 'tt>total_jobs',gap_policy='insert_zeros' )
+    a1.bucket( 'end_data',
+               'date_histogram',
+               field = 'time',
+               interval = interval ).metric( 'tt', a2 ).pipeline( 'avg_monthly_sales',
+                                                                  'avg_bucket',
+                                                                  buckets_path = 'tt>total_jobs',
+                                                                  gap_policy = 'insert_zeros' )
     if isAvgAgg:
-      a1.pipeline('avg_total_jobs', 'avg_bucket', buckets_path='end_data>avg_monthly_sales',gap_policy='insert_zeros')
+      a1.pipeline( 'avg_total_jobs',
+                   'avg_bucket',
+                   buckets_path = 'end_data>avg_monthly_sales',
+                   gap_policy = 'insert_zeros' )
     
     s = self._Search( indexName )
     s = s.filter( 'bool', must = q )

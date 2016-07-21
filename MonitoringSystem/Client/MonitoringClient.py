@@ -1,11 +1,13 @@
 """
 This is the client of the Monitoring service based on Elasticsearch.
 """
-__RCSID__ = "$Id$"
 
-from DIRAC.Core.DISET.RPCClient                 import RPCClient
-from DIRAC.Core.Utilities.Plotting.FileCoding   import codeRequestInFileId
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
+
 import types 
+
+__RCSID__ = "$Id$"
 
 class MonitoringClient( object ):
   """ 
@@ -100,13 +102,28 @@ class MonitoringClient( object ):
     return result
   
   def addMonitoringRecords( self, monitoringtype, doc_type, data ):
+    """
+    :param str monitoringtype
+    :param str doc_type
+    :param dict data
+    """
     rpcClient = self.__getServer()
     return rpcClient.addMonitoringRecords( monitoringtype, doc_type, data )
   
   def addRecords( self, indexName, doc_type, data ):
+    """
+    add records to the database
+    :param str indexName
+    :param str doc_type
+    :param dict data
+    """
     rpcClient = self.__getServer()
     return rpcClient.addRecords( indexName, doc_type, data )
   
   def deleteIndex(self, indexName):
+    """
+    It deletes a specific index...
+    :param str indexName
+    """
     rpcClient = self.__getServer()
     return rpcClient.deleteIndex(indexName)
