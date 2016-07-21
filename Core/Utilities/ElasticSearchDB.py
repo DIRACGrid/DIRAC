@@ -44,26 +44,7 @@ class ElasticSearchDB( object ):
     """
     self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
     self.__tryToConnect()
-  
-  ########################################################################
-  def setClusterName( self, name ):
-    """
-      It is used to set the cluster name
-      
-      :param self: self reference
-      :param str requestName: request name
-    
-    """
-    self.__clusterName = name
-  
-  ########################################################################
-  def getClusterName( self ):
-    """
-    It returns the cluster name
-    
-    :param self: self reference
-    """
-    return self.__clusterName
+    self.clusterName = ''
   
   ########################################################################  
   def query( self, index, query ):
@@ -106,7 +87,7 @@ class ElasticSearchDB( object ):
       if self.__client.ping():
         # Returns True if the cluster is running, False otherwise
         result = self.__client.info()
-        self.setClusterName ( result.get( "cluster_name", " " ) )
+        self.clusterName ( result.get( "cluster_name", " " ) )
         self.log.info( "Database info", result )
         self._connected = True
       else:
