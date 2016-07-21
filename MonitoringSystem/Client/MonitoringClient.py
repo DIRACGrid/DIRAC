@@ -1,11 +1,10 @@
 """
 This is the client of the Monitoring service based on Elasticsearch.
 """
+import types 
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
-
-import types 
 
 __RCSID__ = "$Id$"
 

@@ -6,12 +6,12 @@
 It is used to load the monitoring types. 
 
 """
+import re
 
 from DIRAC.Core.Utilities import DIRACSingleton
-from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
 
-import re
+from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 __RCSID__ = "$Id$"
 

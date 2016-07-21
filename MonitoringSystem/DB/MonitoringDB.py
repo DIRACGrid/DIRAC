@@ -6,9 +6,10 @@
 It is a wrapper on top of Elasticsearch. It is used to manage the DIRAC monitoring types. 
 """
 
-from DIRAC.Core.Base.ElasticDB import ElasticDB
-from DIRAC.MonitoringSystem.private.TypeLoader import TypeLoader
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Base.ElasticDB import ElasticDB
+
+from DIRAC.MonitoringSystem.private.TypeLoader import TypeLoader
 
 __RCSID__ = "$Id$"
 

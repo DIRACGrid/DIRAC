@@ -3,17 +3,17 @@
 It is used to create plots using Elasticsearch
 
 """
+import datetime
 
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
-from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 from DIRAC.Core.Utilities.Plotting import gMonitoringDataCache
 from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
 from DIRAC.Core.Utilities.Plotting.Plots import generateErrorMessagePlot
 
-import datetime
+from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
+from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 
 __RCSID__ = "$Id$"
 
