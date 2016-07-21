@@ -2,15 +2,15 @@
 It used to create several plots
 """
 
-__RCSID__ = "$Id$"
-
-from DIRAC                                   import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.Plotting           import gMonitoringDataCache
-from DIRAC.MonitoringSystem.private.DBUtils  import DBUtils
-from DIRAC.Core.Utilities.Plotting.Plots     import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot, generateCumulativePlot, generatePiePlot, generateStackedLinePlot
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities.Plotting import gMonitoringDataCache
+from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
+from DIRAC.Core.Utilities.Plotting.Plots import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot, generateCumulativePlot, generatePiePlot, generateStackedLinePlot
 
 import time
 import copy
+
+__RCSID__ = "$Id$"
 
 class BasePlotter( DBUtils ):
 
@@ -121,8 +121,10 @@ class BasePlotter( DBUtils ):
       return S_ERROR( "Report %s is not defined" % reportRequest[ 'reportName' ] )
     else:
       funcObj = getattr( self, funcName )
-  
-    return gMonitoringDataCache.getReportData( reportRequest, reportHash, funcObj )
+    
+    return gMonitoringDataCache.getReportData( reportRequest = reportRequest,
+                                               reportHash = reportHash,
+                                               dataFunc = funcObj )
 
   def __generatePlotForReport( self, reportRequest, reportHash, reportData ):
     """
@@ -137,7 +139,11 @@ class BasePlotter( DBUtils ):
       funcObj = getattr( self, funcName )
     except:
       return S_ERROR( "Plot function for report %s is not defined" % reportRequest[ 'reportName' ] )
-    return gMonitoringDataCache.getReportPlot( reportRequest, reportHash, reportData, funcObj )
+    
+    return gMonitoringDataCache.getReportPlot( reportRequest = reportRequest,
+                                               reportHash = reportHash,
+                                               reportData = reportData,
+                                               plotFunc = funcObj )
 
   def _getTimedData( self, startTime, endTime, selectFields, preCondDict, metadataDict = None ):
     """
@@ -197,14 +203,14 @@ class BasePlotter( DBUtils ):
       return retVal
     interval, _ = retVal['Value']
     
-    retVal = self._retrieveBucketedData( self._typeName,
-                                          startTime,
-                                          endTime,
-                                          interval,
-                                          selectFields,
-                                          condDict,
-                                          grouping,
-                                          metadataDict )
+    retVal = self._retrieveBucketedData( typeName = self._typeName,
+                                         startTime = startTime,
+                                         endTime = endTime,
+                                         interval = interval,
+                                         selectFields = selectFields,
+                                         condDict = condDict,
+                                         grouping = grouping,
+                                         metadataDict = metadataDict )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict = retVal[ 'Value' ]
@@ -300,7 +306,10 @@ class BasePlotter( DBUtils ):
     if not dataDict:
       funcToPlot = generateNoDataPlot
     plotFileName = "%s.png" % filename
-    finalResult = funcToPlot( plotFileName, dataDict, metadata )
+
+    finalResult = funcToPlot( fileName = plotFileName,
+                              data = dataDict,
+                              metadata = metadata )
     if not finalResult[ 'OK' ]:
       return finalResult
     thbMD = self.__checkThumbnailMetadata( metadata )

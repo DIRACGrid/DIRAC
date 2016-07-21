@@ -2,10 +2,10 @@
 It is a helper module used to create a certain plot...
 """
 
-__RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities  import Time
-from DIRAC                 import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
+
+__RCSID__ = "$Id$"
 
 class DBUtils ( object ):
   
@@ -35,15 +35,14 @@ class DBUtils ( object ):
                120 * 86400:( '4d', 4 * 24 * 3600 ),
                86400 * 367:( '1w', 86400 * 7 ) }
   
-  def __init__( self, db, setup ):
-    self.__db = db
-    self.__setup = setup
-    
+  def __init__( self, db, setup ):  
     """ c'tor
     :param self: self reference
     :param object the database module
     :param str setup DIRAC setup
     """
+    self.__db = db
+    self.__setup = setup
     
   def getKeyValues( self, typeName, condDict ):
     """
@@ -55,7 +54,14 @@ class DBUtils ( object ):
     """
     It is a wrapper class...
     """
-    return self.__db.retrieveBucketedData( typeName, startTime, endTime, interval, selectFields, condDict, grouping, metadataDict)
+    return self.__db.retrieveBucketedData( typeName = typeName,
+                                           startTime = startTime,
+                                           endTime = endTime,
+                                           interval = interval,
+                                           selectFields = selectFields,
+                                           condDict = condDict,
+                                           grouping = grouping,
+                                           metainfo = metadataDict )
   
   def _determineBucketSize( self, start, end ):
     """

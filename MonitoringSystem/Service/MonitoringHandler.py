@@ -4,19 +4,18 @@ It is used to create plots using Elasticsearch
 
 """
 
-__RCSID__ = "$Id$"
-
-from DIRAC.Core.DISET.RequestHandler              import RequestHandler
-from DIRAC                                        import gLogger, S_OK, S_ERROR
-from DIRAC.MonitoringSystem.DB.MonitoringDB       import MonitoringDB
-from DIRAC.Core.Utilities                         import Time
-from DIRAC.MonitoringSystem.private.MainReporter  import MainReporter
-from DIRAC.Core.Utilities.Plotting                import gMonitoringDataCache
-from DIRAC.Core.Utilities.Plotting.FileCoding     import extractRequestFromFileId
-from DIRAC.Core.Utilities.Plotting.Plots          import generateErrorMessagePlot
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
+from DIRAC.Core.Utilities import Time
+from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
+from DIRAC.Core.Utilities.Plotting import gMonitoringDataCache
+from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
+from DIRAC.Core.Utilities.Plotting.Plots import generateErrorMessagePlot
 
 import datetime
 
+__RCSID__ = "$Id$"
 
 class MonitoringHandler( RequestHandler ):
   
@@ -28,14 +27,13 @@ class MonitoringHandler( RequestHandler ):
   
   """
   
-  __reportRequestDict = { 'typeName' : types.StringType,
-                        'reportName' : types.StringType,
-                        'startTime' : Time._allDateTypes,
-                        'endTime' : Time._allDateTypes,
-                        'condDict' : types.DictType,
-                        'grouping' : types.StringType,
-                        'extraArgs' : types.DictType
-                      }
+  __reportRequestDict = {'typeName' : basestring,
+                         'reportName' : basestring,
+                         'startTime' : Time._allDateTypes,
+                         'endTime' : Time._allDateTypes,
+                         'condDict' : dict,
+                         'grouping' : basestring,
+                         'extraArgs' : dict}
   
   __db = None
   

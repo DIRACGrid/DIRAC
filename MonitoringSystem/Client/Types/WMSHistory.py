@@ -2,9 +2,9 @@
 This class is a helper to create the proper index and insert the proper values....
 """
 
-__RCSID__ = "$Id $"
-
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
+
+__RCSID__ = "$Id $"
 
 ########################################################################
 class WMSHistory( BaseType ):
@@ -22,8 +22,8 @@ class WMSHistory( BaseType ):
     """
     
     self.setKeyFields( [ 'Status', 'Site', 'User', 'UserGroup', \
-                      'JobGroup', 'MinorStatus', 'ApplicationStatus', \
-                      'JobSplitType' ] )
+                        'JobGroup', 'MinorStatus', 'ApplicationStatus', \
+                        'JobSplitType' ] )
     
     self.setMonitoringFields( [ 'Jobs', 'Reschedules' ] )
     
