@@ -1,3 +1,14 @@
+[v6r15p9]
+
+*Configuration
+FIX: fixed CS agents initialization bug
+
+*DMS
+FIX: fixed inconsistency between DataIntegrity and ConsistencyInspector modules
+
+*Interfaces
+FIX: Fix download of LFNs in InputSandbox when running job locally
+
 [v6r15p8]
 
 *Configuration

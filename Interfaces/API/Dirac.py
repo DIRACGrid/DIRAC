@@ -877,7 +877,9 @@ class Dirac( API ):
       if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for isFile in sandbox:
-        if not os.path.isabs( isFile ):
+        if isFile.lower().startswith("lfn:"): #isFile is an LFN
+          isFile = isFile[4:]
+        elif not os.path.isabs( isFile ):
           # if a relative path, it is relative to the user working directory
           isFile = os.path.join( baseDir, isFile )
 
@@ -898,7 +900,7 @@ class Dirac( API ):
             tarFile = tarfile.open( basefname, 'r' )
             for member in tarFile.getmembers():
               tarFile.extract( member, os.getcwd() )
-        except Exception, x :
+        except Exception as x:
           return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
@@ -1660,7 +1662,7 @@ class Dirac( API ):
         tarFile = tarfile.open( fileName, 'r' )
         for member in tarFile.getmembers():
           tarFile.extract( member, dirPath )
-    except Exception, x :
+    except Exception as x :
       os.chdir( start )
       result = S_ERROR( str( x ) )
 
