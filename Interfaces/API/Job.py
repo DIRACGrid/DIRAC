@@ -839,7 +839,7 @@ class Job( API ):
        :type environmentDict: dictionary
     """
     kwargs = {'environmentDict':environmentDict}
-    if not isinstance( environmentDict, list ):
+    if not isinstance( environmentDict, dict ):
       return self._reportError( 'Expected dictionary of environment variables', **kwargs )
 
     if environmentDict:
