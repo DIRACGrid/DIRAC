@@ -15,21 +15,21 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 __RCSID__ = "$Id: $"
 
 class GOCDB2CSAgent ( AgentModule ):
-  """
-  Class to retrieve information about service endpoints
-  from GOCDB and update configuration stored by CS
+  """ Class to retrieve information about service endpoints
+      from GOCDB and update configuration stored by CS
   """
 
   def __init__( self, *args, **kwargs ):
-    ''' c'tor
-    '''
-    super(GOCDB2CSAgent, self).__init__( self, *args, **kwargs )
+    """ c'tor
+    """
+    super(GOCDB2CSAgent, self).__init__( *args, **kwargs )
     self.GOCDBClient = None
     self.csAPI = None
     self.dryRun = False
 
   def initialize( self ):
-
+    """ Run at the agent initialization (normally every 500 cycles)
+    """
     # client to connect to GOCDB
     self.GOCDBClient = GOCDBClient()
     self.dryRun = self.am_getOption( 'DryRun', self.dryRun )
@@ -39,10 +39,10 @@ class GOCDB2CSAgent ( AgentModule ):
     return self.csAPI.initialize()
 
   def execute( self ):
-    '''
+    """
     Execute GOCDB queries according to the function map
     and user request (options in configuration).
-    '''
+    """
 
     # __functionMap is at the end of the class definition
     for option, functionCall in GOCDB2CSAgent.__functionMap.iteritems():
@@ -57,10 +57,10 @@ class GOCDB2CSAgent ( AgentModule ):
     return S_OK()
 
   def updatePerfSONARConfiguration( self ):
-    '''
+    """
     Get current status of perfSONAR endpoints from GOCDB
     and update CS configuration accordingly.
-    '''
+    """
     log = self.log.getSubLogger( 'updatePerfSONAREndpoints' )
     log.debug( 'Begin function ...' )
 
@@ -93,11 +93,11 @@ class GOCDB2CSAgent ( AgentModule ):
     return S_OK()
 
   def __getPerfSONAREndpoints( self ):
-    '''
+    """
     Retrieve perfSONAR endpoint information directly form GOCDB.
 
     :return: List of perfSONAR endpoints (dictionaries) as stored by GOCDB.
-    '''
+    """
 
     log = self.log.getSubLogger( '__getPerfSONAREndpoints' )
     log.debug( 'Begin function ...' )
@@ -119,13 +119,13 @@ class GOCDB2CSAgent ( AgentModule ):
     return S_OK( endpointList )
 
   def __preparePerfSONARConfiguration( self, endpointList ):
-    '''
+    """
     Prepare a dictionary with a new CS configuration of perfSONAR endpoints.
 
     :return: Dictionary where keys are configuration paths (options and sections)
              and values are values of corresponding options
              or None in case of a path pointing to a section.
-    '''
+    """
 
     log = self.log.getSubLogger( '__preparePerfSONARConfiguration' )
     log.debug( 'Begin function ...' )
@@ -182,13 +182,13 @@ class GOCDB2CSAgent ( AgentModule ):
     return S_OK( newConfiguration )
 
   def __addDIRACSiteName( self, inputList ):
-    '''
+    """
     Extend given list of GOCDB endpoints with DIRAC site name, i.e.
     add an entry "DIRACSITENAME" in dictionaries that describe endpoints.
     If given site name could not be found "DIRACSITENAME" is set to 'None'.
 
     :return: List of perfSONAR endpoints (dictionaries).
-    '''
+    """
 
     log = self.log.getSubLogger( '__addDIRACSiteName' )
     log.debug( 'Begin function ...' )
@@ -217,9 +217,9 @@ class GOCDB2CSAgent ( AgentModule ):
     return S_OK( outputList )
 
   def __updateConfiguration( self, setElements = None, delElements = None ):
-    '''
+    """
     Update configuration stored by CS.
-    '''
+    """
     if setElements is None:
       setElements = {}
     if delElements is None:
