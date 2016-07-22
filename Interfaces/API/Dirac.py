@@ -877,7 +877,9 @@ class Dirac( API ):
       if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for isFile in sandbox:
-        if not os.path.isabs( isFile ):
+        if isFile.lower().startswith("lfn:"): #isFile is an LFN
+          isFile = isFile[4:]
+        elif not os.path.isabs( isFile ):
           # if a relative path, it is relative to the user working directory
           isFile = os.path.join( baseDir, isFile )
 
