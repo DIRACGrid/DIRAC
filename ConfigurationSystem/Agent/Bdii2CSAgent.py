@@ -23,7 +23,7 @@ class Bdii2CSAgent( AgentModule ):
     """ Defines default parameters
     """
 
-    super(Bdii2CSAgent, self).__init__( self, *args, **kwargs )
+    super(Bdii2CSAgent, self).__init__( *args, **kwargs )
 
     self.addressTo = ''
     self.addressFrom = ''

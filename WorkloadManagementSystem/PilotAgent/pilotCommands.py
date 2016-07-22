@@ -21,7 +21,6 @@ import sys
 import os
 import stat
 import socket
-import re
 
 from pilotTools import CommandBase, retrieveUrlTimeout
 

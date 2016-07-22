@@ -275,8 +275,8 @@ class Matcher( object ):
       result = self.pilotAgentsDB.setPilotStatus( pilotReference, status = 'Running', gridSite = site,
                                                   destination = gridCE, benchmark = benchmark )
       if not result['OK']:
-        self.log.error( "Problem updating pilot information",
-                        "; setPilotStatus. pilotReference: %s; %s" % ( pilotReference, result['Message'] ) )
+        self.log.warn( "Problem updating pilot information",
+                       "; setPilotStatus. pilotReference: %s; %s" % ( pilotReference, result['Message'] ) )
 
   def _updatePilotJobMapping( self, resourceDict, jobID ):
     """ Update pilot to job mapping information
