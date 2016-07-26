@@ -250,11 +250,6 @@ Queue %(nJobs)s
 
       resultDict[job] = pilotStatus
 
-    if len( resultDict ) != len( jobIDList ):
-      for jobRef in jobIDList:
-        job = jobRef.split( ":::" )[0]
-        if job not in resultDict:
-          resultDict[job] = 'Unknown'
     self.log.verbose( "Pilot Statuses: %s " % resultDict )
     return S_OK( resultDict )
 

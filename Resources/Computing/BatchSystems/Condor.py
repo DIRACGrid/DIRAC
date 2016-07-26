@@ -213,11 +213,6 @@ class Condor( object ):
         if statusDict[job] == 'HELD':
           statusDict[job] = 'Unknown'
 
-    if len( statusDict ) != len( jobIDList ):
-      for job in jobIDList:
-        if not job in statusDict:
-          statusDict[job] = 'Unknown'
-          
     # Final output
     status = 0
     resultDict['Status'] = 0
