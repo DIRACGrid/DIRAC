@@ -76,11 +76,13 @@ class ThreadPoolExecutor ( Pool ):
     if blocking:
       gLogger.warn( "blocking is irrelevant for the ThreadPoolExecutor!" )    
     
+    future = None
     try:      
       future = self.__threadPool.submit( oCallable, *args, **kwargs )
       if oCallback:
         future.add_done_callback( oCallback )
-    except Exception:
+    except Exception as e:
+      gLogger.exception( e )
       if oExceptionCallback:
         oExceptionCallback( sys.exc_info() )
     return future
