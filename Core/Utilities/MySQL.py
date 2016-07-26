@@ -560,6 +560,13 @@ class MySQL( object ):
     return S_OK( inEscapeValues )
 
 
+  def _safeCmd( self, command ):
+    """ Just replaces password, if visible, with *********
+    """
+    if self.__passwd in command:
+      return command.replace(self.__passwd, '**********')
+    return command
+
   def _connect( self ):
     """
     open connection to MySQL DB and put Connection into Queue
@@ -595,12 +602,12 @@ class MySQL( object ):
     return S_ERROR upon error
     """
     if debug:
-      self.logger.debug( '_query:', cmd )
+      self.logger.debug( '_query: %s' % self._safeCmd( cmd ) )
     else:
       if self.logger._minLevel == self.logger._logLevels.getLevelValue( 'DEBUG' ):
-        self.logger.verbose( '_query:', cmd )
+        self.logger.verbose( '_query: %s' % self._safeCmd( cmd ) )
       else:
-        self.logger.verbose( '_query:', cmd[:min( len( cmd ) , 512 )] )
+        self.logger.verbose( '_query: %s' % self._safeCmd( cmd )[:min( len( cmd ) , 512 )] )
 
     if gDebugFile:
       start = time.time()
@@ -633,7 +640,7 @@ class MySQL( object ):
 
       retDict = S_OK( res )
     except Exception as x:
-      self.log.warn( '_query:', cmd )
+      self.log.warn( '_query: %s' % self._safeCmd( cmd ) )
       retDict = self._except( '_query', x, 'Execution failed.' )
 
     try:
@@ -654,12 +661,12 @@ class MySQL( object ):
         return S_ERROR upon error
     """
     if debug:
-      self.logger.debug( '_update:', cmd )
+      self.logger.debug( '_update: %s' % self._safeCmd( cmd ) )
     else:
       if self.logger._minLevel == self.logger._logLevels.getLevelValue( 'DEBUG' ):
-        self.logger.verbose( '_update:', cmd )
+        self.logger.verbose( '_update: %s' % self._safeCmd( cmd ) )
       else:
-        self.logger.verbose( '_update:', cmd[:min( len( cmd ) , 512 )] )
+        self.logger.verbose( '_update: %s' % self._safeCmd( cmd )[:min( len( cmd ) , 512 )] )
 
     if gDebugFile:
       start = time.time()
@@ -681,7 +688,7 @@ class MySQL( object ):
       if cursor.lastrowid:
         retDict[ 'lastRowId' ] = cursor.lastrowid
     except Exception as x:
-      self.log.warn( '_update: %s: %s' % ( cmd, str( x ) ) )
+      self.log.warn( '_update: %s: %s' % ( self._safeCmd( cmd ), str( x ) ) )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
     try:
