@@ -6,12 +6,13 @@ Note: You can not use the ThreadPoolExecutor with 'with' for example:
 
 """
 import sys
-
+gMissingLibrary = False
 try:
   import concurrent.futures
 except ImportError:
   from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-  missingLibrary = True
+  global gMissingLibrary
+  gMissingLibrary = True
   
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -92,11 +93,14 @@ gThreadPoolExecutor = False
 def getGlobalThreadPool():
   global gThreadPoolExecutor
   if not gThreadPoolExecutor:
-    if missingLibrary:
+    global gMissingLibrary
+    if gMissingLibrary:
+      gLogger.info("DIRAC ThreadPool is used!")
       gThreadPoolExecutor = ThreadPool( 1, 500 )
       gThreadPoolExecutor.daemonize()
     else:
       gThreadPoolExecutor = ThreadPoolExecutor( 500 )
+      gLogger.info("concurrent.futures.ThreadPoolExecutor is used")
   return gThreadPoolExecutor
  
 if __name__ == "__main__":
