@@ -563,9 +563,7 @@ class MySQL( object ):
   def _safeCmd( self, command ):
     """ Just replaces password, if visible, with *********
     """
-    if self.__passwd in command:
-      return command.replace(self.__passwd, '**********')
-    return command
+    return command.replace(self.__passwd, '**********')
 
   def _connect( self ):
     """
