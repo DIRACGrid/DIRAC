@@ -10,6 +10,7 @@ import sys
 try:
   import concurrent.futures
 except ImportError:
+  from DIRAC.Core.Utilities.ThreadPool import ThreadPool
   missingLibrary = True
   
 try:
@@ -86,7 +87,18 @@ class ThreadPoolExecutor ( Pool ):
       if oExceptionCallback:
         oExceptionCallback( sys.exc_info() )
     return future
-  
+
+gThreadPoolExecutor = False
+def getGlobalThreadPool():
+  global gThreadPoolExecutor
+  if not gThreadPoolExecutor:
+    if missingLibrary:
+      gThreadPoolExecutor = ThreadPool( 1, 500 )
+      gThreadPoolExecutor.daemonize()
+    else:
+      gThreadPoolExecutor = ThreadPoolExecutor( 500 )
+  return gThreadPoolExecutor
+ 
 if __name__ == "__main__":
   import random
   import time

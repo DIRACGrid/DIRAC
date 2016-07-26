@@ -41,8 +41,8 @@ class Pool( object ): #TODO: python3 class Pool(metaclass=ABCMeta):
   @abstractmethod
   def generateJobAndQueueIt( self,
                              oCallable,
-                             args = tuple(),
-                             kwargs = dict(),
+                             args = None,
+                             kwargs = None,
                              sTJId = None,
                              oCallback = None,
                              oExceptionCallback = None,
