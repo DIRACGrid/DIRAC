@@ -1,12 +1,10 @@
 #!/bin/env python
 """
-tests for HTCondorCECompulintElement module
+tests for HTCondorCEComputingElement module
 """
 
-import sys
 import unittest
 from mock import MagicMock as Mock, patch
-import mock
 
 from DIRAC.Resources.Computing import HTCondorCEComputingElement as HTCE
 from DIRAC.Resources.Computing.BatchSystems import Condor
@@ -22,6 +20,7 @@ HISTORY_LINES ="""
 """.strip().split('\n')
 
 class HTCondorCETests( unittest.TestCase ):
+  """ tests for the HTCondorCE Module """
 
   def setUp( self ):
     pass
