@@ -83,6 +83,7 @@ except:
   gLogger = False
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
+from DIRAC.Core.Utilities.Pool import Pool
 
 class WorkingThread( threading.Thread ):
 
@@ -167,7 +168,7 @@ class ThreadedJob:
       else:
         self.__jobException = sys.exc_info()
 
-class ThreadPool( threading.Thread ):
+class ThreadPool( threading.Thread, Pool ):
 
   def __init__( self, iMinThreads, iMaxThreads = 0, iMaxQueuedRequests = 0, strictLimits = True ):
     threading.Thread.__init__( self )

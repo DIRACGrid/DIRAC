@@ -24,3 +24,4 @@ rst2pdf>=0.93
 ipython
 python-coveralls
 futures
+functools

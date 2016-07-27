@@ -94,7 +94,7 @@ def getGlobalThreadPool():
   global gThreadPoolExecutor
   if not gThreadPoolExecutor:
     global gMissingLibrary
-    if gMissingLibrary:
+    if gMissingLibrary: #FIXME: When the futures is available, we can remove this check...
       gLogger.info("DIRAC ThreadPool is used!")
       gThreadPoolExecutor = ThreadPool( 1, 500 )
       gThreadPoolExecutor.daemonize()
@@ -103,18 +103,3 @@ def getGlobalThreadPool():
       gLogger.info("concurrent.futures.ThreadPoolExecutor is used")
   return gThreadPoolExecutor
  
-if __name__ == "__main__":
-  import random
-  import time
-  
-  def testJob( i ):
-    print 'Got: %s' % i 
-    time.sleep( random.randint( 1, 5 ) )
-    return i
-  
-  executor = ThreadPoolExecutor( 4 ) 
-  for i in xrange( 6 ):
-    result = executor.generateJobAndQueueIt( testJob, args = ( i, ) )
-  
-  print 'Waiting threads: %d' % executor.numWaitingThreads()
-  print 'Working threads: %d' % executor.numWorkingThreads()

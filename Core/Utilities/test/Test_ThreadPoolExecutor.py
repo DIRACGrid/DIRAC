@@ -36,6 +36,7 @@ class ThreadPoolExecutorTests( unittest.TestCase ):
 
     self.assertEqual( 4, self.threadPool.numWorkingThreads() )
     self.assert_( not self.threadPool.numWaitingThreads () < 4 )
+    self.assertEqual( self.threadPool.getMaxThreads(), 4 )
   
   def test_generateJobAndQueueItICallback( self ):
     for i in xrange( 20 ):
@@ -48,6 +49,7 @@ class ThreadPoolExecutorTests( unittest.TestCase ):
 
     self.assertEqual( 4, self.threadPool.numWorkingThreads() )
     self.assert_( not self.threadPool.numWaitingThreads () < 4 )
+    self.assertEqual( self.threadPool.getMaxThreads(), 4 )
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ThreadPoolExecutorTests )
