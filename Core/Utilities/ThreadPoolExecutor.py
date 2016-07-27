@@ -6,7 +6,7 @@ Note: You can not use the ThreadPoolExecutor with 'with' for example:
 
 """
 import sys
-gMissingLibrary = False
+
 try:
   import concurrent.futures
 except ImportError:
@@ -62,15 +62,15 @@ class ThreadPoolExecutor ( Pool ):
                              oExceptionCallback = None,
                              blocking = None ):
     """
-    :param object oCallable the method which will be executed on a thread.
-    :param tuple args the arguments will be used by oCallable
-    :param dict kwargs the arguments will be passed to the oCallable. The argument preceded by an identifier (e.g. name=).
+    :param object oCallable: the method which will be executed on a thread.
+    :param tuple args: the arguments will be used by oCallable
+    :param dict kwargs: the arguments will be passed to the oCallable. The argument preceded by an identifier (e.g. name=).
     for example: color(code=1, white=False)
-    :param int sTJId thread job id
-    :param object oCallback it is a callback function. When the result is obtained then the callback function is used.
-    :param oExceptionCallback If an exception occur in the target function, then the oExceptionCallback is called with the exception instance.
-    :param bool blocking  If block is true, block if necessary until a free slot (thread) is available.
-    :return S_OK / S_ERROR
+    :param int sTJId: thread job id
+    :param object oCallback: it is a callback function. When the result is obtained then the callback function is used.
+    :param oExceptionCallback: If an exception occur in the target function, then the oExceptionCallback is called with the exception instance.
+    :param bool blocking:  If block is true, block if necessary until a free slot (thread) is available.
+    :return: S_OK / S_ERROR
     """
     if sTJId:
       gLogger.warn( "ThreadPoolExecutor does not support sTJId!" )

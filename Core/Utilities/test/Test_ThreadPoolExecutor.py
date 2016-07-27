@@ -9,6 +9,7 @@ import random
 import time
 #import functools
 import os
+import pytest
 import logging
 logging.basicConfig()
 
@@ -27,6 +28,7 @@ def testFunc( timeWait ):
 #  time.sleep( timeWait )
 #  return timeWait
 
+@pytest.fixture(autouse=True)
 def testCallback(fn):
   print "callback: pid=%s" % ( os.getpid() )
     
