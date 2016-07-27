@@ -7,19 +7,27 @@ Unit test for DIRAC.Core.Utilities.ThreadPoolExecutor
 import unittest
 import random
 import time
-import functools
+#import functools
 import os
+import logging
+logging.basicConfig()
 
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.ThreadPoolExecutor import ThreadPoolExecutor
 
 def testFunc( timeWait ):
   """ function to be executed by a future """
-  print "pid=%s will sleep for %s s" % ( os.getpid(), timeWait )
-  time.sleep( timeWait )
-  return timeWait
+  print "pid=%s will sleep " % ( os.getpid() )
+  time.sleep( 1 )
+  
 
-def testCallback( futures ):
+#def testFunc( timeWait ):
+#  """ function to be executed by a future """
+#  print "pid=%s will sleep for %s s" % ( os.getpid(), timeWait )
+#  time.sleep( timeWait )
+#  return timeWait
+
+def testCallback(fn):
   print "callback: pid=%s" % ( os.getpid() )
     
 class ThreadPoolExecutorTests( unittest.TestCase ):
