@@ -31,8 +31,8 @@ class ThreadPoolExecutorTests( unittest.TestCase ):
     
   def test_generateJobAndQueueItI( self ):  
     for _ in xrange( 20 ):
-      timetoWait = random.randint( 0, 10 )
-      self.threadPool.generateJobAndQueueIt( testFunc, args = ( timetoWait, ) )
+      timeWait = random.randint( 0, 10 )
+      self.threadPool.generateJobAndQueueIt( testFunc, args = ( timeWait, ) )
 
     self.assertEqual( 4, self.threadPool.numWorkingThreads() )
     self.assert_( not self.threadPool.numWaitingThreads () < 4 )
@@ -40,12 +40,12 @@ class ThreadPoolExecutorTests( unittest.TestCase ):
   
   def test_generateJobAndQueueItICallback( self ):
     for i in xrange( 20 ):
-      timetoWait = random.randint( 0, 10 )
-      self.threadPool.generateJobAndQueueIt( testFunc, args = ( timetoWait, ) )
+      timeWait = random.randint( 0, 10 )
+      self.threadPool.generateJobAndQueueIt( testFunc, args = ( timeWait, ) )
       if i % 2:
-        self.threadPool.generateJobAndQueueIt( testFunc, args = ( timetoWait, ), oCallback = functools.partial( testCallback, "Future:%s" % timetoWait ) )
+        self.threadPool.generateJobAndQueueIt( testFunc, args = ( timeWait, ), oCallback = functools.partial( testCallback, "Future:%s" % timeWait ) )
       else:
-        self.threadPool.generateJobAndQueueIt( testFunc, args = ( timetoWait, ) )
+        self.threadPool.generateJobAndQueueIt( testFunc, args = ( timeWait, ) )
 
     self.assertEqual( 4, self.threadPool.numWorkingThreads() )
     self.assert_( not self.threadPool.numWaitingThreads () < 4 )
