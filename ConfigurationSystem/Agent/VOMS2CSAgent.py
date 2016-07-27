@@ -86,7 +86,7 @@ class VOMS2CSAgent( AgentModule ):
                                        "VOMS2CSAgent run log", mailMsg,
                                        self.am_getOption( 'mailFrom', "DIRAC system" ) )
 
-    if csAPI.csModified:
+    if self.csAPI.csModified:
       # We have accumulated all the changes, commit them now
       self.log.info( "There are changes to the CS ready to be committed" )
       if self.dryRun:
@@ -262,11 +262,13 @@ class VOMS2CSAgent( AgentModule ):
 # Local utilities
 ###############################################################
 
-def getVOMSVOs( voList = [] ):
+def getVOMSVOs( voList = None ):
   """ Get all VOs that have VOMS correspondence
 
   :return: dictonary of the VO -> VOMSName correspondence
   """
+  if voList is None:
+    voList = []
   voDict = {}
   if not voList:
     result = gConfig.getSections( '/Registry/VO' )
