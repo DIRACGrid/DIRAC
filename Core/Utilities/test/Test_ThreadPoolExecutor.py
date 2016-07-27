@@ -19,8 +19,8 @@ def testFunc( timeWait ):
   time.sleep( timeWait )
   return timeWait
 
-def testCallback( timeWait, futures ):
-  print "callback: pid=%s will sleep for %s s" % ( os.getpid(), timeWait )
+def testCallback( futures ):
+  print "callback: pid=%s" % ( os.getpid() )
     
 class ThreadPoolExecutorTests( unittest.TestCase ):
   
@@ -43,7 +43,7 @@ class ThreadPoolExecutorTests( unittest.TestCase ):
       timeWait = random.randint( 0, 10 )
       self.threadPool.generateJobAndQueueIt( testFunc, args = ( timeWait, ) )
       if i % 2:
-        self.threadPool.generateJobAndQueueIt( testFunc, args = ( timeWait, ), oCallback = functools.partial( testCallback, "Future:%s" % timeWait ) )
+        self.threadPool.generateJobAndQueueIt( testFunc, args = ( timeWait, ), oCallback = testCallback ) 
       else:
         self.threadPool.generateJobAndQueueIt( testFunc, args = ( timeWait, ) )
 
