@@ -519,7 +519,7 @@ class FileCatalogClient( FileCatalogClientBase ):
   def getDirectoryUserMetadata( self, path, timeout = 120 ):
     """ Get all the metadata valid for the given directory path
     """
-    return self._getRPC( timeout = timeout ).dmeta.getDirectoryMetadata( path )
+    return self._getRPC( timeout = timeout ).getDirectoryUserMetadata( path )
 
 
   def findDirectoriesByMetadata( self, metaDict, path = '/', timeout = 120 ):

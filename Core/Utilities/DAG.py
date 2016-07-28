@@ -84,7 +84,6 @@ class DAG( object ):
 
     return l
 
-
 def checkNode( node ):
   """ Returns a hashable version of node
   """

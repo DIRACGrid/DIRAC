@@ -33,6 +33,9 @@ Requirements
         
          iptables -I INPUT -p tcp --dport 9130:9200 -j ACCEPT
          service iptables save
+      - DIRAC extensions that need specific services which are not an extension of DIRAC used 
+        should better use ports 9201-9300 in order to avoid confusion. If this happens, 
+        the procedure above should be repeated to include the new range of ports.
       - For the server hosting the portal, ports 80 and 443 should be open and redirected to ports 
         8080 and 8443 respectively, i.e. setting iptables appropriately::
 
