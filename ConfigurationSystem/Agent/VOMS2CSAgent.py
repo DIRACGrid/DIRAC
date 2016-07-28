@@ -201,7 +201,7 @@ class VOMS2CSAgent( AgentModule ):
             fullRole = "/%s/%s" % ( vomsVOName, role )
             group = vomsDIRACMapping.get( fullRole )
             if group:
-              groupsWithRole.append( group )
+              groupsWithRole.extend( group )
           userDict['Groups'] = list( set( groupsWithRole + [defaultVOGroup] ) )
           self.__adminMsgs[ 'Info' ].append( "Adding new user %s: %s" % ( newDiracName, str( userDict ) ) )
           self.voChanged = True
@@ -221,7 +221,7 @@ class VOMS2CSAgent( AgentModule ):
           fullRole = "/%s/%s" % ( vomsVOName, role )
           group = vomsDIRACMapping.get( fullRole )
           if group:
-            groupsWithRole.append( group )
+            groupsWithRole.extend( group )
         keepGroups = nonVOGroups + groupsWithRole + [defaultVOGroup]
         for group in existingGroups:
           role = diracVOMSMapping[group]
