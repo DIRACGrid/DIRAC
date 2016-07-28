@@ -1333,6 +1333,15 @@ class Dirac( API ):
     if not isinstance( localCache, basestring ):
       return self._errorReport( 'Expected string for path to local cache' )
 
+    localFile = os.path.join( localCache, os.path.basename( lfn ) )
+    if os.path.exists( localFile ):
+      return self._errorReport( 'A local file "%s" with the same name as the remote file exists. '
+                                'Cannot proceed with replication:\n'
+                                '   Go to a different working directory\n'
+                                '   Move it different directory or use a different localCache\n'
+                                '   Delete the file yourself'
+                                '' % localFile )
+
     dm = DataManager()
     result = dm.replicateAndRegister( lfn, destinationSE, sourceSE, '', localCache )
     if not result['OK']:

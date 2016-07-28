@@ -174,22 +174,31 @@ class Bdii2CSAgent( AgentModule ):
     if vo in self.voBdiiCEDict:
       return S_OK( self.voBdiiCEDict[vo] )
     self.log.info( "Check for available CEs for VO", vo )
-    result = getBdiiCEInfo( vo )
+    totalResult = S_OK( {} )
     message = ''
-    if not result['OK']:
-      message = result['Message']
-      for bdii in self.alternativeBDIIs :
-        result = getBdiiCEInfo( vo, host = bdii )
-        if result['OK']:
-          break
-    if not result['OK']:
-      if message:
-        self.log.error( "Error during BDII request", message )
+
+    mainResult = getBdiiCEInfo( vo )
+    if not mainResult['OK']:
+      self.log.error( "Failed getting information from default bdii", mainResult['Message'] )
+      message = mainResult['Message']
+
+    for bdii in reversed( self.alternativeBDIIs ):
+      resultAlt = getBdiiCEInfo( vo, host = bdii )
+      if resultAlt['OK']:
+        totalResult['Value'].update( resultAlt['Value'] )
       else:
-        self.log.error( "Error during BDII request", result['Message'] )
+        self.log.error( "Failed getting information from %s " % bdii, resultAlt['Message'] )
+        message = ( message + "\n" + resultAlt['Message'] ).strip()
+
+    if mainResult['OK']:
+      totalResult['Value'].update( mainResult['Value'] )
+
+    if not totalResult['Value'] and message: ## Dict is empty and we have an error message
+      self.log.error( "Error during BDII request", message )
+      totalResult = S_ERROR( message )
     else:
-      self.voBdiiCEDict[vo] = result['Value']
-    return result
+      self.voBdiiCEDict[vo] = totalResult['Value']
+    return totalResult
 
   def __getBdiiSEInfo( self, vo ):
 

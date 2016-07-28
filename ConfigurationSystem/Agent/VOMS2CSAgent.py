@@ -86,16 +86,21 @@ class VOMS2CSAgent( AgentModule ):
                                        "VOMS2CSAgent run log", mailMsg,
                                        self.am_getOption( 'mailFrom', "DIRAC system" ) )
 
-    # We have accumulated all the changes, commit them now
-    if self.dryRun:
-      self.log.info( "Dry Run: CS won't be updated" )
-      self.csapi.showDiff()
+    if self.csAPI.csModified:
+      # We have accumulated all the changes, commit them now
+      self.log.info( "There are changes to the CS ready to be committed" )
+      if self.dryRun:
+        self.log.info( "Dry Run: CS won't be updated" )
+        self.csapi.showDiff()
+      else:
+        result = self.csapi.commitChanges()
+        if not result[ 'OK' ]:
+          self.log.error( "Could not commit configuration changes", result[ 'Message' ] )
+          return result
+        self.log.notice( "Configuration committed" )
     else:
-      result = self.csapi.commitChanges()
-      if not result[ 'OK' ]:
-        self.log.error( "Could not commit configuration changes", result[ 'Message' ] )
-        return result
-      self.log.info( "Configuration committed" )
+      self.log.info( "No changes to the CS recorded at this cycle" )
+
     return S_OK()
 
   @executeWithUserProxy
@@ -201,7 +206,7 @@ class VOMS2CSAgent( AgentModule ):
             fullRole = "/%s/%s" % ( vomsVOName, role )
             group = vomsDIRACMapping.get( fullRole )
             if group:
-              groupsWithRole.append( group )
+              groupsWithRole.extend( group )
           userDict['Groups'] = list( set( groupsWithRole + [defaultVOGroup] ) )
           self.__adminMsgs[ 'Info' ].append( "Adding new user %s: %s" % ( newDiracName, str( userDict ) ) )
           self.voChanged = True
@@ -221,7 +226,7 @@ class VOMS2CSAgent( AgentModule ):
           fullRole = "/%s/%s" % ( vomsVOName, role )
           group = vomsDIRACMapping.get( fullRole )
           if group:
-            groupsWithRole.append( group )
+            groupsWithRole.extend( group )
         keepGroups = nonVOGroups + groupsWithRole + [defaultVOGroup]
         for group in existingGroups:
           role = diracVOMSMapping[group]
@@ -257,11 +262,13 @@ class VOMS2CSAgent( AgentModule ):
 # Local utilities
 ###############################################################
 
-def getVOMSVOs( voList = [] ):
+def getVOMSVOs( voList = None ):
   """ Get all VOs that have VOMS correspondence
 
   :return: dictonary of the VO -> VOMSName correspondence
   """
+  if voList is None:
+    voList = []
   voDict = {}
   if not voList:
     result = gConfig.getSections( '/Registry/VO' )
