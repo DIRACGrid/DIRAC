@@ -177,12 +177,10 @@ class Bdii2CSAgent( AgentModule ):
     totalResult = S_OK( {} )
     message = ''
 
-    result = getBdiiCEInfo( vo )
-    if result['OK']:
-      totalResult['Value'].update( result['Value'] )
-    else:
-      self.log.error( "Failed getting information from default bdii", result['Message'] )
-      message = result['Message']
+    mainResult = getBdiiCEInfo( vo )
+    if not mainResult['OK']:
+      self.log.error( "Failed getting information from default bdii", mainResult['Message'] )
+      message = mainResult['Message']
 
     for bdii in self.alternativeBDIIs:
       resultAlt = getBdiiCEInfo( vo, host = bdii )
@@ -191,6 +189,9 @@ class Bdii2CSAgent( AgentModule ):
       else:
         self.log.error( "Failed getting information from %s " % bdii, resultAlt['Message'] )
         message = ( message + "\n" + resultAlt['Message'] ).strip()
+
+    if mainResult['OK']:
+      totalResult['Value'].update( mainResult['Value'] )
 
     if not totalResult['Value'] and message: ## Dict is empty and we have an error message
       self.log.error( "Error during BDII request", message )

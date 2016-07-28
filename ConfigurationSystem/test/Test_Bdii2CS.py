@@ -11,6 +11,15 @@ from DIRAC.ConfigurationSystem.Agent import Bdii2CSAgent
 
 MODNAME= "DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent"
 
+MAINBDII = { 'site1': {'CEs': { 'ce1': { 'Queues': { 'queue1': "SomeValues" }}}},
+             'site2': {'CEs': { 'ce2': { 'Queues': { 'queue2': "SomeValues" }}}}
+           }
+ALTBDII = { 'site2': {'CEs': { 'ce2': { 'Queues': { 'queue2': "SomeOtherValues" }},
+                               'ce2b': { 'Queues': { 'queue2b': "SomeOtherValues" }}}},
+            'site3': {'CEs': { 'ce3': { 'Queues': { 'queue3': "SomeValues" }}}}
+          }
+
+
 class Bdii2CSTests( unittest.TestCase ):
 
   def setUp( self ):
@@ -28,17 +37,15 @@ class Bdii2CSTests( unittest.TestCase ):
 
   def test__getBdiiCEInfo_success( self ):
 
-    bdiiInfo1 = {'site1': {'CEs': { 'ce1': { 'Queues': { 'queue1': "SomeValues" }}}}}
-    bdiiInfo2 = {'site2': {'CEs': { 'ce2': { 'Queues': { 'queue2': "SomeValues" }}}}}
     expectedResult = {}
-    expectedResult.update(bdiiInfo1)
-    expectedResult.update(bdiiInfo2)
+    expectedResult.update( ALTBDII )
+    expectedResult.update( MAINBDII )
 
     self.agent.alternativeBDIIs = [ "server2" ]
     with patch( MODNAME+".getBdiiCEInfo",
                 new=Mock( side_effect=[
-                  S_OK( bdiiInfo1 ),
-                  S_OK( bdiiInfo2 ),
+                  S_OK( MAINBDII ),
+                  S_OK( ALTBDII ),
                 ] )
               ) as infoMock:
       ret = self.agent._Bdii2CSAgent__getBdiiCEInfo( "vo" ) #pylint: disable=no-member
@@ -46,17 +53,17 @@ class Bdii2CSTests( unittest.TestCase ):
       infoMock.assert_any_call( "vo", host="server2" )
     self.assertTrue( ret['OK'] )
     self.assertEqual( expectedResult, ret['Value'] )
+    self.assertEqual( ret['Value']['site2']['CEs']['ce2']['Queues']['queue2'], "SomeValues" )
+    self.assertNotIn( 'ce2b', ret['Value']['site2']['CEs'] )
 
 
   def test__getBdiiCEInfo_fail_10( self ):
-
-    bdiiInfo2 = {'site2': {'CEs': { 'ce2': { 'Queues': { 'queue2': "SomeValues" }}}}}
 
     self.agent.alternativeBDIIs = [ "server2" ]
     with patch( MODNAME+".getBdiiCEInfo",
                 new=Mock( side_effect=[
                   S_ERROR( "error" ),
-                  S_OK( bdiiInfo2 ),
+                  S_OK( ALTBDII ),
                 ] )
               ) as infoMock:
       ret = self.agent._Bdii2CSAgent__getBdiiCEInfo( "vo" ) #pylint: disable=no-member
@@ -66,16 +73,15 @@ class Bdii2CSTests( unittest.TestCase ):
                              for args in self.agent.log.error.call_args_list ),
                        self.agent.log.error.call_args_list )
     self.assertTrue( ret['OK'] )
-    self.assertEqual( bdiiInfo2, ret['Value'] )
+    self.assertEqual( ALTBDII, ret['Value'] )
 
   def test__getBdiiCEInfo_fail_01( self ):
 
-    bdiiInfo1 = {'site1': {'CEs': { 'ce1': { 'Queues': { 'queue1': "SomeValues" }}}}}
 
     self.agent.alternativeBDIIs = [ "server2" ]
     with patch( MODNAME+".getBdiiCEInfo",
                 new=Mock( side_effect=[
-                  S_OK( bdiiInfo1 ),
+                  S_OK( MAINBDII ),
                   S_ERROR( "error" ),
                 ] )
               ) as infoMock:
@@ -86,7 +92,7 @@ class Bdii2CSTests( unittest.TestCase ):
                              for args in self.agent.log.error.call_args_list ),
                        self.agent.log.error.call_args_list )
     self.assertTrue( ret['OK'] )
-    self.assertEqual( bdiiInfo1, ret['Value'] )
+    self.assertEqual( MAINBDII, ret['Value'] )
 
 
   def test__getBdiiCEInfo_fail_11( self ):
