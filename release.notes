@@ -262,6 +262,9 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p39]
+
+Patch to include WebApp version v1r6p32
 
 [v6r14p38]
 

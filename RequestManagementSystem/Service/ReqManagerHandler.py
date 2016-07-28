@@ -107,21 +107,21 @@ class ReqManagerHandler( RequestHandler ):
     if request.Status not in Request.FINAL_STATES and ( not request.NotBefore or request.NotBefore < now ) :
       # We don't delay if it is the first insertion
       if getattr( request, 'RequestID', 0 ):
-	# If it is a constant delay, just set it
-	if cls.constantRequestDelay:
-	  extraDelay = datetime.timedelta( minutes = cls.constantRequestDelay )
-	else:
-	  # If there is a waiting Operation with Files
-	  op = request.getWaiting().get( 'Value' )
-	  if op and len( op ):
-	    attemptList = [ opFile.Attempt for opFile in op if opFile.Status == "Waiting" ]
-	    if attemptList:
-	      maxWaitingAttempt = max( [ opFile.Attempt for opFile in op if opFile.Status == "Waiting" ] )
-	      # In case it is the first attempt, extraDelay is 0
-	      # maxWaitingAttempt can be None if the operation has no File, like the ForwardDiset
-	      extraDelay = datetime.timedelta( minutes = 2 * math.log( maxWaitingAttempt )  if maxWaitingAttempt else 0 )
+        # If it is a constant delay, just set it
+        if cls.constantRequestDelay:
+          extraDelay = datetime.timedelta( minutes = cls.constantRequestDelay )
+        else:
+          # If there is a waiting Operation with Files
+          op = request.getWaiting().get( 'Value' )
+          if op and len( op ):
+            attemptList = [ opFile.Attempt for opFile in op if opFile.Status == "Waiting" ]
+            if attemptList:
+              maxWaitingAttempt = max( [ opFile.Attempt for opFile in op if opFile.Status == "Waiting" ] )
+              # In case it is the first attempt, extraDelay is 0
+              # maxWaitingAttempt can be None if the operation has no File, like the ForwardDiset
+              extraDelay = datetime.timedelta( minutes = 2 * math.log( maxWaitingAttempt )  if maxWaitingAttempt else 0 )
 
-	request.NotBefore = now + extraDelay
+        request.NotBefore = now + extraDelay
 
     gLogger.info( "putRequest: request %s not before %s (extra delay %s)" % ( request.RequestName, request.NotBefore, extraDelay ) )
 
