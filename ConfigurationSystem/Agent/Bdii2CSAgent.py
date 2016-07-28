@@ -182,7 +182,7 @@ class Bdii2CSAgent( AgentModule ):
       self.log.error( "Failed getting information from default bdii", mainResult['Message'] )
       message = mainResult['Message']
 
-    for bdii in self.alternativeBDIIs:
+    for bdii in reversed( self.alternativeBDIIs ):
       resultAlt = getBdiiCEInfo( vo, host = bdii )
       if resultAlt['OK']:
         totalResult['Value'].update( resultAlt['Value'] )
