@@ -23,7 +23,7 @@ class CSAPI( object ):
     """
     Initialization function
     """
-    self.__csModified = False
+    self.csModified = False
     self.__baseSecurity = "/Registry"
 
     self.__userDN = ''
@@ -98,7 +98,7 @@ class CSAPI( object ):
     result = self.__csMod.loadFromRemote()
     if not result[ 'OK' ]:
       return result
-    self.__csModified = False
+    self.csModified = False
     self.__csMod.updateGConfigurationData()
     return S_OK()
 
@@ -199,7 +199,7 @@ class CSAPI( object ):
         gLogger.info( "Deleted user %s from group %s" % ( username, group ) )
       self.__csMod.removeSection( "%s/Users/%s" % ( self.__baseSecurity, username ) )
       gLogger.info( "Deleted user %s" % username )
-      self.__csModified = True
+      self.csModified = True
     return S_OK( True )
 
   def __removeUserFromGroup( self, group, username ):
@@ -262,7 +262,7 @@ class CSAPI( object ):
       gLogger.info( "Added user %s to group %s" % ( username, userGroup ) )
       self.__addUserToGroup( userGroup, username )
     gLogger.info( "Registered user %s" % username )
-    self.__csModified = True
+    self.csModified = True
     return S_OK( True )
 
   def modifyUser( self, username, properties, createIfNonExistant = False ):
@@ -322,7 +322,7 @@ class CSAPI( object ):
     if modifiedUser:
       modified = True
       gLogger.info( "Modified user %s" % username )
-      self.__csModified = True
+      self.csModified = True
     else:
       gLogger.info( "Nothing to modify for user %s" % username )
     return S_OK( modified )
@@ -349,7 +349,7 @@ class CSAPI( object ):
     for prop in properties:
       self.__csMod.setOptionValue( "%s/Groups/%s/%s" % ( self.__baseSecurity, groupname, prop ), properties[ prop ] )
     gLogger.info( "Registered group %s" % groupname )
-    self.__csModified = True
+    self.csModified = True
     return S_OK( True )
 
   def modifyGroup( self, groupname, properties, createIfNonExistant = False ):
@@ -383,7 +383,7 @@ class CSAPI( object ):
         modifiedGroup = True
     if modifiedGroup:
       gLogger.info( "Modified group %s" % groupname )
-      self.__csModified = True
+      self.csModified = True
     else:
       gLogger.info( "Nothing to modify for group %s" % groupname )
     return S_OK( True )
@@ -413,7 +413,7 @@ class CSAPI( object ):
     for prop in properties:
       self.__csMod.setOptionValue( "%s/Hosts/%s/%s" % ( self.__baseSecurity, hostname, prop ), properties[ prop ] )
     gLogger.info( "Registered host %s" % hostname )
-    self.__csModified = True
+    self.csModified = True
     return S_OK( True )
 
   def addShifter( self, shifters = None ):
@@ -512,7 +512,7 @@ class CSAPI( object ):
       self.__csMod.setOptionValue( section + '/' + shifter + '/' + 'User', shifters[shifter]['User'] )
       self.__csMod.setOptionValue( section + '/' + shifter + '/' + 'Group', shifters[shifter]['Group'] )
 
-    self.__csModified = True
+    self.csModified = True
     return S_OK( True )
 
 
@@ -546,7 +546,7 @@ class CSAPI( object ):
         modifiedHost = True
     if modifiedHost:
       gLogger.info( "Modified host %s" % hostname )
-      self.__csModified = True
+      self.csModified = True
     else:
       gLogger.info( "Nothing to modify for host %s" % hostname )
     return S_OK( True )
@@ -600,7 +600,7 @@ class CSAPI( object ):
   def commitChanges( self, sortUsers = True ):
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
-    if self.__csModified:
+    if self.csModified:
       self.checkForUnexistantUsersInGroups()
       if sortUsers:
         self.sortUsersAndGroups()
@@ -616,7 +616,7 @@ class CSAPI( object ):
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
-    if self.__csModified:
+    if self.csModified:
       retVal = self.__csMod.commit()
       if not retVal[ 'OK' ]:
         gLogger.error( "Can't commit new configuration data", "%s" % retVal[ 'Message' ] )
@@ -630,7 +630,7 @@ class CSAPI( object ):
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     self.__csMod.mergeFromCFG( cfg )
-    self.__csModified = True
+    self.csModified = True
     return S_OK()
 
   def modifyValue( self, optionPath, newValue ):
@@ -643,7 +643,7 @@ class CSAPI( object ):
       return S_ERROR( 'Trying to set %s to %s but option does not exist' % ( optionPath, newValue ) )
     gLogger.verbose( "Changing %s from \n%s \nto \n%s" % ( optionPath, prevVal, newValue ) )
     self.__csMod.setOptionValue( optionPath, newValue )
-    self.__csModified = True
+    self.csModified = True
     return S_OK( 'Modified %s' % optionPath )
 
   def setOption( self, optionPath, optionValue ):
@@ -652,7 +652,7 @@ class CSAPI( object ):
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     self.__csMod.setOptionValue( optionPath, optionValue )
-    self.__csModified = True
+    self.csModified = True
     return S_OK( 'Created new option %s = %s' % ( optionPath, optionValue ) )
 
 
@@ -662,7 +662,7 @@ class CSAPI( object ):
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     self.__csMod.setComment( optionPath, comment )
-    self.__csModified = True
+    self.csModified = True
     return S_OK( 'Set option comment %s : %s' % ( optionPath, comment ) )
 
   def delOption( self, optionPath ):
@@ -672,7 +672,7 @@ class CSAPI( object ):
       return self.__initialized
     if not self.__csMod.removeOption( optionPath ):
       return S_ERROR( "Couldn't delete option %s" % optionPath )
-    self.__csModified = True
+    self.csModified = True
     return S_OK( 'Deleted option %s' % optionPath )
 
   def createSection( self, sectionPath, comment = "" ):
@@ -681,7 +681,7 @@ class CSAPI( object ):
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     self.__csMod.createSection( sectionPath )
-    self.__csModified = True
+    self.csModified = True
     if comment:
       self.__csMod.setComment( sectionPath, comment )
     return S_OK()
@@ -693,7 +693,7 @@ class CSAPI( object ):
       return self.__initialized
     if not self.__csMod.removeSection( sectionPath ):
       return S_ERROR( "Could not delete section %s " % sectionPath )
-    self.__csModified = True
+    self.csModified = True
     return S_OK( )
 
   def copySection( self, originalPath, targetPath ):
@@ -708,7 +708,7 @@ class CSAPI( object ):
       return result
     if not self.__csMod.mergeSectionFromCFG( targetPath, sectionCfg ):
       return S_ERROR( "Could not merge cfg into section %s" % targetPath )
-    self.__csModified = True
+    self.csModified = True
     return S_OK( )
 
   def moveSection( self, originalPath, targetPath ):
@@ -720,7 +720,7 @@ class CSAPI( object ):
     result = self.delSection( originalPath )
     if not result['OK']:
       return result
-    self.__csModified = True
+    self.csModified = True
     return S_OK()
 
   def mergeCFGUnderSection( self, sectionPath, cfg ):
@@ -733,7 +733,7 @@ class CSAPI( object ):
       return result
     if not self.__csMod.mergeSectionFromCFG( sectionPath, cfg ):
       return S_ERROR( "Could not merge cfg into section %s" % sectionPath )
-    self.__csModified = True
+    self.csModified = True
     return S_OK()
 
   def mergeWithCFG( self, cfg ):
@@ -742,7 +742,7 @@ class CSAPI( object ):
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     self.__csMod.mergeFromCFG( cfg )
-    self.__csModified = True
+    self.csModified = True
     return S_OK()
 
   def getCurrentCFG( self ):
