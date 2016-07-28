@@ -24,6 +24,8 @@ from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_ST
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import Subprocess
 
+from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
+
 __RCSID__ = "$Id$"
 
 CE_NAME = 'HTCondorCE'
@@ -35,22 +37,6 @@ def condorIDFromJobRef( jobRef ):
   jobURL = jobRef.split(":::")[0]
   condorID = jobURL.split("/")[-1]
   return jobURL,condorID
-
-def parseCondorStatus( lines, jobID ):
-  """parse the condor_q or condor_history output for the job status"""
-  for line in lines:
-    if line.strip().startswith( jobID ):
-      if " I " in line:
-        return 'Waiting'
-      elif " R " in line:
-        return 'Running'
-      elif " C " in line:
-        return 'Done'
-      elif " X " in line:
-        return 'Aborted'
-      elif " H " in line:
-        return 'HELD'
-  return 'Unknown'
 
 def findFile( workingDir, fileName ):
   """ find a pilot out, err, log file """
@@ -240,19 +226,22 @@ Queue %(nJobs)s
       job,jobID = condorIDFromJobRef( jobRef )
       condorIDs[job] = jobID
 
-    status,stdout_q = commands.getstatusoutput( 'condor_q %s' % ' '.join(condorIDs.values()) )
+    ##This will return a list of 1245.75 3
+    status,stdout_q = commands.getstatusoutput( 'condor_q -af:j JobStatus %s' % ' '.join(condorIDs.values()) )
     if status != 0:
       return S_ERROR( stdout_q )
+    qList = stdout_q.strip().split('\n')
 
-    status_history,stdout_history = commands.getstatusoutput( 'condor_history %s ' % ' '.join(condorIDs.values()) )
-    if status_history == 0:
-      stdout_q = '\n'.join( [stdout_q,stdout_history] )
+    ##FIXME: condor_history does only support j for autoformat from 8.5.3,
+    ## format adds whitespace for each field This will return a list of 1245 75 3
+    ## needs to cocatenate the first two with a dot
+    condorHistCall = 'condor_history -af ClusterId ProcId JobStatus %s' % ' '.join( condorIDs.values() )
 
-    lines = stdout_q.split( '\n' )
+    treatCondorHistory( condorHistCall, qList )
 
     for job,jobID in condorIDs.iteritems():
 
-      pilotStatus = parseCondorStatus( lines, jobID )
+      pilotStatus = parseCondorStatus( qList, jobID )
       if pilotStatus == 'HELD':
         #make sure the pilot stays dead and gets taken out of the condor_q
         _rmStat, _rmOut = commands.getstatusoutput( 'condor_rm %s ' % jobID )
@@ -261,11 +250,6 @@ Queue %(nJobs)s
 
       resultDict[job] = pilotStatus
 
-    if len( resultDict ) != len( jobIDList ):
-      for jobRef in jobIDList:
-        job = jobRef.split( ":::" )[0]
-        if job not in resultDict:
-          resultDict[job] = 'Unknown'
     self.log.verbose( "Pilot Statuses: %s " % resultDict )
     return S_OK( resultDict )
 
