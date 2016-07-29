@@ -34,6 +34,7 @@ class ElasticSearchDB( object ):
   __chunk_size = 1000
   __url = ""
   __timeout = 120
+  clusterName = ''  
   ########################################################################
   def __init__( self, host, port ):
     """ c'tor
@@ -45,7 +46,6 @@ class ElasticSearchDB( object ):
     self.__url = "%s:%d" % ( host, port )
     self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
     self.__tryToConnect()
-    self.clusterName = ''
   
   ########################################################################  
   def query( self, index, query ):
@@ -88,7 +88,7 @@ class ElasticSearchDB( object ):
       if self.__client.ping():
         # Returns True if the cluster is running, False otherwise
         result = self.__client.info()
-        self.clusterName ( result.get( "cluster_name", " " ) )
+        self.clusterName = result.get( "cluster_name", " " )
         self.log.info( "Database info", result )
         self._connected = True
       else:

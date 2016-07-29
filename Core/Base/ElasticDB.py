@@ -20,7 +20,7 @@ class ElasticDB( ElasticSearchDB ):
 
   :param str __dbHost: the host name of the Elasticsearch database
   :param str __dbPort: The port where the Elasticsearch database is listening
-  :param str __clusterName: The name of the cluster.
+  :param str clusterName: The name of the cluster.
   """
   
   ########################################################################
@@ -53,7 +53,7 @@ class ElasticDB( ElasticSearchDB ):
     self.log.info( "==================================================" )
     self.log.info( "Host:           " + self.__dbHost )
     self.log.info( "Port:           " + str( self.__dbPort ) )
-    self.log.info( "ClusterName:    " + self.__clusterName )
+    self.log.info( "ClusterName:    " + self.clusterName )
     self.log.info( "==================================================" )
   
   ########################################################################
