@@ -24,7 +24,10 @@ def parseCondorStatus( lines, jobID ):
   jobID = str(jobID)
   for line in lines:
     l = line.strip().split()
-    status = int( l[1] )
+    try:
+      status = int( l[1] )
+    except (ValueError, IndexError):
+      continue
     if l[0] == jobID:
       return { 1: 'Waiting',
                2: 'Running',
