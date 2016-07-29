@@ -117,12 +117,19 @@ class ElasticSearchDB( object ):
     except Exception as e:
       gLogger.error( e )
     doctype = ''
-    for config in result:
-      if not result[config].get( 'mappings' ) :
+    for indexConfig in result:
+      if not result[indexConfig].get( 'mappings' ):
         # there is a case when the mapping exits and the value is None...
-        return S_ERROR( "%s does not exists!" % indexName )
-      doctype = result[config]['mappings']
-      break
+        # this is usually an empty index or a corrupted index.
+        gLogger.warn( "Index does not have mapping %s!" % indexConfig )
+        continue
+      if result[indexConfig].get( 'mappings' ) :
+        doctype = result[indexConfig]['mappings']
+        break  # we supose the mapping of all indexes are the same...
+      
+    if not doctype:
+      return S_ERROR( "%s does not exists!" % indexName )
+      
     return S_OK( doctype ) 
   
   ########################################################################
