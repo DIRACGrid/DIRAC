@@ -196,9 +196,9 @@ class RequestHandler( object ):
       finally:
         self.__lockManager.unlock( "FileTransfer/%s" % sDirection )
 
-    except Exception, v:
-      gLogger.exception( "Uncaught exception when serving Transfer", "%s" % sDirection )
-      return S_ERROR( "Server error while serving %s: %s" % ( sDirection, str( v ) ) )
+    except Exception as e:
+      gLogger.exception( "Uncaught exception when serving Transfer", "%s" % sDirection, lException = e )
+      return S_ERROR( "Server error while serving %s: %s" % ( sDirection, str( e ) ) )
 
   def transfer_fromClient( self, fileId, token, fileSize, fileHelper ):
     return S_ERROR( "This server does no allow receiving files" )
@@ -258,9 +258,9 @@ class RequestHandler( object ):
       finally:
         self.__lockManager.unlock( "RPC/%s" % method )
         self.__msgBroker.removeTransport( self.__trid, closeTransport = False )
-    except Exception, v:
-      gLogger.exception( "Uncaught exception when serving RPC", "Function %s" % method )
-      return S_ERROR( "Server error while serving %s: %s" % ( method, str( v ) ) )
+    except Exception as e:
+      gLogger.exception( "Uncaught exception when serving RPC", "Function %s" % method, lException = e )
+      return S_ERROR( "Server error while serving %s: %s" % ( method, str( e ) ) )
 
   def __checkExpectedArgumentTypes( self, method, args ):
     """
@@ -357,9 +357,9 @@ class RequestHandler( object ):
       else:
         uReturnValue = oMethod( self.__trid )
       return uReturnValue
-    except Exception, v:
-      gLogger.exception( "Uncaught exception when serving Connect", "Function %s" % realMethod )
-      return S_ERROR( "Server error while serving %s: %s" % ( methodName, str( v ) ) )
+    except Exception as e:
+      gLogger.exception( "Uncaught exception when serving Connect", "Function %s" % realMethod, lException = e )
+      return S_ERROR( "Server error while serving %s: %s" % ( methodName, str( e ) ) )
 
 
   def _rh_executeMessageCallback( self, msgObj ):
@@ -377,9 +377,9 @@ class RequestHandler( object ):
     try:
       try:
         uReturnValue = oMethod( msgObj )
-      except Exception, v:
-        gLogger.exception( "Uncaught exception when serving message", methodName )
-        return S_ERROR( "Server error while serving %s: %s" % ( msgName, str( v ) ) )
+      except Exception as e:
+        gLogger.exception( "Uncaught exception when serving message", methodName, lException = e )
+        return S_ERROR( "Server error while serving %s: %s" % ( msgName, str( e ) ) )
     finally:
       self.__lockManager.unlock( methodName )
     if not isReturnStructure( uReturnValue ):
@@ -419,8 +419,8 @@ class RequestHandler( object ):
     else:
       argsString = "\n\t%s\n" % ",\n\t".join( [ str( arg )[:50] for arg in args ] )
     gLogger.notice( "Executing action", "%s %s(%s)" % ( self.srv_getFormattedRemoteCredentials(),
-                                                      method,
-                                                      argsString ) )
+                                                        method,
+                                                        argsString ) )
 
   def __logRemoteQueryResponse( self, retVal, elapsedTime ):
     """
