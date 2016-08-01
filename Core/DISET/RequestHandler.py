@@ -196,23 +196,23 @@ class RequestHandler( object ):
       finally:
         self.__lockManager.unlock( "FileTransfer/%s" % sDirection )
 
-    except Exception as e:
+    except Exception as e: #pylint: disable=broad-except
       gLogger.exception( "Uncaught exception when serving Transfer", "%s" % sDirection, lException = e )
-      return S_ERROR( "Server error while serving %s: %s" % ( sDirection, str( e ) ) )
+      return S_ERROR( "Server error while serving %s: %s" % ( sDirection, repr( e ) ) )
 
-  def transfer_fromClient( self, fileId, token, fileSize, fileHelper ):
+  def transfer_fromClient( self, fileId, token, fileSize, fileHelper ): #pylint: disable=unused-argument
     return S_ERROR( "This server does no allow receiving files" )
 
-  def transfer_toClient( self, fileId, token, fileHelper ):
+  def transfer_toClient( self, fileId, token, fileHelper ): #pylint: disable=unused-argument
     return S_ERROR( "This server does no allow sending files" )
 
-  def transfer_bulkFromClient( self, bulkId, token, bulkSize, fileHelper ):
+  def transfer_bulkFromClient( self, bulkId, token, bulkSize, fileHelper ): #pylint: disable=unused-argument
     return S_ERROR( "This server does no allow bulk receiving" )
 
-  def transfer_bulkToClient( self, bulkId, token, fileHelper ):
+  def transfer_bulkToClient( self, bulkId, token, fileHelper ): #pylint: disable=unused-argument
     return S_ERROR( "This server does no allow bulk sending" )
 
-  def transfer_listBulk( self, bulkId, token, fileHelper ):
+  def transfer_listBulk( self, bulkId, token, fileHelper ): #pylint: disable=unused-argument
     return S_ERROR( "This server does no allow bulk listing" )
 
 #####
@@ -434,7 +434,7 @@ class RequestHandler( object ):
     else:
       argsString = "ERROR: %s" % retVal[ 'Message' ]
     gLogger.notice( "Returning response", "%s (%.2f secs) %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                                elapsedTime, argsString ) )
+                                                                  elapsedTime, argsString ) )
 
 ####
 #
