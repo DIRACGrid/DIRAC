@@ -94,7 +94,7 @@ class StompMQConnection( MQConnection ):
     password = self.parameters.get( 'Password', 'guest' )
     self.queueName = self.parameters.get( 'Queue' )
     headers = {}
-    if "Persistent" in self.parameters and self.parameters['Persistent'].lower() in ['true', 'yes', '1']:
+    if self.parameters.get( 'Persistent', '' ).lower() in ['true', 'yes', '1']:
       headers = { 'persistent': 'true' }
     try:
       self.connection = stomp.Connection( [ ( host, int( port ) ) ], vhost = vhost )
@@ -126,7 +126,7 @@ class StompMQConnection( MQConnection ):
     :param str message: string or any json encodable structure
     """
     try:
-      if isinstance( message, list ):
+      if isinstance( message, ( list, set, tuple ) ):
         for msg in message:
           self.connection.send( body = json.dumps( msg ), destination = '/queue/%s' % self.queueName )
       else:

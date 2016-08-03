@@ -25,6 +25,7 @@ class MQConnection( object ):
     """
 
     self.alive = False
+    self.parameters = {}
 
   def on_error( self, headers, message ):
     """ Default callback function called when an error happens
@@ -43,9 +44,9 @@ class MQConnection( object ):
     if not parameters:
       return S_ERROR( EMQUKN, 'Queue parameters are not provided' )
 
-    for param in self.MANDATORY_PARAMETERS:
-      if param not in parameters:
-        return S_ERROR( EMQUKN, "Parameter %s not provided" % param )
+    missingParameters = set( self.MANDATORY_PARAMETERS ) - set( parameters )
+    if missingParameters:
+      return S_ERROR( EMQUKN, "Parameter(s) %s not provided" % ','.join( missingParameters ) )
 
     self.parameters = parameters
 

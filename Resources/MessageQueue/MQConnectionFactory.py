@@ -56,10 +56,10 @@ class MQConnectionFactory( object ):
         return result
 
     except Exception as exc:
-      msg = 'MQConnectionFactory could not instantiate %s object: %s' % ( subClassName, str( exc ) )
+      msg = 'MQConnectionFactory could not instantiate %s object: %s' % ( subClassName, repr( exc ) )
       self.log.exception( 'Could not instantiate MQConnection object', IException = exc )
       self.log.warn( msg )
-      return S_ERROR( msg )
+      return S_ERROR( EMQUKN, msg )
 
     return S_OK( mqConnection )
 
@@ -71,13 +71,8 @@ class MQConnectionFactory( object ):
     :param dict parameters: MQ connection parameters
     :return: S_OK( MQconnectionObject )/ S_ERROR
     """
-    result = self.__getMQConnection( queueName = queueName,
-                                     parameters = parameters )
-    if not result['OK']:
-      return result
-
-    mqConnection = result['Value']
-    return S_OK( mqConnection )
+    return self.__getMQConnection( queueName = queueName,
+                                   parameters = parameters )
 
   def getMQPublisher( self, queueName = None, parameters = None ):
     """ Get a MQConnection object in a Publisher mode
