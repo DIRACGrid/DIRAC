@@ -101,7 +101,7 @@ class BasePlotter( DBUtils ):
       plotDict[ 'reportData' ] = reportData
     return S_OK( plotDict )
 
-  def _plotsList( self ):
+  def plotsList( self ):
     """
     It returns the list of available plots.
     """
