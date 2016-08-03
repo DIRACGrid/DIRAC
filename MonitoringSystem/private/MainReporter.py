@@ -33,14 +33,15 @@ class PlottersList( object ):
     for objName in objectsLoaded:
       self.__plotters[ objName[:-7] ] = objectsLoaded[ objName ]
 
-  def __getPlotterClass( self, typeName ):
+  def getPlotterClass( self, typeName ):
     """
     It returns the plotter class for a given monitoring type
     """
     try:
-      return self.__plotters[ typeName ]
+      return S_OK ( self.__plotters[ typeName ] )
     except KeyError:
-      return None
+      return S_ERROR()
+      
 
 class MainReporter( object ):
   
@@ -88,12 +89,12 @@ class MainReporter( object ):
     :return dict S_OK/S_ERROR the values used to create the plot
     """
     typeName = reportRequest[ 'typeName' ]
-    plotterClass = self.__plotterList.__getPlotterClass( typeName )
-    if not plotterClass:
+    plotterClass = self.__plotterList.getPlotterClass( typeName )
+    if not plotterClass['OK']:
       return S_ERROR( "There's no reporter registered for type %s" % typeName )
     
     reportRequest[ 'hash' ] = self.__calculateReportHash( reportRequest )
-    plotter = plotterClass( self.__db, self.__setup, reportRequest[ 'extraArgs' ] )
+    plotter = plotterClass['Value']( self.__db, self.__setup, reportRequest[ 'extraArgs' ] )
     return plotter.generate( reportRequest )
 
   def list( self, typeName ):
@@ -101,9 +102,9 @@ class MainReporter( object ):
     It returns the available plots
     :param str typeName monitoring type
     :return dict S_OK/S_ERROR list of available reports (plots)
-    """
-    plotterClass = self.__plotterList.__getPlotterClass( typeName )
-    if not plotterClass:
+    """ 
+    plotterClass = self.__plotterList.getPlotterClass( typeName )
+    if not plotterClass['OK']:
       return S_ERROR( "There's no plotter registered for type %s" % typeName )
-    plotter = plotterClass( self.__db, self.__setup )
-    return S_OK( plotter._plotsList() )
+    plotter = plotterClass['Value']( self.__db, self.__setup )
+    return S_OK( plotter.plotsList() )
