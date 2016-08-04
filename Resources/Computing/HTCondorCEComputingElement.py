@@ -227,7 +227,7 @@ Queue %(nJobs)s
       condorIDs[job] = jobID
 
     ##This will return a list of 1245.75 3
-    status,stdout_q = commands.getstatusoutput( 'condor_q -af:j JobStatus %s' % ' '.join(condorIDs.values()) )
+    status,stdout_q = commands.getstatusoutput( 'condor_q %s -af:j JobStatus ' % ' '.join(condorIDs.values()) )
     if status != 0:
       return S_ERROR( stdout_q )
     qList = stdout_q.strip().split('\n')
@@ -235,7 +235,7 @@ Queue %(nJobs)s
     ##FIXME: condor_history does only support j for autoformat from 8.5.3,
     ## format adds whitespace for each field This will return a list of 1245 75 3
     ## needs to cocatenate the first two with a dot
-    condorHistCall = 'condor_history -af ClusterId ProcId JobStatus %s' % ' '.join( condorIDs.values() )
+    condorHistCall = 'condor_history %s -af ClusterId ProcId JobStatus' % ' '.join( condorIDs.values() )
 
     treatCondorHistory( condorHistCall, qList )
 
