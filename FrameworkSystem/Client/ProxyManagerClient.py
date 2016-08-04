@@ -230,11 +230,6 @@ class ProxyManagerClient:
   @gVOMSProxiesSync
   def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
                          cacheTime = 14400, requiredVOMSAttribute = False,
-
-
-
-
-
                          proxyToConnect = False, token = False ):
     """
     Download a proxy if needed and transform it into a VOMS one
