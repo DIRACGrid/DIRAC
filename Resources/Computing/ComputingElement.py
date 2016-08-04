@@ -66,7 +66,7 @@ class ComputingElement(object):
     self.batchSystem = None
 
     self.minProxyTime = gConfig.getValue( '/Registry/MinProxyLifeTime', 10800 ) #secs
-    self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 ) #secs
+    self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 43200 ) #secs
     self.proxyCheckPeriod = gConfig.getValue( '/Registry/ProxyCheckingPeriod', 3600 ) #secs
 
     self.initializeParameters()
@@ -190,8 +190,21 @@ class ComputingElement(object):
 
   def setParameters( self, ceOptions ):
     """ Add parameters from the given dictionary overriding the previous values
+
+        :param dict ceOptions: CE parameters dictionary to update already defined ones
     """
     self.ceParameters.update( ceOptions )
+
+    # At this point we can know the exact type of CE,
+    # try to get generic parameters for this type
+    ceType = self.ceParameters.get( 'CEType' )
+    if ceType:
+      result = gConfig.getOptionsDict( '/Resources/Computing/%s' % ceType )
+      if result['OK']:
+        generalCEDict = result['Value']
+        generalCEDict.update( self.ceParameters )
+        self.ceParameters = generalCEDict
+
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:
         self.ceParameters[key] = int( self.ceParameters[key] )
