@@ -6,8 +6,10 @@ command line tool to remove local and remote proxies
 
 import sys
 import os
+
+import DIRAC
 from DIRAC import gLogger, S_OK
-from  DIRAC.Core.Security import Locations
+from DIRAC.Core.Security import Locations
 from DIRAC.Core.Base import Script
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -15,7 +17,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Security import ProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
-
+__RCSID__ = "$Id$"
 
 
 class Params( object ):
@@ -113,7 +115,10 @@ def deleteLocalProxy( proxyLoc ):
   try:
     os.unlink( proxyLoc )
   except IOError:
-    gLogger.error( 'Failed to delete local proxy.' )
+    gLogger.error( 'IOError: Failed to delete local proxy.' )
+    return
+  except OSError:
+    gLogger.error( 'OSError: Failed to delete local proxy.' )
     return
   gLogger.notice( 'Local proxy deleted.' )
 
@@ -130,14 +135,13 @@ def main():
 
   if options.delete_all and options.vos:
     gLogger.error( "-a and -v options are mutually exclusive. Please pick one or the other." )
-    sys.exit( 1 )
-
+    return 1
 
   proxyLoc = Locations.getDefaultProxyLocation()
 
   if not os.path.exists( proxyLoc ):
     gLogger.error( "No local proxy found in %s, exiting." % proxyLoc )
-    sys.exit( 1 )
+    return 1
 
   result = ProxyInfo.getProxyInfo( proxyLoc, True )
   if not result[ 'OK' ]:
@@ -171,11 +175,12 @@ def main():
   else:
     deleteLocalProxy( proxyLoc )
 
-  sys.exit( 0 )
+  return 0
 
 if __name__ == "__main__":
   try:
-    main()
+    retval = main()
+    DIRAC.exit( retval )
   except RuntimeError as rtError:
     gLogger.error( 'Operation failed: %s' % str( rtError ) )
-
+  DIRAC.exit( 1 )
