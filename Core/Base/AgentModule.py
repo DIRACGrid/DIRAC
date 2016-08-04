@@ -155,8 +155,8 @@ class AgentModule( object ):
                                        globals(),
                                        locals(),
                                        versionVar )
-    except Exception:
-      self.log.exception( "Cannot load agent module" )
+    except Exception as excp:
+      self.log.exception( "Cannot load agent module", lException = excp )
     for prop in ( ( versionVar, "version" ), ( docVar, "description" ) ):
       try:
         self.__codeProperties[ prop[1] ] = getattr( self.__agentModule, prop[0] )
@@ -241,7 +241,7 @@ class AgentModule( object ):
     return os.path.join( self.__basePath, str( self.am_getOption( 'shifterProxyLocation' ) ) )
 
   def am_getOption( self, optionName, defaultValue = None ):
-    if defaultValue == None:
+    if defaultValue is None:
       if optionName in self.__configDefaults:
         defaultValue = self.__configDefaults[ optionName ]
     if optionName and optionName[0] == "/":
@@ -312,7 +312,7 @@ class AgentModule( object ):
         raise Exception( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleProperties[ 'fullName' ] ) )
       return result
     except Exception as e:
-      self.log.exception( "Agent exception while calling method", name )
+      self.log.exception( "Agent exception while calling method %s" % name, lException = e )
       return S_ERROR( "Exception while calling %s method: %s" % ( name, str( e ) ) )
 
 
