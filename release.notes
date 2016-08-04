@@ -1,7 +1,7 @@
 [v6r15p10]
 
 *Core
-FIX: MySQL - do not print database access password explicitely in the logs
+FIX: MySQL - do not print database access password explicitly in the logs
 
 *Configuration
 CHANGE: VOMS2CSAgent - show in the log if there are changes ready to be committed
