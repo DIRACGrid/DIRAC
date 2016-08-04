@@ -86,7 +86,7 @@ class VOMS2CSAgent( AgentModule ):
                                        "VOMS2CSAgent run log", mailMsg,
                                        self.am_getOption( 'mailFrom', "DIRAC system" ) )
 
-    if self.csAPI.csModified:
+    if self.csapi.csModified:
       # We have accumulated all the changes, commit them now
       self.log.info( "There are changes to the CS ready to be committed" )
       if self.dryRun:
