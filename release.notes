@@ -1,3 +1,26 @@
+[v6r15p11]
+
+*Framework
+NEW: dirac-proxy-destroy command to destroy proxy locally and in the ProxyManager
+     service
+CHANGE: ProxyManagerClient - reduce the proxy caching time to be more suitable
+        for cases with short VOMS extensions     
+
+*Configuration
+FIX: VOMS2CSAgent - fixed typo bug in execute()
+
+*RMS
+FIX: RequestTask - fix if the problem when the processing of an operation times out, 
+     there was no increment of the attempts done.
+
+*DMS
+FIX: FTSAgent - avoid FTS to fetch a request that was canceled
+
+*Resources
+FIX: HTCondorCE - protect against non-standard line in 'job status' list in the getJobStatus()
+CHANGE: ComputingElement - reduce the default time length of the payload proxy to accomodate
+        the case with short VOMS extensions
+
 [v6r15p10]
 
 *Core
