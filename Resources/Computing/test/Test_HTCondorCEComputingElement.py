@@ -34,10 +34,13 @@ class HTCondorCETests( unittest.TestCase ):
     104097.9 2
     104098.0 1
     104098.1 4
+
+    foo bar
     104098.2 3
     104098.3 5
     104098.4 7
     """.strip().split('\n')
+    ## force there to be an empty line
 
     expectedResults = {
       "104097.9": "Running",

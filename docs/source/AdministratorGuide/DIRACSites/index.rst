@@ -11,3 +11,4 @@ In this section, the procedures to give access to the site resources are describ
    
    ComputingElements/index
    StorageElements/index
+   MessageQueues/index

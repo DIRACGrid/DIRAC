@@ -184,7 +184,7 @@ class ProxyManagerClient:
 
   @gProxiesSync
   def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
-                     cacheTime = 43200, proxyToConnect = False, token = False ):
+                     cacheTime = 14400, proxyToConnect = False, token = False ):
     """
     Get a proxy Chain from the proxy management
     """
@@ -213,7 +213,7 @@ class ProxyManagerClient:
     return S_OK( chain )
 
   def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
-                           cacheTime = 43200, filePath = False, proxyToConnect = False, token = False ):
+                           cacheTime = 14400, filePath = False, proxyToConnect = False, token = False ):
     """
     Get a proxy Chain from the proxy management and write it to file
     """
@@ -229,7 +229,13 @@ class ProxyManagerClient:
 
   @gVOMSProxiesSync
   def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
-                         cacheTime = 43200, requiredVOMSAttribute = False, proxyToConnect = False, token = False ):
+                         cacheTime = 14400, requiredVOMSAttribute = False,
+
+
+
+
+
+                         proxyToConnect = False, token = False ):
     """
     Download a proxy if needed and transform it into a VOMS one
     """
@@ -259,8 +265,9 @@ class ProxyManagerClient:
     self.__vomsProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200, cacheTime = 43200,
-                               requiredVOMSAttribute = False, filePath = False, proxyToConnect = False, token = False ):
+  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
+                               cacheTime = 14400, requiredVOMSAttribute = False, filePath = False,
+                               proxyToConnect = False, token = False ):
     """
     Download a proxy if needed, transform it into a VOMS one and write it to file
     """
