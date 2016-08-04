@@ -4,16 +4,17 @@
     The MQListener can be used in two modes:
 
     Simple mode with a default callback allows to get messages one by one by an explicit
-    get() call:
+    get() call::
 
       listener = MQListener( queueName )
       listener.get()
 
     Consumer mode with a custom callback function provided in the constructor or through
-    setCallback call:
+    setCallback call::
 
       listener = MQListener( queueName, callback = myCallback )
-      listener run()
+      listener.run()
+
 """
 
 import time
