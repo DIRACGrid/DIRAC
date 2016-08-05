@@ -41,7 +41,7 @@ class SystemAdministratorHandler( RequestHandler ):
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
 
     if hostMonitoring:
-      gThreadScheduler.addPeriodicTask( 60, cls.__storeHostInfo, ( cls, ) )
+      gThreadScheduler.addPeriodicTask( 60, cls.__storeHostInfo )
       #the SystemAdministrator service does not has to use the client to report data about the host.
 
     return S_OK( 'Initialization went well' )
@@ -635,12 +635,11 @@ class SystemAdministratorHandler( RequestHandler ):
       return S_ERROR( 'No documentation was found' )
 
   @staticmethod
-  def __storeHostInfo( selfReference ):
+  def __storeHostInfo():
     """
     Retrieves and stores into a MySQL database information about the host
-    :param object selfReference: it is the reference of the SystemAdministrator instance.
     """
-    result = selfReference.__readHostInfo()
+    result = SystemAdministratorHandler.__readHostInfo()
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
       return S_ERROR( result[ 'Message' ] )
