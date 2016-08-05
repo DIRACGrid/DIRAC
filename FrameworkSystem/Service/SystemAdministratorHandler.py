@@ -642,7 +642,7 @@ class SystemAdministratorHandler( RequestHandler ):
     result = SystemAdministratorHandler.__readHostInfo()
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
-      return S_ERROR( result[ 'Message' ] )
+      return result
 
     fields = result[ 'Value' ]
     fields[ 'Timestamp' ] = datetime.utcnow()
@@ -650,6 +650,6 @@ class SystemAdministratorHandler( RequestHandler ):
     result = client.updateLog( socket.getfqdn(), fields )
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
-      return S_ERROR( result[ 'Message' ] )
+      return result
 
     return S_OK( 'Profiling information logged correctly' )
