@@ -3,27 +3,24 @@
 # Author : A.S.
 ########################################################################
 
-""" HTCondorCE Computing Element
+"""HTCondorCE Computing Element
 
    Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Agent
    Needs the condor grid middleware (condor_submit, condor_history, condor_q, condor_rm)
 
-   Configuration for the HTCondorCE submission can be done via the configuration system::
+   Configuration for the HTCondorCE submission can be done via the configuration system ::
 
-     Resources/Computing/CEDefaults/HTCondorCE/WorkingDirectory
-     Resources/Computing/CEDefaults/HTCondorCE/DaysToKeepLogs
+     WorkingDirectory: Location to store the pilot and condor log files
+     DaysToKeepLogs:  how low to keep the log files until they are removed
+     ExtraSubmitString: Additional option for the condor submit file, separate options with '\\n', for example:
+        request_cpus = 8 \\n periodic_remove = ...
 
-   Additional configuration for the submission file can be done per CE, Site or all HTCondorCEs::
 
-     Top priority          : Resources/Sites/<Grid>/<Site>/CEs/<CE>/ExtraSubmitString
-     Second priority       : Resources/Sites/<Grid>/<Site>/ExtraSubmitString
-     Default for HTCondorCE: Resources/Computing/CEDefaults/HTCondorCE/ExtraSubmitString
-
-   It should be of the form::
-
-      request_cpus = 8 \\n periodic_remove = ...
-
+   see :ref:`res-comp-htcondor`
 """
+  # Note: if you read this documentation in the source code and not via the sphinx
+  # created documentation, there should only be one slash when setting the option,
+  # but "\n" gets rendered as a linebreak in sphinx
 
 import os
 import tempfile
@@ -38,8 +35,6 @@ from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_STATUS
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import Subprocess
-from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
-
 
 from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
 
@@ -68,7 +63,8 @@ def getCondorLogFile( pilotRef ):
   """return the location of the logFile belonging to the pilot reference"""
   _jobUrl, condorID = condorIDFromJobRef( pilotRef )
   #FIXME: This gets called from the WMSAdministrator, so we don't have the same
-  #working directory as for the SiteDirector unless we force it
+  #working directory as for the SiteDirector unless we force it, there is also
+  #no CE instantiated when this function is called so we can only pick this option up from one place
   workingDirectory = gConfig.getValue( "Resources/Computing/CEDefaults/HTCondorCE/WorkingDirectory",
                                        DEFAULT_WORKINGDIRECTORY )
   resLog = findFile( workingDirectory, '%s.log' % condorID )
@@ -92,13 +88,12 @@ class HTCondorCEComputingElement( ComputingElement ):
     self.outputURL = 'gsiftp://localhost'
     self.gridEnv = ''
     self.proxyRenewal = 0
-    self.extraSubmitString = ''
-    self.__getExtraSubmitString()
+    self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
 
+    ## see note on getCondorLogFile, why we can only use the global setting
     self.workingDirectory = gConfig.getValue( "Resources/Computing/CEDefaults/HTCondorCE/WorkingDirectory",
                                               DEFAULT_WORKINGDIRECTORY )
-    self.daysToKeepLogs = gConfig.getValue( "Resources/Computing/CEDefaults/HTCondorCE/DaysToKeepLogs",
-                                            DEFAULT_DAYSTOKEEPLOGS )
+    self.daysToKeepLogs = self.ceParameters.get( "DaysToKeepLogs", DEFAULT_DAYSTOKEEPLOGS )
 
   #############################################################################
   def __writeSub( self, executable, nJobs ):
@@ -365,45 +360,5 @@ Queue %(nJobs)s
     status,stdout = commands.getstatusoutput( r'find %(workDir)s -mtime +%(days)s -type f \( -name "*.out" -o -name "*.err" -o -name "*.log" \) -delete ' % findPars )
     if status != 0:
       self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
-
-  def __getExtraSubmitString( self ):
-    """
-    For the additional string from configuration - only done at initialisation time
-    If this string changes, the corresponding site directors have to be restarted
-
-    :returns: None
-    """
-    extraString = '' # Start with the default value
-    ceHost = self.ceParameters.get( 'Host', self.ceName )
-    if not ceHost:
-      self.log.error( "No Host defined in ceParameters, cannot get extra string" )
-      return
-    result = getSiteForCE( ceHost )
-    if not result['OK']:
-      self.log.error( "Unknown Site ...", result['Message'] )
-      return
-    site = result['Value']
-    # Now we know the site. Get the grid
-    grid = site.split(".")[0]
-
-    extraVariable = "ExtraSubmitString"
-    firstOption = "Resources/Sites/%s/%s/CEs/%s/%s" % (grid, site, ceHost, extraVariable)
-    secondOption = "Resources/Sites/%s/%s/%s" % (grid, site, extraVariable)
-    typeDefault = "Resources/Computing/CEDefaults/%s/%s" % ( self.ceType, extraVariable )
-    # Now go about getting the string in the agreed order
-    for option in ( firstOption, secondOption, typeDefault ):
-      self.log.debug("Trying to get ExtraSubmitString string from %s" % option)
-      result = gConfig.getValue( option, defaultValue='' )
-      if result:
-        extraString = result
-        self.log.debug( "Found submit string: %s" % extraString )
-        break
-    if extraString == '':
-      self.log.info( "No ExtraString found in configuration for %s" % ceHost )
-    else:
-      ## de-escape newline marker "\n" used for line separation
-      self.extraSubmitString = extraString.decode( "string_escape" )
-      self.log.info( "Extra submit string :\n'''\n%s\n'''" % self.extraSubmitString )
-      self.log.info( " --- to be added to pilots going to CE: %s" % ceHost )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
