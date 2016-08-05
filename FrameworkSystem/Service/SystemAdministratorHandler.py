@@ -41,8 +41,7 @@ class SystemAdministratorHandler( RequestHandler ):
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
 
     if hostMonitoring:
-      client = SystemAdministratorClient( 'localhost' )
-      gThreadScheduler.addPeriodicTask( 60, client.storeHostInfo )
+      gThreadScheduler.addPeriodicTask( 60, cls.__storeHostInfo )
 
     return S_OK( 'Initialization went well' )
 
@@ -633,8 +632,7 @@ class SystemAdministratorHandler( RequestHandler ):
     except Exception as _e:
       return S_ERROR( 'No documentation was found' )
 
-  types_storeHostInfo = []
-  def export_storeHostInfo( self ):
+  def __storeHostInfo( self ):
     """
     Retrieves and stores into a MySQL database information about the host
     """
