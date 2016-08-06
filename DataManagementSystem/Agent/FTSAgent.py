@@ -172,6 +172,17 @@ class FTSAgent( AgentModule ):
   @classmethod
   def getRequest( cls, reqID ):
     """ get Requests systematically and refresh cache """
+
+    # Make sure the request is Scheduled
+    res = cls.requestClient().getRequestStatus( reqID )
+    if not res['OK']:
+      cls.__reqCache.pop( reqID, None )
+      return res
+    status = res['Value']
+    if status != 'Scheduled':
+      cls.__reqCache.pop( reqID, None )
+      return S_ERROR( "Request with id %s is not Scheduled:%s" % ( reqID, status ) )
+
     getRequest = cls.requestClient().getRequest( reqID )
     if not getRequest["OK"]:
       cls.__reqCache.pop( reqID, None )

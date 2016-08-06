@@ -106,6 +106,7 @@ import threading
 import os
 import signal
 import Queue
+import errno
 from types import FunctionType, TypeType, ClassType
 
 try:
@@ -296,7 +297,7 @@ class WorkingProcess( multiprocessing.Process ):
       ## processThread is still alive? stop it!
       if self.__processThread.is_alive():
         self.__processThread._Thread__stop()
-        self.task.setResult( S_ERROR("Timed out") )  
+        self.task.setResult( S_ERROR( errno.ETIME, "Timed out" ) )
         timeout = True
       # if the task finished with no results, something bad happened, e.g. 
       # undetected timeout  
