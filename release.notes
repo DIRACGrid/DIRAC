@@ -1,5 +1,9 @@
 [v6r16-pre1]
 
+*Core
+CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
+        ExtraModule option
+
 *Resources
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
