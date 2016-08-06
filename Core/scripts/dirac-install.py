@@ -35,7 +35,7 @@ def S_ERROR( msg = "" ):
 class Params( object ):
 
   def __init__( self ):
-    self.extraModules = []
+    self.extensions = []
     self.project = 'DIRAC'
     self.installation = 'DIRAC'
     self.release = ""
@@ -668,9 +668,9 @@ class ReleaseConfig( object ):
         pass
     return lcgVersion
 
-  def getModulesToInstall( self, release, extraModules = False ):
-    if not extraModules:
-      extraModules = []
+  def getModulesToInstall( self, release, extensions = False ):
+    if not extensions:
+      extensions = []
     extraFound = []
     modsToInstall = {}
     modsOrder = []
@@ -687,8 +687,8 @@ class ReleaseConfig( object ):
       except KeyError:
         requiredModules = []
       for modName in requiredModules:
-        if modName not in extraModules:
-          extraModules.append( modName )
+        if modName not in extensions:
+          extensions.append( modName )
       result = self.getTarsLocation( project )
       if not result[ 'OK' ]:
         return result
@@ -703,27 +703,27 @@ class ReleaseConfig( object ):
         modNames = [ mod.strip() for mod in defaultMods.split( "," ) if mod.strip() ]
       except KeyError:
         modNames = []
-      for extraMod in extraModules:
+      for extension in extensions:
         # Check if the version of the extension module is specified in the command line
         extraVersion = None
-        if ":" in extraMod:
-          extraMod, extraVersion = extraMod.split( ":" )
-          modVersions[extraMod] = extraVersion
-        if extraMod in modVersions:
-          modNames.append( extraMod )
-          extraFound.append( extraMod )
-        if project != 'DIRAC':
-          dExtraMod = "%sDIRAC" % extraMod
-          if dExtraMod in modVersions:
-            modNames.append( dExtraMod )
-            extraFound.append( extraMod )
+        if ":" in extension:
+          extension, extraVersion = extension.split( ":" )
+          modVersions[extension] = extraVersion
+        if extension in modVersions:
+          modNames.append( extension )
+          extraFound.append( extension )
+        if 'DIRAC' not in extension:
+          dextension = "%sDIRAC" % extension
+          if dextension in modVersions:
+            modNames.append( dextension )
+            extraFound.append( extension )
       modNameVer = [ "%s:%s" % ( modName, modVersions[ modName ] ) for modName in modNames ]
       self.__dbgMsg( "Modules to be installed for %s are: %s" % ( project, ", ".join( modNameVer ) ) )
       for modName in modNames:
         modsToInstall[ modName ] = ( tarsPath, modVersions[ modName ] )
         modsOrder.insert( 0, modName )
 
-    for modName in extraModules:
+    for modName in extensions:
       if modName.split(":")[0] not in extraFound:
         return S_ERROR( "No module %s defined. You sure it's defined for this release?" % modName )
 
@@ -1027,7 +1027,7 @@ def installExternalRequirements( extType ):
 
 cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'l:', 'project=', 'Project to install' ),
-            ( 'e:', 'extraModules=', 'Extra modules to install (comma separated)' ),
+            ( 'e:', 'extensions=', 'Extensions to install (comma separated)' ),
             ( 't:', 'installType=', 'Installation type (client/server)' ),
             ( 'i:', 'pythonVersion=', 'Python version to compile (27/26)' ),
             ( 'p:', 'platform=', 'Platform to install' ),
@@ -1109,9 +1109,11 @@ def loadConfiguration():
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
       continue
-    #Also react to Extensions as if they were extra modules
-    if opName == 'extensions':
-      opName = 'extraModules'
+    
+    if opName == 'extraModules':
+      logWARN( "extraModules is deprecated please use extensions instead!" )
+      opName = 'extensions'
+    
     if opName == 'installType':
       opName = 'externalsType'
     if isinstance( getattr( cliParams, opName ), basestring ):
@@ -1127,10 +1129,10 @@ def loadConfiguration():
       cliParams.release = v
     elif o in ( '-l', '--project' ):
       cliParams.project = v
-    elif o in ( '-e', '--extraModules' ):
+    elif o in ( '-e', '--extensions' ):
       for pkg in [ p.strip() for p in v.split( "," ) if p.strip() ]:
-        if pkg not in cliParams.extraModules:
-          cliParams.extraModules.append( pkg )
+        if pkg not in cliParams.extensions:
+          cliParams.extensions.append( pkg )
     elif o in ( '-t', '--installType' ):
       cliParams.externalsType = v
     elif o in ( '-i', '--pythonVersion' ):
@@ -1455,7 +1457,7 @@ if __name__ == "__main__":
     sys.exit( 1 )
   if not cliParams.externalsOnly:
     logNOTICE( "Discovering modules to install" )
-    result = releaseConfig.getModulesToInstall( cliParams.release, cliParams.extraModules )
+    result = releaseConfig.getModulesToInstall( cliParams.release, cliParams.extensions )
     if not result[ 'OK' ]:
       logERROR( result[ 'Message' ] )
       sys.exit( 1 )
