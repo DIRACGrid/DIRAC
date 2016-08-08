@@ -183,7 +183,7 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
         if comList and not community in comList:
           continue
       siteCEParameters = {}
-      result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs' )
+      result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs' % ( grid, site ) )
       if result['OK']:
         siteCEParameters = result['Value']
       result = gConfig.getSections( '/Resources/Sites/%s/%s/CEs' % ( grid, site ) )
