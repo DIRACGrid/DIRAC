@@ -551,7 +551,8 @@ class SystemAdministratorHandler( RequestHandler ):
 
     infoResult = gComponentInstaller.getInfo( getCSExtensions() )
     if infoResult['OK']:
-      result.update( infoResult['Value'] )
+      # the infoResult value is {"Extensions":{'a1':'v1',a2:'v2'}; we convert to a string
+      result.update( {"Extensions":";".join( ["%s:%s" % ( key, value ) for ( key, value ) in infoResult["Value"].get( 'Extensions' ).iteritems()] )} )
 
     # Host certificate properties
     certFile, _keyFile = getHostCertificateAndKeyLocation()
@@ -562,7 +563,7 @@ class SystemAdministratorHandler( RequestHandler ):
       result['SecondsLeft'] = resultCert['Value']['secondsLeft']
       result['CertificateValidity'] = str( timedelta( seconds = resultCert['Value']['secondsLeft'] ) )
       result['CertificateDN'] = resultCert['Value']['subject']
-      result['HostProperties'] = ','.join( resultCert['Value']['groupProperties'] )
+      result['HostProperties'] = str( resultCert['Value']['groupProperties'] )
       result['CertificateIssuer'] = resultCert['Value']['issuer']
 
     # Host uptime

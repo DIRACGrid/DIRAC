@@ -244,7 +244,7 @@ class HostLogging( componentsBase ):
   hostName = Column( 'HostName', String( 32 ), nullable = False, primary_key = True )
   # status
   DIRAC = Column( 'DIRACVersion', String( 32 ) )
-  Extension = Column( 'Extension', String( 64 ) )
+  Extensions = Column( 'Extensions', String( 64 ) )
   Load1 = Column( 'Load1', String( 32 ) ) # float
   Load5 = Column( 'Load5', String( 32 ) ) # float
   Load15 = Column( 'Load15', String( 32 ) ) # float
@@ -298,7 +298,7 @@ class HostLogging( componentsBase ):
 
     dictionary = {'HostName': self.hostName,
                   'DIRACVersion': self.DIRAC,
-                  'Extension': self.Extension,
+                  'Extensions': self.Extensions,
                   'Load1': self.Load1,
                   'Load5': self.Load5,
                   'Load15': self.Load15,
