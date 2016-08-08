@@ -41,8 +41,8 @@ class SystemAdministratorHandler( RequestHandler ):
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
 
     if hostMonitoring:
-      client = SystemAdministratorClient( 'localhost' )
-      gThreadScheduler.addPeriodicTask( 60, client.storeHostInfo )
+      gThreadScheduler.addPeriodicTask( 60, cls.__storeHostInfo )
+      #the SystemAdministrator service does not has to use the client to report data about the host.
 
     return S_OK( 'Initialization went well' )
 
@@ -455,7 +455,8 @@ class SystemAdministratorHandler( RequestHandler ):
 
     return S_OK( resultDict )
 
-  def __readHostInfo( self ):
+  @staticmethod
+  def __readHostInfo():
     """ Get host current loads, memory, etc
     """
 
@@ -550,7 +551,8 @@ class SystemAdministratorHandler( RequestHandler ):
 
     infoResult = gComponentInstaller.getInfo( getCSExtensions() )
     if infoResult['OK']:
-      result.update( infoResult['Value'] )
+      # the infoResult value is {"Extensions":{'a1':'v1',a2:'v2'}; we convert to a string
+      result.update( {"Extensions":";".join( ["%s:%s" % ( key, value ) for ( key, value ) in infoResult["Value"].get( 'Extensions' ).iteritems()] )} )
 
     # Host certificate properties
     certFile, _keyFile = getHostCertificateAndKeyLocation()
@@ -561,7 +563,7 @@ class SystemAdministratorHandler( RequestHandler ):
       result['SecondsLeft'] = resultCert['Value']['secondsLeft']
       result['CertificateValidity'] = str( timedelta( seconds = resultCert['Value']['secondsLeft'] ) )
       result['CertificateDN'] = resultCert['Value']['subject']
-      result['HostProperties'] = ','.join( resultCert['Value']['groupProperties'] )
+      result['HostProperties'] = str( resultCert['Value']['groupProperties'] )
       result['CertificateIssuer'] = resultCert['Value']['issuer']
 
     # Host uptime
@@ -633,15 +635,15 @@ class SystemAdministratorHandler( RequestHandler ):
     except Exception as _e:
       return S_ERROR( 'No documentation was found' )
 
-  types_storeHostInfo = []
-  def export_storeHostInfo( self ):
+  @staticmethod
+  def __storeHostInfo():
     """
     Retrieves and stores into a MySQL database information about the host
     """
-    result = self.__readHostInfo()
+    result = SystemAdministratorHandler.__readHostInfo()
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
-      return S_ERROR( result[ 'Message' ] )
+      return result
 
     fields = result[ 'Value' ]
     fields[ 'Timestamp' ] = datetime.utcnow()
@@ -649,6 +651,6 @@ class SystemAdministratorHandler( RequestHandler ):
     result = client.updateLog( socket.getfqdn(), fields )
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
-      return S_ERROR( result[ 'Message' ] )
+      return result
 
     return S_OK( 'Profiling information logged correctly' )
