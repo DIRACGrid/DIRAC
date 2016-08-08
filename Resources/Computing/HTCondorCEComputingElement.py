@@ -65,7 +65,7 @@ def getCondorLogFile( pilotRef ):
   #FIXME: This gets called from the WMSAdministrator, so we don't have the same
   #working directory as for the SiteDirector unless we force it, there is also
   #no CE instantiated when this function is called so we can only pick this option up from one place
-  workingDirectory = gConfig.getValue( "Resources/Computing/CEDefaults/HTCondorCE/WorkingDirectory",
+  workingDirectory = gConfig.getValue( "Resources/Computing/HTCondorCE/WorkingDirectory",
                                        DEFAULT_WORKINGDIRECTORY )
   resLog = findFile( workingDirectory, '%s.log' % condorID )
   return resLog
@@ -91,7 +91,7 @@ class HTCondorCEComputingElement( ComputingElement ):
     self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
 
     ## see note on getCondorLogFile, why we can only use the global setting
-    self.workingDirectory = gConfig.getValue( "Resources/Computing/CEDefaults/HTCondorCE/WorkingDirectory",
+    self.workingDirectory = gConfig.getValue( "Resources/Computing/HTCondorCE/WorkingDirectory",
                                               DEFAULT_WORKINGDIRECTORY )
     self.daysToKeepLogs = self.ceParameters.get( "DaysToKeepLogs", DEFAULT_DAYSTOKEEPLOGS )
 

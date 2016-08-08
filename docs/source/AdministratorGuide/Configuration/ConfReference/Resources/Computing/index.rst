@@ -60,17 +60,17 @@ HTCondorCE Parameters
 
 Options for the HTCondorCEs
 
-+---------------------+----------------------------------------------------+-----------------------------------------------------------+
-| **Name**            | **Description**                                    | **Example**                                               |
-+---------------------+----------------------------------------------------+-----------------------------------------------------------+
-| ExtraSubmitString   | Additional string for the condor submit            | request_cpus = 8 \\n periodic_remove = ...                |
-|                     | file. Separate entries with "\\n".                 |                                                           |
-+---------------------+----------------------------------------------------+-----------------------------------------------------------+
-| WorkingDirectory    | Directory where the pilot log files are stored     | /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT    |
-|                     | locally. Also temproray files like condor submit   |                                                           |
-|                     | files are kept here. This option is only read from |                                                           |
-|                     | the global CEDefaults/HTCondorCE location.         |                                                           |
-+---------------------+----------------------------------------------------+-----------------------------------------------------------+
-| DaysToKeepLogFiles  | How many days pilot log files are kept on the disk | 15                                                        |
-|                     | before they are removed                            |                                                           |
-+---------------------+----------------------------------------------------+-----------------------------------------------------------+
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+| **Name**            | **Description**                                     | **Example**                                               |
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+| ExtraSubmitString   | Additional string for the condor submit             | request_cpus = 8 \\n periodic_remove = ...                |
+|                     | file. Separate entries with "\\n".                  |                                                           |
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+| WorkingDirectory    | Directory where the pilot log files are stored      | /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT    |
+|                     | locally. Also temproray files like condor submit    |                                                           |
+|                     | files are kept here. This option is only read from  |                                                           |
+|                     | the global Resources/Computing/HTCondorCE location. |                                                           |
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+| DaysToKeepLogFiles  | How many days pilot log files are kept on the disk  | 15                                                        |
+|                     | before they are removed                             |                                                           |
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
