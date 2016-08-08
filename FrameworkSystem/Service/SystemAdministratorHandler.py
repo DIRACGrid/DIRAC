@@ -561,7 +561,7 @@ class SystemAdministratorHandler( RequestHandler ):
     resultCert = chain.getCredentials()
     if resultCert['OK']:
       result['SecondsLeft'] = resultCert['Value']['secondsLeft']
-      result['CertificateValidity'] = str( timedelta( seconds = resultCert['Value']['secondsLeft'] ) )
+      result['CertificateValidity'] = timedelta( seconds = resultCert['Value']['secondsLeft'] )
       result['CertificateDN'] = resultCert['Value']['subject']
       result['HostProperties'] = str( resultCert['Value']['groupProperties'] )
       result['CertificateIssuer'] = resultCert['Value']['issuer']
