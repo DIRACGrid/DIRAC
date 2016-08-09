@@ -552,7 +552,7 @@ class SystemAdministratorHandler( RequestHandler ):
     infoResult = gComponentInstaller.getInfo( getCSExtensions() )
     if infoResult['OK']:
       # the infoResult value is {"Extensions":{'a1':'v1',a2:'v2'}; we convert to a string
-      result.update( {"Extension":";".join( ["%s:%s" % ( key, value ) for ( key, value ) in infoResult["Value"].get( 'Extensions' ).iteritems()] )} )
+      result.update( {"Extensions":";".join( ["%s:%s" % ( key, value ) for ( key, value ) in infoResult["Value"].get( 'Extensions' ).iteritems()] )} )
 
     # Host certificate properties
     certFile, _keyFile = getHostCertificateAndKeyLocation()
@@ -647,6 +647,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     fields = result[ 'Value' ]
     fields[ 'Timestamp' ] = datetime.utcnow()
+    fields[ 'Extension' ] = fields[ 'Extensions' ]
     client = ComponentMonitoringClient()
     result = client.updateLog( socket.getfqdn(), fields )
     if not result[ 'OK' ]:
