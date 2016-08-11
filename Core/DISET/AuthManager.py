@@ -5,6 +5,7 @@ __RCSID__ = "$Id$"
 
 import types
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForVO
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Security import Properties
@@ -142,7 +143,6 @@ class AuthManager( object ):
       return False
     credDict[ self.KW_USERNAME ] = retVal[ 'Value' ]
     credDict[ self.KW_PROPERTIES ] = CS.getPropertiesForHost( credDict[ self.KW_USERNAME ], [] )
-    credDict[ self.KW_PROPERTIES ].append( 'Host' )
     return True
 
   def getValidPropertiesForMethod( self, method, defaultProperties = False ):
@@ -233,6 +233,24 @@ class AuthManager( object ):
     :param validProps: List of valid properties
     :return: Boolean specifying whether any property has matched the valid ones
     """
+
+    # Prepare and check the valid group list
+    validGroups = []
+    for property in list( validProps ):
+      if property.startswith( 'group:' ):
+        validProps.remove( property )
+        property = property.replace( 'group:', '' )
+        validGroups.append( property )
+      elif property.startswith( 'vo:' ):
+        validProps.remove( property )
+        vo = property.replace( 'vo:', '' )
+        result = getGroupsForVO( vo )
+        if result['OK']:
+          validGroups.extend( result['Value'] )
+
+    if validGroups and not credDict[ self.KW_GROUP ] in validGroups:
+      return []
+
     #HACK: Map lower case properties to properties to make the check in lowercase but return the proper case
     if not caseSensitive:
       validProps = dict( ( prop.lower(), prop ) for prop in validProps )
