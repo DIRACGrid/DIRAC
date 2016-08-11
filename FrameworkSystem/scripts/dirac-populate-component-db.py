@@ -189,10 +189,11 @@ for host in finalSet:
 monitoringClient = ComponentMonitoringClient()
 
 # Add the installations to the database
+
 for record in records:
   result = MonitoringUtilities.monitorInstallation(
       record[ 'Component' ][ 'Type' ], record[ 'Component' ][ 'System' ],
-      record[ 'Component' ][ 'Module' ], record[ 'Installation' ][ 'Instance'],
+      record[ 'Installation' ][ 'Instance'], record[ 'Component' ][ 'Module' ],
       record[ 'Host' ][ 'CPU' ], record[ 'Host' ][ 'HostName' ] )
   if not result[ 'OK' ]:
     gLogger.error( result[ 'Message' ] )
