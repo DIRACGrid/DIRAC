@@ -142,6 +142,7 @@ class AuthManager( object ):
       return False
     credDict[ self.KW_USERNAME ] = retVal[ 'Value' ]
     credDict[ self.KW_PROPERTIES ] = CS.getPropertiesForHost( credDict[ self.KW_USERNAME ], [] )
+    credDict[ self.KW_PROPERTIES ].append( 'Host' )
     return True
 
   def getValidPropertiesForMethod( self, method, defaultProperties = False ):
