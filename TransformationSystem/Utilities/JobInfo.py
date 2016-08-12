@@ -1,7 +1,6 @@
 """Job Information"""
 
 from itertools import izip_longest
-import re
 
 __RCSID__ = "$Id$"
 
