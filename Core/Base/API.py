@@ -87,7 +87,7 @@ class API( object ):
       return self._errorReport( 'No proxy found in local environment', res['Message'] )
     proxyInfo = res['Value']
     gLogger.debug( formatProxyInfoAsString( proxyInfo ) )
-    if 'group 'not in proxyInfo:
+    if 'group' not in proxyInfo:
       return self._errorReport( 'Proxy information does not contain the group', res['Message'] )
     res = getDNForUsername( proxyInfo['username'] )
     if not res['OK']:

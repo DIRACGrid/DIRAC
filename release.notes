@@ -8,6 +8,32 @@ CHANGE: dirac-install, dirac-configure - use Extensions options consistently, dr
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 
+[v6r15p12]
+
+*Core
+FIX: Graphs - make sure matplotlib package is always using Agg backend
+FIX: cshrc - added protection for cases with undefined environment variables
+NEW: AuthManager - added possibility to define authorization rules by VO
+     and by user group
+
+*Configuration
+NEW: Resources, ComputingElement(Factory) - added possibility to define site-wide
+     CE parameters; added possibility to define common parameters for a given
+     CE type.
+
+*Framework
+FIX: SystemAdministrator service - avoid using its own client to connect
+     to itself for storing host information
+FIX: SystemAdministratorClientCLI, dirac-populate-component-db - fix insertion
+     of wrongly configured component to the ComponentMonitorDB     
+
+*DMS
+FIX: FileCatalog service - fix the argument type for getAncestor(), getDescendents()
+
+*Resources
+CHANGE: HTCondorCE - added new configurable options - ExtraSubmitString, WorkingDirectory
+        DaysToKeepLogs
+
 [v6r15p11]
 
 *Framework
