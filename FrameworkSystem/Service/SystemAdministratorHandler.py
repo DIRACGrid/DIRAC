@@ -551,6 +551,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     infoResult = gComponentInstaller.getInfo( getCSExtensions() )
     if infoResult['OK']:
+      result.update( infoResult['Value'] )
       # the infoResult value is {"Extensions":{'a1':'v1',a2:'v2'}; we convert to a string
       result.update( {"Extensions":";".join( ["%s:%s" % ( key, value ) for ( key, value ) in infoResult["Value"].get( 'Extensions' ).iteritems()] )} )
 
