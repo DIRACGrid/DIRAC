@@ -36,6 +36,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
 from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
+from ILCDIRAC.Interfaces.API.DiracILC import DiracILC
 
 __RCSID__ = "$Id$"
 
@@ -67,6 +68,7 @@ class DataRecoveryAgent(AgentModule):
     self.fcClient = FileCatalogClient()
     self.tClient = TransformationClient()
     self.reqClient = ReqClient()
+    self.diracILC = DiracILC()
     self.inputFilesProcessed = set()
     self.todo = {'MCGeneration':
                  [dict(Message="MCGeneration: OutputExists: Job 'Done'",
@@ -354,7 +356,7 @@ class DataRecoveryAgent(AgentModule):
           if job.pendingRequest:
             self.log.warn("Job has Pending requests:\n%s" % job)
             break
-          job.getJobInformation(self.jobMon)
+          job.getJobInformation(self.diracILC)
           job.checkFileExistance(self.fcClient)
           if tasksDict and lfnTaskDict:
             try:

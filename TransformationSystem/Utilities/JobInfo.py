@@ -68,12 +68,12 @@ class JobInfo(object):
     """check if some files are missing and therefore some files exist """
     return not (self.allFilesExist() or self.allFilesMissing())
 
-  def getJobInformation(self, jobMon):
+  def getJobInformation(self, dILC):
     """get all the information for the job"""
-    jdlList = self.__getJDL(jobMon)
-    self.__getOutputFiles(jdlList)
-    self.__getTaskID(jdlList)
-    self.__getInputFile(jdlList)
+    jdlParameters = self.__getJDL(dILC)
+    self.__getOutputFiles(jdlParameters)
+    self.__getTaskID(jdlParameters)
+    self.__getInputFile(jdlParameters)
 
   def getTaskInfo(self, tasksDict, lfnTaskDict):
     """extract the task information from the taskDict"""
@@ -123,32 +123,27 @@ class JobInfo(object):
       request = result['Value']['Successful'][self.jobID]
       self.pendingRequest = request.Status not in ("Done", "Canceled")
 
-  def __getJDL(self, jobMon):
-    """return jdlList for this job"""
-    res = jobMon.getJobJDL(int(self.jobID), False)
+  def __getJDL(self, dILC):
+    """return jdlParameterDictionary for this job"""
+    res = dILC.getJobJDL(int(self.jobID))
     if not res['OK']:
       raise RuntimeError("Failed to get jobJDL: %s" % res['Message'])
-    jdlString = res['Value']
-    jdlList = jdlString.split('\n')
-    return jdlList
+    jdlParameters = res['Value']
+    return jdlParameters
 
-  def __getOutputFiles(self, jdlList):
+  def __getOutputFiles(self, jdlParameters):
     """get the Production Outputfiles for the given Job"""
-    if 'ProductionOutputData = "' in "".join(jdlList):
-      lfns = JobInfo.__getSingleLFN(jdlList)
-    else:
-      lfns = JobInfo.__getMultiLFN(jdlList)
+    lfns = jdlParameters.get('ProductionOutputData', [])
+    if isinstance(lfns, basestring):
+      lfns = [lfns]
     self.outputFiles = lfns
 
-  def __getInputFile(self, jdlList):
+  def __getInputFile(self, jdlParameters):
     """get the Inputdata for the given job"""
-    for val in jdlList:
-      if 'InputData' in val:
-        lfn = re.search('".*"', val)
-        lfn = lfn.group(0).strip('"')
-        self.inputFile = lfn
+    lfn = jdlParameters.get('InputData', None)
+    self.inputFile = lfn
 
-  def __getTaskID(self, jdlList):
+  def __getTaskID(self, jdlParameters):
     """get the taskID """
     for val in jdlList:
       if 'TaskID' in val:
