@@ -20,6 +20,10 @@ FIX: SystemAdministratorClientCLI, dirac-populate-component-db - fix insertion
 *DMS
 FIX: FileCatalog service - fix the argument type for getAncestor(), getDescendents()
 
+*WMS
+NEW: JobCleaningAgent - add an option (disabled by default) to remove Jobs from the 
+     dirac server irrespective of their state
+
 *Resources
 CHANGE: HTCondorCE - added new configurable options - ExtraSubmitString, WorkingDirectory
         DaysToKeepLogs
