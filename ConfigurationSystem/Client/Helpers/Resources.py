@@ -69,7 +69,6 @@ def getFTS2ServersForSites( siteList = None ):
 
 def getFTS3Servers():
   """ get FTSServers for sites
-  :param list siteList: list of sites
   """
 
   csPath = cfgPath( gBaseResourcesSection, "FTSEndpoints/FTS3" )
@@ -160,7 +159,6 @@ def getQueue( site, ce, queue ):
   return S_OK( resultDict )
 
 
-
 def getQueues( siteList = None, ceList = None, ceTypeList = None, community = None, mode = None ):
   """ Get CE/queue options according to the specified selection
   """
@@ -184,6 +182,10 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
         comList = gConfig.getValue( '/Resources/Sites/%s/%s/VO' % ( grid, site ), [] )
         if comList and not community in comList:
           continue
+      siteCEParameters = {}
+      result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs' % ( grid, site ) )
+      if result['OK']:
+        siteCEParameters = result['Value']
       result = gConfig.getSections( '/Resources/Sites/%s/%s/CEs' % ( grid, site ) )
       if not result['OK']:
         continue
@@ -197,14 +199,17 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
           ceType = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/CEType' % ( grid, site, ce ), '' )
           if not ceType or not ceType in ceTypeList:
             continue
+        if ceList is not None and not ce in ceList:
+          continue
         if community:
           comList = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/VO' % ( grid, site, ce ), [] )
           if comList and not community in comList:
             continue
+        ceOptionsDict = dict( siteCEParameters )
         result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( grid, site, ce ) )
         if not result['OK']:
           continue
-        ceOptionsDict = result['Value']
+        ceOptionsDict.update( result['Value'] )
         result = gConfig.getSections( '/Resources/Sites/%s/%s/CEs/%s/Queues' % ( grid, site, ce ) )
         if not result['OK']:
           continue

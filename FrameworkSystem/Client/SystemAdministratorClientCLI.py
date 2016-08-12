@@ -541,12 +541,6 @@ class SystemAdministratorClientCLI( CLI ):
       gLogger.notice( self.do_install.__doc__ )
       return
 
-    # Retrieve user installing the component
-    result = getProxyInfo()
-    if not result[ 'OK' ]:
-      self._errMsg( result[ 'Message'] )
-    user = result[ 'Value' ][ 'username' ]
-
     option = argss[0]
     del argss[0]
     if option == "mysql":
@@ -634,6 +628,7 @@ class SystemAdministratorClientCLI( CLI ):
 
       specialOptions = {}
       module = ''
+     
       for i in range(len(argss)):
         if argss[i] == "-m":
           specialOptions['Module'] = argss[i+1]
@@ -653,11 +648,15 @@ class SystemAdministratorClientCLI( CLI ):
         self._errMsg( result['Message'] )
         return
       hostSetup = result['Value']['Setup']
-
+    
       # Install Module section if not yet there
       if module:
         result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, module,
                                                             getCSExtensions(), hostSetup )
+        # in case of Error we must stop, this can happen when the module name is wrong...
+        if not result['OK']:
+          self._errMsg( result['Message'] )
+          return
         # Add component section with specific parameters only
         result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, component,
                                                             getCSExtensions(), hostSetup, specialOptions,
@@ -706,6 +705,7 @@ class SystemAdministratorClientCLI( CLI ):
         if not result['OK']:
           self._errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
           return
+      
       result = MonitoringUtilities.monitorInstallation( option, system, component, module, cpu = cpu, hostname = hostname )
       if not result['OK']:
         self._errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
