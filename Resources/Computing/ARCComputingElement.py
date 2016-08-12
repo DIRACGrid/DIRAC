@@ -8,7 +8,7 @@
     Using the ARC API now
 """
 
-__RCSID__ = "58c42fc (2013-07-07 22:54:57 +0200) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
+__RCSID__ = "$Id$"
 
 import os
 import stat
