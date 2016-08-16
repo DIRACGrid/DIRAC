@@ -1,17 +1,22 @@
 import unittest
 import datetime
 import json
+import string
 from mock import MagicMock
 
+
 from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import ReplicateAndRegister
+from DIRAC.DataManagementSystem.Agent.RequestOperations.MoveReplica import MoveReplica
 from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.Request import Request
 
 class ReqOpsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
   """
   def setUp( self ):
     fcMock = MagicMock()
-    ftsMock = MagicMock
+    ftsMock = MagicMock()
 
     self.rr = ReplicateAndRegister()
     self.rr.fc = fcMock
@@ -21,6 +26,125 @@ class ReqOpsTestCase( unittest.TestCase ):
     pass
 
 #############################################################################
+class MoveReplicaSuccess( ReqOpsTestCase ):
+
+    def setUp(self):
+      self.op = Operation()
+      self.op.Type = "MoveFile"
+      self.op.SourceSE = "%s,%s" % ( "sourceSE1", "sourceSE2" )
+      self.op.TargetSE = "%s,%s" % ( "targetSE1", "targetSE2" )
+
+      self.File = File()
+      self.File.LFN = '/cta/file1'
+      self.File.Size = 2L
+      self.File.Checksum = '011300a2'
+      self.File.ChecksumType = "adler32"
+      self.op.addFile( self.File )
+
+      self.req = Request()
+      self.req.addOperation( self.op )
+      self.mr = MoveReplica( self.op )
+
+      self.mr.dm = MagicMock()
+      self.mr.fc = MagicMock()
+
+    # This test needs to be fixed. It currently fails because StorageElement is not mocked
+    '''def test__dmTransfer( self ):
+
+      successful = {}
+      for sourceSE in self.op.sourceSEList:
+        successful[sourceSE] = 'dips://' + string.lower(sourceSE) + ':9148/DataManagement/StorageElement' + self.File.LFN
+
+      res = {'OK': True, 'Value': {'Successful': {self.File.LFN : successful}, 'Failed': {}}}
+      self.mr.dm.getActiveReplicas.return_value = res
+
+      res = {'OK': True, 'Value': {'Successful': {self.File.LFN : {'register': 0.1228799819946289, 'replicate': 9.872732877731323}}, 'Failed': {}}}
+      self.mr.dm.replicateAndRegister.return_value = res
+
+      res = self.mr.dmTransfer( self.File )
+      self.assertTrue( res['OK'] )
+
+      self.assertEqual( self.mr.operation.__files__[0].Status, 'Waiting' )
+      self.assertEqual( self.mr.operation.Status, 'Waiting' )
+      self.assertEqual( self.mr.request.Status, 'Waiting' )'''
+
+    def test__dmRemoval( self ):
+
+      res = {'OK': True, 'Value': {'Successful': { self.File.LFN : {'DIRACFileCatalog': True}}, 'Failed': {}}}
+      self.mr.dm.removeReplica.return_value = res
+
+      toRemoveDict = {self.File.LFN: self.File}
+      targetSEs = self.op.sourceSEList
+
+      res = self.mr.dmRemoval( toRemoveDict, targetSEs )
+      self.assertTrue( res['OK'] )
+
+      resvalue = dict( [ ( targetSE, '' ) for targetSE in targetSEs ] )
+      self.assertEqual( res['Value'], {self.File.LFN: resvalue} )
+
+      self.assertEqual( self.mr.operation.__files__[0].Status, 'Done' )
+      self.assertEqual( self.mr.operation.Status, 'Done' )
+      self.assertEqual( self.mr.request.Status, 'Done' )
+
+class MoveReplicaFailure( ReqOpsTestCase ):
+
+    def setUp( self ):
+      self.op = Operation()
+      self.op.Type = "MoveReplica"
+      self.op.SourceSE = "%s,%s" % ( "sourceSE1", "sourceSE2" )
+      self.op.TargetSE = "%s,%s" % ( "targetSE1", "targetSE2" )
+
+      self.File = File()
+      self.File.LFN = '/cta/file1'
+      self.File.Size = 2L
+      self.File.Checksum = '011300a2'
+      self.File.ChecksumType = "adler32"
+      self.op.addFile( self.File )
+
+      self.req = Request()
+      self.req.addOperation( self.op )
+      self.mr = MoveReplica( self.op )
+
+      self.mr.dm = MagicMock()
+      self.mr.fc = MagicMock()
+
+    def test__dmTransfer( self ):
+
+      successful = {}
+      for sourceSE in self.op.sourceSEList:
+        successful[sourceSE] = 'dips://' + string.lower( sourceSE ) + ':9148/DataManagement/StorageElement' + self.File.LFN
+
+      res = {'OK': True, 'Value': {'Successful': successful, 'Failed': {}}}
+      self.mr.dm.getActiveReplicas.return_value = res
+
+      res =  {'OK': True, 'Value': {'Successful': {}, 'Failed': {self.File.LFN : 'Unable to replicate file'}}}
+      self.mr.dm.replicateAndRegister.return_value = res
+
+      res = self.mr.dmTransfer( self.File )
+      self.assertFalse( res['OK'] )
+
+      self.assertEqual( self.mr.operation.__files__[0].Status, 'Waiting' )
+      self.assertEqual( self.mr.operation.Status, 'Waiting' )
+      self.assertEqual( self.mr.request.Status, 'Waiting' )
+
+
+    def test__dmRemoval( self ):
+
+      res =  {'OK': True, 'Value': {'Successful': {}, 'Failed': {self.File.LFN: 'Write access not permitted for this credential'}}}
+      self.mr.dm.removeReplica.return_value = res
+
+      toRemoveDict = {self.File.LFN: self.File}
+      targetSEs = self.op.sourceSEList
+
+      res = self.mr.dmRemoval( toRemoveDict, targetSEs )
+      self.assertTrue( res['OK'] )
+
+      resvalue = dict( [ ( targetSE, 'Write access not permitted for this credential' ) for targetSE in targetSEs ] )
+      self.assertEqual( res['Value'], {self.File.LFN: resvalue} )
+
+      self.assertEqual( self.mr.operation.__files__[0].Status, 'Waiting' )
+      self.assertEqual( self.mr.operation.Status, 'Waiting' )
+      self.assertEqual( self.mr.request.Status, 'Waiting' )
 
 class ReplicateAndRegisterSuccess( ReqOpsTestCase ):
 
@@ -69,4 +193,7 @@ class ReplicateAndRegisterSuccess( ReqOpsTestCase ):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ReqOpsTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ReplicateAndRegisterSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MoveReplicaSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MoveReplicaFailure ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+
