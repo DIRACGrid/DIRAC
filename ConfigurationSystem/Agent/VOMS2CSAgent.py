@@ -15,6 +15,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getUs
                                                               getVOMSRoleGroupMapping, getUsersInVO, \
                                                               getAllUsers
 from DIRAC.Core.Utilities.Proxy                        import executeWithUserProxy
+from DIRAC.Core.Utilities.List                         import fromChar
 
 __RCSID__ = "$Id$"
 
@@ -33,7 +34,8 @@ class VOMS2CSAgent( AgentModule ):
 
     self.autoAddUsers = False
     self.autoModifyUsers = False
-
+    self.autoDeleteUsers = False
+    self.detailedReport = True
 
   def initialize( self ):
     """ Initialize the default parameters
@@ -54,6 +56,8 @@ class VOMS2CSAgent( AgentModule ):
     self.dryRun = self.am_getOption( 'DryRun', self.dryRun )
     self.autoAddUsers = self.am_getOption( 'AutoAddUsers', self.autoAddUsers )
     self.autoModifyUsers = self.am_getOption( 'AutoModifyUsers', self.autoModifyUsers )
+    self.autoDeleteUsers = self.am_getOption( 'AutoDeleteUsers', self.autoDeleteUsers )
+    self.detailedReport = self.am_getOption( 'DetailedReport', self.detailedReport )
 
     return S_OK()
 
@@ -155,9 +159,12 @@ class VOMS2CSAgent( AgentModule ):
     newDNs = []
     for user in diracUserDict:
       dn = diracUserDict[user]['DN']
-      existingDNs.append( dn )
-      if dn not in vomsUserDict:
-        obsoletedDNs.append( dn )
+      # We can have users with more than one DN registered
+      dnList = fromChar( dn )
+      existingDNs.extend( dnList )
+      for dn in dnList:
+        if dn not in vomsUserDict:
+          obsoletedDNs.append( dn )
 
     for dn in vomsUserDict:
       if dn not in existingDNs:
@@ -180,18 +187,28 @@ class VOMS2CSAgent( AgentModule ):
         for user in nonVOUserDict:
           if dn == nonVOUserDict[user]['DN']:
             diracName = user
+
+        # Check the nickName in the same VO to see if the user is already registered
+        # with another DN
+        nickName = ''
+        newDNForExistingUser = ''
+        result = vomsSrv.attGetUserNickname( dn, vomsUserDict[dn]['CA'] )
+        if result['OK']:
+          nickName = result['Value']
+        if nickName in diracUserDict:
+          diracName = nickName
+          # This is a flag for adding the new DN to an already existing user
+          newDNForExistingUser = dn
+
         # We have a real new user
         if not diracName:
-          nickName = ''
-          result = vomsSrv.attGetUserNickname( dn, vomsUserDict[dn]['CA'] )
-          if result['OK']:
-            nickName = result['Value']
 
           if nickName:
             newDiracName = nickName
           else:
             newDiracName = getUserName( dn, vomsUserDict[dn]['mail'] )
 
+          # If the chosen user name exists already, append a distinguishing suffix
           ind = 1
           trialName = newDiracName
           while newDiracName in allDiracUsers:
@@ -219,6 +236,8 @@ class VOMS2CSAgent( AgentModule ):
 
         # We have an already existing user
         userDict = { "DN": dn, "CA": vomsUserDict[dn]['CA'], "Email": vomsUserDict[dn]['mail'] }
+        if newDNForExistingUser:
+          userDict['DN'] = ','.join( [ dn, diracUserDict[diracName]['DN'] ] )
         nonVOGroups = nonVOUserDict.get( diracName, {} ).get( 'Groups', [] )
         existingGroups = diracUserDict.get( diracName, {} ).get( 'Groups', [] )
         groupsWithRole = []
@@ -246,15 +265,25 @@ class VOMS2CSAgent( AgentModule ):
     # Check if there are potentially obsoleted users
     oldUsers = set()
     for user in diracUserDict:
-      dn = diracUserDict[user]['DN']
-      if not dn in vomsUserDict and not user in nonVOUserDict:
+      dnSet = set( fromChar( diracUserDict[user]['DN'] ) )
+      if not dnSet.intersection( set( vomsUserDict.keys() ) ) and not user in nonVOUserDict:
         for group in diracUserDict[user]['Groups']:
-          if not group in noVOMSGroups:
+          if group not in noVOMSGroups:
             oldUsers.add( user )
+
     if oldUsers:
       self.voChanged = True
-      self.__adminMsgs[ 'Info' ].append( 'The following users to be checked for deletion: %s' % str( oldUsers ) )
-      self.log.info( 'The following users to be checked for deletion: %s' % str( oldUsers ) )
+      if self.autoDeleteUsers:
+        self.log.info( 'The following users will be deleted: %s' % str( oldUsers ) )
+        result = self.csapi.deleteUsers( oldUsers )
+        if result['OK']:
+          self.__adminMsgs[ 'Info' ].append( 'The following users deleted from CS: %s' % str( oldUsers ) )
+        else:
+          self.__adminMsgs[ 'Errors' ].append( 'Error in deleting users from CS: %s' % str( oldUsers ) )
+          self.log.error( 'Error while user deletion from CS', result )
+      else:
+        self.__adminMsgs[ 'Info' ].append( 'The following users to be checked for deletion: %s' % str( oldUsers ) )
+        self.log.info( 'The following users to be checked for deletion: %s' % str( oldUsers ) )
 
     return S_OK()
 
@@ -327,10 +356,16 @@ def getUserNameFromDN( dn ):
   :param str dn: user DN
   :return str: user name
   """
-
+  # Weird case of just a name as DN !
+  if '/' not in dn:
+    dn = 'CN=' + dn
   for entry in dn.split( '/' ):
     if entry:
-      key, value = entry.split( '=' )
+      # Weird case of no field name !
+      if '=' not in entry:
+        key, value = "CN", entry
+      else:
+        key, value = entry.split( '=' )
       if key.upper() == 'CN':
         ind = value.find( "(" )
         # Strip of possible words in parenthesis in the name
