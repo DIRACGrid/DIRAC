@@ -80,6 +80,12 @@ class VOMS2CSAgent( AgentModule ):
       if not result['OK']:
         self.log.error( 'Failed to perform VOMS to CS synchronization:', 'VO %s: %s' % ( vo, result["Message"] ) )
         continue
+      resultDict = result['Value']
+      newUsers = resultDict.get( "NewUsers", [] )
+      modUsers = resultDict.get( "ModifiedUsers", [] )
+      delUsers = resultDict.get( "DeletedUsers", [] )
+      self.log.info( "Run results: new users %d, modified users %d, deleted users %d" % \
+                     ( len( newUsers ), len( modUsers ), len( delUsers ) ) )
 
       if self.csapi.csModified:
         # We have accumulated all the changes, commit them now
