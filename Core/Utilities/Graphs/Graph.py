@@ -291,7 +291,7 @@ class Graph(object):
     prefs = self.prefs
     
     try:
-      import Image as PILImage, ImageEnhance as PILImageEnhance
+      from PIL import Image, ImageEnhance
     except ImportError:
       return
     
@@ -302,8 +302,8 @@ class Graph(object):
     if not imagePath: return
     
     try:
-      i = PILImage.open( imagePath )
-      enh = PILImageEnhance.Contrast( i )
+      image = Image.open( imagePath )
+      enh = ImageEnhance.Contrast( image )
       i = enh.enhance( .1 )
       img_size = i.size
       resize = 1.0
