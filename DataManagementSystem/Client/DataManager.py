@@ -499,7 +499,6 @@ class DataManager( object ):
 
       # We don't consider it a failure if the SE is not valid
       if not DErrno.cmpError( res, errno.EACCES ):
-        errStr = "Failed to put file to Storage Element."
         oDataOperation.setValueByKey( 'TransferOK', 0 )
         oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
         oDataOperation.setEndTime()
@@ -507,6 +506,7 @@ class DataManager( object ):
         gDataStoreClient.commit()
         startTime = time.time()
         log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
+      errStr = "Failed to put file to Storage Element."
       log.debug( errStr, "%s: %s" % ( fileName, res['Message'] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     successful[lfn] = {'put': putTime}

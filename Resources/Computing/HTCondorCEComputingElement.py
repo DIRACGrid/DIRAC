@@ -101,15 +101,14 @@ class HTCondorCEComputingElement( ComputingElement ):
 
     """
 
-    initialDir = os.path.dirname( self.workingDirectory )
     self.log.debug( "Working directory: %s " % self.workingDirectory )
     ##We randomize the location of the pilotoutput and log, because there are just too many of them
     pre1 = makeGuid()[:3]
     pre2 = makeGuid()[:3]
-    mkDir( os.path.join( initialDir, pre1, pre2 ) )
+    mkDir( os.path.join( self.workingDirectory, pre1, pre2 ) )
     initialDirPrefix = "%s/%s" %( pre1, pre2 )
 
-    self.log.debug( "InitialDir: %s" % os.path.join(initialDir,initialDirPrefix) )
+    self.log.debug( "InitialDir: %s" % os.path.join( self.workingDirectory, initialDirPrefix ) )
 
     fd, name = tempfile.mkstemp( suffix = '.sub', prefix = 'HTCondorCE_', dir = self.workingDirectory )
     subFile = os.fdopen( fd, 'w' )
@@ -138,7 +137,7 @@ Queue %(nJobs)s
             nJobs=nJobs,
             ceName=self.ceName,
             extraString=self.extraSubmitString,
-            initialDir=os.path.join(initialDir,initialDirPrefix),
+            initialDir=os.path.join( self.workingDirectory, initialDirPrefix ),
           )
     subFile.write( sub )
     subFile.close()
