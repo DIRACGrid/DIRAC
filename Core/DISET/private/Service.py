@@ -3,6 +3,8 @@ import os
 import time
 import DIRAC
 import threading
+from concurrent.futures import ThreadPoolExecutor
+
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities import Time, MemStat
@@ -12,7 +14,6 @@ from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, MessageSender
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
@@ -69,10 +70,8 @@ class Service( object ):
     #Initialize lock manager
     self._lockManager = LockManager( self._cfg.getMaxWaitingPetitions() )
     self._initMonitoring()
-    self._threadPool = ThreadPool( max( 1, self._cfg.getMinThreads() ),
-                                   max( 0, self._cfg.getMaxThreads() ),
-                                   self._cfg.getMaxWaitingPetitions() )
-    self._threadPool.daemonize()
+    self._threadPool = ThreadPoolExecutor( max( 0, self._cfg.getMaxThreads() ) )
+    
     self._msgBroker = MessageBroker( "%sMSB" % self._name, threadPool = self._threadPool )
     #Create static dict
     self._serviceInfoDict = { 'serviceName' : self._name,
@@ -240,8 +239,9 @@ class Service( object ):
     return S_OK()
 
   def __reportThreadPoolContents( self ):
-    self._monitor.addMark( 'PendingQueries', self._threadPool.pendingJobs() )
-    self._monitor.addMark( 'ActiveQueries', self._threadPool.numWorkingThreads() )
+    
+    self._monitor.addMark( 'PendingQueries', self._threadPool._work_queue.qsize() )
+    self._monitor.addMark( 'ActiveQueries', len( self._threadPool._threads ) )
     self._monitor.addMark( 'RunningThreads', threading.activeCount() )
     self._monitor.addMark( 'MaxFD', self.__maxFD )
     self.__maxFD = 0
@@ -255,8 +255,8 @@ class Service( object ):
   def handleConnection( self, clientTransport ):
     self._stats[ 'connections' ] += 1
     self._monitor.setComponentExtraParam( 'queries', self._stats[ 'connections' ] )
-    self._threadPool.generateJobAndQueueIt( self._processInThread,
-                                             args = ( clientTransport, ) )
+    
+    self._threadPool.submit(self._processInThread, clientTransport )
 
   #Threaded process function
   def _processInThread( self, clientTransport ):

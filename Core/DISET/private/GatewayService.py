@@ -1,21 +1,16 @@
 
-import os
 import cStringIO
-import DIRAC
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import List, Time
+
+from concurrent.futures import ThreadPoolExecutor
+
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, getGlobalMessageBroker
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Security.X509Chain import X509Chain
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
@@ -39,10 +34,8 @@ class GatewayService( Service ):
     gLogger.verbose( "Service URL is %s" % self._url )
     #Discover Handler
     self._initMonitoring()
-    self._threadPool = ThreadPool( 1,
-                                    max( 0, self._cfg.getMaxThreads() ),
-                                    self._cfg.getMaxWaitingPetitions() )
-    self._threadPool.daemonize()
+    self._threadPool = ThreadPoolExecutor( max( 0, self._cfg.getMaxThreads() ) ) 
+    
     self._msgBroker = MessageBroker( "%sMSB" % GatewayService.GATEWAY_NAME, threadPool = self._threadPool )
     self._msgBroker.useMessageObjects( False )
     getGlobalMessageBroker().useMessageObjects( False )
