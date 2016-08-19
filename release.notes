@@ -1,3 +1,11 @@
+[v6r15p13]
+
+*Resources
+FIX: HTCondorCEComputingElement - fixed location of log/output files 
+  
+*TS
+FIX: ValidateOutputDataAgent - works now with the DataManager shifter proxy
+
 [v6r15p12]
 
 *Core
