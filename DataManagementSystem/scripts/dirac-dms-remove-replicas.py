@@ -40,7 +40,7 @@ Usage:
     inputFile.close()
   else:
     lfns = [inputFileName]
-  for lfnList in breakListIntoChunks( sorted( lfns, True ), 500 ):
+  for lfnList in breakListIntoChunks( sorted( lfns, reverse=True ), 500 ):
     for storageElementName in storageElementNames:
       res = dm.removeReplica( storageElementName, lfnList )
       if not res['OK']:
