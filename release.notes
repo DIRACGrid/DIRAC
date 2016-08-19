@@ -8,6 +8,14 @@ CHANGE: dirac-install, dirac-configure - use Extensions options consistently, dr
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 
+[v6r15p13]
+
+*Resources
+FIX: HTCondorCEComputingElement - fixed location of log/output files 
+  
+*TS
+FIX: ValidateOutputDataAgent - works now with the DataManager shifter proxy
+
 [v6r15p12]
 
 *Core
