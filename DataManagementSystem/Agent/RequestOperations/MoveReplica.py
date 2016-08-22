@@ -6,98 +6,12 @@
 __RCSID__ = "$Id $"
 
 # # imports
-import re, os, string
+import os
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.Core.Utilities.Adler import compareAdler
-
-from DIRAC.DataManagementSystem.Client.DataManager                                import DataManager
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
-
-from DIRAC.Resources.Storage.StorageElement                                       import StorageElement
-from DIRAC.Resources.Catalog.FileCatalog                                          import FileCatalog
-
-def filterReplicas( opFile, logger = None, dataManager = None ):
-  """ filter out banned/invalid source SEs """
-
-  if logger is None:
-    logger = gLogger
-  if dataManager is None:
-    dataManager = DataManager()
-
-  log = logger.getSubLogger( "filterReplicas" )
-  ret = { "Valid" : [], "NoMetadata" : [], "Bad" : [], 'NoReplicas':[], 'NoPFN':[] }
-  replicas = dataManager.getActiveReplicas( opFile.LFN )
-
-  if not replicas["OK"]:
-    log.error( 'Failed to get active replicas', replicas["Message"] )
-    return replicas
-  reNotExists = re.compile( r".*such file.*" )
-  replicas = replicas["Value"]
-  failed = replicas["Failed"].get( opFile.LFN , "" )
-  if reNotExists.match( failed.lower() ):
-    opFile.Status = "Failed"
-    opFile.Error = failed
-    return S_ERROR( failed )
-
-  replicas = replicas["Successful"].get( opFile.LFN, {} )
-  noReplicas = False
-  if not replicas:
-    allReplicas = dataManager.getReplicas( opFile.LFN )
-    if allReplicas['OK']:
-      allReplicas = allReplicas['Value']['Successful'].get( opFile.LFN, {} )
-      if not allReplicas:
-        ret['NoReplicas'].append( None )
-        noReplicas = True
-      else:
-        # We try inactive replicas to see if maybe the file doesn't exist at all
-        replicas = allReplicas
-      log.warn( "File has no%s replica in File Catalog" % ( '' if noReplicas else ' active' ), opFile.LFN )
-    else:
-      return allReplicas
-
-  if not opFile.Checksum:
-    # Set Checksum to FC checksum if not set in the request
-    fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
-    fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum' )
-    # Replace opFile.Checksum if it doesn't match a valid FC checksum
-    if fcChecksum:
-      opFile.Checksum = fcChecksum
-      opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
-
-  for repSEName in replicas:
-    repSEMetadata = StorageElement( repSEName ).getFileMetadata( opFile.LFN )
-    error = repSEMetadata.get( 'Message', repSEMetadata.get( 'Value', {} ).get( 'Failed', {} ).get( opFile.LFN ) )
-    if error:
-      log.warn( 'unable to get metadata at %s for %s' % ( repSEName, opFile.LFN ), error.replace( '\n', '' ) )
-      if 'File does not exist' in error:
-        ret['NoReplicas'].append( repSEName )
-      else:
-        ret["NoMetadata"].append( repSEName )
-    elif not noReplicas:
-      repSEMetadata = repSEMetadata['Value']['Successful'][opFile.LFN]
-
-      seChecksum = repSEMetadata.get( "Checksum" )
-      if not seChecksum and opFile.Checksum:
-        opFile.Checksum = None
-        opFile.ChecksumType = None
-      elif seChecksum and not opFile.Checksum:
-        opFile.Checksum = seChecksum
-      if not opFile.Checksum or not seChecksum or compareAdler( seChecksum, opFile.Checksum ):
-        # # All checksums are OK
-        ret["Valid"].append( repSEName )
-      else:
-        log.warn( " %s checksum mismatch, FC: '%s' @%s: '%s'" % ( opFile.LFN,
-                                                              opFile.Checksum,
-                                                              repSEName,
-                                                              seChecksum ) )
-        ret["Bad"].append( repSEName )
-    else:
-      # If a replica was found somewhere, don't set the file as no replicas
-      ret['NoReplicas'] = []
-
-  return S_OK( ret )
+from DIRAC.DataManagementSystem.Client.ConsistencyInspector                       import ConsistencyInspector
 
 ####
 class MoveReplica( DMSRequestOperationsBase ):
@@ -133,15 +47,15 @@ class MoveReplica( DMSRequestOperationsBase ):
     gMonitor.registerActivity( "RemoveReplicaFail", "Failed replica removals",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
-    # Clients
-    self.fc = FileCatalog()
+    # Init ConsistencyInspector: used to check replicas
+    self.ci = ConsistencyInspector()
 
   def __call__( self ):
     """ call me maybe """
     # # check replicas first
-    checkReplicas = self.__checkReplicas()
-    if not checkReplicas["OK"]:
-      self.log.error( 'Failed to check replicas', checkReplicas["Message"] )
+    res = self.__checkReplicas()
+    if not res["OK"]:
+      self.log.error( 'Failed to check replicas', res["Message"] )
 
     sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
     if sourceSE:
@@ -207,6 +121,43 @@ class MoveReplica( DMSRequestOperationsBase ):
 
     return S_OK()
 
+  def __checkReplicas( self ):
+    """ check done replicas and update file states  """
+    waitingFiles = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation
+                          if opFile.Status in ( "Waiting", "Scheduled" ) ] )
+    targetSESet = set( self.operation.targetSEList )
+
+     # Check replicas
+    res = self.ci._getCatalogReplicas( waitingFiles.keys() )
+
+    if not res["OK"]:
+      self.log.error( 'Failed to get catalog replicas', res["Message"] )
+      return S_ERROR()
+
+    allReplicas = res['Value'][0]
+
+    replicas = self.ci.compareChecksum( waitingFiles.keys() )
+
+    if not replicas["OK"]:
+      self.log.error( 'Failed to check replicas', replicas["Message"] )
+      return S_ERROR()
+
+    replicas = replicas["Value"]
+    noReplicas = replicas['NoReplicas']
+
+    if noReplicas:
+      for lfn in noReplicas.keys():
+        self.log.error( "File %s doesn't exist" % lfn )
+        gMonitor.addMark( "ReplicateFail", len( targetSESet ) )
+        waitingFiles[lfn].Status = "Failed"
+
+    for lfn, reps in allReplicas.items():
+      if targetSESet.issubset( set( reps ) ):
+        self.log.info( "file %s has been replicated to all targets" % lfn )
+        waitingFiles[lfn].Status = "Done"
+
+    return S_OK()
+
   def dmRemoval(self, toRemoveDict, targetSEs ):
 
     gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
@@ -262,36 +213,6 @@ class MoveReplica( DMSRequestOperationsBase ):
 
     return S_OK(removalStatus)
 
-  def __checkReplicas( self ):
-    """ check done replicas and update file states  """
-    waitingFiles = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation
-                          if opFile.Status in ( "Waiting", "Scheduled" ) ] )
-
-    targetSESet = set( self.operation.targetSEList )
-    replicas = self.fc.getReplicas( waitingFiles.keys() )
-
-    if not replicas["OK"]:
-      self.log.error( 'Failed to get replicas', replicas["Message"] )
-      return replicas
-
-    reMissing = re.compile( r".*such file.*" )
-    for failedLFN, errStr in replicas["Value"]["Failed"].items():
-      waitingFiles[failedLFN].Error = errStr
-      if reMissing.search( errStr.lower() ):
-        self.log.error( "File does not exists", failedLFN )
-        gMonitor.addMark( "ReplicateFail", len( targetSESet ) )
-        waitingFiles[failedLFN].Status = "Failed"
-
-    for successfulLFN, reps in replicas["Value"]["Successful"].items():
-      if targetSESet.issubset( set( reps ) ):
-        self.log.info( "file %s has been replicated to all targets" % successfulLFN )
-
-    return S_OK()
-
-  def _filterReplicas( self, opFile ):
-    """ filter out banned/invalid source SEs """
-    return filterReplicas( opFile, logger = self.log, dataManager = self.dm )
-
   def dmTransfer( self, opFile ):
     """ replicate and register using dataManager  """
     # # get waiting files. If none just return
@@ -302,34 +223,64 @@ class MoveReplica( DMSRequestOperationsBase ):
     opFile.Error = ''
     lfn = opFile.LFN
 
-    # Check if replica is at the specified source
-    replicas = self._filterReplicas( opFile )
+    # Check replicas
+    res = self.ci._getCatalogReplicas( [lfn] )
+
+    if not res["OK"]:
+      self.log.error( 'Failed to get catalog replicas', res["Message"] )
+      return S_ERROR()
+
+    allReplicas = res['Value'][0]
+    replicas = self.ci.compareChecksum( [lfn] )
+
     if not replicas["OK"]:
       self.log.error( 'Failed to check replicas', replicas["Message"] )
       return S_ERROR()
-    replicas = replicas["Value"]
-    validReplicas = replicas["Valid"]
-    noMetaReplicas = replicas["NoMetadata"]
-    noReplicas = replicas['NoReplicas']
-    badReplicas = replicas['Bad']
-    noPFN = replicas['NoPFN']
 
-    if not validReplicas:
+    replicas = replicas["Value"]
+
+    validReplicas = []
+    noReplicas = replicas['NoReplicas']
+    missingAllReplicas = replicas["MissingAllReplicas"]
+    missingReplica = replicas["MissingReplica"]
+    someReplicasCorrupted = replicas["SomeReplicasCorrupted"]
+    allReplicasCorrupted = replicas["AllReplicasCorrupted"]
+
+    if noReplicas:
       gMonitor.addMark( "ReplicateFail" )
-      if noMetaReplicas:
-        self.log.warn( "unable to replicate '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
-        opFile.Error = "Couldn't get metadata"
-      elif noReplicas:
-        self.log.error( "Unable to replicate", "File %s doesn't exist at %s" % ( opFile.LFN, ','.join( noReplicas ) ) )
-        opFile.Error = 'No replicas found'
-        opFile.Status = 'Failed'
-      elif badReplicas:
-        self.log.error( "Unable to replicate", "%s, all replicas have a bad checksum at %s" % ( opFile.LFN, ','.join( badReplicas ) ) )
-        opFile.Error = 'All replicas have a bad checksum'
-        opFile.Status = 'Failed'
-      elif noPFN:
-        self.log.warn( "unable to replicate %s, could not get a PFN" % opFile.LFN )
+      self.log.error( "Unable to replicate", "File %s doesn't exist" % ( lfn ) )
+      opFile.Error = 'No replicas found'
+      opFile.Status = 'Failed'
       return S_ERROR()
+    elif missingAllReplicas:
+      gMonitor.addMark( "ReplicateFail" )
+      self.log.error( "Unable to replicate", "%s, all replicas are missing" % ( lfn ) )
+      opFile.Error = 'Missing all replicas'
+      opFile.Status = 'Failed'
+      return S_ERROR()
+    elif allReplicasCorrupted:
+      gMonitor.addMark( "ReplicateFail" )
+      self.log.error( "Unable to replicate", "%s, all replicas are corrupted" % ( lfn ) )
+      opFile.Error = 'All replicas corrupted'
+      opFile.Status = 'Failed'
+      return S_ERROR()
+    elif someReplicasCorrupted:
+      gMonitor.addMark( "ReplicateFail" )
+      self.log.error( "Unable to replicate", "%s, replicas corrupted at %s" % ( lfn, someReplicasCorrupted[lfn] ) )
+      opFile.Error = 'At least one replica corrupted'
+      opFile.Status = 'Failed'
+      return S_ERROR()
+    elif missingReplica:
+      gMonitor.addMark( "ReplicateFail" )
+      self.log.error( "Unable to replicate", "%s, missing replicas at %s" % ( lfn , missingReplica[lfn] ) )
+      opFile.Error = 'At least one missing replica'
+      opFile.Status = 'Failed'
+      return S_ERROR()
+
+    # Check if replica is at the specified source
+    for repSEName in allReplicas[lfn]:
+      validReplicas.append( repSEName )
+
     # # get the first one in the list
     if sourceSE not in validReplicas:
       if sourceSE:
