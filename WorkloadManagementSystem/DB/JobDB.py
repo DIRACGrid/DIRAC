@@ -45,6 +45,7 @@ __RCSID__ = "$Id$"
 import sys
 import operator
 
+from DIRAC.Core.Utilities                                    import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
 from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERROR
 from DIRAC.Core.Utilities                                    import Time
@@ -1462,6 +1463,8 @@ class JobDB( DB ):
     siteList = []
     if result['OK']:
       siteList = [ x[0] for x in result['Value']]
+    else:
+      return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     return S_OK( siteList )
 
@@ -1469,7 +1472,7 @@ class JobDB( DB ):
   def getSiteMaskStatus( self, sites = None ):
     """ Get the currently site mask status
     """
-    if type(sites) is list:
+    if isinstance(sites, list):
 
       cmd = "SELECT Site, Status FROM SiteMask WHERE"
       first = True
@@ -1481,13 +1484,19 @@ class JobDB( DB ):
           cmd += " OR Site='" + siteName + "'"
 
       result = self._query( cmd )
-      return S_OK( dict(result['Value']) )
+      if result['OK']:
+        return S_OK( dict(result['Value']) )
+      else:
+        return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
-    elif type(sites) is str:
+    elif isinstance(sites, basestring):
 
       cmd = "SELECT Status FROM SiteMask WHERE Site='%s'" % sites
       result = self._query( cmd )
-      return S_OK( result['Value'][0][0] )
+      if result['OK']:
+        return S_OK( result['Value'][0][0] )
+      else:
+        return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     else:
       cmd = "SELECT Site,Status FROM SiteMask"
@@ -1497,24 +1506,8 @@ class JobDB( DB ):
     if result['OK']:
       for site, status in result['Value']:
         siteDict[site] = status
-
-    return S_OK( siteDict )
-
-#############################################################################
-  def getAllSiteMaskStatus( self ):
-    """ Get the everything from site mask status
-    """
-    cmd = "SELECT Site,Status,LastUpdateTime,Author,Comment FROM SiteMask"
-
-    result = self._query( cmd )
-
-    if not result[ 'OK' ]:
-      return result[ 'Message' ]
-
-    siteDict = {}
-    if result['OK']:
-      for site, status, LastUpdateTime, Author, Comment in result['Value']:
-        siteDict[site] = status, LastUpdateTime, Author, Comment
+    else:
+      return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     return S_OK( siteDict )
 

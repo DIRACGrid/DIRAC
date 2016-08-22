@@ -64,14 +64,14 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
 ##############################################################################
-  types_getSiteMask = []
+  types_getSiteMask = [basestring]
   def export_getSiteMask(self, siteState = 'Active'):
     """ Get the site mask
     """
     return jobDB.getSiteMask( siteState )
 
 ##############################################################################
-  types_getSiteMaskStatus = []
+  types_getSiteMaskStatus = [basestring]
   def export_getSiteMaskStatus(self, sites = None):
     """ Get the site mask of given site(s)
     """
