@@ -1,7 +1,6 @@
 import unittest
 import datetime
 import json
-import string
 from mock import MagicMock
 
 
@@ -53,7 +52,7 @@ class MoveReplicaSuccess( ReqOpsTestCase ):
 
       successful = {}
       for sourceSE in self.op.sourceSEList:
-        successful[sourceSE] = 'dips://' + string.lower(sourceSE) + ':9148/DataManagement/StorageElement' + self.File.LFN
+        successful[sourceSE] = 'dips://' + sourceSE.lower() + ':9148/DataManagement/StorageElement' + self.File.LFN
 
       res = {'OK': True, 'Value': {'Successful': {self.File.LFN : successful}, 'Failed': {}}}
       self.mr.dm.getActiveReplicas.return_value = res
@@ -107,15 +106,19 @@ class MoveReplicaFailure( ReqOpsTestCase ):
 
       self.mr.dm = MagicMock()
       self.mr.fc = MagicMock()
+      self.mr.ci = MagicMock()
 
     def test__dmTransfer( self ):
 
       successful = {}
       for sourceSE in self.op.sourceSEList:
-        successful[sourceSE] = 'dips://' + string.lower( sourceSE ) + ':9148/DataManagement/StorageElement' + self.File.LFN
+        successful[sourceSE] = 'dips://' + sourceSE.lower() + ':9148/DataManagement/StorageElement' + self.File.LFN
 
-      res = {'OK': True, 'Value': {'Successful': successful, 'Failed': {}}}
-      self.mr.dm.getActiveReplicas.return_value = res
+      res = {'OK': True, 'Value': ({self.File.LFN: successful}, [])}
+      self.mr.ci._getCatalogReplicas.return_value = res
+
+      res = {'OK': True, 'Value': {'MissingAllReplicas': {}, 'NoReplicas': {}, 'MissingReplica': {}, 'SomeReplicasCorrupted': {}, 'AllReplicasCorrupted': {}}}
+      self.mr.ci.compareChecksum.return_value = res
 
       res =  {'OK': True, 'Value': {'Successful': {}, 'Failed': {self.File.LFN : 'Unable to replicate file'}}}
       self.mr.dm.replicateAndRegister.return_value = res
