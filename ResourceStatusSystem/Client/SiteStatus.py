@@ -179,7 +179,7 @@ class SiteStatus( object ):
     for siteName in siteNamesList:
 
       if self.rssFlag:
-        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )
+        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
       else:
         siteStatus = self.wmsAdministrator.getSiteMask()
 
