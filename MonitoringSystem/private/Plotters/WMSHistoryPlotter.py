@@ -1,9 +1,9 @@
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.MonitoringSystem.Client.Types.WMSHistory import WMSHistory
-from DIRAC.MonitoringSystem.private.Plotters.BaseReporter import BaseReporter
+from DIRAC                                                import S_OK, S_ERROR
+from DIRAC.MonitoringSystem.Client.Types.WMSHistory       import WMSHistory
+from DIRAC.MonitoringSystem.private.Plotters.BasePlotter  import BasePlotter
 
-class WMSHistoryPlotter( BaseReporter ):
+class WMSHistoryPlotter( BasePlotter ):
 
   _typeName = "WMSHistory"
   _typeKeyFields =  WMSHistory().getKeyFields() 
@@ -27,7 +27,7 @@ class WMSHistoryPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ],
                  'skipEdgeColor' : True,
                  'ylabel' : "jobs"  }
-    #plotInfo[ 'data' ] = self._fillWithZero( plotInfo[ 'granularity' ], reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], plotInfo[ 'data' ] )
+    #plotInfo[ 'data' ] = self._fillWithZero( plotInfo[ 'granularity' ], reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], plotInfo[ 'data' ] )    
     return self._generateStackedLinePlot( filename, plotInfo[ 'data' ], metadata )
 
 
