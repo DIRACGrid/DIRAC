@@ -941,7 +941,10 @@ EOF
           stampedPilotRefs = list( pilotRefs )
           break
 
-      result = ce.isProxyValid()
+      # This proxy is used for checking the pilot status and renewals
+      # We really need at least a few hours otherwise the renewed
+      # proxy may expire before we check again...
+      result = ce.isProxyValid( 3*3600 )
       if not result['OK']:
         result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, 23400 )
         if not result['OK']:
