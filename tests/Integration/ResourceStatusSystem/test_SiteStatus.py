@@ -1,5 +1,5 @@
 """ This is a test of the chain
-    SiteStatus ->  ResourceStatusClient -> JobDB
+    SiteStatus ->  ResourceStatusClient -> ResourceStatusDB
     It supposes that the DB is present, and that the service is running
 
     this is pytest!
