@@ -39,7 +39,7 @@ class ElasticSearchDB( object ):
     """
     global gDebugFile
     
-    if 'log' not in dir( self ):
+    if not hasattr( self, 'log' ):
       self.log = gLogger.getSubLogger( 'ElasticSearch' )
     self.logger = self.log
     
@@ -51,7 +51,7 @@ class ElasticSearchDB( object ):
       except IOError as e:
         self.log.error( e )
       
-    self.__client = Elasticsearch( self.__url )
+    self.__client = Elasticsearch( self.__url, timeout = 30 )
     self.__tryToConnect()
   
   ########################################################################
@@ -118,6 +118,7 @@ class ElasticSearchDB( object ):
         self.log.info( "Database info", result )
         self._connected = True
       else:
+        self._connected = False
         self.log.error( "Cannot connect to the database!" )
     except ConnectionError as e:
       self.log.error( e )
@@ -136,6 +137,7 @@ class ElasticSearchDB( object ):
     :param str indexName is the number of the index...
     :return S_OK or S_ERROR 
     """
+    result = []
     try:
       result = self.__client.indices.get_mapping( indexName )
     except Exception as e:
@@ -232,7 +234,10 @@ class ElasticSearchDB( object ):
           '_source': {}
       }
       body['_source'] = i
-      body['_source']['time'] = datetime.fromtimestamp( i.get( 'time', int( Time.toEpoch() ) ) )
+      try:
+        body['_source']['time'] = datetime.fromtimestamp( i.get( 'time', int( Time.toEpoch() ) ) )
+      except TypeError as e:
+        body['_source']['time'] = i.get( 'time' )
       docs += [body]
     try:
       res = helpers.bulk( self.__client, docs, chunk_size = self.__chunk_size )
