@@ -1,18 +1,44 @@
+"""
+It is a helper module used to create a certain plot...
+"""
+
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities  import Time
 from DIRAC                 import S_OK, S_ERROR
 
 class DBUtils ( object ):
+  
+  """ 
+  .. class:: DBUtils
+  
+  It implements few methods used to create the plots.
+  
+  param: list __units it is elasticsearch specific unites
+  param: list __unitvalues the units in second
+  param: list __esunits used to determine the buckets size  
+   
+  """
+  #TODO: Maybe it is better to use the same structure we have in BasePlotter
+  
   # 86400 seconds -> 1d
   # 604800 seconds -> 1w
   # 2592000 seconds -> 1m
   # 525600 minutes -> year
+  
   __units = ['minutes', 'day', 'week', 'month', 'year']
-  __unitsvalues = {'minutes': 30, 'day':86400, 'week':604800, 'month':2592000, 'year':86400 * 365}
-  __esUnits = {86400:( '30m', 60 * 30 ), 604800:( '3h', 3 * 3600 ), 2592000:( '12h', 12 * 3600 ), 86400 * 365:( '1w', 86400 * 7 ) }
+  __unitvalues = {'minutes': 30, 'day':86400, 'week':604800, 'month':2592000, 'year':86400 * 365}
+  __esunits = {86400:( '30m', 60 * 30 ), 604800:( '3h', 3 * 3600 ), 2592000:( '12h', 12 * 3600 ), 86400 * 365:( '1w', 86400 * 7 ) }
+  
   def __init__( self, db, setup ):
     self.__db = db
     self.__setup = setup
+    
+    """ c'tor
+    :param self: self reference
+    :param object the database module
+    :param str setup DIRAC setup
+    """
     
   def getKeyValues( self, typeName, condDict ):
     """
@@ -21,6 +47,9 @@ class DBUtils ( object ):
     return self.__db.getKeyValues( self.__setup, typeName, condDict )
   
   def _retrieveBucketedData( self, typeName, startTime, endTime, interval, selectFields, condDict = None, grouping = '', metadataDict = None):
+    """
+    It is a wrapper class...
+    """
     return self.__db.retrieveBucketedData( typeName, startTime, endTime, interval, selectFields, condDict, grouping, metadataDict)
   
   def _determineBucketSize( self, start, end ):
@@ -30,8 +59,8 @@ class DBUtils ( object ):
     diff = end - start
     unit = ''
     for i in self.__units:
-      if diff <= self.__unitsvalues[i]:
-        unit = self.__esUnits[self.__unitsvalues[i]]
+      if diff <= self.__unitvalues[i]:
+        unit = self.__esunits[self.__unitvalues[i]]
         break
     if unit == '':
       return S_ERROR( "Can not determine the bucket size..." )
