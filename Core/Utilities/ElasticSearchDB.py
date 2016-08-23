@@ -172,6 +172,7 @@ class ElasticSearchDB( object ):
       self.__client.indices.create( fullIndex, body = mapping )
       result = S_OK( fullIndex )
     except Exception as e:
+      self.log.error("Can not create the index:", e)
       result = S_ERROR( e )
     return result
   
