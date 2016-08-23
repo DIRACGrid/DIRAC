@@ -211,7 +211,7 @@ class MonitoringHandler( RequestHandler ):
     :param int endTime epoch time, end time of the plot
     :param dict condDict is the conditions used to gnerate the plot: {'Status':['Running'],'grouping': ['Site'] }
     :param str grouping is the grouping of the data for example: 'Site'
-    :paran dict extraArgs epoch time which can be last day, last week, last month
+    :param dict extraArgs epoch time which can be last day, last week, last month
     :return S_OK or S_ERROR S_OK value is a dictionary which contains all values used to create the plot
     """
     retVal = self.__checkPlotRequest( reportRequest )
