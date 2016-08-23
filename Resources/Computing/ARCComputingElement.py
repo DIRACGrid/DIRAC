@@ -56,13 +56,13 @@ class ARCComputingElement( ComputingElement ):
                        'Preparing'  : 'Scheduled',
                        'Submitting' : 'Scheduled',
                        'Queuing'    : 'Scheduled',
-                       'Hold'       : 'Scheduled',
                        'Undefined'  : 'Unknown',
                        'Running'    : 'Running',
                        'Finishing'  : 'Running',
                        'Deleted' : 'Killed',
                        'Killed'  : 'Killed',
                        'Failed'  : 'Failed',
+                       'Hold'    : 'Failed',
                        'Finished': 'Done',
                        'Other'   : 'Done'
       }
@@ -375,6 +375,9 @@ class ARCComputingElement( ComputingElement ):
           if job.ProxyExpirationTime < nextHour:
             job.Renew()
             gLogger.debug("Renewing proxy for job %s whose proxy expires at %s" % (jobID, job.ProxyExpirationTime))
+        if arcState == "Hold":
+          # Cancel held jobs so they don't sit in the queue forever
+          self.killJob(jobID)
       else:
         resultDict[jobID] = 'Unknown'
       # If done - is it really done? Check the exit code
