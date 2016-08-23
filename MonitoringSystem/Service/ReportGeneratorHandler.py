@@ -1,5 +1,6 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
+########################################################################
+# $Id: $
+########################################################################
 
 """
 
@@ -7,9 +8,11 @@ It creates the reports using Elasticsearch
 
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from type import StringType
+from types import StringType
 
 class ReportGeneratorHandler( RequestHandler ):
   

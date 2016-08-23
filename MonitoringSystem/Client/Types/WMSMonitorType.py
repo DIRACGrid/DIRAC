@@ -1,8 +1,12 @@
-__RCSID__ = "$Id$"
+########################################################################
+# $Id: $
+########################################################################
 
 """
 This class is a helper to create the proper index and insert the proper values....
 """
+
+__RCSID__ = "$Id $"
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
