@@ -22,14 +22,25 @@ class ElasticTestCase( unittest.TestCase ):
     self.index_name = ''
 
   def tearDown( self ):
-    self.es.indices.delete(self.index_name)
+    self.el.deleteIndex(self.index_name)
     del self.el
   
-  def test_addRecords(self):
+  
+  def test_index(self):
     result = self.el.createIndex('integrationtest', {})
-    print 'rrrr', result
     self.assert_( result['OK'] )
     self.index_name = result['Value']
+    for i in self.data:
+      result = self.el.index(self.index_name, 'test', i)
+      self.assert_( result['created'] )
+  
+  def test_bulkindex(self):
+    result = self.el.createIndex('integrationtest', {})
+    self.assert_( result['OK'] )
+    self.index_name = result['Value']
+    result = self.el.bulk_index(self.index_name, 'test', self.data)
+    self.assertEqual( result[0], 10)
+    
     
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase( ElasticTestCase )
