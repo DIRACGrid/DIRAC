@@ -1,7 +1,3 @@
-########################################################################
-# $Id: $
-########################################################################
-
 """
 This class a wrapper around elasticsearch-py. It is used to query
 Elasticsearch database.
@@ -277,4 +273,3 @@ class ElasticSearchDB( object ):
       values += [bucket['key']]
     del query
     return S_OK( values )
-  
