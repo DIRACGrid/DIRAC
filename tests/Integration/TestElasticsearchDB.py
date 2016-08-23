@@ -9,7 +9,7 @@ import unittest
 import datetime
 import time
 
-elHost = 'elastic1.cern.ch' #'localhost'
+elHost = 'localhost'
 elPort = '9200'
 
 class ElasticTestCase( unittest.TestCase ):
@@ -36,7 +36,6 @@ class ElasticBulkCreateChain( ElasticTestCase ):
   
   def test_bulkindex( self ):
     result = self.el.bulk_index( 'integrationtest', 'test', self.data )
-    print result
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'], 10 )
     time.sleep( 10 )
@@ -76,7 +75,7 @@ class ElasticDeleteChain( ElasticTestCase ):
     self.assert_( result['Message'] )
     
   def test_deleteIndex( self ):
-    result = self.el.generateFullIndexName( 'integrationtest' )    
+    result = self.el._generateFullIndexName( 'integrationtest' )    
     res = self.el.deleteIndex( result )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], result )
@@ -85,7 +84,7 @@ class ElasticTestChain( ElasticTestCase ):
   
   def setUp( self ):
     self.el = ElasticSearchDB( elHost, elPort )
-    result = self.el.generateFullIndexName( 'integrationtest' )    
+    result = self.el._generateFullIndexName( 'integrationtest' )    
     self.assert_( len( result ) > len( 'integrationtest' ) )
     self.index_name = result     
   
@@ -96,7 +95,6 @@ class ElasticTestChain( ElasticTestCase ):
   
   def test_getDocTypes( self ):
     result = self.el.getDocTypes( self.index_name )
-    print result
     self.assert_( result )
     self.assertDictEqual( result['Value'], {u'test': {u'properties': {u'Color': {u'type': u'string'}, u'Product': {u'type': u'string'}, u'time': {u'type': u'date', u'format': u'strict_date_optional_time||epoch_millis'}, u'quantity': {u'type': u'long'}}}} )
   
@@ -108,7 +106,7 @@ class ElasticTestChain( ElasticTestCase ):
     indexName = 'test'
     today = datetime.datetime.today().strftime( "%Y-%m-%d" )
     expected = "%s-%s" % ( indexName, today )
-    result = self.el.generateFullIndexName( indexName )
+    result = self.el._generateFullIndexName( indexName )
     self.assertEqual( result, expected )
   
   def test_getUniqueValue( self ):

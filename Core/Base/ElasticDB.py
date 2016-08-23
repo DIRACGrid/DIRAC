@@ -46,7 +46,7 @@ class ElasticDB( ElasticSearchDB ):
     self.__dbHost = dbParameters[ 'Host' ]
     self.__dbPort = dbParameters[ 'Port' ]
     
-    ElasticSearchDB.__init__( self, self.__dbHost, self.__dbPort, debug = debug )
+    super( ElasticDB, self ).__init__( self.__dbHost, self.__dbPort, debug = debug )
 
     if not self._connected:
       raise RuntimeError( 'Can not connect to DB %s, exiting...' % self.dbName )
