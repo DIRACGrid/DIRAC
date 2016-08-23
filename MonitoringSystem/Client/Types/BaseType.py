@@ -20,6 +20,8 @@ class BaseType( object ):
   :param list keyFields: The attributes what we monitor.
   :param list monitoringFields: This is the value what we plot
   :param int dataToKeep: Data retention. We keep all data by default.
+  :param dict mapping: We can specify the mapping of the documents. It is used during the creation of an index. 
+                       Note: If you do not want to be analysed a string, you have to set the mapping
   """
   
   __doc_type = None
@@ -27,6 +29,7 @@ class BaseType( object ):
   __keyFields = []
   __monitoringFields = []
   __dataToKeep = None
+  __mapping = {}
   
   ########################################################################
   def __init__( self ):
@@ -133,3 +136,14 @@ class BaseType( object ):
     It returns the attributes which will be plotted
     """
     return self.__monitoringFields
+  
+  ########################################################################
+  def setMapping(self, mapping):
+    """
+    :param dict mapping: the mapping used by elasticsearch
+    """
+    self.__mapping = mapping
+    
+  ########################################################################
+  def getMapping(self):
+    return self.__mapping
