@@ -1,14 +1,14 @@
 """
 It used to create several plots
 """
+import time
+import copy
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Plotting import gMonitoringDataCache
-from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
 from DIRAC.Core.Utilities.Plotting.Plots import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot, generateCumulativePlot, generatePiePlot, generateStackedLinePlot
 
-import time
-import copy
+from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
 
 __RCSID__ = "$Id$"
 
