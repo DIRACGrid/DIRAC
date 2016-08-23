@@ -193,6 +193,8 @@ class ElasticSearchDB( object ):
       retVal = self.__client.indices.delete( indexName )
     except NotFoundError as e:
       return S_ERROR(e)
+    except ValueError as e:
+      return S_ERROR(e)
     
     if retVal.get('acknowledged', False): 
       return S_OK(indexName)
@@ -200,7 +202,16 @@ class ElasticSearchDB( object ):
       return S_ERROR(retVal)
   
   def index( self, indexName, doc_type, body ):
-    return self.__client.index( index = indexName, doc_type = doc_type, body = body )
+    try:
+      res = self.__client.index( index = indexName, doc_type = doc_type, body = body )
+    except TransportError as e:
+      return S_ERROR(e)
+    
+    if res.get('created', False):
+      return S_OK(indexName)
+    else:
+      return S_ERROR(res)
+    
   
   def bulk_index( self, indexprefix, doc_type, data, mapping = {} ):
     """
