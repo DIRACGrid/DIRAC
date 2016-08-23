@@ -2,15 +2,15 @@
 It is a helper module which contains the available reports
 """
 
-__RCSID__ = "$Id$"
-
-from DIRAC                                                import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder          import getServiceSection
-from DIRAC.MonitoringSystem.private.Plotters.BasePlotter  import BasePlotter as myBasePlotter
-from DIRAC.Core.Utilities.Plotting.ObjectLoader           import loadObjects
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
+from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter as myBasePlotter
+from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
 
 import hashlib
 import re
+
+__RCSID__ = "$Id$"
 
 class PlottersList( object ):
   
@@ -34,7 +34,7 @@ class PlottersList( object ):
     for objName in objectsLoaded:
       self.__plotters[ objName[:-7] ] = objectsLoaded[ objName ]
 
-  def getPlotterClass( self, typeName ):
+  def __getPlotterClass( self, typeName ):
     """
     It returns the plotter class for a given monitoring type
     """
@@ -89,7 +89,7 @@ class MainReporter( object ):
     :return dict S_OK/S_ERROR the values used to create the plot
     """
     typeName = reportRequest[ 'typeName' ]
-    plotterClass = self.__plotterList.getPlotterClass( typeName )
+    plotterClass = self.__plotterList.__getPlotterClass( typeName )
     if not plotterClass:
       return S_ERROR( "There's no reporter registered for type %s" % typeName )
     
@@ -103,7 +103,7 @@ class MainReporter( object ):
     :param str typeName monitoring type
     :return dict S_OK/S_ERROR list of available reports (plots)
     """
-    plotterClass = self.__plotterList.getPlotterClass( typeName )
+    plotterClass = self.__plotterList.__getPlotterClass( typeName )
     if not plotterClass:
       return S_ERROR( "There's no plotter registered for type %s" % typeName )
     plotter = plotterClass( self.__db, self.__setup )

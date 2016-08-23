@@ -8,17 +8,19 @@ Elasticsearch database.
 
 """
 
-__RCSID__ = "$Id$"
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import DErrno
 
-from DIRAC                      import gLogger, S_OK, S_ERROR
-from elasticsearch              import Elasticsearch
-from elasticsearch_dsl          import Search, Q, A
-from elasticsearch.exceptions   import ConnectionError, TransportError, NotFoundError
-from elasticsearch.helpers      import BulkIndexError
-from elasticsearch              import helpers
-from datetime                   import datetime
-from DIRAC.Core.Utilities       import Time
-from DIRAC.Core.Utilities       import DErrno
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search, Q, A
+from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundError
+from elasticsearch.helpers import BulkIndexError
+from elasticsearch import helpers
+
+from datetime import datetime
+
+__RCSID__ = "$Id$"
 
 class ElasticSearchDB( object ):
   
@@ -203,7 +205,9 @@ class ElasticSearchDB( object ):
     :return the index name in case of success.
     """
     try:
-      res = self.__client.index( index = indexName, doc_type = doc_type, body = body )
+      res = self.__client.index( index = indexName,
+                                 doc_type = doc_type,
+                                 body = body )
     except TransportError as e:
       return S_ERROR( e )
     
@@ -259,9 +263,20 @@ class ElasticSearchDB( object ):
     
     query = self._Search( indexName )
     if orderBy:
-      query.aggs.bucket( key, 'terms', field = key, size = 0, order = orderBy ).metric( key, 'cardinality', field = key )
+      query.aggs.bucket( key, 
+                         'terms', 
+                         field = key, 
+                         size = 0, 
+                         order = orderBy ).metric( key, 
+                                                   'cardinality', 
+                                                   field = key )
     else:
-      query.aggs.bucket( key, 'terms', field = key, size = 0 ).metric( key, 'cardinality', field = key )
+      query.aggs.bucket( key, 
+                         'terms', 
+                         field = key, 
+                         size = 0 ).metric( key, 
+                                            'cardinality', 
+                                            field = key )
     
     try:
       result = query.execute()
