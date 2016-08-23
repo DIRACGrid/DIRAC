@@ -19,8 +19,7 @@ class MonitoringDB( ElasticDB ):
     self.__readonly = readOnly
     self.__documents = {}
     self.__loadIndexes()
-    
-    
+       
   def __loadIndexes( self ):
     """
     It loads all monitoring indexes and types.
