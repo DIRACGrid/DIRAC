@@ -1444,6 +1444,27 @@ class JobDB( DB ):
     return retVal
 
 #############################################################################
+  def getUserSitesTuple( self, sites ):
+    """Returns tuple of active/banned/invalid sties from a user provided list."""
+    ret = self._escapeValues( sites )
+    if not ret['OK']:
+      return ret
+
+    sites = set(sites)
+    sites_sql = ret['Value']
+    sites_sql[0] = 'SELECT %s AS Site' % sites_sql[0]
+    sites_sql = ' UNION SELECT '.join(sites_sql)
+    cmd = "SELECT Site FROM (%s) AS tmptable WHERE Site NOT IN (SELECT Site FROM SiteMask WHERE Status='Active')" % sites_sql
+    result = self._query( cmd )
+    if not result['OK']:
+      return result
+    nonActiveSites = set(x[0] for x in result['Value'])
+    activeSites = sites.difference(nonActiveSites)
+    bannedSites = nonActiveSites.intersection(set(self.getSiteMask( 'Banned' )))
+    invalidSites = nonActiveSites.difference(bannedSites)
+    return S_OK( (activeSites, bannedSites, invalidSites) )
+
+#############################################################################
   def getSiteMask( self, siteState = 'Active' ):
     """ Get the currently active site list
     """

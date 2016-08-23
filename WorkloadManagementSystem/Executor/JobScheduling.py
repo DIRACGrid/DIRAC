@@ -86,12 +86,23 @@ class JobScheduling( OptimizerExecutor ):
     # If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
-        sites = self._applySiteFilter( userSites, banned = wmsBannedSites )
-        if not sites:
-          if len( userSites ) > 1:
-            return self.__holdJob( jobState, "Requested sites %s are inactive" % ",".join( userSites ) )
-          else:
-            return self.__holdJob( jobState, "Requested site %s is inactive" % userSites[0] )
+        result = self.__jobDB.getUserSitesTuple( userSites )
+        if not result[ 'OK' ]:
+          return S_ERROR( "Problem checking userSites for tuple of active/banned/invalid sites" )
+
+        userSites, banned_sites, invalid_sites = result['Value']
+        if invalid_sites:
+          self.jobLog.debug( "Invalid site(s) requested: %s" % ','.join( invalid_sites ) )
+          if not self.ex_getOption( 'AllowInvalidSites', True ):
+            return self.__holdJob( jobState, "Requested site(s) %s are invalid" % ",".join( invalid_sites ) )
+        if banned_sites:
+          self.jobLog.debug( "Banned site(s) %s ignored" % ",".join( banned_sites ) )
+          if not userSites:
+            return self.__holdJob( jobState, "Requested site(s) %s are inactive" % ",".join( banned_sites ) )
+
+        if not userSites:
+          return self.__holdJob( jobState, "No requested site(s) are active/valid" )
+        userSites = list(userSites)
 
     # Check if there is input data
     result = jobState.getInputData()
