@@ -9,23 +9,14 @@
 """
 __RCSID__ = "$Id$"
 
+import json
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
-from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.Core.Utilities import Time
-import json
-try:
-  import pika
-except Exception as e:
-  from DIRAC.Core.Utilities.Subprocess import systemCall
-  result = systemCall( False, ["pip", "install", "pika"] )
-  if not result['OK']:
-    raise RuntimeError( result['Message'] )
-  else:
-    import pika
+from DIRAC.Resources.MessageQueue.MQPublisher import MQPublisher
+
 
 
 class StatesMonitoringAgent( AgentModule ):
@@ -68,50 +59,23 @@ class StatesMonitoringAgent( AgentModule ):
         field = 'OwnerGroup'
       self.__jobDBFields.append( field )
     
-    result = gConfig.getOption( "/Systems/RabbitMQ/User" )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: User' )
-    user = result['Value']
-    
-    result = gConfig.getOption( "/Systems/RabbitMQ/Password" )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: Password' )
-    password = result['Value']
-    
-    result = gConfig.getOption( "/Systems/RabbitMQ/Host" )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: Host' )
-    self.host = result['Value']
-    
-    self.credentials = pika.PlainCredentials( user, password )
-
-    self.connection = pika.BlockingConnection( pika.ConnectionParameters( host = self.host, credentials = self.credentials ) )
-    self.channel = self.connection.channel()
-
-    self.channel.exchange_declare( exchange = 'mdatabase',
-                         exchange_type = 'fanout' )
-
+    self.publisher = MQPublisher( "TestQueue" )
     return S_OK()
 
-  def sendRecords( self, data ):
+  def sendRecords( self, data, retry = None ):
+    
+    if retry > 3:
+      return S_ERROR("can not send the data to MQ!")
+    
     try:
-      self.channel.basic_publish( exchange = 'mdatabase',
-                        routing_key = '',
-                        body = data,
-                        properties = pika.BasicProperties( 
-                        delivery_mode = 2,  # make message persistent
-                      ) )
+      self.publisher.put(data)
     except Exception as e:
-      gLogger.error( "Connection closed:" + str( e ) )
-      self.connection = pika.BlockingConnection( pika.ConnectionParameters( host = self.host, credentials = self.credentials ) )
-      self.channel = self.connection.channel()
-      self.channel.exchange_declare( exchange = 'mdatabase',
-                         exchange_type = 'fanout' )
-      gLogger.info( "Resend records" )
+      retry += 1
+      gLogger.error( "Connection closed:" + repr( e ) )
       self.sendRecords( data )
       
   def finalize( self ):
-    self.connection.close()
+    self.publisher.stop()
     
   def execute( self ):
     """ Main execution method
