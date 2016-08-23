@@ -64,9 +64,9 @@ class DBUtils ( object ):
     diff = end - start
     
     unit = ''
-    for i in sorted(self.__esbucket.keys()):
-      if diff <= i:
-        unit = self.__esbucket[i]
+    for interval in sorted(self.__esbucket.keys()):
+      if diff <= interval:
+        unit = self.__esbucket[interval]
         break   
     if not unit:
       return S_ERROR( "Can not determine the bucket size..." )

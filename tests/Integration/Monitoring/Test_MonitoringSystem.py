@@ -1,9 +1,8 @@
 """
-It is used to test client->db-> service
+It is used to test client->db-> service. It requires the  Monitoring service.
 """
 
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.DISET.TransferClient                import TransferClient
 
 from DIRAC                                          import gLogger

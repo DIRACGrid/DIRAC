@@ -7,7 +7,7 @@ It is used to create plots using Elasticsearch
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RequestHandler              import RequestHandler
-from DIRAC                                        import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.MonitoringSystem.DB.MonitoringDB       import MonitoringDB
 from DIRAC.Core.Utilities                         import Time
 from DIRAC.MonitoringSystem.private.MainReporter  import MainReporter
@@ -15,7 +15,6 @@ from DIRAC.Core.Utilities.Plotting                import gMonitoringDataCache
 from DIRAC.Core.Utilities.Plotting.FileCoding     import extractRequestFromFileId
 from DIRAC.Core.Utilities.Plotting.Plots          import generateErrorMessagePlot
 
-import types
 import datetime
 
 
@@ -46,7 +45,7 @@ class MonitoringHandler( RequestHandler ):
     return S_OK()
   
    
-  types_listUniqueKeyValues = [ types.StringTypes ]
+  types_listUniqueKeyValues = [ basestring ]
   def export_listUniqueKeyValues( self, typeName ):
     """
     :param str typeName is the monitoring type registered in the Types.
@@ -56,10 +55,10 @@ class MonitoringHandler( RequestHandler ):
     setup = self.serviceInfoDict.get( 'clientSetup', None )
     if not setup:
       return S_ERROR( "FATAL ERROR:  Problem with the service configuration!" )
-    #NOTE: we can apply some policies if it will be needed!
+    # NOTE: we can apply some policies if it will be needed!
     return self.__db.getKeyValues( typeName, setup )
     
-  types_listReports = [ types.StringTypes ]
+  types_listReports = [ basestring ]
   def export_listReports( self, typeName ):
     """
     :param str typeName monitoring type for example WMSHistory
@@ -164,7 +163,7 @@ class MonitoringHandler( RequestHandler ):
       except ValueError:
         gLogger.error( "lastSeconds key must be a number" )
         return S_ERROR( "Value Error" )
-      #TODO: Maybe we can have last hour in the monitoring
+      # TODO: Maybe we can have last hour in the monitoring
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
       now = Time.dateTime()
@@ -172,12 +171,13 @@ class MonitoringHandler( RequestHandler ):
       reportRequest[ 'startTime' ] = now - datetime.timedelta( seconds = lastSeconds )
     else:
       # if end date is not there, just set it to now
-      if not reportRequest.get( 'endTime', False ):
+      if not reportRequest.get( 'endTime' ):
+        #check the existence of the endTime it can be present and empty
         reportRequest[ 'endTime' ] = Time.dateTime()
     # Check keys
     for key in self.__reportRequestDict:
       if not key in reportRequest:
-        return S_ERROR( 'Missing mandatory field %s in plot reques' % key )
+        return S_ERROR( 'Missing mandatory field %s in plot request' % key )
 
       if not isinstance( reportRequest[ key ], self.__reportRequestDict[ key ] ):
         return S_ERROR( "Type mismatch for field %s (%s), required one of %s" % ( key,
@@ -188,10 +188,10 @@ class MonitoringHandler( RequestHandler ):
     
     return S_OK( reportRequest )
 
-  types_generatePlot = [ types.DictType ]
+  types_generatePlot = [ dict ]
   def export_generatePlot( self, reportRequest ):
     """
-    It crated a plots for a given request
+    It creates a plots for a given request
     :param dict reportRequest contains the plot arguments...
     """
     retVal = self.__checkPlotRequest( reportRequest )
@@ -201,10 +201,10 @@ class MonitoringHandler( RequestHandler ):
     reportRequest[ 'generatePlot' ] = True
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
   
-  types_getReport = [ types.DictType ]
+  types_getReport = [ dict ]
   def export_getReport( self, reportRequest ):
     """
-    It is used to get the raw data used to create a plot.
+    It is used to get the raw data used to create a plot. The reportRequest has the following parameters:
     :param str typeName the type of the monitoring
     :param str reportName the name of the plotter used to create the plot for example:  NumberOfJobs
     :param int startTime epoch time, start time of the plot
@@ -212,7 +212,7 @@ class MonitoringHandler( RequestHandler ):
     :param dict condDict is the conditions used to gnerate the plot: {'Status':['Running'],'grouping': ['Site'] }
     :param str grouping is the grouping of the data for example: 'Site'
     :paran dict extraArgs epoch time which can be last day, last week, last month
-    :rerturn S_OK or S_ERROR
+    :return S_OK or S_ERROR S_OK value is a dictionary which contains all values used to create the plot
     """
     retVal = self.__checkPlotRequest( reportRequest )
     if not retVal[ 'OK' ]:
@@ -222,7 +222,7 @@ class MonitoringHandler( RequestHandler ):
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
   
   
-  types_addMonitoringRecords = [types.StringTypes, types.StringTypes, types.ListType]
+  types_addMonitoringRecords = [basestring, basestring, list]
   def export_addMonitoringRecords( self, monitoringtype, doc_type, data ):
     """
     It is used to insert data directly to the given monitoring type
@@ -234,10 +234,10 @@ class MonitoringHandler( RequestHandler ):
     if not retVal['OK']:
       return retVal 
     prefix = retVal['Value']
-    gLogger.debug("addMonitoringRecords:", prefix)
+    gLogger.debug( "addMonitoringRecords:", prefix )
     return self.__db.bulk_index( prefix, doc_type, data )
 
-  types_addRecords = [types.StringTypes, types.StringTypes, types.ListType]
+  types_addRecords = [basestring, basestring, list]
   def export_addRecords( self, indexname, doc_type, data ):
     """
     It is used to insert data directly to the database... The data will be inserted to the given index.
@@ -249,15 +249,15 @@ class MonitoringHandler( RequestHandler ):
     gLogger.debug( "Bulk index:", indexname )
     return self.__db.bulk_index( indexname, doc_type, data )
   
-  types_deleteIndex = [types.StringTypes]  
-  def export_deleteIndex(self, indexName):
+  types_deleteIndex = [basestring]  
+  def export_deleteIndex( self, indexName ):
     """
     It is used to delete an index!
-    Note this is for experinced users!!!
+    Note this is for experienced users!!!
     :param str indexName 
     """
     setup = self.serviceInfoDict.get( 'clientSetup', '' )
     indexName = "%s_%s" % ( setup.lower(), indexName )
     gLogger.debug( "delete index:", indexName )
-    return self.__db.deleteIndex(indexName)
+    return self.__db.deleteIndex( indexName )
   

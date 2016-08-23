@@ -68,11 +68,11 @@ class MonitoringDB( ElasticDB ):
     
     all_index = "%s-*" % index
     
-    if self.isExists( all_index ):  
+    if self.exists( all_index ):  
       indexes = self.getIndexes()
       if indexes:
         actualindexName = self._generateFullIndexName( index )
-        if self.isExists( actualindexName ):  
+        if self.exists( actualindexName ):  
           self.log.info( "The index is exists:", actualindexName )
         else:
           result = self.createIndex( index, mapping )

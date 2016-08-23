@@ -558,7 +558,7 @@ def getElasticDBParameters( fullname ):
   result = gConfig.getOption( cs_path + '/Host' )
   if not result['OK']:
     # No host name found, try at the common place
-    result = gConfig.getOption( '/Systems/Databases/Host' )
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/Host' )
     if not result['OK']:
       return S_ERROR( 'Failed to get the configuration parameter: Host' )
   dbHost = result['Value']
@@ -575,7 +575,7 @@ def getElasticDBParameters( fullname ):
   result = gConfig.getOption( cs_path + '/Port' )
   if not result['OK']:
     # No individual port number found, try at the common place
-    result = gConfig.getOption( '/Systems/Databases/Port' )
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/Port' )
     if result['OK']:
       dbPort = int( result['Value'] )
   else:

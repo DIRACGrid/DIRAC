@@ -1,3 +1,6 @@
+"""
+It is used to load classes from a specific system.
+"""
 import re
 import os
 import DIRAC
@@ -6,6 +9,12 @@ from DIRAC.Core.Utilities                        import List
 from DIRAC.ConfigurationSystem.Client.Helpers    import CSGlobals
 
 def loadObjects( path, reFilter = None, parentClass = None ):
+  """
+  :param str path the path to the syetem for example: DIRAC/AccountingSystem
+  :param object reFilter regular expression used to found the class
+  :param object parentClass class instance
+  :return dict it return the name of the clase and the instance of the class.
+  """
   if not reFilter:
     reFilter = re.compile( ".*[a-z1-9]\.py$" )
   pathList = List.fromChar( path, "/" )
