@@ -11,7 +11,7 @@ __RCSID__ = "$Id $"
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 ########################################################################
-class WMSMonitor( BaseType ):
+class WMSHistory( BaseType ):
 
   
   """
