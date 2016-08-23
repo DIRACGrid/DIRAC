@@ -8,15 +8,6 @@ class WMSHistoryPlotter( BaseReporter ):
   _typeName = "WMSHistory"
   _typeKeyFields =  WMSHistory().getKeyFields() 
 
-  def _translateGrouping( self, grouping ):
-    if grouping == "Country":
-      sqlRepr = 'upper( substring( %s, locate( ".", %s, length( %s ) - 4 ) + 1 ) )'
-      return ( sqlRepr, [ 'Site', 'Site', 'Site' ], sqlRepr )
-    elif grouping == "Grid":
-      return ( 'substring_index( %s, ".", 1 )', [ 'Site' ] )
-    else:
-      return ( "%s", [ grouping ] )
-
   def _reportNumberOfJobs( self, reportRequest ):
     
     selectFields = ['Jobs']
