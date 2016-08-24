@@ -54,7 +54,7 @@ class MonitoringHandler( RequestHandler ):
     if not setup:
       return S_ERROR( "FATAL ERROR:  Problem with the service configuration!" )
     # NOTE: we can apply some policies if it will be needed!
-    return self.__db.getKeyValues( typeName, setup )
+    return self.__db.getKeyValues( typeName )
     
   types_listReports = [ basestring ]
   def export_listReports( self, typeName ):

@@ -42,6 +42,7 @@ class ElasticSearchDB( object ):
     self.__url = "%s:%d" % ( host, port )
     self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
     self.__tryToConnect()
+    self._connected = False
   
   ########################################################################  
   def query( self, index, query ):
@@ -85,13 +86,13 @@ class ElasticSearchDB( object ):
         # Returns True if the cluster is running, False otherwise
         result = self.__client.info()
         self.clusterName = result.get( "cluster_name", " " )
-        self.log.info( "Database info", result )
+        gLogger.info( "Database info", result )
         self._connected = True
       else:
         self._connected = False
-        self.log.error( "Cannot connect to the database!" )
+        gLogger.error( "Cannot connect to the database!" )
     except ConnectionError as e:
-      self.log.error( e )
+      gLogger.error( repr(e) )
       self._connected = False 
 
   ########################################################################
@@ -110,7 +111,7 @@ class ElasticSearchDB( object ):
     result = []
     try:
       result = self.__client.indices.get_mapping( indexName )
-    except Exception as e:
+    except Exception as e: # pylint: disable=broad-except
       gLogger.error( e )
     doctype = ''
     for indexConfig in result:
@@ -157,11 +158,11 @@ class ElasticSearchDB( object ):
       result = S_OK( fullIndex )
     else:
       try:
-        self.log.info( "Create index: ", fullIndex + str( mapping ) )
-        self.__client.indices.create( fullIndex, body = mapping )
+        gLogger.info( "Create index: ", fullIndex + str( mapping ) )
+        self.__client.indices.create( fullIndex, body = {'mappings': mapping} )
         result = S_OK( fullIndex )
-      except Exception as e:
-        self.log.error( "Can not create the index:", e )
+      except Exception as e: # pylint: disable=broad-except
+        gLogger.error( "Can not create the index:", e )
         result = S_ERROR( e )
     return result
   
@@ -203,13 +204,18 @@ class ElasticSearchDB( object ):
       return S_ERROR( res )
     
   
-  def bulk_index( self, indexprefix, doc_type, data, mapping = {} ):
+  def bulk_index( self, indexprefix, doc_type, data, mapping ):
     """
     :param str indexPrefix: it is the index name. 
     :param str doc_type
     :param list data contains a list of dictionary 
     """
+    gLogger.info( "%d records will be insert to %s" % ( len( data ), doc_type ) )
+    if mapping is None:
+      mapping = {}
+      
     indexName = self._generateFullIndexName( indexprefix )
+    gLogger.debug("inserting datat to %s index" % indexName)
     if not self.exists( indexName ):
       retVal = self.createIndex( indexprefix, mapping )
       if not retVal['OK']:

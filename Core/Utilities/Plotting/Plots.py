@@ -31,7 +31,6 @@ def generateNoDataPlot( fileName, data, metadata ):
     with open( fileName, "wb" ) as fn:
       text = "No data for this selection for the plot: %s" % metadata['title']
       textGraph( text, fn, metadata )
-      fn.close()
   except IOError as e:
     return S_ERROR( errno.EIO, e )
   return S_OK()
@@ -63,7 +62,6 @@ def generateTimedStackedBarPlot( fileName, data, metadata ):
         if key not in metadata:
           metadata[ key ] = value
       barGraph( data, fn, **metadata )
-      fn.close()
   except IOError as e:
     return S_ERROR( errno.EIO, e )
   return S_OK()
@@ -85,7 +83,6 @@ def generateQualityPlot( fileName, data, metadata ):
       metadata[ 'sort_labels' ] = 'alpha'
       metadata[ 'plot_left_padding' ] = int( maxKeyLength * 2.5 )
       qualityGraph( data, fn, **metadata )
-      fn.close()
   except IOError as e:
     return S_ERROR( errno.EIO, e )
   return S_OK()
@@ -103,7 +100,6 @@ def generateCumulativePlot( fileName, data, metadata ):
       if 'sort_labels' not in metadata:
         metadata[ 'sort_labels' ] = 'last_value'
       lineGraph( data, fn, **metadata )
-      fn.close()
   except IOError as e:
     return S_ERROR( errno.EIO, e )
   return S_OK()
@@ -122,7 +118,6 @@ def generateStackedLinePlot( fileName, data, metadata ):
         if key not in metadata:
           metadata[ key ] = value
       lineGraph( data, fn, **metadata )
-      fn.close()
   except IOError as e:
     return S_ERROR( errno.EIO, e )
   return S_OK()
@@ -138,7 +133,6 @@ def generatePiePlot( fileName, data, metadata ):
     with open( fileName, "wb" ) as fn:
       checkMetadata( metadata )
       pieGraph( data, fn, **metadata )
-      fn.close()
   except IOError as e:
     return S_ERROR( errno.EIO, e )
   return S_OK()

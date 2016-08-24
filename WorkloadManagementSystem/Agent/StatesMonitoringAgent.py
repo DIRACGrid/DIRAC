@@ -9,14 +9,11 @@
 """
 __RCSID__ = "$Id$"
 
-import json
-
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.Core.Utilities import Time
-from DIRAC.Resources.MessageQueue.MQPublisher import MQPublisher
-
+from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 
 
 class StatesMonitoringAgent( AgentModule ):
@@ -38,7 +35,7 @@ class StatesMonitoringAgent( AgentModule ):
                                 'JobType',
                               ]
   __summaryDefinedFields = [ ( 'ApplicationStatus', 'unset' ), ( 'MinorStatus', 'unset' ) ]
-  __summaryValueFieldsMapping = [ 'value',
+  __summaryValueFieldsMapping = [ 'Jobs',
                                   'Reschedules',
                                 ]
   __renameFieldsMapping = { 'JobType' : 'JobSplitType' }
@@ -49,6 +46,8 @@ class StatesMonitoringAgent( AgentModule ):
     """
     
     self.jobDB = JobDB()
+    
+    self.monitoringDB = MonitoringDB()
 
     self.am_setOption( "PollingTime", 120 )
     self.__jobDBFields = []
@@ -59,24 +58,15 @@ class StatesMonitoringAgent( AgentModule ):
         field = 'OwnerGroup'
       self.__jobDBFields.append( field )
     
-    self.publisher = MQPublisher( "TestQueue" )
     return S_OK()
 
-  def sendRecords( self, data, retry = None ):
-    
-    if retry > 3:
-      return S_ERROR("can not send the data to MQ!")
-    
+  def sendRecords( self, data, monitoringType ):
     try:
-      self.publisher.put(data)
+      return self.monitoringDB.put( data, monitoringType )
     except Exception as e:
-      retry += 1
-      gLogger.error( "Connection closed:" + repr( e ) )
-      self.sendRecords( data )
+      return S_ERROR( "Faild to insert: %s" % repr( e ) )
       
-  def finalize( self ):
-    self.publisher.stop()
-    
+     
   def execute( self ):
     """ Main execution method
     """
@@ -88,6 +78,7 @@ class StatesMonitoringAgent( AgentModule ):
     # Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
+    documents = []
     if not result[ 'OK' ]:
       gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
     else:
@@ -108,11 +99,14 @@ class StatesMonitoringAgent( AgentModule ):
         record = record[ len( self.__summaryKeyFieldsMapping ): ]
         for iP in range( len( self.__summaryValueFieldsMapping ) ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
-        rD['startTime'] = int( Time.toEpoch( now ) )       
-        rD['metric'] = 'WMSHistory'
-        message = json.dumps( rD )
-        self.sendRecords( message )
-      gLogger.info( "The records are successfully sent!" )
+        rD['time'] = int( Time.toEpoch( now ) )       
+        documents += [rD]
+      res = self.sendRecords( documents, 'WMSHistory' )
+      if res['OK']:
+        gLogger.info( "The records are successfully inserted to MonitoringDB!" )
+      else:
+        #we must use some failover
+        gLogger.error( 'Faild to insert the records: %s', res['Message'] )
         
     return S_OK()
 

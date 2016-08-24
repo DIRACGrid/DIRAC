@@ -21,7 +21,7 @@ class MonitoringDB( ElasticDB ):
     self.__readonly = readOnly
     self.__documents = {}
     self.__loadIndexes()
-       
+           
   def __loadIndexes( self ):
     """
     It loads all monitoring indexes and types.
@@ -47,7 +47,7 @@ class MonitoringDB( ElasticDB ):
         if self.__readonly:
           gLogger.info( "Read only mode is okay" )
         else:
-          self.registerType( doc_type, indexName, mapping )
+          self.registerType( indexName, mapping )
   
   def getIndexName( self, typeName ):
     """
@@ -63,11 +63,11 @@ class MonitoringDB( ElasticDB ):
     else:
       return S_ERROR( "The index of %s not found!" % typeName )
   
-  def registerType( self, mtype, index, mapping ):
+  def registerType( self, index, mapping ):
     """
     It register the type and index, if does not exists
-    :param str type: Type of the documents
-    :param str index: name of the index
+    :param str index name of the index
+    :param dict mapping mapping used to create the index.
     """ 
     
     all_index = "%s-*" % index
@@ -94,7 +94,7 @@ class MonitoringDB( ElasticDB ):
       
   
     
-  def getKeyValues( self, typeName, setup ):
+  def getKeyValues( self, typeName ):
     """
     Get all values for a given key field in a type
     """
@@ -186,3 +186,27 @@ class MonitoringDB( ElasticDB ):
     
     return S_OK( result )
     
+  def put( self, records, monitoringType ):
+    """
+    It is used to insert the data to El.
+    :param list records it is a list of documents (dictionary)
+    :param str monitoringType is the type of the monitoring
+    """
+    mapping = self.__getMapping( monitoringType )
+    gLogger.debug( "Mapping used to create an index:", mapping )
+    res = self.getIndexName( monitoringType )
+    if not res['OK']:
+      return res
+    indexName = res['Value']
+    return self.bulk_index( indexName, monitoringType, records, mapping )
+  
+  def __getMapping( self, monitoringType ):
+    """
+    It returns the mapping of a certain monitoring type
+    :param str monitoringType the monitoring type for example WMSHistory
+    :return it returns an empty dixtionary if there is no mapping defenied.
+    """
+    mapping = {}
+    if monitoringType in self.__documents:
+      mapping = self.__documents[monitoringType].get( "mapping", {} )
+    return mapping
