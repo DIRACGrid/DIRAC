@@ -39,11 +39,11 @@ class ElasticSearchDB( object ):
     :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
     :param bool debug: save the debug information to a file   
     """
+    self._connected = False
     self.__url = "%s:%d" % ( host, port )
     self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
     self.__tryToConnect()
-    self._connected = False
-  
+      
   ########################################################################  
   def query( self, index, query ):
     """It exexutes a query and it returns the result

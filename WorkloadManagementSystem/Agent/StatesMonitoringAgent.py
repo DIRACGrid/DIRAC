@@ -34,8 +34,7 @@ class StatesMonitoringAgent( AgentModule ):
                                 'JobGroup',
                                 'JobType',
                                 'ApplicationStatus',
-                                'MinorStatus',
-                                'SubmissionTime']
+                                'MinorStatus']
   __summaryDefinedFields = [ ( 'ApplicationStatus', 'unset' ), ( 'MinorStatus', 'unset' ) ]
   __summaryValueFieldsMapping = [ 'Jobs',
                                   'Reschedules']
