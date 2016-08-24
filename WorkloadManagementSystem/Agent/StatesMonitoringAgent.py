@@ -33,14 +33,19 @@ class StatesMonitoringAgent( AgentModule ):
                                 'UserGroup',
                                 'JobGroup',
                                 'JobType',
-                              ]
+                                'ApplicationStatus',
+                                'MinorStatus',
+                                'SubmissionTime']
   __summaryDefinedFields = [ ( 'ApplicationStatus', 'unset' ), ( 'MinorStatus', 'unset' ) ]
   __summaryValueFieldsMapping = [ 'Jobs',
-                                  'Reschedules',
-                                ]
+                                  'Reschedules']
   __renameFieldsMapping = { 'JobType' : 'JobSplitType' }
 
-
+  __jobDBFields = []
+  
+  jobDB = None
+  monitoringDB = None
+  
   def initialize( self ):
     """ Standard constructor
     """
@@ -50,7 +55,7 @@ class StatesMonitoringAgent( AgentModule ):
     self.monitoringDB = MonitoringDB()
 
     self.am_setOption( "PollingTime", 120 )
-    self.__jobDBFields = []
+
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
         field = 'Owner'
@@ -63,7 +68,7 @@ class StatesMonitoringAgent( AgentModule ):
   def sendRecords( self, data, monitoringType ):
     try:
       return self.monitoringDB.put( data, monitoringType )
-    except Exception as e:
+    except Exception as e: # pylint: disable=broad-except
       return S_ERROR( "Faild to insert: %s" % repr( e ) )
       
      
