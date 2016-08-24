@@ -44,6 +44,7 @@ class StatesMonitoringAgent( AgentModule ):
   
   jobDB = None
   monitoringDB = None
+  __retry = 2
   
   def initialize( self ):
     """ Standard constructor
@@ -64,11 +65,16 @@ class StatesMonitoringAgent( AgentModule ):
     
     return S_OK()
 
-  def sendRecords( self, data, monitoringType ):
+  def sendRecords( self, data, monitoringType, counter = 0 ):
+    if counter > self.__retry:
+      return S_ERROR( "Falied to insert %d records to the db!" % len( data ) )
     try:
       return self.monitoringDB.put( data, monitoringType )
-    except Exception as e: # pylint: disable=broad-except
-      return S_ERROR( "Faild to insert: %s" % repr( e ) )
+    except Exception as e:  # pylint: disable=broad-except
+      gLogger.warn( "Problem during db acces: %s" % repr( e ) )
+      counter += 1
+      return self.sendRecords( data, monitoringType, counter )
+      
       
      
   def execute( self ):
