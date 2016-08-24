@@ -30,7 +30,6 @@ class ElasticDB( ElasticSearchDB ):
     :param self: self reference
     :param str dbName: name of the database for example: MonitoringDB
     :param str fullName: The full name of the database for example: 'Monitoring/MonitoringDB'
-    :param bool debug: save the debug information to a file 
     """
     
     database_name = dbname
@@ -47,7 +46,7 @@ class ElasticDB( ElasticSearchDB ):
     super( ElasticDB, self ).__init__( self.__dbHost, self.__dbPort )
 
     if not self._connected:
-      raise RuntimeError( 'Can not connect to DB %s, exiting...' % self.dbName )
+      raise RuntimeError( 'Can not connect to DB %s, exiting...' % self.clusterName )
 
 
     self.log.info( "==================================================" )

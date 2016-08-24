@@ -204,7 +204,7 @@ class ElasticSearchDB( object ):
       return S_ERROR( res )
     
   
-  def bulk_index( self, indexprefix, doc_type, data, mapping ):
+  def bulk_index( self, indexprefix, doc_type, data, mapping = None ):
     """
     :param str indexPrefix: it is the index name. 
     :param str doc_type

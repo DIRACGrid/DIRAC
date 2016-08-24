@@ -82,7 +82,7 @@ class MonitoringHandler( RequestHandler ):
       gLogger.info( "Seems the file request is a plot generation request!" )
       try:
         result = self.__generatePlotFromFileId( fileId )
-      except Exception as e:
+      except Exception as e: # pylint: disable=broad-except
         gLogger.exception( "Exception while generating plot", str( e ) )
         result = S_ERROR( "Error while generating plot: %s" % str( e ) )
       if not result[ 'OK' ]:
