@@ -182,8 +182,9 @@ class DMSHelpers( object ):
       if storageElement not in self.storageElementSet:
         return False
     if self.notForJobSEs is None:
-      self.notForJobSEs = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsNotToBeUsedForJobs', [] ) )
-    return storageElement not in resolveSEGroup( self.notForJobSEs )
+      seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsNotToBeUsedForJobs', [] ) )
+      self.notForJobSEs = resolveSEGroup( seList )
+    return storageElement not in self.notForJobSEs
 
   def isSEArchive( self, storageElement ):
     if self.archiveSEs is None:
