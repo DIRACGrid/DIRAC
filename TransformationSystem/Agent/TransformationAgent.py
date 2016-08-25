@@ -87,7 +87,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     # for caching using a pickle file
     self.workDirectory = self.am_getWorkDirectory()
-    self.cacheFile = os.path.join( self.workDirectory, 'ReplicaCache_%s.pkl' % str() )
+    self.cacheFile = os.path.join( self.workDirectory, 'ReplicaCache.pkl' )
     self.controlDirectory = self.am_getControlDirectory()
 
     # remember the offset if any in TS
