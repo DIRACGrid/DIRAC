@@ -51,7 +51,7 @@ if __name__ == "__main__":
   path = metaDict.get( 'Path', '/' )
   metaDict.pop( 'Path' )
 
-  print metaDict
+  gLogger.info( "MetaDataDictionary: %s" % metaDict )
 
   result = fc.findFilesByMetadata( metaDict, path )
   if not result['OK']:
@@ -60,4 +60,5 @@ if __name__ == "__main__":
   lfnList = result['Value']
 
   for lfn in lfnList:
-    gLogger.notice( lfn )
+    ## glogger adds a space after the line which causes problems if the output is used as input to other scripts
+    print lfn
