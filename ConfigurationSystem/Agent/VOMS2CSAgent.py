@@ -111,7 +111,7 @@ class VOMS2CSAgent( AgentModule ):
         result = self.__addHomeDirectory( vo, newUsers, proxyUserName = voAdminUser, proxyUserGroup = voAdminGroup ) #pylint: disable=unexpected-keyword-arg
         if not result['OK']:
           self.log.error( 'Failed to create user home directories:', 'VO %s: %s' % ( vo, result["Message"] ) )
-        if result['Value']['Failed']:
+        else:
           for user in result['Value']['Failed']:
             self.log.error( "Failed to create home directory", "user: %s, operation: %s" % \
                             ( user, result['Value']['Failed'][user] ) )
@@ -422,7 +422,7 @@ class VOMS2CSAgent( AgentModule ):
         self.log.info( 'The following users will be deleted: %s' % str( oldUsers ) )
         result = self.csapi.deleteUsers( oldUsers )
         if result['OK']:
-          self.__adminMsgs[ 'Info' ].append( 'The following users deleted from CS:\n  %s' % str( oldUsers ) )
+          self.__adminMsgs[ 'Info' ].append( 'The following users are deleted from CS:\n  %s\n' % str( oldUsers ) )
           resultDict['DeletedUsers'] = oldUsers
         else:
           self.__adminMsgs[ 'Errors' ].append( 'Error in deleting users from CS:\n  %s' % str( oldUsers ) )
