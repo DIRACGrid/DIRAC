@@ -17,6 +17,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getUs
 from DIRAC.Core.Utilities.Proxy                        import executeWithUserProxy
 from DIRAC.Core.Utilities.List                         import fromChar
 from DIRAC.Core.Utilities.PrettyPrint                  import printTable
+from DIRAC.Resources.Catalog.FileCatalog               import FileCatalog
 
 __RCSID__ = "$Id$"
 
@@ -37,6 +38,7 @@ class VOMS2CSAgent( AgentModule ):
     self.autoModifyUsers = False
     self.autoDeleteUsers = False
     self.detailedReport = True
+    self.makeFCEntry = False
 
   def initialize( self ):
     """ Initialize the default parameters
@@ -59,6 +61,7 @@ class VOMS2CSAgent( AgentModule ):
     self.autoModifyUsers = self.am_getOption( 'AutoModifyUsers', self.autoModifyUsers )
     self.autoDeleteUsers = self.am_getOption( 'AutoDeleteUsers', self.autoDeleteUsers )
     self.detailedReport = self.am_getOption( 'DetailedReport', self.detailedReport )
+    self.makeFCEntry = self.am_getOption( 'MakeHomeDirectory', self.makeFCEntry )
 
     return S_OK()
 
@@ -101,6 +104,21 @@ class VOMS2CSAgent( AgentModule ):
           self.log.notice( "Configuration committed for VO %s" % vo )
       else:
         self.log.info( "No changes to the CS for VO %s recorded at this cycle" % vo )
+
+      # Add user home directory in the file catalog
+      if self.makeFCEntry and newUsers:
+        self.log.info( "Creating home directories for users %s" % str( newUsers ) )
+        result = self.__addHomeDirectory( vo, newUsers, proxyUserName = voAdminUser, proxyUserGroup = voAdminGroup ) #pylint: disable=unexpected-keyword-arg
+        if not result['OK']:
+          self.log.error( 'Failed to create user home directories:', 'VO %s: %s' % ( vo, result["Message"] ) )
+        if result['Value']['Failed']:
+          for user in result['Value']['Failed']:
+            self.log.error( "Failed to create home directory", "user: %s, operation: %s" % \
+                            ( user, result['Value']['Failed'][user] ) )
+            self.__adminMsgs[ 'Errors' ].append( "Failed to create home directory for user %s: operation %s" % \
+                                                 ( user, result['Value']['Failed'][user] ) )
+          for user in result['Value']['Successful']:
+            self.__adminMsgs[ 'Info' ].append( "Created home directory for user %s" % user )
 
       if self.voChanged or self.detailedReport:
         mailMsg = ""
@@ -415,6 +433,36 @@ class VOMS2CSAgent( AgentModule ):
 
     return S_OK( resultDict )
 
+  @executeWithUserProxy
+  def __addHomeDirectory( self, vo, newUsers ):
+
+    fc = FileCatalog( vo = vo )
+    defaultVOGroup = getVOOption( vo, "DefaultGroup", "%s_user" % vo )
+
+    failed = {}
+    successful = {}
+    for user in newUsers:
+      result = fc.addUser( user )
+      if not result['OK']:
+        failed[user] = "addUser"
+        continue
+      dirName = '/%s/user/%s/%s' % ( vo, user[0], user )
+      result = fc.createDirectory( dirName )
+      if not result['OK']:
+        failed[user] = "createDirectory"
+        continue
+      result = fc.changePathOwner( { dirName: user }, recursive = True )
+      if not result['OK']:
+        failed[user] = "changePathOwner"
+        continue
+      result = fc.changePathGroup( { dirName: defaultVOGroup }, recursive = True )
+      if not result['OK']:
+        failed[user] = "changePathGroup"
+        continue
+      successful[user] = True
+
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
 ###############################################################
 # Local utilities
 ###############################################################
@@ -422,7 +470,7 @@ class VOMS2CSAgent( AgentModule ):
 def getVOMSVOs( voList = None ):
   """ Get all VOs that have VOMS correspondence
 
-  :return: dictonary of the VO -> VOMSName correspondence
+  :return: dictionary of the VO -> VOMSName correspondence
   """
   if voList is None:
     voList = []
