@@ -30,12 +30,14 @@ class FileCatalogClient( FileCatalogClientBase ):
                    'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup',
                    'addMetadataField','deleteMetadataField','setMetadata','setMetadataBulk','removeMetadata',
                    'addMetadataSet', 'addDataset', 'addDatasetAnnotation', 'removeDataset', 'updateDataset',
-                   'freezeDataset', 'releaseDataset']
+                   'freezeDataset', 'releaseDataset', 'addUser', 'deleteUser', 'addGroup', 'deleteGroup',
+                   'repairCatalog', 'rebuildDirectoryUsage' ]
 
   NO_LFN_METHODS = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
                     'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
                     'getReplicasByMetadata','findFilesByMetadataDetailed','findFilesByMetadataWeb',
-                    'getCompatibleMetadata', 'addMetadataSet', 'getMetadataSet', 'getFileUserMetadata', 'getLFNForGUID']
+                    'getCompatibleMetadata', 'addMetadataSet', 'getMetadataSet', 'getFileUserMetadata', 'getLFNForGUID',
+                    'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'repairCatalog', 'rebuildDirectoryUsage' ]
 
   ADMIN_METHODS = [ 'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'getUsers', 'getGroups',
                     'getCatalogCounters', 'repairCatalog', 'rebuildDirectoryUsage' ]
