@@ -42,5 +42,6 @@ The following sections add some detail for the WMS systems.
    :maxdepth: 1
 
    Pilots/index
+   PilotsLogging/index
    Jobs/index
    JobPriorities/index
