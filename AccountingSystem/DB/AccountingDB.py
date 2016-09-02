@@ -1301,7 +1301,7 @@ class AccountingDB( DB ):
     IF types define dataTimespan, then records older than datatimespan seconds will be deleted
     automatically
     """
-    dataTimespan = self.dbCatalog[ typeName ][ 'dataTimespan' ] - self.dbBucketsLength[ typeName ][-1][1]
+    dataTimespan = self.dbCatalog[ typeName ][ 'dataTimespan' ] + self.dbBucketsLength[ typeName ][-1][1]
     if dataTimespan < 86400 * 30:
       return
     for table, field in ( ( _getTableName( "type", typeName ), 'endTime' ),
