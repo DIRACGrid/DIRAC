@@ -605,9 +605,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       if not os.path.exists( fileName ):
         self.replicaCache[transID] = {}
       else:
-        cacheFile = open( fileName, 'r' )
-        self.replicaCache[transID] = pickle.load( cacheFile )
-        cacheFile.close()
+        with open( fileName, 'r' ) as cacheFile:
+          self.replicaCache[transID] = pickle.load( cacheFile )
         self._logInfo( "Successfully loaded replica cache from file %s (%d files)" %
                        ( fileName, self.__filesInCache( transID ) ),
                        method = method, transID = transID )
