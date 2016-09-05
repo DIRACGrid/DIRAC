@@ -69,6 +69,10 @@ def diskSpace(path, size = 'TB', total = False):
       return S_ERROR( "No valid size specified" )
 
     st = os.statvfs(path)
+
+    if not st:
+      return S_ERROR( "Path not found %s", path )
+
     if total:
       # return total space
       result = (st.f_blocks * st.f_frsize) / convert
