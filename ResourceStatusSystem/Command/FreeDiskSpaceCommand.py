@@ -96,7 +96,7 @@ class FreeDiskSpaceCommand( Command ):
         self.rpc = RPCClient( DIPSurls[name], timeout=120 )
         free = self.rpc.getFreeDiskSpace("/")
         total = self.rpc.getTotalDiskSpace("/")
-        self.rsClient.addOrModifySpaceTokenOccupancyCache(name, lastCheckTime = datetime.utcnow(), free = free,
-                                                          total = total, token = name )
+        self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint = DIPSurls[name], lastCheckTime = datetime.utcnow(),
+                                                          free = free, total = total, token = name )
 
     return S_OK()
