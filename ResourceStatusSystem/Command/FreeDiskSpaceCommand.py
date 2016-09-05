@@ -1,6 +1,6 @@
-''' RemainingDiskSpaceCommand
+''' FreeDiskSpaceCommand
 
-  The Command gets the remaining space that is left in a DIRAC Storage Element
+  The Command gets the free space that is left in a DIRAC Storage Element
 
 '''
 
@@ -12,14 +12,14 @@ from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 __RCSID__ = '$Id:  $'
 
 
-class RemainingDiskSpaceCommand( Command ):
+class FreeDiskSpaceCommand( Command ):
   '''
-  Uses diskSpace method to get the remaining space
+  Uses diskSpace method to get the free space
   '''
 
   def __init__( self, args = None ):
 
-    super( RemainingDiskSpaceCommand, self ).__init__( args )
+    super( FreeDiskSpaceCommand, self ).__init__( args )
 
     self.rpc = None
     self.rsClient = None
@@ -84,7 +84,7 @@ class RemainingDiskSpaceCommand( Command ):
 
   def doCommand( self ):
     """
-    Gets the total and the remaining disk space of all DIPS storage elements that
+    Gets the total and the free disk space of all DIPS storage elements that
     are found in the CS and inserts the results in the SpaceTokenOccupancyCache table
     of ResourceManagementDB database.
     """
@@ -94,7 +94,7 @@ class RemainingDiskSpaceCommand( Command ):
     if DIPSurls:
       for name in DIPSurls:
         self.rpc = RPCClient( DIPSurls[name], timeout=120 )
-        free = self.rpc.getRemainingDiskSpace("/")
+        free = self.rpc.getFreeDiskSpace("/")
         total = self.rpc.getTotalDiskSpace("/")
         self.rsClient.addOrModifySpaceTokenOccupancyCache(name, lastCheckTime = datetime.utcnow(), free = free,
                                                           total = total, token = name )

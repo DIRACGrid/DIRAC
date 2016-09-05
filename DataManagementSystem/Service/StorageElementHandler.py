@@ -50,10 +50,11 @@ BASE_PATH = ""
 MAX_STORAGE_SIZE = 0
 USE_TOKENS = False
 
-def diskSpace(path, size = 'TB'):
+def diskSpace(path, size = 'TB', total = False):
     """
       Returns disk usage of the given path.
       If no size is specified, terabytes will be used by default.
+      If total is set to true, the total disk space will be returned instead.
     """
 
     if size.upper() == "KB":
@@ -68,29 +69,14 @@ def diskSpace(path, size = 'TB'):
       return S_ERROR( "No valid size specified" )
 
     st = os.statvfs(path)
-    free = (st.f_bavail * st.f_frsize) / convert
-    return S_OK( round(free, 2) )
-
-def totalSpace(path, size = 'TB'):
-    """
-      Returns total disk space of the given path.
-      If no size is specified, terabytes will be used by default.
-    """
-
-    if size.upper() == "KB":
-      convert = 1024
-    elif size.upper() == "MB":
-      convert = 1.048576e6
-    elif size.upper() == "GB":
-      convert = 1.073741824e9
-    elif size.upper() == "TB":
-      convert = 1.099511627776e12
+    if total:
+      # return total space
+      result = (st.f_blocks * st.f_frsize) / convert
     else:
-      return S_ERROR( "No valid size specified" )
+      # return free space
+      result = (st.f_bavail * st.f_frsize) / convert
 
-    st = os.statvfs(path)
-    total = (st.f_blocks * st.f_frsize) / convert
-    return S_OK( round(total, 2) )
+    return S_OK( round(result, 2) )
 
 def initializeStorageElementHandler( serviceInfo ):
   """  Initialize Storage Element global settings
@@ -218,19 +204,19 @@ class StorageElementHandler( RequestHandler ):
     """
     return self.__getFileStat( self.__resolveFileID( fileID ) )
 
-  types_getRemainingDiskSpace = [StringTypes]
-  def export_getRemainingDiskSpace( self, path, size = 'TB' ):
-    """ Get the remaining disk space of the storage element
+  types_getFreeDiskSpace = [basestring]
+  def export_getFreeDiskSpace( self, path, size = 'TB' ):
+    """ Get the free disk space of the storage element
         If no size is specified, terabytes will be used by default.
     """
     return diskSpace(path, size)
 
-  types_getTotalDiskSpace = [StringTypes]
+  types_getTotalDiskSpace = [basestring]
   def export_getTotalDiskSpace( self, path, size = 'TB' ):
     """ Get the total disk space of the storage element
         If no size is specified, terabytes will be used by default.
     """
-    return totalSpace(path, size)
+    return diskSpace(path, size, total = True)
 
   types_createDirectory = [StringTypes]
   def export_createDirectory( self, dir_path ):
