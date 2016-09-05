@@ -25,7 +25,7 @@ except:
 import logging
 import requests
 import tempfile
-from exceptions import *
+from fts3.rest.client.exceptions import *
 import os
 
 class Request(object):
@@ -102,7 +102,7 @@ class Request(object):
 
         self._handle_error(url, response.status_code, response.text)
 
-        return response.text
+        return str( response.text )
 
 
 __all__ = ['Request']
