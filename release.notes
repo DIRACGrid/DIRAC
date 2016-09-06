@@ -1,8 +1,12 @@
-[v6r16-pre1]
+[v6r16-pre2]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
         ExtraModule option
+
+*DMS
+NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move-replica-request
+     comand line tool
 
 *Resources
 NEW: MessageQueue resources to manage MQ connections complemented with
