@@ -603,20 +603,13 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       method = '__readCache'
       fileName = self.__cacheFile( transID )
       if not os.path.exists( fileName ):
-        # This is as a transitory measure for migrating from single to multiple cache files
-        fileName = self.cacheFile
-        cacheFile = open( fileName, 'r' )
-        cache = pickle.load( cacheFile )
-        for t_id in [t_id for t_id in cache if t_id not in self.replicaCache]:
-          self.replicaCache[t_id] = cache[t_id]
-        self.replicaCache[transID] = cache.get( transID, {} )
+        self.replicaCache[transID] = {}
       else:
-        cacheFile = open( fileName, 'r' )
-        self.replicaCache[transID] = pickle.load( cacheFile )
-      cacheFile.close()
-      self._logInfo( "Successfully loaded replica cache from file %s (%d files)" %
-                     ( fileName, self.__filesInCache( transID ) ),
-                     method = method, transID = transID )
+        with open( fileName, 'r' ) as cacheFile:
+          self.replicaCache[transID] = pickle.load( cacheFile )
+        self._logInfo( "Successfully loaded replica cache from file %s (%d files)" %
+                       ( fileName, self.__filesInCache( transID ) ),
+                       method = method, transID = transID )
     except Exception:
       self._logException( "Failed to load replica cache from file %s" % fileName,
                           method = method, transID = transID )

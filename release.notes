@@ -12,6 +12,36 @@ NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 
+[v6r15p14]
+
+*Core
+FIX: BaseClient - proper error propagation to avoid excessive output in the logger
+
+*Configuration
+CHANGE: Resources helper - in getStorageElementOptions() dereference SEs containing
+        BaseSE and Alias references
+
+*Accounting
+FIX: AccountingDB - changes to use DB index to speed-up removal query
+
+*DMS
+CHANGE: DMSHelpers - define SE groups SEsUsedForFailover, SEsNotToBeUsedForJobs, 
+        SEsUsedForArchive in the Operations/DataManagement and use them in the
+        corresponding helper functions
+FIX: FTSJob - temporary fix for the FTS rest interface Request object until it is
+     fixed in the FTS REST server         
+
+*Resources
+FIX: HTCondirCEComputingElement - check that some path was found in findFile(), return with error otherwise
+CHANGE: ARCComputingElement - consider jobs in Hold state as Failed as they never come back
+CHANGE: ARCComputingElement - do not use JobSupervisor tool for bulk job cancellation as
+        it does not seem to work, cancel jobs one by one
+FIX: ARCComputingElement - ensure that pilot jobs that are queued also get their proxies renewed on ARC-CE        
+
+*WMS
+FIX: SiteDirector - ensure that a proxy of at least 3 hours is available to the updatePilotStatus 
+     function so that if it renews any proxies, it's not renewing them with a very short proxy
+
 [v6r15p13]
 
 *Resources
