@@ -70,6 +70,9 @@ class DMSHelpers( object ):
     self.storageElementSet = set()
     self.siteSet = set()
     self.__opsHelper = Operations( vo = vo )
+    self.failoverSEs = None
+    self.archiveSEs = None
+    self.notForJobSEs = None
 
 
   def getSiteSEMapping( self ):
@@ -167,22 +170,28 @@ class DMSHelpers( object ):
     return sorted( self.storageElementSet )
 
   def isSEFailover( self, storageElement ):
-    seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForFailover', [] ) )
+    if self.failoverSEs is None:
+      seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForFailover', [] ) )
+      self.failoverSEs = resolveSEGroup( seList )
     # FIXME: remove string test at some point
-    return storageElement in resolveSEGroup( seList ) or ( not seList and isinstance( storageElement, basestring ) and 'FAILOVER' in storageElement.upper() )
+    return storageElement in self.failoverSEs or ( not self.failoverSEs and isinstance( storageElement, basestring ) and 'FAILOVER' in storageElement.upper() )
 
   def isSEForJobs( self, storageElement, checkSE = True ):
     if checkSE:
       self.getSiteSEMapping()
       if storageElement not in self.storageElementSet:
         return False
-    seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsNotToBeUsedForJobs', [] ) )
-    return storageElement not in resolveSEGroup( seList )
+    if self.notForJobSEs is None:
+      seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsNotToBeUsedForJobs', [] ) )
+      self.notForJobSEs = resolveSEGroup( seList )
+    return storageElement not in self.notForJobSEs
 
   def isSEArchive( self, storageElement ):
-    seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForArchive', [] ) )
+    if self.archiveSEs is None:
+      seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForArchive', [] ) )
+      self.archiveSEs = resolveSEGroup( seList )
     # FIXME: remove string test at some point
-    return storageElement in resolveSEGroup( seList ) or ( not seList and isinstance( storageElement, basestring ) and 'ARCHIVE' in storageElement.upper() )
+    return storageElement in self.archiveSEs or ( not self.archiveSEs and isinstance( storageElement, basestring ) and 'ARCHIVE' in storageElement.upper() )
 
   def getSitesForSE( self, storageElement, connectionLevel = None ):
     connectionIndex = _getConnectionIndex( connectionLevel, default = DOWNLOAD )

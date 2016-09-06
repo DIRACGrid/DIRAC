@@ -119,6 +119,14 @@ def getStorageElementOptions( seName ):
   if not result['OK']:
     return result
   options = result['Value']
+  # If the SE is an baseSE or an alias, derefence it
+  if 'BaseSE' in options or 'Alias' in options:
+    storageConfigPath = '/Resources/StorageElements/%s' % options.get( 'BaseSE', options.get( 'Alias' ) )
+    result = gConfig.getOptionsDict( storageConfigPath )
+    if not result['OK']:
+      return result
+    result['Value'].update( options )
+    options = result['Value']
 
   # Help distinguishing storage type
   diskSE = True
