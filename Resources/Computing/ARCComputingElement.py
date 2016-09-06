@@ -56,13 +56,13 @@ class ARCComputingElement( ComputingElement ):
                        'Preparing'  : 'Scheduled',
                        'Submitting' : 'Scheduled',
                        'Queuing'    : 'Scheduled',
-                       'Hold'       : 'Scheduled',
                        'Undefined'  : 'Unknown',
                        'Running'    : 'Running',
                        'Finishing'  : 'Running',
                        'Deleted' : 'Killed',
                        'Killed'  : 'Killed',
                        'Failed'  : 'Failed',
+                       'Hold'    : 'Failed',
                        'Finished': 'Done',
                        'Other'   : 'Done'
       }
@@ -262,24 +262,15 @@ class ARCComputingElement( ComputingElement ):
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
 
-    js = arc.compute.JobSupervisor(self.usercfg)
-
     jobList = list( jobIDList )
     if isinstance( jobIDList, basestring ):
       jobList = [ jobIDList ]
 
+    gLogger.debug("Killing jobs %s" % jobIDList)
     for jobID in jobList:
       job = self.__getARCJob( jobID )
-      js.AddJob( job )
-
-    result = js.Cancel() # Cancel all jobs at once
-
-    if not result:
-      gLogger.debug("Failed to kill jobs %s. CE(?) not reachable?" % jobIDList)
-      return S_ERROR( 'Failed to kill the job(s)' )
-    else:
-      gLogger.debug("Killed jobs %s" % jobIDList)
-
+      if not job.Cancel():
+        gLogger.debug("Failed to kill job %s. CE(?) not reachable?" % jobID)
 
     return S_OK()
 
@@ -375,6 +366,10 @@ class ARCComputingElement( ComputingElement ):
           if job.ProxyExpirationTime < nextHour:
             job.Renew()
             gLogger.debug("Renewing proxy for job %s whose proxy expires at %s" % (jobID, job.ProxyExpirationTime))
+        if arcState == "Hold":
+          # Cancel held jobs so they don't sit in the queue forever
+          gLogger.debug("Killing held job %s" % jobID)
+          job.Cancel()
       else:
         resultDict[jobID] = 'Unknown'
       # If done - is it really done? Check the exit code
