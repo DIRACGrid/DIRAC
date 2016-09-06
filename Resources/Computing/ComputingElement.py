@@ -88,7 +88,7 @@ class ComputingElement(object):
         os.environ['X509_USER_PROXY'] = result['Value']['path']
         return S_OK()
     else:
-      result = gProxyManager.dumpProxyToFile( self.proxy )
+      result = gProxyManager.dumpProxyToFile( self.proxy, requiredTimeLeft=self.minProxyTime )
       if not result['OK']:
         return result
       os.environ['X509_USER_PROXY'] = result['Value']
