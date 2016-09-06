@@ -531,7 +531,12 @@ class SiteDirector( AgentModule ):
       if not result['OK']:
         return result
       self.proxy = result['Value']
-      ce.setProxy( self.proxy, self.proxy.getRemainingSecs()['Value'] )
+      # Check returned proxy lifetime
+      result = self.proxy.getRemainingSecs()
+      if not result['OK']:
+        return result
+      lifetime_secs = result['Value']
+      ce.setProxy( self.proxy, lifetime_secs )
 
       # Get the number of available slots on the target site/queue
       totalSlots = self.getQueueSlots( queue, manyWaitingPilotsFlag )
