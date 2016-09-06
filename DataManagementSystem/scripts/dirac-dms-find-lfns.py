@@ -47,6 +47,8 @@ if __name__ == "__main__":
   typeDict.update( result['Value']['DirectoryMetaFields'] )
   # Special meta tags
   typeDict.update( FILE_STANDARD_METAKEYS )
+  
+  gLogger.info( "MetaDataDictionary: %s" % metaDict )
 
   mq = MetaQuery( typeDict = typeDict )
   result = mq.setMetaQuery( args )
@@ -63,4 +65,4 @@ if __name__ == "__main__":
   lfnList = result['Value']
 
   for lfn in lfnList:
-    gLogger.notice( lfn )
+    print lfn
