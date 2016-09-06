@@ -25,6 +25,7 @@
 import os
 import tempfile
 import commands
+import errno
 
 from DIRAC                                               import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
@@ -57,6 +58,8 @@ def findFile( workingDir, fileName ):
   if not res['OK']:
     return res
   paths = res['Value'][1].splitlines()
+  if not paths:
+    return S_ERROR( errno.ENOENT, "Could not find %s in directory %s" % ( fileName, workingDir ) )
   return S_OK(paths)
 
 def getCondorLogFile( pilotRef ):
