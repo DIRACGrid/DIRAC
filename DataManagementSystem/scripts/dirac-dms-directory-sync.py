@@ -50,6 +50,7 @@ for switch in Script.getUnprocessedSwitches():
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gConfig, gLogger
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -111,7 +112,7 @@ def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
           return S_ERROR('Error: ' + res['Message'])
       return S_OK()
     else:
-      return S_ERROR("Error:" + result['Message'])
+      return S_ERROR("Error: %s" % result['Value'])
   else:
     return S_ERROR("Error:" + result['Message'])
 
