@@ -31,10 +31,10 @@ def getMachineFeatures():
   for item in ( 'hs06', 'jobslots', 'log_cores', 'phys_cores' ):
     fname = os.path.join( featuresDir, item )
     try:
-      val = urllib.urlopen( fname ).read()
-    except :
-      val = 0
-    features[item] = val
+      # Only keep features that do exist
+      features[item] = urllib.urlopen( fname ).read()
+    except IOError:
+      pass
   return features
 
 def getJobFeatures():
@@ -46,10 +46,10 @@ def getJobFeatures():
   for item in ( 'hs06_job', 'allocated_cpu' ):
     fname = os.path.join( featuresDir, item )
     try:
-      val = urllib.urlopen( fname ).read()
+      # Only keep features that do exist
+      features[item] = urllib.urlopen( fname ).read()
     except IOError:
-      val = 0
-    features[item] = val
+      pass
   return features
 
 
@@ -58,7 +58,7 @@ def getPowerFromMJF():
   try:
     features = getJobFeatures()
     hs06Job = features.get( 'hs06_job' )
-    # If the information is there, return, otherwise go to machine features
+    # If the information is there and non zero, return, otherwise go to machine features
     if hs06Job:
       return round( float( hs06Job ), 2 )
     features = getMachineFeatures()
