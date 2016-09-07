@@ -10,7 +10,7 @@ import threading
 
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Resources.MessageQueue.MQConnection import MQConnection
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import EMQNOM, EMQUKN, EMQCONN
 
 class StompMQConnection( MQConnection ):
@@ -45,8 +45,6 @@ class StompMQConnection( MQConnection ):
     :param json message: json string of the message
     """
     result = self.callback( headers, message )
-    if result is None:
-      gLogger.error( "callback function has to return S_OK/S_ERROR!" )
     if self.acknowledgement:
       if result['OK']:
         self.connection.ack( headers['message-id'], self.subscriptionID )
