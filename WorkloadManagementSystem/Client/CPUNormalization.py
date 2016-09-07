@@ -57,8 +57,10 @@ def getPowerFromMJF():
   """ Extracts the machine power from either JOBFEATURES or MACHINEFEATURES """
   try:
     features = getJobFeatures()
-    if 'hs06_job' in features:
-      return round( float( features['hs06_job'] ), 2 )
+    hs06Job = features.get( 'hs06_job' )
+    # If the information is there, return, otherwise go to machine features
+    if hs06Job:
+      return round( float( hs06Job ), 2 )
     features = getMachineFeatures()
     totalPower = float( features.get( 'hs06', 0 ) )
     logCores = float( features.get( 'log_cores', 0 ) )
