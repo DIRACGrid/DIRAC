@@ -9,23 +9,11 @@
 """
 __RCSID__ = "$Id$"
 
-
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
-from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.Core.Utilities import Time
-import json
-try:
-  import pika
-except Exception as e:
-  from DIRAC.Core.Utilities.Subprocess import systemCall
-  result = systemCall( False, ["pip", "install", "pika"] )
-  if not result['OK']:
-    raise RuntimeError( result['Message'] )
-  else:
-    import pika
+from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 
 
 class StatesMonitoringAgent( AgentModule ):
@@ -45,22 +33,29 @@ class StatesMonitoringAgent( AgentModule ):
                                 'UserGroup',
                                 'JobGroup',
                                 'JobType',
-                              ]
+                                'ApplicationStatus',
+                                'MinorStatus']
   __summaryDefinedFields = [ ( 'ApplicationStatus', 'unset' ), ( 'MinorStatus', 'unset' ) ]
-  __summaryValueFieldsMapping = [ 'value',
-                                  'Reschedules',
-                                ]
+  __summaryValueFieldsMapping = [ 'Jobs',
+                                  'Reschedules']
   __renameFieldsMapping = { 'JobType' : 'JobSplitType' }
 
-
+  __jobDBFields = []
+  
+  jobDB = None
+  monitoringDB = None
+  __retry = 2
+  
   def initialize( self ):
     """ Standard constructor
     """
     
     self.jobDB = JobDB()
+    
+    self.monitoringDB = MonitoringDB()
 
     self.am_setOption( "PollingTime", 120 )
-    self.__jobDBFields = []
+
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
         field = 'Owner'
@@ -68,51 +63,20 @@ class StatesMonitoringAgent( AgentModule ):
         field = 'OwnerGroup'
       self.__jobDBFields.append( field )
     
-    result = gConfig.getOption( "/Systems/RabbitMQ/User" )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: User' )
-    user = result['Value']
-    
-    result = gConfig.getOption( "/Systems/RabbitMQ/Password" )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: Password' )
-    password = result['Value']
-    
-    result = gConfig.getOption( "/Systems/RabbitMQ/Host" )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: Host' )
-    self.host = result['Value']
-    
-    self.credentials = pika.PlainCredentials( user, password )
-
-    self.connection = pika.BlockingConnection( pika.ConnectionParameters( host = self.host, credentials = self.credentials ) )
-    self.channel = self.connection.channel()
-
-    self.channel.exchange_declare( exchange = 'mdatabase',
-                         exchange_type = 'fanout' )
-
     return S_OK()
 
-  def sendRecords( self, data ):
+  def sendRecords( self, data, monitoringType, counter = 0 ):
+    if counter > self.__retry:
+      return S_ERROR( "Falied to insert %d records to the db!" % len( data ) )
     try:
-      self.channel.basic_publish( exchange = 'mdatabase',
-                        routing_key = '',
-                        body = data,
-                        properties = pika.BasicProperties( 
-                        delivery_mode = 2,  # make message persistent
-                      ) )
-    except Exception as e:
-      gLogger.error( "Connection closed:" + str( e ) )
-      self.connection = pika.BlockingConnection( pika.ConnectionParameters( host = self.host, credentials = self.credentials ) )
-      self.channel = self.connection.channel()
-      self.channel.exchange_declare( exchange = 'mdatabase',
-                         exchange_type = 'fanout' )
-      gLogger.info( "Resend records" )
-      self.sendRecords( data )
+      return self.monitoringDB.put( data, monitoringType )
+    except Exception as e:  # pylint: disable=broad-except
+      gLogger.warn( "Problem during db acces: %s" % repr( e ) )
+      counter += 1
+      return self.sendRecords( data, monitoringType, counter )
       
-  def finalize( self ):
-    self.connection.close()
-    
+      
+     
   def execute( self ):
     """ Main execution method
     """
@@ -124,6 +88,7 @@ class StatesMonitoringAgent( AgentModule ):
     # Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
+    documents = []
     if not result[ 'OK' ]:
       gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
     else:
@@ -144,11 +109,14 @@ class StatesMonitoringAgent( AgentModule ):
         record = record[ len( self.__summaryKeyFieldsMapping ): ]
         for iP in range( len( self.__summaryValueFieldsMapping ) ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
-        rD['startTime'] = int( Time.toEpoch( now ) )       
-        rD['metric'] = 'WMSHistory'
-        message = json.dumps( rD )
-        self.sendRecords( message )
-      gLogger.info( "The records are successfully sent!" )
+        rD['time'] = int( Time.toEpoch( now ) )       
+        documents += [rD]
+      res = self.sendRecords( documents, 'WMSHistory' )
+      if res['OK']:
+        gLogger.info( "The records are successfully inserted to MonitoringDB!" )
+      else:
+        #we must use some failover
+        gLogger.error( 'Faild to insert the records: %s', res['Message'] )
         
     return S_OK()
 
