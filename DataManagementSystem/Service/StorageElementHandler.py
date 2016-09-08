@@ -50,7 +50,7 @@ BASE_PATH = ""
 MAX_STORAGE_SIZE = 0
 USE_TOKENS = False
 
-def diskSpace(path, size = 'TB', total = False):
+def getDiskSpace(path, size = 'TB', total = False):
     """
       Returns disk usage of the given path.
       If no size is specified, terabytes will be used by default.
@@ -78,7 +78,7 @@ def diskSpace(path, size = 'TB', total = False):
         # return free space
         result = (st.f_bavail * st.f_frsize) / convert
 
-    except Exception as e:
+    except OSError as e:
       return S_ERROR( "Error %s", e )
 
     return S_OK( round(result, 2) )
@@ -214,14 +214,14 @@ class StorageElementHandler( RequestHandler ):
     """ Get the free disk space of the storage element
         If no size is specified, terabytes will be used by default.
     """
-    return diskSpace(path, size)
+    return getDiskSpace(path, size)
 
   types_getTotalDiskSpace = [basestring]
   def export_getTotalDiskSpace( self, path, size = 'TB' ):
     """ Get the total disk space of the storage element
         If no size is specified, terabytes will be used by default.
     """
-    return diskSpace(path, size, total = True)
+    return getDiskSpace(path, size, total = True)
 
   types_createDirectory = [StringTypes]
   def export_createDirectory( self, dir_path ):
