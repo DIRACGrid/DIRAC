@@ -1,8 +1,13 @@
-[v6r16-pre2]
+[v6r16-pre3]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
         ExtraModule option
+
+*Monitoring
+NEW: New Monitoring system is introduced to collect, analyze and display various
+     monitoring information on DIRAC components status and behavior using ElasticSearch
+     database. The initial implementation is to collect WMSHistory counters.
 
 *DMS
 NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move-replica-request
