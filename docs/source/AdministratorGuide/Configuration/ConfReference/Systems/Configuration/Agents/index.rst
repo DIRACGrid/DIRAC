@@ -34,6 +34,10 @@ Common options for all the agents:
 | *DryRun*            | If True, the agent won't change       | DryRun = False               |
 |                     | the CS                                |                              |
 +---------------------+---------------------------------------+------------------------------+
+| *WatchdogTime*      | If > 0 will kill the agent if the     | | WatchdogTime = 3600        |
+|                     | cycle exceeds WatchdogTime in seconds | | (default is 0)             |
+|                     | to force a restart of the agent       |                              |
++---------------------+---------------------------------------+------------------------------+
 
 
 

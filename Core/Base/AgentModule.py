@@ -9,6 +9,7 @@
 import os
 import threading
 import time
+import signal
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
@@ -76,6 +77,7 @@ class AgentModule( object ):
       - Enabled
       - PollingTime            default = 120
       - MaxCycles              default = 500
+      - WatchdogTime           default = 0 (disabled)
       - ControlDirectory       control/SystemName/AgentName
       - WorkDirectory          work/SystemName/AgentName
       - shifterProxy           ''
@@ -125,6 +127,7 @@ class AgentModule( object ):
     self.__configDefaults[ 'Enabled'] = self.am_getOption( "Status", "Active" ).lower() in ( 'active' )
     self.__configDefaults[ 'PollingTime'] = self.am_getOption( "PollingTime", 120 )
     self.__configDefaults[ 'MaxCycles'] = self.am_getOption( "MaxCycles", 500 )
+    self.__configDefaults[ 'WatchdogTime' ] = self.am_getOption( "WatchdogTime", 0 )
     self.__configDefaults[ 'ControlDirectory' ] = os.path.join( self.__basePath,
                                                                 'control',
                                                                 *agentName.split( "/" ) )
@@ -205,6 +208,10 @@ class AgentModule( object ):
       self.log.notice( " Cycles: %s" % self.am_getMaxCycles() )
     else:
       self.log.notice( " Cycles: unlimited" )
+    if self.am_getOption( 'WatchdogTime' ) > 0:
+      self.log.notice( " Watchdog interval: %s" % self.am_getWatchdogTime() )
+    else:
+      self.log.notice( " Watchdog interval: disabled " )
     self.log.notice( "="*40 )
     self.__initialized = True
     return S_OK()
@@ -266,6 +273,9 @@ class AgentModule( object ):
 
   def am_getMaxCycles( self ):
     return self.am_getOption( "MaxCycles" )
+
+  def am_getWatchdogTime( self ):
+    return self.am_getOption( "WatchdogTime" )
 
   def am_getCyclesDone( self ):
     return self.am_getModuleParam( 'cyclesDone' )
@@ -337,6 +347,11 @@ class AgentModule( object ):
       cD = self.__moduleProperties[ 'cyclesDone' ]
       self.log.notice( "Remaining %s of %s cycles" % ( mD - cD, mD ) )
     self.log.notice( "-"*40 )
+    # use SIGALARM as a watchdog interrupt if enabled
+    watchdogInt = self.am_getWatchdogTime()
+    if watchdogInt > 0:
+      signal.signal( signal.SIGALRM, signal.SIG_DFL )
+      signal.alarm( watchdogInt )
     elapsedTime = time.time()
     cpuStats = self._startReportToMonitoring()
     cycleResult = self.__executeModuleCycle()
@@ -363,6 +378,9 @@ class AgentModule( object ):
     self.log.notice( "-"*40 )
     # Update number of cycles
     self.monitor.setComponentExtraParam( 'cycles', self.__moduleProperties[ 'cyclesDone' ] )
+    # cycle finished successfully, cancel watchdog
+    if watchdogInt > 0:
+      signal.alarm(0)
     return cycleResult
 
   def _startReportToMonitoring( self ):
