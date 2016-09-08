@@ -1,3 +1,10 @@
+[v6r15p15]
+
+*WMS
+CHANGE: JobScheduling - correct handling of user specified sites in the executor,
+        including non-existent (misspelled) site names
+        
+
 [v6r15p14]
 
 *Core
@@ -18,7 +25,7 @@ FIX: FTSJob - temporary fix for the FTS rest interface Request object until it i
      fixed in the FTS REST server         
 
 *Resources
-FIX: HTCondirCEComputingElement - check that some path was found in findFile(), return with error otherwise
+FIX: HTCondorCEComputingElement - check that some path was found in findFile(), return with error otherwise
 CHANGE: ARCComputingElement - consider jobs in Hold state as Failed as they never come back
 CHANGE: ARCComputingElement - do not use JobSupervisor tool for bulk job cancellation as
         it does not seem to work, cancel jobs one by one
