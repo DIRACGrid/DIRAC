@@ -13,8 +13,8 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 
 class DataCache( object ):
 
-  def __init__( self ):
-    self.graphsLocation = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data', 'accountingPlots' )
+  def __init__( self, dirName = 'accountingPlots' ):
+    self.graphsLocation = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data', dirName )
     self.cachedGraphs = {}
     self.alive = True
     self.purgeThread = threading.Thread( target = self.purgeExpired )
@@ -43,8 +43,8 @@ class DataCache( object ):
     """
     Get report data from cache if exists, else generate it
     """
-    reportData = self.__dataCache.get( reportHash )
-    if reportData is None:
+    reportData = self.__dataCache.get( reportHash )   
+    if not reportData:
       retVal = dataFunc( reportRequest )
       if not retVal[ 'OK' ]:
         return retVal
@@ -57,7 +57,7 @@ class DataCache( object ):
     Get report data from cache if exists, else generate it
     """
     plotDict = self.__graphCache.get( reportHash )
-    if plotDict is None:
+    if not plotDict:
       basePlotFileName = "%s/%s" % ( self.graphsLocation, reportHash )
       retVal = plotFunc( reportRequest, reportData, basePlotFileName )
       if not retVal[ 'OK' ]:
@@ -96,4 +96,4 @@ class DataCache( object ):
 
 
 
-gDataCache = DataCache()
+
