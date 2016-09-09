@@ -363,9 +363,10 @@ class VOMS2CSAgent( AgentModule ):
       groupsWithRole = []
       for role in vomsUserDict[dn]['Roles']:
         fullRole = "/%s/%s" % ( vomsVOName, role )
-        group = vomsDIRACMapping.get( fullRole )
-        if group:
-          groupsWithRole.extend( group )
+        groupList = vomsDIRACMapping.get( fullRole )
+        for group in groupList:
+          if group not in noSyncVOMSGroups:
+            groupsWithRole.append( group )
       keepGroups = nonVOGroups + groupsWithRole + [defaultVOGroup]
       for group in existingGroups:
         if group in nonVOGroups:
