@@ -14,7 +14,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.Core.Utilities import Time
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
-
+from DIRAC.MonitoringSystem.Client.FailoverStore import FailoverStore
 
 class StatesMonitoringAgent( AgentModule ):
   """
@@ -55,7 +55,10 @@ class StatesMonitoringAgent( AgentModule ):
     self.monitoringDB = MonitoringDB()
 
     self.am_setOption( "PollingTime", 120 )
-
+    
+    self.failoverStore = FailoverStore( db = self.monitoringDB,
+                                       monitoringType = "WMSHistory" )
+    
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
         field = 'Owner'
@@ -109,13 +112,13 @@ class StatesMonitoringAgent( AgentModule ):
         record = record[ len( self.__summaryKeyFieldsMapping ): ]
         for iP in range( len( self.__summaryValueFieldsMapping ) ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
-        rD['timestamp'] = int( Time.toEpoch( now ) )       
-        documents += [rD]
-      res = self.sendRecords( documents, 'WMSHistory' )
+        rD['time'] = int( Time.toEpoch( now ) )       
+        self.failoverStore.addRecord( rD )
+      res = self.failoverStore.commit()
       if res['OK']:
         gLogger.info( "The records are successfully inserted to MonitoringDB!" )
       else:
-        #we must use some failover
+        # we must use some failover
         gLogger.error( 'Faild to insert the records: %s', res['Message'] )
         
     return S_OK()
