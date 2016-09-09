@@ -19,3 +19,12 @@ The attributes of this agent are showed in the table below:
 | *AutoModifyUsers*     | If users will be modified            |                                              |
 |                       | automatically                        | AutoModifyUsers = True                       |
 +-----------------------+--------------------------------------+----------------------------------------------+
+| *AutoDeleteUsers*     | Users no more registered in VOMS are |                                              |
+|                       | automatically deleted from DIRAC     | AutoDeleteUsers = False                      |
++-----------------------+--------------------------------------+----------------------------------------------+
+| *DetailedReport*      | Detailed report on users per group   |                                              |
+|                       | sent to the VO administrator         | DetailedReport = True                        |
++-----------------------+--------------------------------------+----------------------------------------------+
+| *MakeHomeDirectory*   | Automatically create user home       |                                              |
+|                       | directory in the File Catalog        | MakeHomeDirectory = False                    |
++-----------------------+--------------------------------------+----------------------------------------------+
