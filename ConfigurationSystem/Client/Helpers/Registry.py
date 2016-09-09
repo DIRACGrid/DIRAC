@@ -313,6 +313,7 @@ def getVOMSRoleGroupMapping( vo = '' ):
   vomsGroupDict = {}
   groupVomsDict = {}
   noVOMSGroupList = []
+  noVOMSSyncGroupList = []
 
   for group in groupList:
     vomsRole = getGroupOption( group, 'VOMSRole' )
@@ -320,9 +321,15 @@ def getVOMSRoleGroupMapping( vo = '' ):
       vomsGroupDict.setdefault( vomsRole, [] )
       vomsGroupDict[vomsRole].append( group )
       groupVomsDict[group] = vomsRole
+      syncVOMS = getGroupOption( group, 'AutoSyncVOMS', True )
+      if not syncVOMS:
+        noVOMSSyncGroupList.append( group )
 
   for group in groupList:
     if not group in groupVomsDict:
       noVOMSGroupList.append(group)
 
-  return S_OK( { "VOMSDIRAC": vomsGroupDict, "DIRACVOMS": groupVomsDict, "NoVOMS": noVOMSGroupList } )
+  return S_OK( { "VOMSDIRAC": vomsGroupDict,
+                 "DIRACVOMS": groupVomsDict,
+                 "NoVOMS": noVOMSGroupList,
+                 "NoSyncVOMS": noVOMSSyncGroupList } )

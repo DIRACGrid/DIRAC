@@ -577,11 +577,12 @@ class CSAPI( object ):
     for group in self.__csMod.getSections( "%s/Groups" % self.__baseSecurity ):
       usersOptionPath = "%s/Groups/%s/Users" % ( self.__baseSecurity, group )
       users = self.__csMod.getValue( usersOptionPath )
-      usersList = List.fromChar( users )
-      usersList.sort()
-      sortedUsers = ", ".join( usersList )
-      if users != sortedUsers:
-        self.__csMod.setOptionValue( usersOptionPath, sortedUsers )
+      if users:
+        usersList = List.fromChar( users )
+        usersList.sort()
+        sortedUsers = ", ".join( usersList )
+        if users != sortedUsers:
+          self.__csMod.setOptionValue( usersOptionPath, sortedUsers )
 
   def checkForUnexistantUsersInGroups( self ):
     allUsers = self.__csMod.getSections( "%s/Users" % self.__baseSecurity )
