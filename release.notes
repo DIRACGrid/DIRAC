@@ -1,9 +1,13 @@
 [v6r15p15]
 
+*Configuration
+CHANGE: VOMS2CSAgent - added new features: deleting users no more registered in VOMS;
+        automatic creation of home directories in the File Catalog for new users
+
 *WMS
 CHANGE: JobScheduling - correct handling of user specified sites in the executor,
         including non-existent (misspelled) site names
-        
+FIX: CPUNormalization - accept if the JOBFEATURES information is zero or absent        
 
 [v6r15p14]
 
