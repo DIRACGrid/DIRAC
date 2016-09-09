@@ -6,6 +6,8 @@
     -
 """
 
+from collections import defaultdict
+
 from DIRAC.Core.Base.AgentModule                       import AgentModule
 from DIRAC.ConfigurationSystem.Client.CSAPI            import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient   import NotificationClient
@@ -184,12 +186,11 @@ class VOMS2CSAgent( AgentModule ):
     diracVOMSMapping = result['Value']['DIRACVOMS']
 
     records = []
-    groupDict = {}
+    groupDict = defaultdict( int )
     multiDNUsers = {}
     suspendedUsers = []
     for user in userDict:
       for group in userDict[user]['Groups']:
-        groupDict.setdefault( group, 0 )
         groupDict[group] += 1
       dnList = fromChar( userDict[user]['DN'] )
       if len( dnList ) > 1:
@@ -219,7 +220,7 @@ class VOMS2CSAgent( AgentModule ):
   @executeWithUserProxy
   def __syncCSWithVOMS( self, vo ):
     self.__adminMsgs = { 'Errors' : [], 'Info' : [] }
-    resultDict = {}
+    resultDict = defaultdict( list )
 
     # Get DIRAC group vs VOMS Role Mappings
     result = getVOMSRoleGroupMapping( vo )
@@ -349,7 +350,6 @@ class VOMS2CSAgent( AgentModule ):
             result = self.csapi.modifyUser( newDiracName, userDict, createIfNonExistant = True )
             if not result['OK']:
               self.log.warn( 'Failed adding new user %s' % newDiracName )
-            resultDict.setdefault( 'NewUsers', [] )
             resultDict['NewUsers'].append( newDiracName )
             newAddedUserDict[newDiracName] = userDict
           continue
@@ -416,7 +416,6 @@ class VOMS2CSAgent( AgentModule ):
         if result['OK'] and result['Value']:
           self.log.info( "Modified user %s: %s" % ( diracName, str( userDict ) ) )
           self.voChanged = True
-          resultDict.setdefault( 'ModifiedUsers', [] )
           resultDict['ModifiedUsers'].append( diracName )
 
     # Check if there are potentially obsoleted users
