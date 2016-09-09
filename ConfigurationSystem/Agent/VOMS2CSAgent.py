@@ -400,13 +400,13 @@ class VOMS2CSAgent( AgentModule ):
             addedGroups = set( userDict[key] ) - set( diracUserDict.get( diracName, {} ).get( key, [] ) )
             removedGroups = set( diracUserDict.get( diracName, {} ).get( key, [] ) ) - set( userDict[key] )
             if addedGroups:
-              modMsg += "    Added to group(s) %s\n" % str( addedGroups )
+              modMsg += "    Added to group(s) %s\n" % ','.join( addedGroups )
             if removedGroups:
-              modMsg += "    Removed from group(s) %s\n" % str( removedGroups )
+              modMsg += "    Removed from group(s) %s\n" % ','.join( removedGroups )
           else:
             oldValue = str( diracUserDict.get( diracName, {} ).get( key, '' ) )
             if str( userDict[key] ) != oldValue:
-              modMsg += "    %s: %s\n" % ( key, str( userDict[key] ) )
+              modMsg += "    %s: %s -> %s\n" % ( key, oldValue, str( userDict[key] ) )
         if modMsg:
           self.__adminMsgs[ 'Info' ].append( message + modMsg )
           modified = True
