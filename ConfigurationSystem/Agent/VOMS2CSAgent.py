@@ -229,6 +229,7 @@ class VOMS2CSAgent( AgentModule ):
     vomsDIRACMapping = result['Value']['VOMSDIRAC']
     diracVOMSMapping = result['Value']['DIRACVOMS']
     noVOMSGroups = result['Value']['NoVOMS']
+    noSyncVOMSGroups = result['Value']['NoSyncVOMS']
 
     vomsSrv = VOMSService( vo )
 
@@ -331,9 +332,10 @@ class VOMS2CSAgent( AgentModule ):
           groupsWithRole = []
           for role in vomsUserDict[dn]['Roles']:
             fullRole = "/%s/%s" % ( vomsVOName, role )
-            group = vomsDIRACMapping.get( fullRole )
-            if group:
-              groupsWithRole.extend( group )
+            groupList = vomsDIRACMapping.get( fullRole )
+            for group in groupList:
+              if group not in noSyncVOMSGroups:
+                groupsWithRole.append( group )
           userDict['Groups'] = list( set( groupsWithRole + [defaultVOGroup] ) )
           message = "\n  Added new user %s:\n" % newDiracName
           for key in userDict:
@@ -375,6 +377,9 @@ class VOMS2CSAgent( AgentModule ):
           keepGroups.append( group )
         # Keep existing groups with no VOMS attribute if any
         if group in noVOMSGroups:
+          keepGroups.append( group )
+        # Keep groups for which syncronization with VOMS is forbidden
+        if group in noSyncVOMSGroups:
           keepGroups.append( group )
       userDict['Groups'] = list( set( keepGroups ) )
       # Merge together groups for the same user but different DNs
