@@ -277,12 +277,14 @@ class VOMS2CSAgent( AgentModule ):
         newDNs.append( dn )
 
     allDiracUsers = getAllUsers()
+    nonVOUserDict = {}
     nonVOUsers = list( set( allDiracUsers ) - set( diracUserDict.keys() ) )
-    result = self.csapi.describeUsers( nonVOUsers )
-    if not result['OK']:
-      self.log.error( 'Could not retrieve CS User description' )
-      return result
-    nonVOUserDict = result['Value']
+    if nonVOUsers:
+      result = self.csapi.describeUsers( nonVOUsers )
+      if not result['OK']:
+        self.log.error( 'Could not retrieve CS User description' )
+        return result
+      nonVOUserDict = result['Value']
 
     # Process users
     defaultVOGroup = getVOOption( vo, "DefaultGroup", "%s_user" % vo )
@@ -395,8 +397,12 @@ class VOMS2CSAgent( AgentModule ):
         modMsg = ''
         for key in userDict:
           if key == "Groups":
-            if set( userDict[key] ) != set( diracUserDict.get( diracName, {} ).get( key, [] ) ):
-              modMsg += "    %s: %s\n" % ( key, str( userDict[key] ) )
+            addedGroups = set( userDict[key] ) - set( diracUserDict.get( diracName, {} ).get( key, [] ) )
+            removedGroups = set( diracUserDict.get( diracName, {} ).get( key, [] ) ) - set( userDict[key] )
+            if addedGroups:
+              modMsg += "    Added to group(s) %s\n" % str( addedGroups )
+            if removedGroups:
+              modMsg += "    Removed from group(s) %s\n" % str( removedGroups )
           else:
             oldValue = str( diracUserDict.get( diracName, {} ).get( key, '' ) )
             if str( userDict[key] ) != oldValue:
@@ -417,7 +423,7 @@ class VOMS2CSAgent( AgentModule ):
     oldUsers = set()
     for user in diracUserDict:
       dnSet = set( fromChar( diracUserDict[user]['DN'] ) )
-      if not dnSet.intersection( set( vomsUserDict.keys() ) ) and not user in nonVOUserDict:
+      if not dnSet.intersection( set( vomsUserDict.keys() ) ) and user not in nonVOUserDict:
         for group in diracUserDict[user]['Groups']:
           if group not in noVOMSGroups:
             oldUsers.add( user )
