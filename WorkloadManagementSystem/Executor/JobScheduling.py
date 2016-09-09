@@ -90,15 +90,15 @@ class JobScheduling( OptimizerExecutor ):
         if not result[ 'OK' ]:
           return S_ERROR( "Problem checking userSites for tuple of active/banned/invalid sites" )
 
-        userSites, banned_sites, invalid_sites = result['Value']
-        if invalid_sites:
-          self.jobLog.debug( "Invalid site(s) requested: %s" % ','.join( invalid_sites ) )
+        userSites, bannedSites, invalidSites = result['Value']
+        if invalidSites:
+          self.jobLog.debug( "Invalid site(s) requested: %s" % ','.join( invalidSites ) )
           if not self.ex_getOption( 'AllowInvalidSites', True ):
-            return self.__holdJob( jobState, "Requested site(s) %s are invalid" % ",".join( invalid_sites ) )
-        if banned_sites:
-          self.jobLog.debug( "Banned site(s) %s ignored" % ",".join( banned_sites ) )
+            return self.__holdJob( jobState, "Requested site(s) %s are invalid" % ",".join( invalidSites ) )
+        if bannedSites:
+          self.jobLog.debug( "Banned site(s) %s ignored" % ",".join( bannedSites ) )
           if not userSites:
-            return self.__holdJob( jobState, "Requested site(s) %s are inactive" % ",".join( banned_sites ) )
+            return self.__holdJob( jobState, "Requested site(s) %s are inactive" % ",".join( bannedSites ) )
 
         if not userSites:
           return self.__holdJob( jobState, "No requested site(s) are active/valid" )
