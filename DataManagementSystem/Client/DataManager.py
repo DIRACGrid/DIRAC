@@ -1474,7 +1474,8 @@ class DataManager( object ):
   def getActiveReplicas( self, lfns, getUrl = True, diskOnly = False, preferDisk = False ):
     """ Get all the replicas for the SEs which are in Active status for reading.
     """
-    return self.getReplicas( lfns, allStatus = False, getUrl = getUrl, diskOnly = diskOnly, preferDisk = preferDisk, active = True )
+    return self.getReplicas( lfns, allStatus = False, getUrl = getUrl, diskOnly = diskOnly,
+                             preferDisk = preferDisk, active = True )
 
   def __filterTapeReplicas( self, replicaDict, diskOnly = False ):
     """
@@ -1482,24 +1483,35 @@ class DataManager( object ):
     If there is a disk replica, removetape replicas, else keep all
     The input argument is modified
     """
-    for lfn, replicas in replicaDict['Successful'].items():  # Beware, tehre is a del below
-      self.__filterTapeSEs( replicas, diskOnly = diskOnly )
+    seList = set( se for ses in replicaDict['Successful'].itervalues() for se in ses )
+    # Get a cache of SE statuses for long list of replicas
+    seStatus = dict( ( se,
+                       ( self.__checkSEStatus( se, status = 'diskSE' ),
+                        self.__checkSEStatus( se, status = 'tapeSE' ) ) ) for se in seList )
+    for lfn, replicas in replicaDict['Successful'].items():  # Beware, there is a del below
+      self.__filterTapeSEs( replicas, diskOnly = diskOnly, seStatus = seStatus )
       # If diskOnly, one may not have any replica in the end, set Failed
       if diskOnly and not replicas:
         del replicaDict['Successful'][lfn]
         replicaDict['Failed'][lfn] = 'No disk replicas'
     return
 
-  def __filterTapeSEs( self, replicas, diskOnly = False ):
+  def __filterTapeSEs( self, replicas, diskOnly = False, seStatus = None ):
     """ Remove the tape SEs as soon as there is one disk SE or diskOnly is requested
     The input argument is modified
     """
+    # Build the SE status cache if not existing
+    if seStatus is None:
+      seStatus = dict( ( se,
+                         ( self.__checkSEStatus( se, status = 'diskSE' ),
+                          self.__checkSEStatus( se, status = 'tapeSE' ) ) ) for se in replicas )
+
     for se in replicas:  #  There is a del below but we then return!
       # First find a disk replica, otherwise do nothing unless diskOnly is set
-      if diskOnly or self.__checkSEStatus( se, status = 'DiskSE' ):
+      if diskOnly or seStatus[se][0]:
         # There is one disk replica, remove tape replicas and exit loop
         for se in replicas.keys():  # Beware: there is a pop below
-          if self.__checkSEStatus( se, status = 'TapeSE' ):
+          if seStatus[se][1]:
             replicas.pop( se )
         return
     return
@@ -1531,9 +1543,12 @@ class DataManager( object ):
     Check a replica dictionary for active replicas
     The input dict is modified, no returned value
     """
+    seList = set( se for ses in replicaDict['Successful'].itervalues() for se in ses )
+    # Get a cache of SE statuses for long list of replicas
+    seStatus = dict( ( se, self.__checkSEStatus( se, status = 'Read' ) ) for se in seList )
     for replicas in replicaDict['Successful'].itervalues():
       for se in replicas.keys():  # Beware: there is a pop below
-        if not self.__checkSEStatus( se, status = 'Read' ):
+        if not seStatus[se]:
           replicas.pop( se )
     return
 
