@@ -1589,7 +1589,6 @@ class DataManager( object ):
     result = {'Successful':catalogReplicas, 'Failed':failed}
     if active:
       self.__checkActiveReplicas( result )
-    print catalogReplicas
     if diskOnly or preferDisk:
       self.__filterTapeReplicas( result, diskOnly = diskOnly )
     return S_OK( result )
