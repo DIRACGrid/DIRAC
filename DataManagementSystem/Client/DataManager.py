@@ -1503,9 +1503,11 @@ class DataManager( object ):
     # Build the SE status cache if not existing
     if seStatus is None:
       seStatus = dict( ( se,
-                         ( self.__checkSEStatus( se, status = 'diskSE' ),
-                          self.__checkSEStatus( se, status = 'tapeSE' ) ) ) for se in replicas )
+                         ( self.__checkSEStatus( se, status = 'DiskSE' ),
+                          self.__checkSEStatus( se, status = 'TapeSE' ) ) ) for se in replicas )
 
+    print seStatus
+    print replicas
     for se in replicas:  #  There is a del below but we then return!
       # First find a disk replica, otherwise do nothing unless diskOnly is set
       if diskOnly or seStatus[se][0]:
@@ -1514,6 +1516,7 @@ class DataManager( object ):
           if seStatus[se][1]:
             replicas.pop( se )
         return
+    print replicas
     return
 
   def checkActiveReplicas( self, replicaDict ):
@@ -1589,6 +1592,7 @@ class DataManager( object ):
     result = {'Successful':catalogReplicas, 'Failed':failed}
     if active:
       self.__checkActiveReplicas( result )
+    print catalogReplicas
     if diskOnly or preferDisk:
       self.__filterTapeReplicas( result, diskOnly = diskOnly )
     return S_OK( result )
