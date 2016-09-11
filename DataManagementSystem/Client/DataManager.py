@@ -1506,8 +1506,6 @@ class DataManager( object ):
                          ( self.__checkSEStatus( se, status = 'DiskSE' ),
                           self.__checkSEStatus( se, status = 'TapeSE' ) ) ) for se in replicas )
 
-    print seStatus
-    print replicas
     for se in replicas:  #  There is a del below but we then return!
       # First find a disk replica, otherwise do nothing unless diskOnly is set
       if diskOnly or seStatus[se][0]:
@@ -1516,7 +1514,6 @@ class DataManager( object ):
           if seStatus[se][1]:
             replicas.pop( se )
         return
-    print replicas
     return
 
   def checkActiveReplicas( self, replicaDict ):
