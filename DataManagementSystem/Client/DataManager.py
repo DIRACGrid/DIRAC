@@ -1486,8 +1486,8 @@ class DataManager( object ):
     seList = set( se for ses in replicaDict['Successful'].itervalues() for se in ses )
     # Get a cache of SE statuses for long list of replicas
     seStatus = dict( ( se,
-                       ( self.__checkSEStatus( se, status = 'diskSE' ),
-                        self.__checkSEStatus( se, status = 'tapeSE' ) ) ) for se in seList )
+                       ( self.__checkSEStatus( se, status = 'DiskSE' ),
+                        self.__checkSEStatus( se, status = 'TapeSE' ) ) ) for se in seList )
     for lfn, replicas in replicaDict['Successful'].items():  # Beware, there is a del below
       self.__filterTapeSEs( replicas, diskOnly = diskOnly, seStatus = seStatus )
       # If diskOnly, one may not have any replica in the end, set Failed
