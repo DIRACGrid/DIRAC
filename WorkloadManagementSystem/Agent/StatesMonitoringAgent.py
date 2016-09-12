@@ -3,18 +3,17 @@
 # File :    StatesMonitoringAgent.py
 # Author :  Zoltan Mathe
 ########################################################################
-
 """  StatesMonitoringAgent sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
 """
 __RCSID__ = "$Id$"
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import gLogger, gConfig, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.Core.Utilities import Time
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
-from DIRAC.MonitoringSystem.Client.FailoverStore import FailoverStore
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 class StatesMonitoringAgent( AgentModule ):
   """
@@ -54,10 +53,10 @@ class StatesMonitoringAgent( AgentModule ):
     
     self.monitoringDB = MonitoringDB()
 
-    self.am_setOption( "PollingTime", 120 )
+    self.am_setOption( "PollingTime", 30 )
     
-    self.failoverStore = FailoverStore( db = self.monitoringDB,
-                                       monitoringType = "WMSHistory" )
+    self.monitoringReporter = MonitoringReporter( db = self.monitoringDB,
+                                                  monitoringType = "WMSHistory" )
     
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
@@ -67,19 +66,7 @@ class StatesMonitoringAgent( AgentModule ):
       self.__jobDBFields.append( field )
     
     return S_OK()
-
-  def sendRecords( self, data, monitoringType, counter = 0 ):
-    if counter > self.__retry:
-      return S_ERROR( "Falied to insert %d records to the db!" % len( data ) )
-    try:
-      return self.monitoringDB.put( data, monitoringType )
-    except Exception as e:  # pylint: disable=broad-except
-      gLogger.warn( "Problem during db acces: %s" % repr( e ) )
-      counter += 1
-      return self.sendRecords( data, monitoringType, counter )
-      
-      
-     
+   
   def execute( self ):
     """ Main execution method
     """
@@ -91,7 +78,6 @@ class StatesMonitoringAgent( AgentModule ):
     # Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
-    documents = []
     if not result[ 'OK' ]:
       gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
     else:
@@ -113,13 +99,9 @@ class StatesMonitoringAgent( AgentModule ):
         for iP in range( len( self.__summaryValueFieldsMapping ) ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
         rD['time'] = int( Time.toEpoch( now ) )       
-        self.failoverStore.addRecord( rD )
-      res = self.failoverStore.commit()
-      if res['OK']:
-        gLogger.info( "The records are successfully inserted to MonitoringDB!" )
-      else:
-        # we must use some failover
-        gLogger.error( 'Faild to insert the records: %s', res['Message'] )
+        self.monitoringReporter.addRecord( rD )
+      self.monitoringReporter.commit()
+      gLogger.info( "The records are successfully sent to the Store!" )
         
     return S_OK()
 
