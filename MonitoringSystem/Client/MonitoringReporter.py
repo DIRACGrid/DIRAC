@@ -21,7 +21,7 @@ class MonitoringReporter( object ):
     
     try:
       self.__mqListener = MQListener( monitoringType ) #, callback = self.consumeRecords )
-      self.__mqListener.setAckCallback(self.consumeRecords)
+      #self.__mqListener.setCallback(self.consumeRecords)
       self.__mqPublisher = MQPublisher( monitoringType )
       self.__mq = True
     except MQConnectionError as exc:
@@ -73,8 +73,9 @@ class MonitoringReporter( object ):
       self.__documents.extend( documents )
     
     print 'start'
-    '''
+    
     result = S_OK()
+    self.__mqListener.start()
     while result['OK']:
       result = self.__mqListener.get()
       print '!!!!', result['OK']
@@ -82,22 +83,23 @@ class MonitoringReporter( object ):
         records = json.loads( result['Value'] )
         retVal = self.__db.put( list(records), self.__monitoringType )
         if not retVal['OK']:
-          #self.__mqListener.stop()
-          #res = self.publishRecords( records )
-          #if not res['OK']:
-          #  return res
+          self.__mqListener.stop()
+          res = self.publishRecords( records )
+          if not res['OK']:
+            return res
           break
       else:
         print 'SS@@#######', result['Message']
-        #self.__mqListener.stop()
+        self.__mqListener.stop()
         break
+    
     '''
     result = self.__mqListener.get()
     print 'EEE',result
     if result['OK']:
       records = json.loads( result['Value'] )
       print 'records', records
-    
+    '''
     print 'END'
     return S_OK( recordSent ) 
   
