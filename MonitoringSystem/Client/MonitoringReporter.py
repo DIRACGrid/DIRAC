@@ -75,7 +75,6 @@ class MonitoringReporter( object ):
     print 'start'
     
     result = S_OK()
-    self.__mqListener.start()
     while result['OK']:
       result = self.__mqListener.get()
       print '!!!!', result['OK']
