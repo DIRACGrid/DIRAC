@@ -73,6 +73,7 @@ class InputDataByProtocol( object ):
         bestReplica[lfn] = success[lfn][0]
       return S_OK( {'Successful': bestReplica, 'Failed':result['Value']['Failed']} )
 
+    failed = set( result['Value']['Failed'] )
     # If all replicas are requested, get results for other SEs
     seList = set()
     localSESet = set( localSEList )
@@ -92,9 +93,10 @@ class InputDataByProtocol( object ):
         return result
       for lfn in result['Value']['Successful']:
         success.setdefault( lfn, [] ).extend( result['Value']['Successful'][lfn] )
+      failed.update( result['Value']['Failed'] )
     # Only consider failed the files that are not successful as well
-    failed = [lfn for lfn in result['Value']['Failed'] if lfn not in success]
-    return S_OK( {'Successful': success, 'Failed':failed} )
+    failed -= set( success )
+    return S_OK( {'Successful': success, 'Failed':sorted( failed )} )
 
   def __resolveReplicas( self, seList, replicas, ignoreTape = False, requestedProtocol = '' ):
     diskSEs = set()
@@ -152,13 +154,13 @@ class InputDataByProtocol( object ):
           trackLFNs.setdefault( lfn, [] ).append( { 'pfn': replicas.get( lfn, {} ).get( seName, lfn ), 'se': seName, 'size': replicas[lfn]['Size'], 'guid': replicas[lfn]['GUID'] } )
 
     self.log.debug( 'Files grouped by SEs are:\n%s' % str( seFilesDict ) )
-    for seName, lfns in seFilesDict.items():
+    for seName, lfns in seFilesDict.iteritems():
       self.log.info( ' %s LFNs found from catalog at SE %s' % ( len( lfns ), seName ) )
       self.log.verbose( '\n'.join( lfns ) )
 
     # Can now start to obtain TURLs for files grouped by localSE
     # for requested input data
-    for seName, lfns in seFilesDict.items():
+    for seName, lfns in seFilesDict.iteritems():
       if not lfns:
         continue
       failedReps = set()
@@ -224,7 +226,7 @@ class InputDataByProtocol( object ):
           self.log.warn( "Error setting job param", result['Message'] )
 
       failedReplicas.update( failedReps )
-      for lfn, turl in seResult['Successful'].items():
+      for lfn, turl in seResult['Successful'].iteritems():
         for track in trackLFNs[lfn]:
           if track['se'] == seName:
             track['turl'] = turl
@@ -235,7 +237,7 @@ class InputDataByProtocol( object ):
 
     # Check if the files were actually resolved (i.e. have a TURL)
     # If so, remove them from failed list
-    for lfn, mdataList in trackLFNs.items():
+    for lfn, mdataList in trackLFNs.items():  # There is a pop below, can't use iteritems()
       for mdata in list( mdataList ):
         if 'turl' not in mdata:
           mdataList.remove( mdata )
