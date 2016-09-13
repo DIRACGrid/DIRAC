@@ -1,3 +1,14 @@
+"""
+This class is used to insert data to elasticsearch. It uses an internal list which is used to keep messages in the memory. 
+addRecord is used to insert messages to the internal queue. commit is used to insert the acumulated messages to elasticsearch.
+It provides two failover mechanism:
+1.) If the database is not available, the data will be keept in the memory.
+2.) If a MQ is avaulable, we store the messages in MQ service.
+
+Note: In order to not send to many rows to the db we use  __maxRecordsInABundle. 
+
+"""
+
 import threading
 import json
 
@@ -6,9 +17,23 @@ from DIRAC.Resources.MessageQueue.MQListener import MQListener
 from DIRAC.Resources.MessageQueue.MQPublisher import MQPublisher
 from DIRAC.Resources.MessageQueue.MQConnection import MQConnectionError
 
-
+__RCSID__ = "$Id$"
 
 class MonitoringReporter( object ):
+  
+  """ 
+  .. class:: MonitoringReporter
+  
+  This class is used to interact with the db using failover mechanism.
+  
+  :param: int __maxRecordsInABundle limit the number of records to be inserted to the db.
+  :param: threading.RLock __documentLock is used to lock the local store when it is being modified.
+  :param: object __db is is the db instance used to insert the data.
+  :param: list __documents contains the recods which will be inserted to the db
+  :param: bool __mq we can use MQ if it is available... By default it is not allowed.
+  :param: str __monitoringType type of the records which will be inserted to the db. For example: WMSHistory.
+  :param: object __mqPublisher publisher used to publish the records to the MQ
+  """
   
   def __init__( self, db, monitoringType = '' ):
     self.__maxRecordsInABundle = 5000
@@ -17,11 +42,8 @@ class MonitoringReporter( object ):
     self.__documents = []
     self.__mq = False
     self.__monitoringType = None
-    self.__commitTimer = None
-    
+        
     try:
-      #self.__mqListener = MQListener( monitoringType ) #, callback = self.consumeRecords )
-      #self.__mqListener.setCallback(self.consumeRecords)
       self.__mqPublisher = MQPublisher( monitoringType )
       self.__mq = True
     except MQConnectionError as exc:
@@ -29,52 +51,53 @@ class MonitoringReporter( object ):
              
     self.__monitoringType = monitoringType
   
-  def consumeRecords(self, headers, message):
-    records = json.loads(message) 
-    print '####', type(records)
-    #records = json.loads( message )   
-    print '!!!!', records[0]
-    return S_ERROR()
-  
   def processRecords( self ):
-    print 'start'
+    """
+    It consumes all messaged from the MQ (these are failover messages). In case of failure, the messages
+    will be inserted to the MQ again.
+    """
     try:
       mqListener = MQListener( self.__monitoringType )
     except MQConnectionError as exc:
       gLogger.error( "Fail to create Listener: %s" % exc )
       return S_ERROR( "Fail to create Listener: %s" % exc )
-    
+     
     result = S_OK()
     while result['OK']:
-      print 'while'
+      # we consume all messages from the listener internal queue.
       result = mqListener.get()
-      print '!!!!', result['OK']
+      mqListener.stop()  # make sure that we will not proccess any more messages.
       if result['OK']:
         records = json.loads( result['Value'] )
         retVal = self.__db.put( list( records ), self.__monitoringType )
         if not retVal['OK']:
-          mqListener.stop()
+          # the db is not available and we publish again the data to MQ
           res = self.publishRecords( records )
           print res
           if not res['OK']:
             return res
-          break
-      else:
-        print 'SS@@#######', result['Message']
-        mqListener.stop()
-        break
-    print 'end'
+    
     return S_OK()
     
   def addRecord( self, rec ):
+    """
+    It inserts the record to the list
+    :param: dict rec it kontains a key/value pair.
+    """
     self.__documents.append( rec )
        
   def publishRecords( self, records ):
-    print 'publishRecords'
-    return self.__mqPublisher.put( json.dumps(records) )
+    """
+    send data to the MQ
+    :param: list records contains a list of key/value pairs (dictionaries)
+    """
+    return self.__mqPublisher.put( json.dumps( records ) )
       
   def commit( self ):
-    
+    """
+    It inserts the accumulated data to the db. In case of failure
+    it keeps in memory/MQ
+    """
     self.__documentLock.acquire()
     documents = self.__documents
     self.__documents = []
@@ -89,14 +112,15 @@ class MonitoringReporter( object ):
           del documents[ :self.__maxRecordsInABundle ]          
         else:
           if self.__mq:
-            res = self.publishRecords( recordsToSend )
+            res = self.publishRecords( recordsToSend[:2] )
+            del documents
             documents = []
-            #if we managed to publish the records we can delete from the list
+            # if we managed to publish the records we can delete from the list
             if res['OK']:
               recordSent += len( recordsToSend )
               del documents[ :self.__maxRecordsInABundle ]
             else:
-              return res #in case of MQ problem
+              return res  # in case of MQ problem
     except Exception as e:  # pylint: disable=broad-except
       gLogger.exception( "Error committing", lException = e )
       return S_ERROR( "Error committing %s" % repr( e ).replace( ',)', ')' ) )    
@@ -108,14 +132,5 @@ class MonitoringReporter( object ):
       if not result['OK']:
         gLogger.error( "Unable to insert data from the MQ", result['Message'] )
         
-    
-    '''
-    result = self.__mqListener.get()
-    print 'EEE',result
-    if result['OK']:
-      records = json.loads( result['Value'] )
-      print 'records', records
-    '''
-  
     return S_OK( recordSent ) 
   
