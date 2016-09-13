@@ -73,6 +73,7 @@ class InputDataByProtocol( object ):
         bestReplica[lfn] = success[lfn][0]
       return S_OK( {'Successful': bestReplica, 'Failed':result['Value']['Failed']} )
 
+    # Keep the failed LFNs from local SEs
     failed = set( result['Value']['Failed'] )
     # If all replicas are requested, get results for other SEs
     seList = set()
