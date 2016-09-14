@@ -192,7 +192,6 @@ class MonitoringDB( ElasticDB ):
     :param list records it is a list of documents (dictionary)
     :param str monitoringType is the type of the monitoring
     """
-    return S_ERROR("Resouce not available!")
     mapping = self.__getMapping( monitoringType )
     gLogger.debug( "Mapping used to create an index:", mapping )
     res = self.getIndexName( monitoringType )
