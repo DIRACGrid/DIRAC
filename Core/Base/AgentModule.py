@@ -208,7 +208,7 @@ class AgentModule( object ):
       self.log.notice( " Cycles: %s" % self.am_getMaxCycles() )
     else:
       self.log.notice( " Cycles: unlimited" )
-    if self.am_getOption( 'WatchdogTime' ) > 0:
+    if self.am_getWatchdogTime() > 0:
       self.log.notice( " Watchdog interval: %s" % self.am_getWatchdogTime() )
     else:
       self.log.notice( " Watchdog interval: disabled " )
@@ -275,7 +275,7 @@ class AgentModule( object ):
     return self.am_getOption( "MaxCycles" )
 
   def am_getWatchdogTime( self ):
-    return self.am_getOption( "WatchdogTime" )
+    return int( self.am_getOption( "WatchdogTime" ) )
 
   def am_getCyclesDone( self ):
     return self.am_getModuleParam( 'cyclesDone' )
