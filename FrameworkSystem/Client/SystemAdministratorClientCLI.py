@@ -16,7 +16,7 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdminis
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
-from DIRAC.FrameworkSystem.Client import DynamicMonitoringClient
+from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
@@ -372,7 +372,7 @@ class SystemAdministratorClientCLI( CLI ):
           if argDict[ '-s' ]:
             size = int( argDict[ '-s' ] )
         except ValueError as _ve:
-          self.__errMsg( 'Argument \'size\' must be an integer' )
+          self._errMsg( 'Argument \'size\' must be an integer' )
           return
         host = argDict[ '-h' ]
         initialDate = argDict[ '-id' ]
@@ -389,7 +389,7 @@ class SystemAdministratorClientCLI( CLI ):
         else:
           endingDate = ''
 
-        client = DynamicMonitoringClient()
+        client = MonitoringClient()
         if size:
           result = client.getLogHistory( host, component, size )
         else:
@@ -397,8 +397,9 @@ class SystemAdministratorClientCLI( CLI ):
 
         if result[ 'OK' ]:
           self.displayLogs( result[ 'Value' ] )
+          #TODO: this method does not exists...
         else:
-          self.__errMsg( result[ 'Message' ] )
+          self._errMsg( result[ 'Message' ] )
       else:
         gLogger.notice( self.do_show.__doc__ )
     else:
