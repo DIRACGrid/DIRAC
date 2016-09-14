@@ -6,7 +6,12 @@ __RCSID__ = "$Id$"
 
 import psutil
 import datetime
+import errno
+
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.DErrno import EEZOMBIE
+from DIRAC.Core.Utilities.DErrno import EENOPID
+from DIRAC.Core.Utilities.DErrno import EEEXCEPTION
 
 class Profiler( object ):
   """
@@ -35,7 +40,7 @@ class Profiler( object ):
       return S_OK( self.process.pid )
     else:
       gLogger.error( 'No PID of process to profile' )
-      return S_ERROR( 'No PID of process to profile' )
+      return S_ERROR( EENOPID, 'No PID of process to profile' )
 
   def status( self ):
     """
@@ -46,21 +51,21 @@ class Profiler( object ):
         result = self.process.status()
       except psutil.NoSuchProcess as e:
         gLogger.error( 'No such process: %s' % e )
-        return S_ERROR( 'No such process: %s' % e )
+        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.ZombieProcess as e:
         gLogger.error( 'Zombie process: %s' % e )
-        return S_ERROR( 'Zombie process: %s' % e )
+        return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
-        return S_ERROR( 'Access denied: %s' % e )
+        return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
       except Exception as e:
         gLogger.error( e )
-        return S_ERROR( e )
+        return S_ERROR( EEEXCEPTION, e )
 
       return S_OK( result )
     else:
       gLogger.error( 'No PID of process to profile' )
-      return S_ERROR( 'No PID of process to profile' )
+      return S_ERROR( EENOPID, 'No PID of process to profile' )
 
   def runningTime( self ):
     """
@@ -72,21 +77,21 @@ class Profiler( object ):
         result = ( datetime.datetime.now() - start ).total_seconds()
       except psutil.NoSuchProcess as e:
         gLogger.error( 'No such process: %s' % e )
-        return S_ERROR( 'No such process: %s' % e )
+        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.ZombieProcess as e:
         gLogger.error( 'Zombie process: %s' % e )
-        return S_ERROR( 'Zombie process: %s' % e )
+        return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
-        return S_ERROR( 'Access denied: %s' % e )
+        return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
       except Exception as e:
         gLogger.error( e )
-        return S_ERROR( e )
+        return S_ERROR( EEEXCEPTION, e )
 
       return S_OK( result )
     else:
       gLogger.error( 'No PID of process to profile' )
-      return S_ERROR( 'No PID of process to profile' )
+      return S_ERROR( EENOPID, 'No PID of process to profile' )
 
   def memoryUsage( self ):
     """
@@ -98,21 +103,21 @@ class Profiler( object ):
         result = self.process.get_memory_info()[0] / float( 2 ** 20 )
       except psutil.NoSuchProcess as e:
         gLogger.error( 'No such process: %s' % e )
-        return S_ERROR( 'No such process: %s' % e )
+        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.ZombieProcess as e:
         gLogger.error( 'Zombie process: %s' % e )
-        return S_ERROR( 'Zombie process: %s' % e )
+        return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
-        return S_ERROR( 'Access denied: %s' % e )
+        return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
       except Exception as e:
         gLogger.error( e )
-        return S_ERROR( e )
+        return S_ERROR( EEEXCEPTION, e )
 
       return S_OK( result )
     else:
       gLogger.error( 'No PID of process to profile' )
-      return S_ERROR( 'No PID of process to profile' )
+      return S_ERROR( EENOPID, 'No PID of process to profile' )
 
   def numThreads( self ):
     """
@@ -123,21 +128,21 @@ class Profiler( object ):
         result = self.process.num_threads()
       except psutil.NoSuchProcess as e:
         gLogger.error( 'No such process: %s' % e )
-        return S_ERROR( 'No such process: %s' % e )
+        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.ZombieProcess as e:
         gLogger.error( 'Zombie process: %s' % e )
-        return S_ERROR( 'Zombie process: %s' % e )
+        return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
-        return S_ERROR( 'Access denied: %s' % e )
+        return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
       except Exception as e:
         gLogger.error( e )
-        return S_ERROR( e )
+        return S_ERROR( EEEXCEPTION, e )
 
       return S_OK( result )
     else:
       gLogger.error( 'No PID of process to profile' )
-      return S_ERROR( 'No PID of process to profile' )
+      return S_ERROR( EENOPID, 'No PID of process to profile' )
 
   def cpuUsage( self ):
     """
@@ -148,21 +153,21 @@ class Profiler( object ):
         result = self.process.cpu_percent()
       except psutil.NoSuchProcess as e:
         gLogger.error( 'No such process: %s' % e )
-        return S_ERROR( 'No such process: %s' % e )
+        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.ZombieProcess as e:
         gLogger.error( 'Zombie process: %s' % e )
-        return S_ERROR( 'Zombie process: %s' % e )
+        return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
-        return S_ERROR( 'Access denied: %s' % e )
+        return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
       except Exception as e:
         gLogger.error( e )
-        return S_ERROR( e )
+        return S_ERROR( EEEXCEPTION, e )
 
       return S_OK( result )
     else:
       gLogger.error( 'No PID of process to profile' )
-      return S_ERROR( 'No PID of process to profile' )
+      return S_ERROR( EENOPID, 'No PID of process to profile' )
 
   def getAllProcessData( self ):
     """
