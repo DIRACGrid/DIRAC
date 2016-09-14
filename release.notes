@@ -1,5 +1,9 @@
 [v6r15p16]
 
+*Core
+CHANGE: AgentModule - added a SIGALARM handler to set a hard timeout for each Agent
+        cycle to avoid agents stuck forever due to some faults in the execution code
+
 *DMS
 FIX: DataManager - cache SE status information in filterTapeReplicas() to speed up execution
      
