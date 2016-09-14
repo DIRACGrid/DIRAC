@@ -8,7 +8,7 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC  import gLogger, gConfig, S_OK
+from DIRAC  import gConfig, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.Core.Utilities import Time
@@ -44,6 +44,7 @@ class StatesMonitoringAgent( AgentModule ):
   jobDB = None
   monitoringDB = None
   monitoringReporter = None
+  reportPeriod = None
     
   def initialize( self ):
     """ Standard constructor
@@ -53,7 +54,8 @@ class StatesMonitoringAgent( AgentModule ):
     
     self.monitoringDB = MonitoringDB()
 
-    self.am_setOption( "PollingTime", 120 )
+    self.reportPeriod = 120
+    self.am_setOption( "PollingTime", self.reportPeriod )
     
     self.monitoringReporter = MonitoringReporter( db = self.monitoringDB,
                                                   monitoringType = "WMSHistory" )
@@ -74,19 +76,19 @@ class StatesMonitoringAgent( AgentModule ):
     if not result[ 'OK' ]:
       return result
     validSetups = result[ 'Value' ]
-    gLogger.info( "Valid setups for this cycle are %s" % ", ".join( validSetups ) )
+    self.log.info( "Valid setups for this cycle are %s" % ", ".join( validSetups ) )
     # Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
     if not result[ 'OK' ]:
-      gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
+      self.log.error( "Can't the the jobdb summary", result[ 'Message' ] )
     else:
       values = result[ 'Value' ][1]
-      gLogger.info( "Start sending records!" )
+      self.log.info( "Start sending records!" )
       for record in values:
         recordSetup = record[0]
         if recordSetup not in validSetups:
-          gLogger.error( "Setup %s is not valid" % recordSetup )
+          self.log.error( "Setup %s is not valid" % recordSetup )
           continue
         record = record[1:]
         rD = {}
@@ -101,7 +103,7 @@ class StatesMonitoringAgent( AgentModule ):
         rD['time'] = int( Time.toEpoch( now ) )       
         self.monitoringReporter.addRecord( rD )
       self.monitoringReporter.commit()
-      gLogger.info( "The records are successfully sent to the Store!" )
+      self.log.info( "The records are successfully sent to the Store!" )
         
     return S_OK()
 

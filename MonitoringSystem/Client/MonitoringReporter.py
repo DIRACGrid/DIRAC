@@ -1,5 +1,7 @@
 """
-This class is used to insert data to elasticsearch. It uses an internal list which is used to keep messages in the memory. 
+This class is used to insert data to a db (currently elasticsearch). The __db instance must provide a put method, which implements the
+insert procedure to the db.
+It uses an internal list which is used to keep messages in the memory. 
 addRecord is used to insert messages to the internal queue. commit is used to insert the acumulated messages to elasticsearch.
 It provides two failover mechanism:
 1.) If the database is not available, the data will be keept in the memory.
@@ -28,7 +30,7 @@ class MonitoringReporter( object ):
   
   :param: int __maxRecordsInABundle limit the number of records to be inserted to the db.
   :param: threading.RLock __documentLock is used to lock the local store when it is being modified.
-  :param: object __db is is the db instance used to insert the data.
+  :param: object __db is the db instance used to insert the data.
   :param: list __documents contains the recods which will be inserted to the db
   :param: bool __mq we can use MQ if it is available... By default it is not allowed.
   :param: str __monitoringType type of the records which will be inserted to the db. For example: WMSHistory.
