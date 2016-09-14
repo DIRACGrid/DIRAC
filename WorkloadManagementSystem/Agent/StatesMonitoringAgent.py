@@ -43,8 +43,8 @@ class StatesMonitoringAgent( AgentModule ):
   
   jobDB = None
   monitoringDB = None
-  __retry = 2
-  
+  monitoringReporter = None
+    
   def initialize( self ):
     """ Standard constructor
     """
@@ -53,7 +53,7 @@ class StatesMonitoringAgent( AgentModule ):
     
     self.monitoringDB = MonitoringDB()
 
-    self.am_setOption( "PollingTime", 30 )
+    self.am_setOption( "PollingTime", 120 )
     
     self.monitoringReporter = MonitoringReporter( db = self.monitoringDB,
                                                   monitoringType = "WMSHistory" )

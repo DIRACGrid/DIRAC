@@ -112,9 +112,7 @@ class MonitoringReporter( object ):
           del documents[ :self.__maxRecordsInABundle ]          
         else:
           if self.__mq:
-            res = self.publishRecords( recordsToSend[:2] )
-            del documents
-            documents = []
+            res = self.publishRecords( recordsToSend )
             # if we managed to publish the records we can delete from the list
             if res['OK']:
               recordSent += len( recordsToSend )
