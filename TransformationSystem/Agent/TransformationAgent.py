@@ -146,7 +146,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
           parentProd, movedFiles = res['Value']
           if movedFiles:
             self._logInfo( "Successfully moved files from %d to %d:" % ( parentProd, transID ), transID = transID )
-            for status, val in movedFiles.items():
+            for status, val in movedFiles.iteritems():
               self._logInfo( "\t%d files to status %s" % ( val, status ), transID = transID )
       if transID not in self.transInQueue:
         count += 1
@@ -456,7 +456,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       for chunk in breakListIntoChunks( newLFNs, 10000 ):
         res = self._getDataReplicasDM( transID, chunk, clients, active = active )
         if res['OK']:
-          reps = dict( [( lfn, ses ) for lfn, ses in res['Value'].items() if ses] )
+          reps = dict( ( lfn, ses ) for lfn, ses in res['Value'].iteritems() if ses )
           newReplicas.update( reps )
           self.__updateCache( transID, reps )
         else:
@@ -480,12 +480,12 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     method = '_getDataReplicasDM'
 
     startTime = time.time()
-    self._logVerbose( "Getting replicas for %d files from catalog" % len( lfns ),
+    self._logVerbose( "Getting %sreplicas for %d files from catalog" % ( 'active ' if active else '', len( lfns ) ),
                       method = method, transID = transID )
     if active:
-      res = clients['DataManager'].getActiveReplicas( lfns, preferDisk = True )
+      res = clients['DataManager'].getActiveReplicas( lfns, getUrl = False, preferDisk = True )
     else:
-      res = clients['DataManager'].getReplicas( lfns )
+      res = clients['DataManager'].getReplicas( lfns, getUrl = False )
     if not res['OK']:
       return res
     replicas = res['Value']
@@ -503,7 +503,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                         method = method, transID = transID )
     # Create a dictionary containing all the file replicas
     failoverLfns = []
-    for lfn, replicaDict in replicas['Successful'].items():
+    for lfn, replicaDict in replicas['Successful'].iteritems():
       for se in replicaDict:
         #### This should definitely be included in the SE definition (i.e. not used for transformations)
         if active and 'failover' in se.lower():
@@ -516,7 +516,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       self._logVerbose( "%d files have no replica but possibly in Failover SE" % len( failoverLfns ) )
     # Make sure that file missing from the catalog are marked in the transformation DB.
     missingLfns = []
-    for lfn, reason in replicas['Failed'].items():
+    for lfn, reason in replicas['Failed'].iteritems():
       if "No such file or directory" in reason:
         self._logVerbose( "%s not found in the catalog." % lfn, method = method, transID = transID )
         missingLfns.append( lfn )
@@ -570,8 +570,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         # Remove empty transformations
         if not self.replicaCache[transID]:
           del self.replicaCache[transID]
-    except Exception:
-      self._logException( "Exception when cleaning replica cache:" )
+    except Exception as x:
+      self._logException( "Exception when cleaning replica cache:", lException = x )
 
   def __removeFilesFromCache( self, transID, lfns ):
     removed = self.__removeFromCache( transID, lfns )
@@ -610,8 +610,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         self._logInfo( "Successfully loaded replica cache from file %s (%d files)" %
                        ( fileName, self.__filesInCache( transID ) ),
                        method = method, transID = transID )
-    except Exception:
-      self._logException( "Failed to load replica cache from file %s" % fileName,
+    except Exception as x:
+      self._logException( "Failed to load replica cache from file %s" % fileName, lException = x,
                           method = method, transID = transID )
       self.replicaCache[transID] = {}
 
@@ -644,8 +644,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       self._logInfo( "Successfully wrote %d replica cache file(s) (%d files) in %.1f seconds" \
                      % ( nCache, filesInCache, time.time() - startTime ),
                      method = method, transID = transID if transID else None )
-    except Exception:
-      self._logException( "Could not write replica cache file %s" % cacheFile,
+    except Exception as x:
+      self._logException( "Could not write replica cache file %s" % cacheFile, lException = x,
                           method = method, transID = t_id )
 
   def __generatePluginObject( self, plugin, clients ):
@@ -653,8 +653,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """
     try:
       plugModule = __import__( self.pluginLocation, globals(), locals(), ['TransformationPlugin'] )
-    except ImportError, e:
-      self._logException( "Failed to import 'TransformationPlugin' %s: %s" % ( plugin, e ),
+    except ImportError as e:
+      self._logException( "Failed to import 'TransformationPlugin' %s" % plugin, lException = e ,
                            method = "__generatePluginObject" )
       return S_ERROR()
     try:
@@ -662,8 +662,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                                                                 transClient = clients['TransformationClient'],
                                                                 dataManager = clients['DataManager'] )
       return S_OK( plugin_o )
-    except AttributeError, e:
-      self._logException( "Failed to create %s(): %s." % ( plugin, e ), method = "__generatePluginObject" )
+    except AttributeError as e:
+      self._logException( "Failed to create %s()" % plugin, lException = e , method = "__generatePluginObject" )
       return S_ERROR()
     plugin_o.setDirectory( self.workDirectory )
     plugin_o.setCallback( self.pluginCallback )
