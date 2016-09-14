@@ -82,13 +82,12 @@ class RequestHandler( object ):
     allNames = dir( cls )
     exportedMethods = [ name for name in allNames if 'export_' in name ]
     system, service = cls.__svcName.split( '/' )
-    setup = gConfigurationData.extractOptionFromCFG( 'DIRAC/Setup' )
-    systemSetup = gConfigurationData.extractOptionFromCFG( 'DIRAC/Setups/%s/%s' % ( setup, system ) )
-    result = gConfigurationData.extractOptionFromCFG( '/Systems/%s/%s/Services/%s/ResponseMonitoring/Methods' % ( system, systemSetup, service ) )
+    setup = gConfig.getValue( 'DIRAC/Setup' )
+    systemSetup = gConfig.getValue( 'DIRAC/Setups/%s/%s' % ( setup, system ) )
+    result = gConfig.getOption( '/Systems/%s/%s/Services/%s/ResponseMonitoring/Methods' % ( system, systemSetup, service ), [] )
 
-    if result:
-      methods = result.split( ', ' )
-      monitoredMethods = [ method for method in methods if 'export_%s' % method in exportedMethods ]
+    if result['OK']:
+      monitoredMethods = [ method for method in result['Value'] if 'export_%s' % method in exportedMethods ]
 
       for method in monitoredMethods:
         gMonitor.registerActivity( method,
