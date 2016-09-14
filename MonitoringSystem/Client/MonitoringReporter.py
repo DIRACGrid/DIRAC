@@ -73,7 +73,6 @@ class MonitoringReporter( object ):
         if not retVal['OK']:
           # the db is not available and we publish again the data to MQ
           res = self.publishRecords( records )
-          print res
           if not res['OK']:
             return res
     
