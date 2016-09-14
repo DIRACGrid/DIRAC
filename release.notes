@@ -1,3 +1,15 @@
+[v6r15p16]
+
+*DMS
+FIX: DataManager - cache SE status information in filterTapeReplicas() to speed up execution
+     
+*WMS
+BUGFIX: InputDataByProtocol - the failed resolution for local SEs was not considered correctly:
+        if there were other SEs that were ignored (e.g. because on tape)     
+     
+*TS
+FIX: TransformationAgent - in getDataReplicasDM() no need to get replica PFNs     
+
 [v6r15p15]
 
 *Configuration
