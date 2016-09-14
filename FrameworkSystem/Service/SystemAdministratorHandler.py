@@ -23,10 +23,9 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
-from DIRAC.Core.Utilities.RabbitMQ import RabbitConnection
 from DIRAC.Core.Utilities import Profiler
-from DIRAC.Core.Utilities import DErrno
+from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 __RCSID__ = "$Id$"
 
@@ -51,33 +50,9 @@ class SystemAdministratorHandler( RequestHandler ):
     dynamicMonitoring = cls.srv_getCSOption( 'DynamicMonitoring', False )
 
     if dynamicMonitoring:
-      client = SystemAdministratorClient( 'localhost' )
-
-      # Get the RabbitMQ parameters from the CS
-      result = gConfig.getOption( 'DIRAC/Setup' )
-      if not result[ 'OK' ]:
-        gLogger.error( 'DynamicMonitoring couldn\'t be enabled: %s' % result[ 'Message' ] )
-        return result
-      setup = result[ 'Value' ]
-      result = gConfig.getOption( 'DIRAC/Setups/%s/%s' % ( setup, system ) )
-      if not result[ 'OK' ]:
-        gLogger.error( 'DynamicMonitoring couldn\'t be enabled: %s' % result[ 'Message' ] )
-        return S_ERROR( DErrno.ESECTION, result )
-      sysSetup = result[ 'Value' ]
-      result = gConfig.getOptionsDict( 'Systems/%s/%s/MessageQueueing/%s' % ( system, sysSetup, queueName ) )
-      if not result[ 'OK' ]:
-        gLogger.error( 'DynamicMonitoring couldn\'t be enabled: %s' % result[ 'Message' ] )
-        return S_ERROR( DErrno.ESECTION, result )
-      parameters = result[ 'Value' ]
-
-      # Setup the RabbitMQ connection with the retrieved parameters
-      result = SystemAdministratorHandler.rabbitMQ.setupConnection( 'Framework', 'ComponentMonitoring', parameters, False )
-      if not result[ 'OK' ]:
-        gLogger.error( 'DynamicMonitoring couldn\'t be enabled: %s' % result[ 'Message' ] )
-        return result
-
-      gThreadScheduler.addPeriodicTask( 120, client.storeProfiling )
-
+      cls.__monitoringReporter = MonitoringReporter( db = MonitoringDB(), monitoringType = "ComponentMonitoring" )
+      gThreadScheduler.addPeriodicTask( 120, cls.__storeProfiling )
+      
     return S_OK( 'Initialization went well' )
 
   types_getInfo = [ ]
@@ -691,24 +666,24 @@ class SystemAdministratorHandler( RequestHandler ):
 
     return S_OK( 'Profiling information logged correctly' )
 
-  types_storeProfiling = []
-  def export_storeProfiling( self ):
+  @staticmethod
+  def __storeProfiling():
     """
     Retrieves and stores into ElasticSearch profiling information about the components on the host
     """
-    result = ComponentInstaller.getStartupComponentStatus( [] )
+    result = gComponentInstaller.getStartupComponentStatus( [] )
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
       return S_ERROR( result[ 'Message' ] )
     startupComps = result[ 'Value' ]
 
-    result = ComponentInstaller.getSetupComponents()
+    result = gComponentInstaller.getSetupComponents()
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
       return S_ERROR( result[ 'Message' ] )
     setupComps = result[ 'Value' ]
 
-    # Get the profiling information for every running component and send it to RabbitMQ
+    # Get the profiling information for every running component and send it to MonitoringSystem
     for cType in setupComps:
       for system in setupComps[ cType ]:
         for comp in setupComps[ cType ][ system ]:
@@ -720,7 +695,7 @@ class SystemAdministratorHandler( RequestHandler ):
             log[ 'host' ] = socket.getfqdn()
             log[ 'component' ] = '%s_%s' % ( system, comp )
             log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ].isoformat()
-            result = SystemAdministratorHandler.rabbitMQ.put( log )
+            result = SystemAdministratorHandler.__monitoringReporter.put( log )
             if not result[ 'OK' ]:
               gLogger.error( result[ 'Message' ] )
               return result
