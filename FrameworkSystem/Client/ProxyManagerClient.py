@@ -1,7 +1,5 @@
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id$"
-
 import os
 import datetime
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
@@ -13,6 +11,8 @@ from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import S_OK, S_ERROR, gLogger
+
+__RCSID__ = "$Id$"
 
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
@@ -199,7 +199,7 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     if token:
       retVal = rpcClient.getProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
-                                   long( cacheTime + requiredTimeLeft ), token )
+					    long( cacheTime + requiredTimeLeft ), token )
     else:
       retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
                                    long( cacheTime + requiredTimeLeft ) )
@@ -301,11 +301,11 @@ class ProxyManagerClient:
 
     for userGroup in groups:
       result = self.downloadVOMSProxy( userDN,
-                                     userGroup,
-                                     limited = False,
-                                     requiredTimeLeft = requiredTimeLeft,
-                                     requiredVOMSAttribute = vomsAttr,
-                                     proxyToConnect = proxyToConnect )
+				       userGroup,
+				       limited = False,
+				       requiredTimeLeft = requiredTimeLeft,
+				       requiredVOMSAttribute = vomsAttr,
+				       proxyToConnect = proxyToConnect )
       if result['OK']:
         return result
     return result
