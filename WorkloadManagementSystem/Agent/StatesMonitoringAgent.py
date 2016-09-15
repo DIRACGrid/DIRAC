@@ -81,7 +81,7 @@ class StatesMonitoringAgent( AgentModule ):
     result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
     if not result[ 'OK' ]:
-      self.log.error( "Can't the the jobdb summary", result[ 'Message' ] )
+      self.log.error( "Can't get the jobdb summary", result[ 'Message' ] )
     else:
       values = result[ 'Value' ][1]
       self.log.info( "Start sending records!" )

@@ -7,7 +7,7 @@ It provides two failover mechanism:
 1.) If the database is not available, the data will be keept in the memory.
 2.) If a MQ is avaulable, we store the messages in MQ service.
 
-Note: In order to not send to many rows to the db we use  __maxRecordsInABundle. 
+Note: In order to not send too many rows to the db we use  __maxRecordsInABundle. 
 
 """
 
