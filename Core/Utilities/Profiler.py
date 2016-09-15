@@ -100,7 +100,7 @@ class Profiler( object ):
     if self.process:
       try:
         # Information is returned in bytes and converted to MB
-        result = self.process.get_memory_info()[0] / float( 2 ** 20 )
+        result = self.process.memory_info()[0] / float( 2 ** 20 )
       except psutil.NoSuchProcess as e:
         gLogger.error( 'No such process: %s' % e )
         return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
