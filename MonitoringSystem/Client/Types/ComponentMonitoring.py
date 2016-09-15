@@ -25,9 +25,9 @@ class ComponentMonitoring( BaseType ):
     
     self.setMonitoringFields( [ 'runningTime', 'memoryUsage', 'threads', 'cpuUsage' ] )
     
-    self.setIndex( 'wmshistory_index' )  # overwrite the index name
+    #self.setIndex( 'wmshistory_index' )  # overwrite the index name
     
-    self.setDocType( "WMSHistory" )
+    self.setDocType( "ComponentMonitoring" )
     
     self.setMapping( {'host_type': {'_all': {'enabled': 'false'}, 'properties': {'host': {'index': 'not_analyzed', 'type': 'string'}}},
                       'component_type':{'_all': {'enabled': 'false'}, 'properties': {'component': {'index': 'not_analyzed', 'type': 'string'}}},
