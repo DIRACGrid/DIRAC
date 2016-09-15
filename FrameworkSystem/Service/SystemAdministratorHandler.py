@@ -27,6 +27,8 @@ from DIRAC.Core.Utilities import Profiler
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
+gMonitoringReporter = None
+
 __RCSID__ = "$Id$"
 
 #pylint: disable=no-self-use
@@ -38,7 +40,7 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Handler class initialization
     """
-
+    
     # Check the flag for monitoring of the state of the host
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
 
@@ -48,9 +50,10 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # Check the flag for dynamic monitoring
     dynamicMonitoring = cls.srv_getCSOption( 'DynamicMonitoring', False )
-
+    
     if dynamicMonitoring:
-      cls.__monitoringReporter = MonitoringReporter( db = MonitoringDB(), monitoringType = "ComponentMonitoring" )
+      global gMonitoringReporter
+      gMonitoringReporter = MonitoringReporter( db = MonitoringDB(), monitoringType = "ComponentMonitoring" )
       gThreadScheduler.addPeriodicTask( 120, cls.__storeProfiling )
       
     return S_OK( 'Initialization went well' )
@@ -671,7 +674,7 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Retrieves and stores into ElasticSearch profiling information about the components on the host
     """
-    result = gComponentInstaller.getStartupComponentStatus( [] )
+    result = gComponentInstaller.getStartupComponentStatus( [] ) #TODO: if we have a component which are not running, we will not ptofile the running processes
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
       return S_ERROR( result[ 'Message' ] )
@@ -695,12 +698,9 @@ class SystemAdministratorHandler( RequestHandler ):
             log[ 'host' ] = socket.getfqdn()
             log[ 'component' ] = '%s_%s' % ( system, comp )
             log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ].isoformat()
-            result = SystemAdministratorHandler.__monitoringReporter.put( log )
-            if not result[ 'OK' ]:
-              gLogger.error( result[ 'Message' ] )
-              return result
+            gMonitoringReporter.addRecord( log )
           else:
             gLogger.error( result[ 'Message' ] )
             return result
-
+    gMonitoringReporter.commit()
     return S_OK( 'Profiling information logged correctly' )
