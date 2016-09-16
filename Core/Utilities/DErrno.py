@@ -93,6 +93,9 @@ EMQCONN = 1142
 #Elasticsearch
 EELNOFOUND = 1146
 
+#config
+ESECTION = 1400
+
 # ## WMS/Workflow
 EWMSUKN = 1500
 EWMSJDL = 1501
@@ -150,6 +153,8 @@ dErrorCode = {
                1142 : 'EMQCONN',
                # Elasticsearch
                1146 : 'EELNOFOUND',
+               # Config
+               1400 : "ESECTION",
                # WMS/Workflow
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
@@ -164,8 +169,7 @@ dErrorCode = {
 
                # TS
                1900 : "ETSUKN",
-               1901 : "ETSDATA",
-               }
+               1901 : "ETSDATA"}
 
 
 dStrError = {
@@ -207,6 +211,8 @@ dStrError = {
               EMQCONN : "MQ connection failure",
               # 114X Elasticsearch
               EELNOFOUND: "Index not found",
+               # Config
+              ESECTION : "Section is not found",
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid JDL",
@@ -219,8 +225,7 @@ dStrError = {
               ERMSUKN : "Unknown RMS error",
               # TS
               ETSUKN : "Unknown Transformation System Error",
-              ETSDATA : "Invalid Input Data definition",
-}
+              ETSDATA : "Invalid Input Data definition"}
 
 def strerror(code):
   """ This method wraps up os.strerror, and behave the same way.

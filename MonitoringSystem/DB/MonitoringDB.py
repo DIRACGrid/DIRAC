@@ -143,7 +143,7 @@ class MonitoringDB( ElasticDB ):
     
     indexName = "%s*" % ( retVal['Value'] )
     q = [self._Q( 'range',
-                  time = {'lte':endTime * 1000,
+                  timestamp = {'lte':endTime * 1000,
                           'gte': startTime * 1000} )]
     for cond in condDict:
       kwargs = {cond: condDict[cond][0]}
@@ -151,11 +151,11 @@ class MonitoringDB( ElasticDB ):
       q += [query] 
     
     a1 = self._A( 'terms', field = grouping, size = 0 )
-    a2 = self._A( 'terms', field = 'time' )
+    a2 = self._A( 'terms', field = 'timestamp' )
     a2.metric( 'total_jobs', 'sum', field = selectFields[0] )
     a1.bucket( 'end_data',
                'date_histogram',
-               field = 'time',
+               field = 'timestamp',
                interval = interval ).metric( 'tt', a2 ).pipeline( 'avg_monthly_sales',
                                                                   'avg_bucket',
                                                                   buckets_path = 'tt>total_jobs',
@@ -169,7 +169,7 @@ class MonitoringDB( ElasticDB ):
     s = self._Search( indexName )
     s = s.filter( 'bool', must = q )
     s.aggs.bucket( '2', a1 )
-    s.fields( ['time'] + selectFields )
+    s.fields( ['timestamp'] + selectFields )
     gLogger.debug( 'Query:', s.to_dict() )
     retVal = s.execute()
     
