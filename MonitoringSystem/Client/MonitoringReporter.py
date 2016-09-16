@@ -49,7 +49,7 @@ class MonitoringReporter( object ):
       self.__mqPublisher = MQPublisher( monitoringType )
       self.__mq = True
     except MQConnectionError as exc:
-      gLogger.error( "Fail to create Publisher: %s" % exc )
+      gLogger.warn( "Fail to create Publisher: %s" % exc )
              
     self.__monitoringType = monitoringType
   
