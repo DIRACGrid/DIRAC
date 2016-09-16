@@ -109,7 +109,7 @@ class StatesMonitoringAgent( AgentModule ):
         record = record[ len( self.__summaryKeyFieldsMapping ): ]
         for iP in range( len( self.__summaryValueFieldsMapping ) ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
-        rD['time'] = int( Time.toEpoch( now ) )       
+        rD['timestamp'] = int( Time.toEpoch( now ) )       
         documents += [rD]
       res = self.sendRecords( documents, 'WMSHistory' )
       if res['OK']:

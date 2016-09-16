@@ -229,9 +229,9 @@ class ElasticSearchDB( object ):
       }
       body['_source'] = row
       try:
-        body['_source']['time'] = datetime.fromtimestamp( row.get( 'time', int( Time.toEpoch() ) ) )
+        body['_source']['timestamp'] = datetime.fromtimestamp( row.get( 'timestamp', int( Time.toEpoch() ) ) )
       except TypeError as e:
-        body['_source']['time'] = row.get( 'time' )
+        body['_source']['timestamp'] = row.get( 'timestamp' )
       docs += [body]
     try:
       res = helpers.bulk( self.__client, docs, chunk_size = self.__chunk_size )
