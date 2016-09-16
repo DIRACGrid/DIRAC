@@ -5,6 +5,7 @@
 """
 It is a wrapper on top of Elasticsearch. It is used to manage the DIRAC monitoring types. 
 """
+import datetime
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Base.ElasticDB import ElasticDB
@@ -61,7 +62,7 @@ class MonitoringDB( ElasticDB ):
     if indexName:
       return S_OK( indexName )
     else:
-      return S_ERROR( "The index of %s not found!" % typeName )
+      return S_ERROR( "Type %s is not defined" % typeName )
   
   def registerType( self, index, mapping ):
     """
@@ -111,7 +112,7 @@ class MonitoringDB( ElasticDB ):
     monfields = self.__documents[typeName]['monitoringFields']
     
     for i in docs[typeName]['properties']:
-      if i not in monfields and not i.startswith('time'):
+      if i not in monfields and not i.startswith( 'time' ):
         retVal = self.getUniqueValue( indexName, i )
         if not retVal['OK']:
           return retVal
@@ -131,14 +132,12 @@ class MonitoringDB( ElasticDB ):
      
     """
     
-    if typeName not in self.__documents:
-      return S_ERROR( "Type %s is not defined" % typeName )
     retVal = self.getIndexName( typeName )
     if not retVal['OK']:
       return retVal
     isAvgAgg = False
-    #the data is used to fill the pie charts. This aggregation is used to average the buckets.
-    if metainfo and metainfo.get('metric','sum') == 'avg':
+    # the data is used to fill the pie charts. This aggregation is used to average the buckets.
+    if metainfo and metainfo.get( 'metric', 'sum' ) == 'avg':
       isAvgAgg = True
     
     indexName = "%s*" % ( retVal['Value'] )
@@ -210,3 +209,36 @@ class MonitoringDB( ElasticDB ):
     if monitoringType in self.__documents:
       mapping = self.__documents[monitoringType].get( "mapping", {} )
     return mapping
+  
+  def getLastDayData( self, typeName, condDict ):
+    """
+    It returns the last day data for a given monitoring type.
+    for example: {'sort': [{'timestamp': {'order': 'desc'}}], 
+    'query': {'bool': {'must': [{'match': {'host': 'dzmathe.cern.ch'}}, 
+    {'match': {'component': 'Bookkeeping_BookkeepingManager'}}]}}}
+    :param str typeName name of the monitoring type
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+    """
+    
+    retVal = self.getIndexName( typeName )
+    if not retVal['OK']:
+      return retVal
+    date = datetime.datetime.utcnow()
+    indexName = "%s-%s" % ( retVal['Value'], date.strftime( '%Y-%m-%d' ) )
+    
+    # going to create:
+    # s = Search(using=cl, index = 'lhcb-certification_componentmonitoring-index-2016-09-16')
+    # s = s.filter( 'bool', must = [Q('match', host='dzmathe.cern.ch'), Q('match', component='Bookkeeping_BookkeepingManager')]) 
+    # s = s.query(q)
+    # s = s.sort('-timestamp')
+    mustClose = []
+    for cond in condDict:
+      kwargs = {cond: condDict[cond][0]}
+      query = self._Q( 'match', **kwargs )
+      mustClose.append( query ) 
+    
+    s = self._Search( indexName )
+    s = s.filter( 'bool', must = mustClose )
+    s = s.sort( '-timestamp' )
