@@ -102,8 +102,11 @@ class StatesMonitoringAgent( AgentModule ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
         rD['time'] = int( Time.toEpoch( now ) )       
         self.monitoringReporter.addRecord( rD )
-      self.monitoringReporter.commit()
-      self.log.info( "The records are successfully sent to the Store!" )
+      retVal = self.monitoringReporter.commit()
+      if retVal['OK']:
+        self.log.info( "The records are successfully sent to the Store!" )
+      else:
+        self.log.warn( "Faild to insert the records! It will be retried in the next iteration", retVal['Message'] )
         
     return S_OK()
 
