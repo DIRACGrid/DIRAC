@@ -61,6 +61,7 @@ EIMPERR = 1001
 ENOMETH = 1002
 ECONF = 1003
 EVALUE = 1004
+EEEXCEPTION = 1005
 # Files manipulation: 1X
 ECTMPF = 1010
 EOF = 1011
@@ -96,6 +97,10 @@ EELNOFOUND = 1146
 #config
 ESECTION = 1400
 
+#processes
+EEZOMBIE = 1147
+EENOPID = 1148
+
 # ## WMS/Workflow
 EWMSUKN = 1500
 EWMSJDL = 1501
@@ -122,6 +127,7 @@ dErrorCode = {
                1002 : 'ENOMETH',
                1003 : 'ECONF',
                1004 : 'EVALUE',
+               1005 : 'EEEXCEPTION',
                # 101X: Files manipulation
                1010 : 'ECTMPF',
                1011 : 'EOF',
@@ -155,6 +161,9 @@ dErrorCode = {
                1146 : 'EELNOFOUND',
                # Config
                1400 : "ESECTION",
+               #Processes
+               1147 : 'EEZOMBIE',
+               1148 : 'EENOPID',
                # WMS/Workflow
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
@@ -180,6 +189,7 @@ dStrError = {
               ENOMETH : "No such method or function",
               ECONF : "Configuration error",
               EVALUE: "Wrong value passed", 
+              EEEXCEPTION: "runtime general exception",
               # 101X: Files manipulation
               ECTMPF : "Failed to create temporary file",
               EOF : "Cannot open file",
@@ -213,6 +223,9 @@ dStrError = {
               EELNOFOUND: "Index not found",
                # Config
               ESECTION : "Section is not found",
+              #processes
+              EEZOMBIE: "Zombie process",
+              EENOPID: "No PID of process",
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid JDL",
