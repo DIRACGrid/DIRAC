@@ -14,7 +14,7 @@ class MonitoringClient( object ):
   
   This class expose the methods of the Monitoring Service
   
-  param: RPCClient __rpcClient stores the rpc client used to connect to the service
+  :param: RPCClient __rpcClient stores the rpc client used to connect to the service
   
   """
   

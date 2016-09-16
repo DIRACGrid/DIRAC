@@ -3,18 +3,17 @@
 # File :    StatesMonitoringAgent.py
 # Author :  Zoltan Mathe
 ########################################################################
-
 """  StatesMonitoringAgent sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
 """
 __RCSID__ = "$Id$"
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import gConfig, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.Core.Utilities import Time
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
-
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 class StatesMonitoringAgent( AgentModule ):
   """
@@ -44,8 +43,9 @@ class StatesMonitoringAgent( AgentModule ):
   
   jobDB = None
   monitoringDB = None
-  __retry = 2
-  
+  monitoringReporter = None
+  reportPeriod = None
+    
   def initialize( self ):
     """ Standard constructor
     """
@@ -54,8 +54,12 @@ class StatesMonitoringAgent( AgentModule ):
     
     self.monitoringDB = MonitoringDB()
 
-    self.am_setOption( "PollingTime", 120 )
-
+    self.reportPeriod = 120
+    self.am_setOption( "PollingTime", self.reportPeriod )
+    
+    self.monitoringReporter = MonitoringReporter( db = self.monitoringDB,
+                                                  monitoringType = "WMSHistory" )
+    
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
         field = 'Owner'
@@ -64,19 +68,7 @@ class StatesMonitoringAgent( AgentModule ):
       self.__jobDBFields.append( field )
     
     return S_OK()
-
-  def sendRecords( self, data, monitoringType, counter = 0 ):
-    if counter > self.__retry:
-      return S_ERROR( "Falied to insert %d records to the db!" % len( data ) )
-    try:
-      return self.monitoringDB.put( data, monitoringType )
-    except Exception as e:  # pylint: disable=broad-except
-      gLogger.warn( "Problem during db acces: %s" % repr( e ) )
-      counter += 1
-      return self.sendRecords( data, monitoringType, counter )
-      
-      
-     
+   
   def execute( self ):
     """ Main execution method
     """
@@ -84,20 +76,19 @@ class StatesMonitoringAgent( AgentModule ):
     if not result[ 'OK' ]:
       return result
     validSetups = result[ 'Value' ]
-    gLogger.info( "Valid setups for this cycle are %s" % ", ".join( validSetups ) )
+    self.log.info( "Valid setups for this cycle are %s" % ", ".join( validSetups ) )
     # Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
-    documents = []
     if not result[ 'OK' ]:
-      gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
+      self.log.error( "Can't get the jobdb summary", result[ 'Message' ] )
     else:
       values = result[ 'Value' ][1]
-      gLogger.info( "Start sending records!" )
+      self.log.info( "Start sending records!" )
       for record in values:
         recordSetup = record[0]
         if recordSetup not in validSetups:
-          gLogger.error( "Setup %s is not valid" % recordSetup )
+          self.log.error( "Setup %s is not valid" % recordSetup )
           continue
         record = record[1:]
         rD = {}
@@ -109,14 +100,13 @@ class StatesMonitoringAgent( AgentModule ):
         record = record[ len( self.__summaryKeyFieldsMapping ): ]
         for iP in range( len( self.__summaryValueFieldsMapping ) ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
-        rD['timestamp'] = int( Time.toEpoch( now ) )       
-        documents += [rD]
-      res = self.sendRecords( documents, 'WMSHistory' )
-      if res['OK']:
-        gLogger.info( "The records are successfully inserted to MonitoringDB!" )
+        rD['time'] = int( Time.toEpoch( now ) )       
+        self.monitoringReporter.addRecord( rD )
+      retVal = self.monitoringReporter.commit()
+      if retVal['OK']:
+        self.log.info( "The records are successfully sent to the Store!" )
       else:
-        #we must use some failover
-        gLogger.error( 'Faild to insert the records: %s', res['Message'] )
+        self.log.warn( "Faild to insert the records! It will be retried in the next iteration", retVal['Message'] )
         
     return S_OK()
 
