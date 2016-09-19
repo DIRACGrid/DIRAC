@@ -115,7 +115,13 @@ class MonitoringTestChain ( MonitoringTestCase ):
     result = self.client.getReport( *params )
     self.assert_( result['OK'] )
     self.assertDictEqual( result['Value'], {'data': {u'multiple': {1458194400: 227.0}, u'lcg.ihep.su': {1458216000: 18.0}, u'lcg.cnaf.it': {1458151200: None, 1458172800: None, 1458162000: None, 1458194400: None, 1458216000: 22.0, 1458140400: 4.0, 1458183600: None, 1458205200: None}, u'lcg.nikhef.nl': {1458216000: 27.0}, u'lcg.bari.it': {1458216000: 34.0}, u'lcg.rrcki.ru': {1458226800: 3.0}, u'group.ral.uk': {1458140400: 34.0}, u'lcg.desyzn.de': {1458226800: 43.0}, u'lcg.ral.uk': {1458129600: 2.0, 1458172800: None, 1458162000: None, 1458194400: None, 1458216000: None, 1458140400: None, 1458183600: None, 1458205200: None, 1458226800: 5.0, 1458151200: None}, u'lcg.pic.es': {1458129600: 1.0}, u'lcg.gridka.de': {1458129600: 2.0}, u'lcg.bristol.uk': {1458216000: 9.0}, u'lcg.cern.ch': {1458140400: 120.0}, u'lcg.bologna.it': {1458216000: 1.0}}, 'granularity': 10800} )
-    
+  
+  def test_getLastDayData( self ):
+    params = {'Status':'Running', 'Site':'LCG.NIKHEF.nl'}
+    result = self.client.getLastDayData( 'WMSHistory', params )
+    self.assert_( result['OK'] )
+    self.assertEqual( len( result['Value'] ), 2 )
+                     
 class MonitoringDeleteChain( MonitoringTestCase ):
   
   def test_deleteNonExistingIndex( self ): 

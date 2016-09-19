@@ -391,13 +391,20 @@ class SystemAdministratorClientCLI( CLI ):
 
         client = MonitoringClient()
         if size:
-          result = client.getLogHistory( host, component, size )
+          result = client.getLimitedData( host, component, size )
         else:
-          result = client.getLogsPeriod( host, component, initialDate, endingDate )
+          result = client.getDataForAGivenPeriod( host, component, initialDate, endingDate )
 
         if result[ 'OK' ]:
-          self.displayLogs( result[ 'Value' ] )
-          #TODO: this method does not exists...
+          text = ''
+          headers = [result['Value'][0].keys()]
+          for header in headers:
+            text += str( header ).ljust( 15 )
+          gLogger.notice( text )
+          for record in result[ 'Value' ]:
+            for metric in record.itervalues():
+              text += str( metric ).ljust( 15 )
+            gLogger.notice( text )
         else:
           self._errMsg( result[ 'Message' ] )
       else:

@@ -210,7 +210,7 @@ class MonitoringDB( ElasticDB ):
       mapping = self.__documents[monitoringType].get( "mapping", {} )
     return mapping
   
-  def getLastDayData( self, typeName, condDict ):
+  def __getRawData( self, typeName, condDict, size = 0 ):
     """
     It returns the last day data for a given monitoring type.
     for example: {'sort': [{'timestamp': {'order': 'desc'}}], 
@@ -220,8 +220,8 @@ class MonitoringDB( ElasticDB ):
     :param dict condDict -> conditions for the query
                   key -> name of the field
                   value -> list of possible values
+    :param int size number of rows which whill be returned. By default is all
     """
-    
     retVal = self.getIndexName( typeName )
     if not retVal['OK']:
       return retVal
@@ -233,15 +233,28 @@ class MonitoringDB( ElasticDB ):
     # s = s.filter( 'bool', must = [Q('match', host='dzmathe.cern.ch'), Q('match', component='Bookkeeping_BookkeepingManager')]) 
     # s = s.query(q)
     # s = s.sort('-timestamp')
+    
+    
     mustClose = []
     for cond in condDict:
       kwargs = {cond: condDict[cond][0]}
       query = self._Q( 'match', **kwargs )
       mustClose.append( query ) 
     
+    if condDict.get( 'startTime' ) and condDict.get( 'endTime' ):
+      query = self._Q( 'range',
+                timestamp = {'lte':condDict.get( 'endTime' ),
+                             'gte': condDict.get( 'startTime' ) } )
+      
+      mustClose.append( query )
+    
     s = self._Search( indexName )
     s = s.filter( 'bool', must = mustClose )
-    s = s.sort( '-timestamp' ) 
+    s = s.sort( '-timestamp' )
+    
+    if size > 0:
+      s = s.extra( size = size ) 
+    
     retVal = s.execute()
     if not retVal['OK']:
       return retVal
@@ -255,3 +268,58 @@ class MonitoringDB( ElasticDB ):
       for resObj in retVal["Value"]:
         records.append( dict( [ ( paramName, getattr( resObj, paramName ) ) for paramName in paramNames] ) )
       return S_OK( records )
+  
+  def getLastDayData( self, typeName, condDict ):
+    """
+    It returns the last day data for a given monitoring type.
+    for example: {'sort': [{'timestamp': {'order': 'desc'}}], 
+    'query': {'bool': {'must': [{'match': {'host': 'dzmathe.cern.ch'}}, 
+    {'match': {'component': 'Bookkeeping_BookkeepingManager'}}]}}}
+    :param str typeName name of the monitoring type
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+    """
+    return self.__getRawData( typeName, condDict )
+    
+  
+  def getLimitedData( self, typeName, condDict, size = 10 ):
+    """
+    Returns a list of records for a given selection.
+    :param str typeName name of the monitoring type
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+    :param int size: Indicates how many entries should be retrieved from the log
+    :return: Up to size entries for the given component from the database
+    """
+    return self.__getRawData( typeName, condDict, size )
+    
+  
+  def getDataForAGivenPeriod( self, typeName, condDict, initialDate = '', endDate = '' ):
+    """
+    Retrieves the history of logging entries for the given component during a given given time period
+    :param: str typeName name of the monitoring type
+    :param: dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+    :param str initialDate: Indicates the start of the time period in the format 'DD/MM/YYYY hh:mm'
+    :param str endDate: Indicate the end of the time period in the format 'DD/MM/YYYY hh:mm'
+    :return: Entries from the database for the given component recorded between the initial and the end dates
+    
+    """
+    if not initialDate and not endDate:
+      return self.__getRawData( typeName, condDict, 10 )
+
+    if initialDate:
+      condDict['startTime'] = datetime.datetime.strptime( initialDate, '%d/%m/%Y %H:%M' )
+    else:
+      condDict['startTime'] = datetime.datetime.min
+    if endDate:
+      condDict['endTime'] = datetime.datetime.strptime( endDate, '%d/%m/%Y %H:%M' )
+    else:
+      condDict['endTime'] = datetime.datetime.utcnow()
+      
+    
+    return self.__getRawData( typeName, condDict )
+    
