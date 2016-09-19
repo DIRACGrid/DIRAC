@@ -257,11 +257,11 @@ class ElasticSearchDB( object ):
     
     startDate = datetime.utcnow()
     
-    endDate = startDate - timedelta( days = 4 )
+    endDate = startDate - timedelta( days = 1 )
     
     timeFilter = self._Q( 'range',
-                          timestamp = {'lte':int(Time.toEpoch( endDate )),
-                                       'gte': int(Time.toEpoch( startDate )), } )
+                          timestamp = {'lte':int(Time.toEpoch( endDate )) * 1000,
+                                       'gte': int(Time.toEpoch( startDate )) * 1000, } )
     query = query.filter( 'bool', must = timeFilter
                            )
     if orderBy:
@@ -290,4 +290,5 @@ class ElasticSearchDB( object ):
     for bucket in result.aggregations[key].buckets:
       values += [bucket['key']]
     del query
+    print '@@@',values
     return S_OK( values )
