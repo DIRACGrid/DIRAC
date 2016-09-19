@@ -259,3 +259,14 @@ class MonitoringHandler( RequestHandler ):
     gLogger.debug( "delete index:", indexName )
     return self.__db.deleteIndex( indexName )
   
+  types_getLastDayData = [basestring, dict]
+  def getLastDayData( self, typeName, condDict ):
+    """
+    It returns the data from the last day index. Note: we create daily indexes.
+    :param str typeName name of the monitoring type
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values 
+    """
+    
+    return self.__db.getLastDayData( typeName, condDict )

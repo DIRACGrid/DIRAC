@@ -126,3 +126,14 @@ class MonitoringClient( object ):
     """
     rpcClient = self.__getServer()
     return rpcClient.deleteIndex(indexName)
+  
+  def getLastDayData( self, typeName, condDict ):
+    """
+    It returns the data from the last day index. Note: we create daily indexes.
+    :param str typeName name of the monitoring type
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values 
+    """
+    rpcClient = self.__getServer()
+    return rpcClient.getLastDayData( typeName, condDict )

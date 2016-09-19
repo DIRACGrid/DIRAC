@@ -241,4 +241,17 @@ class MonitoringDB( ElasticDB ):
     
     s = self._Search( indexName )
     s = s.filter( 'bool', must = mustClose )
-    s = s.sort( '-timestamp' )
+    s = s.sort( '-timestamp' ) 
+    retVal = s.execute()
+    if not retVal['OK']:
+      return retVal
+    if retVal['Value']:
+      records = []
+      paramNames = dir( retVal['Value'][0] )
+      try:
+        paramNames.remove( 'meta' )
+      except ValueError as e:
+        gLogger.warn( "meta is not in the Result", e )
+      for resObj in retVal["Value"]:
+        records.append( dict( [ ( paramName, getattr( resObj, paramName ) ) for paramName in paramNames] ) )
+      return S_OK( records )
