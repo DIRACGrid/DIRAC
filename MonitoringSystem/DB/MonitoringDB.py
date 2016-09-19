@@ -5,6 +5,7 @@
 """
 It is a wrapper on top of Elasticsearch. It is used to manage the DIRAC monitoring types. 
 """
+import datetime
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Base.ElasticDB import ElasticDB
@@ -61,7 +62,7 @@ class MonitoringDB( ElasticDB ):
     if indexName:
       return S_OK( indexName )
     else:
-      return S_ERROR( "The index of %s not found!" % typeName )
+      return S_ERROR( "Type %s is not defined" % typeName )
   
   def registerType( self, index, mapping ):
     """
@@ -111,7 +112,7 @@ class MonitoringDB( ElasticDB ):
     monfields = self.__documents[typeName]['monitoringFields']
     
     for i in docs[typeName]['properties']:
-      if i not in monfields and not i.startswith('time'):
+      if i not in monfields and not i.startswith( 'time' ):
         retVal = self.getUniqueValue( indexName, i )
         if not retVal['OK']:
           return retVal
@@ -131,14 +132,12 @@ class MonitoringDB( ElasticDB ):
      
     """
     
-    if typeName not in self.__documents:
-      return S_ERROR( "Type %s is not defined" % typeName )
     retVal = self.getIndexName( typeName )
     if not retVal['OK']:
       return retVal
     isAvgAgg = False
-    #the data is used to fill the pie charts. This aggregation is used to average the buckets.
-    if metainfo and metainfo.get('metric','sum') == 'avg':
+    # the data is used to fill the pie charts. This aggregation is used to average the buckets.
+    if metainfo and metainfo.get( 'metric', 'sum' ) == 'avg':
       isAvgAgg = True
     
     indexName = "%s*" % ( retVal['Value'] )
@@ -210,3 +209,117 @@ class MonitoringDB( ElasticDB ):
     if monitoringType in self.__documents:
       mapping = self.__documents[monitoringType].get( "mapping", {} )
     return mapping
+  
+  def __getRawData( self, typeName, condDict, size = 0 ):
+    """
+    It returns the last day data for a given monitoring type.
+    for example: {'sort': [{'timestamp': {'order': 'desc'}}], 
+    'query': {'bool': {'must': [{'match': {'host': 'dzmathe.cern.ch'}}, 
+    {'match': {'component': 'Bookkeeping_BookkeepingManager'}}]}}}
+    :param str typeName name of the monitoring type
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+    :param int size number of rows which whill be returned. By default is all
+    """
+    retVal = self.getIndexName( typeName )
+    if not retVal['OK']:
+      return retVal
+    date = datetime.datetime.utcnow()
+    indexName = "%s-%s" % ( retVal['Value'], date.strftime( '%Y-%m-%d' ) )
+    
+    # going to create:
+    # s = Search(using=cl, index = 'lhcb-certification_componentmonitoring-index-2016-09-16')
+    # s = s.filter( 'bool', must = [Q('match', host='dzmathe.cern.ch'), Q('match', component='Bookkeeping_BookkeepingManager')]) 
+    # s = s.query(q)
+    # s = s.sort('-timestamp')
+    
+    
+    mustClose = []
+    for cond in condDict:
+      kwargs = {cond: condDict[cond][0]}
+      query = self._Q( 'match', **kwargs )
+      mustClose.append( query ) 
+    
+    if condDict.get( 'startTime' ) and condDict.get( 'endTime' ):
+      query = self._Q( 'range',
+                timestamp = {'lte':condDict.get( 'endTime' ),
+                             'gte': condDict.get( 'startTime' ) } )
+      
+      mustClose.append( query )
+    
+    s = self._Search( indexName )
+    s = s.filter( 'bool', must = mustClose )
+    s = s.sort( '-timestamp' )
+    
+    if size > 0:
+      s = s.extra( size = size ) 
+    
+    retVal = s.execute()
+    if not retVal['OK']:
+      return retVal
+    if retVal['Value']:
+      records = []
+      paramNames = dir( retVal['Value'][0] )
+      try:
+        paramNames.remove( 'meta' )
+      except ValueError as e:
+        gLogger.warn( "meta is not in the Result", e )
+      for resObj in retVal["Value"]:
+        records.append( dict( [ ( paramName, getattr( resObj, paramName ) ) for paramName in paramNames] ) )
+      return S_OK( records )
+  
+  def getLastDayData( self, typeName, condDict ):
+    """
+    It returns the last day data for a given monitoring type.
+    for example: {'sort': [{'timestamp': {'order': 'desc'}}], 
+    'query': {'bool': {'must': [{'match': {'host': 'dzmathe.cern.ch'}}, 
+    {'match': {'component': 'Bookkeeping_BookkeepingManager'}}]}}}
+    :param str typeName name of the monitoring type
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+    """
+    return self.__getRawData( typeName, condDict )
+    
+  
+  def getLimitedData( self, typeName, condDict, size = 10 ):
+    """
+    Returns a list of records for a given selection.
+    :param str typeName name of the monitoring type
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+    :param int size: Indicates how many entries should be retrieved from the log
+    :return: Up to size entries for the given component from the database
+    """
+    return self.__getRawData( typeName, condDict, size )
+    
+  
+  def getDataForAGivenPeriod( self, typeName, condDict, initialDate = '', endDate = '' ):
+    """
+    Retrieves the history of logging entries for the given component during a given given time period
+    :param: str typeName name of the monitoring type
+    :param: dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+    :param str initialDate: Indicates the start of the time period in the format 'DD/MM/YYYY hh:mm'
+    :param str endDate: Indicate the end of the time period in the format 'DD/MM/YYYY hh:mm'
+    :return: Entries from the database for the given component recorded between the initial and the end dates
+    
+    """
+    if not initialDate and not endDate:
+      return self.__getRawData( typeName, condDict, 10 )
+
+    if initialDate:
+      condDict['startTime'] = datetime.datetime.strptime( initialDate, '%d/%m/%Y %H:%M' )
+    else:
+      condDict['startTime'] = datetime.datetime.min
+    if endDate:
+      condDict['endTime'] = datetime.datetime.strptime( endDate, '%d/%m/%Y %H:%M' )
+    else:
+      condDict['endTime'] = datetime.datetime.utcnow()
+      
+    
+    return self.__getRawData( typeName, condDict )
+    

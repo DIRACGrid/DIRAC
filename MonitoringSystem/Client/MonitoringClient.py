@@ -126,3 +126,44 @@ class MonitoringClient( object ):
     """
     rpcClient = self.__getServer()
     return rpcClient.deleteIndex(indexName)
+  
+  def getLastDayData( self, typeName, condDict ):
+    """
+    It returns the data from the last day index. Note: we create daily indexes.
+    :param str typeName name of the monitoring type
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values 
+    """
+    rpcClient = self.__getServer()
+    return rpcClient.getLastDayData( typeName, condDict )
+  
+  
+  def getLimitedData( self, typeName, condDict, size = 10 ):
+    '''
+    Returns a list of records for a given selection.
+    :param str typeName name of the monitoring type
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+    :param int size: Indicates how many entries should be retrieved from the log
+    :return: Up to size entries for the given component from the database
+    '''
+    rpcClient = self.__getServer()
+    return rpcClient.getLimitedData( typeName, condDict, size )
+  
+  def getDataForAGivenPeriod( self, typeName, condDict, initialDate = '', endDate = '' ):
+    """
+    Retrieves the history of logging entries for the given component during a given given time period
+    :param: str typeName name of the monitoring type
+    :param: dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+    :param str initialDate: Indicates the start of the time period in the format 'DD/MM/YYYY hh:mm'
+    :param str endDate: Indicate the end of the time period in the format 'DD/MM/YYYY hh:mm'
+    :return: Entries from the database for the given component recorded between the initial and the end dates
+    
+    """
+    rpcClient = self.__getServer()
+    return rpcClient.getDataForAGivenPeriod( typeName, condDict, initialDate, endDate )
+    

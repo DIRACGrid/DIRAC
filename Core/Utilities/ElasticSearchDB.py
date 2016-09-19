@@ -5,6 +5,7 @@ Elasticsearch database.
 """
 
 from datetime import datetime
+from datetime import timedelta
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q, A
@@ -105,7 +106,7 @@ class ElasticSearchDB( object ):
   ########################################################################
   def getDocTypes( self, indexName ):
     """
-    :param str indexName is the number of the index...
+    :param str indexName is the name of the index...
     :return S_OK or S_ERROR 
     """
     result = []
@@ -253,8 +254,18 @@ class ElasticSearchDB( object ):
     """
     
     query = self._Search( indexName )
+    
+    startDate = datetime.utcnow()
+    
+    endDate = startDate - timedelta( days = 1 )
+    
+    timeFilter = self._Q( 'range',
+                          timestamp = {'lte':int(Time.toEpoch( endDate )) * 1000,
+                                       'gte': int(Time.toEpoch( startDate )) * 1000, } )
+    query = query.filter( 'bool', must = timeFilter
+                           )
     if orderBy:
-      query.aggs.bucket( key, 
+      query.aggs.bucket( key,
                          'terms', 
                          field = key, 
                          size = 0, 
@@ -270,6 +281,7 @@ class ElasticSearchDB( object ):
                                             field = key )
     
     try:
+      gLogger.debug( "Query", query.to_dict() )
       result = query.execute()
     except TransportError as e:
       return S_ERROR( e )
@@ -278,4 +290,5 @@ class ElasticSearchDB( object ):
     for bucket in result.aggregations[key].buckets:
       values += [bucket['key']]
     del query
+    print '@@@',values
     return S_OK( values )

@@ -1,22 +1,63 @@
 """
-It is used to test client->db-> service. It requires the  Monitoring service.
+It is used to test the MonitoringReporter. It requires MonitoringDB which is based on elasticsearch and MQ which is optional...
+
+CS:
+
+Systems
+{
+  Monitoring
+  {
+     Certification
+     {
+      Databases
+      {
+        MonitoringDB
+        {
+          Host = localhost
+          Port = 9200
+        }
+      }
+    }
+  }
+}
+
+If you want to test with MQ:
+
+Resources
+{
+  MQServices
+  {
+    xxxx.cern.ch (hostname where we run MQ
+    {
+      MQType = Stomp
+      Host = xxxx.cern.ch
+      Port = 61613
+      User = username
+      Password = xxxx
+    }
+  }
+}
+
 """
 
-from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Core.DISET.TransferClient                import TransferClient
+import unittest
+
+from datetime                                       import datetime
 
 from DIRAC                                          import gLogger
-from datetime                                       import datetime
-import unittest
-import tempfile
-import time
 
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
+
+    
 class MonitoringTestCase( unittest.TestCase ):
   
   def setUp( self ):
     gLogger.setLevel( 'INFO' )
     
-    self.client = MonitoringClient( )
+    self.monitoringDB = MonitoringDB()
+    self.monitoringReporter = MonitoringReporter( db = self.monitoringDB, 
+                                                 monitoringType = "WMSHistory" )
     
     self.data = [{u'Status': u'Waiting', 'Jobs': 2, u'time': 1458130176, u'JobSplitType': u'MCStripping', u'MinorStatus': u'unset', u'Site': u'LCG.GRIDKA.de', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00049848', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'time': 1458130176, u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.PIC.es', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton', u'JobGroup': u'lhcb', u'UserGroup': u'lhcb_user', u'metric': u'WMSHistory'},
@@ -62,83 +103,31 @@ class MonitoringTestCase( unittest.TestCase ):
   def tearDown( self ):
     pass
   
-class MonitoringInsertData ( MonitoringTestCase ):
+class MonitoringReporter ( MonitoringTestCase ):
   
-  def test_addMonitoringRecords( self ):
-    result = self.client.addMonitoringRecords( 'moni', 'WMSHistory', self.data )
-    self.assert_( result['Message'] )
-        
-  def test_bulkinsert( self ):
-    result = self.client.addRecords( "wmshistory_index", "WMSHistory", self.data )
+  def test_addRecords( self ):
+    for record in self.data:
+      self.monitoringReporter.addRecord( record )
+    result = self.monitoringReporter.commit()
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'], len( self.data ) )
-    time.sleep( 10 )
-
-class MonitoringTestChain ( MonitoringTestCase ):
+        
   
-  def test_listReports( self ):
-    result = self.client.listReports( 'WMSHistory' )
-    self.assert_( result['OK'] )
-    self.assertEqual( result['Value'], ['AverageNumberOfJobs', 'NumberOfJobs', 'NumberOfReschedules'] )
-  
-  def test_listUniqueKeyValues( self ):
-    result = self.client.listUniqueKeyValues( 'WMSHistory' )
-    self.assert_( result['OK'] )
-    self.assert_( 'Status' in result['Value'] )
-    self.assert_( 'JobSplitType' in result['Value'] )
-    self.assert_( 'MinorStatus' in result['Value'] )
-    self.assert_( 'Site' in result['Value'] ) 
-    self.assert_( 'ApplicationStatus' in  result['Value'] )
-    self.assert_( 'User' in result['Value'] )
-    self.assert_( 'JobGroup' in result['Value'] )
-    self.assert_( 'UserGroup' in result['Value'] )
-    self.assert_( 'metric' in result['Value'] )
-    self.assertDictEqual( result['Value'], {u'Status': [u'running', u'waiting'], u'JobSplitType': [u'mcsimulation', u'mcreconstruction', u'user', u'mcstripping', u'datastripping'], u'MinorStatus': [u'unset'], u'Site': [u'lcg.cnaf.it', u'lcg.ral.uk', u'lcg.ihep.su', u'lcg.desyzn.de', u'lcg.bari.it', u'lcg.rrcki.ru', u'multiple', u'lcg.bristol.uk', u'lcg.nikhef.nl', u'group.ral.uk', u'lcg.bologna.it', u'lcg.cern.ch', u'lcg.gridka.de', u'lcg.pic.es'], u'ApplicationStatus': [u'unset'], u'User': [u'phicharp', u'olupton', u'clangenb', u'mamartin', u'mrwillia', u'mvesteri'], u'JobGroup': [u'lhcb', u'00050248', u'00050251', u'00049844', u'00049845', u'00049848', u'00050238', u'00050243', u'00050246', u'00049847', u'00050229', u'00050232', u'00050234', u'00050236', u'00050241', u'00050244', u'00050247', u'00050250', u'00050256', u'00050280', u'00050286', u'00050299', u'00050303'], u'UserGroup': [u'lhcb_mc', u'lhcb_user', u'lhcb_data'], u'metric': [u'wmshistory']} )
-    
-  def test_generatePlot( self ):
-    params = ( 'WMSHistory', 'NumberOfJobs', datetime( 2016, 3, 16, 12, 30, 0, 0 ), datetime( 2016, 3, 17, 19, 29, 0, 0 ), {'grouping': ['Site']}, 'Site', {} )
-    result = self.client.generateDelayedPlot( *params )
-    self.assert_( result['OK'] )
-    self.assertEqual( result['Value'], {'plot': 'Z:eNpljcEKwjAQRH8piWLbvQkeRLAeKnhOm7Us2CTsbsH69UYUFIQZZvawb4LUMKQYdjRoKH3kNGeK403W0JEiolSAMZxpwodXcsZukFZItipukFyxeSmiNIB3Zb_lUQL-wD4ssQYYc2Jt_VQuB-089cin6yH1Ur5FPev_UgnrSjXfpRp0yfjGGLgcuz2JJl7wCYg6Slo=', 'thumbnail': False} )
-  
-  def test_getPlot( self ):
-    tempFile = tempfile.TemporaryFile()
-    transferClient = TransferClient( 'Monitoring/Monitoring' )
-    params = ( 'WMSHistory', 'NumberOfJobs', datetime( 2016, 3, 16, 12, 30, 0, 0 ), datetime( 2016, 3, 17, 19, 29, 0, 0 ), {'grouping': ['Site']}, 'Site', {} )
-    result = self.client.generateDelayedPlot( *params )
-    self.assert_( result['OK'] )
-    result = transferClient.receiveFile( tempFile, result['Value']['plot'] )
-    self.assert_( result['OK'] )
-  
-  def test_getReport( self ):
-    params = ( 'WMSHistory', 'NumberOfJobs', datetime( 2016, 3, 16, 12, 30, 0, 0 ), datetime( 2016, 3, 17, 19, 29, 0, 0 ), {'grouping': ['Site']}, 'Site', {} )
-    result = self.client.getReport( *params )
-    self.assert_( result['OK'] )
-    self.assertDictEqual( result['Value'], {'data': {u'multiple': {1458194400: 227.0}, u'lcg.ihep.su': {1458216000: 18.0}, u'lcg.cnaf.it': {1458151200: None, 1458172800: None, 1458162000: None, 1458194400: None, 1458216000: 22.0, 1458140400: 4.0, 1458183600: None, 1458205200: None}, u'lcg.nikhef.nl': {1458216000: 27.0}, u'lcg.bari.it': {1458216000: 34.0}, u'lcg.rrcki.ru': {1458226800: 3.0}, u'group.ral.uk': {1458140400: 34.0}, u'lcg.desyzn.de': {1458226800: 43.0}, u'lcg.ral.uk': {1458129600: 2.0, 1458172800: None, 1458162000: None, 1458194400: None, 1458216000: None, 1458140400: None, 1458183600: None, 1458205200: None, 1458226800: 5.0, 1458151200: None}, u'lcg.pic.es': {1458129600: 1.0}, u'lcg.gridka.de': {1458129600: 2.0}, u'lcg.bristol.uk': {1458216000: 9.0}, u'lcg.cern.ch': {1458140400: 120.0}, u'lcg.bologna.it': {1458216000: 1.0}}, 'granularity': 10800} )
-  
-  def test_getLastDayData( self ):
-    params = {'Status':'Running', 'Site':'LCG.NIKHEF.nl'}
-    result = self.client.getLastDayData( 'WMSHistory', params )
-    self.assert_( result['OK'] )
-    self.assertEqual( len( result['Value'] ), 2 )
-                     
 class MonitoringDeleteChain( MonitoringTestCase ):
   
-  def test_deleteNonExistingIndex( self ): 
-    res = self.client.deleteIndex( "alllaaaaa" )
-    self.assert_( res['Message'] )
     
   def test_deleteIndex( self ):
+    result = self.monitoringDB.getIndexName('WMSHistory')
+    self.assert_( result['OK'] )
+    
     today = datetime.today().strftime( "%Y-%m-%d" )
-    result = "%s-%s" % ( 'wmshistory_index', today ) 
-    res = self.client.deleteIndex( result )
+    indexName = "%s-%s" % ( result['Value'], today ) 
+    res = self.monitoringDB.deleteIndex( indexName )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'test_wmshistory_index-%s' % today )
+    
     
 
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringTestCase )
-  testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringInsertData ) )
-  testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringTestChain ) )
   testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringDeleteChain ) )
   unittest.TextTestRunner( verbosity = 2 ).run( testSuite )
