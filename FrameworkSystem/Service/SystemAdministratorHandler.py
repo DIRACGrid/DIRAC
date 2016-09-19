@@ -23,7 +23,11 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
+from DIRAC.Core.Utilities import Profiler
+from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
+gMonitoringReporter = None
 
 __RCSID__ = "$Id$"
 
@@ -36,7 +40,7 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Handler class initialization
     """
-
+    
     # Check the flag for monitoring of the state of the host
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
 
@@ -44,6 +48,14 @@ class SystemAdministratorHandler( RequestHandler ):
       gThreadScheduler.addPeriodicTask( 60, cls.__storeHostInfo )
       #the SystemAdministrator service does not has to use the client to report data about the host.
 
+    # Check the flag for dynamic monitoring
+    dynamicMonitoring = cls.srv_getCSOption( 'DynamicMonitoring', False )
+    
+    if dynamicMonitoring:
+      global gMonitoringReporter
+      gMonitoringReporter = MonitoringReporter( db = MonitoringDB(), monitoringType = "ComponentMonitoring" )
+      gThreadScheduler.addPeriodicTask( 120, cls.__storeProfiling )
+      
     return S_OK( 'Initialization went well' )
 
   types_getInfo = [ ]
@@ -655,4 +667,40 @@ class SystemAdministratorHandler( RequestHandler ):
       gLogger.error( result[ 'Message' ] )
       return result
 
+    return S_OK( 'Profiling information logged correctly' )
+
+  @staticmethod
+  def __storeProfiling():
+    """
+    Retrieves and stores into ElasticSearch profiling information about the components on the host
+    """
+    result = gComponentInstaller.getStartupComponentStatus( [] ) #TODO: if we have a component which are not running, we will not ptofile the running processes
+    if not result[ 'OK' ]:
+      gLogger.error( result[ 'Message' ] )
+      return S_ERROR( result[ 'Message' ] )
+    startupComps = result[ 'Value' ]
+
+    result = gComponentInstaller.getSetupComponents()
+    if not result[ 'OK' ]:
+      gLogger.error( result[ 'Message' ] )
+      return S_ERROR( result[ 'Message' ] )
+    setupComps = result[ 'Value' ]
+
+    # Get the profiling information for every running component and send it to MonitoringSystem
+    for cType in setupComps:
+      for system in setupComps[ cType ]:
+        for comp in setupComps[ cType ][ system ]:
+          pid = startupComps[ '%s_%s' % ( system, comp ) ][ 'PID' ]
+          profiler = Profiler.Profiler( pid )
+          result = profiler.getAllProcessData()
+          if result[ 'OK' ]:
+            log = result[ 'Value' ][ 'stats' ]
+            log[ 'host' ] = socket.getfqdn()
+            log[ 'component' ] = '%s_%s' % ( system, comp )
+            log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ].isoformat()
+            gMonitoringReporter.addRecord( log )
+          else:
+            gLogger.error( result[ 'Message' ] )
+            return result
+    gMonitoringReporter.commit()
     return S_OK( 'Profiling information logged correctly' )
