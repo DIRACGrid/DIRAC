@@ -25,38 +25,38 @@ class Transformation( API ):
     super( Transformation, self ).__init__()
 
     self.paramTypes = { 'TransformationID'      : [types.IntType, types.LongType],
-                          'TransformationName'    : types.StringTypes,
-                          'Status'                : types.StringTypes,
-                          'Description'           : types.StringTypes,
-                          'LongDescription'       : types.StringTypes,
-                          'Type'                  : types.StringTypes,
-                          'Plugin'                : types.StringTypes,
-                          'AgentType'             : types.StringTypes,
-                          'FileMask'              : types.StringTypes,
-                          'TransformationGroup'   : types.StringTypes,
-                          'GroupSize'             : [types.IntType, types.LongType, types.FloatType],
-                          'InheritedFrom'         : [types.IntType, types.LongType],
-                          'Body'                  : types.StringTypes,
-                          'MaxNumberOfTasks'      : [types.IntType, types.LongType],
-                          'EventsPerTask'         : [types.IntType, types.LongType]}
+			'TransformationName'    : types.StringTypes,
+			'Status'                : types.StringTypes,
+			'Description'           : types.StringTypes,
+			'LongDescription'       : types.StringTypes,
+			'Type'                  : types.StringTypes,
+			'Plugin'                : types.StringTypes,
+			'AgentType'             : types.StringTypes,
+			'FileMask'              : types.StringTypes,
+			'TransformationGroup'   : types.StringTypes,
+			'GroupSize'             : [types.IntType, types.LongType, types.FloatType],
+			'InheritedFrom'         : [types.IntType, types.LongType],
+			'Body'                  : types.StringTypes,
+			'MaxNumberOfTasks'      : [types.IntType, types.LongType],
+			'EventsPerTask'         : [types.IntType, types.LongType]}
     self.paramValues = { 'TransformationID'      : 0,
-                          'TransformationName'    : '',
-                          'Status'                : 'New',
-                          'Description'           : '',
-                          'LongDescription'       : '',
-                          'Type'                  : '',
-                          'Plugin'                : 'Standard',
-                          'AgentType'             : 'Manual',
-                          'FileMask'              : '',
-                          'TransformationGroup'   : 'General',
-                          'GroupSize'             : 1,
-                          'InheritedFrom'         : 0,
-                          'Body'                  : '',
-                          'MaxNumberOfTasks'       : 0,
-                          'EventsPerTask'          : 0}
+			 'TransformationName'    : '',
+			 'Status'                : 'New',
+			 'Description'           : '',
+			 'LongDescription'       : '',
+			 'Type'                  : '',
+			 'Plugin'                : 'Standard',
+			 'AgentType'             : 'Manual',
+			 'FileMask'              : '',
+			 'TransformationGroup'   : 'General',
+			 'GroupSize'             : 1,
+			 'InheritedFrom'         : 0,
+			 'Body'                  : '',
+			 'MaxNumberOfTasks'       : 0,
+			 'EventsPerTask'          : 0}
     self.ops = Operations()
     self.supportedPlugins = self.ops.getValue( 'Transformations/AllowedPlugins',
-                                              ['Broadcast', 'Standard', 'BySize', 'ByShare'] )
+					       ['Broadcast', 'Standard', 'BySize', 'ByShare'] )
     if not transClient:
       self.transClient = TransformationClient()
     else:
@@ -473,19 +473,19 @@ class Transformation( API ):
       self._prettyPrint( self.paramValues )
 
     res = self.transClient.addTransformation( self.paramValues['TransformationName'],
-                                             self.paramValues['Description'],
-                                             self.paramValues['LongDescription'],
-                                             self.paramValues['Type'],
-                                             self.paramValues['Plugin'],
-                                             self.paramValues['AgentType'],
-                                             self.paramValues['FileMask'],
-                                             transformationGroup = self.paramValues['TransformationGroup'],
-                                             groupSize = self.paramValues['GroupSize'],
-                                             inheritedFrom = self.paramValues['InheritedFrom'],
-                                             body = self.paramValues['Body'],
-                                             maxTasks = self.paramValues['MaxNumberOfTasks'],
-                                             eventsPerTask = self.paramValues['EventsPerTask'],
-                                             addFiles = addFiles )
+					      self.paramValues['Description'],
+					      self.paramValues['LongDescription'],
+					      self.paramValues['Type'],
+					      self.paramValues['Plugin'],
+					      self.paramValues['AgentType'],
+					      self.paramValues['FileMask'],
+					      transformationGroup = self.paramValues['TransformationGroup'],
+					      groupSize = self.paramValues['GroupSize'],
+					      inheritedFrom = self.paramValues['InheritedFrom'],
+					      body = self.paramValues['Body'],
+					      maxTasks = self.paramValues['MaxNumberOfTasks'],
+					      eventsPerTask = self.paramValues['EventsPerTask'],
+					      addFiles = addFiles )
     if not res['OK']:
       if printOutput:
         self._prettyPrint( res )
