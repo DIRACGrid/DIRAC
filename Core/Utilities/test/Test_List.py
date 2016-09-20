@@ -132,7 +132,7 @@ class ListTestCase( unittest.TestCase ):
     # negative number of chunks
     try:
       List.breakListIntoChunks([], -2)
-    except Exceptio as val:
+    except Exception as val:
       self.assertEqual( isinstance(val, RuntimeError), True )
       self.assertEqual( str(val), "chunkSize cannot be less than 1" )
 
