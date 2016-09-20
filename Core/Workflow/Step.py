@@ -23,7 +23,7 @@ class StepDefinition( AttributeCollection ):
     self.parent = parent
 
     # sort out Parameters and class attributes
-    if ( obj == None ) or isinstance( obj, ParameterCollection ):
+    if ( obj is None ) or isinstance( obj, ParameterCollection ):
       self.setType( 'notgiven' )
       self.setDescrShort( '' )
       self.setDescription( '' )
@@ -141,7 +141,7 @@ class StepInstance( AttributeCollection ):
       self.setType( obj.getType() )
       self.setDescrShort( obj.getDescrShort() )
       self.parameters = ParameterCollection( obj.parameters )
-    elif ( obj == None ) or isinstance( obj, ParameterCollection ):
+    elif ( obj is None ) or isinstance( obj, ParameterCollection ):
       # set attributes
       self.setName( name )
       self.setType( "" )
@@ -219,7 +219,7 @@ class StepInstance( AttributeCollection ):
     # Report the Application state if the corresponding tool is supplied
     if 'JobReport' in self.workflow_commons:
       if self.parent.workflowStatus['OK']:
-	self.workflow_commons['JobReport'].setApplicationStatus( 'Executing ' + self.getName() )
+        self.workflow_commons['JobReport'].setApplicationStatus( 'Executing ' + self.getName() )
 
     # Prepare Step statistics evaluation
     self.step_commons['StartTime'] = time.time()
@@ -269,9 +269,9 @@ class StepInstance( AttributeCollection ):
         if not result['OK']:
           if self.stepStatus['OK']:
             error_message = result['Message']
-	    if 'JobReport' in self.workflow_commons:
+            if 'JobReport' in self.workflow_commons:
               if self.parent.workflowStatus['OK']:
-		self.workflow_commons['JobReport'].setApplicationStatus( error_message )
+                self.workflow_commons['JobReport'].setApplicationStatus( error_message )
           self.stepStatus = S_ERROR( result['Message'] )
         else:
           for parameter in mod_inst.parameters:
@@ -289,7 +289,7 @@ class StepInstance( AttributeCollection ):
                   # print 'Output step_exec_attr', st_parameter.getName(), step_exec_modules[st_parameter.getLinkedModule()], parameter.getLinkedParameter()
                   step_exec_attr[parameter.getName()] = \
                          getattr( step_exec_modules[parameter.getLinkedModule()],
-				  parameter.getLinkedParameter() )
+                                  parameter.getLinkedParameter() )
               else:
                 # This also does not make sense - we can give a warning
                 print "Warning! Module OUTPUT attribute ", parameter.getName(),
@@ -325,9 +325,9 @@ class StepInstance( AttributeCollection ):
           # This is the error that caused the workflow disruption
           # report it to the WMS
           error_message = 'Exception while %s module execution: %s' % ( mod_inst_name, str( x ) )
-	  if 'JobReport' in self.workflow_commons:
+          if 'JobReport' in self.workflow_commons:
             if self.parent.workflowStatus['OK']:
-	      self.workflow_commons['JobReport'].setApplicationStatus( 'Exception in %s module' % mod_inst_name )
+              self.workflow_commons['JobReport'].setApplicationStatus( 'Exception in %s module' % mod_inst_name )
 
         self.stepStatus = S_ERROR( error_message )
 
@@ -347,7 +347,7 @@ class StepInstance( AttributeCollection ):
             # print 'Output step_exec_attr', st_parameter.getName(), step_exec_modules[st_parameter.getLinkedModule()], st_parameter.getLinkedParameter()
             step_exec_attr[st_parameter.getName()] = \
                    getattr( step_exec_modules[st_parameter.getLinkedModule()],
-                           st_parameter.getLinkedParameter() )
+                            st_parameter.getLinkedParameter() )
           setattr( self, st_parameter.getName(), step_exec_attr[st_parameter.getName()] )
         else:
           # This also does not make sense - we can give a warning
