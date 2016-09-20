@@ -177,6 +177,8 @@ class MonitoringDB( ElasticDB ):
     gLogger.debug( 'Query:', s.to_dict() )
     retVal = s.execute()
     
+    gLogger.debug( "Query result", len( retVal ) )
+    
     result = {}
     for i in retVal.aggregations['2'].buckets:
       if isAvgAgg:
@@ -187,9 +189,103 @@ class MonitoringDB( ElasticDB ):
         for j in i.end_data.buckets:
           dp[j.key / 1000] = j.avg_monthly_sales.value
         result[site] = dp
-    
+    # the result format is { 'grouping':{timestamp:value, timestamp:value} for example : {u'Bookkeeping_BookkeepingManager': {1474300800: 4.0, 1474344000: 4.0, 1474331400: 4.0, 1
+    # 474302600: 4.0, 1474365600: 4.0, 1474304400: 4.0, 1474320600: 4.0, 1474360200: 4.0, 1474306200: 4.0, 1474356600: 4.0, 1474336800: 4.0, 1474326000: 4.0, 1474315200: 4.0, 
+    # 1474281000: 4.0, 1474309800: 4.0, 1474338600: 4.0, 1474311600: 4.0, 1474317000: 4.0, 1474367400: 4.0, 1474333200: 4.0, 1474284600: 4.0, 1474362000: 4.0, 
+    # 1474327800: 4.0, 1474345800: 4.0, 1474286400: 4.0, 1474308000: 4.0, 1474322400: 4.0, 1474288200: 4.0, 1474351200: 4.0, 1474282800: 4.0, 1474347600: 4.0, 
+    # 1474313400: 4.0, 1474349400: 4.0, 1474297200: 4.0, 1474340400: 4.0, 1474291800: 4.0, 1474335000: 4.0, 1474293600: 4.0, 1474290000: 4.0, 1474363800: 4.0, 
+    # 1474329600: 4.0, 1474353000: 4.0, 1474358400: 4.0, 1474324200: 4.0, 1474354800: 4.0, 1474295400: 4.0, 1474318800: 4.0, 1474299000: 4.0, 1474342200: 4.0}, 
+    # u'Framework_SystemAdministrator': {1474300800: 8.0, 1474344000: 8.0, 1474331400: 8.0, 1474302600: 8.0, 1474365600: 8.0, 1474304400: 8.0, 1474320600: 8.0, 
+    # 1474360200: 8.0, 1474306200: 8.0, 1474356600: 8.0, 1474336800: 8.0, 1474326000: 8.0, 1474315200: 8.0, 1474281000: 8.0, 1474309800: 8.0, 1474338600: 8.0, 
+    # 1474311600: 8.0, 1474317000: 8.0, 1474367400: 8.0, 1474333200: 8.0, 1474284600: 8.0, 1474362000: 8.0, 1474327800: 8.0, 1474345800: 8.0, 1474286400: 8.0, 
+    # 1474308000: 8.0, 1474322400: 8.0, 1474288200: 8.0, 1474351200: 8.0, 1474282800: 8.0, 1474347600: 8.0, 1474313400: 8.0, 1474349400: 8.0, 1474297200: 8.0, 
+    # 1474340400: 8.0, 1474291800: 8.0, 1474335000: 8.0, 1474293600: 8.0, 1474290000: 8.0, 1474363800: 8.0, 1474329600: 8.0, 1474353000: 8.0, 1474358400: 8.0, 
+    # 1474324200: 8.0, 1474354800: 8.0, 1474295400: 8.0, 1474318800: 8.0, 1474299000: 8.0, 1474342200: 8.0}}
     return S_OK( result )
     
+  def retrieveAggregatedData( self, typeName, startTime, endTime, interval, selectFields, condDict, grouping, metainfo ):
+    """
+    Get data from the DB using simple aggregations. Note: this method is equivalent to retrieveBucketedData. 
+    The different is the dynamic bucketing. We do not perform dynamic bucketing on the raw data.
+    
+    :param str typeName name of the monitoring type
+    :param int startTime  epoch objects.
+    :param int endtime epoch objects.
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+     
+    """
+#    {'query': {'bool': {'filter': [{'bool': {'must': [{'range': {'timestamp': {'gte': 1474271462000, 'lte': 1474357862000}}}]}}]}}, 'aggs': {'end_data': {'date_histogram': {'field': 'timestamp', 'interval': '30m'}, 'aggs': {'tt': {'terms': {'field': 'component', 'size': 0}, 'aggs': {'m1': {'avg': {'
+#    field': 'threads'}}}}}}}}
+# 
+#     query = [Q( 'range',timestamp = {'lte':1474357862000,'gte': 1474271462000} )]
+# 
+#     a = A('terms', field = 'component', size = 0 )
+#     a.metric('m1', 'avg', field = 'threads' )
+# 
+#     s = Search(using=cl, index = 'lhcb-certification_componentmonitoring-index-*')
+# 
+#     s = s.filter( 'bool', must = query )
+#     s = s.aggs.bucket('end_data', 'date_histogram', field='timestamp', interval='30m').metric( 'tt', a )
+    
+    retVal = self.getIndexName( typeName )
+    if not retVal['OK']:
+      return retVal
+    
+    # default is average
+    aggregator = metainfo.get( 'metric', 'avg' )
+          
+    indexName = "%s*" % ( retVal['Value'] )
+    q = [self._Q( 'range',
+                  timestamp = {'lte':endTime * 1000,
+                          'gte': startTime * 1000} )]
+    for cond in condDict:
+      kwargs = {cond: condDict[cond][0]}
+      query = self._Q( 'match', **kwargs )
+      q += [query] 
+    
+    a1 = self._A( 'terms', field = grouping, size = 0 )
+    a1.metric( 'm1', aggregator, field = selectFields[0] )
+           
+    s = self._Search( indexName )
+    s = s.filter( 'bool', must = q )
+    s.aggs.bucket( 'end_data',
+                   'date_histogram',
+                   field = 'timestamp',
+                   interval = interval ).metric( 'tt', a1 )
+    
+    s.fields( ['timestamp'] + selectFields )
+    s = s.extra( size = 0 )  # do not get the hits!
+     
+    gLogger.debug( 'Query:', s.to_dict() )
+    retVal = s.execute()
+    
+    result = {}
+    for bucket in retVal.aggregations['end_data'].buckets:
+      # each bucket key is a time (unix epoch and usual datetime
+      bucketTime = bucket.key / 1000
+      for value in bucket['tt'].buckets: 
+        # each bucket contains an agregation called tt which sum/avg of the metric.
+        if value.key not in result:
+          result[value.key] = {bucketTime:value.m1.value}
+        else:
+          result[value.key].update( {bucketTime:value.m1.value} )    
+    # the result format is { 'grouping':{timestamp:value, timestamp:value} for example : {u'Bookkeeping_BookkeepingManager': {1474300800: 4.0, 1474344000: 4.0, 1474331400: 4.0, 1
+    # 474302600: 4.0, 1474365600: 4.0, 1474304400: 4.0, 1474320600: 4.0, 1474360200: 4.0, 1474306200: 4.0, 1474356600: 4.0, 1474336800: 4.0, 1474326000: 4.0, 1474315200: 4.0, 
+    # 1474281000: 4.0, 1474309800: 4.0, 1474338600: 4.0, 1474311600: 4.0, 1474317000: 4.0, 1474367400: 4.0, 1474333200: 4.0, 1474284600: 4.0, 1474362000: 4.0, 
+    # 1474327800: 4.0, 1474345800: 4.0, 1474286400: 4.0, 1474308000: 4.0, 1474322400: 4.0, 1474288200: 4.0, 1474351200: 4.0, 1474282800: 4.0, 1474347600: 4.0, 
+    # 1474313400: 4.0, 1474349400: 4.0, 1474297200: 4.0, 1474340400: 4.0, 1474291800: 4.0, 1474335000: 4.0, 1474293600: 4.0, 1474290000: 4.0, 1474363800: 4.0, 
+    # 1474329600: 4.0, 1474353000: 4.0, 1474358400: 4.0, 1474324200: 4.0, 1474354800: 4.0, 1474295400: 4.0, 1474318800: 4.0, 1474299000: 4.0, 1474342200: 4.0}, 
+    # u'Framework_SystemAdministrator': {1474300800: 8.0, 1474344000: 8.0, 1474331400: 8.0, 1474302600: 8.0, 1474365600: 8.0, 1474304400: 8.0, 1474320600: 8.0, 
+    # 1474360200: 8.0, 1474306200: 8.0, 1474356600: 8.0, 1474336800: 8.0, 1474326000: 8.0, 1474315200: 8.0, 1474281000: 8.0, 1474309800: 8.0, 1474338600: 8.0, 
+    # 1474311600: 8.0, 1474317000: 8.0, 1474367400: 8.0, 1474333200: 8.0, 1474284600: 8.0, 1474362000: 8.0, 1474327800: 8.0, 1474345800: 8.0, 1474286400: 8.0, 
+    # 1474308000: 8.0, 1474322400: 8.0, 1474288200: 8.0, 1474351200: 8.0, 1474282800: 8.0, 1474347600: 8.0, 1474313400: 8.0, 1474349400: 8.0, 1474297200: 8.0, 
+    # 1474340400: 8.0, 1474291800: 8.0, 1474335000: 8.0, 1474293600: 8.0, 1474290000: 8.0, 1474363800: 8.0, 1474329600: 8.0, 1474353000: 8.0, 1474358400: 8.0, 
+    # 1474324200: 8.0, 1474354800: 8.0, 1474295400: 8.0, 1474318800: 8.0, 1474299000: 8.0, 1474342200: 8.0}}
+    
+    return S_OK( result )
+  
   def put( self, records, monitoringType ):
     """
     It is used to insert the data to El.

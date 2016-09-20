@@ -63,6 +63,19 @@ class DBUtils ( object ):
                                            grouping = grouping,
                                            metainfo = metadataDict )
   
+  def _retrieveAggregatedData( self, typeName, startTime, endTime, interval, selectFields, condDict = None, grouping = '', metadataDict = None ):
+    """
+    Retrieve data from EL
+    """
+    return self.__db.retrieveAggregatedData( typeName = typeName,
+                                           startTime = startTime,
+                                           endTime = endTime,
+                                           interval = interval,
+                                           selectFields = selectFields,
+                                           condDict = condDict,
+                                           grouping = grouping,
+                                           metainfo = metadataDict )
+  
   def _determineBucketSize( self, start, end ):
     """
     It is used to determine the bucket size using _esUnits
@@ -91,3 +104,20 @@ class DBUtils ( object ):
         currentDict[ timeEpoch ] /= float( factor )
         maxValue = max( maxValue, currentDict[ timeEpoch ] )
     return dataDict, maxValue
+  
+  def _getAccumulationMaxValue( self, dataDict ):
+    """
+    Divide by factor the values and get the maximum value
+      - dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+    """
+    maxValue = 0
+    maxEpoch = 0
+    for key in dataDict:
+      currentDict = dataDict[ key ]
+      for timeEpoch in currentDict:
+        if timeEpoch > maxEpoch:
+          maxEpoch = timeEpoch
+          maxValue = 0
+        if timeEpoch == maxEpoch:
+          maxValue += currentDict[ timeEpoch ]
+    return maxValue

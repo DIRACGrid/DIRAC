@@ -291,5 +291,5 @@ class ElasticSearchDB( object ):
     for bucket in result.aggregations[key].buckets:
       values += [bucket['key']]
     del query
-    print '@@@',values
+    gLogger.debug( "Nb of unique rows retrieved", len( values ) )
     return S_OK( values )
