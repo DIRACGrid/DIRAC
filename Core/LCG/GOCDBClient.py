@@ -1,4 +1,4 @@
-""" GOCDBClient module is a client for the GOC DB, looking for Downtimes.
+  """ GOCDBClient module is a client for the GOC DB, looking for Downtimes.
 """
 __RCSID__ = "$Id$"
 
@@ -174,18 +174,18 @@ class GOCDBClient( object ):
     """
     Get the list of all current DTs' links
     """
-    
+
     gDTPage = self._downTimeCurlDownload() # xml format
     gResourceDT = self._downTimeXMLParsing( gDTPage, "Resource" ) # python dictionary format
     gSiteDT = self._downTimeXMLParsing( gDTPage, "Site" ) # python dictionary format
-    
+
     currentDTLinkList = []
     for dt in gResourceDT:
       currentDTLinkList.append(gResourceDT[dt]['GOCDB_PORTAL_URL'])
-      
+
     for dt in gSiteDT:
       currentDTLinkList.append(gSiteDT[dt]['GOCDB_PORTAL_URL'])
-      
+
     return S_OK(currentDTLinkList)
 
 #############################################################################
@@ -234,7 +234,7 @@ class GOCDBClient( object ):
     if entity is not None:
       if isinstance( entity, basestring ):
         gocdb_ep = gocdb_ep + "&topentity=" + entity
-    gocdb_ep = gocdb_ep + when + gocdbpi_startDate
+    gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
     req = urllib2.Request( gocdb_ep )
     dtPage = urllib2.urlopen( req )
