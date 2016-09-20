@@ -1,4 +1,4 @@
-  """ GOCDBClient module is a client for the GOC DB, looking for Downtimes.
+""" GOCDBClient module is a client for the GOC DB, looking for Downtimes.
 """
 __RCSID__ = "$Id$"
 
