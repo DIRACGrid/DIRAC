@@ -199,7 +199,7 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     if token:
       retVal = rpcClient.getProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
-					    long( cacheTime + requiredTimeLeft ), token )
+                                            long( cacheTime + requiredTimeLeft ), token )
     else:
       retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
                                    long( cacheTime + requiredTimeLeft ) )
@@ -300,12 +300,11 @@ class ProxyManagerClient:
       return S_ERROR( "No group found that has %s as voms attrs" % vomsAttr )
 
     for userGroup in groups:
-      result = self.downloadVOMSProxy( userDN,
-				       userGroup,
-				       limited = False,
-				       requiredTimeLeft = requiredTimeLeft,
-				       requiredVOMSAttribute = vomsAttr,
-				       proxyToConnect = proxyToConnect )
+      result = self.downloadVOMSProxy( userDN, userGroup,
+                                       limited = False,
+                                       requiredTimeLeft = requiredTimeLeft,
+                                       requiredVOMSAttribute = vomsAttr,
+                                       proxyToConnect = proxyToConnect )
       if result['OK']:
         return result
     return result

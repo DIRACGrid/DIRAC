@@ -439,17 +439,17 @@ class ConsistencyInspector( object ):
       if not oneGoodReplica:
         if lfn in lfnNotExisting:
           gLogger.info( "=> All replicas are missing", lfn )
-	  retDict['MissingAllReplicas'][lfn] = 'All'
+          retDict['MissingAllReplicas'][lfn] = 'All'
         else:
           gLogger.info( "=> All replicas have bad checksum", lfn )
-	  retDict['AllReplicasCorrupted'][lfn] = csDict[ lfn ]
+          retDict['AllReplicasCorrupted'][lfn] = csDict[ lfn ]
       elif not allGoodReplicas:
         if lfn in lfnNotExisting:
           gLogger.info( "=> At least one replica missing", lfn )
           retDict['MissingReplica'][lfn] = lfnNotExisting[lfn]
         else:
           gLogger.info( "=> At least one replica with good Checksum", lfn )
-	  retDict['SomeReplicasCorrupted'][lfn] = csDict[lfn]
+          retDict['SomeReplicasCorrupted'][lfn] = csDict[lfn]
 
     return S_OK(retDict)
 

@@ -411,7 +411,7 @@ class SiteDirector( AgentModule ):
     tqIDList = result['Value'].keys()
     result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
                                           'Status': WAITING_PILOT_STATUS },
-					None )
+                                        None )
     totalWaitingPilots = 0
     if result['OK']:
       totalWaitingPilots = result['Value']
@@ -509,7 +509,7 @@ class SiteDirector( AgentModule ):
         lastUpdateTime = dateTime() - self.pilotWaitingTime * second
         result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
                                               'Status': WAITING_PILOT_STATUS },
-					    None, lastUpdateTime )
+                                            None, lastUpdateTime )
         if not result['OK']:
           self.log.error( 'Failed to get Number of Waiting pilots', result['Message'] )
           totalWaitingPilots = 0

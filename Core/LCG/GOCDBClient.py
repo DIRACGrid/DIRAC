@@ -119,7 +119,7 @@ class GOCDBClient( object ):
         res_startDate = {}
       else:
         res_startDate = self._downTimeXMLParsing( resXML_startDate, granularity,
-	      name, startDateMax )
+                                                  name, startDateMax )
 
       # merge the results of the 2 queries:
       res = res_ongoing
@@ -312,29 +312,29 @@ class GOCDBClient( object ):
 
     for dt_ID in dtDict.keys():
       if siteOrRes in ( 'Site', 'Sites' ):
-	if not 'SITENAME' in dtDict[dt_ID]:
+        if not 'SITENAME' in dtDict[dt_ID]:
           dtDict.pop( dt_ID )
           continue
         if entities is not None:
           if not isinstance( entities, list ):
             entities = [entities]
-	  if not dtDict[dt_ID]['SITENAME'] in entities:
+          if not dtDict[dt_ID]['SITENAME'] in entities:
             dtDict.pop( dt_ID )
 
       elif siteOrRes in ( 'Resource', 'Resources' ):
-	if not 'HOSTNAME' in dtDict[dt_ID]:
+        if not 'HOSTNAME' in dtDict[dt_ID]:
           dtDict.pop( dt_ID )
           continue
         if entities is not None:
           if not isinstance( entities, list ):
             entities = [entities]
-	  if not dtDict[dt_ID]['HOSTNAME'] in entities:
+          if not dtDict[dt_ID]['HOSTNAME'] in entities:
             dtDict.pop( dt_ID )
 
     if startDateMax is not None:
       for dt_ID in dtDict.keys():
         startDateMaxFromKeys = datetime( *time.strptime( dtDict[dt_ID]['FORMATED_START_DATE'],
-							 "%Y-%m-%d %H:%M" )[0:5] )
+                                                         "%Y-%m-%d %H:%M" )[0:5] )
         if startDateMaxFromKeys > startDateMax:
           dtDict.pop( dt_ID )
 

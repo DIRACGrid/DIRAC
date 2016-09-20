@@ -25,38 +25,38 @@ class Transformation( API ):
     super( Transformation, self ).__init__()
 
     self.paramTypes = { 'TransformationID'      : [types.IntType, types.LongType],
-			'TransformationName'    : types.StringTypes,
-			'Status'                : types.StringTypes,
-			'Description'           : types.StringTypes,
-			'LongDescription'       : types.StringTypes,
-			'Type'                  : types.StringTypes,
-			'Plugin'                : types.StringTypes,
-			'AgentType'             : types.StringTypes,
-			'FileMask'              : types.StringTypes,
-			'TransformationGroup'   : types.StringTypes,
-			'GroupSize'             : [types.IntType, types.LongType, types.FloatType],
-			'InheritedFrom'         : [types.IntType, types.LongType],
-			'Body'                  : types.StringTypes,
-			'MaxNumberOfTasks'      : [types.IntType, types.LongType],
-			'EventsPerTask'         : [types.IntType, types.LongType]}
+                        'TransformationName'    : types.StringTypes,
+                        'Status'                : types.StringTypes,
+                        'Description'           : types.StringTypes,
+                        'LongDescription'       : types.StringTypes,
+                        'Type'                  : types.StringTypes,
+                        'Plugin'                : types.StringTypes,
+                        'AgentType'             : types.StringTypes,
+                        'FileMask'              : types.StringTypes,
+                        'TransformationGroup'   : types.StringTypes,
+                        'GroupSize'             : [types.IntType, types.LongType, types.FloatType],
+                        'InheritedFrom'         : [types.IntType, types.LongType],
+                        'Body'                  : types.StringTypes,
+                        'MaxNumberOfTasks'      : [types.IntType, types.LongType],
+                        'EventsPerTask'         : [types.IntType, types.LongType]}
     self.paramValues = { 'TransformationID'      : 0,
-			 'TransformationName'    : '',
-			 'Status'                : 'New',
-			 'Description'           : '',
-			 'LongDescription'       : '',
-			 'Type'                  : '',
-			 'Plugin'                : 'Standard',
-			 'AgentType'             : 'Manual',
-			 'FileMask'              : '',
-			 'TransformationGroup'   : 'General',
-			 'GroupSize'             : 1,
-			 'InheritedFrom'         : 0,
-			 'Body'                  : '',
-			 'MaxNumberOfTasks'       : 0,
-			 'EventsPerTask'          : 0}
+                         'TransformationName'    : '',
+                         'Status'                : 'New',
+                         'Description'           : '',
+                         'LongDescription'       : '',
+                         'Type'                  : '',
+                         'Plugin'                : 'Standard',
+                         'AgentType'             : 'Manual',
+                         'FileMask'              : '',
+                         'TransformationGroup'   : 'General',
+                         'GroupSize'             : 1,
+                         'InheritedFrom'         : 0,
+                         'Body'                  : '',
+                         'MaxNumberOfTasks'       : 0,
+                         'EventsPerTask'          : 0}
     self.ops = Operations()
     self.supportedPlugins = self.ops.getValue( 'Transformations/AllowedPlugins',
-					       ['Broadcast', 'Standard', 'BySize', 'ByShare'] )
+                                               ['Broadcast', 'Standard', 'BySize', 'ByShare'] )
     if not transClient:
       self.transClient = TransformationClient()
     else:
@@ -290,7 +290,7 @@ class Transformation( API ):
   def getTransformationFiles( self, fileStatus = [], lfns = [], outputFields = ['FileID', 'LFN', 'Status', 'TaskID',
                                                                                 'TargetSE', 'UsedSE', 'ErrorCount',
                                                                                 'InsertedTime', 'LastUpdate'],
-                             orderBy = 'FileID', printOutput = False ):
+                              orderBy = 'FileID', printOutput = False ):
     condDict = {'TransformationID':self.paramValues['TransformationID']}
     if fileStatus:
       condDict['Status'] = fileStatus
@@ -314,7 +314,7 @@ class Transformation( API ):
                                                                                    'ExternalStatus', 'ExternalID',
                                                                                    'TargetSE', 'CreationTime',
                                                                                    'LastUpdateTime'],
-                             orderBy = 'TaskID', printOutput = False ):
+                              orderBy = 'TaskID', printOutput = False ):
     condDict = {'TransformationID':self.paramValues['TransformationID']}
     if taskStatus:
       condDict['ExternalStatus'] = taskStatus
@@ -338,7 +338,7 @@ class Transformation( API ):
   def getTransformations( self, transID = [], transStatus = [], outputFields = ['TransformationID', 'Status',
                                                                                 'AgentType', 'TransformationName',
                                                                                 'CreationDate'],
-                         orderBy = 'TransformationID', printOutput = False ):
+                          orderBy = 'TransformationID', printOutput = False ):
     condDict = {}
     if transID:
       condDict['TransformationID'] = transID
@@ -376,9 +376,10 @@ class Transformation( API ):
     return S_OK( res )
 
   #############################################################################
-  def getTransformationsByUser( self, authorDN = "", userName = "", transID = [], transStatus = [], outputFields = ['TransformationID', 'Status',
-                                                                                                     'AgentType', 'TransformationName',
-                                                                                                     'CreationDate', 'AuthorDN'],
+  def getTransformationsByUser( self, authorDN = "", userName = "", transID = [], transStatus = [],
+                                outputFields = ['TransformationID', 'Status',
+                                                'AgentType', 'TransformationName',
+                                                'CreationDate', 'AuthorDN'],
                                 orderBy = 'TransformationID', printOutput = False ):
     condDict = {}
     if authorDN == "":
@@ -473,19 +474,19 @@ class Transformation( API ):
       self._prettyPrint( self.paramValues )
 
     res = self.transClient.addTransformation( self.paramValues['TransformationName'],
-					      self.paramValues['Description'],
-					      self.paramValues['LongDescription'],
-					      self.paramValues['Type'],
-					      self.paramValues['Plugin'],
-					      self.paramValues['AgentType'],
-					      self.paramValues['FileMask'],
-					      transformationGroup = self.paramValues['TransformationGroup'],
-					      groupSize = self.paramValues['GroupSize'],
-					      inheritedFrom = self.paramValues['InheritedFrom'],
-					      body = self.paramValues['Body'],
-					      maxTasks = self.paramValues['MaxNumberOfTasks'],
-					      eventsPerTask = self.paramValues['EventsPerTask'],
-					      addFiles = addFiles )
+                                              self.paramValues['Description'],
+                                              self.paramValues['LongDescription'],
+                                              self.paramValues['Type'],
+                                              self.paramValues['Plugin'],
+                                              self.paramValues['AgentType'],
+                                              self.paramValues['FileMask'],
+                                              transformationGroup = self.paramValues['TransformationGroup'],
+                                              groupSize = self.paramValues['GroupSize'],
+                                              inheritedFrom = self.paramValues['InheritedFrom'],
+                                              body = self.paramValues['Body'],
+                                              maxTasks = self.paramValues['MaxNumberOfTasks'],
+                                              eventsPerTask = self.paramValues['EventsPerTask'],
+                                              addFiles = addFiles )
     if not res['OK']:
       if printOutput:
         self._prettyPrint( res )
@@ -540,7 +541,7 @@ class Transformation( API ):
 
   def _checkStandardPlugin( self ):
     groupSize = self.paramValues['GroupSize']
-    if ( groupSize <= 0 ):
+    if groupSize <= 0:
       gLogger.info( "The GroupSize was found to be less than zero. It has been set to 1." )
       res = self.setGroupSize( 1 )
       if not res['OK']:
