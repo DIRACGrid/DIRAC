@@ -111,6 +111,7 @@ class ElasticSearchDB( object ):
     """
     result = []
     try:
+      gLogger.debug( "Getting mappings for ", indexName )
       result = self.__client.indices.get_mapping( indexName )
     except Exception as e: # pylint: disable=broad-except
       gLogger.error( e )
@@ -255,9 +256,9 @@ class ElasticSearchDB( object ):
     
     query = self._Search( indexName )
     
-    startDate = datetime.utcnow()
+    endDate = datetime.utcnow()
     
-    endDate = startDate - timedelta( days = 1 )
+    startDate = endDate - timedelta( days = 30 )
     
     timeFilter = self._Q( 'range',
                           timestamp = {'lte':int(Time.toEpoch( endDate )) * 1000,

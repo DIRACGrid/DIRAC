@@ -109,8 +109,13 @@ class MonitoringDB( ElasticDB ):
     if not retVal['OK']:
       return retVal
     docs = retVal['Value']
+    gLogger.debug( "Doc types", docs )
     monfields = self.__documents[typeName]['monitoringFields']
     
+    if typeName not in docs:
+      #this is only happen when we the index is created and we were not able to send records to the index. 
+      #There is no data in the index we can not create the plot.
+      return S_ERROR( "%s empty and can not retrive the Type of the index" % indexName )
     for i in docs[typeName]['properties']:
       if i not in monfields and not i.startswith( 'time' ):
         retVal = self.getUniqueValue( indexName, i )
