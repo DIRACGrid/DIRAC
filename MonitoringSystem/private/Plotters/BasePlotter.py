@@ -167,15 +167,28 @@ class BasePlotter( DBUtils ):
     if not retVal['OK']:
       return retVal
     interval, granularity = retVal['Value']
-       
-    retVal = self._retrieveBucketedData( self._typeName,
-                                          startTime,
-                                          endTime,
-                                          interval,
-                                          selectFields,
-                                          condDict,
-                                          grouping,
-                                          metadataDict )
+    
+    dynamicBucketing = metadataDict.get( 'DynamicBucketing', True )
+    #by default we use dynamic bucketing
+    if dynamicBucketing:   
+      retVal = self._retrieveBucketedData( self._typeName,
+                                           startTime,
+                                           endTime,
+                                           interval,
+                                           selectFields,
+                                           condDict,
+                                           grouping,
+                                           metadataDict )
+    else:
+      retVal = self._retrieveAggregatedData( self._typeName,
+                                             startTime,
+                                             endTime,
+                                             interval,
+                                             selectFields,
+                                             condDict,
+                                             grouping,
+                                             metadataDict )
+      
     if not retVal[ 'OK' ]:
       return retVal
     dataDict = retVal[ 'Value' ] 
