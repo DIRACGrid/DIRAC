@@ -296,14 +296,20 @@ class ReleaseConfig( object ):
       self.__debugCB( msg )
 
   def __loadCFGFromURL( self, urlcfg, checkHash = False ):
-    if urlcfg in self.__cfgCache:
-      return S_OK( self.__cfgCache[ urlcfg ] )
-    try:
-      cfgData = urlretrieveTimeout( urlcfg, timeout = cliParams.timeout )
-      if not cfgData:
-        return S_ERROR( "Could not get data from %s" % urlcfg )
-    except:
-      return S_ERROR( "Could not open %s" % urlcfg )
+
+    # This can be a local file
+    if os.path.exists( urlcfg ):
+      with open( urlcfg, 'r' ) as relFile:
+        cfgData = relFile.read()
+    else:
+      if urlcfg in self.__cfgCache:
+        return S_OK( self.__cfgCache[ urlcfg ] )
+      try:
+        cfgData = urlretrieveTimeout( urlcfg, timeout = cliParams.timeout )
+        if not cfgData:
+          return S_ERROR( "Could not get data from %s" % urlcfg )
+      except:
+        return S_ERROR( "Could not open %s" % urlcfg )
     try:
       #cfgData = cfgFile.read()
       cfg = ReleaseConfig.CFG( cfgData )
