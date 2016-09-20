@@ -75,7 +75,7 @@ class StepDefinition( AttributeCollection ):
 
   def addModule( self, module ):
     # KGG We need to add code to update existing modules
-    if self.module_definitions == None:
+    if self.module_definitions is None:
       self.parent.module_definitions.append( module )
     else:
       self.module_definitions.append( module )

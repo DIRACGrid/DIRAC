@@ -62,23 +62,23 @@ class GOCDBClient( object ):
 
     :return: (example)
       {'OK': True,
-       'Value': {'92569G0 lhcbsrm-kit.gridka.de': {'DESCRIPTION': 'Annual site downtime for various major tasks in the area of network, storage, etc.',
-						   'FORMATED_END_DATE': '2014-05-27 15:21',
-						   'FORMATED_START_DATE': '2014-05-26 04:00',
-						   'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14051',
-						   'HOSTED_BY': 'FZK-LCG2',
-						   'HOSTNAME': 'lhcbsrm-kit.gridka.de',
-						   'SERVICE_TYPE': 'SRM.nearline',
-						   'SEVERITY': 'OUTAGE'},
-		  '99873G0 srm.pic.esSRM': {'HOSTED_BY': 'pic',
-					    'ENDPOINT': 'srm.pic.esSRM',
-					    'SEVERITY': 'OUTAGE',
-					    'HOSTNAME': 'srm.pic.es',
-					    'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=21303',
-					    'FORMATED_START_DATE': '2016-09-14 06:00',
-					    'SERVICE_TYPE': 'SRM',
-					    'FORMATED_END_DATE': '2016-09-14 15:00',
-					    'DESCRIPTION': 'Outage declared due to network and dCache upgrades'}
+       'Value': {'92569G0 lhcbsrm-kit.gridka.de': {'DESCRIPTION': 'Annual site downtime for various major tasks i...',
+	       'FORMATED_END_DATE': '2014-05-27 15:21',
+	       'FORMATED_START_DATE': '2014-05-26 04:00',
+	       'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14051',
+	       'HOSTED_BY': 'FZK-LCG2',
+	       'HOSTNAME': 'lhcbsrm-kit.gridka.de',
+	       'SERVICE_TYPE': 'SRM.nearline',
+	       'SEVERITY': 'OUTAGE'},
+      '99873G0 srm.pic.esSRM': {'HOSTED_BY': 'pic',
+	      'ENDPOINT': 'srm.pic.esSRM',
+	      'SEVERITY': 'OUTAGE',
+	      'HOSTNAME': 'srm.pic.es',
+	      'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=21303',
+	      'FORMATED_START_DATE': '2016-09-14 06:00',
+	      'SERVICE_TYPE': 'SRM',
+	      'FORMATED_END_DATE': '2016-09-14 15:00',
+	      'DESCRIPTION': 'Outage declared due to network and dCache upgrades'}
                  }
         }
 
@@ -119,7 +119,7 @@ class GOCDBClient( object ):
         res_startDate = {}
       else:
         res_startDate = self._downTimeXMLParsing( resXML_startDate, granularity,
-						  name, startDateMax )
+	      name, startDateMax )
 
       # merge the results of the 2 queries:
       res = res_ongoing

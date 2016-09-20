@@ -1,21 +1,18 @@
 ########################################################################
-# $HeadURL $
 # File: AdlerTestCase.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2011/02/11 09:08:19
 ########################################################################
 
-""" :mod: AdlerTestCase 
+""" :mod: AdlerTestCase
     =======================
-     
+
     .. module: AdlerTestCase
     :synopsis: test case for DIRAC.Core.Utilities.Adler module
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-    
+
     test case for DIRAC.Core.Utilities.Adler module
 """
-
-__RCSID__ = "$Id $"
 
 ##
 # @file AdlerTestCase.py
@@ -23,12 +20,14 @@ __RCSID__ = "$Id $"
 # @date 2011/02/11 09:08:37
 # @brief Definition of AdlerTestCase class.
 
-## imports 
+## imports
 import os
 import unittest
 import string
 import tempfile
 from zlib import adler32
+
+__RCSID__ = "$Id $"
 
 ## from DIRAC
 from DIRAC.Core.Utilities import Adler
@@ -40,10 +39,10 @@ class AdlerTestCase(unittest.TestCase):
   .. class:: AdlerTestCase
   test case for DIRAC.Core.Utilities.Adler module
   """
-	
+
   def setUp( self ):
-    self.emptyAdler = hex(adler32( "" ))[2:] 
-    self.lettersAdler = hex(adler32( string.letters ))[2:] 
+    self.emptyAdler = hex(adler32( "" ))[2:]
+    self.lettersAdler = hex(adler32( string.letters ))[2:]
 
   def testStringAdler( self ):
     """ stringAdler tests """
@@ -54,14 +53,14 @@ class AdlerTestCase(unittest.TestCase):
       self.assertEqual( isinstance(error, TypeError), True )
     # wrong argument type
     self.assertEqual( Adler.stringAdler([]), False )
-    # empty string 
+    # empty string
     self.assertEqual( int(Adler.stringAdler("")), int(self.emptyAdler) )
     # all letters
     self.assertEqual( Adler.stringAdler(string.letters), self.lettersAdler )
 
   def testConversion( self ):
     """ intAdlerToHex and hexAdlerToInt tests """
-    # no arguments 
+    # no arguments
     try:
       Adler.intAdlerToHex()
     except Exception, error:
@@ -69,11 +68,11 @@ class AdlerTestCase(unittest.TestCase):
     # wrong type of arg (should it really print out to stdout)
     self.assertEqual( Adler.intAdlerToHex("a"), False )
     # normal operation
-    self.assertEqual( int(Adler.intAdlerToHex(1)), 
-                      Adler.hexAdlerToInt( Adler.intAdlerToHex(1) ) ) 
+    self.assertEqual( int(Adler.intAdlerToHex(1)),
+		      Adler.hexAdlerToInt( Adler.intAdlerToHex(1) ) )
     self.assertEqual( Adler.hexAdlerToInt( "0x01" ),
                       int( Adler.intAdlerToHex( Adler.hexAdlerToInt( "0x01" ) ) ) )
-  
+
   def testFileAdler( self ):
     """ fileAdler tests """
     # no args
@@ -81,7 +80,7 @@ class AdlerTestCase(unittest.TestCase):
       Adler.fileAdler()
     except Exception, error:
       self.assertEqual( isinstance(error,TypeError ), True )
-    # read-protected file 
+    # read-protected file
     self.assertEqual( Adler.fileAdler( "/root/.login" ), False )
     # inexisting file
     self.assertEqual( Adler.fileAdler( "Stone/Dead/Norwegian/Blue/Parrot/In/Camelot" ), False )
@@ -90,7 +89,7 @@ class AdlerTestCase(unittest.TestCase):
     self.assertEqual( int(Adler.fileAdler( path )), int(self.emptyAdler) )
     os.write( fd,  string.letters )
     self.assertEqual( Adler.fileAdler( path ), self.lettersAdler )
-   
+
   def testCompareAdler( self ):
     """ compareAdler tests """
     # same adlers
@@ -102,7 +101,5 @@ class AdlerTestCase(unittest.TestCase):
 ## test suite execution
 if __name__ == "__main__":
   TESTLOADER = unittest.TestLoader()
-  SUITE = TESTLOADER.loadTestsFromTestCase( AdlerTestCase )      
+  SUITE = TESTLOADER.loadTestsFromTestCase( AdlerTestCase )
   unittest.TextTestRunner(verbosity=3).run( SUITE )
-		
-

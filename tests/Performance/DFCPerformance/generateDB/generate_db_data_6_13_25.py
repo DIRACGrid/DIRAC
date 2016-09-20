@@ -34,7 +34,7 @@ print "START TRANSACTION;"
 
 for uId in config.users:
   print "INSERT INTO FC_Users (UserName) values ('%s');"%(uId)
-  
+
 for gId in config.groups:
   print "INSERT INTO FC_Groups (GroupName) values ('%s');"%(gId)
 
@@ -53,7 +53,7 @@ def proc_insert_dir(parent_id, child_name, UID, GID, Mode, Status):
   print "INSERT INTO FC_DirectoryList (Name, UID, GID, CreationDate, ModificationDate, Mode, Status)\
    values ('%s', %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s, %s);" % ( child_name, UID, GID, Mode, Status )
   print "SELECT LAST_INSERT_ID() INTO @dir_id;"
-  
+
   print "INSERT INTO FC_DirectoryClosure (ParentID, ChildID, Depth ) VALUES (@dir_id, @dir_id, 0);"
 
   if parent_id:
@@ -61,8 +61,8 @@ def proc_insert_dir(parent_id, child_name, UID, GID, Mode, Status):
        SELECT p.ParentID, @dir_id, p.depth + 1
        FROM FC_DirectoryClosure p
        WHERE p.ChildID = %s;""" % parent_id
-    
-    
+
+
 def proc_insert_file(dir_id, size, UID, GID, status_id, filename, GUID, checksum, checksumtype, mode):
   """ print the insert file statement """
 
@@ -100,7 +100,7 @@ def loop ( index, cur, parentId ):
     dirName = '/%s'%('/'.join(map(str, next)))
     myDirId = dirId
     proc_insert_dir(parentId, dirName, uid, gid, 755, 1)
-   
+
     nbFiles = 0
     # prod files, tot = 5M
     if len(next) == 6:
@@ -109,7 +109,7 @@ def loop ( index, cur, parentId ):
     elif len(next) == 9:
       nbFiles = 30
 
-     
+
 
     #generate files
     if nbFiles:
@@ -120,7 +120,6 @@ def loop ( index, cur, parentId ):
         guid = "%s"%fileId
         checksum = guid
         proc_insert_file(myDirId, size, uid, gid, statusid, filename, guid, checksum, checksumType, mode)
-  	
         nbRep = 2
         ses = random.sample(range(2, len(config.storageElements) + 2), nbRep)
         firstRep = True
@@ -133,15 +132,15 @@ def loop ( index, cur, parentId ):
           pfn = "%s_%s.rep"%(f, seid)
           proc_insert_replica(fileId, seid, statusid, rep_type, pfn)
           repId += 1
-          
-        fileId += 1      
- 
+
+	fileId += 1
+
     dirId += 1
     loop(index +1, next, myDirId )
 
 loop(0,[], 1)
 
-print "COMMIT;" 
+print "COMMIT;"
 print "SET FOREIGN_KEY_CHECKS = 1;"
 print "SET UNIQUE_CHECKS = 1;"
 print "SET AUTOCOMMIT = 1;"
