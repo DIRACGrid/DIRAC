@@ -1641,6 +1641,11 @@ class ComponentInstaller( object ):
           DIRAC.exit( -1 )
         return result
       installedDatabases = result['Value']
+      result = self.getAvailableDatabases( CSGlobals.getCSExtensions() )
+      if not result[ 'OK' ]:
+        return result
+      dbDict = result['Value']
+
       for dbName in setupDatabases:
         if dbName not in installedDatabases:
           result = self.installDatabase( dbName, monitorFlag = False )
@@ -1652,7 +1657,8 @@ class ComponentInstaller( object ):
         else:
           gLogger.notice( 'Database %s already installed' % dbName )
 
-        result = self.addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
+        dbSystem = dbDict[dbName]['System']
+        result = self.addDatabaseOptionsToCS( None, dbSystem, dbName, overwrite = True )
         if not result['OK']:
           gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
 
@@ -2452,13 +2458,6 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     """
     Install requested DB in MySQL server
     """
-
-    # Create entry in the static monitoring DB
-    result = self.getAvailableDatabases( CSGlobals.getCSExtensions() )
-    if not result[ 'OK' ]:
-      return result
-
-    dbSystem = result[ 'Value' ][ dbName ][ 'System' ]
 
     if not self.mysqlRootPwd:
       rootPwdPath = cfgInstallPath( 'Database', 'RootPwd' )
