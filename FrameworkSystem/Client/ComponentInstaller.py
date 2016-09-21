@@ -287,6 +287,11 @@ class ComponentInstaller( object ):
     if not result:
       return result
     self.loadDiracCfg( verbose )
+
+    # Make sure that new options are globally available
+    if gConfig:
+      gConfig.forceRefresh()
+
     return result
 
   def _addCfgToCS( self, cfg ):
