@@ -10,12 +10,12 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import Time
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
-from DIRAC.Core.Utilities.Plotting import gDataCache
+from DIRAC.AccountingSystem.private.DataCache import gDataCache
 from DIRAC.AccountingSystem.private.MainReporter import MainReporter
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
-from DIRAC.Core.Utilities.Plotting.Plots            import generateErrorMessagePlot
-from DIRAC.Core.Utilities.Plotting.FileCoding       import extractRequestFromFileId
+from DIRAC.AccountingSystem.private.Plots import generateErrorMessagePlot
+from DIRAC.AccountingSystem.private.FileCoding import extractRequestFromFileId
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
@@ -26,7 +26,7 @@ class ReportGeneratorHandler( RequestHandler ):
   """ DIRAC service class to retrieve information from the AccountingDB
   """
 
-  __acDB = False
+  __acDB = None
   __reportRequestDict = { 'typeName' : types.StringTypes,
                           'reportName' : types.StringTypes,
                           'startTime' : (datetime.datetime, datetime.date),
