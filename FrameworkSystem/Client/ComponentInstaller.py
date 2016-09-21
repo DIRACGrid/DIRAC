@@ -1644,11 +1644,13 @@ class ComponentInstaller( object ):
             DIRAC.exit( -1 )
           extension, system = result['Value']
           gLogger.notice( 'Database %s from %s/%s installed' % ( dbName, extension, system ) )
-          result = self.addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
-          if not result['OK']:
-            gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
         else:
           gLogger.notice( 'Database %s already installed' % dbName )
+
+        result = self.addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
+        if not result['OK']:
+          gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
+
 
     if self.mysqlPassword:
       if not self._addMySQLToDiracCfg():
