@@ -17,7 +17,7 @@
 import unittest
 from DIRAC.Core.Utilities.Statistics import *
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 
 ########################################################################

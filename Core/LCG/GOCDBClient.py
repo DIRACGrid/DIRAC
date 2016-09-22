@@ -160,7 +160,7 @@ class GOCDBClient( object ):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    assert isinstance( granularity, basestring) and isinstance( entity, basestring )
+    assert isinstance( granularity, basestring ) and isinstance( entity, basestring )
     try:
       serviceXML = self._getServiceEndpointCurlDownload( granularity, entity )
       return S_OK( self._serviceEndpointXMLParsing( serviceXML ) )
@@ -312,7 +312,7 @@ class GOCDBClient( object ):
 
     for dt_ID in dtDict.keys():
       if siteOrRes in ( 'Site', 'Sites' ):
-        if not 'SITENAME' in dtDict[dt_ID]:
+        if 'SITENAME' not in dtDict[dt_ID]:
           dtDict.pop( dt_ID )
           continue
         if entities is not None:
@@ -322,13 +322,13 @@ class GOCDBClient( object ):
             dtDict.pop( dt_ID )
 
       elif siteOrRes in ( 'Resource', 'Resources' ):
-        if not 'HOSTNAME' in dtDict[dt_ID]:
+        if 'HOSTNAME' not in dtDict[dt_ID]:
           dtDict.pop( dt_ID )
           continue
         if entities is not None:
           if not isinstance( entities, list ):
             entities = [entities]
-          if not dtDict[dt_ID]['HOSTNAME'] in entities:
+          if dtDict[dt_ID]['HOSTNAME'] not in entities:
             dtDict.pop( dt_ID )
 
     if startDateMax is not None:

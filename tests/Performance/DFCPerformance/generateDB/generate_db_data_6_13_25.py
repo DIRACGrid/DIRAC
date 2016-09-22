@@ -133,7 +133,7 @@ def loop ( index, cur, parentId ):
           proc_insert_replica(fileId, seid, statusid, rep_type, pfn)
           repId += 1
 
-	fileId += 1
+        fileId += 1
 
     dirId += 1
     loop(index +1, next, myDirId )

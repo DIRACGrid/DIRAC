@@ -27,10 +27,10 @@ import string
 import tempfile
 from zlib import adler32
 
-__RCSID__ = "$Id $"
-
 ## from DIRAC
 from DIRAC.Core.Utilities import Adler
+
+__RCSID__ = "$Id$"
 
 ########################################################################
 class AdlerTestCase(unittest.TestCase):
@@ -69,7 +69,7 @@ class AdlerTestCase(unittest.TestCase):
     self.assertEqual( Adler.intAdlerToHex("a"), False )
     # normal operation
     self.assertEqual( int(Adler.intAdlerToHex(1)),
-		      Adler.hexAdlerToInt( Adler.intAdlerToHex(1) ) )
+                      Adler.hexAdlerToInt( Adler.intAdlerToHex(1) ) )
     self.assertEqual( Adler.hexAdlerToInt( "0x01" ),
                       int( Adler.intAdlerToHex( Adler.hexAdlerToInt( "0x01" ) ) ) )
 
@@ -78,7 +78,7 @@ class AdlerTestCase(unittest.TestCase):
     # no args
     try:
       Adler.fileAdler()
-    except Exception, error:
+    except Exception as error:
       self.assertEqual( isinstance(error,TypeError ), True )
     # read-protected file
     self.assertEqual( Adler.fileAdler( "/root/.login" ), False )

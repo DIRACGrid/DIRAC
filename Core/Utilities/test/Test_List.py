@@ -14,7 +14,7 @@ import unittest
 # sut
 from  DIRAC.Core.Utilities import List
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 
 ########################################################################
