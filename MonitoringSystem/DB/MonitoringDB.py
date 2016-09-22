@@ -9,6 +9,7 @@ import datetime
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Base.ElasticDB import ElasticDB
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
 from DIRAC.MonitoringSystem.private.TypeLoader import TypeLoader
 
@@ -20,6 +21,7 @@ class MonitoringDB( ElasticDB ):
   def __init__( self, name = 'Monitoring/MonitoringDB', readOnly = False ):
     super( MonitoringDB, self ).__init__( 'MonitoringDB', name )
     self.__readonly = readOnly
+    self.__setup = CSGlobals.getSetup()
     self.__documents = {}
     self.__loadIndexes()
            
@@ -27,28 +29,23 @@ class MonitoringDB( ElasticDB ):
     """
     It loads all monitoring indexes and types.
     """
-    retVal = gConfig.getSections( "/DIRAC/Setups" )
-    if not retVal[ 'OK' ]:
-      return retVal
     
-    setupsList = retVal[ 'Value' ]
     objectsLoaded = TypeLoader().getTypes()
 
     # Load the files
     for pythonClassName in sorted( objectsLoaded ):
       typeClass = objectsLoaded[ pythonClassName ]
-      for setup in setupsList:
-        indexName = "%s_%s" % ( setup.lower(), typeClass()._getIndex() )
-        doc_type = typeClass()._getDocType() 
-        mapping = typeClass().getMapping()
-        monfields = typeClass().getMonitoringFields()
-        self.__documents[doc_type] = {'indexName': indexName,
-                                      'mapping':mapping,
-                                      'monitoringFields':monfields}
-        if self.__readonly:
-          gLogger.info( "Read only mode is okay" )
-        else:
-          self.registerType( indexName, mapping )
+      indexName = "%s_%s" % ( self.__setup.lower(), typeClass()._getIndex() )
+      doc_type = typeClass()._getDocType() 
+      mapping = typeClass().getMapping()
+      monfields = typeClass().getMonitoringFields()
+      self.__documents[doc_type] = {'indexName': indexName,
+                                    'mapping':mapping,
+                                    'monitoringFields':monfields}
+      if self.__readonly:
+        gLogger.info( "Read only mode is okay" )
+      else:
+        self.registerType( indexName, mapping )
   
   def getIndexName( self, typeName ):
     """
