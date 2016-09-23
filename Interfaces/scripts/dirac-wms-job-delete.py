@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
-# File : dirac-production-job-delete
+# File : dirac-wms-job-delete
 # Author : Stuart Paterson
 ########################################################################
 """
 Delete DIRAC job from WMS, if running it will be killed
 """
-__RCSID__ = "$Id$"
+
+import os.path
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -23,7 +24,8 @@ Script.registerSwitch( "g:", "JobGroup=", "Get output for jobs in the given grou
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-import os.path
+__RCSID__ = "$Id$"
+
 
 if __name__ == "__main__":
 

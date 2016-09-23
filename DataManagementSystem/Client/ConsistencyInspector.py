@@ -439,17 +439,17 @@ class ConsistencyInspector( object ):
       if not oneGoodReplica:
         if lfn in lfnNotExisting:
           gLogger.info( "=> All replicas are missing", lfn )
-          retDict['MissingAllReplicas'][ lfn] = 'All'
+          retDict['MissingAllReplicas'][lfn] = 'All'
         else:
           gLogger.info( "=> All replicas have bad checksum", lfn )
-          retDict['AllReplicasCorrupted'][ lfn ] = csDict[ lfn ]
+          retDict['AllReplicasCorrupted'][lfn] = csDict[lfn]
       elif not allGoodReplicas:
         if lfn in lfnNotExisting:
           gLogger.info( "=> At least one replica missing", lfn )
           retDict['MissingReplica'][lfn] = lfnNotExisting[lfn]
         else:
           gLogger.info( "=> At least one replica with good Checksum", lfn )
-          retDict['SomeReplicasCorrupted'][ lfn ] = csDict[ lfn ]
+          retDict['SomeReplicasCorrupted'][lfn] = csDict[lfn]
 
     return S_OK(retDict)
 
@@ -634,7 +634,8 @@ class ConsistencyInspector( object ):
   #
 
   def storageDirectoryToCatalog( self, lfnDir, storageElement ):
-    """ This obtains the file found on the storage element in the supplied directories and determines whether they exist in the catalog and checks their metadata elements
+    """ This obtains the file found on the storage element in the supplied directories
+        and determines whether they exist in the catalog and checks their metadata elements
     """
     gLogger.info( "-" * 40 )
     gLogger.info( "Performing the SE->FC check at %s" % storageElement )

@@ -581,6 +581,7 @@ class Job( API ):
       if not re.search( '^DIRAC.', destination ) and not destination.lower() == 'any':
         result = self.__checkSiteIsValid( destination )
         if not result['OK']:
+          self.log.error( "Site is not valid", result['Message'] )
           return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
       description = 'User specified destination site'
       self._addParameter( self.workflow, 'Site', 'JDL', destination, description )
@@ -589,6 +590,7 @@ class Job( API ):
         if not re.search( '^DIRAC.', site ) and not site.lower() == 'any':
           result = self.__checkSiteIsValid( site )
           if not result['OK']:
+            self.log.error( "Site is not valid", result['Message'] )
             return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
       destSites = ';'.join( destination )
       description = 'List of sites selected by user'
