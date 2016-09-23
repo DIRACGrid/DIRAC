@@ -236,7 +236,7 @@ class GOCDBClient( object ):
     if entity is not None:
       if isinstance( entity, basestring ):
         gocdb_ep = gocdb_ep + "&topentity=" + entity
-    gocdb_ep = gocdb_ep + when + gocdbpi_startDate
+    gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
     req = urllib2.Request( gocdb_ep )
     dtPage = urllib2.urlopen( req )
