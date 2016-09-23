@@ -110,11 +110,8 @@ class ElasticSearchDB( object ):
     It returns the available indexes...
     """
         
-    sufix = '-*'
-    if not self.__indexPrefix: #in that case we are not using a prefix.
-      sufix = '*'
     #we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.  
-    return [ index for index in self.__client.indices.get_aliases( "%s%s" % ( self.__indexPrefix, sufix ) ) ]
+    return [ index for index in self.__client.indices.get_aliases( "%s*" % self.__indexPrefix ) ]
   
   ########################################################################
   def getDocTypes( self, indexName ):
