@@ -1,8 +1,12 @@
-[v6r16-pre4]
+[v6r16-pre5]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
         ExtraModule option
+*Core
+FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
+FIX: ComponentInstaller - always update CS when a database is installed, even if it is
+     already existing in the db server 
 
 *Monitoring
 NEW: New Monitoring system is introduced to collect, analyze and display various
