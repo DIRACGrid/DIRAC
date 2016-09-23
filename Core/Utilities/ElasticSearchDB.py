@@ -33,17 +33,25 @@ class ElasticSearchDB( object ):
   __timeout = 120
   clusterName = ''  
   ########################################################################
-  def __init__( self, host, port ):
+  def __init__( self, host, port, indexPrefix ):
     """ c'tor
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
     :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
-    :param bool debug: save the debug information to a file   
+    :param bool debug: save the debug information to a file
+    :param str indexPrefix it is the indexPrefix used to get all indexes 
     """
+    self.__indexPrefix = indexPrefix
     self._connected = False
     self.__url = "%s:%d" % ( host, port )
     self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
     self.__tryToConnect()
+  
+  def getIndexPrefix( self ):
+    """
+    It returns the DIRAC setup.
+    """
+    return self.__indexPrefix
       
   ########################################################################  
   def query( self, index, query ):
@@ -101,7 +109,9 @@ class ElasticSearchDB( object ):
     """
     It returns the available indexes...
     """
-    return [ index for index in self.__client.indices.get_aliases() ]
+        
+    #we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.  
+    return [ index for index in self.__client.indices.get_aliases( "%s*" % self.__indexPrefix ) ]
   
   ########################################################################
   def getDocTypes( self, indexName ):

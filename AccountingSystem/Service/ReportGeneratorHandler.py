@@ -26,7 +26,7 @@ class ReportGeneratorHandler( RequestHandler ):
   """ DIRAC service class to retrieve information from the AccountingDB
   """
 
-  __acDB = False
+  __acDB = None
   __reportRequestDict = { 'typeName' : types.StringTypes,
                           'reportName' : types.StringTypes,
                           'startTime' : (datetime.datetime, datetime.date),

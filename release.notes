@@ -1,8 +1,12 @@
-[v6r16-pre4]
+[v6r16-pre5]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
         ExtraModule option
+*Core
+FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
+FIX: ComponentInstaller - always update CS when a database is installed, even if it is
+     already existing in the db server 
 
 *Monitoring
 NEW: New Monitoring system is introduced to collect, analyze and display various
@@ -16,6 +20,15 @@ NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move
 *Resources
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
+
+[v6r15p17]
+
+*Core
+CHANGE: GOCDBClient - catch all downtimes, independently of their scope
+FIX: LSFTimeLeft - accept 2 "word" output from bqueues command
+CHANGE: dirac-install - create bashrc/cshrc with the possibility to define
+        installation path in the $DIRAC env variable, this is needed for
+        the cvmfs DIRAC client installation
 
 [v6r15p16]
 

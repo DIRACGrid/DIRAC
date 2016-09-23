@@ -212,7 +212,7 @@ def getCPUTime( cpuNormalizationFactor ):
     if result['OK']:
       cpuWorkLeft = result['Value']
 
-  if cpuWorkLeft:
+  if cpuWorkLeft > 0:
     # This is in HS06sseconds
     # We need to convert in real seconds
     if not cpuNormalizationFactor:  # if cpuNormalizationFactor passed in is 0, try get it from the local cfg
