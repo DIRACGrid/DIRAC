@@ -19,7 +19,7 @@ __RCSID__ = "$Id$"
 class MonitoringDB( ElasticDB ):
 
   def __init__( self, name = 'Monitoring/MonitoringDB', readOnly = False ):
-    super( MonitoringDB, self ).__init__( 'MonitoringDB', name, CSGlobals.getSetup() )
+    super( MonitoringDB, self ).__init__( 'MonitoringDB', name, CSGlobals.getSetup().lower() )
     self.__readonly = readOnly
     self.__documents = {}
     self.__loadIndexes()
@@ -34,7 +34,7 @@ class MonitoringDB( ElasticDB ):
     # Load the files
     for pythonClassName in sorted( objectsLoaded ):
       typeClass = objectsLoaded[ pythonClassName ]
-      indexName = "%s_%s" % ( self.getSetup().lower(), typeClass()._getIndex() )
+      indexName = "%s_%s" % ( self.getIndexPrefix(), typeClass()._getIndex() )
       doc_type = typeClass()._getDocType() 
       mapping = typeClass().getMapping()
       monfields = typeClass().getMonitoringFields()
