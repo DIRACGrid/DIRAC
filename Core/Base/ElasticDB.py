@@ -24,12 +24,13 @@ class ElasticDB( ElasticSearchDB ):
   """
   
   ########################################################################
-  def __init__( self, dbname, fullName ):
+  def __init__( self, dbname, fullName, indexPrefix = '' ):
     """ c'tor
 
     :param self: self reference
     :param str dbName: name of the database for example: MonitoringDB
     :param str fullName: The full name of the database for example: 'Monitoring/MonitoringDB'
+    :param str indexPrefix it is the indexPrefix used to get all indexes
     """
     
     database_name = dbname
@@ -43,7 +44,7 @@ class ElasticDB( ElasticSearchDB ):
     self.__dbHost = dbParameters[ 'Host' ]
     self.__dbPort = dbParameters[ 'Port' ]
     
-    super( ElasticDB, self ).__init__( self.__dbHost, self.__dbPort )
+    super( ElasticDB, self ).__init__( self.__dbHost, self.__dbPort, indexPrefix )
 
     if not self._connected:
       raise RuntimeError( 'Can not connect to DB %s, exiting...' % self.clusterName )
