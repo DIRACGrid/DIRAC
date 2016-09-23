@@ -109,9 +109,8 @@ class ElasticSearchDB( object ):
     """
     It returns the available indexes...
     """
-    #we only return indexes which belong to a specific setup for example 'lhcb-production' or 'dirac-production etc.
-    #this is a policy used by IT to distinguish between users.
-    return [ index for index in self.__client.indices.get_aliases( "%s-*", self.__indexPrefix ) ]
+    #we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
+    return [ index for index in self.__client.indices.get_aliases( "%s-*" % self.__indexPrefix ) ]
   
   ########################################################################
   def getDocTypes( self, indexName ):
