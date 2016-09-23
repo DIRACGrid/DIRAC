@@ -89,7 +89,7 @@ class MatcherHandler( RequestHandler ):
                          jlDB = jlDB,
                          opsHelper = opsHelper )
       result = matcher.selectJob( resourceDescription, credDict )
-    except RuntimeError, rte:
+    except RuntimeError as rte:
       self.log.error( "Error requesting job: ", rte )
       return S_ERROR( "Error requesting job" )
 
@@ -126,4 +126,3 @@ class MatcherHandler( RequestHandler ):
     """ Return matching task queues
     """
     return gTaskQueueDB.matchAndGetTaskQueue( resourceDict )
-
