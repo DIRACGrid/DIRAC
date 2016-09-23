@@ -33,17 +33,25 @@ class ElasticSearchDB( object ):
   __timeout = 120
   clusterName = ''  
   ########################################################################
-  def __init__( self, host, port ):
+  def __init__( self, host, port, setup ):
     """ c'tor
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
     :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
-    :param bool debug: save the debug information to a file   
+    :param bool debug: save the debug information to a file
+    :param str setup it is the dirac setup   
     """
+    self.__setup = setup
     self._connected = False
     self.__url = "%s:%d" % ( host, port )
     self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
     self.__tryToConnect()
+  
+  def getSetup( self ):
+    """
+    It returns the DIRAC setup.
+    """
+    return self.__setup
       
   ########################################################################  
   def query( self, index, query ):
@@ -101,7 +109,10 @@ class ElasticSearchDB( object ):
     """
     It returns the available indexes...
     """
-    return [ index for index in self.__client.indices.get_aliases() ]
+    prefix = "%s-*" % ( self.__setup )
+    #we only return indexes which belong to a specific setup for example 'lhcb-production' or 'dirac-production etc.
+    #this is a policy used by IT to distinguish between users.
+    return [ index for index in self.__client.indices.get_aliases( prefix ) ]
   
   ########################################################################
   def getDocTypes( self, indexName ):
