@@ -7,14 +7,13 @@
     for applications.
 """
 
-__RCSID__ = "$Id$"
-
-import types
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.PoolXMLSlice import PoolXMLSlice
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
+__RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'InputDataResolution'
 CREATE_CATALOG = False
@@ -101,7 +100,7 @@ class InputDataResolution( object ):
     policy = self.arguments['Job'].get( 'InputDataPolicy', [] )
     if policy:
       # In principle this can be a list of modules with the first taking precedence
-      if type( policy ) in types.StringTypes:
+      if isinstance( policy, basestring ):
         policy = [policy]
       self.log.info( 'Job has a specific policy setting: %s' % ( ', '.join( policy ) ) )
     else:

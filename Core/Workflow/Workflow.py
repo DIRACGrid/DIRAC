@@ -1,8 +1,6 @@
-# $Id$
 """
-    This is a comment
+    Workflow class is the main container of Steps and Modules
 """
-__RCSID__ = "$Revision: 1.38 $"
 
 import os, re, types
 import xml.sax
@@ -11,6 +9,8 @@ from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Utility import *
 from DIRAC import S_OK, S_ERROR
+
+__RCSID__ = "$Id$"
 
 class Workflow( AttributeCollection ):
 
@@ -202,7 +202,7 @@ class Workflow( AttributeCollection ):
   def execute( self ):
     self.resolveGlobalVars()
     # define workflow attributes
-    wf_exec_attr = {} # dictianary with the WF attributes, used to resolve links to self.attrname
+    wf_exec_attr = {} # dictionary with the WF attributes, used to resolve links to self.attrname
     for wf_parameter in self.parameters:
       # parameters shall see objects in the current scope order to resolve links
       if wf_parameter.preExecute(): # for parm which not just outputs

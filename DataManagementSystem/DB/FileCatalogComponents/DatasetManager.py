@@ -671,7 +671,7 @@ class DatasetManager( object ):
     """ Get status of the given dataset
     """
 
-    result = self.getDatasetParameters( datasetName, credDict )
+    result = self.__getDatasetParameters( datasetName, credDict )
     if not result['OK']:
       return result
     status = result['Value']['Status']
@@ -738,7 +738,7 @@ class DatasetManager( object ):
   def __getDatasetFiles( self, datasetName, credDict ):
     """ Get dataset files
     """
-    result = self.getDatasetParameters( datasetName, credDict )
+    result = self.__getDatasetParameters( datasetName, credDict )
     if not result['OK']:
       return result
     status = result['Value']['Status']
@@ -769,7 +769,7 @@ class DatasetManager( object ):
   def __freezeDataset( self, datasetName, credDict ):
     """ Freeze the contents of the dataset
     """
-    result = self.getDatasetParameters( datasetName, credDict )
+    result = self.__getDatasetParameters( datasetName, credDict )
     if not result['OK']:
       return result
     status = result['Value']['Status']
@@ -819,7 +819,7 @@ class DatasetManager( object ):
   def __releaseDataset( self, datasetName, credDict ):
     """ return the dataset to a dynamic state
     """
-    result = self.getDatasetParameters( datasetName, credDict )
+    result = self.__getDatasetParameters( datasetName, credDict )
     if not result['OK']:
       return result
     status = result['Value']['Status']

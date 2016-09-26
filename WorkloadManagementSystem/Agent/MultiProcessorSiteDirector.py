@@ -4,15 +4,13 @@ import os
 import random
 import re
 
-import DIRAC
-from DIRAC                                                 import S_OK, S_ERROR, gConfig
+from DIRAC                                                 import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector     import SiteDirector, WAITING_PILOT_STATUS
-from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
+from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Resources
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
 from DIRAC.Core.Utilities.Time                             import dateTime, second
-from DIRAC.Core.Utilities.List                             import fromChar
 
 __RCSID__ = "$Id$"
 
@@ -114,7 +112,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
     self.log.info( tqIDList )
     result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
                                           'Status': WAITING_PILOT_STATUS },
-                                           None )
+                                        None )
     tagWaitingPilots = 0
     if result['OK']:
       tagWaitingPilots = result['Value']
@@ -272,7 +270,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
         ce.setProxy( self.proxy, cpuTime - 60 )
 
         # Get the number of available slots on the target site/queue
-        totalSlots = super( MultiProcessorSiteDirector, self ).getQueueSlots( queue )
+        totalSlots = self.getQueueSlots( queue, False )
         if totalSlots == 0:
           self.log.debug( '%s: No slots available' % queue )
           continue
@@ -288,16 +286,16 @@ class MultiProcessorSiteDirector( SiteDirector ):
 
         while pilotsToSubmit > 0:
           self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
-  
+
           bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
           jobExecDir = ''
           jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )
           httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
-  
+
           result = self.getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir, processors )
           if not result['OK']:
             return result
-  
+
           executable, pilotSubmissionChunk = result['Value']
           result = ce.submitJob( executable, '', pilotSubmissionChunk, processors = processors )
           # ## FIXME: The condor thing only transfers the file with some
@@ -310,7 +308,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
             pilotsToSubmit = 0
             self.failedQueues[queue] += 1
             continue
-  
+
           pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
           queueSubmittedPilots += pilotSubmissionChunk
           # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
@@ -338,7 +336,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
             if not tqDict.has_key( tqID ):
               tqDict[tqID] = []
             tqDict[tqID].append( pilotID )
-  
+
           for tqID, pilotList in tqDict.items():
             result = pilotAgentsDB.addPilotTQReference( pilotList,
                                                         tqID,
@@ -354,7 +352,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
             for pilot in pilotList:
               result = pilotAgentsDB.setPilotStatus( pilot, 'Submitted', ceName,
                                                     'Successfully submitted by the SiteDirector',
-                                                    siteName, queueName )
+                                                     siteName, queueName )
               if not result['OK']:
                 self.log.error( 'Failed to set pilot status: ', result['Message'] )
                 continue

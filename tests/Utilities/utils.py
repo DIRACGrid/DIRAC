@@ -1,4 +1,10 @@
-import os, shutil
+""" few utilities
+"""
+
+import os
+import shutil
+
+#pylint: disable=missing-docstring
 
 def cleanTestDir():
   for fileIn in os.listdir( '.' ):

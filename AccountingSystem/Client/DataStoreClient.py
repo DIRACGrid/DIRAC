@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities                           import DEncode
 from DIRAC.RequestManagementSystem.Client.Request   import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.Core.Utilities.DErrno import ERMSUKN
 
 random.seed()
 
@@ -96,6 +97,7 @@ class DataStoreClient(object):
         if retVal[ 'OK' ]:
           self.__lastSuccessfulCommit = time.time()
         else:
+          gLogger.error( 'Error sending accounting record', retVal['Message'] )
           if self.__failoverEnabled and time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
             gLogger.verbose( "Sending accounting records to failover" )
             result = _sendToFailover( retVal[ 'rpcStub' ] )
@@ -105,7 +107,7 @@ class DataStoreClient(object):
             return S_ERROR( "Cannot commit data to DataStore service" )
         sent += len( registersToSend )
         del registersList[ :self.__maxRecordsInABundle ]
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
       gLogger.exception( "Error committing", lException = e )
       return S_ERROR( "Error committing %s" % repr( e ).replace( ',)', ')' ) )    
     finally:
@@ -136,14 +138,18 @@ class DataStoreClient(object):
 def _sendToFailover( rpcStub ):
   """ Create a ForwardDISET operation for failover
   """
-  request = Request()
-  request.RequestName = "Accounting.DataStore.%s.%s" % ( time.time(), random.random() )
-  forwardDISETOp = Operation()
-  forwardDISETOp.Type = "ForwardDISET"
-  forwardDISETOp.Arguments = DEncode.encode( rpcStub )
-  request.addOperation( forwardDISETOp )
+  try:
+    request = Request()
+    request.RequestName = "Accounting.DataStore.%s.%s" % ( time.time(), random.random() )
+    forwardDISETOp = Operation()
+    forwardDISETOp.Type = "ForwardDISET"
+    forwardDISETOp.Arguments = DEncode.encode( rpcStub )
+    request.addOperation( forwardDISETOp )
 
-  return ReqClient().putRequest( request )
+    return ReqClient().putRequest( request )
 
+  # We catch all the exceptions, because it should never crash
+  except Exception as e:  # pylint: disable=broad-except
+    return S_ERROR( ERMSUKN, "Exception sending accounting failover request: %s" % repr( e ) )
 
 gDataStoreClient = DataStoreClient()

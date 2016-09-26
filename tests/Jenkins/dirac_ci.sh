@@ -2,30 +2,67 @@
 #-------------------------------------------------------------------------------
 # dirac_ci
 #
-#  Several functions used for Jenkins style jobs
+# Several functions used for Jenkins style jobs
+# They may also work on other CI systems
 #
 #
 # fstagni@cern.ch
 # 09/12/2014
 #-------------------------------------------------------------------------------
 
-# first first: sourcing utility file
-source $WORKSPACE/DIRAC/tests/Jenkins/utilities.sh
+# A CI job needs:
+#
+# === environment variables (minimum set):
+# DEBUG
+# WORKSPACE
+# DIRACBRANCH
+#
+# === a default directory structure is created:
+# ~/TestCode
+# ~/ServerInstallDIR
+# ~/PilotInstallDIR
 
 
-############################################
-# List URLs where to get scripts
-############################################
-DIRAC_INSTALL='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py'
-DIRAC_PILOT='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/dirac-pilot.py'
-DIRAC_PILOT_TOOLS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotTools.py'
-DIRAC_PILOT_COMMANDS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotCommands.py'
-DIRAC_INSTALL_SITE='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh --no-check-certificate'
 
-DIRAC_RELEASES='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/releases.cfg'
-############################################
 
-INSTALL_CFG_FILE='$WORKSPACE/DIRAC/tests/Jenkins/install.cfg'
+# Def of environment variables:
+
+if [ "$DEBUG" ]
+then
+  echo '==> Running in DEBUG mode'
+  DEBUG='-ddd'
+else
+  echo '==> Running in non-DEBUG mode'
+fi
+
+if [ "$WORKSPACE" ]
+then
+  echo '==> We are in Jenkins I guess'
+else
+  WORKSPACE=$PWD
+fi
+
+if [ "$DIRACBRANCH" ]
+then
+  echo '==> Working on DIRAC branch ' $DIRACBRANCH
+else
+  DIRACBRANCH='integration'
+fi
+
+# Creating default structure
+mkdir -p $WORKSPACE/TestCode # Where the test code resides
+TESTCODE=$_
+mkdir -p $WORKSPACE/ServerInstallDIR # Where servers are installed
+SERVERINSTALLDIR=$_
+mkdir -p $WORKSPACE/ClientInstallDIR # Where clients are installed
+CLIENTINSTALLDIR=$_
+mkdir -p $WORKSPACE/PilotInstallDIR # Where pilots are installed
+PILOTINSTALLDIR=$_
+
+
+# Sourcing utility file
+source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
+
 
 
 #...............................................................................
@@ -38,44 +75,41 @@ INSTALL_CFG_FILE='$WORKSPACE/DIRAC/tests/Jenkins/install.cfg'
 #...............................................................................
 
 function installSite(){
-	echo '[installSite]'
+  echo '==> [installSite]'
 
-	killRunsv
-	findRelease
+  prepareForServer
 
-	generateCertificates
+  killRunsv
+  findRelease
 
-	#install_site.sh file
-	mkdir $WORKSPACE/DIRAC
-	cd $WORKSPACE/DIRAC
-	wget -np $DIRAC_INSTALL_SITE
-	chmod +x install_site.sh
+  generateCertificates
 
-	#Fixing install.cfg file
-	cp $(eval echo $INSTALL_CFG_FILE) .
-	sed -i s/VAR_Release/$projectVersion/g $WORKSPACE/DIRAC/install.cfg
-	if [ ! -z "$LcgVer" ]
-	then
-		echo 'Fixing LcgVer to ' $LcgVer
-		sed -i s/VAR_LcgVer/$LcgVer/g $WORKSPACE/DIRAC/install.cfg
-	else
-		sed -i s/VAR_LcgVer/$externalsVersion/g $WORKSPACE/DIRAC/install.cfg
-	fi
-	sed -i s,VAR_TargetPath,$WORKSPACE,g $WORKSPACE/DIRAC/install.cfg
-	fqdn=`hostname --fqdn`
-	sed -i s,VAR_HostDN,$fqdn,g $WORKSPACE/DIRAC/install.cfg
+  getCFGFile
 
-	sed -i s/VAR_DB_User/$DB_USER/g $WORKSPACE/DIRAC/install.cfg
-	sed -i s/VAR_DB_Password/$DB_PASSWORD/g $WORKSPACE/DIRAC/install.cfg
-	sed -i s/VAR_DB_RootUser/$DB_ROOTUSER/g $WORKSPACE/DIRAC/install.cfg
-	sed -i s/VAR_DB_RootPwd/$DB_ROOTPWD/g $WORKSPACE/DIRAC/install.cfg
-	sed -i s/VAR_DB_Host/$DB_HOST/g $WORKSPACE/DIRAC/install.cfg
-	sed -i s/VAR_DB_Port/$DB_PORT/g $WORKSPACE/DIRAC/install.cfg
+  echo '==> Fixing install.cfg file'
+  if [ "$LcgVer" ]
+  then
+    echo '==> Fixing LcgVer to ' $LcgVer
+    sed -i s/VAR_LcgVer/$LcgVer/g $SERVERINSTALLDIR/install.cfg
+  else
+    sed -i s/VAR_LcgVer/$externalsVersion/g $SERVERINSTALLDIR/install.cfg
+  fi
+  sed -i s,VAR_TargetPath,$SERVERINSTALLDIR,g $SERVERINSTALLDIR/install.cfg
+  fqdn=`hostname --fqdn`
+  sed -i s,VAR_HostDN,$fqdn,g $SERVERINSTALLDIR/install.cfg
 
-	#Installing
-	./install_site.sh install.cfg
+  sed -i s/VAR_DB_User/$DB_USER/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_DB_Password/$DB_PASSWORD/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_DB_RootUser/$DB_ROOTUSER/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_DB_RootPwd/$DB_ROOTPWD/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_DB_Host/$DB_HOST/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/install.cfg
 
-	source $WORKSPACE/bashrc
+  echo '==> Started installing'
+  $SERVERINSTALLDIR/install_site.sh $SERVERINSTALLDIR/install.cfg
+  echo '==> Completed installation'
+
+  source $SERVERINSTALLDIR/bashrc
 }
 
 
@@ -88,82 +122,86 @@ function installSite(){
 #...............................................................................
 
 function fullInstallDIRAC(){
-	echo '[fullInstallDIRAC]'
+  echo '==> [fullInstallDIRAC]'
 
-	finalCleanup
+  finalCleanup
 
-	if [ ! -z "$DEBUG" ]
-	then
-		echo 'Running in DEBUG mode'
-		export DEBUG='-ddd'
-	fi
+  #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
+  installSite
 
-	#basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
-	installSite
+  #replace the sources with custom ones if defined
+  diracReplace
 
-	#replace the sources with custom ones if defined
-	diracReplace
+  #Dealing with security stuff
+  # generateCertificates
+  generateUserCredentials
+  diracCredentials
 
-	#Dealing with security stuff
-	generateUserCredentials
-	diracCredentials
+  #just add a site
+  diracAddSite
 
-	#just add a site
-	diracAddSite
+  #Install the Framework
+  findDatabases 'FrameworkSystem'
+  dropDBs
+  diracDBs
+  findServices 'FrameworkSystem'
+  diracServices
 
-	#Install the Framework
-	findDatabases 'FrameworkSystem'
-	dropDBs
-	diracDBs
-	findServices 'FrameworkSystem'
-	diracServices
+  #create groups
+  diracUserAndGroup
 
-	#create groups
-	diracUserAndGroup
+  echo '==> Restarting Framework ProxyManager'
+  dirac-restart-component Framework ProxyManager $DEBUG
 
-	echo 'Restarting Framework ProxyManager'
-	dirac-restart-component Framework ProxyManager $DEBUG
+  echo '==> Restarting Framework ComponentMonitoring'
+  dirac-restart-component Framework ComponentMonitoring $DEBUG
 
-	echo 'Restarting Framework ComponentMonitoring'
-	dirac-restart-component Framework ComponentMonitoring $DEBUG
+  #Now all the rest
 
-	#Now all the rest
+  #DBs (not looking for FrameworkSystem ones, already installed)
+  #findDatabases 'exclude' 'FrameworkSystem'
+  findDatabases 'exclude' 'FrameworkSystem'
+  dropDBs
+  diracDBs
 
-	#DBs (not looking for FrameworkSystem ones, already installed)
-	#findDatabases 'exclude' 'FrameworkSystem'
-	findDatabases 'exclude' 'FrameworkSystem'
-	dropDBs
-	diracDBs
+  #upload proxies
+  diracProxies
 
-	#upload proxies
-	diracProxies
+  #fix the DBs (for the FileCatalog)
+  diracDFCDB
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py $DEBUG
 
-	#fix the DBs (for the FileCatalog)
-	diracDFCDB
-	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py $WORKSPACE $DEBUG
+  #services (not looking for FrameworkSystem already installed)
+  findServices 'exclude' 'FrameworkSystem'
+  diracServices
 
-	#services (not looking for FrameworkSystem already installed)
-	findServices 'exclude' 'FrameworkSystem'
-	diracServices
+  #fix the services
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py $DEBUG
 
-	#fix the services
-	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py $WORKSPACE $DEBUG
+  #fix the SandboxStore and other stuff
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py JenkinsSetup $DEBUG
 
-	#fix the SandboxStore and other stuff
-	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py $WORKSPACE $DEBUG
+  echo '==> Restarting WorkloadManagement SandboxStore'
+  dirac-restart-component WorkloadManagement SandboxStore $DEBUG
 
-	echo 'Restarting WorkloadManagement SandboxStore'
-	dirac-restart-component WorkloadManagement SandboxStore $DEBUG
+  echo '==> Restarting DataManagement FileCatalog'
+  dirac-restart-component DataManagement FileCatalog $DEBUG
 
-	echo 'Restarting DataManagement FileCatalog'
-	dirac-restart-component DataManagement FileCatalog $DEBUG
+  echo '==> Restarting Configuration Server'
+  dirac-restart-component Configuration Server $DEBUG
 
-	echo 'Restarting Configuration Server'
-	dirac-restart-component Configuration Server $DEBUG
+  echo '==> Restarting ResourceStatus ResourceStatus'
+  dirac-restart-component ResourceStatus ResourceStatus $DEBUG
 
-	#agents
-	findAgents
-	diracAgents
+  echo '==> Restarting ResourceStatus ResourceManagement'
+  dirac-restart-component ResourceStatus ResourceManagement $DEBUG
+
+  echo '==> Restarting ResourceStatus Publisher'
+  dirac-restart-component ResourceStatus Publisher $DEBUG
+
+  #agents
+  findAgents
+  diracAgents
 
 
 }
@@ -171,20 +209,20 @@ function fullInstallDIRAC(){
 
 function clean(){
 
-	#Uninstalling the services
-	diracUninstallServices
+  #Uninstalling the services
+  diracUninstallServices
 
-	#stopping runsv of services and agents
-	stopRunsv
+  #stopping runsv of services and agents
+  stopRunsv
 
-	#DBs
-	findDatabases
-	dropDBs
-	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS FileCatalogDB;"
-	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS InstalledComponentsDB;"
+  #DBs
+  findDatabases
+  dropDBs
+  mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS FileCatalogDB;"
+  mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS InstalledComponentsDB;"
 
-	#clean all
-	finalCleanup
+  #clean all
+  finalCleanup
 }
 
 ############################################
@@ -202,41 +240,73 @@ function clean(){
 
 function DIRACPilotInstall(){
 
-	prepareForPilot
+  prepareForPilot
 
-	default
+  default
 
-	#run the dirac-pilot script, the JobAgent won't necessarily match a job
+  findRelease
 
-	findRelease
+  #Don't launch the JobAgent here
+  cwd=$PWD
+  cd $PILOTINSTALLDIR
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $PILOTINSTALLDIR
+    return
+  fi
 
-	#Don't launch the JobAgent here
-	python dirac-pilot.py -S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ -X GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements $DEBUG
+  python dirac-pilot.py -S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ -X GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: pilot script failed'
+    return
+  fi
+
+  cd $cwd
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $cwd
+    return
+  fi
 }
 
 
 function fullPilot(){
 
-	if [ ! -z "$DEBUG" ]
-	then
-		echo 'Running in DEBUG mode'
-		export DEBUG='-ddd'
-	fi
+  #first simply install via the pilot
+  DIRACPilotInstall
 
-	#first simply install via the pilot
-	DIRACPilotInstall
+  #this should have been created, we source it so that we can continue
+  source $PILOTINSTALLDIR/bashrc
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot source bashrc'
+    return
+  fi
 
-	#this should have been created, we source it so that we can continue
-	source bashrc
+  #Adding the LocalSE and the CPUTimeLeft, for the subsequent tests
+  dirac-configure -FDMH --UseServerCertificate -L $DIRACSE $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot configure'
+    return
+  fi
 
-	#Adding the LocalSE and the CPUTimeLeft, for the subsequent tests
-	dirac-configure -FDMH --UseServerCertificate -L $DIRACSE $DEBUG
+  #Configure for CPUTimeLeft and more
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py -o /DIRAC/Security/UseServerCertificate=True $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot update the CFG'
+    return
+  fi
 
-	#Configure for CPUTimeLeft and more
-	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-cfg-update.py -V $VO -S $DIRACSETUP -o /DIRAC/Security/UseServerCertificate=True $DEBUG
-
-	#Getting a user proxy, so that we can run jobs
-	downloadProxy
-	#Set not to use the server certificate for running the jobs
-	dirac-configure -FDMH -o /DIRAC/Security/UseServerCertificate=False $DEBUG
+  #Getting a user proxy, so that we can run jobs
+  downloadProxy
+  #Set not to use the server certificate for running the jobs
+  dirac-configure -FDMH -o /DIRAC/Security/UseServerCertificate=False $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot run dirac-configure'
+    return
+  fi
 }

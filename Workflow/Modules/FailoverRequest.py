@@ -34,8 +34,8 @@ class FailoverRequest( ModuleBase ):
     if not self._enableModule():
       raise GracefulTermination( "Skipping FailoverRequest module" )
 
-    self.request.RequestName     = 'job_%d_request.xml' % self.jobID
-    self.request.JobID           = self.jobID
+    self.request.RequestName = 'job_%d_request.xml' % self.jobID
+    self.request.JobID = self.jobID
     self.request.SourceComponent = "Job_%d" % self.jobID
 
   def _execute( self ):
@@ -47,6 +47,8 @@ class FailoverRequest( ModuleBase ):
       for lfn in self.inputDataList:
         if not lfn in filesInFileReport:
           self.log.info( "Forcing status to 'Unused' due to workflow failure for: %s" % ( lfn ) )
+          # Set the force flag in case the file was in a terminal status
+          self.fileReport.force = True
           self.fileReport.setFileStatus( int( self.production_id ), lfn, 'Unused' )
     else:
       filesInFileReport = self.fileReport.getFiles()

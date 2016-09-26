@@ -6,8 +6,6 @@
     databases
 """
 
-__RCSID__ = "$Id$"
-
 import re
 import time
 import threading
@@ -20,6 +18,8 @@ from DIRAC.Core.Utilities.List                            import stringListToStr
 from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
 from DIRAC.Core.Utilities.Subprocess                      import pythonCall
+
+__RCSID__ = "$Id$"
 
 MAX_ERROR_COUNT = 10
 
@@ -107,7 +107,7 @@ class TransformationDB( DB ):
                                  'ParameterName',
                                  'ParameterValue',
                                  'ParameterType'
-                                 ]
+                                ]
 
 
     # This is here to ensure full compatibility between different versions of the MySQL DB schema
@@ -132,14 +132,14 @@ class TransformationDB( DB ):
 
   def addTransformation( self, transName, description, longDescription, authorDN, authorGroup, transType,
                          plugin, agentType, fileMask,
-                        transformationGroup = 'General',
-                        groupSize = 1,
-                        inheritedFrom = 0,
-                        body = '',
-                        maxTasks = 0,
-                        eventsPerTask = 0,
-                        addFiles = True,
-                        connection = False ):
+                         transformationGroup = 'General',
+                         groupSize = 1,
+                         inheritedFrom = 0,
+                         body = '',
+                         maxTasks = 0,
+                         eventsPerTask = 0,
+                         addFiles = True,
+                         connection = False ):
     """ Add new transformation definition including its input streams
     """
     connection = self.__getConnection( connection )
@@ -163,9 +163,9 @@ class TransformationDB( DB ):
                                         '%s','New','%s',%d,\
                                         %d,%s,%d,%d);" % \
                                       ( transName, description, longDescription,
-                                       authorDN, authorGroup, transType, plugin, agentType,
-                                       fileMask, transformationGroup, groupSize,
-                                       inheritedFrom, body, maxTasks, eventsPerTask )
+                                        authorDN, authorGroup, transType, plugin, agentType,
+                                        fileMask, transformationGroup, groupSize,
+                                        inheritedFrom, body, maxTasks, eventsPerTask )
     res = self._update( req, connection )
     if not res['OK']:
       self.lock.release()
@@ -315,12 +315,12 @@ class TransformationDB( DB ):
         return S_ERROR( "Failed to parse parameter value" )
       paramValue = res['Value']
       req = "UPDATE Transformations SET %s=%s, LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d" % ( paramName,
-                                                                                                          paramValue,
-                                                                                                          transID )
+                                                                                                         paramValue,
+                                                                                                         transID )
       return self._update( req, connection )
     req = "UPDATE Transformations SET %s='%s', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d" % ( paramName,
-                                                                                                          paramValue,
-                                                                                                          transID )
+                                                                                                         paramValue,
+                                                                                                         transID )
     return self._update( req, connection )
 
   def _getTransformationID( self, transName, connection = False ):
@@ -805,6 +805,8 @@ class TransformationDB( DB ):
         if res['OK']:
           if taskID in res['Value']:
             taskDict['InputVector'] = res['Value'][taskID]
+        else:
+          return res
       resultList.append( taskDict )
     result = S_OK( resultList )
     result['Records'] = webList
@@ -1069,7 +1071,9 @@ class TransformationDB( DB ):
                                                                                                           transID )
     res = self._query( req )
     inputVectorDict = {}
-    if res['OK'] and res['Value']:
+    if not res['OK']:
+      return res
+    elif res['Value']:
       for row in res['Value']:
         inputVectorDict[row[0]] = row[1]
     return S_OK( inputVectorDict )

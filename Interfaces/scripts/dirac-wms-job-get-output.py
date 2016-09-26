@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-wms-job-get-output
 # Author : Stuart Paterson
 ########################################################################
 """
   Retrieve output sandbox for a DIRAC job
 """
-__RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
 
-import os, shutil, datetime
+import os
+import shutil
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -29,6 +28,9 @@ args = Script.getPositionalArgs()
 
 from DIRAC.Interfaces.API.Dirac  import Dirac, parseArguments
 from DIRAC.Core.Utilities.Time import toString, date, day
+from DIRAC.Core.Utilities.File import mkDir
+
+__RCSID__ = "$Id$"
 
 dirac = Dirac()
 exitCode = 0
@@ -82,8 +84,7 @@ if group:
     outputDir = group
 
 if outputDir:
-  if not os.path.exists( outputDir ):
-    os.makedirs( outputDir )
+  mkDir( outputDir )
 else:
   outputDir = os.getcwd()
 

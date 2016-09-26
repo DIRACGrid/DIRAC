@@ -8,8 +8,6 @@
     initialize method and on the _getClients method.
 """
 
-__RCSID__ = "$Id$"
-
 import time
 import datetime
 from Queue import Queue
@@ -25,6 +23,8 @@ from DIRAC.Core.Security.ProxyInfo                                  import getPr
 from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
+
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 
@@ -50,6 +50,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     self.ownerDN = ''
 
     self.pluginLocation = ''
+    self.bulkSubmissionFlag = False
 
     # for the threading
     self.transQueue = Queue()
@@ -74,6 +75,9 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     # Default clients
     self.transClient = TransformationClient()
+
+    # Bulk submission flag
+    self.bulkSubmissionFlag = self.am_getOption( 'BulkSubmission', False )
 
     # setting up the threading
     maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', 15 )
@@ -453,8 +457,12 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self._logVerbose( "No tasks found for submission", transID = transID, method = method )
       return tasksToSubmit
     self._logInfo( "Obtained %d tasks for submission" % len( tasks ), transID = transID, method = method )
-    preparedTransformationTasks = clients['TaskManager'].prepareTransformationTasks( transBody, tasks,
-                                                                                     self.owner, self.ownerGroup, self.ownerDN )
+    preparedTransformationTasks = clients['TaskManager'].prepareTransformationTasks( transBody,
+                                                                                     tasks,
+                                                                                     self.owner,
+                                                                                     self.ownerGroup,
+                                                                                     self.ownerDN,
+                                                                                     self.bulkSubmissionFlag )
     self._logDebug( "prepareTransformationTasks return value: %s" % preparedTransformationTasks,
                     method = method, transID = transID )
     if not preparedTransformationTasks['OK']:

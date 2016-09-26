@@ -13,7 +13,6 @@
     - Local execution of workflows for testing purposes.
 
 """
-__RCSID__ = "$Id$"
 
 import re
 import os
@@ -50,8 +49,10 @@ from DIRAC.Core.Base.AgentReactor                        import AgentReactor
 from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Utilities                                import Time
+from DIRAC.Core.Utilities.File                           import mkDir
 from DIRAC.Core.Utilities.PrettyPrint                    import printTable
 
+__RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'DiracAPI'
 
@@ -184,7 +185,7 @@ class Dirac( API ):
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
-    if requestedStates == None:
+    if requestedStates is None:
       requestedStates = ['Done', 'Failed', 'Completed']  # because users dont care about completed
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sorted( jobs ):
@@ -212,7 +213,7 @@ class Dirac( API ):
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
-    if requestedStates == None:
+    if requestedStates is None:
       requestedStates = ['Done']
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sorted( jobs ):
@@ -266,7 +267,7 @@ class Dirac( API ):
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
-    if jobIDs == None:
+    if jobIDs is None:
       jobIDs = []
     if not isinstance( jobIDs, list ):
       return self._errorReport( 'The jobIDs must be a list of (strings or ints).' )
@@ -715,6 +716,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
+  #FIXME: this seems unused
   def _runInputDataResolution( self, inputData, site = None ):
     """ Run the VO plugin input data resolution mechanism.
     """
@@ -875,7 +877,9 @@ class Dirac( API ):
       if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for isFile in sandbox:
-        if not os.path.isabs( isFile ):
+        if isFile.lower().startswith("lfn:"): #isFile is an LFN
+          isFile = isFile[4:]
+        elif not os.path.isabs( isFile ):
           # if a relative path, it is relative to the user working directory
           isFile = os.path.join( baseDir, isFile )
 
@@ -896,7 +900,7 @@ class Dirac( API ):
             tarFile = tarfile.open( basefname, 'r' )
             for member in tarFile.getmembers():
               tarFile.extract( member, os.getcwd() )
-        except Exception, x :
+        except Exception as x:
           return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
@@ -1329,6 +1333,15 @@ class Dirac( API ):
     if not isinstance( localCache, basestring ):
       return self._errorReport( 'Expected string for path to local cache' )
 
+    localFile = os.path.join( localCache, os.path.basename( lfn ) )
+    if os.path.exists( localFile ):
+      return self._errorReport( 'A local file "%s" with the same name as the remote file exists. '
+                                'Cannot proceed with replication:\n'
+                                '   Go to a different working directory\n'
+                                '   Move it different directory or use a different localCache\n'
+                                '   Delete the file yourself'
+                                '' % localFile )
+
     dm = DataManager()
     result = dm.replicateAndRegister( lfn, destinationSE, sourceSE, '', localCache )
     if not result['OK']:
@@ -1603,24 +1616,16 @@ class Dirac( API ):
       return ret
     jobID = ret['Value']
 
-    # TODO: Do not check if dir already exists
     dirPath = ''
     if outputDir:
       dirPath = outputDir
       if not noJobDir:
         dirPath = '%s/%s' % ( outputDir, jobID )
-      # if os.path.exists( dirPath ):
-      #  return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
     else:
       dirPath = '%s/%s' % ( os.getcwd(), jobID )
       if os.path.exists( dirPath ):
         return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
-
-    try:
-      if not os.path.exists( dirPath ):
-        os.makedirs( dirPath )
-    except Exception as x:
-      return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
+    mkDir(dirPath)
 
     # New download
     result = SandboxStoreClient( useCertificates = self.useCertificates ).downloadSandboxForJob( jobID, 'Output', dirPath )
@@ -1666,7 +1671,7 @@ class Dirac( API ):
         tarFile = tarfile.open( fileName, 'r' )
         for member in tarFile.getmembers():
           tarFile.extract( member, dirPath )
-    except Exception, x :
+    except Exception as x :
       os.chdir( start )
       result = S_ERROR( str( x ) )
 
@@ -2212,7 +2217,7 @@ class Dirac( API ):
       msg.append( 'CPU Profile: Not Available' )
 
     self.log.info( 'Summary of debugging outputs for job %s retrieved in directory:\n%s\n' % ( jobID, debugDir ),
-                  '\n'.join( msg ) )
+                   '\n'.join( msg ) )
     return S_OK( debugDir )
 
   #############################################################################
@@ -2429,9 +2434,9 @@ class Dirac( API ):
     return S_OK( stdout )
 
   #############################################################################
-  def ping( self, system, service, printOutput = False ):
-    return self.pingService( system, service, printOutput = printOutput )
-  def pingService( self, system, service, printOutput = False ):
+  def ping( self, system, service, printOutput = False, url = None ):
+    return self.pingService( system, service, printOutput = printOutput, url = url )
+  def pingService( self, system, service, printOutput = False, url = None ):
     """The ping function will attempt to return standard information from a system
        service if this is available.  If the ping() command is unsuccessful it could
        indicate a period of service unavailability.
@@ -2447,19 +2452,26 @@ class Dirac( API ):
        :type service: string
        :param printOutput: Flag to print to stdOut
        :type printOutput: Boolean
+       :param url: url to ping (instad of system & service)
+       :type url: string
        :returns: S_OK,S_ERROR
     """
-    if not isinstance( system, basestring ) and isinstance( service, basestring ):
-      return self._errorReport( 'Expected string for system and service to ping()' )
+
+    if not isinstance( system, basestring ) and isinstance( service, basestring ) and not isinstance( url, basestring ):
+      return self._errorReport( 'Expected string for system and service or a url to ping()' )
     result = S_ERROR()
     try:
-      systemSection = getSystemSection( system + '/' )
-      self.log.verbose( 'System section is: %s' % ( systemSection ) )
-      section = '%s/%s' % ( systemSection, service )
-      self.log.verbose( 'Requested service should have CS path: %s' % ( section ) )
-      serviceURL = getServiceURL( '%s/%s' % ( system, service ) )
-      self.log.verbose( 'Service URL is: %s' % ( serviceURL ) )
-      client = RPCClient( '%s/%s' % ( system, service ) )
+      if not url:
+        systemSection = getSystemSection( system + '/' )
+        self.log.verbose( 'System section is: %s' % ( systemSection ) )
+        section = '%s/%s' % ( systemSection, service )
+        self.log.verbose( 'Requested service should have CS path: %s' % ( section ) )
+        serviceURL = getServiceURL( '%s/%s' % ( system, service ) )
+        self.log.verbose( 'Service URL is: %s' % ( serviceURL ) )
+        client = RPCClient( '%s/%s' % ( system, service ) )
+      else:
+        serviceURL = url
+        client = RPCClient( url )
       result = client.ping()
       if result['OK']:
         result['Value']['service url'] = serviceURL

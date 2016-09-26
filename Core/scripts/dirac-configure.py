@@ -57,15 +57,19 @@ LogLevel
   Example: dirac-configure -d -S LHCb-Development -C 'dips://lhcbprod.pic.es:9135/Configuration/Server' -W 'dips://lhcbprod.pic.es:9135' --SkipCAChecks
 
 """
-__RCSID__ = "$Id$"
+import sys
+import os
 
 import DIRAC
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 
-import sys, os
+
+__RCSID__ = "$Id$"
+
 
 logLevel = None
 setup = None
@@ -84,6 +88,7 @@ vo = None
 update = False
 outputFile = ''
 skipVOMSDownload = False
+extensions = ''
 
 def setGateway( optionValue ):
   global gatewayServer
@@ -194,9 +199,17 @@ def forceUpdate( optionValue ):
   update = True
   return DIRAC.S_OK()
 
+def setExtensions( optionValue ):
+  global extensions
+  extensions = optionValue
+  DIRAC.gConfig.setOptionValue( '/DIRAC/Extensions', extensions )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'Extensions' ), extensions )
+  return DIRAC.S_OK()
+
 Script.disableCS()
 
 Script.registerSwitch( "S:", "Setup=", "Set <setup> as DIRAC setup", setSetup )
+Script.registerSwitch( "e:", "Extensions=", "Set <extensions> as DIRAC extensions", setExtensions )
 Script.registerSwitch( "C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", setServer )
 Script.registerSwitch( "I", "IncludeAllServers", "include all Configuration Servers", setAllServers )
 Script.registerSwitch( "n:", "SiteName=", "Set <sitename> as DIRAC Site Name", setSiteName )
@@ -298,6 +311,16 @@ if not vo:
   if newVO:
     setVO( newVO )
 
+if not extensions:
+  newExtensions = DIRAC.gConfig.getValue( cfgInstallPath( 'ExtraModules' ) )
+  if newExtensions:
+    DIRAC.gLogger.warn( "ExtraModules option is deprecated, use Extensions option instead!" )
+  else:
+    newExtensions = DIRAC.gConfig.getValue( cfgInstallPath( 'Extensions' ), '' )
+  
+  if newExtensions:
+    setExtensions( newExtensions )
+    
 DIRAC.gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
 DIRAC.gLogger.notice( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 
@@ -349,8 +372,7 @@ if not skipCADownload:
   Script.enableCS()
   try:
     dirName = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'certificates' )
-    if not os.path.exists( dirName ):
-      os.makedirs( dirName )
+    mkDir(dirName)
   except:
     DIRAC.gLogger.exception()
     DIRAC.gLogger.fatal( 'Fail to create directory:', dirName )
@@ -423,8 +445,7 @@ if not outputFile:
 outputFile = os.path.abspath( outputFile )
 if not os.path.exists( outputFile ):
   configDir = os.path.dirname( outputFile )
-  if not os.path.exists( configDir ):
-    os.makedirs( configDir )
+  mkDir(configDir)
   update = True
   DIRAC.gConfig.dumpLocalCFGToFile( outputFile )
 
@@ -479,12 +500,7 @@ for vo in vomsDict:
   vomsDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomsdir', voName )
   vomsesDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomses' )
   for path in ( vomsDirPath, vomsesDirPath ):
-    if not os.path.isdir( path ):
-      try:
-        os.makedirs( path )
-      except Exception as e:
-        DIRAC.gLogger.error( "Could not create directory", str( e ) )
-        sys.exit( 1 )
+    mkDir(path)
   vomsesLines = []
   for vomsHost in vomsDirHosts:
     hostFilePath = os.path.join( vomsDirPath, "%s.lsc" % vomsHost )

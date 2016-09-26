@@ -46,9 +46,13 @@ If a Master Configuration Server is being installed the following Options can be
 
 """
 
-__RCSID__ = "$Id$"
-
-import os, re, glob, stat, time, shutil, socket
+import os
+import re
+import glob
+import stat
+import time
+import shutil
+import socket
 
 import DIRAC
 from DIRAC import rootPath
@@ -59,6 +63,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
+from DIRAC.Core.Utilities.File import mkDir, mkLink
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, \
                                                      cfgInstallSection, ResourcesDefaults, CSGlobals
@@ -76,6 +81,8 @@ from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.Platform import getPlatformString
+
+__RCSID__ = "$Id$"
 
 
 class ComponentInstaller( object ):
@@ -360,11 +367,11 @@ class ComponentInstaller( object ):
       extensions.remove( 'Web' )
     centralCfg.createNewSection( 'DIRAC', '' )
     if extensions:
-      centralCfg['DIRAC'].addKey( 'Extensions', ','.join( extensions ), '' )
+      centralCfg['DIRAC'].addKey( 'Extensions', ','.join( extensions ), '' ) #pylint: disable=no-member
 
     vo = self.localCfg.getOption( cfgInstallPath( 'VirtualOrganization' ), '' )
     if vo:
-      centralCfg['DIRAC'].addKey( 'VirtualOrganization', vo, '' )
+      centralCfg['DIRAC'].addKey( 'VirtualOrganization', vo, '' ) #pylint: disable=no-member
 
     for section in [ 'Systems', 'Resources',
                      'Resources/Sites', 'Resources/Sites/DIRAC',
@@ -406,55 +413,55 @@ class ComponentInstaller( object ):
           if not centralCfg.isSection( section ):
             centralCfg.createNewSection( section )
 
-        if centralCfg['Registry'].existsKey( 'DefaultGroup' ):
-          centralCfg['Registry'].deleteKey( 'DefaultGroup' )
-        centralCfg['Registry'].addKey( 'DefaultGroup', defaultGroupName, '' )
+        if centralCfg['Registry'].existsKey( 'DefaultGroup' ): #pylint: disable=unsubscriptable-object,no-member
+          centralCfg['Registry'].deleteKey( 'DefaultGroup' ) #pylint: disable=unsubscriptable-object,no-member
+        centralCfg['Registry'].addKey( 'DefaultGroup', defaultGroupName, '' ) #pylint: disable=unsubscriptable-object,no-member
 
-        if centralCfg['Registry']['Users'][adminUserName].existsKey( 'DN' ):
-          centralCfg['Registry']['Users'][adminUserName].deleteKey( 'DN' )
-        centralCfg['Registry']['Users'][adminUserName].addKey( 'DN', adminUserDN, '' )
+        if centralCfg['Registry']['Users'][adminUserName].existsKey( 'DN' ): #pylint: disable=unsubscriptable-object
+          centralCfg['Registry']['Users'][adminUserName].deleteKey( 'DN' ) #pylint: disable=unsubscriptable-object
+        centralCfg['Registry']['Users'][adminUserName].addKey( 'DN', adminUserDN, '' ) #pylint: disable=unsubscriptable-object
 
-        if centralCfg['Registry']['Users'][adminUserName].existsKey( 'Email' ):
-          centralCfg['Registry']['Users'][adminUserName].deleteKey( 'Email' )
-        centralCfg['Registry']['Users'][adminUserName].addKey( 'Email' , adminUserEmail, '' )
+        if centralCfg['Registry']['Users'][adminUserName].existsKey( 'Email' ): #pylint: disable=unsubscriptable-object
+          centralCfg['Registry']['Users'][adminUserName].deleteKey( 'Email' ) #pylint: disable=unsubscriptable-object
+        centralCfg['Registry']['Users'][adminUserName].addKey( 'Email' , adminUserEmail, '' ) #pylint: disable=unsubscriptable-object
 
         # Add Admin User to Admin Group and default group
         for group in [adminGroupName, defaultGroupName]:
-          if not centralCfg['Registry']['Groups'][group].isOption( 'Users' ):
-            centralCfg['Registry']['Groups'][group].addKey( 'Users', '', '' )
-          users = centralCfg['Registry']['Groups'][group].getOption( 'Users', [] )
+          if not centralCfg['Registry']['Groups'][group].isOption( 'Users' ): #pylint: disable=unsubscriptable-object
+            centralCfg['Registry']['Groups'][group].addKey( 'Users', '', '' ) #pylint: disable=unsubscriptable-object
+          users = centralCfg['Registry']['Groups'][group].getOption( 'Users', [] ) #pylint: disable=unsubscriptable-object
           if adminUserName not in users:
-            centralCfg['Registry']['Groups'][group].appendToOption( 'Users', ', %s' % adminUserName )
-          if not centralCfg['Registry']['Groups'][group].isOption( 'Properties' ):
-            centralCfg['Registry']['Groups'][group].addKey( 'Properties', '', '' )
+            centralCfg['Registry']['Groups'][group].appendToOption( 'Users', ', %s' % adminUserName ) #pylint: disable=unsubscriptable-object
+          if not centralCfg['Registry']['Groups'][group].isOption( 'Properties' ): #pylint: disable=unsubscriptable-object
+            centralCfg['Registry']['Groups'][group].addKey( 'Properties', '', '' ) #pylint: disable=unsubscriptable-object
 
-        properties = centralCfg['Registry']['Groups'][adminGroupName].getOption( 'Properties', [] )
+        properties = centralCfg['Registry']['Groups'][adminGroupName].getOption( 'Properties', [] ) #pylint: disable=unsubscriptable-object
         for prop in adminGroupProperties:
           if prop not in properties:
             properties.append( prop )
-            centralCfg['Registry']['Groups'][adminGroupName].appendToOption( 'Properties', ', %s' % prop )
+            centralCfg['Registry']['Groups'][adminGroupName].appendToOption( 'Properties', ', %s' % prop ) #pylint: disable=unsubscriptable-object
 
-        properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption( 'Properties', [] )
+        properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption( 'Properties', [] ) #pylint: disable=unsubscriptable-object
         for prop in defaultGroupProperties:
           if prop not in properties:
             properties.append( prop )
-            centralCfg['Registry']['Groups'][defaultGroupName].appendToOption( 'Properties', ', %s' % prop )
+            centralCfg['Registry']['Groups'][defaultGroupName].appendToOption( 'Properties', ', %s' % prop ) #pylint: disable=unsubscriptable-object
 
     # Add the master Host description
     if hostDN:
       hostSection = cfgPath( 'Registry', 'Hosts', self.host )
       if not centralCfg.isSection( hostSection ):
         centralCfg.createNewSection( hostSection )
-      if centralCfg['Registry']['Hosts'][self.host].existsKey( 'DN' ):
-        centralCfg['Registry']['Hosts'][self.host].deleteKey( 'DN' )
-      centralCfg['Registry']['Hosts'][self.host].addKey( 'DN', hostDN, '' )
-      if not centralCfg['Registry']['Hosts'][self.host].isOption( 'Properties' ):
-        centralCfg['Registry']['Hosts'][self.host].addKey( 'Properties', '', '' )
-      properties = centralCfg['Registry']['Hosts'][self.host].getOption( 'Properties', [] )
+      if centralCfg['Registry']['Hosts'][self.host].existsKey( 'DN' ): #pylint: disable=unsubscriptable-object
+        centralCfg['Registry']['Hosts'][self.host].deleteKey( 'DN' ) #pylint: disable=unsubscriptable-object
+      centralCfg['Registry']['Hosts'][self.host].addKey( 'DN', hostDN, '' ) #pylint: disable=unsubscriptable-object
+      if not centralCfg['Registry']['Hosts'][self.host].isOption( 'Properties' ): #pylint: disable=unsubscriptable-object
+        centralCfg['Registry']['Hosts'][self.host].addKey( 'Properties', '', '' ) #pylint: disable=unsubscriptable-object
+      properties = centralCfg['Registry']['Hosts'][self.host].getOption( 'Properties', [] ) #pylint: disable=unsubscriptable-object
       for prop in defaultHostProperties:
         if prop not in properties:
           properties.append( prop )
-          centralCfg['Registry']['Hosts'][self.host].appendToOption( 'Properties', ', %s' % prop )
+          centralCfg['Registry']['Hosts'][self.host].appendToOption( 'Properties', ', %s' % prop ) #pylint: disable=unsubscriptable-object
 
     # Operations
     if adminUserEmail:
@@ -465,7 +472,7 @@ class ComponentInstaller( object ):
 
     # Website
     websiteCfg = self.__getCfg( cfgPath( 'Website', 'Authorization',
-                                    'systems', 'configuration' ), 'Default', 'all' )
+                                         'systems', 'configuration' ), 'Default', 'all' )
     websiteCfg['Website'].addKey( 'DefaultGroups',
                                   ', '.join( ['visitor', defaultGroupName, adminGroupName] ), '' )
     websiteCfg['Website'].addKey( 'DefaultSetup', self.setup, '' )
@@ -535,8 +542,8 @@ class ComponentInstaller( object ):
       mySetup = self.setup
 
     result = self.monitoringClient.getInstallations( { 'UnInstallationTime': None, 'Instance': component },
-                                                { 'System': system },
-                                                {}, True )
+                                                     { 'System': system },
+                                                     {}, True )
     if not result[ 'OK' ]:
       return result
     installations = result[ 'Value' ]
@@ -560,8 +567,8 @@ class ComponentInstaller( object ):
         isRenamed = True
 
       result = self.monitoringClient.getInstallations( { 'UnInstallationTime': None },
-                                                    { 'System': system, 'Module': installation[ 'Component' ][ 'Module' ] },
-                                                    {}, True )
+                                                       { 'System': system, 'Module': installation[ 'Component' ][ 'Module' ] },
+                                                       {}, True )
       if not result[ 'OK' ]:
         return result
       installations = result[ 'Value' ]
@@ -576,7 +583,9 @@ class ComponentInstaller( object ):
           removeMain = True
 
       if remove:
-        result = self._removeSectionFromCS( cfgPath( 'Systems', system, compInstance, installation[ 'Component' ][ 'Type' ].title() + 's', component ) )
+        result = self._removeSectionFromCS( cfgPath( 'Systems', system,
+                                                     compInstance,
+                                                     installation[ 'Component' ][ 'Type' ].title() + 's', component ) )
         if not result[ 'OK' ]:
           return result
 
@@ -586,7 +595,10 @@ class ComponentInstaller( object ):
             return result
 
       if removeMain:
-        result = self._removeSectionFromCS( cfgPath( 'Systems', system, compInstance, installation[ 'Component' ][ 'Type' ].title() + 's', installation[ 'Component' ][ 'Module' ] ) )
+        result = self._removeSectionFromCS( cfgPath( 'Systems', system,
+                                                     compInstance,
+                                                     installation[ 'Component' ][ 'Type' ].title() + 's',
+                                                     installation[ 'Component' ][ 'Module' ] ) )
         if not result[ 'OK' ]:
           return result
 
@@ -650,7 +662,7 @@ class ComponentInstaller( object ):
       execList = compCfg.getOption( '%s/Load' % componentSection, [] )
       for element in execList:
         result = self.addDefaultOptionsToCS( gConfig, componentType, systemName, element, extensions, self.setup,
-                                        {}, overwrite )
+                                             {}, overwrite )
         resultAddToCFG.setdefault( 'Modules', {} )
         resultAddToCFG['Modules'][element] = result['OK']
     return resultAddToCFG
@@ -741,7 +753,7 @@ class ComponentInstaller( object ):
           DIRAC.exit( -1 )
         return S_ERROR( error )
 
-      compCfg = compCfg[sectionName][componentModule]
+      compCfg = compCfg[sectionName][componentModule] #pylint: disable=unsubscriptable-object
 
       # Delete Dependencies section if any
       compCfg.deleteKey( 'Dependencies' )
@@ -760,7 +772,7 @@ class ComponentInstaller( object ):
         urlsPath = cfgPath( 'Systems', system, compInstance, 'URLs' )
         cfg.createNewSection( urlsPath )
         cfg.setOption( cfgPath( urlsPath, component ),
-                      'dips://%s:%d/%s/%s' % ( self.host, port, system, component ) )
+                       'dips://%s:%d/%s/%s' % ( self.host, port, system, component ) )
 
     return S_OK( cfg )
 
@@ -801,7 +813,7 @@ class ComponentInstaller( object ):
     gLogger.notice( 'Adding to CS', '%s/%s' % ( system, dbName ) )
     return self._addCfgToCS( databaseCfg )
 
-  def removeDatabaseOptionsFromCS( self, gConfig, system, dbName, mySetup = None ):
+  def removeDatabaseOptionsFromCS( self, gConfig_o, system, dbName, mySetup = None ):
     """
     Remove the section with database options from the CS, if possible
     """
@@ -809,15 +821,15 @@ class ComponentInstaller( object ):
       mySetup = self.setup
 
     result = self.monitoringClient.installationExists( { 'UnInstallationTime': None },
-                                                  { 'System': system, 'Type': 'DB', 'Module': dbName },
-                                                  {} )
+                                                       { 'System': system, 'Type': 'DB', 'Module': dbName },
+                                                       {} )
     if not result[ 'OK' ]:
       return result
     exists = result[ 'Value' ]
 
     instanceOption = cfgPath( 'DIRAC', 'Setups', mySetup, system )
-    if gConfig:
-      compInstance = gConfig.getValue( instanceOption, '' )
+    if gConfig_o:
+      compInstance = gConfig_o.getValue( instanceOption, '' )
     else:
       compInstance = self.localCfg.getOption( instanceOption, '' )
 
@@ -1141,7 +1153,7 @@ class ComponentInstaller( object ):
       runDict['RSS'] = -1
       if pid: # check the process CPU usage and memory
         # PID %CPU %MEM VSZ
-        result = self.execCommand( 0, ['ps', '-q', pid, 'au'] )
+        result = self.execCommand( 0, ['ps', '-p', pid, 'u'] )
         if result['OK'] and len( result['Value'] ) > 0:
           stats = result['Value'][1]
           values = re.findall( r"\d*\.\d+|\d+", stats )
@@ -1297,7 +1309,7 @@ class ComponentInstaller( object ):
       loader = ModuleLoader( "Agent", PathFinder.getAgentSection, AgentModule )
     elif componentType == 'service':
       loader = ModuleLoader( "Service", PathFinder.getServiceSection,
-                                        RequestHandler, moduleSuffix = "Handler" )
+                             RequestHandler, moduleSuffix = "Handler" )
     elif componentType == 'executor':
       loader = ModuleLoader( "Executor", PathFinder.getExecutorSection, ExecutorModule )
     else:
@@ -1480,33 +1492,12 @@ class ComponentInstaller( object ):
 
     # Make sure the necessary directories are there
     if self.basePath != self.instancePath:
-      if not os.path.exists( self.instancePath ):
-        try:
-          os.makedirs( self.instancePath )
-        except Exception:
-          error = 'Can not create directory for self.instance %s' % self.instancePath
-          if self.exitOnError:
-            gLogger.exception( error )
-            DIRAC.exit( -1 )
-          return S_ERROR( error )
-      if not os.path.isdir( self.instancePath ):
-        error = 'Instance directory %s is not valid' % self.instancePath
-        if self.exitOnError:
-          gLogger.error( error )
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
+      mkDir(self.instancePath)
 
       instanceEtcDir = os.path.join( self.instancePath, 'etc' )
       etcDir = os.path.dirname( self.cfgFile )
       if not os.path.exists( instanceEtcDir ):
-        try:
-          os.symlink( etcDir, instanceEtcDir )
-        except Exception:
-          error = 'Can not create link to configuration %s' % instanceEtcDir
-          if self.exitOnError:
-            gLogger.exception( error )
-            DIRAC.exit( -1 )
-          return S_ERROR( error )
+        mkLink( etcDir, instanceEtcDir )
 
       if os.path.realpath( instanceEtcDir ) != os.path.realpath( etcDir ):
         error = 'Instance etc (%s) is not the same as DIRAC etc (%s)' % ( instanceEtcDir, etcDir )
@@ -1518,14 +1509,7 @@ class ComponentInstaller( object ):
     # if any server or agent needs to be install we need the startup directory and runsvdir running
     if setupServices or setupAgents or setupExecutors or setupWeb:
       if not os.path.exists( self.startDir ):
-        try:
-          os.makedirs( self.startDir )
-        except Exception:
-          error = 'Can not create %s' % self.startDir
-          if self.exitOnError:
-            gLogger.exception( error )
-            DIRAC.exit( -1 )
-          return S_ERROR( error )
+        mkDir(self.startDir)
       # And need to make sure runsvdir is running
       result = self.execCommand( 0, ['ps', '-ef'] )
       if not result['OK']:
@@ -1652,6 +1636,11 @@ class ComponentInstaller( object ):
           DIRAC.exit( -1 )
         return result
       installedDatabases = result['Value']
+      result = self.getAvailableDatabases( CSGlobals.getCSExtensions() )
+      if not result[ 'OK' ]:
+        return result
+      dbDict = result['Value']
+
       for dbName in setupDatabases:
         if dbName not in installedDatabases:
           result = self.installDatabase( dbName, monitorFlag = False )
@@ -1660,11 +1649,14 @@ class ComponentInstaller( object ):
             DIRAC.exit( -1 )
           extension, system = result['Value']
           gLogger.notice( 'Database %s from %s/%s installed' % ( dbName, extension, system ) )
-          result = self.addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
-          if not result['OK']:
-            gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
         else:
           gLogger.notice( 'Database %s already installed' % dbName )
+
+        dbSystem = dbDict[dbName]['System']
+        result = self.addDatabaseOptionsToCS( None, dbSystem, dbName, overwrite = True )
+        if not result['OK']:
+          gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
+
 
     if self.mysqlPassword:
       if not self._addMySQLToDiracCfg():
@@ -1732,22 +1724,21 @@ class ComponentInstaller( object ):
 
   def _createRunitLog( self, runitCompDir ):
     self.controlDir = os.path.join( runitCompDir, 'control' )
-    os.makedirs( self.controlDir )
+    mkDir( self.controlDir )
 
     logDir = os.path.join( runitCompDir, 'log' )
-    os.makedirs( logDir )
+    mkDir( logDir )
 
     logConfigFile = os.path.join( logDir, 'config' )
-    fd = open( logConfigFile, 'w' )
-    fd.write(
+    with open( logConfigFile, 'w' ) as fd:
+      fd.write(
   """s10000000
   n20
   """ )
-    fd.close()
 
     logRunFile = os.path.join( logDir, 'run' )
-    fd = open( logRunFile, 'w' )
-    fd.write(
+    with open( logRunFile, 'w' ) as fd:
+      fd.write(
   """#!/bin/bash
   #
   rcfile=%(bashrc)s
@@ -1756,7 +1747,6 @@ class ComponentInstaller( object ):
   exec svlogd .
 
   """ % { 'bashrc' : os.path.join( self.instancePath, 'bashrc' ) } )
-    fd.close()
 
     os.chmod( logRunFile, self.gDefaultPerms )
 
@@ -1799,7 +1789,7 @@ class ComponentInstaller( object ):
     if componentModule:
       specialOptions['Module'] = componentModule
     result = self.getComponentCfg( componentType, system, component, self.instance, extensions,
-                              specialOptions = specialOptions )
+                                   specialOptions = specialOptions )
     if not result[ 'OK' ]:
       return result
     compCfg = result[ 'Value' ]
@@ -1850,17 +1840,16 @@ class ComponentInstaller( object ):
 
       cTypeLower = componentType.lower()
       if cTypeLower == 'agent' or cTypeLower == 'consumer':
-        stopFile = os.path.join( runitCompDir, 'control', 't' )
-        fd = open( stopFile, 'w' )
-        fd.write(
-  """#!/bin/bash
-  echo %(self.controlDir)s/%(system)s/%(component)s/stop_%(type)s
-  touch %(self.controlDir)s/%(system)s/%(component)s/stop_%(type)s
-  """ % {'self.controlDir': self.controlDir,
-         'system' : system,
-         'component': component,
-         'type': cTypeLower } )
-        fd.close()
+        stopFile = os.path.join( runitCompDir, 'control', 't' ) # This is, e.g., /opt/dirac/runit/WorkfloadManagementSystem/Matcher/control/t
+        controlDir = self.runitDir.replace('runit', 'control') # This is, e.g., /opt/dirac/control/WorkfloadManagementSystem/Matcher/
+        with open( stopFile, 'w' ) as fd:
+          fd.write( """#!/bin/bash
+echo %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
+touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
+""" % { 'controlDir': controlDir,
+        'system' : system,
+        'component': component,
+        'type': cTypeLower } )
 
         os.chmod( stopFile, self.gDefaultPerms )
 
@@ -1889,11 +1878,10 @@ class ComponentInstaller( object ):
     # Create the startup entry now
     runitCompDir = result['Value']
     startCompDir = os.path.join( self.startDir, '%s_%s' % ( system, component ) )
-    if not os.path.exists( self.startDir ):
-      os.makedirs( self.startDir )
+    mkDir(self.startDir)
     if not os.path.lexists( startCompDir ):
       gLogger.notice( 'Creating startup link at', startCompDir )
-      os.symlink( runitCompDir, startCompDir )
+      mkLink( runitCompDir, startCompDir )
       time.sleep( 10 )
 
     # Check the runsv status
@@ -2056,13 +2044,12 @@ class ComponentInstaller( object ):
     startCompDir = [ os.path.join( self.startDir, 'Web_httpd' ),
                      os.path.join( self.startDir, 'Web_paster' ) ]
 
-    if not os.path.exists( self.startDir ):
-      os.makedirs( self.startDir )
+    mkDir( self.startDir )
 
     for i in range( 2 ):
       if not os.path.lexists( startCompDir[i] ):
         gLogger.notice( 'Creating startup link at', startCompDir[i] )
-        os.symlink( runitCompDir[i], startCompDir[i] )
+        mkLink( runitCompDir[i], startCompDir[i] )
         time.sleep( 1 )
     time.sleep( 5 )
 
@@ -2094,12 +2081,9 @@ class ComponentInstaller( object ):
     startCompDir = os.path.join( self.startDir, 'Web_WebApp' )
 
 
-    if not os.path.exists( self.startDir ):
-      os.makedirs( self.startDir )
+    mkDir( self.startDir )
 
-    if not os.path.lexists( startCompDir ):
-        gLogger.notice( 'Creating startup link at', startCompDir )
-        os.symlink( runitCompDir, startCompDir )
+    mkLink( runitCompDir, startCompDir )
 
     time.sleep( 5 )
 
@@ -2151,7 +2135,7 @@ class ComponentInstaller( object ):
                                                              webappCompileScript,
                                                              webappCompileScript ) ):
         gLogger.error( "Compile script %s failed. Check %s.err" % ( webappCompileScript,
-                                                                         webappCompileScript ) )
+                                                                    webappCompileScript ) )
       else:
         prodMode = "-p"
 
@@ -2168,8 +2152,8 @@ class ComponentInstaller( object ):
       try:
         self._createRunitLog( runitWebAppDir )
         runFile = os.path.join( runitWebAppDir, 'run' )
-        fd = open( runFile, 'w' )
-        fd.write(
+        with open( runFile, 'w' ) as fd:
+          fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -2180,7 +2164,6 @@ class ComponentInstaller( object ):
   """ % {'bashrc': os.path.join( self.instancePath, 'bashrc' ),
          'DIRAC': self.linkedRootPath,
          'prodMode':prodMode} )
-        fd.close()
 
         os.chmod( runFile, self.gDefaultPerms )
       except Exception:
@@ -2325,59 +2308,50 @@ class ComponentInstaller( object ):
     if self.mysqlMode:
       gLogger.notice( 'This is a MySQl %s server' % self.mysqlMode )
 
-    try:
-      os.makedirs( self.mysqlDbDir )
-      os.makedirs( self.mysqlLogDir )
-    except Exception:
-      error = 'Can not create MySQL dirs'
-      gLogger.exception( error )
-      if self.exitOnError:
-        DIRAC.exit( -1 )
-      return S_ERROR( error )
+    mkDir( self.mysqlDbDir )
+    mkDir( self.mysqlLogDir )
 
     try:
-      fd = open( self.mysqlMyOrg, 'r' )
-      myOrg = fd.readlines()
-      fd.close()
+      with open( self.mysqlMyOrg, 'r' ) as fd:
+        myOrg = fd.readlines()
 
-      fd = open( self.mysqlMyCnf, 'w' )
-      for line in myOrg:
-        if line.find( '[mysqld]' ) == 0:
-          line += '\n'.join( [ 'innodb_file_per_table', '' ] )
-        elif line.find( 'innodb_log_arch_dir' ) == 0:
-          line = ''
-        elif line.find( 'innodb_data_file_path' ) == 0:
-          line = line.replace( '2000M', '200M' )
-        elif line.find( 'server-id' ) == 0 and self.mysqlMode.lower() == 'master':
-          # MySQL Configuration for Master Server
-          line = '\n'.join( ['server-id = 1',
-                             '# DIRAC Master-Server',
-                             'sync-binlog = 1',
-                             'replicate-ignore-table = mysql.MonitorData',
-                             '# replicate-ignore-db=db_name',
-                             'log-bin = mysql-bin',
-                             'log-slave-updates', '' ] )
-        elif line.find( 'server-id' ) == 0 and self.mysqlMode.lower() == 'slave':
-          # MySQL Configuration for Slave Server
-          line = '\n'.join( ['server-id = %s' % int( time.time() ),
-                             '# DIRAC Slave-Server',
-                             'sync-binlog = 1',
-                             'replicate-ignore-table = mysql.MonitorData',
-                             '# replicate-ignore-db=db_name',
-                             'log-bin = mysql-bin',
-                             'log-slave-updates', '' ] )
-        elif line.find( '/opt/dirac/mysql' ) > -1:
-          line = line.replace( '/opt/dirac/mysql', self.mysqlDir )
+      with open( self.mysqlMyCnf, 'w' ) as fd:
+        for line in myOrg:
+          if line.find( '[mysqld]' ) == 0:
+            line += '\n'.join( [ 'innodb_file_per_table', '' ] )
+          elif line.find( 'innodb_log_arch_dir' ) == 0:
+            line = ''
+          elif line.find( 'innodb_data_file_path' ) == 0:
+            line = line.replace( '2000M', '200M' )
+          elif line.find( 'server-id' ) == 0 and self.mysqlMode.lower() == 'master':
+            # MySQL Configuration for Master Server
+            line = '\n'.join( ['server-id = 1',
+                               '# DIRAC Master-Server',
+                               'sync-binlog = 1',
+                               'replicate-ignore-table = mysql.MonitorData',
+                               '# replicate-ignore-db=db_name',
+                               'log-bin = mysql-bin',
+                               'log-slave-updates', '' ] )
+          elif line.find( 'server-id' ) == 0 and self.mysqlMode.lower() == 'slave':
+            # MySQL Configuration for Slave Server
+            line = '\n'.join( ['server-id = %s' % int( time.time() ),
+                               '# DIRAC Slave-Server',
+                               'sync-binlog = 1',
+                               'replicate-ignore-table = mysql.MonitorData',
+                               '# replicate-ignore-db=db_name',
+                               'log-bin = mysql-bin',
+                               'log-slave-updates', '' ] )
+          elif line.find( '/opt/dirac/mysql' ) > -1:
+            line = line.replace( '/opt/dirac/mysql', self.mysqlDir )
 
-        if self.mysqlSmallMem:
-          if line.find( 'innodb_buffer_pool_size' ) == 0:
-            line = 'innodb_buffer_pool_size = 200M\n'
-        elif self.mysqlLargeMem:
-          if line.find( 'innodb_buffer_pool_size' ) == 0:
-            line = 'innodb_buffer_pool_size = 10G\n'
+          if self.mysqlSmallMem:
+            if line.find( 'innodb_buffer_pool_size' ) == 0:
+              line = 'innodb_buffer_pool_size = 200M\n'
+          elif self.mysqlLargeMem:
+            if line.find( 'innodb_buffer_pool_size' ) == 0:
+              line = 'innodb_buffer_pool_size = 10G\n'
 
-        fd.write( line )
-      fd.close()
+          fd.write( line )
     except Exception:
       error = 'Can not create my.cnf'
       gLogger.exception( error )
@@ -2387,8 +2361,8 @@ class ComponentInstaller( object ):
 
     gLogger.notice( 'Initializing MySQL...' )
     result = self.execCommand( 0, ['mysql_install_db',
-                              '--defaults-file=%s' % self.mysqlMyCnf,
-                              '--datadir=%s' % self.mysqlDbDir ] )
+                                   '--defaults-file=%s' % self.mysqlMyCnf,
+                                   '--datadir=%s' % self.mysqlDbDir ] )
     if not result['OK']:
       return result
 
@@ -2405,7 +2379,7 @@ class ComponentInstaller( object ):
     # MySQL tends to define root@host user rather than root@host.domain
     hostName = self.mysqlHost.split( '.' )[0]
     result = self.execMySQL( "UPDATE user SET Host='%s' WHERE Host='%s'" % ( self.mysqlHost, hostName ),
-                                                                       localhost = True )
+                             localhost = True )
     if not result['OK']:
       return result
     result = self.execMySQL( "FLUSH PRIVILEGES" )
@@ -2479,13 +2453,6 @@ class ComponentInstaller( object ):
     """
     Install requested DB in MySQL server
     """
-
-    # Create entry in the static monitoring DB
-    result = self.getAvailableDatabases( CSGlobals.getCSExtensions() )
-    if not result[ 'OK' ]:
-      return result
-
-    dbSystem = result[ 'Value' ][ dbName ][ 'System' ]
 
     if not self.mysqlRootPwd:
       rootPwdPath = cfgInstallPath( 'Database', 'RootPwd' )
@@ -2578,7 +2545,7 @@ class ComponentInstaller( object ):
 
     return S_OK( dbFile.split( '/' )[-4:-2] )
 
-  def uninstallDatabase( self, gConfig, dbName ):
+  def uninstallDatabase( self, gConfig_o, dbName ):
     """
     Remove a database from DIRAC
     """
@@ -2588,7 +2555,7 @@ class ComponentInstaller( object ):
 
     dbSystem = result[ 'Value' ][ dbName ][ 'System' ]
 
-    result = self.removeDatabaseOptionsFromCS( gConfig, dbSystem, dbName )
+    result = self.removeDatabaseOptionsFromCS( gConfig_o, dbSystem, dbName )
     if not result [ 'OK' ]:
       return result
 
@@ -2662,7 +2629,6 @@ class ComponentInstaller( object ):
     Produce new dirac.cfg including configuration for new CE
     """
     from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
-    from DIRAC import gConfig
     cesCfg = ResourcesDefaults.getComputingElementDefaults( ceName, ceType, cfg, currentSectionPath )
     ceNameList = cesCfg.listSections()
     if not ceNameList:

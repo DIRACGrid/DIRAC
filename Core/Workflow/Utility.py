@@ -5,7 +5,7 @@
     workflow operations
 """
 
-__RCSID__ = "$Revision: 1.3 $"
+__RCSID__ = "$Id$"
 
 import types, re
 

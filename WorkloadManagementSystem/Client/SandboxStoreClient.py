@@ -15,6 +15,7 @@ from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize
@@ -103,7 +104,7 @@ class SandboxStoreClient( object ):
             files2Upload.append( sFile )
           else:
             errorFiles.append( sFile )
-      
+
       elif isinstance( sFile, StringIO.StringIO ):
         files2Upload.append( sFile )
       else:
@@ -172,10 +173,7 @@ class SandboxStoreClient( object ):
     if not destinationDir:
       destinationDir = os.getcwd()
     else:
-      try:
-        os.makedirs( destinationDir )
-      except:
-        pass
+      mkDir(destinationDir)
 
     try:
       tmpSBDir = tempfile.mkdtemp( prefix = "TMSB." )

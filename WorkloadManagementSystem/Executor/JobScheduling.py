@@ -9,7 +9,6 @@
       This Executor will fail affected jobs meaningfully.
 
 """
-__RCSID__ = "$Id: $"
 
 import random
 
@@ -27,6 +26,7 @@ from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import Optim
 from DIRAC.WorkloadManagementSystem.DB.JobDB                        import JobDB
 
 
+__RCSID__ = "$Id: $"
 
 class JobScheduling( OptimizerExecutor ):
   """
@@ -86,12 +86,23 @@ class JobScheduling( OptimizerExecutor ):
     # If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
-        sites = self._applySiteFilter( userSites, banned = wmsBannedSites )
-        if not sites:
-          if len( userSites ) > 1:
-            return self.__holdJob( jobState, "Requested sites %s are inactive" % ",".join( userSites ) )
-          else:
-            return self.__holdJob( jobState, "Requested site %s is inactive" % userSites[0] )
+        result = self.__jobDB.getUserSitesTuple( userSites )
+        if not result[ 'OK' ]:
+          return S_ERROR( "Problem checking userSites for tuple of active/banned/invalid sites" )
+
+        userSites, bannedSites, invalidSites = result['Value']
+        if invalidSites:
+          self.jobLog.debug( "Invalid site(s) requested: %s" % ','.join( invalidSites ) )
+          if not self.ex_getOption( 'AllowInvalidSites', True ):
+            return self.__holdJob( jobState, "Requested site(s) %s are invalid" % ",".join( invalidSites ) )
+        if bannedSites:
+          self.jobLog.debug( "Banned site(s) %s ignored" % ",".join( bannedSites ) )
+          if not userSites:
+            return self.__holdJob( jobState, "Requested site(s) %s are inactive" % ",".join( bannedSites ) )
+
+        if not userSites:
+          return self.__holdJob( jobState, "No requested site(s) are active/valid" )
+        userSites = list(userSites)
 
     # Check if there is input data
     result = jobState.getInputData()
@@ -126,7 +137,10 @@ class JobScheduling( OptimizerExecutor ):
         return self.__holdJob( jobState, res['Message'] )
       stageLFNs = res['Value']['offlineLFNs']
       if stageLFNs:
-        if not self.__checkStageAllowed( jobState ):
+        res = self.__checkStageAllowed( jobState )
+        if not res['OK']:
+          return res
+        if not res['Value']:
           return S_ERROR( "Stage not allowed" )
         self.__requestStaging( jobState, stageLFNs )
         return S_OK()
@@ -149,7 +163,10 @@ class JobScheduling( OptimizerExecutor ):
     siteCandidates = list( opData[ 'SiteCandidates' ] )
     self.jobLog.info( "Site candidates are %s" % siteCandidates )
 
-    siteCandidates = self._applySiteFilter( list( set( siteCandidates ) & set( userSites ) ), banned = userBannedSites )
+    if userSites:
+      siteCandidates = list( set( siteCandidates ) & set( userSites ) )
+
+    siteCandidates = self._applySiteFilter( siteCandidates, banned = userBannedSites )
     if not siteCandidates:
       return S_ERROR( "Impossible InputData * Site requirements" )
 
@@ -187,7 +204,10 @@ class JobScheduling( OptimizerExecutor ):
 
     # Check if the user is allowed to stage
     if self.ex_getOption( "RestrictDataStage", False ):
-      if not self.__checkStageAllowed( jobState ):
+      res = self.__checkStageAllowed( jobState )
+      if not res['OK']:
+        return res
+      if not res['Value']:
         return S_ERROR( "Stage not allowed" )
 
     # Get stageSites[0] because it has already been randomized and it's as good as any in stageSites
@@ -347,10 +367,7 @@ class JobScheduling( OptimizerExecutor ):
     return ( True, bestSites )
 
   def __preRequestStaging( self, jobState, stageSite, opData ):
-    result = getSEsForSite( stageSite )
-    if not result['OK']:
-      return S_ERROR( 'Could not determine SEs for site %s' % stageSite )
-    siteSEs = result['Value']
+    from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
     tapeSEs = []
     diskSEs = []
@@ -359,6 +376,14 @@ class JobScheduling( OptimizerExecutor ):
       return result
     manifest = result['Value']
     vo = manifest.getOption( 'VirtualOrganization' )
+    inputDataPolicy = manifest.getOption( 'InputDataPolicy', 'Protocol' )
+    connectionLevel = 'DOWNLOAD' if 'download' in inputDataPolicy.lower() else 'PROTOCOL'
+    # Allow staging from SEs accessible by protocol
+    result = DMSHelpers( vo = vo ).getSEsForSite( stageSite, connectionLevel = connectionLevel )
+    if not result['OK']:
+      return S_ERROR( 'Could not determine SEs for site %s' % stageSite )
+    siteSEs = result['Value']
+
     for seName in siteSEs:
       se = StorageElement( seName, vo = vo )
       result = se.getStatus()
@@ -565,4 +590,4 @@ class JobScheduling( OptimizerExecutor ):
       self.jobLog.error( "Cannot retrieve OwnerGroup from DB: %s" % result[ 'Message' ] )
       return S_ERROR( "Cannot get OwnerGroup" )
     group = result[ 'Value' ]
-    return Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup( group )
+    return S_OK( Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup( group ) )

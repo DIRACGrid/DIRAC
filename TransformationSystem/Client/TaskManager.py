@@ -1,16 +1,14 @@
 """ TaskManager contains WorkflowsTasks and RequestTasks modules, for managing jobs and requests tasks
 """
-__RCSID__ = "$Id$"
-
-COMPONENT_NAME = 'TaskManager'
-
 import time
 import StringIO
+import json
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.Core.Utilities.List                                  import fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
+from DIRAC.Core.Utilities.DErrno                                import ETSDATA, ETSUKN
 from DIRAC.Interfaces.API.Job                                   import Job
 from DIRAC.RequestManagementSystem.Client.ReqClient             import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request               import Request
@@ -23,6 +21,11 @@ from DIRAC.TransformationSystem.Client.TransformationClient     import Transform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getDNForUsername
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
+
+
+__RCSID__ = "$Id$"
+
+COMPONENT_NAME = 'TaskManager'
 
 
 def _requestName( transID, taskID ):
@@ -49,7 +52,8 @@ class TaskBase( TransformationAgentsUtilities ):
     self.transInThread = {}
     self.debug = False
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '',
+                                  bulkSubmissionFlag = False):
     return S_ERROR( "Not implemented" )
 
   def submitTransformationTasks( self, taskDict ):
@@ -116,9 +120,13 @@ class RequestTasks( TaskBase ):
       self.requestValidator = requestValidator
 
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '',
+                                  bulkSubmissionFlag = False):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
+    if not taskDict:
+      return S_OK({})
+
     if ( not owner ) or ( not ownerGroup ):
       res = getProxyInfo( False, False )
       if not res['OK']:
@@ -132,6 +140,72 @@ class RequestTasks( TaskBase ):
       if not res['OK']:
         return res
       ownerDN = res['Value'][0]
+
+    try:
+      transJson = json.loads(transBody)
+      self._multiOperationsBody( transJson, taskDict, ownerDN, ownerGroup )
+    except ValueError: ##json couldn't load
+      self._singleOperationsBody( transBody, taskDict, ownerDN, ownerGroup )
+
+    return S_OK( taskDict )
+
+  def _multiOperationsBody( self, transJson, taskDict, ownerDN, ownerGroup ):
+    """ deal with a Request that has multiple operations
+
+    :param transJson: list of lists of string and dictionaries, e.g.:
+
+      .. code :: python
+
+        body = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
+                 ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
+               ]
+
+    :param dict taskDict: dictionary of tasks, modified in this function
+    :param str ownerDN: certificate DN used for the requests
+    :param str onwerGroup: dirac group used for the requests
+    :returns: None
+    """
+
+    for taskID in sorted( taskDict ):
+      paramDict = taskDict[taskID]
+      if not paramDict.get('InputData'):
+        self.log.error( "Error creating request for task", "%s, No input data" % taskID )
+        taskDict.pop( taskID )
+        continue
+      files = []
+
+      transID = paramDict['TransformationID']
+      oRequest = Request()
+      if isinstance( paramDict['InputData'], list ):
+        files = paramDict['InputData']
+      elif isinstance( paramDict['InputData'], basestring ):
+        files = paramDict['InputData'].split( ';' )
+
+      # create the operations from the json structure
+      for operationTuple in transJson:
+        op = Operation()
+        op.Type = operationTuple[0]
+        for parameter, value in operationTuple[1].iteritems():
+          setattr( op, parameter, value )
+
+        for lfn in files:
+          opFile = File()
+          opFile.LFN = lfn
+          op.addFile( opFile )
+
+        oRequest.addOperation( op )
+
+      self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
+
+  def _singleOperationsBody(self, transBody, taskDict, ownerDN, ownerGroup ):
+    """ deal with a Request that has just one operation, as it was sofar
+
+    :param transBody: string, can be an empty string
+    :param dict taskDict: dictionary of tasks, modified in this function
+    :param str ownerDN: certificate DN used for the requests
+    :param str onwerGroup: dirac group used for the requests
+    :returns: None
+    """
 
     requestOperation = 'ReplicateAndRegister'
     if transBody:
@@ -152,7 +226,7 @@ class RequestTasks( TaskBase ):
       transfer.TargetSE = paramDict['TargetSE']
 
       # If there are input files
-      if paramDict['InputData']:
+      if paramDict.get('InputData'):
         if isinstance( paramDict['InputData'], list ):
           files = paramDict['InputData']
         elif isinstance( paramDict['InputData'], basestring ):
@@ -164,20 +238,34 @@ class RequestTasks( TaskBase ):
           transfer.addFile( trFile )
 
       oRequest.addOperation( transfer )
-      oRequest.RequestName = _requestName( transID, taskID )
-      oRequest.OwnerDN = ownerDN
-      oRequest.OwnerGroup = ownerGroup
+      self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
 
-      isValid = self.requestValidator.validate( oRequest )
-      if not isValid['OK']:
-        self.log.error( "Error creating request for task", "%s %s" % ( taskID, isValid ) )
-        # This works because we loop over a copy of the keys !
-        taskDict.pop( taskID )
-        continue
+  def _assignRequestToTask( self, oRequest, taskDict, transID, taskID, ownerDN, ownerGroup ):
+    """set ownerDN and group to request, and add the request to taskDict if it is
+    valid, otherwise remove the task from the taskDict
 
-      taskDict[taskID]['TaskObject'] = oRequest
+    :param oRequest: Request
+    :param dict taskDict: dictionary of tasks, modified in this function
+    :param int transID: Transformation ID
+    :param int taskID: Task ID
+    :param str ownerDN: certificate DN used for the requests
+    :param str onwerGroup: dirac group used for the requests
+    :returns: None
+    """
 
-    return S_OK( taskDict )
+    oRequest.RequestName = _requestName( transID, taskID )
+    oRequest.OwnerDN = ownerDN
+    oRequest.OwnerGroup = ownerGroup
+
+    isValid = self.requestValidator.validate( oRequest )
+    if not isValid['OK']:
+      self.log.error( "Error creating request for task", "%s %s" % ( taskID, isValid ) )
+      # This works because we loop over a copy of the keys !
+      taskDict.pop( taskID )
+      return
+    taskDict[taskID]['TaskObject'] = oRequest
+    return
+
 
   def submitTransformationTasks( self, taskDict ):
     """ Submit requests one by one
@@ -332,10 +420,19 @@ class WorkflowTasks( TaskBase ):
 
     self.destinationPlugin_o = None
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '',
+                                  ownerDN = '', bulkSubmissionFlag = False ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
+
+    :param transBody: transformation job template
+    :param taskDict: dictionary of per task parameters
+    :param owner: owner of the transformation
+    :param ownerGroup: group of the owner of the transformation
+    :param ownerDN: DN of the owner of the transformation
+    :return:  S_OK/S_ERROR with updated taskDict
     """
+
     if ( not owner ) or ( not ownerGroup ):
       res = getProxyInfo( False, False )
       if not res['OK']:
@@ -349,6 +446,100 @@ class WorkflowTasks( TaskBase ):
       if not res['OK']:
         return res
       ownerDN = res['Value'][0]
+
+    if bulkSubmissionFlag:
+      return self.__prepareTransformationTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
+    else:
+      return self.__prepareTransformationTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
+
+  def __prepareTransformationTasksBulk( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
+    """ Prepare transformation tasks with a single job object for bulk submission
+    """
+
+    transID = taskDict[taskDict.keys()[0]]['TransformationID']
+
+    # Prepare the bulk Job object with common parameters
+    oJob = self.jobClass( transBody )
+
+    self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ), transID = transID )
+    oJob.setOwner( owner )
+    oJob.setOwnerGroup( ownerGroup )
+    oJob.setOwnerDN( ownerDN )
+
+    jobType = oJob.workflow.findParameter( 'JobType' ).getValue()
+    transGroup = str( transID ).zfill( 8 )
+
+    oJob._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
+    oJob.setType( jobType )
+    self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ), transID = transID )
+    oJob.setJobGroup( transGroup )
+
+    if int( transID ) in [int( x ) for x in self.opsH.getValue( "Hospital/Transformations", [] )]:
+      self._handleHospital( oJob )
+
+    # Collect per job parameters sequences
+    paramSeqDict = {}
+    for taskNumber in sorted( taskDict ):
+      seqDict = {}
+      paramsDict = taskDict[taskNumber]
+
+      # Handle destination site
+      site = oJob.workflow.findParameter( 'Site' ).getValue()
+      sites = self._handleDestination( paramsDict )
+      if not sites:
+        self._logError( 'Could not get a list a sites', transID = transID )
+        return S_ERROR( ETSUKN, "Can not evaluate destination site" )
+      else:
+        self._logVerbose( 'Setting Site: ', str( sites ), transID = transID )
+        seqDict['Site'] = sites
+
+      constructedName = str( transID ).zfill( 8 ) + '_' + str( taskNumber ).zfill( 8 )
+      self._logVerbose( 'Setting task name to %s' % constructedName, transID = transID )
+      seqDict['JobName'] = transGroup
+      seqDict['JOB_ID'] = str( taskNumber ).zfill( 8 )
+
+      self._logDebug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskNumber, str( paramsDict ) ), transID = transID )
+
+      # Handle Input Data
+      inputData = paramsDict.get( 'InputData' )
+      if inputData:
+        self._logVerbose( 'Setting input data to %s' % inputData )
+        seqDict['InputData'] = inputData
+      elif paramSeqDict.get( 'InputData' ) is not None:
+        return S_ERROR( ETSDATA, "Invalid mixture of jobs with and without input data" )
+
+      for paramName, paramValue in paramsDict.items():
+        if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
+          if paramValue:
+            self._logVerbose( 'Setting %s to %s' % ( paramName, paramValue ) )
+            seqDict[paramName] = paramValue
+
+      if self.outputDataModule:
+        res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
+                                   'TaskID':taskNumber, 'InputData':inputData},
+                                  moduleLocation = self.outputDataModule )
+        if not res ['OK']:
+          self._logError( "Failed to generate output data", res['Message'], transID = transID )
+          continue
+        for name, output in res['Value'].items():
+          seqDict[name] = ';'.join( output )
+
+      for pName in seqDict:
+        paramSeqDict.setdefault( pName, [] )
+        paramSeqDict[pName].append( seqDict[pName] )
+
+    for paramName, paramSeq in paramSeqDict.iteritems():
+      if paramName in [ 'JOB_ID', 'PRODUCTION_ID', 'InputData' ]:
+        oJob.setParameterSequence( paramName, paramSeq, addToWorkflow=paramName )
+      else:
+        oJob.setParameterSequence( paramName, paramSeq )
+
+    taskDict['BulkJobObject'] = oJob
+    return S_OK( taskDict )
+
+  def __prepareTransformationTasks( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
+    """ Prepare transformation tasks with a job object per task
+    """
 
     for taskNumber in sorted( taskDict ):
       oJob = self.jobClass( transBody )
@@ -499,6 +690,41 @@ class WorkflowTasks( TaskBase ):
     return module.execute()
 
   def submitTransformationTasks( self, taskDict ):
+
+    if 'BulkJobObject' in taskDict:
+      return self.__submitTransformationTasksBulk( taskDict )
+    else:
+      return self.__submitTransformationTasks( taskDict )
+
+  def __submitTransformationTasksBulk( self, taskDict ):
+    """ Submit jobs in one go with one parametric job
+    """
+    startTime = time.time()
+    transID = taskDict[taskDict.keys()[0]]['TransformationID']
+    oJob = taskDict.pop( 'BulkJobObject' )
+    if oJob is None:
+      self._logError( 'submitTransformationTasksBulk: no bulk Job object found', transID = transID )
+      return S_ERROR( ETSUKN, 'No bulk job object provided for submission' )
+
+    result = self.submitTaskToExternal( oJob )
+    if not result['OK']:
+      return result
+
+    jobIDList = result['Value']
+    if len( jobIDList ) != len( taskDict ):
+      return S_ERROR( ETSUKN, 'Submitted less number of jobs than requested tasks' )
+
+    for ind, taskID in enumerate( sorted( taskDict ) ):
+      taskDict[taskID]['ExternalID'] = jobIDList[ind]
+      taskDict[taskID]['Success'] = True
+
+    submitted = len( jobIDList )
+    self._logInfo( 'submitTransformationTasksBulk: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
+                                                                                                  time.time() - startTime ),
+                   transID = transID )
+    return S_OK( taskDict )
+
+  def __submitTransformationTasks( self, taskDict ):
     """ Submit jobs one by one
     """
     submitted = 0
@@ -521,7 +747,8 @@ class WorkflowTasks( TaskBase ):
         taskDict[taskID]['Success'] = False
         failed += 1
     self._logInfo( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
-                                                                                            time.time() - startTime ), transID = transID )
+                                                                                              time.time() - startTime ),
+                   transID = transID )
     if failed:
       self._logError( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ), transID = transID )
     return S_OK( taskDict )

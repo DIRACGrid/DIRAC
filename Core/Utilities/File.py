@@ -4,25 +4,50 @@
    By default on Error they return None.
 """
 
-__RCSID__ = "$Id$"
-
 import os
 import hashlib as md5
 import random
 import glob
-import types
+import sys
 import re
+import errno
+
+__RCSID__ = "$Id$"
+
+def mkDir( path ):
+  """ Emulate 'mkdir -p path' (if path exists already, don't raise an exception)
+  """
+  try:
+    if os.path.isdir(path):
+      return
+    os.makedirs( path )
+  except OSError as osError:
+    if osError.errno == errno.EEXIST and os.path.isdir( path ):
+      pass
+    else:
+      raise
+
+def mkLink( src, dst ):
+  """ Protected creation of simbolic link
+  """
+  try:
+    os.symlink(src, dst)
+  except OSError as osError:
+    if osError.errno == errno.EEXIST and os.path.islink(dst) and os.path.realpath(dst) == src:
+      pass
+    else:
+      raise
 
 def makeGuid( fileName = None ):
   """Utility to create GUID. If a filename is provided the
      GUID will correspond to its content's hexadecimal md5 checksum.
      Otherwise a random seed is used to create the GUID.
      The format is capitalized 8-4-4-4-12.
-     
+
      .. warning::
         Could return None in case of OSError or IOError.
-     
-     :param string fileName: name of file 
+
+     :param string fileName: name of file
   """
   myMd5 = md5.md5()
   if fileName:
@@ -70,18 +95,17 @@ def generateGuid( checksum, checksumtype ):
   guid = guid.upper()
   return guid
 
-
 def checkGuid( guid ):
   """Checks whether a supplied GUID is of the correct format.
      The guid is a string of 36 characters [0-9A-F] long split into 5 parts of length 8-4-4-4-12.
 
      .. warning::
         As we are using GUID produced by various services and some of them could not follow
-        convention, this function is passing by a guid which can be made of lower case chars or even just 
+        convention, this function is passing by a guid which can be made of lower case chars or even just
         have 5 parts of proper length with whatever chars.
 
      :param string guid: string to be checked
-     :return: True (False) if supplied string is (not) a valid GUID. 
+     :return: True (False) if supplied string is (not) a valid GUID.
   """
   reGUID = re.compile( "^[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}$" )
   if reGUID.match( guid.upper() ):
@@ -96,17 +120,17 @@ def getSize( fileName ):
   """Get size of a file.
 
   :param string fileName: name of file to be checked
-  
-  The os module claims only OSError can be thrown, 
+
+  The os module claims only OSError can be thrown,
   but just for curiosity it's catching all possible exceptions.
 
-  .. warning:: 
+  .. warning::
      On any exception it returns -1.
-  
+
   """
   try:
     return os.stat( fileName )[6]
-  except Exception:
+  except OSError:
     return - 1
 
 def getGlobbedTotalSize( files ):
@@ -116,7 +140,7 @@ def getGlobbedTotalSize( files ):
   :params list files: list or tuple of strings of files
   """
   totalSize = 0
-  if type( files ) in ( types.ListType, types.TupleType ):
+  if isinstance( files, (list, tuple) ):
     for entry in files:
       size = getGlobbedTotalSize( entry )
       if size == -1:
@@ -137,11 +161,11 @@ def getGlobbedTotalSize( files ):
 def getGlobbedFiles( files ):
   """Get list of files or a single file.
   Globs the parameter to allow regular expressions.
-  
+
   :params list files: list or tuple of strings of files
   """
   globbedFiles = []
-  if type( files ) in ( types.ListType, types.TupleType ):
+  if isinstance( files, ( list, tuple ) ):
     for entry in files:
       globbedFiles += getGlobbedFiles( entry )
   else:
@@ -192,7 +216,7 @@ def getMD5ForFiles( fileList ):
   fileList.sort()
   hashMD5 = md5.md5()
   for filePath in fileList:
-    if ( os.path.isdir( filePath ) ):
+    if os.path.isdir( filePath ):
       continue
     with open( filePath, "rb" ) as fd:
       buf = fd.read( 4096 )
@@ -202,6 +226,5 @@ def getMD5ForFiles( fileList ):
   return hashMD5.hexdigest()
 
 if __name__ == "__main__":
-  import sys
   for p in sys.argv[1:]:
     print "%s : %s bytes" % ( p, getGlobbedTotalSize( p ) )

@@ -6,8 +6,19 @@
     a particular job. The JobWrapper starts a thread for execution of the job
     and a Watchdog Agent that can monitor progress.
 """
-__RCSID__ = "$Id: $"
+import os
+import stat
+import re
+import sys
+import time
+import shutil
+import threading
+import tarfile
+import glob
+import urllib
+import json
 
+import DIRAC
 from DIRAC.DataManagementSystem.Client.DataManager                  import DataManager
 from DIRAC.Resources.Catalog.FileCatalog                            import FileCatalog
 from DIRAC.DataManagementSystem.Client.FailoverTransfer             import FailoverTransfer
@@ -36,19 +47,8 @@ from DIRAC.Core.Utilities                                           import DEnco
 from DIRAC.Core.Utilities                                           import Time
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
-import DIRAC
 
-import os
-import stat
-import re
-import sys
-import time
-import shutil
-import threading
-import tarfile
-import glob
-import urllib
-import json
+__RCSID__ = "$Id: $"
 
 EXECUTION_RESULT = {}
 
@@ -61,6 +61,7 @@ class JobWrapper( object ):
     self.initialTiming = os.times()
     self.section = os.path.join( getSystemSection( 'WorkloadManagement/JobWrapper' ), 'JobWrapper' )
     self.log = gLogger
+    self.log.showHeaders( True )
     # Create the accounting report
     self.accountingReport = AccountingJob()
     # Initialize for accounting
@@ -101,6 +102,7 @@ class JobWrapper( object ):
     self.tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
     self.sandboxSizeLimit = gConfig.getValue( self.section + '/OutputSandboxLimit', 1024 * 1024 * 10 )
     self.cleanUpFlag = gConfig.getValue( self.section + '/CleanUpFlag', True )
+    self.boincUserID = gConfig.getValue( '/LocalSite/BoincUserID', 0 )
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
@@ -225,6 +227,8 @@ class JobWrapper( object ):
       parameters.append( ( 'CPUScalingFactor', self.ceArgs['CPUScalingFactor'] ) )
     if 'CPUNormalizationFactor' in self.ceArgs:
       parameters.append( ( 'CPUNormalizationFactor', self.ceArgs['CPUNormalizationFactor'] ) )
+    if self.boincUserID:
+      parameters.append( ( 'BoincUserID', self.boincUserID ) )
 
     parameters.append( ( 'PilotAgent', self.diracVersion ) )
     parameters.append( ( 'JobWrapperPID', self.currentPID ) )
@@ -1089,16 +1093,16 @@ class JobWrapper( object ):
     requestFlag = len( requests ) > 0 or not outputDataRequest.isEmpty()
 
     if self.failedFlag and requestFlag:
-      self.log.info( 'Application finished with errors and there are pending requests for this job.' )
+      self.log.info( 'Job finished with errors and there are pending requests.' )
       self.__report( 'Failed', 'Pending Requests' )
     elif not self.failedFlag and requestFlag:
-      self.log.info( 'Application finished successfully with pending requests for this job.' )
+      self.log.info( 'Job finished successfully with pending requests.' )
       self.__report( 'Completed', 'Pending Requests' )
     elif self.failedFlag and not requestFlag:
-      self.log.info( 'Application finished with errors with no pending requests.' )
+      self.log.info( 'Job finished with errors with no pending requests.' )
       self.__report( 'Failed' )
     elif not self.failedFlag and not requestFlag:
-      self.log.info( 'Application finished successfully with no pending requests for this job.' )
+      self.log.info( 'Job finished successfully with no pending requests.' )
       self.__report( 'Done', 'Execution Complete' )
 
     self.sendFailoverRequest()
@@ -1138,8 +1142,7 @@ class JobWrapper( object ):
     execTime = elapsed
     diskSpaceConsumed = getGlobbedTotalSize( os.path.join( self.root, str( self.jobID ) ) )
     # Fill the data
-    acData = {
-               'User' : self.owner,
+    acData = { 'User' : self.owner,
                'UserGroup' : self.userGroup,
                'JobGroup' : self.jobGroup,
                'JobType' : self.jobType,
@@ -1158,8 +1161,7 @@ class JobWrapper( object ):
                'DiskSpace' : diskSpaceConsumed,
                'InputSandBoxSize' : self.inputSandboxSize,
                'OutputSandBoxSize' : self.outputSandboxSize,
-               'ProcessedEvents' : self.processedEvents
-             }
+               'ProcessedEvents' : self.processedEvents}
     self.log.verbose( 'Accounting Report is:' )
     self.log.verbose( acData )
     self.accountingReport.setValuesFromDict( acData )
@@ -1233,6 +1235,13 @@ class JobWrapper( object ):
       isValid = RequestValidator().validate( request )
       if not isValid["OK"]:
         self.log.error( "Failover request is not valid", isValid["Message"] )
+        self.__report( status = 'Failed', minorStatus = 'Failover Request Failed' )
+        self.log.error( "Job will fail, first trying to print out the content of the request" )
+        reqToJSON = request.toJSON()
+        if reqToJSON['OK']:
+          print str( reqToJSON['Value'] )
+        else:
+          self.log.error( "Something went wrong creating the JSON from request", reqToJSON['Message'] )
       else:
         # We try several times to put the request before failing the job: it's very important that requests go through,
         # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
@@ -1250,11 +1259,9 @@ class JobWrapper( object ):
                             '%d: %s. Re-trying...' % ( counter, result['Message'] ) )
             del requestClient
             time.sleep( counter ** 3 )
-        if not result['OK']:
-          self.__report( 'Failed', 'Failover Request Failed' )
-        return result
 
-    return S_OK()
+        if not result['OK']:
+          self.__report( status = 'Failed', minorStatus = 'Failover Request Failed' )
 
   #############################################################################
   def __getRequestFiles( self ):

@@ -7,14 +7,13 @@ The following methods are available in the Service interface::
     addMessages()
 
 """
-__RCSID__ = "$Id$"
-
-from types import ListType, StringTypes
 
 from DIRAC                                            import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler                  import RequestHandler
 from DIRAC.FrameworkSystem.private.logging.Message    import tupleToMessage
 from DIRAC.FrameworkSystem.DB.SystemLoggingDB         import SystemLoggingDB
+
+__RCSID__ = "$Id$"
 
 # This is a global instance of the SystemLoggingDB class
 gLogDB = False
@@ -27,9 +26,6 @@ def initializeSystemLoggingHandler( serviceInfo ):
   res = gLogDB._connect()
   if not res['OK']:
     return res
-  res = gLogDB._checkTable()
-  if not res['OK'] and not res['Message'] == 'The requested table already exist':
-    return res
 
   return S_OK()
 
@@ -38,8 +34,8 @@ class SystemLoggingHandler( RequestHandler ):
   """
 
   def __addMessage( self, messageObject, site, nodeFQDN ):
-    """  
-    This is the function that actually adds the Message to 
+    """
+    This is the function that actually adds the Message to
     the log Database
     """
     credentials = self.getRemoteCredentials()
@@ -56,17 +52,17 @@ class SystemLoggingHandler( RequestHandler ):
     return gLogDB.insertMessage( messageObject, site, nodeFQDN, userDN, userGroup, remoteAddress )
 
 
-  types_addMessages = [ ListType, StringTypes, StringTypes ]
+  types_addMessages = [ list, basestring, basestring ]
   #A normal exported function (begins with export_)
   def export_addMessages( self, messagesList, site, nodeFQDN ):
-    """ 
+    """
     This is the interface to the service
     Inputs:
-           
+
       msgList contains a list of Message Objects.
-           
+
     Outputs:
-           
+
       S_OK if no exception was raised
       S_ERROR if an exception was raised
 
@@ -79,4 +75,3 @@ class SystemLoggingHandler( RequestHandler ):
                        'because: "%s"' % result['Message'] )
         return S_ERROR( result['Message'] )
     return S_OK()
-

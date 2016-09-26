@@ -4,10 +4,7 @@ problematic file and replicas to the IntegrityDB and their status
 correctly updated in the FileCatalog.
 """
 
-__RCSID__ = "$Id$"
-
 import re
-import types
 
 from DIRAC                                                import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
@@ -15,6 +12,9 @@ from DIRAC.Resources.Storage.StorageElement               import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues                    import returnSingleResult
 from DIRAC.Core.Base.Client                               import Client
+
+__RCSID__ = "$Id$"
+
 
 class DataIntegrityClient( Client ):
 
@@ -55,7 +55,7 @@ class DataIntegrityClient( Client ):
 
   def __init__( self, **kwargs ):
 
-    Client.__init__( self, **kwargs )
+    super(DataIntegrityClient, self).__init__( **kwargs )
     self.setServer( 'DataManagement/DataIntegrity' )
     self.dm = DataManager()
     self.fc = FileCatalog()
@@ -108,9 +108,9 @@ class DataIntegrityClient( Client ):
 
         sourceComponent is the component issuing the request.
     """
-    if type( replicaTuple ) == types.TupleType:
+    if isinstance( replicaTuple, tuple ):
       replicaTuple = [replicaTuple]
-    elif type( replicaTuple ) == types.ListType:
+    elif isinstance( replicaTuple, list ):
       pass
     else:
       errStr = "DataIntegrityClient.setReplicaProblematic: Supplied replica info must be a tuple or list of tuples."
@@ -188,7 +188,7 @@ class DataIntegrityClient( Client ):
     if bookkeepingSize == catalogSize == storageSize:
       gLogger.info( "CatalogPFNSizeMismatch replica (%d) matched all registered sizes." % fileID )
       return self.__updateReplicaToChecked( problematicDict )
-    if ( catalogSize == bookkeepingSize ):
+    if catalogSize == bookkeepingSize:
       gLogger.info( "CatalogPFNSizeMismatch replica (%d) found to mismatch the bookkeeping also" % fileID )
       res = returnSingleResult( self.fc.getReplicas( lfn ) )
       if not res['OK']:
@@ -211,6 +211,7 @@ class DataIntegrityClient( Client ):
     gLogger.info( "CatalogPFNSizeMismatch replica (%d) all sizes found mismatch. Updating retry count" % fileID )
     return self.incrementProblematicRetry( fileID )
 
+  #FIXME: Unused?
   def resolvePFNNotRegistered( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNNotRegistered prognosis
     """
@@ -278,6 +279,7 @@ class DataIntegrityClient( Client ):
       return self.changeProblematicPrognosis( fileID, 'CatalogPFNSizeMismatch' )
     return self.__updateCompletedFiles( 'PFNNotRegistered', fileID )
 
+  #FIXME: Unused?
   def resolveLFNCatalogMissing( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the LFNCatalogMissing prognosis
     """
@@ -296,6 +298,7 @@ class DataIntegrityClient( Client ):
       return self.__returnProblematicError( fileID, res )
     return self.__updateCompletedFiles( 'LFNCatalogMissing', fileID )
 
+  #FIXME: Unused?
   def resolvePFNMissing( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNMissing prognosis
     """
@@ -345,6 +348,7 @@ class DataIntegrityClient( Client ):
     # If we get here the problem is solved so we can update the integrityDB
     return self.__updateCompletedFiles( 'PFNMissing', fileID )
 
+  #FIXME: Unused?
   def resolvePFNUnavailable( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNUnavailable prognosis
     """
@@ -367,6 +371,7 @@ class DataIntegrityClient( Client ):
     # Need to make the replica okay in the Catalog
     return self.__updateReplicaToChecked( problematicDict )
 
+  #FIXME: Unused?
   def resolvePFNZeroSize( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolves the PFNZeroSize prognosis
     """
@@ -408,6 +413,7 @@ class DataIntegrityClient( Client ):
 
   ############################################################################################
 
+  #FIXME: Unused?
   def resolveLFNZeroReplicas( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolves the LFNZeroReplicas prognosis
     """
@@ -437,3 +443,16 @@ class DataIntegrityClient( Client ):
         gLogger.info( "LFNZeroReplicas file (%d) removed from catalog" % fileID )
     # If we get here the problem is solved so we can update the integrityDB
     return self.__updateCompletedFiles( 'LFNZeroReplicas', fileID )
+
+
+  def _reportProblematicFiles( self, lfns, reason ):
+    """ Simple wrapper function around setFileProblematic
+    """
+    gLogger.info( 'The following %s files were found with %s' % ( len( lfns ), reason ) )
+    for lfn in sorted( lfns ):
+      gLogger.info( lfn )
+    res = self.setFileProblematic( lfns, reason, sourceComponent = 'DataIntegrityClient' )
+    if not res['OK']:
+      gLogger.info( 'Failed to update integrity DB with files', res['Message'] )
+    else:
+      gLogger.info( 'Successfully updated integrity DB with files' )

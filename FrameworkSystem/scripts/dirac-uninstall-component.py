@@ -4,17 +4,16 @@
 Uninstallation of a DIRAC component
 """
 
-__RCSID__ = "$Id$"
-
 import socket
-from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC import exit as DIRACexit
-import DIRAC.FrameworkSystem.Client.ComponentInstaller as gComponentInstaller
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+
+__RCSID__ = "$Id$"
 
 gComponentInstaller.exitOnError = True
 
@@ -26,11 +25,11 @@ def setForce( opVal ):
 
 Script.registerSwitch( "f", "force", "Forces the removal of the logs", setForce )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... System Component|System/Component' % Script.scriptName,
-                                    'Arguments:',
-                                    '  System:  Name of the DIRAC system (ie: WorkloadManagement)',
-                                    '  Component: Name of the DIRAC component (ie: Matcher)'] ) )
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... System Component|System/Component' % Script.scriptName,
+                                     'Arguments:',
+                                     '  System:  Name of the DIRAC system (ie: WorkloadManagement)',
+                                     '  Component: Name of the DIRAC component (ie: Matcher)'] ) )
 
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
@@ -63,7 +62,7 @@ removeLogs = False
 if force:
   removeLogs = True
 else:
-  if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in gComponentInstaller.COMPONENT_TYPES:
+  if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in gComponentInstaller.componentTypes:
     result = promptUser( 'Remove logs?', [ 'y', 'n' ], 'n' )
     if result[ 'OK' ]:
       removeLogs = result[ 'Value' ] == 'y'

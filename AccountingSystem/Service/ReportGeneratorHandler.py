@@ -1,31 +1,32 @@
 """ Module that holds the ReportGeneratorHandler class
 """
 
-__RCSID__ = "$Id$"
-
 import types
 import os
 import datetime
-import errno
 
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities import Time
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
-from DIRAC.AccountingSystem.private.DataCache import gDataCache
+from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.AccountingSystem.private.MainReporter import MainReporter
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
-from DIRAC.AccountingSystem.private.Plots import generateErrorMessagePlot
-from DIRAC.AccountingSystem.private.FileCoding import extractRequestFromFileId
+from DIRAC.Core.Utilities.Plotting.Plots            import generateErrorMessagePlot
+from DIRAC.Core.Utilities.Plotting.FileCoding       import extractRequestFromFileId
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time
+
+
+__RCSID__ = "$Id$"
 
 class ReportGeneratorHandler( RequestHandler ):
   """ DIRAC service class to retrieve information from the AccountingDB
   """
 
-  __acDB = False
+  __acDB = None
   __reportRequestDict = { 'typeName' : types.StringTypes,
                           'reportName' : types.StringTypes,
                           'startTime' : (datetime.datetime, datetime.date),
@@ -45,11 +46,7 @@ class ReportGeneratorHandler( RequestHandler ):
     if "/" != dataPath[0]:
       dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
     gLogger.info( "Data will be written into %s" % dataPath )
-    try:
-      os.makedirs( dataPath )
-    except OSError as e:
-      if e.errno != errno.EEXIST:
-        raise
+    mkDir( dataPath )
     try:
       testFile = "%s/acc.jarl.test" % dataPath
       fd = file( testFile, "w" )

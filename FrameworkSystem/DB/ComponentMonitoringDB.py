@@ -1,18 +1,21 @@
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id$"
-
 import random
 
 from DIRAC  import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, List, Network
 
+__RCSID__ = "$Id$"
+
 class ComponentMonitoringDB( DB ):
 
-  def __init__( self, requireVoms = False,
-               useMyProxy = False ):
+  def __init__( self, requireVoms = False, useMyProxy = False ):
+    """ c'tor
+
+        Initialize the DB
+    """
     DB.__init__( self, 'ComponentMonitoringDB', 'Framework/ComponentMonitoringDB' )
     random.seed()
     retVal = self.__initializeDB()
@@ -55,10 +58,10 @@ class ComponentMonitoringDB( DB ):
                                      'Cycles' : 'INTEGER',
                                      'Queries' : 'INTEGER'
                                    },
-                                   'PrimaryKey' : 'Id',
-                                   'Indexes' : { 'ComponentIndex' : [ 'ComponentName', 'Setup', 'Host', 'Port' ],
-                                                 'TypeIndex' : [ 'Type' ],
-                                               }
+                        'PrimaryKey' : 'Id',
+                        'Indexes' : { 'ComponentIndex' : [ 'ComponentName', 'Setup', 'Host', 'Port' ],
+                                      'TypeIndex' : [ 'Type' ],
+                                    }
                       }
 
     tN = self.__getTableName( "VersionHistory" )
@@ -70,7 +73,7 @@ class ComponentMonitoringDB( DB ):
                                      'Platform' : 'VARCHAR(255) NOT NULL',
                                      'Description' : 'BLOB',
                                    },
-                                  'Indexes' : { 'Component' : [ 'CompId' ] }
+                        'Indexes' : { 'Component' : [ 'CompId' ] }
                       }
 
     return self._createTables( tablesD )
@@ -208,8 +211,8 @@ class ComponentMonitoringDB( DB ):
     if 'startTime' in compDict:
       sqlUpdateFields.append( "StartTime='%s'" % self.__datetime2str( compDict[ 'startTime' ] ) )
     return self._update( "UPDATE `%s` SET %s WHERE Id=%s" % ( self.__getTableName( "Components" ),
-                                                                       ", ".join( sqlUpdateFields ),
-                                                                       compDict[ 'compId' ] ) )
+                                                              ", ".join( sqlUpdateFields ),
+                                                              compDict[ 'compId' ] ) )
 
   def __getComponents( self, condDict ):
     """

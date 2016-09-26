@@ -2,12 +2,8 @@
 Classes and functions for easier management of the InstalledComponents database
 """
 
-__RCSID__ = "$Id$"
-
 import re
 import datetime
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from sqlalchemy import  MetaData, \
                         Column, \
                         Integer, \
@@ -23,20 +19,23 @@ from sqlalchemy.orm import sessionmaker, \
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.sql.expression import null
 
-metadata = MetaData()
-Base = declarative_base()
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
-class Component( Base ):
+__RCSID__ = "$Id$"
+
+metadata = MetaData()
+componentsBase = declarative_base()
+
+class Component( componentsBase ):
   """
   This class defines the schema of the Components table in the
   InstalledComponentsDB database
   """
 
   __tablename__ = 'Components'
-  __table_args__ = {
-    'mysql_engine': 'InnoDB',
-    'mysql_charset': 'utf8'
-  }
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
 
   componentID = Column( 'ComponentID', Integer, primary_key = True )
   system = Column( 'System', String( 32 ), nullable = False )
@@ -44,6 +43,8 @@ class Component( Base ):
   cType = Column( 'Type', String( 32 ), nullable = False )
 
   def __init__( self, system = null(), module = null(), cType = null() ):
+    """ just defines some instance members
+    """
     self.system = system
     self.module = module
     self.cType = cType
@@ -71,12 +72,10 @@ class Component( Base ):
     installations are is included
     """
 
-    dictionary = {
-                  'ComponentID': self.componentID,
+    dictionary = {'ComponentID': self.componentID,
                   'System': self.system,
                   'Module': self.module,
-                  'Type': self.cType
-                  }
+                  'Type': self.cType}
 
     if includeInstallations:
       installations = []
@@ -87,23 +86,21 @@ class Component( Base ):
 
     return S_OK( dictionary )
 
-class Host( Base ):
+class Host( componentsBase ):
   """
   This class defines the schema of the Hosts table in the
   InstalledComponentsDB database
   """
 
   __tablename__ = 'Hosts'
-  __table_args__ = {
-    'mysql_engine': 'InnoDB',
-    'mysql_charset': 'utf8'
-  }
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
 
   hostID = Column( 'HostID', Integer, primary_key = True )
   hostName = Column( 'HostName', String( 32 ), nullable = False )
   cpu = Column( 'CPU', String( 64 ), nullable = False )
   installationList = relationship( 'InstalledComponent',
-                                    backref = 'installationHost' )
+                                   backref = 'installationHost' )
 
   def __init__( self, host = null(), cpu = null() ):
     self.hostName = host
@@ -130,11 +127,9 @@ class Host( Base ):
     Components where installed is included
     """
 
-    dictionary = {
-                  'HostID': self.hostID,
+    dictionary = {'HostID': self.hostID,
                   'HostName': self.hostName,
-                  'CPU': self.cpu
-                  }
+                  'CPU': self.cpu}
 
     if includeInstallations:
       installations = []
@@ -146,44 +141,42 @@ class Host( Base ):
 
     return S_OK( dictionary )
 
-class InstalledComponent( Base ):
+class InstalledComponent( componentsBase ):
   """
   This class defines the schema of the InstalledComponents table in the
   InstalledComponentsDB database
   """
 
   __tablename__ = 'InstalledComponents'
-  __table_args__ = {
-    'mysql_engine': 'InnoDB',
-    'mysql_charset': 'utf8'
-  }
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
 
   componentID = Column( 'ComponentID',
                         Integer,
                         ForeignKey( 'Components.ComponentID' ),
                         primary_key = True )
   hostID = Column( 'HostID',
-                    Integer,
-                    ForeignKey( 'Hosts.HostID' ),
-                    primary_key = True )
+                   Integer,
+                   ForeignKey( 'Hosts.HostID' ),
+                   primary_key = True )
   instance = Column( 'Instance',
-                      String( 32 ),
-                      primary_key = True )
+                     String( 32 ),
+                     primary_key = True )
   installationTime = Column( 'InstallationTime',
-                              DateTime,
-                              primary_key = True )
+                             DateTime,
+                             primary_key = True )
   unInstallationTime = Column( 'UnInstallationTime',
-                                DateTime )
+                               DateTime )
   installedBy = Column( 'InstalledBy', String( 32 ) )
   unInstalledBy = Column( 'UnInstalledBy', String( 32 ) )
   installationComponent = relationship( 'Component',
                                         backref = 'installationList' )
 
   def __init__( self, instance = null(),
-                      installationTime = null(),
-                      unInstallationTime = null(),
-                      installedBy = null(),
-                      unInstalledBy = null() ):
+                installationTime = null(),
+                unInstallationTime = null(),
+                installedBy = null(),
+                unInstalledBy = null() ):
     self.instance = instance
     self.installationTime = installationTime
     self.unInstallationTime = unInstallationTime
@@ -205,9 +198,9 @@ class InstalledComponent( Base ):
     self.unInstallationTime = dictionary.get( 'UnInstallationTime',
                                               self.unInstallationTime )
     self.installedBy = dictionary.get( 'InstalledBy',
-                                              self.installedBy )
+                                       self.installedBy )
     self.unInstalledBy = dictionary.get( 'UnInstalledBy',
-                                              self.unInstalledBy )
+                                         self.unInstalledBy )
 
     return S_OK( 'Successfully read from dictionary' )
 
@@ -220,13 +213,11 @@ class InstalledComponent( Base ):
     installations are is included
     """
 
-    dictionary = {
-                  'Instance': self.instance,
+    dictionary = {'Instance': self.instance,
                   'InstallationTime': self.installationTime,
                   'UnInstallationTime': self.unInstallationTime,
                   'InstalledBy': self.installedBy,
-                  'UnInstalledBy': self.unInstalledBy
-                  }
+                  'UnInstalledBy': self.unInstalledBy}
 
     if includeComponents:
       dictionary[ 'Component' ] = self.installationComponent.toDict()[ 'Value' ]
@@ -240,17 +231,15 @@ class InstalledComponent( Base ):
 
     return S_OK( dictionary )
 
-class HostLogging( Base ):
+class HostLogging( componentsBase ):
   """
   This class defines the schema of the HostLogging table in the
   InstalledComponentsDB database
   """
 
   __tablename__ = 'HostLogging'
-  __table_args__ = {
-    'mysql_engine': 'InnoDB',
-    'mysql_charset': 'utf8'
-  }
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
 
   hostName = Column( 'HostName', String( 32 ), nullable = False, primary_key = True )
   # status
@@ -307,8 +296,7 @@ class HostLogging( Base ):
     Return the object as a dictionary
     """
 
-    dictionary = {
-                  'HostName': self.hostName,
+    dictionary = {'HostName': self.hostName,
                   'DIRACVersion': self.DIRAC,
                   'Extension': self.Extension,
                   'Load1': self.Load1,
@@ -329,8 +317,7 @@ class HostLogging( Base ):
                   'OpenSockets': self.OpenSockets,
                   'Setup': self.Setup,
                   'Uptime': self.Uptime,
-                  'Timestamp': self.Timestamp
-                  }
+                  'Timestamp': self.Timestamp}
 
     return S_OK( dictionary )
 
@@ -358,13 +345,11 @@ class InstalledComponentsDB( object ):
     self.port = dbParameters[ 'Port' ]
     self.user = dbParameters[ 'User' ]
     self.password = dbParameters[ 'Password' ]
-    self.db = dbParameters[ 'DBName' ]
+    self.dbName = dbParameters[ 'DBName' ]
 
-    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' %
-                    ( self.user, self.password, self.host, self.port, self.db ),
-                    pool_recycle = 3600, echo_pool = True
-                    )
-    self.Session = scoped_session( sessionmaker( bind = self.engine ) )
+    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.user, self.password, self.host, self.port, self.dbName ),
+                                 pool_recycle = 3600, echo_pool = True)
+    self.session = scoped_session( sessionmaker( bind = self.engine ) )
     self.inspector = Inspector.from_engine( self.engine )
 
   def __initializeDB( self ):
@@ -375,36 +360,36 @@ class InstalledComponentsDB( object ):
     tablesInDB = self.inspector.get_table_names()
 
     # Components
-    if not 'Components' in tablesInDB:
+    if 'Components' not in tablesInDB:
       try:
-        Component.__table__.create( self.engine )
+        Component.__table__.create( self.engine ) #pylint: disable=no-member
       except Exception as e:
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'Components\' already exists' )
 
     # Hosts
-    if not 'Hosts' in tablesInDB:
+    if 'Hosts' not in tablesInDB:
       try:
-        Host.__table__.create( self.engine )
+        Host.__table__.create( self.engine ) #pylint: disable=no-member
       except Exception as e:
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'Hosts\' already exists' )
 
     # InstalledComponents
-    if not 'InstalledComponents' in tablesInDB:
+    if 'InstalledComponents' not in tablesInDB:
       try:
-        InstalledComponent.__table__.create( self.engine )
+        InstalledComponent.__table__.create( self.engine ) #pylint: disable=no-member
       except Exception as e:
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'InstalledComponents\' already exists' )
 
     # HostLogging
-    if not 'HostLogging' in tablesInDB:
+    if 'HostLogging' not in tablesInDB:
       try:
-        HostLogging.__table__.create( self.engine )
+        HostLogging.__table__.create( self.engine ) #pylint: disable=no-member
       except Exception as e:
         return S_ERROR( e )
     else:
@@ -412,7 +397,7 @@ class InstalledComponentsDB( object ):
 
     return S_OK( 'Tables created' )
 
-  def __filterFields( self, session, table, matchFields = {} ):
+  def __filterFields( self, session, table, matchFields = None ):
     """
     Filters instances of a selection by finding matches on the given fields
     session argument is a Session instance used to retrieve the items
@@ -424,9 +409,12 @@ class InstalledComponentsDB( object ):
     If matchFields is empty, no filtering will be done
     """
 
+    if matchFields is None:
+      matchFields = {}
+
     filtered = session.query( table )
 
-    for key in matchFields.keys():
+    for key in matchFields:
       actualKey = key
 
       comparison = '='
@@ -439,14 +427,14 @@ class InstalledComponentsDB( object ):
 
       if matchFields[ key ] == None:
         sql = '%s IS NULL' % ( actualKey )
-      elif type( matchFields[ key ] ) == list:
+      elif isinstance( matchFields[ key ], list):
         if len( matchFields[ key ] ) > 0 and not None in matchFields[ key ]:
           sql = '%s IN ( ' % ( actualKey )
           for i, element in enumerate( matchFields[ key ] ):
             toAppend = element
-            if type( toAppend ) == datetime.datetime:
+            if isinstance( toAppend, datetime.datetime):
               toAppend = toAppend.strftime( "%Y-%m-%d %H:%M:%S" )
-            if type( toAppend in [ datetime.datetime, str ] ):
+            if isinstance( toAppend, (datetime.datetime, str) ):
               toAppend = '\'%s\'' % ( toAppend )
             if i == 0:
               sql = '%s%s' % ( sql, toAppend )
@@ -455,9 +443,9 @@ class InstalledComponentsDB( object ):
           sql = '%s )' % ( sql )
         else:
           continue
-      elif type( matchFields[ key ] ) == str:
+      elif isinstance( matchFields[ key ], basestring):
         sql = '%s %s \'%s\'' % ( actualKey, comparison, matchFields[ key ] )
-      elif type( matchFields[ key ] ) == datetime.datetime:
+      elif isinstance( matchFields[ key ], datetime.datetime):
         sql = '%s %s \'%s\'' % \
                         ( actualKey,
                           comparison,
@@ -475,7 +463,7 @@ class InstalledComponentsDB( object ):
 
     return S_OK( filtered )
 
-  def __filterInstalledComponentsFields( self, session, matchFields = {} ):
+  def __filterInstalledComponentsFields( self, session, matchFields = None ):
     """
     Filters instances by finding matches on the given fields in the same way
     as the '__filterFields' function
@@ -490,19 +478,21 @@ class InstalledComponentsDB( object ):
     matchFields argument should be a dictionary with the fields to match.
     If matchFields is empty, no filtering will be done
     """
-
+    if matchFields is None:
+      matchFields = {}
     componentKeys = {}
-    for ( key, val ) in matchFields.items():
+
+    for ( key, val ) in matchFields.iteritems():
       if 'Component.' in key:
         componentKeys[ key.replace( 'Component.', '' ) ] = val
 
     hostKeys = {}
-    for ( key, val ) in matchFields.items():
+    for ( key, val ) in matchFields.iteritems():
       if 'Host.' in key:
         hostKeys[ key.replace( 'Host.', '' ) ] = val
 
     selfKeys = {}
-    for ( key, val ) in matchFields.items():
+    for ( key, val ) in matchFields.iteritems():
       if not 'Component.' in key and not 'Host.' in key:
         selfKeys[ key ] = val
 
@@ -547,7 +537,7 @@ class InstalledComponentsDB( object ):
     'Host.attribute' if table equals InstalledComponent
     """
 
-    session = self.Session()
+    session = self.session()
 
     if table == InstalledComponent:
       result = self.__filterInstalledComponentsFields( session, matchFields )
@@ -577,7 +567,7 @@ class InstalledComponentsDB( object ):
     the database it is necessary to call commitChanges()
     """
 
-    session = self.Session()
+    session = self.session()
 
     component = Component()
     component.fromDict( newComponent )
@@ -599,7 +589,7 @@ class InstalledComponentsDB( object ):
     session.close()
     return S_OK( 'Component successfully added' )
 
-  def removeComponents( self, matchFields = {} ):
+  def removeComponents( self, matchFields = None ):
     """
     Removes components with matches in the given fields
     matchFields argument should be a dictionary with the fields and values
@@ -611,8 +601,10 @@ class InstalledComponentsDB( object ):
     NOTE: The removal of the items is temporary. To commit the changes to
     the database it is necessary to call commitChanges()
     """
+    if matchFields is None:
+      matchFields = {}
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterFields( session, Component, matchFields )
     if not result[ 'OK' ]:
@@ -634,9 +626,9 @@ class InstalledComponentsDB( object ):
     return S_OK( 'Components successfully removed' )
 
   def getComponents( self,
-                        matchFields = {},
-                        includeInstallations = False,
-                        includeHosts = False ):
+                     matchFields = {},
+                     includeInstallations = False,
+                     includeHosts = False ):
     """
     Returns a list with all the components with matches in the given fields
     matchFields argument should be a dictionary with the fields to match or
@@ -650,7 +642,7 @@ class InstalledComponentsDB( object ):
     is to be retrieved
     """
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterFields( session, Component, matchFields )
     if not result[ 'OK' ]:
@@ -693,7 +685,7 @@ class InstalledComponentsDB( object ):
     Checks whether the given component exists in the database or not
     """
 
-    session = self.Session()
+    session = self.session()
 
     try:
       query = session.query( Component )\
@@ -703,8 +695,7 @@ class InstalledComponentsDB( object ):
     except Exception as e:
       session.rollback()
       session.close()
-      return S_ERROR( 
-                  'Couldn\'t check the existence of the component: %s' % ( e ) )
+      return S_ERROR('Couldn\'t check the existence of the component: %s' % ( e ) )
 
     session.commit()
     session.close()
@@ -727,7 +718,7 @@ class InstalledComponentsDB( object ):
     their new updated values
     """
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterFields( session, Component, matchFields )
     if not result[ 'OK' ]:
@@ -759,7 +750,7 @@ class InstalledComponentsDB( object ):
     the database it is necessary to call commitChanges()
     """
 
-    session = self.Session()
+    session = self.session()
 
     host = Host()
     host.fromDict( newHost )
@@ -794,7 +785,7 @@ class InstalledComponentsDB( object ):
     the database it is necessary to call commitChanges()
     """
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterFields( session, Host, matchFields )
     if not result[ 'OK' ]:
@@ -816,9 +807,9 @@ class InstalledComponentsDB( object ):
     return S_OK( 'Hosts successfully removed' )
 
   def getHosts( self,
-                  matchFields = {},
-                  includeInstallations = False,
-                  includeComponents = False ):
+                matchFields = {},
+                includeInstallations = False,
+                includeComponents = False ):
     """
     Returns a list with all the hosts with matches in the given fields
     matchFields argument should be a dictionary with the fields to match or
@@ -832,7 +823,7 @@ class InstalledComponentsDB( object ):
     be retrieved
     """
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterFields( session, Host, matchFields )
     if not result[ 'OK' ]:
@@ -876,7 +867,7 @@ class InstalledComponentsDB( object ):
     Checks whether the given host exists in the database or not
     """
 
-    session = self.Session()
+    session = self.session()
 
     try:
       query = session.query( Host )\
@@ -907,7 +898,7 @@ class InstalledComponentsDB( object ):
     their new updated values
     """
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterFields( session, Host, matchFields )
     if not result[ 'OK' ]:
@@ -931,10 +922,10 @@ class InstalledComponentsDB( object ):
     return S_OK( 'Host(s) updated' )
 
   def addInstalledComponent( self,
-                                newInstallation,
-                                componentDict,
-                                hostDict,
-                                forceCreate = False ):
+                             newInstallation,
+                             componentDict,
+                             hostDict,
+                             forceCreate = False ):
     """
     Add a new installation of a component to the database
     installation argument should be a dictionary with the InstalledComponent
@@ -950,7 +941,7 @@ class InstalledComponentsDB( object ):
     the database it is necessary to call commitChanges()
     """
 
-    session = self.Session()
+    session = self.session()
 
     installation = InstalledComponent()
     installation.fromDict( newInstallation )
@@ -1020,9 +1011,7 @@ class InstalledComponentsDB( object ):
     session.close()
     return S_OK( 'InstalledComponent successfully added' )
 
-  def getInstalledComponents( self,
-                                  matchFields = {},
-                                  installationsInfo = False ):
+  def getInstalledComponents( self, matchFields = None, installationsInfo = False ):
     """
     Returns a list with all the InstalledComponents with matches in the given
     fields
@@ -1034,8 +1023,10 @@ class InstalledComponentsDB( object ):
     installationsInfo indicates whether information about the components and
     host taking part in the installation is to be provided
     """
+    if matchFields is None:
+      matchFields = {}
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterInstalledComponentsFields( session, matchFields )
     if not result[ 'OK' ]:
@@ -1071,7 +1062,7 @@ class InstalledComponentsDB( object ):
     their new updated values
     """
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterInstalledComponentsFields( session, matchFields )
     if not result[ 'OK' ]:
@@ -1108,7 +1099,7 @@ class InstalledComponentsDB( object ):
     the database it is necessary to call commitChanges()
     """
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterInstalledComponentsFields( session, matchFields )
     if not result[ 'OK' ]:
@@ -1139,7 +1130,7 @@ class InstalledComponentsDB( object ):
     Valid keys for newLog include fields that are present in a HostLogging object:
     HostName, DIRACVersion, Load1, Load5, ... of which only HostName is mandatory
     """
-    session = self.Session()
+    session = self.session()
 
     log = HostLogging()
     log.fromDict( newLog )
@@ -1171,7 +1162,7 @@ class InstalledComponentsDB( object ):
     matchFields argument can be empty to remove all the logs
     """
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterFields( session, HostLogging, matchFields )
     if not result[ 'OK' ]:
@@ -1201,7 +1192,7 @@ class InstalledComponentsDB( object ):
     <Field.smaller> to filter using > and < relationships
     """
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterFields( session, HostLogging, matchFields )
     if not result[ 'OK' ]:
@@ -1234,7 +1225,7 @@ class InstalledComponentsDB( object ):
     their new updated values
     """
 
-    session = self.Session()
+    session = self.session()
 
     result = self.__filterFields( session, HostLogging, matchFields )
     if not result[ 'OK' ]:

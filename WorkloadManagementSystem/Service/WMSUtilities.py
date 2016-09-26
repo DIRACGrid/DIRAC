@@ -2,8 +2,6 @@
     Requires the Nordugrid ARC plugins. In particular : nordugrid-arc-python
 """
 
-__RCSID__ = "$Id$"
-
 import shutil
 import os
 
@@ -12,6 +10,8 @@ from tempfile import mkdtemp
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
+
+__RCSID__ = "$Id$"
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
@@ -114,4 +114,3 @@ def getPilotLoggingInfo( grid, pilotRef ):
     return S_ERROR( error )
 
   return S_OK( output )
-

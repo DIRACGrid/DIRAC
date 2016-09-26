@@ -1,4 +1,5 @@
-__RCSID__ = "$Id$"
+""" ConfigurationData module is the base for cfg files management
+"""
 
 import os.path
 import zlib
@@ -6,11 +7,15 @@ import zipfile
 import thread
 import time
 import DIRAC
+
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+
+__RCSID__ = "$Id$"
 
 class ConfigurationData( object ):
 
@@ -44,13 +49,13 @@ class ConfigurationData( object ):
     self.mergedCFG = self.remoteCFG.mergeWith( self.localCFG )
     self.remoteServerList = []
     localServers = self.extractOptionFromCFG( "%s/Servers" % self.configurationPath,
-                                        self.localCFG,
-                                        disableDangerZones = True )
+                                              self.localCFG,
+                                              disableDangerZones = True )
     if localServers:
       self.remoteServerList.extend( List.fromChar( localServers, "," ) )
     remoteServers = self.extractOptionFromCFG( "%s/Servers" % self.configurationPath,
-                                        self.remoteCFG,
-                                        disableDangerZones = True )
+                                               self.remoteCFG,
+                                               disableDangerZones = True )
     if remoteServers:
       self.remoteServerList.extend( List.fromChar( remoteServers, "," ) )
     self.remoteServerList = List.uniqueElements( self.remoteServerList )
@@ -197,60 +202,49 @@ class ConfigurationData( object ):
   def setVersion( self, version, cfg = False ):
     if not cfg:
       cfg = self.remoteCFG
-    self.setOptionInCFG( "%s/Version" % self.configurationPath,
-                                  version,
-                                  cfg )
+    self.setOptionInCFG( "%s/Version" % self.configurationPath, version, cfg )
 
   def getVersion( self, cfg = False ):
     if not cfg:
       cfg = self.remoteCFG
-    value = self.extractOptionFromCFG( "%s/Version" % self.configurationPath,
-                                        cfg )
+    value = self.extractOptionFromCFG( "%s/Version" % self.configurationPath, cfg )
     if value:
       return value
     return "0"
 
   def getName( self ):
-    return self.extractOptionFromCFG( "%s/Name" % self.configurationPath,
-                                        self.mergedCFG )
+    return self.extractOptionFromCFG( "%s/Name" % self.configurationPath, self.mergedCFG )
 
   def exportName( self ):
-    return self.setOptionInCFG( "%s/Name" % self.configurationPath,
-                                self.getName(),
-                                self.remoteCFG )
+    return self.setOptionInCFG( "%s/Name" % self.configurationPath, self.getName(), self.remoteCFG )
 
   def getRefreshTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/RefreshTime" % self.configurationPath,
-                                        self.mergedCFG ) )
+      return int( self.extractOptionFromCFG( "%s/RefreshTime" % self.configurationPath, self.mergedCFG ) )
     except:
       return 300
 
   def getPropagationTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/PropagationTime" % self.configurationPath,
-                                        self.mergedCFG ) )
+      return int( self.extractOptionFromCFG( "%s/PropagationTime" % self.configurationPath, self.mergedCFG ) )
     except:
       return 300
 
   def getSlavesGraceTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/SlavesGraceTime" % self.configurationPath,
-                                        self.mergedCFG ) )
+      return int( self.extractOptionFromCFG( "%s/SlavesGraceTime" % self.configurationPath, self.mergedCFG ) )
     except:
       return 600
 
   def mergingEnabled( self ):
     try:
-      val = self.extractOptionFromCFG( "%s/EnableAutoMerge" % self.configurationPath,
-                                        self.mergedCFG )
+      val = self.extractOptionFromCFG( "%s/EnableAutoMerge" % self.configurationPath, self.mergedCFG )
       return val.lower() in ( "yes", "true", "y" )
     except:
       return False
 
   def getAutoPublish( self ):
-    value = self.extractOptionFromCFG( "%s/AutoPublish" % self.configurationPath,
-                                        self.localCFG )
+    value = self.extractOptionFromCFG( "%s/AutoPublish" % self.configurationPath, self.localCFG )
     if value and value.lower() in ( "no", "false", "n" ):
       return False
     else:
@@ -260,26 +254,20 @@ class ConfigurationData( object ):
     return list( self.remoteServerList )
 
   def getConfigurationGateway( self ):
-    return self.extractOptionFromCFG( "/DIRAC/Gateway",
-                                        self.localCFG )
+    return self.extractOptionFromCFG( "/DIRAC/Gateway", self.localCFG )
 
   def setServers( self, sServers ):
-    self.setOptionInCFG( "%s/Servers" % self.configurationPath,
-                                  sServers,
-                                  self.remoteCFG )
+    self.setOptionInCFG( "%s/Servers" % self.configurationPath, sServers, self.remoteCFG )
     self.sync()
 
   def deleteLocalOption( self, optionPath ):
     self.deleteOptionInCFG( optionPath, self.localCFG )
 
   def getMasterServer( self ):
-    return self.extractOptionFromCFG( "%s/MasterServer" % self.configurationPath,
-                                      self.remoteCFG )
+    return self.extractOptionFromCFG( "%s/MasterServer" % self.configurationPath, self.remoteCFG )
 
   def setMasterServer( self, sURL ):
-    self.setOptionInCFG( "%s/MasterServer" % self.configurationPath,
-                         sURL,
-                         self.remoteCFG )
+    self.setOptionInCFG( "%s/MasterServer" % self.configurationPath, sURL, self.remoteCFG )
     self.sync()
 
   def getCompressedData( self ):
@@ -288,8 +276,7 @@ class ConfigurationData( object ):
     return self.__compressedConfigurationData
 
   def isMaster( self ):
-    value = self.extractOptionFromCFG( "%s/Master" % self.configurationPath,
-                                            self.localCFG )
+    value = self.extractOptionFromCFG( "%s/Master" % self.configurationPath, self.localCFG )
     if value and value.lower() in ( "yes", "true", "y" ):
       return True
     else:
@@ -341,10 +328,7 @@ class ConfigurationData( object ):
     configurationFile = os.path.join( DIRAC.rootPath, "etc", configurationFilename )
     today = Time.date()
     backupPath = os.path.join( self.getBackupDir(), str( today.year ), "%02d" % today.month )
-    try:
-      os.makedirs( backupPath )
-    except:
-      pass
+    mkDir(backupPath)
     backupFile = os.path.join( backupPath, configurationFilename.replace( ".cfg", ".%s.zip" % backupName ) )
     if os.path.isfile( configurationFile ):
       gLogger.info( "Making a backup of configuration in %s" % backupFile )
@@ -354,8 +338,7 @@ class ConfigurationData( object ):
         zf.close()
       except Exception:
         gLogger.exception()
-        gLogger.error( "Cannot backup configuration data file",
-                     "file %s" % backupFile )
+        gLogger.error( "Cannot backup configuration data file", "file %s" % backupFile )
     else:
       gLogger.warn( "CS data file does not exist", configurationFile )
 

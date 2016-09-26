@@ -3,14 +3,12 @@
     Utilities and classes here are used by MatcherHandler
 """
 
-__RCSID__ = "$Id"
-
 import time
 
 from DIRAC import gLogger
 
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.PrettyPrint import printDict
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -23,6 +21,8 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, \
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+
+__RCSID__ = "$Id"
 
 
 class Matcher( object ):
@@ -66,6 +66,21 @@ class Matcher( object ):
     startTime = time.time()
 
     resourceDict = self._getResourceDict( resourceDescription, credDict )
+
+    # Make a nice print of the resource matching parameters
+    toPrintDict = dict( resourceDict )
+    if "MaxRAM" in resourceDescription:
+      toPrintDict['MaxRAM'] = resourceDescription['MaxRAM']
+    if "Processors" in resourceDescription:
+      toPrintDict['Processors'] = resourceDescription['Processors']
+    toPrintDict['Tag'] = []
+    if "Tag" in resourceDict:
+      for tag in resourceDict['Tag']:
+        if not tag.endswith( 'GB' ) and not tag.endswith( 'Processors' ):
+          toPrintDict['Tag'].append( tag )
+    if not toPrintDict['Tag']:
+      toPrintDict.pop( 'Tag' )
+    gLogger.info( 'Resource description for matching', printDict( toPrintDict ) )
 
     negativeCond = self.limiter.getNegativeCondForSite( resourceDict['Site'] )
     result = self.tqDB.matchAndGetJob( resourceDict, negativeCond = negativeCond )
@@ -153,73 +168,51 @@ class Matcher( object ):
     """
 
     resourceDict = {}
-    if isinstance( resourceDescription, basestring ):
-      classAdAgent = ClassAd( resourceDescription )
-      if not classAdAgent.isOK():
-        raise ValueError( 'Illegal Resource JDL' )
-      self.log.verbose( classAdAgent.asJDL() )
+    for name in singleValueDefFields:
+      if resourceDescription.has_key( name ):
+        resourceDict[name] = resourceDescription[name]
 
-      for name in singleValueDefFields:
-        if classAdAgent.lookupAttribute( name ):
-          if name == 'CPUTime':
-            resourceDict[name] = classAdAgent.getAttributeInt( name )
-          else:
-            resourceDict[name] = classAdAgent.getAttributeString( name )
+    for name in multiValueMatchFields:
+      if name in resourceDescription:
+        resourceDict[name] = resourceDescription[name]
 
-      for name in multiValueMatchFields:
-        if classAdAgent.lookupAttribute( name ):
-          if name == 'SubmitPool':
-            resourceDict[name] = classAdAgent.getListFromExpression( name )
-          else:
-            resourceDict[name] = classAdAgent.getAttributeString( name )
+    for name in tagMatchFields:
+      if name in resourceDescription and resourceDescription[name]:
+        resourceDict[name] = resourceDescription[name]
+      rname = 'Required%s' % name
+      if rname in resourceDescription:
+        resourceDict[rname] = resourceDescription[rname]
 
-      # Check if a JobID is requested
-      if classAdAgent.lookupAttribute( 'JobID' ):
-        resourceDict['JobID'] = classAdAgent.getAttributeInt( 'JobID' )
+    if 'JobID' in resourceDescription:
+      resourceDict['JobID'] = resourceDescription['JobID']
 
-      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization' ):
-        if classAdAgent.lookupAttribute( k ):
-          resourceDict[ k ] = classAdAgent.getAttributeString( k )
+    # Convert MaxRAM and Processors parameters into a list of tags
+    maxRAM = resourceDescription.get( 'MaxRAM' )
+    if maxRAM:
+      try:
+        maxRAM = int( maxRAM )/1000
+      except ValueError:
+        maxRAM = None
+    nProcessors = resourceDescription.get( 'Processors' )
+    if nProcessors:
+      try:
+        nProcessors = int( nProcessors )
+      except ValueError:
+        nProcessors = None
+    for param, key in [ ( maxRAM, 'GB' ), ( nProcessors, 'Processors' ) ]:
+      if param and param <= 128 :
+        paramList = range( 2, param + 1 )
+        paramTags = [ '%d%s' % ( par, key ) for par in paramList ]
+        if paramTags:
+          resourceDict.setdefault( "Tag", [] ).extend( paramTags )
 
-    else:
-      for name in singleValueDefFields:
-        if resourceDescription.has_key( name ):
-          resourceDict[name] = resourceDescription[name]
+    if 'Tag' in resourceDict:
+      resourceDict['Tag'] = list( set( resourceDict['Tag'] ) )
 
-      for name in multiValueMatchFields:
-        if name in resourceDescription:
-          resourceDict[name] = resourceDescription[name]
-
-      for name in tagMatchFields:
-        if name in resourceDescription:
-          resourceDict[name] = resourceDescription[name]
-        rname = 'Required%s' % name
-        if rname in resourceDescription:
-          resourceDict[rname] = resourceDescription[rname]
-
-      if 'JobID' in resourceDescription:
-        resourceDict['JobID'] = resourceDescription['JobID']
-
-      # Convert MaxRAM and NumberOfProcessors parameters into a list of tags
-      maxRAM = resourceDescription.get( 'MaxRAM' )
-      nProcessors = resourceDescription.get( 'NumberOfProcessors' )
-      for param, key in [ ( maxRAM, 'GB' ), ( nProcessors, 'Processors' ) ]:
-        if param:
-          try:
-            intValue = int( param )/1000
-            if intValue <= 128:
-              paramList = range( 1, intValue + 1 )
-              paramTags = [ '%d%s' % ( par, key ) for par in paramList ]
-              resourceDict.setdefault( "Tag", [] ).extend( paramTags )
-          except ValueError:
-            pass
-      if 'Tag' in resourceDict:
-        resourceDict['Tag'] = list( set( resourceDict['Tag'] ) )
-
-      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
-                 'PilotReference', 'PilotBenchmark', 'PilotInfoReportedFlag' ):
-        if k in resourceDescription:
-          resourceDict[ k ] = resourceDescription[ k ]
+    for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
+               'PilotReference', 'PilotBenchmark', 'PilotInfoReportedFlag' ):
+      if k in resourceDescription:
+        resourceDict[ k ] = resourceDescription[ k ]
 
     return resourceDict
 
@@ -282,8 +275,8 @@ class Matcher( object ):
       result = self.pilotAgentsDB.setPilotStatus( pilotReference, status = 'Running', gridSite = site,
                                                   destination = gridCE, benchmark = benchmark )
       if not result['OK']:
-        self.log.error( "Problem updating pilot information",
-                        "; setPilotStatus. pilotReference: %s; %s" % ( pilotReference, result['Message'] ) )
+        self.log.warn( "Problem updating pilot information",
+                       "; setPilotStatus. pilotReference: %s; %s" % ( pilotReference, result['Message'] ) )
 
   def _updatePilotJobMapping( self, resourceDict, jobID ):
     """ Update pilot to job mapping information

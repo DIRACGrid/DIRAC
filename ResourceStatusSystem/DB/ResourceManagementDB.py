@@ -1,4 +1,3 @@
-# $HeadURL:  $
 ''' ResourceManagementDB
 
   Module that provides basic methods to access the ResourceManagementDB.
@@ -267,12 +266,12 @@ class ResourceManagementDB( object ):
     return MySQLWrapper.select( self, params, meta )
 
   def delete( self, params, meta ):
-    '''
+    """
     Uses arguments to build conditional SQL statement ( WHERE ... ). If the
     sql statement desired is more complex, you can use kwargs to interact with
     the MySQL buildCondition parser and generate a more sophisticated query.
     There is only one forbidden query, with all parameters None ( this would
-    mean a query of the type `DELETE * from TableName` ). The usage of kwargs
+    mean a query of the type DELETE * from TableName ). The usage of kwargs
     is the same as in the get function.
 
     :Parameters:
@@ -284,7 +283,7 @@ class ResourceManagementDB( object ):
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
     return MySQLWrapper.delete( self, params, meta )
 
   ## Extended SQL methods ######################################################
