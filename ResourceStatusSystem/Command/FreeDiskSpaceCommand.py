@@ -5,9 +5,10 @@
 '''
 
 from datetime                                                   import datetime
-from DIRAC                                                      import S_OK, S_ERROR, gConfig
+from DIRAC                                                      import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
+from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
 __RCSID__ = '$Id:  $'
 
@@ -58,45 +59,57 @@ class FreeDiskSpaceCommand( Command ):
 
     return result
 
-  def getAllUrls(self, protocol = None ):
-    """
-    Gets all the urls of storage elements from CS.
-    If protocol is set, then it is going to fetch only
-    the urls that use the given protocol.
+  def _prepareCommand( self ):
+    '''
+      FreeDiskSpaceCommand requires one argument:
+      - element : Resource
 
-    :param protocol: String
-    :return: Dictionary of { StorageElementName : Url }
-    """
+    '''
 
-    if protocol:
-      # Not case-sensitive
-      protocol = protocol.lower()
+    if 'element' not in self.args:
+      return S_ERROR( '"element" not found in self.args' )
+    element = self.args[ 'element' ]
 
-    SEs = gConfig.getSections("/Resources/StorageElements/")
+    return S_OK( element )
 
-    urls = {}
-    for SE in SEs['Value']:
-      res = self.getUrl( SE, protocol )
-      if res:
-        urls.update( {SE: res} )
-
-    return urls
-
-  def doCommand( self ):
+  def doNew( self, masterParams = None ):
     """
     Gets the total and the free disk space of all DIPS storage elements that
     are found in the CS and inserts the results in the SpaceTokenOccupancyCache table
     of ResourceManagementDB database.
     """
 
-    DIPSurls = self.getAllUrls( "dips" )
+    if masterParams is not None:
+      element = masterParams
+    else:
+      element = self._prepareCommand()
+      if not element[ 'OK' ]:
+        return element
 
-    if DIPSurls:
-      for name in DIPSurls:
-        self.rpc = RPCClient( DIPSurls[name], timeout=120 )
-        free = self.rpc.getFreeDiskSpace("/")
-        total = self.rpc.getTotalDiskSpace("/")
-        self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint = DIPSurls[name], lastCheckTime = datetime.utcnow(),
-                                                          free = free, total = total, token = name )
+    elementURL = self.getUrl(element, "dips")
+
+    if not elementURL:
+      gLogger.info( "Not a DIPS storage element, skipping..." )
+      return S_OK()
+
+    self.rpc = RPCClient( elementURL, timeout=120 )
+    free = self.rpc.getFreeDiskSpace("/")
+    total = self.rpc.getTotalDiskSpace("/")
+    self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint = elementURL, lastCheckTime = datetime.utcnow(),
+                                                      free = free, total = total, token = element )
+
+    return S_OK()
+
+  def doCache( self ):
+    return S_OK()
+
+  def doMaster( self ):
+
+    elements = CSHelpers.getStorageElements()
+
+    for name in elements:
+      diskSpace = self.doNew( name )
+      if not diskSpace[ 'OK' ]:
+        S_ERROR( "doNew command failed %s"  % diskSpace )
 
     return S_OK()
