@@ -10,7 +10,8 @@
     The DIRAC APIs are used to create Jobs that make use of these modules.
 """
 
-import os, copy
+import os
+import copy
 
 from DIRAC                                                  import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
@@ -464,15 +465,15 @@ class ModuleBase( object ):
 
     if fileMask and fileMask != ['']:
       for fileName, metadata in candidateFiles.items():
-        if ( ( metadata['type'].lower() not in fileMask ) ):  # and ( fileName.split( '.' )[-1] not in fileMask ) ):
-          del( candidateFiles[fileName] )
+        if metadata['type'].lower() not in fileMask:  # and ( fileName.split( '.' )[-1] not in fileMask ) ):
+          del candidateFiles[fileName]
           self.log.info( 'Output file %s was produced but will not be treated (fileMask is %s)' % ( fileName,
-                                                                                              ', '.join( fileMask ) ) )
+                                                                                                    ', '.join( fileMask ) ) )
     else:
       self.log.info( 'No outputDataFileMask provided, the files with all the extensions will be considered' )
 
     if stepMask and stepMask != ['']:
-      # FIXME: This supposes that the LFN contains the step ID
+      # This supposes that the LFN contains the step ID
       for fileName, metadata in candidateFiles.items():
         if fileName.split( '_' )[-1].split( '.' )[0] not in stepMask:
           del( candidateFiles[fileName] )

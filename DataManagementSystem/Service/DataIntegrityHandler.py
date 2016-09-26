@@ -1,19 +1,13 @@
-########################################################################
-# $HeadURL $
-# File: DataIntegrityHandler.py
-########################################################################
-""" 
+"""
 :mod: DataIntegrityHandler
- 
+
 
 .. module: DataIntegrityHandler
 
-  :synopsis: DataIntegrityHandler is the implementation of the Data Integrity service in 
+  :synopsis: DataIntegrityHandler is the implementation of the Data Integrity service in
   the DISET framework
 
 """
-
-__RCSID__ = "$Id$"
 
 ## imports
 from types import DictType, IntType, LongType, ListType, StringTypes
@@ -21,6 +15,8 @@ from types import DictType, IntType, LongType, ListType, StringTypes
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK
 from DIRAC.DataManagementSystem.DB.DataIntegrityDB import DataIntegrityDB
+
+__RCSID__ = "$Id$"
 
 # This is a global instance of the DataIntegrityDB class
 gDataIntegrityDB = False

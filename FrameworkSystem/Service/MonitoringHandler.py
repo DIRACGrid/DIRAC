@@ -186,7 +186,7 @@ class MonitoringHandler( RequestHandler ):
     for acList in deletionList:
       retVal = gServiceInterface.deleteActivity( acList[0], acList[1] )
       if not retVal[ 'OK' ]:
-        failed.append( retVal[ 'Value' ] )
+        failed.append( retVal[ 'Message' ] )
     if failed:
       return S_ERROR( "\n".join( failed ) )
     return S_OK()

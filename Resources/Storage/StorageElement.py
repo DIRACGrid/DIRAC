@@ -1,10 +1,8 @@
 """ This is the StorageElement class.
 """
 
-__RCSID__ = "$Id$"
-
-# # custom duty
 import re
+# # custom duty
 import time
 import datetime
 import copy
@@ -27,6 +25,8 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
+__RCSID__ = "$Id$"
+
 
 class StorageElementCache( object ):
 
@@ -36,6 +36,13 @@ class StorageElementCache( object ):
   def __call__( self, name, plugins = None, vo = None, hideExceptions = False ):
     self.seCache.purgeExpired( expiredInSeconds = 60 )
     tId = threading.current_thread().ident
+
+    if not vo:
+      result = getVOfromProxyGroup()
+      if not result['OK']:
+        return
+      vo = result['Value']
+
     argTuple = ( tId, name, plugins, vo )
     seObj = self.seCache.get( argTuple )
 
@@ -94,26 +101,26 @@ class StorageElementItem( object ):
   # Some methods have a different name in the StorageElement and the plugins...
   # We could avoid this static list in the __getattr__ by checking the storage plugin and so on
   # but fine... let's not be too smart, otherwise it becomes unreadable :-)
-  __equivalentMethodNames = {"exists" : "exists",
-                            "isFile" : "isFile",
-                            "getFile" : "getFile",
-                            "putFile" : "putFile",
-                            "replicateFile" : "putFile",
-                            "getFileMetadata" : "getFileMetadata",
-                            "getFileSize" : "getFileSize",
-                            "removeFile" : "removeFile",
-                            "prestageFile" : "prestageFile",
-                            "prestageFileStatus" : "prestageFileStatus",
-                            "pinFile" : "pinFile",
-                            "releaseFile" : "releaseFile",
-                            "isDirectory" : "isDirectory",
-                            "getDirectoryMetadata" : "getDirectoryMetadata",
-                            "getDirectorySize" : "getDirectorySize",
-                            "listDirectory" : "listDirectory",
-                            "removeDirectory" : "removeDirectory",
-                            "createDirectory" : "createDirectory",
-                            "putDirectory" : "putDirectory",
-                            "getDirectory" : "getDirectory",
+  __equivalentMethodNames = { "exists" : "exists",
+                              "isFile" : "isFile",
+                              "getFile" : "getFile",
+                              "putFile" : "putFile",
+                              "replicateFile" : "putFile",
+                              "getFileMetadata" : "getFileMetadata",
+                              "getFileSize" : "getFileSize",
+                              "removeFile" : "removeFile",
+                              "prestageFile" : "prestageFile",
+                              "prestageFileStatus" : "prestageFileStatus",
+                              "pinFile" : "pinFile",
+                              "releaseFile" : "releaseFile",
+                              "isDirectory" : "isDirectory",
+                              "getDirectoryMetadata" : "getDirectoryMetadata",
+                              "getDirectorySize" : "getDirectorySize",
+                              "listDirectory" : "listDirectory",
+                              "removeDirectory" : "removeDirectory",
+                              "createDirectory" : "createDirectory",
+                              "putDirectory" : "putDirectory",
+                              "getDirectory" : "getDirectory",
                             }
 
   # We can set default argument in the __executeFunction which impacts all plugins
@@ -123,7 +130,7 @@ class StorageElementItem( object ):
                          "pinFile" : { "lifetime" : 60 * 60 * 24 },
                          "removeDirectory" : { "recursive" : False },
                          "getDirectory" : { "localPath" : False },
-                         }
+                        }
 
   def __init__( self, name, plugins = None, vo = None, hideExceptions = False ):
     """ c'tor
@@ -145,19 +152,19 @@ class StorageElementItem( object ):
     self.opHelper = Operations( vo = self.vo )
 
     proxiedProtocols = gConfig.getValue( '/LocalSite/StorageElements/ProxyProtocols', "" ).split( ',' )
-    useProxy = ( gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "UnknownProtocol" )
-                in proxiedProtocols )
+    self.useProxy = ( gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "UnknownProtocol" )
+                 in proxiedProtocols )
 
-    if not useProxy:
-      useProxy = gConfig.getValue( '/LocalSite/StorageElements/%s/UseProxy' % name, False )
-    if not useProxy:
-      useProxy = self.opHelper.getValue( '/Services/StorageElements/%s/UseProxy' % name, False )
+    if not self.useProxy:
+      self.useProxy = gConfig.getValue( '/LocalSite/StorageElements/%s/UseProxy' % name, False )
+    if not self.useProxy:
+      self.useProxy = self.opHelper.getValue( '/Services/StorageElements/%s/UseProxy' % name, False )
 
     self.valid = True
     if plugins == None:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = [], hideExceptions = hideExceptions )
+      res = StorageFactory( useProxy = self.useProxy, vo = self.vo ).getStorages( name, pluginList = [], hideExceptions = hideExceptions )
     else:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = plugins, hideExceptions = hideExceptions )
+      res = StorageFactory( useProxy = self.useProxy, vo = self.vo ).getStorages( name, pluginList = plugins, hideExceptions = hideExceptions )
 
     if not res['OK']:
       self.valid = False
@@ -202,7 +209,7 @@ class StorageElementItem( object ):
                           'listDirectory',
                           'isDirectory',
                           'isFile',
-                           ]
+                        ]
 
     self.okMethods = [ 'getLocalProtocols',
                        'getProtocols',
@@ -450,6 +457,10 @@ class StorageElementItem( object ):
 
     """
 
+    # No common protocols if this is a proxy storage
+    if self.useProxy:
+      return S_OK( [] )
+
     # We should actually separate source and destination protocols
     # For example, an SRM can get as a source an xroot or gsiftp url...
     # but with the current implementation, we get only srm
@@ -619,7 +630,7 @@ class StorageElementItem( object ):
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName
-        :param lfn : string, list or dictionnary
+        :param lfn : string, list or dictionary
         :param *args : variable amount of non-keyword arguments. SHOULD BE EMPTY
         :param **kwargs : keyword arguments
         :returns S_OK( { 'Failed': {lfn : reason} , 'Successful': {lfn : value} } )
@@ -767,9 +778,9 @@ class StorageElementItem( object ):
       return self.__executeMethod
 
     raise AttributeError( "StorageElement does not have a method '%s'" % name )
-  
 
-      
+
+
 
   def addAccountingOperation( self, lfns, startDate, elapsedTime, storageParameters, callRes ):
     """
@@ -788,10 +799,10 @@ class StorageElementItem( object ):
 
 
     """
-  
+
     if self.methodName not in ( self.readMethods + self.writeMethods + self.removeMethods ):
       return
-  
+
     baseAccountingDict = {}
     baseAccountingDict['OperationType'] = 'se.%s' % self.methodName
     baseAccountingDict['User'] = getProxyInfo().get( 'Value', {} ).get( 'username', 'unknown' )
@@ -800,7 +811,7 @@ class StorageElementItem( object ):
     baseAccountingDict['RegistrationTotal'] = 0
 
     # if it is a get method, then source and destination of the transfer should be inverted
-    if self.methodName in ( 'putFile', 'getFile' ):
+    if self.methodName == 'getFile':
       baseAccountingDict['Destination'] = siteName()
       baseAccountingDict[ 'Source'] = self.name
     else:
@@ -819,7 +830,7 @@ class StorageElementItem( object ):
     oDataOperation.setEndTime( startDate + datetime.timedelta( seconds = elapsedTime ) )
     oDataOperation.setValueByKey( 'TransferTime', elapsedTime )
     oDataOperation.setValueByKey( 'Protocol', storageParameters.get( 'Protocol', 'unknown' ) )
-  
+
     if not callRes['OK']:
       # Everything failed
       oDataOperation.setValueByKey( 'TransferTotal', len( lfns ) )
@@ -849,7 +860,7 @@ class StorageElementItem( object ):
       oDataOperation.setValueByKey( 'TransferSize', totalSize )
       oDataOperation.setValueByKey( 'TransferTotal', totalSucc )
       oDataOperation.setValueByKey( 'TransferOK', totalSucc )
-      
+
       if callRes['Value']['Failed']:
         oDataOperationFailed = copy.deepcopy( oDataOperation )
         oDataOperationFailed.setValueByKey( 'TransferTotal', len( failed ) )

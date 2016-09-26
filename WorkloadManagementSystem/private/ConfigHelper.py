@@ -14,12 +14,19 @@ def findGenericPilotCredentials( vo = False, group = False ):
   opsHelper = Operations.Operations( vo = vo )
   pilotGroup = opsHelper.getValue( "Pilot/GenericPilotGroup", "" )
   pilotDN = opsHelper.getValue( "Pilot/GenericPilotDN", "" )
+  if not pilotDN:
+    pilotUser = opsHelper.getValue( "Pilot/GenericPilotUser", "" )
+    if pilotUser:
+      result = Registry.getDNForUsername( pilotUser )
+      if result['OK']:
+        pilotDN = result['Value']
   if pilotDN and pilotGroup:
     gLogger.verbose( "Pilot credentials from CS: %s@%s" % ( pilotDN, pilotGroup ) )
     result = gProxyManager.userHasProxy( pilotDN, pilotGroup, 86400 )
     if not result[ 'OK' ]:
       return S_ERROR( "%s@%s has no proxy in ProxyManager" )
     return S_OK( ( pilotDN, pilotGroup ) )
+
   #Auto discover
   gLogger.verbose( "Pilot credentials are not defined. Autodiscovering..." )
   if pilotGroup:

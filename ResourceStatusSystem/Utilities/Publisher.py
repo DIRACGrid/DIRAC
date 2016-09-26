@@ -1,9 +1,8 @@
-# $HeadURL:  $
 ''' Publisher
-
-  Module not used. Will be back to life whenever the portal is ready.
-
 '''
+
+#FIXME: Module not used. Will be back to life whenever the portal is ready.
+
 #
 #import copy
 #import threading

@@ -81,7 +81,7 @@ class Service( object ):
                               'messageSender' : MessageSender( self._name, self._msgBroker ),
                               'validNames' : self._validNames,
                               'csPaths' : [ PathFinder.getServiceSection( svcName ) for svcName in self._validNames ]
-                             }
+                            }
     #Call static initialization function
     try:
       self._handler[ 'class' ]._rh__initializeClass( dict( self._serviceInfoDict ),
@@ -93,8 +93,8 @@ class Service( object ):
           gLogger.verbose( "Executing initialization function" )
           try:
             result = initFunc( dict( self._serviceInfoDict ) )
-          except Exception, excp:
-            gLogger.exception( "Exception while calling initialization function" )
+          except Exception as excp:
+            gLogger.exception( "Exception while calling initialization function", lException = excp )
             return S_ERROR( "Exception while calling initialization function: %s" % str( excp ) )
           if not isReturnStructure( result ):
             return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )

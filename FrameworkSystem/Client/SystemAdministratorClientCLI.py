@@ -16,6 +16,7 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdminis
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
+from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
@@ -141,6 +142,9 @@ class SystemAdministratorClientCLI( CLI ):
           show installations [ list | current | -n <Name> | -h <Host> | -s <System> | -m <Module> | -t <Type> | -itb <InstallationTime before>
                               | -ita <InstallationTime after> | -utb <UnInstallationTime before> | -uta <UnInstallationTime after> ]*
                              - show all the installations of components that match the given parameters
+          show profile <system> <component> [ -s <size> | -h <host> | -id <initial date DD/MM/YYYY> | -it <initial time hh:mm>
+                              | -ed <end date DD/MM/YYYY | -et <end time hh:mm> ]*
+                             - show <size> log lines of profiling information for a component in the machine <host>
           show errors [*|<system> <service|agent>]
                              - show error count for the given component or all the components
                                in the last hour and day
@@ -345,6 +349,66 @@ class SystemAdministratorClientCLI( CLI ):
           gLogger.notice( self.do_show.__doc__ )
       else:
         gLogger.notice( self.do_show.__doc__ )
+    elif option == "profile":
+      if len( argss ) > 1:
+        system = argss[0]
+        del argss[0]
+        component = argss[0]
+        del argss[0]
+
+        component = '%s_%s' % ( system, component )
+
+        argDict = { '-s': None, '-h': self.host, '-id': None, '-it': '00:00', '-ed': None, '-et': '00:00' }
+        key = None
+        for arg in argss:
+          if not key:
+            key = arg
+          else:
+            argDict[ key ] = arg
+            key = None
+
+        size = None
+        try:
+          if argDict[ '-s' ]:
+            size = int( argDict[ '-s' ] )
+        except ValueError as _ve:
+          self._errMsg( 'Argument \'size\' must be an integer' )
+          return
+        host = argDict[ '-h' ]
+        initialDate = argDict[ '-id' ]
+        initialTime = argDict[ '-it' ]
+        endingDate = argDict[ '-ed' ]
+        endingTime = argDict[ '-et' ]
+
+        if initialDate:
+          initialDate = '%s %s' % ( initialDate, initialTime )
+        else:
+          initialDate = ''
+        if endingDate:
+          endingDate = '%s %s' % ( endingDate, endingTime )
+        else:
+          endingDate = ''
+
+        client = MonitoringClient()
+        if size:
+          result = client.getLimitedData( host, component, size )
+        else:
+          result = client.getDataForAGivenPeriod( host, component, initialDate, endingDate )
+
+        if result[ 'OK' ]:
+          text = ''
+          headers = [result['Value'][0].keys()]
+          for header in headers:
+            text += str( header ).ljust( 15 )
+          gLogger.notice( text )
+          for record in result[ 'Value' ]:
+            for metric in record.itervalues():
+              text += str( metric ).ljust( 15 )
+            gLogger.notice( text )
+        else:
+          self._errMsg( result[ 'Message' ] )
+      else:
+        gLogger.notice( self.do_show.__doc__ )
     else:
       gLogger.notice( "Unknown option:", option )
 
@@ -541,12 +605,6 @@ class SystemAdministratorClientCLI( CLI ):
       gLogger.notice( self.do_install.__doc__ )
       return
 
-    # Retrieve user installing the component
-    result = getProxyInfo()
-    if not result[ 'OK' ]:
-      self._errMsg( result[ 'Message'] )
-    user = result[ 'Value' ][ 'username' ]
-
     option = argss[0]
     del argss[0]
     if option == "mysql":
@@ -634,6 +692,7 @@ class SystemAdministratorClientCLI( CLI ):
 
       specialOptions = {}
       module = ''
+     
       for i in range(len(argss)):
         if argss[i] == "-m":
           specialOptions['Module'] = argss[i+1]
@@ -653,11 +712,15 @@ class SystemAdministratorClientCLI( CLI ):
         self._errMsg( result['Message'] )
         return
       hostSetup = result['Value']['Setup']
-
+    
       # Install Module section if not yet there
       if module:
         result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, module,
                                                             getCSExtensions(), hostSetup )
+        # in case of Error we must stop, this can happen when the module name is wrong...
+        if not result['OK']:
+          self._errMsg( result['Message'] )
+          return
         # Add component section with specific parameters only
         result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, component,
                                                             getCSExtensions(), hostSetup, specialOptions,
@@ -706,6 +769,7 @@ class SystemAdministratorClientCLI( CLI ):
         if not result['OK']:
           self._errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
           return
+      
       result = MonitoringUtilities.monitorInstallation( option, system, component, module, cpu = cpu, hostname = hostname )
       if not result['OK']:
         self._errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )

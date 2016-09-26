@@ -17,14 +17,14 @@ executeWithUserProxy decorator example usage::
 
 """
 
-__RCSID__ = "$Id$"
-
 import os
 
 from DIRAC                                               import gConfig, gLogger, S_ERROR
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.ConfigurationSystem.Client.ConfigurationData  import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getVOMSAttributeForGroup, getDNForUsername
+
+__RCSID__ = "$Id$"
 
 def executeWithUserProxy( fcn ):
   """
@@ -81,7 +81,7 @@ def executeWithUserProxy( fcn ):
 
       try:
         return fcn( *args, **kwargs )
-      except Exception as lException:
+      except Exception as lException: #pylint: disable=broad-except
         value = ','.join( [str( arg ) for arg in lException.args] )
         exceptType = lException.__class__.__name__
         return S_ERROR( "Exception - %s: %s" % ( exceptType, value ) )

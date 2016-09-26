@@ -86,7 +86,7 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
   if type( attr ) == types.ListType:
     attr = ' '.join( attr )
 
-  cmd = 'ldapsearch -x -LLL -h %s -b %s "%s" %s' % ( host, base, filt, attr )
+  cmd = 'ldapsearch -x -LLL -o ldif-wrap=no -h %s -b %s "%s" %s' % ( host, base, filt, attr )
   result = shellCall( 0, cmd )
 
   response = []

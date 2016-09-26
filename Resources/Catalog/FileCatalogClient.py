@@ -1,9 +1,5 @@
-########################################################################
-# $HeadURL$
-########################################################################
-""" The FileCatalogClient is a class representing the client of the DIRAC File Catalog  """
-
-__RCSID__ = "$Id$"
+""" The FileCatalogClient is a class representing the client of the DIRAC File Catalog
+"""
 
 import os
 
@@ -11,6 +7,9 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.Resources.Catalog.Utilities                 import checkCatalogArguments
 from DIRAC.Resources.Catalog.FileCatalogClientBase     import FileCatalogClientBase
+
+__RCSID__ = "$Id$"
+
 
 class FileCatalogClient( FileCatalogClientBase ):
   """ Client code to the DIRAC File Catalogue
@@ -21,9 +20,10 @@ class FileCatalogClient( FileCatalogClientBase ):
                  [ 'isFile', 'getFileMetadata',
                    'getReplicas', 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                    'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                   'getLFNForPFN', 'getLFNForGUID', 'findFilesByMetadata','getMetadataFields','getDirectoryUserMetadata',
+                   'getLFNForPFN', 'getLFNForGUID', 'findFilesByMetadata','getMetadataFields',
                    'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
                    'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet', 'getDatasets',
+                   'getFileDescendents', 'getFileAncestors',
                    'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
 
   WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
@@ -31,12 +31,14 @@ class FileCatalogClient( FileCatalogClientBase ):
                    'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup',
                    'addMetadataField','deleteMetadataField','setMetadata','setMetadataBulk','removeMetadata',
                    'addMetadataSet', 'addDataset', 'addDatasetAnnotation', 'removeDataset', 'updateDataset',
-                   'freezeDataset', 'releaseDataset']
+                   'freezeDataset', 'releaseDataset', 'addUser', 'deleteUser', 'addGroup', 'deleteGroup',
+                   'repairCatalog', 'rebuildDirectoryUsage' ]
 
   NO_LFN_METHODS = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
                     'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
                     'getReplicasByMetadata','findFilesByMetadataDetailed','findFilesByMetadataWeb',
-                    'getCompatibleMetadata','addMetadataSet','getMetadataSet']
+                    'getCompatibleMetadata', 'addMetadataSet', 'getMetadataSet', 'getFileUserMetadata', 'getLFNForGUID',
+                    'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'repairCatalog', 'rebuildDirectoryUsage' ]
 
   ADMIN_METHODS = [ 'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'getUsers', 'getGroups',
                     'getCatalogCounters', 'repairCatalog', 'rebuildDirectoryUsage' ]
@@ -223,12 +225,11 @@ class FileCatalogClient( FileCatalogClientBase ):
       for dir_, fList in result['Value'].items():
         for fi in fList:
           fileList.append( dir_ + '/' + fi )
-      result['Value'] = fileList    
+      result['Value'] = fileList
       return result
     else:
       return S_ERROR( 'Illegal return value type %s' % type( result['Value'] ) )
 
-  @checkCatalogArguments
   def getFileUserMetadata( self, path, timeout = 120 ):
     """Get the meta data attached to a file, but also to
     the its corresponding directory
@@ -243,7 +244,7 @@ class FileCatalogClient( FileCatalogClientBase ):
     if not result['OK']:
       return result
     fmeta.update(result['Value'])
-    
+
     return S_OK(fmeta)
 
   ########################################################################
@@ -421,7 +422,6 @@ class FileCatalogClient( FileCatalogClientBase ):
     """ Get the status for the supplied replicas """
     return self._getRPC( timeout = timeout ).getFileDescendents( lfns, depths )
 
-  @checkCatalogArguments
   def getLFNForGUID( self, guids, timeout = 120 ):
     """Get the matching lfns for given guids"""
     return self._getRPC( timeout = timeout ).getLFNForGUID( guids )
@@ -522,7 +522,7 @@ class FileCatalogClient( FileCatalogClientBase ):
   def getDirectoryUserMetadata( self, path, timeout = 120 ):
     """ Get all the metadata valid for the given directory path
     """
-    return self._getRPC( timeout = timeout ).dmeta.getDirectoryMetadata( path )
+    return self._getRPC( timeout = timeout ).getDirectoryUserMetadata( path )
 
 
   def findDirectoriesByMetadata( self, metaDict, path = '/', timeout = 120 ):
@@ -641,6 +641,3 @@ class FileCatalogClient( FileCatalogClientBase ):
     two lines !
     """
     return self._getRPC( timeout = timeout ).getDatasetFiles( datasets )
-
-
-

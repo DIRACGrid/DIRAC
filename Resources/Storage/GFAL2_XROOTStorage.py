@@ -7,10 +7,9 @@
 
 
 # from DIRAC
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
-
-
+from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
 class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
@@ -21,6 +20,7 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
 
   PROTOCOL_PARAMETERS = GFAL2_StorageBase.PROTOCOL_PARAMETERS + ['SvcClass']
+  DYNAMIC_OPTIONS = { 'SvcClass' : 'svcClass'}
 
   def __init__( self, storageName, parameters ):
     """ c'tor
@@ -34,8 +34,10 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     :param str spaceToken: space token
     :param str wspath: location of SRM on :host:
     """
+
     # # init base class
     super( GFAL2_XROOTStorage, self ).__init__( storageName, parameters )
+    self.srmSpecificParse = False
 
     self.log = gLogger.getSubLogger( "GFAL2_XROOTStorage", True )
 
@@ -47,47 +49,36 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
 
 
-  def _getExtendedAttributes( self, path, _attributes = None ):
-    """ Hard coding list of attributes and then call the base method of GFAL2_StorageBase
+    # We don't need extended attributes for metadata
+    self._defaultExtendedAttributes = None
 
-    :param self: self reference
-    :param str path: path of which we want extended attributes
-    :return: S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
+
+  def __addDoubleSlash( self, res ):
+    """ Utilities to add the double slash between the host(:port) and the path
+
+        :param res: DIRAC return structure which contains an URL if S_OK
+        :return: DIRAC structure with corrected URL
     """
-
-    # hard coding the attributes list for xroot because the plugin returns the wrong values
-    # xrootd.* instead of xroot.* see: https://its.cern.ch/jira/browse/DMC-664
-    attributes = ['xroot.cksum', 'xroot.space']
-    res = super( GFAL2_XROOTStorage, self )._getExtendedAttributes( path, attributes )
-    return res
-
-
-  def _getSingleFile( self, src_url, dest_file ):
-    """ Some XROOT StorageElements have problems with the checksum at the moment so to still be able to copy
-    files from XROOT we disable the checksum check for this operation.
-
-    :param self: self reference
-    :param str src_url: path of the source file
-    :param str dest_file: path of destination
-    :returns: S_ERROR( errStr ) in case of an error
-              S_OK( size of file ) if copying is successful
-
-    """
-    self.log.debug( "GFAL2_XROOTStorage._getSingleFile: Calling base method with checksum disabled" )
-    res = super( GFAL2_XROOTStorage, self )._getSingleFile( src_url, dest_file, disableChecksum = True )
-    return res
-  
-  def constructURLFromLFN( self, lfn, withWSUrl = False ):
-    """ Extend the method defined in the base class to add the Service Class if defined
-    """
-
-    res = super(GFAL2_XROOTStorage, self).constructURLFromLFN(lfn, withWSUrl = withWSUrl)
     if not res['OK']:
       return res
     url = res['Value']
-    svcClass = self.protocolParameters['SvcClass']
-    if svcClass:
-      url += '?svcClass=%s'%svcClass
+    res = pfnparse( url, srmSpecific = self.srmSpecificParse )
+    if not res['OK']:
+      return res
+    urlDict = res['Value']
+    urlDict['Path'] = '/' + urlDict['Path']
+    return pfnunparse( urlDict, srmSpecific = self.srmSpecificParse )
 
-    return S_OK(url)
+  def getURLBase( self, withWSUrl = False ):
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash( super( GFAL2_XROOTStorage, self ).getURLBase( withWSUrl = withWSUrl ) )
+
+  def constructURLFromLFN( self, lfn, withWSUrl = False ):
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash( super( GFAL2_XROOTStorage, self ).constructURLFromLFN( lfn = lfn, withWSUrl = withWSUrl ) )
+
+  def getCurrentURL( self, fileName ):
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash( super( GFAL2_XROOTStorage, self ).getCurrentURL( fileName ) )
+
 

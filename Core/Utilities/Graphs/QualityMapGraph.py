@@ -6,7 +6,7 @@
 
 import datetime
 from pylab import setp
-from matplotlib.colors import Normalize, LinearSegmentedColormap
+from matplotlib.colors import Normalize
 import matplotlib.cm as cm
 from matplotlib.colorbar import make_axes, ColorbarBase
 from matplotlib.dates import date2num
@@ -64,11 +64,17 @@ class QualityMapGraph( PlotBase ):
         self.width = ( max( self.gdata.all_keys ) - min( self.gdata.all_keys ) ) / nKeys
 
     # Setup the colormapper to get the right colors
-    self.cmap = LinearSegmentedColormap( 'quality_colormap', cdict, 256 )
-    #self.cmap = cm.RdYlGn
-    self.norms = Normalize( 0, 100 )
+    self.cmap = None
+
+    max_value = prefs.get( 'normalization' )
+    if max_value:
+      self.cmap = cm.YlGnBu #pylint: disable=no-member
+    else:
+      max_value = 100
+      self.cmap = cm.RdYlGn #pylint: disable=no-member
+
+    self.norms = Normalize( 0, max_value )
     mapper = cm.ScalarMappable( cmap = self.cmap, norm = self.norms )
-    mapper = cm.ScalarMappable( cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=no-member
     def get_alpha( *args, **kw ):
       return 1.0
     mapper.get_alpha = get_alpha
@@ -147,7 +153,7 @@ class QualityMapGraph( PlotBase ):
     setp( self.ax.get_yticklines(), markersize = 0. )
 
     cax, kw = make_axes( self.ax, orientation = 'vertical', fraction = 0.07 )
-    cb = ColorbarBase( cax, cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=no-member
+    cb = ColorbarBase( cax, cmap = self.cmap, norm = self.norms ) #pylint: disable=no-member
     cb.draw_all()
     #cb = self.ax.colorbar( self.mapper, format="%d%%",
     #  orientation='horizontal', fraction=0.04, pad=0.1, aspect=40  )
@@ -176,12 +182,12 @@ class QualityMapGraph( PlotBase ):
       ticks.sort()
       ax.set_xticks( [i + .5 for i in ticks] )
       ax.set_xticklabels( [reverse_smap[i] for i in ticks] )
-      labels = ax.get_xticklabels()
+      #labels = ax.get_xticklabels()
       ax.grid( False )
       if self.log_xaxis:
         xmin = 0.001
       else:
-        xmin = 0
+        xmin = 0.
       ax.set_xlim( xmin = xmin, xmax = len( ticks ) )
     elif self.gdata.key_type == "time":
 

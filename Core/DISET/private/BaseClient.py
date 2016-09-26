@@ -96,13 +96,13 @@ class BaseClient:
     try:
       result = self.__findServiceURL()
     except Exception as e:
-      return S_ERROR( str( e ) )
+      return S_ERROR( repr( e ) )
     if not result[ 'OK' ]:
       return result
     self.serviceURL = result[ 'Value' ]
     retVal = Network.splitURL( self.serviceURL )
     if not retVal[ 'OK' ]:
-      return S_ERROR( "URL is malformed: %s" % retVal[ 'Message' ] )
+      return retVal
     self.__URLTuple = retVal[ 'Value' ]
     self._serviceName = self.__URLTuple[-1]
     res = gConfig.getOptionsDict( "/DIRAC/ConnConf/%s:%s" % self.__URLTuple[1:3] )
@@ -130,7 +130,7 @@ class BaseClient:
     if self.KW_USE_CERTIFICATES in self.kwargs:
       self.useCertificates = self.kwargs[ self.KW_USE_CERTIFICATES ]
     else:
-      self.useCertificates = gConfig._useServerCertificate()
+      self.useCertificates = gConfig.useServerCertificate()
       self.kwargs[ self.KW_USE_CERTIFICATES ] = self.useCertificates
     if self.KW_SKIP_CA_CHECK not in self.kwargs:
       if self.useCertificates:
@@ -200,7 +200,7 @@ class BaseClient:
     try:
       urls = getServiceURL( self._destinationSrv, setup = self.setup )
     except Exception as e:
-      return S_ERROR( "Cannot get URL for %s in setup %s: %s" % ( self._destinationSrv, self.setup, str( e ) ) )
+      return S_ERROR( "Cannot get URL for %s in setup %s: %s" % ( self._destinationSrv, self.setup, repr( e ) ) )
     if not urls:
       return S_ERROR( "URL for service %s not found" % self._destinationSrv )
 
@@ -315,9 +315,9 @@ and this is thread %s
           self.__discoverURL()
           return self._connect()
         else:
-          return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, retVal ) )
+          return retVal
     except Exception as e:
-      return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, e ) )
+      return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, repr( e ) ) )
     trid = getGlobalTransportPool().add( transport )
     return S_OK( ( trid, transport ) )
 
@@ -357,7 +357,7 @@ and this is thread %s
       return self.__initStatus
     retVal = gProtocolDict[ self.__URLTuple[0] ][ 'sanity' ]( self.__URLTuple[1:3], self.kwargs )
     if not retVal[ 'OK' ]:
-      return S_ERROR( "Insane environment for protocol: %s" % retVal[ 'Message' ] )
+      return retVal
     idDict = retVal[ 'Value' ]
     for key in idDict:
       self.__idDict[ key ] = idDict[ key ]

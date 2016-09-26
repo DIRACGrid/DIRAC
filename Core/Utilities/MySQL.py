@@ -147,8 +147,10 @@
 
 """
 
+import collections
+import time
+import threading
 import MySQLdb
-
 
 from DIRAC                      import gLogger
 from DIRAC                      import S_OK, S_ERROR
@@ -164,11 +166,6 @@ except MySQLdb.ProgrammingError:
 gInstancesCount = 0
 gDebugFile = None
 
-import collections
-import time
-import threading
-from types import DictType, ListType
-
 __RCSID__ = "$Id$"
 
 
@@ -179,7 +176,7 @@ def _checkFields( inFields, inValues ):
     Helper to check match between inFields and inValues lengths
   """
 
-  if inFields == None and inValues == None:
+  if inFields is None and inValues is None:
     return S_OK()
 
   try:
@@ -196,7 +193,7 @@ def _quotedList( fieldList = None ):
 
     To be use for Table and Field Names
   """
-  if fieldList == None:
+  if fieldList is None:
     return None
   quotedFields = []
   try:
@@ -433,9 +430,9 @@ class MySQL( object ):
       raise x
     except MySQLdb.Error, e:
       self.log.debug( '%s: %s' % ( methodName, err ),
-                     '%d: %s' % ( e.args[0], e.args[1] ) )
+                      '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( DErrno.EMYSQL, '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
-    except Exception, e:
+    except Exception as e:
       self.log.debug( '%s: %s' % ( methodName, err ), str( e ) )
       return S_ERROR( DErrno.EMYSQL, '%s: (%s)' % ( err, str( e ) ) )
 
@@ -461,7 +458,7 @@ class MySQL( object ):
     It also includes quotation marks " around the given string
     """
 
-    retDict = self.__getConnection()
+    retDict = self._getConnection()
     if not retDict['OK']:
       return retDict
     connection = retDict['Value']
@@ -563,6 +560,11 @@ class MySQL( object ):
     return S_OK( inEscapeValues )
 
 
+  def _safeCmd( self, command ):
+    """ Just replaces password, if visible, with *********
+    """
+    return command.replace(self.__passwd, '**********')
+
   def _connect( self ):
     """
     open connection to MySQL DB and put Connection into Queue
@@ -579,8 +581,8 @@ class MySQL( object ):
       return S_OK()
 
     self.log.debug( '_connect: Attempting to access DB',
-                    '[%s@%s] by user %s/%s.' %
-                    ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) )
+                    '[%s@%s] by user %s' %
+                    ( self.__dbName, self.__hostName, self.__userName ) )
     try:
       self.log.verbose( '_connect: Connected.' )
       self._connected = True
@@ -598,17 +600,17 @@ class MySQL( object ):
     return S_ERROR upon error
     """
     if debug:
-      self.logger.debug( '_query:', cmd )
+      self.logger.debug( '_query: %s' % self._safeCmd( cmd ) )
     else:
       if self.logger._minLevel == self.logger._logLevels.getLevelValue( 'DEBUG' ):
-        self.logger.verbose( '_query:', cmd )
+        self.logger.verbose( '_query: %s' % self._safeCmd( cmd ) )
       else:
-        self.logger.verbose( '_query:', cmd[:min( len( cmd ) , 512 )] )
+        self.logger.verbose( '_query: %s' % self._safeCmd( cmd )[:min( len( cmd ) , 512 )] )
 
     if gDebugFile:
       start = time.time()
 
-    retDict = self.__getConnection()
+    retDict = self._getConnection()
     if not retDict['OK']:
       return retDict
     connection = retDict[ 'Value' ]
@@ -635,8 +637,8 @@ class MySQL( object ):
           self.logger.verbose( '_query: %s ...' % str( res[:10] ) )
 
       retDict = S_OK( res )
-    except Exception , x:
-      self.log.warn( '_query:', cmd )
+    except Exception as x:
+      self.log.warn( '_query: %s' % self._safeCmd( cmd ) )
       retDict = self._except( '_query', x, 'Execution failed.' )
 
     try:
@@ -657,17 +659,17 @@ class MySQL( object ):
         return S_ERROR upon error
     """
     if debug:
-      self.logger.debug( '_update:', cmd )
+      self.logger.debug( '_update: %s' % self._safeCmd( cmd ) )
     else:
       if self.logger._minLevel == self.logger._logLevels.getLevelValue( 'DEBUG' ):
-        self.logger.verbose( '_update:', cmd )
+        self.logger.verbose( '_update: %s' % self._safeCmd( cmd ) )
       else:
-        self.logger.verbose( '_update:', cmd[:min( len( cmd ) , 512 )] )
+        self.logger.verbose( '_update: %s' % self._safeCmd( cmd )[:min( len( cmd ) , 512 )] )
 
     if gDebugFile:
       start = time.time()
 
-    retDict = self.__getConnection( conn = conn )
+    retDict = self._getConnection()
     if not retDict['OK']:
       return retDict
     connection = retDict['Value']
@@ -684,7 +686,7 @@ class MySQL( object ):
       if cursor.lastrowid:
         retDict[ 'lastRowId' ] = cursor.lastrowid
     except Exception as x:
-      self.log.warn( '_update: %s: %s' % ( cmd, str( x ) ) )
+      self.log.warn( '_update: %s: %s' % ( self._safeCmd( cmd ), str( x ) ) )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
     try:
@@ -707,13 +709,13 @@ class MySQL( object ):
 
     :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR
     """
-    if type( cmdList ) != ListType:
+    if not isinstance( cmdList, list ):
       return S_ERROR( DErrno.EMYSQL, "_transaction: wrong type (%s) for cmdList" % type( cmdList ) )
 
     # # get connection
     connection = conn
     if not connection:
-      retDict = self.__getConnection()
+      retDict = self._getConnection()
       if not retDict['OK']:
         return retDict
       connection = retDict[ 'Value' ]
@@ -725,7 +727,7 @@ class MySQL( object ):
       for cmd in cmdList:
         cmdRet.append( ( cmd, cursor.execute( cmd ) ) )
       connection.commit()
-    except Exception, error:
+    except Exception as error:
       self.logger.execption( error )
       # # rollback, put back connection to the pool
       connection.rollback()
@@ -751,7 +753,7 @@ class MySQL( object ):
         viewQuery = [ "CREATE OR REPLACE VIEW `%s`.`%s` AS" % ( self.__dbName, viewName ) ]
 
         columns = ",".join( [ "%s AS %s" % ( colDef, colName )
-                             for colName, colDef in  viewDict.get( "Fields", {} ).iteritems() ] )
+                              for colName, colDef in  viewDict.get( "Fields", {} ).iteritems() ] )
         tables = viewDict.get( "SelectFrom", "" )
         if columns and tables:
           viewQuery.append( "SELECT %s FROM %s" % ( columns, tables ) )
@@ -815,7 +817,7 @@ class MySQL( object ):
     """
 
     # First check consistency of request
-    if type( tableDict ) != DictType:
+    if not isinstance( tableDict, dict ):
       return S_ERROR( DErrno.EMYSQL, 'Argument is not a dictionary: %s( %s )'
                       % ( type( tableDict ), tableDict ) )
 
@@ -925,8 +927,7 @@ class MySQL( object ):
         else:
           charset = 'latin1'
 
-        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % (
-               table, ',\n'.join( cmdList ), engine, charset )
+        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % ( table, ',\n'.join( cmdList ), engine, charset )
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
           return retDict
@@ -952,7 +953,7 @@ class MySQL( object ):
     if inFields != None:
       try:
         condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
-      except Exception, x:
+      except Exception as x:
         return S_ERROR( DErrno.EMYSQL, x )
 
     return self.getFields( tableName, outFields, condDict, limit, conn, older, newer, timeStamp, orderAttribute )
@@ -978,24 +979,13 @@ class MySQL( object ):
     return param[0].tostring()
 
   def _getConnection( self ):
-    """
-    Return a new connection to the DB
-    It uses the private method __getConnection
+    """ Return  a new connection to the DB,
+
+        Try the Queue, if it is empty add a newConnection to the Queue and retry
+        it will retry MAXCONNECTRETRY to open a new connection and will return
+        an error if it fails.
     """
     self.log.debug( '_getConnection:' )
-
-    retDict = self.__getConnection( trial = 0 )
-    return retDict
-
-  def __getConnection( self, conn = None, trial = 0 ):
-    """
-    Return a new connection to the DB,
-    if conn is provided then just return it.
-    then try the Queue, if it is empty add a newConnection to the Queue and retry
-    it will retry MAXCONNECTRETRY to open a new connection and will return
-    an error if it fails.
-    """
-    self.log.debug( '__getConnection:' )
 
     if not self.__initialized:
       error = 'DB not properly initialized'
@@ -1039,8 +1029,8 @@ class MySQL( object ):
 
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
-                                  greater = None, smaller = None )
-    except Exception, x:
+                                  greater = greater, smaller = smaller )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     cmd = 'SELECT COUNT(*) FROM %s %s' % ( table, cond )
@@ -1064,15 +1054,15 @@ class MySQL( object ):
       return S_ERROR( DErrno.EMYSQL, error )
 
     attrNames = _quotedList( attrList )
-    if attrNames == None:
+    if attrNames is None:
       error = 'Invalid updateFields argument'
       self.log.debug( 'getCounters:', error )
       return S_ERROR( DErrno.EMYSQL, error )
 
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
-                                  greater = None, smaller = None )
-    except Exception, x:
+                                  greater = greater, smaller = smaller )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     cmd = 'SELECT %s, COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
@@ -1110,8 +1100,8 @@ class MySQL( object ):
 
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
-                                  greater = None, smaller = None )
-    except Exception, x:
+                                  greater = greater, smaller = smaller )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     cmd = 'SELECT  DISTINCT( %s ) FROM %s %s ORDER BY %s' % ( attributeName, table, cond, attributeName )
@@ -1187,9 +1177,9 @@ class MySQL( object ):
         else:
           escapeInValue = retDict['Value'][0]
           condition = ' %s %s %s >= %s' % ( condition,
-                                              conjunction,
-                                              timeStamp,
-                                              escapeInValue )
+                                            conjunction,
+                                            timeStamp,
+                                            escapeInValue )
           conjunction = "AND"
       if older:
         retDict = self._escapeValues( [ older ] )
@@ -1199,9 +1189,9 @@ class MySQL( object ):
         else:
           escapeInValue = retDict['Value'][0]
           condition = ' %s %s %s < %s' % ( condition,
-                                             conjunction,
-                                             timeStamp,
-                                             escapeInValue )
+                                           conjunction,
+                                           timeStamp,
+                                           escapeInValue )
 
     if isinstance( greater, dict ):
       for attrName, attrValue in greater.iteritems():
@@ -1218,9 +1208,9 @@ class MySQL( object ):
         else:
           escapeInValue = retDict['Value'][0]
           condition = ' %s %s %s >= %s' % ( condition,
-                                             conjunction,
-                                             attrName,
-                                             escapeInValue )
+                                            conjunction,
+                                            attrName,
+                                            escapeInValue )
           conjunction = "AND"
 
     if isinstance( smaller, dict ):
@@ -1238,9 +1228,9 @@ class MySQL( object ):
         else:
           escapeInValue = retDict['Value'][0]
           condition = ' %s %s %s < %s' % ( condition,
-                                             conjunction,
-                                             attrName,
-                                             escapeInValue )
+                                           conjunction,
+                                           attrName,
+                                           escapeInValue )
           conjunction = "AND"
 
 
@@ -1249,7 +1239,7 @@ class MySQL( object ):
     if not isinstance( orderAttrList, list ):
       orderAttrList = [ orderAttribute ]
     for orderAttr in orderAttrList:
-      if orderAttr == None:
+      if orderAttr is None:
         continue
       if not isinstance( orderAttr, basestring ):
         error = 'Invalid orderAttribute argument'
@@ -1295,7 +1285,7 @@ class MySQL( object ):
       Select "outFields" from "tableName" with condDict
       N records can match the condition
       return S_OK( tuple(Field,Value) )
-      if outFields == None all fields in "tableName" are returned
+      if outFields is None all fields in "tableName" are returned
       if limit is not False, the given limit is set
       inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
     """
@@ -1308,28 +1298,27 @@ class MySQL( object ):
     quotedOutFields = '*'
     if outFields:
       quotedOutFields = _quotedList( outFields )
-      if quotedOutFields == None:
+      if quotedOutFields is None:
         error = 'Invalid outFields arguments'
         self.log.warn( 'getFields:', error )
         return S_ERROR( DErrno.EMYSQL, error )
 
-    self.log.verbose( 'getFields:', 'selecting fields %s from table %s.' %
-                          ( quotedOutFields, table ) )
+    self.log.verbose( 'getFields:', 'selecting fields %s from table %s.' % ( quotedOutFields, table ) )
 
-    if condDict == None:
+    if condDict is None:
       condDict = {}
 
     try:
       try:
         mylimit = limit[0]
         myoffset = limit[1]
-      except:
+      except TypeError:
         mylimit = limit
         myoffset = None
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
-                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = mylimit,
-                        greater = None, smaller = None, offset = myoffset )
-    except Exception, x:
+                                       timeStamp = timeStamp, orderAttribute = orderAttribute, limit = mylimit,
+                                       greater = greater, smaller = smaller, offset = myoffset )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     return self._query( 'SELECT %s FROM %s %s' %
@@ -1359,8 +1348,8 @@ class MySQL( object ):
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
                                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
-                                       greater = None, smaller = None )
-    except Exception, x:
+                                       greater = greater, smaller = smaller )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     return self._update( 'DELETE FROM %s %s' % ( table, condition ), conn, debug = True )
@@ -1397,12 +1386,12 @@ class MySQL( object ):
       self.log.warn( 'updateFields:', error )
       return S_ERROR( DErrno.EMYSQL, error )
 
-    if updateFields == None:
+    if updateFields is None:
       updateFields = []
       updateValues = []
 
     if updateDict:
-      if type( updateDict ) != DictType:
+      if not isinstance( updateDict, dict ):
         error = 'updateDict must be a of Type DictType'
         self.log.warn( 'updateFields:', error )
         return S_ERROR( DErrno.EMYSQL, error )
@@ -1420,14 +1409,13 @@ class MySQL( object ):
       return updateValues
     updateValues = updateValues['Value']
 
-    self.log.verbose( 'updateFields:', 'updating fields %s from table %s.' %
-                          ( ', '.join( updateFields ), table ) )
+    self.log.verbose( 'updateFields:', 'updating fields %s from table %s.' %( ', '.join( updateFields ), table ) )
 
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
-                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
-                        greater = None, smaller = None )
-    except Exception, x:
+                                       timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
+                                       greater = greater, smaller = smaller )
+    except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
     updateString = ','.join( ['%s = %s' % ( _quotedList( [updateFields[k]] ),
@@ -1454,12 +1442,12 @@ class MySQL( object ):
       self.log.warn( 'insertFields:', retDict['Message'] )
       return retDict
 
-    if inFields == None:
+    if inFields is None:
       inFields = []
       inValues = []
 
     if inDict:
-      if type( inDict ) != DictType:
+      if not isinstance( inDict, dict ):
         error = 'inDict must be a of Type DictType'
         self.log.warn( 'insertFields:', error )
         return S_ERROR( DErrno.EMYSQL, error )
@@ -1472,7 +1460,7 @@ class MySQL( object ):
         return S_ERROR( DErrno.EMYSQL, error )
 
     inFieldString = _quotedList( inFields )
-    if inFieldString == None:
+    if inFieldString is None:
       error = 'Invalid inFields arguments'
       self.log.warn( 'insertFields:', error )
       return S_ERROR( DErrno.EMYSQL, error )
@@ -1488,13 +1476,13 @@ class MySQL( object ):
     inValueString = '(  %s )' % inValueString
 
     self.log.verbose( 'insertFields:', 'inserting %s into table %s'
-                          % ( inFieldString, table ) )
+                      % ( inFieldString, table ) )
 
     return self._update( 'INSERT INTO %s %s VALUES %s' %
                          ( table, inFieldString, inValueString ), conn, debug = True )
 
 
-  def executeStoredProcedure( self, packageName, parameters, outputIds, output = True, array = None, conn = False ):
+  def executeStoredProcedure( self, packageName, parameters, outputIds ):
     conDict = self._getConnection()
     if not conDict['OK']:
       return conDict
@@ -1509,7 +1497,7 @@ class MySQL( object ):
         cursor.execute( "SELECT %s" % resName )
         row.append( cursor.fetchone()[0] )
       retDict = S_OK( row )
-    except  Exception , x:
+    except Exception as x:
       retDict = self._except( '_query', x, 'Execution failed.' )
       connection.rollback()
 
@@ -1517,13 +1505,11 @@ class MySQL( object ):
       cursor.close()
     except Exception:
       pass
-
-
     return retDict
 
 
   # For the procedures that execute a select without storing the result
-  def executeStoredProcedureWithCursor( self, packageName, parameters, output = True, array = None, conn = False ):
+  def executeStoredProcedureWithCursor( self, packageName, parameters ):
     conDict = self._getConnection()
     if not conDict['OK']:
       return conDict
@@ -1536,7 +1522,7 @@ class MySQL( object ):
       cursor.execute( execStr )
       rows = cursor.fetchall()
       retDict = S_OK( rows )
-    except  Exception , x:
+    except Exception as x:
       retDict = self._except( '_query', x, 'Execution failed.' )
       connection.rollback()
     try:
@@ -1544,175 +1530,4 @@ class MySQL( object ):
     except Exception:
       pass
 
-
     return retDict
-
-#####################################################################################
-#
-#   This is a test code for this class, it requires access to a MySQL DB
-#
-if __name__ == '__main__':
-
-  import os
-  import sys
-  from DIRAC.Core.Utilities import Time
-  from DIRAC.Core.Base.Script import parseCommandLine
-  parseCommandLine()
-
-  if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
-    gLogger.info( 'Unset python optimization "PYTHONOPTIMIZE"' )
-    sys.exit( 0 )
-
-  gLogger.info( 'Testing MySQL class...' )
-
-  HOST = '127.0.0.1'
-  USER = 'Dirac'
-  PWD = 'Dirac'
-  DB = 'AccountingDB'
-
-  TESTDB = MySQL( HOST, USER, PWD, DB )
-  assert TESTDB._connect()['OK']
-
-  TESTDICT = { 'TestTable' : { 'Fields': { 'ID'      : "INTEGER UNIQUE NOT NULL AUTO_INCREMENT",
-                                           'Name'    : "VARCHAR(255) NOT NULL DEFAULT 'Yo'",
-                                           'Surname' : "VARCHAR(255) NOT NULL DEFAULT 'Tu'",
-                                           'Count'   : "INTEGER NOT NULL DEFAULT 0",
-                                           'Time'    : "DATETIME",
-                                         },
-                                'PrimaryKey': 'ID'
-                             }
-              }
-
-  NAME = 'TestTable'
-  FIELDS = [ 'Name', 'Surname' ]
-  NEWVALUES = [ 'Name2', 'Surn2' ]
-  SOMEFIELDS = [ 'Name', 'Surname', 'Count' ]
-  ALLFIELDS = [ 'ID', 'Name', 'Surname', 'Count', 'Time' ]
-  ALLVALUES = [ 1, 'Name1', 'Surn1', 1, 'UTC_TIMESTAMP()' ]
-  ALLDICT = dict( Name = 'Name1', Surname = 'Surn1', Count = 1, Time = 'UTC_TIMESTAMP()' )
-  COND0 = {}
-  COND10 = {'Count': range( 10 )}
-
-  try:
-    RESULT = TESTDB._createTables( TESTDICT, force = True )
-    assert RESULT['OK']
-    print 'Table Created'
-
-    RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == []
-
-    RESULT = TESTDB.getDistinctAttributeValues( NAME, FIELDS[0], COND0 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == []
-
-    RESULT = TESTDB.getFields( NAME, FIELDS )
-    assert RESULT['OK']
-    assert RESULT['Value'] == ()
-
-    print 'Inserting'
-
-    for J in range( 100 ):
-      RESULT = TESTDB.insertFields( NAME, SOMEFIELDS, ['Name1', 'Surn1', J] )
-      assert RESULT['OK']
-      assert RESULT['Value'] == 1
-      assert RESULT['lastRowId'] == J + 1
-
-    print 'Querying'
-
-    RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == [( {'Surname': 'Surn1', 'Name': 'Name1'}, 100L )]
-
-    RESULT = TESTDB.getDistinctAttributeValues( NAME, FIELDS[0], COND0 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == ['Name1']
-
-    RESULT = TESTDB.getFields( NAME, FIELDS )
-    assert RESULT['OK']
-    assert len( RESULT['Value'] ) == 100
-
-    RESULT = TESTDB.getFields( NAME, SOMEFIELDS, COND10 )
-    assert RESULT['OK']
-    assert len( RESULT['Value'] ) == 10
-
-    RESULT = TESTDB.getFields( NAME, limit = 1 )
-    assert RESULT['OK']
-    assert len( RESULT['Value'] ) == 1
-
-    RESULT = TESTDB.getFields( NAME, ['Count'], orderAttribute = 'Count:DESC', limit = 1 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == ( ( 99, ), )
-
-    RESULT = TESTDB.getFields( NAME, ['Count'], orderAttribute = 'Count:ASC', limit = 1 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == ( ( 0, ), )
-
-    RESULT = TESTDB.getCounters( NAME, FIELDS, COND10 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == [( {'Surname': 'Surn1', 'Name': 'Name1'}, 10L )]
-
-    RESULT = TESTDB._getFields( NAME, FIELDS, COND10.keys(), COND10.values() )
-    assert RESULT['OK']
-    assert len( RESULT['Value'] ) == 10
-
-    RESULT = TESTDB.updateFields( NAME, FIELDS, NEWVALUES, COND10 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == 10
-
-    RESULT = TESTDB.updateFields( NAME, FIELDS, NEWVALUES, COND10 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == 0
-
-    print 'Removing'
-
-    RESULT = TESTDB.deleteEntries( NAME, COND10 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == 10
-
-    RESULT = TESTDB.deleteEntries( NAME )
-    assert RESULT['OK']
-    assert RESULT['Value'] == 90
-
-    RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
-    assert RESULT['OK']
-    assert RESULT['Value'] == []
-
-    RESULT = TESTDB.insertFields( NAME, inFields = ALLFIELDS, inValues = ALLVALUES )
-    assert RESULT['OK']
-    assert RESULT['Value'] == 1
-
-    time.sleep( 1 )
-
-    RESULT = TESTDB.insertFields( NAME, inDict = ALLDICT )
-    assert RESULT['OK']
-    assert RESULT['Value'] == 1
-
-    time.sleep( 2 )
-    RESULT = TESTDB.getFields( NAME, older = 'UTC_TIMESTAMP()', timeStamp = 'Time' )
-    assert RESULT['OK']
-    assert len( RESULT['Value'] ) == 2
-
-    RESULT = TESTDB.getFields( NAME, newer = 'UTC_TIMESTAMP()', timeStamp = 'Time' )
-    assert len( RESULT['Value'] ) == 0
-
-    RESULT = TESTDB.getFields( NAME, older = Time.toString(), timeStamp = 'Time' )
-    assert RESULT['OK']
-    assert len( RESULT['Value'] ) == 2
-
-    RESULT = TESTDB.getFields( NAME, newer = Time.dateTime(), timeStamp = 'Time' )
-    assert RESULT['OK']
-    assert len( RESULT['Value'] ) == 0
-
-    RESULT = TESTDB.deleteEntries( NAME )
-    assert RESULT['OK']
-    assert RESULT['Value'] == 2
-
-    print 'OK'
-
-  except AssertionError:
-    print 'ERROR ',
-    if not RESULT['OK']:
-      print RESULT['Message']
-    else:
-      print RESULT

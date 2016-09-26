@@ -46,7 +46,7 @@ class MessageFactory:
     sysName = sL[0]
     svcHandlerName = "%sHandler" % sL[1]
     loadedObjs = loadObjects( "%sSystem/Service" % sysName,
-                          reFilter = re.compile( "^%s\.py$" % svcHandlerName ) )
+                              reFilter = re.compile( r"^%s\.py$" % svcHandlerName ) )
     if svcHandlerName not in loadedObjs:
       return S_ERROR( "Could not find %s for getting messages definition" % serviceName )
     return S_OK( loadedObjs[ svcHandlerName ] )
@@ -250,7 +250,7 @@ class DummyMessage:
 
 def loadObjects( path, reFilter = None, parentClass = None ):
   if not reFilter:
-    reFilter = re.compile( ".*[a-z1-9]\.py$" )
+    reFilter = re.compile( r".*[a-z1-9]\.py$" )
   pathList = List.fromChar( path, "/" )
 
   parentModuleList = [ "%sDIRAC" % ext for ext in CSGlobals.getCSExtensions() ] + [ 'DIRAC' ]
@@ -286,8 +286,8 @@ def loadObjects( path, reFilter = None, parentClass = None ):
     if parentClass == objClass:
       continue
     if parentClass and not issubclass( objClass, parentClass ):
-        gLogger.warn( "%s is not a subclass of %s. Skipping" % ( objClass, parentClass ) )
-        continue
+      gLogger.warn( "%s is not a subclass of %s. Skipping" % ( objClass, parentClass ) )
+      continue
     gLogger.info( "Loaded %s" % objPythonPath )
     loadedObjects[ pythonClassName ] = objClass
 

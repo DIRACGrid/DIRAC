@@ -107,7 +107,7 @@ class TransformationDB( DB ):
                                  'ParameterName',
                                  'ParameterValue',
                                  'ParameterType'
-                                 ]
+                                ]
 
 
     # This is here to ensure full compatibility between different versions of the MySQL DB schema
@@ -132,14 +132,14 @@ class TransformationDB( DB ):
 
   def addTransformation( self, transName, description, longDescription, authorDN, authorGroup, transType,
                          plugin, agentType, fileMask,
-                        transformationGroup = 'General',
-                        groupSize = 1,
-                        inheritedFrom = 0,
-                        body = '',
-                        maxTasks = 0,
-                        eventsPerTask = 0,
-                        addFiles = True,
-                        connection = False ):
+                         transformationGroup = 'General',
+                         groupSize = 1,
+                         inheritedFrom = 0,
+                         body = '',
+                         maxTasks = 0,
+                         eventsPerTask = 0,
+                         addFiles = True,
+                         connection = False ):
     """ Add new transformation definition including its input streams
     """
     connection = self.__getConnection( connection )
@@ -163,9 +163,9 @@ class TransformationDB( DB ):
                                         '%s','New','%s',%d,\
                                         %d,%s,%d,%d);" % \
                                       ( transName, description, longDescription,
-                                       authorDN, authorGroup, transType, plugin, agentType,
-                                       fileMask, transformationGroup, groupSize,
-                                       inheritedFrom, body, maxTasks, eventsPerTask )
+                                        authorDN, authorGroup, transType, plugin, agentType,
+                                        fileMask, transformationGroup, groupSize,
+                                        inheritedFrom, body, maxTasks, eventsPerTask )
     res = self._update( req, connection )
     if not res['OK']:
       self.lock.release()
@@ -315,12 +315,12 @@ class TransformationDB( DB ):
         return S_ERROR( "Failed to parse parameter value" )
       paramValue = res['Value']
       req = "UPDATE Transformations SET %s=%s, LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d" % ( paramName,
-                                                                                                          paramValue,
-                                                                                                          transID )
+                                                                                                         paramValue,
+                                                                                                         transID )
       return self._update( req, connection )
     req = "UPDATE Transformations SET %s='%s', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d" % ( paramName,
-                                                                                                          paramValue,
-                                                                                                          transID )
+                                                                                                         paramValue,
+                                                                                                         transID )
     return self._update( req, connection )
 
   def _getTransformationID( self, transName, connection = False ):

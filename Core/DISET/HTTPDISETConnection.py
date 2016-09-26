@@ -100,7 +100,7 @@ class HTTPDISETConnection( httplib.HTTPConnection ):
     for res in socket.getaddrinfo( self.host, self.port, 0,
                                   socket.SOCK_STREAM ):
       _af, _socktype, _proto, _canonname, addTuple = res
-      result = gSSLSocketFactory.createClientSocket( addTuple, useCertificates = gConfig._useServerCertificate() )
+      result = gSSLSocketFactory.createClientSocket( addTuple, useCertificates = gConfig.useServerCertificate() )
       if not result[ 'OK' ]:
         errorMsg = result[ 'Message' ]
         continue
