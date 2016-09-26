@@ -811,7 +811,7 @@ class StorageElementItem( object ):
     baseAccountingDict['RegistrationTotal'] = 0
 
     # if it is a get method, then source and destination of the transfer should be inverted
-    if self.methodName in ( 'putFile', 'getFile' ):
+    if self.methodName == 'getFile':
       baseAccountingDict['Destination'] = siteName()
       baseAccountingDict[ 'Source'] = self.name
     else:

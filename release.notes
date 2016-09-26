@@ -1,12 +1,91 @@
-[v6r16-pre1]
+[v6r16-pre5]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
         ExtraModule option
+*Core
+FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
+FIX: ComponentInstaller - always update CS when a database is installed, even if it is
+     already existing in the db server 
+
+*Monitoring
+NEW: New Monitoring system is introduced to collect, analyze and display various
+     monitoring information on DIRAC components status and behavior using ElasticSearch
+     database. The initial implementation is to collect WMSHistory counters.
+
+*DMS
+NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move-replica-request
+     comand line tool
 
 *Resources
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
+
+[v6r15p17]
+
+*Core
+CHANGE: GOCDBClient - catch all downtimes, independently of their scope
+FIX: LSFTimeLeft - accept 2 "word" output from bqueues command
+CHANGE: dirac-install - create bashrc/cshrc with the possibility to define
+        installation path in the $DIRAC env variable, this is needed for
+        the cvmfs DIRAC client installation
+
+[v6r15p16]
+
+*Core
+CHANGE: AgentModule - added a SIGALARM handler to set a hard timeout for each Agent
+        cycle to avoid agents stuck forever due to some faults in the execution code
+
+*DMS
+FIX: DataManager - cache SE status information in filterTapeReplicas() to speed up execution
+     
+*WMS
+BUGFIX: InputDataByProtocol - the failed resolution for local SEs was not considered correctly:
+        if there were other SEs that were ignored (e.g. because on tape)     
+     
+*TS
+FIX: TransformationAgent - in getDataReplicasDM() no need to get replica PFNs     
+
+[v6r15p15]
+
+*Configuration
+CHANGE: VOMS2CSAgent - added new features: deleting users no more registered in VOMS;
+        automatic creation of home directories in the File Catalog for new users
+
+*WMS
+CHANGE: JobScheduling - correct handling of user specified sites in the executor,
+        including non-existent (misspelled) site names
+FIX: CPUNormalization - accept if the JOBFEATURES information is zero or absent        
+
+[v6r15p14]
+
+*Core
+FIX: BaseClient - proper error propagation to avoid excessive output in the logger
+
+*Configuration
+CHANGE: Resources helper - in getStorageElementOptions() dereference SEs containing
+        BaseSE and Alias references
+
+*Accounting
+FIX: AccountingDB - changes to use DB index to speed-up removal query
+
+*DMS
+CHANGE: DMSHelpers - define SE groups SEsUsedForFailover, SEsNotToBeUsedForJobs, 
+        SEsUsedForArchive in the Operations/DataManagement and use them in the
+        corresponding helper functions
+FIX: FTSJob - temporary fix for the FTS rest interface Request object until it is
+     fixed in the FTS REST server         
+
+*Resources
+FIX: HTCondorCEComputingElement - check that some path was found in findFile(), return with error otherwise
+CHANGE: ARCComputingElement - consider jobs in Hold state as Failed as they never come back
+CHANGE: ARCComputingElement - do not use JobSupervisor tool for bulk job cancellation as
+        it does not seem to work, cancel jobs one by one
+FIX: ARCComputingElement - ensure that pilot jobs that are queued also get their proxies renewed on ARC-CE        
+
+*WMS
+FIX: SiteDirector - ensure that a proxy of at least 3 hours is available to the updatePilotStatus 
+     function so that if it renews any proxies, it's not renewing them with a very short proxy
 
 [v6r15p13]
 
@@ -72,7 +151,7 @@ CHANGE: ComputingElement - reduce the default time length of the payload proxy t
 [v6r15p10]
 
 *Core
-FIX: MySQL - do not print database access password explicitely in the logs
+FIX: MySQL - do not print database access password explicitly in the logs
 
 *Configuration
 CHANGE: VOMS2CSAgent - show in the log if there are changes ready to be committed

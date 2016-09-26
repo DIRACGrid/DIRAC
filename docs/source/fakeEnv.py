@@ -14,48 +14,48 @@ class API:
   pass
 
 def server_init(a, b):
-	pass
+  pass
 
 def connect( host, user, passwd, db ):
-	pass
+  pass
 
 def thread_safe():
-	pass
+  pass
 
 def server_end():
-	pass
+  pass
 
 def timezone(a):
-	pass
+  pass
 
 def array(a, b):
-	pass
+  pass
 
 def absolute(a):
-	pass
+  pass
 
 def average(a):
-	pass
+  pass
 
 def sum(a):
-	pass
+  pass
 
 def divide(a, b):
-	pass
+  pass
 
 def date2num(a):
-	pass
+  pass
 
 AutoDateLocator = AutoDateFormatter = DateFormatter = RRuleLocator = HOURLY = MINUTELY = SECONDLY = YEARLY = MONTHLY = DAILY = RRuleLocator = rrulewrapper = ''
 
 class FigureCanvasAgg:
-	pass
+  pass
 
 class Figure:
-	pass
+  pass
 
 class poisson:
-	pass
+  pass
 
 class date2num:
   pass
@@ -64,12 +64,12 @@ class relativedelta:
   pass
 
 class ScalarFormatter:
-	def ScalarFormatter(self, a):
-		pass
+  def ScalarFormatter(self, a):
+    pass
 
 class RequestDB:
   pass
-  
+
 class Graph(object):
   pass
 

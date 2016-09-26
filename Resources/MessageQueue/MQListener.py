@@ -18,7 +18,7 @@
 """
 
 import time
-from DIRAC import S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.MessageQueue.MQConnectionFactory import MQConnectionFactory
 from DIRAC.Resources.MessageQueue.MQConnection import MQConnectionError
 

@@ -23,3 +23,5 @@ coverage>=4.0.3
 rst2pdf>=0.93
 ipython
 python-coveralls
+elasticsearch-dsl>=2.0.0
+psutil>=4.2.0
