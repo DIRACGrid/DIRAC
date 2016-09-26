@@ -64,12 +64,12 @@ def getFilesToStage( lfnList ):
     return S_ERROR( "Could not get metadata for files" )
   offlineLFNs = set( lfnList ) - onlineLFNs
 
-
   for offlineLFN in offlineLFNs:
     ses = lfnListReplicas['Value']['Successful'][offlineLFN].keys()
-    random.shuffle( ses )
-    se = ses[0]
-    offlineLFNsDict.setdefault( se, list() ).append( offlineLFN )
+    if ses:
+      random.shuffle( ses )
+      se = ses[0]
+      offlineLFNsDict.setdefault( se, list() ).append( offlineLFN )
 
   return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict} )
 
