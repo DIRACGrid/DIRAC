@@ -155,7 +155,11 @@ class BasePlotter( DBUtils ):
     :param dict metadataDict extra arguments used to create the plot.
     
     """
+    
     condDict = {}
+    
+    if metadataDict is None:
+      metadataDict = {}
     
     grouping = preCondDict['grouping'][0]
     # Make safe selections
