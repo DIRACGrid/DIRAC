@@ -1,5 +1,7 @@
 ''' FTSStorageBanAction
 
+    This action has as effect to call FTS3 rest APIs for banning SEs. Needs FTS client version>=3.4.0
+
 '''
 
 import json
@@ -10,7 +12,7 @@ from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseActio
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getFTS3Servers
 
-__RCSID__ = '$Id:  $'
+__RCSID__ = '$Id: $'
 
 class FTSStorageBanAction( BaseAction ):
   '''
@@ -20,7 +22,7 @@ class FTSStorageBanAction( BaseAction ):
   def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults, clients ):
 
     super( FTSStorageBanAction, self ).__init__( name, decisionParams, enforcementResult,
-                                         singlePolicyResults, clients )
+                                                 singlePolicyResults, clients )
 
 
     # enforcementResult supposed to look like:
@@ -57,7 +59,11 @@ class FTSStorageBanAction( BaseAction ):
 
   def _banStorageElement( self, storageElement ):
 
-    endpoints = getFTS3Servers()[ 'Value' ]
+    endpoints = getFTS3Servers()
+    if not endpoints['OK']:
+      return endpoints
+
+    endpoints = endpoints['Value']
 
     blacklist = {}
     for endpoint in endpoints:
@@ -74,13 +80,10 @@ class FTSStorageBanAction( BaseAction ):
         return S_ERROR( repr( e ).replace( ',)', ')' ) )
 
       context = fts3.Context( endpoint, proxyPath )
-      timeout = 3600  # or...?
-      status = 'wait'  # or...?
-      allow_submit = False  # or...?
+      status = 'wait'  # This status leaves the jobs queued. The only alternative is "cancel"
 
-      # TODO: ban_se returns the list of jobIDs interrupted by the banning
-      pausedJobIDs = fts3.ban_se( context, storageElement, status, timeout, allow_submit )
-      self.log.info( "fts3.ban_se: %s" % pausedJobIDs )
+      pausedJobIDs = fts3.ban_se( context, storageElement, status, timeout = 3600, allow_submit = False )
+      self.log.info( "fts3.ban_se: paused jobs: %s" % ','.join(pausedJobIDs) )
 
       blacklist[endpoint] = json.loads( context.get( "ban/se" ) )
 

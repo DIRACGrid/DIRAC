@@ -1,3 +1,28 @@
+[v6r15p17]
+
+*Core
+CHANGE: GOCDBClient - catch all downtimes, independently of their scope
+FIX: LSFTimeLeft - accept 2 "word" output from bqueues command
+CHANGE: dirac-install - create bashrc/cshrc with the possibility to define
+        installation path in the $DIRAC env variable, this is needed for
+        the cvmfs DIRAC client installation
+
+[v6r15p16]
+
+*Core
+CHANGE: AgentModule - added a SIGALARM handler to set a hard timeout for each Agent
+        cycle to avoid agents stuck forever due to some faults in the execution code
+
+*DMS
+FIX: DataManager - cache SE status information in filterTapeReplicas() to speed up execution
+     
+*WMS
+BUGFIX: InputDataByProtocol - the failed resolution for local SEs was not considered correctly:
+        if there were other SEs that were ignored (e.g. because on tape)     
+     
+*TS
+FIX: TransformationAgent - in getDataReplicasDM() no need to get replica PFNs     
+
 [v6r15p15]
 
 *Configuration

@@ -50,6 +50,9 @@ class LSFTimeLeft( object ):
         if len( info ) >= 4:
           self.cpuLimit = float( info[0] ) * 60
           self.cpuRef = info[3]
+        elif len( info ) == 2 and info[1] == "min":
+          self.cpuLimit = float( info[0] ) * 60
+          self.cpuRef = None
         else:
           self.log.warn( 'Problem parsing "%s" for CPU limit' % lines[i + 1] )
           self.cpuLimit = -1
