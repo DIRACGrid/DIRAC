@@ -1,8 +1,6 @@
-# $Id$
 """
-    This is a comment
+    Workflow class is the main container of Steps and Modules
 """
-__RCSID__ = "$Revision: 1.38 $"
 
 import os, re, types
 import xml.sax
@@ -11,6 +9,8 @@ from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Utility import *
 from DIRAC import S_OK, S_ERROR
+
+__RCSID__ = "$Id$"
 
 class Workflow( AttributeCollection ):
 

@@ -362,7 +362,7 @@ class InstalledComponentsDB( object ):
     # Components
     if 'Components' not in tablesInDB:
       try:
-        Component.__table__.create( self.engine )
+        Component.__table__.create( self.engine ) #pylint: disable=no-member
       except Exception as e:
         return S_ERROR( e )
     else:
@@ -371,7 +371,7 @@ class InstalledComponentsDB( object ):
     # Hosts
     if 'Hosts' not in tablesInDB:
       try:
-        Host.__table__.create( self.engine )
+        Host.__table__.create( self.engine ) #pylint: disable=no-member
       except Exception as e:
         return S_ERROR( e )
     else:
@@ -380,7 +380,7 @@ class InstalledComponentsDB( object ):
     # InstalledComponents
     if 'InstalledComponents' not in tablesInDB:
       try:
-        InstalledComponent.__table__.create( self.engine )
+        InstalledComponent.__table__.create( self.engine ) #pylint: disable=no-member
       except Exception as e:
         return S_ERROR( e )
     else:
@@ -389,7 +389,7 @@ class InstalledComponentsDB( object ):
     # HostLogging
     if 'HostLogging' not in tablesInDB:
       try:
-        HostLogging.__table__.create( self.engine )
+        HostLogging.__table__.create( self.engine ) #pylint: disable=no-member
       except Exception as e:
         return S_ERROR( e )
     else:

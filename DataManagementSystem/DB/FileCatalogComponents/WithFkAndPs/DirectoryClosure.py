@@ -1,8 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-from DIRAC.Core.Utilities.List import intListToString, stringListToString
-
 """ DIRAC FileCatalog component representing a directory tree with
     a closure table
 
@@ -12,14 +7,13 @@ from DIRAC.Core.Utilities.List import intListToString, stringListToString
                     you do it several times within 1 second, then there will be no changed, and affected = 0
 """
 
+import os
+
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.List import intListToString, stringListToString
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 
 __RCSID__ = "$Id$"
-
-import os
-import errno
-from types import ListType, StringTypes, IntType, LongType
-from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 
 
 class DirectoryClosure( DirectoryTreeBase ):
@@ -153,7 +147,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     """
 
     dirs = dirIDList
-    if type( dirIDList ) != ListType:
+    if not isinstance( dirIDList, list ):
       dirs = [dirIDList]
 
 
@@ -215,7 +209,7 @@ class DirectoryClosure( DirectoryTreeBase ):
   def getChildren( self, path, connection = False ):
     """ Get child directory IDs for the given directory
     """
-    if type( path ) in StringTypes:
+    if isinstance( path, basestring ):
       result = self.findDir( path, connection )
       if not result['OK']:
         return result
@@ -268,7 +262,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     """
 
     dirs = dirIdList
-    if type( dirIdList ) != ListType:
+    if not isinstance( dirIdList, list ):
       dirs = [dirIdList]
 
     dIds = intListToString( dirs )
@@ -312,7 +306,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     result = self.db.executeStoredProcedure( 'ps_count_sub_directories',
                                              ( dirId, includeParent, 'ret1' ),
-                                              outputIds = [2] )
+                                             outputIds = [2] )
     if not result['OK']:
       return result
 
@@ -390,7 +384,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     if parentDirId or path == '/':
       result = self.db.executeStoredProcedureWithCursor( packageName = 'ps_insert_dir',
                                                          parameters = ( parentDirId, dpath, l_uid,
-                                                                       l_gid, self.db.umask, status ) )
+                                                                        l_gid, self.db.umask, status ) )
 
       if not result['OK']:
         return result
@@ -459,10 +453,10 @@ class DirectoryClosure( DirectoryTreeBase ):
     psName = None
 
     # it is a path ...
-    if type( pathOrDirId ) in StringTypes:
+    if isinstance( pathOrDirId, basestring ):
       psName = 'ps_get_all_directory_info'
     # it is the dirId
-    elif type( pathOrDirId ) in [IntType, LongType]:
+    elif isinstance( pathOrDirId, (list, long) ):
       psName = 'ps_get_all_directory_info_from_id'
     else:
       return S_ERROR( "Unknown type of pathOrDirId %s" % type( pathOrDirId ) )
@@ -503,10 +497,10 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     # The PS associated with a given parameter
     psNames = {'UID' : 'ps_set_dir_uid',
-                'GID' : 'ps_set_dir_gid',
+               'GID' : 'ps_set_dir_gid',
                'Status' : 'ps_set_dir_status',
                'Mode' : 'ps_set_dir_mode',
-               }
+              }
 
     psName = psNames.get( pname, None )
 
@@ -539,7 +533,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     else:
       return DirectoryTreeBase._setDirectoryParameter( self, path, pname, pvalue )
 
-  
+
 
 
   def _setDirectoryGroup( self, path, gname, recursive = False ):
@@ -672,7 +666,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     """ Get the total size of the requested directories
     """
     return self.__getPhysicalSize( lfns, 'ps_calculate_dir_physical_size', connection )
-  
+
   def _changeDirectoryParameter( self, paths,
                                  directoryFunction,
                                  _fileFunction,

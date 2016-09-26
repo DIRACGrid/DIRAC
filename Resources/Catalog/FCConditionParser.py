@@ -309,7 +309,7 @@ class FCConditionParser(object):
         try:
           evaluatedLfns[lfn] = self.__evaluateCondition( conditionStr, lfn = lfn, **kwargs )
         except Exception as e:
-          self.log.error( e )
+          self.log.exception( "Exception while evaluation conditions", lException = e )
           evaluatedLfns[lfn] = False
     else:
       evaluatedLfns = dict.fromkeys( lfns, True )

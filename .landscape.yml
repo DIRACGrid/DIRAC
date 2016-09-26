@@ -1,0 +1,7 @@
+pylint:
+  run: true
+
+pep8:
+  disable:
+    - E114
+    - E111

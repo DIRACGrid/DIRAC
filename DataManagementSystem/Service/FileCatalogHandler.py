@@ -323,7 +323,7 @@ class FileCatalogHandler( RequestHandler ):
     """ Get the status for the supplied replicas """
     return gFileCatalogDB.getReplicaStatus( lfns, self.getRemoteCredentials() )
 
-  types_getFileAncestors = [ ListType, [ ListType, IntType, LongType ] ]
+  types_getFileAncestors = [ [ ListType, DictType ], [ ListType, IntType, LongType ] ]
   def export_getFileAncestors( self, lfns, depths ):
     """ Get the status for the supplied replicas """
     dList = depths
@@ -332,7 +332,7 @@ class FileCatalogHandler( RequestHandler ):
     lfnDict = dict.fromkeys( lfns, True )
     return gFileCatalogDB.getFileAncestors( lfnDict, dList, self.getRemoteCredentials() )
 
-  types_getFileDescendents = [ ListType, [ ListType, IntType, LongType ] ]
+  types_getFileDescendents = [ [ ListType, DictType ], [ ListType, IntType, LongType ] ]
   def export_getFileDescendents( self, lfns, depths ):
     """ Get the status for the supplied replicas """
     dList = depths

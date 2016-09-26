@@ -207,53 +207,44 @@ class ConfigurationData( object ):
   def getVersion( self, cfg = False ):
     if not cfg:
       cfg = self.remoteCFG
-    value = self.extractOptionFromCFG( "%s/Version" % self.configurationPath,
-                                        cfg )
+    value = self.extractOptionFromCFG( "%s/Version" % self.configurationPath, cfg )
     if value:
       return value
     return "0"
 
   def getName( self ):
-    return self.extractOptionFromCFG( "%s/Name" % self.configurationPath,
-                                        self.mergedCFG )
+    return self.extractOptionFromCFG( "%s/Name" % self.configurationPath, self.mergedCFG )
 
   def exportName( self ):
-    return self.setOptionInCFG( "%s/Name" % self.configurationPath,
-                                self.getName(),
-                                self.remoteCFG )
+    return self.setOptionInCFG( "%s/Name" % self.configurationPath, self.getName(), self.remoteCFG )
 
   def getRefreshTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/RefreshTime" % self.configurationPath,
-                                        self.mergedCFG ) )
+      return int( self.extractOptionFromCFG( "%s/RefreshTime" % self.configurationPath, self.mergedCFG ) )
     except:
       return 300
 
   def getPropagationTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/PropagationTime" % self.configurationPath,
-                                        self.mergedCFG ) )
+      return int( self.extractOptionFromCFG( "%s/PropagationTime" % self.configurationPath, self.mergedCFG ) )
     except:
       return 300
 
   def getSlavesGraceTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/SlavesGraceTime" % self.configurationPath,
-                                        self.mergedCFG ) )
+      return int( self.extractOptionFromCFG( "%s/SlavesGraceTime" % self.configurationPath, self.mergedCFG ) )
     except:
       return 600
 
   def mergingEnabled( self ):
     try:
-      val = self.extractOptionFromCFG( "%s/EnableAutoMerge" % self.configurationPath,
-                                        self.mergedCFG )
+      val = self.extractOptionFromCFG( "%s/EnableAutoMerge" % self.configurationPath, self.mergedCFG )
       return val.lower() in ( "yes", "true", "y" )
     except:
       return False
 
   def getAutoPublish( self ):
-    value = self.extractOptionFromCFG( "%s/AutoPublish" % self.configurationPath,
-                                        self.localCFG )
+    value = self.extractOptionFromCFG( "%s/AutoPublish" % self.configurationPath, self.localCFG )
     if value and value.lower() in ( "no", "false", "n" ):
       return False
     else:
@@ -263,26 +254,20 @@ class ConfigurationData( object ):
     return list( self.remoteServerList )
 
   def getConfigurationGateway( self ):
-    return self.extractOptionFromCFG( "/DIRAC/Gateway",
-                                        self.localCFG )
+    return self.extractOptionFromCFG( "/DIRAC/Gateway", self.localCFG )
 
   def setServers( self, sServers ):
-    self.setOptionInCFG( "%s/Servers" % self.configurationPath,
-                                  sServers,
-                                  self.remoteCFG )
+    self.setOptionInCFG( "%s/Servers" % self.configurationPath, sServers, self.remoteCFG )
     self.sync()
 
   def deleteLocalOption( self, optionPath ):
     self.deleteOptionInCFG( optionPath, self.localCFG )
 
   def getMasterServer( self ):
-    return self.extractOptionFromCFG( "%s/MasterServer" % self.configurationPath,
-                                      self.remoteCFG )
+    return self.extractOptionFromCFG( "%s/MasterServer" % self.configurationPath, self.remoteCFG )
 
   def setMasterServer( self, sURL ):
-    self.setOptionInCFG( "%s/MasterServer" % self.configurationPath,
-                         sURL,
-                         self.remoteCFG )
+    self.setOptionInCFG( "%s/MasterServer" % self.configurationPath, sURL, self.remoteCFG )
     self.sync()
 
   def getCompressedData( self ):
@@ -291,8 +276,7 @@ class ConfigurationData( object ):
     return self.__compressedConfigurationData
 
   def isMaster( self ):
-    value = self.extractOptionFromCFG( "%s/Master" % self.configurationPath,
-                                            self.localCFG )
+    value = self.extractOptionFromCFG( "%s/Master" % self.configurationPath, self.localCFG )
     if value and value.lower() in ( "yes", "true", "y" ):
       return True
     else:
@@ -354,8 +338,7 @@ class ConfigurationData( object ):
         zf.close()
       except Exception:
         gLogger.exception()
-        gLogger.error( "Cannot backup configuration data file",
-                     "file %s" % backupFile )
+        gLogger.error( "Cannot backup configuration data file", "file %s" % backupFile )
     else:
       gLogger.warn( "CS data file does not exist", configurationFile )
 

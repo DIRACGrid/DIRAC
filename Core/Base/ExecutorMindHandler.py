@@ -91,13 +91,13 @@ class ExecutorMindHandler( RequestHandler ):
       result = self.exec_prepareToSend( taskId, taskObj, eId )
       if not result[ 'OK' ]:
         return result
-    except Exception, excp:
-      gLogger.exception( "Exception while executing prepareToSend: %s" % str( excp ) )
+    except Exception as excp:
+      gLogger.exception( "Exception while executing prepareToSend: %s" % str( excp ), lException = excp )
       return S_ERROR( "Cannot presend task" )
     try:
       result = self.exec_serializeTask( taskObj )
-    except Exception, excp:
-      gLogger.exception( "Exception while serializing task %s" % taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception while serializing task %s" % taskId, lException = excp )
       return S_ERROR( "Cannot serialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "exec_serializeTask does not return a return structure" )
@@ -151,8 +151,8 @@ class ExecutorMindHandler( RequestHandler ):
     taskId = msgObj.taskId
     try:
       result = self.exec_deserializeTask( msgObj.taskStub )
-    except Exception, excp:
-      gLogger.exception( "Exception while deserializing task %s" % taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception while deserializing task %s" % taskId, lException = excp )
       return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "exec_deserializeTask does not return a return structure" )
@@ -169,8 +169,8 @@ class ExecutorMindHandler( RequestHandler ):
     taskId = msgObj.taskId
     try:
       result = self.exec_deserializeTask( msgObj.taskStub )
-    except Exception, excp:
-      gLogger.exception( "Exception while deserializing task %s" % taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception while deserializing task %s" % taskId, lException = excp )
       return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "exec_deserializeTask does not return a return structure" )
@@ -188,8 +188,8 @@ class ExecutorMindHandler( RequestHandler ):
     taskId = msgObj.taskId
     try:
       result = self.exec_deserializeTask( msgObj.taskStub )
-    except Exception, excp:
-      gLogger.exception( "Exception while deserializing task %s" % taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception while deserializing task %s" % taskId, lException = excp )
       return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "exec_deserializeTask does not return a return structure" )
@@ -200,8 +200,8 @@ class ExecutorMindHandler( RequestHandler ):
     self.__eDispatch.removeTask( msgObj.taskId )
     try:
       self.exec_taskError( msgObj.taskId, taskObj, msgObj.errorMsg )
-    except:
-      gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception when processing task %s" % msgObj.taskId, lException = excp )
     return S_OK()
 
   auth_msg_ExecutorError = [ 'all' ]

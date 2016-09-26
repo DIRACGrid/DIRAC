@@ -1,13 +1,13 @@
 """ Implementation of Module
 """
 
-__RCSID__ = "$Id:$"
-
 import copy
 import os
 
 #try: # this part to import as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
+
+__RCSID__ = "$Id$"
 
 class ModuleDefinition( AttributeCollection ):
 

@@ -36,13 +36,13 @@ class WatchdogFactory( object ):
 
     try:
       wdModule = __import__( self.watchDogsLocation + '.%s' % subClassName, globals(), locals(), [subClassName] )
-    except ImportError, e:
-      self.log.exception( "Failed to import module" + self.watchDogsLocation + '.%s' % subClassName + '.%s' % subClassName + ': ' + e )
+    except ImportError as e:
+      self.log.exception( "Failed to import module" + self.watchDogsLocation + '.%s' % subClassName + '.%s' % subClassName + ': ' + str(e) )
       return S_ERROR( "Failed to import module" )
     try:
       wd_o = getattr( wdModule, subClassName )( pid, thread, spObject, jobcputime, memoryLimit )
       return S_OK( wd_o )
-    except AttributeError, e:
+    except AttributeError as e:
       self.log.exception( "Failed to create %s(): %s." % ( subClassName, e ) )
       return S_ERROR( "Failed to create object" )
 

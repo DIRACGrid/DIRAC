@@ -36,8 +36,6 @@
 """
 
 import os
-import traceback
-import errno
 import imp
 import sys
 
@@ -62,6 +60,8 @@ ETYPE = 1000
 EIMPERR = 1001
 ENOMETH = 1002
 ECONF = 1003
+EVALUE = 1004
+EEEXCEPTION = 1005
 # Files manipulation: 1X
 ECTMPF = 1010
 EOF = 1011
@@ -87,6 +87,19 @@ EVOMS = 1121
 # Databases : 3X
 EDB = 1130
 EMYSQL = 1131
+# Message Queues: 4X
+EMQUKN = 1140
+EMQNOM = 1141
+EMQCONN = 1142
+#Elasticsearch
+EELNOFOUND = 1146
+
+#config
+ESECTION = 1400
+
+#processes
+EEZOMBIE = 1147
+EENOPID = 1148
 
 # ## WMS/Workflow
 EWMSUKN = 1500
@@ -113,6 +126,8 @@ dErrorCode = {
                1001 : 'EIMPERR',
                1002 : 'ENOMETH',
                1003 : 'ECONF',
+               1004 : 'EVALUE',
+               1005 : 'EEEXCEPTION',
                # 101X: Files manipulation
                1010 : 'ECTMPF',
                1011 : 'EOF',
@@ -138,6 +153,17 @@ dErrorCode = {
                # 113X: Databases
                1130 : 'EDB',
                1131 : 'EMYSQL',
+               # 114X: Message Queues
+               1140 : 'EMQUKN',
+               1141 : 'EMQNOM',
+               1142 : 'EMQCONN',
+               # Elasticsearch
+               1146 : 'EELNOFOUND',
+               # Config
+               1400 : "ESECTION",
+               #Processes
+               1147 : 'EEZOMBIE',
+               1148 : 'EENOPID',
                # WMS/Workflow
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
@@ -152,8 +178,7 @@ dErrorCode = {
 
                # TS
                1900 : "ETSUKN",
-               1901 : "ETSDATA",
-               }
+               1901 : "ETSDATA"}
 
 
 dStrError = {
@@ -163,6 +188,8 @@ dStrError = {
               EIMPERR : "Failed to import library",
               ENOMETH : "No such method or function",
               ECONF : "Configuration error",
+              EVALUE: "Wrong value passed", 
+              EEEXCEPTION: "runtime general exception",
               # 101X: Files manipulation
               ECTMPF : "Failed to create temporary file",
               EOF : "Cannot open file",
@@ -188,6 +215,17 @@ dStrError = {
               # 113X: Databases
               EDB : "Database Error",
               EMYSQL : "MySQL Error",
+              # 114X: Message Queues
+              EMQUKN : "Unknown MQ Error",
+              EMQNOM : "No messages",
+              EMQCONN : "MQ connection failure",
+              # 114X Elasticsearch
+              EELNOFOUND: "Index not found",
+               # Config
+              ESECTION : "Section is not found",
+              #processes
+              EEZOMBIE: "Zombie process",
+              EENOPID: "No PID of process",
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid JDL",
@@ -200,8 +238,7 @@ dStrError = {
               ERMSUKN : "Unknown RMS error",
               # TS
               ETSUKN : "Unknown Transformation System Error",
-              ETSDATA : "Invalid Input Data definition",
-}
+              ETSDATA : "Invalid Input Data definition"}
 
 def strerror(code):
   """ This method wraps up os.strerror, and behave the same way.
@@ -212,7 +249,7 @@ def strerror(code):
     return "Undefined error"
 
   errMsg = "Unknown error %s" % code
-  
+
   try:
     errMsg = dStrError[code]
   except KeyError:
@@ -223,7 +260,7 @@ def strerror(code):
       # on others, it returns a message...
     except ValueError:
       pass
-  
+
   return errMsg
 
 def cmpError( inErr, candidate ):
@@ -311,4 +348,3 @@ def includeExtensionErrors():
 
     except:
       pass
-

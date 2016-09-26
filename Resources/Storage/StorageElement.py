@@ -36,6 +36,13 @@ class StorageElementCache( object ):
   def __call__( self, name, plugins = None, vo = None, hideExceptions = False ):
     self.seCache.purgeExpired( expiredInSeconds = 60 )
     tId = threading.current_thread().ident
+
+    if not vo:
+      result = getVOfromProxyGroup()
+      if not result['OK']:
+        return
+      vo = result['Value']
+
     argTuple = ( tId, name, plugins, vo )
     seObj = self.seCache.get( argTuple )
 
@@ -145,19 +152,19 @@ class StorageElementItem( object ):
     self.opHelper = Operations( vo = self.vo )
 
     proxiedProtocols = gConfig.getValue( '/LocalSite/StorageElements/ProxyProtocols', "" ).split( ',' )
-    useProxy = ( gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "UnknownProtocol" )
+    self.useProxy = ( gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "UnknownProtocol" )
                  in proxiedProtocols )
 
-    if not useProxy:
-      useProxy = gConfig.getValue( '/LocalSite/StorageElements/%s/UseProxy' % name, False )
-    if not useProxy:
-      useProxy = self.opHelper.getValue( '/Services/StorageElements/%s/UseProxy' % name, False )
+    if not self.useProxy:
+      self.useProxy = gConfig.getValue( '/LocalSite/StorageElements/%s/UseProxy' % name, False )
+    if not self.useProxy:
+      self.useProxy = self.opHelper.getValue( '/Services/StorageElements/%s/UseProxy' % name, False )
 
     self.valid = True
     if plugins == None:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = [], hideExceptions = hideExceptions )
+      res = StorageFactory( useProxy = self.useProxy, vo = self.vo ).getStorages( name, pluginList = [], hideExceptions = hideExceptions )
     else:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = plugins, hideExceptions = hideExceptions )
+      res = StorageFactory( useProxy = self.useProxy, vo = self.vo ).getStorages( name, pluginList = plugins, hideExceptions = hideExceptions )
 
     if not res['OK']:
       self.valid = False
@@ -450,6 +457,10 @@ class StorageElementItem( object ):
 
     """
 
+    # No common protocols if this is a proxy storage
+    if self.useProxy:
+      return S_OK( [] )
+
     # We should actually separate source and destination protocols
     # For example, an SRM can get as a source an xroot or gsiftp url...
     # but with the current implementation, we get only srm
@@ -619,7 +630,7 @@ class StorageElementItem( object ):
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName
-        :param lfn : string, list or dictionnary
+        :param lfn : string, list or dictionary
         :param *args : variable amount of non-keyword arguments. SHOULD BE EMPTY
         :param **kwargs : keyword arguments
         :returns S_OK( { 'Failed': {lfn : reason} , 'Successful': {lfn : value} } )
@@ -800,7 +811,7 @@ class StorageElementItem( object ):
     baseAccountingDict['RegistrationTotal'] = 0
 
     # if it is a get method, then source and destination of the transfer should be inverted
-    if self.methodName in ( 'putFile', 'getFile' ):
+    if self.methodName == 'getFile':
       baseAccountingDict['Destination'] = siteName()
       baseAccountingDict[ 'Source'] = self.name
     else:

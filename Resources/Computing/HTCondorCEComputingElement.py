@@ -3,18 +3,31 @@
 # Author : A.S.
 ########################################################################
 
-""" HTCondorCE Computing Element
+"""HTCondorCE Computing Element
 
    Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Agent
    Needs the condor grid middleware (condor_submit, condor_history, condor_q, condor_rm)
 
+   Configuration for the HTCondorCE submission can be done via the configuration system ::
+
+     WorkingDirectory: Location to store the pilot and condor log files
+     DaysToKeepLogs:  how low to keep the log files until they are removed
+     ExtraSubmitString: Additional option for the condor submit file, separate options with '\\n', for example:
+        request_cpus = 8 \\n periodic_remove = ...
+
+
+   see :ref:`res-comp-htcondor`
 """
+  # Note: if you read this documentation in the source code and not via the sphinx
+  # created documentation, there should only be one slash when setting the option,
+  # but "\n" gets rendered as a linebreak in sphinx
 
 import os
 import tempfile
 import commands
+import errno
 
-from DIRAC                                               import S_OK, S_ERROR
+from DIRAC                                               import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
 from DIRAC.Core.Utilities.File                           import mkDir
@@ -24,11 +37,14 @@ from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_ST
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import Subprocess
 
+from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
+
 __RCSID__ = "$Id$"
 
 CE_NAME = 'HTCondorCE'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 DEFAULT_WORKINGDIRECTORY = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT'
+DEFAULT_DAYSTOKEEPLOGS = 15
 
 def condorIDFromJobRef( jobRef ):
   """return tuple of "jobURL" and condorID from the jobRef string"""
@@ -36,36 +52,25 @@ def condorIDFromJobRef( jobRef ):
   condorID = jobURL.split("/")[-1]
   return jobURL,condorID
 
-def parseCondorStatus( lines, jobID ):
-  """parse the condor_q or condor_history output for the job status"""
-  for line in lines:
-    if line.strip().startswith( jobID ):
-      if " I " in line:
-        return 'Waiting'
-      elif " R " in line:
-        return 'Running'
-      elif " C " in line:
-        return 'Done'
-      elif " X " in line:
-        return 'Aborted'
-      elif " H " in line:
-        return 'HELD'
-  return 'Unknown'
-
 def findFile( workingDir, fileName ):
   """ find a pilot out, err, log file """
   res = Subprocess().systemCall("find %s -name '%s'" % (workingDir, fileName), shell=True)
   if not res['OK']:
     return res
   paths = res['Value'][1].splitlines()
+  if not paths:
+    return S_ERROR( errno.ENOENT, "Could not find %s in directory %s" % ( fileName, workingDir ) )
   return S_OK(paths)
 
 def getCondorLogFile( pilotRef ):
   """return the location of the logFile belonging to the pilot reference"""
   _jobUrl, condorID = condorIDFromJobRef( pilotRef )
   #FIXME: This gets called from the WMSAdministrator, so we don't have the same
-  #working directory as for the SiteDirector unless we force it
-  resLog = findFile( DEFAULT_WORKINGDIRECTORY, '%s.log' % condorID )
+  #working directory as for the SiteDirector unless we force it, there is also
+  #no CE instantiated when this function is called so we can only pick this option up from one place
+  workingDirectory = gConfig.getValue( "Resources/Computing/HTCondorCE/WorkingDirectory",
+                                       DEFAULT_WORKINGDIRECTORY )
+  resLog = findFile( workingDirectory, '%s.log' % condorID )
   return resLog
 
 class HTCondorCEComputingElement( ComputingElement ):
@@ -76,7 +81,7 @@ class HTCondorCEComputingElement( ComputingElement ):
   def __init__( self, ceUniqueID ):
     """ Standard constructor.
     """
-    ComputingElement.__init__( self, ceUniqueID )
+    super( HTCondorCEComputingElement, self ).__init__( ceUniqueID )
 
     self.ceType = CE_NAME
     self.submittedJobs = 0
@@ -86,27 +91,32 @@ class HTCondorCEComputingElement( ComputingElement ):
     self.outputURL = 'gsiftp://localhost'
     self.gridEnv = ''
     self.proxyRenewal = 0
+    self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
+
+    ## see note on getCondorLogFile, why we can only use the global setting
+    self.workingDirectory = gConfig.getValue( "Resources/Computing/HTCondorCE/WorkingDirectory",
+                                              DEFAULT_WORKINGDIRECTORY )
+    self.daysToKeepLogs = self.ceParameters.get( "DaysToKeepLogs", DEFAULT_DAYSTOKEEPLOGS )
 
   #############################################################################
   def __writeSub( self, executable, nJobs ):
     """ Create the Sub File for submission
 
     """
-    workingDirectory = self.ceParameters['WorkingDirectory']
-    initialDir = os.path.dirname( workingDirectory )
-    self.log.debug( "Working directory: %s " % workingDirectory )
+
+    self.log.debug( "Working directory: %s " % self.workingDirectory )
     ##We randomize the location of the pilotoutput and log, because there are just too many of them
     pre1 = makeGuid()[:3]
     pre2 = makeGuid()[:3]
-    mkDir( os.path.join( initialDir, pre1, pre2 ) )
+    mkDir( os.path.join( self.workingDirectory, pre1, pre2 ) )
     initialDirPrefix = "%s/%s" %( pre1, pre2 )
 
-    self.log.debug( "InitialDir: %s" % os.path.join(initialDir,initialDirPrefix) )
+    self.log.debug( "InitialDir: %s" % os.path.join( self.workingDirectory, initialDirPrefix ) )
 
-    fd, name = tempfile.mkstemp( suffix = '.sub', prefix = 'HTCondorCE_', dir = workingDirectory )
+    fd, name = tempfile.mkstemp( suffix = '.sub', prefix = 'HTCondorCE_', dir = self.workingDirectory )
     subFile = os.fdopen( fd, 'w' )
 
-    executable = os.path.join( workingDirectory, executable )
+    executable = os.path.join( self.workingDirectory, executable )
 
     sub = """
 executable = %(executable)s
@@ -121,12 +131,16 @@ grid_resource = condor %(ceName)s %(ceName)s:9619
 ShouldTransferFiles = YES
 WhenToTransferOutput = ON_EXIT_OR_EVICT
 kill_sig=SIGTERM
+
+%(extraString)s
+
 Queue %(nJobs)s
 
 """ % dict( executable=executable,
             nJobs=nJobs,
             ceName=self.ceName,
-            initialDir=os.path.join(initialDir,initialDirPrefix),
+            extraString=self.extraSubmitString,
+            initialDir=os.path.join( self.workingDirectory, initialDirPrefix ),
           )
     subFile.write( sub )
     subFile.close()
@@ -240,19 +254,22 @@ Queue %(nJobs)s
       job,jobID = condorIDFromJobRef( jobRef )
       condorIDs[job] = jobID
 
-    status,stdout_q = commands.getstatusoutput( 'condor_q %s' % ' '.join(condorIDs.values()) )
+    ##This will return a list of 1245.75 3
+    status,stdout_q = commands.getstatusoutput( 'condor_q %s -af:j JobStatus ' % ' '.join(condorIDs.values()) )
     if status != 0:
       return S_ERROR( stdout_q )
+    qList = stdout_q.strip().split('\n')
 
-    status_history,stdout_history = commands.getstatusoutput( 'condor_history %s ' % ' '.join(condorIDs.values()) )
-    if status_history == 0:
-      stdout_q = '\n'.join( [stdout_q,stdout_history] )
+    ##FIXME: condor_history does only support j for autoformat from 8.5.3,
+    ## format adds whitespace for each field This will return a list of 1245 75 3
+    ## needs to cocatenate the first two with a dot
+    condorHistCall = 'condor_history %s -af ClusterId ProcId JobStatus' % ' '.join( condorIDs.values() )
 
-    lines = stdout_q.split( '\n' )
+    treatCondorHistory( condorHistCall, qList )
 
     for job,jobID in condorIDs.iteritems():
 
-      pilotStatus = parseCondorStatus( lines, jobID )
+      pilotStatus = parseCondorStatus( qList, jobID )
       if pilotStatus == 'HELD':
         #make sure the pilot stays dead and gets taken out of the condor_q
         _rmStat, _rmOut = commands.getstatusoutput( 'condor_rm %s ' % jobID )
@@ -261,11 +278,6 @@ Queue %(nJobs)s
 
       resultDict[job] = pilotStatus
 
-    if len( resultDict ) != len( jobIDList ):
-      for jobRef in jobIDList:
-        job = jobRef.split( ":::" )[0]
-        if job not in resultDict:
-          resultDict[job] = 'Unknown'
     self.log.verbose( "Pilot Statuses: %s " % resultDict )
     return S_OK( resultDict )
 
@@ -279,17 +291,16 @@ Queue %(nJobs)s
     ## SiteDirector WorkingDirectory, it might not even run on the
     ## same machine
     #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
-    workingDirectory = DEFAULT_WORKINGDIRECTORY
 
     output = ''
     error = ''
-    resOut = findFile( workingDirectory, '%s.out' % condorID )
+    resOut = findFile( self.workingDirectory, '%s.out' % condorID )
     if not resOut['OK']:
       self.log.error("Failed to find output file for condor job", jobID )
       return resOut
     outputfilename = resOut['Value'][0]
 
-    resErr = findFile( workingDirectory, '%s.err' % condorID )
+    resErr = findFile( self.workingDirectory, '%s.err' % condorID )
     if not resErr['OK']:
       self.log.error("Failed to find error file for condor job", jobID )
       return resErr
@@ -335,26 +346,20 @@ Queue %(nJobs)s
 
     #FIXME: again some issue with the working directory...
     #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
-    workingDirectory = DEFAULT_WORKINGDIRECTORY
 
-    self.log.debug( "Cleaning working directory: %s" % workingDirectory )
+    self.log.debug( "Cleaning working directory: %s" % self.workingDirectory )
 
     ### remove all files older than 120 minutes starting with DIRAC_ Condor will
     ### push files on submission, but it takes at least a few seconds until this
     ### happens so we can't directly unlink after condor_submit
-    status,stdout = commands.getstatusoutput( 'find %s -mmin +120 -name "DIRAC_*" -delete ' % workingDirectory )
+    status,stdout = commands.getstatusoutput( 'find %s -mmin +120 -name "DIRAC_*" -delete ' % self.workingDirectory )
     if status != 0:
       self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
 
-    ### remove all log files older than 15 days
-    ### FIXME: make this configurable
-    status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.log" -type f -delete ' % workingDirectory )
-    if status != 0:
-      self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
-    status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.out" -type f -delete ' % workingDirectory )
-    if status != 0:
-      self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
-    status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.err" -type f -delete ' % workingDirectory )
+    ### remove all out/err/log files older than "DaysToKeepLogs" days
+    findPars = dict( workDir=self.workingDirectory, days=self.daysToKeepLogs )
+    ### remove all out/err/log files older than "DaysToKeepLogs" days
+    status,stdout = commands.getstatusoutput( r'find %(workDir)s -mtime +%(days)s -type f \( -name "*.out" -o -name "*.err" -o -name "*.log" \) -delete ' % findPars )
     if status != 0:
       self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
 

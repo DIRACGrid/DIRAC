@@ -7,12 +7,14 @@
 
 __RCSID__ = "$Id$"
 
+# Make sure the the Agg backend is used despite arbitrary configuration
+import matplotlib
+matplotlib.use( 'agg' )
+
 import DIRAC
 
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
-
-import time
 
 common_prefs = {
   'background_color':'white',

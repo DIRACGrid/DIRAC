@@ -1,4 +1,4 @@
-""" Priority corrector for the group and ingroup shares
+""" Priority corrector for the group and in-group shares
 """
 
 __RCSID__ = "$Id$"

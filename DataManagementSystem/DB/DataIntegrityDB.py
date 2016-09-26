@@ -1,64 +1,71 @@
-########################################################################
-# $HeadURL$
-########################################################################
-""" DataIntegrityDB class is a front-end to the Data Integrity Database. """
-__RCSID__ = "$Id$"
+""" DataIntegrityDB class is a front-end to the Data Integrity Database.
+"""
 
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Base.DB import DB
 
+__RCSID__ = "$Id$"
+
 #############################################################################
 class DataIntegrityDB( DB ):
+  """ Only 1 table, that can be created with:
+
+      CREATE TABLE Problematics(
+        FileID INTEGER NOT NULL AUTO_INCREMENT,
+        Prognosis VARCHAR(32) NOT NULL,
+        LFN VARCHAR(255) NOT NULL,
+        PFN VARCHAR(255),
+        Size BIGINT(20),
+        SE VARCHAR(32),
+        GUID VARCHAR(255),
+        Status VARCHAR(32) DEFAULT 'New',
+        Retries INTEGER DEFAULT 0,
+        InsertDate DATETIME NOT NULL,
+        LastUpdate DATETIME NOT NULL,
+        Source VARCHAR(127) NOT NULL DEFAULT 'Unknown',
+        PRIMARY KEY(FileID),
+        INDEX (Prognosis,Status)
+      );
   """
-CREATE TABLE Problematics(
-  FileID INTEGER NOT NULL AUTO_INCREMENT,
-  Prognosis VARCHAR(32) NOT NULL,
-  LFN VARCHAR(255) NOT NULL,
-  PFN VARCHAR(255),
-  Size BIGINT(20),
-  SE VARCHAR(32),
-  GUID VARCHAR(255),
-  Status VARCHAR(32) DEFAULT 'New',
-  Retries INTEGER DEFAULT 0,
-  InsertDate DATETIME NOT NULL,
-  LastUpdate DATETIME NOT NULL,
-  Source VARCHAR(127) NOT NULL DEFAULT 'Unknown',
-  PRIMARY KEY(FileID),
-  INDEX (Prognosis,Status)
-);
-"""
-
-  tableName = 'Problematics'
-  tableDict = { tableName: { 'Fields' : { 'FileID': 'INTEGER NOT NULL AUTO_INCREMENT',
-                                          'Prognosis': 'VARCHAR(32) NOT NULL',
-                                          'LFN': 'VARCHAR(255) NOT NULL',
-                                          'PFN': 'VARCHAR(255)',
-                                          'Size': 'BIGINT(20)',
-                                          'SE': 'VARCHAR(32)',
-                                          'GUID': 'VARCHAR(255)',
-                                          'Status': 'VARCHAR(32) DEFAULT "New"',
-                                          'Retries': 'INTEGER DEFAULT 0',
-                                          'InsertDate': 'DATETIME NOT NULL',
-                                          'LastUpdate': 'DATETIME NOT NULL',
-                                          'Source': 'VARCHAR(127) NOT NULL DEFAULT "Unknown"',
-                                         },
-                            'PrimaryKey': 'FileID',
-                            'Indexes': { 'PS': ['Prognosis', 'Status']},
-                            'Engine': 'InnoDB',
-                            }
-               }
-
-  fieldList = ['FileID', 'LFN', 'PFN', 'Size', 'SE', 'GUID', 'Prognosis']
 
   def __init__( self ):
     """ Standard Constructor
     """
     DB.__init__( self, 'DataIntegrityDB', 'DataManagement/DataIntegrityDB' )
 
+    self.tableName = 'Problematics'
+    self.tableDict = { self.tableName: { 'Fields' : { 'FileID': 'INTEGER NOT NULL AUTO_INCREMENT',
+                                                      'Prognosis': 'VARCHAR(32) NOT NULL',
+                                                      'LFN': 'VARCHAR(255) NOT NULL',
+                                                      'PFN': 'VARCHAR(255)',
+                                                      'Size': 'BIGINT(20)',
+                                                      'SE': 'VARCHAR(32)',
+                                                      'GUID': 'VARCHAR(255)',
+                                                      'Status': 'VARCHAR(32) DEFAULT "New"',
+                                                      'Retries': 'INTEGER DEFAULT 0',
+                                                      'InsertDate': 'DATETIME NOT NULL',
+                                                      'LastUpdate': 'DATETIME NOT NULL',
+                                                      'Source': 'VARCHAR(127) NOT NULL DEFAULT "Unknown"',
+                                                    },
+                                         'PrimaryKey': 'FileID',
+                                         'Indexes': { 'PS': ['Prognosis', 'Status']},
+                                         'Engine': 'InnoDB',
+                                       }
+                      }
+
+    self.fieldList = ['FileID', 'LFN', 'PFN', 'Size', 'SE', 'GUID', 'Prognosis']
+
+
   def _checkTable( self ):
     """ Make sure the table is created
     """
-    return self._createTables( self.tableDict, force = False )
+    showTables = self._query( "SHOW TABLES;" )
+    if not showTables['OK']:
+      return showTables
+    tables = [ table[0] for table in showTables['Value'] if table ]
+    if self.tableName not in tables:
+      return self._createTables( self.tableDict, force = False )
+    return S_OK()
 
 #############################################################################
   def insertProblematic( self, source, fileMetadata ):
@@ -168,130 +175,3 @@ CREATE TABLE Problematics(
     """
     return self.updateFields( self.tableName, condDict = { 'FileID': fileID },
                               updateDict = { 'Prognosis': newPrognosis, 'LastUpdate':'UTC_TIMESTAMP()' } )
-
-def test():
-  """ Some test cases
-  """
-
-  # building up some fake CS values
-  gConfig.setOptionValue( 'DIRAC/Setup', 'Test' )
-  gConfig.setOptionValue( '/DIRAC/Setups/Test/DataManagement', 'Test' )
-
-  host = '127.0.0.1'
-  user = 'Dirac'
-  pwd = 'Dirac'
-  db = 'AccountingDB'
-
-  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataIntegrityDB/Host', host )
-  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataIntegrityDB/DBName', db )
-  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataIntegrityDB/User', user )
-  gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/DataIntegrityDB/Password', pwd )
-
-  diDB = DataIntegrityDB()
-  assert diDB._connect()['OK']
-
-  source = 'Test'
-  prognosis = 'TestError'
-  prodID = 1234
-  lfn = '/Test/%08d/File1' % prodID
-  fileMetadata1 = {lfn: {'Prognosis': prognosis, 'PFN': 'File1', 'SE': 'Test-SE'}}
-  fileOut1 = {'FileID': 1L, 'LFN': lfn, 'PFN': 'File1', 'Prognosis': prognosis,
-              'GUID': None, 'SE': 'Test-SE', 'Size': None}
-  newStatus = 'Solved'
-  newPrognosis = 'AnotherError'
-
-  try:
-    gLogger.info( '\n Creating Table\n' )
-    # Make sure it is there and it has been created for this test
-    result = diDB._checkTable()
-    assert result['OK']
-
-    result = diDB._checkTable()
-    assert not result['OK']
-    assert result['Message'] == 'The requested table already exist'
-
-    result = diDB.insertProblematic( source, fileMetadata1 )
-    assert result['OK']
-    assert result['Value'] == {'Successful': {lfn: True}, 'Failed': {}}
-
-    result = diDB.insertProblematic( source, fileMetadata1 )
-    assert result['OK']
-    assert result['Value'] == {'Successful': {lfn: 'Already exists'}, 'Failed': {}}
-
-    result = diDB.getProblematicsSummary()
-    assert result['OK']
-    assert result['Value'] == {'TestError': {'New': 1}}
-
-    result = diDB.getDistinctPrognosis()
-    assert result['OK']
-    assert result['Value'] == ['TestError']
-
-    result = diDB.getProblematic()
-    assert result['OK']
-    assert result['Value'] == fileOut1
-
-    result = diDB.incrementProblematicRetry( result['Value']['FileID'] )
-    assert result['OK']
-    assert result['Value'] == 1
-
-    result = diDB.getProblematic()
-    assert result['OK']
-    assert result['Value'] == fileOut1
-
-    result = diDB.getPrognosisProblematics( prognosis )
-    assert result['OK']
-    assert result['Value'] == [fileOut1]
-
-    result = diDB.getTransformationProblematics( prodID )
-    assert result['OK']
-    assert result['Value'][lfn] == 1
-
-    result = diDB.setProblematicStatus( 1, newStatus )
-    assert result['OK']
-    assert result['Value'] == 1
-
-    result = diDB.changeProblematicPrognosis( 1, newPrognosis )
-    assert result['OK']
-    assert result['Value'] == 1
-
-    result = diDB.getPrognosisProblematics( prognosis )
-    assert result['OK']
-    assert result['Value'] == []
-
-    result = diDB.removeProblematic( 1 )
-    assert result['OK']
-    assert result['Value'] == 1
-
-    result = diDB.getProblematicsSummary()
-    assert result['OK']
-    assert result['Value'] == {}
-
-    gLogger.info( '\n Removing Table\n' )
-    result = diDB._update( 'DROP TABLE `%s`' % diDB.tableName )
-    assert result['OK']
-
-
-    gLogger.info( '\n OK\n' )
-
-
-  except AssertionError:
-    print 'ERROR ',
-    if not result['OK']:
-      print result['Message']
-    else:
-      print result
-
-    sys.exit( 1 )
-
-if __name__ == '__main__':
-  import sys
-  import os
-  from DIRAC.Core.Base import Script
-  Script.parseCommandLine()
-  gLogger.setLevel( 'VERBOSE' )
-
-  if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
-    gLogger.info( 'Unset pyhthon optimization "PYTHONOPTIMIZE"' )
-    sys.exit( 0 )
-
-  test()

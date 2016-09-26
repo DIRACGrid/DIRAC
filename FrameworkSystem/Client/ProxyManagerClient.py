@@ -1,7 +1,5 @@
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id$"
-
 import os
 import datetime
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
@@ -13,6 +11,8 @@ from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import S_OK, S_ERROR, gLogger
+
+__RCSID__ = "$Id$"
 
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
@@ -184,7 +184,7 @@ class ProxyManagerClient:
 
   @gProxiesSync
   def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
-                     cacheTime = 43200, proxyToConnect = False, token = False ):
+                     cacheTime = 14400, proxyToConnect = False, token = False ):
     """
     Get a proxy Chain from the proxy management
     """
@@ -199,7 +199,7 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     if token:
       retVal = rpcClient.getProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
-                                   long( cacheTime + requiredTimeLeft ), token )
+                                            long( cacheTime + requiredTimeLeft ), token )
     else:
       retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
                                    long( cacheTime + requiredTimeLeft ) )
@@ -213,7 +213,7 @@ class ProxyManagerClient:
     return S_OK( chain )
 
   def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
-                           cacheTime = 43200, filePath = False, proxyToConnect = False, token = False ):
+                           cacheTime = 14400, filePath = False, proxyToConnect = False, token = False ):
     """
     Get a proxy Chain from the proxy management and write it to file
     """
@@ -229,7 +229,8 @@ class ProxyManagerClient:
 
   @gVOMSProxiesSync
   def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
-                         cacheTime = 43200, requiredVOMSAttribute = False, proxyToConnect = False, token = False ):
+                         cacheTime = 14400, requiredVOMSAttribute = False,
+                         proxyToConnect = False, token = False ):
     """
     Download a proxy if needed and transform it into a VOMS one
     """
@@ -259,8 +260,9 @@ class ProxyManagerClient:
     self.__vomsProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200, cacheTime = 43200,
-                               requiredVOMSAttribute = False, filePath = False, proxyToConnect = False, token = False ):
+  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
+                               cacheTime = 14400, requiredVOMSAttribute = False, filePath = False,
+                               proxyToConnect = False, token = False ):
     """
     Download a proxy if needed, transform it into a VOMS one and write it to file
     """
@@ -298,12 +300,11 @@ class ProxyManagerClient:
       return S_ERROR( "No group found that has %s as voms attrs" % vomsAttr )
 
     for userGroup in groups:
-      result = self.downloadVOMSProxy( userDN,
-                                     userGroup,
-                                     limited = False,
-                                     requiredTimeLeft = requiredTimeLeft,
-                                     requiredVOMSAttribute = vomsAttr,
-                                     proxyToConnect = proxyToConnect )
+      result = self.downloadVOMSProxy( userDN, userGroup,
+                                       limited = False,
+                                       requiredTimeLeft = requiredTimeLeft,
+                                       requiredVOMSAttribute = vomsAttr,
+                                       proxyToConnect = proxyToConnect )
       if result['OK']:
         return result
     return result

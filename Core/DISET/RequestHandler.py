@@ -196,23 +196,23 @@ class RequestHandler( object ):
       finally:
         self.__lockManager.unlock( "FileTransfer/%s" % sDirection )
 
-    except Exception, v:
-      gLogger.exception( "Uncaught exception when serving Transfer", "%s" % sDirection )
-      return S_ERROR( "Server error while serving %s: %s" % ( sDirection, str( v ) ) )
+    except Exception as e: #pylint: disable=broad-except
+      gLogger.exception( "Uncaught exception when serving Transfer", "%s" % sDirection, lException = e )
+      return S_ERROR( "Server error while serving %s: %s" % ( sDirection, repr( e ) ) )
 
-  def transfer_fromClient( self, fileId, token, fileSize, fileHelper ):
+  def transfer_fromClient( self, fileId, token, fileSize, fileHelper ): #pylint: disable=unused-argument
     return S_ERROR( "This server does no allow receiving files" )
 
-  def transfer_toClient( self, fileId, token, fileHelper ):
+  def transfer_toClient( self, fileId, token, fileHelper ): #pylint: disable=unused-argument
     return S_ERROR( "This server does no allow sending files" )
 
-  def transfer_bulkFromClient( self, bulkId, token, bulkSize, fileHelper ):
+  def transfer_bulkFromClient( self, bulkId, token, bulkSize, fileHelper ): #pylint: disable=unused-argument
     return S_ERROR( "This server does no allow bulk receiving" )
 
-  def transfer_bulkToClient( self, bulkId, token, fileHelper ):
+  def transfer_bulkToClient( self, bulkId, token, fileHelper ): #pylint: disable=unused-argument
     return S_ERROR( "This server does no allow bulk sending" )
 
-  def transfer_listBulk( self, bulkId, token, fileHelper ):
+  def transfer_listBulk( self, bulkId, token, fileHelper ): #pylint: disable=unused-argument
     return S_ERROR( "This server does no allow bulk listing" )
 
 #####
@@ -258,9 +258,9 @@ class RequestHandler( object ):
       finally:
         self.__lockManager.unlock( "RPC/%s" % method )
         self.__msgBroker.removeTransport( self.__trid, closeTransport = False )
-    except Exception, v:
-      gLogger.exception( "Uncaught exception when serving RPC", "Function %s" % method )
-      return S_ERROR( "Server error while serving %s: %s" % ( method, str( v ) ) )
+    except Exception as e:
+      gLogger.exception( "Uncaught exception when serving RPC", "Function %s" % method, lException = e )
+      return S_ERROR( "Server error while serving %s: %s" % ( method, str( e ) ) )
 
   def __checkExpectedArgumentTypes( self, method, args ):
     """
@@ -357,9 +357,9 @@ class RequestHandler( object ):
       else:
         uReturnValue = oMethod( self.__trid )
       return uReturnValue
-    except Exception, v:
-      gLogger.exception( "Uncaught exception when serving Connect", "Function %s" % realMethod )
-      return S_ERROR( "Server error while serving %s: %s" % ( methodName, str( v ) ) )
+    except Exception as e:
+      gLogger.exception( "Uncaught exception when serving Connect", "Function %s" % realMethod, lException = e )
+      return S_ERROR( "Server error while serving %s: %s" % ( methodName, str( e ) ) )
 
 
   def _rh_executeMessageCallback( self, msgObj ):
@@ -377,9 +377,9 @@ class RequestHandler( object ):
     try:
       try:
         uReturnValue = oMethod( msgObj )
-      except Exception, v:
-        gLogger.exception( "Uncaught exception when serving message", methodName )
-        return S_ERROR( "Server error while serving %s: %s" % ( msgName, str( v ) ) )
+      except Exception as e:
+        gLogger.exception( "Uncaught exception when serving message", methodName, lException = e )
+        return S_ERROR( "Server error while serving %s: %s" % ( msgName, str( e ) ) )
     finally:
       self.__lockManager.unlock( methodName )
     if not isReturnStructure( uReturnValue ):
@@ -419,8 +419,8 @@ class RequestHandler( object ):
     else:
       argsString = "\n\t%s\n" % ",\n\t".join( [ str( arg )[:50] for arg in args ] )
     gLogger.notice( "Executing action", "%s %s(%s)" % ( self.srv_getFormattedRemoteCredentials(),
-                                                      method,
-                                                      argsString ) )
+                                                        method,
+                                                        argsString ) )
 
   def __logRemoteQueryResponse( self, retVal, elapsedTime ):
     """
@@ -434,7 +434,7 @@ class RequestHandler( object ):
     else:
       argsString = "ERROR: %s" % retVal[ 'Message' ]
     gLogger.notice( "Returning response", "%s (%.2f secs) %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                                elapsedTime, argsString ) )
+                                                                  elapsedTime, argsString ) )
 
 ####
 #
@@ -450,9 +450,8 @@ class RequestHandler( object ):
     dInfo[ 'time' ] = Time.dateTime()
     #Uptime
     try:
-      oFD = file( "/proc/uptime" )
-      iUptime = long( float( oFD.readline().split()[0].strip() ) )
-      oFD.close()
+      with open( "/proc/uptime" ) as oFD:
+        iUptime = long( float( oFD.readline().split()[0].strip() ) )
       dInfo[ 'host uptime' ] = iUptime
     except:
       pass
@@ -462,9 +461,8 @@ class RequestHandler( object ):
     dInfo[ 'service uptime' ] = serviceUptime.days * 3600 + serviceUptime.seconds
     #Load average
     try:
-      oFD = file( "/proc/loadavg" )
-      sLine = oFD.readline()
-      oFD.close()
+      with open( "/proc/loadavg" ) as oFD:
+        sLine = oFD.readline()
       dInfo[ 'load' ] = " ".join( sLine.split()[:3] )
     except:
       pass

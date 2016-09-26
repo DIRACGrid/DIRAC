@@ -1,14 +1,15 @@
 """
 """
 
-__RCSID__ = "$Id$"
-
 import os.path
 import hashlib
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.FrameworkSystem.private.monitoring.ColorGenerator import ColorGenerator
 from DIRAC.Core.Utilities import Subprocess, Time
+from DIRAC.Core.Utilities.File import mkDir
+
+__RCSID__ = "$Id$"
 
 class RRDManager( object ):
 
@@ -24,10 +25,7 @@ class RRDManager( object ):
     self.log = gLogger.getSubLogger( "RRDManager" )
     self.rrdExec = gConfig.getValue( "%s/RRDExec" % getServiceSection( "Framework/Monitoring" ), "rrdtool" )
     for path in ( self.rrdLocation, self.graphLocation ):
-      try:
-        os.makedirs( path )
-      except:
-        pass
+      mkDir( path )
 
   def existsRRDFile( self, rrdFile ):
     rrdFilePath = "%s/%s" % ( self.rrdLocation, rrdFile )

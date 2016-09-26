@@ -1,3 +1,4 @@
 =========================
-DIRAC Storage Elements
+Storage Elements
 =========================
+

@@ -26,7 +26,7 @@ class NotificationClient:
     return self.__rpcFunctor( "Framework/Notification", **kwargs )
 
   #############################################################################
-  def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True ):
+  def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True, html = False ):
     """ Send an e-mail with subject and body to the specified address. Try to send
         from local area before central service by default.
     """
@@ -38,6 +38,7 @@ class NotificationClient:
         m._subject = subject
         m._message = body
         m._mailAddress = address
+        m._html = html
         if fromAddress:
           m._fromAddress = fromAddress
         result = m._send()
