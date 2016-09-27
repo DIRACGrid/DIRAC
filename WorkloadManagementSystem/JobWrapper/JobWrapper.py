@@ -1,26 +1,38 @@
 ########################################################################
-# $Id$
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
-
 """ The Job Wrapper Class is instantiated with arguments tailored for running
     a particular job. The JobWrapper starts a thread for execution of the job
     and a Watchdog Agent that can monitor progress.
 """
+import os
+import stat
+import re
+import sys
+import time
+import shutil
+import threading
+import tarfile
+import glob
+import urllib
+import json
 
-__RCSID__ = "$Id$"
-
-from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
+import DIRAC
+from DIRAC.DataManagementSystem.Client.DataManager                  import DataManager
+from DIRAC.Resources.Catalog.FileCatalog                            import FileCatalog
 from DIRAC.DataManagementSystem.Client.FailoverTransfer             import FailoverTransfer
 from DIRAC.Resources.Catalog.PoolXMLFile                            import getGUID
-from DIRAC.RequestManagementSystem.Client.RequestContainer          import RequestContainer
-from DIRAC.RequestManagementSystem.Client.RequestClient             import RequestClient
+from DIRAC.RequestManagementSystem.Client.Request                   import Request
+from DIRAC.RequestManagementSystem.Client.Operation                 import Operation
+from DIRAC.RequestManagementSystem.Client.ReqClient                 import ReqClient
+from DIRAC.RequestManagementSystem.private.RequestValidator         import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient       import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry              import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
@@ -29,17 +41,18 @@ from DIRAC.Core.Utilities.Subprocess                                import syste
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
+from DIRAC.Core.Utilities.Adler                                     import fileAdler
 from DIRAC.Core.Utilities                                           import List
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List, Time
-from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
+from DIRAC.Core.Utilities                                           import DEncode
+from DIRAC.Core.Utilities                                           import Time
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
-import DIRAC
 
-import os, re, sys, time, shutil, threading, tarfile, glob, types
+__RCSID__ = "$Id: $"
 
 EXECUTION_RESULT = {}
 
-class JobWrapper:
+class JobWrapper( object ):
 
   #############################################################################
   def __init__( self, jobID = None, jobReport = None ):
@@ -48,12 +61,13 @@ class JobWrapper:
     self.initialTiming = os.times()
     self.section = os.path.join( getSystemSection( 'WorkloadManagement/JobWrapper' ), 'JobWrapper' )
     self.log = gLogger
-    #Create the accounting report
+    self.log.showHeaders( True )
+    # Create the accounting report
     self.accountingReport = AccountingJob()
     # Initialize for accounting
     self.wmsMajorStatus = "unknown"
     self.wmsMinorStatus = "unknown"
-    #Set now as start time
+    # Set now as start time
     self.accountingReport.setStartTime()
     if not jobID:
       self.jobID = 0
@@ -64,6 +78,7 @@ class JobWrapper:
       self.jobReport = jobReport
     else:
       self.jobReport = JobReport( self.jobID, 'JobWrapper@%s' % self.siteName )
+    self.failoverTransfer = FailoverTransfer()
 
     # self.root is the path the Wrapper is running at
     self.root = os.getcwd()
@@ -87,18 +102,20 @@ class JobWrapper:
     self.tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
     self.sandboxSizeLimit = gConfig.getValue( self.section + '/OutputSandboxLimit', 1024 * 1024 * 10 )
     self.cleanUpFlag = gConfig.getValue( self.section + '/CleanUpFlag', True )
+    self.boincUserID = gConfig.getValue( '/LocalSite/BoincUserID', 0 )
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
     self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
     self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', [] )
+    self.masterCatalogOnlyFlag = gConfig.getValue( self.section + '/MasterCatalogOnlyFlag', True )
     self.defaultFailoverSE = gConfig.getValue( '/Resources/StorageElementGroups/Tier1-Failover', [] )
     self.defaultOutputPath = ''
-    self.rm = ReplicaManager()
+    self.dm = DataManager()
+    self.fc = FileCatalog()
     self.log.verbose( '===========================================================================' )
-    self.log.verbose( 'SVN version %s' % ( __RCSID__ ) )
+    self.log.verbose( 'Version %s' % ( __RCSID__ ) )
     self.log.verbose( self.diracVersion )
-    self.log.verbose( 'Developer tag: 2' )
     self.currentPID = os.getpid()
     self.log.verbose( 'Job Wrapper started under PID: %s' % self.currentPID )
     # Define a new process group for the job wrapper
@@ -110,19 +127,19 @@ class JobWrapper:
     self.log.verbose( '==========================================================================' )
     self.log.verbose( 'sys.path is: \n%s' % '\n'.join( sys.path ) )
     self.log.verbose( '==========================================================================' )
-    if not os.environ.has_key( 'PYTHONPATH' ):
+    if 'PYTHONPATH' not in os.environ:
       self.log.verbose( 'PYTHONPATH is: null' )
     else:
       pypath = os.environ['PYTHONPATH']
       self.log.verbose( 'PYTHONPATH is: \n%s' % '\n'.join( pypath.split( ':' ) ) )
       self.log.verbose( '==========================================================================' )
-    if os.environ.has_key( 'LD_LIBRARY_PATH_SAVE' ):
-      if os.environ.has_key( 'LD_LIBRARY_PATH' ):
-        os.environ['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH'] + ':' + os.environ['LD_LIBRARY_PATH_SAVE']
+    if 'LD_LIBRARY_PATH_SAVE' in os.environ:
+      if 'LD_LIBRARY_PATH' in os.environ:
+        os.environ['LD_LIBRARY_PATH'] += ':' + os.environ['LD_LIBRARY_PATH_SAVE']
       else:
         os.environ['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH_SAVE']
 
-    if not os.environ.has_key( 'LD_LIBRARY_PATH' ):
+    if 'LD_LIBRARY_PATH' not in os.environ:
       self.log.verbose( 'LD_LIBRARY_PATH is: null' )
     else:
       ldpath = os.environ['LD_LIBRARY_PATH']
@@ -130,9 +147,9 @@ class JobWrapper:
       self.log.verbose( '==========================================================================' )
     if not self.cleanUpFlag:
       self.log.verbose( 'CleanUp Flag is disabled by configuration' )
-    #Failure flag
+    # Failure flag
     self.failedFlag = True
-    #Set defaults for some global parameters to be defined for the accounting report
+    # Set defaults for some global parameters to be defined for the accounting report
     self.owner = 'unknown'
     self.jobGroup = 'unknown'
     self.jobType = 'unknown'
@@ -146,7 +163,7 @@ class JobWrapper:
     self.outputSandboxSize = 0
     self.outputDataSize = 0
     self.processedEvents = 0
-    self.wmsAccountingSent = False
+    self.jobAccountingSent = False
 
     self.jobArgs = {}
     self.optArgs = {}
@@ -163,62 +180,55 @@ class JobWrapper:
     self.ceArgs = arguments ['CE']
     self.log.verbose( self.ceArgs )
     self.__setInitialJobParameters()
-    if arguments.has_key( 'Optimizer' ):
-      self.optArgs = arguments['Optimizer']
-    else:
-      self.optArgs = {}
-    #Fill some parameters for the accounting report
-    if self.jobArgs.has_key( 'Owner' ):
-      self.owner = self.jobArgs['Owner']
-    if self.jobArgs.has_key( 'JobGroup' ):
-      self.jobGroup = self.jobArgs['JobGroup']
-    if self.jobArgs.has_key( 'JobType' ):
-      self.jobType = self.jobArgs['JobType']
-    if self.jobArgs.has_key( 'InputData' ):
-      dataParam = self.jobArgs['InputData']
-      if dataParam and not type( dataParam ) == type( [] ):
-        dataParam = [dataParam]
-      self.inputDataFiles = len( dataParam )
-    if self.jobArgs.has_key( 'OutputData' ):
-      dataParam = self.jobArgs['OutputData']
-      if dataParam and not type( dataParam ) == type( [] ):
-        dataParam = [dataParam]
-      self.outputDataFiles = len( dataParam )
-    if self.jobArgs.has_key( 'ProcessingType' ):
-      self.processingType = self.jobArgs['ProcessingType']
-    if self.jobArgs.has_key( 'OwnerGroup' ):
-      self.userGroup = self.jobArgs['OwnerGroup']
-    if self.jobArgs.has_key( 'JobSplitType' ):
-      self.jobClass = self.jobArgs['JobSplitType']
+    self.optArgs = arguments.get( 'Optimizer', {} )
+    # Fill some parameters for the accounting report
+    self.owner = self.jobArgs.get( 'Owner', self.owner )
+    self.jobGroup = self.jobArgs.get( 'JobGroup', self.jobGroup )
+    self.jobType = self.jobArgs.get( 'JobType', self.jobType )
+    dataParam = self.jobArgs.get( 'InputData', [] )
+    if dataParam and not isinstance( dataParam, list ):
+      dataParam = [dataParam]
+    self.inputDataFiles = len( dataParam )
+    dataParam = self.jobArgs.get( 'OutputData', [] )
+    if dataParam and not isinstance( dataParam, list ):
+      dataParam = [dataParam]
+    self.outputDataFiles = len( dataParam )
+    self.processingType = self.jobArgs.get( 'ProcessingType', self.processingType )
+    self.userGroup = self.jobArgs.get( 'OwnerGroup', self.userGroup )
+    self.jobClass = self.jobArgs.get( 'JobSplitType', self.jobClass )
 
-    # Prepare the working directory and cd to there
+    # Prepare the working directory, cd to there, and copying eventual extra arguments in it
     if self.jobID:
       if os.path.exists( str( self.jobID ) ):
         shutil.rmtree( str( self.jobID ) )
       os.mkdir( str( self.jobID ) )
       os.chdir( str( self.jobID ) )
+      extraOpts = self.jobArgs.get( 'ExtraOptions', '' )
+      if extraOpts:
+        if os.path.exists( '%s/%s' % ( self.root, extraOpts ) ):
+          shutil.copyfile( '%s/%s' % ( self.root, extraOpts ), extraOpts )
+        self.__loadLocalCFGFiles( self.localSiteRoot )
     else:
       self.log.info( 'JobID is not defined, running in current directory' )
 
-    infoFile = open( 'job.info', 'w' )
-    infoFile.write( self.__dictAsInfoString( self.jobArgs, '/Job' ) )
-    infoFile.close()
+    with open( 'job.info', 'w' ) as infoFile:
+      infoFile.write( self.__dictAsInfoString( self.jobArgs, '/Job' ) )
 
   #############################################################################
   def __setInitialJobParameters( self ):
     """Sets some initial job parameters
     """
     parameters = []
-    if self.ceArgs.has_key( 'LocalSE' ):
+    if 'LocalSE' in self.ceArgs:
       parameters.append( ( 'AgentLocalSE', ','.join( self.ceArgs['LocalSE'] ) ) )
-    if self.ceArgs.has_key( 'CompatiblePlatforms' ):
-      parameters.append( ( 'AgentCompatiblePlatforms', ','.join( self.ceArgs['CompatiblePlatforms'] ) ) )
-    if self.ceArgs.has_key( 'PilotReference' ):
+    if 'PilotReference' in self.ceArgs:
       parameters.append( ( 'Pilot_Reference', self.ceArgs['PilotReference'] ) )
-    if self.ceArgs.has_key( 'CPUScalingFactor' ):
+    if 'CPUScalingFactor' in self.ceArgs:
       parameters.append( ( 'CPUScalingFactor', self.ceArgs['CPUScalingFactor'] ) )
-    if self.ceArgs.has_key( 'CPUNormalizationFactor' ):
+    if 'CPUNormalizationFactor' in self.ceArgs:
       parameters.append( ( 'CPUNormalizationFactor', self.ceArgs['CPUNormalizationFactor'] ) )
+    if self.boincUserID:
+      parameters.append( ( 'BoincUserID', self.boincUserID ) )
 
     parameters.append( ( 'PilotAgent', self.diracVersion ) )
     parameters.append( ( 'JobWrapperPID', self.currentPID ) )
@@ -231,18 +241,18 @@ class JobWrapper:
     """
     files = os.listdir( localRoot )
     self.log.debug( 'Checking directory %s for *.cfg files' % localRoot )
-    for i in files:
-      if re.search( '.cfg$', i ):
-        gConfig.loadFile( '%s/%s' % ( localRoot, i ) )
-        self.log.debug( 'Found local .cfg file %s' % i )
+    for localFile in files:
+      if re.search( '.cfg$', localFile ):
+        gConfig.loadFile( '%s/%s' % ( localRoot, localFile ) )
+        self.log.verbose( "Found local .cfg file '%s'" % localFile )
 
   #############################################################################
   def __dictAsInfoString( self, dData, infoString = '', currentBase = "" ):
     for key in dData:
       value = dData[ key ]
-      if type( value ) == types.DictType:
+      if isinstance( value, dict ):
         infoString = self.__dictAsInfoString( value, infoString, "%s/%s" % ( currentBase, key ) )
-      elif type( value ) in ( types.ListType, types.TupleType ):
+      elif isinstance( value, ( list, tuple ) ):
         if len( value ) and value[0] == '[':
           infoString += "%s/%s = %s\n" % ( currentBase, key, " ".join( value ) )
         else:
@@ -266,34 +276,35 @@ class JobWrapper:
     os.environ['DIRACSITE'] = DIRAC.siteName()
     self.log.verbose( 'DIRACSITE = %s' % ( DIRAC.siteName() ) )
 
-    outputFile = self.defaultOutputFile
-    errorFile = self.defaultErrorFile
-    if self.jobArgs.has_key( 'StdError' ):
-      errorFile = self.jobArgs['StdError']
-    if self.jobArgs.has_key( 'StdOutput' ):
-      outputFile = self.jobArgs['StdOutput']
+    os.environ['DIRAC_PROCESSORS'] = str( self.ceArgs.get( 'Processors', 1 ) )
+    self.log.verbose( 'DIRAC_PROCESSORS = %s' % ( self.ceArgs.get( 'Processors', 1 ) ) )
 
-    if self.jobArgs.has_key( 'MaxCPUTime' ):
-      jobCPUTime = int( self.jobArgs['MaxCPUTime'] )
+    os.environ['DIRAC_WHOLENODE'] = str( self.ceArgs.get( 'WholeNode', False ) )
+    self.log.verbose( 'DIRAC_WHOLENODE = %s' % ( self.ceArgs.get( 'WholeNode', False ) ) )
+
+    errorFile = self.jobArgs.get( 'StdError', self.defaultErrorFile )
+    outputFile = self.jobArgs.get( 'StdOutput', self.defaultOutputFile )
+
+    if 'CPUTime' in self.jobArgs:
+      jobCPUTime = int( self.jobArgs['CPUTime'] )
     else:
       self.log.info( 'Job %s has no CPU time limit specified, '
                      'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
       jobCPUTime = self.defaultCPUTime
 
-    if self.jobArgs.has_key( 'Executable' ):
+    jobMemory = 0.
+    if "Memory" in self.jobArgs:
+      # Job specifies memory in GB, internally use KB
+      jobMemory = int( self.jobArgs['Memory'] )*1024.*1024.
+
+    if 'Executable' in self.jobArgs:
       executable = self.jobArgs['Executable'].strip()
-      #HACK: To be removed after SVN migration is successful
-      if executable == "$DIRACROOT/scripts/jobexec":
-        executable = "$DIRACROOT/scripts/dirac-jobexec"
-      #END HACK
     else:
       msg = 'Job %s has no specified executable' % ( self.jobID )
       self.log.warn( msg )
       return S_ERROR( msg )
 
-    jobArguments = ''
-    if self.jobArgs.has_key( 'Arguments' ):
-      jobArguments = self.jobArgs['Arguments']
+    jobArguments = self.jobArgs.get( 'Arguments', '' )
 
     executable = os.path.expandvars( executable )
     exeThread = None
@@ -307,19 +318,19 @@ class JobWrapper:
     executable = os.path.abspath( executable )
     if not os.access( executable, os.X_OK ):
       try:
-        os.chmod( executable, 0775 )
+        os.chmod( executable, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH )
       except Exception:
         self.log.warn( 'Failed to change mode to 775 for the executable', executable )
 
     exeEnv = dict( os.environ )
-    if self.jobArgs.has_key( 'ExecutionEnvironment' ):
+    if 'ExecutionEnvironment' in self.jobArgs:
       self.log.verbose( 'Adding variables to execution environment' )
       variableList = self.jobArgs['ExecutionEnvironment']
-      if type( variableList ) == type( " " ):
+      if isinstance( variableList, basestring ):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split( '=' )[0]
-        valEnv = var.split( '=' )[1]
+        valEnv = urllib.unquote( var.split( '=' )[1] )
         exeEnv[nameEnv] = valEnv
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
@@ -338,14 +349,14 @@ class JobWrapper:
       if not payloadPID:
         return S_ERROR( 'Payload process could not start after 10 seconds' )
     else:
+      self.__report( 'Failed', 'Application not found', sendFlag = True )
       return S_ERROR( 'Path to executable %s not found' % ( executable ) )
 
     self.__setJobParam( 'PayloadPID', payloadPID )
 
-    watchdogFactory = WatchdogFactory()
-    watchdogInstance = watchdogFactory.getWatchdog( self.currentPID, exeThread, spObject, jobCPUTime )
+    watchdogInstance = WatchdogFactory().getWatchdog( self.currentPID, exeThread, spObject, jobCPUTime, jobMemory )
     if not watchdogInstance['OK']:
-      self.log.warn( watchdogInstance['Message'] )
+      self.log.error( 'Could not create Watchdog instance', watchdogInstance['Message'] )
       return S_ERROR( 'Could not create Watchdog instance' )
 
     self.log.verbose( 'WatchdogInstance %s' % ( watchdogInstance ) )
@@ -355,11 +366,11 @@ class JobWrapper:
     watchdog.initialize()
     self.log.verbose( 'Calibrating Watchdog instance' )
     watchdog.calibrate()
-    # do not kill SAM jobs by CPU time
-    if self.jobArgs.has_key( 'JobType' ) and self.jobArgs['JobType'] == 'SAM':
+    # do not kill Test jobs by CPU time
+    if self.jobArgs.get( 'JobType', '' ) == 'Test':
       watchdog.testCPUConsumed = False
 
-    if self.jobArgs.has_key( 'DisableCPUCheck' ):
+    if 'DisableCPUCheck' in self.jobArgs:
       watchdog.testCPUConsumed = False
 
     if exeThread.isAlive():
@@ -374,17 +385,24 @@ class JobWrapper:
         time.sleep( 5 )
 
     outputs = None
-    if EXECUTION_RESULT.has_key( 'Thread' ):
+    if 'Thread' in EXECUTION_RESULT:
       threadResult = EXECUTION_RESULT['Thread']
       if not threadResult['OK']:
         self.log.error( 'Failed to execute the payload', threadResult['Message'] )
+
+        self.__report( 'Failed', 'Application thread failed', sendFlag = True )
         if 'Value' in threadResult:
-          outputs = threadResult['Value']
+          outs = threadResult['Value']
+        if outs:
+          self.__setJobParam( 'ApplicationError', outs[0], sendFlag = True )
+        else:
+          self.__setJobParam( 'ApplicationError', 'None reported', sendFlag = True )
       else:
         outputs = threadResult['Value']
 
-    if EXECUTION_RESULT.has_key( 'CPU' ):
-      self.log.info( 'EXECUTION_RESULT[CPU] in JobWrapper execute', str( EXECUTION_RESULT['CPU'] ) )
+    if 'CPU' in EXECUTION_RESULT:
+      cpuString = ' '.join( ['%.2f' % x for x in EXECUTION_RESULT['CPU'] ] )
+      self.log.info( 'EXECUTION_RESULT[CPU] in JobWrapper execute', cpuString )
 
 
     if watchdog.checkError:
@@ -392,7 +410,7 @@ class JobWrapper:
       # os.times only reports for waited children
       # Take the CPU from the last value recorded by the Watchdog
       self.__report( 'Failed', watchdog.checkError, sendFlag = True )
-      if EXECUTION_RESULT.has_key( 'CPU' ):
+      if 'CPU' in EXECUTION_RESULT:
         if 'LastUpdateCPU(s)' in watchdog.currentStats:
           EXECUTION_RESULT['CPU'][0] = 0
           EXECUTION_RESULT['CPU'][0] = 0
@@ -401,10 +419,10 @@ class JobWrapper:
 
     if watchdog.currentStats:
       self.log.info( 'Statistics collected by the Watchdog:\n ',
-                        '\n  '.join( ['%s: %s' % items for items in watchdog.currentStats.items() ] ) )
+                        '\n  '.join( ['%s: %s' % items for items in watchdog.currentStats.iteritems() ] ) )
     if outputs:
       status = threadResult['Value'][0]
-      #Send final heartbeat of a configurable number of lines here
+      # Send final heartbeat of a configurable number of lines here
       self.log.verbose( 'Sending final application standard output heartbeat' )
       self.__sendFinalStdOut( exeThread )
       self.log.verbose( 'Execution thread status = %s' % ( status ) )
@@ -474,9 +492,10 @@ class JobWrapper:
   def __getCPU( self ):
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
-    #TODO: normalize CPU consumed via scale factor
-    self.log.info( 'EXECUTION_RESULT[CPU] in __getCPU', str( EXECUTION_RESULT['CPU'] ) )
-    utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
+    # TODO: normalize CPU consumed via scale factor
+    cpuString = ' '.join( ['%.2f' % x for x in EXECUTION_RESULT['CPU'] ] )
+    self.log.info( 'EXECUTION_RESULT[CPU] in __getCPU', cpuString )
+    utime, stime, cutime, cstime, _elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
     self.log.verbose( "Total CPU time consumed = %s" % ( cpuTime ) )
     result = self.__getCPUHMS( cpuTime )
@@ -496,60 +515,54 @@ class JobWrapper:
     """
     self.__report( 'Running', 'Input Data Resolution', sendFlag = True )
 
-    if self.ceArgs.has_key( 'LocalSE' ):
-      localSEList = self.ceArgs['LocalSE']
+    # What is this input data? - and exit if there's no input
+    inputData = self.jobArgs['InputData']
+    if not inputData:
+      msg = "Job Wrapper cannot resolve local replicas of input data with null job input data parameter "
+      self.log.error( msg )
+      return S_ERROR( msg )
+    else:
+      if isinstance( inputData, basestring ):
+        inputData = [inputData]
+      lfns = [ fname.replace( 'LFN:', '' ) for fname in inputData ]
+      self.log.verbose( 'Job input data requirement is \n%s' % ',\n'.join( lfns ) )
+
+
+    # Does this site have local SEs? - not failing if it doesn't
+    if 'LocalSE' in self.ceArgs:
+      localSEList = self.ceArgs[ 'LocalSE']
     else:
       localSEList = gConfig.getValue( '/LocalSite/LocalSE', [] )
-      if not localSEList:
-        msg = 'Job has input data requirement but no site LocalSE defined'
-        self.log.warn( msg )
-        return S_ERROR( msg )
 
-    inputData = self.jobArgs['InputData']
-    self.log.verbose( 'Input Data is: \n%s' % ( inputData ) )
-    if type( inputData ) in types.StringTypes:
-      inputData = [inputData]
-
-    if type( localSEList ) in types.StringTypes:
-      localSEList = List.fromChar( localSEList )
-
-    msg = 'Job Wrapper cannot resolve local replicas of input data with null '
-    if not inputData:
-      msg += 'job input data parameter '
-      self.log.warn( msg )
-      return S_ERROR( msg )
     if not localSEList:
-      msg += 'site localSEList list'
-      self.log.warn( msg )
-#      return S_ERROR( msg )
+      self.log.warn( "Job has input data requirement but no site LocalSE defined" )
+    else:
+      if isinstance( localSEList, basestring ):
+        localSEList = List.fromChar( localSEList )
+      self.log.info( "Site has the following local SEs: %s" % ', '.join( localSEList ) )
 
-    if not self.jobArgs.has_key( 'InputDataModule' ):
-      msg = 'Job has no input data resolution module specified'
-      self.log.warn( msg )
-      # Use the default one
+    # How to get this data?
+    if 'InputDataModule' not in self.jobArgs:
+      self.log.warn( "Job has no input data resolution module specified, using the default one" )
       inputDataPolicy = 'DIRAC.WorkloadManagementSystem.Client.InputDataResolution'
     else:
       inputDataPolicy = self.jobArgs['InputDataModule']
 
-    self.log.verbose( 'Job input data requirement is \n%s' % ',\n'.join( inputData ) )
-    self.log.verbose( 'Job input data resolution policy module is %s' % ( inputDataPolicy ) )
-    self.log.info( 'Site has the following local SEs: %s' % ', '.join( localSEList ) )
-    lfns = [ fname.replace( 'LFN:', '' ) for fname in inputData ]
+    self.log.verbose( "Job input data resolution policy module is %s" % ( inputDataPolicy ) )
 
+
+    # Now doing the real stuff
     optReplicas = {}
     if self.optArgs:
-      optDict = None
       try:
-        optDict = eval( self.optArgs['InputData'] )
+        optDict, _length = DEncode.decode( self.optArgs['InputData'] )
         optReplicas = optDict['Value']
-        self.log.info( 'Found optimizer catalogue result' )
+        self.log.info( 'Found optimizer catalog result' )
         self.log.verbose( optReplicas )
-      except Exception, x:
-        optDict = None
+      except Exception as x:
         self.log.warn( str( x ) )
-        self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalogue directly' )
+        self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalog directly' )
 
-    resolvedData = {}
     result = self.__checkFileCatalog( lfns, optReplicas )
     if not result['OK']:
       self.log.info( 'Could not obtain replica information from Optimizer File Catalog information' )
@@ -564,14 +577,14 @@ class JobWrapper:
     else:
       resolvedData = result
 
-    #add input data size to accounting report (since resolution successful)
-    for lfn, mdata in resolvedData['Value']['Successful'].items():
-      if mdata.has_key( 'Size' ):
+    # add input data size to accounting report (since resolution successful)
+    for lfn, mdata in resolvedData['Value']['Successful'].iteritems():
+      if 'Size' in mdata:
         lfnSize = mdata['Size']
-        if not type( lfnSize ) == type( long( 1 ) ):
+        if not isinstance( lfnSize, long ):
           try:
             lfnSize = long( lfnSize )
-          except Exception, x:
+          except Exception as x:
             lfnSize = 0
             self.log.info( 'File size for LFN:%s was not a long integer, setting size to 0' % ( lfn ) )
         self.inputDataSize += lfnSize
@@ -581,6 +594,7 @@ class JobWrapper:
     argumentsDict = {'FileCatalog':resolvedData, 'Configuration':configDict, 'InputData':lfns, 'Job':self.jobArgs}
     self.log.info( argumentsDict )
     moduleFactory = ModuleFactory()
+    self.log.verbose( "Now starting execution of input data policy module" )
     moduleInstance = moduleFactory.getModule( inputDataPolicy, argumentsDict )
     if not moduleInstance['OK']:
       return moduleInstance
@@ -612,8 +626,8 @@ class JobWrapper:
     self.log.verbose( replicas )
 
     failedGUIDs = []
-    for lfn, reps in replicas['Value']['Successful'].items():
-      if not reps.has_key( 'GUID' ):
+    for lfn, reps in replicas['Value']['Successful'].iteritems():
+      if 'GUID' not in reps:
         failedGUIDs.append( lfn )
 
     if failedGUIDs:
@@ -630,7 +644,7 @@ class JobWrapper:
         and check the result.
     """
     start = time.time()
-    repsResult = self.rm.getReplicas( lfns )
+    repsResult = self.dm.getReplicas( lfns )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     if not repsResult['OK']:
@@ -641,16 +655,14 @@ class JobWrapper:
     badLFNs = []
     catalogResult = repsResult['Value']
 
-    if catalogResult.has_key( 'Failed' ):
-      for lfn, cause in catalogResult['Failed'].items():
-        badLFNCount += 1
-        badLFNs.append( 'LFN:%s Problem: %s' % ( lfn, cause ) )
+    for lfn, cause in catalogResult.get( 'Failed', {} ).iteritems():
+      badLFNCount += 1
+      badLFNs.append( 'LFN:%s Problem: %s' % ( lfn, cause ) )
 
-    if catalogResult.has_key( 'Successful' ):
-      for lfn, replicas in catalogResult['Successful'].items():
-        if not replicas:
-          badLFNCount += 1
-          badLFNs.append( 'LFN:%s Problem: Null replica value' % ( lfn ) )
+    for lfn, replicas in catalogResult.get( 'Successful', {} ).iteritems():
+      if not replicas:
+        badLFNCount += 1
+        badLFNs.append( 'LFN:%s Problem: Null replica value' % ( lfn ) )
 
     if badLFNCount:
       self.log.warn( 'Job Wrapper found %s problematic LFN(s) for job %s' % ( badLFNCount, self.jobID ) )
@@ -659,23 +671,23 @@ class JobWrapper:
       self.__setJobParam( 'MissingLFNs', param )
       return S_ERROR( 'Input Data Not Available' )
 
-    #Must retrieve GUIDs from LFC for files
+    # Must retrieve GUIDs from LFC for files
     start = time.time()
-    guidDict = self.rm.getCatalogFileMetadata( lfns )
+    guidDict = self.fc.getFileMetadata( lfns )
     timing = time.time() - start
     self.log.info( 'GUID Lookup Time: %.2f seconds ' % ( timing ) )
     if not guidDict['OK']:
-      self.log.warn( 'Failed to retrieve GUIDs from file catalogue' )
+      self.log.warn( 'Failed to retrieve GUIDs from file catalog' )
       self.log.warn( guidDict['Message'] )
       return guidDict
 
     failed = guidDict['Value']['Failed']
     if failed:
-      self.log.warn( 'Could not retrieve GUIDs from catalogue for the following files' )
+      self.log.warn( 'Could not retrieve GUIDs from catalog for the following files' )
       self.log.warn( failed )
       return S_ERROR( 'Missing GUIDs' )
 
-    for lfn, reps in repsResult['Value']['Successful'].items():
+    for lfn, reps in repsResult['Value']['Successful'].iteritems():
       guidDict['Value']['Successful'][lfn].update( reps )
 
     catResult = guidDict
@@ -686,21 +698,19 @@ class JobWrapper:
     """Outputs for a job may be treated here.
     """
 
-    #first iteration of this, no checking of wildcards or oversize sandbox files etc.
-    outputSandbox = []
-    if self.jobArgs.has_key( 'OutputSandbox' ):
-      outputSandbox = self.jobArgs['OutputSandbox']
-      if not type( outputSandbox ) == type( [] ):
-        outputSandbox = [ outputSandbox ]
+    # first iteration of this, no checking of wildcards or oversize sandbox files etc.
+    outputSandbox = self.jobArgs.get( 'OutputSandbox', [] )
+    if isinstance( outputSandbox, basestring ):
+      outputSandbox = [ outputSandbox ]
+    if outputSandbox:
       self.log.verbose( 'OutputSandbox files are: %s' % ', '.join( outputSandbox ) )
-    outputData = []
-    if self.jobArgs.has_key( 'OutputData' ):
-      outputData = self.jobArgs['OutputData']
-      if not type( outputData ) == type( [] ):
-        outputData = outputData.split( ';' )
+    outputData = self.jobArgs.get( 'OutputData', [] )
+    if outputData and isinstance( outputData, basestring ):
+      outputData = outputData.split( ';' )
+    if outputData:
       self.log.verbose( 'OutputData files are: %s' % ', '.join( outputData ) )
 
-    #First resolve any wildcards for output files and work out if any files are missing
+    # First resolve any wildcards for output files and work out if any files are missing
     resolvedSandbox = self.__resolveOutputSandboxFiles( outputSandbox )
     if not resolvedSandbox['OK']:
       self.log.warn( 'Output sandbox file resolution failed:' )
@@ -712,7 +722,7 @@ class JobWrapper:
     if missingFiles:
       self.jobReport.setJobParameter( 'OutputSandboxMissingFiles', ', '.join( missingFiles ), sendFlag = False )
 
-    if not self.jobArgs.has_key( 'Owner' ):
+    if 'Owner' not in self.jobArgs:
       msg = 'Job has no owner specified'
       self.log.warn( msg )
       return S_OK( msg )
@@ -721,18 +731,25 @@ class JobWrapper:
     if not self.failedFlag:
       self.__report( 'Completed', 'Uploading Output Sandbox' )
 
+    uploadOutputDataInAnyCase = False
+
     if fileList and self.jobID:
       self.outputSandboxSize = getGlobbedTotalSize( fileList )
       self.log.info( 'Attempting to upload Sandbox with limit:', self.sandboxSizeLimit )
       sandboxClient = SandboxStoreClient()
       result = sandboxClient.uploadFilesAsSandboxForJob( fileList, self.jobID,
-                                                         'Output', self.sandboxSizeLimit ) # 1024*1024*10
+                                                         'Output', self.sandboxSizeLimit )  # 1024*1024*10
       if not result['OK']:
         self.log.error( 'Output sandbox upload failed with message', result['Message'] )
-        if result.has_key( 'SandboxFileName' ):
-          outputSandboxData = result['SandboxFileName']
+        outputSandboxData = result.get( 'SandboxFileName' )
+        if outputSandboxData:
+
           self.log.info( 'Attempting to upload %s as output data' % ( outputSandboxData ) )
-          outputData.append( outputSandboxData )
+          if self.failedFlag:
+            outputData = [outputSandboxData]
+            uploadOutputDataInAnyCase = True
+          else:
+            outputData.append( outputSandboxData )
           self.jobReport.setJobParameter( 'OutputSandbox', 'Sandbox uploaded to grid storage', sendFlag = False )
           self.jobReport.setJobParameter( 'OutputSandboxLFN',
                                           self.__getLFNfromOutputFile( outputSandboxData )[0], sendFlag = False )
@@ -745,18 +762,15 @@ class JobWrapper:
           self.__report( 'Completed', 'Output Sandbox Uploaded' )
         self.log.info( 'Sandbox uploaded successfully' )
 
-    if outputData and not self.failedFlag:
-      #Do not upload outputdata if the job has failed.
-      if self.jobArgs.has_key( 'OutputSE' ):
-        outputSE = self.jobArgs['OutputSE']
-        if type( outputSE ) in types.StringTypes:
-          outputSE = [outputSE]
-      else:
-        outputSE = self.defaultOutputSE
+    if ( outputData and not self.failedFlag ) or uploadOutputDataInAnyCase:
+      # Do not upload outputdata if the job has failed.
+      # The exception is when the outputData is what was the OutputSandbox, which should be uploaded in any case
+      outputSE = self.jobArgs.get( 'OutputSE', self.defaultOutputSE )
+      if isinstance( outputSE, basestring ):
+        outputSE = [outputSE]
 
-      if self.jobArgs.has_key( 'OutputPath' ) and type( self.jobArgs['OutputPath'] ) in types.StringTypes:
-        outputPath = self.jobArgs['OutputPath']
-      else:
+      outputPath = self.jobArgs.get( 'OutputPath', self.defaultOutputPath )
+      if not isinstance( outputPath, basestring ):
         outputPath = self.defaultOutputPath
 
       if not outputSE and not self.defaultFailoverSE:
@@ -809,7 +823,7 @@ class JobWrapper:
 
   #############################################################################
   def __transferOutputDataFiles( self, outputData, outputSE, outputPath ):
-    """Performs the upload and registration in the LFC
+    """ Performs the upload and registration in the File Catalog(s)
     """
     self.log.verbose( 'Uploading output data files' )
     self.__report( 'Completed', 'Uploading Output Data' )
@@ -826,7 +840,7 @@ class JobWrapper:
       else:
         nonlfnList.append( out )
 
-    # Check whether list of outputData has a globbable pattern    
+    # Check whether list of outputData has a globbable pattern
     globbedOutputList = List.uniqueElements( getGlobbedFiles( nonlfnList ) )
     if not globbedOutputList == nonlfnList and globbedOutputList:
       self.log.info( 'Found a pattern in the output data file list, files to upload are:',
@@ -842,25 +856,41 @@ class JobWrapper:
     else:
       pfnGUID = result['Value']
 
-    #Instantiate the failover transfer client
-    failoverTransfer = FailoverTransfer()
-
     for outputFile in outputData:
       ( lfn, localfile ) = self.__getLFNfromOutputFile( outputFile, outputPath )
       if not os.path.exists( localfile ):
         self.log.error( 'Missing specified output data file:', outputFile )
         continue
 
+      # # file size
+      localfileSize = getGlobbedTotalSize( localfile )
+
       self.outputDataSize += getGlobbedTotalSize( localfile )
+
       outputFilePath = os.path.join( os.getcwd(), localfile )
-      fileGUID = None
-      if pfnGUID.has_key( localfile ):
-        fileGUID = pfnGUID[localfile]
+
+      # # file GUID
+      fileGUID = pfnGUID[localfile] if localfile in pfnGUID else None
+      if fileGUID:
         self.log.verbose( 'Found GUID for file from POOL XML catalogue %s' % localfile )
 
+      # #  file checksum
+      cksm = fileAdler( outputFilePath )
+
+      fileMetaDict = { "Size": localfileSize,
+                       "LFN" : lfn,
+                       "ChecksumType" : "Adler32",
+                       "Checksum": cksm,
+                       "GUID" : fileGUID }
+
       outputSEList = self.__getSortedSEList( outputSE )
-      upload = failoverTransfer.transferAndRegisterFile( localfile, outputFilePath, lfn,
-                                                         outputSEList, fileGUID, self.defaultCatalog )
+      upload = self.failoverTransfer.transferAndRegisterFile( fileName = localfile,
+                                                              localPath = outputFilePath,
+                                                              lfn = lfn,
+                                                              destinationSEList = outputSEList,
+                                                              fileMetaDict = fileMetaDict,
+                                                              fileCatalog = self.defaultCatalog,
+                                                              masterCatalogOnly = self.masterCatalogOnlyFlag )
       if upload['OK']:
         self.log.info( '"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile,
                                                                             upload['Value']['uploadedSE'],
@@ -880,41 +910,36 @@ class JobWrapper:
 
       failoverSEs = self.__getSortedSEList( self.defaultFailoverSE )
       targetSE = outputSEList[0]
-      result = failoverTransfer.transferAndRegisterFileFailover( localfile, outputFilePath,
-                                                                 lfn, targetSE, failoverSEs,
-                                                                 fileGUID, self.defaultCatalog )
+      result = self.failoverTransfer.transferAndRegisterFileFailover( fileName = localfile,
+                                                                      localPath = outputFilePath,
+                                                                      lfn = lfn,
+                                                                      targetSE = targetSE,
+                                                                      failoverSEList = failoverSEs,
+                                                                      fileMetaDict = fileMetaDict,
+                                                                      fileCatalog = self.defaultCatalog,
+                                                                      masterCatalogOnly = self.masterCatalogOnlyFlag )
       if not result['OK']:
-        self.log.error( 'Completely failed to upload file to failover SEs with result:\n%s' % result )
+        self.log.error( 'Completely failed to upload file to failover SEs', result['Message'] )
         missing.append( outputFile )
       else:
         self.log.info( 'File %s successfully uploaded to failover storage element' % lfn )
         uploaded.append( lfn )
 
 
-    #For files correctly uploaded must report LFNs to job parameters
+    # For files correctly uploaded must report LFNs to job parameters
     if uploaded:
       report = ', '.join( uploaded )
-      #In case the VO payload has also uploaded data using the same parameter 
-      #name this should be checked prior to setting. 
+      # In case the VO payload has also uploaded data using the same parameter
+      # name this should be checked prior to setting.
       monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
       result = monitoring.getJobParameter( int( self.jobID ), 'UploadedOutputData' )
       if result['OK']:
-        if result['Value'].has_key( 'UploadedOutputData' ):
+        if 'UploadedOutputData' in result['Value']:
           report += ', %s' % result['Value']['UploadedOutputData']
 
       self.jobReport.setJobParameter( 'UploadedOutputData', report, sendFlag = False )
 
-    #Write out failover transfer request object in case of deferred operations 
-    result = failoverTransfer.getRequestObject()
-    if not result['OK']:
-      self.log.error( result )
-      return S_ERROR( 'Could not retrieve modified request' )
-
-    request = result['Value']
-    if not request.isEmpty()['Value']:
-      request.toFile( 'transferOutputDataFiles_request.xml' )
-
-    #TODO Notify the user of any output data / output sandboxes
+    # TODO Notify the user of any output data / output sandboxes
     if missing:
       self.__setJobParam( 'OutputData', 'MissingFiles: %s' % ', '.join( missing ) )
       self.__report( 'Failed', 'Uploading Job OutputData' )
@@ -959,13 +984,16 @@ class JobWrapper:
       vo = getVOForGroup( self.userGroup )
       if not vo:
         vo = 'dirac'
-      basePath = '/' + vo + '/user/' + initial + '/' + self.owner
+
+      ops = Operations( vo = vo )
+      user_prefix = ops.getValue( "LFNUserPrefix", 'user' )
+      basePath = '/' + vo + '/' + user_prefix + '/' + initial + '/' + self.owner
       if outputPath:
         # If output path is given, append it to the user path and put output files in this directory
         if outputPath.startswith( '/' ):
           outputPath = outputPath[1:]
       else:
-        # By default the output path is constructed from the job id 
+        # By default the output path is constructed from the job id
         subdir = str( self.jobID / 1000 )
         outputPath = subdir + '/' + str( self.jobID )
       lfn = os.path.join( basePath, outputPath, os.path.basename( localfile ) )
@@ -984,7 +1012,7 @@ class JobWrapper:
     registeredISB = []
     lfns = []
     self.__report( 'Running', 'Downloading InputSandbox' )
-    if type( inputSandbox ) not in ( types.TupleType, types.ListType ):
+    if not isinstance( inputSandbox, ( list, tuple ) ):
       inputSandbox = [ inputSandbox ]
     for isb in inputSandbox:
       if isb.find( "LFN:" ) == 0 or isb.find( "lfn:" ) == 0:
@@ -1017,9 +1045,10 @@ class JobWrapper:
             self.inputSandboxSize += result[ 'Value' ]
 
     if lfns:
+      self.log.info( "Downloading Input SandBox LFNs, number of files to get", len( lfns ) )
       self.__report( 'Running', 'Downloading InputSandbox LFN(s)' )
       lfns = [fname.replace( 'LFN:', '' ).replace( 'lfn:', '' ) for fname in lfns]
-      download = self.rm.getFile( lfns )
+      download = self.dm.getFile( lfns )
       if not download['OK']:
         self.log.warn( download )
         self.__report( 'Running', 'Failed Downloading InputSandbox LFN(s)' )
@@ -1035,15 +1064,15 @@ class JobWrapper:
 
     userFiles = sandboxFiles + [ os.path.basename( lfn ) for lfn in lfns ]
     for possibleTarFile in userFiles:
-      if not os.path.exists( possibleTarFile ):
+      if not os.path.exists( possibleTarFile ) :
         continue
       try:
-        if tarfile.is_tarfile( possibleTarFile ):
+        if os.path.isfile( possibleTarFile ) and tarfile.is_tarfile( possibleTarFile ):
           self.log.info( 'Unpacking input sandbox file %s' % ( possibleTarFile ) )
           tarFile = tarfile.open( possibleTarFile, 'r' )
           for member in tarFile.getmembers():
             tarFile.extract( member, os.getcwd() )
-      except Exception, x :
+      except Exception as x:
         return S_ERROR( 'Could not untar %s with exception %s' % ( possibleTarFile, str( x ) ) )
 
     if userFiles:
@@ -1058,18 +1087,22 @@ class JobWrapper:
     """Perform any final actions to clean up after job execution.
     """
     self.log.info( 'Running JobWrapper finalization' )
+    # find if there are pending failover requests
     requests = self.__getRequestFiles()
-    if self.failedFlag and requests:
-      self.log.info( 'Application finished with errors and there are pending requests for this job.' )
+    outputDataRequest = self.failoverTransfer.getRequest()
+    requestFlag = len( requests ) > 0 or not outputDataRequest.isEmpty()
+
+    if self.failedFlag and requestFlag:
+      self.log.info( 'Job finished with errors and there are pending requests.' )
       self.__report( 'Failed', 'Pending Requests' )
-    elif not self.failedFlag and requests:
-      self.log.info( 'Application finished successfully with pending requests for this job.' )
+    elif not self.failedFlag and requestFlag:
+      self.log.info( 'Job finished successfully with pending requests.' )
       self.__report( 'Completed', 'Pending Requests' )
-    elif self.failedFlag and not requests:
-      self.log.info( 'Application finished with errors with no pending requests.' )
+    elif self.failedFlag and not requestFlag:
+      self.log.info( 'Job finished with errors with no pending requests.' )
       self.__report( 'Failed' )
-    elif not self.failedFlag and not requests:
-      self.log.info( 'Application finished successfully with no pending requests for this job.' )
+    elif not self.failedFlag and not requestFlag:
+      self.log.info( 'Job finished successfully with no pending requests.' )
       self.__report( 'Done', 'Execution Complete' )
 
     self.sendFailoverRequest()
@@ -1080,10 +1113,10 @@ class JobWrapper:
       return 0
 
   #############################################################################
-  def sendWMSAccounting( self, status = '', minorStatus = '' ):
+  def sendJobAccounting( self, status = '', minorStatus = '' ):
     """Send WMS accounting data.
     """
-    if self.wmsAccountingSent:
+    if self.jobAccountingSent:
       return S_OK()
     if status:
       self.wmsMajorStatus = status
@@ -1091,25 +1124,25 @@ class JobWrapper:
       self.wmsMinorStatus = minorStatus
 
     self.accountingReport.setEndTime()
-    #CPUTime and ExecTime
+    # CPUTime and ExecTime
     if not 'CPU' in EXECUTION_RESULT:
       # If the payload has not started execution (error with input data, SW, SB,...)
       # Execution result is not filled use self.initialTiming
-      self.log.info( 'EXECUTION_RESULT[CPU] missing in sendWMSAccounting' )
+      self.log.info( 'EXECUTION_RESULT[CPU] missing in sendJobAccounting' )
       finalStat = os.times()
       EXECUTION_RESULT['CPU'] = []
       for i in range( len( finalStat ) ):
         EXECUTION_RESULT['CPU'].append( finalStat[i] - self.initialTiming[i] )
 
-    self.log.info( 'EXECUTION_RESULT[CPU] in sendWMSAccounting', str( EXECUTION_RESULT['CPU'] ) )
+    cpuString = ' '.join( ['%.2f' % x for x in EXECUTION_RESULT['CPU'] ] )
+    self.log.info( 'EXECUTION_RESULT[CPU] in sendJobAccounting', cpuString )
 
     utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
     execTime = elapsed
     diskSpaceConsumed = getGlobbedTotalSize( os.path.join( self.root, str( self.jobID ) ) )
-    #Fill the data
-    acData = {
-               'User' : self.owner,
+    # Fill the data
+    acData = { 'User' : self.owner,
                'UserGroup' : self.userGroup,
                'JobGroup' : self.jobGroup,
                'JobType' : self.jobType,
@@ -1128,92 +1161,121 @@ class JobWrapper:
                'DiskSpace' : diskSpaceConsumed,
                'InputSandBoxSize' : self.inputSandboxSize,
                'OutputSandBoxSize' : self.outputSandboxSize,
-               'ProcessedEvents' : self.processedEvents
-             }
+               'ProcessedEvents' : self.processedEvents}
     self.log.verbose( 'Accounting Report is:' )
     self.log.verbose( acData )
     self.accountingReport.setValuesFromDict( acData )
     result = self.accountingReport.commit()
     # Even if it fails a failover request will be created
-    self.wmsAccountingSent = True
+    self.jobAccountingSent = True
     return result
 
   #############################################################################
   def sendFailoverRequest( self, status = '', minorStatus = '' ):
     """ Create and send a combined job failover request if any
     """
-    request = RequestContainer()
-    requestName = '%s.xml' % self.jobID
-    if self.jobArgs.has_key( 'JobName' ):
-      #To make the request names more appealing for users
+    request = Request()
+
+    requestName = 'job_%s' % self.jobID
+    if 'JobName' in self.jobArgs:
+      # To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
-      if type( jobName ) == type( ' ' ) and jobName:
-        jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' )
+      if isinstance( jobName, basestring ) and jobName:
+        jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' ).replace( '"', '' )
         jobName = jobName.replace( '.', '' ).replace( '{', '' ).replace( '}', '' ).replace( ':', '' )
         requestName = '%s_%s' % ( jobName, requestName )
 
-    request.setRequestName( requestName )
-    request.setJobID( self.jobID )
-    request.setSourceComponent( "Job_%s" % self.jobID )
+    request.RequestName = requestName.replace( '"', '' )
+    request.JobID = self.jobID
+    request.SourceComponent = "Job_%s" % self.jobID
 
     # JobReport part first
-    result = self.jobReport.generateRequest()
+    result = self.jobReport.generateForwardDISET()
     if result['OK']:
-      reportRequest = result['Value']
-      if reportRequest:
-        request.update( reportRequest )
+      if isinstance( result["Value"], Operation ):
+        self.log.info( 'Adding a job state update DISET operation to the request' )
+        request.addOperation( result["Value"] )
+    else:
+      self.log.warn( 'JobReportFailure', "Could not generate a forwardDISET operation: %s" % result['Message'] )
+      self.log.warn( 'JobReportFailure', "The job won't fail, but the jobLogging info might be incomplete" )
 
     # Accounting part
     if not self.jobID:
-      self.log.verbose( 'No accounting to be sent since running locally' )
+      self.log.debug( 'No accounting to be sent since running locally' )
     else:
-      result = self.sendWMSAccounting( status, minorStatus )
+      result = self.sendJobAccounting( status, minorStatus )
       if not result['OK']:
-        self.log.warn( 'Could not send WMS accounting with result: \n%s' % result )
-        if result.has_key( 'rpcStub' ):
-          self.log.verbose( 'Adding accounting report to failover request object' )
-          request.setDISETRequest( result['rpcStub'] )
+        self.log.warn( 'JobAccountingFailure', "Could not send job accounting with result: \n%s" % result['Message'] )
+        self.log.warn( 'JobAccountingFailure', "Trying to build a failover request" )
+        if 'rpcStub' in result:
+          self.log.verbose( "Adding accounting report to failover request object" )
+          forwardDISETOp = Operation()
+          forwardDISETOp.Type = "ForwardDISET"
+          forwardDISETOp.Arguments = DEncode.encode( result['rpcStub'] )
+          request.addOperation( forwardDISETOp )
+          self.log.verbose( "Added accounting report to failover request object" )
         else:
-          self.log.warn( 'No rpcStub found to construct failover request for WMS accounting report' )
+          self.log.warn( 'JobAccountingFailure', "No rpcStub found to construct failover request for job accounting report" )
+          self.log.warn( 'JobAccountingFailure', "The job won't fail, but the accounting for this job won't be sent" )
+
+    # Failover transfer requests
+    for storedOperation in self.failoverTransfer.request:
+      request.addOperation( storedOperation )
 
     # Any other requests in the current directory
     rfiles = self.__getRequestFiles()
     for rfname in rfiles:
-      rfile = open( rfname, 'r' )
-      reqString = rfile.read()
-      rfile.close()
-      requestStored = RequestContainer( reqString )
-      request.update( requestStored )
+      with open( rfname, 'r' ) as rFile:
+        requestStored = Request( json.load( rFile ) )
+      for storedOperation in requestStored:
+        request.addOperation( storedOperation )
 
-    # The request is ready, send it now
-    if not request.isEmpty()['Value']:
-      requestClient = RequestClient()
-      requestString = request.toXML()['Value']
-      result = requestClient.setRequest( requestName, requestString )
-      if result['OK']:
-        resDigest = request.getDigest()
-        digest = resDigest['Value']
-        self.jobReport.setJobParameter( 'PendingRequest', digest )
+    if len( request ):
+      # The request is ready, send it now
+      isValid = RequestValidator().validate( request )
+      if not isValid["OK"]:
+        self.log.error( "Failover request is not valid", isValid["Message"] )
+        self.__report( status = 'Failed', minorStatus = 'Failover Request Failed' )
+        self.log.error( "Job will fail, first trying to print out the content of the request" )
+        reqToJSON = request.toJSON()
+        if reqToJSON['OK']:
+          print str( reqToJSON['Value'] )
+        else:
+          self.log.error( "Something went wrong creating the JSON from request", reqToJSON['Message'] )
       else:
-        self.__report( 'Failed', 'Failover Request Failed' )
-        self.log.error( 'Failed to set failover request', result['Message'] )
-      return result
-    else:
-      return S_OK()
+        # We try several times to put the request before failing the job: it's very important that requests go through,
+        # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
+        # It's a poor man solution, but I don't see fancy alternatives
+        for counter in range( 10 ):
+          requestClient = ReqClient()
+          result = requestClient.putRequest( request )
+          if result['OK']:
+            resDigest = request.getDigest()
+            digest = resDigest['Value']
+            self.jobReport.setJobParameter( 'PendingRequest', digest )
+            break
+          else:
+            self.log.error( 'Failed to set failover request',
+                            '%d: %s. Re-trying...' % ( counter, result['Message'] ) )
+            del requestClient
+            time.sleep( counter ** 3 )
+
+        if not result['OK']:
+          self.__report( status = 'Failed', minorStatus = 'Failover Request Failed' )
 
   #############################################################################
   def __getRequestFiles( self ):
     """Simple wrapper to return the list of request files.
     """
-    return glob.glob( '*_request.xml' )
+    return glob.glob( '*_request.json' )
 
   #############################################################################
   def __cleanUp( self ):
     """Cleans up after job processing. Can be switched off via environment
        variable DO_NOT_DO_JOB_CLEANUP or by JobWrapper configuration option.
     """
-    #Environment variable is a feature for DIRAC (helps local debugging).
-    if os.environ.has_key( 'DO_NOT_DO_JOB_CLEANUP' ) or not self.cleanUpFlag:
+    # Environment variable is a feature for DIRAC (helps local debugging).
+    if 'DO_NOT_DO_JOB_CLEANUP' in os.environ or not self.cleanUpFlag:
       cleanUp = False
     else:
       cleanUp = True
@@ -1295,7 +1357,8 @@ class ExecutionThread( threading.Thread ):
     EXECUTION_RESULT['CPU'] = []
     for i in range( len( finalStat ) ):
       EXECUTION_RESULT['CPU'].append( finalStat[i] - initialStat[i] )
-    gLogger.info( 'EXECUTION_RESULT[CPU] after Execution of spObject.systemCall', str( EXECUTION_RESULT['CPU'] ) )
+    cpuString = ' '.join( ['%.2f' % x for x in EXECUTION_RESULT['CPU'] ] )
+    gLogger.info( 'EXECUTION_RESULT[CPU] after Execution of spObject.systemCall', cpuString )
     gLogger.info( 'EXECUTION_RESULT[Thread] after Execution of spObject.systemCall', str( EXECUTION_RESULT['Thread'] ) )
 
   #############################################################################
@@ -1305,13 +1368,11 @@ class ExecutionThread( threading.Thread ):
   #############################################################################
   def sendOutput( self, stdid, line ):
     if stdid == 0 and self.stdout:
-      outputFile = open( self.stdout, 'a+' )
-      print >> outputFile, line
-      outputFile.close()
+      with open( self.stdout, 'a+' ) as outputFile:
+        print >> outputFile, line
     elif stdid == 1 and self.stderr:
-      errorFile = open( self.stderr, 'a+' )
-      print >> errorFile, line
-      errorFile.close()
+      with open( self.stderr, 'a+' ) as errorFile:
+        print >> errorFile, line
     self.outputLines.append( line )
     size = len( self.outputLines )
     if size > self.maxPeekLines:
@@ -1321,29 +1382,27 @@ class ExecutionThread( threading.Thread ):
   #############################################################################
   def getOutput( self, lines = 0 ):
     if self.outputLines:
-      #restrict to smaller number of lines for regular
-      #peeking by the watchdog
+      # restrict to smaller number of lines for regular
+      # peeking by the watchdog
       # FIXME: this is multithread, thus single line would be better
       if lines:
         size = len( self.outputLines )
         cut = size - lines
         self.outputLines = self.outputLines[cut:]
-
-      result = S_OK()
-      result['Value'] = self.outputLines
-    else:
-      result = S_ERROR( 'No Job output found' )
-
-    return result
+      return S_OK( self.outputLines )
+    return S_ERROR( 'No Job output found' )
 
 def rescheduleFailedJob( jobID, message, jobReport = None ):
+
+  rescheduleResult = 'Rescheduled'
+
   try:
 
     gLogger.warn( 'Failure during %s' % ( message ) )
 
-    #Setting a job parameter does not help since the job will be rescheduled,
-    #instead set the status with the cause and then another status showing the
-    #reschedule operation.
+    # Setting a job parameter does not help since the job will be rescheduled,
+    # instead set the status with the cause and then another status showing the
+    # reschedule operation.
 
     if not jobReport:
       gLogger.info( 'Creating a new JobReport Object' )
@@ -1361,23 +1420,14 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
     jobManager = RPCClient( 'WorkloadManagement/JobManager' )
     result = jobManager.rescheduleJob( int( jobID ) )
     if not result['OK']:
-      gLogger.warn( result )
+      gLogger.warn( result['Message'] )
+      if 'Maximum number of reschedulings is reached' in result['Message']:
+        rescheduleResult = 'Failed'
 
-    # Send mail to debug errors
-    mailAddress = DIRAC.alarmMail
-    site = DIRAC.siteName()
-    subject = 'Job rescheduled at %s' % site
-    ret = systemCall( 0, 'hostname' )
-    wn = ret['Value'][1]
-    msg = 'Job %s rescheduled at %s, wn=%s\n' % ( jobID, site, wn )
-    msg += message
-
-    NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
-
-    return
+    return rescheduleResult
   except Exception:
     gLogger.exception( 'JobWrapperTemplate failed to reschedule Job' )
-    return
+    return 'Failed'
 
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF

@@ -46,7 +46,7 @@ class MessageFactory:
     sysName = sL[0]
     svcHandlerName = "%sHandler" % sL[1]
     loadedObjs = loadObjects( "%sSystem/Service" % sysName,
-                          reFilter = re.compile( "^%s\.py$" % svcHandlerName ) )
+                              reFilter = re.compile( r"^%s\.py$" % svcHandlerName ) )
     if svcHandlerName not in loadedObjs:
       return S_ERROR( "Could not find %s for getting messages definition" % serviceName )
     return S_OK( loadedObjs[ svcHandlerName ] )
@@ -101,6 +101,7 @@ class Message( object ):
     self.__fDef = {}
     self.__order = []
     self.__values = {}
+    self.__msgClient = None
     self.__waitForAck = Message.DEFAULTWAITFORACK
     for fName in msgDefDict:
       fType = msgDefDict[ fName ]
@@ -114,11 +115,18 @@ class Message( object ):
     self.__locked = True
     #self.__setattr__ = self.__objSetAttr
 
+  def setMsgClient( self, msgClient ):
+    self.__msgClient = msgClient
+
+  @property
+  def msgClient( self ):
+    return self.__msgClient
+
   def isOK( self ):
     for k in self.__order:
       if k not in self.__values:
         return False
-      if self.__fDef[k] != None and type( self.__values[k] ) not in self.__fDef[k]:
+      if self.__fDef[k] != None and not isinstance( self.__values[k], self.__fDef[k] ):
         return False
     return True
 
@@ -135,11 +143,11 @@ class Message( object ):
     return self.__order
 
   def loadAttrsFromDict( self, dataDict ):
-    if type( data ) != types.DictType:
+    if type( dataDict ) != types.DictType:
       return S_ERROR( "Params have to be a dict" )
     for k in dataDict:
       try:
-        setattr( self, k , v )
+        setattr( self, k , dataDict[ k ] )
       except AttributeError, e:
         return S_ERROR( str( e ) )
     return S_OK()
@@ -147,7 +155,7 @@ class Message( object ):
   def dumpAttrs( self ):
     try:
       return S_OK( ( self.__waitForAck, tuple( self.__values[ k ] for k in self.__order ) ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Could not dump message: %s doesn't have a value" % e )
 
   def loadAttrs( self, data ):
@@ -242,7 +250,7 @@ class DummyMessage:
 
 def loadObjects( path, reFilter = None, parentClass = None ):
   if not reFilter:
-    reFilter = re.compile( ".*[a-z1-9]\.py$" )
+    reFilter = re.compile( r".*[a-z1-9]\.py$" )
   pathList = List.fromChar( path, "/" )
 
   parentModuleList = [ "%sDIRAC" % ext for ext in CSGlobals.getCSExtensions() ] + [ 'DIRAC' ]
@@ -272,14 +280,14 @@ def loadObjects( path, reFilter = None, parentClass = None ):
                                globals(),
                                locals(), pythonClassName )
       objClass = getattr( objModule, pythonClassName )
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Can't load type %s/%s: %s" % ( parentModule, pythonClassName, str( e ) ) )
       continue
     if parentClass == objClass:
       continue
     if parentClass and not issubclass( objClass, parentClass ):
-        gLogger.warn( "%s is not a subclass of %s. Skipping" % ( objClass, parentClass ) )
-        continue
+      gLogger.warn( "%s is not a subclass of %s. Skipping" % ( objClass, parentClass ) )
+      continue
     gLogger.info( "Loaded %s" % objPythonPath )
     loadedObjects[ pythonClassName ] = objClass
 

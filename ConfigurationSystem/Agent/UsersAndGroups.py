@@ -1,7 +1,3 @@
-###################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/LHCbDIRAC/trunk/LHCbDIRAC/ConfigurationSystem/Agent/UsersAndGroups.py $
-########################################################################
-__RCSID__ = "$Id: UsersAndGroups.py 34413 2011-02-19 06:10:18Z rgracian $"
 """
   Update Users and Groups from VOMS on CS
 """
@@ -13,6 +9,8 @@ from DIRAC.Core.Security.VOMSService                 import VOMSService
 from DIRAC.Core.Security                             import Locations, X509Chain
 from DIRAC.Core.Utilities                            import List, Subprocess
 from DIRAC                                           import S_OK, S_ERROR, gConfig
+
+__RCSID__ = "$Id: $"
 
 class UsersAndGroups( AgentModule ):
 
@@ -58,7 +56,7 @@ class UsersAndGroups( AgentModule ):
       cmdEnv[ 'X509_USER_PROXY' ] = self.proxyLocation
     lfcDNs = []
     try:
-      retlfc = Subprocess.systemCall( 0, ( 'lfc-listusrmap', ), env = cmdEnv )
+      retlfc = Subprocess.systemCall( 30, ( 'lfc-listusrmap', ), env = cmdEnv )
       if not retlfc['OK']:
         self.log.fatal( 'Can not get LFC User List', retlfc['Message'] )
         return retlfc
@@ -211,10 +209,10 @@ class UsersAndGroups( AgentModule ):
           userName = result[ 'Value' ]
         else:
           self.__adminMsgs[ 'Errors' ].append( "Could not retrieve nickname for DN %s" % user[ 'DN' ] )
-          self.log.error( "Could not get nickname for DN %s" % user[ 'DN' ] )
+          self.log.error( "Could not get nickname for DN", user[ 'DN' ] )
           userName = user[ 'mail' ][:user[ 'mail' ].find( '@' )]
       if not userName:
-        self.log.error( "Empty nickname for DN %s" % user[ 'DN' ] )
+        self.log.error( "Empty nickname for DN", user[ 'DN' ] )
         self.__adminMsgs[ 'Errors' ].append( "Empty nickname for DN %s" % user[ 'DN' ] )
         continue
       self.log.info( " (%02d%%) Found username %s : %s " % ( ( iUPos * 100 / len( usersInVOMS ) ), userName, user[ 'DN' ] ) )
@@ -343,7 +341,9 @@ class UsersAndGroups( AgentModule ):
       result = csapi.modifyUser( user, csUserData, createIfNonExistant = True )
       if not result[ 'OK' ]:
         self.__adminMsgs[ 'Error' ].append( "Cannot modify user %s: %s" % ( user, result[ 'Message' ] ) )
-        self.log.error( "Cannot modify user %s" % user )
+        self.log.error( "Cannot modify user", user )
+      elif not result['Value']:
+        self.__adminMsgs[ 'Error' ].append( "Cannot modify user %s" % user )
 
     if usersWithMoreThanOneDN:
       self.__adminMsgs[ 'Info' ].append( "\nUsers with more than one DN:" )

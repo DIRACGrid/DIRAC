@@ -37,7 +37,7 @@ for unprocSw in Script.getUnprocessedSwitches():
 
 try:
   usersCFG = CFG().loadFromFile( args[0] )
-except Exception, e:
+except Exception as e:
   errorList.append( "file open", "Can't parse file %s: %s" % ( args[0], str( e ) ) )
   errorCode = 1
 else:

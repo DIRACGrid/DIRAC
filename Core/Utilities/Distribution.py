@@ -17,6 +17,7 @@ class Distribution:
   anonymousSVNRoot = { 'global' : cernAnonRoot,
                        'DIRAC' : cernAnonRoot,
                        'LHCbDIRAC' : cernAnonRoot,
+                       'LHCbVMDIRAC' : cernAnonRoot,
                        'LHCbWebDIRAC' : cernAnonRoot,
                        'BelleDIRAC' : googleAnonRoot,
                        'MagicDIRAC' : googleAnonRoot,
@@ -29,6 +30,7 @@ class Distribution:
   devSVNRoot = { 'global' : cernDevRoot,
                  'DIRAC' : cernDevRoot,
                  'LHCbDIRAC' : cernDevRoot,
+                 'LHCbVMDIRAC' : cernDevRoot,
                  'LHCbWebDIRAC' : cernDevRoot,
                  'ILCDIRAC' : cernDevRoot,
                  'BelleDIRAC' : googleDevRoot,
@@ -94,7 +96,7 @@ class Distribution:
     remoteData = remoteFile.read()
     remoteFile.close()
     if not remoteData:
-      gLogger.error( "Could not retrieve versions for package %s" % self.package )
+      gLogger.error( "Could not retrieve versions for package", self.package )
       sys.exit( 1 )
     versions = []
     rePackage = ".*"
@@ -259,7 +261,7 @@ class Distribution:
         replStr = "%s = %s" % ( versionStrings[iP], verTup[iP] )
       else:
         replStr = "%s = 0" % versionStrings[iP]
-      reList.append( ( re.compile( "^(%s\s*=)\s*[0-9]+\s*" % versionStrings[iP] ), replStr ) )
+      reList.append( ( re.compile( r"^(%s\s*=)\s*[0-9]+\s*" % versionStrings[iP] ), replStr ) )
     for line in outData.split( "\n" ):
       for reCm, replStr in reList:
         line = reCm.sub( replStr, line )
@@ -293,7 +295,7 @@ def writeVersionToInit( rootPath, version ):
     fd = open( initFile, "r" )
     fileData = fd.read()
     fd.close()
-  except Exception, e:
+  except Exception as e:
     return S_ERROR( "Could not open %s: %s" % ( initFile, str( e ) ) )
   versionStrings = ( "majorVersion", "minorVersion", "patchLevel", "preVersion" )
   reList = []
@@ -302,7 +304,7 @@ def writeVersionToInit( rootPath, version ):
       replStr = "%s = %s" % ( versionStrings[iP], verTup[iP] )
     else:
       replStr = "%s = 0" % versionStrings[iP]
-    reList.append( ( re.compile( "^(%s\s*=)\s*[0-9]+\s*" % versionStrings[iP] ), replStr ) )
+    reList.append( ( re.compile( r"^(%s\s*=)\s*[0-9]+\s*" % versionStrings[iP] ), replStr ) )
   newData = []
   for line in fileData.split( "\n" ):
     for reCm, replStr in reList:
@@ -312,7 +314,7 @@ def writeVersionToInit( rootPath, version ):
     fd = open( initFile, "w" )
     fd.write( "\n".join( newData ) )
     fd.close()
-  except Exception, e:
+  except Exception as e:
     return S_ERROR( "Could write to %s: %s" % ( initFile, str( e ) ) )
   return S_OK()
 
@@ -322,7 +324,7 @@ def writeVersionToInit( rootPath, version ):
 def createTarball( tarballPath, directoryToTar, additionalDirectoriesToTar = None ):
   tf = tarfile.open( tarballPath, "w:gz" )
   tf.add( directoryToTar, os.path.basename( os.path.abspath( directoryToTar ) ), recursive = True )
-  if type( additionalDirectoriesToTar ) in ( types.StringType, types.UnicodeType ):
+  if isinstance( additionalDirectoriesToTar, basestring ):
     additionalDirectoriesToTar = [ additionalDirectoriesToTar ]
   if additionalDirectoriesToTar:
     for dirToTar in additionalDirectoriesToTar:
@@ -349,7 +351,7 @@ gAllowedNoteTypes = ( "NEW", "CHANGE", "BUGFIX", 'FIX' )
 gNoteTypeAlias = { 'FIX' : 'BUGFIX' }
 
 def retrieveReleaseNotes( packages ):
-  if type( packages ) in ( types.StringType, types.UnicodeType ):
+  if isinstance( packages, basestring ):
     packages = [ str( packages ) ]
   packageCFGDict = {}
   #Get the versions.cfg
@@ -393,7 +395,7 @@ def retrieveReleaseNotes( packages ):
   return pkgNotesDict
 
 def generateReleaseNotes( packages, destinationPath, versionReleased = "", singleVersion = False ):
-  if type( packages ) in ( types.StringType, types.UnicodeType ):
+  if isinstance( packages, basestring ):
     packages = [ str( packages ) ]
   pkgNotesDict = retrieveReleaseNotes( packages )
   fileContents = []

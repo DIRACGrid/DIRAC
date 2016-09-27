@@ -1,4 +1,6 @@
-# $HeadURL$
+""" Just listing the possible Properties
+"""
+
 __RCSID__ = "$Id$"
 #
 TRUSTED_HOST = "TrustedHost"
@@ -10,14 +12,18 @@ CS_ADMINISTRATOR = "CSAdministrator"
 JOB_SHARING = "JobSharing"
 # DIRAC Service Administrator
 SERVICE_ADMINISTRATOR = "ServiceAdministrator"
-# Job Administrator
+# Job Administrator can manipulate everybody's jobs
 JOB_ADMINISTRATOR = "JobAdministrator"
+# Job Monitor - can get job monitoring information
+JOB_MONITOR = "JobMonitor"
 # Private pilot
 PILOT = "Pilot"
 # Generic pilot
 GENERIC_PILOT = "GenericPilot"
 # Site Manager
 SITE_MANAGER = "SiteManager"
+# User, group, VO Registry management
+USER_MANAGER = 'UserManager'
 # Operator
 OPERATOR = "Operator"
 #Allow getting full delegated proxies
@@ -36,7 +42,7 @@ PPG_AUTHORITY = "PPGAuthority"
 BOOKKEEPING_MANAGEMENT = "BookkeepingManagement"
 #Allow to set notifications and manage alarms
 ALARMS_MANAGEMENT = "AlarmsManagement"
-#Allow FC Management
+# Allow FC Management - FC root user
 FC_MANAGEMENT = "FileCatalogManagement"
 #Allow staging files
 STAGE_ALLOWED = "StageAllowed"

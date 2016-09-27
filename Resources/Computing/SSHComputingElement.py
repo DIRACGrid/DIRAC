@@ -1,43 +1,85 @@
 ########################################################################
-# $HeadURL$
 # File :   SSHComputingElement.py
-# Author : Dumitru Laurentiu
+# Author : Dumitru Laurentiu, A.T.
 ########################################################################
 
-""" SSH (Virtual) Computing Element: For a given list of ip/cores pair it will send jobs
-    directly through ssh
-    It's still under development & debugging,
-""" 
+""" SSH (Virtual) Computing Element: For a given IP/host it will send jobs directly through ssh
+"""
+
+import os
+import urllib
+import json
+import stat
+from types import StringTypes
+from urlparse import urlparse
+
+from DIRAC                                               import S_OK, S_ERROR
+from DIRAC                                               import rootPath
+from DIRAC                                               import gLogger
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
+from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
+from DIRAC.Core.Utilities.List                           import uniqueElements
+from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
-from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
-from DIRAC                                               import gConfig
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
-import os, sys, time, re, socket, stat, shutil
-import string, shutil, bz2, base64, tempfile, random
 
-CE_NAME = 'SSH'
-MANDATORY_PARAMETERS = [ 'Queue' ]
+__RCSID__ = "$Id$"
 
-class SSH:
+class SSH( object ):
+  """ SSH class encapsulates passing commands and files through an SSH tunnel
+      to a remote host. It can use either ssh or gsissh access. The final host
+      where the commands will be executed and where the files will copied/retrieved
+      can be reached through an intermediate host if SSHTunnel parameters is defined.
 
-  def __init__( self, user, host, password = None ):
+      SSH constructor parameters are defined in a SSH accessible Computing Element
+      in the Configuration System:
 
-    self.user = user
+      - SSHHost: SSH host name
+      - SSHUser: SSH user login
+      - SSHPassword: SSH password
+      - SSHPort: port number if not standard, e.g. for the gsissh access
+      - SSHKey: location of the ssh private key for no-password connection
+      - SSHOptions: any other SSH options to be used
+      - SSHTunnel: string defining the use of intermediate SSH host. Example:
+                   'ssh -i /private/key/location -l final_user final_host'
+      - SSHType: ssh ( default ) or gsissh
+
+      The class public interface includes two methods:
+
+      sshCall( timeout, command_sequence )
+      scpCall( timeout, local_file, remote_file, upload = False/True )
+  """
+
+  def __init__( self, host = None, parameters = {} ):
+
     self.host = host
-    self.password = password
+    if not host:
+      self.host = parameters.get( 'SSHHost', '' )
+
+    self.user = parameters.get( 'SSHUser', '' )
+    self.password = parameters.get( 'SSHPassword', '' )
+    self.port = parameters.get( 'SSHPort', '' )
+    self.key = parameters.get( 'SSHKey', '' )
+    self.options = parameters.get( 'SSHOptions', '' )
+    self.sshTunnel = parameters.get( 'SSHTunnel', '' )
+    self.sshType = parameters.get( 'SSHType', 'ssh' )
+
+    if self.port:
+      self.options += ' -p %s' % self.port
+    if self.key:
+      self.options += ' -i %s' % self.key
+    self.options = self.options.strip()
+
+    self.log = gLogger.getSubLogger( 'SSH' )
 
   def __ssh_call( self, command, timeout ):
 
     try:
       import pexpect
       expectFlag = True
-    except:
-      from DIRAC import shellCall
+    except Exception as x:
+      from DIRAC.Core.Utilities.Subprocess import shellCall
       expectFlag = False
 
     if not timeout:
@@ -45,62 +87,141 @@ class SSH:
 
     if expectFlag:
       ssh_newkey = 'Are you sure you want to continue connecting'
-      child = pexpect.spawn( command, timeout = timeout )
-
-      i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
-      if i == 0: # Timeout        
+      try:
+        child = pexpect.spawn( command, timeout = timeout )
+        i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'assword: '] )
+        if i == 0: # Timeout
           return S_OK( ( -1, child.before, 'SSH login failed' ) )
-      elif i == 1: # SSH does not have the public key. Just accept it.
+        elif i == 1: # SSH does not have the public key. Just accept it.
           child.sendline ( 'yes' )
-          child.expect ( 'password: ' )
-          i = child.expect( [pexpect.TIMEOUT, 'password: '] )
+          child.expect ( 'assword: ' )
+          i = child.expect( [pexpect.TIMEOUT, 'assword: '] )
           if i == 0: # Timeout
-            return S_OK( ( -1, child.before + child.after, 'SSH login failed' ) )
+            return S_OK( ( -1, str( child.before ) + str( child.after ), 'SSH login failed' ) )
           elif i == 1:
-            child.sendline( password )
+            child.sendline( self.password )
             child.expect( pexpect.EOF )
             return S_OK( ( 0, child.before, '' ) )
-      elif i == 2:
-        # Passwordless login, get the output
-        return S_OK( ( 0, child.before, '' ) )
+        elif i == 2:
+          # Passwordless login, get the output
+          return S_OK( ( 0, child.before, '' ) )
 
-        
-      if self.password:
-        child.sendline( self.password )
-        child.expect( pexpect.EOF )
-        return S_OK( ( 0, child.before, '' ) )
-      else:
-        return S_ERROR( ( -1, child.before, '' ) )
+
+        if self.password:
+          child.sendline( self.password )
+          child.expect( pexpect.EOF )
+          return S_OK( ( 0, child.before, '' ) )
+        else:
+          return S_ERROR( ( -2, child.before, '' ) )
+      except Exception as x:
+        res = ( -1 , 'Encountered exception %s: %s' % ( Exception, str( x ) ) )
+        return S_ERROR( res )
     else:
       # Try passwordless login
       result = shellCall( timeout, command )
 #      print ( "!!! SSH command: %s returned %s\n" % (command, result) )
       if result['Value'][0] == 255:
-        return S_ERROR ( (-1, 'Cannot connect to host %s' % self.host, '') )
+        return S_ERROR ( ( -1, 'Cannot connect to host %s' % self.host, '' ) )
       return result
-
 
   def sshCall( self, timeout, cmdSeq ):
     """ Execute remote command via a ssh remote call
+
+    :param int timeout: timeout of the command
+    :param list cmdSeq: list of command components
     """
 
     command = cmdSeq
     if type( cmdSeq ) == type( [] ):
       command = ' '.join( cmdSeq )
 
-    command = "ssh -l %s %s '%s'" % ( self.user, self.host, command )
-    return self.__ssh_call( command, timeout )
+    pattern = "__DIRAC__"
 
-  def scpCall( self, timeout, localFile, destinationPath, upload = True ):
-    """ Execute scp copy
-    """
-
-    if upload:
-      command = "scp %s %s@%s:%s" % ( localFile, self.user, self.host, destinationPath )
+    if self.sshTunnel:
+      command = command.replace( "'", '\\\\\\\"' )
+      command = command.replace( '$', '\\\\\\$' )
+      command = '/bin/sh -c \' %s -q %s -l %s %s "%s \\\"echo %s; %s\\\" " \' ' % ( self.sshType, self.options,
+                                                                                    self.user, self.host,
+                                                                                    self.sshTunnel, pattern, command )
     else:
-      command = "scp %s@%s:%s %s" % ( self.user, self.host, destinationPath, localFile )
-    return self.__ssh_call( command, timeout )
+      #command = command.replace( '$', '\$' )
+      command = '%s -q %s -l %s %s "echo %s; %s"' % ( self.sshType, self.options, self.user, self.host, pattern, command )
+    self.log.debug( "SSH command: %s" % command )
+    result = self.__ssh_call( command, timeout )
+    self.log.debug( "SSH command result %s" % str( result ) )
+    if not result['OK']:
+      return result
 
+    # Take the output only after the predefined pattern
+    ind = result['Value'][1].find('__DIRAC__')
+    if ind == -1:
+      return result
+
+    status,output,error = result['Value']
+    output = output[ind+9:]
+    if output.startswith('\r'):
+      output = output[1:]
+    if output.startswith('\n'):
+      output = output[1:]
+
+    result['Value'] = ( status,output,error )
+    return result
+
+  def scpCall( self, timeout, localFile, remoteFile, postUploadCommand = '', upload = True ):
+    """ Perform file copy through an SSH magic.
+
+    :param int timeout: timeout of the command
+    :param str localFile: local file path, serves as source for uploading and destination for downloading.
+                          Can take 'Memory' as value, in this case the downloaded contents is returned
+                          as result['Value']
+    :param str remoteFile: remote file full path
+    :param str postUploadCommand: command executed on the remote side after file upload
+    :param bool upload: upload if True, download otherwise
+    """
+    if upload:
+      if self.sshTunnel:
+        remoteFile = remoteFile.replace( '$', '\\\\\$' )
+        postUploadCommand = postUploadCommand.replace( '$', '\\\\\$' )
+        command = "/bin/sh -c 'cat %s | %s -q %s %s@%s \"%s \\\"cat > %s; %s\\\"\"' " % ( localFile,
+                                                                                          self.sshType,
+                                                                                          self.options,
+                                                                                          self.user,
+                                                                                          self.host,
+                                                                                          self.sshTunnel,
+                                                                                          remoteFile,
+                                                                                          postUploadCommand )
+      else:
+        command = "/bin/sh -c \"cat %s | %s -q %s %s@%s 'cat > %s; %s'\" " % ( localFile,
+                                                                               self.sshType,
+                                                                               self.options,
+                                                                               self.user,
+                                                                               self.host,
+                                                                               remoteFile,
+                                                                               postUploadCommand )
+    else:
+      finalCat = '| cat > %s' % localFile
+      if localFile.lower() == 'memory':
+        finalCat = ''
+      if self.sshTunnel:
+        remoteFile = remoteFile.replace( '$', '\\\\\\$' )
+        command = "/bin/sh -c '%s -q %s -l %s %s \"%s \\\"cat %s\\\"\" %s'" % ( self.sshType,
+                                                                                self.options,
+                                                                                self.user,
+                                                                                self.host,
+                                                                                self.sshTunnel,
+                                                                                remoteFile,
+                                                                                finalCat )
+      else:
+        remoteFile = remoteFile.replace( '$', '\$' )
+        command = "/bin/sh -c '%s -q %s -l %s %s \"cat %s\" %s'" % ( self.sshType,
+                                                                     self.options,
+                                                                     self.user,
+                                                                     self.host,
+                                                                     remoteFile,
+                                                                     finalCat )
+
+    self.log.debug( "SSH copy command: %s" % command )
+    return self.__ssh_call( command, timeout )
 
 class SSHComputingElement( ComputingElement ):
 
@@ -110,9 +231,12 @@ class SSHComputingElement( ComputingElement ):
     """
     ComputingElement.__init__( self, ceUniqueID )
 
-    self.ceType = CE_NAME
+    self.ceType = 'SSH'
+    self.execution = "SSH"
+    self.batchSystem = 'Host'
     self.submittedJobs = 0
-    self.mandatoryParameters = MANDATORY_PARAMETERS
+    self.outputTemplate = ''
+    self.errorTemplate = ''
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -120,51 +244,65 @@ class SSHComputingElement( ComputingElement ):
     """
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
-    # Now Torque specific ones
+    # Now batch system specific ones
     if 'ExecQueue' not in self.ceParameters:
       self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
 
     if 'SharedArea' not in self.ceParameters:
-      self.ceParameters['SharedArea'] = ''
+      #. isn't a good location, move to $HOME
+      self.ceParameters['SharedArea'] = '$HOME'
 
     if 'BatchOutput' not in self.ceParameters:
-      self.ceParameters['BatchOutput'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+      self.ceParameters['BatchOutput'] = 'data'
 
     if 'BatchError' not in self.ceParameters:
-      self.ceParameters['BatchError'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+      self.ceParameters['BatchError'] = 'data'
 
     if 'ExecutableArea' not in self.ceParameters:
-      self.ceParameters['ExecutableArea'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+      self.ceParameters['ExecutableArea'] = 'data'
 
+    if 'InfoArea' not in self.ceParameters:
+      self.ceParameters['InfoArea'] = 'info'
 
-  def reset( self ):
+    if 'WorkArea' not in self.ceParameters:
+      self.ceParameters['WorkArea'] = 'work'
 
+  def _reset( self ):
+    """ Process CE parameters and make necessary adjustments
+    """
+    self.batchSystem = self.ceParameters.get( 'BatchSystem', 'Host' )
+    if 'BatchSystem' not in self.ceParameters:
+      self.ceParameters['BatchSystem'] = self.batchSystem
+    self.loadBatchSystem()
+
+    self.user = self.ceParameters['SSHUser']
     self.queue = self.ceParameters['Queue']
-    self.sshScript = os.path.join( rootPath,"DIRAC", "Resources", "Computing", "scripts", "sshce" )
+    self.submitOptions = self.ceParameters.get( 'SubmitOptions', '' )
     if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
       self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
     self.execQueue = self.ceParameters['ExecQueue']
     self.log.info( "Using queue: ", self.queue )
-    self.hostname = socket.gethostname()
+
     self.sharedArea = self.ceParameters['SharedArea']
     self.batchOutput = self.ceParameters['BatchOutput']
+    if not self.batchOutput.startswith( '/' ):
+      self.batchOutput = os.path.join( self.sharedArea, self.batchOutput )
     self.batchError = self.ceParameters['BatchError']
+    if not self.batchError.startswith( '/' ):
+      self.batchError = os.path.join( self.sharedArea, self.batchError )
     self.infoArea = self.ceParameters['InfoArea']
+    if not self.infoArea.startswith( '/' ):
+      self.infoArea = os.path.join( self.sharedArea, self.infoArea )
     self.executableArea = self.ceParameters['ExecutableArea']
-    self.sshUser = self.ceParameters['SSHUser']
-    self.sshPassword = ''
-    if 'SSHPassword' in self.ceParameters:
-      self.sshPassword = self.ceParameters['SSHPassword']
-    self.sshHost = []
-    
-    for host in self.ceParameters['SSHHost'].strip().split(','):
-      self.sshHost.append(host.strip())
-      self.log.verbose('Registered host:%s; uploading script.' % host.strip())
-      ssh = SSH( self.sshUser, host.strip().split("/")[0], self.sshPassword )
-      result = ssh.scpCall( 10, self.sshScript, '' )      
-      if ( result['OK'] ):
-        ssh.sshCall(10, "chmod +x ~/sshce; mkdir -p %s; mkdir -p %s" % ( self.infoArea, self.executableArea ) )
-    
+    if not self.executableArea.startswith( '/' ):
+      self.executableArea = os.path.join( self.sharedArea, self.executableArea )
+    self.workArea = self.ceParameters['WorkArea']
+    if not self.workArea.startswith( '/' ):
+      self.workArea = os.path.join( self.sharedArea, self.workArea )
+
+    result = self._prepareRemoteHost()
+    if not result['OK']:
+      return result
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -174,33 +312,134 @@ class SSHComputingElement( ComputingElement ):
       if self.ceParameters['RemoveOutput'].lower()  in ['no', 'false', '0']:
         self.removeOutput = False
 
-  #############################################################################
-  def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
-    """ Method to submit job
-    """
-    max=0;    
-    best="N/A";
-    
-    for host in self.sshHost:
-      thost=host.split("/")
-      runningJobs=self.getUnitDynamicInfo(thost[0])
-      
-      if (runningJobs >= 0):        
-        if ( max <= int(thost[1]) - int(runningJobs) ):
-          max=int(thost[1]) - int(runningJobs)
-          best=thost[0];     
+    return S_OK()
 
-    if best == "N/A":
-      return S_ERROR( "No online node found on queue" )
-    
-    return self.submitJobReal ( best, executableFile, proxy, numberOfJobs )
-    
-    
-  def submitJobReal( self, host, executableFile, proxy, numberOfJobs = 1 ):
-    
+  def _prepareRemoteHost( self, host = None ):
+    """ Prepare remote directories and upload control script
+    """
+
+    ssh = SSH( host = host, parameters = self.ceParameters )
+
+    # Make remote directories
+    dirTuple = tuple ( uniqueElements( [self.sharedArea,
+                                        self.executableArea,
+                                        self.infoArea,
+                                        self.batchOutput,
+                                        self.batchError,
+                                        self.workArea] ) )
+    nDirs = len( dirTuple )
+    cmd = 'mkdir -p %s; '*nDirs % dirTuple
+    cmd = "bash -c '%s'" % cmd
+    self.log.verbose( 'Creating working directories on %s' % self.ceParameters['SSHHost'] )
+    result = ssh.sshCall( 30, cmd )
+    if not result['OK']:
+      self.log.warn( 'Failed creating working directories: %s' % result['Message'][1] )
+      return result
+    status, output, _error = result['Value']
+    if status == -1:
+      self.log.warn( 'Timeout while creating directories' )
+      return S_ERROR( 'Timeout while creating directories' )
+    if "cannot" in output:
+      self.log.warn( 'Failed to create directories: %s' % output )
+      return S_ERROR( 'Failed to create directories: %s' % output )
+
+    # Upload the control script now
+    batchSystemDir = os.path.join( rootPath, "DIRAC", "Resources", "Computing", "BatchSystems" )
+    batchSystemScript = os.path.join( batchSystemDir, '%s.py' % self.batchSystem )
+    batchSystemExecutor = os.path.join( batchSystemDir, 'executeBatch.py' )
+    self.log.verbose( 'Uploading %s script to %s' % ( self.batchSystem, self.ceParameters['SSHHost'] ) )
+    remoteScript = '%s/execute_batch' % self.sharedArea
+    result = ssh.scpCall( 30,
+                          '%s %s' % ( batchSystemScript, batchSystemExecutor ),
+                          remoteScript,
+                          postUploadCommand = 'chmod +x %s' % remoteScript )
+    if not result['OK']:
+      self.log.warn( 'Failed uploading control script: %s' % result['Message'][1] )
+      return result
+    status, output, _error = result['Value']
+    if status != 0:
+      if status == -1:
+        self.log.warn( 'Timeout while uploading control script' )
+        return S_ERROR( 'Timeout while uploading control script' )
+      else:
+        self.log.warn( 'Failed uploading control script: %s' % output )
+        return S_ERROR( 'Failed uploading control script' )
+
+    # Chmod the control scripts
+    #self.log.verbose( 'Chmod +x control script' )
+    #result = ssh.sshCall( 10, "chmod +x %s/%s" % ( self.sharedArea, self.controlScript ) )
+    #if not result['OK']:
+    #  self.log.warn( 'Failed chmod control script: %s' % result['Message'][1] )
+    #  return result
+    #status, output, _error = result['Value']
+    #if status != 0:
+    #  if status == -1:
+    #    self.log.warn( 'Timeout while chmod control script' )
+    #    return S_ERROR( 'Timeout while chmod control script' )
+    #  else:
+    #    self.log.warn( 'Failed uploading chmod script: %s' % output )
+    #    return S_ERROR( 'Failed uploading chmod script' )
+
+    return S_OK()
+
+  def __executeHostCommand( self, command, options, ssh = None, host = None ):
+
+    if not ssh:
+      ssh = SSH( host = host, parameters = self.ceParameters )
+
+    options['BatchSystem'] = self.batchSystem
+    options['Method'] = command
+    options['SharedDir'] = self.sharedArea
+    options['OutputDir'] = self.batchOutput
+    options['ErrorDir'] = self.batchError
+    options['WorkDir'] = self.workArea
+    options['InfoDir'] = self.infoArea
+    options['ExecutionContext'] = self.execution
+    options['User'] = self.user
+    options['Queue'] = self.queue
+
+
+    options = json.dumps( options )
+    options = urllib.quote( options )
+
+    cmd = "bash --login -c 'python %s/execute_batch %s'" % ( self.sharedArea, options )
+
+    self.log.verbose( 'CE submission command: %s' %  cmd )
+
+    result = ssh.sshCall( 120, cmd )
+    if not result['OK']:
+      self.log.error( '%s CE job submission failed' % self.ceType, result['Message'] )
+      return result
+
+    sshStatus = result['Value'][0]
+    sshStdout = result['Value'][1]
+    sshStderr = result['Value'][2]
+
+    # Examine results of the job submission
+    if sshStatus == 0:
+      output = sshStdout.strip().replace('\r','').strip()
+      try:
+        index = output.index('============= Start output ===============')
+        output = output[index+42:]
+      except:
+        return S_ERROR( "Invalid output from remote command: %s" % output )
+      try:
+        output = urllib.unquote( output )
+        result = json.loads( output )
+        if isinstance( result, basestring ) and result.startswith( 'Exception:' ):
+          return S_ERROR( result )
+        else:
+          return S_OK( result )
+      except:
+        return S_ERROR( 'Invalid return structure from job submission' )
+    else:
+      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
+
+  def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
+
 #    self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0755 )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
 
     # if no proxy is supplied, the executable can be submitted directly
     # otherwise a wrapper script is needed to get the proxy to the execution node
@@ -208,99 +447,104 @@ class SSHComputingElement( ComputingElement ):
     # recommended to transfer a proxy inside the executable if possible.
     if proxy:
       self.log.verbose( 'Setting up proxy for payload' )
-
-      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
-      compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace( '\n', '' )
-
-      wrapperContent = """#!/usr/bin/env python
-# Wrapper script for executable and proxy
-import os, tempfile, sys, base64, bz2, shutil
-try:
-  workingDirectory = tempfile.mkdtemp( suffix = '_wrapper', prefix= 'TORQUE_' )
-  os.chdir( workingDirectory )
-  open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
-  open( '%(executable)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedExecutable)s" ) ) )
-  os.chmod('proxy',0600)
-  os.chmod('%(executable)s',0700)
-  os.environ["X509_USER_PROXY"]=os.path.join(workingDirectory, 'proxy')
-except Exception, x:
-  print >> sys.stderr, x
-  sys.exit(-1)
-cmd = "./%(executable)s"
-print 'Executing: ', cmd
-sys.stdout.flush()
-os.system( cmd )
-
-shutil.rmtree( workingDirectory )
-
-""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
-        'compressedAndEncodedExecutable': compressedAndEncodedExecutable, \
-        'executable': os.path.basename( executableFile ) }
-
-      fd, name = tempfile.mkstemp( suffix = '_wrapper.py', prefix = 'NOTORQUE_', dir = os.getcwd() )
-      wrapper = os.fdopen( fd, 'w' )
-      wrapper.write( wrapperContent )
-      wrapper.close()
-
+      wrapperContent = bundleProxy( executableFile, proxy )
+      name = writeScript( wrapperContent, os.getcwd() )
       submitFile = name
-
     else: # no proxy
       submitFile = executableFile
 
-    ssh = SSH( self.sshUser, host, self.sshPassword )
-    # Copy the executable
-    os.chmod( submitFile, stat.S_IRUSR | stat.S_IXUSR )
-    sFile = os.path.basename( submitFile )
-    result = ssh.scpCall( 10, submitFile, '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) )
-    
-#    self.log.verbose( '***%s %s %s SCP: %s, %s/%s : %s\n' % (  self.sshUser, host, self.sshPassword, submitFile, self.executableArea, os.path.basename( submitFile ), result ) )
-    
-    # submit submitFile directly to host
-    # rm la final
-    rnd = random.randint(200,5000)
-    cmd = "~/sshce run_job %s/%s %s_%s %s" % \
-	(  self.executableArea, os.path.basename( submitFile ), host, rnd, self.infoArea )
-
-#    self.log.verbose( '*** CE submission command: %s\n' %  cmd )
-
-    result = ssh.sshCall( 10, cmd )
-    
-#    if not result['OK'] or result['Value'][0] != 0:
-    if not result['OK']:
-      self.log.warn( '===========> SSH CE result NOT OK' )
-      self.log.debug( result )
-      return S_ERROR( result['Value'] )
-    else:
-      self.log.debug( 'SSH CE result OK' )
-      
-#    self.log.verbose ( ' **** ce.submitjob, sshCall returned : %s\n' % result )
-
-    stampDict = {}
-
-    batchID = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
-    stampDict[batchID[0]] = '%s_%s' % (host, rnd) 
-    
-    result = S_OK ( batchID )
-    result['PilotStampDict'] = stampDict
-
-    self.submittedJobs += 1
+    result = self._submitJobToHost( submitFile, numberOfJobs )
+    if proxy:
+      os.remove( submitFile )
 
     return result
 
-  #############################################################################
-  def getUnitDynamicInfo( self, hostAddress ):
-    ssh = SSH( self.sshUser, hostAddress, self.sshPassword )
-    cmd = ["~/sshce dynamic_info %s"  % self.infoArea ]
-    ret = ssh.sshCall( 10, cmd )
+  def _submitJobToHost( self, executableFile, numberOfJobs, host = None ):
+    """  Submit prepared executable to the given host
+    """
+    ssh = SSH( host = host, parameters = self.ceParameters )
+    # Copy the executable
+    submitFile = '%s/%s' % ( self.executableArea, os.path.basename( executableFile ) )
+    result = ssh.scpCall( 30, executableFile, submitFile, postUploadCommand = 'chmod +x %s' % submitFile )
+    if not result['OK']:
+      return result
 
-    if not ret['OK']:
-      self.log.error( 'Timeout', ret['Message'] )
-      return -1
+    jobStamps = []
+    for _i in range( numberOfJobs ):
+      jobStamps.append( makeGuid()[:8] )
 
-    return ret['Value'][1]
-    
-    
-  def getDynamicInfo( self ):
+    # Collect command options
+    commandOptions = { 'Executable': submitFile,
+                       'NJobs': numberOfJobs,
+                       'SubmitOptions': self.submitOptions,
+                       'JobStamps': jobStamps }
+
+    resultCommand = self.__executeHostCommand( 'submitJob', commandOptions, ssh = ssh, host = host )
+    if not resultCommand['OK']:
+      return resultCommand
+
+    result = resultCommand['Value']
+    if result['Status'] != 0:
+      return S_ERROR( 'Failed job submission: %s' % result['Message'] )
+    else:
+      batchIDs = result['Jobs']
+      if batchIDs:
+        ceHost = host
+        if host is None:
+          ceHost = self.ceName
+        jobIDs = [ '%s%s://%s/%s' % ( self.ceType.lower(), self.batchSystem.lower(), ceHost, _id ) for _id in batchIDs ]
+      else:
+        return S_ERROR( 'No jobs IDs returned' )
+
+    result = S_OK( jobIDs )
+    self.submittedJobs += len( batchIDs )
+
+    return result
+
+  def killJob( self, jobIDList ):
+    """ Kill a bunch of jobs
+    """
+    if type( jobIDList ) in StringTypes:
+      jobIDList = [jobIDList]
+    return self._killJobOnHost( jobIDList )
+
+  def _killJobOnHost( self, jobIDList, host = None ):
+    """ Kill the jobs for the given list of job IDs
+    """
+    jobDict = {}
+    for job in jobIDList:
+      stamp = os.path.basename( urlparse( job ).path )
+      jobDict[stamp] = job
+    stampList = jobDict.keys()
+
+    commandOptions = { 'JobIDList': stampList, 'User': self.user }
+    resultCommand = self.__executeHostCommand( 'killJob', commandOptions, host = host )
+    if not resultCommand['OK']:
+      return resultCommand
+
+    result = resultCommand['Value']
+    if result['Status'] != 0:
+      return S_ERROR( 'Failed job kill: %s' % result['Message'] )
+
+    if result['Failed']:
+      return S_ERROR( '%d jobs failed killing' % len( result['Failed'] ) )
+
+    return S_OK( len( result['Successful'] ) )
+
+  def _getHostStatus( self, host = None ):
+    """ Get jobs running at a given host
+    """
+    resultCommand = self.__executeHostCommand( 'getCEStatus', {}, host = host )
+    if not resultCommand['OK']:
+      return resultCommand
+
+    result = resultCommand['Value']
+    if result['Status'] != 0:
+      return S_ERROR( 'Failed to get CE status: %s' % result['Message'] )
+
+    return S_OK( result )
+
+  def getCEStatus( self, jobIDList = None ):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()
@@ -308,115 +552,123 @@ shutil.rmtree( workingDirectory )
     result['RunningJobs'] = 0
     result['WaitingJobs'] = 0
 
-    for host in self.sshHost:
-      thost=host.split("/")
+    resultHost = self._getHostStatus()
+    if not resultHost['OK']:
+      return resultHost
 
-      runningJobs = self.getUnitDynamicInfo(thost[0])
-      if (runningJobs > -1):
-        result['RunningJobs'] += int(runningJobs)
-
-    self.log.verbose( 'Waiting Jobs: ', 0 )
+    result['RunningJobs'] = resultHost['Value'].get( 'Running',0 )
+    result['WaitingJobs'] = resultHost['Value'].get( 'Waiting',0 )
+    if "AvailableCores" in resultHost['Value']:
+      result['AvailableCores'] = resultHost['Value']['AvailableCores']
+    self.log.verbose( 'Waiting Jobs: ', result['WaitingJobs'] )
     self.log.verbose( 'Running Jobs: ', result['RunningJobs'] )
 
     return result
 
-  def getJobStatus (self, jobIDList):
-    wnDict={}
-    
-    self.log.verbose ( 'getJobStatus (jobIDList) ; jobIDList = %s' % jobIDList )
-    for job in jobIDList:
-      jobStamp=job.split(':::')[1]
-      if not jobStamp.split('_')[0] in wnDict:
-        wnDict[jobStamp.split('_')[0]]=[]
-      wnDict[jobStamp.split('_')[0]].append(jobStamp)
-
-#    print (' !! wnDict : %s \n    ' % wnDict )
-    resultDict={}
-        
-    for elem in wnDict:        
- 
-      tmpDict=self.getUnitJobStatus( wnDict[elem], elem )['Value']
-    #  self.log.verbose(' !!!! getUnitJobStatus(%s, %s) => %s\n' % (wnDict[elem],elem, tmpDict) )
-      for item in tmpDict:
-        resultDict[item]=tmpDict[item]
-    #    self.log.verbose(' !!!! resultDict[%s]= tmpDict[%s] ; tmpdict value: (%s)\n' % ( item, item,tmpDict[item]) )
-      
-#    self.log.verbose(' !!! getJobStatus will return: %s\n' % S_OK ( resultDict ) )  
-    return S_OK( resultDict )
-    
-  def getUnitJobStatus( self, jobIDList, host ):
+  def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
-#    self.log.verbose( '*** getUnitJobStatus %s - %s\n' % ( jobIDList, host) )
-    
+    return self._getJobStatusOnHost( jobIDList )
+
+  def _getJobStatusOnHost( self, jobIDList, host = None ):
+    """ Get the status information for the given list of jobs
+    """
+
     resultDict = {}
-    ssh = SSH( self.sshUser, host, self.sshPassword )
-    
-    cmd = [ '~/sshce job_status %s' % self.infoArea, '#'.join(jobIDList) ]
-    result = ssh.sshCall( 10, cmd )
+    jobDict = {}
+    for job in jobIDList:
+      stamp = os.path.basename( urlparse( job ).path )
+      jobDict[stamp] = job
+    stampList = jobDict.keys()
 
-    if not result['OK']:
-      return result
+    for jobList in breakListIntoChunks( stampList, 100 ):
+      resultCommand = self.__executeHostCommand( 'getJobStatus', { 'JobIDList': jobList }, host = host )
+      if not resultCommand['OK']:
+        return resultCommand
 
-    output = result['Value'][1].strip().replace( '\r', '' )
-#    self.log.verbose ( ' **** ce.getUnitJobStatus, output : %s\n' % output )  
+      result = resultCommand['Value']
+      if result['Status'] != 0:
+        return S_ERROR( 'Failed to get job status: %s' % result['Message'] )
 
-    lines = output.split( '#' )
-    for line in lines:
-      jbundle=line.split('-')
-      if ( len(jbundle) == 2 ):
-        if jbundle[1] in ['D']:
-          resultDict[jbundle[0]] = 'Done'
-        elif jbundle[1] in ['R']:
-          resultDict[jbundle[0]] = 'Running'
-      #self.log.verbose ( ' **** ce.getUnitJobStatus %s, job %s status %s\n %s' % ( host, jbundle[0], resultDict[jbundle[0]], resultDict ) )                  
-    
-#    self.log.verbose( ' !!! getUnitJobStatus will return : %s\n' % resultDict )
+      for stamp in result['Jobs']:
+        resultDict[jobDict[stamp]] = result['Jobs'][stamp]
+
     return S_OK( resultDict )
+
+  def _getJobOutputFiles( self, jobID, host = None ):
+    """ Get output file names for the specific CE
+    """
+    jobStamp = os.path.basename( urlparse( jobID ).path )
+    host = urlparse( jobID ).hostname
+
+    if 'OutputTemplate' in self.ceParameters:
+      self.outputTemplate = self.ceParameters['OutputTemplate']
+      self.errorTemplate = self.ceParameters['ErrorTemplate']
+
+    if self.outputTemplate:
+      output = self.outputTemplate % jobStamp
+      error = self.errorTemplate % jobStamp
+    elif 'OutputTemplate' in self.ceParameters:
+      self.outputTemplate = self.ceParameters['OutputTemplate']
+      self.errorTemplate = self.ceParameters['ErrorTemplate']
+      output = self.outputTemplate % jobStamp
+      error = self.errorTemplate % jobStamp
+    elif hasattr( self.batch, 'getJobOutputFiles' ):
+      resultCommand = self.__executeHostCommand( 'getJobOutputFiles', { 'JobIDList': [jobStamp] }, host = host )
+      if not resultCommand['OK']:
+        return resultCommand
+
+      result = resultCommand['Value']
+      if result['Status'] != 0:
+        return S_ERROR( 'Failed to get job output files: %s' % result['Message'] )
+
+      if 'OutputTemplate' in result:
+        self.outputTemplate = result['OutputTemplate']
+        self.errorTemplate = result['ErrorTemplate']
+
+      output = result['Jobs'][jobStamp]['Output']
+      error = result['Jobs'][jobStamp]['Error']
+    else:
+      output = '%s/%s.out' % ( self.batchOutput, jobStamp )
+      error = '%s/%s.err' % ( self.batchError, jobStamp )
+
+    return S_OK( ( jobStamp, host, output, error ) )
 
   def getJobOutput( self, jobID, localDir = None ):
     """ Get the specified job standard output and error files. If the localDir is provided,
-        the output is returned as file in this directory. Otherwise, the output is returned 
-        as strings. 
+        the output is returned as file in this directory. Otherwise, the output is returned
+        as strings.
     """
-    jobPid = jobID.split( ':::' )[0]
-    jobStamp = jobID.split( ':::' )[1]
-    self.log.verbose( '!! getJobOutput, jobStamp=%s  jobID %s\n' % (jobStamp, jobID) )
-    
-    host = jobStamp.split( '_' )[0]
-    
-    if not localDir:
-      tempDir = tempfile.mkdtemp()
-    else:
-      tempDir = localDir
-
-    ssh = SSH( self.sshUser, host, self.sshPassword )
-    result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobStamp ), '%s/%s/std.out' % ( self.infoArea, jobStamp ), upload = False )
+    result = self._getJobOutputFiles(jobID)
     if not result['OK']:
       return result
-    if not os.path.exists( '%s/%s.out' % ( tempDir, jobStamp ) ):
-      os.system( 'touch %s/%s.out' % ( tempDir, jobStamp ) )
-    result = ssh.scpCall( 20, '%s/%s.err' % ( tempDir, jobStamp ), '%s/%s/std.err' % ( self.infoArea, jobStamp ), upload = False )
-    if not result['OK']:
-      return result
-    if not os.path.exists( '%s/%s.err' % ( tempDir, jobStamp ) ):
-      os.system( 'touch %s/%s.err' % ( tempDir, jobStamp ) )
 
-    # The result is OK, we can remove the output
-    if self.removeOutput:
-      result = ssh.sshCall( 10, 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobNumber, self.batchError, jobNumber ) )
+    jobStamp, _host, outputFile, errorFile = result['Value']
+    self.log.verbose( 'Getting output for jobID %s' % jobID )
 
     if localDir:
-      return S_OK( ( '%s/%s.out' % ( tempDir, jobStamp ), '%s/%s.err' % ( tempDir, jobStamp ) ) )
+      localOutputFile = '%s/%s.out' % ( localDir, jobStamp )
+      localErrorFile = '%s/%s.err' % ( localDir, jobStamp )
     else:
-      # Return the output as a string
-      outputFile = open( '%s/%s.out' % ( tempDir, jobStamp ), 'r' )
-      output = outputFile.read()
-      outputFile.close()
-      outputFile = open( '%s/%s.err' % ( tempDir, jobStamp ), 'r' )
-      error = outputFile.read()
-      outputFile.close()
-      shutil.rmtree( tempDir )
-      return S_OK( ( output, error ) )
+      localOutputFile = 'Memory'
+      localErrorFile = 'Memory'
+
+    host = urlparse( jobID ).hostname
+    ssh = SSH( parameters = self.ceParameters, host = host )
+    result = ssh.scpCall( 30, localOutputFile, outputFile, upload = False )
+    if not result['OK']:
+      return result
+    output = result['Value'][1]
+    if localDir:
+      output = localOutputFile
+
+    result = ssh.scpCall( 30, localErrorFile, errorFile, upload = False )
+    if not result['OK']:
+      return result
+    error = result['Value'][1]
+    if localDir:
+      error = localErrorFile
+
+    return S_OK( ( output, error ) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

@@ -30,10 +30,6 @@ class Params:
     sys.exit( 0 )
     return DIRAC.S_OK()
 
-  def debugMsg( self, msg ):
-    if self.debug:
-      print msg
-
 params = Params()
 
 Script.registerSwitch( "f:", "file=", "File to use as proxy", params.setProxyLocation )

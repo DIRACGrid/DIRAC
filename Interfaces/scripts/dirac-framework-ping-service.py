@@ -16,22 +16,36 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     '  %s [option|cfgfile] ... System Service|System/Agent' % Script.scriptName,
                                     'Arguments:',
                                     '  System:   Name of the DIRAC system (ie: WorkloadManagement)',
-                                    '  Service:  Name of the DIRAC service (ie: Matcher)'] ) )
+                                    '  Service:  Name of the DIRAC service (ie: Matcher)',
+                                    '  url: URL of the service to ping (instead of System and Service)'] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
+system = None
+service = None
+url = None
 if len( args ) == 1:
-  args = args[0].split( '/' )
+  # it is a URL
+  if args[0].startswith( 'dips://' ):
+    url = args[0]
+  # It is System/Service
+  else:
+    sys_serv = args[0].split( '/' )
+    if len( sys_serv ) != 2:
+      Script.showHelp()
+    else:
+      system, service = sys_serv
 
-if len( args ) < 2:
+elif len( args ) == 2:
+  system, service = args[0], args[1]
+else:
   Script.showHelp()
+
 
 from DIRAC.Interfaces.API.Dirac                        import Dirac
 dirac = Dirac()
 exitCode = 0
 
-system = args[0]
-service = args[1]
-result = dirac.ping( system, service, printOutput = True )
+result = dirac.ping( system, service, printOutput = True, url = url )
 
 if not result:
   print 'ERROR: Null result from ping()'

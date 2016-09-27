@@ -1,14 +1,17 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
+""" This is the guy that actually modifies the content of the CS
+"""
 
-import zlib, difflib
+import zlib
+import difflib
 
 from DIRAC.Core.Utilities                               import List, Time
 from DIRAC.Core.Utilities.CFG                           import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo
 
-class Modificator:
+__RCSID__ = "$Id$"
+
+class Modificator( object ):
 
   def __init__( self, rpcClient = False, commiterId = "unknown" ):
     self.commiterTag = "@@-"
@@ -55,13 +58,12 @@ class Modificator:
     lists"""
 
     opts = self.getOptions(sectionPath)
-    pathDict = dict( [ ( o, self.getValue( "%s/%s" % ( sectionPath, o
-                                                       ) ) ) for o in opts ] )
+    pathDict = dict( ( o, self.getValue( "%s/%s" % ( sectionPath, o ) ) ) for o in opts )
     return pathDict
 
   def getDictRootedAt(self, relpath = "", root = ""):
     """Gives the configuration rooted at path in a Python dict. The
-    result is a Python dictionnary that reflects the structure of the
+    result is a Python dictionary that reflects the structure of the
     config file."""
     def getDictRootedAt(path):
       retval = {}

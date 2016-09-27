@@ -1,2 +1,0 @@
-class CSAPI( object ):
-  pass

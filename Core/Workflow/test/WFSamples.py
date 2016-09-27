@@ -218,10 +218,8 @@ w2 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test1.xml")
 w2.toXMLFile('/afs/cern.ch/user/g/gkuznets/test2.xml')
 w4 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test2.xml")
 print w4.createCode()
-#print w4.showCode()
 eval(compile(w4.createCode(),'<string>','exec'))
 print "==================================================================="
-#print w2.showCode()
 w4.execute()
 
 

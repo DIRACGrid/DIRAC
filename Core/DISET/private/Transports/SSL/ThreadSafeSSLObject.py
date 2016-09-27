@@ -52,7 +52,7 @@ class _MagicMethod:
         if v[0] == -1:
           return 0
         else:
-          gLogger.error( "ERROR while executing = %s( %s ) (%s)" % ( self.sFunctionName, str( args )[1:-2], str( v ) ) )
+          gLogger.error( "ERROR while executing", "%s( %s ) (%s)" % ( self.sFunctionName, str( args )[1:-2], str( v ) ) )
           raise v
     finally:
       self.unlock()

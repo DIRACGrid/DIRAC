@@ -1,31 +1,33 @@
 """ Base class for DIRAC Client """
-########################################################################
-# $Id$
-# $HeadURL$
-########################################################################
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 
-class Client:
-  """ Simple class to redirect unknown actions directly to the server. 
+class Client( object ):
+  """ Simple class to redirect unknown actions directly to the server. Arguments
+      to the constructor are passed to the RPCClient constructor as they are.
+
       - The self.serverURL member should be set by the inheriting class
   """
-  def __init__( self ):
+  def __init__( self, **kwargs ):
     self.serverURL = None
-    self.timeout = None
     self.call = None
+    self.__kwargs = kwargs
 
   def setServer( self, url ):
     self.serverURL = url
 
   def setTimeout( self, timeout ):
-    self.timeout = timeout
+    self.__kwargs['timeout'] = timeout
 
   def getServer( self ):
     return self.serverURL
 
   def __getattr__( self, name ):
+    # This allows the dir() method to work as well as tab completion in ipython
+    if name == '__dir__':
+      return super( Client, self ).__getattr__()
     self.call = name
     return self.executeRPC
 
@@ -53,9 +55,12 @@ class Client:
     # evalString = "rpcClient.%s(*parms,**kws)" % toExecute
     # return eval( evalString )
 
-  def _getRPC( self, rpc = False, url = '', timeout = 120 ):
+  def _getRPC( self, rpc = None, url = '', timeout = 600 ):
+    """ Return RPCClient object to url
+    """
     if not rpc:
       if not url:
         url = self.serverURL
-      rpc = RPCClient( url, timeout = timeout )
+      self.__kwargs.setdefault( 'timeout', timeout )
+      rpc = RPCClient( url, **self.__kwargs )
     return rpc

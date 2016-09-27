@@ -1,21 +1,18 @@
-try:
-  import sqlite3
-except:
-  pass
+""" interacts with sqlite3 db
+"""
 
+import sqlite3
 import os
 import types
-try:
-  import hashlib as md5
-except:
-  import md5
+import hashlib
 import time
+
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.private.monitoring.Activity import Activity
 from DIRAC.Core.Utilities import Time
 
-class MonitoringCatalog:
+class MonitoringCatalog( object ):
 
   def __init__( self, dataPath ):
     """
@@ -60,17 +57,17 @@ class MonitoringCatalog:
     try:
       filePath = "%s/monitoringSchema.sql" % os.path.dirname( __file__ )
       fd = open( filePath )
-      buffer = fd.read()
+      buff = fd.read()
       fd.close()
     except IOError, e:
       DIRAC.abort( 1, "Can't read monitoring schema", filePath )
-    while buffer.find( ";" ) > -1:
-      limit = buffer.find( ";" ) + 1
-      sqlQuery = buffer[ : limit ].replace( "\n", "" )
-      buffer = buffer[ limit : ]
+    while buff.find( ";" ) > -1:
+      limit = buff.find( ";" ) + 1
+      sqlQuery = buff[ : limit ].replace( "\n", "" )
+      buff = buff[ limit : ]
       try:
         self.__dbExecute( sqlQuery )
-      except Exception, e:
+      except Exception as e:
         DIRAC.abort( 1, "Can't create tables", str( e ) )
 
   def createSchema( self ):
@@ -84,7 +81,7 @@ class MonitoringCatalog:
       tablesList = c.fetchall()
       if len( tablesList ) < 2:
         self.__createTables()
-    except Exception, e:
+    except Exception as e:
       self.log.fatal( "Failed to startup db engine", str( e ) )
       return False
     return True
@@ -127,7 +124,7 @@ class MonitoringCatalog:
       else:
         valuesList.append( dataDict[ key ] )
         keysList.append( "%s = ?" % key )
-    if type( fields ) in ( types.StringType, types.UnicodeType ):
+    if isinstance( fields, basestring ):
       fields = [ fields ]
     if len( keysList ) > 0:
       whereCond = "WHERE %s" % ( " AND ".join( keysList ) )
@@ -162,9 +159,8 @@ class MonitoringCatalog:
       valuePoitersList.append( "?" )
       valuesList.append( dataDict[ key ] )
     query = "INSERT INTO %s (%s) VALUES (%s);" % ( table,
-                                       ", ".join( namesList ),
-                                       ",".join( valuePoitersList )
-                                       )
+                                                   ", ".join( namesList ),
+                                                   ",".join( valuePoitersList ) )
     c = self.__dbExecute( query, values = valuesList )
     return c.rowcount
 
@@ -214,14 +210,14 @@ class MonitoringCatalog:
     else:
       self.log.info( "Registering source", str( sourceDict ) )
       if self.__insert( "sources", { 'id' : 'NULL' }, sourceDict ) == 0:
-        return - 1
+        return -1
       return self.__select( "id", "sources", sourceDict )[0][0]
 
   def registerActivity( self, sourceId, acName, acDict ):
     """
     Register an activity
     """
-    m = md5.md5()
+    m = hashlib.md5()
     acDict[ 'name' ] = acName
     acDict[ 'sourceId' ] = sourceId
     m.update( str( acDict ) )
@@ -238,7 +234,7 @@ class MonitoringCatalog:
                                'filename' : "'%s'" % filePath,
                                },
                                acDict ) == 0:
-        return - 1
+        return -1
       return self.__select( "filename", "activities", acDict )[0][0]
 
   def getFilename( self, sourceId, acName ):
@@ -343,7 +339,7 @@ class MonitoringCatalog:
     """
     Get a view for a given id
     """
-    if type( viewId ) in ( types.StringType, types.UnicodeType ):
+    if isinstance( viewId, basestring ):
       return self.__select( "definition, variableFields", "views", { "name" : viewId } )
     else:
       return self.__select( "definition, variableFields", "views", { "id" : viewId } )

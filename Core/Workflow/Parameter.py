@@ -1,12 +1,11 @@
-# $Id$
 """
     This module defines a classs for a generic Workflow Parameter. It also defines
     a ParameterCollection class as a list of parameters as well as an AttributeCollection
     class which is the base class for the main Workflow classes.
 """
-__RCSID__ = "$Revision: 1.33 $"
-
 from DIRAC.Core.Workflow.Utility import *
+
+__RCSID__ = "$Id$"
 
 # unbound method, returns indentated string
 def indent( indent = 0 ):
@@ -429,19 +428,27 @@ class ParameterCollection( list ):
     self[:] = []
 
   def remove( self, name_or_ind ):
-    # work for index as well as for the string
+    """ Removes a parameter given its name, or the index (the latter is not suggested), and only if it exists
+
+        If there are 2 parameters with the same name, only the first will be removed
+    """
     if isinstance( name_or_ind, list ) and isinstance( name_or_ind[0], str ):
       for s in name_or_ind:
         par = self.find( s )
         if par == None:
           print "ERROR ParameterCollection.remove() can not find parameter with the name=%s" % ( s )
         else:
-          del self[self.findIndex( s )]
+          index = self.findIndex( s )
+          if index > -1:
+            del self[index]
 
-    elif isinstance( name_or_ind, str ): # we given name
-      del self[self.findIndex( name_or_ind )]
-    elif isinstance( name_or_ind, int ) or isinstance( name_or_ind ): # we given index
-      del self[name_or_ind]
+    elif isinstance( name_or_ind, str ):  # we give a name
+      index = self.findIndex( name_or_ind )
+    elif isinstance( name_or_ind, int ):  # we give the index
+      index = name_or_ind
+
+    if index > -1:
+      del self[index]
 
   def find( self, name_or_ind ):
     """ Method to find Parameters
@@ -449,8 +456,8 @@ class ParameterCollection( list ):
     # work for index as well as for the string
     if isinstance( name_or_ind, str ): # we given name
       for v in self:
-          if v.getName() == name_or_ind:
-            return v
+        if v.getName() == name_or_ind:
+          return v
       return None
 
     elif isinstance( name_or_ind, int ) or isinstance( name_or_ind, long ): # we given index
@@ -476,24 +483,24 @@ class ParameterCollection( list ):
     return - 1
 
   def getParametersNames( self ):
-    list = []
+    l = []
     for v in self:
-      list.append( v.getName() )
-    return list
+      l.append( v.getName() )
+    return l
 
   def compare( self, s ):
-      # we comparing parameters only, the attributes will be compared in hierarhy above
-      # we ignore the position of the Parameter in the list
-      # we assume that names of the Parameters are DIFFERENT otherwise we have to change alghorithm!!!
-      if ( not isinstance( s, ParameterCollection ) ) or ( len( s ) != len( self ) ):
-        return False
-      for v in self:
-        for i in s:
-          if v.getName() == i.getName():
-            if not v.compare( i ):
-              return False
-            else:
-              break
+    # we comparing parameters only, the attributes will be compared in hierarhy above
+    # we ignore the position of the Parameter in the list
+    # we assume that names of the Parameters are DIFFERENT otherwise we have to change alghorithm!!!
+    if ( not isinstance( s, ParameterCollection ) ) or ( len( s ) != len( self ) ):
+      return False
+    for v in self:
+      for i in s:
+        if v.getName() == i.getName():
+          if not v.compare( i ):
+            return False
+          else:
+            break
         else:
           #if we reached this place naturally we can not find matching name
           return False
@@ -588,11 +595,10 @@ class AttributeCollection( dict ):
     return self.toXML()
 
   def toXMLFile( self, filename ):
-    f = open( filename, 'w+' )
-    sarray = self.toXML()
-    for element in sarray:
-      f.write( element )
-    f.close()
+    with open( filename, 'w+' ) as f:
+      sarray = self.toXML()
+      for element in sarray:
+        f.write( element )
     return
 
   def toXML( self ):
@@ -705,4 +711,3 @@ class AttributeCollection( dict ):
 
   def resolveGlobalVars( self, wf_parameters = None, step_parameters = None ):
     self.parameters.resolveGlobalVars( wf_parameters, step_parameters )
-

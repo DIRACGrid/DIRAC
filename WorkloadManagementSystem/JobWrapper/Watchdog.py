@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -20,20 +19,21 @@
 
 __RCSID__ = "$Id$"
 
+import os
+import time
+
+from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities                               import Time
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ConfigurationSystem.Client.Config            import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder        import getSystemInstance
 from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
-from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
 
-import os, time
-
-class Watchdog:
+class Watchdog( object ):
 
   #############################################################################
-  def __init__( self, pid, exeThread, spObject, jobCPUtime, systemFlag = 'linux2.4' ):
+  def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'linux2.4' ):
     """ Constructor, takes system flag as argument.
     """
     self.log = gLogger.getSubLogger( "Watchdog" )
@@ -43,6 +43,7 @@ class Watchdog:
     self.appPID = self.exeThread.getCurrentPID()
     self.spObject = spObject
     self.jobCPUtime = jobCPUtime
+    self.memoryLimit = memoryLimit
     self.calibration = 0
     self.initialValues = {}
     self.parameters = {}
@@ -53,6 +54,34 @@ class Watchdog:
     self.currentStats = {}
     self.initialized = False
     self.count = 0
+
+    #defaults
+    self.testWallClock = 1
+    self.testDiskSpace = 1
+    self.testLoadAvg = 1
+    self.maxWallClockTime = 3 * 24 * 60 * 60
+    self.testCPUConsumed = 1
+    self.testCPULimit = 0
+    self.testMemoryLimit = 0
+    self.testTimeLeft = 1
+    self.pollingTime = 10  # 10 seconds
+    self.checkingTime = 30 * 60  # 30 minute period
+    self.minCheckingTime = 20 * 60  # 20 mins
+    self.maxWallClockTime = 3 * 24 * 60 * 60  # e.g. 4 days
+    self.jobPeekFlag = 1  # on / off
+    self.minDiskSpace = 10  # MB
+    self.loadAvgLimit = 1000  # > 1000 and jobs killed
+    self.sampleCPUTime = 30 * 60  # e.g. up to 20mins sample
+    self.jobCPUMargin = 20  # %age buffer before killing job
+    self.minCPUWallClockRatio = 5  # ratio %age
+    self.nullCPULimit = 5  # After 5 sample times return null CPU consumption kill job
+    self.checkCount = 0
+    self.nullCPUCount = 0
+
+    self.grossTimeLeftLimit = 10 * self.checkingTime
+    self.timeLeftUtil = TimeLeft()
+    self.timeLeft = 0
+    self.littleTimeLeft = False
 
 
   #############################################################################
@@ -76,27 +105,26 @@ class Watchdog:
     self.maxcount = loops
     self.log.verbose( 'Watchdog initialization' )
     self.log.info( 'Attempting to Initialize Watchdog for: %s' % ( self.systemFlag ) )
-    #Test control flags
+    # Test control flags
     self.testWallClock = gConfig.getValue( self.section + '/CheckWallClockFlag', 1 )
     self.testDiskSpace = gConfig.getValue( self.section + '/CheckDiskSpaceFlag', 1 )
     self.testLoadAvg = gConfig.getValue( self.section + '/CheckLoadAvgFlag', 1 )
     self.testCPUConsumed = gConfig.getValue( self.section + '/CheckCPUConsumedFlag', 1 )
     self.testCPULimit = gConfig.getValue( self.section + '/CheckCPULimitFlag', 0 )
+    self.testMemoryLimit = gConfig.getValue( self.section + '/CheckMemoryLimitFlag', 0 )
     self.testTimeLeft = gConfig.getValue( self.section + '/CheckTimeLeftFlag', 1 )
-    #Other parameters
-    self.pollingTime = gConfig.getValue( self.section + '/PollingTime', 10 ) # 10 seconds
-    self.checkingTime = gConfig.getValue( self.section + '/CheckingTime', 30 * 60 ) #30 minute period
-    self.minCheckingTime = gConfig.getValue( self.section + '/MinCheckingTime', 20 * 60 ) # 20 mins
-    self.maxWallClockTime = gConfig.getValue( self.section + '/MaxWallClockTime', 3 * 24 * 60 * 60 ) # e.g. 4 days
-    self.jobPeekFlag = gConfig.getValue( self.section + '/JobPeekFlag', 1 ) # on / off
-    self.minDiskSpace = gConfig.getValue( self.section + '/MinDiskSpace', 10 ) #MB
-    self.loadAvgLimit = gConfig.getValue( self.section + '/LoadAverageLimit', 1000 ) # > 1000 and jobs killed
-    self.sampleCPUTime = gConfig.getValue( self.section + '/CPUSampleTime', 30 * 60 ) # e.g. up to 20mins sample
-    self.jobCPUMargin = gConfig.getValue( self.section + '/JobCPULimitMargin', 20 ) # %age buffer before killing job
-    self.minCPUWallClockRatio = gConfig.getValue( self.section + '/MinCPUWallClockRatio', 5 ) #ratio %age
-    self.nullCPULimit = gConfig.getValue( self.section + '/NullCPUCountLimit', 5 ) #After 5 sample times return null CPU consumption kill job
-    self.checkCount = 0
-    self.nullCPUCount = 0
+    # Other parameters
+    self.pollingTime = gConfig.getValue( self.section + '/PollingTime', 10 )  # 10 seconds
+    self.checkingTime = gConfig.getValue( self.section + '/CheckingTime', 30 * 60 )  # 30 minute period
+    self.minCheckingTime = gConfig.getValue( self.section + '/MinCheckingTime', 20 * 60 )  # 20 mins
+    self.maxWallClockTime = gConfig.getValue( self.section + '/MaxWallClockTime', 3 * 24 * 60 * 60 )  # e.g. 4 days
+    self.jobPeekFlag = gConfig.getValue( self.section + '/JobPeekFlag', 1 )  # on / off
+    self.minDiskSpace = gConfig.getValue( self.section + '/MinDiskSpace', 10 )  # MB
+    self.loadAvgLimit = gConfig.getValue( self.section + '/LoadAverageLimit', 1000 )  # > 1000 and jobs killed
+    self.sampleCPUTime = gConfig.getValue( self.section + '/CPUSampleTime', 30 * 60 )  # e.g. up to 20mins sample
+    self.jobCPUMargin = gConfig.getValue( self.section + '/JobCPULimitMargin', 20 )  # %age buffer before killing job
+    self.minCPUWallClockRatio = gConfig.getValue( self.section + '/MinCPUWallClockRatio', 5 )  # ratio %age
+    self.nullCPULimit = gConfig.getValue( self.section + '/NullCPUCountLimit', 5 )  # After 5 sample times return null CPU consumption kill job
     if self.checkingTime < self.minCheckingTime:
       self.log.info( 'Requested CheckingTime of %s setting to %s seconds (minimum)' % ( self.checkingTime, self.minCheckingTime ) )
       self.checkingTime = self.minCheckingTime
@@ -104,12 +132,8 @@ class Watchdog:
     # The time left is returned in seconds @ 250 SI00 = 1 HS06,
     # the self.checkingTime and self.pollingTime are in seconds,
     # thus they need to be multiplied by a large enough factor
-    self.grossTimeLeftLimit = 10 * self.checkingTime
     self.fineTimeLeftLimit = gConfig.getValue( self.section + '/TimeLeftLimit', 150 * self.pollingTime )
 
-    self.timeLeftUtil = TimeLeft()
-    self.timeLeft = 0
-    self.littleTimeLeft = False
     return S_OK()
 
   def run( self ):
@@ -118,18 +142,18 @@ class Watchdog:
 
     result = self.initialize()
     if not result['OK']:
-      gLogger.always( 'Can not start wtchdog for the following reason' )
-      gLogger.always( result['Message'] )
+      self.log.always( 'Can not start watchdog for the following reason' )
+      self.log.always( result['Message'] )
       return result
 
     try:
       while True:
-        gLogger.debug( 'Starting agent loop # %d' % self.count )
+        self.log.debug( 'Starting watchdog loop # %d' % self.count )
         start_cycle_time = time.time()
         result = self.execute()
         exec_cycle_time = time.time() - start_cycle_time
         if not result[ 'OK' ]:
-          gLogger.error( "Watchdog error during execution", result[ 'Message' ] )
+          self.log.error( "Watchdog error during execution", result[ 'Message' ] )
           break
         elif result['Value'] == "Ended":
           break
@@ -138,7 +162,7 @@ class Watchdog:
           time.sleep( self.pollingTime - exec_cycle_time )
       return S_OK()
     except Exception:
-      gLogger.exception()
+      self.log.exception()
       return S_ERROR( 'Exception' )
 
   #############################################################################
@@ -146,7 +170,6 @@ class Watchdog:
     """ The main agent execution method of the Watchdog.
     """
     if not self.exeThread.isAlive():
-      #print self.parameters
       self.__getUsageSummary()
       self.log.info( 'Process to monitor has completed, Watchdog will exit.' )
       return S_OK( "Ended" )
@@ -162,63 +185,101 @@ class Watchdog:
         self.littleTimeLeftCount -= 1
 
 
-    #Note: need to poll regularly to see if the thread is alive
+    # Note: need to poll regularly to see if the thread is alive
     #      but only perform checks with a certain frequency
     if ( time.time() - self.initialValues['StartTime'] ) > self.checkingTime * self.checkCount:
       self.checkCount += 1
-      result = self.__performChecks()
+      result = self._performChecks()
       if not result['OK']:
         self.log.warn( 'Problem during recent checks' )
         self.log.warn( result['Message'] )
       return S_OK()
     else:
-      #self.log.debug('Application thread is alive: checking count is %s' %(self.checkCount))
+      # self.log.debug('Application thread is alive: checking count is %s' %(self.checkCount))
       return S_OK()
 
 
   #############################################################################
-  def __performChecks( self ):
+  def _performChecks( self ):
     """The Watchdog checks are performed at a different period to the checking of the
        application thread and correspond to the checkingTime.
     """
     self.log.verbose( '------------------------------------' )
     self.log.verbose( 'Checking loop starts for Watchdog' )
     heartBeatDict = {}
+
     msg = ''
-    result = self.getLoadAverage()
-    msg += 'LoadAvg: %s ' % ( result['Value'] )
-    heartBeatDict['LoadAverage'] = result['Value']
-    if not self.parameters.has_key( 'LoadAverage' ):
-      self.parameters['LoadAverage'] = []
-    self.parameters['LoadAverage'].append( result['Value'] )
-    result = self.getMemoryUsed()
-    msg += 'MemUsed: %.1f kb ' % ( result['Value'] )
-    heartBeatDict['MemoryUsed'] = result['Value']
-    if not self.parameters.has_key( 'MemoryUsed' ):
-      self.parameters['MemoryUsed'] = []
-    self.parameters['MemoryUsed'].append( result['Value'] )
+
+    loadAvg = self.getLoadAverage()
+    if not loadAvg['OK']:
+      msg += 'LoadAvg: ERROR'
+    else:
+      loadAvg = loadAvg['Value']
+      msg += 'LoadAvg: %d ' % loadAvg
+      heartBeatDict['LoadAverage'] = loadAvg
+      if not self.parameters.has_key( 'LoadAverage' ):
+        self.parameters['LoadAverage'] = []
+      self.parameters['LoadAverage'].append( loadAvg )
+
+    memoryUsed = self.getMemoryUsed()
+    if not memoryUsed['OK']:
+      msg += 'MemUsed: ERROR '
+    else:
+      memoryUsed = memoryUsed['Value']
+      msg += 'MemUsed: %.1f kb ' % ( memoryUsed )
+      heartBeatDict['MemoryUsed'] = memoryUsed
+      if not self.parameters.has_key( 'MemoryUsed' ):
+        self.parameters['MemoryUsed'] = []
+      self.parameters['MemoryUsed'].append( memoryUsed )
+
+    result = self.processMonitor.getMemoryConsumed( self.wrapperPID )
+    if result['OK']:
+      vsize = result['Value']['Vsize']/1024.
+      rss = result['Value']['RSS']/1024.
+      heartBeatDict['Vsize'] = vsize
+      heartBeatDict['RSS'] = rss
+      self.parameters.setdefault( 'Vsize', [] )
+      self.parameters['Vsize'].append( vsize )
+      self.parameters.setdefault( 'RSS', [] )
+      self.parameters['RSS'].append( rss )
+      msg += "Job Vsize: %.1f kb " % vsize
+      msg += "Job RSS: %.1f kb " % rss
     result = self.getDiskSpace()
-    msg += 'DiskSpace: %.1f MB ' % ( result['Value'] )
+    if not result['OK']:
+      self.log.warn( "Could not establish DiskSpace", result['Message'] )
+    else:
+      msg += 'DiskSpace: %.1f MB ' % ( result['Value'] )
     if not self.parameters.has_key( 'DiskSpace' ):
       self.parameters['DiskSpace'] = []
-    self.parameters['DiskSpace'].append( result['Value'] )
-    heartBeatDict['AvailableDiskSpace'] = result['Value']
-    result = self.__getCPU()
-    msg += 'CPU: %s (h:m:s) ' % ( result['Value'] )
-    if not self.parameters.has_key( 'CPUConsumed' ):
-      self.parameters['CPUConsumed'] = []
-    self.parameters['CPUConsumed'].append( result['Value'] )
-    hmsCPU = result['Value']
-    rawCPU = self.__convertCPUTime( hmsCPU )
-    if rawCPU['OK']:
-      heartBeatDict['CPUConsumed'] = rawCPU['Value']
+    if result['OK']:
+      self.parameters['DiskSpace'].append( result['Value'] )
+      heartBeatDict['AvailableDiskSpace'] = result['Value']
+    
+    cpu = self.__getCPU()
+    if not cpu['OK']:
+      msg += 'CPU: ERROR '
+      hmsCPU = 0
+    else:
+      cpu = cpu['Value']
+      msg += 'CPU: %s (h:m:s) ' % ( cpu )
+      if not self.parameters.has_key( 'CPUConsumed' ):
+        self.parameters['CPUConsumed'] = []
+      self.parameters['CPUConsumed'].append( cpu )
+      hmsCPU = cpu
+      rawCPU = self.__convertCPUTime( hmsCPU )
+      if rawCPU['OK']:
+        heartBeatDict['CPUConsumed'] = rawCPU['Value']
+    
     result = self.__getWallClockTime()
-    msg += 'WallClock: %.2f s ' % ( result['Value'] )
-    self.parameters['WallClockTime'].append( result['Value'] )
-    heartBeatDict['WallClockTime'] = result['Value']
+    if not result['OK']:
+      self.log.warn( "Failed determining wall clock time", result['Message'] )
+    else:
+      msg += 'WallClock: %.2f s ' % ( result['Value'] )
+      self.parameters.setdefault( 'WallClockTime', list() ).append( result['Value'] )
+      heartBeatDict['WallClockTime'] = result['Value']
     self.log.info( msg )
 
-    result = self.__checkProgress()
+    result = self._checkProgress()
     if not result['OK']:
       self.checkError = result['Message']
       self.log.warn( self.checkError )
@@ -275,23 +336,25 @@ class Watchdog:
   def __getCPU( self ):
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
-    cpuTime = '00:00:00'
     try:
       cpuTime = self.processMonitor.getCPUConsumed( self.wrapperPID )
-    except Exception:
+      if not cpuTime['OK']:
+        self.log.warn( 'Problem while checking consumed CPU' )
+        return cpuTime
+      cpuTime = cpuTime['Value']
+      if cpuTime:
+        self.log.verbose( "Raw CPU time consumed (s) = %s" % ( cpuTime ) )
+        return self.__getCPUHMS( cpuTime )
+      else:
+        self.log.error( "CPU time consumed found to be 0" )
+        return S_ERROR()
+
+    except Exception as e:
       self.log.warn( 'Could not determine CPU time consumed with exception' )
-      self.log.exception()
-      return S_OK( cpuTime ) #just return null CPU
+      self.log.exception( e )
+      return S_ERROR( "Could not determine CPU time consumed with exception" )
 
-    if not cpuTime['OK']:
-      self.log.warn( 'Problem while checking consumed CPU' )
-      self.log.warn( cpuTime )
-      return S_OK( '00:00:00' ) #again return null CPU in this case
 
-    cpuTime = cpuTime['Value']
-    self.log.verbose( "Raw CPU time consumed (s) = %s" % ( cpuTime ) )
-    result = self.__getCPUHMS( cpuTime )
-    return result
 
   #############################################################################
   def __getCPUHMS( self, cpuTime ):
@@ -321,7 +384,7 @@ class Watchdog:
     return S_OK()
 
   #############################################################################
-  def __checkProgress( self ):
+  def _checkProgress( self ):
     """This method calls specific tests to determine whether the job execution
        is proceeding normally.  CS flags can easily be added to add or remove
        tests via central configuration.
@@ -330,48 +393,49 @@ class Watchdog:
 
     if self.testWallClock:
       result = self.__checkWallClockTime()
-      report += 'WallClock: OK, '
       if not result['OK']:
         self.log.warn( result['Message'] )
         return result
+      report += 'WallClock: OK, '
     else:
       report += 'WallClock: NA,'
 
     if self.testDiskSpace:
       result = self.__checkDiskSpace()
-      report += 'DiskSpace: OK, '
       if not result['OK']:
         self.log.warn( result['Message'] )
         return result
+      report += 'DiskSpace: OK, '
     else:
       report += 'DiskSpace: NA,'
 
     if self.testLoadAvg:
       result = self.__checkLoadAverage()
-      report += 'LoadAverage: OK, '
       if not result['OK']:
-        self.log.warn( result['Message'] )
-        return result
+        self.log.warn( "Check of load average failed, but won't fail because of that: %s" % result['Message'] )
+        report += 'LoadAverage: ERROR, '
+        return S_OK()
+      report += 'LoadAverage: OK, '
     else:
       report += 'LoadAverage: NA,'
 
     if self.testCPUConsumed:
       result = self.__checkCPUConsumed()
-      report += 'CPUConsumed: OK, '
       if not result['OK']:
         return result
+      report += 'CPUConsumed: OK, '
     else:
       report += 'CPUConsumed: NA, '
 
     if self.testCPULimit:
       result = self.__checkCPULimit()
-      report += 'CPULimit OK, '
       if not result['OK']:
         self.log.warn( result['Message'] )
         return result
+      report += 'CPULimit OK, '
     else:
       report += 'CPULimit: NA, '
-
+        
     if self.testTimeLeft:
       self.__timeLeft()
       if self.timeLeft:
@@ -379,6 +443,14 @@ class Watchdog:
     else:
       report += 'TimeLeft: NA'
 
+    if self.testMemoryLimit:
+      result = self.__checkMemoryLimit()
+      if not result['OK']:
+        self.log.warn( result['Message'] )
+        return result
+      report += 'MemoryLimit OK, '
+    else:
+      report += 'MemoryLimit: NA, '
 
     self.log.info( report )
     return S_OK( 'All enabled checks passed' )
@@ -397,7 +469,7 @@ class Watchdog:
 
     wallClockTime = self.parameters['WallClockTime'][-1]
     if wallClockTime < self.sampleCPUTime:
-      self.log.info( "Stopping check, wallclock time (%s) is still smalled than sample time (%s)" % ( wallClockTime,
+      self.log.info( "Stopping check, wallclock time (%s) is still smaller than sample time (%s)" % ( wallClockTime,
                                                                                             self.sampleCPUTime ) )
       return S_OK()
 
@@ -410,20 +482,29 @@ class Watchdog:
     wallClockTime = self.parameters['WallClockTime'][-1] - self.parameters['WallClockTime'][-1 - intervals ]
     try:
       cpuTime = self.__convertCPUTime( self.parameters['CPUConsumed'][-1] )['Value']
+      # For some reason, some times the CPU consumed estimation returns 0
+      # if cpuTime == 0:
+      #   return S_OK()
       cpuTime -= self.__convertCPUTime( self.parameters['CPUConsumed'][-1 - intervals ] )['Value']
+      if cpuTime < 0:
+        self.log.warn( 'Consumed CPU time negative, something wrong may have happened, ignore' )
+        return S_OK()
+      if wallClockTime <= 0:
+        self.log.warn( 'Wallclock time should not be negative or zero, Ignore' )
+        return S_OK()
 
       ratio = ( cpuTime / wallClockTime ) * 100.
 
       self.log.info( "CPU/Wallclock ratio is %.2f%%" % ratio )
       # in case of error cpuTime might be 0, exclude this
-      if wallClockTime and ratio < self.minCPUWallClockRatio:
+      if ratio < self.minCPUWallClockRatio:
         if os.path.exists( 'DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK' ):
           self.log.info( 'N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload' )
           return S_OK()
         self.log.info( "Job is stalled!" )
         return S_ERROR( 'Watchdog identified this job as stalled' )
-    except Exception, e:
-      self.log.error( "Cannot convert CPU consumed from string to int: %s" % str( e ) )
+    except Exception as e:
+      self.log.error( "Cannot convert CPU consumed from string to int", str( e ) )
 
     return S_OK()
 
@@ -444,11 +525,11 @@ class Watchdog:
       mins = float( cpuHMS[1] ) * 60
       secs = float( cpuHMS[2] )
       cpuValue = float( hours + mins + secs )
-    except Exception, x:
+    except Exception as x:
       self.log.warn( str( x ) )
       return S_ERROR( 'Could not calculate CPU time' )
 
-    #Normalization to be implemented
+    # Normalization to be implemented
     normalizedCPUValue = cpuValue
 
     result = S_OK()
@@ -485,6 +566,20 @@ class Watchdog:
       return S_OK( 'CPU consumed is not measurable yet' )
     else:
       return S_OK( 'Not possible to determine CPU consumed' )
+
+  def __checkMemoryLimit( self ):
+    """ Checks that the job memory consumption is within a limit
+    """
+    if self.parameters.has_key( 'Vsize' ):
+      vsize = self.parameters['Vsize'][-1]
+      
+    if vsize and self.memoryLimit:
+      if vsize > self.memoryLimit:
+        vsize = vsize
+        # Just a warning for the moment
+        self.log.warn( "Job has consumed %f.2 KB of memory with the limit of %f.2 KB" % ( vsize, self.memoryLimit ) )  
+    
+    return S_OK()
 
   #############################################################################
   def __checkDiskSpace( self ):
@@ -549,49 +644,50 @@ class Watchdog:
     self.__getWallClockTime()
     self.parameters['WallClockTime'] = []
 
-    initialCPU = 0.0
-    result = self.__getCPU()
-    self.log.verbose( 'CPU consumed %s' % ( result ) )
-    if not result['OK']:
-      msg = 'Could not establish CPU consumed'
-      self.log.warn( msg )
-#      result = S_ERROR(msg)
-#      return result
+    cpuConsumed = self.__getCPU()
+    if not cpuConsumed['OK']:
+      self.log.warn( "Could not establish CPU consumed, setting to 0.0" )
+      cpuConsumed = 0.0
+    else:
+      cpuConsumed = cpuConsumed['Value']
 
-    initialCPU = result['Value']
-
-    self.initialValues['CPUConsumed'] = initialCPU
+    self.initialValues['CPUConsumed'] = cpuConsumed
     self.parameters['CPUConsumed'] = []
 
-    result = self.getLoadAverage()
-    self.log.verbose( 'LoadAverage: %s' % ( result ) )
-    if not result['OK']:
-      msg = 'Could not establish LoadAverage'
-      self.log.warn( msg )
-#      result = S_ERROR(msg)
-#      return result
+    loadAvg = self.getLoadAverage()
+    if not loadAvg['OK']:
+      self.log.warn( "Could not establish LoadAverage, setting to 0" )
+      loadAvg = 0
+    else:
+      loadAvg = loadAvg['Value']
 
-    self.initialValues['LoadAverage'] = result['Value']
+    self.initialValues['LoadAverage'] = loadAvg
     self.parameters['LoadAverage'] = []
 
-    result = self.getMemoryUsed()
-    self.log.verbose( 'MemUsed: %s' % ( result ) )
-    if not result['OK']:
-      msg = 'Could not establish MemoryUsed'
-      self.log.warn( msg )
-#      result = S_ERROR(msg)
-#      return result
+    memUsed = self.getMemoryUsed()
+    if not memUsed['OK']:
+      self.log.warn( "Could not establish MemoryUsed, setting to 0" )
+      memUsed = 0
+    else:
+      memUsed = memUsed['Value']
 
-    self.initialValues['MemoryUsed'] = result['Value']
+    self.initialValues['MemoryUsed'] = memUsed
     self.parameters['MemoryUsed'] = []
+    
+    result = self.processMonitor.getMemoryConsumed( self.wrapperPID )
+    self.log.verbose( 'Job Memory: %s' % ( result['Value'] ) )
+    if not result['OK']:
+      self.log.warn( 'Could not get job memory usage' )
 
-    result = self. getDiskSpace()
+    self.initialValues['Vsize'] = result['Value']['Vsize']/1024.
+    self.initialValues['RSS'] = result['Value']['RSS']/1024.
+    self.parameters['Vsize'] = []
+    self.parameters['RSS'] = []
+
+    result = self.getDiskSpace()
     self.log.verbose( 'DiskSpace: %s' % ( result ) )
     if not result['OK']:
-      msg = 'Could not establish DiskSpace'
-      self.log.warn( msg )
-#      result = S_ERROR(msg)
-#      return result
+      self.log.warn( "Could not establish DiskSpace" )
 
     self.initialValues['DiskSpace'] = result['Value']
     self.parameters['DiskSpace'] = []
@@ -599,10 +695,7 @@ class Watchdog:
     result = self.getNodeInformation()
     self.log.verbose( 'NodeInfo: %s' % ( result ) )
     if not result['OK']:
-      msg = 'Could not establish static system information'
-      self.log.warn( msg )
-#      result = S_ERROR(msg)
-#      return result
+      self.log.warn( "Could not establish static system information" )
 
     if os.environ.has_key( 'LSB_JOBID' ):
       result['LocalJobID'] = os.environ['LSB_JOBID']
@@ -651,7 +744,7 @@ class Watchdog:
     """ Returns average load, memory etc. over execution of job thread
     """
     summary = {}
-    #CPUConsumed
+    # CPUConsumed
     if self.parameters.has_key( 'CPUConsumed' ):
       cpuList = self.parameters['CPUConsumed']
       if cpuList:
@@ -661,7 +754,7 @@ class Watchdog:
           summary['LastUpdateCPU(s)'] = rawCPU['Value']
       else:
         summary['LastUpdateCPU(s)'] = 'Could not be estimated'
-    #DiskSpace
+    # DiskSpace
     if self.parameters.has_key( 'DiskSpace' ):
       space = self.parameters['DiskSpace']
       if space:
@@ -671,14 +764,14 @@ class Watchdog:
         summary['DiskSpace(MB)'] = value
       else:
         summary['DiskSpace(MB)'] = 'Could not be estimated'
-    #MemoryUsed
+    # MemoryUsed
     if self.parameters.has_key( 'MemoryUsed' ):
       memory = self.parameters['MemoryUsed']
       if memory:
         summary['MemoryUsed(kb)'] = abs( float( memory[-1] ) - float( self.initialValues['MemoryUsed'] ) )
       else:
         summary['MemoryUsed(kb)'] = 'Could not be estimated'
-    #LoadAverage
+    # LoadAverage
     if self.parameters.has_key( 'LoadAverage' ):
       laList = self.parameters['LoadAverage']
       if laList:
@@ -687,8 +780,12 @@ class Watchdog:
         summary['LoadAverage'] = 'Could not be estimated'
 
     result = self.__getWallClockTime()
-    wallClock = result['Value']
-    summary['WallClockTime(s)'] = wallClock
+    if not result['OK']:
+      self.log.warn( "Failed determining wall clock time", result['Message'] )
+      summary['WallClockTime(s)'] = 0
+    else:
+      wallClock = result['Value']
+      summary['WallClockTime(s)'] = wallClock
 
     self.__reportParameters( summary, 'UsageSummary', True )
     self.currentStats = summary
@@ -718,7 +815,7 @@ class Watchdog:
         self.__setJobParamList( parameters )
 
       self.log.info( '==========================================================' )
-    except Exception, x:
+    except Exception as x:
       self.log.warn( 'Problem while reporting parameters' )
       self.log.warn( str( x ) )
 
@@ -765,7 +862,7 @@ class Watchdog:
   def __setJobParamList( self, value ):
     """Wraps around setJobParameters of state update client
     """
-    #job wrapper template sets the jobID variable
+    # job wrapper template sets the jobID variable
     if not os.environ.has_key( 'JOBID' ):
       self.log.info( 'Running without JOBID so parameters will not be reported' )
       return S_OK()
@@ -806,4 +903,4 @@ class Watchdog:
     self.log.warn( 'Watchdog: ' + methodName + ' method should be implemented in a subclass' )
     return S_ERROR( 'Watchdog: ' + methodName + ' method should be implemented in a subclass' )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

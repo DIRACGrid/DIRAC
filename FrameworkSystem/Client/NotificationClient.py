@@ -1,18 +1,14 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ DIRAC Notification Client class encapsulates the methods exposed
     by the Notification service.
 """
 
-import os
+__RCSID__ = "$Id$"
+
 import types
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Mail import Mail
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_ERROR
 
 class NotificationClient:
 
@@ -30,7 +26,7 @@ class NotificationClient:
     return self.__rpcFunctor( "Framework/Notification", **kwargs )
 
   #############################################################################
-  def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True ):
+  def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True, html = False ):
     """ Send an e-mail with subject and body to the specified address. Try to send
         from local area before central service by default.
     """
@@ -42,10 +38,11 @@ class NotificationClient:
         m._subject = subject
         m._message = body
         m._mailAddress = address
+        m._html = html
         if fromAddress:
           m._fromAddress = fromAddress
         result = m._send()
-      except Exception, x:
+      except Exception as x:
         self.log.warn( 'Sending mail failed with exception:\n%s' % ( str( x ) ) )
 
       if result['OK']:

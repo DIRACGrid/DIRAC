@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   AgentReactor.py
 # Author : Adria Casajus
 ########################################################################
@@ -25,18 +24,17 @@
   must inherit from the base class AgentModule
 
 """
-__RCSID__ = "$Id$"
-
 import time
-import os
-from DIRAC import S_OK, S_ERROR, gLogger, rootPath
+
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Utilities import ThreadScheduler
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 from DIRAC.Core.Base.AgentModule import AgentModule
 
-class AgentReactor:
+__RCSID__ = "$Id$"
+
+class AgentReactor( object ):
   """
     Main interface to DIRAC Agents. It allows to :
     - define a Agents modules to be executed
@@ -86,10 +84,10 @@ class AgentReactor:
         if not result[ 'OK' ]:
           return S_ERROR( "Error while calling initialize method of %s: %s" % ( agentName, result[ 'Message' ] ) )
         agentData[ 'instanceObj' ] = instanceObj
-      except Exception, excp:
+      except Exception as excp:
         if not hideExceptions:
-          gLogger.exception( "Can't load agent %s" % agentName )
-        return S_ERROR(  "Can't load agent %s" % ( agentName, excp ) )
+          gLogger.exception( "Can't load agent %s" % agentName, lException = excp )
+        return S_ERROR(  "Can't load agent %s: \n %s" % ( agentName, excp ) )
       agentPeriod = instanceObj.am_getPollingTime()
       result = self.__scheduler.addPeriodicTask( agentPeriod, instanceObj.am_go,
                                                  executions = instanceObj.am_getMaxCycles(),
@@ -112,13 +110,13 @@ class AgentReactor:
       Run all defined agents a given number of cycles
     """
     if agentName:
-      self.loadAgentModule( agentName )
+      self.loadAgentModules( [ agentName ] )
     error = ''
     for aName in self.__agentModules:
       result = self.setAgentModuleCyclesToExecute( aName, numCycles )
       if not result['OK']:
         error = 'Failed to set cycles to execute'
-        gLogger( '%s:' % error, aName )
+        gLogger.error( '%s:' % error, aName )
         break
     if error:
       return S_ERROR( error )
@@ -132,8 +130,8 @@ class AgentReactor:
     for agentName in self.__agentModules:
       try:
         self.__agentModules[agentName]['instanceObj'].finalize()
-      except Exception:
-        gLogger.exception( 'Failed to execute finalize for Agent:', agentName )
+      except Exception as excp:
+        gLogger.exception( 'Failed to execute finalize for Agent: %s' % agentName, lException = excp )
 
   def go( self ):
     """
@@ -146,7 +144,7 @@ class AgentReactor:
       while self.__alive:
         self.__checkControlDir()
         timeToNext = self.__scheduler.executeNextTask()
-        if timeToNext == None:
+        if timeToNext is None:
           gLogger.info( "No more agent modules to execute. Exiting" )
           break
         time.sleep( min( max( timeToNext, 0.5 ), 5 ) )
@@ -163,9 +161,9 @@ class AgentReactor:
     if maxCycles:
       try:
         maxCycles += self.__agentModules[ agentName ][ 'instanceObj' ].am_getCyclesDone()
-      except Exception:
+      except Exception as excp:
         error = 'Can not determine number of cycles to execute'
-        gLogger.exception( '%s:' % error, '"%s"' % maxCycles )
+        gLogger.exception( "%s: '%s'" % ( error, maxCycles ), lException = excp )
         return S_ERROR( error )
     self.__agentModules[ agentName ][ 'instanceObj' ].am_setOption( 'MaxCycles', maxCycles )
     self.__scheduler.setNumExecutionsForTask( self.__agentModules[ agentName ][ 'taskId' ],
@@ -190,6 +188,6 @@ class AgentReactor:
       if not alive:
         gLogger.info( "Stopping agent module %s" % ( agentName ) )
         self.__scheduler.removeTask( self.__agentModules[ agentName ][ 'taskId' ] )
-        del( self.__tasks[ self.__agentModules[ agentName ][ 'taskId' ] ] )
+        del self.__tasks[ self.__agentModules[ agentName ][ 'taskId' ] ]
         self.__agentModules[ agentName ][ 'running' ] = False
         agent.am_removeStopAgentFile()

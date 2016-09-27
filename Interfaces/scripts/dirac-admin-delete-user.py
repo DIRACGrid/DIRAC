@@ -8,7 +8,7 @@
   Remove User from Configuration
 """
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -19,6 +19,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
@@ -31,7 +32,7 @@ choice = raw_input( "Are you sure you want to delete user/s %s? yes/no [no]: " %
 choice = choice.lower()
 if choice not in ( "yes", "y" ):
   print "Delete aborted"
-  DIRAC.exit( 0 )
+  DIRACExit( 0 )
 
 for user in args:
   if not diracAdmin.csDeleteUser( user ):
@@ -47,5 +48,4 @@ if not exitCode:
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit( exitCode )
-x
+DIRACExit( exitCode )

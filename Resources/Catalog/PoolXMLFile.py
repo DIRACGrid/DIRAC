@@ -1,18 +1,14 @@
-########################################################################
-# $Id$
-########################################################################
 """ The POOL XML File module provides a means to extract the GUID of a file or list
     of files by searching for an appropriate POOL XML Catalog in the specified directory.
 """
-
 __RCSID__ = "$Id$"
 
-import os, glob, re, tarfile, string
+import os, glob, tarfile
 
 from DIRAC.Resources.Catalog.PoolXMLCatalog           import PoolXMLCatalog
 from DIRAC.Core.Utilities.List                        import uniqueElements
 from DIRAC.Core.Utilities.File                        import makeGuid
-from DIRAC                                            import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC                                            import S_OK, S_ERROR, gLogger
 
 #############################################################################
 
@@ -31,7 +27,7 @@ def getGUID( fileNames, directory = '' ):
   if not type( fileNames ) == type( [] ):
     fileNames = [fileNames]
 
-  gLogger.verbose( 'Will look for POOL XML Catalog GUIDs in %s for %s' % ( directory, string.join( fileNames, ', ' ) ) )
+  gLogger.verbose( 'Will look for POOL XML Catalog GUIDs in %s for %s' % ( directory, ', '.join( fileNames ) ) )
 
   finalCatList = _getPoolCatalogs( directory )
 
@@ -48,9 +44,9 @@ def getGUID( fileNames, directory = '' ):
     pfnGUIDs[fname] = guid
 
   if not generated:
-    gLogger.info( 'Found GUIDs from POOL XML Catalogue for all files: %s' % string.join( fileNames, ', ' ) )
+    gLogger.info( 'Found GUIDs from POOL XML Catalogue for all files: %s' % ', '.join( fileNames) )
   else:
-    gLogger.info( 'GUIDs not found from POOL XML Catalogue (and were generated) for: %s' % string.join( generated, ', ' ) )
+    gLogger.info( 'GUIDs not found from POOL XML Catalogue (and were generated) for: %s' % ', '.join( generated) )
 
   result = S_OK( pfnGUIDs )
   result['directory'] = directory
@@ -74,7 +70,7 @@ def getType( fileNames, directory = '' ):
   if not type( fileNames ) == type( [] ):
     fileNames = [fileNames]
 
-  gLogger.verbose( 'Will look for POOL XML Catalog file types in %s for %s' % ( directory, string.join( fileNames, ', ' ) ) )
+  gLogger.verbose( 'Will look for POOL XML Catalog file types in %s for %s' % ( directory, ', '.join( fileNames ) ) )
 
   finalCatList = _getPoolCatalogs( directory )
 
@@ -91,9 +87,9 @@ def getType( fileNames, directory = '' ):
     pfnTypes[fname] = typeFile
 
   if not generated:
-    gLogger.info( 'Found Types from POOL XML Catalogue for all files: %s' % string.join( fileNames, ', ' ) )
+    gLogger.info( 'Found Types from POOL XML Catalogue for all files: %s' % ', '.join( fileNames ) )
   else:
-    gLogger.info( 'GUIDs not found from POOL XML Catalogue (and were generated) for: %s' % string.join( generated, ', ' ) )
+    gLogger.info( 'GUIDs not found from POOL XML Catalogue (and were generated) for: %s' % ', '.join( generated ) )
 
   result = S_OK( pfnTypes )
   result['directory'] = directory
@@ -124,7 +120,8 @@ def _getPoolCatalogs( directory = '' ):
             tarFile.extract( member, directory )
             poolCatalogList.append( os.path.join( directory, member.name ) )
         except Exception, x :
-          gLogger.error( 'Could not untar %s with exception %s' % ( fname, str( x ) ) )
+          gLogger.error( 'Could not untar with exception', 
+                         ' %s: %s' % ( fname, str( x ) ) )
       else:
         poolCatalogList.append( fname )
 
@@ -134,12 +131,12 @@ def _getPoolCatalogs( directory = '' ):
   finalCatList = []
   for possibleCat in poolCatalogList:
     try:
-      cat = PoolXMLCatalog( possibleCat )
+      _cat = PoolXMLCatalog( possibleCat )
       finalCatList.append( possibleCat )
-    except Exception, x:
+    except Exception as x:
       gLogger.debug( 'Ignoring non-POOL catalogue file %s' % possibleCat )
 
-  gLogger.debug( 'Final list of catalog files are: %s' % string.join( finalCatList, ', ' ) )
+  gLogger.debug( 'Final list of catalog files are: %s' % ', '.join( finalCatList ) )
 
   return finalCatList
 

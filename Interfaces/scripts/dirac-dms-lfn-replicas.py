@@ -29,7 +29,7 @@ for switch in switches:
 if len( lfns ) < 1:
   Script.showHelp()
 
-from DIRAC.Interfaces.API.Dirac                         import Dirac
+from DIRAC.Interfaces.API.Dirac import Dirac
 dirac = Dirac()
 exitCode = 0
 

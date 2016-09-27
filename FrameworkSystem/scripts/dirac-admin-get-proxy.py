@@ -1,19 +1,18 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-get-proxy
 # Author :  Stuart Paterson
 ########################################################################
 """
   Retrieve a delegated proxy for the given user and group
 """
-__RCSID__ = "$Id$"
 import os
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
+__RCSID__ = "$Id$"
 
 class Params:
 
@@ -85,11 +84,18 @@ if userDN.find( "/" ) != 0:
   DNList = retVal[ 'Value' ]
   if len( DNList ) > 1:
     print "Username %s has more than one DN registered" % userName
+    ind = 0
     for dn in DNList:
-      print " %s" % dn
-    print "Which dn do you want to download?"
-    DIRAC.exit( 2 )
-  userDN = DNList[0]
+      print "%d %s" % ( ind, dn )
+      ind += 1
+    inp = raw_input( "Which DN do you want to download? [default 0] " )
+    if not inp:
+      inp = 0
+    else:
+      inp = int( inp )
+    userDN = DNList[inp]
+  else:
+    userDN = DNList[0]
 
 if not params.proxyPath:
   if not userName:

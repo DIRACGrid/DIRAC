@@ -15,12 +15,22 @@ from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
 from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSafeSSLObject
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 if GSI.__version__ < "0.5.0":
   raise Exception( "Required GSI version >= 0.5.0" )
 
 class SocketInfoFactory:
 
+  def __init__(self):
+    self.__timeout = 1
+  
+  def setSocketTimeout(self, timeout):
+    self.__timeout = timeout
+    
+  def getSocketTimeout(self):
+    return self.__timeout
+  
   def generateClientInfo( self, destinationHostname, kwargs ):
     infoDict = { 'clientMode' : True,
                  'hostname' : destinationHostname,
@@ -30,30 +40,47 @@ class SocketInfoFactory:
       infoDict[ key ] = kwargs[ key ]
     try:
       return S_OK( SocketInfo( infoDict ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error while creating SSL context: %s" % str( e ) )
 
   def generateServerInfo( self, kwargs ):
-    infoDict = { 'clientMode' : False, 'timeout' : 5 }
+    infoDict = { 'clientMode' : False, 'timeout' : 30 }
     for key in kwargs.keys():
       infoDict[ key ] = kwargs[ key ]
     try:
       return S_OK( SocketInfo( infoDict ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( str( e ) )
 
   def __socketConnect( self, hostAddress, timeout, retries = 2 ):
-    osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-    #osSocket.setblocking( 0 )
+    addrs = socket.getaddrinfo(hostAddress[0], hostAddress[1], 0, socket.SOCK_STREAM)
+    errs = []
+    for addr in addrs:
+      res = self.__sockConnect( addr[4], addr[0], timeout, retries )
+      if res[ 'OK' ]:
+        return res
+      else:
+        errs.append( res[ 'Message' ] )
+    return S_ERROR( ", ".join( errs ) )
+
+  def __sockConnect( self, hostAddress, sockType, timeout, retries ):
+    try:
+      osSocket = socket.socket( sockType, socket.SOCK_STREAM )
+    except socket.error as e:
+      gLogger.warn( "Exception while creating a socket:", str( e ) ) 
+      return S_ERROR( "Exception while creating a socket:%s" % str( e ) )
+    # osSocket.setblocking( 0 )
     if timeout:
-      osSocket.settimeout( 5 )
+      tsocket = self.getSocketTimeout()
+      gLogger.verbose( "Connection timeout set to: ", tsocket )
+      osSocket.settimeout( tsocket )  # we try to connect 3 times with 1 second timeout
     try:
       osSocket.connect( hostAddress )
     except socket.error , e:
       if e.args[0] == "timed out":
         osSocket.close()
         if retries:
-          return self.__socketConnect( hostAddress, timeout, retries - 1 )
+          return self.__sockConnect( hostAddress, sockType, timeout, retries - 1 )
         else:
           return S_ERROR( "Can't connect: %s" % str( e ) )
       if e.args[0] not in ( 114, 115 ):
@@ -105,8 +132,9 @@ class SocketInfoFactory:
     retVal = Network.getIPsForHostName( hostName )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not resolve %s: %s" % ( hostName, retVal[ 'Message' ] ) )
-    ipList = List.randomize( retVal[ 'Value' ] )
-    for i in range( 3 ):
+    ipList = retVal[ 'Value' ] #In that case the first ip always  the correct one.  
+    
+    for _ in xrange( 1 ): #TODO: this retry can be reduced. 
       connected = False
       errorsList = []
       for ip in ipList :
@@ -132,7 +160,11 @@ class SocketInfoFactory:
     return S_OK( socketInfo )
 
   def getListeningSocket( self, hostAddress, listeningQueueSize = 5, reuseAddress = True, **kwargs ):
-    osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+    try:
+      osSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
+    except socket.error:
+      # IPv6 is probably disabled on this node, try IPv4 only instead
+      osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     if reuseAddress:
       osSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
     retVal = self.generateServerInfo( kwargs )

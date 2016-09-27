@@ -1,17 +1,17 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
-import os
+"""
+"""
+
 import os.path
-try:
-  import hashlib as md5
-except:
-  import md5
+import hashlib
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.FrameworkSystem.private.monitoring.ColorGenerator import ColorGenerator
 from DIRAC.Core.Utilities import Subprocess, Time
+from DIRAC.Core.Utilities.File import mkDir
 
-class RRDManager:
+__RCSID__ = "$Id$"
+
+class RRDManager( object ):
 
   __sizesList = [ [ 200, 50 ], [ 400, 100 ], [ 600, 150 ], [ 800, 200 ] ]
   __logRRDCommands = False
@@ -25,10 +25,7 @@ class RRDManager:
     self.log = gLogger.getSubLogger( "RRDManager" )
     self.rrdExec = gConfig.getValue( "%s/RRDExec" % getServiceSection( "Framework/Monitoring" ), "rrdtool" )
     for path in ( self.rrdLocation, self.graphLocation ):
-      try:
-        os.makedirs( path )
-      except:
-        pass
+      mkDir( path )
 
   def existsRRDFile( self, rrdFile ):
     rrdFilePath = "%s/%s" % ( self.rrdLocation, rrdFile )
@@ -55,7 +52,7 @@ class RRDManager:
         else:
           fd.write( "OK    %s\n" % cmd )
         fd.close()
-      except Exception, e:
+      except Exception as e:
         self.log.warn( "Cannot write log %s: %s" % ( logFile, str( e ) ) )
     if not retVal[ 'OK' ]:
       return retVal
@@ -161,7 +158,7 @@ class RRDManager:
     """
     Generate a random name
     """
-    m = md5.md5()
+    m = hashlib.md5()
     m.update( str( args ) )
     m.update( str( kwargs ) )
     return m.hexdigest()
@@ -264,5 +261,5 @@ class RRDManager:
   def deleteRRD( self, rrdFile ):
     try:
       os.unlink( "%s/%s" % ( self.rrdLocation, rrdFile ) )
-    except Exception, e:
-      self.log.error( "Could not delete rrd file %s: %s" % ( rrdFile, str( e ) ) )
+    except Exception as e:
+      self.log.error( "Could not delete rrd file", "%s: %s" % ( rrdFile, str( e ) ) )

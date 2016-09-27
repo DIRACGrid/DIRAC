@@ -30,17 +30,12 @@ class DBUtils:
       - orderFields -> list of fields to order by, can be in form
                        ( "%s, %s", ( "field1name", "field2name", "field3name" )
     """
-    typeName = "%s_%s" % ( self._setup, typeName )
     validCondDict = {}
     if type( condDict ) == types.DictType:
       for key in condDict:
         if type( condDict[ key ] ) in ( types.ListType, types.TupleType ) and len( condDict[ key ] ) > 0:
           validCondDict[ key ] = condDict[ key ]
-    retVal = self._acDB._getConnection()
-    if not retVal[ 'OK' ]:
-      return retVal
-    connObj = retVal[ 'Value' ]
-    return self._acDB.retrieveBucketedData( typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, connObj = connObj )
+    return self._acDB.retrieveBucketedData( self._setup, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields )
 
   def _getUniqueValues( self, typeName, startTime, endTime, condDict, fieldList ):
     stringList = [ "%s" for field in fieldList ]
@@ -70,13 +65,11 @@ class DBUtils:
     return groupDict
 
   def _getBins( self, typeName, startTime, endTime ):
-    typeName = "%s_%s" % ( self._setup, typeName )
-    return self._acDB.calculateBuckets( typeName, startTime, endTime )
+    return self._acDB.calculateBuckets( self._setup, typeName, startTime, endTime )
 
   def _getBucketLengthForTime( self, typeName, momentEpoch ):
     nowEpoch = Time.toEpoch()
-    typeName = "%s_%s" % ( self._setup, typeName )
-    return self._acDB.calculateBucketLengthForTime( typeName, nowEpoch, momentEpoch )
+    return self._acDB.calculateBucketLengthForTime( self._setup, typeName, nowEpoch, momentEpoch )
 
   def _spanToGranularity( self, granularity, bucketsData ):
     """
@@ -90,10 +83,18 @@ class DBUtils:
     def addToNormData( bucketDate, data, proportion = 1.0 ):
       if bucketDate in normData:
         for iP in range( len( data ) ):
-          normData[ bucketDate ][iP] += data[iP]
+          val = data[ iP ]
+          if val == None:
+            val = 0
+          normData[ bucketDate ][iP] += float( val ) * proportion
         normData[ bucketDate ][ -1 ] += proportion
       else:
-        normData[ bucketDate ] = data + [ proportion ]
+        normData[ bucketDate ] = []
+        for fD in data:
+          if fD == None:
+            fD = 0
+          normData[ bucketDate ].append( float( fD ) * proportion )
+        normData[ bucketDate ].append( proportion )
 
     for bucketData in bucketsData:
       bucketDate = bucketData[0]
@@ -165,7 +166,7 @@ class DBUtils:
     startBucketEpoch = startEpoch - startEpoch % granularity
     for key in dataDict:
       currentDict = dataDict[ key ]
-      for timeEpoch in range( startBucketEpoch, endEpoch, granularity ):
+      for timeEpoch in range( int( startBucketEpoch ), int( endEpoch ), granularity ):
         if timeEpoch not in currentDict:
           currentDict[ timeEpoch ] = 0
     return dataDict
@@ -269,12 +270,7 @@ class DBUtils:
     """
     Get all valid key values in a type
     """
-    retVal = self._acDB._getConnection()
-    if not retVal[ 'OK' ]:
-      return retVal
-    connObj = retVal[ 'Value' ]
-    typeName = "%s_%s" % ( self._setup, typeName )
-    return self._acDB.getKeyValues( typeName, condDict, connObj )
+    return self._acDB.getKeyValues( self._setup, typeName, condDict )
 
   def _calculateProportionalGauges( self, dataDict ):
     """

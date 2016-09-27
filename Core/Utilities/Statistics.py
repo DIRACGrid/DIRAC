@@ -56,7 +56,7 @@ def getVariance( numbers, posMean='Empty' ):
 
   # Subtract the mean from each data item and square the difference.
   # Sum all the squared deviations.
-  return sum([(float(item)-mean)**2.0 for item in numbers ])/len(numbers)
+  return sum( ( float( item ) - mean ) ** 2.0 for item in numbers ) / len( numbers )
 
 def getStandardDeviation(numbers, variance='Empty', mean='Empty'):
   """Determine the measure of the dispersion of the data set based on the

@@ -32,7 +32,7 @@ for file in files:
     else:
       print 'ERROR %s: Failed to get md5' % file
       exitCode = 2
-  except Exception, x:
+  except Exception as x:
     print 'ERROR %s: Failed to get md5' % file, str( x )
     exitCode = 2
 

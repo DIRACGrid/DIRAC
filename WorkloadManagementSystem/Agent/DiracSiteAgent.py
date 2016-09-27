@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    DiracSiteAgent.py
 # Author :  Andrei Tsaregorodtsev
 ########################################################################
@@ -8,14 +7,18 @@
 """
 __RCSID__ = "$Id$"
 
+import os
+import time
+import urllib
+import stat
+
+import DIRAC
+from DIRAC                                               import S_OK, S_ERROR, gConfig
+
 from DIRAC.Core.Base.AgentModule                         import AgentModule
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Security.Locations                       import getProxyLocation
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
-from DIRAC                                               import S_OK, S_ERROR, gConfig
-import DIRAC
-
-import os, time, urllib
 
 AGENT_NAME = 'WorkloadManagement/DiracSiteAgent'
 
@@ -38,7 +41,6 @@ class DiracSiteAgent( AgentModule ):
 
     self.logLevel = gConfig.getValue( 'DIRAC/LogLevel', 'INFO' )
     self.siteRoot = gConfig.getValue( 'LocalSite/Root', DIRAC.rootPath )
-    self.localArea = gConfig.getValue( 'LocalSite/LocalArea', '/tmp' )
     self.siteName = gConfig.getValue( 'LocalSite/Site', 'Unknown' )
     self.cpuFactor = gConfig.getValue( 'LocalSite/CPUScalingFactor', 'Unknown' )
     self.maxPilots = gConfig.getValue( 'LocalSite/MaxPilots', 100 )
@@ -59,7 +61,7 @@ class DiracSiteAgent( AgentModule ):
       try:
         prop = gConfig.getValue( propLocation, propDefault ).replace( '"', '' )
         self.propertiesDict[propLocation] = str( prop )
-      except Exception, e:
+      except Exception as e:
         print e
         return S_ERROR( 'Expected string for %s field' % propLocation )
 
@@ -68,7 +70,7 @@ class DiracSiteAgent( AgentModule ):
                       'Site' : self.propertiesDict['/LocalSite/Site'],
                       'CPUTime' : 3000000,
 #                      'GridMiddleware' : '',
-#                      'LHCbPlatform' : '',
+#                      'Platform' : '',
 #                      'PilotType' : '',
 #                      'JobType' : '',
 #                      'OwnerGroup' : '',
@@ -77,16 +79,12 @@ class DiracSiteAgent( AgentModule ):
                       }
 
     #options to pass to the pilot
-    self.pilotOptions = {
-                         '/LocalSite/SharedArea' : '',
-                         '/LocalSite/LocalArea' : '',
-                         '/LocalSite/Architecture' : '',
+    self.pilotOptions = {'/LocalSite/Architecture' : '',
                          '/LocalSite/CPUScalingFactor' : '',
                          '/LocalSite/LocalCE' : 'InProcess',
                          '/LocalSite/Site' : '',
                          '/LocalSite/ConcurrentJobs' : '',
-                         '/LocalSite/MaxCPUTime' : ''
-                         }
+                         '/LocalSite/MaxCPUTime' : ''}
     for optName, optDefault in self.pilotOptions.items():
       self.pilotOptions[optName] = gConfig.getValue( '%(optName)s' % {'optName':optName}, optDefault )
 
@@ -118,7 +116,7 @@ class DiracSiteAgent( AgentModule ):
       self.diracInstallPath = self.diracInstallFileName
       try:
         urllib.urlretrieve( self.diracInstallURL, self.diracInstallPath )
-        os.chmod( self.diracInstallPath, 0755 )
+        os.chmod( self.diracInstallPath, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
       except:
         self.log.error( 'Failed to retrieve %(diracInstallFileName)s from %(diracInstallUrl)s' %
                         { 'diracInstallFileName':self.diracInstallFileName,
@@ -176,9 +174,6 @@ class DiracSiteAgent( AgentModule ):
     if not ret['OK']:
       self.log.warn( ret['Message'] )
       return ret
-
-    ceJDL = ret['Value'].getJDL()
-    self.log.debug( 'CE jdl', ceJDL )
     return ret
 
   #############################################################################

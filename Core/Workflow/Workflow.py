@@ -1,8 +1,6 @@
-# $Id$
 """
-    This is a comment
+    Workflow class is the main container of Steps and Modules
 """
-__RCSID__ = "$Revision: 1.38 $"
 
 import os, re, types
 import xml.sax
@@ -11,6 +9,8 @@ from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Utility import *
 from DIRAC import S_OK, S_ERROR
+
+__RCSID__ = "$Id$"
 
 class Workflow( AttributeCollection ):
 
@@ -90,9 +90,8 @@ class Workflow( AttributeCollection ):
   def toXMLFile( self, outFile ):
     if os.path.exists( outFile ):
       os.remove( outFile )
-    xmlfile = open( outFile, 'w' )
-    xmlfile.write( self.toXML() )
-    xmlfile.close()
+    with open( outFile, 'w' ) as xmlfile:
+      xmlfile.write( self.toXML() )
 
   def addTool( self, name, tool ):
     """ Add an object that will be available in all the modules to perform some operations.
@@ -135,8 +134,8 @@ class Workflow( AttributeCollection ):
       raise KeyError( 'Can not find StepDefinition ' + type + ' to create StepInstrance ' + name )
 
   def removeStepInstance( self, name ):
-    self.instances[name].setParents( None )
-    self.instances.delete( name )
+    self.step_instances[name].setParent( None )
+    self.step_instances.delete( name )
 
   def updateParents( self ):
     self.module_definitions.updateParents( self )
@@ -200,29 +199,10 @@ class Workflow( AttributeCollection ):
     str = str + 'j.execute()'
     return str
 
-  def showCode( self, combine_steps = False ):
-    str = ''
-    str = str + self.module_definitions.createCode()
-    str = str + self.step_definitions.createCode()
-    str = str + "\nclass job:\n"
-    str = str + indent( 1 ) + 'def execute(self):\n'
-    #str=str+indent(2)+'# flush self.step_instances\n'
-    str = str + self.step_instances.createCode()
-    # it seems we do not need it on this level
-    str = str + indent( 2 ) + '# output assignment\n'
-    for v in self.parameters:
-      if v.isOutput():
-        str = str + v.createParameterCode( 2, 'self' )
-
-    str = str + '\nj=job()\n'
-    str = str + self.parameters.createParametersCode( 0, 'j' )
-    str = str + 'j.execute()'
-    return str
-
   def execute( self ):
     self.resolveGlobalVars()
     # define workflow attributes
-    wf_exec_attr = {} # dictianary with the WF attributes, used to resolve links to self.attrname
+    wf_exec_attr = {} # dictionary with the WF attributes, used to resolve links to self.attrname
     for wf_parameter in self.parameters:
       # parameters shall see objects in the current scope order to resolve links
       if wf_parameter.preExecute(): # for parm which not just outputs

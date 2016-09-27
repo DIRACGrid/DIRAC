@@ -10,7 +10,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC import S_OK, S_ERROR, gConfig, List
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
@@ -19,6 +19,8 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
+from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 import re, time
 
@@ -50,6 +52,8 @@ class PilotStatusAgent( AgentModule ):
     self.am_setOption( 'GridEnv', '' )
     self.am_setOption( 'PilotStalledDays', 3 )
     self.pilotDB = PilotAgentsDB()
+    self.diracadmin = DiracAdmin()
+    self.jobDB = JobDB()
     return S_OK()
 
   #############################################################################
@@ -115,7 +119,7 @@ class PilotStatusAgent( AgentModule ):
           continue
         refList = result['Value']
 
-        ret = gProxyManager.getPilotProxyFromVOMSGroup( ownerDN, ownerGroup )
+        ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup )
         if not ret['OK']:
           self.log.error( ret['Message'] )
           self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
@@ -178,15 +182,14 @@ class PilotStatusAgent( AgentModule ):
     """
 
     last_update = Time.dateTime() - MAX_WAITING_STATE_LENGTH * Time.hour
-    clearDict = {}
     clearDict = {'Status':'Waiting',
-                  'OwnerDN':condDict['OwnerDN'],
-                  'OwnerGroup':condDict['OwnerGroup'],
-                  'GridType':condDict['GridType'],
-                  'Broker':condDict['Broker']}
+                 'OwnerDN':condDict['OwnerDN'],
+                 'OwnerGroup':condDict['OwnerGroup'],
+                 'GridType':condDict['GridType'],
+                 'Broker':condDict['Broker']}
     result = self.pilotDB.selectPilots( clearDict, older = last_update )
     if not result['OK']:
-      self.log.warn( 'Failed to get the Pilot Agents fpr Waiting state' )
+      self.log.warn( 'Failed to get the Pilot Agents for Waiting state' )
       return result
     if not result['Value']:
       return S_OK()
@@ -267,15 +270,21 @@ class PilotStatusAgent( AgentModule ):
     pilotsDict = result['Value']
 
     for pRef in pilotsDict:
+      if pilotsDict[pRef].has_key('Jobs') and len(pilotsDict[pRef]['Jobs']) > 0 and self._checkJobLastUpdateTime(pilotsDict[pRef]['Jobs'],self.pilotStalledDays):
+        self.log.debug('%s should not be deleted since one job of %s is running.' % ( str(pRef) , str(pilotsDict[pRef]['Jobs']) ) )
+        continue
       deletedJobDict = pilotsDict[pRef]
       deletedJobDict['Status'] = 'Deleted'
       deletedJobDict['StatusDate'] = Time.dateTime()
       pilotsToAccount[ pRef ] = deletedJobDict
       if len( pilotsToAccount ) > 100:
         self.accountPilots( pilotsToAccount, connection )
+        self._killPilots( pilotsToAccount )
         pilotsToAccount = {}
 
     self.accountPilots( pilotsToAccount, connection )
+    self._killPilots( pilotsToAccount )
+
 
     return S_OK()
 
@@ -506,3 +515,32 @@ class PilotStatusAgent( AgentModule ):
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
+
+  def _killPilots( self, acc ):
+    for i in sorted(acc.keys()):
+      result = self.diracadmin.getPilotInfo( i )
+      if result['OK'] and result['Value'].has_key(i) and result['Value'][i].has_key('Status'):
+        ret = self.diracadmin.killPilot( str(i) )
+        if ret['OK']:
+          self.log.info("Successfully deleted: %s (Status : %s)" % (i, result['Value'][i]['Status'] ) )
+        else:
+          self.log.error( "Failed to delete pilot: ", "%s : %s" % ( i, ret['Message'] ) )
+      else:
+        self.log.error( "Failed to get pilot info", "%s : %s" % ( i, str( result ) ) )
+
+  def _checkJobLastUpdateTime( self, joblist , StalledDays ):
+    timeLimitToConsider = Time.dateTime() - Time.day * StalledDays 
+    ret = False
+    for jobID in joblist:
+      result = self.jobDB.getJobAttributes( int( jobID ) )
+      if result['OK']:
+        if 'LastUpdateTime' in result['Value']:
+          lastUpdateTime = result['Value']['LastUpdateTime']
+          if Time.fromString( lastUpdateTime ) > timeLimitToConsider:
+            ret = True
+            self.log.debug( 'Since %s updates LastUpdateTime on %s this does not to need to be deleted.' % ( str( jobID ), str( lastUpdateTime ) ) )
+            break
+      else:
+        self.log.error( "Error taking job info from DB", result['Message'] )
+    return ret
+

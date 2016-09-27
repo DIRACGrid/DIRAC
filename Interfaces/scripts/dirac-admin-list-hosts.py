@@ -5,7 +5,7 @@
 # Author :  Adrian Casajus
 ########################################################################
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base import Script
 
 Script.registerSwitch( "e", "extended", "Show extended info" )
@@ -13,6 +13,7 @@ Script.registerSwitch( "e", "extended", "Show extended info" )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
@@ -34,4 +35,4 @@ else:
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit( exitCode )
+DIRACExit( exitCode )

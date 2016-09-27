@@ -4,6 +4,7 @@
 ########################################################################
 __RCSID__   = "$Id$"
 
+from DIRAC           import exit as DIRACExit
 from DIRAC.Core.Base import Script 
 
 Script.setUsageMessage("""
@@ -15,17 +16,17 @@ Usage:
 
 Script.parseCommandLine()
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface
-catalog = CatalogInterface()
-import sys,os
-
-if not len(sys.argv) == 4:
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+catalog = FileCatalog()
+import os
+args = Script.getPositionalArgs()
+if not len(args) == 3:
   Script.showHelp()
-  DIRAC.exit( -1 )
+  DIRACExit( -1 )
 else:
-  inputFileName = sys.argv[1]
-  se = sys.argv[2]
-  newStatus = sys.argv[3]
+  inputFileName = args[0]
+  se = args[1]
+  newStatus = args[2]
 
 if os.path.exists(inputFileName):
   inputFile = open(inputFileName,'r')
@@ -35,10 +36,10 @@ if os.path.exists(inputFileName):
 else:
   lfns = [inputFileName]
 
-res = catalog.getCatalogReplicas(lfns,True)
+res = catalog.getReplicas( lfns, True )
 if not res['OK']:
   print res['Message']
-  sys.exit()
+  DIRACExit( -1 )
 replicas = res['Value']['Successful']
 
 lfnDict = {}
@@ -48,7 +49,7 @@ for lfn in lfns:
   lfnDict[lfn]['Status'] = newStatus
   lfnDict[lfn]['PFN'] = replicas[lfn][se]
 
-res = catalog.setCatalogReplicaStatus(lfnDict)
+res = catalog.setReplicaStatus( lfnDict )
 if not res['OK']:
   print "ERROR:",res['Message']
 if res['Value']['Failed']:

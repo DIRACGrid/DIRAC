@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-restart-mysql
 # Author : Ricardo Graciani
 ########################################################################
@@ -17,9 +16,9 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                       ] ) )
 Script.parseCommandLine()
 #
-from DIRAC.Core.Utilities import InstallTools
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 #
-print InstallTools.stopMySQL()['Value'][1]
-print InstallTools.startMySQL()['Value'][1]
+print gComponentInstaller.stopMySQL()['Value'][1]
+print gComponentInstaller.startMySQL()['Value'][1]

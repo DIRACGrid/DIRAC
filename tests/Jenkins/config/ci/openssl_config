@@ -1,0 +1,18 @@
+[ req ]
+default_bits           = 1024
+encrypt_key            = yes
+distinguished_name     = req_dn
+prompt                 = no
+x509_extensions        = v3_ca
+
+[ req_dn ]
+C                      = ch
+O                      = DIRAC
+OU                     = DIRAC CI
+CN                     = #hostname#
+emailAddress           = lhcb-dirac-ci@cern.ch
+
+[ v3_ca ]
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always
+basicConstraints       = CA:true

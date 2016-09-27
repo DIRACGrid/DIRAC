@@ -1,61 +1,64 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
+""" Module that holds the ReportGeneratorHandler class
+"""
+
 import types
 import os
 import datetime
 
-from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
-from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
-from DIRAC.AccountingSystem.private.Summaries import Summaries
-from DIRAC.AccountingSystem.private.DataCache import gDataCache
+from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities import Time
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
+from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
+from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.AccountingSystem.private.MainReporter import MainReporter
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
-from DIRAC.AccountingSystem.private.Plots import generateErrorMessagePlot
-from DIRAC.AccountingSystem.private.FileCoding import extractRequestFromFileId
+from DIRAC.Core.Utilities.Plotting.Plots            import generateErrorMessagePlot
+from DIRAC.Core.Utilities.Plotting.FileCoding       import extractRequestFromFileId
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time
 
-gAccountingDB = False
 
-def initializeReportGeneratorHandler( serviceInfo ):
-  global gAccountingDB
-  gAccountingDB = AccountingDB( readOnly = True )
-  #Get data location
-  reportSection = PathFinder.getServiceSection( "Accounting/ReportGenerator" )
-  dataPath = gConfig.getValue( "%s/DataLocation" % reportSection, "data/accountingGraphs" )
-  dataPath = dataPath.strip()
-  if "/" != dataPath[0]:
-    dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
-  gLogger.info( "Data will be written into %s" % dataPath )
-  try:
-    os.makedirs( dataPath )
-  except:
-    pass
-  try:
-    testFile = "%s/acc.jarl.test" % dataPath
-    fd = file( testFile, "w" )
-    fd.close()
-    os.unlink( testFile )
-  except IOError:
-    gLogger.fatal( "Can't write to %s" % dataPath )
-    return S_ERROR( "Data location is not writable" )
-  gDataCache.setGraphsLocation( dataPath )
-  gMonitor.registerActivity( "plotsDrawn", "Drawn plot images", "Accounting reports", "plots", gMonitor.OP_SUM )
-  gMonitor.registerActivity( "reportsRequested", "Generated reports", "Accounting reports", "reports", gMonitor.OP_SUM )
-  return S_OK()
+__RCSID__ = "$Id$"
 
 class ReportGeneratorHandler( RequestHandler ):
+  """ DIRAC service class to retrieve information from the AccountingDB
+  """
 
-  __reportRequestDict = { 'typeName' : types.StringType,
-                        'reportName' : types.StringType,
-                        'startTime' : Time._allDateTypes,
-                        'endTime' : Time._allDateTypes,
-                        'condDict' : types.DictType,
-                        'grouping' : types.StringType,
-                        'extraArgs' : types.DictType
-                      }
+  __acDB = None
+  __reportRequestDict = { 'typeName' : types.StringTypes,
+                          'reportName' : types.StringTypes,
+                          'startTime' : (datetime.datetime, datetime.date),
+                          'endTime' : (datetime.datetime, datetime.date),
+                          'condDict' : types.DictType,
+                          'grouping' : types.StringTypes,
+                          'extraArgs' : types.DictType}
+
+  @classmethod
+  def initializeHandler( cls, serviceInfo ):
+    multiPath = PathFinder.getDatabaseSection( "Accounting/MultiDB" )
+    cls.__acDB = MultiAccountingDB( multiPath, readOnly = True )
+    #Get data location
+    reportSection = serviceInfo[ 'serviceSectionPath' ]
+    dataPath = gConfig.getValue( "%s/DataLocation" % reportSection, "data/accountingGraphs" )
+    dataPath = dataPath.strip()
+    if "/" != dataPath[0]:
+      dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
+    gLogger.info( "Data will be written into %s" % dataPath )
+    mkDir( dataPath )
+    try:
+      testFile = "%s/acc.jarl.test" % dataPath
+      fd = file( testFile, "w" )
+      fd.close()
+      os.unlink( testFile )
+    except IOError:
+      gLogger.fatal( "Can't write to %s" % dataPath )
+      return S_ERROR( "Data location is not writable" )
+    gDataCache.setGraphsLocation( dataPath )
+    gMonitor.registerActivity( "plotsDrawn", "Drawn plot images", "Accounting reports", "plots", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "reportsRequested", "Generated reports", "Accounting reports", "reports", gMonitor.OP_SUM )
+    return S_OK()
 
 
 
@@ -63,15 +66,16 @@ class ReportGeneratorHandler( RequestHandler ):
     #If extraArgs is not there add it
     if 'extraArgs' not in reportRequest:
       reportRequest[ 'extraArgs' ] = {}
-    if type( reportRequest[ 'extraArgs' ] ) != self.__reportRequestDict[ 'extraArgs' ]:
+    if not isinstance( reportRequest[ 'extraArgs' ], self.__reportRequestDict[ 'extraArgs' ] ):
       return S_ERROR( "Extra args has to be of type %s" % self.__reportRequestDict[ 'extraArgs' ] )
     reportRequestExtra = reportRequest[ 'extraArgs' ]
     #Check sliding plots
     if 'lastSeconds' in reportRequestExtra:
       try:
         lastSeconds = long( reportRequestExtra[ 'lastSeconds' ] )
-      except:
-        return S_ERROR( "lastSeconds key must be a number" )
+      except ValueError:
+        gLogger.error( "lastSeconds key must be a number" )
+        return S_ERROR( "Value Error" )
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
       now = Time.dateTime()
@@ -85,18 +89,14 @@ class ReportGeneratorHandler( RequestHandler ):
     for key in self.__reportRequestDict:
       if not key in reportRequest:
         return S_ERROR( 'Missing mandatory field %s in plot reques' % key )
-      requestKeyType = type( reportRequest[ key ] )
+
+      if not isinstance( reportRequest[ key ], self.__reportRequestDict[ key ] ):
+        return S_ERROR( "Type mismatch for field %s (%s), required one of %s" % ( key,
+                                                                                  str( type( reportRequest[ key ] ) ),
+                                                                                  str( self.__reportRequestDict[ key ] ) ) )
       if key in ( 'startTime', 'endTime' ):
-        if requestKeyType not in self.__reportRequestDict[ key ]:
-          return S_ERROR( "Type mismatch for field %s (%s), required one of %s" % ( key,
-                                                                                    str( requestKeyType ),
-                                                                                    str( self.__reportRequestDict[ key ] ) ) )
         reportRequest[ key ] = int( Time.toEpoch( reportRequest[ key ] ) )
-      else:
-        if requestKeyType != self.__reportRequestDict[ key ]:
-          return S_ERROR( "Type mismatch for field %s (%s), required %s" % ( key,
-                                                                             str( requestKeyType ),
-                                                                             str( self.__reportRequestDict[ key ] ) ) )
+
     return S_OK( reportRequest )
 
   types_generatePlot = [ types.DictType ]
@@ -114,7 +114,7 @@ class ReportGeneratorHandler( RequestHandler ):
     retVal = self.__checkPlotRequest( reportRequest )
     if not retVal[ 'OK' ]:
       return retVal
-    reporter = MainReporter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    reporter = MainReporter( self.__acDB, self.serviceInfoDict[ 'clientSetup' ] )
     gMonitor.addMark( "plotsDrawn" )
     reportRequest[ 'generatePlot' ] = True
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
@@ -134,29 +134,29 @@ class ReportGeneratorHandler( RequestHandler ):
     retVal = self.__checkPlotRequest( reportRequest )
     if not retVal[ 'OK' ]:
       return retVal
-    reporter = MainReporter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    reporter = MainReporter( self.__acDB, self.serviceInfoDict[ 'clientSetup' ] )
     gMonitor.addMark( "reportsRequested" )
     reportRequest[ 'generatePlot' ] = False
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
 
-  types_listReports = [ types.StringType ]
+  types_listReports = [ types.StringTypes ]
   def export_listReports( self, typeName ):
     """
     List all available plots
     Arguments:
       - none
     """
-    reporter = MainReporter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    reporter = MainReporter( self.__acDB, self.serviceInfoDict[ 'clientSetup' ] )
     return reporter.list( typeName )
 
-  types_listUniqueKeyValues = [ types.StringType ]
+  types_listUniqueKeyValues = [ types.StringTypes ]
   def export_listUniqueKeyValues( self, typeName ):
     """
     List all values for all keys in a type
     Arguments:
       - none
     """
-    dbUtils = DBUtils( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
+    dbUtils = DBUtils( self.__acDB, self.serviceInfoDict[ 'clientSetup' ] )
     credDict = self.getRemoteCredentials()
     if typeName in gPoliciesList:
       policyFilter = gPoliciesList[ typeName ]
@@ -205,7 +205,7 @@ class ReportGeneratorHandler( RequestHandler ):
       #Seems a request for a plot!
       try:
         result = self.__generatePlotFromFileId( fileId )
-      except Exception, e:
+      except Exception as e:
         gLogger.exception( "Exception while generating plot" )
         result = S_ERROR( "Error while generating plot: %s" % str( e ) )
       if not result[ 'OK' ]:
@@ -215,7 +215,7 @@ class ReportGeneratorHandler( RequestHandler ):
       fileId = result[ 'Value' ]
     retVal = gDataCache.getPlotData( fileId )
     if not retVal[ 'OK' ]:
-      self.__sendErrorAsImg( result[ 'Message' ], fileHelper )
+      self.__sendErrorAsImg( retVal[ 'Message' ], fileHelper )
       return retVal
     retVal = fileHelper.sendData( retVal[ 'Value' ] )
     if not retVal[ 'OK' ]:

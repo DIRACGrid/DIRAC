@@ -12,6 +12,8 @@ from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
+DEFAULT_SSL_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS"
+
 class SocketInfo:
 
   __cachedCAsCRLs = False
@@ -19,10 +21,9 @@ class SocketInfo:
   __cachedCAsCRLsLoadLock = LockRing().getLock()
 
 
-  def __init__( self, infoDict, sslContext = False ):
+  def __init__( self, infoDict, sslContext = None ):
+    self.__retry = 0
     self.infoDict = infoDict
-    #HACK:DISABLE CRLS!!!!!
-    self.infoDict[ 'IgnoreCRLs' ] = True
     if sslContext:
       self.sslContext = sslContext
     else:
@@ -58,7 +59,10 @@ class SocketInfo:
     isProxyChain = peerChain.isProxy()['Value']
     isLimitedProxyChain = peerChain.isLimitedProxy()['Value']
     if isProxyChain:
-      identitySubject = peerChain.getIssuerCert()['Value'].getSubjectNameObject()[ 'Value' ]
+      if peerChain.isPUSP()['Value']:
+        identitySubject = peerChain.getCertInChain( -2 )['Value'].getSubjectNameObject()[ 'Value' ]
+      else:
+        identitySubject = peerChain.getIssuerCert()['Value'].getSubjectNameObject()[ 'Value' ]
     else:
       identitySubject = peerChain.getCertInChain( 0 )['Value'].getSubjectNameObject()[ 'Value' ]
     credDict = { 'DN' : identitySubject.one_line(),
@@ -84,7 +88,7 @@ class SocketInfo:
   def clone( self ):
     try:
       return S_OK( SocketInfo( dict( self.infoDict ), self.sslContext ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( str( e ) )
 
   def verifyCallback( self, *args, **kwargs ):
@@ -102,7 +106,7 @@ class SocketInfo:
       hostCN_m = hostCN.split( '/' )[1]
     if hostCN_m == hostConn:
       return True
-    result = checkHostsMatch( hostCN_m, hostCN )
+    result = checkHostsMatch( hostCN_m, hostConn )
     if not result[ 'OK' ]:
       return False
     return result[ 'Value' ]
@@ -129,7 +133,7 @@ class SocketInfo:
       if not SocketInfo.__cachedCAsCRLs or time.time() - SocketInfo.__cachedCAsCRLsLastLoaded > 900:
         #Need to generate the CA Store
         casDict = {}
-        crlsDict = []
+        crlsDict = {}
         casPath = Locations.getCAsLocation()
         if not casPath:
           return S_ERROR( "No valid CAs location found" )
@@ -168,21 +172,16 @@ class SocketInfo:
               if crl.has_expired():
                 continue
               crlID = crl.get_issuer().one_line()
-              crlNotAfter = crl.get_not_after()
-              if crlID not in crlsDict:
-                crlsDict[ crlID ] = ( crlNotAfter, crl )
-                crlsFound += 1
-              else:
-                if crlsDict[ crlID ][0] < crlNotAfter:
-                  crlsDict[ crlID ] = ( crlNotAfter, crl )
+              crlsDict[ crlID ] = crl 
+              crlsFound += 1
               continue
-            except:
+            except Exception as e:
               if fileName.find( ".r0" ) == len( fileName ) - 2:
-                gLogger.exception( "LOADING %s" % filePath )
+                gLogger.exception( "LOADING %s ,Exception: %s" % ( filePath , str(e) ) )
 
         gLogger.debug( "Loaded %s CAs [%s CRLs]" % ( casFound, crlsFound ) )
         SocketInfo.__cachedCAsCRLs = ( [ casDict[k][1] for k in casDict ],
-                                       [ crlsDict[k][1] for k in crlsDict ] )
+                                       [ crlsDict[k] for k in crlsDict ] )
         SocketInfo.__cachedCAsCRLsLastLoaded = time.time()
     except:
       gLogger.exception( "ASD" )
@@ -217,6 +216,7 @@ class SocketInfo:
     except:
       return S_ERROR( "SSL method %s is not valid" % self.infoDict[ 'sslMethod' ] )
     self.sslContext = GSI.SSL.Context( method )
+    self.sslContext.set_cipher_list( self.infoDict.get( 'sslCiphers', DEFAULT_SSL_CIPHERS ) )
     if contextOptions:
       self.sslContext.set_options( contextOptions )
     #self.sslContext.set_read_ahead( 1 )
@@ -317,12 +317,23 @@ class SocketInfo:
       except GSI.SSL.WantWriteError:
         time.sleep( 0.001 )
       except GSI.SSL.Error, v:
-        #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
-        gLogger.warn( "Error while handshaking", v )
-        return S_ERROR( "Error while handshaking" )
+        if self.__retry < 3:
+          self.__retry += 1
+          return self.__sslHandshake()
+        else:
+          # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+          gLogger.warn( "Error while handshaking", v )
+          return S_ERROR( "Error while handshaking" )
       except Exception, v:
         gLogger.warn( "Error while handshaking", v )
-        return S_ERROR( "Error while handshaking" )
+        if self.__retry < 3:
+          self.__retry += 1
+          return self.__sslHandshake()
+        else:
+          # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+          gLogger.warn( "Error while handshaking", v )
+          return S_ERROR( "Error while handshaking" )
+        
     credentialsDict = self.gatherPeerCredentials()
     if self.infoDict[ 'clientMode' ]:
       hostnameCN = credentialsDict[ 'CN' ]

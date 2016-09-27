@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 """  This constitues the base class for the backends of the logger
 """
 
-class BaseBackend:
+class BaseBackend(object):
 
   _charData = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   _showCallingFrame = True
@@ -45,7 +45,7 @@ class BaseBackend:
       messageName += "[%s]" % messageObject.getFrameInfo()
     timeToShow = Time.toString( messageObject.getTime() ).split( '.' )[0]
     lines = []
-    prefix = [ timeToShow, "UTC", messageName, "%s:" % messageObject.getLevel().rjust( 5 ) ]
+    prefix = [ timeToShow, "UTC", messageName, "%s:" % messageObject.getLevel().rjust( 6 ) ]
     if self._optionsDictionary[ 'showThreads' ]:
       prefix[2] += "[%s]" % self.getThreadId()
     prefix = " ".join( prefix )

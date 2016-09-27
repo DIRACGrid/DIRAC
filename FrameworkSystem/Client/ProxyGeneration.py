@@ -27,16 +27,21 @@ class CLIParams:
   stdinPasswd = False
   userPasswd = ""
   checkClock = True
-
+  embedDefaultGroup = True
+  rfc = False
 
   def setProxyLifeTime( self, arg ):
     try:
       fields = [ f.strip() for f in arg.split( ":" ) ]
       self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
     except:
-      gLogger.error( "Can't parse %s time! Is it a HH:MM?" % arg )
+      gLogger.error( "Can't parse time! Is it a HH:MM?", arg )
       return S_ERROR( "Can't parse time argument" )
     return S_OK()
+
+  def setRFC( self, arg ):
+      self.rfc = True
+      return S_OK()
 
   def setProxyRemainingSecs( self, arg ):
     self.proxyLifeTime = int( arg )
@@ -61,7 +66,7 @@ class CLIParams:
     try:
       self.proxyStrength = int( arg )
     except:
-      gLogger.error( "Can't parse %s bits! Is it a number?" % arg )
+      gLogger.error( "Can't parse bits! Is it a number?", '%s' % arg )
       return S_ERROR( "Can't parse strength argument" )
     return S_OK()
 
@@ -121,6 +126,7 @@ class CLIParams:
     Script.registerSwitch( "p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd )
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
     Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck )
+    Script.registerSwitch( "r", "rfc", "Create an RFC proxy", self.setRFC )
 
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -187,18 +193,25 @@ def generateProxy( params ):
   retVal = chain.loadKeyFromFile( keyLoc, password = params.userPasswd )
   if not retVal[ 'OK' ]:
     gLogger.warn( retVal[ 'Message' ] )
+    if 'bad decrypt' in retVal[ 'Message' ]:
+      return S_ERROR( "Bad passphrase" )
     return S_ERROR( "Can't load %s" % keyLoc )
 
   if params.checkWithCS:
     retVal = chain.generateProxyToFile( proxyLoc,
                                         params.proxyLifeTime,
                                         strength = params.proxyStrength,
-                                        limited = params.limitedProxy )
+                                        limited = params.limitedProxy,
+                                        rfc = params.rfc )
 
     gLogger.info( "Contacting CS..." )
     retVal = Script.enableCS()
     if not retVal[ 'OK' ]:
       gLogger.warn( retVal[ 'Message' ] )
+      if 'Unauthorized query' in retVal[ 'Message' ]:
+        # add hint for users
+        return S_ERROR( "Can't contact DIRAC CS: %s (User possibly not registered with dirac server) "
+                        % retVal[ 'Message' ] )
       return S_ERROR( "Can't contact DIRAC CS: %s" % retVal[ 'Message' ] )
     userDN = chain.getCertInChain( -1 )['Value'].getSubjectDN()['Value']
     if not params.diracGroup:
@@ -221,7 +234,7 @@ def generateProxy( params ):
       return S_ERROR( "User %s has no groups defined" % username )
     groups = retVal[ 'Value' ]
     if params.diracGroup not in groups:
-      return S_ERROR( "Requested group %s is not valid for user %s" % ( params.diracGroup, username ) )
+      return S_ERROR( "Requested group %s is not valid for DN %s" % ( params.diracGroup, userDN ) )
     gLogger.info( "Creating proxy for %s@%s (%s)" % ( username, params.diracGroup, userDN ) )
 
   if params.summary:
@@ -243,7 +256,8 @@ def generateProxy( params ):
                                       params.proxyLifeTime,
                                       params.diracGroup,
                                       strength = params.proxyStrength,
-                                      limited = params.limitedProxy )
+                                      limited = params.limitedProxy,
+                                      rfc = params.rfc )
 
   if not retVal[ 'OK' ]:
     gLogger.warn( retVal[ 'Message' ] )

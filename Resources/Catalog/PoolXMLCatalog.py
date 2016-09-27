@@ -1,18 +1,14 @@
-########################################################################
-# $Id$
-########################################################################
 """ POOL XML Catalog Class
     This class handles simple XML-based File Catalog following the
     POOL project schema. It presents a DIRAC generic File Catalog interface
     although not complete and with several extensions
 """
-
 __RCSID__ = "$Id$"
 
-import re, os, xml.dom.minidom, types
+import os, xml.dom.minidom, types
 from DIRAC import S_OK, S_ERROR
 
-class PoolFile:
+class PoolFile( object ):
   """
       A Pool XML File Catalog entry
 
@@ -33,13 +29,10 @@ class PoolFile:
         for pfn in pfns:
           ftype = pfn.getAttribute( 'filetype' )
           name = pfn.getAttribute( 'name' )
-
           # Get the SE name if any
-          se = "Uknown"
-          for metadata in meta:
-            mname = metadata.getAttribute( 'att_name' )
-            if mname == name:
-              se = metadata.getAttribute( 'att_value' )
+          se = pfn.getAttribute( 'se' )
+          se = se if se else "Unknown"
+
 
           self.pfns.append( ( name, ftype, se ) )
       logics = dom.getElementsByTagName( 'logical' )
@@ -92,7 +85,8 @@ class PoolFile:
     """ Adds one PFN
     """
     sename = "Unknown"
-    if se: sename = se
+    if se: 
+      sename = se
 
     if pfntype:
       self.pfns.append( ( pfn, pfntype, sename ) )
@@ -103,35 +97,46 @@ class PoolFile:
     """ Output the contents as an XML string
     """
 
-    res = '\n  <File ID="' + self.guid + '">\n'
-    if len( self.pfns ) > 0:
-      res = res + '     <physical>\n'
+    doc = xml.dom.minidom.Document()
+
+    fileElt = doc.createElement( "File" )
+    fileElt.setAttribute( "ID", self.guid )
+    if self.pfns:
+      physicalElt = doc.createElement( "physical" )
+      fileElt.appendChild( physicalElt )
       for p in self.pfns:
-        #To properly escape <>& in POOL XML slice.
+        pfnElt = doc.createElement( "pfn" )
+        physicalElt.appendChild( pfnElt )
+
+        # To properly escape <>& in POOL XML slice.
         fixedp = p[0].replace( "&", "&amp;" )
         fixedp = fixedp.replace( "&&amp;amp;", "&amp;" )
         fixedp = fixedp.replace( "<", "&lt" )
         fixedp = fixedp.replace( ">", "&gt" )
-        res = res + '       <pfn filetype="' + p[1] + '" name="' + fixedp + '"/>\n'
+
+        pfnElt.setAttribute( "filetype", p[1] )
+        pfnElt.setAttribute( "name", fixedp )
+        pfnElt.setAttribute( "se", p[2] )
+
       if metadata:
         for p in self.pfns:
-          res = res + '       <metadata att_name="' + p[0] + '" att_value="' + p[2] + '"/>\n'
-      res = res + '     </physical>\n'
-    else:
-      res = res + '     </physical>\n'
+          metadataElt = doc.createElement( "metadata" )
+          physicalElt.appendChild( metadataElt )
 
-    if len( self.lfns ) > 0:
-      res = res + '     <logical>\n'
+          metadataElt.setAttribute( 'att_name', p[0] )
+          metadataElt.setAttribute( 'att_value', p[2] )
+
+    if self.lfns:
+      logicalElt = doc.createElement( "logical" )
+      fileElt.appendChild( logicalElt )
       for l in self.lfns:
-        res = res + '       <lfn name="' + l + '"/>\n'
-      res = res + '     </logical>\n'
-    else:
-      res = res + '     </logical>\n'
+        lfnElt = doc.createElement( 'lfn' )
+        logicalElt.appendChild( lfnElt )
 
-    res = res + '   </File>\n'
-    return res
+        lfnElt.setAttribute( 'name', l )
+    return fileElt.toprettyxml( indent = "   " )
 
-class PoolXMLCatalog:
+class PoolXMLCatalog( object ):
   """ A Pool XML File Catalog
   """
 
@@ -151,7 +156,7 @@ class PoolXMLCatalog:
       if type( xmlfile ) == list:
         for xmlf in xmlfile:
           try:
-            sfile = file( xmlf, 'r' )
+            _sfile = file( xmlf, 'r' )
             self.dom = xml.dom.minidom.parse( xmlf )
           except:
             self.dom = xml.dom.minidom.parseString( xmlf )
@@ -159,7 +164,7 @@ class PoolXMLCatalog:
           self.analyseCatalog( self.dom )
       else:
         try:
-          sfile = file( xmlfile, 'r' )
+          _sfile = file( xmlfile, 'r' )
           self.dom = xml.dom.minidom.parse( xmlfile )
           # This is a file, set it as a backend by default
           self.backend_file = xmlfile
@@ -217,7 +222,7 @@ class PoolXMLCatalog:
        Dumps the contents of the catalog to the std output
     """
 
-    for guid, pfile in self.files.items():
+    for _guid, pfile in self.files.items():
       pfile.dump()
 
   def getFileByGuid( self, guid ):
@@ -252,7 +257,7 @@ class PoolXMLCatalog:
   def getTypeByPfn( self, pfn ):
     """ Get Type for a given PFN
     """
-    for guid, pfile in self.files.items():
+    for _guid, pfile in self.files.items():
       for p in pfile.pfns:
         if pfn == p[0]:
           return p[1]
@@ -319,7 +324,7 @@ class PoolXMLCatalog:
     """ Remove file for a given GUID
     """
 
-    for g, pfile in self.files.items():
+    for g, _pfile in self.files.items():
       if guid == g:
         del self.files[guid]
 
@@ -346,7 +351,7 @@ class PoolXMLCatalog:
 
     failed = {}
     successful = {}
-    for lfn, pfn, size, se, guid, pfnType in files:
+    for lfn, pfn, se, guid, pfnType in files:
       #print '>'*10
       #print pfnType
       pf = PoolFile()
@@ -377,7 +382,7 @@ class PoolXMLCatalog:
 
     failed = {}
     successful = {}
-    for lfn, pfn, se, master in replicas:
+    for lfn, pfn, se, _master in replicas:
       guid = self.getGuidByLfn( lfn )
       if guid:
         self.files[guid].addPfn( pfn, None, se )
@@ -389,23 +394,23 @@ class PoolXMLCatalog:
     return S_OK( resDict )
 
 
-  def addPfnByGuid( self, guid, pfn, pfntype = None, se = None ):
+  def addPfnByGuid( self, lfn, guid, pfn, pfntype = None, se = None ):
     """ Add PFN for a given GUID - not standard
     """
 
     if guid in self.files.keys():
       self.files[guid].addPfn( pfn, pfntype, se )
     else:
-      self.addFile( guid, pfn = pfn, pfntype = pfntype, se = se )
+      self.addFile( [ lfn, pfn, se, guid, pfntype ] )
 
-  def addLfnByGuid( self, guid, lfn ):
+  def addLfnByGuid( self, guid, lfn, pfn, se, pfntype ):
     """ Add LFN for a given GUID - not standard
     """
 
     if guid in self.files.keys():
       self.files[guid].addLfn( lfn )
     else:
-      self.addFile( guid, lfn )
+      self.addFile( [ lfn, pfn, se, guid, pfntype ] )
 
   def toXML( self, metadata = False ):
     """ Convert the contents into an XML string
@@ -416,7 +421,7 @@ class PoolXMLCatalog:
 <!DOCTYPE POOLFILECATALOG SYSTEM "InMemory">
 <POOLFILECATALOG>\n\n"""
 
-    for guid, pfile in self.files.items():
+    for _guid, pfile in self.files.items():
       res = res + pfile.toXML( metadata )
 
     res = res + "\n</POOLFILECATALOG>\n"

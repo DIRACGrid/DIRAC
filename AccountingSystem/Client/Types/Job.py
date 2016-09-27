@@ -40,3 +40,21 @@ class Job( BaseAccountingType ):
     self.checkType()
     #Fill the site
     self.setValueByKey( "Site", DIRAC.siteName() )
+
+  def checkRecord( self ):
+    result = self.getValue( "ExecTime" )
+    if not result[ 'OK' ]:
+      return result
+    execTime = result[ 'Value' ]
+    result = self.getValue( "CPUTime" )
+    if not result[ 'OK' ]:
+      return result
+    cpuTime = result[ 'Value' ]
+    if cpuTime > execTime * 100:
+      return DIRAC.S_ERROR( "OOps. CPUTime seems to be more than 100 times the ExecTime. Smells fishy!" )
+    if execTime > 33350400: # 1 year
+      return DIRAC.S_ERROR( "OOps. More than 1 year of cpu time smells fishy!" )
+    return DIRAC.S_OK()
+
+
+

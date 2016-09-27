@@ -1,37 +1,40 @@
-########################################################################
-# $Id$
-########################################################################
+""" Client for the SandboxStore.
+    Will connect to the WorkloadManagement/SandboxStore service.
+"""
+
+__RCSID__ = "$Id$"
 
 import os
 import tarfile
-try:
-  import hashlib as md5
-except:
-  import md5
+import hashlib
 import tempfile
-import types
 import re
-from DIRAC.Core.DISET.TransferClient import TransferClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Core.Utilities.File import getSize, getGlobbedTotalSize
-from DIRAC.Core.Utilities import List
+import StringIO
+
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
-class SandboxStoreClient:
+from DIRAC.Core.DISET.TransferClient import TransferClient
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.File import getGlobbedTotalSize
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+
+class SandboxStoreClient( object ):
 
   __validSandboxTypes = ( 'Input', 'Output' )
   __smdb = None
 
-  def __init__( self, useCertificates = False, rpcClient = False, transferClient = False,
-                delegatedDN = None, delegatedGroup = None, setup = None ):
+  def __init__( self, rpcClient = None, transferClient = None, **kwargs ):
+
     self.__serviceName = "WorkloadManagement/SandboxStore"
     self.__rpcClient = rpcClient
     self.__transferClient = transferClient
-    self.__useCertificates = useCertificates
-    self.__delegatedDN = delegatedDN
-    self.__delegatedGroup = delegatedGroup
-    self.__setup = setup
+    self.__kwargs = kwargs
+    self.__vo = None
+    if 'delegatedGroup' in kwargs:
+      self.__vo = getVOForGroup( kwargs['delegatedGroup'] )
     if SandboxStoreClient.__smdb == None:
       try:
         from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
@@ -48,17 +51,15 @@ class SandboxStoreClient:
     if self.__rpcClient:
       return self.__rpcClient
     else:
-      return RPCClient( self.__serviceName, useCertificates = self.__useCertificates,
-                        delegatedGroup = self.__delegatedGroup, delegatedDN = self.__delegatedDN, setup = self.__setup )
+      return RPCClient( self.__serviceName, **self.__kwargs )
 
   def __getTransferClient( self ):
     if self.__transferClient:
       return self.__transferClient
     else:
-      return TransferClient( self.__serviceName, useCertificates = self.__useCertificates,
-                             delegatedGroup = self.__delegatedGroup, delegatedDN = self.__delegatedDN, setup = self.__setup )
+      return TransferClient( self.__serviceName, **self.__kwargs )
 
-  #Upload sandbox to jobs and pilots
+  # Upload sandbox to jobs and pilots
 
   def uploadFilesAsSandboxForJob( self, fileList, jobId, sbType, sizeLimit = 0 ):
     if sbType not in self.__validSandboxTypes:
@@ -70,12 +71,17 @@ class SandboxStoreClient:
       return S_ERROR( "Invalid Sandbox type %s" % sbType )
     return self.uploadFilesAsSandbox( fileList, sizeLimit, assignTo = { "Pilot:%s" % jobId: sbType } )
 
-  #Upload generic sandbox
+  # Upload generic sandbox
 
   def uploadFilesAsSandbox( self, fileList, sizeLimit = 0, assignTo = {} ):
     """ Send files in the fileList to a Sandbox service for the given jobID.
-        This is the preferable method to upload sandboxes. fileList can contain
-        both files and directories
+        This is the preferable method to upload sandboxes.
+
+        a fileList item can be:
+          - a string, which is an lfn name
+          - a file name (real), that is supposed to be on disk, in the current directory
+          - a fileObject that should be a StringIO.StringIO type of object
+
         Parameters:
           - assignTo : Dict containing { 'Job:<jobid>' : '<sbType>', ... }
     """
@@ -86,17 +92,23 @@ class SandboxStoreClient:
       if assignTo[ key ] not in self.__validSandboxTypes:
         return S_ERROR( "Invalid sandbox type %s" % assignTo[ key ] )
 
-    if type( fileList ) not in ( types.TupleType, types.ListType ):
-      return S_ERROR( "fileList must be a tuple!" )
+    if not isinstance( fileList, ( list, tuple ) ):
+      return S_ERROR( "fileList must be a list or tuple!" )
 
-    for file in fileList:
-      if re.search( '^lfn:', file ) or re.search( '^LFN:', file ):
-        pass
-      else:
-        if os.path.exists( file ):
-          files2Upload.append( file )
+    for sFile in fileList:
+      if isinstance( sFile, basestring ):
+        if re.search( '^lfn:', sFile, flags = re.IGNORECASE ):
+          pass
         else:
-          errorFiles.append( file )
+          if os.path.exists( sFile ):
+            files2Upload.append( sFile )
+          else:
+            errorFiles.append( sFile )
+
+      elif isinstance( sFile, StringIO.StringIO ):
+        files2Upload.append( sFile )
+      else:
+        return S_ERROR("Objects of type %s can't be part of InputSandbox" % type( sFile ) )
 
     if errorFiles:
       return S_ERROR( "Failed to locate files: %s" % ", ".join( errorFiles ) )
@@ -104,12 +116,17 @@ class SandboxStoreClient:
     try:
       fd, tmpFilePath = tempfile.mkstemp( prefix = "LDSB." )
       os.close( fd )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
     tf = tarfile.open( name = tmpFilePath, mode = "w|bz2" )
-    for file in files2Upload:
-      tf.add( os.path.realpath( file ), os.path.basename( file ), recursive = True )
+    for sFile in files2Upload:
+      if isinstance( sFile, basestring ):
+        tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
+      elif isinstance( sFile, StringIO.StringIO ):
+        tarInfo = tarfile.TarInfo( name = 'jobDescription.xml' )
+        tarInfo.size = len( sFile.buf )
+        tf.addfile( tarinfo = tarInfo, fileobj = sFile )
     tf.close()
 
     if sizeLimit > 0:
@@ -119,18 +136,19 @@ class SandboxStoreClient:
         result[ 'SandboxFileName' ] = tmpFilePath
         return result
 
-    oMD5 = md5.md5()
-    fd = open( tmpFilePath, "rb" )
-    bData = fd.read( 10240 )
-    while bData:
-      oMD5.update( bData )
+    oMD5 = hashlib.md5()
+    with open( tmpFilePath, "rb" ) as fd:
       bData = fd.read( 10240 )
-    fd.close()
+      while bData:
+        oMD5.update( bData )
+        bData = fd.read( 10240 )
 
     transferClient = self.__getTransferClient()
     result = transferClient.sendFile( tmpFilePath, ( "%s.tar.bz2" % oMD5.hexdigest(), assignTo ) )
+    result[ 'SandboxFileName' ] = tmpFilePath
     try:
-      os.unlink( tmpFilePath )
+      if result['OK']:
+        os.unlink( tmpFilePath )
     except:
       pass
     return result
@@ -150,23 +168,21 @@ class SandboxStoreClient:
       return S_ERROR( "Invalid sandbox URL" )
     SEName = sbSplit[0]
     SEPFN = "|".join( sbSplit[1:] )
-    #If destination dir is not specified use current working dir
-    #If its defined ensure the dir structure is there
+    # If destination dir is not specified use current working dir
+    # If its defined ensure the dir structure is there
     if not destinationDir:
       destinationDir = os.getcwd()
     else:
-      try:
-        os.makedirs( destinationDir )
-      except:
-        pass
+      mkDir(destinationDir)
 
     try:
       tmpSBDir = tempfile.mkdtemp( prefix = "TMSB." )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
-    rm = ReplicaManager()
-    result = rm.getStorageFile( SEPFN, SEName, tmpSBDir, singleFile = True )
+    se = StorageElement( SEName, vo = self.__vo )
+    result = returnSingleResult( se.getFile( SEPFN, localPath = tmpSBDir ) )
+
     if not result[ 'OK' ]:
       return result
     sbFileName = os.path.basename( SEPFN )
@@ -181,7 +197,7 @@ class SandboxStoreClient:
         tfile.close()
         os.unlink( tarFileName )
         os.rmdir( tmpSBDir )
-      except Exception, e:
+      except Exception as e:
         os.unlink( tarFileName )
         os.rmdir( tmpSBDir )
         return S_ERROR( 'Failed to read the sandbox archive: %s' % str( e ) )
@@ -199,13 +215,13 @@ class SandboxStoreClient:
         sandboxSize += tarinfo.size
       tf.close()
       result[ 'Value' ] = sandboxSize
-    except Exception, e:
+    except Exception as e:
       result = S_ERROR( "Could not open bundle: %s" % str( e ) )
 
     try:
       os.unlink( tarFileName )
       os.rmdir( tmpSBDir )
-    except Exception, e:
+    except Exception as e:
       gLogger.warn( "Could not remove temporary dir %s: %s" % ( tmpSBDir, str( e ) ) )
 
     return result
@@ -223,7 +239,7 @@ class SandboxStoreClient:
     return self.__assignSandboxToEntity( "Job:%s" % jobId, sbLocation, sbType, ownerName, ownerGroup, eSetup )
 
   def unassignJobs( self, jobIdList ):
-    if type( jobIdList ) in ( types.IntType, types.LongType ):
+    if isinstance( jobIdList, ( int, long ) ):
       jobIdList = [ jobIdList ]
     entitiesList = []
     for jobId in jobIdList:
@@ -258,7 +274,7 @@ class SandboxStoreClient:
     return self.__assignSandboxToEntity( "Pilot:%s" % pilotId, sbLocation, sbType, ownerName, ownerGroup, eSetup )
 
   def unassignPilots( self, pilotIdIdList ):
-    if type( pilotIdIdList ) in ( types.IntType, types.LongType ):
+    if isinstance( pilotIdIdList, ( int, long ) ):
       pilotIdIdList = [ pilotIdIdList ]
     entitiesList = []
     for pilotId in pilotIdIdList:
@@ -285,7 +301,9 @@ class SandboxStoreClient:
     """
     Get the sandboxes assigned to jobs and the relation type
     """
-    return self.__getRPCClient().getSandboxesAssignedToEntity( eId )
+    rpcClient = self.__getRPCClient()
+    return rpcClient.getSandboxesAssignedToEntity( eId )
+
 
   def __assignSandboxesToEntity( self, eId, sbList, ownerName = "", ownerGroup = "", eSetup = "" ):
     """
@@ -300,7 +318,8 @@ class SandboxStoreClient:
       if not eSetup:
         eSetup = gConfig.getValue( "/DIRAC/Setup", "Production" )
       return SandboxStoreClient.__smdb.assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
-    return self.__getRPCClient().assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
+    rpcClient = self.__getRPCClient()
+    return rpcClient.assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
 
   def __assignSandboxToEntity( self, eId, sbLocation, sbType, ownerName = "", ownerGroup = "", eSetup = "" ):
     """
@@ -314,4 +333,5 @@ class SandboxStoreClient:
     """
     Unassign a list of jobs of their respective sandboxes
     """
-    return self.__getRPCClient().unassignEntities( eIdList )
+    rpcClient = self.__getRPCClient()
+    return rpcClient.unassignEntities( eIdList )

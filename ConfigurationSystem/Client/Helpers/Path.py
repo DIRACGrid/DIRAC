@@ -10,12 +10,14 @@ __RCSID__ = "$Id$"
 
 cfgInstallSection = 'LocalInstallation'
 cfgResourceSection = 'Resources'
+import os
 
 def cfgPath( *args ):
   """
   Basic method to make a path out of a tuple of string, any of them can be already a path
   """
-  return '/'.join( [str( k ) for k in args] )
+  path = os.path.join( *[str( k ) for k in args] )  
+  return os.path.normpath( path )
 
 def cfgInstallPath( *args ):
   """

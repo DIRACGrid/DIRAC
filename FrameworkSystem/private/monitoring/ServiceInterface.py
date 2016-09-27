@@ -1,12 +1,23 @@
-# $HeadURL$
+""" This module exposes singleton gServiceInterface as istance of ServiceInterface (also in this module)
+
+    Interacts with RRD (rrdtool), with ComponentMonitoringDB (mysql) and with MonitoringCatalog (sqlite3)
+
+    Main clients are the monitoring handler (what's called by gMonitor object), and the web portal.
+"""
+
 __RCSID__ = "$Id$"
-import DIRAC
+
+from DIRAC import S_OK, S_ERROR
+
 from DIRAC import gLogger, rootPath, gConfig
-from DIRAC.FrameworkSystem.private.monitoring.RRDManager import RRDManager
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
 
-class ServiceInterface:
+from DIRAC.FrameworkSystem.private.monitoring.RRDManager import RRDManager
+from DIRAC.FrameworkSystem.private.monitoring.PlotCache import PlotCache
+from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
+from DIRAC.FrameworkSystem.private.monitoring.MonitoringCatalog import MonitoringCatalog
+
+class ServiceInterface( object ):
 
   __sourceToComponentIdMapping = {}
 
@@ -27,29 +38,20 @@ class ServiceInterface:
     """
     Creates a Monitoring catalog connector
     """
-    from DIRAC.FrameworkSystem.private.monitoring.MonitoringCatalog import MonitoringCatalog
     return MonitoringCatalog( self.dataPath )
-
-  def serviceRunning( self ):
-    """
-    Returns if monitoring service is running
-    """
-    return self.srvUp
 
   def initialize( self, dataPath ):
     """
     Initialize monitoring server
     """
-    from DIRAC.FrameworkSystem.private.monitoring.PlotCache import PlotCache
-    from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 
     self.dataPath = dataPath
     self.plotCache = PlotCache( RRDManager( self.rrdPath, self.plotsPath ) )
     self.srvUp = True
     try:
       self.compmonDB = ComponentMonitoringDB()
-    except Exception, e:
-      gLogger.exception( "Cannot initialize component monitoring db" )
+    except Exception as e:
+      gLogger.exception( "Cannot initialize component monitoring db: %s" % e )
 
   def initializeDB( self ):
     """
@@ -69,16 +71,6 @@ class ServiceInterface:
                                                      'groupBy': ['activities.description'],
                                                      'label': '$SITE'} ),
                                    ['sources.componentName'] )
-
-  def __checkActivityDict( self, acDict ):
-    """
-    Check that the dictionary is a valid activity one
-    """
-    validKeys = ( "name", "category", "unit", "type", "description", "bucketLength" )
-    for key in acDict:
-      if key not in validKeys:
-        return False
-    return True
 
   def __checkSourceDict( self, sourceDict ):
     """
@@ -133,7 +125,7 @@ class ServiceInterface:
     """
     Adds marks to activities
     """
-    gLogger.info( "Commiting marks", "From %s for %s" % ( sourceId, ", ".join( activitiesDict.keys() ) ) )
+    gLogger.info( "Committing marks", "From %s for %s" % ( sourceId, ", ".join( activitiesDict.keys() ) ) )
     acCatalog = self.__createCatalog()
     rrdManager = self.__createRRDManager()
     unregisteredActivities = []
@@ -253,7 +245,7 @@ class ServiceInterface:
     """
     try:
       fd = file( "%s/%s" % ( self.plotsPath, filename ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( e )
     data = fd.read()
     fd.close()
@@ -335,7 +327,6 @@ class ServiceInterface:
     """
     Get a list of activities
     """
-    acDict = {}
     catalog = self.__createCatalog()
     total = 0
     for sourceTuple in catalog.getSources( dbCond ):

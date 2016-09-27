@@ -1,21 +1,15 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id$"
-
-import types
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
-from DIRAC.Core.Security import Properties, CS
+from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+
+__RCSID__ = "$Id$"
 
 class ProxyManagerHandler( RequestHandler ):
 
@@ -24,18 +18,16 @@ class ProxyManagerHandler( RequestHandler ):
 
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
-    requireVoms = cls.srv_getCSOption( "RequireVOMS", False )
     useMyProxy = cls.srv_getCSOption( "UseMyProxy", False )
     try:
-      cls.__proxyDB = ProxyDB( requireVoms = requireVoms,
-                              useMyProxy = useMyProxy )
+      cls.__proxyDB = ProxyDB( useMyProxy = useMyProxy )
     except RuntimeError, excp:
       return S_ERROR( "Can't connect to ProxyDB: %s" % excp )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredTokens, elapsedTime = 900 )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredRequests, elapsedTime = 900 )
-    gThreadScheduler.addPeriodicTask( 3600, cls.__proxyDB.purgeLogs )
+    gThreadScheduler.addPeriodicTask( 21600, cls.__proxyDB.purgeLogs )
     gThreadScheduler.addPeriodicTask( 3600, cls.__proxyDB.purgeExpiredProxies )
-    gLogger.info( "VOMS: %s\nMyProxy: %s\n MyProxy Server: %s" % ( requireVoms, useMyProxy, cls.__proxyDB.getMyProxyServer() ) )
+    gLogger.info( "MyProxy: %s\n MyProxy Server: %s" % ( useMyProxy, cls.__proxyDB.getMyProxyServer() ) )
     return S_OK()
 
   def __generateUserProxiesInfo( self ):
@@ -43,11 +35,11 @@ class ProxyManagerHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     result = Registry.getDNForUsername( credDict[ 'username' ] )
     if not result[ 'OK' ]:
-      return retDict
+      return result
     selDict = { 'UserDN' : result[ 'Value' ] }
     result = self.__proxyDB.getProxiesContent( selDict, {}, 0, 0 )
     if not result[ 'OK']:
-      return retDict
+      return result
     contents = result[ 'Value' ]
     userDNIndex = contents[ 'ParameterNames' ].index( "UserDN" )
     userGroupIndex = contents[ 'ParameterNames' ].index( "UserGroup" )
@@ -73,7 +65,7 @@ class ProxyManagerHandler( RequestHandler ):
     """
     return S_OK( self.__generateUserProxiesInfo() )
 
-  types_requestDelegationUpload = [ ( types.IntType, types.LongType ), ( types.StringType, types.BooleanType ) ]
+  types_requestDelegationUpload = [ [int, long], [basestring, bool] ]
   def export_requestDelegationUpload( self, requestedUploadTime, userGroup ):
     """ Request a delegation. Send a delegation request to client
     """
@@ -95,8 +87,8 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     remainingSecs = retVal[ 'Value' ]
-    #If we have a proxy longer than the one uploading it's not needed
-    #ten minute margin to compensate just in case
+    # If we have a proxy longer than the one uploading it's not needed
+    # ten minute margin to compensate just in case
     if remainingSecs >= requestedUploadTime - 600:
       gLogger.info( "Upload request not necessary by %s:%s" % ( userName, userGroup ) )
       return self.__addKnownUserProxiesInfo( S_OK() )
@@ -107,7 +99,7 @@ class ProxyManagerHandler( RequestHandler ):
       gLogger.error( "Upload request failed", "by %s:%s : %s" % ( userName, userGroup, result['Message'] ) )
     return result
 
-  types_completeDelegationUpload = [ ( types.IntType, types.LongType ), types.StringType ]
+  types_completeDelegationUpload = [ ( int, long ), basestring ]
   def export_completeDelegationUpload( self, requestId, pemChain ):
     """ Upload result of delegation
     """
@@ -147,10 +139,10 @@ class ProxyManagerHandler( RequestHandler ):
       if Properties.PRIVATE_LIMITED_DELEGATION in Registry.getPropertiesForGroup( requestedUserGroup ):
         return S_ERROR( "You can't download proxies for that group" )
       return S_OK( True )
-    #Not authorized!
+    # Not authorized!
     return S_ERROR( "You can't get proxies! Bad boy!" )
 
-  types_getProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
+  types_getProxy = [ basestring, basestring, basestring, ( int, long ) ]
   def export_getProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
     """
     Get a proxy for a userDN/userGroup
@@ -179,7 +171,7 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     chain, secsLeft = retVal[ 'Value' ]
-    #If possible we return a proxy 1.5 longer than requested
+    # If possible we return a proxy 1.5 longer than requested
     requiredLifetime = min( secsLeft, requiredLifetime * self.__maxExtraLifeFactor )
     retVal = chain.generateChainFromRequestString( requestPem,
                                                    lifetime = requiredLifetime,
@@ -188,7 +180,7 @@ class ProxyManagerHandler( RequestHandler ):
       return retVal
     return S_OK( retVal[ 'Value' ] )
 
-  types_getVOMSProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
+  types_getVOMSProxy = [ basestring, basestring, basestring, ( int, long ) ]
   def export_getVOMSProxy( self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute = False ):
     """
     Get a proxy for a userDN/userGroup
@@ -218,17 +210,17 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     chain, secsLeft = retVal[ 'Value' ]
-    #If possible we return a proxy 1.5 longer than requested
-    requiredLifetime = min( secsLeft, requiredLifetime * self.__maxExtraLifeFactor )
+    # If possible we return a proxy 1.5 longer than requested
+    requiredLifetime = int( min( secsLeft, requiredLifetime * self.__maxExtraLifeFactor ) )
     retVal = chain.generateChainFromRequestString( requestPem,
                                                    lifetime = requiredLifetime,
                                                    requireLimited = forceLimited )
     if not retVal[ 'OK' ]:
       return retVal
-    credDict = self.getRemoteCredentials()
+    _credDict = self.getRemoteCredentials()
     return S_OK( retVal[ 'Value' ] )
 
-  types_setPersistency = [ types.StringType, types.StringType, types.BooleanType ]
+  types_setPersistency = [ basestring, basestring, bool ]
   def export_setPersistency( self, userDN, userGroup, persistentFlag ):
     """
     Set the persistency for a given dn/group
@@ -244,26 +236,26 @@ class ProxyManagerHandler( RequestHandler ):
                                                   userGroup )
     return S_OK()
 
-  types_deleteProxyBundle = [ ( types.ListType, types.TupleType ) ]
+  types_deleteProxyBundle = [ ( list, tuple ) ]
   def export_deleteProxyBundle( self, idList ):
     """
     delete a list of id's
     """
     errorInDelete = []
     deleted = 0
-    for id in idList:
-      if len( id ) != 2:
-        errorInDelete.append( "%s doesn't have two fields" % str( id ) )
-      retVal = self.export_deleteProxy( id[0], id[1] )
+    for _id in idList:
+      if len( _id ) != 2:
+        errorInDelete.append( "%s doesn't have two fields" % str( _id ) )
+      retVal = self.export_deleteProxy( _id[0], _id[1] )
       if not retVal[ 'OK' ]:
-        errorInDelete.append( "%s : %s" % ( str( id ), retVal[ 'Message' ] ) )
+        errorInDelete.append( "%s : %s" % ( str( _id ), retVal[ 'Message' ] ) )
       else:
         deleted += 1
     if errorInDelete:
       return S_ERROR( "Could not delete some proxies: %s" % ",".join( errorInDelete ) )
     return S_OK( deleted )
 
-  types_deleteProxy = [ ( types.ListType, types.TupleType ) ]
+  types_deleteProxy = [ ( list, tuple ) ]
   def export_deleteProxy( self, userDN, userGroup ):
     """
     Delete a proxy from the DB
@@ -279,8 +271,8 @@ class ProxyManagerHandler( RequestHandler ):
                                         userDN, userGroup )
     return S_OK()
 
-  types_getContents = [ types.DictType, ( types.ListType, types.TupleType ),
-                       ( types.IntType, types.LongType ), ( types.IntType, types.LongType ) ]
+  types_getContents = [ dict, ( list, tuple ),
+                       ( int, long ), ( int, long ) ]
   def export_getContents( self, selDict, sortDict, start, limit ):
     """
     Retrieve the contents of the DB
@@ -290,8 +282,8 @@ class ProxyManagerHandler( RequestHandler ):
       selDict[ 'UserName' ] = credDict[ 'username' ]
     return self.__proxyDB.getProxiesContent( selDict, sortDict, start, limit )
 
-  types_getLogContents = [ types.DictType, ( types.ListType, types.TupleType ),
-                       ( types.IntType, types.LongType ), ( types.IntType, types.LongType ) ]
+  types_getLogContents = [ dict, ( list, tuple ),
+                       ( int, long ), ( int, long ) ]
   def export_getLogContents( self, selDict, sortDict, start, limit ):
     """
     Retrieve the contents of the DB
@@ -299,7 +291,7 @@ class ProxyManagerHandler( RequestHandler ):
     return self.__proxyDB.getLogsContent( selDict, sortDict, start, limit )
 
 
-  types_generateToken = [ types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
+  types_generateToken = [ basestring, basestring, ( int, long ) ]
   def export_generateToken( self, requesterDN, requesterGroup, tokenUses ):
     """
     Generate tokens for proxy retrieval
@@ -308,9 +300,9 @@ class ProxyManagerHandler( RequestHandler ):
     self.__proxyDB.logAction( "generate tokens", credDict[ 'DN' ], credDict[ 'group' ], requesterDN, requesterGroup )
     return self.__proxyDB.generateToken( requesterDN, requesterGroup, numUses = tokenUses )
 
-  types_getProxyWithToken = [ types.StringType, types.StringType,
-                              types.StringType, ( types.IntType, types.LongType ),
-                              types.StringType ]
+  types_getProxyWithToken = [ basestring, basestring,
+                              basestring, ( int, long ),
+                              basestring ]
   def export_getProxyWithToken( self, userDN, userGroup, requestPem, requiredLifetime, token ):
     """
     Get a proxy for a userDN/userGroup
@@ -337,9 +329,9 @@ class ProxyManagerHandler( RequestHandler ):
     self.__proxyDB.logAction( "download proxy with token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return self.__getProxy( userDN, userGroup, requestPem, requiredLifetime, True )
 
-  types_getVOMSProxyWithToken = [ types.StringType, types.StringType,
-                                  types.StringType, ( types.IntType, types.LongType ),
-                                  types.StringType ]
+  types_getVOMSProxyWithToken = [ basestring, basestring,
+                                  basestring, ( int, long ),
+                                  basestring ]
   def export_getVOMSProxyWithToken( self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute = False ):
     """
     Get a proxy for a userDN/userGroup

@@ -1,17 +1,57 @@
-import threading, thread
+""" This helper looks in the /Operations section of the CS, considering its specific nature:
+    the /Operations section is designed in a way that each configuration can be specific to a Setup, while maintaining a default.
+
+    So, for example, given the following /Operations section::
+
+      Operations/
+          Default/
+              someSection/
+                  someOption = someValue
+                  aSecondOption = aSecondValue
+          Production/
+              someSection/
+                  someOption = someValueInProduction
+                  aSecondOption = aSecondValueInProduction
+          Certification/
+              someSection/
+                  someOption = someValueInCertification
+
+    The following calls would give different results based on the setup::
+
+      Operations().getValue('someSection/someOption')
+        - someValueInProduction if we are in 'Production' setup
+        - someValueInCertification if we are in 'Certification' setup
+
+      Operations().getValue('someSection/aSecondOption')
+        - aSecondValueInProduction if we are in 'Production' setup
+        - aSecondValue if we are in 'Certification' setup     <- looking in Default since there's no Certification/someSection/aSecondOption
+
+"""
+
+import thread
 import types
-from DIRAC import S_OK, S_ERROR
+import os
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities import CFG, LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
 class Operations( object ):
+  """ Operations class
+
+      The /Operations CFG section is maintained in a cache by an Operations object
+  """
 
   __cache = {}
   __cacheVersion = 0
   __cacheLock = LockRing.LockRing().getLock()
 
   def __init__( self, vo = False, group = False, setup = False ):
+    """ c'tor
+
+        Setting some defaults
+    """
     self.__uVO = vo
     self.__uGroup = group
     self.__uSetup = setup
@@ -26,10 +66,14 @@ class Operations( object ):
       self.__vo = globalVO
     elif self.__uVO:
       self.__vo = self.__uVO
-    else:
+    elif self.__uGroup:
       self.__vo = Registry.getVOForGroup( self.__uGroup )
       if not self.__vo:
         self.__vo = False
+    else:
+      result = getVOfromProxyGroup()
+      if result['OK']:
+        self.__vo = result['Value']    
     #Set the setup
     self.__setup = False
     if self.__uSetup:
@@ -84,13 +128,13 @@ class Operations( object ):
     self.__discoverSettings()
 
   def __getSearchPaths( self ):
-    paths = [ "/Operations/Default", "/Operations/%s" % self.__setup ]
+    paths = [ "/Operations/Defaults", "/Operations/%s" % self.__setup ]
     if not self.__vo:
       globalVO = CSGlobals.getVO()
       if not globalVO:
         return paths
       self.__vo = CSGlobals.getVO()
-    paths.append( "/Operations/%s/Default" % self.__vo )
+    paths.append( "/Operations/%s/Defaults" % self.__vo )
     paths.append( "/Operations/%s/%s" % ( self.__vo, self.__setup ) )
     return paths
 
@@ -103,7 +147,7 @@ class Operations( object ):
     if not section:
       return S_ERROR( "%s in Operations does not exist" % sectionPath )
     sectionCFG = section[ 'value' ]
-    if type( sectionCFG ) in ( types.StringType, types.UnicodeType ):
+    if isinstance( sectionCFG, basestring ):
       return S_ERROR( "%s in Operations is not a section" % sectionPath )
     return S_OK( sectionCFG )
 
@@ -131,27 +175,22 @@ class Operations( object ):
       data[ opName ] = sectionCFG[ opName ]
     return S_OK( data )
 
-  def generatePath( self, option, vo = False, setup = False ):
+  def getPath( self, option, vo = False, setup = False ):
     """
-    Generate the CS path for an option
-    if vo is not defined, the helper's vo will be used for multi VO installations
-    if setup evaluates False (except None) -> The helpers setup will  be used
-    if setup is defined -> whatever is defined will be used as setup
-    if setup is None -> Defaults will be used
+    Generate the CS path for an option:
+    
+      - if vo is not defined, the helper's vo will be used for multi VO installations
+      - if setup evaluates False (except None) -> The helpers setup will  be used
+      - if setup is defined -> whatever is defined will be used as setup
+      - if setup is None -> Defaults will be used
+    
+    :param option: path with respect to the Operations standard path  
+    :type option: string
     """
-    path = "/Operations"
-    if not CSGlobals.getVO():
-      if not vo:
-        vo = self.__vo
-      if vo:
-        path += "/%s" % vo
-    if not setup and setup != None:
-      if not setup:
-        setup = self.__setup
-    if setup:
-      path += "/%s" % setup
-    else:
-      path += "/Default" 
-    return "%s/%s" % ( path, option )
-      
-
+    
+    for path in self.__getSearchPaths():
+      optionPath = os.path.join( path, option )
+      value = gConfig.getValue( optionPath , 'NoValue' )
+      if value != "NoValue":
+        return optionPath
+    return ''  

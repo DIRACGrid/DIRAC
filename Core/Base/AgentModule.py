@@ -1,34 +1,29 @@
 ########################################################################
-# $HeadURL$
 # File :    AgentModule.py
 # Author :  Adria Casajus
 ########################################################################
 """
   Base class for all agent modules
 """
-__RCSID__ = "$Id$"
 
 import os
 import threading
-import types
 import time
+import signal
+
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor, rootPath
-from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities import Time, MemStat
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
-from DIRAC.Core.Utilities import Time, MemStat
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
+from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 
-def _checkDir( path ):
-  try:
-    os.makedirs( path )
-  except Exception:
-    pass
-  if not os.path.isdir( path ):
-    raise Exception( 'Can not create %s' % path )
+__RCSID__ = "$Id$"
 
-class AgentModule:
+class AgentModule( object ):
   """ Base class for all agent modules
 
       This class is used by the AgentReactor Class to steer the execution of
@@ -82,6 +77,7 @@ class AgentModule:
       - Enabled
       - PollingTime            default = 120
       - MaxCycles              default = 500
+      - WatchdogTime           default = 0 (disabled)
       - ControlDirectory       control/SystemName/AgentName
       - WorkDirectory          work/SystemName/AgentName
       - shifterProxy           ''
@@ -131,6 +127,7 @@ class AgentModule:
     self.__configDefaults[ 'Enabled'] = self.am_getOption( "Status", "Active" ).lower() in ( 'active' )
     self.__configDefaults[ 'PollingTime'] = self.am_getOption( "PollingTime", 120 )
     self.__configDefaults[ 'MaxCycles'] = self.am_getOption( "MaxCycles", 500 )
+    self.__configDefaults[ 'WatchdogTime' ] = self.am_getOption( "WatchdogTime", 0 )
     self.__configDefaults[ 'ControlDirectory' ] = os.path.join( self.__basePath,
                                                                 'control',
                                                                 *agentName.split( "/" ) )
@@ -139,10 +136,10 @@ class AgentModule:
                                                              *agentName.split( "/" ) )
     self.__configDefaults[ 'shifterProxy' ] = ''
     self.__configDefaults[ 'shifterProxyLocation' ] = os.path.join( self.__configDefaults[ 'WorkDirectory' ],
-                                                                        '.shifterCred' )
+                                                                    '.shifterCred' )
 
 
-    if type( properties ) == types.DictType:
+    if isinstance( properties, dict):
       for key in properties:
         self.__moduleProperties[ key ] = properties[ key ]
       self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
@@ -161,16 +158,16 @@ class AgentModule:
                                        globals(),
                                        locals(),
                                        versionVar )
-    except Exception:
-      self.log.exception( "Cannot load agent module" )
+    except Exception as excp:
+      self.log.exception( "Cannot load agent module", lException = excp )
     for prop in ( ( versionVar, "version" ), ( docVar, "description" ) ):
       try:
         self.__codeProperties[ prop[1] ] = getattr( self.__agentModule, prop[0] )
       except Exception:
-        self.log.error( "Missing %s" % prop[0] )
+        self.log.error( "Missing property", prop[0] )
         self.__codeProperties[ prop[1] ] = 'unset'
     self.__codeProperties[ 'DIRACVersion' ] = DIRAC.version
-    self.__codeProperties[ 'platform' ] = DIRAC.platform
+    self.__codeProperties[ 'platform' ] = DIRAC.getPlatform()
 
   def am_initialize( self, *initArgs ):
     agentName = self.am_getModuleParam( 'fullName' )
@@ -179,8 +176,11 @@ class AgentModule:
       return S_ERROR( "initialize must return S_OK/S_ERROR" )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )
-    _checkDir( self.am_getControlDirectory() )
-    _checkDir( self.am_getWorkDirectory() )
+    mkDir( self.am_getControlDirectory() )
+    workDirectory = self.am_getWorkDirectory()
+    mkDir( workDirectory )
+    # Set the work directory in an environment variable available to subprocesses if needed
+    os.environ['AGENT_WORKDIRECTORY'] = workDirectory
 
     self.__moduleProperties[ 'shifterProxy' ] = self.am_getOption( 'shifterProxy' )
     if self.am_monitoringEnabled():
@@ -196,7 +196,7 @@ class AgentModule:
     self.log.notice( " Base Module version: %s " % __RCSID__ )
     self.log.notice( " Agent version: %s" % self.__codeProperties[ 'version' ] )
     self.log.notice( " DIRAC version: %s" % DIRAC.version )
-    self.log.notice( " DIRAC platform: %s" % DIRAC.platform )
+    self.log.notice( " DIRAC platform: %s" % DIRAC.getPlatform() )
     pollingTime = int( self.am_getOption( 'PollingTime' ) )
     if pollingTime > 3600:
       self.log.notice( " Polling time: %s hours" % ( pollingTime / 3600. ) )
@@ -208,6 +208,10 @@ class AgentModule:
       self.log.notice( " Cycles: %s" % self.am_getMaxCycles() )
     else:
       self.log.notice( " Cycles: unlimited" )
+    if self.am_getWatchdogTime() > 0:
+      self.log.notice( " Watchdog interval: %s" % self.am_getWatchdogTime() )
+    else:
+      self.log.notice( " Watchdog interval: disabled " )
     self.log.notice( "="*40 )
     self.__initialized = True
     return S_OK()
@@ -223,9 +227,8 @@ class AgentModule:
 
   def am_createStopAgentFile( self ):
     try:
-      fd = open( self.am_getStopAgentFile(), 'w' )
-      fd.write( 'Dirac site agent Stopped at %s' % Time.toString() )
-      fd.close()
+      with open( self.am_getStopAgentFile(), 'w' ) as fd:
+        fd.write( 'Dirac site agent Stopped at %s' % Time.toString() )
     except Exception:
       pass
 
@@ -245,7 +248,7 @@ class AgentModule:
     return os.path.join( self.__basePath, str( self.am_getOption( 'shifterProxyLocation' ) ) )
 
   def am_getOption( self, optionName, defaultValue = None ):
-    if defaultValue == None:
+    if defaultValue is None:
       if optionName in self.__configDefaults:
         defaultValue = self.__configDefaults[ optionName ]
     if optionName and optionName[0] == "/":
@@ -270,6 +273,9 @@ class AgentModule:
 
   def am_getMaxCycles( self ):
     return self.am_getOption( "MaxCycles" )
+
+  def am_getWatchdogTime( self ):
+    return int( self.am_getOption( "WatchdogTime" ) )
 
   def am_getCyclesDone( self ):
     return self.am_getModuleParam( 'cyclesDone' )
@@ -299,7 +305,7 @@ class AgentModule:
     self.monitor.initialize()
     self.monitor.registerActivity( 'CPU', "CPU Usage", 'Framework', "CPU,%", self.monitor.OP_MEAN, 600 )
     self.monitor.registerActivity( 'MEM', "Memory Usage", 'Framework', 'Memory,MB', self.monitor.OP_MEAN, 600 )
-    #Component monitor
+    # Component monitor
     for field in ( 'version', 'DIRACVersion', 'description', 'platform' ):
       self.monitor.setComponentExtraParam( field, self.__codeProperties[ field ] )
     self.monitor.setComponentExtraParam( 'startTime', Time.dateTime() )
@@ -315,8 +321,8 @@ class AgentModule:
       if not isReturnStructure( result ):
         raise Exception( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleProperties[ 'fullName' ] ) )
       return result
-    except Exception, e:
-      self.log.exception( "Exception while calling %s method" % name )
+    except Exception as e:
+      self.log.exception( "Agent exception while calling method %s" % name, lException = e )
       return S_ERROR( "Exception while calling %s method: %s" % ( name, str( e ) ) )
 
 
@@ -325,12 +331,12 @@ class AgentModule:
       result = setupShifterProxyInEnv( self.__moduleProperties[ "shifterProxy" ],
                                        self.am_getShifterProxyLocation() )
       if not result[ 'OK' ]:
-        self.log.error( result['Message'] )
+        self.log.error( "Failed to set shifter proxy", result['Message'] )
         return result
     return S_OK()
 
   def am_go( self ):
-    #Set the shifter proxy if required
+    # Set the shifter proxy if required
     result = self._setShifterProxy()
     if not result[ 'OK' ]:
       return result
@@ -341,14 +347,19 @@ class AgentModule:
       cD = self.__moduleProperties[ 'cyclesDone' ]
       self.log.notice( "Remaining %s of %s cycles" % ( mD - cD, mD ) )
     self.log.notice( "-"*40 )
+    # use SIGALARM as a watchdog interrupt if enabled
+    watchdogInt = self.am_getWatchdogTime()
+    if watchdogInt > 0:
+      signal.signal( signal.SIGALRM, signal.SIG_DFL )
+      signal.alarm( watchdogInt )
     elapsedTime = time.time()
     cpuStats = self._startReportToMonitoring()
     cycleResult = self.__executeModuleCycle()
     if cpuStats:
       self._endReportToMonitoring( *cpuStats )
-    #Increment counters
+    # Increment counters
     self.__moduleProperties[ 'cyclesDone' ] += 1
-    #Show status
+    # Show status
     elapsedTime = time.time() - elapsedTime
     self.__moduleProperties[ 'totalElapsedTime' ] += elapsedTime
     self.log.notice( "-"*40 )
@@ -363,10 +374,13 @@ class AgentModule:
     if cycleResult[ 'OK' ]:
       self.log.notice( " Cycle was successful" )
     else:
-      self.log.error( " Cycle had an error:", cycleResult[ 'Message' ] )
+      self.log.warn( " Cycle had an error:", cycleResult[ 'Message' ] )
     self.log.notice( "-"*40 )
-    #Update number of cycles
+    # Update number of cycles
     self.monitor.setComponentExtraParam( 'cycles', self.__moduleProperties[ 'cyclesDone' ] )
+    # cycle finished successfully, cancel watchdog
+    if watchdogInt > 0:
+      signal.alarm(0)
     return cycleResult
 
   def _startReportToMonitoring( self ):
@@ -391,17 +405,19 @@ class AgentModule:
     wallTime = time.time() - initialWallTime
     stats = os.times()
     cpuTime = stats[0] + stats[2] - initialCPUTime
-    percentage = cpuTime / wallTime * 100.
+    percentage = 0
+    if wallTime:
+      percentage = cpuTime / wallTime * 100.
     if percentage > 0:
       gMonitor.addMark( 'CPU', percentage )
 
 
   def __executeModuleCycle( self ):
-    #Execute the beginExecution function
+    # Execute the beginExecution function
     result = self.am_secureCall( self.beginExecution, name = "beginExecution" )
     if not result[ 'OK' ]:
       return result
-    #Launch executor functions
+    # Launch executor functions
     executors = self.__moduleProperties[ 'executors' ]
     if len( executors ) == 1:
       result = self.am_secureCall( executors[0][0], executors[0][1] )
@@ -414,7 +430,7 @@ class AgentModule:
         thread.start()
       for thread in exeThreads:
         thread.join()
-    #Execute the endExecution function
+    # Execute the endExecution function
     return  self.am_secureCall( self.endExecution, name = "endExecution" )
 
   def initialize( self, *args, **kwargs ):

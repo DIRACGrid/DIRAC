@@ -1,20 +1,19 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
-__RCSID__ = "$Id$"
 
 import sys
 import datetime
 import DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
+__RCSID__ = "$Id$"
 
 class Params( ProxyGeneration.CLIParams ):
 
@@ -114,7 +113,7 @@ class ProxyInit:
     if not vomsAttr:
       return S_ERROR( "Requested adding a VOMS extension but no VOMS attribute defined for group %s" % self.__piParams.diracGroup )
 
-    result = VOMS.VOMS().setVOMSAttributes( self.__proxyGenerated, attribute = vomsAttr, vo = Registry.getVOForGroup( self.__piParams.diracGroup ) )
+    result = VOMS.VOMS().setVOMSAttributes( self.__proxyGenerated, attribute = vomsAttr, vo = Registry.getVOMSVOForGroup( self.__piParams.diracGroup ) )
     if not result[ 'OK' ]:
       return S_ERROR( "Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" % result[ 'Message' ] )
 
@@ -151,6 +150,7 @@ class ProxyInit:
     upParams = ProxyUpload.CLIParams()
     upParams.onTheFly = True
     upParams.proxyLifeTime = issuerCert.getRemainingSecs()[ 'Value' ] - 300
+    upParams.rfcIfPossible = self.__piParams.rfc
     upParams.diracGroup = userGroup
     for k in ( 'certLoc', 'keyLoc', 'userPasswd' ):
       setattr( upParams, k , getattr( self.__piParams, k ) )
@@ -164,8 +164,12 @@ class ProxyInit:
     return S_OK()
 
   def printInfo( self ):
-    gLogger.notice( "Proxy generated:" )
-    gLogger.notice( ProxyInfo.getProxyInfoAsString( self.__proxyGenerated )[ 'Value' ] )
+    result = ProxyInfo.getProxyInfoAsString( self.__proxyGenerated )
+    if not result['OK']:
+      gLogger.error( 'Failed to get the new proxy info: %s' % result['Message'] )
+    else:
+      gLogger.notice( "Proxy generated:" )
+      gLogger.notice( result[ 'Value' ] )
     if self.__uploadedInfo:
       gLogger.notice( "\nProxies uploaded:" )
       maxDNLen = 0
@@ -189,7 +193,13 @@ class ProxyInit:
     pI.certLifeTimeCheck()
     result = pI.addVOMSExtIfNeeded()
     if not result[ 'OK' ]:
-      gLogger.info( result[ 'Message' ] )
+      if "returning a valid AC for the user" in result['Message']:
+        gLogger.error( result[ 'Message' ] )
+        gLogger.error("\n Are you sure you are properly registered in the VO?")
+      elif "Missing voms-proxy" in result['Message']:
+        gLogger.notice( "Failed to add VOMS extension: no standard grid interface available" )
+      else:
+        gLogger.error( result['Message'] )
       if self.__piParams.strict:
         return result
 

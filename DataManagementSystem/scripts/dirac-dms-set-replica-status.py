@@ -22,8 +22,7 @@ Script.parseCommandLine( ignoreErrors = False )
 
 import DIRAC
 from DIRAC                                                          import gConfig, gLogger
-from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
-from DIRAC.Core.Utilities.List                                      import sortList
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 import os
 
 args = Script.getPositionalArgs()
@@ -38,14 +37,14 @@ if os.path.exists( inputFileName ):
   inputFile = open( inputFileName, 'r' )
   string = inputFile.read()
   inputFile.close()
-  lfns = sortList( string.splitlines() )
+  lfns = sorted( string.splitlines() )
 else:
   lfns = [inputFileName]
 
-rm = ReplicaManager()
+fc = FileCatalog()
 
 replicaDict = {}
-res = rm.getCatalogReplicas( lfns, allStatus = True )
+res = fc.getReplicas( lfns, allStatus = True )
 if not res['OK']:
   gLogger.error( "Failed to get catalog replicas.", res['Message'] )
   DIRAC.exit( -1 )
@@ -61,7 +60,7 @@ if not lfnDict:
   gLogger.error( "No files found at the supplied storage element." )
   DIRAC.exit( 2 )
 
-res = rm.setCatalogReplicaStatus( lfnDict )
+res = fc.setReplicaStatus( lfnDict )
 if not res['OK']:
   gLogger.error( "Failed to set catalog replica status.", res['Message'] )
   DIRAC.exit( -1 )

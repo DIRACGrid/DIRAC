@@ -1,7 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The TimeLeft utility allows to calculate the amount of CPU time
     left for a given batch system slot.  This is essential for the 'Filling
     Mode' where several VO jobs may be executed in the same allocated slot.
@@ -13,16 +9,19 @@
     With this information the utility can calculate in normalized units the
     CPU time remaining for a given slot.
 """
-__RCSID__ = "$Id$"
+
+import os
+
+import DIRAC
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-import DIRAC
+__RCSID__ = "$Id$"
 
-import os
-
-class TimeLeft:
+class TimeLeft( object ):
+  """ This generally does not run alone
+  """
 
   #############################################################################
   def __init__( self ):
@@ -33,7 +32,12 @@ class TimeLeft:
     self.scaleFactor = gConfig.getValue( '/LocalSite/CPUScalingFactor', 0.0 )
     if not self.scaleFactor:
       self.log.warn( '/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName() )
-    self.cpuMargin = gConfig.getValue( '/LocalSite/CPUMargin', 10 ) #percent
+
+    self.normFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
+    if not self.normFactor:
+      self.log.warn( '/LocalSite/CPUNormalizationFactor not defined for site %s' % DIRAC.siteName() )
+
+    self.cpuMargin = gConfig.getValue( '/LocalSite/CPUMargin', 10 )  # percent
     result = self.__getBatchSystemPlugin()
     if result['OK']:
       self.batchPlugin = result['Value']
@@ -41,31 +45,36 @@ class TimeLeft:
       self.batchPlugin = None
       self.batchError = result['Message']
 
-  def getScaledCPU( self ):
-    """Returns the current CPU Time spend (according to batch system) scaled according 
+  def getScaledCPU( self, processors = 1 ):
+    """Returns the current CPU Time spend (according to batch system) scaled according
        to /LocalSite/CPUScalingFactor
     """
-    #Quit if no scale factor available
+    # Quit if no scale factor available
     if not self.scaleFactor:
-      return S_OK( 0.0 )
+      return 0
 
-    #Quit if Plugin is not available
+    # Quit if Plugin is not available
     if not self.batchPlugin:
-      return S_OK( 0.0 )
+      return 0
 
     resourceDict = self.batchPlugin.getResourceUsage()
 
-    if 'Value' in resourceDict and resourceDict['Value']['CPU']:
-      return S_OK( resourceDict['Value']['CPU'] * self.scaleFactor )
+    if 'Value' in resourceDict:
+      if resourceDict['Value']['CPU']:
+        return resourceDict['Value']['CPU'] * self.scaleFactor
+      elif resourceDict['Value']['WallClock']:
+        # When CPU value missing, guess from WallClock and number of processors
+        return resourceDict['Value']['WallClock'] * self.scaleFactor * processors
 
-    return S_OK( 0.0 )
+
+    return 0
 
   #############################################################################
-  def getTimeLeft( self, cpuConsumed ):
+  def getTimeLeft( self, cpuConsumed = 0.0, processors = 1 ):
     """Returns the CPU Time Left for supported batch systems.  The CPUConsumed
        is the current raw total CPU.
     """
-    #Quit if no scale factor available
+    # Quit if no scale factor available
     if not self.scaleFactor:
       return S_ERROR( '/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName() )
 
@@ -78,40 +87,67 @@ class TimeLeft:
       return resourceDict
 
     resources = resourceDict['Value']
-    self.log.verbose( resources )
-    if not resources['CPULimit'] or not resources['WallClockLimit']:
-      return S_ERROR( 'No CPU / WallClock limits obtained' )
+    self.log.debug( "self.batchPlugin.getResourceUsage(): %s" % str( resources ) )
+    if not resources['CPULimit'] and not resources['WallClockLimit']:
+      # This should never happen
+      return S_ERROR( 'No CPU or WallClock limit obtained' )
 
-    cpuFactor = 100 * float( resources['CPU'] ) / float( resources['CPULimit'] )
-    cpuRemaining = 100 - cpuFactor
+    # if one of CPULimit or WallClockLimit is missing, compute a reasonable value
+    if not resources['CPULimit']:
+      resources['CPULimit'] = resources['WallClockLimit'] * processors
+    elif not resources['WallClockLimit']:
+      resources['WallClockLimit'] = resources['CPULimit']
+
+    # if one of CPU or WallClock is missing, compute a reasonable value
+    if not resources['CPU']:
+      resources['CPU'] = resources['WallClock'] * processors
+    elif not resources['WallClock']:
+      resources['WallClock'] = resources['CPU']
+
+    timeLeft = 0.
+    cpu = float( resources['CPU'] )
     cpuLimit = float( resources['CPULimit'] )
-    wcFactor = 100 * float( resources['WallClock'] ) / float( resources['WallClockLimit'] )
-    wcRemaining = 100 - wcFactor
+    cpuUsedFraction = cpu / cpuLimit
+    cpuRemainingFraction = 1. - cpuUsedFraction
+    wc = float( resources['WallClock'] )
     wcLimit = float( resources['WallClockLimit'] )
-    self.log.verbose( 'Used CPU is %.02f, Used WallClock is %.02f.' % ( cpuFactor, wcFactor ) )
-    self.log.verbose( 'Remaining WallClock %.02f, Remaining CPU %.02f, margin %s' %
-                      ( wcRemaining, cpuRemaining, self.cpuMargin ) )
+    wcUsedFraction = wc / wcLimit
+    wcRemainingFraction = 1. - wcUsedFraction
+    marginFraction = self.cpuMargin / 100.
+    fractionTuple = ( 100. * cpuRemainingFraction, 100. * wcRemainingFraction, self.cpuMargin )
+    self.log.verbose( 'Used CPU is %.1f s out of %.1f, Used WallClock is %.1f s out of %.1f.' % ( cpu, cpuLimit, wc, wcLimit ) )
+    self.log.verbose( 'Remaining CPU %.02f%%, Remaining WallClock %.02f%%, margin %s%%' % fractionTuple )
 
-    timeLeft = None
-    if wcRemaining > cpuRemaining and ( wcRemaining - cpuRemaining ) > self.cpuMargin:
-      # In some cases cpuFactor might be 0
-      # timeLeft = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
-      # We need time left in the same units used by the Matching
-      timeLeft = float( cpuRemaining * cpuLimit / 100 * self.scaleFactor )
-      self.log.verbose( 'Remaining WallClock %.02f > Remaining CPU %.02f and difference > margin %s' %
-                        ( wcRemaining, cpuRemaining, self.cpuMargin ) )
+    validTimeLeft = False
+    if wcRemainingFraction > cpuRemainingFraction and ( wcRemainingFraction - cpuRemainingFraction ) > marginFraction:
+      # FIXME: I have no idea why this test is done (PhC)
+      self.log.verbose( 'Remaining CPU %.02f%% < Remaining WallClock  %.02f%% and difference > margin %s%%' % fractionTuple )
+      validTimeLeft = True
     else:
-      if cpuRemaining > self.cpuMargin and wcRemaining > self.cpuMargin:
-        self.log.verbose( 'Remaining WallClock %.02f and Remaining CPU %.02f both > margin %s' %
-                          ( wcRemaining, cpuRemaining, self.cpuMargin ) )
-        # In some cases cpuFactor might be 0
-        # timeLeft = float(cpuConsumed*self.scaleFactor*(wcRemaining-self.cpuMargin)/cpuFactor)
-        timeLeft = float( cpuRemaining * cpuLimit / 100 * self.scaleFactor )
+      if cpuRemainingFraction > marginFraction and wcRemainingFraction > marginFraction:
+        self.log.verbose( 'Remaining CPU %.02f%% and Remaining WallClock %.02f%% both > margin %s%%' % fractionTuple )
+        validTimeLeft = True
       else:
-        self.log.verbose( 'Remaining CPU %.02f < margin %s and WallClock %.02f < margin %s so no time left' %
-                          ( cpuRemaining, self.cpuMargin, wcRemaining, self.cpuMargin ) )
+        self.log.verbose( 'Remaining CPU %.02f%% or WallClock %.02f%% < margin %s%% so no time left' % fractionTuple )
+    if validTimeLeft:
+      if cpu and cpuConsumed > 3600. and self.normFactor:
+        # If there has been more than 1 hour of consumed CPU and
+        # there is a Normalization set for the current CPU
+        # use that value to renormalize the values returned by the batch system
+        # NOTE: cpuConsumed is non-zero for call by the JobAgent and 0 for call by the watchdog
+        # cpuLimit and cpu may be in the units of the batch system, not real seconds... (in this case the other case won't work)
+        # therefore renormalise it using cpuConsumed (which is in real seconds)
+        timeLeft = ( cpuLimit - cpu ) * self.normFactor * cpuConsumed / cpu
+      elif self.normFactor:
+        # FIXME: this is always used by the watchdog... Also used by the JobAgent
+        #        if consumed less than 1 hour of CPU
+        # It was using self.scaleFactor but this is inconsistent: use the same as above
+        # In case the returned cpu and cpuLimit are not in real seconds, this is however rubbish
+        timeLeft = ( cpuLimit - cpu ) * self.normFactor
+      else:
+        # Last resort recovery...
+        timeLeft = ( cpuLimit - cpu ) * self.scaleFactor
 
-    if timeLeft:
       self.log.verbose( 'Remaining CPU in normalized units is: %.02f' % timeLeft )
       return S_OK( timeLeft )
     else:
@@ -119,26 +155,29 @@ class TimeLeft:
 
   #############################################################################
   def __getBatchSystemPlugin( self ):
-    """Using the name of the batch system plugin, will return an instance
-       of the plugin class.
+    """ Using the name of the batch system plugin, will return an instance of the plugin class.
     """
-    batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME', 'SGE':'SGE_TASK_ID'} #more to be added later
+    batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME', 'SGE':'SGE_TASK_ID'}  # more to be added later
     name = None
     for batchSystem, envVar in batchSystems.items():
-      if os.environ.has_key( envVar ):
+      if envVar in os.environ:
         name = batchSystem
         break
 
-    if name == None:
+    if name is None and 'MACHINEFEATURES' in os.environ and 'JOBFEATURES' in os.environ:
+      # Only use MJF if legacy batch system information not available for now
+      name = 'MJF'
+
+    if name is None:
       self.log.warn( 'Batch system type for site %s is not currently supported' % DIRAC.siteName() )
       return S_ERROR( 'Current batch system is not supported' )
 
     self.log.debug( 'Creating plugin for %s batch system' % ( name ) )
     try:
       batchSystemName = "%sTimeLeft" % ( name )
-      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
+      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' % #pylint: disable=unused-variable
                                 batchSystemName, globals(), locals(), [batchSystemName] )
-    except Exception, x:
+    except ImportError as x:
       msg = 'Could not import DIRAC.Core.Utilities.TimeLeft.%s' % ( batchSystemName )
       self.log.warn( x )
       self.log.warn( msg )
@@ -147,7 +186,7 @@ class TimeLeft:
     try:
       batchStr = 'batchPlugin.%s()' % ( batchSystemName )
       batchInstance = eval( batchStr )
-    except Exception, x:
+    except Exception as x: #pylint: disable=broad-except
       msg = 'Could not instantiate %s()' % ( batchSystemName )
       self.log.warn( x )
       self.log.warn( msg )
@@ -162,9 +201,7 @@ def runCommand( cmd, timeout = 120 ):
   result = shellCall( timeout, cmd )
   if not result['OK']:
     return result
-  status = result['Value'][0]
-  stdout = result['Value'][1]
-  stderr = result['Value'][2]
+  status, stdout, stderr = result['Value'][0:3]
 
   if status:
     gLogger.warn( 'Status %s while executing %s' % ( status, cmd ) )
@@ -175,7 +212,7 @@ def runCommand( cmd, timeout = 120 ):
       return S_ERROR( stderr )
     return S_ERROR( 'Status %s while executing %s' % ( status, cmd ) )
   else:
-    return S_OK( stdout )
+    return S_OK( str( stdout ) )
 
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

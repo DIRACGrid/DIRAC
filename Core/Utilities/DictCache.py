@@ -1,49 +1,65 @@
-# $HeadURL$
+"""
+  DictCache.
+"""
 __RCSID__ = "$Id$"
 
-import threading
 import datetime
+# DIRAC
+from DIRAC.Core.Utilities.LockRing import LockRing
 
-class DictCache:
+class DictCache( object ):
+  """
+  .. class:: DictCache
+
+  simple dict cache
+  """
 
   def __init__( self, deleteFunction = False ):
     """
     Initialize the dict cache.
       If a delete function is specified it will be invoked when deleting a cached object
     """
-    self.__lock = threading.RLock()
+    self.__lock = None
+
     self.__cache = {}
     self.__deleteFunction = deleteFunction
 
+  @property
+  def lock( self ):
+    """ lock """
+    if not self.__lock:
+      self.__lock = LockRing().getLock( self.__class__.__name__, recursive = True )
+    return self.__lock
+
   def exists( self, cKey, validSeconds = 0 ):
     """
-    Returns True/False if the key exists for the given number of seconds
+      Returns True/False if the key exists for the given number of seconds
       Arguments:
-        - cKey : identification key of the record
-        - validSeconds : The amount of seconds the key has to be valid for
+      :param cKey: identification key of the record
+      :param validSeconds: The amount of seconds the key has to be valid for
     """
-    self.__lock.acquire()
+    self.lock.acquire()
     try:
-      #Is the key in the cache?
+      # Is the key in the cache?
       if cKey in self.__cache:
         expTime = self.__cache[ cKey ][ 'expirationTime' ]
-        #If it's valid return True!
+        # If it's valid return True!
         if expTime > datetime.datetime.now() + datetime.timedelta( seconds = validSeconds ):
           return True
         else:
-          #Delete expired
+          # Delete expired
           self.delete( cKey )
       return False
     finally:
-      self.__lock.release()
+      self.lock.release()
 
   def delete( self, cKey ):
     """
     Delete a key from the cache
-      Arguments:
-        - cKey : identification key of the record
+      
+    :param cKey: identification key of the record
     """
-    self.__lock.acquire()
+    self.lock.acquire()
     try:
       if cKey not in self.__cache:
         return
@@ -51,53 +67,53 @@ class DictCache:
         self.__deleteFunction( self.__cache[ cKey ][ 'value' ] )
       del( self.__cache[ cKey ] )
     finally:
-      self.__lock.release()
+      self.lock.release()
 
   def add( self, cKey, validSeconds, value = None ):
     """
     Add a record to the cache
-      Arguments:
-        - cKey : identification key of the record
-        - validSeconds : valid seconds of this record
-        - value : value of the record
+      
+    :param cKey: identification key of the record
+    :param validSeconds: valid seconds of this record
+    :param value: value of the record
     """
     if max( 0, validSeconds ) == 0:
       return
-    self.__lock.acquire()
+    self.lock.acquire()
     try:
       vD = { 'expirationTime' : datetime.datetime.now() + datetime.timedelta( seconds = validSeconds ),
              'value' : value }
       self.__cache[ cKey ] = vD
     finally:
-      self.__lock.release()
+      self.lock.release()
 
   def get( self, cKey, validSeconds = 0 ):
     """
     Get a record from the cache
-      Arguments:
-        - cKey : identification key of the record
-        - validSeconds : The amount of seconds the key has to be valid for
+
+    :param cKey: identification key of the record
+    :param validSeconds: The amount of seconds the key has to be valid for
     """
-    self.__lock.acquire()
+    self.lock.acquire()
     try:
-      #Is the key in the cache?
+      # Is the key in the cache?
       if cKey in self.__cache:
         expTime = self.__cache[ cKey ][ 'expirationTime' ]
-        #If it's valid return True!
+        # If it's valid return True!
         if expTime > datetime.datetime.now() + datetime.timedelta( seconds = validSeconds ):
           return self.__cache[ cKey ][ 'value' ]
         else:
-          #Delete expired
+          # Delete expired
           self.delete( cKey )
-      return False
+      return None
     finally:
-      self.__lock.release()
+      self.lock.release()
 
   def showContentsInString( self ):
     """
     Return a human readable string to represent the contents
     """
-    self.__lock.acquire()
+    self.lock.acquire()
     try:
       data = []
       for cKey in self.__cache:
@@ -107,13 +123,13 @@ class DictCache:
           data.append( "\tVal: %s" % self.__cache[ cKey ][ 'value' ] )
       return "\n".join( data )
     finally:
-      self.__lock.release()
+      self.lock.release()
 
   def getKeys( self, validSeconds = 0 ):
     """
     Get keys for all contents
     """
-    self.__lock.acquire()
+    self.lock.acquire()
     try:
       keys = []
       limitTime = datetime.datetime.now() + datetime.timedelta( seconds = validSeconds )
@@ -122,13 +138,13 @@ class DictCache:
           keys.append( cKey )
       return keys
     finally:
-      self.__lock.release()
+      self.lock.release()
 
   def purgeExpired( self, expiredInSeconds = 0 ):
     """
     Purge all entries that are expired or will be expired in <expiredInSeconds>
     """
-    self.__lock.acquire()
+    self.lock.acquire()
     try:
       keys = []
       limitTime = datetime.datetime.now() + datetime.timedelta( seconds = expiredInSeconds )
@@ -140,13 +156,15 @@ class DictCache:
           self.__deleteFunction( self.__cache[ cKey ][ 'value' ] )
         del( self.__cache[ cKey ] )
     finally:
-      self.__lock.release()
+      self.lock.release()
 
-  def purgeAll( self ):
+  def purgeAll( self, useLock = True ):
     """
     Purge all entries
+    CAUTION: useLock parameter should ALWAYS be True except when called from __del__
     """
-    self.__lock.acquire()
+    if useLock:
+      self.lock.acquire()
     try:
       keys = self.__cache.keys()
       for cKey in keys:
@@ -154,4 +172,17 @@ class DictCache:
           self.__deleteFunction( self.__cache[ cKey ][ 'value' ] )
         del( self.__cache[ cKey ] )
     finally:
-      self.__lock.release()
+      if useLock:
+        self.lock.release()
+
+  def __del__( self ):
+    """ When the DictCache is deleted, all the entries should be purged.
+        This is particularly useful when the DictCache manages files
+        CAUTION: if you carefully read the python doc, you will see all the
+        caveat of __del__. In particular, no guaranty that it is called...
+        (https://docs.python.org/2/reference/datamodel.html#object.__del__)
+    """
+    self.purgeAll( useLock = False )
+    del self.__lock
+    del self.__cache
+

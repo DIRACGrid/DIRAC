@@ -1,24 +1,18 @@
-# $HeadURL$
-
 """ Plotting Service generates graphs according to the client specifications
     and data
 """
 
 __RCSID__ = "$Id$"
 
-from types import *
 import os
-try:
-  import hashlib as md5
-except:
-  import md5
-from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
+import hashlib
+from types import DictType, ListType
+
+from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.Service.PlotCache import gPlotCache
-from DIRAC.Core.Utilities.Graphs import graph
-import tempfile
 
 def initializePlottingHandler( serviceInfo ):
 
@@ -49,7 +43,7 @@ def initializePlottingHandler( serviceInfo ):
 class PlottingHandler( RequestHandler ):
 
   def __calculatePlotHash( self, data, metadata, subplotMetadata ):
-    m = md5.md5()
+    m = hashlib.md5()
     m.update( repr( {'Data':data, 'PlotMetadata':metadata, 'SubplotMetadata':subplotMetadata} ) )
     return m.hexdigest()
 

@@ -1,7 +1,12 @@
+""" The mind is a service the distributes "task" to executors
+"""
 
 import types
-from DIRAC import S_OK, S_ERROR, gLogger
+import pprint
+
+from DIRAC import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, ExecutorDispatcherCallbacks
 
@@ -9,18 +14,20 @@ from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, Executor
 class ExecutorMindHandler( RequestHandler ):
 
   MSG_DEFINITIONS = { 'ProcessTask' : { 'taskId' : ( types.IntType, types.LongType ),
-                                        'taskStub' : types.StringType,
-                                        'eType' : types.StringType },
+                                        'taskStub' : types.StringTypes,
+                                        'eType' : types.StringTypes },
                       'TaskDone' : { 'taskId' : ( types.IntType, types.LongType ),
-                                     'taskStub' : types.StringType },
+                                     'taskStub' : types.StringTypes },
                       'TaskFreeze' : { 'taskId' : ( types.IntType, types.LongType ),
-                                       'taskStub' : types.StringType,
+                                       'taskStub' : types.StringTypes,
                                        'freezeTime' : ( types.IntType, types.LongType ) },
                       'TaskError' : { 'taskId': ( types.IntType, types.LongType ),
-                                      'errorMsg' : types.StringType,
-                                      'taskStub' : types.StringType },
+                                      'errorMsg' : types.StringTypes,
+                                      'taskStub' : types.StringTypes,
+                                      'eType' : types.StringTypes},
                       'ExecutorError' : { 'taskId': ( types.IntType, types.LongType ),
-                                          'errorMsg' : types.StringType } }
+                                          'errorMsg' : types.StringTypes,
+                                          'eType' : types.StringTypes } }
 
   class MindCallbacks( ExecutorDispatcherCallbacks ):
 
@@ -34,7 +41,7 @@ class ExecutorMindHandler( RequestHandler ):
       self.__allowedClients = []
 
     def cbSendTask( self, taskId, taskObj, eId, eType ):
-      return self.__sendTaskCB(  taskId, taskObj, eId, eType )
+      return self.__sendTaskCB( taskId, taskObj, eId, eType )
 
     def cbDispatch( self, taskId, taskObj, pathExecuted ):
       return self.__dispatchCB( taskId, taskObj, pathExecuted )
@@ -42,8 +49,8 @@ class ExecutorMindHandler( RequestHandler ):
     def cbDisconectExecutor( self, eId ):
       return self.__disconnectCB( eId )
 
-    def cbTaskError( self, taskId, errorMsg ):
-      return self.__taskErrCB( taskId, errorMsg )
+    def cbTaskError( self, taskId, taskObj, errorMsg ):
+      return self.__taskErrCB( taskId, taskObj, errorMsg )
 
     def cbTaskProcessed( self, taskId, taskObj, eType ):
       return self.__taskProcDB( taskId, taskObj, eType )
@@ -58,7 +65,7 @@ class ExecutorMindHandler( RequestHandler ):
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     gLogger.notice( "Initializing Executor dispatcher" )
-    cls.__eDispatch = ExecutorDispatcher()
+    cls.__eDispatch = ExecutorDispatcher( cls.srv_getMonitor() )
     cls.__callbacks = ExecutorMindHandler.MindCallbacks( cls.__sendTask,
                                                          cls.exec_dispatch,
                                                          cls.__execDisconnected,
@@ -67,10 +74,14 @@ class ExecutorMindHandler( RequestHandler ):
                                                          cls.exec_taskError )
     cls.__eDispatch.setCallbacks( cls.__callbacks )
     cls.__allowedClients = []
+    if cls.log.shown( "VERBOSE" ):
+      gThreadScheduler.setMinValidPeriod( 1 )
+      gThreadScheduler.addPeriodicTask( 10, lambda: cls.log.verbose( "== Internal state ==\n%s\n===========" % pprint.pformat( cls.__eDispatch._internals() ) ) )
+    return S_OK()
 
   @classmethod
   def setAllowedClients( cls, aClients ):
-    if type( aClients ) not in ( types.ListType, types.TupleType ):
+    if not isinstance( aClients, (list, tuple) ):
       aClients = ( aClients, )
     cls.__allowedClients = aClients
 
@@ -80,13 +91,13 @@ class ExecutorMindHandler( RequestHandler ):
       result = self.exec_prepareToSend( taskId, taskObj, eId )
       if not result[ 'OK' ]:
         return result
-    except Exception, excp:
-      gLogger.exception( "Exception while executing prepareToSend: %s" % str( excp ) )
+    except Exception as excp:
+      gLogger.exception( "Exception while executing prepareToSend: %s" % str( excp ), lException = excp )
       return S_ERROR( "Cannot presend task" )
     try:
       result = self.exec_serializeTask( taskObj )
-    except Exception, excp:
-      gLogger.exception( "Exception while serializing task %s" % taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception while serializing task %s" % taskId, lException = excp )
       return S_ERROR( "Cannot serialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "exec_serializeTask does not return a return structure" )
@@ -140,38 +151,45 @@ class ExecutorMindHandler( RequestHandler ):
     taskId = msgObj.taskId
     try:
       result = self.exec_deserializeTask( msgObj.taskStub )
-    except Exception, excp:
-      gLogger.exception( "Exception while deserializing task %s" % taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception while deserializing task %s" % taskId, lException = excp )
       return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "exec_deserializeTask does not return a return structure" )
     if not result[ 'OK' ]:
       return result
     taskObj = result[ 'Value' ]
-    return self.__eDispatch.taskProcessed( self.srv_getTransportID(), msgObj.taskId, taskObj )
+    result = self.__eDispatch.taskProcessed( self.srv_getTransportID(), msgObj.taskId, taskObj )
+    if not result[ 'OK' ]:
+      gLogger.error( "There was a problem processing task", "%s: %s" % ( taskId, result[ 'Message' ] ) )
+    return S_OK()
 
   auth_msg_TaskFreeze = [ 'all' ]
   def msg_TaskFreeze( self, msgObj ):
     taskId = msgObj.taskId
     try:
       result = self.exec_deserializeTask( msgObj.taskStub )
-    except Exception, excp:
-      gLogger.exception( "Exception while deserializing task %s" % taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception while deserializing task %s" % taskId, lException = excp )
       return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "exec_deserializeTask does not return a return structure" )
     if not result[ 'OK' ]:
       return result
     taskObj = result[ 'Value' ]
-    return self.__eDispatch.freezeTask( self.srv_getTransportID(), msgObj.taskId,
-                                        msgObj.freezeTime, taskObj )
+    result = self.__eDispatch.freezeTask( self.srv_getTransportID(), msgObj.taskId,
+                                          msgObj.freezeTime, taskObj )
+    if not result[ 'OK' ]:
+      gLogger.error( "There was a problem freezing task", "%s: %s" % ( taskId, result[ 'Message' ] ) )
+    return S_OK()
 
   auth_msg_TaskError = [ 'all' ]
   def msg_TaskError( self, msgObj ):
+    taskId = msgObj.taskId
     try:
       result = self.exec_deserializeTask( msgObj.taskStub )
-    except Exception, excp:
-      gLogger.exception( "Exception while deserializing task %s" % taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception while deserializing task %s" % taskId, lException = excp )
       return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "exec_deserializeTask does not return a return structure" )
@@ -182,8 +200,8 @@ class ExecutorMindHandler( RequestHandler ):
     self.__eDispatch.removeTask( msgObj.taskId )
     try:
       self.exec_taskError( msgObj.taskId, taskObj, msgObj.errorMsg )
-    except:
-      gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception when processing task %s" % msgObj.taskId, lException = excp )
     return S_OK()
 
   auth_msg_ExecutorError = [ 'all' ]
@@ -274,4 +292,3 @@ class ExecutorMindHandler( RequestHandler ):
   @classmethod
   def exec_taskFreeze( cls, taskId, taskObj, eType ):
     return S_OK()
-

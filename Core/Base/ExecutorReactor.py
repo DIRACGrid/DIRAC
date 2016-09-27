@@ -1,17 +1,35 @@
 ########################################################################
-# $HeadURL$
 # File :   ExecutorReactor.py
 # Author : Adria Casajus
 ########################################################################
-__RCSID__ = "$Id$"
+"""
+  DIRAC class to execute Executors
+
+  Executors are an active part of DIRAC.
+
+  All DIRAC executors must inherit from the basic class ExecutorModule
+
+  In the most common case, DIRAC Executors are executed using the dirac-executor command.
+  dirac-execuot accepts a list positional arguments.
+
+  dirac-executo then:
+  - produces a instance of ExecutorReactor
+
+  Executor modules must be placed under the Executor directory of a DIRAC System.
+  DIRAC Systems are called XXXSystem where XXX is the [DIRAC System Name], and
+  must inherit from the base class ExecutorModule
+
+"""
 
 import time
 import threading
-from DIRAC import S_OK, S_ERROR, gLogger, rootPath, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
+
+__RCSID__ = "$Id$"
 
 class ExecutorReactor( object ):
 
@@ -120,53 +138,67 @@ class ExecutorReactor( object ):
       modInstance = modObj()
       return S_OK( modInstance )
 
-    def __sendExecutorError( self, taskId, errMsg ):
+    def __sendExecutorError( self, eType, taskId, errMsg ):
       result = self.__msgClient.createMessage( "ExecutorError" )
       if not result[ 'OK' ]:
         return result
       msgObj = result[ 'Value' ]
       msgObj.taskId = taskId
       msgObj.errorMsg = errMsg
+      msgObj.eType = eType
       return self.__msgClient.sendMessage( msgObj )
 
     def __processTask( self, msgObj ):
-      module = msgObj.eType
+      eType = msgObj.eType
       taskId = msgObj.taskId
       taskStub = msgObj.taskStub
-      eType = msgObj.eType
-      result = self.__getInstance( eType )
-      if not result[ 'OK' ]:
-        return self.__sendExecutorError( taskId, result[ 'Message' ] )
-      modInstance = result[ 'Value' ]
-      try:
-        procResult = modInstance._ex_processTask( taskId, taskStub )
-      except Exception, excp:
-        gLogger.exception( "Error while processing task %s" % taskId )
-        return self.__sendExecutorError( taskId, "Error processing task %s: %s" % ( taskId, excp ) )
 
-      if not procResult[ 'OK' ]:
-        msgName = "TaskError"
-        gLogger.info( "Task %d has had an error: %s" % ( taskId, procResult[ 'Message' ] ) )
-      else:
-        taskStub, freezeTime = procResult[ 'Value' ]
-        if freezeTime:
-          msgName = "TaskFreeze"
-        else:
-          msgName = "TaskDone"
+      result = self.__moduleProcess( eType, taskId, taskStub )
+      if not result[ 'OK' ]:
+        return self.__sendExecutorError( eType, taskId, result[ 'Message' ] )
+      msgName, taskStub, extra = result[ 'Value' ]
 
       result = self.__msgClient.createMessage( msgName )
       if not result[ 'OK' ]:
-        return self.__sendExecutorError( taskId, "Can't generate %s message: %s" % ( msgName, result[ 'Message' ] ) )
-      self.__storeInstance( eType, modInstance )
+        return self.__sendExecutorError( eType, taskId, "Can't generate %s message: %s" % ( msgName, result[ 'Message' ] ) )
       gLogger.verbose( "Task %s: Sending %s" % ( str( taskId ), msgName ) )
       msgObj = result[ 'Value' ]
       msgObj.taskId = taskId
       msgObj.taskStub = taskStub
-      if not procResult[ 'OK' ]:
-        msgObj.errorMsg = procResult[ 'Message' ]
-      elif freezeTime:
-        msgObj.freezeTime = freezeTime
+      if msgName == "TaskError":
+        msgObj.errorMsg = extra
+        msgObj.eType = eType
+      elif msgName == "TaskFreeze":
+        msgObj.freezeTime = extra
       return self.__msgClient.sendMessage( msgObj )
+
+
+    def __moduleProcess( self, eType, taskId, taskStub, fastTrackLevel = 0 ):
+      result = self.__getInstance( eType )
+      if not result[ 'OK' ]:
+        return result
+      modInstance = result[ 'Value' ]
+      try:
+        result = modInstance._ex_processTask( taskId, taskStub )
+      except Exception as excp:
+        gLogger.exception( "Error while processing task %s" % taskId, lException = excp )
+        return S_ERROR( "Error processing task %s: %s" % ( taskId, excp ) )
+
+      self.__storeInstance( eType, modInstance )
+
+      if not result[ 'OK' ]:
+        return S_OK( ( 'TaskError', taskStub, "Error: %s" % result[ 'Message' ] ) )
+      taskStub, freezeTime, fastTrackType = result[ 'Value' ]
+      if freezeTime:
+        return S_OK( ( "TaskFreeze", taskStub, freezeTime ) )
+      if fastTrackType:
+        if fastTrackLevel < 10 and fastTrackType in self.__modules:
+          gLogger.notice( "Fast tracking task %s to %s" % ( taskId, fastTrackType ) )
+          return self.__moduleProcess( fastTrackType, taskId, taskStub, fastTrackLevel + 1 )
+        else:
+          gLogger.notice( "Stopping %s fast track. Sending back to the mind" % ( taskId ) )
+
+      return S_OK( ( "TaskDone", taskStub, True ) )
 
 
   #####

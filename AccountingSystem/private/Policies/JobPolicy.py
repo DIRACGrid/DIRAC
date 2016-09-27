@@ -1,9 +1,13 @@
+""" Contains a class used for evaluating policies for accessing jobs/WMS/pilots accounting
+"""
+
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
 from DIRAC.AccountingSystem.private.Policies.FilterExecutor import FilterExecutor
 
-class JobPolicy:
+class JobPolicy( object ):
 
   def __init__( self ):
     self.__executor = FilterExecutor()
@@ -14,6 +18,8 @@ class JobPolicy:
     userProps = credDict[ 'properties' ]
 
     if Properties.JOB_ADMINISTRATOR in userProps:
+      return condDict
+    elif Properties.JOB_MONITOR in userProps:
       return condDict
     elif Properties.JOB_SHARING in userProps:
       condDict[ 'UserGroup' ] = [ credDict[ 'group' ] ]
@@ -29,6 +35,8 @@ class JobPolicy:
     userProps = credDict[ 'properties' ]
 
     if Properties.JOB_ADMINISTRATOR in userProps:
+      return S_OK()
+    elif Properties.JOB_MONITOR in userProps:
       return S_OK()
     elif Properties.JOB_SHARING in userProps:
       if 'User' in condDict:
@@ -66,6 +74,8 @@ class JobPolicy:
     userProps = credDict[ 'properties' ]
 
     if Properties.JOB_ADMINISTRATOR in userProps:
+      return S_OK( dataDict )
+    elif Properties.JOB_MONITOR in userProps:
       return S_OK( dataDict )
     elif Properties.JOB_SHARING in userProps:
       return S_OK( dataDict )

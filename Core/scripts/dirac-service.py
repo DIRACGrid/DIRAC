@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-service
 # Author : Adria Casajus
 ########################################################################
 __RCSID__ = "$Id$"
 
 import sys
-import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.ServiceReactor import ServiceReactor
+from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 
 localCfg = LocalConfiguration()
 
@@ -26,12 +25,14 @@ localCfg.addMandatoryEntry( "Port" )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
 localCfg.addDefaultEntry( "LogLevel", "INFO" )
+localCfg.addDefaultEntry( "LogColor", True )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
   gLogger.initialize( serverName, "/" )
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
   sys.exit( 1 )
 
+includeExtensionErrors()
 
 
 serverToLaunch = ServiceReactor()

@@ -184,8 +184,8 @@ class ThreadScheduler:
       task[ 'executions' ] -= 1
     try:
       task[ 'func' ]( *task[ 'args' ] )
-    except Exception:
-      gLogger.exception( "Exception while executing scheduled task" )
+    except Exception as lException:
+      gLogger.exception( "Exception while executing scheduled task", lException = lException )
       return False
     return True
 

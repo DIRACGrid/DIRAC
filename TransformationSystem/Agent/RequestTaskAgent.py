@@ -1,31 +1,51 @@
-########################################################################
-# $HeadURL$
-########################################################################
-"""  The Request Task Agent takes request tasks created in the transformation database and submits to the request management system. """
-__RCSID__ = "$Id$"
+""" The Request Task Agent takes request tasks created in the transformation database
+    and submits to the request management system
+"""
 
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
-from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
-from DIRAC.TransformationSystem.Client.TaskManager                  import RequestTasks
+from DIRAC import S_OK
+
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
+from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAgentBase
+from DIRAC.TransformationSystem.Client.TaskManager          import RequestTasks
+
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/RequestTaskAgent'
 
 class RequestTaskAgent( TaskManagerAgentBase ):
   """ An AgentModule to submit requests tasks
   """
+  def __init__( self, *args, **kwargs ):
+    """ c'tor
+    """
+    TaskManagerAgentBase.__init__( self, *args, **kwargs )
 
-  #############################################################################
+    self.transType = []
+
   def initialize( self ):
-    """ Sets defaults """
-    
-    taskManager = RequestTasks()
-    
-    TaskManagerAgentBase.initialize( self, taskManager = taskManager )
-    self.transType = ['Replication', 'Removal']
+    """ Standard initialize method
+    """
+    res = TaskManagerAgentBase.initialize( self )
+    if not res['OK']:
+      return res
 
-    # This sets the Default Proxy to used as that defined under 
-    # /Operations/Shifter/ProductionManager
-    # the shifterProxy option in the Configuration can be used to change this default.
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
+    self.am_setOption( 'shifterProxy', 'DataManager' )
+
+    # clients
+    self.taskManager = RequestTasks( transClient = self.transClient )
+
+    agentTSTypes = self.am_getOption( 'TransType', [] )
+    if agentTSTypes:
+      self.transType = agentTSTypes
+    else:
+      self.transType = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
 
     return S_OK()
+    
+  def _getClients( self ):
+    """ Here the taskManager becomes a RequestTasks object
+    """
+    res = TaskManagerAgentBase._getClients( self )
+    threadTaskManager = RequestTasks()
+    res.update( {'TaskManager': threadTaskManager} )
+    return res

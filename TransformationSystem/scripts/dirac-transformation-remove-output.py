@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__ = "$Id$"
 
 import sys
 if len( sys.argv ) < 2:
@@ -18,18 +14,11 @@ from DIRAC.TransformationSystem.Client.TransformationClient           import Tra
 from DIRAC                                                            import gLogger
 import DIRAC
 
-agent = TransformationCleaningAgent( 'Transformation/TransformationCleaningAgent', 'dirac-transformation-remove-output' )
+agent = TransformationCleaningAgent( 'Transformation/TransformationCleaningAgent',
+                                     'Transformation/TransformationCleaningAgent',
+                                     'dirac-transformation-remove-output' )
 agent.initialize()
 
 client = TransformationClient()
 for transID in transIDs:
-  res = client.getTransformationParameters( transID, ['Status'] )
-  if not res['OK']:
-    gLogger.error( "Failed to determine transformation status" )
-    gLogger.error( res['Message'] )
-    continue
-  status = res['Value']
-  if not status in ['RemovingFiles', 'RemovingOutput', 'ValidatingInput', 'Active']:
-    gLogger.error( "The transformation is in %s status and the outputs can not be removed" % status )
-    continue
   agent.removeTransformationOutput( transID )

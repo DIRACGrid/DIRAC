@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic Oracle methods in a multithread-safe mode
     keeping used connections in a python Queue for further reuse.
@@ -50,24 +47,23 @@
 
 """
 
-__RCSID__ = "$Id$"
-
-
-from DIRAC                                  import gLogger
-from DIRAC                                  import S_OK, S_ERROR
-
 import cx_Oracle
 import types
-
-gInstancesCount = 0
-
 import Queue
 import time
 import threading
 
+from DIRAC                                  import gLogger
+from DIRAC                                  import S_OK, S_ERROR
+
+gInstancesCount = 0
+
+__RCSID__ = "$Id$"
+
 maxConnectRetry = 100
 maxArraysize = 5000 #max allowed
-class OracleDB:
+
+class OracleDB(object):
   """
   Basic multithreaded DIRAC Oracle Client Class
   """
@@ -137,7 +133,7 @@ class OracleDB:
       self.logger.debug( '%s: %s' % ( methodName, err ),
                      '%s' % ( e ) )
       return S_ERROR( '%s: ( %s )' % ( err, e ) )
-    except Exception, x:
+    except Exception as x:
       self.logger.debug( '%s: %s' % ( methodName, err ), str( x ) )
       return S_ERROR( '%s: (%s)' % ( err, str( x ) ) )
 
@@ -167,7 +163,7 @@ class OracleDB:
       self.logger.debug( '_connect: Connected.' )
       self._connected = True
       return S_OK()
-    except Exception, x:
+    except Exception as x:
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
 
@@ -201,7 +197,7 @@ class OracleDB:
         self.logger.debug( '_query: %s ...' % str( res[:10] ) )
 
       retDict = S_OK( res )
-    except Exception , x:
+    except Exception as x:
 
       self.logger.debug( '_query:', cmd )
       retDict = self._except( '_query', x, 'Execution failed.' )
@@ -233,7 +229,7 @@ class OracleDB:
       result = None
       results = None
       if array != None and len(array) > 0:
-        if type(array[0]) == types.StringType:
+        if isinstance( type( array[0] ), basestring ):
           result = cursor.arrayvar( cx_Oracle.STRING, array )
           parameters += [result]
         elif type(array[0]) == types.LongType or type(array[0]) == types.IntType:
@@ -250,7 +246,7 @@ class OracleDB:
       else:
         cursor.callproc( packageName, parameters )
       retDict = S_OK( results )
-    except Exception , x:
+    except Exception as x:
 
       self.logger.debug( '_query:', packageName + "(" + str( parameters ) + ")" )
       retDict = self._except( '_query', x, 'Execution failed.' )
@@ -280,7 +276,7 @@ class OracleDB:
       cursor.arraysize = maxArraysize
       result = cursor.callfunc( packageName, returnType, parameters )
       retDict = S_OK( result )
-    except Exception , x:
+    except Exception as x:
       self.logger.debug( '_query:', packageName + "(" + str( parameters ) + ")" )
       retDict = self._except( '_query', x, 'Excution failed.' )
       connection.rollback()
@@ -320,7 +316,7 @@ class OracleDB:
         connection.close()
       except Exception:
         pass
-    except Exception, x:
+    except Exception as x:
       self._except( '__putConnection', x, 'Failed to put Connection in Queue' )
 
   def _getConnection( self ):
@@ -369,14 +365,12 @@ class OracleDB:
         try:
           self.__newConnection()
           return self.__getConnection()
-        except Exception, x:
+        except Exception as x:
           self.logger.debug( '__getConnection: Fails to get connection from Queue', x )
           time.sleep( trial * 5.0 )
           newtrial = trial + 1
           return self.__getConnection( trial = newtrial )
-      except Exception, x:
+      except Exception as x:
         return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
-    except Exception, x:
+    except Exception as x:
       return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
-
-

@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """
   The Job Sanity Agent accepts all jobs from the Job
   receiver and screens them for the following problems:
@@ -13,16 +10,18 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
+import re
+
 from DIRAC import S_OK, S_ERROR
+
+from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient   import SandboxStoreClient
-import re
 
 class JobSanity( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
-      - checkJob() - the main method called for each job
+      - optimizeJob() - the main method called for each job
       and it can provide:
       - initializeOptimizer() before each execution cycle
   """
@@ -127,7 +126,7 @@ class JobSanity( OptimizerExecutor ):
       maxLFNs = self.ex_getOption( 'MaxInputDataPerJob', 100 )
       if len( data ) > maxLFNs:
         message = '%s datasets selected. Max limit is %s.' % ( len( data ), maxLFNs )
-        jobState.setParam( "DatasetCheck", message )
+        jobState.setParameter( "DatasetCheck", message )
         return S_ERROR( "Exceeded Maximum Dataset Limit (%s)" % maxLFNs )
 
     return S_OK( len( data ) )

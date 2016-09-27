@@ -8,7 +8,7 @@
   Report the summary of the stage task from the DB.
 """
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -23,11 +23,13 @@ args = Script.getPositionalArgs()
 if not len( args ) == 1:
   Script.showHelp()
 
+from DIRAC import exit as DIRACExit
+
 try:
   taskID = int( args[0] )
 except:
   print 'Stage requestID must be an integer'
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 client = StorageManagerClient()
@@ -35,7 +37,7 @@ client = StorageManagerClient()
 res = client.getTaskSummary( taskID )
 if not res['OK']:
   print res['Message']
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 taskInfo = res['Value']['TaskInfo']
 replicaInfo = res['Value']['ReplicaInfo']
 outStr = "%s: %s" % ( 'TaskID'.ljust( 20 ), taskID )

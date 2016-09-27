@@ -1,18 +1,15 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import time
 import select
-try:
-  from hashlib import md5
-except:
-  from md5 import md5
+import cStringIO
+from hashlib import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
-from DIRAC.Core.Utilities import DEncode
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.Core.Utilities import DEncode
 
-class BaseTransport:
+class BaseTransport( object ):
 
   bAllowReuseAddress = True
   iListenQueueSize = 5
@@ -34,6 +31,7 @@ class BaseTransport:
     self.sentKeepAlives = 0
     self.waitingForKeepAlivePong = False
     self.__keepAliveLapse = 0
+    self.oSocket = None
     if 'keepAliveLapse' in kwargs:
       try:
         self.__keepAliveLapse = max( 150, int( kwargs[ 'keepAliveLapse' ] ) )
@@ -79,9 +77,6 @@ class BaseTransport:
   def serverMode( self ):
     return self.bServerMode
 
-  def getTransportName( self ):
-    return self.sTransportName
-
   def getRemoteAddress( self ):
     return self.remoteAddress
 
@@ -90,9 +85,6 @@ class BaseTransport:
 
   def getSocket( self ):
     return self.oSocket
-
-  def _write( self, sBuffer ):
-    self.oSocket.send( sBuffer )
 
   def _readReady( self ):
     if not self.iReadTimeout:
@@ -112,7 +104,7 @@ class BaseTransport:
           return S_OK( data )
       else:
         return S_ERROR( "Connection seems stalled. Closing..." )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
   def _write( self, buffer ):
@@ -126,7 +118,7 @@ class BaseTransport:
     else:
       dataToSend = "%s:%s" % ( len( sCodedData ), sCodedData )
     for index in range( 0, len( dataToSend ), self.packetSize ):
-      bytesToSend = len( dataToSend[ index : index + self.packetSize ] )
+      bytesToSend = min( self.packetSize, len( dataToSend ) - index )
       packSentBytes = 0
       while packSentBytes < bytesToSend:
         try:
@@ -134,11 +126,13 @@ class BaseTransport:
           if not result[ 'OK' ]:
             return result
           sentBytes = result[ 'Value' ]
-        except Exception, e:
+        except Exception as e:
           return S_ERROR( "Exception while sending data: %s" % e )
         if sentBytes == 0:
           return S_ERROR( "Connection closed by peer" )
         packSentBytes += sentBytes
+    del sCodedData
+    sCodedData=None
     return S_OK()
 
 
@@ -155,7 +149,7 @@ class BaseTransport:
       isKeepAlive = self.byteStream.find( BaseTransport.keepAliveMagic, 0, keepAliveMagicLen ) == 0
       #While not found the message length or the ka, keep receiving
       while iSeparatorPosition == -1 and not isKeepAlive:
-        retVal = self._read( 1024 )
+        retVal = self._read( 16384 )
         #If error return
         if not retVal[ 'OK' ]:
           return retVal
@@ -178,30 +172,46 @@ class BaseTransport:
         return self.__processKeepAlive( maxBufferSize, blockAfterKeepAlive )
       #From here it must be a real message!
       #Process the size and remove the msg length from the bytestream
-      size = int( self.byteStream[ :iSeparatorPosition ] )
-      self.byteStream = self.byteStream[ iSeparatorPosition + 1: ]
-      #Receive while there's still data to be received 
-      while len( self.byteStream ) < size:
-        retVal = self._read( size - len( self.byteStream ), skipReadyCheck = True )
-        if not retVal[ 'OK' ]:
-          return retVal
-        if not retVal[ 'Value' ]:
-          return S_ERROR( "Peer closed connection" )
-        self.byteStream += retVal[ 'Value' ]
-        if maxBufferSize and len( self.byteStream ) > maxBufferSize:
-          return S_ERROR( "Read limit exceeded (%s chars)" % maxBufferSize )
-      #Data is here! take it out from the bytestream, dencode and return
-      data = self.byteStream[ :size ]
-      self.byteStream = self.byteStream[ size: ]
+      pkgSize = int( self.byteStream[ :iSeparatorPosition ] )
+      pkgData = self.byteStream[ iSeparatorPosition + 1: ]
+      readSize = len( pkgData )
+      if readSize >= pkgSize:
+        #If we already have all the data we need
+        data = pkgData[ :pkgSize ]
+        self.byteStream = pkgData[ pkgSize: ]
+      else:
+        #If we still need to read stuff
+        pkgMem = cStringIO.StringIO()
+        pkgMem.write( pkgData )
+        #Receive while there's still data to be received
+        while readSize < pkgSize:
+          retVal = self._read( pkgSize - readSize, skipReadyCheck = True )
+          if not retVal[ 'OK' ]:
+            return retVal
+          if not retVal[ 'Value' ]:
+            return S_ERROR( "Peer closed connection" )
+          rcvData = retVal[ 'Value' ]
+          readSize += len( rcvData )
+          pkgMem.write( rcvData )
+          if maxBufferSize and readSize > maxBufferSize:
+            return S_ERROR( "Read limit exceeded (%s chars)" % maxBufferSize )
+        #Data is here! take it out from the bytestream, dencode and return
+        if readSize == pkgSize:
+          data = pkgMem.getvalue()
+          self.byteStream = ""
+        else: #readSize > pkgSize:
+          pkgMem.seek( 0, 0 )
+          data = pkgMem.read( pkgSize )
+          self.byteStream = pkgMem.read()
       try:
         data = DEncode.decode( data )[0]
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Could not decode received data: %s" % str( e ) )
       if idleReceive:
         self.receivedMessages.append( data )
         return S_OK()
       return data
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Network error while receiving data" )
       return S_ERROR( "Network error while receiving data: %s" % str( e ) )
 
@@ -252,9 +262,9 @@ class BaseTransport:
     else:
       if self.waitingForKeepAlivePong:
         return S_OK()
-      id = self.keepAliveId + str( self.sentKeepAlives )
+      idK = self.keepAliveId + str( self.sentKeepAlives )
       self.sentKeepAlives += 1
-      kaData = S_OK( { 'id' : id, 'kaping' : True } )
+      kaData = S_OK( { 'id' : idK, 'kaping' : True } )
       self.waitingForKeepAlivePong = True
     return self.sendData( kaData , prefix = BaseTransport.keepAliveMagic )
 
@@ -265,6 +275,12 @@ class BaseTransport:
       peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
     else:
       peerId = ""
-    return "(%s:%s)%s" % ( address[0],
-                           address[1],
-                           peerId )
+    if address[0].find( ":" ) > -1:
+      return "([%s]:%s)%s" % ( address[0], address[1], peerId )
+    return "(%s:%s)%s" % ( address[0], address[1], peerId )
+  
+  def setSocketTimeout(self, timeout):
+    """
+    This method has to be overwritten, if we want to increase the socket timeout.
+    """
+    pass

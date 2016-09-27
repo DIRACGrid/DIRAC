@@ -7,7 +7,7 @@
 """
   Report Normalized CPU length of queue
   
-  This script is used by the dirac-pilot script to set the CPUTime limit for the matching
+  This script was used by the dirac-pilot script to set the CPUTime limit for the matching but now this is no more the case
 """
 __RCSID__ = "$Id$"
 

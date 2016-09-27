@@ -1,31 +1,22 @@
-# $Header$
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath, siteName
+from DIRAC import gLogger, S_OK, S_ERROR, siteName
 
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
-from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager             import ReplicaManager
-from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import StorageManagementDB
-
+from DIRAC.Resources.Storage.StorageElement                       import StorageElement
 from DIRAC.AccountingSystem.Client.Types.DataOperation            import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient                import gDataStoreClient
+from DIRAC.Core.Security.ProxyInfo                                import getProxyInfo
 
-from DIRAC.Core.Security.Misc                                     import getProxyInfo
-
-import time, os, sys, re
-from types import *
+import re
 
 AGENT_NAME = 'StorageManagement/StageMonitorAgent'
 
 class StageMonitorAgent( AgentModule ):
 
   def initialize( self ):
-    self.replicaManager = ReplicaManager()
-    #self.stagerClient = StorageManagerClient()
-    self.dataIntegrityClient = DataIntegrityClient()
-    self.storageDB = StorageManagementDB()
+    self.stagerClient = StorageManagerClient()
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -68,20 +59,23 @@ class StageMonitorAgent( AgentModule ):
     terminalReplicaIDs = {}
     oldRequests = []
     stagedReplicas = []
-    pfnRepIDs = {}
-    pfnReqIDs = {}
+
+    # Since we are in a given SE, the LFN is a unique key
+    lfnRepIDs = {}
+    lfnReqIDs = {}
     for replicaID in seReplicaIDs:
-      pfn = replicaIDs[replicaID]['PFN']
-      pfnRepIDs[pfn] = replicaID
+      lfn = replicaIDs[replicaID]['LFN']
+      lfnRepIDs[lfn] = replicaID
       requestID = replicaIDs[replicaID].get( 'RequestID', None )
       if requestID:
-        pfnReqIDs[pfn] = replicaIDs[replicaID]['RequestID']
+        lfnReqIDs[lfn] = replicaIDs[replicaID]['RequestID']
 
-    gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % ( len( pfnRepIDs ), storageElement ) )
+    gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % ( len( lfnRepIDs ),
+                                                                                                                storageElement ) )
     oAccounting = DataOperation()
     oAccounting.setStartTime()
 
-    res = self.replicaManager.getStorageFileMetadata( pfnReqIDs.keys(), storageElement )
+    res = StorageElement( storageElement ).getFileMetadata( lfnReqIDs )
     if not res['OK']:
       gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.", res['Message'] )
       return
@@ -89,19 +83,19 @@ class StageMonitorAgent( AgentModule ):
 
     accountingDict = self.__newAccountingDict( storageElement )
 
-    for pfn, reason in prestageStatus['Failed'].items():
+    for lfn, reason in prestageStatus['Failed'].items():
       accountingDict['TransferTotal'] += 1
       if re.search( 'File does not exist', reason ):
-        gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: PFN did not exist in the StorageElement", pfn )
-        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN did not exist in the StorageElement'
-    for pfn, staged in prestageStatus['Successful'].items():
+        gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: LFN did not exist in the StorageElement", lfn )
+        terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN did not exist in the StorageElement'
+    for lfn, staged in prestageStatus['Successful'].items():
       if staged and 'Cached' in staged and staged['Cached']:
         accountingDict['TransferTotal'] += 1
         accountingDict['TransferOK'] += 1
         accountingDict['TransferSize'] += staged['Size']
-        stagedReplicas.append( pfnRepIDs[pfn] )
+        stagedReplicas.append( lfnRepIDs[lfn] )
       if staged and 'Cached' in staged and not staged['Cached']:
-        oldRequests.append( pfnRepIDs[pfn] ); #only ReplicaIDs
+        oldRequests.append( lfnRepIDs[lfn] );  # only ReplicaIDs
 
     oAccounting.setValuesFromDict( accountingDict )
     oAccounting.setEndTime()
@@ -110,15 +104,15 @@ class StageMonitorAgent( AgentModule ):
     # Update the states of the replicas in the database
     if terminalReplicaIDs:
       gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: %s replicas are terminally failed." % len( terminalReplicaIDs ) )
-      res = self.storageDB.updateReplicaFailure( terminalReplicaIDs )
+      res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
       if not res['OK']:
         gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Failed to update replica failures.", res['Message'] )
     if stagedReplicas:
       gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: %s staged replicas to be updated." % len( stagedReplicas ) )
-      res = self.storageDB.setStageComplete( stagedReplicas )
+      res = self.stagerClient.setStageComplete( stagedReplicas )
       if not res['OK']:
         gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Failed to updated staged replicas.", res['Message'] )
-      res = self.storageDB.updateReplicaStatus( stagedReplicas, 'Staged' )
+      res = self.stagerClient.updateReplicaStatus( stagedReplicas, 'Staged' )
       if not res['OK']:
         gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Failed to insert replica status.", res['Message'] )
     if oldRequests:
@@ -151,7 +145,7 @@ class StageMonitorAgent( AgentModule ):
 
   def __getStageSubmittedReplicas( self ):
     """ This obtains the StageSubmitted replicas from the Replicas table and the RequestID from the StageRequests table """
-    res = self.storageDB.getCacheReplicas( {'Status':'StageSubmitted'} )
+    res = self.stagerClient.getCacheReplicas( {'Status':'StageSubmitted'} )
     if not res['OK']:
       gLogger.error( "StageMonitor.__getStageSubmittedReplicas: Failed to get replicas with StageSubmitted status.", res['Message'] )
       return res
@@ -170,7 +164,7 @@ class StageMonitorAgent( AgentModule ):
       seReplicas[storageElement].append( replicaID )
 
     # RequestID was missing from replicaIDs dictionary BUGGY?
-    res = self.storageDB.getStageRequests( {'ReplicaID':replicaIDs.keys()} )
+    res = self.stagerClient.getStageRequests( {'ReplicaID':replicaIDs.keys()} )
     if not res['OK']:
       return res
     if not res['Value']:
@@ -182,22 +176,10 @@ class StageMonitorAgent( AgentModule ):
 
     return S_OK( {'SEReplicas':seReplicas, 'ReplicaIDs':replicaIDs} )
 
-  def __reportProblematicFiles( self, lfns, reason ):
-    return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, self.name )
-    if not res['OK']:
-      gLogger.error( "StageMonitor.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
-      return res
-    if res['Value']['Successful']:
-      gLogger.info( "StageMonitor.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
-    if res['Value']['Failed']:
-      gLogger.info( "StageMonitor.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
-    return res
-
   def __wakeupOldRequests( self, oldRequests ):
     gLogger.info( "StageMonitor.__wakeupOldRequests: Attempting..." )
     retryInterval = self.am_getOption( 'RetryIntervalHour', 2 )
-    res = self.storageDB.wakeupOldRequests( oldRequests, retryInterval )
+    res = self.stagerClient.wakeupOldRequests( oldRequests, retryInterval )
     if not res['OK']:
       gLogger.error( "StageMonitor.__wakeupOldRequests: Failed to resubmit old requests.", res['Message'] )
       return res

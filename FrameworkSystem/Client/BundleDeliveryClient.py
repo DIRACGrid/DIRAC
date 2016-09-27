@@ -42,7 +42,7 @@ class BundleDeliveryClient:
       fd = open( fileName, "wb" )
       fd.write( hash )
       fd.close()
-    except Exception, e:
+    except Exception as e:
       self.log.error( "Could not save hash after synchronization", "%s: %s" % ( fileName, str( e ) ) )
 
   def syncDir( self, bundleID, dirToSyncTo ):

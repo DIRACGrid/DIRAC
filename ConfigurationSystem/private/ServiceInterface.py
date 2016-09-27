@@ -1,5 +1,5 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
+""" Threaded implementation of services
+"""
 
 import os
 import time
@@ -7,12 +7,17 @@ import re
 import threading
 import zipfile
 import zlib
+
 import DIRAC
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData, ConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
+
+__RCSID__ = "$Id$"
+
 
 class ServiceInterface( threading.Thread ):
 
@@ -41,10 +46,7 @@ class ServiceInterface( threading.Thread ):
     self.start()
 
   def __loadConfigurationData( self ):
-    try:
-      os.makedirs( os.path.join( DIRAC.rootPath, "etc", "csbackup" ) )
-    except:
-      pass
+    mkDir( os.path.join( DIRAC.rootPath, "etc", "csbackup" ) )
     gConfigurationData.loadConfigurationData()
     if gConfigurationData.isMaster():
       bBuiltNewConfiguration = False
@@ -90,7 +92,7 @@ class ServiceInterface( threading.Thread ):
     self.dAliveSlaveServers[ sSlaveURL ] = time.time()
     if bNewSlave:
       gConfigurationData.setServers( "%s, %s" % ( self.sURL,
-                                                    ", ".join( self.dAliveSlaveServers.keys() ) ) )
+                                                  ", ".join( self.dAliveSlaveServers.keys() ) ) )
       self.__generateNewVersion()
 
   def __checkSlavesStatus( self, forceWriteConfiguration = False ):
@@ -101,17 +103,17 @@ class ServiceInterface( threading.Thread ):
     for sSlaveURL in lSlaveURLs:
       if time.time() - self.dAliveSlaveServers[ sSlaveURL ] > iGraceTime:
         gLogger.info( "Found dead slave", sSlaveURL )
-        del( self.dAliveSlaveServers[ sSlaveURL ] )
+        del self.dAliveSlaveServers[ sSlaveURL ]
         bModifiedSlaveServers = True
     if bModifiedSlaveServers or forceWriteConfiguration:
       gConfigurationData.setServers( "%s, %s" % ( self.sURL,
-                                                    ", ".join( self.dAliveSlaveServers.keys() ) ) )
+                                                  ", ".join( self.dAliveSlaveServers.keys() ) ) )
       self.__generateNewVersion()
 
   def getCompressedConfiguration( self ):
     sData = gConfigurationData.getCompressedData()
 
-  def updateConfiguration( self, sBuffer, commiterDN = "", updateVersionOption = False ):
+  def updateConfiguration( self, sBuffer, commiter = "", updateVersionOption = False ):
     if not gConfigurationData.isMaster():
       return S_ERROR( "Configuration modification is not allowed in this server" )
     #Load the data in a ConfigurationData object
@@ -152,7 +154,7 @@ class ServiceInterface( threading.Thread ):
     gConfigurationData.generateNewVersion()
     #self.__checkSlavesStatus( forceWriteConfiguration = True )
     gLogger.info( "Writing new version to disk!" )
-    retVal = gConfigurationData.writeRemoteConfigurationToDisk( "%s@%s" % ( commiterDN, gConfigurationData.getVersion() ) )
+    retVal = gConfigurationData.writeRemoteConfigurationToDisk( "%s@%s" % ( commiter, gConfigurationData.getVersion() ) )
     gLogger.info( "New version it is!" )
     return retVal
 
@@ -164,7 +166,7 @@ class ServiceInterface( threading.Thread ):
 
   def getCommitHistory( self ):
     files = self.__getCfgBackups( gConfigurationData.getBackupDir() )
-    backups = [ ".".join( fileName.split( "." )[1:3] ).split( "@" ) for fileName in files ]
+    backups = [ ".".join( fileName.split( "." )[1:-1] ).split( "@" ) for fileName in files ]
     return backups
 
   def run( self ):
@@ -186,7 +188,7 @@ class ServiceInterface( threading.Thread ):
     return S_ERROR( "Version %s does not exist" % date )
 
   def __getCfgBackups( self, basePath, date = "", subPath = "" ):
-    rs = re.compile( "^%s\..*%s.*\.zip$" % ( gConfigurationData.getName(), date ) )
+    rs = re.compile( r"^%s\..*%s.*\.zip$" % ( gConfigurationData.getName(), date ) )
     fsEntries = os.listdir( "%s/%s" % ( basePath, subPath ) )
     fsEntries.sort( reverse = True )
     backupsList = []
@@ -210,7 +212,7 @@ class ServiceInterface( threading.Thread ):
       backFile = os.path.join( gConfigurationData.getBackupDir(), backFile[1:] )
     try:
       prevRemoteConfData.loadConfigurationData( backFile )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Could not load original commiter's version: %s" % str( e ) )
     gLogger.info( "Loaded client original version %s" % prevRemoteConfData.getVersion() )
     return S_OK( prevRemoteConfData.getRemoteCFG() )
@@ -231,7 +233,7 @@ class ServiceInterface( threading.Thread ):
       elif action == "modSec":
         if objectName in realModifiedSections:
           result = self._checkConflictsInModifications( realModifiedSections[ objectName ],
-                                                         modAc[3], "%s/%s" % ( parentSection, objectName ) )
+                                                        modAc[3], "%s/%s" % ( parentSection, objectName ) )
           if not result[ 'OK' ]:
             return result
     for modAc in realModList:
@@ -255,7 +257,7 @@ class ServiceInterface( threading.Thread ):
     prevCliToCurCliModList = prevCliCFG.getModifications( curCliCFG )
     prevCliToCurSrvModList = prevCliCFG.getModifications( curSrvCFG )
     result = self._checkConflictsInModifications( prevCliToCurSrvModList,
-                                                   prevCliToCurCliModList )
+                                                  prevCliToCurCliModList )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot AutoMerge: %s" % result[ 'Message' ] )
     #Merge!

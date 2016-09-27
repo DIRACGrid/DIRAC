@@ -1,93 +1,47 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ A set of utilities used in the WMS services
+    Requires the Nordugrid ARC plugins. In particular : nordugrid-arc-python
 """
+
+import shutil
+import os
+
+from tempfile import mkdtemp
+
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities.Grid import executeGridCommand
+from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 
 __RCSID__ = "$Id$"
 
-from tempfile import mkdtemp
-import shutil, os
-from DIRAC.Core.Utilities.Grid import executeGridCommand
-from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-
-from DIRAC import S_OK, S_ERROR, gConfig
-
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
-outputSandboxFiles = [ 'StdOut', 'StdErr', 'std.out', 'std.err' ]
+outputSandboxFiles = [ 'StdOut', 'StdErr' ]
 
 COMMAND_TIMEOUT = 60
 ###########################################################################
 
 def getGridEnv():
-  
+
   gridEnv = ''
   setup = gConfig.getValue( '/DIRAC/Setup', '' )
   if setup:
     instance = gConfig.getValue( '/DIRAC/Setups/%s/WorkloadManagement' % setup, '' )
     if instance:
       gridEnv = gConfig.getValue( '/Systems/WorkloadManagement/%s/GridEnv' % instance, '' )
-      
-  return gridEnv    
 
-def getPilotOutput( proxy, grid, pilotRef, pilotStamp='' ):
-  
-  if grid in ['LCG','gLite']:
-    return getWMSPilotOutput( proxy, grid, pilotRef )
-  elif grid == "CREAM":
-    return getCREAMPilotOutput( proxy, pilotRef, pilotStamp ) 
-  else:
-    return S_ERROR( 'Non-valid grid type %s' % grid )
+  return gridEnv
 
-def getCREAMPilotOutput(proxy,pilotRef,pilotStamp):
-  """
-  """
-  gridEnv = getGridEnv()
-  tmpdir = mkdtemp()
-  result = ComputingElementFactory().getCE(ceName = 'CREAMSite',ceType = 'CREAM',
-                                       ceParametersDict = {'GridEnv':gridEnv,
-                                                           'Queue':'Qeuue',
-                                                           'OutputURL':"gsiftp://localhost",
-                                                           'WorkingDirectory':tmpdir})
-                                   
-  if not result['OK']:
-    shutil.rmtree(tmpdir)  
-    return result
-  ce = result['Value']
-  ce.reset()
-  ce.setProxy(proxy)
-  fullPilotRef = ":::".join([pilotRef,pilotStamp])
-  result = ce.getJobOutput( fullPilotRef )
-  shutil.rmtree(tmpdir)
-  if not result['OK']:
-    return S_ERROR( 'Failed to get pilot output: %s' % result['Message'] )
-  output, error = result['Value']  
-  fileList = outputSandboxFiles
-  result = S_OK()
-  result['FileList'] = fileList
-  result['StdOut'] = output
-  result['StdErr'] = error
-  return result
-
-def getWMSPilotOutput( proxy, grid, pilotRef ):
+@executeWithUserProxy
+def getWMSPilotOutput( pilotRef ):
   """
    Get Output of a GRID job
   """
   tmp_dir = mkdtemp()
-  if grid == 'LCG':
-    cmd = [ 'edg-job-get-output' ]
-  elif grid == 'gLite':
-    cmd = [ 'glite-wms-job-output' ]
-  else:
-    return S_ERROR( 'Unknown GRID %s' % grid )
-
-  cmd.extend( ['--noint', '--dir', tmp_dir, pilotRef] )
+  cmd = [ 'glite-wms-job-output', '--noint', '--dir', tmp_dir, pilotRef]
 
   gridEnv = getGridEnv()
 
-  ret = executeGridCommand( proxy, cmd, gridEnv )
+  ret = executeGridCommand( '', cmd, gridEnv )
   if not ret['OK']:
     shutil.rmtree( tmp_dir )
     return ret
@@ -97,26 +51,21 @@ def getWMSPilotOutput( proxy, grid, pilotRef ):
   for errorString in [ 'already retrieved',
                        'Output not yet Ready',
                        'not yet ready',
-                       'the status is ABORTED' ]:
-    if error.find( errorString ) != -1:
+                       'the status is ABORTED',
+                       'No output files' ]:
+    if errorString in error:
       shutil.rmtree( tmp_dir )
       return S_ERROR( error )
+    if errorString in output:
+      shutil.rmtree( tmp_dir )
+      return S_ERROR( output )
 
   if status:
     shutil.rmtree( tmp_dir )
     return S_ERROR( error )
 
   # Get the list of files
-
-  # LCG always creates an unique sub-directory
-  # gLite does it too now
-  result = executeGridCommand( proxy, ['glite-version'], gridEnv )
-  if not result['OK']:
-    shutil.rmtree( tmp_dir )
-    return result
-  status, output, error = result['Value']
-  if output.find( '3.2' ) != -1:
-    tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
+  tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
 
   result = S_OK()
   result['FileList'] = outputSandboxFiles
@@ -129,32 +78,34 @@ def getWMSPilotOutput( proxy, grid, pilotRef ):
       myfile.close()
     else:
       f = ''
-    # HACK: removed after the current scheme has been in production for at least 1 week
-    if filename == 'std.out' and f:
-      filename = 'StdOut'
-    if filename == 'std.err' and f:
-      filename = 'StdErr'
     result[filename] = f
 
   shutil.rmtree( tmp_dir )
   return result
 
 ###########################################################################
-def getPilotLoggingInfo( proxy, grid, pilotRef ):
+@executeWithUserProxy
+def getPilotLoggingInfo( grid, pilotRef ):
   """
    Get LoggingInfo of a GRID job
   """
-  if grid == 'LCG':
-    cmd = [ 'edg-job-get-logging-info', '-v', '2','--noint', pilotRef ]
-  elif grid == 'gLite':
-    cmd = [ 'glite-wms-job-logging-info', '-v', '3','--noint', pilotRef ]
+  if grid == 'gLite':
+    cmd = [ 'glite-wms-job-logging-info', '-v', '3', '--noint', pilotRef ]
   elif grid == 'CREAM':
-    cmd = [ 'glite-ce-job-status', '-L', '2', '%s' % pilotRef ]  
+    cmd = [ 'glite-ce-job-status', '-L', '2', '%s' % pilotRef ]
+  elif grid == 'HTCondorCE':
+    ## need to import here, otherwise import errors happen
+    from DIRAC.Resources.Computing.HTCondorCEComputingElement import getCondorLogFile
+    resLog = getCondorLogFile( pilotRef )
+    if not resLog['OK']:
+      return resLog
+    logFile = resLog['Value']
+    cmd = [ 'cat', " ".join(logFile) ]
   else:
-    return S_ERROR( 'Unknnown GRID %s' % grid )
+    return S_ERROR( 'Pilot logging not available for %s CEs' % grid )
 
-  gridEnv =  getGridEnv()
-  ret = executeGridCommand( proxy, cmd, gridEnv )
+  gridEnv = getGridEnv()
+  ret = executeGridCommand( '', cmd, gridEnv )
   if not ret['OK']:
     return ret
 
@@ -163,4 +114,3 @@ def getPilotLoggingInfo( proxy, grid, pilotRef ):
     return S_ERROR( error )
 
   return S_OK( output )
-

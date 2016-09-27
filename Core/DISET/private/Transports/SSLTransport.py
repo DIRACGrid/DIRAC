@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import os
@@ -10,6 +9,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
+from DIRAC.Core.Utilities.Devloader import Devloader
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.X509Certificate import X509Certificate
@@ -42,6 +42,12 @@ class SSLTransport( BaseTransport ):
   def __unlock( self ):
     self.__locked = False
 
+  def setSocketTimeout( self, timeout ):
+    """
+    This method is used to chenge the default timeout of the socket
+    """
+    gSocketInfoFactory.setSocketTimeout( timeout )
+    
   def initAsClient( self ):
     retVal = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
     if not retVal[ 'OK' ]:
@@ -64,12 +70,14 @@ class SSLTransport( BaseTransport ):
       return retVal
     self.oSocketInfo = retVal[ 'Value' ]
     self.oSocket = self.oSocketInfo.getSSLSocket()
+    Devloader().addStuffToClose( self.oSocket )
     return S_OK()
 
   def close( self ):
     gLogger.debug( "Closing socket" )
     try:
-      self.oSocket.shutdown()
+      #self.oSocket.shutdown()
+      os.fsync( self.oSocket.fileno() )
       self.oSocket.close()
     except:
       pass
@@ -104,7 +112,7 @@ class SSLTransport( BaseTransport ):
 
   def acceptConnection( self ):
     oClientTransport = SSLTransport( self.stServerAddress )
-    oClientSocket, stClientAddress = self.oSocket.accept()
+    oClientSocket, _stClientAddress = self.oSocket.accept()
     retVal = self.oSocketInfo.clone()
     if not retVal[ 'OK' ]:
       return retVal
@@ -118,7 +126,7 @@ class SSLTransport( BaseTransport ):
     try:
       timeout = self.oSocketInfo.infoDict[ 'timeout' ]
       if timeout:
-         start = time.time()
+        start = time.time()
       while True:
         if timeout:
           if time.time() - start > timeout:
@@ -131,7 +139,7 @@ class SSLTransport( BaseTransport ):
           time.sleep( 0.001 )
         except GSI.SSL.ZeroReturnError:
           return S_OK( "" )
-        except Exception, e:
+        except Exception as e:
           return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
     finally:
       self.__unlock()
@@ -152,7 +160,7 @@ class SSLTransport( BaseTransport ):
           if ok:
             try:
               ok = self.oSocket.do_handshake()
-            except Exception, e:
+            except Exception as e:
               return S_ERROR( "Renegotiation failed: %s" % str( e ) )
 
 
@@ -174,7 +182,7 @@ class SSLTransport( BaseTransport ):
           time.sleep( 0.001 )
         except GSI.SSL.WantReadError:
           time.sleep( 0.001 )
-        except Exception, e:
+        except Exception as e:
           return S_ERROR( "Error while sending: %s" % str( e ) )
       return S_OK( sentBytes )
     finally:
@@ -186,6 +194,7 @@ def checkSanity( urlTuple, kwargs ):
   Check that all ssl environment is ok
   """
   useCerts = False
+  certFile = ''
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
     certTuple = Locations.getHostCertificateAndKeyLocation()
     if not certTuple:
@@ -194,8 +203,8 @@ def checkSanity( urlTuple, kwargs ):
     certFile = certTuple[0]
     useCerts = True
   elif "proxyString" in kwargs:
-    if type( kwargs[ 'proxyString' ] ) != types.StringType:
-      gLogger.error( "proxyString parameter is not a valid type" )
+    if not isinstance( kwargs[ 'proxyString' ], basestring ):
+      gLogger.error( "proxyString parameter is not a valid type", str( type( kwargs[ 'proxyString' ] ) ) )
       return S_ERROR( "proxyString parameter is not a valid type" )
   else:
     if "proxyLocation" in kwargs:
@@ -206,7 +215,7 @@ def checkSanity( urlTuple, kwargs ):
       gLogger.error( "No proxy found" )
       return S_ERROR( "No proxy found" )
     elif not os.path.isfile( certFile ):
-      gLogger.error( "%s proxy file does not exist" % certFile )
+      gLogger.error( "Proxy file does not exist", certFile )
       return S_ERROR( "%s proxy file does not exist" % certFile )
 
   #For certs always check CA's. For clients skipServerIdentityCheck
@@ -231,7 +240,7 @@ def checkSanity( urlTuple, kwargs ):
 
   retVal = certObj.hasExpired()
   if not retVal[ 'OK' ]:
-    gLogger.error( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
+    gLogger.error( "Can't verify proxy or certificate file", "%s:%s" % ( certFile, retVal[ 'Message' ] ) )
     return S_ERROR( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
   else:
     if retVal[ 'Value' ]:

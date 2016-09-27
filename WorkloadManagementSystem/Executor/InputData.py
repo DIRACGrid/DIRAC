@@ -1,59 +1,97 @@
-########################################################################
-# $HeadURL$
-# File :    InputDataAgent.py
-########################################################################
 """
-  The Input Data Agent queries the file catalog for specified job input data and adds the
-  relevant information to the job optimizer parameters to be used during the
-  scheduling decision.
+  The InputData Optimizer Executor queries the file catalog for specified job input data and adds the
+  relevant information to the job optimizer parameters to be used during the scheduling decision.
 """
-__RCSID__ = "$Id$"
 
-import time
 import pprint
+import time
+
+from DIRAC                                                           import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Resources.Storage.StorageElement                          import StorageElement
-from DIRAC.Core.Utilities.SiteSEMapping                              import getSitesForSE
-from DIRAC.Core.Utilities.List                                       import uniqueElements
-from DIRAC                                                           import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Client.ReplicaManager                import ReplicaManager
+from DIRAC.Resources.Catalog.FileCatalog                             import FileCatalog
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers                 import DMSHelpers
+from DIRAC.DataManagementSystem.Client.DataManager                   import DataManager
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations             import Operations
+from DIRAC.Core.Utilities.Proxy                                      import executeWithUserProxy
+
+__RCSID__ = "$Id$"
 
 
 class InputData( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
       - initializeOptimizer() before each execution cycle
-      - checkJob() - the main method called for each job
+      - optimizeJob() - the main method called for each job
   """
 
   @classmethod
   def initializeOptimizer( cls ):
-    """Initialize specific parameters for JobSanityAgent.
+    """Initialize specific parameters for InputData executor.
     """
     cls.failedMinorStatus = cls.ex_getOption( '/FailedJobStatus', 'Input Data Not Available' )
-    #this will ignore failover SE files
+    # this will ignore failover SE files
     cls.checkFileMetadata = cls.ex_getOption( 'CheckFileMetadata', True )
+    # flag to require Input Data lookup with a user proxy
+    cls.checkWithUserProxy = cls.ex_getOption( 'CheckWithUserProxy', False )
 
-    #Define the shifter proxy needed
-    # This sets the Default Proxy to used as that defined under
-    # /Operations/Shifter/ProductionManager
-    # the shifterProxy option in the Configuration can be used to change this default.
-    cls.ex_setProperty( 'shifterProxy', 'DataManager' )
-
-    try:
-      cls.__replicaMan = ReplicaManager()
-    except Exception, e:
-      msg = 'Failed to create ReplicaManager'
-      cls.log.exception( msg )
-      return S_ERROR( msg + str( e ) )
-
+    cls.__dataManDict = {}
+    cls.__fcDict = {}
     cls.__SEToSiteMap = {}
     cls.__lastCacheUpdate = 0
     cls.__cacheLifeTime = 600
 
+    # Note: this is a default, that right now is generically the default for user jobs, at least for main DIRAC users
+    # (since this now doesn't run for production jobs)
+    # But this should probably be replaced by what the job actually request.
+    # The problem is that the InputDataPolicy is not easy to get (a JDL parameter).
+    # This may be used but clear how now
+    # cls.__connectionLevel = 'PROTOCOL'
+
     return S_OK()
 
+  def __getDataManager( self, vo ):
+    if vo in self.__dataManDict:
+      return self.__dataManDict[vo]
+    else:
+      try:
+        self.__dataManDict[vo] = DataManager( vo = vo )
+      except Exception as _e:
+        msg = 'Failed to create DataManager'
+        self.log.exception( msg )
+        return None
+      return self.__dataManDict[vo]
+
+  def __getFileCatalog( self, vo ):
+    if vo in self.__fcDict:
+      return self.__fcDict[vo]
+    else:
+      try:
+        self.__fcDict[vo] = FileCatalog( vo = vo )
+      except Exception as _e:
+        msg = 'Failed to create FileCatalog'
+        self.log.exception( msg )
+        return None
+      return self.__fcDict[vo]
+
   def optimizeJob( self, jid, jobState ):
+    """ This is the method that needs to be implemented by each and every Executor
+
+        This optimizer will run if and only if it is needed:
+        - it will run only if there are input files
+        - for production jobs this can be skipped,
+          since the logic is already applied by the transformation system, via the TaskManagerPlugins
+    """
+    # Is it a production job?
+    result = jobState.getAttribute( "JobType" )
+    if not result['OK']:
+      return S_ERROR( "Could not retrieve job type" )
+    jobType = result['Value']
+    if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
+      self.jobLog.info( "Skipping optimizer, since this is a Production job" )
+      return self.setNextOptimizer()
+
+    # Is there input data or not?
     result = jobState.getInputData()
     if not result[ 'OK' ]:
       self.jobLog.error( "Cannot retrieve input data: %s" % result[ 'Message' ] )
@@ -61,34 +99,39 @@ class InputData( OptimizerExecutor ):
     if not result[ 'Value' ]:
       self.jobLog.notice( "No input data. Skipping." )
       return self.setNextOptimizer()
+
+    # From now on we know that it is a user job with input data
     inputData = result[ 'Value' ]
 
-    #Check if we already executed this Optimizer and the input data is resolved
+    # Check if we already executed this Optimizer and the input data is resolved
     result = self.retrieveOptimizerParam( self.ex_getProperty( 'optimizerName' ) )
     if result['OK'] and result['Value']:
-      self.jobLog.info( "Retrieving stored info" )
-      resolvedData = result['Value']
+      self.jobLog.info( "InputData optimizer ran already" )
     else:
-      self.jobLog.info( 'Processing input data' )
-      result = self.__resolveInputData( jobState, inputData )
+      self.jobLog.info( "Processing input data" )
+      if self.checkWithUserProxy:
+        result = jobState.getAttribute( "Owner" )
+        if not result['OK']:
+          return S_ERROR( "Could not retrieve job owner" )
+        userName = result['Value']
+        result = jobState.getAttribute( "OwnerGroup" )
+        if not result['OK']:
+          return S_ERROR( "Could not retrieve job owner group" )
+        userGroup = result['Value']
+        result = self._resolveInputData( jobState, inputData, proxyUserName = userName, proxyUserGroup = userGroup ) #pylint: disable=unexpected-keyword-arg
+      else:
+        result = self._resolveInputData( jobState, inputData )
       if not result['OK']:
         self.jobLog.warn( result['Message'] )
         return result
-      resolvedData = result['Value']
-
-    #Now check if banned SE's might prevent jobs to be scheduled
-    result = self.__checkActiveSEs( jobState, resolvedData['Value']['Value'] )
-    if not result['OK']:
-      # if after checking SE's input data can not be resolved any more
-      # then keep the job in the same status and update the application status
-      self.freezeTask( 600 )
-      return jobState.setAppStatus( result['Message'] )
 
     return self.setNextOptimizer()
 
   #############################################################################
-  def __resolveInputData( self, jobState, inputData ):
-    """This method checks the file catalog for replica information.
+
+  @executeWithUserProxy
+  def _resolveInputData( self, jobState, inputData ):
+    """ This method checks the file catalog for replica information.
     """
     lfns = []
     for lfn in inputData:
@@ -97,12 +140,18 @@ class InputData( OptimizerExecutor ):
       else:
         lfns.append( lfn )
 
-
+    result = jobState.getManifest()
+    if not result['OK']:
+      return result
+    manifest = result['Value']
+    vo = manifest.getOption( 'VirtualOrganization' )
     startTime = time.time()
-
-    print "LFNS", lfns
-
-    result = self.__replicaMan.getReplicas( lfns )
+    dm = self.__getDataManager( vo )
+    if dm is None:
+      return S_ERROR( 'Failed to instantiate DataManager for vo %s' % vo )
+    else:
+      # This will return already active replicas, excluding banned SEs, and removing tape replicas if there are disk replicas
+      result = dm.getActiveReplicas( lfns, preferDisk = True )
     self.jobLog.info( 'Catalog replicas lookup time: %.2f seconds ' % ( time.time() - startTime ) )
     if not result['OK']:
       self.log.warn( result['Message'] )
@@ -110,22 +159,31 @@ class InputData( OptimizerExecutor ):
 
     replicaDict = result['Value']
 
-    print "REPLICA DICT", replicaDict
+    self.jobLog.verbose( "REPLICA DICT: %s" % replicaDict )
 
-    result = self.__checkReplicas( jobState, replicaDict )
+    result = self.__checkReplicas( jobState, replicaDict, vo )
 
     if not result['OK']:
-      self.jobLog.error( result['Message'] )
+      self.jobLog.error( "Failed to check replicas", result['Message'] )
       return result
     siteCandidates = result[ 'Value' ]
 
     if self.ex_getOption( 'CheckFileMetadata', True ):
-      start = time.time()
-      guidDict = self.__replicaMan.getCatalogFileMetadata( lfns )
+      result = jobState.getManifest()
+      if not result['OK']:
+        return result
+      manifest = result['Value']
+      vo = manifest.getOption( 'VirtualOrganization' )
+      fc = self.__getFileCatalog( vo )
+      if fc is None:
+        return S_ERROR( 'Failed to instantiate FileCatalog for vo %s' % vo )
+      else:
+        guidDict = fc.getFileMetadata( lfns )
       self.jobLog.info( 'Catalog Metadata Lookup Time: %.2f seconds ' % ( time.time() - startTime ) )
 
       if not guidDict['OK']:
         self.log.warn( guidDict['Message'] )
+        return guidDict
 
       failed = guidDict['Value']['Failed']
       if failed:
@@ -147,7 +205,7 @@ class InputData( OptimizerExecutor ):
     return S_OK( resolvedData )
 
   #############################################################################
-  def __checkReplicas( self, jobState, replicaDict ):
+  def __checkReplicas( self, jobState, replicaDict, vo ):
     """Check that all input lfns have valid replicas and can all be found at least in one single site.
     """
     badLFNs = []
@@ -170,10 +228,10 @@ class InputData( OptimizerExecutor ):
       self.jobLog.info( 'Found %s problematic LFN(s):\n%s' % ( len( badLFNs ), errorMsg ) )
       result = jobState.setParameter( self.ex_getProperty( 'optimizerName' ), errorMsg )
       if not result['OK']:
-        self.log.error( result['Message'] )
-      return S_ERROR( 'Input Data Not Available' )
+        self.log.error( 'Failed to set job parameter', result['Message'] )
+      return S_ERROR( 'Input data not available' )
 
-    return self.__getSiteCandidates( okReplicas )
+    return self.__getSiteCandidates( okReplicas, vo )
 
   #############################################################################
   def __checkActiveSEs( self, jobState, replicaDict ):
@@ -184,16 +242,26 @@ class InputData( OptimizerExecutor ):
     # Now let's check if some replicas might not be available due to banned SE's
     self.jobLog.info( "Checking active replicas" )
     startTime = time.time()
-    result = self.__replicaMan.checkActiveReplicas( replicaDict )
+    result = jobState.getManifest()
+    if not result['OK']:
+      return result
+    manifest = result['Value']
+    vo = manifest.getOption( 'VirtualOrganization' )
+    dm = self.__getDataManager( vo )
+    if dm is None:
+      return S_ERROR( 'Failed to instantiate DataManager for vo %s' % vo )
+    else:
+      result = dm.checkActiveReplicas( replicaDict )
     self.jobLog.info( "Active replica check took %.2f secs" % ( time.time() - startTime ) )
     if not result['OK']:
       # due to banned SE's input data might no be available
+      msg = "On Hold: Input data not Available for SE"
       self.jobLog.warn( result['Message'] )
-      return S_ERROR( msg )
+      return S_ERROR( result['Message'] )
 
     activeReplicaDict = result['Value']
 
-    result = self.__checkReplicas( jobState, activeReplicaDict )
+    result = self.__checkReplicas( jobState, activeReplicaDict, vo )
 
     if not result['OK']:
       # due to a banned SE's input data is not available at a single site
@@ -202,7 +270,7 @@ class InputData( OptimizerExecutor ):
       return S_ERROR( msg )
 
     resolvedData = {}
-    #THIS IS ONE OF THE MOST HORRIBLE HACKS. I hate the creator of the Value of Value of Successful of crap...
+    # THIS IS ONE OF THE MOST HORRIBLE HACKS. I hate the creator of the Value of Value of Successful of crap...
     resolvedData['Value'] = S_OK( activeReplicaDict )
     resolvedData['SiteCandidates'] = result['Value']
     result = self.storeOptimizerParam( self.ex_getProperty( 'optimizerName' ), resolvedData )
@@ -226,17 +294,17 @@ class InputData( OptimizerExecutor ):
       self.__lastCacheUpdate = now
 
     if seName not in self.__SEToSiteMap:
-      result = getSitesForSE( seName )
+      result = DMSHelpers().getSitesForSE( seName )
       if not result['OK']:
         return result
       self.__SEToSiteMap[ seName ] = list( result['Value'] )
     return S_OK( self.__SEToSiteMap[ seName ] )
 
   #############################################################################
-  def __getSiteCandidates( self, okReplicas ):
-    """This method returns a list of possible site candidates based on the
-       job input data requirement.  For each site candidate, the number of files
-       on disk and tape is resolved.
+  def __getSiteCandidates( self, okReplicas, vo ):
+    """ This method returns a list of possible site candidates based on the job input data requirement.
+
+        For each site candidate, the number of files on disk and tape is resolved.
     """
 
     lfnSEs = {}
@@ -245,59 +313,64 @@ class InputData( OptimizerExecutor ):
       siteSet = set()
       for seName in replicas:
         result = self.__getSitesForSE( seName )
-        if result['OK']:
-          siteSet.update( result['Value'] )
+        if not result['OK']:
+          self.jobLog.warn( "Could not get sites for SE %s: %s" % ( seName, result[ 'Message' ] ) )
+          return result
+        siteSet.update( result['Value'] )
       lfnSEs[ lfn ] = siteSet
 
-    #This makes an intersection of all sets in the dictionary and returns a set with it
+    if not lfnSEs:
+      return S_ERROR( "No candidate sites available" )
+
+    # This makes an intersection of all sets in the dictionary and returns a set with it
     siteCandidates = set.intersection( *[ lfnSEs[ lfn ] for lfn in lfnSEs ] )
 
     if not siteCandidates:
       return S_ERROR( 'No candidate sites available' )
 
-    #In addition, check number of files on tape and disk for each site
-    #for optimizations during scheduling
+    # In addition, check number of files on tape and disk for each site
+    # for optimizations during scheduling
     sitesData = {}
     for siteName in siteCandidates:
       sitesData[ siteName ] = { 'disk': set(), 'tape': set() }
 
-    #Loop time!
+    # Loop time!
     seDict = {}
     for lfn in okReplicas:
       replicas = okReplicas[ lfn ]
-      #Check each SE in the replicas
+      # Check each SE in the replicas
       for seName in replicas:
-        #If not already "loaded" the add it to the dict
+        # If not already "loaded" the add it to the dict
         if seName not in seDict:
           result = self.__getSitesForSE( seName )
           if not result['OK']:
             self.jobLog.warn( "Could not get sites for SE %s: %s" % ( seName, result[ 'Message' ] ) )
             continue
           siteList = result[ 'Value' ]
-          seObj = StorageElement( seName )
+          seObj = StorageElement( seName, vo = vo )
           result = seObj.getStatus()
           if not result[ 'OK' ]:
             self.jobLog.error( "Could not retrieve status for SE %s: %s" % ( seName, result[ 'Message' ] ) )
             continue
           seStatus = result[ 'Value' ]
           seDict[ seName ] = { 'Sites': siteList, 'Status': seStatus }
-        #Get SE info from the dict
+        # Get SE info from the dict
         seData = seDict[ seName ]
         siteList = seData[ 'Sites' ]
         seStatus = seData[ 'Status' ]
         for siteName in siteList:
-          #If not a candidate site then skip it
+          # If not a candidate site then skip it
           if siteName not in siteCandidates:
             continue
-          #Add the LFNs to the disk/tape lists
+          # Add the LFNs to the disk/tape lists
           diskLFNs = sitesData[ siteName ][ 'disk' ]
           tapeLFNs = sitesData[ siteName ][ 'tape' ]
-          if seStatus[ 'Read' ] and seStatus[ 'DiskSE' ]:
-            #Sets contain only unique elements, no need to check if it's there
+          if seStatus[ 'DiskSE' ]:
+            # Sets contain only unique elements, no need to check if it's there
             diskLFNs.add( lfn )
             if lfn in tapeLFNs:
               tapeLFNs.remove( lfn )
-          if seStatus[ 'Read' ] and seStatus[ 'TapeSE' ]:
+          if seStatus[ 'TapeSE' ]:
             if lfn not in diskLFNs:
               tapeLFNs.add( lfn )
 
@@ -306,4 +379,4 @@ class InputData( OptimizerExecutor ):
       sitesData[siteName]['tape'] = len( sitesData[siteName]['tape'] )
     return S_OK( sitesData )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

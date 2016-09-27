@@ -19,10 +19,10 @@ import os, sys, tempfile, shutil, time, base64, bz2
 
 from DIRAC.WorkloadManagementSystem.private.PilotDirector import PilotDirector
 from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
-from DIRAC.Resources.Computing.ComputingElement import getResourceDict
-from DIRAC.Core.Security import CS
+from DIRAC.Core.Security                                  import CS
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient      import gProxyManager
-from DIRAC import S_OK, S_ERROR, DictCache, gConfig, rootPath
+from DIRAC                                                import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities.DictCache                       import DictCache
 
 ERROR_CE         = 'No CE available'
 ERROR_JDL        = 'Could not create Pilot script'
@@ -33,6 +33,29 @@ COMPUTING_ELEMENTS = []
 WAITING_TO_RUNNING_RATIO = 0.5
 MAX_WAITING_JOBS = 50
 MAX_NUMBER_JOBS = 10000
+
+def getResourceDict( ceName = None ):
+  """Look into LocalSite for Resource Requirements
+  """
+  ret = gConfig.getOptionsDict( '/LocalSite/ResourceDict' )
+  if not ret['OK']:
+    resourceDict = {}
+  else:
+    resourceDict = dict( ret['Value'] )
+
+  # if a CE Name is given, check the corresponding section
+  if ceName:
+    ret = gConfig.getOptionsDict( '/LocalSite/%s/ResourceDict' % ceName )
+    if ret['OK']:
+      resourceDict.update( dict( ret['Value'] ) )
+
+  # now add some defaults
+  resourceDict['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'None' )
+  if not 'CPUTime' in resourceDict:
+    from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
+    resourceDict['CPUTime'] = gConfig.getValue( '/LocalSite/CPUTime', maxCPUSegments[-1] )
+
+  return resourceDict
 
 class DIRACPilotDirector(PilotDirector):
   """
@@ -81,11 +104,11 @@ class DIRACPilotDirector(PilotDirector):
       return
 
     # FIXME: this is to start testing
-    ceName, computingElementDict = self.computingElementDict.items()[0]
+    _ceName, computingElementDict = self.computingElementDict.items()[0]
 
     self.computingElement = computingElementDict['CE']
 
-    self.log.debug( self.computingElement.getDynamicInfo() )
+    self.log.debug( self.computingElement.getCEStatus() )
 
     self.log.info( ' SiteName:', self.siteName )
 
@@ -131,7 +154,7 @@ class DIRACPilotDirector(PilotDirector):
     """
 
     taskQueueID = taskQueueDict['TaskQueueID']
-    ownerDN = taskQueueDict['OwnerDN']
+#     ownerDN = taskQueueDict['OwnerDN']
 
     submittedPilots = 0
 
@@ -149,7 +172,7 @@ class DIRACPilotDirector(PilotDirector):
       availableQueues = []
       # now = Time.dateTime()
       cachedAvailableQueues = self.listMatchCache.get( pilotRequirementsString )
-      if cachedAvailableQueues == False:
+      if cachedAvailableQueues is None:
         availableQueues = self._listQueues( pilotRequirements )
         if availableQueues != False:
           self.listMatchCache.add( pilotRequirementsString, self.listMatchDelay, availableQueues )
@@ -180,25 +203,10 @@ class DIRACPilotDirector(PilotDirector):
 
       ceConfigDict = self.computingElementDict[CE]
 
-      if 'ClientPlatform' in ceConfigDict:
-        pilotOptions.append( "-p '%s'" % ceConfigDict['ClientPlatform'])
-
-      if 'SharedArea' in ceConfigDict:
-        pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % ceConfigDict['SharedArea'] )
-
-      if 'CPUScalingFactor' in ceConfigDict:
-        pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
-
-      if 'CPUNormalizationFactor' in ceConfigDict:
-        pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % ceConfigDict['CPUNormalizationFactor'] )
-
-        self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
-
       httpProxy = ''
       if 'HttpProxy' in ceConfigDict:
         httpProxy = ceConfigDict['HttpProxy']
 
-      pilotDir = ''
       if 'JobExecDir' in ceConfigDict:
         pilotExecDir = ceConfigDict['JobExecDir']
 
@@ -225,7 +233,7 @@ class DIRACPilotDirector(PilotDirector):
         if not maxPilotsToSubmit:
           break
         # submit the pilots and then check again
-        for i in range( min(maxPilotsToSubmit,pilotsToSubmit-submittedPilots) ):
+        for _i in range( min( maxPilotsToSubmit, pilotsToSubmit - submittedPilots ) ):
           submission = computingElement.submitJob(pilotScript, '', '')
           if not submission['OK']:
             self.log.error('Pilot submission failed: ', submission['Message'])
@@ -256,7 +264,6 @@ class DIRACPilotDirector(PilotDirector):
      matching the requirements of the pilots.
      Currently only CPU time is considered
     """
-    availableQueues = []
     result = self.computingElement.available( pilotRequirements )
     if not result['OK']:
       self.log.error( 'Can not determine available queues', result['Message'] )
@@ -282,7 +289,7 @@ class DIRACPilotDirector(PilotDirector):
     localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
 #
-import os, tempfile, sys, shutil, base64, bz2
+import os, stat, tempfile, sys, shutil, base64, bz2
 try:
   pilotExecDir = '%(pilotExecDir)s'
   if not pilotExecDir:
@@ -292,9 +299,9 @@ try:
   open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
   open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedPilot)s" ) ) )
   open( '%(installScript)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedInstall)s" ) ) )
-  os.chmod("proxy",0600)
-  os.chmod("%(pilotScript)s",0700)
-  os.chmod("%(installScript)s",0700)
+  os.chmod("proxy", stat.S_IRUSR | stat.S_IWUSR)
+  os.chmod("%(pilotScript)s", stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+  os.chmod("%(installScript)s", stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
   if "LD_LIBRARY_PATH" not in os.environ:
     os.environ["LD_LIBRARY_PATH"]=""
   os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
@@ -307,7 +314,7 @@ try:
   for key in os.environ.keys():
     print key + '=' + os.environ[key]
   print '==========================================================='
-except Exception, x:
+except Exception as x:
   print >> sys.stderr, x
   sys.exit(-1)
 cmd = "python %(pilotScript)s %(pilotOptions)s"

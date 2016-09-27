@@ -7,6 +7,7 @@ import Queue
 import threading
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities.File import mkDir
 
 class SecurityFileLog( threading.Thread ):
 
@@ -35,10 +36,7 @@ class SecurityFileLog( threading.Thread ):
       secMsg = self.__messagesQueue.get()
       msgTime = secMsg[ 0 ]
       path = "%s/%s/%02d" % ( self.__basePath, msgTime.year, msgTime.month )
-      try:
-        os.makedirs( path )
-      except:
-        pass
+      mkDir( path )
       logFile = "%s/%s%02d%02d.security.log.csv" % ( path, msgTime.year, msgTime.month, msgTime.day )
       if not os.path.isfile( logFile ):
         fd = open( logFile, "w" )
@@ -51,23 +49,23 @@ class SecurityFileLog( threading.Thread ):
   def __launchCleaningOldLogFiles(self):
     nowEpoch = time.time()
     self.__walkOldLogs( self.__basePath,
-                         nowEpoch,
-                         re.compile( "^\d*\.security\.log\.csv$" ),
-                         86400 * 3,
-                         self.__zipOldLog )
+                        nowEpoch,
+                        re.compile( "^\d*\.security\.log\.csv$" ),
+                        86400 * 3,
+                        self.__zipOldLog )
     self.__walkOldLogs( self.__basePath,
-                         nowEpoch,
-                         re.compile( "^\d*\.security\.log\.csv\.gz$" ),
-                         self.__secsToLog,
-                         self.__unlinkOldLog )
+                        nowEpoch,
+                        re.compile( "^\d*\.security\.log\.csv\.gz$" ),
+                        self.__secsToLog,
+                        self.__unlinkOldLog )
 
 
   def __unlinkOldLog( self, filePath ):
     try:
       gLogger.info( "Unlinking file %s" % filePath )
       os.unlink( filePath )
-    except Exception, e:
-      gLogger.error( "Can't unlink old log file %s: %s" % ( filePath, str(e) ) )
+    except Exception as e:
+      gLogger.error( "Can't unlink old log file", "%s: %s" % ( filePath, str(e) ) )
       return 1
     return 0
 
@@ -77,13 +75,13 @@ class SecurityFileLog( threading.Thread ):
       fd = gzip.open( "%s.gz" % filePath, "w" )
       fO = file( filePath )
       bS = 1048576
-      buf = fO.read()
+      buf = fO.read(2**31-1)
       while buf:
         fd.write( buf )
-        buf = fO.read()
+        buf = fO.read(2**31-1)
       fd.close()
       fO.close()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Can't compress old log file", filePath )
       return 1
     return self.__unlinkOldLog( filePath ) + 1
@@ -103,8 +101,8 @@ class SecurityFileLog( threading.Thread ):
           try:
             os.rmdir( entryPath )
             numEntries -= 1
-          except Exception, e:
-            gLogger.error( "Can't delete directory %s: %s" % ( entryPath, str(e) ) )
+          except Exception as e:
+            gLogger.error( "Can't delete directory", "%s: %s" % ( entryPath, str(e) ) )
       elif os.path.isfile( entryPath ):
         numEntries += 1
         if reLog.match( entry ):

@@ -1,26 +1,24 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
 """
    DIRAC Logger client
 """
 
 import sys
 import traceback
-import os
-import os.path
-import re
 import inspect
-import Queue
+
+import DIRAC
 from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.logging.Message import Message
 from DIRAC.Core.Utilities import Time, List
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure, reprReturnErrorStructure
 from DIRAC.FrameworkSystem.private.logging.backends.BackendIndex import gBackendIndex
-from DIRAC.Core.Utilities import ExitCallback, ColorCLI
-import DIRAC
+from DIRAC.Core.Utilities import ExitCallback
+
+__RCSID__ = "$Id$"
 
 DEBUG = 1
 
-class Logger:
+class Logger( object ):
 
   defaultLogLevel = 'NOTICE'
 
@@ -31,7 +29,7 @@ class Logger:
     self._outputList = []
     self._subLoggersDict = {}
     self._logLevels = LogLevels()
-    self.__backendOptions = { 'showHeaders' : True, 'showThreads' : False }
+    self.__backendOptions = { 'showHeaders' : True, 'showThreads' : False, 'Color' : False }
     self.__preinitialize()
     self.__initialized = False
 
@@ -55,10 +53,12 @@ class Logger:
         self._backendsDict[ backend ] = gBackendIndex[ backend ]( self.__backendOptions )
 
   def __preinitialize ( self ):
+    """ This sets some defaults
+    """
     self._systemName = "Framework"
     self.registerBackends( [ 'stdout' ] )
     self._minLevel = self._logLevels.getLevelValue( "NOTICE" )
-    #HACK to take into account dev levels before the command line if fully parsed
+    # HACK to take into account dev levels before the command line if fully parsed
     debLevs = 0
     for arg in sys.argv:
       if arg.find( "-d" ) == 0:
@@ -81,11 +81,11 @@ class Logger:
     from DIRAC.ConfigurationSystem.Client.Config import gConfig
     from os import getpid
 
-    #self.__printDebug( "The configuration path is %s" % cfgPath )
-    #Get the options for the different output backends
+    # self.__printDebug( "The configuration path is %s" % cfgPath )
+    # Get the options for the different output backends
     retDict = gConfig.getOptionsDict( "%s/BackendsOptions" % cfgPath )
 
-    #self.__printDebug( retDict )
+    # self.__printDebug( retDict )
     if not retDict[ 'OK' ]:
       cfgBackOptsDict = { 'FileName': 'Dirac-log_%s.log' % getpid(), 'Interactive': True, 'SleepTime': 150 }
     else:
@@ -93,7 +93,7 @@ class Logger:
 
     self.__backendOptions.update( cfgBackOptsDict )
 
-    if not self.__backendOptions.has_key( 'Filename' ):
+    if 'FileName' not in self.__backendOptions:
       self.__backendOptions[ 'FileName' ] = 'Dirac-log_%s.log' % getpid()
 
     sleepTime = 150
@@ -107,17 +107,19 @@ class Logger:
 
     self.__backendOptions[ 'Site' ] = DIRAC.siteName()
 
-    #Configure outputs
+    self.__backendOptions[ 'Color' ] = gConfig.getValue( "%s/LogColor" % cfgPath, False )
+
+    # Configure outputs
     desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath, 'stdout' )
     self.registerBackends( List.fromChar( desiredBackends ) )
-    #Configure verbosity
+    # Configure verbosity
     defaultLevel = Logger.defaultLogLevel
     if "Scripts" in cfgPath:
       defaultLevel = gConfig.getValue( '/Systems/Scripts/LogLevel', Logger.defaultLogLevel )
     self.setLevel( gConfig.getValue( "%s/LogLevel" % cfgPath, defaultLevel ) )
-    #Configure framing
+    # Configure framing
     self._showCallingFrame = gConfig.getValue( "%s/LogShowLine" % cfgPath, self._showCallingFrame )
-    #Get system name
+    # Get system name
     self._systemName = str( systemName )
 
     if not self.__backendOptions['Interactive']:
@@ -125,11 +127,19 @@ class Logger:
 
   def setLevel( self, levelName ):
     levelName = levelName.upper()
-    if levelName.upper() in self._logLevels.getLevels():
+    if levelName in self._logLevels.getLevels():
       self._minLevel = abs( self._logLevels.getLevelValue( levelName ) )
       return True
     return False
 
+  def getLevel( self ):
+    return self._logLevels.getLevel( self._minLevel )
+
+  def shown( self, levelName ):
+    levelName = levelName.upper()
+    if levelName in self._logLevels.getLevels():
+      return self._logLevels.getLevelValue( levelName ) <= levelName
+    return False
 
   def getName( self ):
     return self._systemName
@@ -171,6 +181,11 @@ class Logger:
     return self.processMessage( messageObject )
 
   def debug( self, sMsg, sVarMsg = '' ):
+    # In case of S_ERROR structure make full string representation
+    if isReturnStructure( sMsg ):
+      sMsg = reprReturnErrorStructure( sMsg, full = True )
+    if isReturnStructure( sVarMsg ):
+      sVarMsg = reprReturnErrorStructure( sVarMsg, full = True )
     messageObject = Message( self._systemName,
                              self._logLevels.debug,
                              Time.dateTime(),
@@ -202,6 +217,7 @@ class Logger:
       sVarMsg += "\n%s" % self.__getExceptionString( lException, lExcInfo )
     else:
       sVarMsg = "\n%s" % self.__getExceptionString( lException, lExcInfo )
+
     messageObject = Message( self._systemName,
                              self._logLevels.exception,
                              Time.dateTime(),
@@ -234,7 +250,7 @@ class Logger:
         messageObject.setName( self._systemName )
       self._processMessage( messageObject )
     return True
-  #S_OK()
+  # S_OK()
 
   def __testLevel( self, sLevel ):
     return abs( self._logLevels.getLevelValue( sLevel ) ) >= self._minLevel
@@ -244,36 +260,40 @@ class Logger:
       self._backendsDict[ backend ].doMessage( messageObject )
 
   def __getExceptionString( self, lException = False, lExcInfo = False ):
+    """
+    Return a formated string with exception and traceback information
+    If lExcInfo is present: full traceback
+    Elif lException is present: only last call traceback
+    Else: no traceback
+    """
+    if lExcInfo:
+      lException = False
     if lException:
+      # This is useless but makes pylint happy
+      if not lException:
+        lException = Exception()
+      lExcInfo = sys.exc_info()
       try:
         args = lException.args
       except:
         return "Passed exception to the logger is not a valid Exception: %s" % str( lException )
-      if len( args ) == 0:
-        type = "Unknown exception type"
-        value = "Unknown exception"
-        stack = ""
-      elif len( args ) == 1:
-        type = "Unknown exception type"
-        value = args[0]
-        stack = ""
-      elif len( args ) == 2:
-        type = args[0]
-        value = args[1]
-        stack = ""
-      else:
-        type = args[0]
-        value = args[1]
-        stack = "\n".join( args[2] )
+      exceptType = lException.__class__.__name__
+      value = ','.join( [str( arg ) for arg in args] )
+      # Only print out last part of the traceback
+      stack = traceback.format_tb( lExcInfo[2] )[-1]
     else:
-      if not lExcInfo:
+      if lExcInfo:
+        if isinstance(lExcInfo, bool):
+          lExcInfo = sys.exc_info()
+        # Get full traceback
+        stack = "".join( traceback.format_tb( lExcInfo[2] ) )
+      else:
         lExcInfo = sys.exc_info()
-      type, value = ( lExcInfo[0], lExcInfo[1] )
-      stack = "\n".join( traceback.format_tb( lExcInfo[2] ) )
-    return "== EXCEPTION ==\n%s:%s\n%s===============" % ( 
-                         type,
-                         value,
-                         stack )
+        stack = ""
+      exceptType = lExcInfo[0].__name__
+      value = lExcInfo[1]
+
+    return "== EXCEPTION == %s\n%s\n%s: %s\n===============" % ( exceptType, stack, exceptType, value )
 
 
   def __discoverCallingFrame( self ):
@@ -306,17 +326,17 @@ class Logger:
       stack.append( f )
       f = f.f_back
     stack.reverse()
-    #traceback.print_exc()
+    # traceback.print_exc()
     sExtendedException = "Locals by frame, innermost last\n"
     for frame in stack:
       sExtendedException += "\n"
       sExtendedException += "Frame %s in %s at line %s\n" % ( frame.f_code.co_name,
-                                           frame.f_code.co_filename,
-                                           frame.f_lineno )
-      for key, value in frame.f_locals.items():
-        #We have to be careful not to cause a new error in our error
-        #printer! Calling str() on an unknown object could cause an
-        #error we don't want.
+                                                              frame.f_code.co_filename,
+                                                              frame.f_lineno )
+      for key, value in frame.f_locals.iteritems():
+        # We have to be careful not to cause a new error in our error
+        # printer! Calling str() on an unknown object could cause an
+        # error we don't want.
         try:
           sExtendedException += "\t%20s = %s\n" % ( key, value )
         except:
@@ -331,7 +351,7 @@ class Logger:
     stack_list = traceback.extract_stack()
     return ''.join( traceback.format_list( stack_list[:-2] ) )
 
-  def flushAllMessages( self, exitCode ):
+  def flushAllMessages( self, exitCode = 0 ):
     for backend in self._backendsDict:
       self._backendsDict[ backend ].flush()
 
@@ -342,10 +362,9 @@ class Logger:
     return self._subLoggersDict[ subName ]
 
   def __printDebug( self, debugString ):
-    """ This function is implemented to debug problems with initialization 
-     of the logger. We have to use it because the Logger is obviously unusable 
+    """ This function is implemented to debug problems with initialization
+     of the logger. We have to use it because the Logger is obviously unusable
      during its initialization.
     """
     if DEBUG:
       print debugString
-

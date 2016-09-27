@@ -11,13 +11,13 @@ from DIRAC.Core.Base import Script
 days = 0
 months = 0
 years = 0
-wildcard = '*'
+wildcard = None
 baseDir = ''
 emptyDirsFlag = False
 Script.registerSwitch( "D:", "Days=", "Match files older than number of days [%s]" % days )
 Script.registerSwitch( "M:", "Months=", "Match files older than number of months [%s]" % months )
 Script.registerSwitch( "Y:", "Years=", "Match files older than number of years [%s]" % years )
-Script.registerSwitch( "w:", "Wildcard=", "Wildcard for matching filenames [%s]" % wildcard )
+Script.registerSwitch( "w:", "Wildcard=", "Wildcard for matching filenames [All]" )
 Script.registerSwitch( "b:", "BaseDir=", "Base directory to begin search (default /[vo]/user/[initial]/[username])" )
 Script.registerSwitch( "e", "EmptyDirs", "Create a list of empty directories" )
 
@@ -45,11 +45,10 @@ import DIRAC
 from DIRAC                                                   import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
 from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
-from DIRAC.DataManagementSystem.Client.ReplicaManager        import ReplicaManager
-from DIRAC.Core.Utilities.List                               import sortList
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from datetime import datetime, timedelta
 import sys, os, time, fnmatch
-rm = ReplicaManager()
+fc = FileCatalog()
 
 def isOlderThan( cTimeStruct, days ):
   timeDelta = timedelta( days = days )
@@ -58,9 +57,9 @@ def isOlderThan( cTimeStruct, days ):
     return True
   return False
 
-verbose = False
+withMetadata = False
 if days or months or years:
-  verbose = True
+  withMetadata = True
 totalDays = 0
 if years:
   totalDays += 365 * years
@@ -74,6 +73,9 @@ if not res['OK']:
   gLogger.error( "Failed to get client proxy information.", res['Message'] )
   DIRAC.exit( 2 )
 proxyInfo = res['Value']
+if proxyInfo['secondsLeft'] == 0:
+  gLogger.error( "Proxy expired" )
+  DIRAC.exit( 2 )
 username = proxyInfo['username']
 vo = ''
 if 'group' in proxyInfo:
@@ -84,41 +86,45 @@ if not baseDir:
     Script.showHelp()
   baseDir = '/%s/user/%s/%s' % ( vo, username[0], username )
 
+baseDir = baseDir.rstrip( '/' )
+
 gLogger.info( 'Will search for files in %s' % baseDir )
 activeDirs = [baseDir]
 
 allFiles = []
 emptyDirs = []
 while len( activeDirs ) > 0:
-  currentDir = activeDirs[0]
-  res = rm.getCatalogListDirectory( currentDir, verbose )
-  activeDirs.remove( currentDir )
+  currentDir = activeDirs.pop()
+  res = fc.listDirectory( currentDir, withMetadata, timeout = 360 )
   if not res['OK']:
     gLogger.error( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Message'] ) )
-  elif res['Value']['Failed'].has_key( currentDir ):
+  elif currentDir in res['Value']['Failed']:
     gLogger.error( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Value']['Failed'][currentDir] ) )
   else:
     dirContents = res['Value']['Successful'][currentDir]
     subdirs = dirContents['SubDirs']
-    empty = True
-    for subdir, metadata in subdirs.items():
-      if ( not verbose ) or isOlderThan( metadata['CreationDate'], totalDays ):
-        activeDirs.append( subdir )
-      empty = False
-    for filename, fileInfo in dirContents['Files'].items():
-      metadata = fileInfo['MetaData']
-      if ( not verbose ) or isOlderThan( metadata['CreationDate'], totalDays ):
-        if fnmatch.fnmatch( filename, wildcard ):
-          allFiles.append( filename )
-      empty = False
-    files = dirContents['Files'].keys()
-    gLogger.notice( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
-    if empty:
+    files = dirContents['Files']
+    if not subdirs and not files:
       emptyDirs.append( currentDir )
+      gLogger.notice( '%s: empty directory' % currentDir )
+    else:
+      for subdir in sorted( subdirs, reverse = True ):
+        if ( not withMetadata ) or isOlderThan( subdirs[subdir]['CreationDate'], totalDays ):
+          activeDirs.append( subdir )
+      for filename in sorted( files ):
+        fileOK = False
+        if ( not withMetadata ) or isOlderThan( files[filename]['MetaData']['CreationDate'], totalDays ):
+          if wildcard is None or fnmatch.fnmatch( filename, wildcard ):
+            fileOK = True
+        if not fileOK:
+          files.pop( filename )
+      allFiles += sorted( files )
+
+      gLogger.notice( "%s: %d files%s, %d sub-directories" % ( currentDir, len( files ), ' matching' if withMetadata or wildcard else '', len( subdirs ) ) )
 
 outputFileName = '%s.lfns' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace( '/', '-' )
 outputFile = open( outputFileName, 'w' )
-for lfn in sortList( allFiles ):
+for lfn in sorted( allFiles ):
   outputFile.write( lfn + '\n' )
 outputFile.close()
 gLogger.notice( '%d matched files have been put in %s' % ( len( allFiles ), outputFileName ) )
@@ -126,7 +132,7 @@ gLogger.notice( '%d matched files have been put in %s' % ( len( allFiles ), outp
 if emptyDirsFlag:
   outputFileName = '%s.emptydirs' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace( '/', '-' )
   outputFile = open( outputFileName, 'w' )
-  for dir in sortList( emptyDirs ):
+  for dir in sorted( emptyDirs ):
     outputFile.write( dir + '\n' )
   outputFile.close()
   gLogger.notice( '%d empty directories have been put in %s' % ( len( emptyDirs ), outputFileName ) )

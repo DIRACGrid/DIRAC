@@ -1,9 +1,8 @@
-## $HeadURL:  $
-#''' Publisher
-#
-#  Module not used. Will be back to life whenever the portal is ready.
-#
-#'''
+''' Publisher
+'''
+
+#FIXME: Module not used. Will be back to life whenever the portal is ready.
+
 #
 #import copy
 #import threading
@@ -21,7 +20,7 @@
 #from DIRAC.ResourceStatusSystem.Utilities.CS            import getStorageElementStatus
 #from DIRAC.ResourceStatusSystem.Utilities.InfoGetter    import InfoGetter
 #
-#__RCSID__ = '$Id: $'
+__RCSID__ = '$Id: $'
 #
 #class Publisher:
 #  """

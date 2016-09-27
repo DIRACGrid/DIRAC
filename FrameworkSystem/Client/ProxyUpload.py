@@ -19,6 +19,7 @@ class CLIParams:
   proxyLoc = False
   onTheFly = False
   stdinPasswd = False
+  rfcIfPossible = False
   userPasswd = ""
 
   def __str__( self ):
@@ -36,7 +37,7 @@ class CLIParams:
     try:
       fields = [ f.strip() for f in arg.split( ":" ) ]
       self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
-    except:
+    except ValueError:
       print "Can't parse %s time! Is it a HH:MM?" % arg
       return DIRAC.S_ERROR( "Can't parse time argument" )
     return DIRAC.S_OK()
@@ -97,9 +98,9 @@ class CLIParams:
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
     Script.addDefaultOptionValue( "LogLevel", "always" )
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain
-from DIRAC.Core.Security import Locations, CS
+from DIRAC.Core.Security import Locations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 def uploadProxy( params ):
@@ -109,11 +110,6 @@ def uploadProxy( params ):
     proxyLoc = Locations.getDefaultProxyLocation()
   if not proxyLoc:
     return S_ERROR( "Can't find any proxy" )
-
-  proxyChain = X509Chain()
-  retVal = proxyChain.loadProxyFromFile( proxyLoc )
-  if not retVal[ 'OK' ]:
-    return S_ERROR( "Can't load proxy file %s: %s" % ( params.proxyLoc, retVal[ 'Message' ] ) )
 
   if params.onTheFly:
     DIRAC.gLogger.info( "Uploading proxy on-the-fly" )
@@ -154,13 +150,23 @@ def uploadProxy( params ):
 
     diracGroup = params.diracGroup
     if not diracGroup:
-      diracGroup = CS.getDefaultUserGroup()
+      result = chain.getCredentials()
+      if not result['OK']:
+        return result
+      if 'group' not in result['Value']:
+        return S_ERROR( 'Can not get Group from existing credentials' )
+      diracGroup = result['Value']['group']
     restrictLifeTime = params.proxyLifeTime
 
   else:
+    proxyChain = X509Chain()
+    retVal = proxyChain.loadProxyFromFile( proxyLoc )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Can't load proxy file %s: %s" % ( params.proxyLoc, retVal[ 'Message' ] ) )
+
     chain = proxyChain
     diracGroup = False
     restrictLifeTime = 0
 
   DIRAC.gLogger.info( " Uploading..." )
-  return gProxyManager.uploadProxy( chain, diracGroup, restrictLifeTime = restrictLifeTime )
+  return gProxyManager.uploadProxy( chain, diracGroup, restrictLifeTime = restrictLifeTime, rfcIfPossible = params.rfcIfPossible )

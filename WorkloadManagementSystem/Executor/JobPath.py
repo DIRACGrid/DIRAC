@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-# File :    JobPathAgent.py
-########################################################################
 """
   The Job Path Agent determines the chain of Optimizing Agents that must
   work on the job prior to the scheduling decision.
@@ -12,15 +8,17 @@
 
 """
 __RCSID__ = "$Id$"
+
 import types
-from DIRAC import S_OK, S_ERROR, List
+
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import List
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
-from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 
 class JobPath( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
-      - checkJob() - the main method called for each job
+      - optimizeJob() - the main method called for each job
       and it can provide:
       - initializeOptimizer() before each execution cycle
   """
@@ -54,7 +52,7 @@ class JobPath( OptimizerExecutor ):
 
     argsDict = { 'JobID': jobState.jid,
                  'JobState' : jobState,
-                 'ConfigPath':self.ex_getModuleParam( "section" ) }
+                 'ConfigPath':self.ex_getProperty( "section" ) }
     try:
       modInstance = self.__voPlugins[ voPlugin ]( argsDict )
       result = modInstance.execute()
@@ -77,7 +75,7 @@ class JobPath( OptimizerExecutor ):
     jobManifest = result[ 'Value' ]
     opChain = jobManifest.getOption( "JobPath", [] )
     if opChain:
-      self.jobLog.info( 'Job defines its own optimizer chain %s' % jobPath )
+      self.jobLog.info( 'Job defines its own optimizer chain %s' % opChain )
       return self.__setOptimizerChain( jobState, opChain )
     #Construct path
     opPath = self.ex_getOption( 'BasePath', ['JobPath', 'JobSanity'] )
@@ -105,6 +103,11 @@ class JobPath( OptimizerExecutor ):
         self.jobLog.info( 'No input data requirement' )
     #End of path
     opPath.extend( self.ex_getOption( 'EndPath', ['JobScheduling'] ) )
+    uPath = []
+    for opN in opPath:
+      if opN not in uPath:
+        uPath.append( opN )
+    opPath = uPath
     self.jobLog.info( 'Constructed path is: %s' % "->".join( opPath ) )
     result = self.__setOptimizerChain( jobState, opPath )
     if not result['OK']:

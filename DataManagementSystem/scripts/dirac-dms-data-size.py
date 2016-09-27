@@ -2,22 +2,22 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__   = "$Id$"
+__RCSID__ = "$Id$"
 
-import sys,os
+import sys, os
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 
 unit = 'GB'
-Script.registerSwitch( "u:", "Unit=","   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
+Script.registerSwitch( "u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit )
 
-Script.setUsageMessage("""
+Script.setUsageMessage( """
 Get the size of the given file or a list of files
 
 Usage:
    %s <lfn | fileContainingLfns> <SE> <status>
-""" % Script.scriptName)
+""" % Script.scriptName )
 
 Script.parseCommandLine( ignoreErrors = False )
 for switch in Script.getUnprocessedSwitches():
@@ -39,14 +39,12 @@ for inputFileName in args:
     inputFile = open( inputFileName, 'r' )
     string = inputFile.read()
     inputFile.close()
-    lfns.extend( string.splitlines() )
+    lfns.extend( [ lfn.strip() for lfn in string.splitlines() ] )
   else:
     lfns.append( inputFileName )
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-rm = ReplicaManager()
-
-res = rm.getCatalogFileSize( lfns )
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+res = FileCatalog().getFileSize( lfns )
 if not res['OK']:
   gLogger.error( "Failed to get size of data", res['Message'] )
   DIRAC.exit( -2 )
@@ -54,13 +52,13 @@ for lfn, reason in res['Value']['Failed'].items():
   gLogger.error( "Failed to get size for %s" % lfn, reason )
 totalSize = 0
 totalFiles = 0
-for lfn,size in res['Value']['Successful'].items():
-  totalFiles+=1
-  totalSize+=size
-gLogger.notice('-' * 30)
-gLogger.notice('%s|%s' % ('Files'.ljust(15),('Size (%s)' % unit).rjust(15))) 
-gLogger.notice('-' * 30)
-gLogger.notice('%s|%s' % (str(totalFiles).ljust(15),str('%.1f' % (totalSize/scaleFactor)).rjust(15)))
-gLogger.notice('-' * 30)
-DIRAC.exit(0)
+for lfn, size in res['Value']['Successful'].items():
+  totalFiles += 1
+  totalSize += size
+gLogger.notice( '-' * 30 )
+gLogger.notice( '%s|%s' % ( 'Files'.ljust( 15 ), ( 'Size (%s)' % unit ).rjust( 15 ) ) )
+gLogger.notice( '-' * 30 )
+gLogger.notice( '%s|%s' % ( str( totalFiles ).ljust( 15 ), str( '%.1f' % ( totalSize / scaleFactor ) ).rjust( 15 ) ) )
+gLogger.notice( '-' * 30 )
+DIRAC.exit( 0 )
 

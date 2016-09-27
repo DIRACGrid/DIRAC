@@ -5,7 +5,7 @@ class LogLevels:
 
   def __init__(self):
     self.always    = 'ALWAYS'
-    self.notice   = 'NOTICE'
+    self.notice    = 'NOTICE'
     self.info      = 'INFO'
     self.verbose   = 'VERB'
     self.debug     = 'DEBUG'
@@ -31,6 +31,14 @@ class LogLevels:
       return self.__levelDict[ sName ]
     else:
       return None
-
+          
+  def getLevel( self, level ):
+    """ Get level name given the level digital value 
+    """  
+    for lev in self.__levelDict:
+      if self.__levelDict[lev] == level:
+        return lev
+    return "Unknown"  
+  
   def getLevels( self ):
     return self.__levelDict.keys()

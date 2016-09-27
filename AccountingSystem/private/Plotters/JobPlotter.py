@@ -1,5 +1,5 @@
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 
@@ -26,14 +26,14 @@ class JobPlotter( BaseReporter ):
                    )
 
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
-                                reportRequest[ 'endTime' ],
-                                selectFields,
-                                reportRequest[ 'condDict' ],
-                                reportRequest[ 'groupingFields' ],
-                                { 'checkNone' : True,
-                                  'convertToGranularity' : 'sum',
-                                  'calculateProportionalGauges' : False,
-                                  'consolidationFunction' : self._efficiencyConsolidation } )
+                                 reportRequest[ 'endTime' ],
+                                 selectFields,
+                                 reportRequest[ 'condDict' ],
+                                 reportRequest[ 'groupingFields' ],
+                                 { 'checkNone' : True,
+                                   'convertToGranularity' : 'sum',
+                                   'calculateProportionalGauges' : False,
+                                   'consolidationFunction' : self._efficiencyConsolidation } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
@@ -89,7 +89,7 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._accumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableUnit( dataDict,
                                                                               self._getAccumulationMaxValue( dataDict ),
                                                                               "time" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
@@ -101,7 +101,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
-                 'sort_labels' : 'last_value' }
+                 'sort_labels' : 'max_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   _reportCPUUsageName = "CPU time"
@@ -121,9 +121,9 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, _maxValue = self._divideByFactor( dataDict, granularity )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableRateUnit( dataDict,
                                                                                   self._getAccumulationMaxValue( dataDict ),
                                                                                   "time" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
@@ -132,6 +132,74 @@ class JobPlotter( BaseReporter ):
 
   def _plotCPUUsage( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'CPU usage by %s' % reportRequest[ 'grouping' ],
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
+                 'ylabel' : plotInfo[ 'unit' ] }
+    return self._generateStackedLinePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
+
+  _reportNormCPUUsedName = "Cumulative Normalized CPU"
+  def _reportNormCPUUsed( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
+                                    'NormCPUTime'
+                                   ]
+                   )
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    dataDict = self._accumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "cpupower" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
+
+  def _plotNormCPUUsed( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Normalized CPU used by %s' % reportRequest[ 'grouping' ],
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
+                 'ylabel' : plotInfo[ 'unit' ],
+                 'sort_labels' : 'max_value' }
+    return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
+
+  _reportNormCPUUsageName = "Normalized CPU power"
+  def _reportNormCPUUsage( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
+                                    'NormCPUTime'
+                                   ]
+                   )
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    dataDict, _maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                                  self._getAccumulationMaxValue( dataDict ),
+                                                                                  "cpupower" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
+
+
+  def _plotNormCPUUsage( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Normalized CPU usage by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -155,9 +223,9 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, _maxValue = self._divideByFactor( dataDict, granularity )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableRateUnit( dataDict,
                                                                                   self._getAccumulationMaxValue( dataDict ),
                                                                                   "time" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
@@ -189,9 +257,9 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, _maxValue = self._divideByFactor( dataDict, granularity )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableUnit( dataDict,
                                                                               self._getAccumulationMaxValue( dataDict ),
                                                                               "jobs" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
@@ -252,7 +320,7 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._accumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableUnit( dataDict,
                                                                               self._getAccumulationMaxValue( dataDict ),
                                                                               "time" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
@@ -264,7 +332,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
-                 'sort_labels' : 'last_value' }
+                 'sort_labels' : 'max_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   _reportTotalWallTimeName = "Pie plot of wall time usage"
@@ -315,7 +383,7 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._accumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableUnit( dataDict,
                                                                               self._getAccumulationMaxValue( dataDict ),
                                                                               "jobs" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
@@ -327,7 +395,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
-                 'sort_labels' : 'last_value' }
+                 'sort_labels' : 'max_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
 
@@ -348,9 +416,9 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, _maxValue = self._divideByFactor( dataDict, granularity )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableRateUnit( dataDict,
                                                                                   self._getAccumulationMaxValue( dataDict ),
                                                                                   "jobs" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
@@ -408,9 +476,9 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, _maxValue = self._divideByFactor( dataDict, granularity )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableRateUnit( dataDict,
                                                                                   self._getAccumulationMaxValue( dataDict ),
                                                                                   "bytes" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
@@ -462,9 +530,9 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, _maxValue = self._divideByFactor( dataDict, granularity )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableRateUnit( dataDict,
                                                                                   self._getAccumulationMaxValue( dataDict ),
                                                                                   "bytes" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
@@ -533,7 +601,7 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._accumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableUnit( dataDict,
                                                                               self._getAccumulationMaxValue( dataDict ),
                                                                               "bytes" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
@@ -588,9 +656,9 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, _maxValue = self._divideByFactor( dataDict, granularity )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+    baseDataDict, graphDataDict, _maxValue, unitName = self._findSuitableRateUnit( dataDict,
                                                                               self._getAccumulationMaxValue( dataDict ),
                                                                               "files" )
     return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,

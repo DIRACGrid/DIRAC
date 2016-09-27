@@ -1,16 +1,16 @@
-""" 
+"""
 """
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
+from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import getSubmitPools
 
-class JobDescription:
+class JobDescription( object ):
 
   def __init__( self ):
     self.__description = CFG()
@@ -46,7 +46,7 @@ class JobDescription:
     """
     try:
       self.__description.loadFromBuffer( cfgString )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't load description from cfg: %s" % str( e ) )
     return S_OK()
 
@@ -62,7 +62,7 @@ class JobDescription:
     """
     initialVal = 0
     if varName not in self.__description:
-      varValue = gConfig.getValue( "/JobDescription/Default%s" % varName , defaultVal )
+      varValue = Operations().getValue( "JobDescription/Default%s" % varName , defaultVal )
     else:
       varValue = self.__description[ varName ]
       initialVal = varValue
@@ -70,8 +70,8 @@ class JobDescription:
       varValue = long( varValue )
     except:
       return S_ERROR( "%s must be a number" % varName )
-    minVal = gConfig.getValue( "/JobDescription/Min%s" % varName, minVal )
-    maxVal = gConfig.getValue( "/JobDescription/Max%s" % varName, maxVal )
+    minVal = Operations().getValue( "JobDescription/Min%s" % varName, minVal )
+    maxVal = Operations().getValue( "JobDescription/Max%s" % varName, maxVal )
     varValue = max( minVal, min( varValue, maxVal ) )
     if initialVal != varValue:
       self.__description.setOption( varName, varValue )
@@ -83,11 +83,11 @@ class JobDescription:
     """
     initialVal = False
     if varName not in self.__description:
-      varValue = gConfig.getValue( "/JobDescription/Default%s" % varName , defaultVal )
+      varValue = Operations().getValue( "JobDescription/Default%s" % varName , defaultVal )
     else:
       varValue = self.__description[ varName ]
       initialVal = varValue
-    if varValue not in gConfig.getValue( "/JobDescription/Choices%s" % varName , choices ):
+    if varValue not in Operations().getValue( "JobDescription/Choices%s" % varName , choices ):
       return S_ERROR( "%s is not a valid value for %s" % ( varValue, varName ) )
     if initialVal != varValue:
       self.__description.setOption( varName, varValue )
@@ -103,7 +103,7 @@ class JobDescription:
     else:
       varValue = self.__description[ varName ]
       initialVal = varValue
-    choices = gConfig.getValue( "/JobDescription/Choices%s" % varName , choices )
+    choices = Operations().getValue( "JobDescription/Choices%s" % varName , choices )
     for v in List.fromChar( varValue ):
       if v not in choices:
         return S_ERROR( "%s is not a valid value for %s" % ( v, varName ) )
@@ -115,7 +115,6 @@ class JobDescription:
     """
     Check Maximum Number of Input Data files allowed
     """
-    initialVal = False
     varName = "InputData"
     if varName not in self.__description:
       return S_OK()
@@ -135,37 +134,31 @@ class JobDescription:
     for k in [ 'OwnerName', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ]:
       if k not in self.__description:
         return S_ERROR( "Missing var %s in description" % k )
-    #Check CPUTime
+    # Check CPUTime
     result = self.__checkNumericalVarInDescription( "CPUTime", 86400, 0, 500000 )
     if not result[ 'OK' ]:
       return result
     result = self.__checkNumericalVarInDescription( "Priority", 1, 0, 10 )
     if not result[ 'OK' ]:
       return result
-    allowedSubmitPools = []
-    for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools = gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
-                                                         option ),
-                                             allowedSubmitPools )
-    result = self.__checkMultiChoiceInDescription( "SubmitPools", allowedSubmitPools )
+
+    allowedSubmitPools = getSubmitPools( self.__description['OwnerGroup'] )
+    result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
+    if not result[ 'OK' ]:
+      return result
+
+    result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
     if not result[ 'OK' ]:
       return result
     result = self.__checkMultiChoiceInDescription( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMaxInputData( 500 )
+    maxInputData = Operations().getValue( "JobDescription/MaxInputData", 500 )
+    result = self.__checkMaxInputData( maxInputData )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMultiChoiceInDescription( "JobType",
-                                                   Operations().getValue( "JobDescription/AllowedJobTypes",
-                                                                     [] ) )
-    if not result[ 'OK' ]:
-      #HACK to maintain backwards compatibility
-      #If invalid set to "User"
-      #HACKEXPIRATION 05/2009
-      self.setVar( "JobType", "User" )
-      #Uncomment after deletion of hack
-      #return result
+    transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
+    result = self.__checkMultiChoiceInDescription( "JobType", ['User', 'Test', 'Hospital'] + transformationTypes )
     return S_OK()
 
   def setVar( self, varName, varValue ):
@@ -187,12 +180,14 @@ class JobDescription:
 
   def getOptionList( self, section = "" ):
     cfg = self.__description.getRecursive( section )
-    if not cfg:
+    if not cfg or 'value' not in cfg:
       return []
+    cfg = cfg[ 'value' ]
     return cfg.listOptions()
 
   def getSectionList( self, section = "" ):
     cfg = self.__description.getRecursive( section )
-    if not cfg:
+    if not cfg or 'value' not in cfg:
       return []
+    cfg = cfg[ 'value' ]
     return cfg.listSections()

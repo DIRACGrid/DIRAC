@@ -34,7 +34,6 @@ def getSiteCEMapping( gridName = '' ):
       return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
     gridTypes = [gridName]
 
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
     if not sites['OK']:
@@ -67,7 +66,6 @@ def getCESiteMapping( gridName = '' ):
       return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
     gridTypes = [gridName]
 
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
     if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
@@ -88,6 +86,8 @@ def getCESiteMapping( gridName = '' ):
 #############################################################################
 def getSiteForCE( computingElement ):
   """ Given a Grid CE name this method returns the DIRAC site name.
+
+      WARNING: if two or more sites happen to have the same ceName/queueName, then only the first found is returned
   """
   finalSite = ''
   gridTypes = gConfig.getSections( '/Resources/Sites/', [] )
@@ -123,23 +123,30 @@ def getCEsForSite( siteName ):
   return S_OK( ces )
 
 #############################################################################
-def getQueueInfo( ceUniqueID ):
+def getQueueInfo( ceUniqueID, diracSiteName = '' ):
   """
     Extract information from full CE Name including associate DIRAC Site
   """
   try:
-    subClusterUniqueID = ceUniqueID.split( ':' )[0]
+    subClusterUniqueID = ceUniqueID.split( '/' )[0].split( ':' )[0]
     queueID = ceUniqueID.split( '/' )[1]
   except:
     return S_ERROR( 'Wrong full queue Name' )
 
-  result = getSiteForCE( subClusterUniqueID )
-  if not result['OK']:
-    return result
-  diracSiteName = result['Value']
-
   if not diracSiteName:
-    return S_ERROR( 'Can not find corresponding Site in CS' )
+    gLogger.debug( "SiteName not given, looking in /LocaSite/Site" )
+    diracSiteName = gConfig.getValue( '/LocalSite/Site', '' )
+
+    if not diracSiteName:
+      gLogger.debug( "Can't find LocalSite name, looking in CS" )
+      result = getSiteForCE( subClusterUniqueID )
+      if not result['OK']:
+        return result
+      diracSiteName = result['Value']
+
+      if not diracSiteName:
+        gLogger.error( 'Can not find corresponding Site in CS' )
+        return S_ERROR( 'Can not find corresponding Site in CS' )
 
   gridType = diracSiteName.split( '.' )[0]
 

@@ -8,8 +8,6 @@
 
 __RCSID__ = "$Id$"
 
-import types
-import os
 import cStringIO
 import tarfile
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -66,20 +64,23 @@ class BundleManager:
     for bId in dirsToBundle:
       bundlePaths = dirsToBundle[ bId ]
       gLogger.info( "Updating %s bundle %s" % ( bId, bundlePaths ) )
-      buffer = cStringIO.StringIO()
+      buffer_ = cStringIO.StringIO()
       filesToBundle = sorted( File.getGlobbedFiles( bundlePaths ) )
-      commonPath = File.getCommonPath( filesToBundle )
-      commonEnd = len( commonPath )
-      gLogger.info( "Bundle will have %s files with common path %s" % ( len( filesToBundle ), commonPath ) )
-      tarBuffer = tarfile.open( 'dummy', "w:gz", buffer )
-      for filePath in filesToBundle:
-        tarBuffer.add( filePath, filePath[ commonEnd: ] )
-      tarBuffer.close()
-      zippedData = buffer.getvalue()
-      buffer.close()
-      hash = File.getMD5ForFiles( filesToBundle )
-      gLogger.info( "Bundled %s : %s bytes (%s)" % ( bId, len( zippedData ), hash ) )
-      self.__bundles[ bId ] = ( hash, zippedData )
+      if filesToBundle:
+        commonPath = File.getCommonPath( filesToBundle )
+        commonEnd = len( commonPath )
+        gLogger.info( "Bundle will have %s files with common path %s" % ( len( filesToBundle ), commonPath ) )
+        tarBuffer = tarfile.open( 'dummy', "w:gz", buffer_ )
+        for filePath in filesToBundle:
+          tarBuffer.add( filePath, filePath[ commonEnd: ] )
+        tarBuffer.close()
+        zippedData = buffer_.getvalue()
+        buffer_.close()
+        hash_ = File.getMD5ForFiles( filesToBundle )
+        gLogger.info( "Bundled %s : %s bytes (%s)" % ( bId, len( zippedData ), hash_ ) )
+        self.__bundles[ bId ] = ( hash_, zippedData )
+      else:
+        self.__bundles[ bId ] = ( None, None )  
 
 gBundleManager = False
 
@@ -103,9 +104,9 @@ class BundleDeliveryHandler( RequestHandler ):
   def transfer_toClient( self, fileId, token, fileHelper ):
     global gBundleManager
     version = ""
-    if type( fileId ) in ( types.StringType, types.UnicodeType ):
+    if isinstance( fileId, basestring ):
       bId = fileId
-    elif type( fileId ) in ( types.ListType, types.TupleType ):
+    elif isinstance( fileId, ( list, tuple ) ):
       if len( fileId ) == 0:
         fileHelper.markAsTransferred()
         return S_ERROR( "No bundle specified!" )
@@ -119,13 +120,17 @@ class BundleDeliveryHandler( RequestHandler ):
       return S_ERROR( "Unknown bundle %s" % bId )
 
     bundleVersion = gBundleManager.getBundleVersion( bId )
+    if bundleVersion is None:
+      fileHelper.markAsTransferred()
+      return S_ERROR( "Empty bundle %s" % bId )
+    
     if version == bundleVersion:
       fileHelper.markAsTransferred()
       return S_OK( bundleVersion )
 
-    buffer = cStringIO.StringIO( gBundleManager.getBundleData( bId ) )
-    result = fileHelper.DataSourceToNetwork( buffer )
-    buffer.close()
+    buffer_ = cStringIO.StringIO( gBundleManager.getBundleData( bId ) )
+    result = fileHelper.DataSourceToNetwork( buffer_ )
+    buffer_.close()
     if not result[ 'OK' ]:
       return result
     return S_OK( bundleVersion )

@@ -1,11 +1,9 @@
-########################################################################
-# $Header$
-########################################################################
 """ StorageManagerHandler is the implementation of the StorageManagementDB in the DISET framework """
+
 __RCSID__ = "$Id$"
 
-from types import *
-from DIRAC                                                 import gLogger, gConfig, S_OK, S_ERROR
+from types import IntType, DictType, ListType, StringTypes, LongType
+from DIRAC                                                 import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler                       import RequestHandler
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB  import StorageManagementDB
 # This is a global instance of the StorageDB
@@ -75,6 +73,13 @@ class StorageManagerHandler( RequestHandler ):
       gLogger.error( 'getTasks: Failed to get Cache replicas', res['Message'] )
     return res
 
+  types_removeStageRequests = [ListType]
+  def export_removeStageRequests( self, replicaIDs):
+    res = storageDB.removeStageRequests( replicaIDs )
+    if not res['OK']:
+      gLogger.error( 'removeStageRequests: Failed to remove StageRequests', res['Message'] )
+    return res
+      
   types_getCacheReplicas = [DictType]
   def export_getCacheReplicas( self, condDict, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None ):
     """ Get the replcias known to the DB. """
@@ -101,7 +106,7 @@ class StorageManagerHandler( RequestHandler ):
   # setRequest is used to initially insert tasks and their associated files. Leaves files in New status.
   #
 
-  types_setRequest = [DictType, StringType, StringType, IntType]
+  types_setRequest = [DictType, StringTypes, StringTypes, IntType]
   def export_setRequest( self, lfnDict, source, callbackMethod, taskID ):
     """ This method allows stage requests to be set into the StagerDB """
     res = storageDB.setRequest( lfnDict, source, callbackMethod, taskID )
@@ -114,7 +119,7 @@ class StorageManagerHandler( RequestHandler ):
   # The state transition of Replicas method
   #
 
-  types_updateReplicaStatus = []
+  types_updateReplicaStatus = [ListType, StringTypes]
   def export_updateReplicaStatus( self, replicaIDs, newReplicaStatus ):
     """ This allows to update the status of replicas """
     res = storageDB.updateReplicaStatus( replicaIDs, newReplicaStatus )
@@ -248,7 +253,7 @@ class StorageManagerHandler( RequestHandler ):
   # Methods for obtaining Tasks, Replicas with supplied state
   #
 
-  types_getTasksWithStatus = [StringType]
+  types_getTasksWithStatus = [StringTypes]
   def export_getTasksWithStatus( self, status ):
     """ This method allows to retrieve Tasks with the supplied status """
     res = storageDB.getTasksWithStatus( status )
@@ -256,7 +261,7 @@ class StorageManagerHandler( RequestHandler ):
       gLogger.error( 'getTasksWithStatus: Failed to get tasks with %s status' % status, res['Message'] )
     return res
 
-  types_getReplicasWithStatus = [StringType]
+  types_getReplicasWithStatus = [StringTypes]
   def export_getReplicasWithStatus( self, status ):
     """ This method allows to retrieve replicas with the supplied status """
     res = storageDB.getCacheReplicas( {'Status':status} )
@@ -303,3 +308,20 @@ class StorageManagerHandler( RequestHandler ):
     if not res['OK']:
       gLogger.error( 'getAssociatedReplicas: Failed to get Associated Replicas. ', res['Message'] )
     return res
+
+  types_killTasksBySourceTaskID = [ListType]
+  def export_killTasksBySourceTaskID(self, sourceTaskIDs ):
+    """ Given SourceTaskIDs (jobIDs), this will cancel further staging of files for the corresponding tasks"""
+    res = storageDB.killTasksBySourceTaskID( sourceTaskIDs )
+    if not res['OK']:
+      gLogger.error( 'removeTasks: Failed to kill staging', res['Message'] )
+    return res
+
+  types_getCacheReplicasSummary = []
+  def export_getCacheReplicasSummary(self):
+    """ Reports breakdown of file number/size in different staging states across storage elements """
+    res = storageDB.getCacheReplicasSummary()
+    if not res['OK']:
+      gLogger.error(' getCacheReplicasSummary: Failed to retrieve summary from server',res['Message'])
+    return res
+

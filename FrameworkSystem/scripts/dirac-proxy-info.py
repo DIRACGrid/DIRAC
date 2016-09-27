@@ -1,19 +1,12 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
-# File :    dirac-proxy-init.py
+# File :    dirac-proxy-info.py
 # Author :  Adrian Casajus
 ########################################################################
-__RCSID__ = "$Id$"
 
-import sys
-import os.path
-import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.NTP import getClockDeviation
+from DIRAC.Core.Utilities.ReturnValues import S_OK
 
-
-class Params:
+class Params(object):
 
   proxyLoc = False
   checkExists = False
@@ -28,42 +21,45 @@ class Params:
     print "Version:"
     print " ", __RCSID__
     sys.exit( 0 )
-    return DIRAC.S_OK()
+    return S_OK()
 
   def setProxyLocation( self, arg ):
     self.proxyLoc = arg
-    return DIRAC.S_OK()
+    return S_OK()
 
   def checkExists( self, arg ):
     self.checkExists = True
-    return DIRAC.S_OK()
+    return S_OK()
 
   def disableVOMS( self, arg ):
     self.vomsEnabled = False
-    return DIRAC.S_OK()
+    return S_OK()
 
   def disableCS( self, arg ):
     self.csEnabled = False
-    return DIRAC.S_OK()
+    return S_OK()
 
   def showSteps( self, arg ):
     self.steps = True
-    return DIRAC.S_OK()
+    return S_OK()
 
   def validityCheck( self, arg ):
     self.checkValid = True
-    return DIRAC.S_OK()
+    return S_OK()
 
   def disableClockCheck( self, arg ):
     self.checkClock = False
-    return DIRAC.S_OK()
+    return S_OK()
 
   def setManagerInfo( self, arg ):
     self.uploadedInfo = True
-    return DIRAC.S_OK()
+    return S_OK()
 
 params = Params()
 
+import sys
+
+from DIRAC.Core.Base import Script
 Script.registerSwitch( "f:", "file=", "File to use as user key", params.setProxyLocation )
 Script.registerSwitch( "i", "version", "Print version", params.showVersion )
 Script.registerSwitch( "n", "novoms", "Disable VOMS", params.disableVOMS )
@@ -71,21 +67,26 @@ Script.registerSwitch( "v", "checkvalid", "Return error if the proxy is invalid"
 Script.registerSwitch( "x", "nocs", "Disable CS", params.disableCS )
 Script.registerSwitch( "e", "steps", "Show steps info", params.showSteps )
 Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", params.disableClockCheck )
-Script.registerSwitch( "m", "uploadedinto", "Show uploaded proxies info", params.setManagerInfo )
+Script.registerSwitch( "m", "uploadedinfo", "Show uploaded proxies info", params.setManagerInfo )
 
 Script.disableCS()
 Script.parseCommandLine()
+
+from DIRAC.Core.Utilities.NTP import getClockDeviation
+from DIRAC import gLogger
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo, getProxyStepsInfo, formatProxyInfoAsString, formatProxyStepsInfoAsString
+from DIRAC.Core.Security import VOMS
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+
+
+__RCSID__ = "$Id$"
+
 
 if params.csEnabled:
   retVal = Script.enableCS()
   if not retVal[ 'OK' ]:
     print "Cannot contact CS to get user list"
-
-from DIRAC import gLogger
-from DIRAC.Core.Security.ProxyInfo import *
-from DIRAC.Core.Security import VOMS
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 if params.checkClock:
   result = getClockDeviation()
@@ -105,6 +106,8 @@ if not result[ 'OK' ]:
   sys.exit( 1 )
 infoDict = result[ 'Value' ]
 gLogger.notice( formatProxyInfoAsString( infoDict ) )
+if not infoDict['isProxy']:
+  gLogger.error( '==============================\n!!! The proxy is not valid !!!' )
 
 if params.steps:
   gLogger.notice( "== Steps extended info ==" )
@@ -136,8 +139,8 @@ if params.uploadedInfo:
       for userDN in uploadedInfo:
         for group in uploadedInfo[ userDN ]:
           gLogger.notice( " %s | %s | %s" % ( userDN.ljust( maxDNLen ),
-                                                  group.ljust( maxGroupLen ),
-                                                  uploadedInfo[ userDN ][ group ].strftime( "%Y/%m/%d %H:%M" ) ) )
+                                              group.ljust( maxGroupLen ),
+                                              uploadedInfo[ userDN ][ group ].strftime( "%Y/%m/%d %H:%M" ) ) )
 
 if params.checkValid:
   if infoDict[ 'secondsLeft' ] == 0:
@@ -151,10 +154,10 @@ if params.checkValid:
     if len( infoDict[ 'VOMS' ] ) > 1:
       invalidProxy( "More than one voms attribute found" )
     if requiredVOMS not in infoDict[ 'VOMS' ]:
-      invalidProxy( "Unexpected VOMS extension %s. Extension expected for DIRAC group is %s" % ( 
+      invalidProxy( "Unexpected VOMS extension %s. Extension expected for DIRAC group is %s" % (
                                                                                  infoDict[ 'VOMS' ][0],
                                                                                  requiredVOMS ) )
-    result = VOMS.VOMS().getVOMSProxyInfo( infoDict[ 'chain' ], 'actime' )
+    result = VOMS.VOMS().getVOMSProxyInfo( infoDict[ 'chain' ], 'actimeleft' )
     if not result[ 'OK' ]:
       invalidProxy( "Cannot determine life time of VOMS attributes: %s" % result[ 'Message' ] )
     if int( result[ 'Value' ].strip() ) == 0:

@@ -1,25 +1,18 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ PlotBase is a base class for various Graphs plots
-    
+
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id$"
-
-import types, random
 from DIRAC.Core.Utilities.Graphs.Palette import Palette
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
-from matplotlib.patches import Rectangle
-from matplotlib.text import Text
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import pixelToPoint, evalPrefs
 from matplotlib.axes import Axes
 from matplotlib.pylab import setp
 
-class PlotBase:
+__RCSID__ = "$Id$"
+
+class PlotBase( object ):
 
   def __init__( self, data = None, axes = None, *aw, **kw ):
 
@@ -34,9 +27,9 @@ class PlotBase:
     self.prefs = evalPrefs( *aw, **kw )
     self.coords = {}
     self.palette = Palette()
-    if type( data ) == types.DictType:
+    if isinstance( data, dict):
       self.gdata = GraphData( data )
-    elif type( data ) == types.InstanceType and data.__class__ == GraphData:
+    elif isinstance( data, object) and data.__class__ == GraphData:
       self.gdata = data
 
   def dumpPrefs( self ):
@@ -120,10 +113,10 @@ class PlotBase:
       y_label_space += label_text_size * 1.5
 
     ax_plot_rect = ( float( plot_left_padding + left + y_label_space ) / f_width,
-                    float( plot_bottom_padding + bottom + x_label_space + stats_line_space ) / f_height,
-                    float( width - plot_left_padding - plot_right_padding - y_label_space ) / f_width,
-                    float( height - plot_bottom_padding - plot_top_padding - x_label_space - \
-                          plot_title_size - 2 * plot_title_padding - stats_line_space ) / f_height )
+                     float( plot_bottom_padding + bottom + x_label_space + stats_line_space ) / f_height,
+                     float( width - plot_left_padding - plot_right_padding - y_label_space ) / f_width,
+                     float( height - plot_bottom_padding - plot_top_padding - x_label_space - \
+                            plot_title_size - 2 * plot_title_padding - stats_line_space ) / f_height )
     ax = Axes( self.figure, ax_plot_rect )
     if prefs['square_axis']:
       l, b, a_width, a_height = ax.get_window_extent().bounds
@@ -131,15 +124,15 @@ class PlotBase:
       if a_height > a_width:
         a_height = a_width
         ax_plot_rect = ( float( plot_left_padding + left ) / f_width,
-                        float( plot_bottom_padding + bottom + delta / 2. ) / f_height,
-                        float( width - plot_left_padding - plot_right_padding ) / f_width,
-                        float( height - plot_bottom_padding - plot_title_size - 2 * plot_title_padding - delta ) / f_height )
+                         float( plot_bottom_padding + bottom + delta / 2. ) / f_height,
+                         float( width - plot_left_padding - plot_right_padding ) / f_width,
+                         float( height - plot_bottom_padding - plot_title_size - 2 * plot_title_padding - delta ) / f_height )
       else:
         a_width = a_height
         ax_plot_rect = ( float( plot_left_padding + left + delta / 2. ) / f_width,
-                        float( plot_bottom_padding + bottom ) / f_height,
-                        float( width - plot_left_padding - delta ) / f_width,
-                        float( height - plot_bottom_padding - plot_title_size - 2 * plot_title_padding ) / f_height )
+                         float( plot_bottom_padding + bottom ) / f_height,
+                         float( width - plot_left_padding - delta ) / f_width,
+                         float( height - plot_bottom_padding - plot_title_size - 2 * plot_title_padding ) / f_height )
       ax.set_position( ax_plot_rect )
 
 
@@ -192,7 +185,7 @@ class PlotBase:
 
       setp( ax.patch, linewidth = pixelToPoint( plot_line_width, dpi ) )
       #setp( ax.spines, linewidth=pixelToPoint(frame_line_width,dpi) )
-      #setp( ax.axvline(), linewidth=pixelToPoint(1.0,dpi) ) 
+      #setp( ax.axvline(), linewidth=pixelToPoint(1.0,dpi) )
       axis_grid_flag = prefs.get( 'plot_axis_grid', True )
       if axis_grid_flag:
         ax.grid( True, color = '#555555', linewidth = pixelToPoint( grid_line_width, dpi ) )
@@ -224,17 +217,15 @@ class PlotBase:
                                     horizontalalignment = 'center',
                                     size = pixelToPoint( plot_title_size, dpi ),
                                     family = prefs['font_family'],
-                                    fontname = prefs['font']
-                                    )
+                                    fontname = prefs['font'])
       self.ax.title.set_transform( self.ax.transAxes )
       self.ax.title.set_family( prefs['font_family'] )
       self.ax.title.set_fontname( prefs['font'] )
     if stats_line:
       self.ax.stats = self.ax.text( 0.5, ( -stats_line_space ) / height,
-                      stats_line,
-                      verticalalignment = 'top',
-                      horizontalalignment = 'center',
-                      size = pixelToPoint( stats_line_size, dpi ) )
+                                    stats_line,
+                                    verticalalignment = 'top',
+                                    horizontalalignment = 'center',
+                                    size = pixelToPoint( stats_line_size, dpi ) )
 
       self.ax.stats.set_transform( self.ax.transAxes )
-

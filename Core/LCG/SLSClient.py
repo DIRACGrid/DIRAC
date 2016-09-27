@@ -31,7 +31,7 @@ def getAvailabilityStatus( sls_id, timeout = None ):
   else:
     return S_OK( { "Availability": int(res), "Weblink": "https://sls.cern.ch/sls/service.php?id=" + sls_id})
 
-def getServiceInfo( sls_id, timeout = None ):
+def getServiceInfo( sls_id, timeout = 120.0 ):
   """
   Return actual SLS "additional service information" as a dict.
   (Parse SLS update XML)

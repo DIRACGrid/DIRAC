@@ -1,8 +1,6 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
-import types
-from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
-from DIRAC.FrameworkSystem.private.logging.Message import Message
+
 from DIRAC.FrameworkSystem.Client.Logger import Logger
 
 class SubSystemLogger( Logger ):
@@ -12,7 +10,7 @@ class SubSystemLogger( Logger ):
     self.__child = child
     for attrName in dir( masterLogger ):
       attrValue = getattr( masterLogger, attrName )
-      if type( attrValue ) == types.StringType:
+      if isinstance( attrValue, basestring ):
         setattr( self, attrName, attrValue )
     self.__masterLogger = masterLogger
     self._subName = subName

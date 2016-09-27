@@ -3,8 +3,8 @@
 ########################################################################
 
 """ LineGraph represents line graphs both simple and stacked. It includes
-    also cumulative graph functionality. 
-    
+    also cumulative graph functionality.
+
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
@@ -12,12 +12,11 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
-from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
-from pylab import setp
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, PrettyDateLocator, \
+                                                       PrettyDateFormatter, PrettyScalarFormatter
 from matplotlib.patches import Polygon
 from matplotlib.dates import date2num
-import time,types
+import datetime
 
 class LineGraph( PlotBase ):
 
@@ -26,44 +25,42 @@ class LineGraph( PlotBase ):
   of values, it takes the keys as the independent variable and the values
   as the dependent variable.
   """
-  
+
   def __init__(self,data,ax,prefs,*args,**kw):
 
     PlotBase.__init__(self,data,ax,prefs,*args,**kw)
 
   def draw( self ):
-  
+
     PlotBase.draw(self)
     self.x_formatter_cb(self.ax)
-  
+
     if self.gdata.isEmpty():
       return None
-        
+
     tmp_x = []; tmp_y = []
-        
-    labels = self.gdata.getLabels()  
+
+    labels = self.gdata.getLabels()
     nKeys = self.gdata.getNumberOfKeys()
     tmp_b = []
     for n in range(nKeys):
       if self.prefs.has_key('log_yaxis'):
         tmp_b.append(0.001)
-        ymin = 0.001
       else:
-        tmp_b.append(0.)  
-        ymin = 0.
-        
+        tmp_b.append(0.)
+
     start_plot = 0
-    end_plot = 0    
+    end_plot = 0
     if "starttime" in self.prefs and "endtime" in self.prefs:
-      start_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['starttime'])))    
-      end_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['endtime'])))                         
-      
+      start_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['starttime'])))
+      end_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['endtime'])))
+
     self.polygons = []
-    seq_b = [(self.gdata.max_num_key,0.0),(self.gdata.min_num_key,0.0)]    
-    zorder = 0.0      
+    seq_b = [(self.gdata.max_num_key,0.0),(self.gdata.min_num_key,0.0)]
+    zorder = 0.0
     labels = self.gdata.getLabels()
     labels.reverse()
-    
+
     # If it is a simple plot, no labels are used
     # Evaluate the most appropriate color in this case
     if self.gdata.isSimplePlot():
@@ -73,41 +70,51 @@ class LineGraph( PlotBase ):
         self.palette.setColor('SimplePlot',color)
       else:
         labels = [(color,0.)]
-      
-    for label,num in labels:  
-    
+
+    for label,num in labels:
+
       color = self.palette.getColor(label)
       ind = 0
       tmp_x = []
       tmp_y = []
       plot_data = self.gdata.getPlotNumData(label)
-      for key, value in plot_data:
+      for key, value, error in plot_data:
         if value is None:
           value = 0.
         tmp_x.append( key )
-        tmp_y.append( float(value)+tmp_b[ind] )   
-        ind += 1       
-      seq_t = zip(tmp_x,tmp_y)     
-      seq = seq_t+seq_b       
+        tmp_y.append( float(value)+tmp_b[ind] )
+        ind += 1
+      seq_t = zip(tmp_x,tmp_y)
+      seq = seq_t+seq_b
       poly = Polygon( seq, facecolor=color, fill=True, linewidth=.2, zorder=zorder)
       self.ax.add_patch( poly )
-      self.polygons.append( poly )        
-      tmp_b = list(tmp_y)  
+      self.polygons.append( poly )
+      tmp_b = list(tmp_y)
       zorder -= 0.1
-                    
-    ymax = max(tmp_b); ymax *= 1.1
-    if self.log_xaxis:  
+
+    ymax = max( tmp_b ); ymax *= 1.1
+    ymin = min( tmp_b, 0. ); ymin *= 1.1
+    if self.prefs.has_key('log_yaxis'):
+      ymin = 0.001
+    xmax=max(tmp_x)
+    if self.log_xaxis:
       xmin = 0.001
-    else: 
+    else:
       xmin = 0
-    self.ax.set_xlim( xmin=xmin, xmax=max(tmp_x) )
+
+    ymin = self.prefs.get( 'ymin', ymin )
+    ymax = self.prefs.get( 'ymax', ymax )
+    xmin = self.prefs.get( 'xmin', xmin )
+    xmax = self.prefs.get( 'xmax', xmax )
+
+    self.ax.set_xlim( xmin=xmin, xmax=xmax )
     self.ax.set_ylim( ymin=ymin, ymax=ymax )
     if self.gdata.key_type == 'time':
       if start_plot and end_plot:
-        self.ax.set_xlim( xmin=start_plot, xmax=end_plot)   
-      else:      
-        self.ax.set_xlim( xmin=min(tmp_x), xmax=max(tmp_x))     
-          
+        self.ax.set_xlim( xmin=start_plot, xmax=end_plot)
+      else:
+        self.ax.set_xlim( xmin=min(tmp_x), xmax=max(tmp_x))
+
   def x_formatter_cb( self, ax ):
     if self.gdata.key_type == "string":
       smap = self.gdata.getStringMap()
@@ -118,7 +125,6 @@ class LineGraph( PlotBase ):
       ticks.sort()
       ax.set_xticks( [i+.5 for i in ticks] )
       ax.set_xticklabels( [reverse_smap[i] for i in ticks] )
-      labels = ax.get_xticklabels()
       ax.grid( False )
       if self.log_xaxis:
         xmin = 0.001
@@ -133,9 +139,6 @@ class LineGraph( PlotBase ):
       ax.xaxis.set_clip_on(False)
       sf = PrettyScalarFormatter( )
       ax.yaxis.set_major_formatter( sf )
-        
+
     else:
-      try:
-        super(LineGraph, self).x_formatter_cb( ax )
-      except:
-        return None
+      return None

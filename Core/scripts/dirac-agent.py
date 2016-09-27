@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-agent
 # Author : Adria Casajus, Andrei Tsaregorodtsev, Stuart Paterson
 ########################################################################
@@ -10,10 +9,10 @@ __RCSID__ = "$Id$"
 """
 
 import sys
-import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
-from DIRAC import gLogger, gConfig
+from DIRAC import gLogger
 from DIRAC.Core.Base.AgentReactor import AgentReactor
+from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 
 localCfg = LocalConfiguration()
 
@@ -27,10 +26,13 @@ localCfg.setConfigurationForAgent( agentName )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
 localCfg.addDefaultEntry( "LogLevel", "INFO" )
+localCfg.addDefaultEntry( "LogColor", True )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
   sys.exit( 1 )
+
+includeExtensionErrors()
 
 if len( positionalArgs ) == 1:
   mainName = positionalArgs[0]

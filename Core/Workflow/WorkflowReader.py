@@ -1,18 +1,18 @@
-# $Id$
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.15 $"
 
-#try: # this part to inport as part of the DIRAC framework
+
+#try: # this part to import as part of the DIRAC framework
 import xml.sax
 from xml.sax.handler import ContentHandler
 
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
-from DIRAC.Core.Workflow.Workflow import *
+from DIRAC.Core.Workflow.Workflow import Workflow
 
+__RCSID__ = "$Id$"
 
 class WorkflowXMLHandler(ContentHandler):
 

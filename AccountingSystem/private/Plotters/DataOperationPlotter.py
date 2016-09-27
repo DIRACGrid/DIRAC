@@ -14,9 +14,11 @@ class DataOperationPlotter( BaseReporter ):
     else:
       return ( "%s", [ grouping ] )
 
+  _reportSuceededTransfersName = "Successful transfers"
   def _reportSuceededTransfers( self, reportRequest ):
     return self.__reportTransfers( reportRequest, 'Suceeded', ( 'Failed', 0 ) )
 
+  _reportFailedTransfersName = "Failed transfers"
   def _reportFailedTransfers( self, reportRequest ):
     return self.__reportTransfers( reportRequest, 'Failed', ( 'Suceeded', 1 ) )
 
@@ -60,6 +62,7 @@ class DataOperationPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ] }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
+  _reportQualityName = "Efficiency by protocol"
   def _reportQuality( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
@@ -109,7 +112,8 @@ class DataOperationPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ] }
     return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
-
+  
+  _reportTransferedDataName = "Cumulative transferred data"
   def _reportTransferedData( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
@@ -175,6 +179,7 @@ class DataOperationPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ] }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
+  _reportDataTransferedName = "Pie chart of transferred data"
   def _reportDataTransfered( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'TransferSize'

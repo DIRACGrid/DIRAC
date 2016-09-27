@@ -9,8 +9,9 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
-from DIRAC import gConfig, List
+from DIRAC import gConfig
 from DIRAC.Core.Utilities.Grid import executeGridCommand
+from DIRAC.Core.Utilities import List
 
 import os, time, re
 
@@ -100,7 +101,7 @@ class gLitePilotDirector( GridPilotDirector ):
     myProxyServer = self.myProxyServer.strip()
     if not myProxyServer:
       #Random string to avoid caching
-      myProxyServer = md5( str( time.time() ) ).hexdigest()
+      myProxyServer = "%s.cern.ch" % md5( str( time.time() ) ).hexdigest()[:10]
 
     wmsClientJDL = """
 RetryCount = 0;

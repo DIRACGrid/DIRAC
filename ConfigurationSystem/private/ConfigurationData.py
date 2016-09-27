@@ -1,19 +1,23 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
+""" ConfigurationData module is the base for cfg files management
+"""
 
 import os.path
 import zlib
 import zipfile
-import threading, thread
+import thread
 import time
 import DIRAC
+
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-class ConfigurationData:
+__RCSID__ = "$Id$"
+
+class ConfigurationData( object ):
 
   def __init__( self, loadDefaultCFG = True ):
     lr = LockRing()
@@ -21,7 +25,7 @@ class ConfigurationData:
     self.threadingEvent.set()
     self.threadingLock = lr.getLock()
     self.runningThreadsNumber = 0
-    self.compressedConfigurationData = ""
+    self.__compressedConfigurationData = None
     self.configurationPath = "/DIRAC/Configuration"
     self.backupsDir = os.path.join( DIRAC.rootPath, "etc", "csbackup" )
     self._isService = False
@@ -45,17 +49,17 @@ class ConfigurationData:
     self.mergedCFG = self.remoteCFG.mergeWith( self.localCFG )
     self.remoteServerList = []
     localServers = self.extractOptionFromCFG( "%s/Servers" % self.configurationPath,
-                                        self.localCFG,
-                                        disableDangerZones = True )
+                                              self.localCFG,
+                                              disableDangerZones = True )
     if localServers:
       self.remoteServerList.extend( List.fromChar( localServers, "," ) )
     remoteServers = self.extractOptionFromCFG( "%s/Servers" % self.configurationPath,
-                                        self.remoteCFG,
-                                        disableDangerZones = True )
+                                               self.remoteCFG,
+                                               disableDangerZones = True )
     if remoteServers:
       self.remoteServerList.extend( List.fromChar( remoteServers, "," ) )
     self.remoteServerList = List.uniqueElements( self.remoteServerList )
-    self.compressedConfigurationData = zlib.compress( str( self.remoteCFG ), 9 )
+    self.__compressedConfigurationData = None
 
   def loadFile( self, fileName ):
     try:
@@ -72,7 +76,7 @@ class ConfigurationData:
       self.localCFG = self.localCFG.mergeWith( extraCFG )
       self.unlock()
       gLogger.debug( "CFG merged" )
-    except Exception, e:
+    except Exception as e:
       self.unlock()
       return S_ERROR( "Cannot merge with new cfg: %s" % str( e ) )
     self.sync()
@@ -97,7 +101,7 @@ class ConfigurationData:
       if fileName[0] != "/":
         fileName = os.path.join( DIRAC.rootPath, "etc", fileName )
       self.remoteCFG.loadFromFile( fileName )
-    except Exception, e:
+    except Exception as e:
       print e
       pass
     self.unlock()
@@ -198,60 +202,49 @@ class ConfigurationData:
   def setVersion( self, version, cfg = False ):
     if not cfg:
       cfg = self.remoteCFG
-    self.setOptionInCFG( "%s/Version" % self.configurationPath,
-                                  version,
-                                  cfg )
+    self.setOptionInCFG( "%s/Version" % self.configurationPath, version, cfg )
 
   def getVersion( self, cfg = False ):
     if not cfg:
       cfg = self.remoteCFG
-    value = self.extractOptionFromCFG( "%s/Version" % self.configurationPath,
-                                        cfg )
+    value = self.extractOptionFromCFG( "%s/Version" % self.configurationPath, cfg )
     if value:
       return value
     return "0"
 
   def getName( self ):
-    return self.extractOptionFromCFG( "%s/Name" % self.configurationPath,
-                                        self.mergedCFG )
+    return self.extractOptionFromCFG( "%s/Name" % self.configurationPath, self.mergedCFG )
 
   def exportName( self ):
-    return self.setOptionInCFG( "%s/Name" % self.configurationPath,
-                                self.getName(),
-                                self.remoteCFG )
+    return self.setOptionInCFG( "%s/Name" % self.configurationPath, self.getName(), self.remoteCFG )
 
   def getRefreshTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/RefreshTime" % self.configurationPath,
-                                        self.mergedCFG ) )
+      return int( self.extractOptionFromCFG( "%s/RefreshTime" % self.configurationPath, self.mergedCFG ) )
     except:
       return 300
 
   def getPropagationTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/PropagationTime" % self.configurationPath,
-                                        self.mergedCFG ) )
+      return int( self.extractOptionFromCFG( "%s/PropagationTime" % self.configurationPath, self.mergedCFG ) )
     except:
       return 300
 
   def getSlavesGraceTime( self ):
     try:
-      return int( self.extractOptionFromCFG( "%s/SlavesGraceTime" % self.configurationPath,
-                                        self.mergedCFG ) )
+      return int( self.extractOptionFromCFG( "%s/SlavesGraceTime" % self.configurationPath, self.mergedCFG ) )
     except:
       return 600
 
   def mergingEnabled( self ):
     try:
-      val = self.extractOptionFromCFG( "%s/EnableAutoMerge" % self.configurationPath,
-                                        self.mergedCFG )
+      val = self.extractOptionFromCFG( "%s/EnableAutoMerge" % self.configurationPath, self.mergedCFG )
       return val.lower() in ( "yes", "true", "y" )
     except:
       return False
 
   def getAutoPublish( self ):
-    value = self.extractOptionFromCFG( "%s/AutoPublish" % self.configurationPath,
-                                        self.localCFG )
+    value = self.extractOptionFromCFG( "%s/AutoPublish" % self.configurationPath, self.localCFG )
     if value and value.lower() in ( "no", "false", "n" ):
       return False
     else:
@@ -261,34 +254,29 @@ class ConfigurationData:
     return list( self.remoteServerList )
 
   def getConfigurationGateway( self ):
-    return self.extractOptionFromCFG( "/DIRAC/Gateway",
-                                        self.localCFG )
+    return self.extractOptionFromCFG( "/DIRAC/Gateway", self.localCFG )
 
   def setServers( self, sServers ):
-    self.setOptionInCFG( "%s/Servers" % self.configurationPath,
-                                  sServers,
-                                  self.remoteCFG )
+    self.setOptionInCFG( "%s/Servers" % self.configurationPath, sServers, self.remoteCFG )
     self.sync()
 
   def deleteLocalOption( self, optionPath ):
     self.deleteOptionInCFG( optionPath, self.localCFG )
 
   def getMasterServer( self ):
-    return self.extractOptionFromCFG( "%s/MasterServer" % self.configurationPath,
-                                      self.remoteCFG )
+    return self.extractOptionFromCFG( "%s/MasterServer" % self.configurationPath, self.remoteCFG )
 
   def setMasterServer( self, sURL ):
-    self.setOptionInCFG( "%s/MasterServer" % self.configurationPath,
-                         sURL,
-                         self.remoteCFG )
+    self.setOptionInCFG( "%s/MasterServer" % self.configurationPath, sURL, self.remoteCFG )
     self.sync()
 
   def getCompressedData( self ):
-    return self.compressedConfigurationData
+    if self.__compressedConfigurationData is None:
+      self.__compressedConfigurationData = zlib.compress( str( self.remoteCFG ), 9 )
+    return self.__compressedConfigurationData
 
   def isMaster( self ):
-    value = self.extractOptionFromCFG( "%s/Master" % self.configurationPath,
-                                            self.localCFG )
+    value = self.extractOptionFromCFG( "%s/Master" % self.configurationPath, self.localCFG )
     if value and value.lower() in ( "yes", "true", "y" ):
       return True
     else:
@@ -317,9 +305,8 @@ class ConfigurationData:
 
   def dumpLocalCFGToFile( self, fileName ):
     try:
-      fd = open( fileName, "w" )
-      fd.write( str( self.localCFG ) )
-      fd.close()
+      with open( fileName, "w" ) as fd:
+        fd.write( str( self.localCFG ) )
       gLogger.verbose( "Configuration file dumped", "'%s'" % fileName )
     except IOError:
       gLogger.error( "Can't dump cfg file", "'%s'" % fileName )
@@ -333,21 +320,15 @@ class ConfigurationData:
     return str( self.mergedCFG )
 
   def dumpRemoteCFGToFile( self, fileName ):
-    fd = open( fileName, "w" )
-    fd.write( str( self.remoteCFG ) )
-    fd.close()
+    with open( fileName, "w" ) as fd:
+      fd.write( str( self.remoteCFG ) )
 
-  def __backupCurrentConfiguration( self, backupName = False ):
-    if not backupName:
-      backupName = self.getVersion()
+  def __backupCurrentConfiguration( self, backupName ):
     configurationFilename = "%s.cfg" % self.getName()
     configurationFile = os.path.join( DIRAC.rootPath, "etc", configurationFilename )
     today = Time.date()
     backupPath = os.path.join( self.getBackupDir(), str( today.year ), "%02d" % today.month )
-    try:
-      os.makedirs( backupPath )
-    except:
-      pass
+    mkDir(backupPath)
     backupFile = os.path.join( backupPath, configurationFilename.replace( ".cfg", ".%s.zip" % backupName ) )
     if os.path.isfile( configurationFile ):
       gLogger.info( "Making a backup of configuration in %s" % backupFile )
@@ -357,22 +338,21 @@ class ConfigurationData:
         zf.close()
       except Exception:
         gLogger.exception()
-        gLogger.error( "Cannot backup configuration data file",
-                     "file %s" % backupFile )
+        gLogger.error( "Cannot backup configuration data file", "file %s" % backupFile )
     else:
       gLogger.warn( "CS data file does not exist", configurationFile )
 
   def writeRemoteConfigurationToDisk( self, backupName = False ):
     configurationFile = os.path.join( DIRAC.rootPath, "etc", "%s.cfg" % self.getName() )
     try:
-      fd = open( configurationFile, "w" )
-      fd.write( str( self.remoteCFG ) )
-      fd.close()
-    except Exception, e:
+      with open( configurationFile, "w" ) as fd:
+        fd.write( str( self.remoteCFG ) )
+    except Exception as e:
       gLogger.fatal( "Cannot write new configuration to disk!",
                      "file %s" % configurationFile )
-      return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, str( e ) ) )
-    self.__backupCurrentConfiguration( backupName )
+      return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, repr( e ).replace( ',)', ')' ) ) )
+    if backupName:
+      self.__backupCurrentConfiguration( backupName )
     return S_OK()
 
   def setRemoteCFG( self, cfg, disableSync = False ):

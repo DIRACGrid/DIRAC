@@ -9,11 +9,14 @@
 """
 __RCSID__ = "$Id$"
 
+import os
+
 import DIRAC
 from DIRAC                                                   import gConfig
 from DIRAC.Core.Base                                         import Script
 from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
+from DIRAC.Core.Utilities.PrettyPrint                        import printTable
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -21,17 +24,56 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-infoDict = {}
+records = []
 
-infoDict['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'Unknown' )
-infoDict['ConfigurationServer'] = gConfig.getValue( '/DIRAC/Configuration/Servers', [] )
-ret = getProxyInfo( disableVOMS = True )
-if ret['OK'] and 'group' in ret['Value']:
-  infoDict['VirtualOrganization'] = getVOForGroup( ret['Value']['group'] )
+records.append( ('Setup', gConfig.getValue( '/DIRAC/Setup', 'Unknown' ) ) )
+records.append( ('ConfigurationServer', str( gConfig.getValue( '/DIRAC/Configuration/Servers', [] ) ) ) )
+records.append( ('Installation path', DIRAC.rootPath ) )
+
+if os.path.exists( os.path.join( DIRAC.rootPath, DIRAC.getPlatform(), 'bin', 'mysql' ) ):
+  records.append( ('Installation type', 'server' ) )
 else:
-  infoDict['VirtualOrganization'] = getVOForGroup( '' )
+  records.append( ('Installation type', 'client' ) )
 
-print 'DIRAC version'.rjust( 20 ), ':', DIRAC.version
+records.append( ( 'Platform', DIRAC.getPlatform() ) )
 
-for k, v in infoDict.items():
-  print k.rjust( 20 ), ':', str( v )
+ret = getProxyInfo( disableVOMS = True )
+if ret['OK']:
+  if 'group' in ret['Value']:
+    records.append( ('VirtualOrganization', getVOForGroup( ret['Value']['group'] ) ) )
+  else:
+    records.append( ('VirtualOrganization', getVOForGroup( '' ) ) )
+  if 'identity' in ret['Value']:
+    records.append( ('User DN', ret['Value']['identity'] ) )
+  if 'secondsLeft' in ret['Value']:
+    records.append( ('Proxy validity, secs', str( ret['Value']['secondsLeft'] ) ) )
+  
+if gConfig.getValue( '/DIRAC/Security/UseServerCertificate', True ):
+  records.append( ('Use Server Certificate', 'Yes' ) )
+else:
+  records.append( ('Use Server Certificate', 'No' ) )
+if gConfig.getValue( '/DIRAC/Security/SkipCAChecks', False ):
+  records.append( ('Skip CA Checks', 'Yes' ) )
+else:
+  records.append( ('Skip CA Checks', 'No' ) )
+    
+  
+try:
+  import gfalthr
+  records.append( ('gfal version', gfalthr.gfal_version() ) )
+except:
+  pass
+
+try:
+  import lcg_util
+  records.append( ('lcg_util version', lcg_util.lcg_util_version() ) )
+except:
+  pass    
+
+records.append( ('DIRAC version', DIRAC.version ) )
+
+fields = ['Option','Value']
+
+print
+printTable( fields, records, numbering=False )
+print

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########################################################################
-# $HeadURL$
 # File :    dirac-distribution
 # Author :  Adria Casajus
 ########################################################################
@@ -11,23 +10,16 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Base      import Script
-from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess, CFG
+from DIRAC.Core.Utilities import List, Distribution, Platform
 
-import sys, os, re, urllib2, tempfile, getpass, imp
+import sys, os, re, urllib2, tempfile, imp
 
 try:
   import hashlib as md5
 except ImportError:
   import md5
-
-globalDistribution = Distribution.Distribution()
-
-g_uploadCmd = {
-  'DIRAC' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/installSource &&  tar -xvf - && ls *.tar.gz > tars.list'",
-  'LHCb' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/LHCbDirac_project &&  tar -xvf - && ls *.tar.gz > tars.list'",
-  'ILC' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'",
-}
 
 ###
 # Load release manager from dirac-install
@@ -36,11 +28,9 @@ diracInstallLocation = os.path.join( os.path.dirname( __file__ ), "dirac-install
 if not os.path.isfile( diracInstallLocation ):
   diracInstallLocation = os.path.join( os.path.dirname( __file__ ), "dirac-install.py" )
 try:
-  diFile = open( diracInstallLocation, "r" )
-  DiracInstall = imp.load_module( "DiracInstall", diFile, diracInstallLocation, ( "", "r", imp.PY_SOURCE ) )
-  diFile.close()
-except Exception, excp:
-  raise
+  with open( diracInstallLocation, "r" ) as diFile:
+    DiracInstall = imp.load_module( "DiracInstall", diFile, diracInstallLocation, ( "", "r", imp.PY_SOURCE ) )
+except Exception as excp:
   gLogger.fatal( "Cannot find dirac-install! Aborting (%s)" % str( excp ) )
   sys.exit( 1 )
 
@@ -62,6 +52,7 @@ class Params:
     self.destination = ""
     self.externalsLocation = ""
     self.makeJobs = 1
+    self.globalDefaults = ""
 
   def setReleases( self, optionValue ):
     self.releasesToBuild = List.fromChar( optionValue )
@@ -111,6 +102,10 @@ class Params:
     self.relcfg = optionValue
     return S_OK()
 
+  def setGlobalDefaults( self, value ):
+    self.globalDefaults = value
+    return S_OK()
+
   def registerSwitches( self ):
     Script.registerSwitch( "r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
     Script.registerSwitch( "l:", "project=", "Project to build the release for (DIRAC by default)", cliParams.setProject )
@@ -123,6 +118,7 @@ class Params:
     Script.registerSwitch( "t:", "buildType=", "External type to build (client/server)", cliParams.setExternalsBuildType )
     Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them", cliParams.setExternalsLocation )
     Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
+    Script.registerSwitch( 'M:', 'defaultsURL=', 'Where to retrieve the global defaults from', cliParams.setGlobalDefaults )
 
     Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                         '\nUsage:',
@@ -133,7 +129,8 @@ class DistributionMaker:
 
   def __init__( self, cliParams ):
     self.cliParams = cliParams
-    self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName )
+    self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName,
+                                               globalDefaultsURL = cliParams.globalDefaults )
     self.relConf.setDebugCB( gLogger.info )
     self.relConf.loadProjectDefaults()
 
@@ -146,10 +143,7 @@ class DistributionMaker:
     if not self.cliParams.destination:
       self.cliParams.destination = tempfile.mkdtemp( 'DiracDist' )
     else:
-      try:
-        os.makedirs( self.cliParams.destination )
-      except:
-        pass
+      mkDir(self.cliParams.destination)
     gLogger.notice( "Will generate tarballs in %s" % self.cliParams.destination )
     return True
 
@@ -270,7 +264,7 @@ class DistributionMaker:
                                            compileTarget,
                                            os.path.join( self.cliParams.destination, "mysql" ) )
       if not result[ 'OK' ]:
-        gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
+        gLogger.error( "Could not generate tarball for package %s" % requestedExternalsString, result[ 'Error' ] )
         sys.exit( 1 )
       os.system( "rm -rf '%s'" % compileTarget )
 
@@ -328,11 +322,8 @@ class DistributionMaker:
 
   def getUploadCmd( self ):
     result = self.relConf.getUploadCommand()
-    upCmd = False
-    if not result['OK']:
-      if self.cliParams.projectName in g_uploadCmd:
-        upCmd = g_uploadCmd[ self.cliParams.projectName ]
-    else:
+    upCmd = ''
+    if result['OK']:
       upCmd = result[ 'Value' ]
 
     filesToCopy = []
@@ -365,4 +356,3 @@ if __name__ == "__main__":
   gLogger.notice( "Everything seems ok. Tarballs generated in %s" % cliParams.destination )
   upCmd = distMaker.getUploadCmd()
   gLogger.always( upCmd )
-

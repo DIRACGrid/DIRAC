@@ -1,24 +1,22 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id$"
-
-import time
 import random
-import types
-from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
+
+from DIRAC  import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, List, Network
 
+__RCSID__ = "$Id$"
+
 class ComponentMonitoringDB( DB ):
 
-  def __init__( self, requireVoms = False,
-               useMyProxy = False,
-               maxQueueSize = 10 ):
-    DB.__init__( self, 'ComponentMonitoringDB', 'Framework/ComponentMonitoringDB', maxQueueSize )
+  def __init__( self, requireVoms = False, useMyProxy = False ):
+    """ c'tor
+
+        Initialize the DB
+    """
+    DB.__init__( self, 'ComponentMonitoringDB', 'Framework/ComponentMonitoringDB' )
     random.seed()
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
@@ -60,10 +58,10 @@ class ComponentMonitoringDB( DB ):
                                      'Cycles' : 'INTEGER',
                                      'Queries' : 'INTEGER'
                                    },
-                                   'PrimaryKey' : 'Id',
-                                   'Indexes' : { 'ComponentIndex' : [ 'ComponentName', 'Setup', 'Host', 'Port' ],
-                                                 'TypeIndex' : [ 'Type' ],
-                                               }
+                        'PrimaryKey' : 'Id',
+                        'Indexes' : { 'ComponentIndex' : [ 'ComponentName', 'Setup', 'Host', 'Port' ],
+                                      'TypeIndex' : [ 'Type' ],
+                                    }
                       }
 
     tN = self.__getTableName( "VersionHistory" )
@@ -75,13 +73,13 @@ class ComponentMonitoringDB( DB ):
                                      'Platform' : 'VARCHAR(255) NOT NULL',
                                      'Description' : 'BLOB',
                                    },
-                                  'Indexes' : { 'Component' : [ 'CompId' ] }
+                        'Indexes' : { 'Component' : [ 'CompId' ] }
                       }
 
     return self._createTables( tablesD )
 
   def __datetime2str( self, dt ):
-    if type( dt ) == types.StringType:
+    if isinstance( dt, basestring ):
       return dt
     return "%s-%s-%s %s:%s:%s" % ( dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second )
 
@@ -107,7 +105,7 @@ class ComponentMonitoringDB( DB ):
     self.log.info( "Trying to register %s" % compLogName )
     result = self._query( "SELECT id FROM `%s` WHERE %s" % ( tableName, " AND ".join( sqlCond ) ) )
     if not result[ 'OK' ]:
-      self.log.error( "Cannot register %s: %s" % ( compLogName, result[ 'Message' ] ) )
+      self.log.error( "Cannot register component", "%s: %s" % ( compLogName, result[ 'Message' ] ) )
       return result
     if len( result[ 'Value' ] ):
       compId = result[ 'Value' ][0][0]
@@ -213,8 +211,8 @@ class ComponentMonitoringDB( DB ):
     if 'startTime' in compDict:
       sqlUpdateFields.append( "StartTime='%s'" % self.__datetime2str( compDict[ 'startTime' ] ) )
     return self._update( "UPDATE `%s` SET %s WHERE Id=%s" % ( self.__getTableName( "Components" ),
-                                                                       ", ".join( sqlUpdateFields ),
-                                                                       compDict[ 'compId' ] ) )
+                                                              ", ".join( sqlUpdateFields ),
+                                                              compDict[ 'compId' ] ) )
 
   def __getComponents( self, condDict ):
     """
@@ -227,9 +225,9 @@ class ComponentMonitoringDB( DB ):
     sqlWhere = []
     for field in condDict:
       val = condDict[ field ]
-      if type( val ) == types.StringType:
+      if isinstance( val, basestring ):
         sqlWhere.append( "%s='%s'" % ( field, val ) )
-      elif type( val ) in ( types.IntType, types.LongType, types.FloatType ):
+      elif isinstance( val, ( int, long, float ) ):
         sqlWhere.append( "%s='%s'" % ( field, val ) )
       else:
         sqlWhere.append( "( %s )" % " OR ".join( [ "%s='%s'" % ( field, v ) for v in val ] ) )
@@ -263,22 +261,22 @@ class ComponentMonitoringDB( DB ):
     if field not in condDict:
       return True
     condVal = condDict[ field ]
-    if type( condVal ) in ( types.ListType, types.TupleType ):
+    if isinstance( condVal, ( list, tuple ) ):
       return value in condVal
     return value == condVal
 
-  def __getComponentDefinitionFromCS( self, system, setup, instance, type, component ):
+  def __getComponentDefinitionFromCS( self, system, setup, instance, cType, component ):
     componentName = "%s/%s" % ( system, component )
     compDict = { 'ComponentName' : componentName,
-                 'Type' : type,
+                 'Type' : cType,
                  'Setup' : setup
                 }
     componentSection = "/Systems/%s/%s/%s/%s" % ( system, instance,
-                                                  "%ss" % type.capitalize(), component )
+                                                  "%ss" % cType.capitalize(), component )
     compStatus = gConfig.getValue( "%s/Status" % componentSection, 'Active' )
     if compStatus.lower() in ( "inactive", ):
       compDict[ 'Status' ] = compStatus.lower().capitalize()
-    if type == 'service':
+    if cType == 'service':
       result = gConfig.getOption( "%s/Port" % componentSection )
       if not result[ 'OK' ]:
         compDict[ 'Status' ] = 'Error'
@@ -321,16 +319,16 @@ class ComponentMonitoringDB( DB ):
       for system in systems:
         instance = systems[ system ]
         #Check defined agents and serviecs
-        for type in ( 'agent' , 'service' ):
+        for cType in ( 'agent' , 'service' ):
           #Get entries for the instance of a system
-          result = gConfig.getSections( "/Systems/%s/%s/%s" % ( system, instance, "%ss" % type.capitalize() ) )
+          result = gConfig.getSections( "/Systems/%s/%s/%s" % ( system, instance, "%ss" % cType.capitalize() ) )
           if not result[ 'OK' ]:
             self.log.warn( "Opps, sytem seems to be defined wrong\n", "System %s at %s: %s" % ( system, instance, result[ 'Message' ] ) )
             continue
           components = result[ 'Value' ]
           for component in components:
             componentName = "%s/%s" % ( system, component )
-            compDict = self.__getComponentDefinitionFromCS( system, setup, instance, type, component )
+            compDict = self.__getComponentDefinitionFromCS( system, setup, instance, cType, component )
             if self.__componentMatchesCondition( compDict, requiredComponents, conditionDict ):
               statusSet.addUniqueToSet( requiredComponents, compDict )
         #Walk the URLs
@@ -433,10 +431,10 @@ class StatusSet:
 
   def setComponentsAsRequired( self, requiredSet ):
     for setup in requiredSet:
-      for type in requiredSet[ setup ]:
-        for name in requiredSet[ setup ][ type ]:
+      for cType in requiredSet[ setup ]:
+        for name in requiredSet[ setup ][ cType ]:
           #Need to narrow down required
-          cDL = requiredSet[ setup ][ type ][ name ]
+          cDL = requiredSet[ setup ][ cType ][ name ]
           cDL = self.__reduceComponentList( cDL )
           self.__setComponentListAsRequired( cDL )
 

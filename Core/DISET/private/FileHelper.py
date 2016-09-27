@@ -3,7 +3,8 @@ __RCSID__ = "$Id$"
 
 import os
 try:
-  import hashlib as md5
+  import hashlib
+  md5 = hashlib
 except:
   import md5
 import types
@@ -21,8 +22,9 @@ class FileHelper:
   __validDirections = ( "toClient", "fromClient", 'receive', 'send' )
   __directionsMapping = { 'toClient' : 'send', 'fromClient' : 'receive' }
 
-  def __init__( self, oTransport = None ):
+  def __init__( self, oTransport = None, checkSum = True ):
     self.oTransport = oTransport
+    self.__checkMD5 = checkSum
     self.__oMD5 = md5.md5()
     self.bFinishedTransmission = False
     self.bReceivedEOF = False
@@ -30,6 +32,12 @@ class FileHelper:
     self.packetSize = 1048576
     self.__fileBytes = 0
     self.__log = gLogger.getSubLogger( "FileHelper" )
+
+  def disableCheckSum( self ):
+    self.__checkMD5 = False
+
+  def enableCheckSum( self ):
+    self.__checkMD5 = True
 
   def setTransport( self, oTransport ):
     self.oTransport = oTransport
@@ -48,7 +56,8 @@ class FileHelper:
     return self.__fileBytes
 
   def sendData( self, sBuffer ):
-    self.__oMD5.update( sBuffer )
+    if self.__checkMD5:
+      self.__oMD5.update( sBuffer )
     retVal = self.oTransport.sendData( S_OK( ( True, sBuffer ) ) )
     if not retVal[ 'OK' ]:
       return retVal
@@ -80,11 +89,12 @@ class FileHelper:
       return retVal
     stBuffer = retVal[ 'Value' ]
     if stBuffer[0]:
-      self.__oMD5.update( stBuffer[1] )
+      if self.__checkMD5:
+        self.__oMD5.update( stBuffer[1] )
       self.oTransport.sendData( S_OK() )
     else:
       self.bReceivedEOF = True
-      if not self.__oMD5.hexdigest() == stBuffer[1]:
+      if self.__checkMD5 and not self.__oMD5.hexdigest() == stBuffer[1]:
         self.bErrorInMD5 = True
       self.__finishedTransmission()
       return S_OK( "" )
@@ -135,7 +145,7 @@ class FileHelper:
     finally:
       try:
         dataSink.close()
-      except Exception, e:
+      except Exception as e:
         pass
 
   def networkToDataSink( self, dataSink, maxFileSize = 0 ):
@@ -163,7 +173,7 @@ class FileHelper:
         receivedBytes += len( strBuffer )
       if strBuffer:
         dataSink.write( strBuffer )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error while receiving file, %s" % str( e ) )
     if self.errorInTransmission():
       return S_ERROR( "Error in the file CRC" )
@@ -192,7 +202,7 @@ class FileHelper:
           return S_OK()
         ioffset += iPacketSize
       self.sendEOF()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error while sending string: %s" % str( e ) )
     try:
       stringIO.close()
@@ -217,7 +227,7 @@ class FileHelper:
         sentBytes += len( sBuffer )
         sBuffer = os.read( iFD, iPacketSize )
       self.sendEOF()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Error while sending file" )
       return S_ERROR( "Error while sending file: %s" % str( e ) )
     self.__fileBytes = sentBytes
@@ -235,6 +245,8 @@ class FileHelper:
       return S_ERROR( "%s data source object does not have a read method" % str( dataSource ) )
     self.__oMD5 = md5.md5()
     iPacketSize = self.packetSize
+    self.__fileBytes = 0
+    sentBytes = 0
     try:
       sBuffer = dataSource.read( iPacketSize )
       while len( sBuffer ) > 0:
@@ -244,24 +256,26 @@ class FileHelper:
         if 'AbortTransfer' in dRetVal and dRetVal[ 'AbortTransfer' ]:
           self.__log.verbose( "Transfer aborted" )
           return S_OK()
+        sentBytes += len( sBuffer )
         sBuffer = dataSource.read( iPacketSize )
       self.sendEOF()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Error while sending file" )
       return S_ERROR( "Error while sending file: %s" % str( e ) )
+    self.__fileBytes = sentBytes
     return S_OK()
 
   def getFileDescriptor( self, uFile, sFileMode ):
     closeAfter = True
-    if type( uFile ) == types.StringType:
+    if isinstance( uFile, basestring ):
       try:
         self.oFile = file( uFile, sFileMode )
       except IOError:
         return S_ERROR( "%s can't be opened" % uFile )
       iFD = self.oFile.fileno()
-    elif type( uFile ) == types.FileType:
+    elif isinstance( uFile, file ):
       iFD = uFile.fileno()
-    elif type( uFile ) == types.IntType:
+    elif isinstance( uFile, int ):
       iFD = uFile
       closeAfter = False
     else:
@@ -272,15 +286,15 @@ class FileHelper:
 
   def getDataSink( self, uFile ):
     closeAfter = True
-    if type( uFile ) == types.StringType:
+    if isinstance( uFile, basestring ):
       try:
         oFile = file( uFile, "wb" )
       except IOError:
         return S_ERROR( "%s can't be opened" % uFile )
-    elif type( uFile ) == types.FileType:
+    elif isinstance( uFile, file ):
       oFile = uFile
       closeAfter = False
-    elif type( uFile ) == types.IntType:
+    elif isinstance( uFile, int ):
       oFile = os.fdopen( uFile, "wb" )
       closeAfter = True
     elif "write" in dir( uFile ):
@@ -315,12 +329,12 @@ class FileHelper:
     if not onthefly:
       try:
         filePipe, filePath = tempfile.mkstemp()
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Can't create temporary file to pregenerate the bulk: %s" % str( e ) )
       self.__createTar( fileList, filePipe, compress )
       try:
         fo = file( filePath, 'rb' )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Can't read pregenerated bulk: %s" % str( e ) )
       result = self.DataSourceToNetwork( fo )
       try:
@@ -368,7 +382,7 @@ class FileHelper:
     thrd.start()
     try:
       self.__extractTar( destDir, rPipe, compress )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error while extracting bulk: %s" % e )
     thrd.join()
     return retList[0]
@@ -392,4 +406,3 @@ class FileHelper:
       return S_ERROR( "Error in bulk compression setting: %s" % str( v ) )
     except Exception, v:
       return S_ERROR( "Error in listing bulk: %s" % str( v ) )
-

@@ -3,23 +3,22 @@ import os
 import time
 import DIRAC
 import threading
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR, gMonitor
-from DIRAC.Core.Utilities import List, Time, MemStat
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
+from DIRAC.Core.Utilities import Time, MemStat
 from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, MessageSender
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
-from DIRAC.Core.Security import CS
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-class Service:
+class Service( object ):
 
   SVC_VALID_ACTIONS = { 'RPC' : 'export',
                         'FileTransfer': 'transfer',
@@ -29,7 +28,7 @@ class Service:
 
   def __init__( self, serviceData ):
     self._svcData = serviceData
-    self._name = serviceData[ 'loadName' ]
+    self._name = serviceData[ 'modName' ]
     self._startTime = Time.dateTime()
     self._validNames = [ serviceData[ 'modName' ]  ]
     if serviceData[ 'loadName' ] not in self._validNames:
@@ -70,9 +69,9 @@ class Service:
     #Initialize lock manager
     self._lockManager = LockManager( self._cfg.getMaxWaitingPetitions() )
     self._initMonitoring()
-    self._threadPool = ThreadPool( 1,
-                                    max( 0, self._cfg.getMaxThreads() ),
-                                    self._cfg.getMaxWaitingPetitions() )
+    self._threadPool = ThreadPool( max( 1, self._cfg.getMinThreads() ),
+                                   max( 0, self._cfg.getMaxThreads() ),
+                                   self._cfg.getMaxWaitingPetitions() )
     self._threadPool.daemonize()
     self._msgBroker = MessageBroker( "%sMSB" % self._name, threadPool = self._threadPool )
     #Create static dict
@@ -82,7 +81,7 @@ class Service:
                               'messageSender' : MessageSender( self._name, self._msgBroker ),
                               'validNames' : self._validNames,
                               'csPaths' : [ PathFinder.getServiceSection( svcName ) for svcName in self._validNames ]
-                             }
+                            }
     #Call static initialization function
     try:
       self._handler[ 'class' ]._rh__initializeClass( dict( self._serviceInfoDict ),
@@ -92,13 +91,18 @@ class Service:
       if self._handler[ 'init' ]:
         for initFunc in self._handler[ 'init' ]:
           gLogger.verbose( "Executing initialization function" )
-          result = initFunc( dict( self._serviceInfoDict ) )
-        if not isReturnStructure( result ):
-          return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
-        if not result[ 'OK' ]:
-          return S_ERROR( "Error while initializing %s: %s" % ( self._name, result[ 'Message' ] ) )
-    except Exception, e:
-      errMsg = "Exception while intializing %s" % self._name
+          try:
+            result = initFunc( dict( self._serviceInfoDict ) )
+          except Exception as excp:
+            gLogger.exception( "Exception while calling initialization function", lException = excp )
+            return S_ERROR( "Exception while calling initialization function: %s" % str( excp ) )
+          if not isReturnStructure( result ):
+            return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
+          if not result[ 'OK' ]:
+            return S_ERROR( "Error while initializing %s: %s" % ( self._name, result[ 'Message' ] ) )
+    except Exception as e:
+      errMsg = "Exception while initializing %s" % self._name
+      gLogger.exception( e )
       gLogger.exception( errMsg )
       return S_ERROR( errMsg )
 
@@ -112,29 +116,7 @@ class Service:
 
     return S_OK()
 
-  def _discoverHandlerLocation( self ):
-    handlerLocation = self._cfg.getHandlerLocation()
-    if handlerLocation:
-      if handlerLocation.find( "Handler.py" ) != len( handlerLocation ) - 10:
-        return S_ERROR( "CS defined file %s does not have a valid handler name" % handlerLocation )
-      return handlerLocation
-    fields = [ field.strip() for field in self._name.split( "/" ) if field.strip() ]
-    if len( fields ) != 2:
-      gLogger.error( "Oops. Invalid service name!", self._name )
-      return False
-    gLogger.debug( "Trying to auto discover handler" )
-    rootModulesToLook = [ "%sDIRAC" % ext for ext in gConfig.getValue( "/DIRAC/Extensions", [] ) ] + [ 'DIRAC' ]
-    for rootModule in rootModulesToLook:
-      gLogger.debug( "Trying to find handler in %s root module" % rootModule )
-      filePath = os.path.join( rootModule, "%sSystem" % fields[0], "Service", "%sHandler.py" % fields[1] )
-      absPath = os.path.join ( DIRAC.rootPath, filePath )
-      if os.path.isfile( absPath ):
-        gLogger.debug( "Auto discovered handler %s" % filePath )
-        return filePath
-      gLogger.debug( "%s is not a valid file" % filePath )
-    return False
-
-  def __searchInitFunctions( self, handlerClass, currentClass = False ):
+  def __searchInitFunctions( self, handlerClass, currentClass = None ):
     if not currentClass:
       currentClass = handlerClass
     initFuncs = []
@@ -154,7 +136,7 @@ class Service:
     handlerName = handlerClass.__name__
     handlerInitMethods = self.__searchInitFunctions( handlerClass )
     try:
-      handlerInitMethods.append( getattr( self._svcData[ 'moduleObj' ], "initialize%s" % handlerName) )
+      handlerInitMethods.append( getattr( self._svcData[ 'moduleObj' ], "initialize%s" % handlerName ) )
     except AttributeError:
       gLogger.verbose( "Not found global initialization function for service" )
 
@@ -242,19 +224,19 @@ class Service:
     self._monitor.registerActivity( 'MaxFD', "Max File Descriptors", 'Framework', 'fd', MonitoringClient.OP_MEAN )
 
     self._monitor.setComponentExtraParam( 'DIRACVersion', DIRAC.version )
-    self._monitor.setComponentExtraParam( 'platform', DIRAC.platform )
+    self._monitor.setComponentExtraParam( 'platform', DIRAC.getPlatform() )
     self._monitor.setComponentExtraParam( 'startTime', Time.dateTime() )
     for prop in ( ( "__RCSID__", "version" ), ( "__doc__", "description" ) ):
       try:
         value = getattr( self._handler[ 'module' ], prop[0] )
-      except Exception, e:
-        gLogger.error( "Missing %s" % prop[0] )
+      except Exception as e:
+        gLogger.exception( e )
+        gLogger.error( "Missing property", prop[0] )
         value = 'unset'
       self._monitor.setComponentExtraParam( prop[1], value )
     for secondaryName in self._cfg.registerAlsoAs():
-      if secondaryName not in self.servicesDict:
-        gLogger.info( "Registering %s also as %s" % ( serviceName, secondaryName ) )
-        self._validNames.append( secondaryName )
+      gLogger.info( "Registering %s also as %s" % ( self._name, secondaryName ) )
+      self._validNames.append( secondaryName )
     return S_OK()
 
   def __reportThreadPoolContents( self ):
@@ -282,7 +264,7 @@ class Service:
     self._lockManager.lockGlobal()
     try:
       monReport = self.__startReportToMonitoring()
-    except Exception, e:
+    except Exception:
       monReport = False
     try:
       #Handshake
@@ -314,7 +296,7 @@ class Service:
       #Close the connection if required
       if result[ 'closeTransport' ] or not result[ 'OK' ]:
         if not result[ 'OK' ]:
-          gLogger.error( "Error processing proposal: %s" % result[ 'Message' ] )
+          gLogger.error( "Error processing proposal", result[ 'Message' ] )
         self._transportPool.close( trid )
       return result
     finally:
@@ -323,7 +305,7 @@ class Service:
         self.__endReportToMonitoring( *monReport )
 
 
-  def _createIdentityString( self, credDict, clientTransport = False ):
+  def _createIdentityString( self, credDict, clientTransport = None ):
     if 'username' in credDict:
       if 'group' in credDict:
         identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ] )
@@ -396,10 +378,14 @@ class Service:
     if not self._authMgr.authQuery( csAuthPath, credDict, hardcodedMethodAuth ):
       #Get the identity string
       identity = self._createIdentityString( credDict )
-      gLogger.warn( "Unauthorized query", "to %s:%s by %s" % ( self._name,
+      fromHost = "unknown host"
+      tr = self._transportPool.get( trid )
+      if tr:
+        fromHost = '/'.join( [ str( item ) for item in tr.getRemoteAddress() ] )
+      gLogger.warn( "Unauthorized query", "to %s:%s by %s from %s" % ( self._name,
                                                                "/".join( actionTuple ),
-                                                               identity ) )
-      result = S_ERROR( "Unautorized query" )
+                                                               identity, fromHost ) )
+      result = S_ERROR( "Unauthorized query" )
     else:
       result = S_OK()
 
@@ -415,7 +401,7 @@ class Service:
                                       self._name, "/".join( actionTuple ) )
     return result
 
-  def _instantiateHandler( self, trid, proposalTuple = False ):
+  def _instantiateHandler( self, trid, proposalTuple = None ):
     """
     Generate an instance of the handler for a given service
     """
@@ -438,7 +424,7 @@ class Service:
     try:
       handlerInstance = self._handler[ 'class' ]( handlerInitDict, trid )
       handlerInstance.initialize()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Server error while loading handler: %s" % str( e ) )
       return S_ERROR( "Server error while loading handler" )
     return S_OK( handlerInstance )
@@ -476,7 +462,7 @@ class Service:
     result[ 'closeTransport' ] = not messageConnection or not result[ 'OK' ]
     return result
 
-  def _mbConnect( self, trid, handlerObj = False ):
+  def _mbConnect( self, trid, handlerObj = None ):
     if not handlerObj:
       result = self._instantiateHandler( trid )
       if not result[ 'OK' ]:
@@ -487,7 +473,7 @@ class Service:
   def _executeAction( self, trid, proposalTuple, handlerObj ):
     try:
       return handlerObj._rh_executeAction( proposalTuple )
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Exception while executing handler action" )
       return S_ERROR( "Server error while executing action: %s" % str( e ) )
 

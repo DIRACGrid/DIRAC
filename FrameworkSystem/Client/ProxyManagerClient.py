@@ -1,27 +1,25 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id$"
-
 import os
 import datetime
-import types
-from DIRAC.Core.Utilities import Time, ThreadSafe, DictCache
-from DIRAC.Core.Security import Locations, CS, File, Properties
+from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
+from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Security import Locations, CS
+from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger
+
+__RCSID__ = "$Id$"
 
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
 gVOMSProxiesSync = ThreadSafe.Synchronizer()
 
 class ProxyManagerClient:
+  __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__( self ):
     self.__usersCache = DictCache()
@@ -124,9 +122,9 @@ class ProxyManagerClient:
                              record )
     return retVal
 
-  def uploadProxy( self, proxy = False, diracGroup = False, chainToConnect = False, restrictLifeTime = 0 ):
+  def uploadProxy( self, proxy = False, diracGroup = False, chainToConnect = False, restrictLifeTime = 0, rfcIfPossible = False ):
     """
-    Upload a proxy to the proxy management service using delgation
+    Upload a proxy to the proxy management service using delegation
     """
     #Discover proxy location
     if type( proxy ) == g_X509ChainType:
@@ -137,7 +135,7 @@ class ProxyManagerClient:
         proxyLocation = Locations.getProxyLocation()
         if not proxyLocation:
           return S_ERROR( "Can't find a valid proxy" )
-      elif type( proxy ) in ( types.StringType, types.UnicodeType ):
+      elif isinstance( proxy, basestring ):
         proxyLocation = proxy
       else:
         return S_ERROR( "Can't find a valid proxy" )
@@ -172,7 +170,7 @@ class ProxyManagerClient:
       chainLifeTime = restrictLifeTime
     retVal = chain.generateChainFromRequestString( reqDict[ 'request' ],
                                                    lifetime = chainLifeTime,
-                                                   diracGroup = diracGroup )
+                                                   diracGroup = diracGroup, rfc = rfcIfPossible)
     if not retVal[ 'OK' ]:
       return retVal
     #Upload!
@@ -185,7 +183,8 @@ class ProxyManagerClient:
 
 
   @gProxiesSync
-  def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, proxyToConnect = False, token = False ):
+  def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
+                     cacheTime = 14400, proxyToConnect = False, token = False ):
     """
     Get a proxy Chain from the proxy management
     """
@@ -200,10 +199,10 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     if token:
       retVal = rpcClient.getProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
-                                   long( requiredTimeLeft ), token )
+                                            long( cacheTime + requiredTimeLeft ), token )
     else:
       retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
-                                   long( requiredTimeLeft ) )
+                                   long( cacheTime + requiredTimeLeft ) )
     if not retVal[ 'OK' ]:
       return retVal
     chain = X509Chain( keyObj = req.getPKey() )
@@ -213,11 +212,12 @@ class ProxyManagerClient:
     self.__proxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, filePath = False, proxyToConnect = False, token = False ):
+  def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
+                           cacheTime = 14400, filePath = False, proxyToConnect = False, token = False ):
     """
     Get a proxy Chain from the proxy management and write it to file
     """
-    retVal = self.downloadProxy( userDN, userGroup, limited, requiredTimeLeft, proxyToConnect, token )
+    retVal = self.downloadProxy( userDN, userGroup, limited, requiredTimeLeft, cacheTime, proxyToConnect, token )
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
@@ -228,8 +228,9 @@ class ProxyManagerClient:
     return retVal
 
   @gVOMSProxiesSync
-  def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200,
-                         requiredVOMSAttribute = False, proxyToConnect = False, token = False ):
+  def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
+                         cacheTime = 14400, requiredVOMSAttribute = False,
+                         proxyToConnect = False, token = False ):
     """
     Download a proxy if needed and transform it into a VOMS one
     """
@@ -245,11 +246,11 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     if token:
       retVal = rpcClient.getVOMSProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
-                                                long( requiredTimeLeft ), token, requiredVOMSAttribute )
+                                                long( cacheTime + requiredTimeLeft ), token, requiredVOMSAttribute )
 
     else:
       retVal = rpcClient.getVOMSProxy( userDN, userGroup, req.dumpRequest()['Value'],
-                                       long( requiredTimeLeft ), requiredVOMSAttribute )
+                                       long( cacheTime + requiredTimeLeft ), requiredVOMSAttribute )
     if not retVal[ 'OK' ]:
       return retVal
     chain = X509Chain( keyObj = req.getPKey() )
@@ -259,12 +260,14 @@ class ProxyManagerClient:
     self.__vomsProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200,
-                               requiredVOMSAttribute = False, filePath = False, proxyToConnect = False, token = False ):
+  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
+                               cacheTime = 14400, requiredVOMSAttribute = False, filePath = False,
+                               proxyToConnect = False, token = False ):
     """
     Download a proxy if needed, transform it into a VOMS one and write it to file
     """
-    retVal = self.downloadVOMSProxy( userDN, userGroup, limited, requiredTimeLeft, requiredVOMSAttribute, proxyToConnect, token )
+    retVal = self.downloadVOMSProxy( userDN, userGroup, limited, requiredTimeLeft, cacheTime,
+                                     requiredVOMSAttribute, proxyToConnect, token )
     if not retVal[ 'OK' ]:
       return retVal
     chain = retVal[ 'Value' ]
@@ -297,12 +300,11 @@ class ProxyManagerClient:
       return S_ERROR( "No group found that has %s as voms attrs" % vomsAttr )
 
     for userGroup in groups:
-      result = self.downloadVOMSProxy( userDN,
-                                     userGroup,
-                                     limited = False,
-                                     requiredTimeLeft = requiredTimeLeft,
-                                     requiredVOMSAttribute = vomsAttr,
-                                     proxyToConnect = proxyToConnect )
+      result = self.downloadVOMSProxy( userDN, userGroup,
+                                       limited = False,
+                                       requiredTimeLeft = requiredTimeLeft,
+                                       requiredVOMSAttribute = vomsAttr,
+                                       proxyToConnect = proxyToConnect )
       if result['OK']:
         return result
     return result
@@ -347,17 +349,17 @@ class ProxyManagerClient:
     result = chain.hash()
     if not result[ 'OK' ]:
       return result
-    hash = result[ 'Value' ]
-    if self.__filesCache.exists( hash, requiredTimeLeft ):
-      filepath = self.__filesCache.get( hash )
-      if os.path.isfile( filepath ):
+    cHash = result[ 'Value' ]
+    if self.__filesCache.exists( cHash, requiredTimeLeft ):
+      filepath = self.__filesCache.get( cHash )
+      if filepath and os.path.isfile( filepath ):
         return S_OK( filepath )
-      self.__filesCache.delete( hash )
+      self.__filesCache.delete( cHash )
     retVal = chain.dumpAllToFile( destinationFile )
     if not retVal[ 'OK' ]:
       return retVal
     filename = retVal[ 'Value' ]
-    self.__filesCache.add( hash, chain.getRemainingSecs()['Value'], filename )
+    self.__filesCache.add( cHash, chain.getRemainingSecs()['Value'], filename )
     return S_OK( filename )
 
   def deleteGeneratedProxyFile( self, chain ):
@@ -384,30 +386,30 @@ class ProxyManagerClient:
       newProxyLifeTime : life time of new proxy
       proxyToConnect : proxy to use for connecting to the service
     """
-    retVal = File.multiProxyArgument( proxyToBeRenewed )
+    retVal = multiProxyArgument( proxyToBeRenewed )
     if not retVal[ 'Value' ]:
       return retVal
     proxyToRenewDict = retVal[ 'Value' ]
 
     secs = proxyToRenewDict[ 'chain' ].getRemainingSecs()[ 'Value' ]
     if secs > minLifeTime:
-      File.deleteMultiProxy( proxyToRenewDict )
+      deleteMultiProxy( proxyToRenewDict )
       return S_OK()
 
     if not proxyToConnect:
       proxyToConnectDict = { 'chain': False, 'tempFile': False }
     else:
-      retVal = File.multiProxyArgument( proxyToConnect )
+      retVal = multiProxyArgument( proxyToConnect )
       if not retVal[ 'Value' ]:
-        File.deleteMultiProxy( proxyToRenewDict )
+        deleteMultiProxy( proxyToRenewDict )
         return retVal
       proxyToConnectDict = retVal[ 'Value' ]
 
     userDN = proxyToRenewDict[ 'chain' ].getIssuerCert()[ 'Value' ].getSubjectDN()[ 'Value' ]
     retVal = proxyToRenewDict[ 'chain' ].getDIRACGroup()
     if not retVal[ 'OK' ]:
-      File.deleteMultiProxy( proxyToRenewDict )
-      File.deleteMultiProxy( proxyToConnectDict )
+      deleteMultiProxy( proxyToRenewDict )
+      deleteMultiProxy( proxyToConnectDict )
       return retVal
     userGroup = retVal[ 'Value' ]
     limited = proxyToRenewDict[ 'chain' ].isLimitedProxy()[ 'Value' ]
@@ -415,8 +417,8 @@ class ProxyManagerClient:
     voms = VOMS()
     retVal = voms.getVOMSAttributes( proxyToRenewDict[ 'chain' ] )
     if not retVal[ 'OK' ]:
-      File.deleteMultiProxy( proxyToRenewDict )
-      File.deleteMultiProxy( proxyToConnectDict )
+      deleteMultiProxy( proxyToRenewDict )
+      deleteMultiProxy( proxyToConnectDict )
       return retVal
     vomsAttrs = retVal[ 'Value' ]
     if vomsAttrs:
@@ -433,8 +435,8 @@ class ProxyManagerClient:
                                    requiredTimeLeft = newProxyLifeTime,
                                    proxyToConnect = proxyToConnectDict[ 'chain' ] )
 
-    File.deleteMultiProxy( proxyToRenewDict )
-    File.deleteMultiProxy( proxyToConnectDict )
+    deleteMultiProxy( proxyToRenewDict )
+    deleteMultiProxy( proxyToConnectDict )
 
     if not retVal[ 'OK' ]:
       return retVal

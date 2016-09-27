@@ -11,6 +11,7 @@ from DIRAC.Core.Base                                   import Script
 read = True
 write = True
 check = True
+remove = True
 site = ''
 mute = False
 
@@ -24,6 +25,7 @@ Usage:
 Script.registerSwitch( "r" , "BanRead" , "     Ban only reading from the storage element" )
 Script.registerSwitch( "w" , "BanWrite", "     Ban writing to the storage element" )
 Script.registerSwitch( "k" , "BanCheck", "     Ban check access to the storage element" )
+Script.registerSwitch( "v" , "BanRemove", "    Ban remove access to the storage element" )
 Script.registerSwitch( "m" , "Mute"    , "     Do not send email" )
 Script.registerSwitch( "S:", "Site="   , "     Ban all SEs associate to site (note that if writing is allowed, check is always allowed)" )
 Script.parseCommandLine( ignoreErrors = True )
@@ -33,25 +35,33 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "r" or switch[0].lower() == "banread":
     write = False
     check = False
+    remove = False
   if switch[0].lower() == "w" or switch[0].lower() == "banwrite":
     read = False
     check = False
+    remove = False
   if switch[0].lower() == "k" or switch[0].lower() == "bancheck":
     read = False
     write = False
+    remove = False
+  if switch[0].lower() == "v" or switch[0].lower() == "banremove":
+    read = False
+    write = False
+    check = False
   if switch[0].lower() == "m" or switch[0].lower() == "mute":
     mute = True
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
-#from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
+# from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
 from DIRAC                                               import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-#csAPI = CSAPI()
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
 
+ses = resolveSEGroup( ses )
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
@@ -85,6 +95,7 @@ if not ses:
 readBanned = []
 writeBanned = []
 checkBanned = []
+removeBanned = []
 
 resourceStatus = ResourceStatus()
 
@@ -100,57 +111,73 @@ for se, seOptions in res[ 'Value' ].items():
   resW = resC = resR = { 'OK' : False }
 
   # Eventually, we will get rid of the notion of InActive, as we always write Banned.
-  if read and seOptions.has_key( 'Read' ):
+  if read and seOptions.has_key( 'ReadAccess' ):
 
-    if not seOptions[ 'Read' ] in [ 'Active', 'Bad' ]:
-      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'Read' ], [ 'Active', 'Bad' ] ) )
-      gLogger.notice( 'Try specifying the command switchs' )
-      continue
-
-    resR = resourceStatus.setStorageElementStatus( se, 'Read', 'Banned', reason, userName )
-    #res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
-    if not resR['OK']:
-      gLogger.error( 'Failed to update %s read access to Banned' % se )
+    if not seOptions[ 'ReadAccess' ] in [ 'Active', 'Degraded', 'Probing' ]:
+      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'ReadAccess' ], [ 'Active', 'Degraded', 'Probing' ] ) )
+      gLogger.notice( 'Try specifying the command switches' )
     else:
-      gLogger.notice( 'Successfully updated %s read access to Banned' % se )
-      readBanned.append( se )
+
+      resR = resourceStatus.setStorageElementStatus( se, 'ReadAccess', 'Banned', reason, userName )
+      # res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
+      if not resR['OK']:
+        gLogger.error( 'Failed to update %s read access to Banned' % se )
+      else:
+        gLogger.notice( 'Successfully updated %s read access to Banned' % se )
+        readBanned.append( se )
 
   # Eventually, we will get rid of the notion of InActive, as we always write Banned.
-  if write and seOptions.has_key( 'Write' ):
+  if write and seOptions.has_key( 'WriteAccess' ):
 
-    if not seOptions[ 'Write' ] in [ 'Active', 'Bad' ]:
-      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'Write' ], [ 'Active', 'Bad' ] ) )
-      gLogger.notice( 'Try specifying the command switchs' )
-      continue
-
-    resW = resourceStatus.setStorageElementStatus( se, 'Write', 'Banned', reason, userName )
-    #res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
-    if not resW['OK']:
-      gLogger.error( "Failed to update %s write access to Banned" % se )
+    if not seOptions[ 'WriteAccess' ] in [ 'Active', 'Degraded', 'Probing' ]:
+      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'WriteAccess' ], [ 'Active', 'Degraded', 'Probing' ] ) )
+      gLogger.notice( 'Try specifying the command switches' )
     else:
-      gLogger.notice( "Successfully updated %s write access to Banned" % se )
-      writeBanned.append( se )
+
+      resW = resourceStatus.setStorageElementStatus( se, 'WriteAccess', 'Banned', reason, userName )
+      # res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
+      if not resW['OK']:
+        gLogger.error( "Failed to update %s write access to Banned" % se )
+      else:
+        gLogger.notice( "Successfully updated %s write access to Banned" % se )
+        writeBanned.append( se )
 
   # Eventually, we will get rid of the notion of InActive, as we always write Banned.
-  if check and seOptions.has_key( 'Check' ):
+  if check and seOptions.has_key( 'CheckAccess' ):
 
-    if not seOptions[ 'Check' ] in [ 'Active', 'Bad' ]:
-      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'Check' ], [ 'Active', 'Bad' ] ) )
-      gLogger.notice( 'Try specifying the command switchs' )
-      continue
-
-    resC = resourceStatus.setStorageElementStatus( se, 'Check', 'Banned', reason, userName )
-    #res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
-    if not resC['OK']:
-      gLogger.error( "Failed to update %s check access to Banned" % se )
+    if not seOptions[ 'CheckAccess' ] in [ 'Active', 'Degraded', 'Probing' ]:
+      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'CheckAccess' ], [ 'Active', 'Degraded', 'Probing' ] ) )
+      gLogger.notice( 'Try specifying the command switches' )
     else:
-      gLogger.notice( "Successfully updated %s check access to Banned" % se )
-      checkBanned.append( se )
+
+      resC = resourceStatus.setStorageElementStatus( se, 'CheckAccess', 'Banned', reason, userName )
+      # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
+      if not resC['OK']:
+        gLogger.error( "Failed to update %s check access to Banned" % se )
+      else:
+        gLogger.notice( "Successfully updated %s check access to Banned" % se )
+        checkBanned.append( se )
+
+  # Eventually, we will get rid of the notion of InActive, as we always write Banned.
+  if remove and seOptions.has_key( 'RemoveAccess' ):
+
+    if not seOptions[ 'RemoveAccess' ] in [ 'Active', 'Degraded', 'Probing' ]:
+      gLogger.notice( 'Remove option for %s is %s, instead of %s' % ( se, seOptions[ 'RemoveAccess' ], [ 'Active', 'Degraded', 'Probing' ] ) )
+      gLogger.notice( 'Try specifying the command switches' )
+    else:
+
+      resC = resourceStatus.setStorageElementStatus( se, 'RemoveAccess', 'Banned', reason, userName )
+      # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
+      if not resC['OK']:
+        gLogger.error( "Failed to update %s remove access to Banned" % se )
+      else:
+        gLogger.notice( "Successfully updated %s remove access to Banned" % se )
+        removeBanned.append( se )
 
   if not( resR['OK'] or resW['OK'] or resC['OK'] ):
     DIRAC.exit( -1 )
 
-if not ( writeBanned or readBanned or checkBanned ):
+if not ( writeBanned or readBanned or checkBanned or removeBanned ):
   gLogger.notice( "No storage elements were banned" )
   DIRAC.exit( -1 )
 
@@ -158,7 +185,7 @@ if mute:
   gLogger.notice( 'Email is muted by script switch' )
   DIRAC.exit( 0 )
 
-subject = '%s storage elements banned for use' % len( writeBanned + readBanned + checkBanned )
+subject = '%s storage elements banned for use' % len( writeBanned + readBanned + checkBanned + removeBanned )
 addressPath = 'EMail/Production'
 address = Operations().getValue( addressPath, '' )
 
@@ -174,6 +201,10 @@ if write:
 if check:
   body = "%s\n\nThe following storage elements were banned for check access:" % body
   for se in checkBanned:
+    body = "%s\n%s" % ( body, se )
+if remove:
+  body = "%s\n\nThe following storage elements were banned for remove access:" % body
+  for se in removeBanned:
     body = "%s\n%s" % ( body, se )
 
 if not address:

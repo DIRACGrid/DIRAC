@@ -8,13 +8,21 @@
 Do the initial installation and configuration of the DIRAC MySQL server
 """
 __RCSID__ = "$Id$"
+
+from DIRAC.Core.Base import Script
+
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1] ] ) )
+
+Script.parseCommandLine()
+
+
 #
-from DIRAC.Core.Utilities import InstallTools
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 #
-InstallTools.getMySQLPasswords()
+gComponentInstaller.getMySQLPasswords()
 #
-InstallTools.installMySQL()
+gComponentInstaller.installMySQL()
 #
-InstallTools._addMySQLToDiracCfg()
+gComponentInstaller._addMySQLToDiracCfg()

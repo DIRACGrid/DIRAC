@@ -1,18 +1,37 @@
-try:
-  import hashlib as md5
-except:
-  import md5
+""" Accounting reporter
+"""
+
+import hashlib as md5
+import re
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
-from DIRAC.AccountingSystem.private.Plotters import gPlottersList
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
+from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter as myBaseReporter
+from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
 
-class MainReporter:
+class PlottersList( object ):
+
+  def __init__( self ):
+    objectsLoaded = loadObjects( 'AccountingSystem/private/Plotters',
+                                 re.compile( r".*[a-z1-9]Plotter\.py$" ),
+                                 myBaseReporter )
+    self.__plotters = {}
+    for objName in objectsLoaded:
+      self.__plotters[ objName[:-7] ] = objectsLoaded[ objName ]
+
+  def getPlotterClass( self, typeName ):
+    try:
+      return self.__plotters[ typeName ]
+    except KeyError:
+      return None
+
+class MainReporter( object ):
 
   def __init__( self, db, setup ):
     self._db = db
     self.setup = setup
     self.csSection = getServiceSection( "Accounting/ReportGenerator", setup = setup )
+    self.plotterList = PlottersList()
 
   def __calculateReportHash( self, reportRequest ):
     requestToHash = dict( reportRequest )
@@ -27,14 +46,14 @@ class MainReporter:
 
   def generate( self, reportRequest, credDict ):
     typeName = reportRequest[ 'typeName' ]
-    plotterClass = gPlottersList.getPlotterClass( typeName )
+    plotterClass = self.plotterList.getPlotterClass( typeName )
     if not plotterClass:
       return S_ERROR( "There's no reporter registered for type %s" % typeName )
     if typeName in gPoliciesList:
       retVal = gPoliciesList[ typeName ].checkRequest( reportRequest[ 'reportName' ],
-                                                    credDict,
-                                                    reportRequest[ 'condDict' ],
-                                                    reportRequest[ 'grouping' ] )
+                                                       credDict,
+                                                       reportRequest[ 'condDict' ],
+                                                       reportRequest[ 'grouping' ] )
       if not retVal[ 'OK' ]:
         return retVal
     reportRequest[ 'hash' ] = self.__calculateReportHash( reportRequest )
@@ -42,7 +61,7 @@ class MainReporter:
     return plotter.generate( reportRequest )
 
   def list( self, typeName ):
-    plotterClass = gPlottersList.getPlotterClass( typeName )
+    plotterClass = self.plotterList.getPlotterClass( typeName )
     if not plotterClass:
       return S_ERROR( "There's no plotter registered for type %s" % typeName )
     plotter = plotterClass( self._db, self.setup )

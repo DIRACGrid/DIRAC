@@ -47,7 +47,8 @@ class Refresher( threading.Thread ):
   def enable( self ):
     self.__refreshEnabled = True
     if self.__lastRefreshExpired():
-      self.forceRefresh()
+      return self.forceRefresh()
+    return S_OK()
 
   def isEnabled( self ):
     return self.__refreshEnabled
@@ -82,9 +83,9 @@ class Refresher( threading.Thread ):
     thd.start()
 
 
-  def forceRefresh( self ):
+  def forceRefresh( self, fromMaster = False ):
     if self.__refreshEnabled:
-      return self.__refresh()
+      return self.__refresh( fromMaster = fromMaster )
     return S_OK()
 
   def autoRefreshAndPublish( self, sURL ):
@@ -131,21 +132,30 @@ class Refresher( threading.Thread ):
       gLogger.warn( "No master server is specified in the configuration, trying to get data from other slaves" )
       return self.__refresh()[ 'OK' ]
 
-  def __refresh( self ):
+  def __refresh( self, fromMaster = False ):
     self.__lastUpdateTime = time.time()
     gLogger.debug( "Refreshing configuration..." )
     gatewayList = getGatewayURLs( "Configuration/Server" )
     updatingErrorsList = []
     if gatewayList:
-      lInitialListOfServers = gatewayList
-      gLogger.debug( "Using configuration gateway", str( lInitialListOfServers[0] ) )
+      initialServerList = gatewayList
+      gLogger.debug( "Using configuration gateway", str( initialServerList[0] ) )
+    elif fromMaster:
+      masterServer = gConfigurationData.getMasterServer()
+      initialServerList = [masterServer]
+      gLogger.debug( "Refreshing from master %s" % masterServer )
     else:
-      lInitialListOfServers = gConfigurationData.getServers()
-      gLogger.debug( "Refreshing from list %s" % str( lInitialListOfServers ) )
-    lRandomListOfServers = List.randomize( lInitialListOfServers )
-    gLogger.debug( "Randomized server list is %s" % ", ".join( lRandomListOfServers ) )
+      initialServerList = gConfigurationData.getServers()
+      gLogger.debug( "Refreshing from list %s" % str( initialServerList ) )
+      
+    # If no servers in the initial list, we are supposed to use the local configuration only
+    if not initialServerList:
+      return S_OK()    
 
-    for sServer in lRandomListOfServers:
+    randomServerList = List.randomize( initialServerList )
+    gLogger.debug( "Randomized server list is %s" % ", ".join( randomServerList ) )
+
+    for sServer in randomServerList:
       from DIRAC.Core.DISET.RPCClient import RPCClient
       oClient = RPCClient( sServer,
                          useCertificates = gConfigurationData.useServerCertificate(),
@@ -156,6 +166,8 @@ class Refresher( threading.Thread ):
       else:
         updatingErrorsList.append( dRetVal[ 'Message' ] )
         gLogger.warn( "Can't update from server", "Error while updating from %s: %s" % ( sServer, dRetVal[ 'Message' ] ) )
+        if dRetVal[ 'Message' ].find( "Insane environment" ) > -1:
+          break
     return S_ERROR( "Reason(s):\n\t%s" % "\n\t".join( List.uniqueElements( updatingErrorsList ) ) )
 
   def daemonize( self ):

@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   ServerUtils.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -10,9 +9,9 @@
 __RCSID__ = "$Id$"
 
 def getDBOrClient( DB, serverName ):
+  """ Tries to instantiate the DB object and returns it if we manage to connect to the DB, otherwise returns a Client of the server
+  """
   from DIRAC import gLogger
-  # Try to instantiate the DB object and return it we managed to connect to the DB
-  # otherwise return a Client of the server
   from DIRAC.Core.DISET.RPCClient                            import RPCClient
   try:
     myDB = DB()

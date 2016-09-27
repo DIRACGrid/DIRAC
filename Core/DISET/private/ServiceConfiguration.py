@@ -10,7 +10,7 @@ class ServiceConfiguration:
 
   def __init__( self, nameList ):
     self.serviceName = nameList[0]
-    self.serviceURL = False
+    self.serviceURL = None
     self.nameList = nameList
     self.pathList = []
     for svcName in nameList:
@@ -37,7 +37,7 @@ class ServiceConfiguration:
   def setURL( self, sURL ):
     self.serviceURL = sURL
 
-  def __getCSURL( self, URL = False ):
+  def __getCSURL( self, URL = None ):
     optionValue = self.getOption( "URL" )
     if optionValue:
       return optionValue
@@ -55,6 +55,12 @@ class ServiceConfiguration:
       return int( self.getOption( "MaxThreads" ) )
     except:
       return 15
+
+  def getMinThreads( self ):
+    try:
+      return int( self.getOption( "MinThreads" ) )
+    except:
+      return 1
 
   def getMaxWaitingPetitions( self ):
     try:

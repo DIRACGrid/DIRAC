@@ -1,90 +1,120 @@
-########################################################################
-# $HeadURL$
-# File :   JobAgent.py
-# Author : Stuart Paterson
-########################################################################
 """
   The Job Agent class instantiates a CE that acts as a client to a
   compute resource and also to the WMS.
   The Job Agent constructs a classAd based on the local resource description in the CS
   and the current resource status that is used for matching.
 """
-__RCSID__ = "$Id$"
 
+import os
+import sys
+import re
+import time
+
+from DIRAC                                                  import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.Core.Utilities.ModuleFactory                     import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight              import ClassAd
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
+from DIRAC.Core.Utilities.CFG                               import CFG
+from DIRAC.Core.Utilities.Os                                import getNumberOfCores
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
-from DIRAC.Resources.Computing.ComputingElementFactory      import ComputingElementFactory
-from DIRAC                                                  import S_OK, S_ERROR, gConfig
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
 from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
 from DIRAC.Core.Security                                    import Properties
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
+from DIRAC.Resources.Computing.ComputingElementFactory      import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob
+from DIRAC.WorkloadManagementSystem.Utilities.Utils         import createJobWrapper
 
+__RCSID__ = "$Id$"
 
-import os, sys, re, time
 
 class JobAgent( AgentModule ):
+  """ This agent is what runs in a worker node. The pilot runs it, after having prepared its configuration.
   """
-      The specific agents must provide the following methods:
-      - initialize() for initial settings
-      - beginExecution()
-      - execute() - the main method called in the agent cycle
-      - endExecution()
-      - finalize() - the graceful exit of the method, this one is usually used
-                 for the agent restart
-  """
+
+  def __init__(self, agentName, loadName, baseAgentName = False, properties = None):
+    """ Just defines some default parameters
+    """
+    if not properties:
+      properties = {}
+    super( JobAgent, self ).__init__( agentName, loadName, baseAgentName, properties )
+
+    self.ceName = 'InProcess'
+    self.computingElement = None
+    self.timeLeft = 0.0
+
+    self.initTimes = os.times()
+    # Localsite options
+    self.siteName = 'Unknown'
+    self.pilotReference = 'Unknown'
+    self.defaultProxyLength = 86400 * 5
+    # Agent options
+    # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
+    self.cpuFactor = 0.0
+    self.jobSubmissionDelay = 10
+    self.fillingMode = False
+    self.minimumTimeLeft = 1000
+    self.stopOnApplicationFailure = True
+    self.stopAfterFailedMatches = 10
+    self.jobCount = 0
+    self.matchFailedCount = 0
+    self.extraOptions = ''
+    # Timeleft
+    self.timeLeftUtil = None
+    self.timeLeftError = ''
+    self.scaledCPUTime = 0.0
+    self.pilotInfoReportedFlag = False
+
 
   #############################################################################
   def initialize( self, loops = 0 ):
     """Sets default parameters and creates CE instance
     """
-    #Disable monitoring
+    # Disable monitoring
     self.am_setOption( 'MonitoringEnabled', False )
-   # self.log.setLevel('debug') #temporary for debugging
+    # self.log.setLevel('debug') #temporary for debugging
     self.am_setOption( 'MaxCycles', loops )
 
-    ceUniqueID = self.am_getOption( 'CEUniqueID', 'InProcess' )
+    ceType = self.am_getOption( 'CEType', 'InProcess' )
     localCE = gConfig.getValue( '/LocalSite/LocalCE', '' )
     if localCE:
       self.log.info( 'Defining CE from local configuration = %s' % localCE )
-      ceUniqueID = localCE
+      ceType = localCE
 
+    # Create backend Computing Element
     ceFactory = ComputingElementFactory()
-    self.ceName = ceUniqueID
-    ceInstance = ceFactory.getCE( ceUniqueID )
+    self.ceName = ceType
+    ceInstance = ceFactory.getCE( ceType )
     if not ceInstance['OK']:
       self.log.warn( ceInstance['Message'] )
       return ceInstance
-
     self.computingElement = ceInstance['Value']
-    self.diracRoot = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( __file__ ) ) ) )
-    #Localsite options
-    self.siteRoot = gConfig.getValue( '/LocalSite/Root', os.getcwd() )
-    self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )
-    self.pilotReference = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
-    self.defaultProxyLength = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 * 5 )
-    #Agent options
+
+    result = self.computingElement.getDescription()
+    if not result['OK']:
+      self.log.warn( "Can not get the CE description" )
+      return result
+    ceDict = result['Value']
+    self.timeLeft = ceDict.get( 'CPUTime', self.timeLeft )
+    self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', self.timeLeft )
+
+    self.initTimes = os.times()
+    # Localsite options
+    self.siteName = gConfig.getValue( '/LocalSite/Site', self.siteName )
+    self.pilotReference = gConfig.getValue( '/LocalSite/PilotReference', self.pilotReference )
+    self.defaultProxyLength = gConfig.getValue( '/Registry/DefaultProxyLifeTime', self.defaultProxyLength )
+    # Agent options
     # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
-    self.cpuFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
-    defaultWrapperLocation = 'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py'
-    self.jobWrapperTemplate = os.path.join( self.diracRoot,
-                                            self.am_getOption( 'JobWrapperTemplate',
-                                                                defaultWrapperLocation ) )
-    self.jobSubmissionDelay = self.am_getOption( 'SubmissionDelay', 10 )
-    self.defaultLogLevel = self.am_getOption( 'DefaultLogLevel', 'info' )
-    self.fillingMode = self.am_getOption( 'FillingModeFlag', False )
-    self.stopOnApplicationFailure = self.am_getOption( 'StopOnApplicationFailure', True )
-    self.jobCount = 0
-    #Timeleft
+    self.cpuFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', self.cpuFactor )
+    self.jobSubmissionDelay = self.am_getOption( 'SubmissionDelay', self.jobSubmissionDelay )
+    self.fillingMode = self.am_getOption( 'FillingModeFlag', self.fillingMode )
+    self.minimumTimeLeft = self.am_getOption( 'MinimumTimeLeft', self.minimumTimeLeft )
+    self.stopOnApplicationFailure = self.am_getOption( 'StopOnApplicationFailure', self.stopOnApplicationFailure )
+    self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', self.stopAfterFailedMatches )
+    self.extraOptions = gConfig.getValue( '/AgentJobRequirements/ExtraOptions', self.extraOptions )
+    # Timeleft
     self.timeLeftUtil = TimeLeft()
-    self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
-    self.gridCEQueue = gConfig.getValue( '/Resources/Computing/CEDefaults/GridCEQueue', '' )
-    self.timeLeftError = ''
-    self.scaledCPUTime = 0.0
     return S_OK()
 
   #############################################################################
@@ -92,19 +122,35 @@ class JobAgent( AgentModule ):
     """The JobAgent execution method.
     """
     if self.jobCount:
-      #Only call timeLeft utility after a job has been picked up
+      # Temporary mechanism to pass a shutdown message to the agent
+      if os.path.exists('/var/lib/dirac_drain'):
+        return self.__finish( 'Node is being drained by an operator' )
+      # Only call timeLeft utility after a job has been picked up
       self.log.info( 'Attempting to check CPU time left for filling mode' )
       if self.fillingMode:
         if self.timeLeftError:
           self.log.warn( self.timeLeftError )
           return self.__finish( self.timeLeftError )
         self.log.info( '%s normalized CPU units remaining in slot' % ( self.timeLeft ) )
+        if self.timeLeft <= self.minimumTimeLeft:
+          return self.__finish( 'No more time left' )
         # Need to update the Configuration so that the new value is published in the next matching request
         result = self.computingElement.setCPUTimeLeft( cpuTimeLeft = self.timeLeft )
         if not result['OK']:
           return self.__finish( result['Message'] )
-        ceJDL = self.computingElement.getJDL()
-        resourceJDL = ceJDL['Value']
+
+        # Update local configuration to be used by submitted job wrappers
+        localCfg = CFG()
+        if self.extraOptions:
+          localConfigFile = os.path.join( '.', self.extraOptions )
+        else:
+          localConfigFile = os.path.join( rootPath, "etc", "dirac.cfg" )
+        localCfg.loadFromFile( localConfigFile )
+        if not localCfg.isSection( '/LocalSite' ):
+          localCfg.createNewSection( '/LocalSite' )
+        localCfg.setOption( '/LocalSite/CPUTimeLeft', self.timeLeft )
+        localCfg.writeToFile( localConfigFile )
+
       else:
         return self.__finish( 'Filling Mode is Disabled' )
 
@@ -117,33 +163,75 @@ class JobAgent( AgentModule ):
 
     self.log.info( available['Message'] )
 
-    ceJDL = self.computingElement.getJDL()
-    resourceJDL = ceJDL['Value']
-    self.log.verbose( resourceJDL )
+    result = self.computingElement.getDescription()
+    if not result['OK']:
+      return result
+    ceDict = result['Value']
+
+    # Add pilot information
+    gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
+    if gridCE != 'Unknown':
+      ceDict['GridCE'] = gridCE
+    if not 'PilotReference' in ceDict:
+      ceDict['PilotReference'] = str( self.pilotReference )
+    ceDict['PilotBenchmark'] = self.cpuFactor
+    ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
+
+    # Add possible job requirements
+    result = gConfig.getOptionsDict( '/AgentJobRequirements' )
+    if result['OK']:
+      requirementsDict = result['Value']
+      ceDict.update( requirementsDict )
+      self.log.info( 'Requirements:', requirementsDict )
+
+    processors, wholeNode = self.__getProcessors()
+    ceDict['Processors'] = processors
+    ceDict['WholeNode'] = wholeNode
+    self.log.info( 'Configured number of processors: %d, WholeNode: %s' % ( processors, wholeNode ) )
+
+    self.log.verbose( ceDict )
     start = time.time()
-    jobRequest = self.__requestJob( resourceJDL )
+    jobRequest = self.__requestJob( ceDict )
     matchTime = time.time() - start
     self.log.info( 'MatcherTime = %.2f (s)' % ( matchTime ) )
 
+    self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', self.stopAfterFailedMatches )
+
     if not jobRequest['OK']:
-      if re.search( 'No work available', jobRequest['Message'] ):
-        self.log.info( 'Job request OK: %s' % ( jobRequest['Message'] ) )
+      if re.search( 'No match found', jobRequest['Message'] ):
+        self.log.notice( 'Job request OK: %s' % ( jobRequest['Message'] ) )
+        self.matchFailedCount += 1
+        if self.matchFailedCount > self.stopAfterFailedMatches:
+          return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "seconds timeout" ) != -1:
-        self.log.error( jobRequest['Message'] )
+        self.log.error( 'Timeout while requesting job', jobRequest['Message'] )
+        self.matchFailedCount += 1
+        if self.matchFailedCount > self.stopAfterFailedMatches:
+          return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "Pilot version does not match" ) != -1 :
-        self.log.error( jobRequest['Message'] )
+        errorMsg = 'Pilot version does not match the production version'
+        self.log.error( errorMsg, jobRequest['Message'].replace( errorMsg, '' ) )
         return S_ERROR( jobRequest['Message'] )
       else:
-        self.log.info( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
+        self.log.notice( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
+        self.matchFailedCount += 1
+        if self.matchFailedCount > self.stopAfterFailedMatches:
+          return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
 
+    # Reset the Counter
+    self.matchFailedCount = 0
+
     matcherInfo = jobRequest['Value']
+    if not self.pilotInfoReportedFlag:
+      # Check the flag after the first access to the Matcher
+      self.pilotInfoReportedFlag = matcherInfo.get( 'PilotInfoReportedFlag', False )
     jobID = matcherInfo['JobID']
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
-      if not matcherInfo.has_key( param ):
+      if param not in matcherInfo:
         self.__report( jobID, 'Failed', 'Matcher did not return %s' % ( param ) )
         return self.__finish( 'Matcher Failed' )
       elif not matcherInfo[param]:
@@ -157,10 +245,9 @@ class JobAgent( AgentModule ):
     ownerDN = matcherInfo['DN']
 
     optimizerParams = {}
-    for key in matcherInfo.keys():
-      if not key in matcherParams:
-        value = matcherInfo[key]
-        optimizerParams[key] = value
+    for key in matcherInfo:
+      if key not in matcherParams:
+        optimizerParams[key] = matcherInfo[key]
 
     parameters = self.__getJDLParameters( jobJDL )
     if not parameters['OK']:
@@ -169,7 +256,7 @@ class JobAgent( AgentModule ):
       return self.__finish( 'JDL Problem' )
 
     params = parameters['Value']
-    if not params.has_key( 'JobID' ):
+    if 'JobID' not in params:
       msg = 'Job has not JobID defined in JDL parameters'
       self.__report( jobID, 'Failed', msg )
       self.log.warn( msg )
@@ -177,116 +264,108 @@ class JobAgent( AgentModule ):
     else:
       jobID = params['JobID']
 
-    if not params.has_key( 'JobType' ):
+    if 'JobType' not in params:
       self.log.warn( 'Job has no JobType defined in JDL parameters' )
       jobType = 'Unknown'
     else:
       jobType = params['JobType']
 
-    if not params.has_key( 'SystemConfig' ):
-      self.log.warn( 'Job has no system configuration defined in JDL parameters' )
-      systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
-      self.log.info( 'Setting system config to /LocalSite/Architecture = %s since it was not specified' % systemConfig )
-      if not systemConfig:
-        self.log.warn( '/LocalSite/Architecture is not defined' )
-      params['SystemConfig'] = systemConfig
-    else:
-      systemConfig = params['SystemConfig']
-      if systemConfig.lower() == 'any':
-        systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
-        self.log.info( 'Setting SystemConfig = /LocalSite/Architecture =',
-                       '"%s" since it was set to "ANY" in the job description' % systemConfig )
-        if not systemConfig:
-          self.log.warn( '/LocalSite/Architecture is not defined' )
-        params['SystemConfig'] = systemConfig
-
-    if not params.has_key( 'MaxCPUTime' ):
+    if 'CPUTime' not in params:
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
 
-    self.log.verbose( 'Job request successful: \n %s' % ( jobRequest['Value'] ) )
-    self.log.info( 'Received JobID=%s, JobType=%s, SystemConfig=%s' % ( jobID, jobType, systemConfig ) )
+    if self.extraOptions:
+      params['Arguments'] += ' ' + self.extraOptions
+      params['ExtraOptions'] = self.extraOptions
+
+    self.log.verbose( 'Job request successful: \n', jobRequest['Value'] )
+    self.log.info( 'Received JobID=%s, JobType=%s' % ( jobID, jobType ) )
     self.log.info( 'OwnerDN: %s JobGroup: %s' % ( ownerDN, jobGroup ) )
     self.jobCount += 1
     try:
-      self.__setJobParam( jobID, 'MatcherServiceTime', str( matchTime ) )
-      if self.gridCEQueue:
-        self.__setJobParam( jobID, 'GridCEQueue', self.gridCEQueue )
-      self.__report( jobID, 'Matched', 'Job Received by Agent' )
-      self.__setJobSite( jobID, self.siteName )
-      self.__reportPilotInfo( jobID )
+      jobReport = JobReport( jobID, 'JobAgent@%s' % self.siteName )
+      jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
+
+      if 'BOINC_JOB_ID' in os.environ:
+        # Report BOINC environment
+        for p in ( 'BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName' ):
+          jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )
+
+      jobReport.setJobStatus( 'Matched', 'Job Received by Agent' )
       result = self.__setupProxy( ownerDN, jobGroup )
       if not result[ 'OK' ]:
         return self.__rescheduleFailedJob( jobID, result[ 'Message' ], self.stopOnApplicationFailure )
-      if 'Value' in result and result[ 'Value' ]:
-        proxyChain = result[ 'Value' ]
+      proxyChain = result.get( 'Value' )
 
-      # Is this necessary at all?
-      saveJDL = self.__saveJobJDLRequest( jobID, jobJDL )
-      #self.__report(jobID,'Matched','Job Prepared to Submit')
+      # Save the job jdl for external monitoring
+      self.__saveJobJDLRequest( jobID, jobJDL )
 
-      resourceParameters = self.__getJDLParameters( resourceJDL )
-      if not resourceParameters['OK']:
-        return resourceParameters
-      resourceParams = resourceParameters['Value']
-
-      software = self.__checkInstallSoftware( jobID, params, resourceParams )
+      software = self.__checkInstallSoftware( jobID, params, ceDict )
       if not software['OK']:
-        self.log.error( 'Failed to install software for job %s' % ( jobID ) )
+        self.log.error( 'Failed to install software for job', '%s' % ( jobID ) )
         errorMsg = software['Message']
         if not errorMsg:
           errorMsg = 'Failed software installation'
         return self.__rescheduleFailedJob( jobID, errorMsg, self.stopOnApplicationFailure )
 
-      self.log.verbose( 'Before %sCE submitJob()' % ( self.ceName ) )
-      submission = self.__submitJob( jobID, params, resourceParams, optimizerParams, jobJDL, proxyChain )
+      self.log.debug( 'Before %sCE submitJob()' % ( self.ceName ) )
+      submission = self.__submitJob( jobID, params, ceDict, optimizerParams, proxyChain )
       if not submission['OK']:
         self.__report( jobID, 'Failed', submission['Message'] )
         return self.__finish( submission['Message'] )
       elif 'PayloadFailed' in submission:
         # Do not keep running and do not overwrite the Payload error
-        return self.__finish( 'Payload execution failed with error code %s' % submission['PayloadFailed'],
-                              self.stopOnApplicationFailure )
+        message = 'Payload execution failed with error code %s' % submission['PayloadFailed']
+        if self.stopOnApplicationFailure:
+          return self.__finish( message, self.stopOnApplicationFailure )
+        else:
+          self.log.info( message )
 
-      self.log.verbose( 'After %sCE submitJob()' % ( self.ceName ) )
+      self.log.debug( 'After %sCE submitJob()' % ( self.ceName ) )
     except Exception:
       self.log.exception()
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception', self.stopOnApplicationFailure )
 
-    result = self.timeLeftUtil.getTimeLeft( 0.0 )
+    # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
+    cpuTime = sum( os.times()[:-1] ) - sum( self.initTimes[:-1] )
+
+    result = self.timeLeftUtil.getTimeLeft( cpuTime, processors )
     if result['OK']:
       self.timeLeft = result['Value']
     else:
       if result['Message'] != 'Current batch system is not supported':
         self.timeLeftError = result['Message']
       else:
-        if self.cpuFactor:
-          # if the batch system is not defined used the CPUNormalizationFactor 
-          # defined locally
-          self.timeLeft = self.__getCPUTimeLeft()
-    scaledCPUTime = self.timeLeftUtil.getScaledCPU()['Value']
+        # if the batch system is not defined, use the process time and the CPU normalization defined locally
+        self.timeLeft = self.__getCPUTimeLeft()
 
+    scaledCPUTime = self.timeLeftUtil.getScaledCPU( processors )
     self.__setJobParam( jobID, 'ScaledCPUTime', str( scaledCPUTime - self.scaledCPUTime ) )
     self.scaledCPUTime = scaledCPUTime
 
     return S_OK( 'Job Agent cycle complete' )
 
   #############################################################################
+  def __saveJobJDLRequest( self, jobID, jobJDL ):
+    """Save job JDL local to JobAgent.
+    """
+    classAdJob = ClassAd( jobJDL )
+    classAdJob.insertAttributeString( 'LocalCE', self.ceName )
+    jdlFileName = jobID + '.jdl'
+    jdlFile = open( jdlFileName, 'w' )
+    jdl = classAdJob.asJDL()
+    jdlFile.write( jdl )
+    jdlFile.close()
+
+  #############################################################################
   def __getCPUTimeLeft( self ):
     """Return the TimeLeft as estimated by DIRAC using the Normalization Factor in the Local Config.
     """
-    utime, stime, cutime, cstime, elapsed = os.times()
-    cpuTime = utime + stime + cutime
+    cpuTime = sum( os.times()[:-1] )
     self.log.info( 'Current raw CPU time consumed is %s' % cpuTime )
-    timeleft = self.timeLeft - cpuTime * self.cpuFactor
+    timeleft = self.timeLeft
+    if self.cpuFactor:
+      timeleft -= cpuTime * self.cpuFactor
     return timeleft
-
-  #############################################################################
-  def __changeProxy( self, oldProxy, newProxy ):
-    """Can call glexec utility here to set uid or simply log the changeover
-       of a proxy.
-    """
-    self.log.verbose( 'Log proxy change (to be instrumented)' )
-    return S_OK()
 
   #############################################################################
   def __setupProxy( self, ownerDN, ownerGroup ):
@@ -296,7 +375,7 @@ class JobAgent( AgentModule ):
     if gConfig.getValue( '/DIRAC/Security/UseServerCertificate' , False ):
       proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
       if not proxyResult['OK']:
-        self.log.error( 'Invalid Proxy', proxyResult['Message'] )
+        self.log.error( 'Failed to setup proxy', proxyResult['Message'] )
         return S_ERROR( 'Failed to setup proxy: %s' % proxyResult[ 'Message' ] )
       return S_OK( proxyResult['Value'] )
     else:
@@ -336,7 +415,7 @@ class JobAgent( AgentModule ):
     retVal = gProxyManager.getPayloadProxyFromDIRACGroup( ownerDN, ownerGroup,
                                                           self.defaultProxyLength, token )
     if not retVal[ 'OK' ]:
-      self.log.error( 'Could not retrieve proxy' )
+      self.log.error( 'Could not retrieve payload proxy', retVal['Message'] )
       self.log.warn( retVal )
       os.system( 'dirac-proxy-info' )
       sys.stdout.flush()
@@ -350,7 +429,7 @@ class JobAgent( AgentModule ):
     """Checks software requirement of job and whether this is already present
        before installing software locally.
     """
-    if not jobParams.has_key( 'SoftwareDistModule' ):
+    if 'SoftwareDistModule' not in jobParams:
       msg = 'Job has no software installation requirement'
       self.log.verbose( msg )
       return S_OK( msg )
@@ -365,29 +444,31 @@ class JobAgent( AgentModule ):
       return moduleInstance
 
     module = moduleInstance['Value']
-    result = module.execute()
-    return result
+    return module.execute()
 
   #############################################################################
-  def __submitJob( self, jobID, jobParams, resourceParams, optimizerParams, jobJDL, proxyChain ):
-    """Submit job to the Computing Element instance after creating a custom
-       Job Wrapper with the available job parameters.
+  def __submitJob( self, jobID, jobParams, resourceParams, optimizerParams, proxyChain ):
+    """ Submit job to the Computing Element instance after creating a custom
+        Job Wrapper with the available job parameters.
     """
-    result = self.__createJobWrapper( jobID, jobParams, resourceParams, optimizerParams )
-
+    logLevel = self.am_getOption( 'DefaultLogLevel', 'INFO' )
+    defaultWrapperLocation = self.am_getOption( 'JobWrapperTemplate',
+                                                'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py' )
+    result = createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
+                               extraOptions = self.extraOptions, defaultWrapperLocation = defaultWrapperLocation,
+                               log = self.log, logLevel = logLevel )
     if not result['OK']:
       return result
 
     wrapperFile = result['Value']
     self.__report( jobID, 'Matched', 'Submitted To CE' )
 
-    wrapperName = os.path.basename( wrapperFile )
-    self.log.info( 'Submitting %s to %sCE' % ( wrapperName, self.ceName ) )
+    self.log.info( 'Submitting JobWrapper %s to %sCE' % ( os.path.basename( wrapperFile ), self.ceName ) )
 
-    #Pass proxy to the CE
+    # Pass proxy to the CE
     proxy = proxyChain.dumpAllToString()
     if not proxy['OK']:
-      self.log.error( proxy )
+      self.log.error( 'Invalid proxy', proxy )
       return S_ERROR( 'Payload Proxy Not Found' )
 
     payloadProxy = proxy['Value']
@@ -410,129 +491,21 @@ class JobAgent( AgentModule ):
       self.log.error( 'Job submission failed', jobID )
       self.__setJobParam( jobID, 'ErrorMessage', '%s CE Submission Error' % ( self.ceName ) )
       if 'ReschedulePayload' in submission:
-        rescheduleFailedJob( jobID, submission['Message'], self.__report )
+        rescheduleFailedJob( jobID, submission['Message'] )
+        return S_OK()  # Without this job is marked as failed at line 265 above
       else:
         if 'Value' in submission:
-          self.log.error( 'Error in DIRAC JobWrapper:', 'exit code = %s' % submission['Value'] )
-        # make sure the Job is declared Failed
-        self.__report( jobID, 'Failed', submission['Message'] )
-      return S_ERROR( '%s CE Submission Error: %s' % ( self.ceName, submission['Message'] ) )
+          self.log.error( 'Error in DIRAC JobWrapper:', 'exit code = %s' % ( str( submission['Value'] ) ) )
+      return S_ERROR( '%s CE Error: %s' % ( self.ceName, submission['Message'] ) )
 
     return ret
 
   #############################################################################
-  def __createJobWrapper( self, jobID, jobParams, resourceParams, optimizerParams ):
-    """This method creates a job wrapper filled with the CE and Job parameters
-       to executed the job.
-    """
-    arguments = {'Job':jobParams,
-                 'CE':resourceParams,
-                 'Optimizer':optimizerParams}
-    self.log.verbose( 'Job arguments are: \n %s' % ( arguments ) )
-
-    workingDir = gConfig.getValue( '/LocalSite/WorkingDirectory', self.siteRoot )
-    if not os.path.exists( '%s/job/Wrapper' % ( workingDir ) ):
-      try:
-        os.makedirs( '%s/job/Wrapper' % ( workingDir ) )
-      except Exception:
-        self.log.exception()
-        return S_ERROR( 'Could not create directory for wrapper script' )
-
-    jobWrapperFile = '%s/job/Wrapper/Wrapper_%s' % ( workingDir, jobID )
-    if os.path.exists( jobWrapperFile ):
-      self.log.verbose( 'Removing existing Job Wrapper for %s' % ( jobID ) )
-      os.remove( jobWrapperFile )
-    fd = open( self.jobWrapperTemplate, 'r' )
-    wrapperTemplate = fd.read()
-    fd.close()
-
-    dateStr = time.strftime( "%Y-%m-%d", time.localtime( time.time() ) )
-    timeStr = time.strftime( "%H:%M", time.localtime( time.time() ) )
-    date_time = '%s %s' % ( dateStr, timeStr )
-    signature = __RCSID__
-    dPython = sys.executable
-
-    systemConfig = ''
-    if jobParams.has_key( 'SystemConfig' ):
-      systemConfig = jobParams['SystemConfig']
-      self.log.verbose( 'Job system configuration requirement is %s' % ( systemConfig ) )
-      if resourceParams.has_key( 'Root' ):
-        jobPython = '%s/%s/bin/python' % ( resourceParams['Root'], systemConfig )
-        if os.path.exists( jobPython ):
-          self.log.verbose( 'Found local python for job:\n%s' % ( jobPython ) )
-          dPython = jobPython
-        else:
-          if systemConfig == 'ANY':
-            self.log.verbose( 'Using standard available python %s for job' % ( dPython ) )
-          else:
-            self.log.warn( 'Job requested python \n%s\n but this is not available locally' % ( jobPython ) )
-      else:
-        self.log.warn( 'No LocalSite/Root defined' )
-    else:
-      self.log.warn( 'Job has no system configuration requirement' )
-
-    if not systemConfig or systemConfig.lower() == 'any':
-      systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
-      if not systemConfig:
-        self.log.warn( 'Could not establish SystemConfig' )
-
-    logLevel = self.defaultLogLevel
-    if jobParams.has_key( 'LogLevel' ):
-      logLevel = jobParams['LogLevel']
-      self.log.info( 'Found Job LogLevel JDL parameter with value: %s' % ( logLevel ) )
-    else:
-      self.log.info( 'Applying default LogLevel JDL parameter with value: %s' % ( logLevel ) )
-
-    realPythonPath = os.path.realpath( dPython )
-    self.log.debug( 'Real python path after resolving links is:' )
-    self.log.debug( realPythonPath )
-    dPython = realPythonPath
-
-    siteRootPython = self.siteRoot
-    self.log.debug( 'DIRACPython is:\n%s' % dPython )
-    self.log.debug( 'SiteRootPythonDir is:\n%s' % siteRootPython )
-    wrapperTemplate = wrapperTemplate.replace( "@SIGNATURE@", str( signature ) )
-    wrapperTemplate = wrapperTemplate.replace( "@JOBID@", str( jobID ) )
-    wrapperTemplate = wrapperTemplate.replace( "@DATESTRING@", str( date_time ) )
-    wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str( arguments ) )
-    wrapperTemplate = wrapperTemplate.replace( "@SITEPYTHON@", str( siteRootPython ) )
-    wrapper = open ( jobWrapperFile, "w" )
-    wrapper.write( wrapperTemplate )
-    wrapper.close ()
-    jobExeFile = '%s/job/Wrapper/Job%s' % ( workingDir, jobID )
-    jobFileContents = \
-"""#!/bin/sh
-%s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
-""" % ( dPython, jobWrapperFile, logLevel )
-    jobFile = open( jobExeFile, 'w' )
-    jobFile.write( jobFileContents )
-    jobFile.close()
-    return S_OK( jobExeFile )
-
-  #############################################################################
-  def __saveJobJDLRequest( self, jobID, jobJDL ):
-    """Save job JDL local to JobAgent.
-    """
-    classAdJob = ClassAd( jobJDL )
-    classAdJob.insertAttributeString( 'LocalCE', self.ceName )
-    jdlFileName = jobID + '.jdl'
-    jdlFile = open( jdlFileName, 'w' )
-    jdl = classAdJob.asJDL()
-    jdlFile.write( jdl )
-    jdlFile.close()
-    return S_OK( jdlFileName )
-
-  #############################################################################
-  def __requestJob( self, resourceJDL ):
+  def __requestJob( self, ceDict ):
     """Request a single job from the matcher service.
     """
-    try:
-      matcher = RPCClient( 'WorkloadManagement/Matcher', timeout = 600 )
-      result = matcher.requestJob( resourceJDL )
-      return result
-    except Exception, x:
-      self.log.exception( lException = x )
-      return S_ERROR( 'Job request to matcher service failed with exception' )
+    matcher = RPCClient( 'WorkloadManagement/Matcher', timeout = 600 )
+    return matcher.requestJob( ceDict )
 
   #############################################################################
   def __getJDLParameters( self, jdl ):
@@ -541,7 +514,7 @@ class JobAgent( AgentModule ):
     try:
       parameters = {}
 #      print jdl
-      if not re.search( '\[', jdl ):
+      if not re.search( r'\[', jdl ):
         jdl = '[' + jdl + ']'
       classAdJob = ClassAd( jdl )
       paramsDict = classAdJob.contents
@@ -560,7 +533,7 @@ class JobAgent( AgentModule ):
           parameters[param] = value.replace( '"', '' ).replace( '{', '"{' ).replace( '}', '}"' )
           self.log.debug( 'Found standard parameter %s: %s' % ( param, parameters[param] ) )
       return S_OK( parameters )
-    except Exception, x:
+    except Exception as x:
       self.log.exception( lException = x )
       return S_ERROR( 'Exception while extracting JDL parameters for job' )
 
@@ -577,29 +550,7 @@ class JobAgent( AgentModule ):
     return jobStatus
 
   #############################################################################
-  def __reportPilotInfo( self, jobID ):
-    """Sends back useful information for the pilotAgentsDB via the WMSAdministrator
-       service.
-    """
-
-    gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
-
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    if gridCE != 'Unknown':
-      result = wmsAdmin.setJobForPilot( int( jobID ), str( self.pilotReference ), gridCE )
-    else:
-      result = wmsAdmin.setJobForPilot( int( jobID ), str( self.pilotReference ) )
-
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-
-    result = wmsAdmin.setPilotBenchmark( str( self.pilotReference ), float( self.cpuFactor ) )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-
-    return S_OK()
-
-  #############################################################################
+  # FIXME: this is not called anywhere...?
   def __setJobSite( self, jobID, site ):
     """Wraps around setJobSite of state update client
     """
@@ -627,8 +578,8 @@ class JobAgent( AgentModule ):
   def __finish( self, message, stop = True ):
     """Force the JobAgent to complete gracefully.
     """
-    self.log.info( 'JobAgent will stop with message "%s", execution complete.' % message )
     if stop:
+      self.log.info( 'JobAgent will stop with message "%s", execution complete.' % message )
       self.am_stopExecution()
       return S_ERROR( message )
     else:
@@ -645,9 +596,9 @@ class JobAgent( AgentModule ):
     jobManager = RPCClient( 'WorkloadManagement/JobManager' )
     jobReport = JobReport( int( jobID ), 'JobAgent@%s' % self.siteName )
 
-    #Setting a job parameter does not help since the job will be rescheduled,
-    #instead set the status with the cause and then another status showing the
-    #reschedule operation.
+    # Setting a job parameter does not help since the job will be rescheduled,
+    # instead set the status with the cause and then another status showing the
+    # reschedule operation.
 
     jobReport.setJobStatus( status = 'Rescheduled',
                             application = message,
@@ -656,11 +607,33 @@ class JobAgent( AgentModule ):
     self.log.info( 'Job will be rescheduled' )
     result = jobManager.rescheduleJob( jobID )
     if not result['OK']:
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to reschedule job', result['Message'] )
       return self.__finish( 'Problem Rescheduling Job', stop )
 
     self.log.info( 'Job Rescheduled %s' % ( jobID ) )
     return self.__finish( 'Job Rescheduled', stop )
+
+  #############################################################################
+  def __getProcessors( self ):
+    """
+    Return number of processors from gConfig and a boolean corresponding to WholeNode option
+    """
+    tag = gConfig.getValue( '/Resources/Computing/CEDefaults/Tag', None )
+
+    if tag is None: return 1, False
+
+    self.log.verbose( "__getProcessors: /Resources/Computing/CEDefaults/Tag", repr( tag ) )
+
+    # look for a pattern like "12345Processors" in tag list
+    m = re.match( r'^(.*\D)?(?P<processors>\d+)Processors([ \t,].*)?$', tag )
+    if m:
+      return int( m.group( 'processors' ) ), False
+
+    # In WholeNode case, detect number of cores from the host
+    if re.match( r'^(.*,\s*)?WholeNode([ \t,].*)?$', tag ):
+      return getNumberOfCores(), True
+
+    return 1, False
 
   #############################################################################
   def finalize( self ):
@@ -677,4 +650,4 @@ class JobAgent( AgentModule ):
 
     return S_OK()
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

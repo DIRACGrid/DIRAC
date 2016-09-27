@@ -1,14 +1,22 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
+########################################################################
+# $HeadURL$
+# File :    dirac-stager-stage-files
+# Author :  Daniela Remenska
+########################################################################
 """
-  Submit Stage Request for Files at given SE
+- submit staging requests for a particular Storage Element! Default DIRAC JobID will be =0. 
+  (not visible in the Job monitoring list though)
+
 """
+__RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
-                                     '  %s [option|cfgfile] ... SE FileName [...]' % Script.scriptName,
+                                     '  %s <LFN> <SE>' % Script.scriptName,
                                      'Arguments:',
-                                     '  SE:       Name of Storage Element',
-                                     '  FileName: LFN to Stage (or local file with list of LFNs)' ] ) )
+                                     '  <LFN>: LFN to Stage (or local file with list of LFNs)',
+                                     '  <SE>:  Name of Storage Element' ] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 
@@ -17,14 +25,15 @@ args = Script.getPositionalArgs()
 if len( args ) < 2:
   Script.showHelp()
 
-seName = args[0]
-fileName = args[1]
+seName = args[1]
+fileName = args[0]
 
 import os
-import DIRAC
+from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 
+stageLfns = {}
 
 if os.path.exists( fileName ):
   try:
@@ -32,48 +41,38 @@ if os.path.exists( fileName ):
     lfns = [ k.strip() for k in lfnFile.readlines() ]
     lfnFile.close()
   except Exception:
-    DIRAC.gLogger.exception( 'Can not open file', fileName )
-    DIRAC.exit( -1 )
-
+    gLogger.exception( 'Can not open file', fileName )
+    DIRACExit( -1 )
 else:
-  lfns = args[1:]
+  lfns = args[:len(args)-1]
 
-dirac = Dirac()
-res = dirac.getReplicas( lfns[0:], active = True, printOutput = False )
-
-if not res['OK']:
-  DIRAC.gLogger.error( res['Message'] )
-  DIRAC.exit( -1 )
-
+stageLfns[seName] = lfns
 stagerClient = StorageManagerClient()
-stageLfns = []
 
-for lfn, replicas in res['Value']['Successful'].items():
-  if seName in replicas:
-    stageLfns.append( lfn )
-    if len( stageLfns ) >= 10:
-      # Use a fake JobID = 0
-      request = stagerClient.setRequest( { seName : stageLfns }, 'WorkloadManagement',
-                                         'updateJobFromStager@WorkloadManagement/JobStateUpdate', 0 )
-      if request['OK']:
-        DIRAC.gLogger.notice( 'Stage Request submitted for %s replicas:' % len( stageLfns ), request['Value'] )
-        stageLfns = []
-      else:
-        DIRAC.gLogger.error( 'Failed to submit Stage Request' )
-        DIRAC.gLogger.error( request['Message'] )
-        if len( stageLfns ) >= 20:
-          # if after 10 attempts we do not manage to submit a request, abort execution
-          DIRAC.exit( -1 )
+res = stagerClient.setRequest( stageLfns, 'WorkloadManagement',
+                                      'updateJobFromStager@WorkloadManagement/JobStateUpdate',
+                                      0 ) # fake JobID = 0
+if not res['OK']:
+  gLogger.error( res['Message'] )
+  DIRACExit( -1 )
+else:
+  print "Stage request submitted for LFNs:\n %s" %lfns
+  print "SE= %s" %seName
+  print "You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>"
 
+'''Example1:
+dirac-stager-stage-files.py filesToStage.txt GRIDKA-RDST 
+Stage request submitted for LFNs:
+ ['/lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00023458_1.full.dst', '/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032669_1.full.dst', '/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032666_1.full.dst']
+SE= GRIDKA-RDST
+You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
 
-if stageLfns:
-  request = stagerClient.setRequest( { seName : stageLfns }, 'WorkloadManagement',
-                                     'updateJobFromStager@WorkloadManagement/JobStateUpdate', 0 )
-  if request['OK']:
-    DIRAC.gLogger.notice( 'Stage Request submitted for %s replicas:' % len( stageLfns ), request['Value'] )
-  else:
-    DIRAC.gLogger.error( 'Failed to submit Stage Request' )
-    DIRAC.gLogger.error( request['Message'] )
-    DIRAC.exit( -1 )
+Example2:
+dirac-stager-stage-files.py /lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032641_1.full.dst GRIDKA-RDST 
+Stage request submitted for LFNs:
+ ['/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032641_1.full.dst']
+SE= GRIDKA-RDST
+You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
+'''
 
-DIRAC.exit()
+DIRACExit()

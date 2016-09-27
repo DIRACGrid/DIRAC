@@ -1,4 +1,3 @@
-# $HeadURL$
 """  TopErrorMessagesReporter produces a list with the most common errors 
    injected in the SystemLoggingDB and sends a notification to a mailing 
    list and specific users. 
@@ -11,7 +10,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getUserOption
 from DIRAC.FrameworkSystem.DB.SystemLoggingDB            import SystemLoggingDB
 from DIRAC.FrameworkSystem.Client.NotificationClient     import NotificationClient
-from DIRAC.Core.Utilities                                import List
 from DIRAC.Core.Utilities                                import date, toString, fromString, day
 
 class TopErrorMessagesReporter( AgentModule ):
@@ -26,9 +24,10 @@ class TopErrorMessagesReporter( AgentModule ):
 
     mailList = self.am_getOption( "MailList", [] )
 
-    userString = self.am_getOption( "Reviewer", 'mseco' )
-    userList = List.fromChar( userString, "," )
-    self.log.debug( "Users to be notified", ": " + userString )
+    userList = self.am_getOption( "Reviewer", [] )
+
+    self.log.debug( "Users to be notified:", ', '.join( userList ) )
+
     for user in userList:
       mail = getUserOption( user, 'Email', '' )
       if not mail:

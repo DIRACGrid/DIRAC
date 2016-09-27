@@ -1,17 +1,15 @@
-# $Id$
+""" Implementation of a step
 """
-    This is a comment
-"""
-__RCSID__ = "$Revision: 1.30 $"
+import os
+import time
+import traceback
+import sys
 
-import os, time, types, traceback, sys
-#try: # this part to inport as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC import S_OK, S_ERROR
-#except: # this part is to import code without DIRAC
-#  from Parameter import *
-#  from Module import *
+
+__RCSID__ = "$Id$"
 
 class StepDefinition( AttributeCollection ):
 
@@ -25,7 +23,7 @@ class StepDefinition( AttributeCollection ):
     self.parent = parent
 
     # sort out Parameters and class attributes
-    if ( obj == None ) or isinstance( obj, ParameterCollection ):
+    if ( obj is None ) or isinstance( obj, ParameterCollection ):
       self.setType( 'notgiven' )
       self.setDescrShort( '' )
       self.setDescription( '' )
@@ -44,7 +42,7 @@ class StepDefinition( AttributeCollection ):
       self.parameters = ParameterCollection( self, obj.parameters )
       self.module_instances = InstancesPool( self, obj.module_instances )
       if obj.module_definitions != None:
-        self.module_definitions = DefinitionsPool( self. obj.module_definitions )
+        self.module_definitions = DefinitionsPool( self.obj.module_definitions )
     else:
       raise TypeError( 'Can not create object type ' + str( type( self ) ) + ' from the ' + str( type( obj ) ) )
     if step_type :
@@ -72,13 +70,12 @@ class StepDefinition( AttributeCollection ):
   def toXMLFile( self, outFile ):
     if os.path.exists( outFile ):
       os.remove( outFile )
-    xmlfile = open( outFile, 'w' )
-    xmlfile.write( self.toXML() )
-    xmlfile.close()
+    with open( outFile, 'w' ) as xmlfile:
+      xmlfile.write( self.toXML() )
 
   def addModule( self, module ):
     # KGG We need to add code to update existing modules
-    if self.module_definitions == None:
+    if self.module_definitions is None:
       self.parent.module_definitions.append( module )
     else:
       self.module_definitions.append( module )
@@ -103,17 +100,14 @@ class StepDefinition( AttributeCollection ):
   def compare( self, s ):
     """ Custom Step comparison operation
     """
-    ret = AttributeCollection.compare( self, s ) and self.module_instances.compare( s )
-    if self.module_definitions.getOwner() == self:
-      ret = ret and self.module_definitions.compare( s )
-    return ret
+    return AttributeCollection.compare( self, s ) and self.module_instances.compare( s )
 
   def updateParent( self, parent ):
     """
     """
     AttributeCollection.updateParents( self, parent )
     self.module_instances.updateParent( self )
-    if( self.module_definitions != None ):
+    if self.module_definitions is not None :
       self.module_definitions.updateParent( self )
 
   def createCode( self ):
@@ -137,17 +131,17 @@ class StepInstance( AttributeCollection ):
     AttributeCollection.__init__( self )
     self.parent = None
 
-    if obj == None:
+    if obj is None:
       self.parameters = ParameterCollection()
     elif isinstance( obj, StepInstance ) or isinstance( obj, StepDefinition ):
-      if name == None:
-          self.setName( obj.getName() )
+      if name is None:
+        self.setName( obj.getName() )
       else:
-          self.setName( name )
+        self.setName( name )
       self.setType( obj.getType() )
       self.setDescrShort( obj.getDescrShort() )
       self.parameters = ParameterCollection( obj.parameters )
-    elif ( obj == None ) or isinstance( obj, ParameterCollection ):
+    elif ( obj is None ) or isinstance( obj, ParameterCollection ):
       # set attributes
       self.setName( name )
       self.setType( "" )
@@ -168,25 +162,25 @@ class StepInstance( AttributeCollection ):
       module_instance_number = module_instance_number + 1
       if not inst.parameters.find( "MODULE_NUMBER" ):
         inst.parameters.append( Parameter( "MODULE_NUMBER", "%s" % module_instance_number, "string", "", "",
-                                         True, False, "ModuleInstance number within the Step" ) )
+                                           True, False, "ModuleInstance number within the Step" ) )
       if not inst.parameters.find( "MODULE_INSTANCE_NAME" ):
         inst.parameters.append( Parameter( "MODULE_INSTANCE_NAME", inst.getName(), "string", "", "",
-                                         True, False, "Name of the ModuleInstance within the Step" ) )
+                                           True, False, "Name of the ModuleInstance within the Step" ) )
       if not inst.parameters.find( "MODULE_DEFINITION_NAME" ):
         inst.parameters.append( Parameter( "MODULE_DEFINITION_NAME", inst.getType(), "string", "", "",
-                                         True, False, "Type of the ModuleInstance within the Step" ) )
+                                           True, False, "Type of the ModuleInstance within the Step" ) )
       if not inst.parameters.find( "JOB_ID" ):
         inst.parameters.append( Parameter( "JOB_ID", "", "string", "self", "JOB_ID",
-                                         True, False, "Job ID within a Production as a string" ) )
+                                           True, False, "Job ID within a Production as a string" ) )
       if not inst.parameters.find( "PRODUCTION_ID" ):
         inst.parameters.append( Parameter( "PRODUCTION_ID", "", "string", "self", "PRODUCTION_ID",
-                                         True, False, "Production ID as a string" ) )
+                                           True, False, "Production ID as a string" ) )
       if not inst.parameters.find( "STEP_NUMBER" ):
         inst.parameters.append( Parameter( "STEP_NUMBER", "", "string", "self", "STEP_NUMBER",
-                                         True, False, "Step instance number within the Workflow" ) )
+                                           True, False, "Step instance number within the Workflow" ) )
       if not inst.parameters.find( "STEP_ID" ):
         inst.parameters.append( Parameter( "STEP_ID", "", "string", "self", "STEP_NUMBER",
-                                         True, False, "Step ID within the Workflow" ) )
+                                           True, False, "Step ID within the Workflow" ) )
       inst.resolveGlobalVars( wf_parameters, self.parameters )
 
   def createCode( self, ind = 2 ):
@@ -222,10 +216,10 @@ class StepInstance( AttributeCollection ):
         filled above in the workflow
     """
     print 'Executing StepInstance', self.getName(), 'of type', self.getType(), definitions.keys()
-    # Report the Application state if the coresponding tool is supplied
-    if self.workflow_commons.has_key( 'JobReport' ):
+    # Report the Application state if the corresponding tool is supplied
+    if 'JobReport' in self.workflow_commons:
       if self.parent.workflowStatus['OK']:
-        result = self.workflow_commons['JobReport'].setApplicationStatus( 'Executing ' + self.getName() )
+        self.workflow_commons['JobReport'].setApplicationStatus( 'Executing ' + self.getName() )
 
     # Prepare Step statistics evaluation
     self.step_commons['StartTime'] = time.time()
@@ -251,17 +245,17 @@ class StepInstance( AttributeCollection ):
             if parameter.getLinkedModule() == 'self':
               # tale value form the step_dict
               setattr( step_exec_modules[mod_inst_name],
-                      parameter.getName(),
-                      step_exec_attr[parameter.getLinkedParameter()] )
+                       parameter.getName(),
+                       step_exec_attr[parameter.getLinkedParameter()] )
             else:
 
               setattr( step_exec_modules[mod_inst_name],
-                      parameter.getName(),
-                      getattr( step_exec_modules[parameter.getLinkedModule()],
-                              parameter.getLinkedParameter() ) )
+                       parameter.getName(),
+                       getattr( step_exec_modules[parameter.getLinkedModule()],
+                                parameter.getLinkedParameter() ) )
           else:
-              # print ">>>> ModuleInstance", mod_inst_name + '.' + parameter.getName(), '=', parameter.getValue()
-              setattr( step_exec_modules[mod_inst_name], parameter.getName(), parameter.getValue() )
+            # print ">>>> ModuleInstance", mod_inst_name + '.' + parameter.getName(), '=', parameter.getValue()
+            setattr( step_exec_modules[mod_inst_name], parameter.getName(), parameter.getValue() )
           # print 'Step Input Parameter:', parameter.getName(), getattr( step_exec_modules[mod_inst_name], parameter.getName() )
 
       # Set reference to the workflow and step common tools
@@ -275,9 +269,9 @@ class StepInstance( AttributeCollection ):
         if not result['OK']:
           if self.stepStatus['OK']:
             error_message = result['Message']
-            if self.workflow_commons.has_key( 'JobReport' ):
+            if 'JobReport' in self.workflow_commons:
               if self.parent.workflowStatus['OK']:
-                resultStatus = self.workflow_commons['JobReport'].setApplicationStatus( error_message )
+                self.workflow_commons['JobReport'].setApplicationStatus( error_message )
           self.stepStatus = S_ERROR( result['Message'] )
         else:
           for parameter in mod_inst.parameters:
@@ -295,7 +289,7 @@ class StepInstance( AttributeCollection ):
                   # print 'Output step_exec_attr', st_parameter.getName(), step_exec_modules[st_parameter.getLinkedModule()], parameter.getLinkedParameter()
                   step_exec_attr[parameter.getName()] = \
                          getattr( step_exec_modules[parameter.getLinkedModule()],
-                                 parameter.getLinkedParameter() )
+                                  parameter.getLinkedParameter() )
               else:
                 # This also does not make sense - we can give a warning
                 print "Warning! Module OUTPUT attribute ", parameter.getName(),
@@ -310,21 +304,20 @@ class StepInstance( AttributeCollection ):
             if key != "OK":
               if key != "Value":
                 self.step_commons[key] = result[key]
-              elif type( result['Value'] ) == types.DictType:
+              elif isinstance( result['Value'], dict ):
                 for vkey in result['Value'].keys():
                   self.step_commons[vkey] = result['Value'][vkey]
 
-      except Exception, x:
+      except Exception as x:
         print "Exception while module execution"
         print "Module", mod_inst_name, mod_inst.getType()
         print str( x )
         exc = sys.exc_info()
         exc_type = exc[0]
         value = exc[1]
-        print "== EXCEPTION ==\n%s: %s\n\n%s===============" % ( 
-                   exc_type,
-                   value,
-                   "\n".join( traceback.format_tb( exc[2] ) ) )
+        print "== EXCEPTION ==\n%s: %s\n\n%s===============" % ( exc_type,
+                                                                 value,
+                                                                 "\n".join( traceback.format_tb( exc[2] ) ) )
 
         print "Step status: ", self.stepStatus
         print "Workflow status: ", self.parent.workflowStatus
@@ -332,9 +325,9 @@ class StepInstance( AttributeCollection ):
           # This is the error that caused the workflow disruption
           # report it to the WMS
           error_message = 'Exception while %s module execution: %s' % ( mod_inst_name, str( x ) )
-          if self.workflow_commons.has_key( 'JobReport' ):
+          if 'JobReport' in self.workflow_commons:
             if self.parent.workflowStatus['OK']:
-              result = self.workflow_commons['JobReport'].setApplicationStatus( 'Exception in %s module' % mod_inst_name )
+              self.workflow_commons['JobReport'].setApplicationStatus( 'Exception in %s module' % mod_inst_name )
 
         self.stepStatus = S_ERROR( error_message )
 
@@ -354,7 +347,7 @@ class StepInstance( AttributeCollection ):
             # print 'Output step_exec_attr', st_parameter.getName(), step_exec_modules[st_parameter.getLinkedModule()], st_parameter.getLinkedParameter()
             step_exec_attr[st_parameter.getName()] = \
                    getattr( step_exec_modules[st_parameter.getLinkedModule()],
-                           st_parameter.getLinkedParameter() )
+                            st_parameter.getLinkedParameter() )
           setattr( self, st_parameter.getName(), step_exec_attr[st_parameter.getName()] )
         else:
           # This also does not make sense - we can give a warning

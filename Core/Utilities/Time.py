@@ -1,4 +1,3 @@
-# $HeadURL$
 """
 DIRAC Times module
 Support for basic Date and Time operations
@@ -8,15 +7,17 @@ It provides common interface to UTC timestamps,
 converter to string types and back.
 
 The following datetime classes are used in the returned objects:
-- dateTime  = datetime.datetime
-- date      = datetime.date
-- time      = datetime.timedelta
+
+  - dateTime  = datetime.datetime
+  - date      = datetime.date
+  - time      = datetime.timedelta
 
 Useful timedelta constant are also provided to
 define time intervals.
 
 Notice: datetime.timedelta objects allow multiplication and division by interger
 but not by float. Thus:
+
   - DIRAC.Times.second * 1.5             is not allowed
   - DIRAC.Times.second * 3 / 2           is allowed
 
@@ -24,10 +25,13 @@ An timeInterval class provides a method to check
 if a give datetime is in the defined interval.
 
 """
-__RCSID__ = "$Id$"
 import time as nativetime
 import datetime
 from types import StringTypes
+import sys
+
+__RCSID__ = "$Id$"
+
 
 # Some useful constants for time operations
 microsecond = datetime.timedelta( microseconds = 1 )
@@ -38,6 +42,54 @@ day = datetime.timedelta( days = 1 )
 week = datetime.timedelta( days = 7 )
 
 dt = datetime.datetime( 2000, 1, 1 )
+
+def timeThis( method ):
+  """ Function to be used as a decorator for timing other functions/methods
+  """
+
+  def timed( *args, **kw ):
+    """ What actually times
+    """
+
+    ts = nativetime.time()
+    result = method( *args, **kw )
+    if sys.stdout.isatty():
+      return result
+    te = nativetime.time()
+
+    pre = dt.utcnow().strftime( "%Y-%m-%d %H:%M:%S UTC " )
+
+    try:
+      pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: ' + args[0].transString
+    except AttributeError:
+      try:
+        pre += args[0].log._systemName + '    TIME: ' + args[0].transString
+      except AttributeError:
+        try:
+          pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: '
+        except AttributeError:
+          pre += 'TIME: '
+    except IndexError:
+      pre += 'TIME: '
+
+    argsLen = ''
+    if args:
+      try:
+        if isinstance( args[1], ( list, dict ) ):
+          argsLen = "arguments len: %d" % len( args[1] )
+      except IndexError:
+        if kw:
+          try:
+            if isinstance( kw.items()[0][1], ( list, dict ) ):
+              argsLen = "arguments len: %d" % len( kw.items()[0][1] )
+          except IndexError:
+            argsLen = ''
+
+    print "%s Exec time ===> function %r %s -> %2.2f sec" % ( pre, method.__name__, argsLen, te - ts )
+    return result
+
+  return timed
+
 
 def dateTime():
   """
@@ -67,7 +119,7 @@ def toEpoch( dateTimeObject = None ):
   """
   Get seconds since epoch
   """
-  if dateTimeObject == None:
+  if not dateTimeObject:
     dateTimeObject = dateTime()
   return nativetime.mktime( dateTimeObject.timetuple() )
 
@@ -81,7 +133,7 @@ def to2K( dateTimeObject = None ):
   """
   Get seconds, with microsecond precission, since 2K
   """
-  if dateTimeObject == None:
+  if not dateTimeObject:
     dateTimeObject = dateTime()
   delta = dateTimeObject - dt
   return delta.days * 86400 + delta.seconds + delta.microseconds / 1000000.
@@ -90,7 +142,7 @@ def from2K( seconds2K = None ):
   """
   Get date from seconds since 2K
   """
-  if seconds2K == None:
+  if not seconds2K:
     seconds2K = to2K( dt )
   return dt + int( seconds2K ) * second + int( seconds2K % 1 * 1000000 ) * microsecond
 
@@ -139,17 +191,16 @@ def fromString( myDate = None ):
         return ( datetime.datetime( year = dateTuple[0],
                                     month = dateTuple[1],
                                     day = dateTuple[2] ) +
-               fromString( dateTimeTuple[1] ) )
+                 fromString( dateTimeTuple[1] ) )
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
       except:
         return ( datetime.datetime( year = int( dateTuple[0] ),
                                     month = int( dateTuple[1] ),
                                     day = int( dateTuple[2] ) ) +
-               fromString( dateTimeTuple[1] ) )
+                 fromString( dateTimeTuple[1] ) )
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
-        return None
     elif myDate.find( ':' ) > 0:
       timeTuple = myDate.replace( '.', ':' ).split( ':' )
       try:
@@ -214,6 +265,17 @@ class timeInterval:
       return False
     return True
 
+def queryTime(f):
+  """ Decorator to measure the function call time
+  """
+  def measureQueryTime(*args, **kwargs):
+    start = nativetime.time()
+    result = f(*args, **kwargs)
+    if result['OK'] and not 'QueryTime' in result:
+      result['QueryTime'] = nativetime.time() - start
+    return result
+  return measureQueryTime
+
 _dateTimeType = type( dateTime() )
 _dateType = type( date() )
 _timeType = type( time() )
@@ -221,5 +283,3 @@ _timeType = type( time() )
 _allTimeTypes = ( _dateTimeType, _timeType )
 _allDateTypes = ( _dateTimeType, _dateType )
 _allTypes = ( _dateTimeType, _dateType, _timeType )
-
-

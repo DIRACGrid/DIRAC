@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import socket
@@ -12,11 +11,11 @@ from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 class PlainTransport( BaseTransport ):
 
   def initAsClient( self ):
-    self.oSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+    timeout = None
     if 'timeout' in self.extraArgsDict:
-      self.oSocket.settimeout( self.extraArgsDict[ 'timeout' ] )
+      timeout = self.extraArgsDict[ 'timeout' ]
     try:
-      self.oSocket.connect( self.stServerAddress )
+      self.oSocket.create_connection( self.stServerAddress, timeout )
     except socket.error , e:
       if e.args[0] != 115:
         return S_ERROR( "Can't connect: %s" % str( e ) )
@@ -34,7 +33,11 @@ class PlainTransport( BaseTransport ):
   def initAsServer( self ):
     if not self.serverMode():
       raise RuntimeError( "Must be initialized as server mode" )
-    self.oSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+    try:
+      self.oSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
+    except socket.error:
+      # IPv6 is probably disabled on this node, try IPv4 only instead
+      self.oSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     if self.bAllowReuseAddress:
       self.oSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
     self.oSocket.bind( self.stServerAddress )
@@ -81,7 +84,7 @@ class PlainTransport( BaseTransport ):
           time.sleep( 0.001 )
         else:
           return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
   def _write( self, buffer ):
@@ -106,7 +109,7 @@ class PlainTransport( BaseTransport ):
           time.sleep( 0.001 )
         else:
           return S_ERROR( "Exception while sending to peer: %s" % str( e ) )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Error while sending: %s" % str( e ) )
     return S_OK( sentBytes )
 

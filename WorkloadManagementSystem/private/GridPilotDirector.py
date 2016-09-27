@@ -35,8 +35,10 @@ from DIRAC.WorkloadManagementSystem.private.PilotDirector  import PilotDirector
 from DIRAC.FrameworkSystem.Client.NotificationClient       import NotificationClient
 from DIRAC.Core.Security.ProxyInfo                         import getProxyInfoAsString
 from DIRAC.Core.Utilities.Grid                             import executeGridCommand
+from DIRAC.Core.Utilities                                  import Time, List
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
-from DIRAC import S_OK, S_ERROR, DictCache, List, Time, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities.DictCache import DictCache
 
 class GridPilotDirector( PilotDirector ):
   """
@@ -123,8 +125,9 @@ class GridPilotDirector( PilotDirector ):
     """
     taskQueueID = taskQueueDict['TaskQueueID']
     # ownerDN = taskQueueDict['OwnerDN']
-    ownerDN = proxy.getCredentials()['Value']['identity']
-
+    credDict = proxy.getCredentials()['Value']
+    ownerDN = credDict['identity']
+    ownerGroup = credDict[ 'group' ]
 
     if not self.resourceBrokers:
       # Since we can exclude RBs from the list, it may become empty
@@ -137,7 +140,6 @@ class GridPilotDirector( PilotDirector ):
       return S_ERROR( ERROR_VOMS )
     if not ret['Value']:
       return S_ERROR( ERROR_VOMS )
-    vomsGroup = ret['Value'][0]
 
     workingDirectory = tempfile.mkdtemp( prefix = 'TQ_%s_' % taskQueueID, dir = workDir )
     self.log.verbose( 'Using working Directory:', workingDirectory )
@@ -160,7 +162,7 @@ class GridPilotDirector( PilotDirector ):
       availableCEs = []
       now = Time.dateTime()
       availableCEs = self.listMatchCache.get( pilotRequirements )
-      if availableCEs == False:
+      if availableCEs is None:
         availableCEs = self._listMatch( proxy, jdl, taskQueueID, rb )
         if availableCEs != False:
           self.log.verbose( 'LastListMatch', now )
@@ -177,6 +179,8 @@ class GridPilotDirector( PilotDirector ):
     # Now we are ready for the actual submission, so
 
     self.log.verbose( 'Submitting Pilots for TaskQueue', taskQueueID )
+
+    # FIXME: what is this?? If it goes on the super class, it is doomed
     submitRet = self._submitPilot( proxy, pilotsPerJob, jdl, taskQueueID, rb )
     try:
       shutil.rmtree( workingDirectory )
@@ -194,14 +198,14 @@ class GridPilotDirector( PilotDirector ):
         pilotReference = self._getChildrenReferences( proxy, pilotReference, taskQueueID )
         submittedPilots += len( pilotReference )
         pilotAgentsDB.addPilotTQReference( pilotReference, taskQueueID, ownerDN,
-                      vomsGroup, resourceBroker, self.gridMiddleware,
+                      ownerGroup, resourceBroker, self.gridMiddleware,
                       pilotRequirements )
     else:
       for pilotReference, resourceBroker in submitRet:
         pilotReference = [pilotReference]
         submittedPilots += len( pilotReference )
         pilotAgentsDB.addPilotTQReference( pilotReference, taskQueueID, ownerDN,
-                      vomsGroup, resourceBroker, self.gridMiddleware, pilotRequirements )
+                      ownerGroup, resourceBroker, self.gridMiddleware, pilotRequirements )
 
     # add some sleep here
     time.sleep( 0.1 * submittedPilots )
@@ -209,24 +213,26 @@ class GridPilotDirector( PilotDirector ):
     if pilotsToSubmit > pilotsPerJob:
       # Additional submissions are necessary, need to get a new token and iterate.
       pilotsToSubmit -= pilotsPerJob
-      ownerDN = self.genericPilotDN
-      ownerGroup = self.genericPilotGroup
       result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
       if not result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
-        return S_ERROR( ERROR_TOKEN )
+        result = S_ERROR( ERROR_TOKEN )
+        result['Value'] = submittedPilots
+        return result
       ( token, numberOfUses ) = result[ 'Value' ]
       for option in pilotOptions:
         if option.find( '-o /Security/ProxyToken=' ) == 0:
           pilotOptions.remove( option )
       pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
-      pilotsPerJob = min( pilotsPerJob, int( numberOfUses / self.maxJobsInFillMode ) )
+      pilotsPerJob = max( 1, min( pilotsPerJob, int( numberOfUses / self.maxJobsInFillMode ) ) )
       result = self._submitPilots( workDir, taskQueueDict, pilotOptions,
                                    pilotsToSubmit, ceMask,
                                    submitPrivatePilot, privateTQ,
                                    proxy, pilotsPerJob )
       if not result['OK']:
-        result['Value'] = submittedPilots
+        if 'Value' not in result:
+          result['Value'] = 0
+        result['Value'] += submittedPilots
         return result
       submittedPilots += result['Value']
 
@@ -291,7 +297,7 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
     pilotJDL += 'StdOutput     = "%s";\n' % outputSandboxFiles[0]
     pilotJDL += 'StdError      = "%s";\n' % outputSandboxFiles[1]
 
-    pilotJDL += 'InputSandbox  = { "%s" };\n' % '", "'.join( [ self.install, executable ] )
+    pilotJDL += 'InputSandbox  = { "%s" };\n' % '", "'.join( [ self.install, executable ] + self.extraModules )
 
     pilotJDL += 'OutputSandbox = { %s };\n' % ', '.join( [ '"%s"' % f for f in outputSandboxFiles ] )
 
@@ -360,9 +366,6 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
     self.log.info( 'Job Submit Execution Time: %.2f for TaskQueue %d' % ( ( time.time() - start ), taskQueueID ) )
 
     stdout = ret['Value'][1]
-    stderr = ret['Value'][2]
-
-    submittedPilot = None
 
     failed = 1
     rb = ''
@@ -370,7 +373,6 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
       m = re.search( "(https:\S+)", line )
       if ( m ):
         glite_id = m.group( 1 )
-        submittedPilot = glite_id
         if not rb:
           m = re.search( "https://(.+):.+", glite_id )
           rb = m.group( 1 )
@@ -388,8 +390,8 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
       f = open( filename, 'w' )
       f.write( '\n'.join( jdlList ) )
       f.close()
-    except Exception, x:
-      self.log.exception()
+    except Exception as x:
+      self.log.exception( x )
       return ''
 
     return filename

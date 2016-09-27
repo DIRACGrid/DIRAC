@@ -2,26 +2,24 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
+from DIRAC import gLogger, S_OK
 
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient  import StorageManagerClient
 from DIRAC.Resources.Catalog.FileCatalog                        import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient      import DataIntegrityClient
-from DIRAC.StorageManagementSystem.DB.StorageManagementDB       import StorageManagementDB
+from DIRAC.DataManagementSystem.Client.DataManager              import DataManager
 
-import time, os, sys, re
-from types import *
-#test 1
+# test 1
 AGENT_NAME = 'StorageManagement/RequestPreparationAgent'
 
 class RequestPreparationAgent( AgentModule ):
 
   def initialize( self ):
     self.fileCatalog = FileCatalog()
-    #self.stagerClient = StorageManagerClient()
+    self.dm = DataManager()
+    self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
-    self.storageDB = StorageManagementDB()
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -30,10 +28,6 @@ class RequestPreparationAgent( AgentModule ):
     return S_OK()
 
   def execute( self ):
-    res = self.prepareNewReplicas()
-    return res
-
-  def prepareNewReplicas( self ):
     """ This is the first logical task to be executed and manages the New->Waiting transition of the Replicas
     """
     res = self.__getNewReplicas()
@@ -47,19 +41,19 @@ class RequestPreparationAgent( AgentModule ):
     replicaIDs = res['Value']['ReplicaIDs']
     gLogger.info( "RequestPreparation.prepareNewReplicas: Obtained %s New replicas for preparation." % len( replicaIDs ) )
 
-    # Check that the files exist in the FileCatalog
-    res = self.__getExistingFiles( replicas.keys() )
+    # Check if the files exist in the FileCatalog
+    res = self.__getExistingFiles( replicas )
     if not res['OK']:
       return res
     exist = res['Value']['Exist']
     terminal = res['Value']['Missing']
     failed = res['Value']['Failed']
     if not exist:
-      gLogger.error( 'RequestPreparation.prepareNewReplicas: Failed determine existance of any files' )
+      gLogger.error( 'RequestPreparation.prepareNewReplicas: Failed to determine the existence of any file' )
       return S_OK()
     terminalReplicaIDs = {}
     for lfn, reason in terminal.items():
-      for se, replicaID in replicas[lfn].items():
+      for replicaID in replicas[lfn].values():
         terminalReplicaIDs[replicaID] = reason
       replicas.pop( lfn )
     gLogger.info( "RequestPreparation.prepareNewReplicas: %s files exist in the FileCatalog." % len( exist ) )
@@ -77,7 +71,7 @@ class RequestPreparationAgent( AgentModule ):
       gLogger.error( 'RequestPreparation.prepareNewReplicas: Failed determine sizes of any files' )
       return S_OK()
     for lfn, reason in terminal.items():
-      for se, replicaID in replicas[lfn].items():
+      for _se, replicaID in replicas[lfn].items():
         terminalReplicaIDs[replicaID] = reason
       replicas.pop( lfn )
     gLogger.info( "RequestPreparation.prepareNewReplicas: Obtained %s file sizes from the FileCatalog." % len( fileSizes ) )
@@ -95,7 +89,7 @@ class RequestPreparationAgent( AgentModule ):
       gLogger.error( 'RequestPreparation.prepareNewReplicas: Failed determine replicas for any files' )
       return S_OK()
     for lfn, reason in terminal.items():
-      for se, replicaID in replicas[lfn].items():
+      for _se, replicaID in replicas[lfn].items():
         terminalReplicaIDs[replicaID] = reason
       replicas.pop( lfn )
     gLogger.info( "RequestPreparation.prepareNewReplicas: Obtained replica information for %s file from the FileCatalog." % len( fileReplicas ) )
@@ -105,7 +99,14 @@ class RequestPreparationAgent( AgentModule ):
     # Check the replicas exist at the requested site
     replicaMetadata = []
     for lfn, requestedSEs in replicas.items():
-      lfnReplicas = fileReplicas[lfn]
+      lfnReplicas = fileReplicas.get( lfn )
+
+      # This should not happen in principle, but it was seen
+      # after a corrupted staging request has entered the DB
+      if not lfnReplicas:
+        gLogger.error( "Missing replicas information", "%s %s" % ( lfn, requestedSEs ) )
+        continue
+
       for requestedSE, replicaID in requestedSEs.items():
         if not requestedSE in lfnReplicas.keys():
           terminalReplicaIDs[replicaID] = "LFN not registered at requested SE"
@@ -116,14 +117,14 @@ class RequestPreparationAgent( AgentModule ):
     # Update the states of the files in the database
     if terminalReplicaIDs:
       gLogger.info( "RequestPreparation.prepareNewReplicas: %s replicas are terminally failed." % len( terminalReplicaIDs ) )
-      #res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
-      res = self.storageDB.updateReplicaFailure( terminalReplicaIDs )
+      # res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
+      res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
       if not res['OK']:
         gLogger.error( "RequestPreparation.prepareNewReplicas: Failed to update replica failures.", res['Message'] )
     if replicaMetadata:
       gLogger.info( "RequestPreparation.prepareNewReplicas: %s replica metadata to be updated." % len( replicaMetadata ) )
       # Sets the Status='Waiting' of CacheReplicas records that are OK with catalogue checks
-      res = self.storageDB.updateReplicaInformation( replicaMetadata )
+      res = self.stagerClient.updateReplicaInformation( replicaMetadata )
       if not res['OK']:
         gLogger.error( "RequestPreparation.prepareNewReplicas: Failed to update replica metadata.", res['Message'] )
     return S_OK()
@@ -131,7 +132,7 @@ class RequestPreparationAgent( AgentModule ):
   def __getNewReplicas( self ):
     """ This obtains the New replicas from the Replicas table and for each LFN the requested storage element """
     # First obtain the New replicas from the CacheReplicas table
-    res = self.storageDB.getCacheReplicas( {'Status':'New'} )
+    res = self.stagerClient.getCacheReplicas( {'Status':'New'} )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getNewReplicas: Failed to get replicas with New status.", res['Message'] )
       return res
@@ -145,35 +146,31 @@ class RequestPreparationAgent( AgentModule ):
     for replicaID, info in res['Value'].items():
       lfn = info['LFN']
       storageElement = info['SE']
-      if not replicas.has_key( lfn ):
-        replicas[lfn] = {}
-      replicas[lfn][storageElement] = replicaID
+      replicas.setdefault( lfn, {} )[storageElement] = replicaID
       replicaIDs[replicaID] = ( lfn, storageElement )
     return S_OK( {'Replicas':replicas, 'ReplicaIDs':replicaIDs} )
 
   def __getExistingFiles( self, lfns ):
     """ This checks that the files exist in the FileCatalog. """
-    filesExist = []
-    missing = {}
-    res = self.fileCatalog.exists( lfns )
+    res = self.fileCatalog.exists( list( set( lfns ) ) )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getExistingFiles: Failed to determine whether files exist.", res['Message'] )
       return res
     failed = res['Value']['Failed']
-    for lfn, exists in res['Value']['Successful'].items():
-      if exists:
-        filesExist.append( lfn )
-      else:
-        missing[lfn] = 'LFN not registered in the FileCatalog'
+    success = res['Value']['Successful']
+    exist = [lfn for lfn, exists in success.items() if exists]
+    missing = list( set( success ) - set( exist ) )
     if missing:
-      for lfn, reason in missing.items():
-        gLogger.warn( "RequestPreparation.__getExistingFiles: %s" % reason, lfn )
-      self.__reportProblematicFiles( missing.keys(), 'LFN-LFC-DoesntExist' )
-    return S_OK( {'Exist':filesExist, 'Missing':missing, 'Failed':failed} )
+      reason = 'LFN not registered in the FC'
+      gLogger.warn( "RequestPreparation.__getExistingFiles: %s" % reason, '\n'.join( [''] + missing ) )
+      self.__reportProblematicFiles( missing, 'LFN-LFC-DoesntExist' )
+      missing = dict.fromkeys( missing, reason )
+    else:
+      missing = {}
+    return S_OK( {'Exist':exist, 'Missing':missing, 'Failed':failed} )
 
   def __getFileSize( self, lfns ):
     """ This obtains the file size from the FileCatalog. """
-    failed = []
     fileSizes = {}
     zeroSize = {}
     res = self.fileCatalog.getFileSize( lfns )
@@ -196,7 +193,7 @@ class RequestPreparationAgent( AgentModule ):
     """ This obtains the replicas from the FileCatalog. """
     replicas = {}
     noReplicas = {}
-    res = self.fileCatalog.getReplicas( lfns )
+    res = self.dm.getActiveReplicas( lfns )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getFileReplicas: Failed to obtain file replicas.", res['Message'] )
       return res
@@ -214,7 +211,7 @@ class RequestPreparationAgent( AgentModule ):
 
   def __reportProblematicFiles( self, lfns, reason ):
     return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, self.name )
+    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'RequestPreparationAgent' )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
       return res

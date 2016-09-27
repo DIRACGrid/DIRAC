@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-utils-file-adler
 # Author :  
 ########################################################################
@@ -24,12 +23,12 @@ if len( files ) == 0:
 
 exitCode = 0
 
-for file in files:
-  adler = fileAdler( file )
+for fa in files:
+  adler = fileAdler( fa )
   if adler:
-    print file.rjust( 100 ), adler.ljust( 10 )
+    print fa.rjust( 100 ), adler.ljust( 10 )
   else:
-    print 'ERROR %s: Failed to get adler' % file
+    print 'ERROR %s: Failed to get adler' % fa
     exitCode = 2
 
 DIRAC.exit( exitCode )

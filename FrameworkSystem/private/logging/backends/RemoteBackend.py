@@ -13,6 +13,7 @@ from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 class RemoteBackend( BaseBackend, threading.Thread ):
 
   def __init__( self, optionsDictionary ):
+    BaseBackend.__init__(self, optionsDictionary)
     threading.Thread.__init__( self )
     self.__interactive = optionsDictionary[ 'Interactive' ]
     self.__sleep = optionsDictionary[ 'SleepTime' ]
@@ -83,7 +84,7 @@ class RemoteBackend( BaseBackend, threading.Thread ):
 
   def flush( self ):
     self._alive = False
-    if not self.__interactive and self._sendMessageToServer()['OK']:
+    if not self.__interactive and self._sendMessageToServer():
       while not self._messageQueue.empty():
         self._bundleMessages()
 

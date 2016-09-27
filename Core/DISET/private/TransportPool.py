@@ -1,10 +1,10 @@
 
 import time
 import threading
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_ERROR
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
-class TransportPool:
+class TransportPool( object ):
 
   def __init__( self, logger = False ):
     if logger:
@@ -27,7 +27,7 @@ class TransportPool:
   def __sendKeepAlives( self, retries = 5 ):
     if retries == 0:
       return
-    now = time.time()
+    tridList = []
     try:
       tridList = [ trid for trid in self.__transports ]
     except RuntimeError:
@@ -91,7 +91,7 @@ class TransportPool:
     try:
       return self.__transports[ trid ][0]
     except KeyError:
-      return False
+      return None
 
   # Receive
   def receive( self, trid, maxBufferSize = 0, blockAfterKeepAlive = True, idleReceive = False ):
@@ -106,7 +106,7 @@ class TransportPool:
   def send( self, trid, msg ):
     try:
       transport = self.__transports[ trid ][0]
-    except KeyError, ke:
+    except KeyError:
       return S_ERROR( "No transport with id %s defined" % trid )
     return transport.sendData( msg )
 
@@ -120,7 +120,7 @@ class TransportPool:
     except KeyError:
       return S_ERROR( "No transport with id %s defined" % trid )
     else:
-      self.__close( trid )
+      self.close( trid )
 
   def sendAndClose( self, trid, msg ):
     try:
@@ -145,9 +145,9 @@ class TransportPool:
       self.__transports[ trid ][0].close()
     except KeyError:
       return S_ERROR( "No transport with id %s defined" % trid )
-    self.__remove( trid )
+    self.remove( trid )
 
-  def __remove( self, trid ):
+  def remove( self, trid ):
     self.__modLock.acquire()
     try:
       if trid in self.__transports:
@@ -156,7 +156,7 @@ class TransportPool:
       self.__modLock.release()
 
 
-gTransportPool = False
+gTransportPool = None
 
 def getGlobalTransportPool():
   global gTransportPool

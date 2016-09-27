@@ -1,19 +1,17 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id$"
-
 import types
 import os
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig, rootPath
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.FrameworkSystem.private.SecurityFileLog import SecurityFileLog
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
+
+__RCSID__ = "$Id$"
 
 gSecurityFileLog = False
 
@@ -26,10 +24,8 @@ def initializeSecurityLoggingHandler( serviceInfo ):
   if "/" != dataPath[0]:
     dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
   gLogger.info( "Data will be written into %s" % dataPath )
-  try:
-    os.makedirs( dataPath )
-  except:
-    pass
+  mkDir( dataPath )
+
   try:
     testFile = "%s/seclog.jarl.test" % dataPath
     fd = file( testFile, "w" )

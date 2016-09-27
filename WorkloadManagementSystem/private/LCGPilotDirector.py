@@ -12,11 +12,10 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
-from DIRAC import S_OK, S_ERROR, List, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
+from DIRAC.Core.Utilities import List
 
-
-import os, time
+import os
 
 # Some default values
 
@@ -32,6 +31,7 @@ class LCGPilotDirector( GridPilotDirector ):
     GridPilotDirector.__init__( self, submitPool )
 
     self.resourceBrokers = BROKERS
+    self.loggingServers = []
 
   def configure( self, csSection, submitPool ):
     """
@@ -113,7 +113,7 @@ MyProxyServer = "no-myproxy.cern.ch";
      Submit pilot and get back the reference
     """
     result = []
-    for i in range( pilotsToSubmit ):
+    for _i in range( pilotsToSubmit ):
       cmd = [ 'edg-job-submit', '-c', '%s' % jdl, '--config-vo', '%s' % jdl, '%s' % jdl ]
       ret = self.parseJobSubmitStdout( proxy, cmd, taskQueueID, rb )
       if ret:

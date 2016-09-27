@@ -1,4 +1,4 @@
-# $HeadURL$
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 __RCSID__ = "$Id$"
 
 import types
@@ -8,15 +8,12 @@ from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-
-
-class ConfigurationClient:
+class ConfigurationClient( object ):
 
   def __init__( self, fileToLoadList = None ):
     self.diracConfigFilePath = os.path.join( DIRAC.rootPath, "etc", "dirac.cfg" )
-    if fileToLoadList and type( fileToLoadList ) == types.ListType:
+    if fileToLoadList and isinstance( fileToLoadList, list ):
       for fileName in fileToLoadList:
         gConfigurationData.loadFile( fileName )
 
@@ -25,6 +22,9 @@ class ConfigurationClient:
 
   def loadCFG( self, cfg ):
     return gConfigurationData.mergeWithLocal( cfg )
+
+  def forceRefresh( self, fromMaster = False ):
+    return gRefresher.forceRefresh( fromMaster = fromMaster )
 
   def dumpLocalCFGToFile( self, fileName ):
     return gConfigurationData.dumpLocalCFGToFile( fileName )
@@ -35,10 +35,10 @@ class ConfigurationClient:
   def addListenerToNewVersionEvent( self, functor ):
     gRefresher.addListenerToNewVersionEvent( functor )
 
-  def dumpCFGAsLocalCache( self, fileName = None ):
+  def dumpCFGAsLocalCache( self, fileName = None, raw = False ):
     cfg = gConfigurationData.mergedCFG.clone()
     try:
-      if cfg.isSection( 'DIRAC' ):
+      if not raw and cfg.isSection( 'DIRAC' ):
         diracSec = cfg[ 'DIRAC' ]
         if diracSec.isSection( 'Configuration' ):
           confSec = diracSec[ 'Configuration' ]
@@ -47,10 +47,9 @@ class ConfigurationClient:
               confSec.deleteKey( opt )
       strData = str( cfg )
       if fileName:
-        fd = open( fileName, "w" )
-        fd.write( strData )
-        fd.close()
-    except Exception, e:
+        with open( fileName, "w" ) as fd:
+          fd.write( strData )
+    except Exception as e:
       return S_ERROR( "Can't write to file %s: %s" % ( fileName, str( e ) ) )
     return S_OK( strData )
 
@@ -60,41 +59,12 @@ class ConfigurationClient:
   def useServerCertificate( self ):
     return gConfigurationData.useServerCertificate()
 
-  # FIXME: to be removed
-  def _useServerCertificate( self ):
-    return gConfigurationData.useServerCertificate()
-
   def getValue( self, optionPath, defaultValue = None ):
     retVal = self.getOption( optionPath, defaultValue )
     if retVal[ 'OK' ]:
       return retVal[ 'Value' ]
     else:
-      gLogger.debug( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
       return defaultValue
-
-#  def getSpecialValue( self, optionPath, defaultValue = None, vo = None, setup = None ):
-#    """ Get a configuration option value for a specific vo and setup
-#    """
-#    voName = vo
-#    if not vo:
-#      voName = getVO()
-#    setupName = setup
-#    if not setup:
-#      setupName = self.getValue( '/DIRAC/Setup', '' )
-#
-#    # Get the most specific defined value now
-#    section = optionPath.split( '/' )[1]
-#    oPath = '/'.join( optionPath.split( '/' )[2:] )
-#    if voName:
-#      if setupName:
-#        value = self.getValue( section + '/' + voName + '/' + setupName + oPath, 'NotDefined' )
-#        if value != 'NotDefined':
-#          return value
-#      value = self.getValue( section + '/' + voName + oPath, 'NotDefined' )
-#      if value != 'NotDefined':
-#        return value
-#    value = self.getValue( optionPath, defaultValue )
-#    return value
 
   def getOption( self, optionPath, typeValue = None ):
     gRefresher.refreshConfigurationIfNeeded()
@@ -103,11 +73,11 @@ class ConfigurationClient:
     if optionValue == None:
       return S_ERROR( "Path %s does not exist or it's not an option" % optionPath )
 
-    #Value has been returned from the configuration
+    # Value has been returned from the configuration
     if typeValue == None:
       return S_OK( optionValue )
 
-    #Casting to typeValue's type
+    # Casting to typeValue's type
     requestedType = typeValue
     if not type( typeValue ) == types.TypeType:
       requestedType = type( typeValue )
@@ -129,7 +99,7 @@ class ConfigurationClient:
         return S_ERROR( "Type mismatch between default (%s) and configured value (%s) " % ( str( typeValue ), optionValue ) )
 
 
-  def getSections( self, sectionPath, listOrdered = False ):
+  def getSections( self, sectionPath, listOrdered = True ):
     gRefresher.refreshConfigurationIfNeeded()
     sectionList = gConfigurationData.getSectionsFromCFG( sectionPath, ordered = listOrdered )
     if type( sectionList ) == types.ListType:
@@ -137,7 +107,7 @@ class ConfigurationClient:
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
 
-  def getOptions( self, sectionPath, listOrdered = False ):
+  def getOptions( self, sectionPath, listOrdered = True ):
     gRefresher.refreshConfigurationIfNeeded()
     optionList = gConfigurationData.getOptionsFromCFG( sectionPath, ordered = listOrdered )
     if type( optionList ) == types.ListType:
@@ -156,6 +126,74 @@ class ConfigurationClient:
       return S_OK( optionsDict )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
+
+  def getConfigurationTree( self, root = '', *filters ):
+    """
+    Create a dictionary with all sections, subsections and options
+    starting from given root. Result can be filtered.
+
+    :param:`root` - string:
+            Starting point in the configuration tree.
+
+    :param:`filters` - string(s):
+            Select results that contain given substrings
+            (check full path, i.e. with option name)
+
+    :return: Return a dictionary where keys are paths taken from
+             the configuration (e.g. /Systems/Configuration/...).
+             Value is "None" when path points to a section
+             or not "None" if path points to an option.
+    """
+
+    log = DIRAC.gLogger.getSubLogger( 'getConfigurationTree' )
+
+    # check if root is an option (special case)
+    option = self.getOption( root )
+    if option['OK']:
+      result = {root: option['Value']}
+
+    else:
+      result = {root: None}
+      for substr in filters:
+        if not substr in root:
+          result = {}
+          break
+
+      # remove slashes at the end
+      root = root.rstrip( '/' )
+
+      # get options of current root
+      options = self.getOptionsDict( root )
+      if not options['OK']:
+        log.error( "getOptionsDict() failed with message: %s" % options['Message'] )
+        return S_ERROR( 'Invalid root path provided' )
+
+      for key, value in options['Value'].iteritems():
+        path = cfgPath( root, key )
+        addOption = True
+        for substr in filters:
+          if not substr in path:
+            addOption = False
+            break
+
+        if addOption:
+          result[path] = value
+
+      # get subsections of the root
+      sections = self.getSections( root )
+      if not sections['OK']:
+        log.error( "getSections() failed with message: %s" % sections['Message'] )
+        return S_ERROR( 'Invalid root path provided' )
+
+      # recursively go through subsections and get their subsections
+      for section in sections['Value']:
+        subtree = self.getConfigurationTree( "%s/%s" % ( root, section ), *filters )
+        if not subtree['OK']:
+          log.error( "getConfigurationTree() failed with message: %s" % sections['Message'] )
+          return S_ERROR( 'Configuration was altered during the operation' )
+        result.update( subtree['Value'] )
+
+    return S_OK( result )
 
   def setOptionValue( self, optionPath, value ):
     """

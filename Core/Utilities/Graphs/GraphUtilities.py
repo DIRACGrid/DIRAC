@@ -1,21 +1,26 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ GraphUtilities is a a collection of utility functions and classes used
     in the DIRAC Graphs package.
-    
+
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id$"
+import types
+import time
+import datetime
+import calendar
+import math
+import pytz
+import numpy
+import os
 
-import types, time, datetime, calendar, math, pytz, numpy, os
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.dates import AutoDateLocator, AutoDateFormatter, DateFormatter, RRuleLocator, \
                              rrulewrapper, HOURLY, MINUTELY, SECONDLY, YEARLY, MONTHLY, DAILY
 from dateutil.relativedelta import relativedelta
+
+__RCSID__ = "$Id$"
+
 
 def evalPrefs( *args, **kw ):
   """ Interpret arguments as preferencies dictionaries or key-value pairs. The overriding order
@@ -26,12 +31,16 @@ def evalPrefs( *args, **kw ):
   for pDict in list( args ) + [kw]:
     if type( pDict ) == types.DictType:
       for key in pDict:
-        prefs[key] = pDict[key]
+        if key == "metadata":
+          for mkey in pDict[key]:
+            prefs[mkey] = pDict[key][mkey]
+        else:
+          prefs[key] = pDict[key]
 
   return prefs
 
 def pixelToPoint( size, dpi ):
-  """ Convert size expressed in pixels into points for a given dpi resolution  
+  """ Convert size expressed in pixels into points for a given dpi resolution
   """
 
   return float( size ) * 100. / float( dpi )
@@ -52,7 +61,7 @@ def convert_to_datetime( string ):
       pass
     else:
       raise ValueError( "Unknown datetime type!" )
-  except Exception, e:
+  except Exception as e:
     t = None
     for dateformat in datestrings:
       try:
@@ -226,17 +235,17 @@ class PrettyDateFormatter( AutoDateFormatter ):
 
   def __call__( self, x, pos = 0 ):
     scale = float( self._locator._get_unit() )
-    if ( scale == 365.0 ):
+    if scale == 365.0:
       self._formatter = DateFormatter( "%Y", self._tz )
-    elif ( scale == 30.0 ):
+    elif scale == 30.0:
       self._formatter = DateFormatter( "%b %Y", self._tz )
-    elif ( ( scale >= 1.0 ) and ( scale <= 7.0 ) ):
+    elif ( scale >= 1.0 ) and ( scale <= 7.0 ):
       self._formatter = DateFormatter( "%Y-%m-%d", self._tz )
-    elif ( scale == ( 1.0 / 24.0 ) ):
+    elif scale == ( 1.0 / 24.0 ):
       self._formatter = DateFormatter( "%H:%M", self._tz )
-    elif ( scale == ( 1.0 / ( 24 * 60 ) ) ):
+    elif scale == ( 1.0 / ( 24 * 60 ) ):
       self._formatter = DateFormatter( "%H:%M", self._tz )
-    elif ( scale == ( 1.0 / ( 24 * 3600 ) ) ):
+    elif scale == ( 1.0 / ( 24 * 3600 ) ):
       self._formatter = DateFormatter( "%H:%M:%S", self._tz )
     else:
       self._formatter = DateFormatter( "%b %d %Y %H:%M:%S", self._tz )
@@ -266,16 +275,16 @@ class PrettyDateLocator( AutoDateLocator ):
     byminute = 0
     bysecond = 0
 
-    if ( numYears >= numticks ):
+    if numYears >= numticks:
       self._freq = YEARLY
-    elif ( numMonths >= numticks ):
+    elif numMonths >= numticks:
       self._freq = MONTHLY
       bymonth = range( 1, 13 )
-      if ( ( 0 <= numMonths ) and ( numMonths <= 14 ) ):
+      if ( 0 <= numMonths ) and ( numMonths <= 14 ):
         interval = 1      # show every month
-      elif ( ( 15 <= numMonths ) and ( numMonths <= 29 ) ):
+      elif ( 15 <= numMonths ) and ( numMonths <= 29 ):
         interval = 3      # show every 3 months
-      elif ( ( 30 <= numMonths ) and ( numMonths <= 44 ) ):
+      elif ( 30 <= numMonths ) and ( numMonths <= 44 ):
         interval = 4      # show every 4 months
       else:   # 45 <= numMonths <= 59
         interval = 6      # show every 6 months
@@ -284,7 +293,7 @@ class PrettyDateLocator( AutoDateLocator ):
       bymonth = None
       bymonthday = range( 1, 32 )
       if ( ( 0 <= numDays ) and ( numDays <= 9 ) ):
-        interval = 1      # show every day 
+        interval = 1      # show every day
       elif ( ( 10 <= numDays ) and ( numDays <= 19 ) ):
         interval = 2      # show every 2 days
       elif ( ( 20 <= numDays ) and ( numDays <= 35 ) ):
@@ -399,15 +408,13 @@ def makeDataFromCSV( csv ):
   """
 
   if os.path.exists( csv ):
-    fdata = open( csv, 'r' )
-    flines = fdata.readlines()
-    fdata.close()
+    with open( csv, 'r' ) as fdata:
+      flines = fdata.readlines()
   else:
     flines = csv.split( '\n' )
 
   graph_data = {}
   labels = flines[0].strip().split( ',' )
-
   if len( labels ) == 2:
     # simple plot data
     for line in flines:
@@ -415,6 +422,11 @@ def makeDataFromCSV( csv ):
       if line[0] != '#':
         key, value = line.split( ',' )
         graph_data[key] = value
+
+  elif len( flines ) == 2:
+    values = flines[1].strip().split( ',' )
+    for key,value in zip(labels,values):
+      graph_data[key] = value
 
   elif len( labels ) > 2:
     # stacked graph data
@@ -426,11 +438,26 @@ def makeDataFromCSV( csv ):
       for line in flines:
         values = line.strip().split( ',' )
         value = values[index].strip()
-        #if value:        
+        #if value:
         plot_data[values[0]] = values[index]
         #else:
           #plot_data[values[0]] = '0.'
-          #pass  
+          #pass
       graph_data[label] = dict( plot_data )
 
   return graph_data
+
+def darkenColor( color, factor=2 ):
+
+  c1 = int( color[1:3], 16 )
+  c2 = int( color[3:5], 16 )
+  c3 = int( color[5:7], 16 )
+
+  c1 /= factor
+  c2 /= factor
+  c3 /= factor
+
+  result = '#' + (str( hex( c1) ).replace( '0x', '' ).zfill( 2 ) +
+                  str( hex( c2) ).replace( '0x', '' ).zfill( 2 ) +
+                  str( hex( c3) ).replace( '0x', '' ).zfill( 2 ) )
+  return result

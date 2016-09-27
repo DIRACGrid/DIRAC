@@ -17,7 +17,6 @@ Script.parseCommandLine()
 users = Script.getPositionalArgs()
 
 from DIRAC import gLogger, gConfig
-from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 if not users:
@@ -30,7 +29,7 @@ if not users:
 gLogger.notice( "-"*30 )
 gLogger.notice( "%s|%s" % ( 'Username'.ljust( 15 ), 'Quota (GB)'.rjust( 15 ) ) )
 gLogger.notice( "-"*30 )
-for user in sortList( users ):
+for user in sorted( users ):
   quota = gConfig.getValue( '/Registry/Users/%s/Quota' % user, 0 )
   if not quota:
     quota = gConfig.getValue( '/Registry/DefaultStorageQuota' )

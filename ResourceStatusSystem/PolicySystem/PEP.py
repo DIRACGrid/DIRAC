@@ -1,183 +1,184 @@
-# $HeadURL $
-''' PEP
+""" PEP
 
-  Module used for enforcing policies. Its class is used for:
-    1. invoke a PDP and collects results
-    2. enforcing results by:
-       a. saving result on a DB
-       b. raising alarms
-       c. other....
-'''
+  PEP ( Policy Enforcement Point ) is the front-end of the whole Policy System.
+  Any interaction with it must go through the PEP to ensure a smooth flow.
 
-from DIRAC                                                       import S_ERROR
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient      import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient  import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP                 import PDP
-from DIRAC.ResourceStatusSystem.Utilities                        import RssConfiguration, Utils
+  Firstly, it loads the PDP ( Policy Decision Point ) which actually is the
+  module doing all dirty work ( finding policies, running them, merging their
+  results, etc... ). Indeed, the PEP takes the output of the PDP for a given set
+  of parameters ( decisionParams ) and enforces the actions that apply ( also
+  determined by the PDP output ).
+
+"""
+
+from DIRAC                                                      import gLogger, S_OK, S_ERROR
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
+from DIRAC.ResourceStatusSystem.Utilities                       import Utils
+ResourceManagementClient = getattr( Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
+ResourceStatusClient = getattr( Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceStatusClient' ), 'ResourceStatusClient' )
 
 __RCSID__  = '$Id: $'
 
-class PEP:
-  '''
-  PEP (Policy Enforcement Point) initialization
+class PEP( object ):
+  """ PEP ( Policy Enforcement Point )
+  """
 
-  :params:
-    :attr:`granularity`       : string - a ValidElement (optional)
-    :attr:`name`              : string - optional name (e.g. of a site)
-    :attr:`status`            : string - optional status
-    :attr:`formerStatus`      : string - optional former status
-    :attr:`reason`            : string - optional reason for last status change
-    :attr:`siteType`          : string - optional site type
-    :attr:`serviceType`       : string - optional service type
-    :attr:`resourceType`      : string - optional resource type
-    :attr:`futureEnforcement` :          optional
-      [
-        {
-          'PolicyType': a PolicyType
-          'Granularity': a ValidElement (optional)
-        }
-      ]
-  '''
+  def __init__( self, clients = dict() ):
+    """ Constructor
 
-  def __init__( self, pdp = None, clients = None ):
-    '''
-    Enforce policies, using a PDP  (Policy Decision Point), based on
+    examples:
+      >>> pep = PEP()
+      >>> pep1 = PEP( { 'ResourceStatusClient' : ResourceStatusClient() } )
+      >>> pep2 = PEP( { 'ResourceStatusClient' : ResourceStatusClient(), 'ClientY' : None } )
 
-     self.__granularity (optional)
-     self.__name (optional)
-     self.__status (optional)
-     self.__formerStatus (optional)
-     self.__reason (optional)
-     self.__siteType (optional)
-     self.__serviceType (optional)
-     self.__realBan (optional)
-     self.__user (optional)
-     self.__futurePolicyType (optional)
-     self.__futureGranularity (optional)
+    :Parameters:
+      **clients** - [ None, `dict` ]
+        dictionary with clients to be used in the commands issued by the policies.
+        If not defined, the commands will import them. It is a measure to avoid
+        opening the same connection every time a policy is evaluated.
 
-     :params:
-       :attr:`pdp`       : a custom PDP object (optional)
-       :attr:`clients`   : a dictionary containing modules corresponding to clients.
-    '''
-    
-    if clients is None:
-      clients = {}
-    
-    try:             
-      self.rsClient = clients[ 'ResourceStatusClient' ]
-    except KeyError: 
-      self.rsClient = ResourceStatusClient()
-    try:             
-      self.rmClient = clients[ 'ResourceManagementClient' ]
-    except KeyError: 
-      self.rmClient = ResourceManagementClient()
+    """
 
-    self.clients = clients
-    if not pdp:
-      self.pdp = PDP( **clients )
+    self.clients = dict( clients )
 
-  def enforce( self, granularity = None, name = None, statusType = None,
-               status = None, formerStatus = None, reason = None, 
-               siteType = None, serviceType = None, resourceType = None, 
-               tokenOwner = None, useNewRes = False, knownInfo = None  ):
-    '''
-      Enforce policies for given set of keyworkds. To be better explained.
-    '''
-  
-    ##  real ban flag  #########################################################
+    # Creating the client in the PEP is a convenience for the PDP, that
+    # uses internally the two TSS clients: ResourceStatusClient and ResouceManagementClient
+    if 'ResourceStatusClient' not in clients:
+      self.clients['ResourceStatusClient'] = ResourceStatusClient()
+    if 'ResourceManagementClient' not in clients:
+      self.clients['ResourceManagementClient'] = ResourceManagementClient()
 
-    realBan = False
-    if tokenOwner is not None:
-      if tokenOwner == 'RS_SVC':
-        realBan = True
+    # Pass to the PDP the clients that are going to be used on the Commands
+    self.pdp = PDP( self.clients )
 
-    ## sanitize input ##########################################################
-    ## IS IT REALLY NEEDED ??
-    
-    validElements = RssConfiguration.getValidElements()    
-    if granularity is not None and granularity not in validElements:
-      return S_ERROR( 'Granularity "%s" not valid' % granularity )
+    self.log = gLogger
 
-    validStatusTypes = RssConfiguration.getValidStatusTypes()
-    if statusType is not None and statusType not in validStatusTypes[ granularity ]['StatusType']:
-      return S_ERROR( 'StatusType "%s" not valid' % statusType )
-    
-    validStatus = RssConfiguration.getValidStatus()
-    if status is not None and status not in validStatus:
-      return S_ERROR( 'Status "%s" not valid' % status )
 
-    validStatus = RssConfiguration.getValidStatus()
-    if formerStatus is not None and formerStatus not in validStatus:
-      return S_ERROR( 'FormerStatus "%s" not valid' % formerStatus )
+  def enforce( self, decisionParams ):
+    """ Given a dictionary with decisionParams, it is passed to the PDP, which
+    will return ( in case there is a/are positive match/es ) a dictionary containing
+    three key-pair values: the original decisionParams ( `decisionParams` ), all
+    the policies evaluated ( `singlePolicyResults` ) and the computed final result
+    ( `policyCombinedResult` ).
 
-    validSiteTypes = RssConfiguration.getValidSiteTypes()
-    if siteType is not None and siteType not in validSiteTypes:
-      return S_ERROR( 'SiteType "%s" not valid' % siteType )
+    To know more about decisionParams, please read PDP.setup where the decisionParams
+    are sanitized.
 
-    validServiceTypes = RssConfiguration.getValidServiceTypes()
-    if serviceType is not None and serviceType not in validServiceTypes:
-      return S_ERROR( 'ServiceType "%s" not valid' % serviceType )
+    examples:
+       >>> pep.enforce( { 'element' : 'Site', 'name' : 'MySite' } )
+       >>> pep.enforce( { 'element' : 'Resource', 'name' : 'myce.domain.ch' } )
 
-    validResourceTypes = RssConfiguration.getValidResourceTypes() 
-    if resourceType is not None and resourceType not in validResourceTypes:
-      return S_ERROR( 'ResourceType "%s" not valid' % resourceType )
-    
-    ## policy setup ############################################################  
+    :Parameters:
+      **decisionParams** - `dict`
+        dictionary with the parameters that will be used to match policies.
 
-    self.pdp.setup( granularity = granularity, name = name, 
-                    statusType = statusType, status = status,
-                    formerStatus = formerStatus, reason = reason, 
-                    siteType = siteType, serviceType = serviceType, 
-                    resourceType = resourceType, useNewRes = useNewRes )
+    """
+    if not decisionParams:
+      self.log.warn( "No decision params...?" )
+      return S_OK()
 
-    ## policy decision #########################################################
+    standardParamsDict = {'element'     : None,
+                          'name'        : None,
+                          'elementType' : None,
+                          'statusType'  : None,
+                          'status'      : None,
+                          'reason'      : None,
+                          'tokenOwner'  : None,
+                          # Last parameter allows policies to be de-activated
+                          'active'      : 'Active'}
 
-    resDecisions = self.pdp.takeDecision( knownInfo = knownInfo )
+    standardParamsDict.update( decisionParams )
 
-    ## record all results before doing anything else    
-    for resP in resDecisions[ 'SinglePolicyResults' ]:
-      
-      if not resP.has_key( 'OLD' ):       
-        self.clients[ "rmClient" ].insertPolicyResultLog( granularity, name,
-                                                          resP[ 'PolicyName' ], 
-                                                          statusType,
-                                                          resP[ 'Status' ], 
-                                                          resP[ 'Reason' ], now )
-        
-      else:
-        gLogger.warn( 'OLD: %s' % resP )
-        
-    res          = resDecisions[ 'PolicyCombinedResult' ] 
-    actionBaseMod = "DIRAC.ResourceStatusSystem.PolicySystem.Actions"
+    if standardParamsDict['element'] is not None:
+      self.log = gLogger.getSubLogger( 'PEP/%s' % standardParamsDict['element'] )
+      if standardParamsDict['name'] is not None:
+        self.log = gLogger.getSubLogger( 'PEP/%s/%s' % ( standardParamsDict['element'], standardParamsDict['name'] ) )
+        self.log.verbose( "Enforce - statusType: %s, status: %s" % ( standardParamsDict['statusType'],
+                                                                     standardParamsDict['status'] ) )
+    decisionParams = dict( standardParamsDict )
 
-    # Security mechanism in case there is no PolicyType returned
-    if res == {}:
-      EmptyAction(granularity, name, statusType, resDecisions).run()
+    # Setup PDP with new parameters dictionary
+    self.pdp.setup( decisionParams )
 
-    else:
-      policyType   = res[ 'PolicyType' ]
+    # Run policies, get decision, get actions to apply
+    resDecisions = self.pdp.takeDecision()
+    if not resDecisions[ 'OK' ]:
+      self.log.error( "Something went wrong, not enforcing policies", '%s' % decisionParams )
+      return resDecisions
+    resDecisions = resDecisions[ 'Value' ]
 
-      if 'Resource_PolType' in policyType:
-        action = Utils.voimport( '%s.ResourceAction' % actionBaseMod )
-        action.ResourceAction(granularity, name, statusType, resDecisions,
-                         rsClient=self.rsClient,
-                         rmClient=self.rmClient).run()
+    # We take from PDP the decision parameters used to find the policies
+    decisionParams = resDecisions[ 'decisionParams' ]
+    policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
+    singlePolicyResults  = resDecisions[ 'singlePolicyResults' ]
 
-      if 'Alarm_PolType' in policyType:
-        action = Utils.voimport( '%s.AlarmAction' % actionBaseMod )
-        action.AlarmAction(granularity, name, statusType, resDecisions,
-                       Clients=self.clients,
-                       Params={"Granularity"  : granularity,
-                               "SiteType"     : siteType,
-                               "ServiceType"  : serviceType,
-                               "ResourceType" : resourceType}).run()
+    # We have run the actions and at this point, we are about to execute the actions.
+    # One more final check before proceeding
+    isNotUpdated = self.__isNotUpdated( decisionParams )
+    if not isNotUpdated[ 'OK' ]:
+      return isNotUpdated
 
-      if 'RealBan_PolType' in policyType and realBan:
-        action = Utils.voimport( '%s.RealBanAction' % actionBaseMod )
-        action.RealBanAction(granularity, name, resDecisions).run()
+    for policyActionName, policyActionType in policyCombinedResult['PolicyAction']:
 
-    return resDecisions
+      try:
+        actionMod = Utils.voimport( 'DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s' % policyActionType )
+      except ImportError:
+        self.log.error( 'Error importing %s action' % policyActionType )
+        continue
 
-################################################################################
+      try:
+        action = getattr( actionMod, policyActionType )
+      except AttributeError:
+        self.log.error( 'Error importing %s action class' % policyActionType )
+        continue
+
+      actionObj = action( policyActionName, decisionParams, policyCombinedResult,
+                          singlePolicyResults, self.clients )
+
+      self.log.debug( ( policyActionName, policyActionType ) )
+
+      actionResult = actionObj.run()
+      if not actionResult[ 'OK' ]:
+        self.log.error( actionResult[ 'Message' ] )
+
+    return S_OK( resDecisions )
+
+
+  def __isNotUpdated( self, decisionParams ):
+    """ Checks for the existence of the element as it was passed to the PEP. It may
+    happen that while being the element processed by the PEP an user through the
+    web interface or the CLI has updated the status for this particular element. As
+    a result, the PEP would overwrite whatever the user had set. This check is not
+    perfect, as still an user action can happen while executing the actions, but
+    the probability is close to 0. However, if there is an action that takes seconds
+    to be executed, this must be re-evaluated. !
+
+    :Parameters:
+      **decisionParams** - `dict`
+        dictionary with the parameters that will be used to match policies
+
+    :return: S_OK / S_ERROR
+
+    """
+
+    # Copy original dictionary and get rid of one key we cannot pass as kwarg
+    selectParams = dict( decisionParams )
+    del selectParams[ 'element' ]
+    del selectParams[ 'active' ]
+
+    # We expect to have an exact match. If not, then something has changed and
+    # we cannot proceed with the actions.
+    unchangedRow = self.clients['ResourceStatusClient'].selectStatusElement( decisionParams[ 'element' ],
+                                                                             'Status', **selectParams )
+    if not unchangedRow[ 'OK' ]:
+      return unchangedRow
+
+    if not unchangedRow[ 'Value' ]:
+      msg = '%(name)s  ( %(status)s / %(statusType)s ) has been updated after PEP started running' % selectParams
+      self.log.error( msg )
+      return S_ERROR( msg )
+
+    return S_OK()
+
+#...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

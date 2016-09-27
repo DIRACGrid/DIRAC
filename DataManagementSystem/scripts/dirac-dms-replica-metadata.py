@@ -2,42 +2,44 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__   = "$Id$"
+__RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script 
+from DIRAC           import exit as DIRACExit
+from DIRAC.Core.Base import Script
 
-Script.setUsageMessage("""
+Script.setUsageMessage( """
 Get the given file replica metadata from the File Catalog
 
 Usage:
    %s <LFN | fileContainingLFNs> SE 
-""" % Script.scriptName)
+""" % Script.scriptName )
 
 Script.parseCommandLine()
 
 from DIRAC import gLogger
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-import os, sys
-
-if not len( sys.argv ) == 3:
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+import os
+args = Script.getPositionalArgs()
+if not len( args ) == 2:
   Script.showHelp()
-  DIRAC.exit( -1 )
+  DIRACExit( -1 )
 else:
-  inputFileName = sys.argv[1]
-  storageElement = sys.argv[2]
+  inputFileName = args[0]
+  storageElement = args[1]
 
 if os.path.exists( inputFileName ):
   inputFile = open( inputFileName, 'r' )
   string = inputFile.read()
-  lfns = string.splitlines()
+  lfns = [ lfn.strip() for lfn in string.splitlines() ]
   inputFile.close()
 else:
   lfns = [inputFileName]
 
-rm = ReplicaManager()
-res = rm.getReplicaMetadata( lfns, storageElement )
+res = DataManager().getReplicaMetadata( lfns, storageElement )
 if not res['OK']:
-  print 'Error:',res['Message']
+  print 'Error:', res['Message']
+  DIRACExit( 1 )
+
 print '%s %s %s %s' % ( 'File'.ljust( 100 ), 'Migrated'.ljust( 8 ), 'Cached'.ljust( 8 ), 'Size (bytes)'.ljust( 10 ) )
 for lfn, metadata in res['Value']['Successful'].items():
   print '%s %s %s %s' % ( lfn.ljust( 100 ), str( metadata['Migrated'] ).ljust( 8 ), str( metadata['Cached'] ).ljust( 8 ), str( metadata['Size'] ).ljust( 10 ) )

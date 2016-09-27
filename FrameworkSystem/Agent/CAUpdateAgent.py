@@ -9,7 +9,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import S_OK
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 class CAUpdateAgent(AgentModule):

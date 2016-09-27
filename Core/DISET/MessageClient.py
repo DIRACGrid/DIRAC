@@ -23,7 +23,7 @@ class MessageClient( BaseClient ):
 
   def _initialize( self ):
     self.__trid = False
-    self.__transport = False
+    self.__transport = None
     self.__uniqueName = self.__generateUniqueClientName()
     self.__msgBroker = getGlobalMessageBroker()
     self.__callbacks = {}
@@ -44,7 +44,11 @@ class MessageClient( BaseClient ):
     return result[ 'Value' ]
 
   def createMessage( self, msgName ):
-    return self.__msgBroker.getMsgFactory().createMessage( self._serviceName, msgName )
+    return self.__msgBroker.getMsgFactory().createMessage( self.getServiceName(), msgName )
+
+  @property
+  def connected( self ):
+    return self.__trid
 
   def connect( self, **extraParams ):
     if extraParams:
@@ -69,7 +73,7 @@ class MessageClient( BaseClient ):
     if not self.__trid:
       return
     if self.__trid != trid:
-      gLogger.error( "OOps. trid's don't match. This shouldn't happen! (%s vs %s)" % ( self.__trid, trid ) )
+      gLogger.error( "OOps. trid's don't match. This shouldn't happen!", "(%s vs %s)" % ( self.__trid, trid ) )
       return S_ERROR( "OOOPS" )
     self.__trid = False
     try:
@@ -86,11 +90,12 @@ class MessageClient( BaseClient ):
 
   def __cbRecvMsg( self, trid, msgObj ):
     msgName = msgObj.getName()
+    msgObj.setMsgClient( self )
     for cb in self.__specialCallbacks[ 'msg' ]:
       try:
         result = cb( self, msgObj )
         if not isReturnStructure( result ):
-          gLogger.error( "Callback for message %s does not return S_OK/S_ERROR" % msgObj.getName() )
+          gLogger.error( "Callback for message does not return S_OK/S_ERROR", msgObj.getName() )
           return S_ERROR( "No response" )
         if not result[ 'OK' ]:
           return result
@@ -104,7 +109,7 @@ class MessageClient( BaseClient ):
     try:
       result = self.__callbacks[ msgName ]( msgObj )
       if not isReturnStructure( result ):
-        gLogger.error( "Callback for message %s does not return S_OK/S_ERROR" % msgName )
+        gLogger.error( "Callback for message does not return S_OK/S_ERROR", msgName )
         return S_ERROR( "No response" )
       return result
     except:

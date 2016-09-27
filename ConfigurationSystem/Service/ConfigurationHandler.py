@@ -1,11 +1,13 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
-import types
+""" The CS! (Configuration Service)
+"""
+
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 gServiceInterface = False
+
+__RCSID__ = "$Id$"
 
 def initializeConfigurationHandler( serviceInfo ):
   global gServiceInterface
@@ -13,6 +15,8 @@ def initializeConfigurationHandler( serviceInfo ):
   return S_OK()
 
 class ConfigurationHandler( RequestHandler ):
+  """ The CS handler
+  """
 
   types_getVersion = []
   def export_getVersion( self ):
@@ -23,7 +27,7 @@ class ConfigurationHandler( RequestHandler ):
     sData = gServiceInterface.getCompressedConfigurationData()
     return S_OK( sData )
 
-  types_getCompressedDataIfNewer = [ types.StringType ]
+  types_getCompressedDataIfNewer = [ basestring ]
   def export_getCompressedDataIfNewer( self, sClientVersion ):
     sVersion = gServiceInterface.getVersion()
     retDict = { 'newestVersion' : sVersion }
@@ -31,12 +35,12 @@ class ConfigurationHandler( RequestHandler ):
       retDict[ 'data' ] = gServiceInterface.getCompressedConfigurationData()
     return S_OK( retDict )
 
-  types_publishSlaveServer = [ types.StringType ]
+  types_publishSlaveServer = [ basestring ]
   def export_publishSlaveServer( self, sURL ):
     gServiceInterface.publishSlaveServer( sURL )
     return S_OK()
 
-  types_commitNewData = [ types.StringType ]
+  types_commitNewData = [ basestring ]
   def export_commitNewData( self, sData ):
     credDict = self.getRemoteCredentials()
     if not 'DN' in credDict or not 'username' in credDict:
@@ -56,7 +60,7 @@ class ConfigurationHandler( RequestHandler ):
       history = history[ :limit ]
     return S_OK( history )
 
-  types_getVersionContents = [ types.ListType ]
+  types_getVersionContents = [ list ]
   def export_getVersionContents( self, versionList ):
     contentsList = []
     for version in versionList:
@@ -67,7 +71,7 @@ class ConfigurationHandler( RequestHandler ):
         return S_ERROR( "Can't get contents for version %s: %s" % ( version, retVal[ 'Message' ] ) )
     return S_OK( contentsList )
 
-  types_rollbackToVersion = [ types.StringType ]
+  types_rollbackToVersion = [ basestring ]
   def export_rollbackToVersion( self, version ):
     retVal = gServiceInterface.getVersionContents( version )
     if not retVal[ 'OK' ]:

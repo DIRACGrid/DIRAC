@@ -1,24 +1,26 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
+""" This is the main module that interprets DIRAC cfg format
+"""
 
 import types
 import copy
 import os
+import re
 try:
   import zipfile
   gZipEnabled = True
 except ImportError:
   gZipEnabled = False
 
+  __RCSID__ = "$Id$"
+
 try:
-  from DIRAC.Core.Utilities import S_OK, S_ERROR
-  from DIRAC.Core.Utilities import List, ThreadSafe
+  from DIRAC.Core.Utilities              import List, ThreadSafe
+  from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
   gCFGSynchro = ThreadSafe.Synchronizer( recursive = True )
 except Exception:
   #We're out of python, define required utilities
   import threading
-  from types import StringTypes
 
   def S_ERROR( messageString = '' ):
     return { 'OK' : False, 'Message' : str( messageString )  }
@@ -28,8 +30,8 @@ except Exception:
 
   class ListDummy:
     def fromChar( self, inputString, sepChar = "," ):
-      if not ( type( inputString ) in StringTypes and
-               type( sepChar ) in StringTypes and
+      if not ( isinstance( inputString, basestring) and
+               isinstance( sepChar, basestring) and
                sepChar ): # to prevent getting an empty String as argument
         return None
 
@@ -92,19 +94,21 @@ class CFG( object ):
     """
     Create a new section
 
-    @type sectionName: string
-    @param sectionName: Name of the section
-    @type comment: string
-    @param comment: Comment for the section
-    @type contents: CFG
-    @param contents: Optional cfg with the contents of the section.
+    :type sectionName: string
+    :param sectionName: Name of the section
+    :type comment: string
+    :param comment: Comment for the section
+    :type contents: CFG
+    :param contents: Optional cfg with the contents of the section.
     """
     if sectionName == "":
       raise ValueError( "Creating a section with empty name! You shouldn't do that!" )
     if sectionName.find( "/" ) > -1:
       recDict = self.getRecursive( sectionName, -1 )
+      if not recDict:
+        return S_ERROR( "Parent section does not exist %s" % sectionName )
       parentSection = recDict[ 'value' ]
-      if type( parentSection ) in ( types.StringType, types.UnicodeType ):
+      if isinstance( parentSection, basestring ):
         raise KeyError( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
       return parentSection.createNewSection( recDict[ 'levelsBelow' ], comment, contents )
     self.__addEntry( sectionName, comment )
@@ -121,10 +125,10 @@ class CFG( object ):
     """
     Replace the contents of a section
 
-    @type sectionName: string
-    @params sectionName: Name of the section
-    @type oCFGToClone: CFG
-    @param oCFGToClone: CFG with the contents of the section
+    :type sectionName: string
+    :params sectionName: Name of the section
+    :type oCFGToClone: CFG
+    :param oCFGToClone: CFG with the contents of the section
     """
     if sectionName not in self.listSections():
       raise KeyError( "Section %s does not exist" % sectionName )
@@ -135,19 +139,21 @@ class CFG( object ):
     """
     Create a new option.
 
-    @type optionName: string
-    @param optionName: Name of the option to create
-    @type value: string
-    @param value: Value of the option
-    @type comment: string
-    @param comment: Comment for the option
+    :type optionName: string
+    :param optionName: Name of the option to create
+    :type value: string
+    :param value: Value of the option
+    :type comment: string
+    :param comment: Comment for the option
     """
     if optionName == "":
       raise ValueError( "Creating an option with empty name! You shouldn't do that!" )
     if optionName.find( "/" ) > -1:
       recDict = self.getRecursive( optionName, -1 )
+      if not recDict:
+        return S_ERROR( "Parent section does not exist %s" % optionName )
       parentSection = recDict[ 'value' ]
-      if type( parentSection ) in ( types.StringType, types.UnicodeType ):
+      if isinstance( parentSection, basestring ):
         raise KeyError( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
       return parentSection.setOption( recDict[ 'levelsBelow' ], value, comment )
     self.__addEntry( optionName, comment )
@@ -157,10 +163,10 @@ class CFG( object ):
     """
     Add an entry and set the comment
 
-    @type entryName: string
-    @param entryName: Name of the entry
-    @type comment: string
-    @param comment: Comment for the entry
+    :type entryName: string
+    :param entryName: Name of the entry
+    :type comment: string
+    :param comment: Comment for the entry
     """
     if not entryName in self.__orderedList:
       self.__orderedList.append( entryName )
@@ -170,22 +176,29 @@ class CFG( object ):
     """
     Check if an option/section with that name exists
 
-    @type key: string
-    @param key: Name of the option/section to check
-    @return: Boolean with the result
+    :type key: string
+    :param key: Name of the option/section to check
+    :return: Boolean with the result
     """
     return key in self.__orderedList
 
   def sortAlphabetically( self, ascending = True ):
     """
     Order this cfg alphabetically
-    returns true if modified
+    returns True if modified
+    """
+    if not ascending:
+      return self.sortByKey( reverse = True )
+    return self.sortByKey()
+
+  def sortByKey( self, key = None , reverse = False ):
+    """
+    Order this cfg by function refered in key, default is None
+    corresponds to alphabetic sort
+    returns True if modified
     """
     unordered = list( self.__orderedList )
-    if ascending:
-      self.__orderedList.sort()
-    else:
-      self.__orderedList.reverse()
+    self.__orderedList.sort( key = key , reverse = reverse )
     return unordered != self.__orderedList
 
   @gCFGSynchro
@@ -193,19 +206,19 @@ class CFG( object ):
     """
     Delete an option/section
 
-    @type key: string
-    @param key: Name of the option/section to delete
-    @return: Boolean with the result
+    :type key: string
+    :param key: Name of the option/section to delete
+    :return: Boolean with the result
     """
     result = self.getRecursive( key, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( key, "/" )[-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( key, "/" )[:-1] ) )
     cfg = result[ 'value' ]
     end = result[ 'levelsBelow' ]
 
     if end in cfg.__orderedList:
-      del( cfg.__commentDict[ end ] )
-      del( cfg.__dataDict[ end ] )
+      del cfg.__commentDict[ end ]
+      del cfg.__dataDict[ end ]
       cfg.__orderedList.remove( end )
       return True
     return False
@@ -215,23 +228,23 @@ class CFG( object ):
     """
     Copy an option/section
 
-    @type oldName: string
-    @param oldName: Name of the option / section to copy
-    @type newName: string
-    @param newName: Destination name
-    @return: Boolean with the result
+    :type oldName: string
+    :param oldName: Name of the option / section to copy
+    :type newName: string
+    :param newName: Destination name
+    :return: Boolean with the result
     """
     if oldName == newName:
       return True
     result = self.getRecursive( oldName, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[:-1] ) )
     oldCfg = result[ 'value' ]
     oldEnd = result[ 'levelsBelow' ]
     if oldEnd in oldCfg.__dataDict:
       result = self.getRecursive( newName, -1 )
       if not result:
-        raise KeyError( "%s does not exist" % "/".join( List.fromChar( newName, "/" )[-1] ) )
+        raise KeyError( "%s does not exist" % "/".join( List.fromChar( newName, "/" )[:-1] ) )
       newCfg = result[ 'value' ]
       newEnd = result[ 'levelsBelow' ]
 
@@ -249,74 +262,74 @@ class CFG( object ):
     """
     List options
 
-    @type ordered: boolean
-    @param ordered: Return the options ordered. By default is False
-    @return: List with the option names
+    :type ordered: boolean
+    :param ordered: Return the options ordered. By default is False
+    :return: List with the option names
     """
     if ordered:
-      return [ sKey for sKey in self.__orderedList if type( self.__dataDict[ sKey ] ) == types.StringType ]
+      return [ sKey for sKey in self.__orderedList if isinstance( self.__dataDict[ sKey ], basestring ) ]
     else:
-      return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) == types.StringType ]
+      return [ sKey for sKey in self.__dataDict.keys() if isinstance( self.__dataDict[ sKey ], basestring ) ]
 
   @gCFGSynchro
   def listSections( self, ordered = True ):
     """
     List subsections
 
-    @type ordered: boolean
-    @param ordered: Return the subsections ordered. By default is False
-    @return: List with the subsection names
+    :type ordered: boolean
+    :param ordered: Return the subsections ordered. By default is False
+    :return: List with the subsection names
     """
     if ordered:
-      return [ sKey for sKey in self.__orderedList if type( self.__dataDict[ sKey ] ) != types.StringType ]
+      return [ sKey for sKey in self.__orderedList if not isinstance( self.__dataDict[ sKey ], basestring ) ]
     else:
-      return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) != types.StringType ]
+      return [ sKey for sKey in self.__dataDict.keys() if not isinstance( self.__dataDict[ sKey ], basestring ) ]
 
   @gCFGSynchro
   def isSection( self, key ):
     """
     Return if a section exists
 
-    @type key: string
-    @param key: Name to check
-    @return: Boolean with the results
+    :type key: string
+    :param key: Name to check
+    :return: Boolean with the results
     """
     if key.find( "/" ) != -1:
       keyDict = self.getRecursive( key, -1 )
       if not keyDict:
         return False
       section = keyDict[ 'value' ]
-      if type( section ) in ( types.StringType, types.UnicodeType ):
+      if isinstance( section, basestring ):
         return False
       secKey = keyDict[ 'levelsBelow' ]
       return section.isSection( secKey )
-    return key in self.__dataDict and type( self.__dataDict[ key ] ) not in ( types.StringType, types.UnicodeType )
+    return key in self.__dataDict and not isinstance( self.__dataDict[ key ], basestring )
 
   @gCFGSynchro
   def isOption( self, key ):
     """
     Return if an option exists
 
-    @type key: string
-    @param key: Name to check
-    @return: Boolean with the results
+    :type key: string
+    :param key: Name to check
+    :return: Boolean with the results
     """
     if key.find( "/" ) != -1:
       keyDict = self.getRecursive( key, -1 )
       if not keyDict:
         return False
       section = keyDict[ 'value' ]
-      if type( section ) in ( types.StringType, types.UnicodeType ):
+      if isinstance( section, basestring ):
         return False
       secKey = keyDict[ 'levelsBelow' ]
       return section.isOption( secKey )
-    return key in self.__dataDict and type( self.__dataDict[ key ] ) == types.StringType
+    return key in self.__dataDict and isinstance( self.__dataDict[ key ], basestring )
 
   def listAll( self ):
     """
     List all sections and options
 
-    @return: List with names of all options and subsections
+    :return: List with names of all options and subsections
     """
     return self.__orderedList
 
@@ -324,9 +337,9 @@ class CFG( object ):
     """
     Explore recursively a path
 
-    @type pathList: list
-    @param pathList: List containing the path to explore
-    @return: Dictionary with the contents { key, value, comment }
+    :type pathList: list
+    :param pathList: List containing the path to explore
+    :return: Dictionary with the contents { key, value, comment }
     """
     if pathList[0] in self.__dataDict:
       if len( pathList ) == 1:
@@ -343,13 +356,13 @@ class CFG( object ):
     """
     Get path contents
 
-    @type path: string
-    @param path: Path to explore recursively and get the contents
-    @type levelsAbove: integer
-    @param levelsAbove: Number of children levels in the path that won't be explored.
+    :type path: string
+    :param path: Path to explore recursively and get the contents
+    :type levelsAbove: integer
+    :param levelsAbove: Number of children levels in the path that won't be explored.
                         For instance, to explore all sections in a path except the last one use
                         levelsAbove = 1
-    @return: Dictionary containing:
+    :return: Dictionary containing:
                 key -> name of the entry
                 value -> content of the key
                 comment -> comment of the key
@@ -357,7 +370,7 @@ class CFG( object ):
     pathList = [ dirName.strip() for dirName in path.split( "/" ) if not dirName.strip() == "" ]
     levelsAbove = abs( levelsAbove )
     if len( pathList ) - levelsAbove < 0:
-      return False
+      return None
     if len( pathList ) - levelsAbove == 0:
       lBel = ""
       if levelsAbove > 0:
@@ -369,7 +382,7 @@ class CFG( object ):
       pathList = pathList[:-levelsAbove]
     retDict = self.__recurse( pathList )
     if not retDict:
-      return False
+      return None
     retDict[ 'levelsBelow' ] = levelsBelow
     return retDict
 
@@ -377,13 +390,13 @@ class CFG( object ):
     """
     Get option value with default applied
 
-    @type opName: string
-    @param opName: Path to the option to retrieve
-    @type defaultValue: optional (any python type)
-    @param defaultValue: Default value for the option if the option is not defined.
+    :type opName: string
+    :param opName: Path to the option to retrieve
+    :type defaultValue: optional (any python type)
+    :param defaultValue: Default value for the option if the option is not defined.
                          If the option is defined, the value will be returned casted to
                          the type of defaultValue if it is defined.
-    @return: Value of the option casted to defaultValue type, or defaultValue
+    :return: Value of the option casted to defaultValue type, or defaultValue
     """
     levels = List.fromChar( opName, "/" )
     dataD = self.__dataDict
@@ -394,7 +407,7 @@ class CFG( object ):
         return defaultValue
       dataD = dataV
 
-    if type( dataV ) != types.StringType:
+    if not isinstance( dataV, basestring ):
       optionValue = defaultValue
     else:
       optionValue = dataV
@@ -432,11 +445,11 @@ class CFG( object ):
 
   def getAsDict( self, path = "" ):
     """
-    Get the contents below a give path as a dict
+    Get the contents below a given path as a dict
 
-    @type path: string
-    @param path: Path to retrieve as dict
-    @return : Dictionary containing the data
+    :type path: string
+    :param path: Path to retrieve as dict
+    :return : Dictionary containing the data
     """
     resVal = {}
     if path:
@@ -444,7 +457,7 @@ class CFG( object ):
       if not reqDict:
         return resVal
       keyCfg = reqDict[ 'value' ]
-      if type( keyCfg ) in ( types.StringType, types.UnicodeType ):
+      if isinstance( keyCfg, basestring ):
         return resVal
       return keyCfg.getAsDict()
     for op in self.listOptions():
@@ -458,14 +471,14 @@ class CFG( object ):
     """
     Append a value to an option prepending a comma
 
-    @type optionName: string
-    @param optionName: Name of the option to append the value
-    @type value: string
-    @param value: Value to append to the option
+    :type optionName: string
+    :param optionName: Name of the option to append the value
+    :type value: string
+    :param value: Value to append to the option
     """
     result = self.getRecursive( optionName, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( optionName, "/" )[:-1] ) )
     cfg = result[ 'value' ]
     end = result[ 'levelsBelow' ]
     if end not in cfg.__dataDict:
@@ -477,19 +490,19 @@ class CFG( object ):
     """
     Add a new entry (option or section)
 
-    @type key: string
-    @param key: Name of the option/section to add
-    @type value: string/CFG
-    @param value: Contents of the new option/section
-    @type comment: string
-    @param comment: Comment for the option/section
-    @type beforeKey: string
-    @param beforeKey: Name of the option/section to add the entry above. By default
+    :type key: string
+    :param key: Name of the option/section to add
+    :type value: string/CFG
+    :param value: Contents of the new option/section
+    :type comment: string
+    :param comment: Comment for the option/section
+    :type beforeKey: string
+    :param beforeKey: Name of the option/section to add the entry above. By default
                         the new entry will be added at the end.
     """
     result = self.getRecursive( key, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( key, "/" )[-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( key, "/" )[:-1] ) )
     cfg = result[ 'value' ]
     end = result[ 'levelsBelow' ]
     if end in cfg.__dataDict:
@@ -507,23 +520,23 @@ class CFG( object ):
     """
     Rename a option/section
 
-    @type oldName: string
-    @param oldName: Name of the option/section to change
-    @type newName: string
-    @param newName: New name of the option/section
-    @return: Boolean with the result of the rename
+    :type oldName: string
+    :param oldName: Name of the option/section to change
+    :type newName: string
+    :param newName: New name of the option/section
+    :return: Boolean with the result of the rename
     """
     if oldName == newName:
       return True
     result = self.getRecursive( oldName, -1 )
     if not result:
-      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[-1] ) )
+      raise KeyError( "%s does not exist" % "/".join( List.fromChar( oldName, "/" )[:-1] ) )
     oldCfg = result[ 'value' ]
     oldEnd = result[ 'levelsBelow' ]
     if oldEnd in oldCfg.__dataDict:
       result = self.getRecursive( newName, -1 )
       if not result:
-        raise KeyError( "%s does not exist" % "/".join( List.fromChar( newName, "/" )[-1] ) )
+        raise KeyError( "%s does not exist" % "/".join( List.fromChar( newName, "/" )[:-1] ) )
       newCfg = result[ 'value' ]
       newEnd = result[ 'levelsBelow' ]
 
@@ -533,8 +546,8 @@ class CFG( object ):
       oldCfg.__orderedList.remove( oldEnd )
       newCfg.__orderedList.insert( refKeyPos, newEnd )
 
-      del( oldCfg.__dataDict[ oldEnd ] )
-      del( oldCfg.__commentDict[ oldEnd ] )
+      del oldCfg.__dataDict[ oldEnd ]
+      del oldCfg.__commentDict[ oldEnd ]
       return True
     else:
       return False
@@ -543,9 +556,9 @@ class CFG( object ):
     """
     Get the contents of a section/option
 
-    @type key: string
-    @param key: Name of the section/option to retrieve
-    @return: String/CFG with the contents
+    :type key: string
+    :param key: Name of the section/option to retrieve
+    :return: String/CFG with the contents
     """
     if key.find( "/" ) > -1:
       subDict = self.getRecursive( key )
@@ -571,7 +584,7 @@ class CFG( object ):
     """
     Get a print friendly representation of the CFG
 
-    @return: String with the contents of the CFG
+    :return: String with the contents of the CFG
     """
     return self.serialize()
 
@@ -579,7 +592,7 @@ class CFG( object ):
     """
     Get a print friendly representation of the CFG
 
-    @return: String with the contents of the CFG
+    :return: String with the contents of the CFG
     """
     return self.serialize()
 
@@ -607,9 +620,9 @@ class CFG( object ):
     """
     Get the comment for an option/section
 
-    @type entryName: string
-    @param entryName: Name of the option/section
-    @return: String with the comment
+    :type entryName: string
+    :param entryName: Name of the option/section
+    :return: String with the comment
     """
     try:
       return self.__commentDict[ entryName ]
@@ -621,10 +634,10 @@ class CFG( object ):
     """
     Set the comment for an option/section
 
-    @type entryName: string
-    @param entryName: Name of the option/section
-    @type comment: string
-    @param comment: Comment for the option/section
+    :type entryName: string
+    :param entryName: Name of the option/section
+    :type comment: string
+    :param comment: Comment for the option/section
     """
     if entryName in self.__orderedList:
       self.__commentDict[ entryName ] = comment
@@ -636,9 +649,9 @@ class CFG( object ):
     """
     Generate a human readable serialization of a CFG
 
-    @type tabLevelString: string
-    @param tabLevelString: Tab string to apply to entries before representing them
-    @return: String with the contents of the CFG
+    :type tabLevelString: string
+    :param tabLevelString: Tab string to apply to entries before representing them
+    :return: String with the contents of the CFG
     """
     indentation = "  "
     cfgString = ""
@@ -667,7 +680,7 @@ class CFG( object ):
     """
     Create a copy of the CFG
 
-    @return: CFG copy
+    :return: CFG copy
     """
     clonedCFG = CFG()
     clonedCFG.__orderedList = copy.deepcopy( self.__orderedList )
@@ -683,10 +696,10 @@ class CFG( object ):
     """
     Generate a CFG by merging with the contents of another CFG.
 
-    @type cfgToMergeWith: CFG
-    @param cfgToMergeWith: CFG with the contents to merge with. This contents are more
+    :type cfgToMergeWith: CFG
+    :param cfgToMergeWith: CFG with the contents to merge with. This contents are more
                             preemtive than this CFG ones
-    @return: CFG with the result of the merge
+    :return: CFG with the result of the merge
     """
     mergedCFG = CFG()
     for option in self.listOptions():
@@ -717,12 +730,12 @@ class CFG( object ):
   def getModifications( self, newerCfg, ignoreMask = None, parentPath = "" ):
     """
     Compare two cfgs
-    
-    @type newerCfg: CFG
-    @param newerCfg: Cfg to compare with
-    @type prefix: string
-    @param prefix: Internal use only
-    @return: A list of modifications
+
+    :type newerCfg: CFG
+    :param newerCfg: Cfg to compare with
+    :type prefix: string
+    :param prefix: Internal use only
+    :return: A list of modifications
     """
     modList = []
     #Options
@@ -792,10 +805,10 @@ class CFG( object ):
   def applyModifications( self, modList, parentSection = "" ):
     """
     Apply modifications to a CFG
-    
-    @type modList: List
-    @param modList: Modifications from a getModifications call
-    @return: True/False
+
+    :type modList: List
+    :param modList: Modifications from a getModifications call
+    :return: True/False
     """
     for modAction in modList:
       action = modAction[0]
@@ -828,7 +841,7 @@ class CFG( object ):
             return result
         if iPos >= len( self.__orderedList ) or key != self.__orderedList[ iPos ]:
           prevPos = self.__orderedList.index( key )
-          del( self.__orderedList[ prevPos ] )
+          del self.__orderedList[ prevPos ]
           self.__orderedList.insert( iPos, key )
       elif action == "addOpt":
         if key in self.listOptions():
@@ -861,9 +874,9 @@ class CFG( object ):
     """
     Load the contents of the CFG from a file
 
-    @type fileName: string
-    @param fileName: File name to load the contents from
-    @return: This CFG
+    :type fileName: string
+    :param fileName: File name to load the contents from
+    :return: This CFG
     """
     if gZipEnabled and fileName.find( ".zip" ) == len( fileName ) - 4:
       #Zipped file
@@ -883,10 +896,11 @@ class CFG( object ):
     """
     Load the contents of the CFG from a string
 
-    @type data: string
-    @param data: Contents of the CFG
-    @return: This CFG
+    :type data: string
+    :param data: Contents of the CFG
+    :return: This CFG
     """
+    commentRE = re.compile( r"^\s*#" )
     self.reset()
     levelList = []
     currentLevel = self
@@ -896,10 +910,9 @@ class CFG( object ):
       line = line.strip()
       if len( line ) < 1:
         continue
-      commentPos = line.find( "#" )
-      if commentPos > -1:
-        currentComment += "%s\n" % line[ commentPos: ].replace( "#", "" )
-        line = line[ :commentPos ]
+      if commentRE.match( line ):
+        currentComment += "%s\n" % line.replace( "#", "" )
+        continue
       for index in range( len( line ) ):
         if line[ index ] == "{":
           currentlyParsedString = currentlyParsedString.strip()
@@ -912,9 +925,7 @@ class CFG( object ):
           currentLevel = levelList.pop()
         elif line[ index ] == "=":
           lFields = line.split( "=" )
-          currentLevel.setOption( lFields[0].strip(),
-           "=".join( lFields[1:] ).strip(),
-           currentComment )
+          currentLevel.setOption( lFields[0].strip(), "=".join( lFields[1:] ).strip(), currentComment )
           currentlyParsedString = ""
           currentComment = ""
           break
@@ -932,10 +943,9 @@ class CFG( object ):
   def loadFromDict( self, data ):
     for k in data:
       value = data[ k ]
-      vType = type( value )
-      if type( value ) == types.DictType:
+      if isinstance( value, dict ):
         self.createNewSection( k , "", CFG().loadFromDict( value ) )
-      elif vType in ( types.ListType, types.TupleType ):
+      elif isinstance( value, (list, tuple) ):
         self.setOption( k , ", ".join( value ), "" )
       else:
         self.setOption( k , str( value ), "" )
@@ -945,9 +955,9 @@ class CFG( object ):
     """
     Write the contents of the cfg to file
 
-    @type fileName: string
-    @param fileName: Name of the file to write the cfg to
-    @return: True/False
+    :type fileName: string
+    :param fileName: Name of the file to write the cfg to
+    :return: True/False
     """
     try:
       directory = os.path.dirname( fileName )
@@ -959,7 +969,3 @@ class CFG( object ):
       return True
     except Exception:
       return False
-
-
-
-

@@ -1,52 +1,99 @@
-#####################################################################################
-# $HeadURL$
-#####################################################################################
 """Collection of DIRAC useful file related modules.
 
 .. warning::
    By default on Error they return None.
 """
 
-__RCSID__ = "$Id$"
-
 import os
-try:
-  import hashlib as md5
-except ImportError:
-  import md5
+import hashlib as md5
 import random
 import glob
-import types
+import sys
 import re
+import errno
+
+__RCSID__ = "$Id$"
+
+def mkDir( path ):
+  """ Emulate 'mkdir -p path' (if path exists already, don't raise an exception)
+  """
+  try:
+    if os.path.isdir(path):
+      return
+    os.makedirs( path )
+  except OSError as osError:
+    if osError.errno == errno.EEXIST and os.path.isdir( path ):
+      pass
+    else:
+      raise
+
+def mkLink( src, dst ):
+  """ Protected creation of simbolic link
+  """
+  try:
+    os.symlink(src, dst)
+  except OSError as osError:
+    if osError.errno == errno.EEXIST and os.path.islink(dst) and os.path.realpath(dst) == src:
+      pass
+    else:
+      raise
 
 def makeGuid( fileName = None ):
-  """Utility to create GUID's, if a filename it is provided the
-     GUID will correspond to its hexadecimal md5 checksum
-     the format is capitalized 8-4-4-4-12, otherwise a random seed it is
-     used to create a GUID.
-     
+  """Utility to create GUID. If a filename is provided the
+     GUID will correspond to its content's hexadecimal md5 checksum.
+     Otherwise a random seed is used to create the GUID.
+     The format is capitalized 8-4-4-4-12.
+
      .. warning::
         Could return None in case of OSError or IOError.
-     
-     :param string fileName: name of file 
+
+     :param string fileName: name of file
   """
   myMd5 = md5.md5()
   if fileName:
     try:
-      fd = open( fileName, 'r' )
-      data = fd.read( 1024 * 1024 )
-      myMd5.update( data )
-      fd.close()
+      with open( fileName, 'r' ) as fd:
+        data = fd.read( 10 * 1024 * 1024 )
+        myMd5.update( data )
     except:
       return None
   else:
     myMd5.update( str( random.getrandbits( 128 ) ) )
+
   md5HexString = myMd5.hexdigest().upper()
-  return "-".join( [ md5HexString[0:8],
-                    md5HexString[8:12],
-                    md5HexString[12:16],
-                    md5HexString[16:20],
-                    md5HexString[20:32] ] )
+  return generateGuid( md5HexString, "MD5" )
+
+def generateGuid( checksum, checksumtype ):
+  """ Generate a GUID based on the file checksum
+  """
+
+  if checksum:
+    if checksumtype == "MD5":
+      checksumString = checksum
+    elif checksumtype == "Adler32":
+      checksumString = str( checksum ).zfill( 32 )
+    else:
+      checksumString = ''
+    if checksumString:
+      guid = "%s-%s-%s-%s-%s" % ( checksumString[0:8],
+                                  checksumString[8:12],
+                                  checksumString[12:16],
+                                  checksumString[16:20],
+                                  checksumString[20:32] )
+      guid = guid.upper()
+      return guid
+
+  # Failed to use the check sum, generate a new guid
+  myMd5 = md5.md5()
+  myMd5.update( str( random.getrandbits( 128 ) ) )
+  md5HexString = myMd5.hexdigest()
+  guid = "%s-%s-%s-%s-%s" % ( md5HexString[0:8],
+                              md5HexString[8:12],
+                              md5HexString[12:16],
+                              md5HexString[16:20],
+                              md5HexString[20:32] )
+  guid = guid.upper()
+  return guid
 
 def checkGuid( guid ):
   """Checks whether a supplied GUID is of the correct format.
@@ -54,11 +101,11 @@ def checkGuid( guid ):
 
      .. warning::
         As we are using GUID produced by various services and some of them could not follow
-        convention this function is passing by a guid which can be made if small caps or even just 
-        have 5 parts of whatever chars of proper lenght.
+        convention, this function is passing by a guid which can be made of lower case chars or even just
+        have 5 parts of proper length with whatever chars.
 
      :param string guid: string to be checked
-     :return: True (False) if supplied string is (not) a valid GUID. 
+     :return: True (False) if supplied string is (not) a valid GUID.
   """
   reGUID = re.compile( "^[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}$" )
   if reGUID.match( guid.upper() ):
@@ -73,26 +120,27 @@ def getSize( fileName ):
   """Get size of a file.
 
   :param string fileName: name of file to be checked
-  
-  The os module claims only OSError can be thrown, 
+
+  The os module claims only OSError can be thrown,
   but just for curiosity it's catching all possible exceptions.
 
-  .. warning:: 
+  .. warning::
      On any exception it returns -1.
-  
+
   """
   try:
     return os.stat( fileName )[6]
-  except Exception:
+  except OSError:
     return - 1
 
 def getGlobbedTotalSize( files ):
   """Get total size of a list of files or a single file.
   Globs the parameter to allow regular expressions.
 
+  :params list files: list or tuple of strings of files
   """
   totalSize = 0
-  if type( files ) in ( types.ListType, types.TupleType ):
+  if isinstance( files, (list, tuple) ):
     for entry in files:
       size = getGlobbedTotalSize( entry )
       if size == -1:
@@ -113,9 +161,11 @@ def getGlobbedTotalSize( files ):
 def getGlobbedFiles( files ):
   """Get list of files or a single file.
   Globs the parameter to allow regular expressions.
+
+  :params list files: list or tuple of strings of files
   """
   globbedFiles = []
-  if type( files ) in ( types.ListType, types.TupleType ):
+  if isinstance( files, ( list, tuple ) ):
     for entry in files:
       globbedFiles += getGlobbedFiles( entry )
   else:
@@ -135,7 +185,7 @@ def getCommonPath( files ):
   def properSplit( dirPath ):
     """Splitting of path to drive and path parts for non-Unix file systems.
 
-    :param string dirParh: path
+    :param string dirPath: path
     """
     nDrive, nPath = os.path.splitdrive( dirPath )
     return  [ nDrive ] + [ d for d in nPath.split( os.sep ) if d.strip() ]
@@ -166,17 +216,15 @@ def getMD5ForFiles( fileList ):
   fileList.sort()
   hashMD5 = md5.md5()
   for filePath in fileList:
-    if ( os.path.isdir( filePath ) ):
+    if os.path.isdir( filePath ):
       continue
-    fd = open( filePath, "rb" )
-    buf = fd.read( 4096 )
-    while buf:
-      hashMD5.update( buf )
+    with open( filePath, "rb" ) as fd:
       buf = fd.read( 4096 )
-    fd.close()
+      while buf:
+        hashMD5.update( buf )
+        buf = fd.read( 4096 )
   return hashMD5.hexdigest()
 
 if __name__ == "__main__":
-  import sys
   for p in sys.argv[1:]:
     print "%s : %s bytes" % ( p, getGlobbedTotalSize( p ) )

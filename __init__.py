@@ -1,8 +1,7 @@
-# $HeadURL$
 """
    DIRAC - Distributed Infrastructure with Remote Agent Control
 
-   The LHCb distributed data production and analysis system.
+   The distributed data production and analysis system of LHCb and other VOs.
 
    DIRAC is a software framework for distributed computing which
    allows to integrate various computing resources in a single
@@ -46,9 +45,6 @@
     - pythonPath:    absolute real path to the directory that contains this file
     - rootPath:      absolute real path to the parent of DIRAC.pythonPath
 
-    - platform:      DIRAC platform string for current host
-    - platformTuple: DIRAC platform tuple for current host
-
     It loads Modules from :
     - DIRAC.Core.Utililies
 
@@ -57,26 +53,32 @@
     - S_ERROR:        ERROR return structure
     - gLogger:        global Logger object
     - gConfig:        global Config object
-    - gMonitor:       global Monitor object
 
     It defines the following functions:
     - abort:          aborts execution
     - exit:           finish execution using callbacks
     - siteName:       returns DIRAC name for current site
 
-"""
-__RCSID__ = "$Id$"
+    - getPlatform():      DIRAC platform string for current host
+    - getPlatformTuple(): DIRAC platform tuple for current host
 
+"""
+
+import sys
+import os
+import platform as pyPlatform
 from pkgutil import extend_path
 __path__ = extend_path( __path__, __name__ )
 
-import sys, os, platform
+
+__RCSID__ = "$Id$"
+
 
 # Define Version
 
 majorVersion = 6
-minorVersion = 4
-patchLevel = 0
+minorVersion = 15
+patchLevel = 9
 preVersion = 0
 
 version = "v%sr%s" % ( majorVersion, minorVersion )
@@ -91,11 +93,11 @@ if preVersion:
 # Check of python version
 
 __pythonMajorVersion = ( "2", )
-__pythonMinorVersion = ( "4", "5", "6", "7" )
+__pythonMinorVersion = ( "6", "7" )
 
-pythonVersion = platform.python_version_tuple()
+pythonVersion = pyPlatform.python_version_tuple()
 if str( pythonVersion[0] ) not in __pythonMajorVersion or str( pythonVersion[1] ) not in __pythonMinorVersion:
-  print "Python Version %s not supported by DIRAC" % platform.python_version()
+  print "Python Version %s not supported by DIRAC" % pyPlatform.python_version()
   print "Supported versions are: "
   for major in __pythonMajorVersion:
     for minor in __pythonMinorVersion:
@@ -113,18 +115,18 @@ rootPath = os.path.dirname( pythonPath )
 
 # Import DIRAC.Core.Utils modules
 
-from DIRAC.Core.Utilities import *
+#from DIRAC.Core.Utilities import *
+from DIRAC.Core.Utilities.Network import getFQDN
+import DIRAC.Core.Utilities.ExitCallback as ExitCallback
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
-#Logger
+
+# Logger
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 #Configuration client
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-
-#Monitoring client
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 # Some Defaults if not present in the configuration
 FQDN = getFQDN()
@@ -136,6 +138,34 @@ else:
   _siteName = 'DIRAC.Client.local'
 
 __siteName = False
+
+
+
+# # Update DErrno with the extensions errors
+# from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+# from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+# allExtensions = CSGlobals.getCSExtensions()
+#
+# # Update for each extension. Careful to conflict :-)
+# for extension in allExtensions:
+#   ol = ObjectLoader( baseModules = ["%sDIRAC" % extension] )
+#   extraErrorModule = ol.loadModule( 'Core.Utilities.DErrno' )
+#   if extraErrorModule['OK']:
+#     extraErrorModule = extraErrorModule['Value']
+#
+#     # The next 3 dictionary MUST be present for consistency
+#
+#     # Global name of errors
+#     DErrno.__dict__.update( extraErrorModule.extra_dErrName )
+#     # Dictionary with the error codes
+#     DErrno.dErrorCode.update( extraErrorModule.extra_dErrorCode )
+#     # Error description string
+#     DErrno.dStrError.update( extraErrorModule.extra_dStrError )
+#
+#     # extra_compatErrorString is optional
+#     for err in getattr( extraErrorModule, 'extra_compatErrorString', [] ) :
+#       DErrno.compatErrorString.setdefault( err, [] ).extend( extraErrorModule.extra_compatErrorString[err] )
+
 
 def siteName():
   """
@@ -149,10 +179,8 @@ def siteName():
 #Callbacks
 ExitCallback.registerSignals()
 
-#Set the platform
-from DIRAC.Core.Utilities.Platform import getPlatformString
-platform = getPlatformString()
-platformTuple = tuple( platform.split( '_' ) )
+# platform detection
+from DIRAC.Core.Utilities.Platform import getPlatformString, getPlatform, getPlatformTuple
 
 def exit( exitCode = 0 ):
   """
@@ -168,6 +196,6 @@ def abort( exitCode, *args, **kwargs ):
   try:
     gLogger.fatal( *args, **kwargs )
     os._exit( exitCode )
-  except:
+  except OSError:
     gLogger.exception( 'Error while executing DIRAC.abort' )
     os._exit( exitCode )

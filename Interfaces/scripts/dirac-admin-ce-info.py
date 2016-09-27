@@ -33,8 +33,6 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
-diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
 
@@ -48,7 +46,7 @@ if not result['OK']:
 sites = result['Value']
 
 for site in sites:
-  result = diracAdmin.getCSDict( cfgPath( gridCfgPath, site ) )
+  result = DIRAC.gConfig.getOptionsDict( cfgPath( gridCfgPath, site ) )
   if result['OK']:
     ces = result['Value'].get( 'CE', [] )
     for ce in args:
