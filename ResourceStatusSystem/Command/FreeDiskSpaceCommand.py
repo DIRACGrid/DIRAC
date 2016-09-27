@@ -7,6 +7,7 @@
 from datetime                                                   import datetime
 from DIRAC                                                      import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
+from DIRAC.Core.Utilities                                       import DErrno
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 
@@ -62,31 +63,30 @@ class FreeDiskSpaceCommand( Command ):
   def _prepareCommand( self ):
     '''
       FreeDiskSpaceCommand requires one argument:
-      - element : Resource
-
+      - name : <str>
     '''
 
-    if 'element' not in self.args:
-      return S_ERROR( '"element" not found in self.args' )
-    element = self.args[ 'element' ]
+    if 'name' not in self.args:
+      return S_ERROR( '"name" not found in self.args' )
+    elementName = self.args[ 'name' ]
 
-    return S_OK( element )
+    return S_OK( elementName )
 
   def doNew( self, masterParams = None ):
     """
-    Gets the total and the free disk space of all DIPS storage elements that
-    are found in the CS and inserts the results in the SpaceTokenOccupancyCache table
+    Gets the total and the free disk space of a DIPS storage element that
+    is found in the CS and inserts the results in the SpaceTokenOccupancyCache table
     of ResourceManagementDB database.
     """
 
     if masterParams is not None:
-      element = masterParams
+      elementName = masterParams
     else:
-      element = self._prepareCommand()
-      if not element[ 'OK' ]:
-        return element
+      elementName = self._prepareCommand()
+      if not elementName[ 'OK' ]:
+        return elementName
 
-    elementURL = self.getUrl(element, "dips")
+    elementURL = self.getUrl(elementName, "dips")
 
     if not elementURL:
       gLogger.info( "Not a DIPS storage element, skipping..." )
@@ -95,15 +95,34 @@ class FreeDiskSpaceCommand( Command ):
     self.rpc = RPCClient( elementURL, timeout=120 )
     free = self.rpc.getFreeDiskSpace("/")
     total = self.rpc.getTotalDiskSpace("/")
-    self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint = elementURL, lastCheckTime = datetime.utcnow(),
-                                                      free = free, total = total, token = element )
+    result = self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint = elementURL, lastCheckTime = datetime.utcnow(),
+                                                               free = free, total = total, token = elementName )
+    if not result[ 'OK' ]:
+      return S_ERROR( DErrno.EMYSQL, "Query failed %s" % result )
 
     return S_OK()
 
   def doCache( self ):
-    return S_OK()
+    """
+    This is a method that gets the element's details from the spaceTokenOccupancy cache.
+    """
+
+    elementName = self._prepareCommand()
+    if not elementName[ 'OK' ]:
+      return elementName
+
+    result = self.rsClient.selectSpaceTokenOccupancyCache(token = elementName)
+
+    if not result[ 'OK' ]:
+      return S_ERROR( DErrno.EMYSQL, "Query failed %s" % result )
+
+    return S_OK( result )
 
   def doMaster( self ):
+    """
+    This method calls the doNew method for each storage element
+    that exists in the CS.
+    """
 
     elements = CSHelpers.getStorageElements()
 

@@ -31,6 +31,7 @@ import os
 import shutil
 import stat
 import re
+import errno
 from stat import ST_MODE, ST_SIZE, ST_ATIME, ST_CTIME, ST_MTIME, S_ISDIR, S_IMODE
 from types import  StringTypes, ListType
 ## from DIRAC
@@ -79,7 +80,7 @@ def getDiskSpace(path, size = 'TB', total = False):
         result = (st.f_bavail * st.f_frsize) / convert
 
     except OSError as e:
-      return S_ERROR( "Error %s", e )
+      return S_ERROR( errno.EIO, "Error while getting the available disk space: %s", repr(e) )
 
     return S_OK( round(result, 2) )
 
