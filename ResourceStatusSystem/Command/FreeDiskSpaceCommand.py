@@ -98,7 +98,7 @@ class FreeDiskSpaceCommand( Command ):
     result = self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint = elementURL, lastCheckTime = datetime.utcnow(),
                                                                free = free, total = total, token = elementName )
     if not result[ 'OK' ]:
-      return S_ERROR( DErrno.EMYSQL, "Query failed %s" % result )
+      return S_ERROR( DErrno.EMYSQL, "Query failed %s" % result['Message'] )
 
     return S_OK()
 
@@ -114,7 +114,7 @@ class FreeDiskSpaceCommand( Command ):
     result = self.rsClient.selectSpaceTokenOccupancyCache(token = elementName)
 
     if not result[ 'OK' ]:
-      return S_ERROR( DErrno.EMYSQL, "Query failed %s" % result )
+      return S_ERROR( DErrno.EMYSQL, "Query failed %s" % result['Message'] )
 
     return S_OK( result )
 
