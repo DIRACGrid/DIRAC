@@ -34,7 +34,10 @@ class ProxyPlugin( FCConditionBasePlugin ):
 
 
         If the conditions does not follow the form 'attribute.predicate(value)', an exception
-        is thrown, and will lead to be evaluated to False
+        is thrown, and will lead to all the expression be evaluated to False
+
+        If there is no proxy, all conditions are evaluated to False
+
     """
     super( ProxyPlugin, self ).__init__( conditions )
 
@@ -49,10 +52,10 @@ class ProxyPlugin( FCConditionBasePlugin ):
     self.value = self.value.replace( "'", "" ).replace( '"', '' ).replace( ' ', '' )
 
     self._checkCondition()
-    self.proxyInfo = getProxyInfo()['Value']
+    self.proxyInfo = getProxyInfo().get( 'Value' )
 
 
-  def _checkCondition(self):
+  def _checkCondition( self ):
     """ Checks that the actual condition makes sense
         if not, raises a RuntimeError exception
     """
@@ -74,10 +77,12 @@ class ProxyPlugin( FCConditionBasePlugin ):
     """ evaluate the parameters.
     """
 
+    if not self.proxyInfo:
+      return False
 
     valueToLookFor = None
     listToLookInto = []
-    
+
     if self.attr in ['username', 'group']:
       valueToLookFor = self.proxyInfo.get( self.attr )
       listToLookInto = self.value.split( ',' )

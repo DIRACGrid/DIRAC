@@ -5,8 +5,6 @@
   and the current resource status that is used for matching.
 """
 
-__RCSID__ = "$Id$"
-
 import os
 import sys
 import re
@@ -28,10 +26,46 @@ from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob
 from DIRAC.WorkloadManagementSystem.Utilities.Utils         import createJobWrapper
 
+__RCSID__ = "$Id$"
+
 
 class JobAgent( AgentModule ):
   """ This agent is what runs in a worker node. The pilot runs it, after having prepared its configuration.
   """
+
+  def __init__(self, agentName, loadName, baseAgentName = False, properties = None):
+    """ Just defines some default parameters
+    """
+    if not properties:
+      properties = {}
+    super( JobAgent, self ).__init__( agentName, loadName, baseAgentName, properties )
+
+    self.ceName = 'InProcess'
+    self.computingElement = None
+    self.timeLeft = 0.0
+
+    self.initTimes = os.times()
+    # Localsite options
+    self.siteName = 'Unknown'
+    self.pilotReference = 'Unknown'
+    self.defaultProxyLength = 86400 * 5
+    # Agent options
+    # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
+    self.cpuFactor = 0.0
+    self.jobSubmissionDelay = 10
+    self.fillingMode = False
+    self.minimumTimeLeft = 1000
+    self.stopOnApplicationFailure = True
+    self.stopAfterFailedMatches = 10
+    self.jobCount = 0
+    self.matchFailedCount = 0
+    self.extraOptions = ''
+    # Timeleft
+    self.timeLeftUtil = None
+    self.timeLeftError = ''
+    self.scaledCPUTime = 0.0
+    self.pilotInfoReportedFlag = False
+
 
   #############################################################################
   def initialize( self, loops = 0 ):
@@ -62,30 +96,25 @@ class JobAgent( AgentModule ):
       self.log.warn( "Can not get the CE description" )
       return result
     ceDict = result['Value']
-    self.timeLeft = ceDict.get( 'CPUTime', 0.0 )
+    self.timeLeft = ceDict.get( 'CPUTime', self.timeLeft )
     self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', self.timeLeft )
 
     self.initTimes = os.times()
     # Localsite options
-    self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )
-    self.pilotReference = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
-    self.defaultProxyLength = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 * 5 )
+    self.siteName = gConfig.getValue( '/LocalSite/Site', self.siteName )
+    self.pilotReference = gConfig.getValue( '/LocalSite/PilotReference', self.pilotReference )
+    self.defaultProxyLength = gConfig.getValue( '/Registry/DefaultProxyLifeTime', self.defaultProxyLength )
     # Agent options
     # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
-    self.cpuFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
-    self.jobSubmissionDelay = self.am_getOption( 'SubmissionDelay', 10 )
-    self.fillingMode = self.am_getOption( 'FillingModeFlag', False )
-    self.minimumTimeLeft = self.am_getOption( 'MinimumTimeLeft', 1000 )
-    self.stopOnApplicationFailure = self.am_getOption( 'StopOnApplicationFailure', True )
-    self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', 10 )
-    self.jobCount = 0
-    self.matchFailedCount = 0
-    self.extraOptions = gConfig.getValue( '/AgentJobRequirements/ExtraOptions', '' )
+    self.cpuFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', self.cpuFactor )
+    self.jobSubmissionDelay = self.am_getOption( 'SubmissionDelay', self.jobSubmissionDelay )
+    self.fillingMode = self.am_getOption( 'FillingModeFlag', self.fillingMode )
+    self.minimumTimeLeft = self.am_getOption( 'MinimumTimeLeft', self.minimumTimeLeft )
+    self.stopOnApplicationFailure = self.am_getOption( 'StopOnApplicationFailure', self.stopOnApplicationFailure )
+    self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', self.stopAfterFailedMatches )
+    self.extraOptions = gConfig.getValue( '/AgentJobRequirements/ExtraOptions', self.extraOptions )
     # Timeleft
     self.timeLeftUtil = TimeLeft()
-    self.timeLeftError = ''
-    self.scaledCPUTime = 0.0
-    self.pilotInfoReportedFlag = False
     return S_OK()
 
   #############################################################################
@@ -419,8 +448,8 @@ class JobAgent( AgentModule ):
 
   #############################################################################
   def __submitJob( self, jobID, jobParams, resourceParams, optimizerParams, proxyChain ):
-    """Submit job to the Computing Element instance after creating a custom
-       Job Wrapper with the available job parameters.
+    """ Submit job to the Computing Element instance after creating a custom
+        Job Wrapper with the available job parameters.
     """
     logLevel = self.am_getOption( 'DefaultLogLevel', 'INFO' )
     defaultWrapperLocation = self.am_getOption( 'JobWrapperTemplate',
@@ -434,7 +463,7 @@ class JobAgent( AgentModule ):
     wrapperFile = result['Value']
     self.__report( jobID, 'Matched', 'Submitted To CE' )
 
-    self.log.info( 'Submitting %s to %sCE' % ( os.path.basename( wrapperFile ), self.ceName ) )
+    self.log.info( 'Submitting JobWrapper %s to %sCE' % ( os.path.basename( wrapperFile ), self.ceName ) )
 
     # Pass proxy to the CE
     proxy = proxyChain.dumpAllToString()
@@ -475,13 +504,8 @@ class JobAgent( AgentModule ):
   def __requestJob( self, ceDict ):
     """Request a single job from the matcher service.
     """
-    try:
-      matcher = RPCClient( 'WorkloadManagement/Matcher', timeout = 600 )
-      result = matcher.requestJob( ceDict )
-      return result
-    except Exception as x:
-      self.log.exception( lException = x )
-      return S_ERROR( "Job request to matcher service failed with exception" )
+    matcher = RPCClient( 'WorkloadManagement/Matcher', timeout = 600 )
+    return matcher.requestJob( ceDict )
 
   #############################################################################
   def __getJDLParameters( self, jdl ):
@@ -490,7 +514,7 @@ class JobAgent( AgentModule ):
     try:
       parameters = {}
 #      print jdl
-      if not re.search( '\[', jdl ):
+      if not re.search( r'\[', jdl ):
         jdl = '[' + jdl + ']'
       classAdJob = ClassAd( jdl )
       paramsDict = classAdJob.contents

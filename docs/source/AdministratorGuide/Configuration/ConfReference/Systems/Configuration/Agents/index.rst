@@ -31,6 +31,13 @@ Common options for all the agents:
 | *Status*            | Agent Status, possible values Active  | Status = Active              |
 |                     | or Inactive                           |                              |
 +---------------------+---------------------------------------+------------------------------+
+| *DryRun*            | If True, the agent won't change       | DryRun = False               |
+|                     | the CS                                |                              |
++---------------------+---------------------------------------+------------------------------+
+| *WatchdogTime*      | If > 0 will kill the agent if the     | | WatchdogTime = 3600        |
+|                     | cycle exceeds WatchdogTime in seconds | | (default is 0)             |
+|                     | to force a restart of the agent       |                              |
++---------------------+---------------------------------------+------------------------------+
 
 
 
@@ -38,9 +45,7 @@ Agents associated with Configuration System:
 
 .. toctree::
    :maxdepth: 2
-   
-   CE2CSAgent/index
-   UsersAndGroups/index
 
-
-
+   Bdii2CSAgent/index
+   VOMS2CSAgent/index
+   GOCDB2CSAgent/index

@@ -5,6 +5,7 @@
      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
 
+
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
@@ -81,3 +82,4 @@ def getSEsForCountry( country ):
   """ Determines the associated SEs from the country code
   """
   return DMSHelpers().getSEsAtCountry( country )
+

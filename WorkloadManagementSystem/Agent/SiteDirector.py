@@ -155,15 +155,15 @@ class SiteDirector( AgentModule ):
 
     # Get the site description dictionary
     siteNames = None
-    if not self.am_getOption( 'Site', 'Any' ).lower() == "any":
+    if self.am_getOption( 'Site', 'Any' ).lower() != "any":
       siteNames = self.am_getOption( 'Site', [] )
       if not siteNames:
         siteNames = None
     ceTypes = None
-    if not self.am_getOption( 'CETypes', 'Any' ).lower() == "any":
+    if self.am_getOption( 'CETypes', 'Any' ).lower() != "any":
       ceTypes = self.am_getOption( 'CETypes', [] )
     ces = None
-    if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
+    if self.am_getOption( 'CEs', 'Any' ).lower() != "any":
       ces = self.am_getOption( 'CEs', [] )
       if not ces:
         ces = None
@@ -411,7 +411,7 @@ class SiteDirector( AgentModule ):
     tqIDList = result['Value'].keys()
     result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
                                           'Status': WAITING_PILOT_STATUS },
-                                          None )
+                                        None )
     totalWaitingPilots = 0
     if result['OK']:
       totalWaitingPilots = result['Value']
@@ -509,7 +509,7 @@ class SiteDirector( AgentModule ):
         lastUpdateTime = dateTime() - self.pilotWaitingTime * second
         result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
                                               'Status': WAITING_PILOT_STATUS },
-                                              None, lastUpdateTime )
+                                            None, lastUpdateTime )
         if not result['OK']:
           self.log.error( 'Failed to get Number of Waiting pilots', result['Message'] )
           totalWaitingPilots = 0
@@ -531,7 +531,12 @@ class SiteDirector( AgentModule ):
       if not result['OK']:
         return result
       self.proxy = result['Value']
-      ce.setProxy( self.proxy, cpuTime - 60 )
+      # Check returned proxy lifetime
+      result = self.proxy.getRemainingSecs() #pylint: disable=no-member
+      if not result['OK']:
+        return result
+      lifetime_secs = result['Value']
+      ce.setProxy( self.proxy, lifetime_secs )
 
       # Get the number of available slots on the target site/queue
       totalSlots = self.getQueueSlots( queue, manyWaitingPilotsFlag )
@@ -941,7 +946,10 @@ EOF
           stampedPilotRefs = list( pilotRefs )
           break
 
-      result = ce.isProxyValid()
+      # This proxy is used for checking the pilot status and renewals
+      # We really need at least a few hours otherwise the renewed
+      # proxy may expire before we check again...
+      result = ce.isProxyValid( 3*3600 )
       if not result['OK']:
         result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, 23400 )
         if not result['OK']:

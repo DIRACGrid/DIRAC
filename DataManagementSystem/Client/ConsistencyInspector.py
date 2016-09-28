@@ -439,17 +439,17 @@ class ConsistencyInspector( object ):
       if not oneGoodReplica:
         if lfn in lfnNotExisting:
           gLogger.info( "=> All replicas are missing", lfn )
-          retDict['MissingAllReplicas'][ lfn] = 'All'
+          retDict['MissingAllReplicas'][lfn] = 'All'
         else:
           gLogger.info( "=> All replicas have bad checksum", lfn )
-          retDict['AllReplicasCorrupted'][ lfn ] = csDict[ lfn ]
+          retDict['AllReplicasCorrupted'][lfn] = csDict[lfn]
       elif not allGoodReplicas:
         if lfn in lfnNotExisting:
           gLogger.info( "=> At least one replica missing", lfn )
           retDict['MissingReplica'][lfn] = lfnNotExisting[lfn]
         else:
           gLogger.info( "=> At least one replica with good Checksum", lfn )
-          retDict['SomeReplicasCorrupted'][ lfn ] = csDict[ lfn ]
+          retDict['SomeReplicasCorrupted'][lfn] = csDict[lfn]
 
     return S_OK(retDict)
 
@@ -540,14 +540,14 @@ class ConsistencyInspector( object ):
     gLogger.info( "-" * 40 )
     if isinstance( lfns, basestring):
       lfns = [lfns]
-    res = self.__getCatalogMetadata( lfns )
+    res = self._getCatalogMetadata( lfns )
     if not res['OK']:
       return res
-    catalogMetadata = res['Value']
-    res = self.__getCatalogReplicas( catalogMetadata.keys() )
+    catalogMetadata, _missingCatalogFiles, _zeroSizeFiles = res['Value']
+    res = self._getCatalogReplicas( catalogMetadata.keys() )
     if not res['OK']:
       return res
-    replicas = res['Value']
+    replicas, _zeroReplicaFiles = res['Value']
     res = self.checkPhysicalFiles( replicas, catalogMetadata )
     if not res['OK']:
       return res
@@ -634,7 +634,8 @@ class ConsistencyInspector( object ):
   #
 
   def storageDirectoryToCatalog( self, lfnDir, storageElement ):
-    """ This obtains the file found on the storage element in the supplied directories and determines whether they exist in the catalog and checks their metadata elements
+    """ This obtains the file found on the storage element in the supplied directories
+        and determines whether they exist in the catalog and checks their metadata elements
     """
     gLogger.info( "-" * 40 )
     gLogger.info( "Performing the SE->FC check at %s" % storageElement )
@@ -676,10 +677,10 @@ class ConsistencyInspector( object ):
 
 
     # For the LFNs found to be registered obtain the file metadata from the catalog and verify against the storage metadata
-    res = self.__getCatalogMetadata( storageMetadata )
+    res = self._getCatalogMetadata( storageMetadata )
     if not res['OK']:
       return res
-    catalogMetadata = res['Value']
+    catalogMetadata, _missingCatalogFiles, _zeroSizeFiles = res['Value']
     sizeMismatch = []
     for lfn, lfnCatalogMetadata in catalogMetadata.iteritems():
       lfnStorageMetadata = storageMetadata[lfn]
@@ -818,7 +819,7 @@ class ConsistencyInspector( object ):
     return S_OK( {'Metadata':allFiles, 'Replicas':replicas['Value']['Successful']} )
 
 
-  def __getCatalogReplicas( self, lfns ):
+  def _getCatalogReplicas( self, lfns ):
     """ Obtain the file replicas from the catalog while checking that there are replicas
     """
     gLogger.info( 'Obtaining the replicas for %s files' % len( lfns ) )
@@ -832,13 +833,10 @@ class ConsistencyInspector( object ):
     for lfn, error in res['Value']['Failed'].iteritems():
       if re.search( 'File has zero replicas', error ):
         zeroReplicaFiles.append( lfn )
-    if zeroReplicaFiles:
-      if not self.interactive:
-        self.__reportProblematicFiles( zeroReplicaFiles, 'LFNZeroReplicas' )
     gLogger.info( 'Obtaining the replicas for files complete' )
-    return S_OK( allReplicas )
+    return S_OK( (allReplicas, zeroReplicaFiles) )
 
-  def __getCatalogMetadata( self, lfns ):
+  def _getCatalogMetadata( self, lfns ):
     """ Obtain the file metadata from the catalog while checking they exist
     """
     if not lfns:
@@ -855,25 +853,5 @@ class ConsistencyInspector( object ):
     for lfn, error in res['Value']['Failed'].iteritems():
       if re.search( 'No such file or directory', error ):
         missingCatalogFiles.append( lfn )
-    if missingCatalogFiles:
-      if not self.interactive:
-        self.__reportProblematicFiles( missingCatalogFiles, 'LFNCatalogMissing' )
-    for lfn, metadata in allMetadata.iteritems():
-      if metadata['Size'] == 0:
-        zeroSizeFiles.append( lfn )
-    if zeroSizeFiles:
-      if not self.interactive:
-        self.__reportProblematicFiles( zeroSizeFiles, 'LFNZeroSize' )
     gLogger.info( 'Obtaining the catalog metadata complete' )
-    return S_OK( allMetadata )
-
-  def __reportProblematicFiles( self, lfns, reason ):
-    """ Simple wrapper function around setFileProblematic """
-    gLogger.info( 'The following %s files were found with %s' % ( len( lfns ), reason ) )
-    for lfn in sorted( lfns ):
-      gLogger.info( lfn )
-    res = self.dic.setFileProblematic( lfns, reason, sourceComponent = 'DataIntegrityClient' )
-    if not res['OK']:
-      gLogger.info( 'Failed to update integrity DB with files', res['Message'] )
-    else:
-      gLogger.info( 'Successfully updated integrity DB with files' )
+    return S_OK( (allMetadata, missingCatalogFiles, zeroSizeFiles) )

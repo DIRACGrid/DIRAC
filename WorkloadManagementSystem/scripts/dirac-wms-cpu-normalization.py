@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
   mjfPower = getPowerFromMJF()
   if mjfPower:
-    gLogger.notice( 'CPU power from MJF is %.1f HS06' % mjfPower )
+    gLogger.notice( 'CPU power from MJF is %.2f HS06' % mjfPower )
   else:
     gLogger.notice( 'MJF not available on this node' )
 

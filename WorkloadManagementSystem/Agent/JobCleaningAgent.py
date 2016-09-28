@@ -55,9 +55,7 @@ class JobCleaningAgent( AgentModule ):
     self.jobByJob = False
     self.throttlingPeriod = 0.
 
-    self.removeStatusDelay = {'Done':7,
-                              'Killed':1,
-                              'Failed':7 }
+    self.removeStatusDelay = {}
 
   #############################################################################
   def initialize( self ):
@@ -82,6 +80,7 @@ class JobCleaningAgent( AgentModule ):
     self.removeStatusDelay['Done'] = self.am_getOption( 'RemoveStatusDelay/Done', 7 )
     self.removeStatusDelay['Killed'] = self.am_getOption( 'RemoveStatusDelay/Killed', 7 )
     self.removeStatusDelay['Failed'] = self.am_getOption( 'RemoveStatusDelay/Failed', 7 )
+    self.removeStatusDelay['Any'] = self.am_getOption( 'RemoveStatusDelay/Any', -1 )
 
     return S_OK()
 
@@ -119,8 +118,12 @@ class JobCleaningAgent( AgentModule ):
     # Remove jobs with final status
     for status in self.removeStatusDelay:
       delay = self.removeStatusDelay[ status ]
+      if delay < 0:
+        # Negative delay means don't delete anything...
+        continue
       condDict = dict( baseCond )
-      condDict[ 'Status' ] = status
+      if status != 'Any':
+        condDict[ 'Status' ] = status
       delTime = str( Time.dateTime() - delay * Time.day )
       result = self.removeJobsByStatus( condDict, delTime )
       if not result['OK']:
@@ -131,7 +134,7 @@ class JobCleaningAgent( AgentModule ):
     """ Remove deleted jobs
     """
     if delay:
-      gLogger.verbose( "Removing jobs with %s and older than %s" % ( condDict, delay ) )
+      gLogger.verbose( "Removing jobs with %s and older than %s day(s)" % ( condDict, delay ) )
       result = self.jobDB.selectJobs( condDict, older = delay, limit = self.maxJobsAtOnce )
     else:
       gLogger.verbose( "Removing jobs with %s " % condDict )

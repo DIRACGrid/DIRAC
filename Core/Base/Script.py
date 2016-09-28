@@ -1,5 +1,7 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
+""" This is the guy that you should use when you develop a script that interacts with DIRAC
+
+    And don't forget to call parseCommandLine()
+"""
 
 import sys
 import os.path
@@ -7,6 +9,8 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
+
+__RCSID__ = "$Id$"
 
 localCfg = LocalConfiguration()
 

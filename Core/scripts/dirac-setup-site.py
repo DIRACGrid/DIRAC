@@ -7,14 +7,29 @@
 Initial installation and configuration of a new DIRAC server (DBs, Services, Agents, Web Portal,...)
 """
 __RCSID__ = "$Id$"
-#
+
+from DIRAC import S_OK
 from DIRAC.Core.Base import Script
+
+class Params:
+
+  def __init__( self ):
+    self.exitOnError = False
+
+  def setExitOnError( self, value ):
+    self.exitOnError = True
+    return S_OK()
+
+cliParams = Params()
+
 Script.disableCS()
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option] ... [cfgfile]' % Script.scriptName,
                                      'Arguments:',
                                      '  cfgfile: DIRAC Cfg with description of the configuration (optional)' ] ) )
+
+Script.registerSwitch( "e", "exitOnError", "flag to exit on error of any component installation", cliParams.setExitOnError )
 
 Script.addDefaultOptionValue( '/DIRAC/Security/UseServerCertificate', 'yes' )
 Script.addDefaultOptionValue( 'LogLevel', 'INFO' )
@@ -30,7 +45,7 @@ if len( args ):
   cfg = args[0]
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
-gComponentInstaller.exitOnError = True
+gComponentInstaller.exitOnError = cliParams.exitOnError
 #
 result = gComponentInstaller.setupSite( Script.localCfg, cfg )
 if not result['OK']:

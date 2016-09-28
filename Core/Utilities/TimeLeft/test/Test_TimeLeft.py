@@ -3,9 +3,11 @@
     (Partially) tested here are SGE and LSF, PBS is TO-DO
 """
 
+#FIXME: remove use of importlib, use @mock.patch decorator instead
+
 # imports
 import unittest, importlib
-from mock import MagicMock
+from mock import MagicMock, patch
 
 from DIRAC import gLogger, S_OK
 
@@ -141,8 +143,9 @@ class TimeLeftSuccess( TimeLeftTestCase ):
       tl.batchPlugin.cpuLimit = 1000
       tl.batchPlugin.wallClockLimit = 1000
 
-      res = tl.getTimeLeft()
-      self.assertEqual( res['OK'], True )
+      with patch( "DIRAC.Core.Utilities.TimeLeft.LSFTimeLeft.runCommand", new=rcMock ):
+        res = tl.getTimeLeft()
+        self.assertEqual( res['OK'], True, res.get('Message', '') )
 
     for batch, retValue in [( 'SGE', SGE_ReturnValue )]:
       self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )

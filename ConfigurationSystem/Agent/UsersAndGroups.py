@@ -1,4 +1,3 @@
-__RCSID__ = "$Id: UsersAndGroups.py 34413 2011-02-19 06:10:18Z rgracian $"
 """
   Update Users and Groups from VOMS on CS
 """
@@ -10,6 +9,8 @@ from DIRAC.Core.Security.VOMSService                 import VOMSService
 from DIRAC.Core.Security                             import Locations, X509Chain
 from DIRAC.Core.Utilities                            import List, Subprocess
 from DIRAC                                           import S_OK, S_ERROR, gConfig
+
+__RCSID__ = "$Id: $"
 
 class UsersAndGroups( AgentModule ):
 

@@ -23,7 +23,11 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
+from DIRAC.Core.Utilities import Profiler
+from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
+gMonitoringReporter = None
 
 __RCSID__ = "$Id$"
 
@@ -36,14 +40,22 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Handler class initialization
     """
-
+    
     # Check the flag for monitoring of the state of the host
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
 
     if hostMonitoring:
-      client = SystemAdministratorClient( 'localhost' )
-      gThreadScheduler.addPeriodicTask( 60, client.storeHostInfo )
+      gThreadScheduler.addPeriodicTask( 60, cls.__storeHostInfo )
+      #the SystemAdministrator service does not has to use the client to report data about the host.
 
+    # Check the flag for dynamic monitoring
+    dynamicMonitoring = cls.srv_getCSOption( 'DynamicMonitoring', False )
+    
+    if dynamicMonitoring:
+      global gMonitoringReporter
+      gMonitoringReporter = MonitoringReporter( db = MonitoringDB(), monitoringType = "ComponentMonitoring" )
+      gThreadScheduler.addPeriodicTask( 120, cls.__storeProfiling )
+      
     return S_OK( 'Initialization went well' )
 
   types_getInfo = [ ]
@@ -455,7 +467,8 @@ class SystemAdministratorHandler( RequestHandler ):
 
     return S_OK( resultDict )
 
-  def __readHostInfo( self ):
+  @staticmethod
+  def __readHostInfo():
     """ Get host current loads, memory, etc
     """
 
@@ -551,6 +564,8 @@ class SystemAdministratorHandler( RequestHandler ):
     infoResult = gComponentInstaller.getInfo( getCSExtensions() )
     if infoResult['OK']:
       result.update( infoResult['Value'] )
+      # the infoResult value is {"Extensions":{'a1':'v1',a2:'v2'}; we convert to a string
+      result.update( {"Extensions":";".join( ["%s:%s" % ( key, value ) for ( key, value ) in infoResult["Value"].get( 'Extensions' ).iteritems()] )} )
 
     # Host certificate properties
     certFile, _keyFile = getHostCertificateAndKeyLocation()
@@ -561,7 +576,7 @@ class SystemAdministratorHandler( RequestHandler ):
       result['SecondsLeft'] = resultCert['Value']['secondsLeft']
       result['CertificateValidity'] = str( timedelta( seconds = resultCert['Value']['secondsLeft'] ) )
       result['CertificateDN'] = resultCert['Value']['subject']
-      result['HostProperties'] = ','.join( resultCert['Value']['groupProperties'] )
+      result['HostProperties'] = resultCert['Value']['groupProperties']
       result['CertificateIssuer'] = resultCert['Value']['issuer']
 
     # Host uptime
@@ -633,22 +648,59 @@ class SystemAdministratorHandler( RequestHandler ):
     except Exception as _e:
       return S_ERROR( 'No documentation was found' )
 
-  types_storeHostInfo = []
-  def export_storeHostInfo( self ):
+  @staticmethod
+  def __storeHostInfo():
     """
     Retrieves and stores into a MySQL database information about the host
     """
-    result = self.__readHostInfo()
+    result = SystemAdministratorHandler.__readHostInfo()
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
-      return S_ERROR( result[ 'Message' ] )
+      return result
 
     fields = result[ 'Value' ]
     fields[ 'Timestamp' ] = datetime.utcnow()
+    fields[ 'Extension' ] = fields[ 'Extensions' ]
     client = ComponentMonitoringClient()
     result = client.updateLog( socket.getfqdn(), fields )
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
-      return S_ERROR( result[ 'Message' ] )
+      return result
 
+    return S_OK( 'Profiling information logged correctly' )
+
+  @staticmethod
+  def __storeProfiling():
+    """
+    Retrieves and stores into ElasticSearch profiling information about the components on the host
+    """
+    result = gComponentInstaller.getStartupComponentStatus( [] ) #TODO: if we have a component which are not running, we will not ptofile the running processes
+    if not result[ 'OK' ]:
+      gLogger.error( result[ 'Message' ] )
+      return S_ERROR( result[ 'Message' ] )
+    startupComps = result[ 'Value' ]
+
+    result = gComponentInstaller.getSetupComponents()
+    if not result[ 'OK' ]:
+      gLogger.error( result[ 'Message' ] )
+      return S_ERROR( result[ 'Message' ] )
+    setupComps = result[ 'Value' ]
+
+    # Get the profiling information for every running component and send it to MonitoringSystem
+    for cType in setupComps:
+      for system in setupComps[ cType ]:
+        for comp in setupComps[ cType ][ system ]:
+          pid = startupComps[ '%s_%s' % ( system, comp ) ][ 'PID' ]
+          profiler = Profiler.Profiler( pid )
+          result = profiler.getAllProcessData()
+          if result[ 'OK' ]:
+            log = result[ 'Value' ][ 'stats' ]
+            log[ 'host' ] = socket.getfqdn()
+            log[ 'component' ] = '%s_%s' % ( system, comp )
+            log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ].isoformat()
+            gMonitoringReporter.addRecord( log )
+          else:
+            gLogger.error( result[ 'Message' ] )
+            return result
+    gMonitoringReporter.commit()
     return S_OK( 'Profiling information logged correctly' )
