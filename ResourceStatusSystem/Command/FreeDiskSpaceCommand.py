@@ -4,11 +4,12 @@
 
 '''
 
-from datetime                                                   import datetime
-from DIRAC                                                      import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-from DIRAC.Core.DISET.RPCClient                                 import RPCClient
-from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from datetime                                        import datetime
+from DIRAC                                           import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.ResourceStatusSystem.Command.Command      import Command
+from DIRAC.Core.DISET.RPCClient                      import RPCClient
+from DIRAC.ResourceStatusSystem.Utilities            import CSHelpers
+from DIRAC.Resources.Storage.StorageElement          import StorageElement
 
 __RCSID__ = '$Id:  $'
 
@@ -24,40 +25,6 @@ class FreeDiskSpaceCommand( Command ):
 
     self.rpc = None
     self.rsClient = None
-
-  def getUrl(self, SE, protocol = None ):
-    """
-    Gets the url of a storage element from the CS.
-    If protocol is set, then it is going to fetch the
-    url only if it uses the given protocol.
-
-    :param SE: String
-    :param protocol: String
-    :return: String
-    """
-    attributes = [ "Protocol", "Host", "Port", "Path"]
-
-    result = ""
-    for attribute in attributes:
-      res = gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/%s" % ( SE, attribute ) )
-
-      if protocol:
-
-        # Not case-sensitive
-        protocol = protocol.lower()
-
-        if attribute is "Protocol" and res != protocol:
-          result = None
-          break
-
-      if attribute is "Protocol":
-        result += res + "://"
-      elif attribute is "Port":
-        result += ":" + res
-      else:
-        result += res
-
-    return result
 
   def _prepareCommand( self ):
     '''
@@ -85,7 +52,9 @@ class FreeDiskSpaceCommand( Command ):
       if not elementName[ 'OK' ]:
         return elementName
 
-    elementURL = self.getUrl(elementName, "dips")
+    se = StorageElement(elementName)
+
+    elementURL = se.getStorageParameters(protocol = "dips")['URLBase']
 
     if not elementURL:
       gLogger.info( "Not a DIPS storage element, skipping..." )
