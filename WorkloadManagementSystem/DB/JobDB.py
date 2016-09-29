@@ -277,10 +277,7 @@ class JobDB( DB ):
         if not ret['OK']:
           return ret
         paramNameList.append( ret['Value'] )
-      if len( paramNameList ) == 1:
-        cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name=%s" % ( e_jobID, paramNameList[0] )
-      else:
-        cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % ( e_jobID, ','.join( paramNameList ) )
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % ( e_jobID, ','.join( paramNameList ) )
       result = self._query( cmd )
       if result['OK']:
         if result['Value']:
