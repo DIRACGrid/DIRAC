@@ -595,7 +595,7 @@ class FTSJob( object ):
     for ftsFile in self:
       trans = fts3.new_transfer( ftsFile.SourceSURL,
                                 ftsFile.TargetSURL,
-                                checksum = ftsFile.Checksum,
+                                checksum = 'ADLER32:%s'%ftsFile.Checksum,
                                 filesize = ftsFile.Size )
       transfers.append( trans )
 
