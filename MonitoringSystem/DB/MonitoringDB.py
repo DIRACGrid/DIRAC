@@ -264,9 +264,10 @@ class MonitoringDB( ElasticDB ):
       for value in bucket['tt'].buckets: 
         # each bucket contains an agregation called tt which sum/avg of the metric.
         if value.key not in result:
-          result[value.key] = {bucketTime:value.m1.value}
+          result[value.key] = {bucketTime:value.m1.value if value.m1.value else 0 } #TODO: this is kind of hack. 
+          #we can use a default value for pipeline aggregation. EL promised that we can use default value for simple aggregation. Later to be checked.
         else:
-          result[value.key].update( {bucketTime:value.m1.value} )    
+          result[value.key].update( {bucketTime:value.m1.value if value.m1.value else 0} )    
     # the result format is { 'grouping':{timestamp:value, timestamp:value} for example : {u'Bookkeeping_BookkeepingManager': {1474300800: 4.0, 1474344000: 4.0, 1474331400: 4.0, 1
     # 474302600: 4.0, 1474365600: 4.0, 1474304400: 4.0, 1474320600: 4.0, 1474360200: 4.0, 1474306200: 4.0, 1474356600: 4.0, 1474336800: 4.0, 1474326000: 4.0, 1474315200: 4.0, 
     # 1474281000: 4.0, 1474309800: 4.0, 1474338600: 4.0, 1474311600: 4.0, 1474317000: 4.0, 1474367400: 4.0, 1474333200: 4.0, 1474284600: 4.0, 1474362000: 4.0, 
