@@ -277,8 +277,7 @@ class JobDB( DB ):
         if not ret['OK']:
           return ret
         paramNameList.append( ret['Value'] )
-      paramNames = ','.join( paramNameList )
-      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % ( e_jobID, paramNames )
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % ( e_jobID, ','.join( paramNameList ) )
       result = self._query( cmd )
       if result['OK']:
         if result['Value']:
@@ -1311,7 +1310,7 @@ class JobDB( DB ):
       return S_ERROR( 'Job ' + str( jobID ) + ' not found in the system' )
 
     if not resultDict['VerifiedFlag']:
-      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % (
+      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % ( 
                                                                              jobID,
                                                                              resultDict['Status'],
                                                                              resultDict['MinorStatus'] ) )
