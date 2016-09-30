@@ -1,3 +1,22 @@
+[v6r15p18]
+
+*Configuration
+FIX: Utilities - take into account WallClock time limit while the MaxCPUTime
+     evaluation in the Bdii@CSAgent 
+
+*DMS
+FIX: FTSJob - specify checksum type at FTS request submission
+
+*StorageManagement
+FIX: StorageManagerClient - in getFilesToStage() avoid exception in case
+     of no active replicas
+
+*Resources
+FIX: StorageBase - in getParameters() added baseURL in the list of parameters returned 
+
+*WMS
+FIX: CPUNormalization - minor code rearrangement
+
 [v6r15p17]
 
 *Core
