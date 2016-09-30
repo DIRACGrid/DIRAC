@@ -67,9 +67,7 @@ def getFilesToStage( lfnList ):
   for offlineLFN in offlineLFNs:
     ses = lfnListReplicas['Value']['Successful'][offlineLFN].keys()
     if ses:
-      random.shuffle( ses )
-      se = ses[0]
-      offlineLFNsDict.setdefault( se, list() ).append( offlineLFN )
+      offlineLFNsDict.setdefault( random.choice( ses ), list() ).append( offlineLFN )
 
   return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict} )
 
