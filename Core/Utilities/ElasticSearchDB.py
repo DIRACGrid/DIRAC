@@ -292,6 +292,7 @@ class ElasticSearchDB( object ):
                                             field = key )
     
     try:
+      query = query.extra( size = 0 ) #do not need the raw data. 
       gLogger.debug( "Query", query.to_dict() )
       result = query.execute()
     except TransportError as e:
