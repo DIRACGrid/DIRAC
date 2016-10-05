@@ -51,7 +51,7 @@ BASE_PATH = ""
 MAX_STORAGE_SIZE = 0
 USE_TOKENS = False
 
-UNIT_CONVERSION = { "KB": 1024, "MB": 1.048576e6, "GB": 1.073741824e9, "TB": 1.099511627776e12 }
+UNIT_CONVERSION = { "KB": 1024, "MB": 1024 * 1024, "GB": 1024 * 1024 * 1024, "TB": 1024 * 1024 * 1024 * 1024 }
 
 def getDiskSpace(path, size = 'TB', total = False):
     """
