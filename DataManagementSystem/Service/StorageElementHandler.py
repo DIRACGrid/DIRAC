@@ -51,6 +51,8 @@ BASE_PATH = ""
 MAX_STORAGE_SIZE = 0
 USE_TOKENS = False
 
+UNIT_CONVERSION = { "KB": 1024, "MB": 1.048576e6, "GB": 1.073741824e9, "TB": 1.099511627776e12 }
+
 def getDiskSpace(path, size = 'TB', total = False):
     """
       Returns disk usage of the given path.
@@ -58,29 +60,25 @@ def getDiskSpace(path, size = 'TB', total = False):
       If total is set to true, the total disk space will be returned instead.
     """
 
-    if size.upper() == "KB":
-      convert = 1024
-    elif size.upper() == "MB":
-      convert = 1.048576e6
-    elif size.upper() == "GB":
-      convert = 1.073741824e9
-    elif size.upper() == "TB":
-      convert = 1.099511627776e12
-    else:
+    size_to_convert = size.upper()
+    if size_to_convert not in UNIT_CONVERSION:
       return S_ERROR( "No valid size specified" )
+    convert = UNIT_CONVERSION[size_to_convert]
 
     try:
       st = os.statvfs(path)
 
       if total:
         # return total space
-        result = (st.f_blocks * st.f_frsize) / convert
+        queried_size = st.f_blocks
       else:
         # return free space
-        result = (st.f_bavail * st.f_frsize) / convert
+        queried_size = st.f_bavail
+
+      result = ( queried_size * st.f_frsize ) / convert
 
     except OSError as e:
-      return S_ERROR( errno.EIO, "Error while getting the available disk space: %s", repr(e) )
+      return S_ERROR( errno.EIO, "Error while getting the available disk space: %s" % repr(e) )
 
     return S_OK( round(result, 2) )
 
