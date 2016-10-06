@@ -86,6 +86,7 @@ class StorageBase( object ):
     parameterDict = dict( self.protocolParameters )
     parameterDict["StorageName"] = self.name
     parameterDict["PluginName"] = self.pluginName
+    parameterDict['URLBase'] = self.getURLBase().get( 'Value', '' )
     return parameterDict
 
   def exists( self, *parms, **kws ):
