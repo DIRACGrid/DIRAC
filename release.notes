@@ -1,4 +1,4 @@
-[v6r16-pre5]
+[v6r16-pre6]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
@@ -20,6 +20,25 @@ NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move
 *Resources
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
+
+[v6r15p18]
+
+*Configuration
+FIX: Utilities - take into account WallClock time limit while the MaxCPUTime
+     evaluation in the Bdii@CSAgent 
+
+*DMS
+FIX: FTSJob - specify checksum type at FTS request submission
+
+*StorageManagement
+FIX: StorageManagerClient - in getFilesToStage() avoid exception in case
+     of no active replicas
+
+*Resources
+FIX: StorageBase - in getParameters() added baseURL in the list of parameters returned 
+
+*WMS
+FIX: CPUNormalization - minor code rearrangement
 
 [v6r15p17]
 
