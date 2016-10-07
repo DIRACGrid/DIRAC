@@ -55,7 +55,7 @@ class CheckStatusCommand( Command ):
                       'FORMATED_START_DATE': downtimes[0].strftime('%Y-%m-%d %H:%M'),
                       'FORMATED_END_DATE': downtimes[3].strftime('%Y-%m-%d %H:%M') }
 
-      r = requests.get('https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime&topentity=' + hostname, verify=False)
+      r = requests.get('https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime&topentity=' + hostname)
       doc = minidom.parseString( r.text )
       downtimeElements = doc.getElementsByTagName( "DOWNTIME" )
 
