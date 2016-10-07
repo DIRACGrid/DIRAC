@@ -667,6 +667,8 @@ class ReleaseConfig( object ):
       return False
 
   def getLCGVersion( self, lcgVersion = "" ):
+    if lcgVersion:
+      return lcgVersion
     for objName in self.__projectsLoadedBy:
       try:
         return self.__prjRelCFG[ self.__projectName ][ cliParams.release ].get( "Releases/%s/LcgVer" % cliParams.release, lcgVersion )
