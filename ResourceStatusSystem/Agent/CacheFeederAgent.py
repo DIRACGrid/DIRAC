@@ -45,6 +45,8 @@ class CacheFeederAgent( AgentModule ):
 
     self.commands[ 'Downtime' ] = [ { 'Downtime'            : {} } ]
     self.commands[ 'SpaceTokenOccupancy' ] = [ { 'SpaceTokenOccupancy' : {} } ]
+    self.commands[ 'GOCDBSync' ] = [ { 'GOCDBSync' : {} } ]
+
 
 
     # PilotsCommand
