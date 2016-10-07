@@ -22,13 +22,13 @@ NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to H
 
 UNITS = { 'HS06': 1. , 'SI00': 1. / 250. }
 
-def getMachineFeatures():
-  """ This uses the _old_ MJF information """
+def __getFeatures( envVariable, items ):
+  """ Extract features """
   features = {}
-  featuresDir = os.environ.get( "MACHINEFEATURES" )
+  featuresDir = os.environ.get( envVariable )
   if featuresDir is None:
     return features
-  for item in ( 'hs06', 'jobslots', 'log_cores', 'phys_cores' ):
+  for item in items:
     fname = os.path.join( featuresDir, item )
     try:
       # Only keep features that do exist
@@ -36,22 +36,14 @@ def getMachineFeatures():
     except IOError:
       pass
   return features
+
+def getMachineFeatures():
+  """ This uses the _old_ MJF information """
+  return __getFeatures( "MACHINEFEATURES", ( 'hs06', 'jobslots', 'log_cores', 'phys_cores' ) )
 
 def getJobFeatures():
   """ This uses the _new_ MJF information """
-  features = {}
-  featuresDir = os.environ.get( "JOBFEATURES" )
-  if featuresDir is None:
-    return features
-  for item in ( 'hs06_job', 'allocated_cpu' ):
-    fname = os.path.join( featuresDir, item )
-    try:
-      # Only keep features that do exist
-      features[item] = urllib.urlopen( fname ).read()
-    except IOError:
-      pass
-  return features
-
+  return __getFeatures( "JOBFEATURES", ( 'hs06_job', 'allocated_cpu' ) )
 
 def getPowerFromMJF():
   """ Extracts the machine power from either JOBFEATURES or MACHINEFEATURES """
