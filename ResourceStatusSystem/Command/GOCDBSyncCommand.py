@@ -34,10 +34,15 @@ class CheckStatusCommand( Command ):
     else:
       self.rmClient = ResourceManagementClient()
 
+    self.seenHostnames = []
+
   def doNew( self, masterParams = None ):
     """
     Gets the downtime IDs and dates of a given hostname from the local database and compares the results
     with the remote database of GOCDB. If the downtime dates have been changed it updates the local database.
+
+    :param: `masterParams` - string
+    :return: S_OK / S_ERROR
     """
 
     if masterParams:
@@ -55,8 +60,13 @@ class CheckStatusCommand( Command ):
                       'FORMATED_START_DATE': downtimes[0].strftime('%Y-%m-%d %H:%M'),
                       'FORMATED_END_DATE': downtimes[3].strftime('%Y-%m-%d %H:%M') }
 
-      r = requests.get('https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime&topentity=' + hostname)
-      doc = minidom.parseString( r.text )
+      try:
+        response = requests.get('https://goc.egi.eudd/gocdbpi_v4/public/?method=get_downtime&topentity=' + hostname, verify=False)
+        response.raise_for_status()
+      except requests.exceptions.RequestException as e:
+          return S_ERROR("Error %s" % e)
+
+      doc = minidom.parseString( response.text )
       downtimeElements = doc.getElementsByTagName( "DOWNTIME" )
 
       for dtElement in downtimeElements:
@@ -90,16 +100,26 @@ class CheckStatusCommand( Command ):
     """
     This method calls the doNew method for each hostname that exists
     in the DowntimeCache table of the local database.
+
+    :return: S_OK / S_ERROR
     """
 
+    # Query DB for all downtimes
     result = self.rmClient.selectDowntimeCache()
     if not result[ 'OK' ]:
       return result
 
     for data in result['Value']:
-      # Get the hostname
+
+      # If already processed don't do it again
+      if data[4] in self.seenHostnames:
+        continue
+
+      # data[4] contains the hostname
       result = self.doNew( data[4] )
       if not result[ 'OK' ]:
         return result
+      else:
+        self.seenHostnames.append( data[4] )
 
     return S_OK()
