@@ -1,4 +1,4 @@
-[v6r16-pre6]
+[v6r16-pre7]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
@@ -20,6 +20,19 @@ NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move
 *Resources
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
+
+[v6r15p19]
+
+*Core
+FIX: dirac-install - lcg-binding version specified in the command switch
+     overrides the configuration option value
+     
+*DMS
+FIX: RemoveFile operation - Remove all files that are not at banned SEs
+
+*TMS
+FIX: FileReport - after successful update of input files status, clear the 
+     cache disctionary to avoid double update      
 
 [v6r15p18]
 
