@@ -34,7 +34,7 @@ class CheckStatusCommand( Command ):
     else:
       self.rmClient = ResourceManagementClient()
 
-    self.seenHostnames = []
+    self.seenHostnames = set()
 
   def doNew( self, masterParams = None ):
     """
@@ -119,7 +119,7 @@ class CheckStatusCommand( Command ):
       result = self.doNew( data[4] )
       if not result[ 'OK' ]:
         return result
-      else:
-        self.seenHostnames.append( data[4] )
+
+      self.seenHostnames.add( data[4] )
 
     return S_OK()
