@@ -61,7 +61,7 @@ class CheckStatusCommand( Command ):
                       'FORMATED_END_DATE': downtimes[3].strftime('%Y-%m-%d %H:%M') }
 
       try:
-        response = requests.get('https://goc.egi.eudd/gocdbpi_v4/public/?method=get_downtime&topentity=' + hostname, verify=False)
+        response = requests.get('https://goc.egi.eudd/gocdbpi_v4/public/?method=get_downtime&topentity=' + hostname)
         response.raise_for_status()
       except requests.exceptions.RequestException as e:
           return S_ERROR("Error %s" % e)
