@@ -7,7 +7,6 @@ import unittest
 import importlib
 
 from DIRAC.ResourceStatusSystem.Command.GOCDBSyncCommand import GOCDBSyncCommand
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC import gLogger, S_OK
 
 __RCSID__ = '$Id:  $'
@@ -23,15 +22,12 @@ class GOCDBSyncCommand_TestCase( unittest.TestCase ):
     gLogger.setLevel( 'DEBUG' )
     self.GOCDBSyncCommandModule = importlib.import_module( 'DIRAC.ResourceStatusSystem.Command.GOCDBSyncCommand' )
     self.mock_GOCDBClient = mock.MagicMock()
-    self.mock_rsClient = ResourceManagementClient
-    self.mock_rsClient = mock.MagicMock()
 
   def tearDown( self ):
     """
     TearDown
     """
     del self.mock_GOCDBClient
-    del self.mock_rsClient
     del self.GOCDBSyncCommandModule
 
 ################################################################################
@@ -63,6 +59,8 @@ class GOCDBSyncCommand_Success( GOCDBSyncCommand_TestCase ):
     """
 
     command = GOCDBSyncCommand()
+    command.rmClient = mock.MagicMock()
+
     res = command.doNew()
     self.assertEqual( False, res['OK'] )
 
