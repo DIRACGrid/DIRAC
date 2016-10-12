@@ -18,11 +18,11 @@ from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceM
 
 __RCSID__ = '$Id:  $'
 
-class CheckStatusCommand( Command ):
+class GOCDBSyncCommand( Command ):
 
   def __init__( self, args = None, clients = None ):
 
-    super( CheckStatusCommand, self ).__init__( args, clients )
+    super( GOCDBSyncCommand, self ).__init__( args, clients )
 
     if 'GOCDBClient' in self.apis:
       self.gClient = self.apis[ 'GOCDBClient' ]
