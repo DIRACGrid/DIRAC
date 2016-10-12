@@ -20,9 +20,7 @@ class GOCDBSyncCommand_TestCase( unittest.TestCase ):
     Setup
     """
     gLogger.setLevel( 'DEBUG' )
-    self.CSHelpersMock = mock.MagicMock()
     self.GOCDBSyncCommandModule = importlib.import_module( 'DIRAC.ResourceStatusSystem.Command.GOCDBSyncCommand' )
-    self.GOCDBSyncCommandModule.CSHelpers = self.CSHelpersMock
     self.mock_GOCDBClient = mock.MagicMock()
 
   def tearDown( self ):
