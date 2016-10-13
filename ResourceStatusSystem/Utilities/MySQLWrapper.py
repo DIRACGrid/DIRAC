@@ -159,14 +159,14 @@ def select( rssDB, params, meta ):
   elif 'newer' in meta:
     field, newer = meta[ 'newer' ]
 
-  paramsTuple = { 'tableName': tableName, 'condDict': params, 'outFields': outFields,
+  paramsDict = { 'tableName': tableName, 'condDict': params, 'outFields': outFields,
                   'limit': limit, 'orderAttribute': order, 'older': older,
                   'newer': newer, 'timeStamp': field }
 
   if ( 'distinct' in meta ) and ( meta['distinct'] is True ):
-    selectResult = rssDB.database.getFields( distinct = True, **paramsTuple  )
+    selectResult = rssDB.database.getFields( distinct = True, **paramsDict  )
   else:
-    selectResult = rssDB.database.getFields( **paramsTuple )
+    selectResult = rssDB.database.getFields( **paramsDict )
 
   selectResult[ 'Columns' ] = outFields
   return selectResult
