@@ -34,8 +34,6 @@ class GOCDBSyncCommand( Command ):
     else:
       self.rmClient = ResourceManagementClient()
 
-    self.seenHostnames = set()
-
   def doNew( self, masterParams = None ):
     """
     Gets the downtime IDs and dates of a given hostname from the local database and compares the results
@@ -105,21 +103,15 @@ class GOCDBSyncCommand( Command ):
     """
 
     # Query DB for all downtimes
-    result = self.rmClient.selectDowntimeCache()
+    result = self.rmClient.selectDowntimeCache( meta = { 'distinct': True } )
     if not result[ 'OK' ]:
       return result
 
     for data in result['Value']:
 
-      # If already processed don't do it again
-      if data[4] in self.seenHostnames:
-        continue
-
       # data[4] contains the hostname
       result = self.doNew( data[4] )
       if not result[ 'OK' ]:
         return result
-
-      self.seenHostnames.add( data[4] )
 
     return S_OK()

@@ -106,7 +106,7 @@ def select( rssDB, params, meta ):
     Method that transforms the RSS DB select into the MySQL getFields method.
   '''
 
-  accepted_keys = ( 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys', 'older', 'newer' )
+  accepted_keys = ( 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys', 'older', 'newer', 'distinct' )
 
   params = _capitalize( params )
   params = _discardNones( params )
@@ -159,10 +159,15 @@ def select( rssDB, params, meta ):
   elif 'newer' in meta:
     field, newer = meta[ 'newer' ]
 
-  selectResult = rssDB.database.getFields( tableName, condDict = params,
-                                           outFields = outFields, limit = limit,
-                                           orderAttribute = order, older = older,
-                                           newer = newer, timeStamp = field )
+  paramsTuple = { 'tableName': tableName, 'condDict': params, 'outFields': outFields,
+                  'limit': limit, 'orderAttribute': order, 'older': older,
+                  'newer': newer, 'timeStamp': field }
+
+  if ( 'distinct' in meta ) and ( meta['distinct'] is True ):
+    selectResult = rssDB.database.getFields( distinct = True, **paramsTuple  )
+  else:
+    selectResult = rssDB.database.getFields( **paramsTuple )
+
   selectResult[ 'Columns' ] = outFields
   return selectResult
 

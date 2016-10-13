@@ -1280,14 +1280,15 @@ class MySQL( object ):
                  limit = False, conn = None,
                  older = None, newer = None,
                  timeStamp = None, orderAttribute = None,
-                 greater = None, smaller = None ):
+                 greater = None, smaller = None, distinct = False ):
     """
       Select "outFields" from "tableName" with condDict
       N records can match the condition
       return S_OK( tuple(Field,Value) )
       if outFields is None all fields in "tableName" are returned
       if limit is not False, the given limit is set
-      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+      inValues are properly escaped using the _escape_string method, they can be single values or lists of values
+      if distinct is set to True then the select query will be executed based on a 'Name' column.
     """
     table = _quotedList( [tableName] )
     if not table:
@@ -1321,8 +1322,10 @@ class MySQL( object ):
     except Exception as x:
       return S_ERROR( DErrno.EMYSQL, x )
 
-    return self._query( 'SELECT %s FROM %s %s' %
-                        ( quotedOutFields, table, condition ), conn, debug = True )
+    if distinct:
+      return self._query( 'SELECT DISTINCT Name FROM %s %s' % ( table, condition ), conn, debug = True )
+    else:
+      return self._query( 'SELECT %s FROM %s %s' % ( quotedOutFields, table, condition ), conn, debug = True )
 
 #############################################################################
   def deleteEntries( self, tableName,
