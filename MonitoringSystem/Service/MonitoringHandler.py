@@ -176,8 +176,7 @@ class MonitoringHandler( RequestHandler ):
         lastSeconds = long( reportRequestExtra[ 'lastSeconds' ] )
       except ValueError:
         gLogger.error( "lastSeconds key must be a number" )
-        return S_ERROR( "Value Error" )
-      # TODO: Maybe we can have last hour in the monitoring
+        return S_ERROR( "Value Error" )      
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
       now = Time.dateTime() #this is an UTC time
