@@ -243,8 +243,9 @@ class ElasticSearchDB( object ):
       try:
         # if the timestamp is not provided, we insert the UTC epoch
         body['_source']['timestamp'] = int( row.get( 'timestamp', int( Time.toEpoch() ) ) ) * 1000
-      except TypeError as e:
+      except (TypeError, ValueError) as e:
         # in case we are not able to convert the timestamp to epoch time....
+        gLogger.error( "Wrong timestamp", e )
         body['_source']['timestamp'] = int( Time.toEpoch() ) * 1000
       docs += [body]
     try:

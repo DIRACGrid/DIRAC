@@ -701,7 +701,7 @@ class SystemAdministratorHandler( RequestHandler ):
             log = result[ 'Value' ][ 'stats' ]
             log[ 'host' ] = socket.getfqdn()
             log[ 'component' ] = instance
-            log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ].isoformat()
+            log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ]
             gMonitoringReporter.addRecord( log )
           else:
             gLogger.error( result[ 'Message' ] )
