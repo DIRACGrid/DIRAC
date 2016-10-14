@@ -241,9 +241,11 @@ class ElasticSearchDB( object ):
       }
       body['_source'] = row
       try:
-        body['_source']['timestamp'] = datetime.fromtimestamp( row.get( 'timestamp', int( Time.toEpoch() ) ) )
+        # if the timestamp is not provided, we insert the UTC epoch
+        body['_source']['timestamp'] = int( row.get( 'timestamp', int( Time.toEpoch() ) ) ) * 1000
       except TypeError as e:
-        body['_source']['timestamp'] = row.get( 'timestamp' )
+        # in case we are not able to convert the timestamp to epoch time....
+        body['_source']['timestamp'] = int( Time.toEpoch() ) * 1000
       docs += [body]
     try:
       res = helpers.bulk( self.__client, docs, chunk_size = self.__chunk_size )

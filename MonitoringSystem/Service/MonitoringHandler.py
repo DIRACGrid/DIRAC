@@ -180,7 +180,7 @@ class MonitoringHandler( RequestHandler ):
       # TODO: Maybe we can have last hour in the monitoring
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
-      now = Time.dateTime()
+      now = Time.dateTime() #this is an UTC time
       reportRequest[ 'endTime' ] = now
       reportRequest[ 'startTime' ] = now - datetime.timedelta( seconds = lastSeconds )
     else:
