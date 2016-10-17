@@ -1,7 +1,7 @@
 """ ResourceStatus
 
   Module use to switch between the CS and the RSS.
-
+  test
 """
 
 import datetime
