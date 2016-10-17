@@ -2,16 +2,16 @@
 Class for management of Stomp MQ connections, e.g. RabbitMQ
 """
 
-__RCSID__ = "$Id$"
-
 import json
 import stomp
 import threading
 
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Resources.MessageQueue.MQConnection import MQConnection
-from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import EMQNOM, EMQUKN, EMQCONN
+
+__RCSID__ = "$Id$"
 
 class StompMQConnection( MQConnection ):
   """
