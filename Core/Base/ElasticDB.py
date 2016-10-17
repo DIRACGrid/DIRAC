@@ -44,14 +44,14 @@ class ElasticDB( ElasticSearchDB ):
     self.__dbHost = dbParameters[ 'Host' ]
     self.__dbPort = dbParameters[ 'Port' ]
     #we can have db which does not have any authentication...
-    self.__userName = ''
-    if 'UserName' in dbParameters:
-      self.__userName = dbParameters[ 'UserName' ]
+    self.__user = ''
+    if 'User' in dbParameters:
+      self.__user = dbParameters[ 'User' ]
     self.__dbPassword = ''
     if 'Password' in dbParameters:
       self.__dbPassword = dbParameters[ 'Password' ]
     
-    super( ElasticDB, self ).__init__( self.__dbHost, self.__dbPort, self.__userName, self.__dbPassword, indexPrefix )
+    super( ElasticDB, self ).__init__( self.__dbHost, self.__dbPort, self.__user, self.__dbPassword, indexPrefix )
 
     if not self._connected:
       raise RuntimeError( 'Can not connect to DB %s, exiting...' % self.clusterName )

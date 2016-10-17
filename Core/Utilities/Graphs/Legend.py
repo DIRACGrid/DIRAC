@@ -19,7 +19,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import types
 
-class Legend:
+class Legend( object ):
 
   def __init__(self,data=None,axes=None,*aw,**kw): 
     

@@ -589,15 +589,15 @@ def getElasticDBParameters( fullname ):
     dbPort = int( result['Value'] )
   parameters[ 'Port' ] = dbPort
 
-  result = gConfig.getOption( cs_path + '/UserName' )
+  result = gConfig.getOption( cs_path + '/User' )
   if not result['OK']:
     # No individual port number found, try at the common place
-    result = gConfig.getOption( '/Systems/NoSQLDatabases/UserName' )
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/User' )
     if result['OK']:
       dbuserName = result['Value']
   else:
     dbuserName = result['Value']
-  parameters[ 'UserName' ] = dbuserName
+  parameters[ 'User' ] = dbuserName
 
   result = gConfig.getOption( cs_path + '/Password' )
   if not result['OK']:
