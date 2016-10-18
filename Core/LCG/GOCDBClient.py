@@ -4,6 +4,7 @@
 import urllib2
 import time
 import socket
+import requests
 
 from datetime import datetime, timedelta
 from xml.dom import minidom
@@ -189,6 +190,26 @@ class GOCDBClient( object ):
       currentDTLinkList.append(gSiteDT[dt]['GOCDB_PORTAL_URL'])
 
     return S_OK(currentDTLinkList)
+
+#############################################################################
+
+  def getHostnameDowntime( self, hostname, startDate = None, ongoing = False):
+
+    params = hostname
+
+    if startDate:
+      params += '&startdate=' + startDate
+
+    if ongoing:
+      params += '&ongoing_only=yes'
+
+    try:
+      response = requests.get('https://goc.egi.eudd/gocdbpi_v4/public/?method=get_downtime&topentity=' + params)
+      response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+      return S_ERROR("Error %s" % e)
+
+    return S_OK(response.text)
 
 #############################################################################
 

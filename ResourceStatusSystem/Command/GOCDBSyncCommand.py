@@ -8,8 +8,8 @@
 '''
 
 import errno
-import requests
 import xml.dom.minidom as minidom
+from datetime     import datetime
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
 from DIRAC.Core.LCG.GOCDBClient                                 import _parseSingleElement
@@ -33,6 +33,8 @@ class GOCDBSyncCommand( Command ):
       self.rmClient = self.apis[ 'ResourceManagementClient' ]
     else:
       self.rmClient = ResourceManagementClient()
+
+    self.seenHostnames = set()
 
   def doNew( self, masterParams = None ):
     """
@@ -58,13 +60,9 @@ class GOCDBSyncCommand( Command ):
                       'FORMATED_START_DATE': downtimes[0].strftime('%Y-%m-%d %H:%M'),
                       'FORMATED_END_DATE': downtimes[3].strftime('%Y-%m-%d %H:%M') }
 
-      try:
-        response = requests.get('https://goc.egi.eudd/gocdbpi_v4/public/?method=get_downtime&topentity=' + hostname)
-        response.raise_for_status()
-      except requests.exceptions.RequestException as e:
-          return S_ERROR("Error %s" % e)
+      response = self.gClient.getHostnameDowntime(hostname, datetime.utcnow().strftime('%Y-%m-%d'), True)
 
-      doc = minidom.parseString( response.text )
+      doc = minidom.parseString( response )
       downtimeElements = doc.getElementsByTagName( "DOWNTIME" )
 
       for dtElement in downtimeElements:
@@ -103,15 +101,21 @@ class GOCDBSyncCommand( Command ):
     """
 
     # Query DB for all downtimes
-    result = self.rmClient.selectDowntimeCache( meta = { 'distinct': True } )
+    result = self.rmClient.selectDowntimeCache()
     if not result[ 'OK' ]:
       return result
 
     for data in result['Value']:
 
+      # If already processed don't do it again
+      if data[4] in self.seenHostnames:
+        continue
+
       # data[4] contains the hostname
       result = self.doNew( data[4] )
       if not result[ 'OK' ]:
         return result
+
+      self.seenHostnames.add( data[4] )
 
     return S_OK()
