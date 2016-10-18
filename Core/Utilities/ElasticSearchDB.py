@@ -39,13 +39,13 @@ class ElasticSearchDB( object ):
     :param str host: name of the database for example: MonitoringDB
     :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
     :param bool debug: save the debug information to a file
-    :param str use: user name of the db
+    :param str user: user name to access the db
     :param str password: if the db is password protected we need to provide a password
     :param str indexPrefix it is the indexPrefix used to get all indexes 
     """
     self.__indexPrefix = indexPrefix
     self._connected = False
-    if password and password:
+    if user and password:
       self.__url = "https://%s:%s@%s:%d" % ( user, password, host, port )
     else:
       self.__url = "%s:%d" % ( host, port )

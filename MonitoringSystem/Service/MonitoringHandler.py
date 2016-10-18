@@ -47,10 +47,10 @@ class MonitoringHandler( RequestHandler ):
     gLogger.info( "Data will be written into %s" % dataPath )
     mkDir( dataPath )
     try:
-      testFile = "%s/acc.jarl.test" % dataPath
-      fd = file( testFile, "w" )
-      fd.close()
-      os.unlink( testFile )
+      testFile = "%s/moni.plot.test" % dataPath
+      with open( testFile, "w" ) as fd:
+        fd.close()
+        os.unlink( testFile )
     except IOError as err:
       gLogger.fatal( "Can't write to %s" % dataPath, err )
       return S_ERROR( "Data location is not writable: %s" % repr( err ) )
