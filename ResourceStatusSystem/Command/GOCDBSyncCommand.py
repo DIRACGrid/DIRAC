@@ -62,7 +62,10 @@ class GOCDBSyncCommand( Command ):
 
       response = self.gClient.getHostnameDowntime(hostname, datetime.utcnow().strftime('%Y-%m-%d'), True)
 
-      doc = minidom.parseString( response )
+      if not response['OK']:
+        return response
+
+      doc = minidom.parseString( response['Value'] )
       downtimeElements = doc.getElementsByTagName( "DOWNTIME" )
 
       for dtElement in downtimeElements:
