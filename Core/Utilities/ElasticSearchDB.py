@@ -245,11 +245,17 @@ class ElasticSearchDB( object ):
           '_source': {}
       }
       body['_source'] = row
+      timestamp = row.get( 'timestamp', int( Time.toEpoch() ) ) #if the timestamp is not provided, we use the current utc time.
       try:
-        # if the timestamp is not provided, we insert the UTC epoch
-        body['_source']['timestamp'] = int( row.get( 'timestamp', int( Time.toEpoch() ) ) ) * 1000
+        if isinstance(timestamp, datetime):
+          body['_source']['timestamp'] = int( timestamp.strftime('%s') ) * 1000
+        elif isinstance(timestamp, basestring):
+          timeobj = datetime.strptime( timestamp, '%Y-%m-%d %H:%M:%S.%f' )
+          body['_source']['timestamp'] = int( timeobj.strftime('%s') ) * 1000
+        else: #we assume  the timestamp is an unix epoch time (integer).
+          body['_source']['timestamp'] = timestamp  * 1000
       except (TypeError, ValueError) as e:
-        # in case we are not able to convert the timestamp to epoch time....
+        # in case we are not able to convert the timestamp to epoch time.... 
         gLogger.error( "Wrong timestamp", e )
         body['_source']['timestamp'] = int( Time.toEpoch() ) * 1000
       docs += [body]
