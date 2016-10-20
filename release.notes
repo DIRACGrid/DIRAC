@@ -1,3 +1,11 @@
+[v6r15p20]
+
+*Framework
+FIX: SystemAdministratorHandler - in updateSoftware() put explicitly the project
+     name into the command
+FIX: ComponentInstaller - added baseDir option to the mysql_install_db call
+     while a fresh new database server installation     
+
 [v6r15p19]
 
 *Core
