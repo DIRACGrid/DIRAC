@@ -141,7 +141,7 @@ class TimeLeftSuccess( TimeLeftTestCase ):
       tl.batchPlugin.bin = '/usr/bin'
       tl.batchPlugin.hostNorm = 10.0
       tl.batchPlugin.cpuLimit = 1000
-      tl.batchPlugin.wallClockLimit = 1000
+      tl.batchPlugin.wallClockLimit = 1000000
 
       with patch( "DIRAC.Core.Utilities.TimeLeft.LSFTimeLeft.runCommand", new=rcMock ):
         res = tl.getTimeLeft()

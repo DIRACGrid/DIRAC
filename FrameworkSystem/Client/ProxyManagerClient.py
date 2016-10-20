@@ -2,6 +2,8 @@
 """
 import os
 import datetime
+
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security import Locations, CS
@@ -10,7 +12,6 @@ from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import S_OK, S_ERROR, gLogger
 
 __RCSID__ = "$Id$"
 
@@ -18,7 +19,7 @@ gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
 gVOMSProxiesSync = ThreadSafe.Synchronizer()
 
-class ProxyManagerClient:
+class ProxyManagerClient( object ):
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__( self ):
