@@ -1,12 +1,16 @@
-[v6r16-pre7]
+[v6r16-pre8]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
         ExtraModule option
-*Core
-FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
+CHANGE: GOCDBClient - replaced urllib2 with requests module
+        FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
 FIX: ComponentInstaller - always update CS when a database is installed, even if it is
      already existing in the db server 
+
+*Accounting
+FIX: JobPolicy - remove User field from the policy conditions to fix a problem that 
+     non-authenticated user gets more privileges on the Accounting info.
 
 *Monitoring
 NEW: New Monitoring system is introduced to collect, analyze and display various
