@@ -19,10 +19,12 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import types
 
-class Legend:
+class Legend( object ):
 
   def __init__(self,data=None,axes=None,*aw,**kw): 
-
+    
+    self.text_size = 0
+    self.column_width = 0
     self.labels = {}
     if type(data) == types.DictType:
       for label,ddict in data.items():
@@ -129,12 +131,13 @@ class Legend:
     canvas = FigureCanvasAgg(figure) 
     dpi = self.prefs['dpi']
     figure.set_dpi( dpi ) 
-    l_size,l_padding = self.__get_legend_text_size()    
+    l_size, _ = self.__get_legend_text_size()    
     self.text_size = pixelToPoint(l_size,dpi)           
     text = Text(0.,0.,text=max_column_text,size=self.text_size)
     text.set_figure(figure)
     bbox = text.get_window_extent(canvas.get_renderer())
-    self.column_width = bbox.width+6*l_size
+    columnwidth = bbox.width+6*l_size
+    self.column_width = columnwidth if columnwidth <= self.prefs['legend_width'] else self.prefs['legend_width'] - 6*l_size #make sure the legend fit in the box
         
   def draw(self):
   

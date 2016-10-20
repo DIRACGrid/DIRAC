@@ -4,13 +4,15 @@ It is used to create plots using Elasticsearch
 
 """
 import datetime
+import os
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities.Plotting import gMonitoringDataCache
+from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
 from DIRAC.Core.Utilities.Plotting.Plots import generateErrorMessagePlot
+from DIRAC.Core.Utilities.File import mkDir
 
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
@@ -40,6 +42,19 @@ class MonitoringHandler( RequestHandler ):
   @classmethod
   def initializeHandler( cls, serviceInfo ):
     cls.__db = MonitoringDB()
+    reportSection = serviceInfo[ 'serviceSectionPath' ]
+    dataPath = gConfig.getValue( "%s/DataLocation" % reportSection, "data/monitoringPlots" )
+    gLogger.info( "Data will be written into %s" % dataPath )
+    mkDir( dataPath )
+    try:
+      testFile = "%s/moni.plot.test" % dataPath
+      with open( testFile, "w" ) as fd:
+        os.unlink( testFile )
+    except IOError as err:
+      gLogger.fatal( "Can't write to %s" % dataPath, err )
+      return S_ERROR( "Data location is not writable: %s" % repr( err ) )
+    gDataCache.setGraphsLocation( dataPath )
+    
     return S_OK()
   
    
@@ -91,7 +106,7 @@ class MonitoringHandler( RequestHandler ):
         return result
       fileId = result[ 'Value' ]
     
-    retVal = gMonitoringDataCache.getPlotData( fileId )
+    retVal = gDataCache.getPlotData( fileId )
     if not retVal[ 'OK' ]:
       self.__sendErrorAsImg( retVal[ 'Message' ], fileHelper )
       return retVal
@@ -160,11 +175,10 @@ class MonitoringHandler( RequestHandler ):
         lastSeconds = long( reportRequestExtra[ 'lastSeconds' ] )
       except ValueError:
         gLogger.error( "lastSeconds key must be a number" )
-        return S_ERROR( "Value Error" )
-      # TODO: Maybe we can have last hour in the monitoring
+        return S_ERROR( "Value Error" )      
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
-      now = Time.dateTime()
+      now = Time.dateTime() #this is an UTC time
       reportRequest[ 'endTime' ] = now
       reportRequest[ 'startTime' ] = now - datetime.timedelta( seconds = lastSeconds )
     else:
