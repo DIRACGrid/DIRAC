@@ -20,4 +20,5 @@ of all the constituent components are described together with their configuratio
    StorageManagement/index
    Transformation/index
    WorkloadManagement/index
+   MonitoringSystem/index
    

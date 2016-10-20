@@ -23,9 +23,7 @@ class JobPolicy( object ):
       return condDict
     elif Properties.JOB_SHARING in userProps:
       condDict[ 'UserGroup' ] = [ credDict[ 'group' ] ]
-    elif Properties.NORMAL_USER in userProps:
-      condDict[ 'User' ] = [ credDict[ 'username' ] ]
-
+    
     return condDict
 
   def checkRequest( self, iD, credDict, condDict, groupingList ):
