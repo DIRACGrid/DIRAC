@@ -280,11 +280,12 @@ class SystemAdministratorHandler( RequestHandler ):
     webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False ) # this is the new portal
     if webPortal:
       if "WebAppDIRAC" not in extensionList:
-        extensionList.append( 'WebAppDIRAC' )
-
-    if extensionList:
-      cmdList += ['-e', ','.join( extensionList )]
-
+        cmdList += ['-e', 'WebAppDIRAC' ]
+   
+    project = gConfig.getValue('/LocalInstallation/Project')
+    if project:
+      cmdList += ['-l', project ]
+      
     # Are grid middleware bindings required ?
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )

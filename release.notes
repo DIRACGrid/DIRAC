@@ -25,6 +25,14 @@ NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 
+[v6r15p20]
+
+*Framework
+FIX: SystemAdministratorHandler - in updateSoftware() put explicitly the project
+     name into the command
+FIX: ComponentInstaller - added baseDir option to the mysql_install_db call
+     while a fresh new database server installation     
+
 [v6r15p19]
 
 *Core
