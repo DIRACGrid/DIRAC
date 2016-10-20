@@ -2352,8 +2352,11 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       return S_ERROR( error )
 
     gLogger.notice( 'Initializing MySQL...' )
+    platform = getPlatformString()
+    baseDir = os.path.join( rootPath, platform )
     result = self.execCommand( 0, ['mysql_install_db',
                                    '--defaults-file=%s' % self.mysqlMyCnf,
+                                   '--baseDir=%s' % baseDir,
                                    '--datadir=%s' % self.mysqlDbDir ] )
     if not result['OK']:
       return result
