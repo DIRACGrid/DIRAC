@@ -32,7 +32,7 @@ FIX: RemoveFile operation - Remove all files that are not at banned SEs
 
 *TMS
 FIX: FileReport - after successful update of input files status, clear the 
-     cache disctionary to avoid double update      
+     cache dictionary to avoid double update      
 
 [v6r15p18]
 
