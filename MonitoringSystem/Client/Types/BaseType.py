@@ -29,7 +29,12 @@ class BaseType( object ):
   __keyFields = []
   __monitoringFields = []
   __dataToKeep = None
-  __mapping = {}
+  __mapping = {'time_type':{
+                            'properties' : {
+                                            'timestamp': {'type': 'date'} #we use timestamp for all monitoring types.
+                                            }
+                            }
+               }
   
   ########################################################################
   def __init__( self ):
@@ -138,11 +143,11 @@ class BaseType( object ):
     return self.__monitoringFields
   
   ########################################################################
-  def setMapping(self, mapping):
+  def addMapping(self, mapping):
     """
     :param dict mapping: the mapping used by elasticsearch
     """
-    self.__mapping = mapping
+    self.__mapping.update(mapping)
     
   ########################################################################
   def getMapping(self):
