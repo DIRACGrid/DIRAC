@@ -49,7 +49,6 @@ class MonitoringHandler( RequestHandler ):
     try:
       testFile = "%s/moni.plot.test" % dataPath
       with open( testFile, "w" ) as fd:
-        fd.close()
         os.unlink( testFile )
     except IOError as err:
       gLogger.fatal( "Can't write to %s" % dataPath, err )
