@@ -7,9 +7,7 @@ import errno
 import psutil
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DErrno import EEZOMBIE
-from DIRAC.Core.Utilities.DErrno import EENOPID
-from DIRAC.Core.Utilities.DErrno import EEEXCEPTION
+from DIRAC.Core.Utilities.DErrno import EEZOMBIE, EENOPID, EEEXCEPTION
 
 __RCSID__ = "$Id$"
 
