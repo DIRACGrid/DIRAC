@@ -599,7 +599,9 @@ def getElasticDBParameters( fullname ):
       dbuserName = result['Value']
   else:
     dbuserName = result['Value']
-  parameters[ 'User' ] = dbuserName
+    
+  if dbuserName:
+    parameters[ 'User' ] = dbuserName
 
   result = gConfig.getOption( cs_path + '/Password' )
   if not result['OK']:
@@ -609,6 +611,8 @@ def getElasticDBParameters( fullname ):
       dbPassword = result['Value']
   else:
     dbPassword = result['Value']
-  parameters[ 'Password' ] = dbPassword
+  
+  if dbPassword:
+    parameters[ 'Password' ] = dbPassword
 
   return S_OK( parameters )
