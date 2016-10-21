@@ -2,9 +2,9 @@
 Profiling class for updated information on process status
 """
 
-import psutil
 import datetime
 import errno
+import psutil
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import EEZOMBIE
@@ -48,16 +48,16 @@ class Profiler( object ):
     if self.process:
       try:
         result = self.process.status()
-      except psutil.NoSuchProcess as e:
-        gLogger.error( 'No such process: %s' % e )
-        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.ZombieProcess as e:
         gLogger.error( 'Zombie process: %s' % e )
         return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
+      except psutil.NoSuchProcess as e:
+	gLogger.error( 'No such process: %s' % e )
+	return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
         return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
-      except Exception as e:
+      except Exception as e: #pylint: disable=broad-except
         gLogger.error( e )
         return S_ERROR( EEEXCEPTION, e )
 
@@ -74,16 +74,16 @@ class Profiler( object ):
       try:
         start = datetime.datetime.fromtimestamp( self.process.create_time() )
         result = ( datetime.datetime.now() - start ).total_seconds()
-      except psutil.NoSuchProcess as e:
-        gLogger.error( 'No such process: %s' % e )
-        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.ZombieProcess as e:
         gLogger.error( 'Zombie process: %s' % e )
         return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
+      except psutil.NoSuchProcess as e:
+	gLogger.error( 'No such process: %s' % e )
+	return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
         return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
-      except Exception as e:
+      except Exception as e: #pylint: disable=broad-except
         gLogger.error( e )
         return S_ERROR( EEEXCEPTION, e )
 
@@ -100,16 +100,16 @@ class Profiler( object ):
       try:
         # Information is returned in bytes and converted to MB
         result = self.process.memory_info()[0] / float( 2 ** 20 )
-      except psutil.NoSuchProcess as e:
-        gLogger.error( 'No such process: %s' % e )
-        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.ZombieProcess as e:
         gLogger.error( 'Zombie process: %s' % e )
         return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
+      except psutil.NoSuchProcess as e:
+	gLogger.error( 'No such process: %s' % e )
+	return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
         return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
-      except Exception as e:
+      except Exception as e: #pylint: disable=broad-except
         gLogger.error( e )
         return S_ERROR( EEEXCEPTION, e )
 
@@ -125,16 +125,16 @@ class Profiler( object ):
     if self.process:
       try:
         result = self.process.num_threads()
-      except psutil.NoSuchProcess as e:
-        gLogger.error( 'No such process: %s' % e )
-        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.ZombieProcess as e:
         gLogger.error( 'Zombie process: %s' % e )
         return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
+      except psutil.NoSuchProcess as e:
+	gLogger.error( 'No such process: %s' % e )
+	return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
         return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
-      except Exception as e:
+      except Exception as e: #pylint: disable=broad-except
         gLogger.error( e )
         return S_ERROR( EEEXCEPTION, e )
 
@@ -150,16 +150,16 @@ class Profiler( object ):
     if self.process:
       try:
         result = self.process.cpu_percent()
-      except psutil.NoSuchProcess as e:
-        gLogger.error( 'No such process: %s' % e )
-        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.ZombieProcess as e:
         gLogger.error( 'Zombie process: %s' % e )
         return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
+      except psutil.NoSuchProcess as e:
+	gLogger.error( 'No such process: %s' % e )
+	return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
         return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
-      except Exception as e:
+      except Exception as e: #pylint: disable=broad-except
         gLogger.error( e )
         return S_ERROR( EEEXCEPTION, e )
 
