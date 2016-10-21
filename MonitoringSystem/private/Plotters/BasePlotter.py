@@ -5,7 +5,7 @@ import time
 import copy
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.Plotting import gMonitoringDataCache
+from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.Core.Utilities.Plotting.Plots import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot, generateCumulativePlot, generatePiePlot, generateStackedLinePlot
 
 from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
@@ -122,7 +122,7 @@ class BasePlotter( DBUtils ):
     else:
       funcObj = getattr( self, funcName )
     
-    return gMonitoringDataCache.getReportData( reportRequest = reportRequest,
+    return gDataCache.getReportData( reportRequest = reportRequest,
                                                reportHash = reportHash,
                                                dataFunc = funcObj )
 
@@ -140,7 +140,7 @@ class BasePlotter( DBUtils ):
     except:
       return S_ERROR( "Plot function for report %s is not defined" % reportRequest[ 'reportName' ] )
     
-    return gMonitoringDataCache.getReportPlot( reportRequest = reportRequest,
+    return gDataCache.getReportPlot( reportRequest = reportRequest,
                                                reportHash = reportHash,
                                                reportData = reportData,
                                                plotFunc = funcObj )

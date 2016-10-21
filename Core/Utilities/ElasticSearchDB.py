@@ -33,17 +33,22 @@ class ElasticSearchDB( object ):
   __timeout = 120
   clusterName = ''  
   ########################################################################
-  def __init__( self, host, port, indexPrefix ):
+  def __init__( self, host, port, user = None, password=None, indexPrefix = ''):
     """ c'tor
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
     :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
     :param bool debug: save the debug information to a file
+    :param str user: user name to access the db
+    :param str password: if the db is password protected we need to provide a password
     :param str indexPrefix it is the indexPrefix used to get all indexes 
     """
     self.__indexPrefix = indexPrefix
     self._connected = False
-    self.__url = "%s:%d" % ( host, port )
+    if user and password:
+      self.__url = "https://%s:%s@%s:%d" % ( user, password, host, port )
+    else:
+      self.__url = "%s:%d" % ( host, port )
     self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
     self.__tryToConnect()
   
@@ -240,10 +245,19 @@ class ElasticSearchDB( object ):
           '_source': {}
       }
       body['_source'] = row
+      timestamp = row.get( 'timestamp', int( Time.toEpoch() ) ) #if the timestamp is not provided, we use the current utc time.
       try:
-        body['_source']['timestamp'] = datetime.fromtimestamp( row.get( 'timestamp', int( Time.toEpoch() ) ) )
-      except TypeError as e:
-        body['_source']['timestamp'] = row.get( 'timestamp' )
+        if isinstance(timestamp, datetime):
+          body['_source']['timestamp'] = int( timestamp.strftime('%s') ) * 1000
+        elif isinstance(timestamp, basestring):
+          timeobj = datetime.strptime( timestamp, '%Y-%m-%d %H:%M:%S.%f' )
+          body['_source']['timestamp'] = int( timeobj.strftime('%s') ) * 1000
+        else: #we assume  the timestamp is an unix epoch time (integer).
+          body['_source']['timestamp'] = timestamp  * 1000
+      except (TypeError, ValueError) as e:
+        # in case we are not able to convert the timestamp to epoch time.... 
+        gLogger.error( "Wrong timestamp", e )
+        body['_source']['timestamp'] = int( Time.toEpoch() ) * 1000
       docs += [body]
     try:
       res = helpers.bulk( self.__client, docs, chunk_size = self.__chunk_size )
