@@ -65,7 +65,8 @@ graph_normal_prefs = {
   'legend_height':120,
   'legend_padding':20,
   'limit_labels':15,
-  'graph_time_stamp':True
+  'graph_time_stamp':True,
+  'label_text_size' : 14
 }
 
 graph_small_prefs = {

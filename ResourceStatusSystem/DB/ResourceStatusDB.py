@@ -21,40 +21,35 @@ class ResourceStatusDB( object ):
   _tablesDB = {}
 
   _tablesLike = {}
-  _tablesLike[ 'ElementStatus' ]    = { 'Fields' :
-                    {
-                     'Name'            : 'VARCHAR(64) NOT NULL',
-                     'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
-                     'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
-                     'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
-                     'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
-                     'DateEffective'   : 'DATETIME NOT NULL',
-                     'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT "1000-01-01 00:00:00"',
-                     'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
-                     'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
-                    },
-                    #FIXME: elementType is needed to be part of the key ??
-                    'PrimaryKey' : [ 'Name', 'StatusType' ]#, 'ElementType' ]
-                                    }
+  _tablesLike[ 'ElementStatus' ]    = { 'Fields' :{'Name'            : 'VARCHAR(64) NOT NULL',
+                                                   'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
+                                                   'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
+                                                   'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
+                                                   'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
+                                                   'DateEffective'   : 'DATETIME NOT NULL',
+                                                   'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT "1000-01-01 00:00:00"',
+                                                   'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
+                                                   'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
+                                                  },
 
-  _tablesLike[ 'ElementWithID' ]       = { 'Fields' :
-                    {
-                     'ID'              : 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
-                     'Name'            : 'VARCHAR(64) NOT NULL',
-                     'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
-                     'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
-                     'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
-                     'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
-                     'DateEffective'   : 'DATETIME NOT NULL',
-                     'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT "1000-01-01 00:00:00"',
-                     'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
-                     'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
-                    },
-                    'PrimaryKey' : [ 'ID' ]
-                                    }
+                                       'PrimaryKey' : [ 'Name', 'StatusType' ]#, 'ElementType' ] #FIXME: elementType is needed to be part of the key ??
+                                      }
 
-  _likeToTable = {
-                    'SiteStatus'        : 'ElementStatus',
+  _tablesLike[ 'ElementWithID' ]       = { 'Fields' : {'ID'              : 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
+                                                       'Name'            : 'VARCHAR(64) NOT NULL',
+                                                       'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
+                                                       'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
+                                                       'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
+                                                       'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
+                                                       'DateEffective'   : 'DATETIME NOT NULL',
+                                                       'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT "1000-01-01 00:00:00"',
+                                                       'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
+                                                       'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
+                                                      },
+                                           'PrimaryKey' : [ 'ID' ]
+                                         }
+
+  _likeToTable = {  'SiteStatus'        : 'ElementStatus',
                     'SiteLog'           : 'ElementWithID',
                     'SiteHistory'       : 'ElementWithID',
                     'ResourceStatus'    : 'ElementStatus',
@@ -66,8 +61,7 @@ class ResourceStatusDB( object ):
                     'ComponentStatus'   : 'ElementStatus',
                     'ComponentLog'      : 'ElementWithID',
                     'ComponentHistory'  : 'ElementWithID',
-                   }
-
+                 }
 
   def __init__( self, mySQL = None ):
     '''

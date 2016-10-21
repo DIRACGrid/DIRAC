@@ -5,11 +5,8 @@
 ########################################################################
 
 """ Frontend for ReqDB
-"""
 
-
-from types import ListType
-""" :mod: RequestDB
+    :mod: RequestDB
     =======================
 
     .. module: RequestDB
@@ -17,11 +14,16 @@ from types import ListType
 
     db holding Request, Operation and File
 """
-__RCSID__ = "$Id $"
-
 import random
 
 import datetime
+
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper
+from sqlalchemy.sql import update
+from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey,\
+                       Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
+
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -29,11 +31,9 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper
-from sqlalchemy.sql import update
-from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey,\
-                       Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
+
+
+__RCSID__ = "$Id $"
 
 
 # Metadata instance that is used to bind the engine, Object and tables
@@ -676,7 +676,7 @@ class RequestDB( object ):
           elif key == 'Status':
             key = '_Status'
 
-          if type( value ) == ListType:
+          if isinstance( value, list ):
             summaryQuery = summaryQuery.filter( eval( '%s.%s.in_(%s)' % ( objectType, key, value ) ) )
           else:
             summaryQuery = summaryQuery.filter( eval( '%s.%s' % ( objectType, key ) ) == value )
@@ -733,7 +733,7 @@ class RequestDB( object ):
     self.log.debug( "getRequestIDsForJobs: got %s jobIDs to check" % str( jobIDs ) )
     if not jobIDs:
       return S_ERROR( "Must provide jobID list as argument." )
-    if type( jobIDs ) in ( long, int ):
+    if isinstance( jobIDs,( long, int ) ):
       jobIDs = [ jobIDs ]
     jobIDs = set( jobIDs )
 
@@ -767,7 +767,7 @@ class RequestDB( object ):
     self.log.debug( "readRequestForJobs: got %s jobIDs to check" % str( jobIDs ) )
     if not jobIDs:
       return S_ERROR( "Must provide jobID list as argument." )
-    if type( jobIDs ) in ( long, int ):
+    if isinstance( jobIDs, ( long, int ) ):
       jobIDs = [ jobIDs ]
     jobIDs = set( jobIDs )
 
