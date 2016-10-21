@@ -3,17 +3,19 @@ This is used to test the ElasticSearchDB module. It is used to discover all poss
 If you modify the test data, you have to update the test cases...
 """
 
-from DIRAC.Core.Utilities.ElasticSearchDB        import ElasticSearchDB
-from DIRAC                                       import gLogger
 import unittest
 import datetime
 import time
+
+from DIRAC                                import gLogger
+from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
+from DIRAC.Core.Utilities.ElasticSearchDB import generateFullIndexName
 
 elHost = 'localhost'
 elPort = '9200'
 
 class ElasticTestCase( unittest.TestCase ):
-  
+
   def setUp( self ):
     gLogger.setLevel( 'DEBUG' )
     self.el = ElasticSearchDB( elHost, elPort )
@@ -31,21 +33,21 @@ class ElasticTestCase( unittest.TestCase ):
 
   def tearDown( self ):
     pass
-   
+
 class ElasticBulkCreateChain( ElasticTestCase ):
-  
+
   def test_bulkindex( self ):
     result = self.el.bulk_index( 'integrationtest', 'test', self.data )
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'], 10 )
     time.sleep( 10 )
-    
+
 class ElasticCreateChain( ElasticTestCase ):
-    
-  
+
+
   def tearDown( self ):
     self.el.deleteIndex( self.index_name )
-    
+
   def test_wrongdataindex( self ):
     result = self.el.createIndex( 'dsh63tsdgad', {} )
     self.assert_( result['OK'] )
@@ -69,46 +71,46 @@ class ElasticCreateChain( ElasticTestCase ):
 
 
 class ElasticDeleteChain( ElasticTestCase ):
-  
+
   def test_deleteNonExistingIndex(self):
     result = self.el.deleteIndex( 'dsdssuu' )
     self.assert_( result['Message'] )
-    
+
   def test_deleteIndex( self ):
-    result = self.el._generateFullIndexName( 'integrationtest' )    
+    result = generateFullIndexName( 'integrationtest' )
     res = self.el.deleteIndex( result )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], result )
-    
+
 class ElasticTestChain( ElasticTestCase ):
-  
+
   def setUp( self ):
     self.el = ElasticSearchDB( elHost, elPort )
-    result = self.el._generateFullIndexName( 'integrationtest' )    
+    result = generateFullIndexName( 'integrationtest' )
     self.assert_( len( result ) > len( 'integrationtest' ) )
-    self.index_name = result     
-  
+    self.index_name = result
+
   def test_getIndexes( self ):
     result = self.el.getIndexes()
     self.assert_( len( result ) > 0 )
-  
-  
+
+
   def test_getDocTypes( self ):
     result = self.el.getDocTypes( self.index_name )
     self.assert_( result )
     self.assertDictEqual( result['Value'], {u'test': {u'properties': {u'Color': {u'type': u'string'}, u'Product': {u'type': u'string'}, u'time': {u'type': u'date', u'format': u'strict_date_optional_time||epoch_millis'}, u'quantity': {u'type': u'long'}}}} )
-  
+
   def test_exists( self ):
     result = self.el.exists( self.index_name )
     self.assert_( result )
-  
+
   def test_generateFullIndexName( self ):
     indexName = 'test'
     today = datetime.datetime.today().strftime( "%Y-%m-%d" )
     expected = "%s-%s" % ( indexName, today )
-    result = self.el._generateFullIndexName( indexName )
+    result = generateFullIndexName( indexName )
     self.assertEqual( result, expected )
-  
+
   def test_getUniqueValue( self ):
     result = self.el.getUniqueValue( self.index_name, 'Color' )
     self.assert_( result )
@@ -119,21 +121,11 @@ class ElasticTestChain( ElasticTestCase ):
     result = self.el.getUniqueValue( self.index_name, 'quantity' )
     self.assert_( result )
     self.assertEqual( result['Value'], [1, 2] )
-  
+
   def test_query( self ):
-    body = {
-    "size": 0,
-    "query": {
-        "filtered": {
-            "query": {
-                "query_string": {
-                    "query": "*"
-                }
-            },
-            "filter": {
-                "bool": {
-                    "must": [{
-                        "range": {
+    body = { "size": 0,
+	     "query": { "filtered": { "query": { "query_string": { "query": "*" } },
+				      "filter": { "bool": { "must": [{ "range": {
                             "time": {
                                 "gte": 1423399451544,
                                 "lte": 1423631917911
@@ -179,13 +171,13 @@ class ElasticTestChain( ElasticTestCase ):
     }
     result = self.el.query( self.index_name, body )
     self.assertEqual( result['aggregations'], {u'3': {u'buckets': [{u'doc_count': 5, u'4': {u'buckets': [{u'1': {u'value': 5.0}, u'key': u'a', u'doc_count': 5}], u'doc_count_error_upper_bound': 0, u'sum_other_doc_count': 0}, u'key': 1423472400000, u'key_as_string': u'2015-02-09T09:00:00.000Z'}, {u'doc_count': 5, u'4': {u'buckets': [{u'1': {u'value': 8.0}, u'key': u'b', u'doc_count': 5}], u'doc_count_error_upper_bound': 0, u'sum_other_doc_count': 0}, u'key': 1423497600000, u'key_as_string': u'2015-02-09T16:00:00.000Z'}]}} )
-  
+
   def test_Search( self ):
     s = self.el._Search( self.index_name )
     result = s.execute()
     self.assertEqual( len( result.hits ), 10 )
     self.assertEqual( dir( result.hits[0] ), [u'Color', u'Product', 'meta', u'quantity', u'time'] )
-  
+
   def test_Q1( self ):
     q = self.el._Q( 'range', time = {'lte':1423501337292, 'gte': 1423497057518} )
     s = self.el._Search( self.index_name )
@@ -195,7 +187,7 @@ class ElasticTestChain( ElasticTestCase ):
     result = s.execute()
     self.assertEqual( len( result.hits ), 5 )
     self.assertEqual( dir( result.hits[0] ), [u'Color', u'Product', 'meta', u'quantity', u'time'] )
-    
+
     q = self.el._Q( 'range', time = {'lte':1423631917911, 'gte': 1423399451544} )
     s = self.el._Search( self.index_name )
     s = s.filter( 'bool', must = q )
@@ -204,7 +196,7 @@ class ElasticTestChain( ElasticTestCase ):
     result = s.execute()
     self.assertEqual( len( result.hits ), 10 )
     self.assertEqual( dir( result.hits[0] ), [u'Color', u'Product', 'meta', u'quantity', u'time'] )
-  
+
   def test_Q2( self ):
     q = [self.el._Q( 'range', time = {'lte':1423631917911, 'gte': 1423399451544} ), self.el._Q( 'match', Product = 'a' )]
     s = self.el._Search( self.index_name )
@@ -215,7 +207,7 @@ class ElasticTestChain( ElasticTestCase ):
     self.assertEqual( len( result.hits ), 5 )
     self.assertEqual( result.hits[0].Product, 'a' )
     self.assertEqual( result.hits[4].Product, 'a' )
-  
+
   def test_A1( self ):
     q = [self.el._Q( 'range', time = {'lte':1423631917911, 'gte': 1423399451544} )]
     s = self.el._Search( self.index_name )
@@ -226,7 +218,7 @@ class ElasticTestChain( ElasticTestCase ):
     self.assertEqual( query, {'query': {'bool': {'filter': [{'bool': {'must': [{'range': {'time': {'gte': 1423399451544, 'lte': 1423631917911}}}]}}]}}, 'aggs': {'2': {'terms': {'field': 'Product', 'size': 0}}}} )
     result = s.execute()
     self.assertEqual( result.aggregations['2'].buckets, [{u'key': u'a', u'doc_count': 5}, {u'key': u'b', u'doc_count': 5}] )
-    
+
   def test_A2( self ):
     q = [self.el._Q( 'range', time = {'lte':1423631917911, 'gte': 1423399451544} )]
     s = self.el._Search( self.index_name )
@@ -238,7 +230,7 @@ class ElasticTestChain( ElasticTestCase ):
     self.assertEqual( query, {'query': {'bool': {'filter': [{'bool': {'must': [{'range': {'time': {'gte': 1423399451544, 'lte': 1423631917911}}}]}}]}}, 'aggs': {'2': {'terms': {'field': 'Product', 'size': 0}, 'aggs': {'total_quantity': {'sum': {'field': 'quantity'}}}}}} )
     result = s.execute()
     self.assertEqual( result.aggregations['2'].buckets, [{u'total_quantity': {u'value': 5.0}, u'key': u'a', u'doc_count': 5}, {u'total_quantity': {u'value': 8.0}, u'key': u'b', u'doc_count': 5}] )
-  
+
   def test_piplineaggregation( self ):
     q = [self.el._Q( 'range', time = {'lte':1423631917911, 'gte': 1423399451544} )]
     s = self.el._Search( self.index_name )
@@ -256,7 +248,7 @@ class ElasticTestChain( ElasticTestCase ):
     self.assertEqual( result.aggregations['2'].buckets[1].key, u'b' )
     self.assertEqual( result.aggregations['2'].buckets[0]['end_data'].buckets[0].avg_buckets, {u'value': 2.5} )
     self.assertEqual( result.aggregations['2'].buckets[1]['end_data'].buckets[0].avg_buckets, {u'value': 4} )
-   
+
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase( ElasticTestCase )
   testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ElasticCreateChain ) )
