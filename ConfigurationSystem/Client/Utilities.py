@@ -10,12 +10,12 @@
   getSiteUpdates
   getSEUpdates
 """
-__RCSID__ = "$Id$"
 
 import re
 import types
 import socket
 from urlparse import urlparse
+
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
@@ -23,6 +23,8 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+
+__RCSID__ = "$Id$"
 
 def getGridVOs():
   """ Get all the VOMS VO names served by this DIRAC service
@@ -556,7 +558,7 @@ def getElasticDBParameters( fullname ):
   """
   Retrieve Database parameters from CS
   fullname should be of the form <System>/<DBname>
-  
+
   """
 
   cs_path = getDatabaseSection( fullname )
@@ -588,5 +590,25 @@ def getElasticDBParameters( fullname ):
   else:
     dbPort = int( result['Value'] )
   parameters[ 'Port' ] = dbPort
+
+  result = gConfig.getOption( cs_path + '/User' )
+  if not result['OK']:
+    # No individual port number found, try at the common place
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/User' )
+    if result['OK']:
+      dbuserName = result['Value']
+  else:
+    dbuserName = result['Value']
+  parameters[ 'User' ] = dbuserName
+
+  result = gConfig.getOption( cs_path + '/Password' )
+  if not result['OK']:
+    # No individual port number found, try at the common place
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/Password' )
+    if result['OK']:
+      dbPassword = result['Value']
+  else:
+    dbPassword = result['Value']
+  parameters[ 'Password' ] = dbPassword
 
   return S_OK( parameters )
