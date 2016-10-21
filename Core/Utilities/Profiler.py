@@ -2,8 +2,6 @@
 Profiling class for updated information on process status
 """
 
-__RCSID__ = "$Id$"
-
 import psutil
 import datetime
 import errno
@@ -12,6 +10,8 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import EEZOMBIE
 from DIRAC.Core.Utilities.DErrno import EENOPID
 from DIRAC.Core.Utilities.DErrno import EEEXCEPTION
+
+__RCSID__ = "$Id$"
 
 class Profiler( object ):
   """
