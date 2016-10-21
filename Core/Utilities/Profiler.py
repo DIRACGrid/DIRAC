@@ -24,13 +24,12 @@ class Profiler( object ):
     """
     :param str pid: PID of the process to be profiled
     """
+    self.process = None
     if pid:
       try:
         self.process = psutil.Process( int( pid ) )
       except psutil.NoSuchProcess as e:
         gLogger.error( 'No such process: %s' % e )
-    else:
-      self.process = None
 
   def pid( self ):
     """
