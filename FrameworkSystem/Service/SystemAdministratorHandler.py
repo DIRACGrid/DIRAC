@@ -280,11 +280,12 @@ class SystemAdministratorHandler( RequestHandler ):
     webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False ) # this is the new portal
     if webPortal:
       if "WebAppDIRAC" not in extensionList:
-        extensionList.append( 'WebAppDIRAC' )
-
-    if extensionList:
-      cmdList += ['-e', ','.join( extensionList )]
-
+        cmdList += ['-e', 'WebAppDIRAC' ]
+   
+    project = gConfig.getValue('/LocalInstallation/Project')
+    if project:
+      cmdList += ['-l', project ]
+      
     # Are grid middleware bindings required ?
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )
@@ -690,14 +691,18 @@ class SystemAdministratorHandler( RequestHandler ):
     for cType in setupComps:
       for system in setupComps[ cType ]:
         for comp in setupComps[ cType ][ system ]:
-          pid = startupComps[ '%s_%s' % ( system, comp ) ][ 'PID' ]
+          instance = "%s_%s" % ( system, comp )
+          if instance not in startupComps:
+            gLogger.error( "Wrongly configured component: %s" % instance )
+            continue
+          pid = startupComps[ instance ][ 'PID' ]
           profiler = Profiler.Profiler( pid )
           result = profiler.getAllProcessData()
           if result[ 'OK' ]:
             log = result[ 'Value' ][ 'stats' ]
             log[ 'host' ] = socket.getfqdn()
-            log[ 'component' ] = '%s_%s' % ( system, comp )
-            log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ].isoformat()
+            log[ 'component' ] = instance
+            log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ]
             gMonitoringReporter.addRecord( log )
           else:
             gLogger.error( result[ 'Message' ] )
