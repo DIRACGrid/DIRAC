@@ -108,7 +108,8 @@ class MonitoringReporter( object ):
         retVal = monitoringDB.put( recordsToSend, self.__monitoringType )
         if retVal[ 'OK' ]:
           recordSent += len( recordsToSend )
-          del documents[ :self.__maxRecordsInABundle ]          
+          del documents[ :self.__maxRecordsInABundle ]
+          gLogger.info( "%d records inserted to the db" % ( len( recordSent ) ) )          
         else:
           if self.__mq:
             res = self.publishRecords( recordsToSend )
@@ -118,6 +119,8 @@ class MonitoringReporter( object ):
               del documents[ :self.__maxRecordsInABundle ]
             else:
               return res  # in case of MQ problem
+          else:
+            gLogger.warn( "Failed to insert the records: %s", retVal['Message'] )
     except Exception as e:  # pylint: disable=broad-except
       gLogger.exception( "Error committing", lException = e )
       return S_ERROR( "Error committing %s" % repr( e ).replace( ',)', ')' ) )    
