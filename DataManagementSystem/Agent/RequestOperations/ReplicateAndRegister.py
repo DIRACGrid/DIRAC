@@ -71,7 +71,7 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     else:
       return allReplicas
 
-  if not opFile.Checksum:
+  if not opFile.Checksum or hexAdlerToInt( opFile.Checksum ) == False:
     # Set Checksum to FC checksum if not set in the request
     fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
     fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum' )
