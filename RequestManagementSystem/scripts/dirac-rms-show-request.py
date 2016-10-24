@@ -124,7 +124,7 @@ if __name__ == "__main__":
       gLogger.fatal( "Error getting request for jobs", res['Message'] )
       DIRAC.exit( 2 )
     if res['Value']['Failed']:
-      gLogger.error( "No request found for jobs %s" % str( res['Value']['Failed'].keys() ) )
+      gLogger.error( "No request found for jobs %s" % ','.join( sorted( str( job ) for job in res['Value']['Failed'] ) ) )
     requests = sorted( res['Value']['Successful'].values() )
     if requests:
       allR = True
