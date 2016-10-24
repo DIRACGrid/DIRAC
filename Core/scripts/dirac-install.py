@@ -12,6 +12,7 @@ import time
 import stat
 import types
 import shutil
+import ssl
 try:
   import hashlib as md5
 except ImportError:
@@ -794,7 +795,13 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     #   opener = urllib2.build_opener( proxy )
     #   #opener = urllib2.build_opener()
     #  urllib2.install_opener( opener )
-    remoteFD = urllib2.urlopen( url )
+
+    # Try to use insecure context explicitly, needed for python >= 2.7.9
+    try:
+      context = ssl._create_unverified_context()
+      remoteFD = urllib2.urlopen( url, context = context )
+    except AttributeError:
+      remoteFD = urllib2.urlopen( url )
     expectedBytes = 0
     # Sometimes repositories do not return Content-Length parameter
     try:
