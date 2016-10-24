@@ -1,6 +1,7 @@
 """
 It is a helper module which contains the available reports
 """
+
 import hashlib
 import re
 
@@ -12,22 +13,22 @@ from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
 __RCSID__ = "$Id$"
 
 class PlottersList( object ):
-  
-  """ 
+
+  """
   .. class:: PlottersList
-  
+
   Used to determine all available plotters used to create the plots
-  
+
   :param dict __plotters stores the available plotters
   """
   def __init__( self ):
-    
+
     """ c'tor
     :param self: self reference
     """
-    
+
     objectsLoaded = loadObjects( 'MonitoringSystem/private/Plotters',
-                                 re.compile( ".*[a-z1-9]Plotter\.py$" ),
+                                 re.compile( r".*[a-z1-9]Plotter\.py$" ),
                                  myBasePlotter )
     self.__plotters = {}
     for objName in objectsLoaded:
@@ -41,13 +42,13 @@ class PlottersList( object ):
       return S_OK ( self.__plotters[ typeName ] )
     except KeyError:
       return S_ERROR()
-      
+
 
 class MainReporter( object ):
-  
-  """ 
+
+  """
   .. class:: MainReporter
-  
+
   :param object __db database object
   :param str __setup DIRAC setup
   :param str __csSection CS section used to configure some parameters.
@@ -68,7 +69,7 @@ class MainReporter( object ):
     """
     It creates an unique identifier
     :param dict reportRequest plot attributes used to create the plot
-    :return str it return an unique value 
+    :return str it return an unique value
     """
     requestToHash = dict( reportRequest )
     granularity = gConfig.getValue( "%s/CacheTimeGranularity" % self.__csSection, 300 )
@@ -84,7 +85,7 @@ class MainReporter( object ):
     """
     It is used to create a plot.
     :param dict reportRequest plot attributes used to create the plot
-    
+
     Note: I know credDict is not used, but if we plan to add some policy, we need to use it!
     :return dict S_OK/S_ERROR the values used to create the plot
     """
@@ -92,7 +93,7 @@ class MainReporter( object ):
     plotterClass = self.__plotterList.getPlotterClass( typeName )
     if not plotterClass['OK']:
       return S_ERROR( "There's no reporter registered for type %s" % typeName )
-    
+
     reportRequest[ 'hash' ] = self.__calculateReportHash( reportRequest )
     plotter = plotterClass['Value']( self.__db, self.__setup, reportRequest[ 'extraArgs' ] )
     return plotter.generate( reportRequest )
@@ -102,7 +103,7 @@ class MainReporter( object ):
     It returns the available plots
     :param str typeName monitoring type
     :return dict S_OK/S_ERROR list of available reports (plots)
-    """ 
+    """
     plotterClass = self.__plotterList.getPlotterClass( typeName )
     if not plotterClass['OK']:
       return S_ERROR( "There's no plotter registered for type %s" % typeName )
