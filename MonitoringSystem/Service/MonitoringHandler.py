@@ -313,3 +313,13 @@ class MonitoringHandler( RequestHandler ):
     """
     return self.__db.getDataForAGivenPeriod( typeName, condDict, initialDate, endDate )
   
+  types_put = [list, basestring]
+  def export_put( self, recordsToInsert, monitoringType ):
+    
+    """
+    It is used to insert records to the db.
+    :param list recordsToInsert records to be inserted to the db
+    :param basestring monitoringType monitoring type...
+    """
+    
+    return self.__db.put( recordsToInsert, monitoringType )
