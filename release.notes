@@ -1,8 +1,9 @@
-[v6r16-pre9]
+[v6r16-pre10]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
         ExtraModule option
+CHANGE: dirac-install - use insecure ssl context for downloading files with urllib2.urlopen    
 CHANGE: GOCDBClient - replaced urllib2 with requests module
         FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
 FIX: ComponentInstaller - always update CS when a database is installed, even if it is
