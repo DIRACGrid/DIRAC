@@ -1,9 +1,5 @@
-########################################################################
-# $Id: $
-########################################################################
-
 """
-It is used to load the monitoring types. 
+It is used to load the monitoring types.
 
 """
 import re
@@ -17,7 +13,7 @@ __RCSID__ = "$Id$"
 
 ########################################################################
 class TypeLoader( object ):
-  
+
   """
   .. class:: BaseType
   :param DIRACSingleton metaclass : this is a singleton
@@ -31,7 +27,7 @@ class TypeLoader( object ):
   __path = ""
   __parentCls = None
   __reFilter = None
-  
+
   ########################################################################
   def __init__( self ):
     """c'tor
@@ -39,7 +35,7 @@ class TypeLoader( object ):
     self.__loaded = {}
     self.__path = "MonitoringSystem/Client/Types"
     self.__parentCls = BaseType
-    self.__reFilter = re.compile( ".*[a-z1-9]\.py$" )
+    self.__reFilter = re.compile( r".*[a-z1-9]\.py$" )
 
   ########################################################################
   def getTypes( self ):
