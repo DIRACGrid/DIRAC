@@ -175,11 +175,7 @@ class MonitoringHandler( RequestHandler ):
         lastSeconds = long( reportRequestExtra[ 'lastSeconds' ] )
       except ValueError:
         gLogger.error( "lastSeconds key must be a number" )
-<<<<<<< HEAD
-	return S_ERROR( "Value Error" )
-=======
         return S_ERROR( "Value Error" )
->>>>>>> 2c57d3b5dc925694665e08c29b04a481ad152fe6
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
       now = Time.dateTime() #this is an UTC time
@@ -284,11 +280,7 @@ class MonitoringHandler( RequestHandler ):
     :param str typeName name of the monitoring type
     :param dict condDict -> conditions for the query
                   key -> name of the field
-<<<<<<< HEAD
 		  value -> list of possible values
-=======
-                  value -> list of possible values
->>>>>>> 2c57d3b5dc925694665e08c29b04a481ad152fe6
     """
 
     return self.__db.getLastDayData( typeName, condDict )
@@ -320,7 +312,6 @@ class MonitoringHandler( RequestHandler ):
 
     """
     return self.__db.getDataForAGivenPeriod( typeName, condDict, initialDate, endDate )
-<<<<<<< HEAD
   
   types_put = [list, basestring]
   def export_put( self, recordsToInsert, monitoringType ):
@@ -332,5 +323,3 @@ class MonitoringHandler( RequestHandler ):
     """
     
     return self.__db.put( recordsToInsert, monitoringType )
-=======
->>>>>>> 2c57d3b5dc925694665e08c29b04a481ad152fe6
