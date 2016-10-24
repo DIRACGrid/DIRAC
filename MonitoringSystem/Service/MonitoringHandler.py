@@ -20,15 +20,15 @@ from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 __RCSID__ = "$Id$"
 
 class MonitoringHandler( RequestHandler ):
-  
+
   """
   .. class:: MonitoringHandler
 
   :param dict __reportRequestDict contains the arguments used to create a certain plot
   :param object __db used to retrieve the data from the db.
-  
+
   """
-  
+
   __reportRequestDict = {'typeName' : basestring,
                          'reportName' : basestring,
                          'startTime' : Time._allDateTypes,
@@ -36,9 +36,9 @@ class MonitoringHandler( RequestHandler ):
                          'condDict' : dict,
                          'grouping' : basestring,
                          'extraArgs' : dict}
-  
+
   __db = None
-  
+
   @classmethod
   def initializeHandler( cls, serviceInfo ):
     cls.__db = MonitoringDB()
@@ -48,21 +48,21 @@ class MonitoringHandler( RequestHandler ):
     mkDir( dataPath )
     try:
       testFile = "%s/moni.plot.test" % dataPath
-      with open( testFile, "w" ) as fd:
+      with open( testFile, "w" ) as _fd:
         os.unlink( testFile )
     except IOError as err:
       gLogger.fatal( "Can't write to %s" % dataPath, err )
       return S_ERROR( "Data location is not writable: %s" % repr( err ) )
     gDataCache.setGraphsLocation( dataPath )
-    
+
     return S_OK()
-  
-   
+
+
   types_listUniqueKeyValues = [ basestring ]
   def export_listUniqueKeyValues( self, typeName ):
     """
     :param str typeName is the monitoring type registered in the Types.
-    
+
     :return: S_OK({key:[]}) or S_ERROR()   The key is element of the __keyFields of the BaseType
     """
     setup = self.serviceInfoDict.get( 'clientSetup', None )
@@ -70,28 +70,28 @@ class MonitoringHandler( RequestHandler ):
       return S_ERROR( "FATAL ERROR:  Problem with the service configuration!" )
     # NOTE: we can apply some policies if it will be needed!
     return self.__db.getKeyValues( typeName )
-    
+
   types_listReports = [ basestring ]
   def export_listReports( self, typeName ):
     """
     :param str typeName monitoring type for example WMSHistory
-    
+
     :return S_OK([]) or S_ERROR() the list of available plots
     """
-    
+
     reporter = MainReporter( self.__db, self.serviceInfoDict[ 'clientSetup' ] )
     return reporter.list( typeName )
-  
+
   def transfer_toClient( self, fileId, token, fileHelper ):
     """
     Get graphs data
-    
+
     :param str fileId encoded plot attributes
     :param object
     :param DIRAC.Core.DISET.private.FileHelper.FileHelper fileHelper
-     
+
     """
-    
+
     # First check if we've got to generate the plot
     if len( fileId ) > 5 and fileId[1] == ':':
       gLogger.info( "Seems the file request is a plot generation request!" )
@@ -105,7 +105,7 @@ class MonitoringHandler( RequestHandler ):
         fileHelper.sendEOF()
         return result
       fileId = result[ 'Value' ]
-    
+
     retVal = gDataCache.getPlotData( fileId )
     if not retVal[ 'OK' ]:
       self.__sendErrorAsImg( retVal[ 'Message' ], fileHelper )
@@ -115,14 +115,14 @@ class MonitoringHandler( RequestHandler ):
       return retVal
     fileHelper.sendEOF()
     return S_OK()
-  
+
   def __generatePlotFromFileId( self, fileId ):
     """
     It create the plots using the encode parameters
     :param str fileId the encoded plot attributes
-    :return S_OK or S_ERROR returns the file name 
+    :return S_OK or S_ERROR returns the file name
     """
-    
+
     result = extractRequestFromFileId( fileId )
     if not result[ 'OK' ]:
       return result
@@ -139,12 +139,12 @@ class MonitoringHandler( RequestHandler ):
         fileToReturn = 'thumbnail'
     gLogger.info( "Returning %s file: %s " % ( fileToReturn, result[ 'Value' ][ fileToReturn ] ) )
     return S_OK( result[ 'Value' ][ fileToReturn ] )
-  
+
   def __sendErrorAsImg( self, msgText, fileHelper ):
     """
     In case of an error message a whcite plot is created with the error message.
     """
-    
+
     retVal = generateErrorMessagePlot( msgText )
     if not retVal:
       retVal = fileHelper.sendData( retVal[ 'Message' ] )
@@ -158,9 +158,9 @@ class MonitoringHandler( RequestHandler ):
   def __checkPlotRequest( self, reportRequest ):
     """
     It check the plot attributes. We have to make sure that all attributes which are needed are provided.
-    
+
     :param dict reportRequest contains the plot attributes.
-    
+
     """
     # If extraArgs is not there add it
     if 'extraArgs' not in reportRequest:
@@ -168,14 +168,14 @@ class MonitoringHandler( RequestHandler ):
     if not isinstance( reportRequest[ 'extraArgs' ], self.__reportRequestDict[ 'extraArgs' ] ):
       return S_ERROR( "Extra args has to be of type %s" % self.__reportRequestDict[ 'extraArgs' ] )
     reportRequestExtra = reportRequest[ 'extraArgs' ]
-    
+
     # Check sliding plots
     if 'lastSeconds' in reportRequestExtra:
       try:
         lastSeconds = long( reportRequestExtra[ 'lastSeconds' ] )
       except ValueError:
         gLogger.error( "lastSeconds key must be a number" )
-        return S_ERROR( "Value Error" )      
+        return S_ERROR( "Value Error" )
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
       now = Time.dateTime() #this is an UTC time
@@ -197,7 +197,7 @@ class MonitoringHandler( RequestHandler ):
                                                                                   str( self.__reportRequestDict[ key ] ) ) )
       if key in ( 'startTime', 'endTime' ):
         reportRequest[ key ] = int( Time.toEpoch( reportRequest[ key ] ) )
-    
+
     return S_OK( reportRequest )
 
   types_generatePlot = [ dict ]
@@ -212,7 +212,7 @@ class MonitoringHandler( RequestHandler ):
     reporter = MainReporter( self.__db, self.serviceInfoDict[ 'clientSetup' ] )
     reportRequest[ 'generatePlot' ] = True
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
-  
+
   types_getReport = [ dict ]
   def export_getReport( self, reportRequest ):
     """
@@ -232,19 +232,19 @@ class MonitoringHandler( RequestHandler ):
     reporter = MainReporter( self.__db, self.serviceInfoDict[ 'clientSetup' ] )
     reportRequest[ 'generatePlot' ] = False
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
-  
-  
+
+
   types_addMonitoringRecords = [basestring, basestring, list]
   def export_addMonitoringRecords( self, monitoringtype, doc_type, data ):
     """
     It is used to insert data directly to the given monitoring type
-    :param str monitoringtype 
+    :param str monitoringtype
     :param list data
     """
-    
+
     retVal = self.__db.getIndexName( monitoringtype )
     if not retVal['OK']:
-      return retVal 
+      return retVal
     prefix = retVal['Value']
     gLogger.debug( "addMonitoringRecords:", prefix )
     return self.__db.bulk_index( prefix, doc_type, data )
@@ -253,26 +253,26 @@ class MonitoringHandler( RequestHandler ):
   def export_addRecords( self, indexname, doc_type, data ):
     """
     It is used to insert data directly to the database... The data will be inserted to the given index.
-    :param str indexname 
+    :param str indexname
     :param list data
     """
     setup = self.serviceInfoDict.get( 'clientSetup', '' )
     indexname = "%s_%s" % ( setup.lower(), indexname )
     gLogger.debug( "Bulk index:", indexname )
     return self.__db.bulk_index( indexname, doc_type, data )
-  
-  types_deleteIndex = [basestring]  
+
+  types_deleteIndex = [basestring]
   def export_deleteIndex( self, indexName ):
     """
     It is used to delete an index!
     Note this is for experienced users!!!
-    :param str indexName 
+    :param str indexName
     """
     setup = self.serviceInfoDict.get( 'clientSetup', '' )
     indexName = "%s_%s" % ( setup.lower(), indexName )
     gLogger.debug( "delete index:", indexName )
     return self.__db.deleteIndex( indexName )
-  
+
   types_getLastDayData = [basestring, dict]
   def export_getLastDayData( self, typeName, condDict ):
     """
@@ -280,11 +280,11 @@ class MonitoringHandler( RequestHandler ):
     :param str typeName name of the monitoring type
     :param dict condDict -> conditions for the query
                   key -> name of the field
-                  value -> list of possible values 
+		  value -> list of possible values
     """
-    
+
     return self.__db.getLastDayData( typeName, condDict )
-  
+
   types_getLimitedDat = [basestring, dict, int]
   def export_getLimitedData( self, typeName, condDict, size ):
     '''
@@ -297,7 +297,7 @@ class MonitoringHandler( RequestHandler ):
     :return: Up to size entries for the given component from the database
     '''
     return self.__db.getLimitedData( typeName, condDict, size )
-  
+
   types_getDataForAGivenPeriod = [basestring, dict, basestring, basestring]
   def export_getDataForAGivenPeriod( self, typeName, condDict, initialDate = '', endDate = '' ):
     """
@@ -309,7 +309,7 @@ class MonitoringHandler( RequestHandler ):
     :param str initialDate: Indicates the start of the time period in the format 'DD/MM/YYYY hh:mm'
     :param str endDate: Indicate the end of the time period in the format 'DD/MM/YYYY hh:mm'
     :return: Entries from the database for the given component recorded between the initial and the end dates
-    
+
     """
     return self.__db.getDataForAGivenPeriod( typeName, condDict, initialDate, endDate )
   

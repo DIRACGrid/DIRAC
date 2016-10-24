@@ -126,6 +126,8 @@ class TimeLeftSuccess( TimeLeftTestCase ):
       rcMock.return_value = S_OK( retValue )
       self.tl.runCommand = rcMock
 
+      timeMock = MagicMock()
+
       tl = TimeLeft()
 #      res = tl.getTimeLeft()
 #      self.assertEqual( res['OK'], True )
@@ -141,11 +143,12 @@ class TimeLeftSuccess( TimeLeftTestCase ):
       tl.batchPlugin.bin = '/usr/bin'
       tl.batchPlugin.hostNorm = 10.0
       tl.batchPlugin.cpuLimit = 1000
-      tl.batchPlugin.wallClockLimit = 1000000
+      tl.batchPlugin.wallClockLimit = 1000
 
       with patch( "DIRAC.Core.Utilities.TimeLeft.LSFTimeLeft.runCommand", new=rcMock ):
-        res = tl.getTimeLeft()
-        self.assertEqual( res['OK'], True, res.get('Message', '') )
+        with patch( "DIRAC.Core.Utilities.TimeLeft.LSFTimeLeft.time", new=timeMock ):
+          res = tl.getTimeLeft()
+          self.assertEqual( res['OK'], True, res.get('Message', '') )
 
     for batch, retValue in [( 'SGE', SGE_ReturnValue )]:
       self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )

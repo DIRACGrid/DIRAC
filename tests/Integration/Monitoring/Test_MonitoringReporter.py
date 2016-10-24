@@ -42,23 +42,24 @@ Resources
 
 import unittest
 
-from datetime                                       import datetime
+from datetime import datetime
 
-from DIRAC                                          import gLogger
+from DIRAC import gLogger
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 
-    
+#pylint: disable=line-too-long
+
 class MonitoringTestCase( unittest.TestCase ):
-  
+
   def setUp( self ):
     gLogger.setLevel( 'INFO' )
-    
+
     self.monitoringDB = MonitoringDB()
-    self.monitoringReporter = MonitoringReporter( db = self.monitoringDB, 
-                                                 monitoringType = "WMSHistory" )
-    
+    self.monitoringReporter = MonitoringReporter( db = self.monitoringDB,
+                                                  monitoringType = "WMSHistory" )
+
     self.data = [{u'Status': u'Waiting', 'Jobs': 2, u'time': 1458130176, u'JobSplitType': u'MCStripping', u'MinorStatus': u'unset', u'Site': u'LCG.GRIDKA.de', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00049848', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'time': 1458130176, u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.PIC.es', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton', u'JobGroup': u'lhcb', u'UserGroup': u'lhcb_user', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'time': 1458130176, u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.RAL.uk', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton', u'JobGroup': u'lhcb', u'UserGroup': u'lhcb_user', u'metric': u'WMSHistory'},
@@ -99,35 +100,36 @@ class MonitoringTestCase( unittest.TestCase ):
                  {u'Status': u'Waiting', 'Jobs': 1, u'time': 1458226213, u'JobSplitType': u'MCReconstruction', u'MinorStatus': u'unset', u'Site': u'LCG.RAL.uk', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00050241', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'time': 1458226213, u'JobSplitType': u'MCReconstruction', u'MinorStatus': u'unset', u'Site': u'LCG.RAL.uk', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00050243', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 2, u'time': 1458226213, u'JobSplitType': u'MCReconstruction', u'MinorStatus': u'unset', u'Site': u'LCG.RAL.uk', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00050247', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'}]
-  
+
   def tearDown( self ):
     pass
-  
-class MonitoringReporter ( MonitoringTestCase ):
-  
+
+class MonitoringReporterAdd( MonitoringTestCase ):
+
   def test_addRecords( self ):
     for record in self.data:
       self.monitoringReporter.addRecord( record )
     result = self.monitoringReporter.commit()
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'], len( self.data ) )
-        
-  
+
+
 class MonitoringDeleteChain( MonitoringTestCase ):
-  
-    
+
+
   def test_deleteIndex( self ):
     result = self.monitoringDB.getIndexName('WMSHistory')
     self.assert_( result['OK'] )
-    
+
     today = datetime.today().strftime( "%Y-%m-%d" )
-    indexName = "%s-%s" % ( result['Value'], today ) 
+    indexName = "%s-%s" % ( result['Value'], today )
     res = self.monitoringDB.deleteIndex( indexName )
     self.assert_( res['OK'] )
-    
-    
+
+
 
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringTestCase )
+  testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringReporterAdd ) )
   testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringDeleteChain ) )
   unittest.TextTestRunner( verbosity = 2 ).run( testSuite )
