@@ -123,8 +123,8 @@ class BasePlotter( DBUtils ):
       funcObj = getattr( self, funcName )
 
     return gDataCache.getReportData( reportRequest = reportRequest,
-				     reportHash = reportHash,
-				     dataFunc = funcObj )
+                                     reportHash = reportHash,
+                                     dataFunc = funcObj )
 
   def __generatePlotForReport( self, reportRequest, reportHash, reportData ):
     """
@@ -141,9 +141,9 @@ class BasePlotter( DBUtils ):
       return S_ERROR( "Plot function for report %s is not defined" % reportRequest[ 'reportName' ] )
 
     return gDataCache.getReportPlot( reportRequest = reportRequest,
-				     reportHash = reportHash,
-				     reportData = reportData,
-				     plotFunc = funcObj )
+                                     reportHash = reportHash,
+                                     reportData = reportData,
+                                     plotFunc = funcObj )
 
   def _getTimedData( self, startTime, endTime, selectFields, preCondDict, metadataDict = None ):
     """
@@ -307,7 +307,7 @@ class BasePlotter( DBUtils ):
       thbMD[ self._EA_PADDING ] = 20
       for key in ( 'title', 'ylabel', 'xlabel' ):
         if key in thbMD:
-	  del thbMD[ key ]
+          del thbMD[ key ]
       return thbMD
     return False
 

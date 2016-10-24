@@ -132,7 +132,7 @@ class MonitoringClient( object ):
     :param str typeName name of the monitoring type
     :param dict condDict -> conditions for the query
                   key -> name of the field
-		  value -> list of possible values
+                  value -> list of possible values
     """
     rpcClient = self.__getServer()
     return rpcClient.getLastDayData( typeName, condDict )

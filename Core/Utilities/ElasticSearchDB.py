@@ -98,7 +98,7 @@ class ElasticSearchDB( object ):
       if self.__client.ping():
         # Returns True if the cluster is running, False otherwise
         result = self.__client.info()
-	self.clusterName = result.get( "cluster_name", " " ) #pylint: disable=no-member
+        self.clusterName = result.get( "cluster_name", " " ) #pylint: disable=no-member
         gLogger.info( "Database info", result )
         self._connected = True
       else:
@@ -247,7 +247,7 @@ class ElasticSearchDB( object ):
         else: #we assume  the timestamp is an unix epoch time (integer).
           body['_source']['timestamp'] = timestamp  * 1000
       except (TypeError, ValueError) as e:
-	# in case we are not able to convert the timestamp to epoch time....
+        # in case we are not able to convert the timestamp to epoch time....
         gLogger.error( "Wrong timestamp", e )
         body['_source']['timestamp'] = int( Time.toEpoch() ) * 1000
       docs += [body]
@@ -282,18 +282,18 @@ class ElasticSearchDB( object ):
     query = query.filter( 'bool', must = timeFilter )
     if orderBy:
       query.aggs.bucket( key,
-			 'terms',
-			 field = key,
-			 size = 0,
-			 order = orderBy ).metric( key,
-						   'cardinality',
+                         'terms',
+                         field = key,
+                         size = 0,
+                         order = orderBy ).metric( key,
+                                                   'cardinality',
                                                    field = key )
     else:
       query.aggs.bucket( key,
-			 'terms',
-			 field = key,
-			 size = 0 ).metric( key,
-					    'cardinality',
+                         'terms',
+                         field = key,
+                         size = 0 ).metric( key,
+                                            'cardinality',
                                             field = key )
 
     try:

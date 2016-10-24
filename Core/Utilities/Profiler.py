@@ -50,8 +50,8 @@ class Profiler( object ):
         gLogger.error( 'Zombie process: %s' % e )
         return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
       except psutil.NoSuchProcess as e:
-	gLogger.error( 'No such process: %s' % e )
-	return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
+        gLogger.error( 'No such process: %s' % e )
+        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
         return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
@@ -76,8 +76,8 @@ class Profiler( object ):
         gLogger.error( 'Zombie process: %s' % e )
         return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
       except psutil.NoSuchProcess as e:
-	gLogger.error( 'No such process: %s' % e )
-	return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
+        gLogger.error( 'No such process: %s' % e )
+        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
         return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
@@ -102,8 +102,8 @@ class Profiler( object ):
         gLogger.error( 'Zombie process: %s' % e )
         return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
       except psutil.NoSuchProcess as e:
-	gLogger.error( 'No such process: %s' % e )
-	return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
+        gLogger.error( 'No such process: %s' % e )
+        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
         return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
@@ -127,8 +127,8 @@ class Profiler( object ):
         gLogger.error( 'Zombie process: %s' % e )
         return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
       except psutil.NoSuchProcess as e:
-	gLogger.error( 'No such process: %s' % e )
-	return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
+        gLogger.error( 'No such process: %s' % e )
+        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
         return S_ERROR( errno.EPERM, 'Access denied: %s' % e )
@@ -152,8 +152,8 @@ class Profiler( object ):
         gLogger.error( 'Zombie process: %s' % e )
         return S_ERROR( EEZOMBIE, 'Zombie process: %s' % e )
       except psutil.NoSuchProcess as e:
-	gLogger.error( 'No such process: %s' % e )
-	return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
+        gLogger.error( 'No such process: %s' % e )
+        return S_ERROR( errno.ESRCH, 'No such process: %s' % e )
       except psutil.AccessDenied as e:
         gLogger.error( 'Access denied: %s' % e )
         return S_ERROR( errno.EPERM, 'Access denied: %s' % e )

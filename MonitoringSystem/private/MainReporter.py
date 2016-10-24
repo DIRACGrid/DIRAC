@@ -28,7 +28,7 @@ class PlottersList( object ):
     """
 
     objectsLoaded = loadObjects( 'MonitoringSystem/private/Plotters',
-				 re.compile( r".*[a-z1-9]Plotter\.py$" ),
+                                 re.compile( r".*[a-z1-9]Plotter\.py$" ),
                                  myBasePlotter )
     self.__plotters = {}
     for objName in objectsLoaded:

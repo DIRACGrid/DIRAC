@@ -1,5 +1,5 @@
 """
-This class is used to insert data to a db (currently elasticsearch). It uses an internal list which is used to keep messages in the memory. 
+This class is used to insert data to a db (currently elasticsearch). It uses an internal list which is used to keep messages in the memory.
 addRecord is used to insert messages to the internal queue. commit is used to insert the acumulated messages to elasticsearch.
 It provides two failover mechanism:
 1.) If the database is not available, the data will be keept in the memory.
@@ -35,7 +35,7 @@ class MonitoringReporter( object ):
   :param: str __monitoringType type of the records which will be inserted to the db. For example: WMSHistory.
   :param: object __mqPublisher publisher used to publish the records to the MQ
   """
-  
+
   def __init__( self, monitoringType = '' ):
 
     self.__maxRecordsInABundle = 5000
@@ -110,7 +110,7 @@ class MonitoringReporter( object ):
         if retVal[ 'OK' ]:
           recordSent += len( recordsToSend )
           del documents[ :self.__maxRecordsInABundle ]
-          gLogger.info( "%d records inserted to the db" % ( recordSent ) )          
+          gLogger.info( "%d records inserted to the db" % ( recordSent ) )
         else:
           if self.__mq:
             res = self.publishRecords( recordsToSend )
@@ -134,4 +134,3 @@ class MonitoringReporter( object ):
         gLogger.error( "Unable to insert data from the MQ", result['Message'] )
 
     return S_OK( recordSent )
-

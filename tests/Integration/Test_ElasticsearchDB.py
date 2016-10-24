@@ -124,8 +124,8 @@ class ElasticTestChain( ElasticTestCase ):
 
   def test_query( self ):
     body = { "size": 0,
-	     "query": { "filtered": { "query": { "query_string": { "query": "*" } },
-				      "filter": { "bool": { "must": [{ "range": {
+             "query": { "filtered": { "query": { "query_string": { "query": "*" } },
+                                      "filter": { "bool": { "must": [{ "range": {
                             "time": {
                                 "gte": 1423399451544,
                                 "lte": 1423631917911

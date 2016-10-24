@@ -30,8 +30,8 @@ class ComponentMonitoring( BaseType ):
     self.setDocType( "ComponentMonitoring" )
 
     self.addMapping( {'host_type': {'_all': {'enabled': 'false'}, 'properties': {'host': {'index': 'not_analyzed', 'type': 'string'}}},
-		      'component_type':{'_all': {'enabled': 'false'}, 'properties': {'component': { 'index': 'not_analyzed',
-												    'type': 'string'}}},
+                      'component_type':{'_all': {'enabled': 'false'}, 'properties': {'component': { 'index': 'not_analyzed',
+                                                                                                    'type': 'string'}}},
                       'status_type':{'_all': {'enabled': 'false'}, 'properties': {'status': {'index': 'not_analyzed', 'type': 'string'}}}} )
 
     self.setDataToKeep ( 86400 * 30 )#we need to define...
