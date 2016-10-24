@@ -23,7 +23,7 @@ __RCSID__ = "$Id $"
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.Adler import compareAdler
+from DIRAC.Core.Utilities.Adler import compareAdler, hexAdlerToInt
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 from DIRAC.DataManagementSystem.Client.DataManager                                import DataManager
@@ -92,8 +92,10 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     elif not noReplicas:
       repSEMetadata = repSEMetadata['Value']['Successful'][opFile.LFN]
 
-      seChecksum = repSEMetadata.get( "Checksum" )
-      if not seChecksum and opFile.Checksum:
+      seChecksum = hexAdlerToInt( repSEMetadata.get( "Checksum" ) )
+      if seChecksum == False and opFile.Checksum:
+        ret['NoMetadata'].append( repSEName )
+      elif not seChecksum and opFile.Checksum:
         opFile.Checksum = None
         opFile.ChecksumType = None
       elif seChecksum and not opFile.Checksum:
