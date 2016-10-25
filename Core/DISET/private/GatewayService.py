@@ -20,6 +20,8 @@ __RCSID__ = "$id:"
 import sys
 import cStringIO
 
+from concurrent.futures import ThreadPoolExecutor
+
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.LockRing import LockRing
@@ -29,7 +31,6 @@ from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, getGlobalMessageBroker
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
@@ -73,12 +74,11 @@ class GatewayService(Service):
     result = self._loadHandlerInit()
     if not result['OK']:
       return result
-    self._handler = result['Value']
+    self._handler = result[ 'Value' ]
     # Discover Handler
-    self._threadPool = ThreadPool(1,
-                                  max(0, self._cfg.getMaxThreads()),
-                                  self._cfg.getMaxWaitingPetitions())
-    self._threadPool.daemonize()
+    self._initMonitoring()
+    self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
+    
     self._msgBroker = MessageBroker("%sMSB" % GatewayService.GATEWAY_NAME, threadPool=self._threadPool)
     self._msgBroker.useMessageObjects(False)
     getGlobalMessageBroker().useMessageObjects(False)

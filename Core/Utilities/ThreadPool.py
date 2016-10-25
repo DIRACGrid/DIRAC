@@ -78,6 +78,9 @@ import time
 import sys
 import Queue
 import threading
+
+from concurrent.futures import ThreadPoolExecutor
+
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
 except:
@@ -311,6 +314,12 @@ def getGlobalThreadPool():
     gThreadPool.daemonize()
   return gThreadPool
 
+gThreadPoolExecutor = False
+def getGlobalThreadPoolExecutor():
+  global gThreadPoolExecutor
+  if not gThreadPoolExecutor:
+    gThreadPoolExecutor = ThreadPoolExecutor( 500 )
+  return gThreadPoolExecutor
 if __name__ == "__main__":
   import random
 
