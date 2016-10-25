@@ -23,7 +23,7 @@ def printVersion( log ):
   try:
     with open( "%s.run" % sys.argv[0], "w" ) as fd:
       pickle.dump( sys.argv[1:], fd )
-  except:
+  except OSError:
     pass
   log.info( "Version %s" % __RCSID__ )
 
@@ -34,7 +34,8 @@ def pythonPathCheck():
     pythonpath = os.getenv( 'PYTHONPATH', '' ).split( ':' )
     print 'Directories in PYTHONPATH:', pythonpath
     for p in pythonpath:
-      if p == '': continue
+      if p == '':
+        continue
       try:
         if os.path.normpath( p ) in sys.path:
           # In case a given directory is twice in PYTHONPATH it has to removed only once
@@ -69,13 +70,12 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
     # Sometimes repositories do not return Content-Length parameter
     try:
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    except Exception, x:
+    except Exception as x:
       expectedBytes = 0
     data = remoteFD.read()
     if fileName:
-      localFD = open( fileName + '-local', "wb" )
-      localFD.write( data )
-      localFD.close()
+      with open( fileName + '-local', "wb" ) as localFD:
+        localFD.write( data )
     else:
       urlData += data
     remoteFD.close()
@@ -474,7 +474,7 @@ class PilotParams( object ):
       elif o == '-D' or o == '--disk':
         try:
           self.minDiskSpace = int( v )
-        except:
+        except ValueError:
           pass
       elif o == '-r' or o == '--release':
         self.releaseVersion = v.split(',',1)[0]
@@ -493,7 +493,7 @@ class PilotParams( object ):
       elif o == '-M' or o == '--MaxCycles':
         try:
           self.maxCycles = min( self.MAX_CYCLES, int( v ) )
-        except:
+        except ValueError:
           pass
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v
