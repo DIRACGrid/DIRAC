@@ -1,4 +1,4 @@
-[v6r16-pre10]
+[v6r16-pre11]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
@@ -6,6 +6,7 @@ CHANGE: dirac-install, dirac-configure - use Extensions options consistently, dr
 CHANGE: dirac-install - use insecure ssl context for downloading files with urllib2.urlopen    
 CHANGE: GOCDBClient - replaced urllib2 with requests module
         FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
+CHANGE: Added environment variables to rc files to enable certificates verification (necessary for python 2.7.9+)
 FIX: ComponentInstaller - always update CS when a database is installed, even if it is
      already existing in the db server 
 
