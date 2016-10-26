@@ -26,6 +26,14 @@ NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 
+[v6r15p21]
+
+*WMS
+FIX: removed default LCG version from the pilot (dirac-install will use the one of the requested release)
+
+*RMS
+FIX: reject bad checksum
+
 [v6r15p20]
 
 *Framework
