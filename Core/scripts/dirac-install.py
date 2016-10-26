@@ -1124,11 +1124,11 @@ def loadConfiguration():
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
       continue
-    
+
     if opName == 'extraModules':
       logWARN( "extraModules is deprecated please use extensions instead!" )
       opName = 'extensions'
-    
+
     if opName == 'installType':
       opName = 'externalsType'
     if isinstance( getattr( cliParams, opName ), basestring ):
@@ -1352,6 +1352,9 @@ def createBashrc():
                      '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'export OPENSSL_CONF=/tmp'] )
+      lines.extend( ['# CAs path for SSL verification',
+                     'export SSL_CERT_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'certificates' ),
+                     'export REQUESTS_CA_BUNDLE=%s' % os.path.join( proPath, 'etc', 'grid-security', 'certificates' )] )
       # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend( ['# DIRAC platform',
@@ -1414,6 +1417,9 @@ def createCshrc():
                      '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'setenv OPENSSL_CONF /tmp'] )
+      lines.extend( ['# CAs path for SSL verification',
+                     'setenv SSL_CERT_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'certificates' ),
+                     'setenv REQUESTS_CA_BUNDLE %s' % os.path.join( proPath, 'etc', 'grid-security', 'certificates' )] )
       lines.extend( ['# IPv6 support',
                      'setenv GLOBUS_IO_IPV6 TRUE',
                      'setenv GLOBUS_FTP_CLIENT_IPV6 TRUE'] )
