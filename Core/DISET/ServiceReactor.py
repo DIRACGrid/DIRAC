@@ -134,6 +134,7 @@ class ServiceReactor(object):
           p = multiprocessing.Process(target=self.__startCloneProcess, args=(svcName, i))
           p.start()
           gLogger.always("Started clone process %s for %s" % (i, svcName))
+
     while self.__alive:
       self.__acceptIncomingConnection()
 
