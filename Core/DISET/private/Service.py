@@ -14,6 +14,7 @@ import threading
 
 import DIRAC
 from concurrent.futures import ThreadPoolExecutor
+from multiprocessing.pool import ThreadPool
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
