@@ -1328,19 +1328,21 @@ def createBashrc():
                 'export PYTHONOPTIMIZE=x' ]
       if 'HOME' in os.environ:
         lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
+
+      # Determining where the CAs are...
       if 'X509_CERT_DIR' in os.environ:
-        lines.append( 'export X509_CERT_DIR=%s' % os.environ['X509_CERT_DIR'] )
         certDir = os.environ['X509_CERT_DIR']
       else:
-        if os.path.isdir( "/etc/grid-security/certificates" ):
-          certDir = os.environ['X509_CERT_DIR']
+        if os.path.isdir( '/etc/grid-security/certificates' ):
+          certDir = '/etc/grid-security/certificates' # Assuming that, if present, it is not empty, and has correct CAs
         else:
-          certDir = '%s/etc/grid-security/certificates' % proPath
-          lines.append( "[[ -d '%s' ]] && export X509_CERT_DIR='%s'" % ( certDir, certDir ) )
-      lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
+          certDir = '%s/etc/grid-security/certificates' % proPath # But this will have to be created at some point (dirac-configure)
       lines.extend( ['# CAs path for SSL verification',
+                     'export X509_CERT_DIR=%s' % certDir,
                      'export SSL_CERT_DIR=%s' % certDir,
                      'export REQUESTS_CA_BUNDLE=%s' % certDir] )
+
+      lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      '[ -z "$DIRAC" ] && export DIRAC=%s' % proPath,
                      'export DIRACBIN=%s' % os.path.join( "$DIRAC", cliParams.platform, 'bin' ),
@@ -1397,19 +1399,21 @@ def createCshrc():
       lines = [ '# DIRAC cshrc file, used by clients to set up the environment',
                 'setenv PYTHONUNBUFFERED yes',
                 'setenv PYTHONOPTIMIZE x' ]
+
+      # Determining where the CAs are...
       if 'X509_CERT_DIR' in os.environ:
-        lines.append( 'setenv X509_CERT_DIR %s' % os.environ['X509_CERT_DIR'] )
         certDir = os.environ['X509_CERT_DIR']
       else:
-        if os.path.isdir( "/etc/grid-security/certificates" ):
-          certDir = os.environ['X509_CERT_DIR']
+        if os.path.isdir( '/etc/grid-security/certificates' ):
+          certDir = '/etc/grid-security/certificates' # Assuming that, if present, it is not empty, and has correct CAs
         else:
-          certDir = '%s/etc/grid-security/certificates' % proPath
-          lines.append( "test -d '%s' && setenv X509_CERT_DIR %s" % ( certDir, certDir ) )
-      lines.append( 'setenv X509_VOMS_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
+          certDir = '%s/etc/grid-security/certificates' % proPath # But this will have to be created at some point (dirac-configure)
       lines.extend( ['# CAs path for SSL verification',
+                     'setenv X509_CERT_DIR %s' %certDir,
                      'setenv SSL_CERT_DIR %s' % certDir,
                      'setenv REQUESTS_CA_BUNDLE %s' % certDir] )
+
+      lines.append( 'setenv X509_VOMS_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      '( test $?DIRAC -eq 1 ) || setenv DIRAC %s' % proPath,
                      'setenv DIRACBIN %s' % os.path.join( "$DIRAC", cliParams.platform, 'bin' ),
