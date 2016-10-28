@@ -574,8 +574,8 @@ class ReleaseConfig( object ):
           for pKey in relDeps:
             if pKey[0] == prj and pKey[1] != vrs:
               errMsg = "%s is required with two different versions ( %s and %s ) starting with %s:%s" % ( prj,
-                                                                                                    pKey[1], vrs,
-                                                                                                    project, release )
+                                                                                                          pKey[1], vrs,
+                                                                                                          project, release )
               return S_ERROR( errMsg )
           #Same version already required
       if project in relDeps and relDeps[ project ] != release:
@@ -1086,8 +1086,8 @@ def usage():
 def loadConfiguration():
 
   optList, args = getopt.getopt( sys.argv[1:],
-                               "".join( [ opt[0] for opt in cmdOpts ] ),
-                               [ opt[1] for opt in cmdOpts ] )
+                                 "".join( [ opt[0] for opt in cmdOpts ] ),
+                                 [ opt[1] for opt in cmdOpts ] )
 
   # First check if the name is defined
   for o, v in optList:
@@ -1330,9 +1330,17 @@ def createBashrc():
         lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
       if 'X509_CERT_DIR' in os.environ:
         lines.append( 'export X509_CERT_DIR=%s' % os.environ['X509_CERT_DIR'] )
-      elif not os.path.isdir( "/etc/grid-security/certificates" ):
-        lines.append( "[[ -d '%s/etc/grid-security/certificates' ]] && export X509_CERT_DIR='%s/etc/grid-security/certificates'" % ( proPath, proPath ) )
+        certDir = os.environ['X509_CERT_DIR']
+      else:
+        if os.path.isdir( "/etc/grid-security/certificates" ):
+          certDir = os.environ['X509_CERT_DIR']
+        else:
+          certDir = '%s/etc/grid-security/certificates' % proPath
+          lines.append( "[[ -d '%s' ]] && export X509_CERT_DIR='%s'" % ( certDir, certDir ) )
       lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
+      lines.extend( ['# CAs path for SSL verification',
+                     'export SSL_CERT_DIR=%s' % certDir,
+                     'export REQUESTS_CA_BUNDLE=%s' % certDir] )
       lines.extend( ['# Some DIRAC locations',
                      '[ -z "$DIRAC" ] && export DIRAC=%s' % proPath,
                      'export DIRACBIN=%s' % os.path.join( "$DIRAC", cliParams.platform, 'bin' ),
@@ -1352,9 +1360,6 @@ def createBashrc():
                      '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'export OPENSSL_CONF=/tmp'] )
-      lines.extend( ['# CAs path for SSL verification',
-                     'export SSL_CERT_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'certificates' ),
-                     'export REQUESTS_CA_BUNDLE=%s' % os.path.join( proPath, 'etc', 'grid-security', 'certificates' )] )
       # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend( ['# DIRAC platform',
@@ -1392,9 +1397,19 @@ def createCshrc():
       lines = [ '# DIRAC cshrc file, used by clients to set up the environment',
                 'setenv PYTHONUNBUFFERED yes',
                 'setenv PYTHONOPTIMIZE x' ]
-      if not 'X509_CERT_DIR' in os.environ and not os.path.isdir( "/etc/grid-security/certificates" ):
-        lines.append( "test -d '%s/etc/grid-security/certificates' && setenv X509_CERT_DIR %s/etc/grid-security/certificates" % ( proPath, proPath ) )
+      if 'X509_CERT_DIR' in os.environ:
+        lines.append( 'setenv X509_CERT_DIR %s' % os.environ['X509_CERT_DIR'] )
+        certDir = os.environ['X509_CERT_DIR']
+      else:
+        if os.path.isdir( "/etc/grid-security/certificates" ):
+          certDir = os.environ['X509_CERT_DIR']
+        else:
+          certDir = '%s/etc/grid-security/certificates' % proPath
+          lines.append( "test -d '%s' && setenv X509_CERT_DIR %s" % ( certDir, certDir ) )
       lines.append( 'setenv X509_VOMS_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
+      lines.extend( ['# CAs path for SSL verification',
+                     'setenv SSL_CERT_DIR %s' % certDir,
+                     'setenv REQUESTS_CA_BUNDLE %s' % certDir] )
       lines.extend( ['# Some DIRAC locations',
                      '( test $?DIRAC -eq 1 ) || setenv DIRAC %s' % proPath,
                      'setenv DIRACBIN %s' % os.path.join( "$DIRAC", cliParams.platform, 'bin' ),
@@ -1417,9 +1432,6 @@ def createCshrc():
                      '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'setenv OPENSSL_CONF /tmp'] )
-      lines.extend( ['# CAs path for SSL verification',
-                     'setenv SSL_CERT_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'certificates' ),
-                     'setenv REQUESTS_CA_BUNDLE %s' % os.path.join( proPath, 'etc', 'grid-security', 'certificates' )] )
       lines.extend( ['# IPv6 support',
                      'setenv GLOBUS_IO_IPV6 TRUE',
                      'setenv GLOBUS_FTP_CLIENT_IPV6 TRUE'] )
