@@ -14,7 +14,6 @@ import threading
 
 import DIRAC
 from concurrent.futures import ThreadPoolExecutor
-from multiprocessing.pool import ThreadPool
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
@@ -85,9 +84,10 @@ class Service(object):
     if referedAction in Service.SVC_VALID_ACTIONS:
       return referedAction
     return False
+  
+  def initialize( self ):
+    #Build the URLs
 
-  def initialize(self):
-    # Build the URLs
     self._url = self._cfg.getURL()
     if not self._url:
       return S_ERROR("Could not build service URL for %s" % self._name)
