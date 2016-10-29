@@ -105,6 +105,13 @@ function installSite(){
   sed -i s/VAR_DB_Host/$DB_HOST/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/install.cfg
 
+  sed -i s/VAR_NoSQLDB_User/$NoSQLDB_USER/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Password/$NoSQLDB_PASSWORD/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_RootUser/$NoSQLDB_ROOTUSER/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_RootPwd/$NoSQLDB_ROOTPWD/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Host/$NoSQLDB_HOST/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
+
   echo '==> Started installing'
   $SERVERINSTALLDIR/install_site.sh $SERVERINSTALLDIR/install.cfg
   echo '==> Completed installation'
