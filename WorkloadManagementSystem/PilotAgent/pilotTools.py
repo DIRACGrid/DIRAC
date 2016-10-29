@@ -35,7 +35,7 @@ def pythonPathCheck():
     print 'Directories in PYTHONPATH:', pythonpath
     for p in pythonpath:
       if p == '':
-	continue
+        continue
       try:
         if os.path.normpath( p ) in sys.path:
           # In case a given directory is twice in PYTHONPATH it has to removed only once
@@ -75,7 +75,7 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
     data = remoteFD.read()
     if fileName:
       with open( fileName + '-local', "wb" ) as localFD:
-	localFD.write( data )
+        localFD.write( data )
     else:
       urlData += data
     remoteFD.close()
@@ -474,7 +474,7 @@ class PilotParams( object ):
       elif o == '-D' or o == '--disk':
         try:
           self.minDiskSpace = int( v )
-	except ValueError:
+        except ValueError:
           pass
       elif o == '-r' or o == '--release':
         self.releaseVersion = v.split(',',1)[0]
@@ -493,7 +493,7 @@ class PilotParams( object ):
       elif o == '-M' or o == '--MaxCycles':
         try:
           self.maxCycles = min( self.MAX_CYCLES, int( v ) )
-	except ValueError:
+        except ValueError:
           pass
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v

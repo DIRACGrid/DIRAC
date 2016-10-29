@@ -32,6 +32,12 @@ NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 
+[v6r15p22]
+
+*Interfaces
+CHANGE: Dirac API - add possibility to define the VO in the API
+CHANGE: Dirac API - add checkSEAccess() method for checking SE status
+
 [v6r15p21]
 
 *WMS

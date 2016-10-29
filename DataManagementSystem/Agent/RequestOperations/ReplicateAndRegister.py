@@ -78,10 +78,10 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     # Replace opFile.Checksum if it doesn't match a valid FC checksum
     if fcChecksum:
       if hexAdlerToInt( fcChecksum ) != False:
-	opFile.Checksum = fcChecksum
-	opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
+        opFile.Checksum = fcChecksum
+        opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
       else:
-	opFile.Checksum = None
+        opFile.Checksum = None
 
   for repSEName in replicas:
     repSEMetadata = StorageElement( repSEName ).getFileMetadata( opFile.LFN )
@@ -97,11 +97,11 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
 
       seChecksum = hexAdlerToInt( repSEMetadata.get( "Checksum" ) )
       if seChecksum == False and opFile.Checksum:
-	ret['NoMetadata'].append( repSEName )
+        ret['NoMetadata'].append( repSEName )
       elif not seChecksum and opFile.Checksum:
         opFile.Checksum = None
         opFile.ChecksumType = None
-      elif seChecksum and not opFile.Checksum:
+      elif seChecksum and ( not opFile.Checksum or opFile.Checksum == 'False' ):
         opFile.Checksum = seChecksum
       if not opFile.Checksum or not seChecksum or compareAdler( seChecksum, opFile.Checksum ):
         # # All checksums are OK
