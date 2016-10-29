@@ -1,4 +1,4 @@
-[v6r16-pre11]
+[v6r16-pre12]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
@@ -9,6 +9,11 @@ CHANGE: GOCDBClient - replaced urllib2 with requests module
 CHANGE: Added environment variables to rc files to enable certificates verification (necessary for python 2.7.9+)
 FIX: ComponentInstaller - always update CS when a database is installed, even if it is
      already existing in the db server 
+FIX: SSLSocketFactory - in __checkKWArgs() use correct host address composed of 2 parts      
+
+*Framework
+FIX: SystemAdministrator service - do not install WebAppDIRAC by default, only for the host
+     really running the web portal
 
 *Accounting
 FIX: JobPolicy - remove User field from the policy conditions to fix a problem that 
