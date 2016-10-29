@@ -1,8 +1,16 @@
-[v6r15p21]
+[v6r15p22]
 
 *Interfaces
 CHANGE: Dirac API - add possibility to define the VO in the API
 CHANGE: Dirac API - add checkSEAccess() method for checking SE status
+
+[v6r15p21]
+
+*WMS
+FIX: removed default LCG version from the pilot (dirac-install will use the one of the requested release)
+
+*RMS
+FIX: reject bad checksum
 
 [v6r15p20]
 

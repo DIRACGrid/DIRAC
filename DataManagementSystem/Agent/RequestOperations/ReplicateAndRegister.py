@@ -23,7 +23,7 @@ __RCSID__ = "$Id $"
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.Adler import compareAdler
+from DIRAC.Core.Utilities.Adler import compareAdler, hexAdlerToInt
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 from DIRAC.DataManagementSystem.Client.DataManager                                import DataManager
@@ -71,14 +71,17 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     else:
       return allReplicas
 
-  if not opFile.Checksum:
+  if not opFile.Checksum or hexAdlerToInt( opFile.Checksum ) == False:
     # Set Checksum to FC checksum if not set in the request
     fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
     fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum' )
     # Replace opFile.Checksum if it doesn't match a valid FC checksum
     if fcChecksum:
-      opFile.Checksum = fcChecksum
-      opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
+      if hexAdlerToInt( fcChecksum ) != False:
+        opFile.Checksum = fcChecksum
+        opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
+      else:
+        opFile.Checksum = None
 
   for repSEName in replicas:
     repSEMetadata = StorageElement( repSEName ).getFileMetadata( opFile.LFN )
@@ -92,11 +95,13 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     elif not noReplicas:
       repSEMetadata = repSEMetadata['Value']['Successful'][opFile.LFN]
 
-      seChecksum = repSEMetadata.get( "Checksum" )
-      if not seChecksum and opFile.Checksum:
+      seChecksum = hexAdlerToInt( repSEMetadata.get( "Checksum" ) )
+      if seChecksum == False and opFile.Checksum:
+        ret['NoMetadata'].append( repSEName )
+      elif not seChecksum and opFile.Checksum:
         opFile.Checksum = None
         opFile.ChecksumType = None
-      elif seChecksum and not opFile.Checksum:
+      elif seChecksum and ( not opFile.Checksum or opFile.Checksum == 'False' ):
         opFile.Checksum = seChecksum
       if not opFile.Checksum or not seChecksum or compareAdler( seChecksum, opFile.Checksum ):
         # # All checksums are OK
