@@ -101,7 +101,7 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
       elif not seChecksum and opFile.Checksum:
         opFile.Checksum = None
         opFile.ChecksumType = None
-      elif seChecksum and not opFile.Checksum:
+      elif seChecksum and ( not opFile.Checksum or opFile.Checksum == 'False' ):
         opFile.Checksum = seChecksum
       if not opFile.Checksum or not seChecksum or compareAdler( seChecksum, opFile.Checksum ):
         # # All checksums are OK
