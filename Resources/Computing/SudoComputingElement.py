@@ -48,26 +48,33 @@ class SudoComputingElement( ComputingElement ):
       return result
 
     payloadProxy = result['Value']
-    if not os.environ.has_key( 'X509_USER_PROXY' ):
+    if not 'X509_USER_PROXY' in os.environ:
       self.log.error( 'X509_USER_PROXY variable for pilot proxy not found in local environment' )
       return S_ERROR( 'X509_USER_PROXY not found' )
 
     pilotProxy = os.environ['X509_USER_PROXY']
     self.log.info( 'Pilot proxy X509_USER_PROXY=%s' % pilotProxy )
 
-    # First username in the sequence to use when running payload job
-    # If first is pltXXp00 then have pltXXp01, pltXXp02, ...
-    try:
-      baseUsername = gConfig.getValue( "/LocalSite/SudoBaseUsername", "" )
-      baseCounter = int( baseUsername[-2:] )
-      self.log.info( 'Base username from /LocalSite/SudoBaseUsername = %s' % baseUsername )
-    except:
-      baseUsername = os.environ['USER'] + '00p00'
-      baseCounter  = 0
-      self.log.info( 'Base username from $USER + 00p00 : %s' % baseUsername )
+    # See if a fixed value has been given
+    payloadUsername = self.ceParameters.get( 'PayloadUser' )
+    
+    if payloadUsername:
+      self.log.info( 'Payload username %s from PayloadUser in ceParameters' % payloadUsername )
+    else:
+      # First username in the sequence to use when running payload job
+      # If first is pltXXp00 then have pltXXp01, pltXXp02, ...
+      try:
+        baseUsername = self.ceParameters.get('BaseUsername')
+        baseCounter = int( baseUsername[-2:] )
+        self.log.info( "Base username from BaseUsername in ceParameters : %s" % baseUsername )
+      except:
+        baseUsername = os.environ['USER'] + '00p00'
+        baseCounter  = 0
+        self.log.info( 'Base username from $USER + 00p00 : %s' % baseUsername )
 
-    # Next one in the sequence
-    payloadUsername = baseUsername[:-2] + ( '%02d' % (baseCounter + self.submittedJobs) )
+      # Next one in the sequence
+      payloadUsername = baseUsername[:-2] + ( '%02d' % (baseCounter + self.submittedJobs) )
+      self.log.info( 'Payload username set to %s using jobs counter' % payloadUsername )
 
     try:
       payloadUID = pwd.getpwnam(payloadUsername).pw_uid
