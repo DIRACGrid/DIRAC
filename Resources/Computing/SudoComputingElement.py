@@ -19,7 +19,7 @@ from DIRAC.Core.Utilities.Subprocess                        import shellCall
 
 MandatoryParameters = [ ]
 
-class sudoComputingElement( ComputingElement ):
+class SudoComputingElement( ComputingElement ):
 
   mandatoryParameters = MandatoryParameters
 
@@ -36,7 +36,7 @@ class sudoComputingElement( ComputingElement ):
     """
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
-    # Now sudo CE specific ones
+    # Now Sudo CE specific ones
 
   #############################################################################
   def submitJob( self, executableFile, proxy, dummy = None ):
@@ -90,17 +90,17 @@ class sudoComputingElement( ComputingElement ):
       self.log.error( 'Failed to change permissions of executable to 0755 with exception', 
                       '\n%s' % ( x ) )
 
-    result = self.sudoExecute( os.path.abspath( executableFile ), payloadProxy, payloadUsername, payloadUID, payloadGID )
+    result = self.SudoExecute( os.path.abspath( executableFile ), payloadProxy, payloadUsername, payloadUID, payloadGID )
     if not result['OK']:
-      self.log.error( 'Failed sudoExecute', result )
+      self.log.error( 'Failed SudoExecute', result )
       return result
 
-    self.log.debug( 'sudo CE result OK' )
+    self.log.debug( 'Sudo CE result OK' )
     self.submittedJobs += 1
     return S_OK()
 
   #############################################################################
-  def sudoExecute( self, executableFile, payloadProxy, payloadUsername, payloadUID, payloadGID ):
+  def SudoExecute( self, executableFile, payloadProxy, payloadUsername, payloadUID, payloadGID ):
     """Run sudo with checking of the exit status code.
     """
     # We now implement a file giveaway using groups, to avoid any need to sudo to root.
