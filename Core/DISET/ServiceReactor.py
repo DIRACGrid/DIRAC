@@ -125,7 +125,7 @@ class ServiceReactor(object):
       self.__listeningConnections[serviceName]['socket'] = transport.getSocket()
     return S_OK()
 
-  def stopChildProcesses(self,  _sig, frame ):
+  def stopChildProcesses(self, _sig, frame):
     """
     It is used to properly stop tornado when more than one process is used.
     In principle this is doing the job of runsv....
@@ -139,12 +139,12 @@ class ServiceReactor(object):
       #sock.shutdown()
       #sock.sock_shutdown()
     handler = frame.f_locals.get('self')
-    if handler and isinstance(handler,ServiceReactor):
+    if handler and isinstance(handler, ServiceReactor):
       handler.stopAllProcess()
 
-    for child in frame.f_locals.get( 'children', [] ):
-      gLogger.info( "Stopping child processes: %d" % child )
-      os.kill( child, signal.SIGTERM )
+    for child in frame.f_locals.get('children', []):
+      gLogger.info("Stopping child processes: %d" % child)
+      os.kill(child, signal.SIGTERM)
 
     #sys.exit( 0 )
 
@@ -156,17 +156,15 @@ class ServiceReactor(object):
     for svcName in self.__listeningConnections:
       gLogger.always("Listening at %s" % self.__services[svcName].getConfig().getURL())
     # Multiple clones not yet working. Disabled by default
-    if False and multiprocessing:
+    if multiprocessing:
       signal.signal(signal.SIGTERM, self.stopChildProcesses)
       signal.signal(signal.SIGINT, self.stopChildProcesses)
       for svcName in self.__listeningConnections:
         clones = self.__services[svcName].getConfig().getCloneProcesses()
         for i in range( 1, clones ):
-          self.__processes = multiprocessing.Process( target = self.__startCloneProcess, args = ( svcName, i ) )
-          #self.__processes.append(p)
-          #p.start()
-          self.__processes.start()
-          #self.__pool.apply(self.__startCloneProcess, ( svcName, i ) )
+          p = multiprocessing.Process( target = self.__startCloneProcess, args = ( svcName, i ) )
+          self.__processes.append(p)
+          p.start()
           gLogger.always( "Started clone process %s for %s" % ( i, svcName ) )
 
         #self.__pool.close()
@@ -181,15 +179,20 @@ class ServiceReactor(object):
     while self.__alive:
       self.__acceptIncomingConnection(svcName)
 
-  def stopAllProcess( self ):
-    gLogger.info( "Stopping: PID=%d, name=%s, parentPid=%d" % ( self.__processes.pid, self.__processes.name, self.__processes._parent_pid ) )
+  def stopAllProcess(self):
+    gLogger.info("Stopping: PID=%d, name=%s, parentPid=%d" %
+                 (self.__processes.pid, self.__processes.name, self.__processes._parent_pid))
     self.__processes.terminate()
-#     for process in self.__processes:
-#       print dir( process )
-#       gLogger.info( "Stopping: PID=%d, name=%s, parentPid=%d" % ( process.pid, process.name, process._parent_pid ) )
-#       if process.is_alive():
-#         process.terminate()
-#         self.__processes.remove( process )
+  #     for process in self.__processes:
+  #       print dir( process )
+  #       gLogger.info( "Stopping: PID=%d, name=%s, parentPid=%d" % ( process.pid, process.name, process._parent_pid ) )
+  #       if process.is_alive():
+  #         process.terminate()
+  #         self.__processes.remove( process )
+    for process in self.__processes:
+      gLogger.info("Stopping: PID=%d, name=%s" % (process.pid, process.name))
+      if process.is_alive():
+        process.terminate()
 
   def __getListeningSocketsList(self, svcName=False):
     if svcName:
