@@ -17,26 +17,21 @@ from DIRAC.Resources.Computing.ComputingElement             import ComputingElem
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                        import shellCall
 
-MandatoryParameters = [ ]
-
 class SudoComputingElement( ComputingElement ):
-
-  mandatoryParameters = MandatoryParameters
 
   #############################################################################
   def __init__( self, ceUniqueID ):
     """ Standard constructor.
     """
-    ComputingElement.__init__( self, ceUniqueID )
+    super(SudoComputingElement, self).__init__(ceUniqueID)
     self.submittedJobs = 0
 
   #############################################################################
   def _addCEConfigDefaults( self ):
     """Method to make sure all necessary Configuration Parameters are defined
     """
-    # First assure that any global parameters are loaded
-    ComputingElement._addCEConfigDefaults( self )
-    # Now Sudo CE specific ones
+    # Assure that any global parameters are loaded
+    super(SudoComputingElement, self)._addCEConfigDefaults()
 
   #############################################################################
   def submitJob( self, executableFile, proxy, dummy = None ):
@@ -50,7 +45,7 @@ class SudoComputingElement( ComputingElement ):
     payloadProxy = result['Value']
     if not 'X509_USER_PROXY' in os.environ:
       self.log.error( 'X509_USER_PROXY variable for pilot proxy not found in local environment' )
-      return S_ERROR( 'X509_USER_PROXY not found' )
+      return S_ERROR(DErrno.EPROXYFOUND, "X509_USER_PROXY not found")
 
     pilotProxy = os.environ['X509_USER_PROXY']
     self.log.info( 'Pilot proxy X509_USER_PROXY=%s' % pilotProxy )
@@ -79,9 +74,8 @@ class SudoComputingElement( ComputingElement ):
     try:
       payloadUID = pwd.getpwnam(payloadUsername).pw_uid
       payloadGID = pwd.getpwnam(payloadUsername).pw_gid
-    except:
+    except KeyError:
       error = S_ERROR( 'User "' + str(payloadUsername) + '" does not exist!' )
-      error['Value'] = ( 201, '', '' )
       return error
 
     self.log.verbose( 'Starting process for monitoring payload proxy' )
@@ -93,13 +87,13 @@ class SudoComputingElement( ComputingElement ):
     self.log.info( 'Changing permissions of executable (%s) to 0755' % executableFile )
     try:
       os.chmod( os.path.abspath( executableFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
-    except Exception, x:
+    except OSError as x:
       self.log.error( 'Failed to change permissions of executable to 0755 with exception', 
                       '\n%s' % ( x ) )
 
-    result = self.SudoExecute( os.path.abspath( executableFile ), payloadProxy, payloadUsername, payloadUID, payloadGID )
+    result = self.sudoExecute( os.path.abspath( executableFile ), payloadProxy, payloadUsername, payloadUID, payloadGID )
     if not result['OK']:
-      self.log.error( 'Failed SudoExecute', result )
+      self.log.error( 'Failed sudoExecute', result )
       return result
 
     self.log.debug( 'Sudo CE result OK' )
@@ -107,7 +101,7 @@ class SudoComputingElement( ComputingElement ):
     return S_OK()
 
   #############################################################################
-  def SudoExecute( self, executableFile, payloadProxy, payloadUsername, payloadUID, payloadGID ):
+  def sudoExecute( self, executableFile, payloadProxy, payloadUsername, payloadUID, payloadGID ):
     """Run sudo with checking of the exit status code.
     """
     # We now implement a file giveaway using groups, to avoid any need to sudo to root.
@@ -137,12 +131,9 @@ class SudoComputingElement( ComputingElement ):
 
     resultTuple = result['Value']
     status = resultTuple[0]
-    stdOutput = resultTuple[1]
-    stdError = resultTuple[2]
-    self.log.info( "Status after the sudo execution is %s" % str( status ) )
-    if status >=127:
-      error = S_ERROR( status )
-      error['Value'] = ( status, stdOutput, stdError )
+    self.log.info( "Status after the sudo execution is %d" % status )
+    if status > 0:
+      error = S_ERROR( 'sudo execution fails with return code %d' % status )
       return error
 
     return result
