@@ -22,8 +22,6 @@ import cStringIO
 
 from concurrent.futures import ThreadPoolExecutor
 
-#from multiprocessing.pool import ThreadPool
-
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.LockRing import LockRing
