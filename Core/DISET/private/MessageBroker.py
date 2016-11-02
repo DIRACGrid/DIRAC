@@ -8,7 +8,6 @@ import socket
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
-#from DIRAC.Core.Utilities.ThreadPool import getGlobalNativThreadPool #getGlobalThreadPoolExecutor
 from DIRAC.Core.Utilities.ThreadPool import getGlobalThreadPoolExecutor
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.DISET.private.MessageFactory import MessageFactory, DummyMessage
@@ -33,7 +32,7 @@ class MessageBroker( object ):
       transportPool = getGlobalTransportPool()
     self.__trPool = transportPool
     if not threadPool:
-      threadPool = getGlobalThreadPoolExecutor() #getGlobalNativThreadPool()   
+      threadPool = getGlobalThreadPoolExecutor()    
     self.__threadPool = threadPool
     self.__listeningForMessages = False
     self.__listenThread = None
@@ -170,7 +169,6 @@ class MessageBroker( object ):
                                                                         result[ 'Message' ] ) )
       return self.removeTransport( trid )
     self.__threadPool.submit( self.__processIncomingData, ( trid, result ) ) 
-    #self.__threadPool.apply_async( self.__processIncomingData, args = ( trid, result ) )
     return S_OK()
 
   def __processIncomingData( self, trid, receivedResult ):
@@ -405,7 +403,6 @@ class MessageBroker( object ):
     #Queue the disconnect CB if it's there
     if cbDisconnect:
       self.__threadPool.submit( cbDisconnect, trid )
-      #self.__threadPool.apply_async(cbDisconnect, args = (trid, ))
       
     return S_OK()
 

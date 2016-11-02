@@ -6,7 +6,6 @@
 __RCSID__ = "$Id$"
 
 import sys
-import signal 
 
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.FrameworkSystem.Client.Logger import gLogger

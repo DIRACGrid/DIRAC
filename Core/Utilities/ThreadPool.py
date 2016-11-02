@@ -80,7 +80,6 @@ import Queue
 import threading
 
 from concurrent.futures import ThreadPoolExecutor
-import multiprocessing.pool as pool 
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -323,13 +322,6 @@ def getGlobalThreadPoolExecutor():
   return gThreadPoolExecutor
 if __name__ == "__main__":
   import random
-
-gNativThreadPool = False
-def getGlobalNativThreadPool():
-  global gNativThreadPool
-  if not gNativThreadPool:
-    gNativThreadPool = pool.ThreadPool( 500 )
-  return gNativThreadPool
 
   def doSomething( iNumber ):
     time.sleep( random.randint( 1, 5 ) )
