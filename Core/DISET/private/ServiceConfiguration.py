@@ -84,7 +84,7 @@ class ServiceConfiguration:
     try:
       return int( self.getOption( "CloneProcesses" ) )
     except:
-      return 1
+      return 0
 
   def getPort( self ):
     try:
