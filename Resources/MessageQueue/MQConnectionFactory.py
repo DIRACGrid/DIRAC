@@ -88,7 +88,7 @@ class MQConnectionFactory( object ):
       return result
 
     mqConnection = result['Value']
-    result = mqConnection.setupConnection()
+    result = mqConnection.setupConnection( messageCallback = None )
     if not result['OK']:
       return result
 
