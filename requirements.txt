@@ -14,7 +14,7 @@ elasticsearch-dsl~=6.3.1
 CMRESHandler>=1.0.0b4
 funcsigs
 future
-futures
+futures>=3.0.5
 GitPython>=2.1.0
 # newer versions of matplotlib require python 3
 matplotlib>=2.1.0,<3.0
@@ -51,6 +51,4 @@ python-json-logger>=0.1.8
 multi-mechanize>=1.2.0
 tornado>=5.0.0
 caniusepython3
-
-bzt
-locustio
+subprocess32

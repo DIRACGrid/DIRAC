@@ -14,7 +14,7 @@ elasticsearch-dsl~=6.3.1
 CMRESHandler>=1.0.0b4
 funcsigs
 future
-futures
+futures>=3.0.5
 GitPython>=2.1.0
 # newer versions of matplotlib require python 3
 matplotlib>=2.1.0,<3.0
@@ -56,4 +56,5 @@ caniusepython3
 bzt
 locustio
 =======
->>>>>>> Revert "Adds Locust performance test for ResourceStatus"
+subprocess32
+>>>>>>> add futures to the requirements
