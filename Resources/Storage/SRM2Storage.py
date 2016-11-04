@@ -769,7 +769,7 @@ class SRM2Storage( StorageBase ):
         self.log.debug( "__putFile: Unable to remove remote file remnant %s." % dest_url )
       return res
     res = res['Value']
-    if not res['OK']:
+    if not res['OK']: #pylint: disable=invalid-sequence-index
       # Remove the failed replica, just in case
       result = self.__executeOperation( dest_url, 'removeFile' )
       if result['OK']:
@@ -912,7 +912,7 @@ class SRM2Storage( StorageBase ):
     if not res['OK']:
       return res
     res = res['Value']
-    if not res['OK']:
+    if not res['OK']: #pylint:disable=invalid-sequence-index
       return res
     errCode, errStr = res['Value']
     if errCode == 0:
@@ -1594,7 +1594,7 @@ class SRM2Storage( StorageBase ):
         res = self.__gfal_operation_wrapper( 'gfal_ls', gfalDict )
         # gDataStoreClient.addRegister( res['AccountingOperation'] )
         if not res['OK']:
-          if re.search( '\[SE\]\[Ls\]\[SRM_FAILURE\]', res['Message'] ):
+          if re.search( r'\[SE\]\[Ls\]\[SRM_FAILURE\]', res['Message'] ):
             allObtained = True
           else:
             failed[url] = res['Message']
@@ -1885,8 +1885,8 @@ class SRM2Storage( StorageBase ):
     if not res['OK']:
       return res
     res = res['Value']
-    if res['OK']:
-      for urlDict in res['Value']:
+    if res['OK']: #pylint: disable=invalid-sequence-index
+      for urlDict in res['Value']: #pylint: disable=invalid-sequence-index
         if 'surl' in urlDict:
           urlDict['surl'] = self.__convertRandomSRMOutputIntoAFullURL( urlDict['surl'] )['Value']
 

@@ -3,32 +3,29 @@
 # Date: 2011/01/17 12:42:07
 ########################################################################
 
-""" :mod: StatisticsTestCase 
+""" :mod: StatisticsTestCase
     =======================
-     
+
     .. module: StatisticsTestCase
     :synopsis: Test cases for DIRAC.Core.Utilities.Statistics module
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-    
+
     Test cases for DIRAC.Core.Utilities.Statistics module
 """
 
-__RCSID__ = "$Id $"
-
-##
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2011/01/17 12:42:33
-
-## imports 
+## imports
 import unittest
 from DIRAC.Core.Utilities.Statistics import *
+
+__RCSID__ = "$Id$"
+
 
 ########################################################################
 class StatisticsTestCase(unittest.TestCase):
 
   """
   .. class:: StatisticsTestCase
-	
+
   Test cases for DIRAC.Core.Utilities.Statistics
 
   """
@@ -47,7 +44,7 @@ class StatisticsTestCase(unittest.TestCase):
       pass
     # correct
     aList = [1, 1, 1, 1]
-    self.assertEqual( getMean(aList), 1.0 ) 
+    self.assertEqual( getMean(aList), 1.0 )
 
   def testGetMedian( self ):
     """ getMedian tests
@@ -87,9 +84,9 @@ class StatisticsTestCase(unittest.TestCase):
     aList = [ 1, 2, 3 ]
     self.assertEqual( getVariance(aList), 2.0/3.0)
     self.assertEqual( getVariance(aList, 2.0), 2.0/3.0)
-    # around mean = 1.0, should be 5/3 
+    # around mean = 1.0, should be 5/3
     self.assertEqual( getVariance(aList, 1.0), 5.0/3.0)
-    
+
   def testgetStandardDeviation( self ):
     """ getStandardDeviation tests
     """
@@ -116,6 +113,5 @@ class StatisticsTestCase(unittest.TestCase):
 if __name__ == "__main__":
 
   TESTLOADER = unittest.TestLoader()
-  SUITE = TESTLOADER.loadTestsFromTestCase( StatisticsTestCase )      
+  SUITE = TESTLOADER.loadTestsFromTestCase( StatisticsTestCase )
   unittest.TextTestRunner(verbosity=3).run( SUITE )
-

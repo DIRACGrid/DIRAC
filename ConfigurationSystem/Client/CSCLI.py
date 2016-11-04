@@ -469,8 +469,6 @@ class CSCLI( CLI ):
           print colorize( line, "green" )
         elif line[0] in ( '?' ):
           print colorize( line, "yellow" ),
-        else:
-          print line
     except:
       _showTraceback()
 

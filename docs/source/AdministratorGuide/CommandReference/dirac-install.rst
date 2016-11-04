@@ -1,6 +1,6 @@
-====================
+=============
 dirac-install
-====================
+=============
 
 2013-02-06 12:30:27 UTC dirac-install [NOTICE]  Processing installation requirements
 
@@ -10,7 +10,7 @@ Usage::
 
  l:  project=             : Project to install
 
- e:  extraModules=        : Extra modules to install (comma separated)
+ e:  externals=        : Externals to install (comma separated)
 
  t:  installType=         : Installation type (client/server)
 

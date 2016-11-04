@@ -69,7 +69,7 @@ class XROOTStorage_TestCase( unittest.TestCase ):
     mocked_xrootclient.rm.side_effect = None
 
     self.parameterDict = dict(Protocol='protocol',
-                              Path='path',
+                              Path = '/path',
                               Host='host',
                               Port='',
                               SpaceToken='spaceToken',
@@ -225,7 +225,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( 'storageName', resource.name )
     self.assertEqual( 'XROOT' , resource.pluginName )
     self.assertEqual( 'protocol'   , resource.protocol )
-    self.assertEqual( 'path'       , resource.protocolParameters['Path'] )
+    self.assertEqual( '/path'       , resource.protocolParameters['Path'] )
     self.assertEqual( 'host'       , resource.protocolParameters['Host'] )
     self.assertEqual( 0       , resource.protocolParameters['Port'] )
     self.assertEqual( 'spaceToken' , resource.protocolParameters['SpaceToken'] )
@@ -241,7 +241,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     res = resource.getParameters()
     self.assertEqual( 'storageName', res['StorageName'] )
     self.assertEqual( 'protocol'   , res['Protocol'] )
-    self.assertEqual( 'path'       , res['Path'] )
+    self.assertEqual( '/path'       , res['Path'] )
     self.assertEqual( 'host'       , res['Host'] )
     self.assertEqual( 0       , res['Port'] )
     self.assertEqual( 'spaceToken' , res['SpaceToken'] )
@@ -410,7 +410,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
     res = resource.getCurrentURL( "filename" )
     self.assertEqual( True, res['OK'] )
-    self.assertEqual( "protocol://host/path/filename", res['Value'] )
+    self.assertEqual( "protocol://host//path/filename", res['Value'] )
 
 
   def test_getDirectoryMetadata( self ):
@@ -481,16 +481,20 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
     setMockDirectory(directoryListMock)
 
+    resource.se = MagicMock()
+    voName = "A"
+    resource.se.vo = voName
     # We created a Directory which contains 2 subdir and 1 file
 
-    res = resource.listDirectory( "A" )
+    aUrl = resource.constructURLFromLFN( "/A" )['Value']
+    res = resource.listDirectory( aUrl )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {}, res['Value']['Failed'] )
-    SubDirs = res['Value']['Successful']["A"]["SubDirs"]
-    SubFiles = res['Value']['Successful']["A"]["Files"]
+    SubDirs = res['Value']['Successful'][aUrl]["SubDirs"]
+    SubFiles = res['Value']['Successful'][aUrl]["Files"]
     self.assertEqual( 2 , len( SubDirs ) )
     self.assertEqual( 1 , len( SubFiles ) )
-    self.assertEqual( SubFiles["root://host/A/file1"]["Size"], 4 )
+    self.assertEqual( SubFiles["/A/file1"]["Size"], 4 )
 
     #Cleanup old side effect
     mocked_xrootclient.stat.side_effect = None
@@ -499,10 +503,10 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     statInfoMock.makeFile()
     updateStatMockReferences( infoval = statInfoMock )
 
-    res = resource.listDirectory( "A" )
+    res = resource.listDirectory( aUrl )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {}, res['Value']['Successful'] )
-    self.assertEqual( "A" , res['Value']['Failed'].keys()[0] )
+    self.assertEqual( aUrl , res['Value']['Failed'].keys()[0] )
 
 
   def test_getFileMetadata( self ):
@@ -1113,14 +1117,14 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     ## with spaceToken
     res = resource.constructURLFromLFN( testLFN )
     self.assertTrue( res['OK'] )
-    self.assertEqual( "protocol://host/path%s?svcClass=%s" % ( testLFN, self.parameterDict['SpaceToken'] )
+    self.assertEqual( "protocol://host//path%s?svcClass=%s" % ( testLFN, self.parameterDict['SpaceToken'] )
                       , res['Value'] )
 
     ## no spaceToken
     resource.protocolParameters['SpaceToken']  = ""
     res = resource.constructURLFromLFN( testLFN )
     self.assertTrue( res['OK'] )
-    self.assertEqual( "protocol://host/path%s" % ( testLFN,  ) , res['Value'] )
+    self.assertEqual( "protocol://host//path%s" % ( testLFN, ) , res['Value'] )
 
 def updateStatMockReferences( statval = None, infoval = None ):
   """Updates the return value of stat to the new values provided. If a value is None, the old return value is used in that place. Should not be called with no arguments/ None None as arguments
@@ -1169,9 +1173,12 @@ if __name__ == '__main__':
 
   # Shut up the gLogger
   # Uncomment this line and comment the next 2 if you want debug
-  # gLogger.setLevel( "DEBUG" )
+
+
   from DIRAC.FrameworkSystem.private.logging.Logger import Logger
   Logger.processMessage = MagicMock()
+#   from DIRAC import gLogger
+#   gLogger.setLevel( "DEBUG" )
 
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( XROOTStorage_Success )

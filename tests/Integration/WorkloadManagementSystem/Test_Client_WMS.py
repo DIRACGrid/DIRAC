@@ -25,7 +25,6 @@
 
 import unittest
 import datetime
-import os
 import tempfile
 # from mock import Mock
 
@@ -57,7 +56,7 @@ def helloWorldJob():
 def createFile( job ):
   tmpdir = tempfile.mkdtemp()
   jobDescription = tmpdir + '/jobDescription.xml'
-  with open( jobDescription, os.O_RDWR | os.O_CREAT ) as fd:
+  with open( jobDescription, 'w' ) as fd:
     fd.write( job._toXML() )
   return jobDescription
 

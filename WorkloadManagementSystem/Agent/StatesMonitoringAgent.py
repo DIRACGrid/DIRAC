@@ -3,30 +3,16 @@
 # File :    StatesMonitoringAgent.py
 # Author :  Zoltan Mathe
 ########################################################################
-
 """  StatesMonitoringAgent sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
 """
 __RCSID__ = "$Id$"
 
-
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import gConfig, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
-from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.Core.Utilities import Time
-import json
-try:
-  import pika
-except Exception as e:
-  from DIRAC.Core.Utilities.Subprocess import systemCall
-  result = systemCall( False, ["pip", "install", "pika"] )
-  if not result['OK']:
-    raise RuntimeError( result['Message'] )
-  else:
-    import pika
-
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 class StatesMonitoringAgent( AgentModule ):
   """
@@ -45,22 +31,30 @@ class StatesMonitoringAgent( AgentModule ):
                                 'UserGroup',
                                 'JobGroup',
                                 'JobType',
-                              ]
+                                'ApplicationStatus',
+                                'MinorStatus']
   __summaryDefinedFields = [ ( 'ApplicationStatus', 'unset' ), ( 'MinorStatus', 'unset' ) ]
-  __summaryValueFieldsMapping = [ 'value',
-                                  'Reschedules',
-                                ]
+  __summaryValueFieldsMapping = [ 'Jobs',
+                                  'Reschedules']
   __renameFieldsMapping = { 'JobType' : 'JobSplitType' }
 
-
+  __jobDBFields = []
+  
+  jobDB = None
+  monitoringReporter = None
+  reportPeriod = None
+    
   def initialize( self ):
     """ Standard constructor
     """
     
     self.jobDB = JobDB()
-
-    self.am_setOption( "PollingTime", 120 )
-    self.__jobDBFields = []
+    
+    self.reportPeriod = 120
+    self.am_setOption( "PollingTime", self.reportPeriod )
+    
+    self.monitoringReporter = MonitoringReporter( monitoringType = "WMSHistory" )
+    
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
         field = 'Owner'
@@ -68,51 +62,8 @@ class StatesMonitoringAgent( AgentModule ):
         field = 'OwnerGroup'
       self.__jobDBFields.append( field )
     
-    result = gConfig.getOption( "/Systems/RabbitMQ/User" )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: User' )
-    user = result['Value']
-    
-    result = gConfig.getOption( "/Systems/RabbitMQ/Password" )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: Password' )
-    password = result['Value']
-    
-    result = gConfig.getOption( "/Systems/RabbitMQ/Host" )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: Host' )
-    self.host = result['Value']
-    
-    self.credentials = pika.PlainCredentials( user, password )
-
-    self.connection = pika.BlockingConnection( pika.ConnectionParameters( host = self.host, credentials = self.credentials ) )
-    self.channel = self.connection.channel()
-
-    self.channel.exchange_declare( exchange = 'mdatabase',
-                         exchange_type = 'fanout' )
-
     return S_OK()
-
-  def sendRecords( self, data ):
-    try:
-      self.channel.basic_publish( exchange = 'mdatabase',
-                        routing_key = '',
-                        body = data,
-                        properties = pika.BasicProperties( 
-                        delivery_mode = 2,  # make message persistent
-                      ) )
-    except Exception as e:
-      gLogger.error( "Connection closed:" + str( e ) )
-      self.connection = pika.BlockingConnection( pika.ConnectionParameters( host = self.host, credentials = self.credentials ) )
-      self.channel = self.connection.channel()
-      self.channel.exchange_declare( exchange = 'mdatabase',
-                         exchange_type = 'fanout' )
-      gLogger.info( "Resend records" )
-      self.sendRecords( data )
-      
-  def finalize( self ):
-    self.connection.close()
-    
+   
   def execute( self ):
     """ Main execution method
     """
@@ -120,19 +71,19 @@ class StatesMonitoringAgent( AgentModule ):
     if not result[ 'OK' ]:
       return result
     validSetups = result[ 'Value' ]
-    gLogger.info( "Valid setups for this cycle are %s" % ", ".join( validSetups ) )
+    self.log.info( "Valid setups for this cycle are %s" % ", ".join( validSetups ) )
     # Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
     if not result[ 'OK' ]:
-      gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
+      self.log.error( "Can't get the jobdb summary", result[ 'Message' ] )
     else:
       values = result[ 'Value' ][1]
-      gLogger.info( "Start sending records!" )
+      self.log.info( "Start sending records!" )
       for record in values:
         recordSetup = record[0]
         if recordSetup not in validSetups:
-          gLogger.error( "Setup %s is not valid" % recordSetup )
+          self.log.error( "Setup %s is not valid" % recordSetup )
           continue
         record = record[1:]
         rD = {}
@@ -144,11 +95,13 @@ class StatesMonitoringAgent( AgentModule ):
         record = record[ len( self.__summaryKeyFieldsMapping ): ]
         for iP in range( len( self.__summaryValueFieldsMapping ) ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
-        rD['startTime'] = int( Time.toEpoch( now ) )       
-        rD['metric'] = 'WMSHistory'
-        message = json.dumps( rD )
-        self.sendRecords( message )
-      gLogger.info( "The records are successfully sent!" )
+        rD['time'] = int( Time.toEpoch( now ) )       
+        self.monitoringReporter.addRecord( rD )
+      retVal = self.monitoringReporter.commit()
+      if retVal['OK']:
+        self.log.info( "The records are successfully sent to the Store!" )
+      else:
+        self.log.warn( "Faild to insert the records! It will be retried in the next iteration", retVal['Message'] )
         
     return S_OK()
 

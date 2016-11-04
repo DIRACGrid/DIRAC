@@ -214,11 +214,13 @@ class X509Chain( object ):
   def generateProxyToString( self, lifeTime, diracGroup = False, strength = 1024, limited = False, rfc = False, proxyKey = False ):
     """
     Generate a proxy and get it as a string
-      Args:
-        - lifeTime : expected lifetime in seconds of proxy
-        - diracGroup : diracGroup to add to the certificate
-        - strength : length in bits of the pair
-        - limited : Create a limited proxy
+
+    Args:
+        lifeTime (int): expected lifetime in seconds of proxy
+        diracGroup (str): diracGroup to add to the certificate
+        strength (int): length in bits of the pair
+        limited (bool): Create a limited proxy
+
     """
     if not self.__loadedChain:
       return S_ERROR( DErrno.ENOCHAIN )
@@ -271,12 +273,13 @@ class X509Chain( object ):
   def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, strength = 1024, limited = False, rfc = False ):
     """
     Generate a proxy and put it into a file
-      Args:
-        - filePath : file to write
-        - lifeTime : expected lifetime in seconds of proxy
-        - diracGroup : diracGroup to add to the certificate
-        - strength : length in bits of the pair
-        - limited : Create a limited proxy
+
+    Args:
+        filePath: file to write
+        lifeTime: expected lifetime in seconds of proxy
+        diracGroup: diracGroup to add to the certificate
+        strength: length in bits of the pair
+        limited: Create a limited proxy
     """
     retVal = self.generateProxyToString( lifeTime, diracGroup, strength, limited, rfc )
     if not retVal[ 'OK' ]:

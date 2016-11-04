@@ -9,7 +9,6 @@
     With this information the utility can calculate in normalized units the
     CPU time remaining for a given slot.
 """
-__RCSID__ = "$Id$"
 
 import os
 
@@ -17,6 +16,8 @@ import DIRAC
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
+
+__RCSID__ = "$Id$"
 
 class TimeLeft( object ):
   """ This generally does not run alone
@@ -163,20 +164,20 @@ class TimeLeft( object ):
         name = batchSystem
         break
 
-    if name == None and os.environ.has_key( 'MACHINEFEATURES' ) and os.environ.has_key( 'JOBFEATURES' ):
+    if name is None and 'MACHINEFEATURES' in os.environ and 'JOBFEATURES' in os.environ:
       # Only use MJF if legacy batch system information not available for now
       name = 'MJF'
 
-    if name == None:
+    if name is None:
       self.log.warn( 'Batch system type for site %s is not currently supported' % DIRAC.siteName() )
       return S_ERROR( 'Current batch system is not supported' )
 
     self.log.debug( 'Creating plugin for %s batch system' % ( name ) )
     try:
       batchSystemName = "%sTimeLeft" % ( name )
-      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
+      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' % #pylint: disable=unused-variable
                                 batchSystemName, globals(), locals(), [batchSystemName] )
-    except Exception as x:
+    except ImportError as x:
       msg = 'Could not import DIRAC.Core.Utilities.TimeLeft.%s' % ( batchSystemName )
       self.log.warn( x )
       self.log.warn( msg )
@@ -185,7 +186,7 @@ class TimeLeft( object ):
     try:
       batchStr = 'batchPlugin.%s()' % ( batchSystemName )
       batchInstance = eval( batchStr )
-    except Exception as x:
+    except Exception as x: #pylint: disable=broad-except
       msg = 'Could not instantiate %s()' % ( batchSystemName )
       self.log.warn( x )
       self.log.warn( msg )

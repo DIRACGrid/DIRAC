@@ -5,6 +5,7 @@ __RCSID__ = "$Id$"
 
 import types
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForVO
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Security import Properties
@@ -51,15 +52,20 @@ class AuthManager( object ):
     if self.KW_EXTRA_CREDENTIALS in credDict:
       userString += " extraCredentials=%s" % str( credDict[ self.KW_EXTRA_CREDENTIALS ] )
     self.__authLogger.verbose( "Trying to authenticate %s" % userString )
-    #Get properties
+    # Get properties
     requiredProperties = self.getValidPropertiesForMethod( methodQuery, defaultProperties )
+    # Extract valid groups
+    validGroups = self.getValidGroups( requiredProperties )
     lowerCaseProperties = [ prop.lower() for prop in requiredProperties ]
+    if not lowerCaseProperties:
+      lowerCaseProperties = ['any']
+
     allowAll = "any" in lowerCaseProperties or "all" in lowerCaseProperties
     #Set no properties by default
     credDict[ self.KW_PROPERTIES ] = []
     #Check non secure backends
     if self.KW_DN not in credDict or not credDict[ self.KW_DN ]:
-      if allowAll:
+      if allowAll and not validGroups:
         self.__authLogger.verbose( "Accepted request from unsecure transport" )
         return True
       else:
@@ -83,12 +89,12 @@ class AuthManager( object ):
       credDict[ self.KW_GROUP ] = credDict[ self.KW_EXTRA_CREDENTIALS ]
     #HACK TO MAINTAIN COMPATIBILITY
     else:
-      if self.KW_EXTRA_CREDENTIALS in credDict and not self.KW_GROUP in credDict:
+      if self.KW_EXTRA_CREDENTIALS in credDict and self.KW_GROUP not in credDict:
         credDict[ self.KW_GROUP ] = credDict[ self.KW_EXTRA_CREDENTIALS ]
     #END OF HACK
     #Get the username
     if self.KW_DN in credDict and credDict[ self.KW_DN ]:
-      if not self.KW_GROUP in credDict:
+      if self.KW_GROUP not in credDict:
         result = CS.findDefaultGroupForDN( credDict[ self.KW_DN ] )
         if not result['OK']:
           return False
@@ -112,14 +118,19 @@ class AuthManager( object ):
           credDict[ self.KW_USERNAME ] = "anonymous"
           credDict[ self.KW_GROUP ] = "visitor"
     #If any or all in the props, allow
-    if allowAll:
+    allowGroup = not validGroups or credDict[ self.KW_GROUP ] in validGroups
+    if allowAll and allowGroup:
       return True
     #Check authorized groups
-    if "authenticated" in lowerCaseProperties:
+    if "authenticated" in lowerCaseProperties and allowGroup:
       return True
     if not self.matchProperties( credDict, requiredProperties ):
       self.__authLogger.warn( "Client is not authorized\nValid properties: %s\nClient: %s" %
                                ( requiredProperties, credDict ) )
+      return False
+    elif not allowGroup:
+      self.__authLogger.warn( "Client is not authorized\nValid groups: %s\nClient: %s" %
+                               ( validGroups, credDict ) )
       return False
     return True
 
@@ -132,9 +143,9 @@ class AuthManager( object ):
     :param credDict: Credentials to ckeck
     :return: Boolean specifying whether the nickname was found
     """
-    if not self.KW_DN in credDict:
+    if self.KW_DN not in credDict:
       return True
-    if not self.KW_GROUP in credDict:
+    if self.KW_GROUP not in credDict:
       return False
     retVal = CS.getHostnameForDN( credDict[ self.KW_DN ] )
     if not retVal[ 'OK' ]:
@@ -167,6 +178,28 @@ class AuthManager( object ):
       return authProps
     self.__authLogger.verbose( "Method %s has no authorization rules defined. Allowing no properties" % method )
     return []
+
+  def getValidGroups( self, rawProperties ):
+    """  Get valid groups as specified in the method authorization rules
+
+    :param list rawProperties: all method properties
+    :return: list of allowed groups or []
+    """
+    validGroups = []
+    for prop in list( rawProperties ):
+      if prop.startswith( 'group:' ):
+        rawProperties.remove( prop )
+        prop = prop.replace( 'group:', '' )
+        validGroups.append( prop )
+      elif prop.startswith( 'vo:' ):
+        rawProperties.remove( prop )
+        vo = prop.replace( 'vo:', '' )
+        result = getGroupsForVO( vo )
+        if result['OK']:
+          validGroups.extend( result['Value'] )
+
+    validGroups = list( set( validGroups ) )
+    return validGroups
 
   def forwardedCredentials( self, credDict ):
     """
@@ -206,9 +239,9 @@ class AuthManager( object ):
     :param credDict: Credentials to ckeck
     :return: Boolean specifying whether the username was found
     """
-    if not self.KW_DN in credDict:
+    if self.KW_DN not in credDict:
       return True
-    if not self.KW_GROUP in credDict:
+    if self.KW_GROUP not in credDict:
       result = CS.findDefaultGroupForDN( credDict[ self.KW_DN ] )
       if not result['OK']:
         return False
@@ -232,6 +265,7 @@ class AuthManager( object ):
     :param validProps: List of valid properties
     :return: Boolean specifying whether any property has matched the valid ones
     """
+
     #HACK: Map lower case properties to properties to make the check in lowercase but return the proper case
     if not caseSensitive:
       validProps = dict( ( prop.lower(), prop ) for prop in validProps )

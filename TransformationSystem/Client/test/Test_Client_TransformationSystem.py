@@ -5,6 +5,7 @@
 
 import unittest
 import types
+import json
 
 from mock import MagicMock
 from DIRAC import gLogger
@@ -212,6 +213,50 @@ class RequestTasksSuccess( ClientsTestCase ):
       except IndexError:
         self.assertEqual( task['TaskObject'][0].Status, 'Waiting' )
 
+    ## test another (single) OperationType
+    res = self.requestTasks.prepareTransformationTasks( 'someType;LogUpload', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
+    self.assert_( res['OK'] )
+    # We should "lose" one of the task in the preparation
+    self.assertEqual( len( taskDict ), 2 )
+    for task in res['Value'].values():
+      self.assert_( isinstance( task['TaskObject'], Request ) )
+      self.assertEqual( task['TaskObject'][0].Type, 'LogUpload' )
+
+    ### Multiple operations
+    transBody = [ ("ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
+                  ("RemoveReplica", { "TargetSE":"FOO-SRM" } ),
+                ]
+    jsonBody = json.dumps(transBody)
+
+    taskDict = {1:{'TransformationID':1, 'TargetSE':'SE1', 'b1':'bb1', 'Site':'MySite',
+                   'InputData':['/this/is/a1.lfn', '/this/is/a2.lfn']},
+                2:{'TransformationID':1, 'TargetSE':'SE2', 'b2':'bb2', 'InputData':"/this/is/a1.lfn;/this/is/a2.lfn"},
+                3:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}}
+
+    res = self.requestTasks.prepareTransformationTasks( jsonBody, taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
+    self.assert_( res['OK'] )
+    # We should "lose" one of the task in the preparation
+    self.assertEqual( len( taskDict ), 2 )
+    for task in res['Value'].values():
+      self.assert_( isinstance( task['TaskObject'], Request ) )
+      self.assertEqual( task['TaskObject'][0].Type, 'ReplicateAndRegister' )
+      self.assertEqual( task['TaskObject'][1].Type, 'RemoveReplica' )
+      try:
+        self.assertEqual( task['TaskObject'][0][0].LFN, '/this/is/a1.lfn' )
+        self.assertEqual( task['TaskObject'][1][0].LFN, '/this/is/a1.lfn' )
+      except IndexError:
+        self.assertEqual( task['TaskObject'][0].Status, 'Waiting' )
+        self.assertEqual( task['TaskObject'][1].Status, 'Waiting' )
+      try:
+        self.assertEqual( task['TaskObject'][0][1].LFN, '/this/is/a2.lfn' )
+        self.assertEqual( task['TaskObject'][1][1].LFN, '/this/is/a2.lfn' )
+      except IndexError:
+        self.assertEqual( task['TaskObject'][0].Status, 'Waiting' )
+        self.assertEqual( task['TaskObject'][1].Status, 'Waiting' )
+
+      self.assertEqual( task['TaskObject'][0].SourceSE, 'FOO-SRM' )
+      self.assertEqual( task['TaskObject'][0].TargetSE, 'BAR-SRM' )
+      self.assertEqual( task['TaskObject'][1].TargetSE, 'FOO-SRM' )
 
 #############################################################################
 
@@ -317,6 +362,45 @@ class TransformationSuccess( ClientsTestCase ):
     self.assert_( res['OK'] )
     res = self.transformation.setPlugin( 'aPlugin' )
     self.assertTrue( res['OK'] )
+
+    ## Test DataOperation Body
+
+    res = self.transformation.setBody( "" )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( self.transformation.paramValues[ "Body" ], "" )
+
+    res = self.transformation.setBody( "_requestType;RemoveReplica" )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( self.transformation.paramValues[ "Body" ], "_requestType;RemoveReplica" )
+
+    ##Json will turn tuples to lists and strings to unicode
+    transBody = [ [ u"ReplicateAndRegister", { u"SourceSE":u"FOO-SRM", u"TargetSE":u"BAR-SRM" }],
+                  [ u"RemoveReplica", { u"TargetSE":u"FOO-SRM" } ],
+                ]
+    res = self.transformation.setBody( transBody )
+    self.assertTrue( res['OK'] )
+
+    self.assertEqual( self.transformation.paramValues[ "Body" ], json.dumps( transBody ) )
+
+    ## This is not true if any of the keys or values are not strings, e.g., integers
+    self.assertEqual( json.loads( self.transformation.paramValues[ "Body" ] ), transBody )
+
+    with self.assertRaisesRegexp( TypeError, "Expected list" ):
+      self.transformation.setBody( {"ReplicateAndRegister":{"foo":"bar"} } )
+    with self.assertRaisesRegexp( TypeError, "Expected tuple" ):
+      self.transformation.setBody( [ "ReplicateAndRegister", "RemoveReplica" ] )
+    with self.assertRaisesRegexp( TypeError, "Expected 2-tuple" ):
+      self.transformation.setBody( [ ( "ReplicateAndRegister", "RemoveReplica", "LogUpload" ) ] )
+    with self.assertRaisesRegexp( TypeError, "Expected string" ):
+      self.transformation.setBody( [ ( 123, "Parameter:Value" ) ] )
+    with self.assertRaisesRegexp( TypeError, "Expected dictionary" ):
+      self.transformation.setBody( [ ("ReplicateAndRegister", "parameter=foo") ] )
+    with self.assertRaisesRegexp( TypeError, "Expected string" ):
+      self.transformation.setBody( [ ("ReplicateAndRegister", { 123: "foo" } ) ] )
+    with self.assertRaisesRegexp( ValueError, "Unknown attribute" ):
+      self.transformation.setBody( [ ("ReplicateAndRegister", { "Request": Request() } ) ] )
+    with self.assertRaisesRegexp( TypeError, "Cannot encode" ):
+      self.transformation.setBody( [ ("ReplicateAndRegister", { "Arguments": Request() } ) ] )
 
   def test_SetGetReset( self ):
     """ Testing of the set, get and reset methods.

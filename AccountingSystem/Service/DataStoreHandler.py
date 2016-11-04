@@ -15,7 +15,7 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 class DataStoreHandler( RequestHandler ):
 
-  __acDB = AccountingDB()
+  __acDB = None
 
   @classmethod
   def initializeHandler( cls, svcInfoDict ):

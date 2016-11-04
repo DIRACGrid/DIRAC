@@ -24,8 +24,6 @@
   must inherit from the base class AgentModule
 
 """
-__RCSID__ = "$Id$"
-
 import time
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -33,6 +31,8 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.Core.Base.AgentModule import AgentModule
+
+__RCSID__ = "$Id$"
 
 class AgentReactor( object ):
   """
@@ -84,9 +84,9 @@ class AgentReactor( object ):
         if not result[ 'OK' ]:
           return S_ERROR( "Error while calling initialize method of %s: %s" % ( agentName, result[ 'Message' ] ) )
         agentData[ 'instanceObj' ] = instanceObj
-      except Exception, excp:
+      except Exception as excp:
         if not hideExceptions:
-          gLogger.exception( "Can't load agent %s" % agentName )
+          gLogger.exception( "Can't load agent %s" % agentName, lException = excp )
         return S_ERROR(  "Can't load agent %s: \n %s" % ( agentName, excp ) )
       agentPeriod = instanceObj.am_getPollingTime()
       result = self.__scheduler.addPeriodicTask( agentPeriod, instanceObj.am_go,
@@ -130,8 +130,8 @@ class AgentReactor( object ):
     for agentName in self.__agentModules:
       try:
         self.__agentModules[agentName]['instanceObj'].finalize()
-      except Exception:
-        gLogger.exception( 'Failed to execute finalize for Agent:', agentName )
+      except Exception as excp:
+        gLogger.exception( 'Failed to execute finalize for Agent: %s' % agentName, lException = excp )
 
   def go( self ):
     """
@@ -144,7 +144,7 @@ class AgentReactor( object ):
       while self.__alive:
         self.__checkControlDir()
         timeToNext = self.__scheduler.executeNextTask()
-        if timeToNext == None:
+        if timeToNext is None:
           gLogger.info( "No more agent modules to execute. Exiting" )
           break
         time.sleep( min( max( timeToNext, 0.5 ), 5 ) )
@@ -161,9 +161,9 @@ class AgentReactor( object ):
     if maxCycles:
       try:
         maxCycles += self.__agentModules[ agentName ][ 'instanceObj' ].am_getCyclesDone()
-      except Exception:
+      except Exception as excp:
         error = 'Can not determine number of cycles to execute'
-        gLogger.exception( '%s:' % error, '"%s"' % maxCycles )
+        gLogger.exception( "%s: '%s'" % ( error, maxCycles ), lException = excp )
         return S_ERROR( error )
     self.__agentModules[ agentName ][ 'instanceObj' ].am_setOption( 'MaxCycles', maxCycles )
     self.__scheduler.setNumExecutionsForTask( self.__agentModules[ agentName ][ 'taskId' ],
@@ -188,6 +188,6 @@ class AgentReactor( object ):
       if not alive:
         gLogger.info( "Stopping agent module %s" % ( agentName ) )
         self.__scheduler.removeTask( self.__agentModules[ agentName ][ 'taskId' ] )
-        del( self.__tasks[ self.__agentModules[ agentName ][ 'taskId' ] ] )
+        del self.__tasks[ self.__agentModules[ agentName ][ 'taskId' ] ]
         self.__agentModules[ agentName ][ 'running' ] = False
         agent.am_removeStopAgentFile()

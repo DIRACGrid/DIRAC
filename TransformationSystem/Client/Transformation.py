@@ -2,6 +2,7 @@
 """
 
 import types
+import json
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PromptUser import promptUser
@@ -9,6 +10,7 @@ from DIRAC.Core.Base.API import API
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 COMPONENT_NAME = 'Transformation'
 
@@ -23,38 +25,38 @@ class Transformation( API ):
     super( Transformation, self ).__init__()
 
     self.paramTypes = { 'TransformationID'      : [types.IntType, types.LongType],
-                          'TransformationName'    : types.StringTypes,
-                          'Status'                : types.StringTypes,
-                          'Description'           : types.StringTypes,
-                          'LongDescription'       : types.StringTypes,
-                          'Type'                  : types.StringTypes,
-                          'Plugin'                : types.StringTypes,
-                          'AgentType'             : types.StringTypes,
-                          'FileMask'              : types.StringTypes,
-                          'TransformationGroup'   : types.StringTypes,
-                          'GroupSize'             : [types.IntType, types.LongType, types.FloatType],
-                          'InheritedFrom'         : [types.IntType, types.LongType],
-                          'Body'                  : types.StringTypes,
-                          'MaxNumberOfTasks'      : [types.IntType, types.LongType],
-                          'EventsPerTask'         : [types.IntType, types.LongType]}
+                        'TransformationName'    : types.StringTypes,
+                        'Status'                : types.StringTypes,
+                        'Description'           : types.StringTypes,
+                        'LongDescription'       : types.StringTypes,
+                        'Type'                  : types.StringTypes,
+                        'Plugin'                : types.StringTypes,
+                        'AgentType'             : types.StringTypes,
+                        'FileMask'              : types.StringTypes,
+                        'TransformationGroup'   : types.StringTypes,
+                        'GroupSize'             : [types.IntType, types.LongType, types.FloatType],
+                        'InheritedFrom'         : [types.IntType, types.LongType],
+                        'Body'                  : types.StringTypes,
+                        'MaxNumberOfTasks'      : [types.IntType, types.LongType],
+                        'EventsPerTask'         : [types.IntType, types.LongType]}
     self.paramValues = { 'TransformationID'      : 0,
-                          'TransformationName'    : '',
-                          'Status'                : 'New',
-                          'Description'           : '',
-                          'LongDescription'       : '',
-                          'Type'                  : '',
-                          'Plugin'                : 'Standard',
-                          'AgentType'             : 'Manual',
-                          'FileMask'              : '',
-                          'TransformationGroup'   : 'General',
-                          'GroupSize'             : 1,
-                          'InheritedFrom'         : 0,
-                          'Body'                  : '',
-                          'MaxNumberOfTasks'       : 0,
-                          'EventsPerTask'          : 0}
+                         'TransformationName'    : '',
+                         'Status'                : 'New',
+                         'Description'           : '',
+                         'LongDescription'       : '',
+                         'Type'                  : '',
+                         'Plugin'                : 'Standard',
+                         'AgentType'             : 'Manual',
+                         'FileMask'              : '',
+                         'TransformationGroup'   : 'General',
+                         'GroupSize'             : 1,
+                         'InheritedFrom'         : 0,
+                         'Body'                  : '',
+                         'MaxNumberOfTasks'       : 0,
+                         'EventsPerTask'          : 0}
     self.ops = Operations()
     self.supportedPlugins = self.ops.getValue( 'Transformations/AllowedPlugins',
-                                              ['Broadcast', 'Standard', 'BySize', 'ByShare'] )
+                                               ['Broadcast', 'Standard', 'BySize', 'ByShare'] )
     if not transClient:
       self.transClient = TransformationClient()
     else:
@@ -90,6 +92,46 @@ class Transformation( API ):
 
   def setSourceSE( self, seList ):
     return self.__setSE( 'SourceSE', seList )
+
+  def setBody( self, body ):
+    """ check that the body is a string, or using the proper syntax for multiple operations
+
+    :param body: transformation body, for example
+
+      .. code :: python
+
+        body = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
+                 ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
+               ]
+
+    :type body: string or list of tuples (or lists) of string and dictionaries
+    :raises TypeError: If the structure is not as expected
+    :raises ValueError: If unknown attribute for the :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation` is used
+    :returns: S_OK, S_ERROR
+    """
+    self.item_called = "Body"
+    if isinstance( body, basestring ):
+      return self.__setParam( body )
+    if not isinstance( body, (list, tuple) ):
+      raise TypeError( "Expected list or string, but %r is %s" % ( body, type( body ) ) )
+
+    for tup in body:
+      if not isinstance( tup, (tuple, list) ):
+        raise TypeError( "Expected tuple or list, but %r is %s" % ( tup, type( tup ) ) )
+      if len(tup) != 2:
+        raise TypeError( "Expected 2-tuple, but %r is length %d" % ( tup, len( tup ) ) )
+      if not isinstance( tup[0], basestring ):
+        raise TypeError( "Expected string, but first entry in tuple %r is %s" % ( tup, type( tup[0] ) ) )
+      if not isinstance( tup[1], dict ):
+        raise TypeError( "Expected dictionary, but second entry in tuple %r is %s" % ( tup, type( tup[0] ) ) )
+      for par, val in tup[1].iteritems():
+        if not isinstance( par, basestring ):
+          raise TypeError( "Expected string, but key in dictionary %r is %s" % ( par, type( par ) ) )
+        if not par in Operation.ATTRIBUTE_NAMES:
+          raise ValueError( "Unknown attribute for Operation: %s" % par )
+        if not isinstance( val, ( basestring, int, long, float, list, tuple, dict ) ):
+          raise TypeError( "Cannot encode %r, in json" % ( val ) )
+      return self.__setParam( json.dumps( body ) )
 
   def __setSE( self, seParam, seList ):
     if isinstance( seList, basestring ):
@@ -248,7 +290,7 @@ class Transformation( API ):
   def getTransformationFiles( self, fileStatus = [], lfns = [], outputFields = ['FileID', 'LFN', 'Status', 'TaskID',
                                                                                 'TargetSE', 'UsedSE', 'ErrorCount',
                                                                                 'InsertedTime', 'LastUpdate'],
-                             orderBy = 'FileID', printOutput = False ):
+                              orderBy = 'FileID', printOutput = False ):
     condDict = {'TransformationID':self.paramValues['TransformationID']}
     if fileStatus:
       condDict['Status'] = fileStatus
@@ -272,7 +314,7 @@ class Transformation( API ):
                                                                                    'ExternalStatus', 'ExternalID',
                                                                                    'TargetSE', 'CreationTime',
                                                                                    'LastUpdateTime'],
-                             orderBy = 'TaskID', printOutput = False ):
+                              orderBy = 'TaskID', printOutput = False ):
     condDict = {'TransformationID':self.paramValues['TransformationID']}
     if taskStatus:
       condDict['ExternalStatus'] = taskStatus
@@ -296,7 +338,7 @@ class Transformation( API ):
   def getTransformations( self, transID = [], transStatus = [], outputFields = ['TransformationID', 'Status',
                                                                                 'AgentType', 'TransformationName',
                                                                                 'CreationDate'],
-                         orderBy = 'TransformationID', printOutput = False ):
+                          orderBy = 'TransformationID', printOutput = False ):
     condDict = {}
     if transID:
       condDict['TransformationID'] = transID
@@ -334,9 +376,10 @@ class Transformation( API ):
     return S_OK( res )
 
   #############################################################################
-  def getTransformationsByUser( self, authorDN = "", userName = "", transID = [], transStatus = [], outputFields = ['TransformationID', 'Status',
-                                                                                                     'AgentType', 'TransformationName',
-                                                                                                     'CreationDate', 'AuthorDN'],
+  def getTransformationsByUser( self, authorDN = "", userName = "", transID = [], transStatus = [],
+                                outputFields = ['TransformationID', 'Status',
+                                                'AgentType', 'TransformationName',
+                                                'CreationDate', 'AuthorDN'],
                                 orderBy = 'TransformationID', printOutput = False ):
     condDict = {}
     if authorDN == "":
@@ -431,19 +474,19 @@ class Transformation( API ):
       self._prettyPrint( self.paramValues )
 
     res = self.transClient.addTransformation( self.paramValues['TransformationName'],
-                                             self.paramValues['Description'],
-                                             self.paramValues['LongDescription'],
-                                             self.paramValues['Type'],
-                                             self.paramValues['Plugin'],
-                                             self.paramValues['AgentType'],
-                                             self.paramValues['FileMask'],
-                                             transformationGroup = self.paramValues['TransformationGroup'],
-                                             groupSize = self.paramValues['GroupSize'],
-                                             inheritedFrom = self.paramValues['InheritedFrom'],
-                                             body = self.paramValues['Body'],
-                                             maxTasks = self.paramValues['MaxNumberOfTasks'],
-                                             eventsPerTask = self.paramValues['EventsPerTask'],
-                                             addFiles = addFiles )
+                                              self.paramValues['Description'],
+                                              self.paramValues['LongDescription'],
+                                              self.paramValues['Type'],
+                                              self.paramValues['Plugin'],
+                                              self.paramValues['AgentType'],
+                                              self.paramValues['FileMask'],
+                                              transformationGroup = self.paramValues['TransformationGroup'],
+                                              groupSize = self.paramValues['GroupSize'],
+                                              inheritedFrom = self.paramValues['InheritedFrom'],
+                                              body = self.paramValues['Body'],
+                                              maxTasks = self.paramValues['MaxNumberOfTasks'],
+                                              eventsPerTask = self.paramValues['EventsPerTask'],
+                                              addFiles = addFiles )
     if not res['OK']:
       if printOutput:
         self._prettyPrint( res )
@@ -498,7 +541,7 @@ class Transformation( API ):
 
   def _checkStandardPlugin( self ):
     groupSize = self.paramValues['GroupSize']
-    if ( groupSize <= 0 ):
+    if groupSize <= 0:
       gLogger.info( "The GroupSize was found to be less than zero. It has been set to 1." )
       res = self.setGroupSize( 1 )
       if not res['OK']:
