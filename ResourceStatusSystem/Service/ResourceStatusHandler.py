@@ -52,6 +52,10 @@ class ResourceStatusHandler( RequestHandler ):
   '''
 
   def __init__( self, *args, **kwargs ):
+
+    # create tables for empty db
+    db.createTables()
+
     super( ResourceStatusHandler, self ).__init__( *args, **kwargs )
 
   @staticmethod

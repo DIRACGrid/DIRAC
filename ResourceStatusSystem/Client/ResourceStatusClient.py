@@ -8,7 +8,7 @@
 from DIRAC                                                  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 
-# from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB         import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.Utilities                   import RssConfiguration
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.FrameworkSystem.Client.NotificationClient        import NotificationClient
@@ -51,11 +51,7 @@ class ResourceStatusClient( object ):
       fails, then tries to connect to the Service :class:ResourceStatusHandler.
     '''
 
-    if not serviceIn:
-      #self.gate = ResourceStatusDB()
-      self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
-    else:
-      self.gate = serviceIn
+    self.rssDB = ResourceStatusDB()
 
     self.validElements = RssConfiguration.getValidElements()
 
@@ -64,7 +60,7 @@ class ResourceStatusClient( object ):
 
   def insertStatusElement( self, element, tableType, name, statusType, status,
                            elementType, reason, dateEffective, lastCheckTime,
-                           tokenOwner, tokenExpiration, meta = None ):
+                           tokenOwner, tokenExpiration ):
     '''
     Inserts on <element><tableType> a new row with the arguments given.
 
@@ -94,18 +90,18 @@ class ResourceStatusClient( object ):
         token assigned to the site & status type
       **tokenExpiration** - `datetime`
         time-stamp setting validity of token ownership
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    return self._query( 'insert', locals() )
+    return self.rssDB.insert(element, tableType, name, statusType, status,
+                             elementType, reason, dateEffective, lastCheckTime,
+                             tokenOwner, tokenExpiration)
+
   def updateStatusElement( self, element, tableType, name, statusType, status,
                            elementType, reason, dateEffective, lastCheckTime,
-                           tokenOwner, tokenExpiration, meta = None ):
+                           tokenOwner, tokenExpiration ):
     '''
     Updates <element><tableType> with the parameters given.
 
@@ -135,19 +131,19 @@ class ResourceStatusClient( object ):
         token assigned to the site & status type
       **tokenExpiration** - `datetime`
         time-stamp setting validity of token ownership
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    return self._query( 'update', locals() )
+    return self.rssDB.update(element, tableType, name, statusType, status,
+                             elementType, reason, dateEffective, lastCheckTime,
+                             tokenOwner, tokenExpiration)
+
   def selectStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
                            dateEffective = None, lastCheckTime = None,
-                           tokenOwner = None, tokenExpiration = None, meta = None ):
+                           tokenOwner = None, tokenExpiration = None ):
     '''
     Gets from <element><tableType> all rows that match the parameters given.
 
@@ -177,19 +173,19 @@ class ResourceStatusClient( object ):
         token assigned to the site & status type
       **tokenExpiration** - `[, datetime, list]`
         time-stamp setting validity of token ownership
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    return self._query( 'select', locals() )
+    return self.rssDB.select(element, tableType, name, statusType, status,
+                             elementType, reason, dateEffective, lastCheckTime,
+                             tokenOwner, tokenExpiration)
+
   def deleteStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
                            dateEffective = None, lastCheckTime = None,
-                           tokenOwner = None, tokenExpiration = None, meta = None ):
+                           tokenOwner = None, tokenExpiration = None ):
     '''
     Deletes from <element><tableType> all rows that match the parameters given.
 
@@ -219,27 +215,20 @@ class ResourceStatusClient( object ):
         token assigned to the site & status type
       **tokenExpiration** - `[, datetime, list]`
         time-stamp setting validity of token ownership
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
     # pylint: disable=unused-argument
-
-    result = self._query( 'delete', locals() )
-    if result['OK']:
-      if tableType == 'Status':
-        self.notify( 'delete', str( locals() ) )
-    return result
+    return self.rssDB.delete(element, tableType, name, statusType, status,
+                             elementType, reason, dateEffective, lastCheckTime,
+                             tokenOwner, tokenExpiration)
 
   def addOrModifyStatusElement( self, element, tableType, name = None,
                                 statusType = None, status = None,
                                 elementType = None, reason = None,
                                 dateEffective = None, lastCheckTime = None,
-                                tokenOwner = None, tokenExpiration = None,
-                                meta = None ):
+                                tokenOwner = None, tokenExpiration = None ):
     '''
     Adds or updates-if-duplicated from <element><tableType> and also adds a log
     if flag is active.
@@ -270,21 +259,19 @@ class ResourceStatusClient( object ):
         token assigned to the site & status type
       **tokenExpiration** - `datetime`
         time-stamp setting validity of token ownership
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    meta = { 'onlyUniqueKeys' : True }
-    return self._query( 'addOrModify', locals() )
+    return self.rssDB.addOrModify(element, tableType, name, statusType, status,
+                                  elementType, reason, dateEffective, lastCheckTime,
+                                  tokenOwner, tokenExpiration)
 
   def modifyStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
                            dateEffective = None, lastCheckTime = None, tokenOwner = None,
-                           tokenExpiration = None, meta = None ):
+                           tokenExpiration = None ):
     '''
     Updates from <element><tableType> and also adds a log if flag is active.
 
@@ -314,22 +301,20 @@ class ResourceStatusClient( object ):
         token assigned to the site & status type
       **tokenExpiration** - `datetime`
         time-stamp setting validity of token ownership
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    meta = { 'onlyUniqueKeys' : True }
-    return self._query( 'modify', locals() )
+    return self.rssDB.modify(element, tableType, name, statusType, status,
+                             elementType, reason, dateEffective, lastCheckTime,
+                             tokenOwner, tokenExpiration)
+
   def addIfNotThereStatusElement( self, element, tableType, name = None,
                                   statusType = None, status = None,
                                   elementType = None, reason = None,
                                   dateEffective = None, lastCheckTime = None,
-                                  tokenOwner = None, tokenExpiration = None,
-                                  meta = None ):
+                                  tokenOwner = None, tokenExpiration = None ):
     '''
     Adds if-not-duplicated from <element><tableType> and also adds a log if flag
     is active.
@@ -360,16 +345,17 @@ class ResourceStatusClient( object ):
         token assigned to the site & status type
       **tokenExpiration** - `datetime`
         time-stamp setting validity of token ownership
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    meta = { 'onlyUniqueKeys' : True }
-    return self._query( 'addIfNotThere', locals() )
+    return self.rssDB.addIfNotThere(element, tableType, name, statusType, status,
+                                    elementType, reason, dateEffective, lastCheckTime,
+                                    tokenOwner, tokenExpiration)
+
+
+
 
   ##############################################################################
   # Protected methods - Use carefully !!
