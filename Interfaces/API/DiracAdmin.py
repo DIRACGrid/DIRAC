@@ -1039,12 +1039,12 @@ class DiracAdmin( API ):
     return self.csAPI.commitChanges( sortUsers = False )
 
   #############################################################################
-  def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True ):
+  def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True, html = False ):
     """
     Send mail to specified address with body.
     """
     notification = NotificationClient()
-    return notification.sendMail( address, subject, body, fromAddress, localAttempt )
+    return notification.sendMail( address, subject, body, fromAddress, localAttempt, html )
 
   #############################################################################
   def sendSMS( self, userName, body, fromAddress = None ):

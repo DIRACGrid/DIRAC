@@ -3,130 +3,16 @@
     (Partially) tested here are SGE and LSF, PBS is TO-DO
 """
 
+#FIXME: remove use of importlib, use @mock.patch decorator instead
+
 # imports
 import unittest, importlib
-from mock import MagicMock
+from mock import MagicMock, patch
 
 from DIRAC import gLogger, S_OK
 
 # sut
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
-
-class TimeLeftTestCase( unittest.TestCase ):
-  """ Base class for the test cases
-  """
-  def setUp( self ):
-    gLogger.setLevel( 'DEBUG' )
-
-  def tearDown( self ):
-    pass
-
-
-class TimeLeftSuccess( TimeLeftTestCase ):
-
-  def test_getScaledCPU( self ):
-    tl = TimeLeft()
-    res = tl.getScaledCPU()
-    self.assertEqual( res, 0 )
-
-    tl.scaleFactor = 5.0
-    tl.normFactor = 5.0
-
-    for batch, retValue in [( 'LSF', LSF_ReturnValue )]:
-      self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
-      rcMock = MagicMock()
-      rcMock.return_value = S_OK( retValue )
-      self.tl.runCommand = rcMock
-
-      batchSystemName = '%sTimeLeft' % batch
-      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
-                                batchSystemName, globals(), locals(), [batchSystemName] )
-      batchStr = 'batchPlugin.%s()' % ( batchSystemName )
-      tl.batchPlugin = eval( batchStr )
-      res = tl.getScaledCPU()
-      self.assertEqual( res, 0.0 )
-
-    for batch, retValue in [( 'SGE', SGE_ReturnValue )]:
-      self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
-      rcMock = MagicMock()
-      rcMock.return_value = S_OK( retValue )
-      self.tl.runCommand = rcMock
-
-      batchSystemName = '%sTimeLeft' % batch
-      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
-                                batchSystemName, globals(), locals(), [batchSystemName] )
-      batchStr = 'batchPlugin.%s()' % ( batchSystemName )
-      tl.batchPlugin = eval( batchStr )
-      res = tl.getScaledCPU()
-      self.assertEqual( res, 300.0 )
-
-
-  def test_getTimeLeft( self ):
-#     for batch, retValue in [( 'LSF', LSF_ReturnValue ), ( 'SGE', SGE_ReturnValue )]:
-
-    for batch, retValue in [( 'LSF', LSF_ReturnValue )]:
-      self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
-      rcMock = MagicMock()
-      rcMock.return_value = S_OK( retValue )
-      self.tl.runCommand = rcMock
-
-      tl = TimeLeft()
-#      res = tl.getTimeLeft()
-#      self.assertEqual( res['OK'], True )
-
-      batchSystemName = '%sTimeLeft' % batch
-      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
-                                batchSystemName, globals(), locals(), [batchSystemName] )
-      batchStr = 'batchPlugin.%s()' % ( batchSystemName )
-      tl.batchPlugin = eval( batchStr )
-
-      tl.scaleFactor = 10.0
-      tl.normFactor = 10.0
-      tl.batchPlugin.bin = '/usr/bin'
-      tl.batchPlugin.hostNorm = 10.0
-      tl.batchPlugin.cpuLimit = 1000
-      tl.batchPlugin.wallClockLimit = 1000
-
-      res = tl.getTimeLeft()
-      self.assertEqual( res['OK'], True )
-
-    for batch, retValue in [( 'SGE', SGE_ReturnValue )]:
-      self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
-      rcMock = MagicMock()
-      rcMock.return_value = S_OK( retValue )
-      self.tl.runCommand = rcMock
-
-      tl = TimeLeft()
-#       res = tl.getTimeLeft()
-#       self.assertFalse( res['OK'] )
-
-      batchSystemName = '%sTimeLeft' % batch
-      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
-                                batchSystemName, globals(), locals(), [batchSystemName] )
-      batchStr = 'batchPlugin.%s()' % ( batchSystemName )
-      tl.batchPlugin = eval( batchStr )
-
-      tl.scaleFactor = 10.0
-      tl.normFactor = 10.0
-      tl.batchPlugin.bin = '/usr/bin'
-      tl.batchPlugin.hostNorm = 10.0
-      tl.batchPlugin.cpuLimit = 1000
-      tl.batchPlugin.wallClockLimit = 1000
-
-      res = tl.getTimeLeft()
-      self.assert_( res['OK'] )
-      self.assertEqual( res['Value'], 9400.0 )
-
-
-#############################################################################
-# Test Suite run
-#############################################################################
-
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TimeLeftTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TimeLeftSuccess ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
-
 
 SGE_ReturnValue = """==============================================================
 job_number:                 12345
@@ -164,6 +50,141 @@ PBS_ReturnValue = """bla"""
 LSF_ReturnValue = """JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME  PROJ_NAME CPU_USED MEM SWAP PIDS START_TIME FINISH_TIME
 12345 lhbplt01 RUN   grid_lhcb  ce407.cern.ch p01001532668097 cream_220615831 10/12-20:51:42 default    00:00:60.00 626732 4071380 13723,13848,13852,14054,14055,14112,14117,14247,14248,14251,14253,14256,28412,20315,20316,23628,25459,25468,25469,14249 10/12-20:52:00 -"""
 
+MJF_ReturnValue = "0"
 
+
+class TimeLeftTestCase( unittest.TestCase ):
+  """ Base class for the test cases
+  """
+  def setUp( self ):
+    gLogger.setLevel( 'DEBUG' )
+    self.tl = None
+
+  def tearDown( self ):
+    pass
+
+
+class TimeLeftSuccess( TimeLeftTestCase ):
+
+  def test_getScaledCPU( self ):
+    tl = TimeLeft()
+    res = tl.getScaledCPU()
+    self.assertEqual( res, 0 )
+
+    tl.scaleFactor = 5.0
+    tl.normFactor = 5.0
+
+    for batch, retValue in [( 'LSF', LSF_ReturnValue )]:
+      self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
+      rcMock = MagicMock()
+      rcMock.return_value = S_OK( retValue )
+      self.tl.runCommand = rcMock
+
+      batchSystemName = '%sTimeLeft' % batch
+      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' % #pylint: disable=unused-variable
+                                batchSystemName, globals(), locals(), [batchSystemName] )
+      batchStr = 'batchPlugin.%s()' % ( batchSystemName )
+      tl.batchPlugin = eval( batchStr )
+      res = tl.getScaledCPU()
+      self.assertEqual( res, 0.0 )
+
+    for batch, retValue in [( 'SGE', SGE_ReturnValue )]:
+      self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
+      rcMock = MagicMock()
+      rcMock.return_value = S_OK( retValue )
+      self.tl.runCommand = rcMock
+
+      batchSystemName = '%sTimeLeft' % batch
+      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' % #pylint: disable=unused-variable
+                                batchSystemName, globals(), locals(), [batchSystemName] )
+      batchStr = 'batchPlugin.%s()' % ( batchSystemName )
+      tl.batchPlugin = eval( batchStr )
+      res = tl.getScaledCPU()
+      self.assertEqual( res, 300.0 )
+
+      for batch, retValue in [( 'MJF', MJF_ReturnValue )]:
+        self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
+        rcMock = MagicMock()
+        rcMock.return_value = S_OK( retValue )
+        self.tl.runCommand = rcMock
+
+        batchSystemName = '%sTimeLeft' % batch
+        batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' % #pylint: disable=unused-variable
+                                  batchSystemName, globals(), locals(), [batchSystemName] )
+        batchStr = 'batchPlugin.%s()' % ( batchSystemName )
+        tl.batchPlugin = eval( batchStr )
+        res = tl.getScaledCPU()
+        self.assertEqual( res, 0.0 )
+
+
+  def test_getTimeLeft( self ):
+#     for batch, retValue in [( 'LSF', LSF_ReturnValue ), ( 'SGE', SGE_ReturnValue )]:
+
+    for batch, retValue in [( 'LSF', LSF_ReturnValue )]:
+      self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
+      rcMock = MagicMock()
+      rcMock.return_value = S_OK( retValue )
+      self.tl.runCommand = rcMock
+
+      timeMock = MagicMock()
+
+      tl = TimeLeft()
+#      res = tl.getTimeLeft()
+#      self.assertEqual( res['OK'], True )
+
+      batchSystemName = '%sTimeLeft' % batch
+      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
+                                batchSystemName, globals(), locals(), [batchSystemName] )
+      batchStr = 'batchPlugin.%s()' % ( batchSystemName )
+      tl.batchPlugin = eval( batchStr )
+
+      tl.scaleFactor = 10.0
+      tl.normFactor = 10.0
+      tl.batchPlugin.bin = '/usr/bin'
+      tl.batchPlugin.hostNorm = 10.0
+      tl.batchPlugin.cpuLimit = 1000
+      tl.batchPlugin.wallClockLimit = 1000
+
+      with patch( "DIRAC.Core.Utilities.TimeLeft.LSFTimeLeft.runCommand", new=rcMock ):
+        with patch( "DIRAC.Core.Utilities.TimeLeft.LSFTimeLeft.time", new=timeMock ):
+          res = tl.getTimeLeft()
+          self.assertEqual( res['OK'], True, res.get('Message', '') )
+
+    for batch, retValue in [( 'SGE', SGE_ReturnValue )]:
+      self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
+      rcMock = MagicMock()
+      rcMock.return_value = S_OK( retValue )
+      self.tl.runCommand = rcMock
+
+      tl = TimeLeft()
+#       res = tl.getTimeLeft()
+#       self.assertFalse( res['OK'] )
+
+      batchSystemName = '%sTimeLeft' % batch
+      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
+                                batchSystemName, globals(), locals(), [batchSystemName] )
+      batchStr = 'batchPlugin.%s()' % ( batchSystemName )
+      tl.batchPlugin = eval( batchStr )
+
+      tl.scaleFactor = 10.0
+      tl.normFactor = 10.0
+      tl.batchPlugin.bin = '/usr/bin'
+      tl.batchPlugin.hostNorm = 10.0
+      tl.batchPlugin.cpuLimit = 1000
+      tl.batchPlugin.wallClockLimit = 1000
+
+      res = tl.getTimeLeft()
+      self.assert_( res['OK'] )
+      self.assertEqual( res['Value'], 9400.0 )
+
+
+#############################################################################
+# Test Suite run
+#############################################################################
+
+if __name__ == '__main__':
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TimeLeftTestCase )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TimeLeftSuccess ) )
+  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

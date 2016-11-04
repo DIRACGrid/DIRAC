@@ -6,8 +6,6 @@ import mock
 
 from datetime import datetime, timedelta
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-# from DIRAC.Core.LCG.SLSClient import getAvailabilityStatus, getServiceInfo
-# from DIRAC.Core.LCG.SAMResultsClient import *
 # #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 # #from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 #
@@ -24,7 +22,6 @@ class ClientsTestCase( unittest.TestCase ):
     self.mockRSS = mock.MagicMock()
 
     self.GOCCli = GOCDBClient()
-#     self.SAMCli = SAMResultsClient()
 
 # #############################################################################
 

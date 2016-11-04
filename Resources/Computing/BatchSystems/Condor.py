@@ -14,6 +14,47 @@ __RCSID__ = "$Id$"
 
 import re, tempfile, commands, os
 
+def parseCondorStatus( lines, jobID ):
+  """parse the condor_q or condor_history output for the job status
+
+  :param list lines: list of lines from the output of the condor commands, each line is a pair of jobID and statusID
+  :param str jobID: jobID of condor job, e.g.: 123.53
+  :returns: Status as known by DIRAC
+  """
+  jobID = str(jobID)
+  for line in lines:
+    l = line.strip().split()
+    try:
+      status = int( l[1] )
+    except (ValueError, IndexError):
+      continue
+    if l[0] == jobID:
+      return { 1: 'Waiting',
+               2: 'Running',
+               3: 'Aborted',
+               4: 'Done',
+               5: 'HELD'
+             }.get( status, 'Unknown' )
+  return 'Unknown'
+
+def treatCondorHistory( condorHistCall, qList ):
+  """concatenate clusterID and processID to get the same output as condor_q
+  until we can expect condor version 8.5.3 everywhere
+
+  :param str condorHistCall: condor_history command to run
+  :param list qList: list of jobID and status from condor_q output, will be modified in this function
+  :returns: None
+  """
+  status_history,stdout_history_temp = commands.getstatusoutput( condorHistCall )
+
+  ## Join the ClusterId and the ProcId and add to existing list of statuses
+  if status_history==0:
+    for line in stdout_history_temp.split('\n'):
+      values = line.strip().split()
+      if len(values) == 3:
+        qList.append( "%s.%s %s" % tuple(values) )
+
+
 class Condor( object ):
 
   def submitJob( self, **kwargs ):
@@ -152,40 +193,29 @@ class Condor( object ):
       resultDict['Message'] = 'No user name'
       return resultDict
     
-    status,stdout_q = commands.getstatusoutput( 'condor_q -submitter %s' % user )
+    status,stdout_q = commands.getstatusoutput( 'condor_q -submitter %s -af:j JobStatus  ' % user )
     
     if status != 0:
       resultDict['Status'] = status
       resultDict['Message'] = stdout_q
       return resultDict
-      
-    status_history, stdout_history = commands.getstatusoutput( 'condor_history | grep %s' % user )  
-    
-    stdout = stdout_q
-    if status_history == 0:
-      stdout = '\n'.join( [stdout_q,stdout_history] )
+
+    qList = stdout_q.strip().split('\n')
+
+    ##FIXME: condor_history does only support j for autoformat from 8.5.3,
+    ## format adds whitespace for each field This will return a list of 1245 75 3
+    ## needs to cocatenate the first two with a dot
+    condorHistCall = 'condor_history -af ClusterId ProcId JobStatus -submitter %s' % user
+    treatCondorHistory( condorHistCall, qList )
   
     statusDict = {}
-    if len( stdout ):
-      lines = stdout.split( '\n' )
-      for line in lines:
-        l = line.strip()
-        for job in jobIDList:
-          if l.startswith( job ):
-            if " I " in line:
-              statusDict[job] = 'Waiting'
-            elif " R " in line:
-              statusDict[job] = 'Running'
-            elif " C " in line:
-              statusDict[job] = 'Done'
-            elif " X " in line:
-              statusDict[job] = 'Aborted'    
-  
-    if len( statusDict ) != len( jobIDList ):
+    if len( qList ):
       for job in jobIDList:
-        if not job in statusDict:
+        job = str(job)
+        statusDict[job] = parseCondorStatus( qList, job )
+        if statusDict[job] == 'HELD':
           statusDict[job] = 'Unknown'
-          
+
     # Final output
     status = 0
     resultDict['Status'] = 0

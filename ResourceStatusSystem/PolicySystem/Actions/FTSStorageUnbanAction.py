@@ -1,4 +1,3 @@
-# $HeadURL:  $
 ''' FTSstorageUnbanAction
 
 '''
@@ -11,7 +10,7 @@ from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseActio
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getFTS3Servers
 
-__RCSID__ = '$Id:  $'
+__RCSID__ = '$Id: $'
 
 class FTSStorageUnbanAction( BaseAction ):
   '''
@@ -21,7 +20,7 @@ class FTSStorageUnbanAction( BaseAction ):
   def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults, clients ):
 
     super( FTSStorageUnbanAction, self ).__init__( name, decisionParams, enforcementResult,
-                                         singlePolicyResults, clients )
+                                                   singlePolicyResults, clients )
 
 
     # enforcementResult supposed to look like:
@@ -57,7 +56,11 @@ class FTSStorageUnbanAction( BaseAction ):
 
   def _unbanStorageElement( self, storageElement ):
 
-    endpoints = getFTS3Servers()[ 'Value' ]
+    endpoints = getFTS3Servers()
+    if not endpoints['OK']:
+      return endpoints
+
+    endpoints = endpoints['Value']
 
     blacklist = {}
     for endpoint in endpoints:

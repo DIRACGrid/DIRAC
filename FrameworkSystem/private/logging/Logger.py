@@ -1,5 +1,3 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
 """
    DIRAC Logger client
 """
@@ -7,17 +5,20 @@ __RCSID__ = "$Id$"
 import sys
 import traceback
 import inspect
+
+import DIRAC
 from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.logging.Message import Message
 from DIRAC.Core.Utilities import Time, List
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure, reprReturnErrorStructure
 from DIRAC.FrameworkSystem.private.logging.backends.BackendIndex import gBackendIndex
 from DIRAC.Core.Utilities import ExitCallback
-import DIRAC
+
+__RCSID__ = "$Id$"
 
 DEBUG = 1
 
-class Logger:
+class Logger( object ):
 
   defaultLogLevel = 'NOTICE'
 
@@ -52,6 +53,8 @@ class Logger:
         self._backendsDict[ backend ] = gBackendIndex[ backend ]( self.__backendOptions )
 
   def __preinitialize ( self ):
+    """ This sets some defaults
+    """
     self._systemName = "Framework"
     self.registerBackends( [ 'stdout' ] )
     self._minLevel = self._logLevels.getLevelValue( "NOTICE" )
@@ -90,7 +93,7 @@ class Logger:
 
     self.__backendOptions.update( cfgBackOptsDict )
 
-    if not self.__backendOptions.has_key( 'Filename' ):
+    if 'FileName' not in self.__backendOptions:
       self.__backendOptions[ 'FileName' ] = 'Dirac-log_%s.log' % getpid()
 
     sleepTime = 150
@@ -328,8 +331,8 @@ class Logger:
     for frame in stack:
       sExtendedException += "\n"
       sExtendedException += "Frame %s in %s at line %s\n" % ( frame.f_code.co_name,
-                                           frame.f_code.co_filename,
-                                           frame.f_lineno )
+                                                              frame.f_code.co_filename,
+                                                              frame.f_lineno )
       for key, value in frame.f_locals.iteritems():
         # We have to be careful not to cause a new error in our error
         # printer! Calling str() on an unknown object could cause an

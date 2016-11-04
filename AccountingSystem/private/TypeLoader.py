@@ -1,7 +1,7 @@
 import re
-from DIRAC.Core.Utilities import DIRACSingleton
+from DIRAC.Core.Utilities                                   import DIRACSingleton
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
-from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
+from DIRAC.Core.Utilities.Plotting.ObjectLoader             import loadObjects
 
 class TypeLoader( object ):
   __metaclass__ = DIRACSingleton.DIRACSingleton

@@ -94,7 +94,12 @@ def printTable( fields, records, sortField='', numbering=True,
         stringBuffer.write( str(count).rjust(numberWidth)+columnSeparator )
 
     for i in range( nFields ):
-      stringBuffer.write( r[i].ljust( lengths[i] )+columnSeparator )
+      #try casting to int and then align to the right, if it fails align to the left
+      try:
+        _val = int( "".join( r[i].split(",") ) )
+        stringBuffer.write( r[i].rjust( lengths[i] )+columnSeparator )
+      except ValueError:
+        stringBuffer.write( r[i].ljust( lengths[i] )+columnSeparator )
 
     stringBuffer.write( '\n' )
     if count == len( recordList )-1 and recordList[-1][0] == "Total":

@@ -22,43 +22,37 @@ NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to H
 
 UNITS = { 'HS06': 1. , 'SI00': 1. / 250. }
 
-def getMachineFeatures():
-  """ This uses the _old_ MJF information """
+def __getFeatures( envVariable, items ):
+  """ Extract features """
   features = {}
-  featuresDir = os.environ.get( "MACHINEFEATURES" )
+  featuresDir = os.environ.get( envVariable )
   if featuresDir is None:
     return features
-  for item in ( 'hs06', 'jobslots', 'log_cores', 'phys_cores' ):
+  for item in items:
     fname = os.path.join( featuresDir, item )
     try:
-      val = urllib.urlopen( fname ).read()
-    except :
-      val = 0
-    features[item] = val
+      # Only keep features that do exist
+      features[item] = urllib.urlopen( fname ).read()
+    except IOError:
+      pass
   return features
+
+def getMachineFeatures():
+  """ This uses the _old_ MJF information """
+  return __getFeatures( "MACHINEFEATURES", ( 'hs06', 'jobslots', 'log_cores', 'phys_cores' ) )
 
 def getJobFeatures():
   """ This uses the _new_ MJF information """
-  features = {}
-  featuresDir = os.environ.get( "JOBFEATURES" )
-  if featuresDir is None:
-    return features
-  for item in ( 'hs06_job', 'allocated_cpu' ):
-    fname = os.path.join( featuresDir, item )
-    try:
-      val = urllib.urlopen( fname ).read()
-    except IOError:
-      val = 0
-    features[item] = val
-  return features
-
+  return __getFeatures( "JOBFEATURES", ( 'hs06_job', 'allocated_cpu' ) )
 
 def getPowerFromMJF():
   """ Extracts the machine power from either JOBFEATURES or MACHINEFEATURES """
   try:
     features = getJobFeatures()
-    if 'hs06_job' in features:
-      return round( float( features['hs06_job'] ), 2 )
+    hs06Job = features.get( 'hs06_job' )
+    # If the information is there and non zero, return, otherwise go to machine features
+    if hs06Job:
+      return round( float( hs06Job ), 2 )
     features = getMachineFeatures()
     totalPower = float( features.get( 'hs06', 0 ) )
     logCores = float( features.get( 'log_cores', 0 ) )
@@ -185,8 +179,21 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
 
 
 def getCPUTime( cpuNormalizationFactor ):
-  """ Trying to get CPUTime (in seconds) from the CS. The default is a large 9999999, that we may consider as "Infinite".
+  """ Trying to get CPUTime left for execution (in seconds).
+
+      It will first look to get the work left looking for batch system information useing the TimeLeft utility.
+      If it succeeds, it will convert it in real second, and return it.
+
+      If it fails, it tries to get it from the static info found in CS.
+      If it fails, it returns the default, which is a large 9999999, that we may consider as "Infinite".
+
       This is a generic method, independent from the middleware of the resource if TimeLeft doesn't return a value
+
+      args:
+        cpuNormalizationFactor (float): the CPU power of the current Worker Node. If not passed in, it's get from the local configuration
+
+      returns:
+        cpuTimeLeft (int): the CPU time left, in seconds
   """
   cpuTimeLeft = 0.
   cpuWorkLeft = gConfig.getValue( '/LocalSite/CPUTimeLeft', 0 )
@@ -197,7 +204,7 @@ def getCPUTime( cpuNormalizationFactor ):
     if result['OK']:
       cpuWorkLeft = result['Value']
 
-  if cpuWorkLeft:
+  if cpuWorkLeft > 0:
     # This is in HS06sseconds
     # We need to convert in real seconds
     if not cpuNormalizationFactor:  # if cpuNormalizationFactor passed in is 0, try get it from the local cfg

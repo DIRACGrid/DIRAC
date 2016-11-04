@@ -1,15 +1,15 @@
 ########################################################################
-# $HeadURL$
-# File :   ResourceDefaults.py
+# File :   ResourcesDefaults.py
 # Author : Ricardo Graciani
 ########################################################################
 """
 Some Helper class to access Default options for Different Resources (CEs, SEs, Catalags,...)
 """
-__RCSID__ = "$Id$"
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgResourceSection, cfgPath, cfgInstallPath, cfgPathToList
 from DIRAC.Core.Utilities.CFG import CFG
+
+__RCSID__ = "$Id$"
 
 def defaultSection( resource ):
   """
@@ -40,9 +40,9 @@ def getComputingElementDefaults( ceName = '', ceType = '', cfg = None, currentSe
       # Add Options from Command Line
       optionsDict = __getExtraOptions( currentSectionPath )
       for name, value in optionsDict.items():
-        cesCfg[ceName].setOption( name, value )
+        cesCfg[ceName].setOption( name, value ) #pylint: disable=no-member
     if ceType:
-      cesCfg[ceName].setOption( 'CEType', ceType )
+      cesCfg[ceName].setOption( 'CEType', ceType ) #pylint: disable=no-member
 
   ceDefaultSection = cfgPath( defaultSection( 'ComputingElements' ) )
   # Load Default for the given type from Central configuration is defined

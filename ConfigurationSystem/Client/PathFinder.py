@@ -1,4 +1,6 @@
-# $HeadURL$
+""" Collection of utilities for finding paths in the CS
+"""
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities import List

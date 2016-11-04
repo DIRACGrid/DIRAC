@@ -1,6 +1,6 @@
 """ This is the Proxy storage element client """
 
-__RCSID__ = "$Id$"
+import os
 
 from DIRAC                                  import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities      import checkArgumentFormat
@@ -10,7 +10,8 @@ from DIRAC.Core.DISET.RPCClient             import RPCClient
 from DIRAC.Core.DISET.TransferClient        import TransferClient
 from DIRAC.Core.Utilities.File              import getSize
 
-import os
+
+__RCSID__ = "$Id$"
 
 class ProxyStorage( StorageBase ):
 
@@ -19,10 +20,7 @@ class ProxyStorage( StorageBase ):
     StorageBase.__init__( self, storageName, parameters )
     self.pluginName = 'Proxy'
     self.isok = True
-
-    self.url = PathFinder.getServiceURL( "DataManagement/StorageElementProxy" )
-    if not self.url:
-      self.isok = False
+    self.url = 'DataManagement/StorageElementProxy'
 
   ######################################
   # File transfer functionalities
@@ -36,7 +34,9 @@ class ProxyStorage( StorageBase ):
     failed = {}
     successful = {}
     client = RPCClient( self.url )
-    transferClient = TransferClient( self.url )
+    # Make sure transferClient uses the same ProxyStorage instance.
+    # Only the this one holds the file we want to transfer.
+    transferClient = TransferClient( client.serviceURL )
     for src_url in urls.keys():
       res = client.prepareFile( self.name, src_url )
       if not res['OK']:
@@ -82,8 +82,8 @@ class ProxyStorage( StorageBase ):
     urls = res['Value']
     failed = {}
     successful = {}
-    client = RPCClient( self.url )
-    transferClient = TransferClient( self.url )
+    # make sure transferClient uses the same ProxyStorage instance we uploaded the file to
+    transferClient = TransferClient( client.serviceURL )
     for dest_url, src_file in urls.items():
       fileName = os.path.basename( dest_url )
       res = transferClient.sendFile( src_file, 'putFile/%s' % fileName )

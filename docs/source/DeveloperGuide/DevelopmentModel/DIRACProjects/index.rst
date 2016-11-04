@@ -1,8 +1,8 @@
 .. _dirac_projects:
 
-========================
+==============
 DIRAC Projects
-========================
+==============
 
 DIRAC is used by several user communities. Some of them are creating their own modules for DIRAC. 
 These modules require a certain version of DIRAC in order to function properly. Virtual organizations 
@@ -13,7 +13,7 @@ Preparing DIRAC distribution
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
 
 Releases schema
--------------------
+---------------
 
 DIRAC *modules* are released and distributed in *projects*. Each project has a *releases.cfg* 
 configuration file where the releases, modules and dependencies are defined. A single *releases.cfg* 
@@ -52,7 +52,7 @@ release name. Each release can require a certain version of any other project (D
 An example with more than one module follows::
 
    DefaultModules = MyExt
-   RequiredExtraModules = Web
+   RequiredExtraModules = WebApp
    
    Sources
    {
@@ -133,7 +133,7 @@ Once generated, they have to be upload to the install project source of tarballs
 to pick them up.
 
 How to define how to make a project distribution
-----------------------------------------------------
+------------------------------------------------
 
 *dirac-distribution* needs to know where to find the *releases.cfg* file. *dirac-distribution* will load 
 some global configuration from a DIRAC web server. That configuration can instruct *dirac-distribution* 
@@ -157,7 +157,7 @@ The defaults file is defined per project and can live in any web server.
 
 
 Installation
-@@@@@@@@@@@@@@@
+@@@@@@@@@@@@
 
 When installing, *dirac-install* requires a release version and optionally a project name. If the project 
 name is given *dirac-install* will try to load the project's versioned ``release-<projectName>-<version>.cfg`` 
@@ -206,7 +206,7 @@ Reference of *releases.cfg*  schema
  #List of modules to be installed by default for the project
  DefaultModules = MyExt
  #Extra modules to be installed
- RequiredExtraModules = Web
+ RequiredExtraModules = WebApp
  
  #Section containing where to find the source code to generate releases
  Sources
@@ -242,7 +242,7 @@ Reference of *releases.cfg*  schema
  }
  
 Reference of an installation's defaults file
------------------------------------------------
+--------------------------------------------
 
 ::
 
@@ -275,7 +275,7 @@ Reference of an installation's defaults file
  
  
 Reference of global default's file
-------------------------------------
+----------------------------------
 
 Global defaults is the file that *dirac-install* will try to load to discover where the each project's 
 ``defaults.cfg`` file is. The schema is as follows::
@@ -322,7 +322,7 @@ All the values in the defined defaults file file take precedence over the global
 for DIRAC maintainers to keep track of all the projects installable via native dirac-install.
 
 Common pitfalls
-------------------
+---------------
 
 Installation will find a given *releases.cfg*  by looking up the project name. All modules defined inside 
 a *releases.cfg*  have to start with the same name as the project. For instance, if the project is *MyVO*, 

@@ -170,7 +170,7 @@ class Job( API ):
     if arguments:
       # If arguments are expressed in terms of parameters, pass them to Workflow
       # These arguments will be resolved on the server side for each parametric job
-      if re.search( '%\(.*\)s', arguments ) or re.search( '%n', arguments ):
+      if re.search( r'%\(.*\)s', arguments ) or re.search( '%n', arguments ):
         self.parametricWFArguments['arguments'] = arguments
       else:
         stepInstance.setValue( 'arguments', arguments )
@@ -228,7 +228,7 @@ class Job( API ):
        :param files: Input sandbox files, can specify full path
        :type files: Single string or list of strings ['','']
     """
-    if type( files ) == list and len( files ):
+    if isinstance( files, list ) and len( files ):
       resolvedFiles = self._resolveInputSandbox( files )
       fileList = ';'.join( resolvedFiles )
       description = 'Input sandbox file list'
@@ -460,7 +460,7 @@ class Job( API ):
        :type outputPath: string
 
     """
-    if outputSE == None:
+    if outputSE is None:
       outputSE = []
     kwargs = {'lfns':lfns, 'OutputSE':outputSE, 'OutputPath':outputPath}
     if isinstance( lfns, list ) and lfns:
@@ -548,7 +548,7 @@ class Job( API ):
        :type timeInSecs: Int
     """
     kwargs = {'timeInSecs':timeInSecs}
-    if not type( timeInSecs ) == int:
+    if not isinstance( timeInSecs, int ):
       try:
         timeInSecs = int( timeInSecs )
       except ValueError:
@@ -581,6 +581,7 @@ class Job( API ):
       if not re.search( '^DIRAC.', destination ) and not destination.lower() == 'any':
         result = self.__checkSiteIsValid( destination )
         if not result['OK']:
+          self.log.error( "Site is not valid", result['Message'] )
           return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
       description = 'User specified destination site'
       self._addParameter( self.workflow, 'Site', 'JDL', destination, description )
@@ -589,6 +590,7 @@ class Job( API ):
         if not re.search( '^DIRAC.', site ) and not site.lower() == 'any':
           result = self.__checkSiteIsValid( site )
           if not result['OK']:
+            self.log.error( "Site is not valid", result['Message'] )
             return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
       destSites = ';'.join( destination )
       description = 'List of sites selected by user'
@@ -839,7 +841,7 @@ class Job( API ):
        :type environmentDict: dictionary
     """
     kwargs = {'environmentDict':environmentDict}
-    if not type( environmentDict ) == type( {} ):
+    if not isinstance( environmentDict, dict ):
       return self._reportError( 'Expected dictionary of environment variables', **kwargs )
 
     if environmentDict:
@@ -950,12 +952,12 @@ class Job( API ):
     """
     resolvedIS = []
     for i in inputSandbox:
-      if not re.search( '\*', i ):
+      if not re.search( r'\*', i ):
         if not os.path.isdir( i ):
           resolvedIS.append( i )
 
     for name in inputSandbox:
-      if re.search( '\*', name ): #escape the star character...
+      if re.search( r'\*', name ): #escape the star character...
         cmd = 'ls -d ' + name
         output = shellCall( 10, cmd )
         if not output['OK']:

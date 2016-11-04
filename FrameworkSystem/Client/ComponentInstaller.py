@@ -367,11 +367,11 @@ class ComponentInstaller( object ):
       extensions.remove( 'Web' )
     centralCfg.createNewSection( 'DIRAC', '' )
     if extensions:
-      centralCfg['DIRAC'].addKey( 'Extensions', ','.join( extensions ), '' )
+      centralCfg['DIRAC'].addKey( 'Extensions', ','.join( extensions ), '' ) #pylint: disable=no-member
 
     vo = self.localCfg.getOption( cfgInstallPath( 'VirtualOrganization' ), '' )
     if vo:
-      centralCfg['DIRAC'].addKey( 'VirtualOrganization', vo, '' )
+      centralCfg['DIRAC'].addKey( 'VirtualOrganization', vo, '' ) #pylint: disable=no-member
 
     for section in [ 'Systems', 'Resources',
                      'Resources/Sites', 'Resources/Sites/DIRAC',
@@ -413,55 +413,55 @@ class ComponentInstaller( object ):
           if not centralCfg.isSection( section ):
             centralCfg.createNewSection( section )
 
-        if centralCfg['Registry'].existsKey( 'DefaultGroup' ):
-          centralCfg['Registry'].deleteKey( 'DefaultGroup' )
-        centralCfg['Registry'].addKey( 'DefaultGroup', defaultGroupName, '' )
+        if centralCfg['Registry'].existsKey( 'DefaultGroup' ): #pylint: disable=unsubscriptable-object,no-member
+          centralCfg['Registry'].deleteKey( 'DefaultGroup' ) #pylint: disable=unsubscriptable-object,no-member
+        centralCfg['Registry'].addKey( 'DefaultGroup', defaultGroupName, '' ) #pylint: disable=unsubscriptable-object,no-member
 
-        if centralCfg['Registry']['Users'][adminUserName].existsKey( 'DN' ):
-          centralCfg['Registry']['Users'][adminUserName].deleteKey( 'DN' )
-        centralCfg['Registry']['Users'][adminUserName].addKey( 'DN', adminUserDN, '' )
+        if centralCfg['Registry']['Users'][adminUserName].existsKey( 'DN' ): #pylint: disable=unsubscriptable-object
+          centralCfg['Registry']['Users'][adminUserName].deleteKey( 'DN' ) #pylint: disable=unsubscriptable-object
+        centralCfg['Registry']['Users'][adminUserName].addKey( 'DN', adminUserDN, '' ) #pylint: disable=unsubscriptable-object
 
-        if centralCfg['Registry']['Users'][adminUserName].existsKey( 'Email' ):
-          centralCfg['Registry']['Users'][adminUserName].deleteKey( 'Email' )
-        centralCfg['Registry']['Users'][adminUserName].addKey( 'Email' , adminUserEmail, '' )
+        if centralCfg['Registry']['Users'][adminUserName].existsKey( 'Email' ): #pylint: disable=unsubscriptable-object
+          centralCfg['Registry']['Users'][adminUserName].deleteKey( 'Email' ) #pylint: disable=unsubscriptable-object
+        centralCfg['Registry']['Users'][adminUserName].addKey( 'Email' , adminUserEmail, '' ) #pylint: disable=unsubscriptable-object
 
         # Add Admin User to Admin Group and default group
         for group in [adminGroupName, defaultGroupName]:
-          if not centralCfg['Registry']['Groups'][group].isOption( 'Users' ):
-            centralCfg['Registry']['Groups'][group].addKey( 'Users', '', '' )
-          users = centralCfg['Registry']['Groups'][group].getOption( 'Users', [] )
+          if not centralCfg['Registry']['Groups'][group].isOption( 'Users' ): #pylint: disable=unsubscriptable-object
+            centralCfg['Registry']['Groups'][group].addKey( 'Users', '', '' ) #pylint: disable=unsubscriptable-object
+          users = centralCfg['Registry']['Groups'][group].getOption( 'Users', [] ) #pylint: disable=unsubscriptable-object
           if adminUserName not in users:
-            centralCfg['Registry']['Groups'][group].appendToOption( 'Users', ', %s' % adminUserName )
-          if not centralCfg['Registry']['Groups'][group].isOption( 'Properties' ):
-            centralCfg['Registry']['Groups'][group].addKey( 'Properties', '', '' )
+            centralCfg['Registry']['Groups'][group].appendToOption( 'Users', ', %s' % adminUserName ) #pylint: disable=unsubscriptable-object
+          if not centralCfg['Registry']['Groups'][group].isOption( 'Properties' ): #pylint: disable=unsubscriptable-object
+            centralCfg['Registry']['Groups'][group].addKey( 'Properties', '', '' ) #pylint: disable=unsubscriptable-object
 
-        properties = centralCfg['Registry']['Groups'][adminGroupName].getOption( 'Properties', [] )
+        properties = centralCfg['Registry']['Groups'][adminGroupName].getOption( 'Properties', [] ) #pylint: disable=unsubscriptable-object
         for prop in adminGroupProperties:
           if prop not in properties:
             properties.append( prop )
-            centralCfg['Registry']['Groups'][adminGroupName].appendToOption( 'Properties', ', %s' % prop )
+            centralCfg['Registry']['Groups'][adminGroupName].appendToOption( 'Properties', ', %s' % prop ) #pylint: disable=unsubscriptable-object
 
-        properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption( 'Properties', [] )
+        properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption( 'Properties', [] ) #pylint: disable=unsubscriptable-object
         for prop in defaultGroupProperties:
           if prop not in properties:
             properties.append( prop )
-            centralCfg['Registry']['Groups'][defaultGroupName].appendToOption( 'Properties', ', %s' % prop )
+            centralCfg['Registry']['Groups'][defaultGroupName].appendToOption( 'Properties', ', %s' % prop ) #pylint: disable=unsubscriptable-object
 
     # Add the master Host description
     if hostDN:
       hostSection = cfgPath( 'Registry', 'Hosts', self.host )
       if not centralCfg.isSection( hostSection ):
         centralCfg.createNewSection( hostSection )
-      if centralCfg['Registry']['Hosts'][self.host].existsKey( 'DN' ):
-        centralCfg['Registry']['Hosts'][self.host].deleteKey( 'DN' )
-      centralCfg['Registry']['Hosts'][self.host].addKey( 'DN', hostDN, '' )
-      if not centralCfg['Registry']['Hosts'][self.host].isOption( 'Properties' ):
-        centralCfg['Registry']['Hosts'][self.host].addKey( 'Properties', '', '' )
-      properties = centralCfg['Registry']['Hosts'][self.host].getOption( 'Properties', [] )
+      if centralCfg['Registry']['Hosts'][self.host].existsKey( 'DN' ): #pylint: disable=unsubscriptable-object
+        centralCfg['Registry']['Hosts'][self.host].deleteKey( 'DN' ) #pylint: disable=unsubscriptable-object
+      centralCfg['Registry']['Hosts'][self.host].addKey( 'DN', hostDN, '' ) #pylint: disable=unsubscriptable-object
+      if not centralCfg['Registry']['Hosts'][self.host].isOption( 'Properties' ): #pylint: disable=unsubscriptable-object
+        centralCfg['Registry']['Hosts'][self.host].addKey( 'Properties', '', '' ) #pylint: disable=unsubscriptable-object
+      properties = centralCfg['Registry']['Hosts'][self.host].getOption( 'Properties', [] ) #pylint: disable=unsubscriptable-object
       for prop in defaultHostProperties:
         if prop not in properties:
           properties.append( prop )
-          centralCfg['Registry']['Hosts'][self.host].appendToOption( 'Properties', ', %s' % prop )
+          centralCfg['Registry']['Hosts'][self.host].appendToOption( 'Properties', ', %s' % prop ) #pylint: disable=unsubscriptable-object
 
     # Operations
     if adminUserEmail:
@@ -583,7 +583,9 @@ class ComponentInstaller( object ):
           removeMain = True
 
       if remove:
-        result = self._removeSectionFromCS( cfgPath( 'Systems', system, compInstance, installation[ 'Component' ][ 'Type' ].title() + 's', component ) )
+        result = self._removeSectionFromCS( cfgPath( 'Systems', system,
+                                                     compInstance,
+                                                     installation[ 'Component' ][ 'Type' ].title() + 's', component ) )
         if not result[ 'OK' ]:
           return result
 
@@ -593,7 +595,10 @@ class ComponentInstaller( object ):
             return result
 
       if removeMain:
-        result = self._removeSectionFromCS( cfgPath( 'Systems', system, compInstance, installation[ 'Component' ][ 'Type' ].title() + 's', installation[ 'Component' ][ 'Module' ] ) )
+        result = self._removeSectionFromCS( cfgPath( 'Systems', system,
+                                                     compInstance,
+                                                     installation[ 'Component' ][ 'Type' ].title() + 's',
+                                                     installation[ 'Component' ][ 'Module' ] ) )
         if not result[ 'OK' ]:
           return result
 
@@ -748,7 +753,7 @@ class ComponentInstaller( object ):
           DIRAC.exit( -1 )
         return S_ERROR( error )
 
-      compCfg = compCfg[sectionName][componentModule]
+      compCfg = compCfg[sectionName][componentModule] #pylint: disable=unsubscriptable-object
 
       # Delete Dependencies section if any
       compCfg.deleteKey( 'Dependencies' )
@@ -1304,7 +1309,7 @@ class ComponentInstaller( object ):
       loader = ModuleLoader( "Agent", PathFinder.getAgentSection, AgentModule )
     elif componentType == 'service':
       loader = ModuleLoader( "Service", PathFinder.getServiceSection,
-                                        RequestHandler, moduleSuffix = "Handler" )
+                             RequestHandler, moduleSuffix = "Handler" )
     elif componentType == 'executor':
       loader = ModuleLoader( "Executor", PathFinder.getExecutorSection, ExecutorModule )
     else:
@@ -1631,19 +1636,27 @@ class ComponentInstaller( object ):
           DIRAC.exit( -1 )
         return result
       installedDatabases = result['Value']
+      result = self.getAvailableDatabases( CSGlobals.getCSExtensions() )
+      if not result[ 'OK' ]:
+        return result
+      dbDict = result['Value']
+
       for dbName in setupDatabases:
         if dbName not in installedDatabases:
-          result = self.installDatabase( dbName, monitorFlag = False )
+          result = self.installDatabase( dbName )
           if not result['OK']:
             gLogger.error( result['Message'] )
             DIRAC.exit( -1 )
           extension, system = result['Value']
           gLogger.notice( 'Database %s from %s/%s installed' % ( dbName, extension, system ) )
-          result = self.addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
-          if not result['OK']:
-            gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
         else:
           gLogger.notice( 'Database %s already installed' % dbName )
+
+        dbSystem = dbDict[dbName]['System']
+        result = self.addDatabaseOptionsToCS( None, dbSystem, dbName, overwrite = True )
+        if not result['OK']:
+          gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
+
 
     if self.mysqlPassword:
       if not self._addMySQLToDiracCfg():
@@ -1827,17 +1840,16 @@ class ComponentInstaller( object ):
 
       cTypeLower = componentType.lower()
       if cTypeLower == 'agent' or cTypeLower == 'consumer':
-        stopFile = os.path.join( runitCompDir, 'control', 't' )
-        fd = open( stopFile, 'w' )
-        fd.write(
-  """#!/bin/bash
-  echo %(self.controlDir)s/%(system)s/%(component)s/stop_%(type)s
-  touch %(self.controlDir)s/%(system)s/%(component)s/stop_%(type)s
-  """ % {'self.controlDir': self.controlDir,
-         'system' : system,
-         'component': component,
-         'type': cTypeLower } )
-        fd.close()
+        stopFile = os.path.join( runitCompDir, 'control', 't' ) # This is, e.g., /opt/dirac/runit/WorkfloadManagementSystem/Matcher/control/t
+        controlDir = self.runitDir.replace('runit', 'control') # This is, e.g., /opt/dirac/control/WorkfloadManagementSystem/Matcher/
+        with open( stopFile, 'w' ) as fd:
+          fd.write( """#!/bin/bash
+echo %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
+touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
+""" % { 'controlDir': controlDir,
+        'system' : system,
+        'component': component,
+        'type': cTypeLower } )
 
         os.chmod( stopFile, self.gDefaultPerms )
 
@@ -2123,7 +2135,7 @@ class ComponentInstaller( object ):
                                                              webappCompileScript,
                                                              webappCompileScript ) ):
         gLogger.error( "Compile script %s failed. Check %s.err" % ( webappCompileScript,
-                                                                         webappCompileScript ) )
+                                                                    webappCompileScript ) )
       else:
         prodMode = "-p"
 
@@ -2348,9 +2360,12 @@ class ComponentInstaller( object ):
       return S_ERROR( error )
 
     gLogger.notice( 'Initializing MySQL...' )
+    platform = getPlatformString()
+    baseDir = os.path.join( rootPath, platform )
     result = self.execCommand( 0, ['mysql_install_db',
-                              '--defaults-file=%s' % self.mysqlMyCnf,
-                              '--datadir=%s' % self.mysqlDbDir ] )
+                                   '--defaults-file=%s' % self.mysqlMyCnf,
+                                   '--baseDir=%s' % baseDir,
+                                   '--datadir=%s' % self.mysqlDbDir ] )
     if not result['OK']:
       return result
 
@@ -2367,7 +2382,7 @@ class ComponentInstaller( object ):
     # MySQL tends to define root@host user rather than root@host.domain
     hostName = self.mysqlHost.split( '.' )[0]
     result = self.execMySQL( "UPDATE user SET Host='%s' WHERE Host='%s'" % ( self.mysqlHost, hostName ),
-                                                                       localhost = True )
+                             localhost = True )
     if not result['OK']:
       return result
     result = self.execMySQL( "FLUSH PRIVILEGES" )
@@ -2437,17 +2452,10 @@ class ComponentInstaller( object ):
     return S_OK( dbList )
 
 
-  def installDatabase( self, dbName, monitorFlag = True ):
+  def installDatabase( self, dbName ):
     """
     Install requested DB in MySQL server
     """
-
-    # Create entry in the static monitoring DB
-    result = self.getAvailableDatabases( CSGlobals.getCSExtensions() )
-    if not result[ 'OK' ]:
-      return result
-
-    dbSystem = result[ 'Value' ][ dbName ][ 'System' ]
 
     if not self.mysqlRootPwd:
       rootPwdPath = cfgInstallPath( 'Database', 'RootPwd' )

@@ -179,13 +179,13 @@ def main():
   user = proxyUser()
   if not user[ 'OK' ]:
     subLogger.error( user[ 'Message' ] )
-    DIRACExit( user[ 'Message' ] )
+    DIRACExit( 1 )
   user = user[ 'Value' ]
   
   res = setToken( user )
   if not res[ 'OK' ]:
     subLogger.error( res[ 'Message' ] )
-    DIRACExit( res[ 'Message' ] )
+    DIRACExit( 1 )
 
 #...............................................................................
 

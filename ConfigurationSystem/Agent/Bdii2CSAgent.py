@@ -19,18 +19,36 @@ __RCSID__ = "$Id$"
 
 class Bdii2CSAgent( AgentModule ):
 
-  addressTo = ''
-  addressFrom = ''
-  voName = ''
-  subject = "Bdii2CSAgent"
-  alternativeBDIIs = []
+  def __init__( self, *args, **kwargs ):
+    """ Defines default parameters
+    """
+
+    super(Bdii2CSAgent, self).__init__( *args, **kwargs )
+
+    self.addressTo = ''
+    self.addressFrom = ''
+    self.voName = []
+    self.subject = "Bdii2CSAgent"
+    self.alternativeBDIIs = []
+    self.voBdiiCEDict = {}
+    self.voBdiiSEDict = {}
+
+    self.csAPI = None
+
+    # What to get
+    self.processCEs = True
+    self.processSEs = False
+    # Update the CS or not?
+    self.dryRun = False
 
   def initialize( self ):
+    """ Gets run paramaters from the configuration
+    """
 
     self.addressTo = self.am_getOption( 'MailTo', self.addressTo )
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
     # Create a list of alternative bdii urls
-    self.alternativeBDIIs = self.am_getOption( 'AlternativeBDIIs', [] )
+    self.alternativeBDIIs = self.am_getOption( 'AlternativeBDIIs', self.alternativeBDIIs )
     # Check if the bdii url is appended by a port number, if not append the default 2170
     for index, url in enumerate( self.alternativeBDIIs ):
       if not url.split( ':' )[-1].isdigit():
@@ -40,12 +58,12 @@ class Bdii2CSAgent( AgentModule ):
       self.log.info( "MailFrom", self.addressFrom )
     if self.alternativeBDIIs :
       self.log.info( "AlternativeBDII URLs:", self.alternativeBDIIs )
-    self.subject = "Bdii2CSAgent"
 
-    self.processCEs = self.am_getOption( 'ProcessCEs', True )
-    self.processSEs = self.am_getOption( 'ProcessSEs', False )
+    self.processCEs = self.am_getOption( 'ProcessCEs', self.processCEs )
+    self.processSEs = self.am_getOption( 'ProcessSEs', self.processSEs )
+    self.dryRun = self.am_getOption( 'DryRun', self.dryRun )
 
-    self.voName = self.am_getOption( 'VirtualOrganization', [] )
+    self.voName = self.am_getOption( 'VirtualOrganization', self.voName )
     if not self.voName:
       self.voName = self.am_getOption( 'VO', [] )
     if not self.voName or ( len( self.voName ) == 1 and self.voName[0].lower() == 'all' ):
@@ -64,8 +82,6 @@ class Bdii2CSAgent( AgentModule ):
     else:
       self.log.fatal( "VirtualOrganization option not defined for agent" )
       return S_ERROR()
-    self.voBdiiCEDict = {}
-    self.voBdiiSEDict = {}
 
     self.csAPI = CSAPI()
     return self.csAPI.initialize()
@@ -73,6 +89,8 @@ class Bdii2CSAgent( AgentModule ):
   def execute( self ):
     """ General agent execution method
     """
+    self.voBdiiCEDict = {}
+    self.voBdiiSEDict = {}
 
     # Get a "fresh" copy of the CS data
     result = self.csAPI.downloadCSData()
@@ -120,17 +138,17 @@ class Bdii2CSAgent( AgentModule ):
         for ce in newCEs:
           queueString = ''
           ceInfo = bdiiInfo[site]['CEs'][ce]
-          ceString = "CE: %s, GOCDB Site Name: %s" % ( ce, site )
+          newCEString = "CE: %s, GOCDB Site Name: %s" % ( ce, site )
           systemTuple = siteDict[site][ce]['System']
           osString = "%s_%s_%s" % ( systemTuple )
-          newCEString = "\n%s\n%s\n" % ( ceString, osString )
+          newCEString = "\n%s\n%s\n" % ( newCEString, osString )
           for queue in ceInfo['Queues']:
             queueStatus = ceInfo['Queues'][queue].get( 'GlueCEStateStatus', 'UnknownStatus' )
             if 'production' in queueStatus.lower():
               ceType = ceInfo['Queues'][queue].get( 'GlueCEImplementationName', '' )
               queueString += "   %s %s %s\n" % ( queue, queueStatus, ceType )
           if queueString:
-            ceString = newCEString
+            ceString += newCEString
             ceString += "Queues:\n"
             ceString += queueString
 
@@ -156,22 +174,31 @@ class Bdii2CSAgent( AgentModule ):
     if vo in self.voBdiiCEDict:
       return S_OK( self.voBdiiCEDict[vo] )
     self.log.info( "Check for available CEs for VO", vo )
-    result = getBdiiCEInfo( vo )
+    totalResult = S_OK( {} )
     message = ''
-    if not result['OK']:
-      message = result['Message']
-      for bdii in self.alternativeBDIIs :
-        result = getBdiiCEInfo( vo, host = bdii )
-        if result['OK']:
-          break
-    if not result['OK']:
-      if message:
-        self.log.error( "Error during BDII request", message )
+
+    mainResult = getBdiiCEInfo( vo )
+    if not mainResult['OK']:
+      self.log.error( "Failed getting information from default bdii", mainResult['Message'] )
+      message = mainResult['Message']
+
+    for bdii in reversed( self.alternativeBDIIs ):
+      resultAlt = getBdiiCEInfo( vo, host = bdii )
+      if resultAlt['OK']:
+        totalResult['Value'].update( resultAlt['Value'] )
       else:
-        self.log.error( "Error during BDII request", result['Message'] )
+        self.log.error( "Failed getting information from %s " % bdii, resultAlt['Message'] )
+        message = ( message + "\n" + resultAlt['Message'] ).strip()
+
+    if mainResult['OK']:
+      totalResult['Value'].update( mainResult['Value'] )
+
+    if not totalResult['Value'] and message: ## Dict is empty and we have an error message
+      self.log.error( "Error during BDII request", message )
+      totalResult = S_ERROR( message )
     else:
-      self.voBdiiCEDict[vo] = result['Value']
-    return result
+      self.voBdiiCEDict[vo] = totalResult['Value']
+    return totalResult
 
   def __getBdiiSEInfo( self, vo ):
 
@@ -247,12 +274,16 @@ class Bdii2CSAgent( AgentModule ):
         else:
           self.csAPI.modifyValue( cfgPath( section, option ), new_value )
 
-      result = self.csAPI.commit()
-      if not result['OK']:
-        self.log.error( "Error while committing to CS", result['Message'] )
+      if self.dryRun:
+        self.log.info( "Dry Run: CS won't be updated" )
+        self.csAPI.showDiff()
       else:
-        self.log.info( "Successfully committed %d changes to CS" % len( changeList ) )
-      return result
+        result = self.csAPI.commit()
+        if not result['OK']:
+          self.log.error( "Error while committing to CS", result['Message'] )
+        else:
+          self.log.info( "Successfully committed %d changes to CS" % len( changeList ) )
+        return result
     else:
       self.log.info( "No changes found" )
       return S_OK()

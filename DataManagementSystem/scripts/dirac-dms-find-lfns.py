@@ -10,6 +10,7 @@ if __name__ == "__main__":
 
   from DIRAC.Core.Base import Script
 
+  Script.registerSwitch( '', 'Path=', '    Path to search for' )
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                        'Usage:',
                                        '  %s [options] metaspec [metaspec ...]' % Script.scriptName,
@@ -27,9 +28,14 @@ if __name__ == "__main__":
   from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD_METAKEYS
   from DIRAC import gLogger
 
+  path = '/'
+  for opt, val in Script.getUnprocessedSwitches():
+    if opt == 'Path':
+      path = val
+
   if len( args ) < 1:
     print "Error: No argument provided\n%s:" % Script.scriptName
-    Script.showHelp( )
+    Script.showHelp()
     DIRAC.exit( -1 )
 
   fc = FileCatalog()
@@ -38,9 +44,11 @@ if __name__ == "__main__":
     gLogger.error( 'Can not access File Catalog:', result['Message'] )
     DIRAC.exit( -1 )
   typeDict = result['Value']['FileMetaFields']
-  typeDict.update(result['Value']['DirectoryMetaFields'])
+  typeDict.update( result['Value']['DirectoryMetaFields'] )
   # Special meta tags
   typeDict.update( FILE_STANDARD_METAKEYS )
+  
+  gLogger.info( "MetaDataDictionary: %s" % metaDict )
 
   mq = MetaQuery( typeDict = typeDict )
   result = mq.setMetaQuery( args )
@@ -48,10 +56,7 @@ if __name__ == "__main__":
     gLogger.error( "Illegal metaQuery:", result['Message'] )
     DIRAC.exit( -1 )
   metaDict = result['Value']
-  path = metaDict.get( 'Path', '/' )
-  metaDict.pop( 'Path' )
-
-  print metaDict
+  path = metaDict.pop( 'Path', path )
 
   result = fc.findFilesByMetadata( metaDict, path )
   if not result['OK']:
@@ -60,4 +65,4 @@ if __name__ == "__main__":
   lfnList = result['Value']
 
   for lfn in lfnList:
-    gLogger.notice( lfn )
+    print lfn
