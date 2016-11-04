@@ -3,8 +3,7 @@
    permissions can execute those commands.
 """
 import re
-from DIRAC import S_OK
-from DIRAC.Core.Utilities.DErrno import DError
+from DIRAC import S_OK , S_ERROR
 import errno
 from DIRAC.Core.Utilities import Subprocess
 
@@ -28,12 +27,12 @@ def executeRabbitmqctl(arg, *argv):
   if result['OK']:
     errorcode, cmd_out, cmd_err = result['Value']
   else:
-    return DError(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
+    return S_ERROR(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
                                 (command, errorcode, cmd_out, cmd_err) )
   if errorcode:
     # No idea what errno code should be used here.
     # Maybe we should define some specific for rabbitmqctl
-    return DError(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
+    return S_ERROR(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
                                 (command, errorcode, cmd_out, cmd_err) )
   return S_OK(cmd_out)
 

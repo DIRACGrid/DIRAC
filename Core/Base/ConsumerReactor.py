@@ -17,8 +17,7 @@
 from DIRAC.Core.Base.ConsumerModule import ConsumerModule
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerSection
-from DIRAC import S_OK
-from DIRAC.Core.Utilities.DErrno import DError
+from DIRAC import S_OK, S_ERROR
 import errno
 
 def loadConsumerModule( consumerModuleName, hideExceptions = False ):
@@ -52,10 +51,10 @@ class ConsumerReactor(object):
        Also the field self.system_ConsumerModuleName
        must be already set in format:[DIRAC System Name]/[DIRAC Consumer Name]
     Returns:
-      S_OK(): or DError in case of errors.
+      S_OK(): or S_ERROR in case of errors.
     """
     if not self.consumerModule['classObj']:
-      return DError(errno.EPERM, 'Consumer module class is not loaded')
+      return S_ERROR(errno.EPERM, 'Consumer module class is not loaded')
     instanceObj = self.consumerModule['classObj']( systemConsumerModuleName = self.systemConsumerModuleName )
     instanceObj.initialize( systemConsumerModuleName =  self.systemConsumerModuleName )
     return S_OK()
