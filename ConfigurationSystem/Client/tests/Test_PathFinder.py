@@ -5,13 +5,46 @@ import unittest
 from DIRAC.ConfigurationSystem.Client.PathFinder import getComponentSection
 from DIRAC.ConfigurationSystem.Client.PathFinder import getConsumerSection
 from DIRAC import gConfig
+import os
+
+from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 
 class TestPathFinder( unittest.TestCase ):
   def setUp( self ):
+    #Creating test configuration file
+    self.testCfgFileName = 'test.cfg'
+    cfgContent='''
+    DIRAC
+    {
+      Setup=TestSetup
+      Setups
+      {
+        TestSetup
+        {
+          WorkloadManagement=MyWM
+        }
+      }
+    }
+    Systems
+    {
+      WorkloadManagement
+      {
+        MyWM
+        {
+        }
+      }
+    }
+    '''
+    with open(self.testCfgFileName, 'w') as f:
+      f.write(cfgContent)
+    gConfig = ConfigurationClient(fileToLoadList = [self.testCfgFileName])  #we replace the configuration by our own one.
     self.setup = gConfig.getValue( '/DIRAC/Setup', '' )
     self.wm = gConfig.getValue('DIRAC/Setups/' + self.setup +'/WorkloadManagement', '')
   def tearDown( self ):
-    pass
+    try:
+      os.remove(self.testCfgFileName)
+    except OSError:
+      pass
 
 class TestGetComponentSection( TestPathFinder ):
   def test_success( self ):

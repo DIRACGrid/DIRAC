@@ -3,15 +3,83 @@
 import unittest
 from DIRAC.Core.Utilities.ConsumerTools import getConsumerOption
 from DIRAC.ConfigurationSystem.Client import PathFinder
+import os
 
-#from DIRAC import gConfig
+from DIRAC import gConfig
+from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
+
 
 class TestConsumerTools( unittest.TestCase ):
 
   def setUp( self ):
+    #Creating test configuration file
+    self.testCfgFileName = 'test.cfg'
+    cfgContent='''
+    DIRAC 
+    {
+      Setup=MyTestSetup
+      Setups
+      {
+        MyTestSetup 
+        {
+          WorkloadManagement=MyWM
+        }
+      }
+    }
+    Systems 
+    {
+      MyRabbitSystem 
+      {
+        MyRabbitSetup 
+        {
+          MessageQueueing
+          {
+            testQueue
+            {
+              Host=127.0.0.1
+              Port= 61613 
+              User=ala
+              VH=/
+              ExchangeName=test
+              Type=aa
+            }
+          }
+        }
+      }
+      WorkloadManagement
+      {
+        MyWM
+        {
+          Consumers
+          {
+            AnotherTestConsumer 
+            {
+              MQConnectorSystem = MyRabbitSystem
+              MQConnectorModuleName = DIRAC.Core.Utilities.RabbitMQConnector
+              MQConnectorClassName = RabbitConnection
+
+              Host = 127.0.0.1
+              Port= 61613 
+              User=ala
+              VH=/
+              ExchangeName=test
+              Type=aa
+              Queue=testQueue
+            } 
+          }
+        }
+      }
+    }
+    '''
+    with open(self.testCfgFileName, 'w') as f:
+      f.write(cfgContent)
+    gConfig = ConfigurationClient(fileToLoadList = [self.testCfgFileName])  #we replace the configuration by our own one.
     self.consumerSection = PathFinder.getConsumerSection( 'WorkloadManagement/AnotherTestConsumer' )
   def tearDown( self ):
-    pass
+    try:
+      os.remove(self.testCfgFileName)
+    except OSError:
+      pass
 
 class TestConsumerToolsGetOption( TestConsumerTools ):
   def test_successHost( self ):
