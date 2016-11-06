@@ -1,3 +1,12 @@
+[v6r16p1]
+
+*Monitoring
+CHANGE: MonitorinDB - allow to use more than one filter condition
+
+*WMS
+CHANGE: StalledJobAgent - send a kill signal to the job before setting it Failed. This should 
+        prevent jobs to continue running after they have been found Stalled and then Failed.
+
 [v6r16]
 
 *Core
