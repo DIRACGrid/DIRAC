@@ -1,3 +1,20 @@
+[v6r17-pre1]
+
+*DMS
+NEW: Next in implementation multi-protocol support for storage elements. When performing 
+     an action on the StorageElement, instead of looping over all the protocol plugins, 
+     we loop over a filtered list. This list is built taking into account which action 
+     is taken (read vs write), and is also sorted according to lists defined in the CS.
+     The negotiation for third party transfer is also improved: it takes into account all 
+     possible protocols the source SE is able to produce, and all protocols the target is 
+     able to receive as input.
+NEW: StorageElement - added methods for monitoring used disk space
+
+*RSS
+NEW: FreeDiskSpace - added new command which is used to get the total and the remaining 
+     disk space of all dirac storage elements that are found in the CS and inserts the 
+     results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.     
+
 [v6r16p1]
 
 *Monitoring
