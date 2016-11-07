@@ -91,12 +91,11 @@ class HTCondorCEComputingElement( ComputingElement ):
     self.outputURL = 'gsiftp://localhost'
     self.gridEnv = ''
     self.proxyRenewal = 0
-    self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
-
+    self.daysToKeepLogs = DEFAULT_DAYSTOKEEPLOGS
+    self.extraSubmitString = ''
     ## see note on getCondorLogFile, why we can only use the global setting
     self.workingDirectory = gConfig.getValue( "Resources/Computing/HTCondorCE/WorkingDirectory",
                                               DEFAULT_WORKINGDIRECTORY )
-    self.daysToKeepLogs = self.ceParameters.get( "DaysToKeepLogs", DEFAULT_DAYSTOKEEPLOGS )
 
   #############################################################################
   def __writeSub( self, executable, nJobs ):
@@ -112,6 +111,8 @@ class HTCondorCEComputingElement( ComputingElement ):
     initialDirPrefix = "%s/%s" %( pre1, pre2 )
 
     self.log.debug( "InitialDir: %s" % os.path.join( self.workingDirectory, initialDirPrefix ) )
+
+    self.log.debug( "ExtraSubmitString:\n### \n %s \n###" % self.extraSubmitString )
 
     fd, name = tempfile.mkstemp( suffix = '.sub', prefix = 'HTCondorCE_', dir = self.workingDirectory )
     subFile = os.fdopen( fd, 'w' )
@@ -150,6 +151,9 @@ Queue %(nJobs)s
     self.queue = self.ceParameters['Queue']
     self.outputURL = self.ceParameters.get( 'OutputURL', 'gsiftp://localhost' )
     self.gridEnv = self.ceParameters['GridEnv']
+    self.daysToKeepLogs = self.ceParameters.get( 'DaysToKeepLogs', DEFAULT_DAYSTOKEEPLOGS )
+    self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
+
 
   #############################################################################
   def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
