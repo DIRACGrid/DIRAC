@@ -53,7 +53,7 @@ class TaskBase( TransformationAgentsUtilities ):
     self.debug = False
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '',
-                                  bulkSubmissionFlag = False):
+                                  bulkSubmissionFlag = False ):
     return S_ERROR( "Not implemented" )
 
   def submitTransformationTasks( self, taskDict ):
@@ -73,10 +73,13 @@ class TaskBase( TransformationAgentsUtilities ):
         res = self.transClient.setTaskStatusAndWmsID( transID, taskID, 'Submitted',
                                                       str( taskDict[taskID]['ExternalID'] ) )
         if not res['OK']:
-          self.log.warn( "updateDBAfterSubmission: Failed to update task status after submission" ,
-                         "%s %s" % ( taskDict[taskID]['ExternalID'], res['Message'] ) )
+          self._logWarn( "updateDBAfterSubmission: Failed to update task status after submission" ,
+                         "%s" % taskDict[taskID]['ExternalID'],
+                         res['Message'],
+                         transID = transID )
         updated += 1
-    self.log.info( "updateDBAfterSubmission: Updated %d tasks in %.1f seconds" % ( updated, time.time() - startTime ) )
+    if updated:
+      self._logInfo( "updateDBAfterSubmission: Updated %d tasks in %.1f seconds" % ( updated, time.time() - startTime ), transID = transID )
     return S_OK()
 
   def updateTransformationReservedTasks( self, taskDicts ):
@@ -121,11 +124,11 @@ class RequestTasks( TaskBase ):
 
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '',
-                                  bulkSubmissionFlag = False):
+                                  bulkSubmissionFlag = False ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
     if not taskDict:
-      return S_OK({})
+      return S_OK( {} )
 
     if ( not owner ) or ( not ownerGroup ):
       res = getProxyInfo( False, False )
@@ -142,9 +145,9 @@ class RequestTasks( TaskBase ):
       ownerDN = res['Value'][0]
 
     try:
-      transJson = json.loads(transBody)
+      transJson = json.loads( transBody )
       self._multiOperationsBody( transJson, taskDict, ownerDN, ownerGroup )
-    except ValueError: ##json couldn't load
+    except ValueError:  # #json couldn't load
       self._singleOperationsBody( transBody, taskDict, ownerDN, ownerGroup )
 
     return S_OK( taskDict )
@@ -168,13 +171,13 @@ class RequestTasks( TaskBase ):
 
     for taskID in sorted( taskDict ):
       paramDict = taskDict[taskID]
-      if not paramDict.get('InputData'):
-        self.log.error( "Error creating request for task", "%s, No input data" % taskID )
+      transID = paramDict['TransformationID']
+      if not paramDict.get( 'InputData' ):
+        self._logError( "Error creating request for task", "%s, No input data" % taskID, transID = transID )
         taskDict.pop( taskID )
         continue
       files = []
 
-      transID = paramDict['TransformationID']
       oRequest = Request()
       if isinstance( paramDict['InputData'], list ):
         files = paramDict['InputData']
@@ -197,7 +200,7 @@ class RequestTasks( TaskBase ):
 
       self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
 
-  def _singleOperationsBody(self, transBody, taskDict, ownerDN, ownerGroup ):
+  def _singleOperationsBody( self, transBody, taskDict, ownerDN, ownerGroup ):
     """ deal with a Request that has just one operation, as it was sofar
 
     :param transBody: string, can be an empty string
@@ -226,7 +229,7 @@ class RequestTasks( TaskBase ):
       transfer.TargetSE = paramDict['TargetSE']
 
       # If there are input files
-      if paramDict.get('InputData'):
+      if paramDict.get( 'InputData' ):
         if isinstance( paramDict['InputData'], list ):
           files = paramDict['InputData']
         elif isinstance( paramDict['InputData'], basestring ):
@@ -259,7 +262,7 @@ class RequestTasks( TaskBase ):
 
     isValid = self.requestValidator.validate( oRequest )
     if not isValid['OK']:
-      self.log.error( "Error creating request for task", "%s %s" % ( taskID, isValid ) )
+      self._logError( "Error creating request for task", "%s %s" % ( taskID, isValid ), transID = transID )
       # This works because we loop over a copy of the keys !
       taskDict.pop( taskID )
       return
@@ -273,6 +276,7 @@ class RequestTasks( TaskBase ):
     submitted = 0
     failed = 0
     startTime = time.time()
+    transID = taskDict[taskDict.keys()[0]]['TransformationID']
     for taskID in sorted( taskDict ):
       if not taskDict[taskID]['TaskObject']:
         taskDict[taskID]['Success'] = False
@@ -284,12 +288,12 @@ class RequestTasks( TaskBase ):
         taskDict[taskID]['Success'] = True
         submitted += 1
       else:
-        self._logError( "Failed to submit task to RMS", res['Message'] )
+        self._logError( "Failed to submit task to RMS", res['Message'], transID = transID )
         taskDict[taskID]['Success'] = False
         failed += 1
-    self._logInfo( 'submitTasks: Submitted %d tasks to RMS in %.1f seconds' % ( submitted, time.time() - startTime ) )
+    self._logInfo( 'submitTasks: Submitted %d tasks to RMS in %.1f seconds' % ( submitted, time.time() - startTime ), transID = transID )
     if failed:
-      self._logWarn( 'submitTasks: But at the same time failed to submit %d tasks to RMS.' % ( failed ) )
+      self._logWarn( 'submitTasks: But at the same time failed to submit %d tasks to RMS.' % ( failed ), transID = transID )
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, oRequest ):
@@ -323,8 +327,8 @@ class RequestTasks( TaskBase ):
 
       newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
       if not newStatus['OK']:
-        log = self._logVerbose if 'not exist' in newStatus['Message'] else self.log.warn
-        log( "getSubmittedTaskStatus: Failed to get requestID for request", '%s' % newStatus['Message'] )
+        log = self._logVerbose if 'not exist' in newStatus['Message'] else self.__logWarn
+        log( "getSubmittedTaskStatus: Failed to get requestID for request", newStatus['Message'], transID = transID )
       else:
         newStatus = newStatus['Value']
         if newStatus != oldStatus:
@@ -359,8 +363,8 @@ class RequestTasks( TaskBase ):
       lfnList = taskFiles[requestID]
       statusDict = self.requestClient.getRequestFileStatus( requestID, lfnList )
       if not statusDict['OK']:
-        log = self._logVerbose if 'not exist' in statusDict['Message'] else self.log.warn
-        log( "getSubmittedFileStatus: Failed to get files status for request", '%s' % statusDict['Message'] )
+        log = self._logVerbose if 'not exist' in statusDict['Message'] else self._logWarn
+        log( "getSubmittedFileStatus: Failed to get files status for request", statusDict['Message'], transID = transID )
         continue
 
       for lfn, newStatus in statusDict['Value'].items():
@@ -503,7 +507,7 @@ class WorkflowTasks( TaskBase ):
       # Handle Input Data
       inputData = paramsDict.get( 'InputData' )
       if inputData:
-        self._logVerbose( 'Setting input data to %s' % inputData )
+        self._logVerbose( 'Setting input data to %s' % inputData, transID = transID )
         seqDict['InputData'] = inputData
       elif paramSeqDict.get( 'InputData' ) is not None:
         return S_ERROR( ETSDATA, "Invalid mixture of jobs with and without input data" )
@@ -511,7 +515,7 @@ class WorkflowTasks( TaskBase ):
       for paramName, paramValue in paramsDict.items():
         if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
           if paramValue:
-            self._logVerbose( 'Setting %s to %s' % ( paramName, paramValue ) )
+            self._logVerbose( 'Setting %s to %s' % ( paramName, paramValue ), transID = transID )
             seqDict[paramName] = paramValue
 
       if self.outputDataModule:
@@ -530,7 +534,7 @@ class WorkflowTasks( TaskBase ):
 
     for paramName, paramSeq in paramSeqDict.iteritems():
       if paramName in [ 'JOB_ID', 'PRODUCTION_ID', 'InputData' ]:
-        oJob.setParameterSequence( paramName, paramSeq, addToWorkflow=paramName )
+        oJob.setParameterSequence( paramName, paramSeq, addToWorkflow = paramName )
       else:
         oJob.setParameterSequence( paramName, paramSeq )
 
