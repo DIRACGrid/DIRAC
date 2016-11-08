@@ -75,11 +75,11 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     # Set Checksum to FC checksum if not set in the request
     fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
     fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum' )
-    opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
     # Replace opFile.Checksum if it doesn't match a valid FC checksum
     if fcChecksum:
       if hexAdlerToInt( fcChecksum ) != False:
         opFile.Checksum = fcChecksum
+        opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
       else:
         opFile.Checksum = None
 
