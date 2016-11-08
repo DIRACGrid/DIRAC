@@ -353,7 +353,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
                     method = method, transID = transID )
     if not transformationFiles['OK']:
       self._logError( "Failed to get transformation files to update: %s" % transformationFiles['Message'],
-                      method = method )
+                      method = method, transID = transID )
       return transformationFiles
     if not transformationFiles['Value']:
       self._logInfo( "No files to be updated", transID = transID, method = method )
