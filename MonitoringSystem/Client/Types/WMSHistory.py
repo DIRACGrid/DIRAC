@@ -38,7 +38,13 @@ class WMSHistory( BaseType ):
                       'appStatus_type':{'_all': {'enabled': 'false'}, 'properties': {'ApplicationStatus': {'index': 'not_analyzed',
                                                                                                            'type': 'string'}}},
                       'monorStat_type':{'_all': {'enabled': 'false'}, 'properties': {'MinorStatus': { 'index': 'not_analyzed',
-                                                                                                      'type': 'string'}}},} )
+                                                                                                      'type': 'string'}}},
+                      'user_type':{'_all': {'enabled': 'false'}, 'properties': {'User': { 'index': 'not_analyzed',
+                                                                                          'type': 'string'}}},
+                      'jobgroup_type':{'_all': {'enabled': 'false'}, 'properties': {'JobGroup': { 'index': 'not_analyzed',
+                                                                                                  'type': 'string'}}},
+                      'usergroup_type':{'_all': {'enabled': 'false'}, 'properties': {'UserGroup': { 'index': 'not_analyzed',
+                                                                                                    'type': 'string'}}}} )
 
     self.setDataToKeep ( 86400 * 30 )
 
