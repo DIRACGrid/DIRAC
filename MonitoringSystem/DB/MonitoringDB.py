@@ -142,9 +142,15 @@ class MonitoringDB( ElasticDB ):
     q = [self._Q( 'range',
                   timestamp = {'lte':endTime * 1000,
                                'gte': startTime * 1000} )]
+      
     for cond in condDict:
-      kwargs = {cond: condDict[cond][0]}
-      query = self._Q( 'match', **kwargs )
+      query = None
+      for condValue in condDict[cond]:
+        kwargs = {cond: condValue}
+        if query:
+          query = query | self._Q( 'match', **kwargs )
+        else:
+          query = self._Q( 'match', **kwargs )
       q += [query]
 
     a1 = self._A( 'terms', field = grouping, size = 0 )
@@ -245,8 +251,13 @@ class MonitoringDB( ElasticDB ):
                   timestamp = {'lte':endTime * 1000,
                                'gte': startTime * 1000} )]
     for cond in condDict:
-      kwargs = {cond: condDict[cond][0]}
-      query = self._Q( 'match', **kwargs )
+      query = None
+      for condValue in condDict[cond]:
+        kwargs = {cond: condValue}
+        if query:
+          query = query | self._Q( 'match', **kwargs )
+        else:
+          query = self._Q( 'match', **kwargs )
       q += [query]
 
     a1 = self._A( 'terms', field = grouping, size = 0 )

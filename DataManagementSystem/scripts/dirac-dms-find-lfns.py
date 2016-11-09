@@ -33,11 +33,6 @@ if __name__ == "__main__":
     if opt == 'Path':
       path = val
 
-  if len( args ) < 1:
-    print "Error: No argument provided\n%s:" % Script.scriptName
-    Script.showHelp()
-    DIRAC.exit( -1 )
-
   fc = FileCatalog()
   result = fc.getMetadataFields()
   if not result['OK']:
@@ -47,8 +42,13 @@ if __name__ == "__main__":
   typeDict.update( result['Value']['DirectoryMetaFields'] )
   # Special meta tags
   typeDict.update( FILE_STANDARD_METAKEYS )
-  
-  gLogger.info( "MetaDataDictionary: %s" % metaDict )
+
+  if len( args ) < 1:
+    print "Error: No argument provided\n%s:" % Script.scriptName
+    Script.showHelp()
+    gLogger.notice( "MetaDataDictionary: \n%s" % str( typeDict ) )
+    DIRAC.exit( -1 )
+
 
   mq = MetaQuery( typeDict = typeDict )
   result = mq.setMetaQuery( args )
@@ -62,7 +62,6 @@ if __name__ == "__main__":
   if not result['OK']:
     gLogger.error( 'Can not access File Catalog:', result['Message'] )
     DIRAC.exit( -1 )
-  lfnList = result['Value']
+  lfnList = sorted( result['Value'] )
 
-  for lfn in lfnList:
-    print lfn
+  gLogger.notice( '\n'.join( lfn for lfn in lfnList ) )
