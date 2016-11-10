@@ -96,18 +96,8 @@ class DatasetManager( object ):
     failed = dict()
     successful = dict()
 
-    print datasets
-
     for datasetName, metaQuery in datasets.items():
-
-      result = self.__getMetaQueryParameters( metaQuery, credDict )
-      if not result['OK']:
-        return result
-      totalSize = result['Value']['TotalSize']
-      datasetHash = result['Value']['DatasetHash']
-      numberOfFiles = result['Value']['NumberOfFiles']
-
-      result = self.__addDataset( datasetName, metaQuery, totalSize, datasetHash, numberOfFiles, uid, gid )
+      result = self.__addDataset( datasetName, metaQuery, credDict, uid, gid )
       if result['OK']:
         successful[datasetName] = True
       else:
@@ -115,7 +105,14 @@ class DatasetManager( object ):
 
     return S_OK( { "Successful": successful, "Failed": failed } )
 
-  def __addDataset( self, datasetName, metaQuery, totalSize, datasetHash, numberOfFiles, uid, gid ):
+  def __addDataset( self, datasetName, metaQuery, credDict, uid, gid ):
+
+    result = self.__getMetaQueryParameters( metaQuery, credDict )
+    if not result['OK']:
+      return result
+    totalSize = result['Value']['TotalSize']
+    datasetHash = result['Value']['DatasetHash']
+    numberOfFiles = result['Value']['NumberOfFiles']
 
     result = self.db.fileManager._getStatusInt( 'Dynamic' )
     if not result['OK']:
