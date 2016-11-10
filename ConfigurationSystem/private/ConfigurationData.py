@@ -331,12 +331,12 @@ class ConfigurationData( object ):
     backupFile = os.path.join( backupPath, configurationFilename.replace( ".cfg", ".%s.zip" % backupName ) )
     if os.path.isfile( configurationFile ):
       gLogger.info( "Making a backup of configuration in %s" % backupFile )
-      with zipfile.ZipFile( backupFile, "w", zipfile.ZIP_DEFLATED ) as zf:
-        try:
+      try:
+        with zipfile.ZipFile( backupFile, "w", zipfile.ZIP_DEFLATED ) as zf:
           zf.write( configurationFile, "%s.backup.%s" % ( os.path.split( configurationFile )[1], backupName ) )
-        except Exception:
-          gLogger.exception()
-          gLogger.error( "Cannot backup configuration data file", "file %s" % backupFile )
+      except Exception:
+        gLogger.exception()
+        gLogger.error( "Cannot backup configuration data file", "file %s" % backupFile )
     else:
       gLogger.warn( "CS data file does not exist", configurationFile )
 
