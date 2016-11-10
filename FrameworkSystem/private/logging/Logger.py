@@ -166,13 +166,14 @@ class Logger( object ):
 
   def debug( self, sMsg, sVarMsg = '' ):
     # In case of S_ERROR structure make full string representation
-    if isReturnStructure( sMsg ):
-      sMsg = reprReturnErrorStructure( sMsg, full = True )
-    if isReturnStructure( sVarMsg ):
-      sVarMsg = reprReturnErrorStructure( sVarMsg, full = True )
-    return self._sendMessage( self._logLevels.debug,
-                              sMsg,
-                              sVarMsg )
+    if self.__testLevel( self._logLevels.debug ):
+      if isReturnStructure( sMsg ):
+        sMsg = reprReturnErrorStructure( sMsg, full = True )
+      if isReturnStructure( sVarMsg ):
+        sVarMsg = reprReturnErrorStructure( sVarMsg, full = True )
+      return self._sendMessage( self._logLevels.debug,
+                                sMsg,
+                                sVarMsg )
 
   def warn( self, sMsg, sVarMsg = '' ):
     return self._sendMessage( self._logLevels.warn,
@@ -185,13 +186,14 @@ class Logger( object ):
                               sVarMsg )
 
   def exception( self, sMsg = "", sVarMsg = '', lException = False, lExcInfo = False ):
-    if sVarMsg:
-      sVarMsg += "\n%s" % self.__getExceptionString( lException, lExcInfo )
-    else:
-      sVarMsg = "\n%s" % self.__getExceptionString( lException, lExcInfo )
-    return self._sendMessage( self._logLevels.exception,
-                              sMsg,
-                              sVarMsg )
+    if self.__testLevel( self._logLevels.exception ):
+      if sVarMsg:
+        sVarMsg += "\n%s" % self.__getExceptionString( lException, lExcInfo )
+      else:
+        sVarMsg = "\n%s" % self.__getExceptionString( lException, lExcInfo )
+      return self._sendMessage( self._logLevels.exception,
+                                sMsg,
+                                sVarMsg )
 
   def fatal( self, sMsg, sVarMsg = '' ):
     return self._sendMessage( self._logLevels.fatal,
