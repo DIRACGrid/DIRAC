@@ -70,17 +70,16 @@ class BundleManager:
         commonPath = File.getCommonPath( filesToBundle )
         commonEnd = len( commonPath )
         gLogger.info( "Bundle will have %s files with common path %s" % ( len( filesToBundle ), commonPath ) )
-        tarBuffer = tarfile.open( 'dummy', "w:gz", buffer_ )
-        for filePath in filesToBundle:
-          tarBuffer.add( filePath, filePath[ commonEnd: ] )
-        tarBuffer.close()
+        with tarfile.open( 'dummy', "w:gz", buffer_ ) as tarBuffer:
+          for filePath in filesToBundle:
+            tarBuffer.add( filePath, filePath[ commonEnd: ] )
         zippedData = buffer_.getvalue()
         buffer_.close()
         hash_ = File.getMD5ForFiles( filesToBundle )
         gLogger.info( "Bundled %s : %s bytes (%s)" % ( bId, len( zippedData ), hash_ ) )
         self.__bundles[ bId ] = ( hash_, zippedData )
       else:
-        self.__bundles[ bId ] = ( None, None )  
+        self.__bundles[ bId ] = ( None, None )
 
 gBundleManager = False
 
@@ -123,7 +122,7 @@ class BundleDeliveryHandler( RequestHandler ):
     if bundleVersion is None:
       fileHelper.markAsTransferred()
       return S_ERROR( "Empty bundle %s" % bId )
-    
+
     if version == bundleVersion:
       fileHelper.markAsTransferred()
       return S_OK( bundleVersion )
