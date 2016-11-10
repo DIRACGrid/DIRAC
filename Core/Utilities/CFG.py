@@ -880,15 +880,13 @@ class CFG( object ):
     """
     if gZipEnabled and fileName.find( ".zip" ) == len( fileName ) - 4:
       #Zipped file
-      zipHandler = zipfile.ZipFile( fileName )
-      nameList = zipHandler.namelist()
-      fileToRead = nameList[0]
-      fileData = zipHandler.read( fileToRead )
-      zipHandler.close()
+      with zipfile.ZipFile( fileName ) as zipHandler:
+        nameList = zipHandler.namelist()
+        fileToRead = nameList[0]
+        fileData = zipHandler.read( fileToRead )
     else:
-      fd = file( fileName )
-      fileData = fd.read()
-      fd.close()
+      with open( fileName ) as fd:
+        fileData = fd.read()
     return self.loadFromBuffer( fileData )
 
   @gCFGSynchro
