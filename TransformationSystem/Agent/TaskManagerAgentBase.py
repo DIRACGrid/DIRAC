@@ -443,7 +443,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       transID, taskID = self._parseTaskName( taskName )
       self._logInfo( "Resetting status of %s to Created as no associated task found" % ( taskName ),
                      method = method, transID = transID )
-      res = clients['TransformationClient'].setTaskStatus( int( transID ), int( taskID ), 'Created' )
+      res = clients['TransformationClient'].setTaskStatus( transID, taskID, 'Created' )
       if not res['OK']:
         self._logError( "Failed to update task status and ID after recovery:",
                         '%s %s' % ( taskName, res['Message'] ),
@@ -455,7 +455,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       transID, taskID = self._parseTaskName( taskName )
       self._logInfo( "Setting status of %s to Submitted with ID %s" % ( taskName, extTaskID ),
                      method = method, transID = transID )
-      setTaskStatusAndWmsID = clients['TransformationClient'].setTaskStatusAndWmsID( int( transID ), int( taskID ),
+      setTaskStatusAndWmsID = clients['TransformationClient'].setTaskStatusAndWmsID( transID, taskID,
                                                                                      'Submitted', str( extTaskID ) )
       if not setTaskStatusAndWmsID['OK']:
         self._logError( "Failed to update task status and ID after recovery:",
