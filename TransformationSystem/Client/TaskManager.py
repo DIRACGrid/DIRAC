@@ -28,7 +28,7 @@ __RCSID__ = "$Id$"
 COMPONENT_NAME = 'TaskManager'
 
 
-def _requestName( transID, taskID ):
+def _transTaskName( transID, taskID ):
   return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
 
 class TaskBase( TransformationAgentsUtilities ):
@@ -67,19 +67,19 @@ class TaskBase( TransformationAgentsUtilities ):
     """
     updated = 0
     startTime = time.time()
-    for taskID in sorted( taskDict ):
-      transID = taskDict[taskID]['TransformationID']
-      if taskDict[taskID]['Success']:
+    for taskID, task in taskDict.iteritems():
+      transID = task['TransformationID']
+      if task['Success']:
         res = self.transClient.setTaskStatusAndWmsID( transID, taskID, 'Submitted',
-                                                      str( taskDict[taskID]['ExternalID'] ) )
+                                                      str( task['ExternalID'] ) )
         if not res['OK']:
-          self._logWarn( "updateDBAfterSubmission: Failed to update task status after submission" ,
-                         "%s" % taskDict[taskID]['ExternalID'],
-                         res['Message'],
-                         transID = transID )
+          self._logWarn( "Failed to update task status after submission" ,
+                         "%s %s" % ( task['ExternalID'], res['Message'] ),
+                         transID = transID, method = 'updateDBAfterSubmission' )
         updated += 1
     if updated:
-      self._logInfo( "updateDBAfterSubmission: Updated %d tasks in %.1f seconds" % ( updated, time.time() - startTime ), transID = transID )
+      self._logInfo( "Updated %d tasks in %.1f seconds" % ( updated, time.time() - startTime ),
+                     transID = transID, method = 'updateDBAfterSubmission' )
     return S_OK()
 
   def updateTransformationReservedTasks( self, taskDicts ):
@@ -168,21 +168,20 @@ class RequestTasks( TaskBase ):
     :param str onwerGroup: dirac group used for the requests
     :returns: None
     """
-
-    for taskID in sorted( taskDict ):
-      paramDict = taskDict[taskID]
-      transID = paramDict['TransformationID']
-      if not paramDict.get( 'InputData' ):
+    failedTasks = []
+    for taskID, task in taskDict.iteritems():
+      transID = task['TransformationID']
+      if not task.get( 'InputData' ):
         self._logError( "Error creating request for task", "%s, No input data" % taskID, transID = transID )
         taskDict.pop( taskID )
         continue
       files = []
 
       oRequest = Request()
-      if isinstance( paramDict['InputData'], list ):
-        files = paramDict['InputData']
-      elif isinstance( paramDict['InputData'], basestring ):
-        files = paramDict['InputData'].split( ';' )
+      if isinstance( task['InputData'], list ):
+        files = task['InputData']
+      elif isinstance( task['InputData'], basestring ):
+        files = task['InputData'].split( ';' )
 
       # create the operations from the json structure
       for operationTuple in transJson:
@@ -198,7 +197,12 @@ class RequestTasks( TaskBase ):
 
         oRequest.addOperation( op )
 
-      self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
+      result = self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
+      if not result['OK']:
+        failedTasks.append( taskID )
+    # Remove failed tasks
+    for taskID in failedTasks:
+      taskDict.pop( taskID )
 
   def _singleOperationsBody( self, transBody, taskDict, ownerDN, ownerGroup ):
     """ deal with a Request that has just one operation, as it was sofar
@@ -216,24 +220,23 @@ class RequestTasks( TaskBase ):
         _requestType, requestOperation = transBody.split( ';' )
       except AttributeError:
         pass
-
+    failedTasks = []
     # Do not remove sorted, we might pop elements in the loop
-    for taskID in sorted( taskDict ):
-      paramDict = taskDict[taskID]
+    for taskID, task in taskDict.iteritems():
 
-      transID = paramDict['TransformationID']
+      transID = task['TransformationID']
 
       oRequest = Request()
       transfer = Operation()
       transfer.Type = requestOperation
-      transfer.TargetSE = paramDict['TargetSE']
+      transfer.TargetSE = task['TargetSE']
 
       # If there are input files
-      if paramDict.get( 'InputData' ):
-        if isinstance( paramDict['InputData'], list ):
-          files = paramDict['InputData']
-        elif isinstance( paramDict['InputData'], basestring ):
-          files = paramDict['InputData'].split( ';' )
+      if task.get( 'InputData' ):
+        if isinstance( task['InputData'], list ):
+          files = task['InputData']
+        elif isinstance( task['InputData'], basestring ):
+          files = task['InputData'].split( ';' )
         for lfn in files:
           trFile = File()
           trFile.LFN = lfn
@@ -241,7 +244,12 @@ class RequestTasks( TaskBase ):
           transfer.addFile( trFile )
 
       oRequest.addOperation( transfer )
-      self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
+      result = self._assignRequestToTask( oRequest, taskDict, transID, taskID, ownerDN, ownerGroup )
+      if not result['OK']:
+        failedTasks.append( taskID )
+    # Remove failed tasks
+    for taskID in failedTasks:
+      taskDict.pop( taskID )
 
   def _assignRequestToTask( self, oRequest, taskDict, transID, taskID, ownerDN, ownerGroup ):
     """set ownerDN and group to request, and add the request to taskDict if it is
@@ -256,18 +264,17 @@ class RequestTasks( TaskBase ):
     :returns: None
     """
 
-    oRequest.RequestName = _requestName( transID, taskID )
+    oRequest.RequestName = _transTaskName( transID, taskID )
     oRequest.OwnerDN = ownerDN
     oRequest.OwnerGroup = ownerGroup
 
     isValid = self.requestValidator.validate( oRequest )
     if not isValid['OK']:
-      self._logError( "Error creating request for task", "%s %s" % ( taskID, isValid ), transID = transID )
-      # This works because we loop over a copy of the keys !
-      taskDict.pop( taskID )
-      return
+      self._logError( "Error creating request for task", "%s %s" % ( taskID, isValid ),
+                      transID = transID )
+      return S_ERROR( 'Error creating request' )
     taskDict[taskID]['TaskObject'] = oRequest
-    return
+    return S_OK()
 
 
   def submitTransformationTasks( self, taskDict ):
@@ -276,28 +283,34 @@ class RequestTasks( TaskBase ):
     submitted = 0
     failed = 0
     startTime = time.time()
-    transID = taskDict[taskDict.keys()[0]]['TransformationID']
-    for taskID in sorted( taskDict ):
-      if not taskDict[taskID]['TaskObject']:
-        taskDict[taskID]['Success'] = False
+    method = 'submitTransformationTasks'
+    for taskID, task in taskDict.iteritems():
+      # transID is the same for all tasks, so pick it up every time here
+      transID = task['TransformationID']
+      if not task['TaskObject']:
+        task['Success'] = False
         failed += 1
         continue
-      res = self.submitTaskToExternal( taskDict[taskID]['TaskObject'] )
+      res = self.submitTaskToExternal( task['TaskObject'] )
       if res['OK']:
-        taskDict[taskID]['ExternalID'] = res['Value']
-        taskDict[taskID]['Success'] = True
+        task['ExternalID'] = res['Value']
+        task['Success'] = True
         submitted += 1
       else:
         self._logError( "Failed to submit task to RMS", res['Message'], transID = transID )
-        taskDict[taskID]['Success'] = False
+        task['Success'] = False
         failed += 1
-    self._logInfo( 'submitTasks: Submitted %d tasks to RMS in %.1f seconds' % ( submitted, time.time() - startTime ), transID = transID )
+    if submitted:
+      self._logInfo( 'Submitted %d tasks to RMS in %.1f seconds' % ( submitted, time.time() - startTime ),
+                     transID = transID, method = method )
     if failed:
-      self._logWarn( 'submitTasks: But at the same time failed to submit %d tasks to RMS.' % ( failed ), transID = transID )
+      self._logWarn( 'Failed to submit %d tasks to RMS.' % ( failed ),
+                     transID = transID, method = method )
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, oRequest ):
-    """ Submits a request using ReqClient
+    """
+    Submits a request to RMS
     """
     if isinstance( oRequest, self.requestClass ):
       return self.requestClient.putRequest( oRequest, useFailoverProxy = False, retryMainService = 2 )
@@ -308,10 +321,8 @@ class RequestTasks( TaskBase ):
     requestNameIDs = {}
     noTasks = []
     for taskDict in taskDicts:
-      requestName = _requestName( taskDict['TransformationID'], taskDict['TaskID'] )
-
+      requestName = _transTaskName( taskDict['TransformationID'], taskDict['TaskID'] )
       reqID = taskDict['ExternalID']
-
       if reqID:
         requestNameIDs[requestName] = reqID
       else:
@@ -320,15 +331,18 @@ class RequestTasks( TaskBase ):
 
 
   def getSubmittedTaskStatus( self, taskDicts ):
+    """
+    Check if tasks changed status, and return a list of tasks per new status
+    """
     updateDict = {}
-
     for taskDict in taskDicts:
       oldStatus = taskDict['ExternalStatus']
 
       newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
       if not newStatus['OK']:
         log = self._logVerbose if 'not exist' in newStatus['Message'] else self.__logWarn
-        log( "getSubmittedTaskStatus: Failed to get requestID for request", newStatus['Message'], transID = transID )
+        log( "getSubmittedTaskStatus: Failed to get requestID for request", newStatus['Message'],
+             transID = taskDict['TransformationID'] )
       else:
         newStatus = newStatus['Value']
         if newStatus != oldStatus:
@@ -336,45 +350,48 @@ class RequestTasks( TaskBase ):
     return S_OK( updateDict )
 
   def getSubmittedFileStatus( self, fileDicts ):
-    taskFiles = {}
-    submittedTasks = {}
-    externalIds = {}
+    """
+    Check if transformation files changed status, and return a list of taskIDs per new status
+    """
     # Don't try and get status of not submitted tasks!
+    transID = None
+    taskFiles = {}
     for fileDict in fileDicts:
-      submittedTasks.setdefault( fileDict['TransformationID'], set() ).add( int( fileDict['TaskID'] ) )
-    for transID in submittedTasks:
-      res = self.transClient.getTransformationTasks( { 'TransformationID':transID, 'TaskID': list( submittedTasks[transID] )} )
-      if not res['OK']:
-        return res
-      for taskDict in res['Value']:
-        taskID = taskDict['TaskID']
-        externalIds[taskID] = taskDict['ExternalID']
-        if taskDict['ExternalStatus'] == 'Created':
-          submittedTasks[transID].remove( taskID )
-
-    for fileDict in fileDicts:
+      # There is only one transformation involved, get however the transID in the loop
       transID = fileDict['TransformationID']
       taskID = int( fileDict['TaskID'] )
-      if taskID in submittedTasks[transID]:
-        taskFiles.setdefault( externalIds[taskID], [] ).append( fileDict['LFN'] )
+      taskFiles.setdefault( taskID, [] ).append( fileDict['LFN'] )
+    # Should not happen, but just in case there are no files, return
+    if transID is None:
+      return S_OK( {} )
+
+    res = self.transClient.getTransformationTasks( { 'TransformationID':transID, 'TaskID': taskFiles.keys()} )
+    if not res['OK']:
+      return res
+    requestFiles = {}
+    for taskDict in res['Value']:
+      taskID = taskDict['TaskID']
+      externalID = taskDict['ExternalID']
+      # Only consider tasks that are submitted
+      if taskDict['ExternalStatus'] != 'Created' and externalID:
+        requestFiles[externalID] = taskFiles[taskID]
 
     updateDict = {}
-    for requestID in sorted( taskFiles ):
-      lfnList = taskFiles[requestID]
+    for requestID, lfnList in requestFiles.iteritems():
       statusDict = self.requestClient.getRequestFileStatus( requestID, lfnList )
       if not statusDict['OK']:
         log = self._logVerbose if 'not exist' in statusDict['Message'] else self._logWarn
-        log( "getSubmittedFileStatus: Failed to get files status for request", statusDict['Message'], transID = transID )
-        continue
-
-      for lfn, newStatus in statusDict['Value'].items():
-        if newStatus == 'Done':
-          updateDict[lfn] = 'Processed'
-        elif newStatus == 'Failed':
-          updateDict[lfn] = 'Problematic'
+        log( "Failed to get files status for request", statusDict['Message'],
+             transID = transID, method = 'getSubmittedFileStatus' )
+      else:
+        for lfn, newStatus in statusDict['Value'].iteritems():
+          if newStatus == 'Done':
+            updateDict[lfn] = 'Processed'
+          elif newStatus == 'Failed':
+            updateDict[lfn] = 'Problematic'
     return S_OK( updateDict )
 
-
+############
 
 class WorkflowTasks( TaskBase ):
   """ Handles jobs
@@ -459,13 +476,17 @@ class WorkflowTasks( TaskBase ):
   def __prepareTransformationTasksBulk( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
     """ Prepare transformation tasks with a single job object for bulk submission
     """
-
-    transID = taskDict[taskDict.keys()[0]]['TransformationID']
+    if taskDict:
+      transID = taskDict.values()[0]['TransformationID']
+    else:
+      return S_OK( {} )
 
     # Prepare the bulk Job object with common parameters
     oJob = self.jobClass( transBody )
+    method = 'prepareTransformationTasksBulk'
 
-    self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ), transID = transID )
+    self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ),
+                      transID = transID, method = method )
     oJob.setOwner( owner )
     oJob.setOwnerGroup( ownerGroup )
     oJob.setOwnerDN( ownerDN )
@@ -475,7 +496,8 @@ class WorkflowTasks( TaskBase ):
 
     oJob._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
     oJob.setType( jobType )
-    self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ), transID = transID )
+    self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ),
+                      transID = transID, method = method )
     oJob.setJobGroup( transGroup )
 
     if int( transID ) in [int( x ) for x in self.opsH.getValue( "Hospital/Transformations", [] )]:
@@ -483,9 +505,10 @@ class WorkflowTasks( TaskBase ):
 
     # Collect per job parameters sequences
     paramSeqDict = {}
-    for taskNumber in sorted( taskDict ):
+    # tasks must be sorted because we use bulk submission and we must find the correspondance
+    for taskID in sorted( taskDict ):
+      paramDict = taskDict[taskID]
       seqDict = {}
-      paramsDict = taskDict[taskNumber]
 
       # Handle destination site
       site = oJob.workflow.findParameter( 'Site' ).getValue()
@@ -497,43 +520,44 @@ class WorkflowTasks( TaskBase ):
         self._logVerbose( 'Setting Site: ', str( sites ), transID = transID )
         seqDict['Site'] = sites
 
-      constructedName = str( transID ).zfill( 8 ) + '_' + str( taskNumber ).zfill( 8 )
-      self._logVerbose( 'Setting task name to %s' % constructedName, transID = transID )
       seqDict['JobName'] = transGroup
-      seqDict['JOB_ID'] = str( taskNumber ).zfill( 8 )
+      seqDict['JOB_ID'] = str( taskID ).zfill( 8 )
 
-      self._logDebug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskNumber, str( paramsDict ) ), transID = transID )
+      self._logDebug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskID, str( paramsDict ) ),
+                      transID = transID, method = method )
 
       # Handle Input Data
       inputData = paramsDict.get( 'InputData' )
       if inputData:
-        self._logVerbose( 'Setting input data to %s' % inputData, transID = transID )
+        self._logVerbose( 'Setting input data to %s' % inputData,
+                          transID = transID, method = method )
         seqDict['InputData'] = inputData
       elif paramSeqDict.get( 'InputData' ) is not None:
         return S_ERROR( ETSDATA, "Invalid mixture of jobs with and without input data" )
 
-      for paramName, paramValue in paramsDict.items():
+      for paramName, paramValue in paramsDict.iteritems():
         if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
           if paramValue:
-            self._logVerbose( 'Setting %s to %s' % ( paramName, paramValue ), transID = transID )
+            self._logVerbose( 'Setting %s to %s' % ( paramName, paramValue ),
+                              transID = transID, method = method )
             seqDict[paramName] = paramValue
 
       if self.outputDataModule:
         res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
-                                   'TaskID':taskNumber, 'InputData':inputData},
+                                   'TaskID':taskID, 'InputData':inputData},
                                   moduleLocation = self.outputDataModule )
         if not res ['OK']:
-          self._logError( "Failed to generate output data", res['Message'], transID = transID )
+          self._logError( "Failed to generate output data", res['Message'],
+                          transID = transID, method = method )
           continue
-        for name, output in res['Value'].items():
+        for name, output in res['Value'].iteritems():
           seqDict[name] = ';'.join( output )
 
-      for pName in seqDict:
-        paramSeqDict.setdefault( pName, [] )
-        paramSeqDict[pName].append( seqDict[pName] )
+      for pName, seq in seqDict.iteritems():
+        paramSeqDict.setdefault( pName, [] ).append( seq )
 
     for paramName, paramSeq in paramSeqDict.iteritems():
-      if paramName in [ 'JOB_ID', 'PRODUCTION_ID', 'InputData' ]:
+      if paramName in ( 'JOB_ID', 'PRODUCTION_ID', 'InputData' ):
         oJob.setParameterSequence( paramName, paramSeq, addToWorkflow = paramName )
       else:
         oJob.setParameterSequence( paramName, paramSeq )
@@ -544,42 +568,49 @@ class WorkflowTasks( TaskBase ):
   def __prepareTransformationTasks( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
     """ Prepare transformation tasks with a job object per task
     """
-
-    for taskNumber in sorted( taskDict ):
+    method = '__prepareTransformationTasks'
+    for taskID, paramsDict in taskDict.iteritems():
+      # Create a job for each task and add it to the taskDict
       oJob = self.jobClass( transBody )
-      paramsDict = taskDict[taskNumber]
       site = oJob.workflow.findParameter( 'Site' ).getValue()
       paramsDict['Site'] = site
       jobType = oJob.workflow.findParameter( 'JobType' ).getValue()
       paramsDict['JobType'] = jobType
       transID = paramsDict['TransformationID']
-      self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ), transID = transID )
+      self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ),
+                        transID = transID, method = method )
       oJob.setOwner( owner )
       oJob.setOwnerGroup( ownerGroup )
       oJob.setOwnerDN( ownerDN )
       transGroup = str( transID ).zfill( 8 )
-      self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ), transID = transID )
+      self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ),
+                        transID = transID, method = method )
       oJob.setJobGroup( transGroup )
-      constructedName = str( transID ).zfill( 8 ) + '_' + str( taskNumber ).zfill( 8 )
-      self._logVerbose( 'Setting task name to %s' % constructedName, transID = transID )
+      constructedName = _transTaskName( transID, taskID )
+      self._logVerbose( 'Setting task name to %s' % constructedName,
+                        transID = transID, method = method )
       oJob.setName( constructedName )
       oJob._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
-      oJob._setParamValue( 'JOB_ID', str( taskNumber ).zfill( 8 ) )
+      oJob._setParamValue( 'JOB_ID', str( taskID ).zfill( 8 ) )
       inputData = None
 
-      self._logDebug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskNumber, str( paramsDict ) ), transID = transID )
+      self._logDebug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskID, str( paramsDict ) ),
+                      transID = transID, method = method )
 
       # These helper functions do the real job
       sites = self._handleDestination( paramsDict )
       if not sites:
-        self._logError( 'Could not get a list a sites', transID = transID )
-        taskDict[taskNumber]['TaskObject'] = ''
+        self._logError( 'Could not get a list a sites',
+                        transID = transID, method = method )
+        paramsDict['TaskObject'] = ''
         continue
       else:
-        self._logVerbose( 'Setting Site: ', str( sites ), transID = transID )
+        self._logVerbose( 'Setting Site: ', str( sites ),
+                          transID = transID, method = method )
         res = oJob.setDestination( sites )
         if not res['OK']:
-          self._logError( 'Could not set the site: %s' % res['Message'], transID = transID )
+          self._logError( 'Could not set the site: %s' % res['Message'],
+                          transID = transID, method = method )
           continue
 
       self._handleInputs( oJob, paramsDict )
@@ -589,17 +620,18 @@ class WorkflowTasks( TaskBase ):
       if int( transID ) in hospitalTrans:
         self._handleHospital( oJob )
 
-      taskDict[taskNumber]['TaskObject'] = ''
+      paramsDict['TaskObject'] = ''
       if self.outputDataModule:
         res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
-                                   'TaskID':taskNumber, 'InputData':inputData},
+                                   'TaskID':taskID, 'InputData':inputData},
                                   moduleLocation = self.outputDataModule )
         if not res ['OK']:
-          self._logError( "Failed to generate output data", res['Message'], transID = transID )
+          self._logError( "Failed to generate output data", res['Message'],
+                          transID = transID, method = method )
           continue
-        for name, output in res['Value'].items():
+        for name, output in res['Value'].iteritems():
           oJob._addJDLParameter( name, ';'.join( output ) )
-      taskDict[taskNumber]['TaskObject'] = oJob
+      paramsDict['TaskObject'] = oJob
     return S_OK( taskDict )
 
   #############################################################################
@@ -648,7 +680,7 @@ class WorkflowTasks( TaskBase ):
   def _handleRest( self, oJob, paramsDict ):
     """ add as JDL parameters all the other parameters that are not for inputs or destination
     """
-    for paramName, paramValue in paramsDict.items():
+    for paramName, paramValue in paramsDict.iteritems():
       if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
         if paramValue:
           self._logVerbose( 'Setting %s to %s' % ( paramName, paramValue ) )
@@ -703,11 +735,13 @@ class WorkflowTasks( TaskBase ):
   def __submitTransformationTasksBulk( self, taskDict ):
     """ Submit jobs in one go with one parametric job
     """
+    if not taskDict:
+      return S_OK( taskDict )
     startTime = time.time()
-    transID = taskDict[taskDict.keys()[0]]['TransformationID']
+    transID = taskDict.values()[0]['TransformationID']
     oJob = taskDict.pop( 'BulkJobObject' )
     if oJob is None:
-      self._logError( 'submitTransformationTasksBulk: no bulk Job object found', transID = transID )
+      self._logError( 'no bulk Job object found', transID = transID, method = 'submitTransformationTasksBulk' )
       return S_ERROR( ETSUKN, 'No bulk job object provided for submission' )
 
     result = self.submitTaskToExternal( oJob )
@@ -716,45 +750,48 @@ class WorkflowTasks( TaskBase ):
 
     jobIDList = result['Value']
     if len( jobIDList ) != len( taskDict ):
+      for task in taskDict.values():
+        task['Success'] = False
       return S_ERROR( ETSUKN, 'Submitted less number of jobs than requested tasks' )
-
-    for ind, taskID in enumerate( sorted( taskDict ) ):
-      taskDict[taskID]['ExternalID'] = jobIDList[ind]
+    # Get back correspondance with tasks sorted by ID
+    for jobID, taskID in zip( jobIDList, sorted( taskDict ) ):
+      taskDict[taskID]['ExternalID'] = jobID
       taskDict[taskID]['Success'] = True
 
     submitted = len( jobIDList )
-    self._logInfo( 'submitTransformationTasksBulk: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
-                                                                                                  time.time() - startTime ),
-                   transID = transID )
+    self._logInfo( 'Submitted %d tasks to WMS in %.1f seconds' % ( submitted, time.time() - startTime ),
+                   transID = transID, method = 'submitTransformationTasksBulk' )
     return S_OK( taskDict )
 
   def __submitTransformationTasks( self, taskDict ):
     """ Submit jobs one by one
     """
+    method = 'submitTransformationTasks'
     submitted = 0
     failed = 0
     startTime = time.time()
-    transID = None
-    for taskID in sorted( taskDict ):
-      transID = taskDict[taskID]['TransformationID']
-      if not taskDict[taskID]['TaskObject']:
-        taskDict[taskID]['Success'] = False
+    for taskID, task in taskDict.iteritems():
+      transID = task['TransformationID']
+      if not task['TaskObject']:
+        task['Success'] = False
         failed += 1
         continue
-      res = self.submitTaskToExternal( taskDict[taskID]['TaskObject'] )
+      res = self.submitTaskToExternal( task['TaskObject'] )
       if res['OK']:
-        taskDict[taskID]['ExternalID'] = res['Value']
-        taskDict[taskID]['Success'] = True
+        task['ExternalID'] = res['Value']
+        task['Success'] = True
         submitted += 1
       else:
-        self._logError( "Failed to submit task to WMS", res['Message'], transID = transID )
-        taskDict[taskID]['Success'] = False
+        self._logError( "Failed to submit task to WMS", res['Message'],
+                        transID = transID, method = method )
+        task['Success'] = False
         failed += 1
-    self._logInfo( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
-                                                                                              time.time() - startTime ),
-                   transID = transID )
+    if submitted:
+      self._logInfo( 'Submitted %d tasks to WMS in %.1f seconds' % ( submitted, time.time() - startTime ),
+                     transID = transID, method = method )
     if failed:
-      self._logError( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ), transID = transID )
+      self._logError( 'Failed to submit %d tasks to WMS.' % ( failed ),
+                      transID = transID, method = method )
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, job ):
@@ -777,97 +814,101 @@ class WorkflowTasks( TaskBase ):
     return self.submissionClient.submitJob( jdl, workflowFileObject )
 
   def updateTransformationReservedTasks( self, taskDicts ):
-    requestNames = []
     transID = None
-    for taskDict in taskDicts:
-      transID = taskDict['TransformationID']
-      taskID = taskDict['TaskID']
-      requestName = _requestName( transID, taskID )
-      requestNames.append( requestName )
-    res = self.jobMonitoringClient.getJobs( {'JobName':requestNames} )
+    jobNames = [_transTaskName( taskDict['TransformationID'], taskDict['TaskID'] ) for taskDict in taskDicts]
+    res = self.jobMonitoringClient.getJobs( {'JobName':jobNames} )
     if not res['OK']:
-      self._logError( "updateTransformationReservedTasks: Failed to get task from WMS", res['Message'], transID = transID )
+      self._logError( "Failed to get task from WMS", res['Message'],
+                      transID = transID, method = 'updateTransformationReservedTasks' )
       return res
-    requestNameIDs = {}
-    allAccounted = True
+    jobNameIDs = {}
     for wmsID in res['Value']:
       res = self.jobMonitoringClient.getJobPrimarySummary( int( wmsID ) )
       if not res['OK']:
-        self._logWarn( "updateTransformationReservedTasks: Failed to get task summary from WMS", res['Message'], transID = transID )
-        allAccounted = False
-        continue
-      jobName = res['Value']['JobName']
-      requestNameIDs[jobName] = int( wmsID )
-    noTask = [requestName for requestName in requestNames if requestName not in requestNameIDs] if allAccounted else []
-    return S_OK( {'NoTasks':noTask, 'TaskNameIDs':requestNameIDs} )
+        self._logWarn( "Failed to get task summary from WMS", res['Message'],
+                       transID = transID, method = 'updateTransformationReservedTasks' )
+      else:
+        jobNameIDs[res['Value']['JobName']] = int( wmsID )
+
+    noTask = list( set( jobNames ) - set( jobNameIDs ) )
+    return S_OK( {'NoTasks':noTask, 'TaskNameIDs':jobNameIDs} )
 
   def getSubmittedTaskStatus( self, taskDicts ):
-    wmsIDs = []
-    transID = None
-    for taskDict in taskDicts:
-      transID = taskDict['TransformationID']
-      wmsID = int( taskDict['ExternalID'] )
-      wmsIDs.append( wmsID )
+    """
+    Check the status of a list of tasks and return lists of taskIDs for each new status
+    """
+    if taskDicts:
+      wmsIDs = [int( taskDict['ExternalID'] ) for taskDict in taskDicts]
+      transID = taskDicts[0]['TransformationID']
+    else:
+      return S_OK( {} )
     res = self.jobMonitoringClient.getJobsStatus( wmsIDs )
     if not res['OK']:
-      self._logWarn( "Failed to get job status from the WMS system", transID = transID )
+      self._logWarn( "Failed to get job status from the WMS system",
+                     transID = transID )
       return res
-    updateDict = {}
     statusDict = res['Value']
+    updateDict = {}
     for taskDict in taskDicts:
-      transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
       wmsID = int( taskDict['ExternalID'] )
       if not wmsID:
         continue
       oldStatus = taskDict['ExternalStatus']
-      newStatus = "Removed"
-      if wmsID in statusDict:
-        newStatus = statusDict[wmsID]['Status']
+      newStatus = statusDict.get( wmsID, {} ).get( 'Status', 'Removed' )
       if oldStatus != newStatus:
         if newStatus == "Removed":
-          self._logVerbose( 'Production/Job %d/%d removed from WMS while it is in %s status' % ( transID,
-                                                                                                 taskID,
-                                                                                                 oldStatus ), transID = transID )
+          self._logVerbose( 'Production/Job %d/%d removed from WMS while it is in %s status' % ( transID, taskID, oldStatus ),
+                            transID = transID )
           newStatus = "Failed"
-        self._logVerbose( 'Setting job status for Production/Job %d/%d to %s' % ( transID, taskID, newStatus ), transID = transID )
+        self._logVerbose( 'Setting job status for Production/Job %d/%d to %s' % ( transID, taskID, newStatus ),
+                          transID = transID )
         updateDict.setdefault( newStatus, [] ).append( taskID )
     return S_OK( updateDict )
 
   def getSubmittedFileStatus( self, fileDicts ):
+    """
+    Check the status of a list of files and return the new status of each LFN
+    """
+    if not fileDicts:
+      return S_OK( {} )
+    # All files are from the same transformation
+    transID = fileDicts[0]['TransformationID']
     taskFiles = {}
-    transID = None
     for fileDict in fileDicts:
-      transID = fileDict['TransformationID']
-      taskID = fileDict['TaskID']
-      requestName = _requestName( transID, taskID )
-      taskFiles.setdefault( requestName, {} )[fileDict['LFN']] = fileDict['Status']
+      jobName = _transTaskName( transID, fileDict['TaskID'] )
+      taskFiles.setdefault( jobName, {} )[fileDict['LFN']] = fileDict['Status']
+
     res = self.updateTransformationReservedTasks( fileDicts )
     if not res['OK']:
-      self._logWarn( "Failed to obtain taskIDs for files", transID = transID )
+      self._logWarn( "Failed to obtain taskIDs for files",
+                     transID = transID )
       return res
     noTasks = res['Value']['NoTasks']
-    requestNameIDs = res['Value']['TaskNameIDs']
+    taskNameIDs = res['Value']['TaskNameIDs']
+
     updateDict = {}
-    for requestName in noTasks:
-      for lfn, oldStatus in taskFiles[requestName].items():
+    for jobName in noTasks:
+      for lfn, oldStatus in taskFiles[jobName].iteritems():
         if oldStatus != 'Unused':
           updateDict[lfn] = 'Unused'
-    res = self.jobMonitoringClient.getJobsStatus( requestNameIDs.values() )
+
+    res = self.jobMonitoringClient.getJobsStatus( taskNameIDs.values() )
     if not res['OK']:
-      self._logWarn( "Failed to get job status from the WMS system", transID = transID )
+      self._logWarn( "Failed to get job status from the WMS system",
+                     transID = transID )
       return res
     statusDict = res['Value']
-    for requestName, wmsID in requestNameIDs.items():
+    for jobName, wmsID in taskNameIDs.iteritems():
       newFileStatus = ''
-      if wmsID in statusDict:
-        jobStatus = statusDict[wmsID]['Status']
-        if jobStatus in ['Done', 'Completed']:
+      jobStatus = statusDict.get( wmsID, {} ).get( 'Status' )
+      if jobStatus:
+        if jobStatus in ( 'Done', 'Completed' ):
           newFileStatus = 'Processed'
-        elif jobStatus in ['Failed']:
+        elif jobStatus in ( 'Failed', ):
           newFileStatus = 'Unused'
       if newFileStatus:
-        for lfn, oldFileStatus in taskFiles[requestName].items():
-          if newFileStatus != oldFileStatus:
+        for lfn, oldStatus in taskFiles[jobName].iteritems():
+          if newFileStatus != oldStatus:
             updateDict[lfn] = newFileStatus
     return S_OK( updateDict )
