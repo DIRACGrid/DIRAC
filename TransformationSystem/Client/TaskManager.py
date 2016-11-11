@@ -897,12 +897,10 @@ class WorkflowTasks( TaskBase ):
       return res
     statusDict = res['Value']
     for jobName, wmsID in taskNameIDs.iteritems():
-      newFileStatus = None
       jobStatus = statusDict.get( wmsID, {} ).get( 'Status' )
-      if jobStatus in ( 'Done', 'Completed' ):
-        newFileStatus = 'Processed'
-      elif jobStatus in ( 'Failed', ):
-        newFileStatus = 'Unused'
+      newFileStatus = {'Done': 'Processed',
+                       'Completed':'Processed',
+                       'Failed': 'Unused'}.get( jobStatus )
       if newFileStatus:
         for lfn, oldStatus in taskFiles[jobName].iteritems():
           if newFileStatus != oldStatus:
