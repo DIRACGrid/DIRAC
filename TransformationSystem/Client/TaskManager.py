@@ -28,9 +28,6 @@ __RCSID__ = "$Id$"
 COMPONENT_NAME = 'TaskManager'
 
 
-def _transTaskName( transID, taskID ):
-  return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
-
 class TaskBase( TransformationAgentsUtilities ):
   ''' The other classes inside here inherits from this one.
   '''
@@ -264,7 +261,7 @@ class RequestTasks( TaskBase ):
     :returns: None
     """
 
-    oRequest.RequestName = _transTaskName( transID, taskID )
+    oRequest.RequestName = self._transTaskName( transID, taskID )
     oRequest.OwnerDN = ownerDN
     oRequest.OwnerGroup = ownerGroup
 
@@ -321,7 +318,7 @@ class RequestTasks( TaskBase ):
     requestNameIDs = {}
     noTasks = []
     for taskDict in taskDicts:
-      requestName = _transTaskName( taskDict['TransformationID'], taskDict['TaskID'] )
+      requestName = self._transTaskName( taskDict['TransformationID'], taskDict['TaskID'] )
       reqID = taskDict['ExternalID']
       if reqID:
         requestNameIDs[requestName] = reqID
@@ -586,7 +583,7 @@ class WorkflowTasks( TaskBase ):
       self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ),
                         transID = transID, method = method )
       oJob.setJobGroup( transGroup )
-      constructedName = _transTaskName( transID, taskID )
+      constructedName = self._transTaskName( transID, taskID )
       self._logVerbose( 'Setting task name to %s' % constructedName,
                         transID = transID, method = method )
       oJob.setName( constructedName )
@@ -815,7 +812,7 @@ class WorkflowTasks( TaskBase ):
 
   def updateTransformationReservedTasks( self, taskDicts ):
     transID = None
-    jobNames = [_transTaskName( taskDict['TransformationID'], taskDict['TaskID'] ) for taskDict in taskDicts]
+    jobNames = [self._transTaskName( taskDict['TransformationID'], taskDict['TaskID'] ) for taskDict in taskDicts]
     res = self.jobMonitoringClient.getJobs( {'JobName':jobNames} )
     if not res['OK']:
       self._logError( "Failed to get task from WMS", res['Message'],
@@ -876,7 +873,7 @@ class WorkflowTasks( TaskBase ):
     transID = fileDicts[0]['TransformationID']
     taskFiles = {}
     for fileDict in fileDicts:
-      jobName = _transTaskName( transID, fileDict['TaskID'] )
+      jobName = self._transTaskName( transID, fileDict['TaskID'] )
       taskFiles.setdefault( jobName, {} )[fileDict['LFN']] = fileDict['Status']
 
     res = self.updateTransformationReservedTasks( fileDicts )

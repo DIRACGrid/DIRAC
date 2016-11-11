@@ -440,7 +440,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     # For the tasks with no associated request found re-set the status of the task in the transformationDB
     for taskName in noTasks:
-      transID, taskID = taskName.split( '_' )
+      transID, taskID = self._parseTaskName( taskName )
       self._logInfo( "Resetting status of %s to Created as no associated task found" % ( taskName ),
                      method = method, transID = transID )
       res = clients['TransformationClient'].setTaskStatus( int( transID ), int( taskID ), 'Created' )
@@ -452,7 +452,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     # For the tasks for which an associated request was found update the task details in the transformationDB
     for taskName, extTaskID in taskNameIDs.items():
-      transID, taskID = taskName.split( '_' )
+      transID, taskID = self._parseTaskName( taskName )
       self._logInfo( "Setting status of %s to Submitted with ID %s" % ( taskName, extTaskID ),
                      method = method, transID = transID )
       setTaskStatusAndWmsID = clients['TransformationClient'].setTaskStatusAndWmsID( int( transID ), int( taskID ),
