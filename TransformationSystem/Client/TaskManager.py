@@ -504,7 +504,7 @@ class WorkflowTasks( TaskBase ):
     paramSeqDict = {}
     # tasks must be sorted because we use bulk submission and we must find the correspondance
     for taskID in sorted( taskDict ):
-      paramDict = taskDict[taskID]
+      paramsDict = taskDict[taskID]
       seqDict = {}
 
       # Handle destination site
