@@ -166,7 +166,7 @@ class RequestTasks( TaskBase ):
     :returns: None
     """
     failedTasks = []
-    for taskID, task in taskDict.iteritems():
+    for taskID, task in taskDict.items():
       transID = task['TransformationID']
       if not task.get( 'InputData' ):
         self._logError( "Error creating request for task", "%s, No input data" % taskID, transID = transID )
