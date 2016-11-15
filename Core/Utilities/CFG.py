@@ -874,7 +874,7 @@ class CFG( object ):
     :param fileName: File name to load the contents from
     :return: This CFG
     """
-    if fileName.find( ".zip" ) == len( fileName ) - 4:
+    if zipfile.is_zipfile( fileName ):
       #Zipped file
       zipHandler = zipfile.ZipFile( fileName )
       nameList = zipHandler.namelist()
