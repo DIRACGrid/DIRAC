@@ -75,8 +75,7 @@ class ClientsTestCase( unittest.TestCase ):
 
     self.maxDiff = None
 
-    gLogger.setLevel( 'DEBUG' )
-
+    gLogger.setLevel( 'INFO' )
 
   def tearDown( self ):
     pass
@@ -260,8 +259,60 @@ class RequestTasksSuccess( ClientsTestCase ):
 
 #############################################################################
 
-
 class TransformationClientSuccess( ClientsTestCase ):
+
+  def test__addFile( self ):
+
+    ### Add a file passing a transformation filter
+    lfn1 = '/dir1/file1'
+    lfn2 = '/dir1/file2'
+    lfns = [lfn1, lfn2]
+    successful = {}
+    failed = {}
+
+    self.tc.fc = MagicMock()
+
+    res = {'OK': True, 'Value': {'particle': 'gamma'}}
+    self.tc.fc.getFileUserMetadata.return_value = res
+
+    res = {'OK': True, 'rpcStub': (('DataManagement/FileCatalog', {'Status': 'Active', 'CatalogURL': 'DataManagement/FileCatalog', \
+      'CatalogType': 'FileCatalog', 'skipCACheck': False, 'keepAliveLapse': 150, 'AccessType': 'Read-Write', \
+      'delegatedGroup': 'devGroup', 'delegatedDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', \
+      'Master': 'True', 'timeout': 120}), 'getMetadataFields', ()), \
+      'Value': {'FileMetaFields': {}, 'DirectoryMetaFields': {'particle': 'VARCHAR(128)'}}}
+
+    self.tc.fc.getMetadataFields.return_value = res
+
+    self.tc._getFilters = MagicMock()
+    self.tc._getFilters.return_value = {'OK': True, 'Value':[(1L, {u'particle': u'gamma'})]}
+
+    self.tc.addFilesToTransformation = MagicMock()
+    res = {'OK': True, 'rpcStub': (('Transformation/TransformationManager', \
+      {'skipCACheck': False, 'keepAliveLapse': 150, 'delegatedGroup': 'devGroup', \
+      'delegatedDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', 'timeout': 600}), \
+      'addFilesToTransformation', (1L, ['/dir1/file1'])), 'Value': {'Successful': {lfn1: 'Added'}, 'Failed': {}}}
+
+    self.tc.addFilesToTransformation.return_value = res
+
+    res = self.tc.addFile( lfn1 )
+    successful[lfn1] = True
+
+    self.assertEqual( res['Value'], {'Successful':successful, 'Failed':failed } )
+
+    ### Add multiple files passing a transformation filter
+    res = {'OK': True, 'rpcStub': (('DataManagement/FileCatalog', {'Status': 'Active', 'CatalogURL': 'DataManagement/FileCatalog', \
+      'CatalogType': 'FileCatalog', 'skipCACheck': False, 'keepAliveLapse': 150, 'AccessType': 'Read-Write', \
+      'delegatedGroup': 'devGroup', 'delegatedDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', \
+      'Master': 'True', 'timeout': 120}), 'getMetadataFields', ()), \
+      'Value': {'FileMetaFields': {}, 'DirectoryMetaFields': {'particle': 'VARCHAR(128)'}}}
+
+    self.tc.fc.getMetadataFields.return_value = res
+
+    res = self.tc.addFile( lfns )
+    for lfn in lfns:
+      successful[lfn] = True
+
+    self.assertEqual( res['Value'], {'Successful':successful, 'Failed':failed } )
 
   def test__applyTransformationFilesStateMachine( self ):
     tsFiles = {}
@@ -346,6 +397,36 @@ class TransformationClientSuccess( ClientsTestCase ):
 
 #############################################################################
 
+class TransformationClientFailure( ClientsTestCase ):
+
+  def test__addFile( self ):
+
+    ### Add a file withouth user metadata defined
+    self.tc.fc = MagicMock()
+
+    res = {'OK': True, 'Value': {}}
+    self.tc.fc.getFileUserMetadata.return_value = res
+
+    res ={'OK': True, 'rpcStub': (('DataManagement/FileCatalog', {'Status': 'Active', 'CatalogURL': 'DataManagement/FileCatalog', \
+      'CatalogType': 'FileCatalog', 'skipCACheck': False, 'keepAliveLapse': 150, 'AccessType': 'Read-Write',  \
+      'delegatedGroup': 'devGroup', 'delegatedDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', \
+      'Master': 'True', 'timeout': 120}), 'getMetadataFields', ()), \
+      'Value': {'FileMetaFields': {}, 'DirectoryMetaFields': {}}}
+
+    self.tc.fc.getMetadataFields.return_value = res
+
+    self.tc._getFilters = MagicMock()
+    self.tc._getFilters.return_value = {'OK': True, 'Value':[(1L, {u'particle': u'gamma'})]}
+
+    #### Check that the file is not added to any transformation
+    lfn = '/dir1/file1'
+    res = self.tc.addFile( lfn )
+    successful = {lfn:False}
+    failed = {}
+
+    self.assertEqual( res['Value'], {'Successful':successful, 'Failed':failed } )
+
+#############################################################################
 
 class TransformationSuccess( ClientsTestCase ):
 
@@ -457,5 +538,6 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PluginUtilitiesSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( RequestTasksSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationClientSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationClientFailure ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
