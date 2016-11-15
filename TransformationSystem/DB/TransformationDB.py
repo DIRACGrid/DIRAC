@@ -7,17 +7,15 @@
 """
 
 import re
-import time
 import threading
+import json
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Security.ProxyInfo                        import getProxyInfo
 from DIRAC.Core.Utilities.List                            import stringListToString, intListToString, breakListIntoChunks
-from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
-from DIRAC.Core.Utilities.Subprocess                      import pythonCall
 
 __RCSID__ = "$Id$"
 
@@ -174,7 +172,7 @@ class TransformationDB( DB ):
     self.lock.release()
     # If the transformation has an input data specification
     if fileMask:
-      self.filters.append( ( transID, re.compile( fileMask ) ) )
+      self.filters.append( ( transID, json.loads( fileMask ) ) )
 
     if inheritedFrom:
       res = self._getTransformationID( inheritedFrom, connection = connection )
@@ -204,9 +202,31 @@ class TransformationDB( DB ):
         if not res['OK']:
           gLogger.error( "Could not insert files, now deleting", res['Message'] )
           return self.deleteTransformation( transID, connection = connection )
+
+    ### Add files to the DataFiles table ##################
+    self.fc = FileCatalog()
     if addFiles and fileMask:
-      self.__addExistingFiles( transID, connection = connection )
+      mqDict = json.loads( fileMask )
+      res = self.fc.findFilesByMetadata( mqDict )
+      filesToAdd = res['Value']
+      gLogger.notice( 'filesToAdd', filesToAdd )
+      if filesToAdd:
+        connection = self.__getConnection( connection )
+        res = self.__addDataFiles( filesToAdd, connection = connection )
+        if not res['OK']:
+          return res
+        lfnFileIDs = res['Value']
+         # Add the files to the transformations
+        fileIDs = []
+        for lfn in filesToAdd:
+          if lfnFileIDs.has_key( lfn ):
+            fileIDs.append( lfnFileIDs[lfn] )
+        res = self.__addFilesToTransformation( transID, fileIDs, connection = connection )
+        if not res['OK']:
+          gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
+
     message = "Created transformation %d" % transID
+  ##############################
     self.__updateTransformationLogging( transID, message, authorDN, connection = connection )
     return S_OK( transID )
 
@@ -350,21 +370,13 @@ class TransformationDB( DB ):
         If transID argument is given, get filters only for this transformation.
     """
     resultList = []
-    # Define the general filter first
-    self.database_name = self.__class__.__name__
-    value = Operations().getValue( 'InputDataFilter/%sFilter' % self.database_name, '' )
-    if value:
-      refilter = re.compile( value )
-      resultList.append( ( 0, refilter ) )
-    # Per transformation filters
     req = "SELECT TransformationID,FileMask FROM Transformations;"
     res = self._query( req, connection )
     if not res['OK']:
       return res
     for transID, mask in res['Value']:
       if mask:
-        refilter = re.compile( mask )
-        resultList.append( ( transID, refilter ) )
+        resultList.append( ( transID, json.loads( mask ) ) )
     self.filters = resultList
     return S_OK( resultList )
 
@@ -479,6 +491,8 @@ class TransformationDB( DB ):
 
   def addFilesToTransformation( self, transName, lfns, connection = False ):
     """ Add a list of LFNs to the transformation directly """
+    gLogger.info( "TransformationDB.addFilesToTransformation: Attempting to add %s files." % lfns )
+    gLogger.info( "TransformationDB.addFilesToTransformation: to Transformations: %s" % transName )
     if not lfns:
       return S_ERROR( 'Zero length LFN list' )
     res = self._getConnectionTransID( connection, transName )
@@ -652,25 +666,6 @@ class TransformationDB( DB ):
     if not res['OK']:
       return res
     return S_OK( fileIDs )
-
-  def __addExistingFiles( self, transID, connection = False ):
-    """ Add files that already exist in the DataFiles table to the transformation specified by the transID
-    """
-    for tID, _filter in self.filters:
-      if tID == transID:
-        filters = [( tID, filter )]
-        break
-    if not filters:
-      return S_ERROR( 'No filters defined for transformation %d' % transID )
-    res = self.__getAllFileIDs( connection = connection )
-    if not res['OK']:
-      return res
-    fileIDs, _lfnFilesIDs = res['Value']
-    passFilter = []
-    for fileID, lfn in fileIDs.items():
-      if self.__filterFile( lfn, filters ):
-        passFilter.append( fileID )
-    return self.__addFilesToTransformation( transID, passFilter, connection = connection )
 
   def __insertExistingTransformationFiles( self, transID, fileTuplesList, connection = False ):
     """ Inserting already transformation files in TransformationFiles table (e.g. for deriving transformations)
@@ -1416,54 +1411,6 @@ class TransformationDB( DB ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def addFile( self, fileDicts, force = False, connection = False ):
-    """  Add a new file to the TransformationDB together with its first replica.
-         In the input dict, the only mandatory info are PFN and SE
-    """
-    gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileDicts ) )
-    successful = {}
-    failed = {}
-    # Determine which files pass the filters and are to be added to transformations
-    transFiles = {}
-    filesToAdd = []
-    for lfn in fileDicts:
-      fileTrans = self.__filterFile( lfn )
-      if not ( fileTrans or force ):
-        successful[lfn] = True
-      else:
-        filesToAdd.append( lfn )
-        for trans in fileTrans:
-          transFiles.setdefault( trans, [] ).append( lfn )
-    # Add the files to the DataFiles and Replicas tables
-    if filesToAdd:
-      connection = self.__getConnection( connection )
-      res = self.__addDataFiles( filesToAdd, connection = connection )
-      if not res['OK']:
-        return res
-      lfnFileIDs = res['Value']
-      for lfn in filesToAdd:
-        if lfn in lfnFileIDs:
-          successful[lfn] = True
-        else:
-          failed[lfn] = True
-      # Add the files to the transformations
-      # TODO: THIS SHOULD BE TESTED WITH A TRANSFORMATION WITH A FILTER
-      for transID, lfns in transFiles.items():
-        fileIDs = []
-        for lfn in lfns:
-          if lfn in lfnFileIDs:
-            fileIDs.append( lfnFileIDs[lfn] )
-        if fileIDs:
-          res = self.__addFilesToTransformation( transID, fileIDs, connection = connection )
-          if not res['OK']:
-            gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
-            failed[lfn] = True
-            successful[lfn] = False
-          else:
-            successful[lfn] = True
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
-
   def removeFile( self, lfns, connection = False ):
     """ Remove file specified by lfn from the ProcessingDB
     """
@@ -1492,36 +1439,3 @@ class TransformationDB( DB ):
         successful[lfn] = True
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
-
-  def addDirectory( self, path, force = False ):
-    """ Adds all the files stored in a given directory in file catalog """
-    gLogger.info( "TransformationDB.addDirectory: Attempting to populate %s." % path )
-    res = pythonCall( 30, self.__addDirectory, path, force )
-    if not res['OK']:
-      gLogger.error( "Failed to invoke addDirectory with shifter proxy" )
-      return res
-    return res['Value']
-
-  def __addDirectory( self, path, force ):
-    res = setupShifterProxyInEnv( "ProductionManager" )
-    if not res['OK']:
-      return S_OK( "Failed to setup shifter proxy" )
-    catalog = FileCatalog()
-    start = time.time()
-    res = catalog.listDirectory( path )
-    if not res['OK']:
-      gLogger.error( "TransformationDB.addDirectory: Failed to get files. %s" % res['Message'] )
-      return res
-    if not path in res['Value']['Successful']:
-      gLogger.error( "TransformationDB.addDirectory: Failed to get files." )
-      return res
-    gLogger.info( "TransformationDB.addDirectory: Obtained %s files in %s seconds." % ( path, time.time() - start ) )
-    successful = []
-    failed = []
-    for lfn in res['Value']['Successful'][path]["Files"]:
-      res = self.addFile( {lfn:{}}, force = force )
-      if not res['OK'] or lfn not in res['Value']['Successful']:
-        failed.append( lfn )
-      else:
-        successful.append( lfn )
-    return {"OK":True, "Value": len( res['Value']['Successful'] ), "Successful":successful, "Failed": failed }
