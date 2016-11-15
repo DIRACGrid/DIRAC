@@ -24,7 +24,8 @@ class FileCatalogClient( FileCatalogClientBase ):
                    'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
                    'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet', 'getDatasets',
                    'getFileDescendents', 'getFileAncestors',
-                   'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
+                   'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation',
+                   'getDirectoryUserMetadata', 'getFileUserMetadata' ]
 
   WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
