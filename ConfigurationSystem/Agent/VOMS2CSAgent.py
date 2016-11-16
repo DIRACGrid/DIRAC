@@ -441,6 +441,7 @@ class VOMS2CSAgent( AgentModule ):
               result = self.csapi.modifyUser( user, userDict )
               if result['OK'] and result['Value']:
                 self.log.info( "Modified user %s: dropped DN %s" % ( user, dn ) )
+                self.__adminMsgs[ 'Info' ].append( "Modified user %s: dropped DN %s" % ( user, dn ) )
                 self.voChanged = True
                 resultDict['ModifiedUsers'].append( diracName )
             else:
