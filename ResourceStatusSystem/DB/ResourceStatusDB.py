@@ -4,11 +4,14 @@
 
 '''
 
+import datetime
+
 from DIRAC                                                 import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities            import getDBParameters
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, Table, Column, MetaData, String, DateTime, BigInteger, exc
+from sqlalchemy.sql import update, select
 
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
@@ -85,6 +88,8 @@ class ResourceStatusDB( object ):
 
     metadata.bind = self.engine
 
+    self.metadataTables = set()
+
     self.DBSession = sessionmaker( bind = self.engine )
     self.session = self.DBSession()
 
@@ -94,24 +99,29 @@ class ResourceStatusDB( object ):
   def createTables( self ):
     """ create tables """
 
+    ElementStatusTables = [ 'SiteStatus', 'ResourceStatus',
+                            'NodeStatus', 'ComponentStatus' ]
+
+    ElementWithIDTables = [ 'SiteLog', 'SiteHistory', 'ResourceLog', 'ResourceHistory',
+                            'NodeLog', 'NodeHistory', 'ComponentLog', 'ComponentHistory' ]
+
     try:
 
-      ElementStatusTables = [ 'SiteStatus', 'ResourceStatus',
-                              'NodeStatus', 'ComponentStatus' ]
-
-      ElementWithIDTables = [ 'SiteLog', 'SiteHistory', 'ResourceLog', 'ResourceHistory',
-                              'NodeLog', 'NodeHistory', 'ComponentLog', 'ComponentHistory' ]
-
       for names in ElementStatusTables:
-        generateElementStatus(names)
+        if names not in self.metadataTables:
+          generateElementStatus(names)
+          self.metadataTables.add(names)
 
       for names in ElementWithIDTables:
-        generateElementWithID(names)
+        if names not in self.metadataTables:
+          generateElementWithID(names)
+          self.metadataTables.add(names)
 
       metadata.create_all( self.engine )
 
     except exc.SQLAlchemyError as e:
-      return S_ERROR( e )
+      self.log.exception( "createTables: unexpected exception", lException = e )
+      return S_ERROR( "createTables: unexpected exception %s" % e )
     return S_OK()
 
   # SQL Methods ###############################################################
@@ -163,9 +173,18 @@ class ResourceStatusDB( object ):
       if tokenExpiration:
         filters.append(table.c.TokenExpiration == tokenExpiration)
 
-      result = self.session.query( table ).filter(*filters).limit(1).all()
+      result = self.session.query( table ).filter(*filters)
 
-      return S_OK( tuple(result) )
+      arr = []
+
+      for u in result:
+        rel = []
+        for j in u:
+         rel.append(j)
+
+        arr.append(rel)
+
+      return S_OK( arr )
 
     except exc.SQLAlchemyError as e:
       self.log.exception( "select: unexpected exception", lException = e )
@@ -176,31 +195,46 @@ class ResourceStatusDB( object ):
               dateEffective = None, lastCheckTime = None,
               tokenOwner = None, tokenExpiration = None ):
 
-    params = {}
-
-    if name:
-      params.update( {"Name" : name} )
-    if statusType:
-      params.update( {"StatusType" : statusType} )
-    if status:
-      params.update( {"Status" : status} )
-    if elementType:
-      params.update( {"ElementType" : elementType} )
-    if reason:
-      params.update( {"Reason" : reason} )
-    if dateEffective:
-      params.update( {"DateEffective" : dateEffective} )
-    if lastCheckTime:
-      params.update( {"LastCheckTime" : lastCheckTime} )
-    if tokenOwner:
-      params.update( {"TokenOwner" : tokenOwner} )
-    if tokenExpiration:
-      params.update( {"TokenExpiration" : tokenExpiration} )
-
     try:
 
-      table = metadata.tables.get( element + tableType ).update()
-      self.engine.execute( table, **params )
+      table = metadata.tables.get( element + tableType )
+
+      filters = []
+
+      # fields to be selected (primary keys)
+      if name:
+        filters.append(table.c.Name == name)
+      elif statusType:
+        filters.append(table.c.StatusType == statusType)
+
+      # fields to be updated
+      params = {}
+
+      if name:
+        params.update( {"Name" : name} )
+      if statusType:
+        params.update( {"StatusType" : statusType} )
+      if status:
+        params.update( {"Status" : status} )
+      if elementType:
+        params.update( {"ElementType" : elementType} )
+      if reason:
+        params.update( {"Reason" : reason} )
+      if dateEffective:
+        params.update( {"DateEffective" : dateEffective} )
+      if lastCheckTime:
+        params.update( {"LastCheckTime" : lastCheckTime} )
+      if tokenOwner:
+        params.update( {"TokenOwner" : tokenOwner} )
+      if tokenExpiration:
+        params.update( {"TokenExpiration" : tokenExpiration} )
+
+      self.session.execute( update( table )
+                            .where( *filters )
+                            .values( **params )
+                          )
+
+      self.session.commit()
 
       return S_OK()
 
@@ -209,9 +243,9 @@ class ResourceStatusDB( object ):
       return S_ERROR( "update: unexpected exception %s" % e )
 
   def delete( self, element, tableType, name = None, statusType = None,
-                    status = None, elementType = None, reason = None,
-                    dateEffective = None, lastCheckTime = None,
-                    tokenOwner = None, tokenExpiration = None ):
+              status = None, elementType = None, reason = None,
+              dateEffective = None, lastCheckTime = None,
+              tokenOwner = None, tokenExpiration = None ):
 
     try:
 
@@ -251,9 +285,9 @@ class ResourceStatusDB( object ):
     return S_OK()
 
   def addIfNotThere( self, element, tableType, name = None, statusType = None,
-              status = None, elementType = None, reason = None,
-              dateEffective = None, lastCheckTime = None,
-              tokenOwner = None, tokenExpiration = None, log = None ):
+                     status = None, elementType = None, reason = None,
+                     dateEffective = None, lastCheckTime = None,
+                     tokenOwner = None, tokenExpiration = None, log = None ):
 
     result = self.select( element, tableType, name, statusType, status, elementType, reason ,
                           dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
@@ -277,9 +311,9 @@ class ResourceStatusDB( object ):
     return S_OK()
 
   def addOrModify( self, element, tableType, name = None, statusType = None,
-              status = None, elementType = None, reason = None,
-              dateEffective = None, lastCheckTime = None,
-              tokenOwner = None, tokenExpiration = None, log = None ):
+                   status = None, elementType = None, reason = None,
+                   dateEffective = None, lastCheckTime = None,
+                   tokenOwner = None, tokenExpiration = None, log = None ):
 
     result = self.select( element, tableType, name, statusType, status, elementType, reason ,
                           dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
