@@ -12,7 +12,6 @@ from DIRAC  import gConfig, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.Core.Utilities import Time
-from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 class StatesMonitoringAgent( AgentModule ):
@@ -42,7 +41,6 @@ class StatesMonitoringAgent( AgentModule ):
   __jobDBFields = []
   
   jobDB = None
-  monitoringDB = None
   monitoringReporter = None
   reportPeriod = None
     
@@ -52,13 +50,10 @@ class StatesMonitoringAgent( AgentModule ):
     
     self.jobDB = JobDB()
     
-    self.monitoringDB = MonitoringDB()
-
     self.reportPeriod = 120
     self.am_setOption( "PollingTime", self.reportPeriod )
     
-    self.monitoringReporter = MonitoringReporter( db = self.monitoringDB,
-                                                  monitoringType = "WMSHistory" )
+    self.monitoringReporter = MonitoringReporter( monitoringType = "WMSHistory" )
     
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':

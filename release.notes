@@ -1,12 +1,28 @@
-[v6r16-pre8]
+[v6r16p1]
+
+*Monitoring
+CHANGE: MonitorinDB - allow to use more than one filter condition
+
+*WMS
+CHANGE: StalledJobAgent - send a kill signal to the job before setting it Failed. This should 
+        prevent jobs to continue running after they have been found Stalled and then Failed.
+
+[v6r16]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
         ExtraModule option
+CHANGE: dirac-install - use insecure ssl context for downloading files with urllib2.urlopen    
 CHANGE: GOCDBClient - replaced urllib2 with requests module
         FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
+CHANGE: Added environment variables to rc files to enable certificates verification (necessary for python 2.7.9+)
 FIX: ComponentInstaller - always update CS when a database is installed, even if it is
      already existing in the db server 
+FIX: SSLSocketFactory - in __checkKWArgs() use correct host address composed of 2 parts      
+
+*Framework
+FIX: SystemAdministrator service - do not install WebAppDIRAC by default, only for the host
+     really running the web portal
 
 *Accounting
 FIX: JobPolicy - remove User field from the policy conditions to fix a problem that 
@@ -24,6 +40,27 @@ NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move
 *Resources
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
+NEW: SudoComputingElement - computing element to execute payload with a sudo to a dedicated
+     UNIX account     
+
+[v6r15p23]
+
+*DMS
+FIX: dirac-dms-find-lfns - fixed bug causing generl script failure
+
+[v6r15p22]
+
+*Interfaces
+CHANGE: Dirac API - add possibility to define the VO in the API
+CHANGE: Dirac API - add checkSEAccess() method for checking SE status
+
+[v6r15p21]
+
+*WMS
+FIX: removed default LCG version from the pilot (dirac-install will use the one of the requested release)
+
+*RMS
+FIX: reject bad checksum
 
 [v6r15p20]
 

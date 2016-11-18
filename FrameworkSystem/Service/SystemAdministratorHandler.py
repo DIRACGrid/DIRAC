@@ -24,7 +24,6 @@ from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import Profiler
-from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 gMonitoringReporter = None
@@ -53,7 +52,7 @@ class SystemAdministratorHandler( RequestHandler ):
     
     if dynamicMonitoring:
       global gMonitoringReporter
-      gMonitoringReporter = MonitoringReporter( db = MonitoringDB(), monitoringType = "ComponentMonitoring" )
+      gMonitoringReporter = MonitoringReporter( monitoringType = "ComponentMonitoring" )
       gThreadScheduler.addPeriodicTask( 120, cls.__storeProfiling )
       
     return S_OK( 'Initialization went well' )
@@ -273,15 +272,17 @@ class SystemAdministratorHandler( RequestHandler ):
     # Check if there are extensions
     extensionList = getCSExtensions()
     if extensionList:
-      if "WebApp" in extensionList:
+      #by default we do not install WebApp
+      if "WebApp" in extensionList: 
         extensionList.remove("WebApp")
-      cmdList += ['-e', ','.join( extensionList )]
-
+      
     webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False ) # this is the new portal
     if webPortal:
       if "WebAppDIRAC" not in extensionList:
-        cmdList += ['-e', 'WebAppDIRAC' ]
+        extensionList.append("WebAppDIRAC")
    
+    cmdList += ['-e', ','.join( extensionList )]
+    
     project = gConfig.getValue('/LocalInstallation/Project')
     if project:
       cmdList += ['-l', project ]
