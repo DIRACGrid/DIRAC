@@ -1643,7 +1643,7 @@ class ComponentInstaller( object ):
 
       for dbName in setupDatabases:
         if dbName not in installedDatabases:
-          result = self.installDatabase( dbName, monitorFlag = False )
+          result = self.installDatabase( dbName )
           if not result['OK']:
             gLogger.error( result['Message'] )
             DIRAC.exit( -1 )
@@ -2360,8 +2360,11 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       return S_ERROR( error )
 
     gLogger.notice( 'Initializing MySQL...' )
+    platform = getPlatformString()
+    baseDir = os.path.join( rootPath, platform )
     result = self.execCommand( 0, ['mysql_install_db',
                                    '--defaults-file=%s' % self.mysqlMyCnf,
+                                   '--baseDir=%s' % baseDir,
                                    '--datadir=%s' % self.mysqlDbDir ] )
     if not result['OK']:
       return result
@@ -2449,7 +2452,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     return S_OK( dbList )
 
 
-  def installDatabase( self, dbName, monitorFlag = True ):
+  def installDatabase( self, dbName ):
     """
     Install requested DB in MySQL server
     """
