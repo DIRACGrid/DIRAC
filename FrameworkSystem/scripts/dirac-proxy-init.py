@@ -201,7 +201,7 @@ class ProxyInit:
       # At least one of the files has been updated in the last 28 days
       return S_OK()
     # Update the CAs & CRLs
-    gLogger.notice("Your CRLs appear to be outdated; attempting to update them...")
+    gLogger.notice( "Your CRLs appear to be outdated; attempting to update them..." )
     bdc = BundleDeliveryClient()
     res = bdc.syncCAs()
     if not res[ 'OK' ]:
