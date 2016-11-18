@@ -1,12 +1,49 @@
-[v6r16-pre7]
+[v6r17-pre1]
+
+*DMS
+NEW: Next in implementation multi-protocol support for storage elements. When performing 
+     an action on the StorageElement, instead of looping over all the protocol plugins, 
+     we loop over a filtered list. This list is built taking into account which action 
+     is taken (read vs write), and is also sorted according to lists defined in the CS.
+     The negotiation for third party transfer is also improved: it takes into account all 
+     possible protocols the source SE is able to produce, and all protocols the target is 
+     able to receive as input.
+NEW: StorageElement - added methods for monitoring used disk space
+
+*RSS
+NEW: FreeDiskSpace - added new command which is used to get the total and the remaining 
+     disk space of all dirac storage elements that are found in the CS and inserts the 
+     results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.     
+
+[v6r16p1]
+
+*Monitoring
+CHANGE: MonitorinDB - allow to use more than one filter condition
+
+*WMS
+CHANGE: StalledJobAgent - send a kill signal to the job before setting it Failed. This should 
+        prevent jobs to continue running after they have been found Stalled and then Failed.
+
+[v6r16]
 
 *Core
 CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
         ExtraModule option
-*Core
-FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
+CHANGE: dirac-install - use insecure ssl context for downloading files with urllib2.urlopen    
+CHANGE: GOCDBClient - replaced urllib2 with requests module
+        FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
+CHANGE: Added environment variables to rc files to enable certificates verification (necessary for python 2.7.9+)
 FIX: ComponentInstaller - always update CS when a database is installed, even if it is
      already existing in the db server 
+FIX: SSLSocketFactory - in __checkKWArgs() use correct host address composed of 2 parts      
+
+*Framework
+FIX: SystemAdministrator service - do not install WebAppDIRAC by default, only for the host
+     really running the web portal
+
+*Accounting
+FIX: JobPolicy - remove User field from the policy conditions to fix a problem that 
+     non-authenticated user gets more privileges on the Accounting info.
 
 *Monitoring
 NEW: New Monitoring system is introduced to collect, analyze and display various
@@ -20,6 +57,35 @@ NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move
 *Resources
 NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
+NEW: SudoComputingElement - computing element to execute payload with a sudo to a dedicated
+     UNIX account     
+
+[v6r15p23]
+
+*DMS
+FIX: dirac-dms-find-lfns - fixed bug causing generl script failure
+
+[v6r15p22]
+
+*Interfaces
+CHANGE: Dirac API - add possibility to define the VO in the API
+CHANGE: Dirac API - add checkSEAccess() method for checking SE status
+
+[v6r15p21]
+
+*WMS
+FIX: removed default LCG version from the pilot (dirac-install will use the one of the requested release)
+
+*RMS
+FIX: reject bad checksum
+
+[v6r15p20]
+
+*Framework
+FIX: SystemAdministratorHandler - in updateSoftware() put explicitly the project
+     name into the command
+FIX: ComponentInstaller - added baseDir option to the mysql_install_db call
+     while a fresh new database server installation     
 
 [v6r15p19]
 

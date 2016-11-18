@@ -1,7 +1,6 @@
 """ GOCDBClient module is a client for the GOC DB, looking for Downtimes.
 """
 
-import urllib2
 import time
 import socket
 import requests
@@ -259,10 +258,9 @@ class GOCDBClient( object ):
         gocdb_ep = gocdb_ep + "&topentity=" + entity
     gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
-    req = urllib2.Request( gocdb_ep )
-    dtPage = urllib2.urlopen( req )
+    dtPage = requests.get( gocdb_ep )
 
-    dt = dtPage.read()
+    dt = dtPage.text
 
     return dt
 
@@ -285,9 +283,9 @@ class GOCDBClient( object ):
     gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_service_endpoint&" \
         + granularity + '=' + entity
 
-    service_endpoint_page = urllib2.urlopen( gocdb_ep )
+    service_endpoint_page = requests.get( gocdb_ep )
 
-    return service_endpoint_page.read()
+    return service_endpoint_page.text
 
 #############################################################################
 
@@ -302,10 +300,9 @@ class GOCDBClient( object ):
 #    # GOCDB-PI query
 #    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_site&sitename="+site
 #
-#    req = urllib2.Request(gocdb_ep)
-#    site_page = urllib2.urlopen(req)
+#    site_page = requests.get( gocdb_ep )
 #
-#    return site_page.read()
+#    return site_page.text
 
 #############################################################################
 

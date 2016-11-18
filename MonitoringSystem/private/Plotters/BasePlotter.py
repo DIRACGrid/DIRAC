@@ -5,7 +5,7 @@ import time
 import copy
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.Plotting import gMonitoringDataCache
+from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.Core.Utilities.Plotting.Plots import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot, generateCumulativePlot, generatePiePlot, generateStackedLinePlot
 
 from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
@@ -14,7 +14,7 @@ __RCSID__ = "$Id$"
 
 class BasePlotter( DBUtils ):
 
-  
+
   _EA_THUMBNAIL = 'thumbnail'
   _EA_WIDTH = 'width'
   _EA_HEIGHT = 'height'
@@ -46,7 +46,7 @@ class BasePlotter( DBUtils ):
     """ c'tor
     :param self: self reference
     """
-    
+
     if isinstance( extraArgs, dict ):
       self._extraArgs = extraArgs
     else:
@@ -65,7 +65,7 @@ class BasePlotter( DBUtils ):
     self.__reportNameMapping = {}
     for rId in reportsRevMap:
       self.__reportNameMapping[ reportsRevMap[ rId ] ] = rId
-    
+
   def generate( self, reportRequest ):
     """
     It retrives the data from the database and create the plot
@@ -75,7 +75,7 @@ class BasePlotter( DBUtils ):
     reportName = reportRequest[ 'reportName' ]
     if reportName in self.__reportNameMapping:
       reportRequest[ 'reportName' ] = self.__reportNameMapping[ reportName ]
-    
+
     gLogger.info( "Retrieving data for %s:%s" % ( reportRequest[ 'typeName' ], reportRequest[ 'reportName' ] ) )
     sT = time.time()
     retVal = self.__retrieveReportData( reportRequest, reportHash )
@@ -109,7 +109,7 @@ class BasePlotter( DBUtils ):
 
   def __retrieveReportData( self, reportRequest, reportHash ):
     """
-    It uses the appropriate Plotter to retrieve the data from the database. 
+    It uses the appropriate Plotter to retrieve the data from the database.
     :param dict reportRequest the dictionary which contains the conditions used to create
     the plot
     :param str reportHash it is the unique identifier used to cache a plot
@@ -121,10 +121,10 @@ class BasePlotter( DBUtils ):
       return S_ERROR( "Report %s is not defined" % reportRequest[ 'reportName' ] )
     else:
       funcObj = getattr( self, funcName )
-    
-    return gMonitoringDataCache.getReportData( reportRequest = reportRequest,
-                                               reportHash = reportHash,
-                                               dataFunc = funcObj )
+
+    return gDataCache.getReportData( reportRequest = reportRequest,
+                                     reportHash = reportHash,
+                                     dataFunc = funcObj )
 
   def __generatePlotForReport( self, reportRequest, reportHash, reportData ):
     """
@@ -133,48 +133,48 @@ class BasePlotter( DBUtils ):
     :param str reportHash unique string which identify the plot
     :param dict repotData contains the data used to generate the plot.
     """
-    
+
     funcName = "_plot%s" % reportRequest[ 'reportName' ]
     try:
       funcObj = getattr( self, funcName )
     except:
       return S_ERROR( "Plot function for report %s is not defined" % reportRequest[ 'reportName' ] )
-    
-    return gMonitoringDataCache.getReportPlot( reportRequest = reportRequest,
-                                               reportHash = reportHash,
-                                               reportData = reportData,
-                                               plotFunc = funcObj )
+
+    return gDataCache.getReportPlot( reportRequest = reportRequest,
+                                     reportHash = reportHash,
+                                     reportData = reportData,
+                                     plotFunc = funcObj )
 
   def _getTimedData( self, startTime, endTime, selectFields, preCondDict, metadataDict = None ):
     """
     It retrieves the time series data from the database.
     :param int startTime epoch time
-    :param int endTime epoch time 
+    :param int endTime epoch time
     :param list selectFields the value what we want to plot
     :param dict preCondDict plot attributes
     :param dict metadataDict extra arguments used to create the plot.
-    
+
     """
-    
+
     condDict = {}
-    
+
     if metadataDict is None:
       metadataDict = {}
-    
+
     grouping = preCondDict['grouping'][0]
     # Make safe selections
     for keyword in self._typeKeyFields:
       if keyword in preCondDict:
         condDict[ keyword ] = preCondDict[ keyword ]
-        
+
     retVal = self._determineBucketSize( startTime, endTime )
     if not retVal['OK']:
       return retVal
     interval, granularity = retVal['Value']
-    
+
     dynamicBucketing = metadataDict.get( 'DynamicBucketing', True )
     #by default we use dynamic bucketing
-    if dynamicBucketing:   
+    if dynamicBucketing:
       retVal = self._retrieveBucketedData( self._typeName,
                                            startTime,
                                            endTime,
@@ -192,18 +192,18 @@ class BasePlotter( DBUtils ):
                                              condDict,
                                              grouping,
                                              metadataDict )
-      
+
     if not retVal[ 'OK' ]:
       return retVal
-    dataDict = retVal[ 'Value' ] 
-    
+    dataDict = retVal[ 'Value' ]
+
     return S_OK( ( dataDict, granularity ) )
 
   def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, metadataDict = None ):
     """
     It returns the adat used to create the pie chart plot.
     :param int startTime epoch time
-    :param int endTime epoch time 
+    :param int endTime epoch time
     :param list selectFields the value what we want to plot
     :param dict preCondDict plot attributes
     :param dict metadataDict extra arguments used to create the plot.
@@ -214,12 +214,12 @@ class BasePlotter( DBUtils ):
     for keyword in self._typeKeyFields:
       if keyword in preCondDict:
         condDict[ keyword ] = preCondDict[ keyword ]
-    
+
     retVal = self._determineBucketSize( startTime, endTime )
     if not retVal['OK']:
       return retVal
     interval, _ = retVal['Value']
-    
+
     retVal = self._retrieveBucketedData( typeName = self._typeName,
                                          startTime = startTime,
                                          endTime = endTime,
@@ -252,7 +252,7 @@ class BasePlotter( DBUtils ):
     if unit not in selectedUnits:
       raise AttributeError( "%s is not a known rate unit" % unit )
     baseUnitData = selectedUnits[ unit ][ 0 ]
-    if self._extraArgs.get( 'staticUnits' ): 
+    if self._extraArgs.get( 'staticUnits' ):
       unitData = selectedUnits[ unit ][ 0 ]
     else:
       unitList = selectedUnits[ unit ]
@@ -307,7 +307,7 @@ class BasePlotter( DBUtils ):
       thbMD[ self._EA_PADDING ] = 20
       for key in ( 'title', 'ylabel', 'xlabel' ):
         if key in thbMD:
-          del( thbMD[ key ] )
+          del thbMD[ key ]
       return thbMD
     return False
 
@@ -367,7 +367,7 @@ class BasePlotter( DBUtils ):
     It create a stacked lien plot
     """
     return self.__plotData( filename, dataDict, metadata, generateStackedLinePlot )
-  
+
   def _fillWithZero( self, granularity, startEpoch, endEpoch, dataDict ):
     """
     Fill with zeros missing buckets

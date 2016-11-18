@@ -24,7 +24,6 @@ from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import Profiler
-from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 gMonitoringReporter = None
@@ -53,7 +52,7 @@ class SystemAdministratorHandler( RequestHandler ):
     
     if dynamicMonitoring:
       global gMonitoringReporter
-      gMonitoringReporter = MonitoringReporter( db = MonitoringDB(), monitoringType = "ComponentMonitoring" )
+      gMonitoringReporter = MonitoringReporter( monitoringType = "ComponentMonitoring" )
       gThreadScheduler.addPeriodicTask( 120, cls.__storeProfiling )
       
     return S_OK( 'Initialization went well' )
@@ -273,18 +272,21 @@ class SystemAdministratorHandler( RequestHandler ):
     # Check if there are extensions
     extensionList = getCSExtensions()
     if extensionList:
-      if "WebApp" in extensionList:
+      #by default we do not install WebApp
+      if "WebApp" in extensionList: 
         extensionList.remove("WebApp")
-      cmdList += ['-e', ','.join( extensionList )]
-
+      
     webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False ) # this is the new portal
     if webPortal:
       if "WebAppDIRAC" not in extensionList:
-        extensionList.append( 'WebAppDIRAC' )
-
-    if extensionList:
-      cmdList += ['-e', ','.join( extensionList )]
-
+        extensionList.append("WebAppDIRAC")
+   
+    cmdList += ['-e', ','.join( extensionList )]
+    
+    project = gConfig.getValue('/LocalInstallation/Project')
+    if project:
+      cmdList += ['-l', project ]
+      
     # Are grid middleware bindings required ?
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )
@@ -690,14 +692,18 @@ class SystemAdministratorHandler( RequestHandler ):
     for cType in setupComps:
       for system in setupComps[ cType ]:
         for comp in setupComps[ cType ][ system ]:
-          pid = startupComps[ '%s_%s' % ( system, comp ) ][ 'PID' ]
+          instance = "%s_%s" % ( system, comp )
+          if instance not in startupComps:
+            gLogger.error( "Wrongly configured component: %s" % instance )
+            continue
+          pid = startupComps[ instance ][ 'PID' ]
           profiler = Profiler.Profiler( pid )
           result = profiler.getAllProcessData()
           if result[ 'OK' ]:
             log = result[ 'Value' ][ 'stats' ]
             log[ 'host' ] = socket.getfqdn()
-            log[ 'component' ] = '%s_%s' % ( system, comp )
-            log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ].isoformat()
+            log[ 'component' ] = instance
+            log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ]
             gMonitoringReporter.addRecord( log )
           else:
             gLogger.error( result[ 'Message' ] )

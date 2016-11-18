@@ -12,6 +12,7 @@ import time
 import stat
 import types
 import shutil
+import ssl
 try:
   import hashlib as md5
 except ImportError:
@@ -573,8 +574,8 @@ class ReleaseConfig( object ):
           for pKey in relDeps:
             if pKey[0] == prj and pKey[1] != vrs:
               errMsg = "%s is required with two different versions ( %s and %s ) starting with %s:%s" % ( prj,
-                                                                                                    pKey[1], vrs,
-                                                                                                    project, release )
+                                                                                                          pKey[1], vrs,
+                                                                                                          project, release )
               return S_ERROR( errMsg )
           #Same version already required
       if project in relDeps and relDeps[ project ] != release:
@@ -794,7 +795,13 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     #   opener = urllib2.build_opener( proxy )
     #   #opener = urllib2.build_opener()
     #  urllib2.install_opener( opener )
-    remoteFD = urllib2.urlopen( url )
+
+    # Try to use insecure context explicitly, needed for python >= 2.7.9
+    try:
+      context = ssl._create_unverified_context()
+      remoteFD = urllib2.urlopen( url, context = context )
+    except AttributeError:
+      remoteFD = urllib2.urlopen( url )
     expectedBytes = 0
     # Sometimes repositories do not return Content-Length parameter
     try:
@@ -1079,8 +1086,8 @@ def usage():
 def loadConfiguration():
 
   optList, args = getopt.getopt( sys.argv[1:],
-                               "".join( [ opt[0] for opt in cmdOpts ] ),
-                               [ opt[1] for opt in cmdOpts ] )
+                                 "".join( [ opt[0] for opt in cmdOpts ] ),
+                                 [ opt[1] for opt in cmdOpts ] )
 
   # First check if the name is defined
   for o, v in optList:
@@ -1117,11 +1124,11 @@ def loadConfiguration():
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
       continue
-    
+
     if opName == 'extraModules':
       logWARN( "extraModules is deprecated please use extensions instead!" )
       opName = 'extensions'
-    
+
     if opName == 'installType':
       opName = 'externalsType'
     if isinstance( getattr( cliParams, opName ), basestring ):
@@ -1321,10 +1328,20 @@ def createBashrc():
                 'export PYTHONOPTIMIZE=x' ]
       if 'HOME' in os.environ:
         lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
+
+      # Determining where the CAs are...
       if 'X509_CERT_DIR' in os.environ:
-        lines.append( 'export X509_CERT_DIR=%s' % os.environ['X509_CERT_DIR'] )
-      elif not os.path.isdir( "/etc/grid-security/certificates" ):
-        lines.append( "[[ -d '%s/etc/grid-security/certificates' ]] && export X509_CERT_DIR='%s/etc/grid-security/certificates'" % ( proPath, proPath ) )
+        certDir = os.environ['X509_CERT_DIR']
+      else:
+        if os.path.isdir( '/etc/grid-security/certificates' ):
+          certDir = '/etc/grid-security/certificates' # Assuming that, if present, it is not empty, and has correct CAs
+        else:
+          certDir = '%s/etc/grid-security/certificates' % proPath # But this will have to be created at some point (dirac-configure)
+      lines.extend( ['# CAs path for SSL verification',
+                     'export X509_CERT_DIR=%s' % certDir,
+                     'export SSL_CERT_DIR=%s' % certDir,
+                     'export REQUESTS_CA_BUNDLE=%s' % certDir] )
+
       lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      '[ -z "$DIRAC" ] && export DIRAC=%s' % proPath,
@@ -1382,8 +1399,20 @@ def createCshrc():
       lines = [ '# DIRAC cshrc file, used by clients to set up the environment',
                 'setenv PYTHONUNBUFFERED yes',
                 'setenv PYTHONOPTIMIZE x' ]
-      if not 'X509_CERT_DIR' in os.environ and not os.path.isdir( "/etc/grid-security/certificates" ):
-        lines.append( "test -d '%s/etc/grid-security/certificates' && setenv X509_CERT_DIR %s/etc/grid-security/certificates" % ( proPath, proPath ) )
+
+      # Determining where the CAs are...
+      if 'X509_CERT_DIR' in os.environ:
+        certDir = os.environ['X509_CERT_DIR']
+      else:
+        if os.path.isdir( '/etc/grid-security/certificates' ):
+          certDir = '/etc/grid-security/certificates' # Assuming that, if present, it is not empty, and has correct CAs
+        else:
+          certDir = '%s/etc/grid-security/certificates' % proPath # But this will have to be created at some point (dirac-configure)
+      lines.extend( ['# CAs path for SSL verification',
+                     'setenv X509_CERT_DIR %s' %certDir,
+                     'setenv SSL_CERT_DIR %s' % certDir,
+                     'setenv REQUESTS_CA_BUNDLE %s' % certDir] )
+
       lines.append( 'setenv X509_VOMS_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      '( test $?DIRAC -eq 1 ) || setenv DIRAC %s' % proPath,

@@ -64,8 +64,7 @@ class ARCComputingElement( ComputingElement ):
                        'Failed'  : 'Failed',
                        'Hold'    : 'Failed',
                        'Finished': 'Done',
-                       'Other'   : 'Done'
-      }
+                       'Other'   : 'Done'}
     self.__getXRSLExtraString() # Do this after all other initialisations, in case something barks
 
   #############################################################################
@@ -104,7 +103,7 @@ class ARCComputingElement( ComputingElement ):
     self.xrslExtraString = '' # Start with the default value
     result = getSiteForCE(self.ceHost)
     self.site = ''
-    if ( result['OK'] ):
+    if result['OK']:
       self.site = result['Value']
     else :
       gLogger.error("Unknown Site ...")
@@ -119,22 +118,22 @@ class ARCComputingElement( ComputingElement ):
     # Now go about getting the string in the agreed order
     gLogger.debug("Trying to get xrslExtra string : first option %s" % firstOption)
     result = gConfig.getValue(firstOption, defaultValue='')
-    if ( result != '' ):
+    if result != '':
       self.xrslExtraString = result
       gLogger.debug("Found xrslExtra string : %s" % self.xrslExtraString)
     else:
       gLogger.debug("Trying to get xrslExtra string : second option %s" % secondOption)
       result = gConfig.getValue(secondOption, defaultValue='')
-      if ( result != '' ):
+      if result != '':
         self.xrslExtraString = result
         gLogger.debug("Found xrslExtra string : %s" % self.xrslExtraString)
       else:
         gLogger.debug("Trying to get xrslExtra string : default option %s" % defaultOption)
         result = gConfig.getValue(defaultOption, defaultValue='')
-        if ( result != '' ):
+        if result != '':
           self.xrslExtraString = result
           gLogger.debug("Found xrslExtra string : %s" % self.xrslExtraString)
-    if ( self.xrslExtraString == '' ):
+    if self.xrslExtraString == '':
       gLogger.always("No XRSLExtra string found in configuration for %s" % self.ceHost)
     else :
       gLogger.always("XRSLExtra string : %s" % self.xrslExtraString)
@@ -199,7 +198,7 @@ class ARCComputingElement( ComputingElement ):
     stampDict = {}
 
     endpoint = arc.Endpoint( self.ceHost + ":2811/jobs", arc.Endpoint.JOBSUBMIT,
-                            "org.nordugrid.gridftpjob")
+                             "org.nordugrid.gridftpjob")
 
     # Submit jobs iteratively for now. Tentatively easier than mucking around with the JobSupervisor class
     for __i in range(numberOfJobs):
@@ -217,7 +216,7 @@ class ARCComputingElement( ComputingElement ):
       submitter = arc.Submitter(self.usercfg)
       result = submitter.Submit(endpoint, jobdescs, jobs)
       # Save info or else ..else.
-      if ( result == arc.SubmissionStatus.NONE ):
+      if result == arc.SubmissionStatus.NONE:
         # Job successfully submitted
         pilotJobReference = jobs[0].JobID
         batchIDList.append( pilotJobReference )
@@ -225,21 +224,21 @@ class ARCComputingElement( ComputingElement ):
         gLogger.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
       else:
         message = "Failed to submit job because "
-        if (result.isSet(arc.SubmissionStatus.NOT_IMPLEMENTED) ): #pylint: disable=no-member
+        if result.isSet( arc.SubmissionStatus.NOT_IMPLEMENTED ): #pylint: disable=no-member
           gLogger.warn( "%s feature not implemented on CE? (weird I know - complain to site admins" % message )
-        if ( result.isSet(arc.SubmissionStatus.NO_SERVICES) ): #pylint: disable=no-member
+        if result.isSet( arc.SubmissionStatus.NO_SERVICES ): #pylint: disable=no-member
           gLogger.warn( "%s no services are running on CE? (open GGUS ticket to site admins" % message )
-        if ( result.isSet(arc.SubmissionStatus.ENDPOINT_NOT_QUERIED) ): #pylint: disable=no-member
+        if result.isSet( arc.SubmissionStatus.ENDPOINT_NOT_QUERIED ): #pylint: disable=no-member
           gLogger.warn( "%s endpoint was not even queried. (network ..?)" % message )
-        if ( result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED) ): #pylint: disable=no-member
+        if result.isSet( arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED ): #pylint: disable=no-member
           gLogger.warn( "%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
-        if ( result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED) ): #pylint: disable=no-member
+        if result.isSet( arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED ): #pylint: disable=no-member
           gLogger.warn( "%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message )
-        if ( result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED) ): #pylint: disable=no-member
+        if result.isSet( arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED ): #pylint: disable=no-member
           gLogger.warn( "%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
-        if ( result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR) ): #pylint: disable=no-member
+        if result.isSet( arc.SubmissionStatus.AUTHENTICATION_ERROR ): #pylint: disable=no-member
           gLogger.warn( "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" % message )
-        if ( result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT) ): #pylint: disable=no-member
+        if result.isSet( arc.SubmissionStatus.ERROR_FROM_ENDPOINT ): #pylint: disable=no-member
           gLogger.warn( "%s some error from the CE - possibly CE problems?" % message )
         gLogger.warn( "%s ... maybe above messages will give a hint." % message )
         break # Boo hoo *sniff*
@@ -298,7 +297,7 @@ class ARCComputingElement( ComputingElement ):
       # Presumably the really proper way forward once the infosys-discuss WG comes up with a solution
       # and it is implemented. Needed for DIRAC instances which use robot certificates for pilots.
       endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
-                               arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
+                                 arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
       retriever = arc.ComputingServiceRetriever(self.usercfg, endpoints)
       retriever.wait() # Takes a bit of time to get and parse the ldap information
       targets = retriever.GetExecutionTargets()
@@ -373,7 +372,7 @@ class ARCComputingElement( ComputingElement ):
       else:
         resultDict[jobID] = 'Unknown'
       # If done - is it really done? Check the exit code
-      if (resultDict[jobID] == "Done"):
+      if resultDict[jobID] == "Done":
         exitCode = int( job.ExitCode )
         if exitCode:
           resultDict[jobID] = "Failed"
@@ -435,7 +434,7 @@ class ARCComputingElement( ComputingElement ):
     else:
       job.Update()
       arcState = job.State.GetGeneralState()
-      if (arcState != "Undefined"):
+      if arcState != "Undefined":
         return S_ERROR( 'Failed to retrieve output for %s as job is not finished (maybe not started yet)' % jobID )
       gLogger.debug("Could not retrieve pilot output for %s - either permission / proxy error or could not connect to CE" % pilotRef)
       return S_ERROR( 'Failed to retrieve output for %s' % jobID )
