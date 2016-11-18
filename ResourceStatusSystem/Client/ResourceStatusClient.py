@@ -8,7 +8,6 @@
 from DIRAC                                                  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB         import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.Utilities                   import RssConfiguration
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.FrameworkSystem.Client.NotificationClient        import NotificationClient
@@ -51,7 +50,7 @@ class ResourceStatusClient( object ):
       fails, then tries to connect to the Service :class:ResourceStatusHandler.
     '''
 
-    self.rssDB = ResourceStatusDB()
+    self.rssDB = RPCClient( "ResourceStatus/ResourceStatus" )
 
     self.validElements = RssConfiguration.getValidElements()
 
@@ -78,7 +77,7 @@ class ResourceStatusClient( object ):
         it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `string`
-        column to distinguish between the diferent elements in the same element
+        column to distinguish between the different elements in the same element
         table.
       **reason** - `string`
         decision that triggered the assigned status
@@ -99,9 +98,10 @@ class ResourceStatusClient( object ):
                              elementType, reason, dateEffective, lastCheckTime,
                              tokenOwner, tokenExpiration)
 
-  def updateStatusElement( self, element, tableType, name, statusType, status,
-                           elementType, reason, dateEffective, lastCheckTime,
-                           tokenOwner, tokenExpiration ):
+  def updateStatusElement( self, element, tableType, name = None, statusType = None,
+                           status = None, elementType = None, reason = None,
+                           dateEffective = None, lastCheckTime = None,
+                           tokenOwner = None, tokenExpiration = None ):
     '''
     Updates <element><tableType> with the parameters given.
 
@@ -119,7 +119,7 @@ class ResourceStatusClient( object ):
         it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `string`
-        column to distinguish between the diferent elements in the same element
+        column to distinguish between the different elements in the same element
         table.
       **reason** - `string`
         decision that triggered the assigned status
@@ -161,7 +161,7 @@ class ResourceStatusClient( object ):
         it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `[, string, list]`
-        column to distinguish between the diferent elements in the same element
+        column to distinguish between the different elements in the same element
         table.
       **reason** - `[, string, list]`
         decision that triggered the assigned status
@@ -203,7 +203,7 @@ class ResourceStatusClient( object ):
         it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `[, string, list]`
-        column to distinguish between the diferent elements in the same element
+        column to distinguish between the different elements in the same element
         table.
       **reason** - `[, string, list]`
         decision that triggered the assigned status
@@ -247,7 +247,7 @@ class ResourceStatusClient( object ):
         it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `string`
-        column to distinguish between the diferent elements in the same element
+        column to distinguish between the different elements in the same element
         table.
       **reason** - `string`
         decision that triggered the assigned status
@@ -289,7 +289,7 @@ class ResourceStatusClient( object ):
         it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `string`
-        column to distinguish between the diferent elements in the same element
+        column to distinguish between the different elements in the same element
         table.
       **reason** - `string`
         decision that triggered the assigned status
@@ -333,7 +333,7 @@ class ResourceStatusClient( object ):
         it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
         `Probing` | `Banned`
       **elementType** - `string`
-        column to distinguish between the diferent elements in the same element
+        column to distinguish between the different elements in the same element
         table.
       **reason** - `string`
         decision that triggered the assigned status
