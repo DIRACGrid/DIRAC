@@ -284,10 +284,10 @@ class ResourceStatusDB( object ):
 
     return S_OK()
 
-  def addIfNotThere( self, element, tableType, name = None, statusType = None,
-                     status = None, elementType = None, reason = None,
-                     dateEffective = None, lastCheckTime = None,
-                     tokenOwner = None, tokenExpiration = None, log = None ):
+  def addIfNotThere( self, element, tableType, name, statusType,
+                     status, elementType, reason,
+                     dateEffective, lastCheckTime,
+                     tokenOwner, tokenExpiration, log = None ):
 
     result = self.select( element, tableType, name, statusType, status, elementType, reason ,
                           dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
