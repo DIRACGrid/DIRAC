@@ -18,6 +18,7 @@ from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
+from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
 import types
 
 class StalledJobAgent( AgentModule ):
@@ -79,9 +80,9 @@ for the agent restart
     if not result['OK']:
       self.log.error( 'Failed to detect stalled jobs', result['Message'] )
 
-    #Note, jobs will be revived automatically during the heartbeat signal phase and
-    #subsequent status changes will result in jobs not being selected by the
-    #stalled job agent.
+    # Note, jobs will be revived automatically during the heartbeat signal phase and
+    # subsequent status changes will result in jobs not being selected by the
+    # stalled job agent.
 
     result = self.__failStalledJobs( failedTime )
     if not result['OK']:
@@ -134,46 +135,47 @@ for the agent restart
     result = self.jobDB.selectJobs( {'Status':'Stalled'} )
     if not result['OK']:
       return result
+    jobs = result['Value']
 
     failedCounter = 0
+    minorStalledStatuses = ( "Job stalled: pilot not running", 'Stalling for more than %d sec' % failedTime )
 
-    if result['Value']:
-      jobs = result['Value']
+    if jobs:
       self.log.info( '%s Stalled jobs will be checked for failure' % ( len( jobs ) ) )
 
       for job in jobs:
-
+        setFailed = False
         # Check if the job pilot is lost
         result = self.__getJobPilotStatus( job )
-        if result['OK']:
-          pilotStatus = result['Value']
-          if pilotStatus != "Running":
-            result = self.__updateJobStatus( job, 'Failed',
-                                             "Job stalled: pilot not running" )
-            failedCounter += 1
-            result = self.__sendAccounting( job )
-            if not result['OK']:
-              self.log.error( 'Failed to send accounting', result['Message'] )
-              break
-            continue
-
-        result = self.__getLatestUpdateTime( job )
         if not result['OK']:
-          return result
-        currentTime = toEpoch()
-        lastUpdate = result['Value']
-        elapsedTime = currentTime - lastUpdate
-        if elapsedTime > failedTime:
-          self.__updateJobStatus( job, 'Failed', 'Stalling for more than %d sec' % failedTime )
+          self.log.error( 'Failed to get pilot status', result['Message'] )
+          continue
+        pilotStatus = result['Value']
+        if pilotStatus != "Running":
+          setFailed = minorStalledStatuses[0]
+        else:
+
+          result = self.__getLatestUpdateTime( job )
+          if not result['OK']:
+            self.log.error( 'Failed to get job update time', result['Message'] )
+            continue
+          elapsedTime = toEpoch() - result['Value']
+          if elapsedTime > failedTime:
+            setFailed = minorStalledStatuses[1]
+
+        # Set the jobs Failed, send them a kill signal in case they are not really dead and send accounting info
+        if setFailed:
+          # Send a kill signal to the job such that it cannot continue running
+          WMSClient().killJob( job )
+          self.__updateJobStatus( job, 'Failed', setFailed )
           failedCounter += 1
           result = self.__sendAccounting( job )
           if not result['OK']:
             self.log.error( 'Failed to send accounting', result['Message'] )
-            break
 
     recoverCounter = 0
 
-    for minor in ["Job stalled: pilot not running", 'Stalling for more than %d sec' % failedTime]:
+    for minor in minorStalledStatuses:
       result = self.jobDB.selectJobs( {'Status':'Failed', 'MinorStatus': minor, 'AccountedFlag': 'False' } )
       if not result['OK']:
         return result
@@ -288,7 +290,7 @@ used to fail jobs due to the optimizer chain.
         self.log.verbose( "self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % ( job, minorstatus ) )
         result = self.jobDB.setJobAttribute( job, 'MinorStatus', minorstatus, update = True )
 
-    if not minorstatus: #Retain last minor status for stalled jobs
+    if not minorstatus:  # Retain last minor status for stalled jobs
       result = self.jobDB.getJobAttributes( job, ['MinorStatus'] )
       if result['OK']:
         minorstatus = result['Value']['MinorStatus']
@@ -346,7 +348,7 @@ used to fail jobs due to the optimizer chain.
     accountingReport.setStartTime( startTime )
     accountingReport.setEndTime( endTime )
     # execTime = toEpoch( endTime ) - toEpoch( startTime )
-    #Fill the accounting data
+    # Fill the accounting data
     acData = { 'Site' : jobDict['Site'],
                'User' : jobDict['Owner'],
                'UserGroup' : jobDict['OwnerGroup'],
@@ -368,13 +370,13 @@ used to fail jobs due to the optimizer chain.
                'OutputSandBoxSize' : 0.0,
                'ProcessedEvents' : 0
              }
-    
+
     # For accidentally stopped jobs ExecTime can be not set
     if not acData['ExecTime']:
       acData['ExecTime'] = acData['CPUTime']
     elif acData['ExecTime'] < acData['CPUTime']:
       acData['ExecTime'] = acData['CPUTime']
-    
+
     self.log.verbose( 'Accounting Report is:' )
     self.log.verbose( acData )
     accountingReport.setValuesFromDict( acData )
@@ -511,7 +513,7 @@ used to fail jobs due to the optimizer chain.
 
     # Remove those with Minor Status "Pending Requests"
     for jobID in jobIDs:
-      result = self.jobDB.getJobAttributes( jobID, ['Status','MinorStatus'] )
+      result = self.jobDB.getJobAttributes( jobID, ['Status', 'MinorStatus'] )
       if not result['OK']:
         self.log.error( 'Failed to get job attributes', result['Message'] )
         continue
@@ -529,4 +531,4 @@ used to fail jobs due to the optimizer chain.
 
     return S_OK()
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
