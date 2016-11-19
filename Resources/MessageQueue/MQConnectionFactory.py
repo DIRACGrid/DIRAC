@@ -46,7 +46,8 @@ class MQConnectionFactory( object ):
     result = objectLoader.loadObject( 'Resources.MessageQueue.%s' % subClassName, subClassName )
     if not result['OK']:
       self.log.error( 'Failed to load object', '%s: %s' % ( subClassName, result['Message'] ) )
-      return result
+    return result
+    
 
     ceClass = result['Value']
     try:
