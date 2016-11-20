@@ -69,10 +69,9 @@ class BundleDeliveryClient:
       return S_OK( False )
     buff.seek( 0 )
     self.log.info( "Synchronizing dir with remote bundle" )
-    tF = tarfile.open( name = 'dummy', mode = "r:gz", fileobj = buff )
-    for tarinfo in tF:
-      tF.extract( tarinfo, dirToSyncTo )
-    tF.close()
+    with tarfile.open( name = 'dummy', mode = "r:gz", fileobj = buff ) as tF:
+      for tarinfo in tF:
+        tF.extract( tarinfo, dirToSyncTo )
     buff.close()
     self.__setHash( bundleID, dirToSyncTo, newHash )
     self.log.info( "Dir has been synchronized" )

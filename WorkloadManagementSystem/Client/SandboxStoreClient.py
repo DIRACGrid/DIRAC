@@ -119,15 +119,14 @@ class SandboxStoreClient( object ):
     except Exception as e:
       return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
-    tf = tarfile.open( name = tmpFilePath, mode = "w|bz2" )
-    for sFile in files2Upload:
-      if isinstance( sFile, basestring ):
-        tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
-      elif isinstance( sFile, StringIO.StringIO ):
-        tarInfo = tarfile.TarInfo( name = 'jobDescription.xml' )
-        tarInfo.size = len( sFile.buf )
-        tf.addfile( tarinfo = tarInfo, fileobj = sFile )
-    tf.close()
+    with tarfile.open( name = tmpFilePath, mode = "w|bz2" ) as tf:
+      for sFile in files2Upload:
+        if isinstance( sFile, basestring ):
+          tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
+        elif isinstance( sFile, StringIO.StringIO ):
+          tarInfo = tarfile.TarInfo( name = 'jobDescription.xml' )
+          tarInfo.size = len( sFile.buf )
+          tf.addfile( tarinfo = tarInfo, fileobj = sFile )
 
     if sizeLimit > 0:
       # Evaluate the compressed size of the sandbox
