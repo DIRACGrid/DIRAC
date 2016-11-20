@@ -103,7 +103,6 @@ class ConfigurationData( object ):
       self.remoteCFG.loadFromFile( fileName )
     except Exception as e:
       print e
-      pass
     self.unlock()
     self.sync()
 
@@ -333,9 +332,8 @@ class ConfigurationData( object ):
     if os.path.isfile( configurationFile ):
       gLogger.info( "Making a backup of configuration in %s" % backupFile )
       try:
-        zf = zipfile.ZipFile( backupFile, "w", zipfile.ZIP_DEFLATED )
-        zf.write( configurationFile, "%s.backup.%s" % ( os.path.split( configurationFile )[1], backupName ) )
-        zf.close()
+        with zipfile.ZipFile( backupFile, "w", zipfile.ZIP_DEFLATED ) as zf:
+          zf.write( configurationFile, "%s.backup.%s" % ( os.path.split( configurationFile )[1], backupName ) )
       except Exception:
         gLogger.exception()
         gLogger.error( "Cannot backup configuration data file", "file %s" % backupFile )
