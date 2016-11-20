@@ -68,15 +68,17 @@ class FailoverTransfer( object ):
     """
     errorList = []
     fileGUID = fileMetaDict.get( "GUID", None )
+    fileChecksum = fileMetaDict.get( "Checksum", None )
 
     for se in destinationSEList:
-      self.log.info( "Attempting dm.putAndRegister('%s','%s','%s',guid='%s',catalog='%s')" % ( lfn,
+      self.log.info( "Attempting dm.putAndRegister('%s','%s','%s',guid='%s',catalog='%s', checksum = '%s')" % ( lfn,
                                                                                                localPath,
                                                                                                se,
                                                                                                fileGUID,
-                                                                                               fileCatalog ) )
+                                                                                               fileCatalog, fileChecksum ) )
 
-      result = DataManager( catalogs = fileCatalog, masterCatalogOnly = masterCatalogOnly ).putAndRegister( lfn, localPath, se, guid = fileGUID )
+      result = DataManager( catalogs = fileCatalog, masterCatalogOnly = masterCatalogOnly ).putAndRegister( lfn, localPath, se, guid = fileGUID,
+                                                                                                            checksum = fileChecksum )
       self.log.verbose( result )
       if not result['OK']:
         self.log.error( 'dm.putAndRegister failed with message', result['Message'] )
