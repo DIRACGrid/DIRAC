@@ -1,4 +1,10 @@
-[v6r17-pre1]
+[v6r17-pre2]
+
+*Core
+FIX: Adler - check explicitly if the checksum value is "False"
+
+*Framework
+CHANGE: Logger - test level before processing string (i.e. mostly converting objects to strings)  
 
 *DMS
 NEW: Next in implementation multi-protocol support for storage elements. When performing 
@@ -9,11 +15,16 @@ NEW: Next in implementation multi-protocol support for storage elements. When pe
      possible protocols the source SE is able to produce, and all protocols the target is 
      able to receive as input.
 NEW: StorageElement - added methods for monitoring used disk space
+FIX: ReplicateAndRegister - fix the case when checksum is False in the FC
 
 *RSS
 NEW: FreeDiskSpace - added new command which is used to get the total and the remaining 
      disk space of all dirac storage elements that are found in the CS and inserts the 
-     results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.     
+     results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.    
+     
+*TS
+FIX: TaskManager, TaskManagerAgentBase - standardize the logging information; removed unnecessary 
+     code; use iterators wherever possible     
 
 [v6r16p1]
 
