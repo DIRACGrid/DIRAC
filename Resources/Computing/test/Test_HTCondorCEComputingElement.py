@@ -8,6 +8,8 @@ from mock import MagicMock as Mock, patch
 
 from DIRAC.Resources.Computing import HTCondorCEComputingElement as HTCE
 from DIRAC.Resources.Computing.BatchSystems import Condor
+from DIRAC import S_OK
+
 MODNAME = "DIRAC.Resources.Computing.HTCondorCEComputingElement"
 
 STATUS_LINES = """
@@ -23,7 +25,10 @@ class HTCondorCETests( unittest.TestCase ):
   """ tests for the HTCondorCE Module """
 
   def setUp( self ):
-    pass
+    self.ceParameters = { 'Queue': "espresso",
+                          'GridEnv': "/dev/null",
+                        }
+
 
   def tearDown( self ):
     pass
@@ -79,9 +84,89 @@ class HTCondorCETests( unittest.TestCase ):
 
     self.assertTrue( ret['OK'] , ret.get('Message', '') )
     self.assertEqual( expectedResults, ret['Value'] )
-    
 
 
+  def test__writeSub_local( self ):
+    htce = HTCE.HTCondorCEComputingElement( 12345 )
+    htce.useLocalSchedd = True
+    subFileMock = Mock()
+    with patch( MODNAME+".os.fdopen", new=Mock( return_value=subFileMock ) ), \
+         patch( MODNAME+".tempfile.mkstemp", new=Mock( return_value=("os", "pilotName"))), \
+         patch( MODNAME+".mkDir", new=Mock()):
+
+      htce._HTCondorCEComputingElement__writeSub( "dirac-install", 42 ) #pylint: disable=E1101
+      for option in [ "ShouldTransferFiles = YES", "WhenToTransferOutput = ON_EXIT_OR_EVICT", "universe = grid"]:
+        # the three [0] are: call_args_list[firstCall][ArgsArgumentsTuple][FirstArgsArgument]
+        self.assertIn( option, subFileMock.write.call_args_list[0][0][0] )
+
+
+  def test__writeSub_remote( self ):
+    htce = HTCE.HTCondorCEComputingElement( 12345 )
+    htce.useLocalSchedd = False
+    subFileMock = Mock()
+    with patch( MODNAME+".os.fdopen", new=Mock( return_value=subFileMock ) ), \
+         patch( MODNAME+".tempfile.mkstemp", new=Mock( return_value=("os", "pilotName"))), \
+         patch( MODNAME+".mkDir", new=Mock()):
+
+      htce._HTCondorCEComputingElement__writeSub( "dirac-install", 42 ) #pylint: disable=E1101
+      for option in [ "ShouldTransferFiles = YES", "WhenToTransferOutput = ON_EXIT_OR_EVICT" ]:
+        self.assertNotIn( option, subFileMock.write.call_args_list[0][0][0] )
+      for option in [ "universe = vanilla"]:
+        self.assertIn( option, subFileMock.write.call_args_list[0][0][0] )
+
+
+  def test_reset_local( self ):
+    htce = HTCE.HTCondorCEComputingElement( 12345 )
+    htce.ceParameters = self.ceParameters
+    htce.useLocalSchedd = True
+    ceName = "condorce.cern.ch"
+    htce.ceName = ceName
+    htce._reset()
+    self.assertEqual( htce.remoteScheddOptions, "" )
+
+
+  def test_reset_remote( self ):
+    htce = HTCE.HTCondorCEComputingElement( 12345 )
+    htce.ceParameters = self.ceParameters
+    htce.useLocalSchedd = False
+    ceName = "condorce.cern.ch"
+    htce.ceName = ceName
+    htce._reset()
+    self.assertEqual( htce.remoteScheddOptions, "-pool %s:9619 -name %s " %(ceName, ceName ) )
+
+
+  def test_submitJob_local( self ):
+    htce = HTCE.HTCondorCEComputingElement( 12345 )
+    htce.ceParameters = self.ceParameters
+    htce.useLocalSchedd = True
+    ceName = "condorce.cern.ch"
+    htce.ceName = ceName
+    execMock = Mock( return_value=S_OK( (0, "123.0 - 123.0")))
+    htce._HTCondorCEComputingElement__writeSub = Mock( return_value= "dirac-pilot" )
+    with patch( MODNAME+".executeGridCommand", new=execMock), \
+         patch( MODNAME+".os", new=Mock() ):
+      result = htce.submitJob( "pilot", "proxy", 1 )
+
+    self.assertTrue( result['OK'], result.get('Message') )
+    remotePoolList = " ".join([ '-pool', '%s:9619'%ceName, '-remote', ceName ])
+    self.assertNotIn( remotePoolList, " ".join(execMock.call_args_list[0][0][1]) )
+
+
+  def test_submitJob_remote( self ):
+    htce = HTCE.HTCondorCEComputingElement( 12345 )
+    htce.ceParameters = self.ceParameters
+    htce.useLocalSchedd = False
+    ceName = "condorce.cern.ch"
+    htce.ceName = ceName
+    execMock = Mock( return_value=S_OK( (0, "123.0 - 123.0")))
+    htce._HTCondorCEComputingElement__writeSub = Mock( return_value= "dirac-pilot" )
+    with patch( MODNAME+".executeGridCommand", new=execMock), \
+         patch( MODNAME+".os", new=Mock() ):
+      result = htce.submitJob( "pilot", "proxy", 1 )
+
+    self.assertTrue( result['OK'], result.get('Message') )
+    remotePoolList = " ".join([ '-pool', '%s:9619'%ceName, '-remote', ceName ])
+    self.assertIn( remotePoolList, " ".join(execMock.call_args_list[0][0][1]) )
 
 
 class BatchCondorTest( unittest.TestCase ):
