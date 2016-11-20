@@ -451,7 +451,15 @@ class DataManager( object ):
     if not checksum:
       log.debug( "Checksum information not provided. Calculating adler32." )
       checksum = fileAdler( fileName )
-      log.debug( "Checksum calculated to be %s." % checksum )
+      # Make another try
+      if not checksum:
+        log.debug( "Checksum calculation failed, try again" )
+        checksum = fileAdler( fileName )
+      if checksum:
+        log.debug( "Checksum calculated to be %s." % checksum )
+      else:
+        return S_ERROR( DErrno.EBADCKS, "Unable to calculate checksum" )
+
     res = self.fc.exists( {lfn:guid} )
     if not res['OK']:
       errStr = "Completely failed to determine existence of destination LFN."
