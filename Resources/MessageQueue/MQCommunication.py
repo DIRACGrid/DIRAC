@@ -31,14 +31,14 @@ def setupConnection(mqURI, messangerType):
     gLogger.error( 'Failed to setupConnection:', '%s' % (result['Message'] ) )
     return result
   params = result['Value']
-  mqService, destinationType, destinationName = mqURI.split( '::' )
+  #mqService, destinationType, destinationName = mqURI.split( '::' )
 
-  mqType = params['MQType']
-  dest = params[destinationType]
-  conn = createMQConnector(mqType = mqType, parameters = params)
-  #conn.start()
-  (messangerId, conn) = connectionManager.addConnectionIfNotExist(connectionInfo={"connection":conn, "destination":dest} , mqServiceId = mqService)
-  return S_OK()
+  #mqType = params['MQType']
+  #dest = params[destinationType]
+  #conn = createMQConnector(mqType = mqType, parameters = params)
+  ##conn.start()
+  #(messangerId, conn) = connectionManager.addConnectionIfNotExist(connectionInfo={"connection":conn, "destination":dest} , mqServiceId = mqService)
+  return S_OK(params)
 
 def getSpecializedMQConnector( mqType):
   subClassName = mqType + 'MQConnector'
@@ -55,13 +55,13 @@ def createMQConnector(mqType,  parameters = None):
     return result
   ceClass = result['Value']
   try:
-    mqConnection = ceClass(parameters)
+    mqConnector = ceClass(parameters)
     if not result['OK']:
       return result
   except Exception as exc:
     gLogger.exception( 'Could not instantiate MQConnector object',  lExcInfo = exc )
     return S_ERROR( EMQUKN, '' )
-  return S_OK( mqConnection )
+  return S_OK( mqConnector )
 
 #Resources
 #{
