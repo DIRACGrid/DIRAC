@@ -13,7 +13,7 @@ from DIRAC.Core.Utilities.Shifter                         import setupShifterPro
 from DIRAC.Core.Utilities.Subprocess                      import pythonCall
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations           import Operations
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.DataManagementSystem.Utilities.MetaQuery import MetaQuery
+from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery
 
 class TransformationClient( Client ):
 
