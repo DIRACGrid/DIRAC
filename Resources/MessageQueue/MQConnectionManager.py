@@ -7,7 +7,6 @@ class MQConnectionManager(object):
   """Manages connections for the Message Queue resources."""
   def __init__(self, connectionStorage = None):
     # We call disconnect() if the connection should be removed.
-    #self._connDict = DictCache( deleteFunction = lambda x : x['connection'].disconnect() )
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self._lock = None
     if connectionStorage:
@@ -30,6 +29,15 @@ class MQConnectionManager(object):
     """docstring for getConnection"""
     return self._connectionStorage.get(mqServiceId, None)
 
+  def getConnector(self, mqServiceId):
+    """docstring for getConnector"""
+    self.lock.acquire()
+    try:
+      return self._connectionStorage.get(mqServiceId, {}).get("MQConnector", None)
+    finally:
+      self.lock.release()
+
+#m.get("gparents", {}).get("parent", {}).get("child")
 
   def addConnectionIfNotExist(self, connectionInfo, mqServiceId):
     self.lock.acquire()
@@ -48,8 +56,8 @@ class MQConnectionManager(object):
     self.lock.acquire()
     try:
       if mqServiceId in self._connectionStorage:
-        if self._connectionStorage[mqServiceId]['MQConnection']:
-          self._connectionStorage[mqServiceId]['MQConnection'].disconnect()
+        if self._connectionStorage[mqServiceId]['MQConnector']:
+          self._connectionStorage[mqServiceId]['MQConnector'].disconnect()
         self._connectionStorage.pop(mqServiceId)
         return True
       else:

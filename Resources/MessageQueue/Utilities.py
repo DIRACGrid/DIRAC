@@ -2,62 +2,64 @@
 """
 
 from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.CSAPI       import CSAPI
 
 __RCSID__ = "$Id$"
 
-def getMQueue( queueName ):
-  """ Get parameter of a MQ queue from the CS
+def getMQParamsFromCS( destinationName ):
+  """ Get parameter of a MQ destination (queue/topic) from the CS
 
-  :param str queueName: name of the queue either just the queue name, in this case
-                       the default MQServer will be used, or in th form <MQServer>::<queueName>
+  :param str destinationName: name of the queue/topic either just the queue/topic name, in this case
+                       the default MQServer will be used, or in th form <MQServer>::<destinationName>
   :return: S_OK( parameterDict )/ S_ERROR
   """
 
-  mqService = None
-  elements = queueName.split( '::' )
+  # API initialization is required to get an up-to-date configuration from the CS
+  csAPI = CSAPI()
+  csAPI.initialize()
+
+  mqService = ''
+  elements = destinationName.split( '::' )
   if len( elements ) == 2:
     mqService, queue = elements
   else:
-    queue = queueName
+    queue = destinationName
 
+  # get both queues and topics
+  print "this is mqService:" + mqService
+  result = gConfig.getConfigurationTree( '/Resources/MQServices', mqService, queue )
+  if not result['OK'] or len( result['Value'] ) == 0:
+    return S_ERROR( 'Requested MQService or queue/topic not found in the CS: %s::%s' % ( mqService, queue ) )
 
-  result = gConfig.getSections( '/Resources/MQServices' )
-  if not result['OK']:
-    return result
-  sections = result['Value']
-  if mqService and not mqService in sections:
-    return S_ERROR( 'Requested MQService %s not found in the CS' % mqService )
-  elif not mqService and len( sections ) == 1:
-    mqService = sections[0]
+  queuePath = None
+  for path, value in result['Value'].iteritems():
 
-  queuePath = ''
-  servicePath = ''
-  if mqService:
-    servicePath = '/Resources/MQServices/%s' % mqService
-    result = gConfig.getSections( '/Resources/MQServices/%s/Queues' % mqService )
-    if result['OK'] and queue in result['Value']:
-      queuePath = '/Resources/MQServices/%s/Queues/%s' % ( mqService, queue )
+    # check section paths for duplicate names
+    # endswith() guarantees that similar queue names are discarded
+    if not value and path.endswith( queue ):
+      if queuePath:
+        return S_ERROR( 'Ambiguous queue/topic %s definition' % queue )
+      else:
+        queuePath = path
+
+  # set-up internal parameter depending on the destination type
+  tmp = queuePath.split( 'Queues' )[0].split( 'Topics' )
+  servicePath = tmp[0]
+
+  serviceDict = {}
+  if len(tmp) > 1:
+    serviceDict['Topic'] = queue
   else:
-    for section in sections:
-      result = gConfig.getSections( '/Resources/MQServices/%s/Queues' % section )
-      if result['OK']:
-        if queue in result['Value']:
-          if queuePath:
-            return S_ERROR( 'Ambiguous queue %s definition' % queue )
-          else:
-            servicePath = '/Resources/MQServices/%s' % section
-            queuePath = '/Resources/MQServices/%s/Queues/%s' % ( section, queue )
+    serviceDict['Queue'] = queue
 
   result = gConfig.getOptionsDict( servicePath )
   if not result['OK']:
     return result
-  serviceDict = result['Value']
+  serviceDict.update( result['Value'] )
 
-  if queuePath:
-    result = gConfig.getOptionsDict( queuePath )
-    if not result['OK']:
-      return result
-    serviceDict.update( result['Value'] )
-  serviceDict['Queue'] = queue
+  result = gConfig.getOptionsDict( queuePath )
+  if not result['OK']:
+    return result
+  serviceDict.update( result['Value'] )
 
   return S_OK( serviceDict )
