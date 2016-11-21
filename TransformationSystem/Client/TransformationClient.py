@@ -2,10 +2,18 @@
 
 __RCSID__ = "$Id$"
 
+import types
+import time
+
 from DIRAC                                                         import S_OK, gLogger
+import DIRAC.Resources.Utilities as utils
 from DIRAC.Core.Base.Client                                        import Client
 from DIRAC.Core.Utilities.List                                     import breakListIntoChunks
+from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.Subprocess                      import pythonCall
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations           import Operations
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery
 
 class TransformationClient( Client ):
 
@@ -63,6 +71,8 @@ class TransformationClient( Client ):
     self.maxResetCounter = opsH.getValue( 'Productions/ProductionFilesMaxResetCounter', 10 )
 
     self.setServer( 'Transformation/TransformationManager' )
+
+    self.fc = FileCatalog()
 
   def setServer( self, url ):
     self.serverURL = url
@@ -425,7 +435,204 @@ class TransformationClient( Client ):
   def isOK( self ):
     return self.valid
 
-  def addDirectory( self, path, force = False ):
-    rpcClient = self._getRPC()
-    return rpcClient.addDirectory( path, force )
+  def getName( self, DN = '' ):
+    """ Get the file catalog type name
+    """
+    return self.name
 
+  def addDirectory( self, path, force = False ):
+    """ Adds all the files stored in a given directory in file catalog """
+    gLogger.info( "addDirectory: Attempting to populate %s." % path )
+    res = pythonCall( 30, self.__addDirectory, path, force )
+    if not res['OK']:
+      gLogger.error( "Failed to invoke addDirectory with shifter proxy" )
+      return res
+    return res['Value']
+
+  def __addDirectory( self, path, force ):
+    res = setupShifterProxyInEnv( "ProductionManager" )
+    if not res['OK']:
+      return S_OK( "Failed to setup shifter proxy" )
+    start = time.time()
+    res = self.fc.listDirectory( path )
+    if not res['OK']:
+      gLogger.error( "addDirectory: Failed to get files. %s" % res['Message'] )
+      return res
+    if not path in res['Value']['Successful']:
+      gLogger.error( "addDirectory: Failed to get files." )
+      return res
+    gLogger.info( "addDirectory: Obtained %s files in %s seconds." % ( path, time.time() - start ) )
+    successful = []
+    failed = []
+    for lfn in res['Value']['Successful'][path]["Files"]:
+      res = self.addFile( {lfn:{}}, force = force )
+      if not res['OK'] or lfn not in res['Value']['Successful']:
+        failed.append( lfn )
+      else:
+        successful.append( lfn )
+    return {"OK":True, "Value": len( res['Value']['Successful'] ), "Successful":successful, "Failed": failed }
+
+  def addFile( self, lfn, force = False ):
+    """ Add the supplied lfn to the Transformations and to the DataFiles table if it passes the filter
+    """
+    fileDict = utils.checkArgumentFormat( lfn )
+    if not fileDict['OK']:
+      return fileDict
+    lfns = fileDict['Value'].keys()
+
+    successful = {}
+    failed = {}
+    transFiles = {}
+    filesToAdd = []
+
+    for lfn in lfns:
+      gLogger.info( "addFile: Attempting to add file %s" % lfn )
+      res = self.fc.getFileUserMetadata( lfn )
+      if not res['OK']:
+        failed[lfn] = res['Message']
+        return S_OK( {'Successful':successful, 'Failed':failed } )
+      else:
+        metadatadict = res['Value']
+      gLogger.info( 'Filter file with metadata', metadatadict )
+      fileTrans = self._filterFileByMetadata( metadatadict )
+      gLogger.info('fileTrans', fileTrans)
+      if not ( fileTrans or force ):  # not clear how force should be used for
+        successful[lfn] = False  # True -> False bug fix: otherwise it is set to True even if fileTrans is empty.
+      else:
+        filesToAdd.append( lfn )
+        for trans in fileTrans:
+          if not transFiles.has_key( trans ):
+            transFiles[trans] = []
+          transFiles[trans].append( lfn )
+
+      # Add the files to the transformations
+      gLogger.info( 'Files to add to transformations:', filesToAdd )
+      if filesToAdd:
+        for transID, lfns in transFiles.items():
+          res = self.addFilesToTransformation( transID, lfns )
+          if not res['OK']:
+            for lfn in lfns:
+              gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
+              failed[lfn] = res['Message']
+          else:
+            successful[lfn] = True
+
+    res = S_OK( {'Successful':successful, 'Failed':failed } )
+    return res
+
+  def setMetadata( self, path, usermetadatadict ):
+    """ It can be applied to a file or to a directory (path). For a file, add the file to Transformations if the updated metadata dictionary passes the filter.
+        For a directory, add the files contained in the directory to the Transformations if the the updated metadata dictionary passes the filter.
+    """
+    gLogger.info( "setMetadata: Attempting to set metadata %s to %s" % (usermetadatadict, path) )
+    successful = {}
+    failed = {}
+    if type( path ) == types.DictType:
+      path = path.keys()[0]
+
+    transFiles = {}
+    filesToAdd = []
+
+    isFile = self.fc.isFile( path )['Value']['Successful'][path]
+    isDirectory = self.fc.isDirectory( path )['Value']['Successful'][path]
+
+    if isFile:
+      res = self.fc.getFileUserMetadata( path )
+    elif isDirectory:
+      res = self.fc.getDirectoryUserMetadata( path )
+
+    if not res['OK']:
+      failed[path] = res['Message']
+      return S_OK( {'Successful':successful, 'Failed':failed } )
+    else:
+      metadatadict = res['Value']
+    metadatadict.update( usermetadatadict )
+    gLogger.info( 'Filter file with metadata:', metadatadict )
+    fileTrans = self._filterFileByMetadata( metadatadict )
+    if not ( fileTrans ):
+      successful[path] = False
+    elif isFile:
+      filesToAdd.append( path )
+      path = [path]
+    else:
+      res = self.fc.findFilesByMetadata( metadatadict, path )
+      path = res['Value']
+      filesToAdd.extend( res['Value'] )
+    for trans in fileTrans:
+      if not transFiles.has_key( trans ):
+        transFiles[trans] = []
+      transFiles[trans].extend( path )
+
+    # Add the files to the transformations
+    gLogger.info( 'Files to add to transformations:', filesToAdd )
+    if filesToAdd:
+      for transID, lfns in transFiles.items():
+        res = self.addFilesToTransformation( transID, lfns )
+        if not res['OK']:
+          for lfn in lfns:
+            gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
+            failed[lfn] = res['Message']
+        else:
+          for lfn in lfns:
+            successful[lfn] = True
+
+    res = S_OK( {'Successful':successful, 'Failed':failed } )
+    return res
+
+  def removeFile( self, lfn ):
+    """ Set files in 'Deleted' status
+    """
+    gLogger.info( "removeFile: Attempting to remove file %s" % lfn )
+    res = utils.checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfns = res['Value'].keys()
+    rpcClient = self._getRPC()
+    successful = {}
+    failed = {}
+    listOfLists = breakListIntoChunks( lfns, 100 )
+    for fList in listOfLists:
+      res = rpcClient.removeFile( fList )
+      if not res['OK']:
+        return res
+      successful.update( res['Value']['Successful'] )
+      failed.update( res['Value']['Failed'] )
+    resDict = {'Successful': successful, 'Failed':failed}
+    return S_OK( resDict )
+
+  def _filterFileByMetadata( self, metadatadict ):
+    """Pass the input metadatadict through those currently active"""
+    result = []
+    queries = self._getFilters()['Value']
+    gLogger.info( 'Filter file by queries', queries )
+    res = self.fc.getMetadataFields()
+
+    if not res['OK']:
+      gLogger.error( "Error in getMetadataFields: %s" % res['Message'] )
+      return res
+    if not res['Value']:
+      gLogger.error( "Error: no metadata fields defined" )
+      return res
+    typeDict = res['Value']['FileMetaFields']
+    typeDict.update( res['Value']['DirectoryMetaFields'] )
+
+    for transID, query in queries:
+      mq = MetaQuery( query, typeDict )
+      gLogger.info( "Apply query %s to metadata %s" % ( mq.getMetaQuery(), metadatadict ) )
+      res = mq.applyQuery(metadatadict)
+      if not res['OK']:
+        gLogger.error( "Error in applying query: %s" % res['Message'] )
+      elif res['Value'] == True:
+        gLogger.info( "Apply query result is True" )
+        result.append( transID )
+      else:
+        gLogger.info( "Apply query result is False" )
+
+    return result
+
+  def _getFilters( self, timeout = None  ):
+    """ Get the existing transformations filters
+    """
+    rpcClient = self._getRPC( timeout = timeout )
+    res = rpcClient.getFilters()
+    return res
