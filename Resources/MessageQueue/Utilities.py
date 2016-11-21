@@ -63,3 +63,16 @@ def getMQParamsFromCS( destinationName ):
   serviceDict.update( result['Value'] )
 
   return S_OK( serviceDict )
+
+def getMQService(mqURI):
+  return mqURI.split("::")[0]
+
+def getDestinationType(mqURI):
+  return mqURI.split("::")[1]
+
+def getDestinationName(mqURI):
+  return mqURI.split("::")[2]
+
+def getDestinationAddress(mqURI):
+  mqType, mqName = mqURI.split("::")[-2:]
+  return "/" + mqType.lower() + "/" + mqName

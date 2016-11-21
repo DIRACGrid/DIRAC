@@ -19,7 +19,7 @@ class TestMQCommunication_setupConnection( TestMQCommunication):
   @mock.patch('DIRAC.Resources.MessageQueue.MQCommunication.getMQParamsFromCS')
   def test_success(self, mock_getMQParamsFromCS):
     mock_getMQParamsFromCS.return_value = S_OK({'Queue':'test1', 'MQType':'Fake', 'Host':'mardirac3.in2p3.fr', 'Port':'666'})
-    mqURI = 'mardirac3.in2p3.fr::Queue:'
+    mqURI = 'mardirac3.in2p3.fr::Queue::test1'
     result = setupConnection(mqURI = mqURI, messangerType = "producer")
     
     #connection = result['Value']

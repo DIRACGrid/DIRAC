@@ -39,12 +39,12 @@ class TestMQConnectionManager_getConnection( TestMQConnectionManager ):
 class TestMQConnectionManager_addConnectionIfNotExist( TestMQConnectionManager ):
   def test_success( self ):
     myInfo = {"MQConnector":None, "destination":[]}
-    result = self.myManager.addConnectionIfNotExist(connectionInfo = myInfo, mqServiceId = "baba.infn.it")
+    result = self.myManager.addConnectionIfNotExist(connectionInfo = myInfo, mqService = "baba.infn.it")
     self.assertEqual(result, myInfo)
 
   def test_success_existingConnection( self ):
     myInfo = {"MQConnector":None, "destination":[]}
-    result = self.myManager.addConnectionIfNotExist(connectionInfo = myInfo, mqServiceId = "testdir.blabla.ch")
+    result = self.myManager.addConnectionIfNotExist(connectionInfo = myInfo, mqService = "testdir.blabla.ch")
     dest = {"name":"/queue/test3", "publishers":1, "subscribers":[2,3,4]}
     expected_conn = {"MQConnector":None, "destinations":[dest]}
     self.assertEqual(result, expected_conn)

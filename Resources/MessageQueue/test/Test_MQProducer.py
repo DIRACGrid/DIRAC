@@ -44,6 +44,12 @@ class TestMQProducer_put( TestMQProducer):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], "FakeMQConnection sending message: wow! to: /queue/FakeQueue")
 
+  def test_failure( self ):
+    producer = MQProducer(mqManager = self.myManager, mqURI  = "bad.cern.ch::Queue::FakeQueue")
+    result = producer.put("wow!")
+    self.assertFalse(result['OK'])
+    #todo add proper error 
+
 class TestMQProducer_close( TestMQProducer):
   def test_success( self ):
     producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue")
