@@ -8,6 +8,7 @@ import datetime
 import copy
 import errno
 import threading
+import sys
 
 # # from DIRAC
 from DIRAC import gLogger, gConfig, siteName
@@ -24,6 +25,7 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 __RCSID__ = "$Id$"
 
@@ -151,6 +153,7 @@ class StorageElementItem( object ):
       self.vo = result['Value']
     self.opHelper = Operations( vo = self.vo )
 
+    # These things will soon have to go as well. 'AccessProtocol.1' is all but flexible.
     proxiedProtocols = gConfig.getValue( '/LocalSite/StorageElements/ProxyProtocols', "" ).split( ',' )
     self.useProxy = ( gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "UnknownProtocol" )
                  in proxiedProtocols )
@@ -165,6 +168,7 @@ class StorageElementItem( object ):
       res = StorageFactory( useProxy = self.useProxy, vo = self.vo ).getStorages( name, pluginList = [], hideExceptions = hideExceptions )
     else:
       res = StorageFactory( useProxy = self.useProxy, vo = self.vo ).getStorages( name, pluginList = plugins, hideExceptions = hideExceptions )
+
 
     if not res['OK']:
       self.valid = False
@@ -182,8 +186,25 @@ class StorageElementItem( object ):
       for storage in self.storages:
         storage.setStorageElement( self )
 
+
     self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
     self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
+    self.log.debug( "useCatalogURL: %s" % self.useCatalogURL )
+
+
+    self.__dmsHelper = DMSHelpers( vo = vo )
+
+    # Allow SE to overwrite general operation config
+    accessProto = self.options.get( 'AccessProtocols' )
+    self.localAccessProtocolList = accessProto if accessProto else self.__dmsHelper.getAccessProtocols()
+    self.log.debug( "localAccessProtocolList %s" % self.localAccessProtocolList )
+
+    writeProto = self.options.get( 'WriteProtocols' )
+    self.localWriteProtocolList = writeProto if writeProto else self.__dmsHelper.getWriteProtocols()
+    self.log.debug( "localWriteProtocolList %s" % self.localWriteProtocolList )
+
+
+
 
     #                         'getTransportURL',
     self.readMethods = [ 'getFile',
@@ -445,13 +466,32 @@ class StorageElementItem( object ):
     log.debug( errStr, "%s for %s" % ( reqStr, self.name ) )
     return S_ERROR( errStr )
 
+  def __getAllProtocols( self, protoType ):
+    """ Returns the list of all protocols for Input or Output
+        :param proto = InputProtocols or OutputProtocols
+    """
+    return set( reduce( lambda x, y:x + y, [plugin.protocolParameters[protoType]  for plugin in self.storages ] ) )
+
+
+  def _getAllInputProtocols( self ):
+    """ Returns all the protocols supported by the SE for Input
+    """
+    return self.__getAllProtocols( 'InputProtocols' )
+
+  def _getAllOutputProtocols( self ):
+    """ Returns all the protocols supported by the SE for Output
+    """
+    return self.__getAllProtocols( 'OutputProtocols' )
+
+
+
   def negociateProtocolWithOtherSE( self, sourceSE, protocols = None ):
     """ Negotiate what protocol could be used for a third party transfer
         between the sourceSE and ourselves. If protocols is given,
         the chosen protocol has to be among those
 
         :param sourceSE : storageElement instance of the sourceSE
-        :param protocols: protocol restriction list
+        :param protocols: ordered protocol restriction list
 
         :return: a list protocols that fits the needs, or None
 
@@ -461,18 +501,31 @@ class StorageElementItem( object ):
     if self.useProxy:
       return S_OK( [] )
 
-    # We should actually separate source and destination protocols
-    # For example, an SRM can get as a source an xroot or gsiftp url...
-    # but with the current implementation, we get only srm
+    log = self.log.getSubLogger( 'negociateProtocolWithOtherSE', child = True )
 
-    destProtocols = set( [destStorage.protocolParameters['Protocol'] for destStorage in self.storages] )
-    sourceProtocols = set( [sourceStorage.protocolParameters['Protocol'] for sourceStorage in sourceSE.storages] )
+    log.debug( "Negociating protocols between %s and %s (protocols %s)" % ( sourceSE.name, self.name, protocols ) )
+
+
+    # Take all the protocols the destination can accept as input
+    destProtocols = self._getAllInputProtocols()
+
+    log.debug( "Destination input protocols %s" % destProtocols )
+
+    # Take all the protocols the source can provide
+    sourceProtocols = sourceSE._getAllOutputProtocols()
+
+    log.debug( "Source output protocols %s" % sourceProtocols )
 
     commonProtocols = destProtocols & sourceProtocols
 
+    # If a restriction list is defined
+    # take the intersection, and sort the commonProtocols
+    # based on the protocolList order
     if protocols:
-      protocols = set( list( protocols ) ) if protocols else set()
-      commonProtocols = commonProtocols & protocols
+      protocolList = list( protocols )
+      commonProtocols = sorted( commonProtocols & set( protocolList ), key = lambda x : self.__getIndexInList( x, protocolList ) )
+
+    log.debug( "Common protocols %s" % commonProtocols )
 
     return S_OK( list( commonProtocols ) )
 
@@ -552,6 +605,9 @@ class StorageElementItem( object ):
     self.log.getSubLogger( 'getURL' ).verbose( "Getting accessUrl %s for lfn in %s." % ( "(%s)" % protocol if protocol else "", self.name ) )
 
     if not protocol:
+      # This turlProtocols seems totally useless.
+      # Get ride of it when gfal2 is totally ready
+      # and replace it with the localAccessProtocol list
       protocols = self.turlProtocols
     elif isinstance( protocol, list ):
       protocols = protocol
@@ -580,7 +636,7 @@ class StorageElementItem( object ):
       self.__fileCatalog = FileCatalog( vo = self.vo )
     return self.__fileCatalog
 
-  def __generateURLDict( self, lfns, storage, replicaDict = {} ):
+  def __generateURLDict( self, lfns, storage, replicaDict = None ):
     """ Generates a dictionary (url : lfn ), where the url are constructed
         from the lfn using the constructURLFromLFN method of the storage plugins.
         :param: lfns : dictionary {lfn:whatever}
@@ -588,6 +644,9 @@ class StorageElementItem( object ):
     """
     log = self.log.getSubLogger( "__generateURLDict" )
     log.verbose( "generating url dict for %s lfn in %s." % ( len( lfns ), self.name ) )
+
+    if not replicaDict:
+      replicaDict = {}
 
     urlDict = {}  # url : lfn
     failed = {}  # lfn : string with errors
@@ -627,6 +686,116 @@ class StorageElementItem( object ):
 #     res['Failed'] = failed
     return res
 
+  @staticmethod
+  def __getIndexInList( x, l ):
+    """ Return the index of the element x in the list l
+        or sys.maxint if it does not exist
+
+        :param x: element to look for
+        :param l: list to look int
+
+        :return: the index or sys.maxint
+    """
+    try:
+      return l.index( x )
+    except ValueError:
+      return sys.maxint
+
+  def __filterPlugins( self, methodName, protocols = None, inputProtocol = None ):
+    """ Determine the list of plugins that
+        can be used for a particular action
+
+        Args:
+          method(str): method to execute
+          protocols(list): specific protocols might be requested
+          inputProtocol(str): in case the method is putFile, this specifies
+                              the protocol given as source
+
+       Returns:
+         list: list of storage plugins
+    """
+
+    log = self.log.getSubLogger( '__filterPlugins', child = True )
+
+    log.debug( "Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" % ( methodName, protocols, inputProtocol ) )
+
+    if isinstance( protocols, basestring ):
+      protocols = [protocols]
+
+    pluginsToUse = []
+
+    potentialProtocols = []
+    allowedProtocols = []
+
+    if methodName in self.readMethods + self.checkMethods:
+      allowedProtocols = self.localAccessProtocolList
+    elif methodName in self.removeMethods + self.writeMethods :
+      allowedProtocols = self.localWriteProtocolList
+    else:
+      # OK methods
+      # If a protocol or protocol list is specified, we only use the plugins that
+      # can generate such protocol
+      # otherwise we return them all
+      if protocols:
+        setProtocol = set( protocols )
+        for plugin in self.storages:
+          if set( plugin.protocolParameters.get( "OutputProtocols", [] ) ) & setProtocol:
+            log.debug( "Plugin %s can generate compatible protocol" % plugin.pluginName )
+            pluginsToUse.append( plugin )
+      else:
+        pluginsToUse = self.storages
+
+      # The closest list for "OK" methods is the AccessProtocol preference, so we sort based on that
+      pluginsToUse.sort( key = lambda x: self.__getIndexInList( x.protocolParameters['Protocol'] , self.localAccessProtocolList ) )
+      log.debug( "Plugins to be used for %s: %s" % ( methodName, [p.pluginName for p in pluginsToUse] ) )
+      return pluginsToUse
+
+    log.debug( "Allowed protocol: %s" % allowedProtocols )
+
+    # if a list of protocol is specified, take it into account
+    if protocols:
+      potentialProtocols = list( set( allowedProtocols ) & set( protocols ) )
+    else:
+      potentialProtocols = allowedProtocols
+
+    log.debug( 'Potential protocols %s' % potentialProtocols )
+
+    localSE = self.__isLocalSE()['Value']
+
+    for plugin in self.storages:
+      # Determine whether to use this storage object
+      pluginParameters = plugin.getParameters()
+      pluginName = pluginParameters.get( 'PluginName' )
+
+      if not pluginParameters:
+        log.debug( "Failed to get storage parameters.", "%s %s" % ( self.name, pluginName ) )
+        continue
+
+      if not ( pluginName in self.remotePlugins ) and not localSE and not pluginName == "Proxy":
+        # If the SE is not local then we can't use local protocols
+        log.debug( "Local protocol not appropriate for remote use: %s." % pluginName )
+        continue
+
+      if pluginParameters['Protocol'] not in potentialProtocols:
+        log.debug( "Plugin %s not allowed for %s." % ( pluginName, methodName ) )
+        continue
+
+      # If we are attempting a putFile and we know the inputProtocol
+      if methodName == 'putFile' and inputProtocol:
+        if inputProtocol not in pluginParameters['InputProtocols']:
+          log.debug( "Plugin %s not appropriate for %s protocol as input." % ( pluginName, inputProtocol ) )
+          continue
+
+      pluginsToUse.append( plugin )
+
+    # sort the plugins according to the lists in the CS
+    pluginsToUse.sort( key = lambda x: self.__getIndexInList( x.protocolParameters['Protocol'] , allowedProtocols ) )
+
+    log.debug( "Plugins to be used for %s: %s" % ( methodName, [p.pluginName for p in pluginsToUse] ) )
+
+    return pluginsToUse
+
+
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName
@@ -636,6 +805,9 @@ class StorageElementItem( object ):
         :returns S_OK( { 'Failed': {lfn : reason} , 'Successful': {lfn : value} } )
                 The Failed dict contains the lfn only if the operation failed on all the storages
                 The Successful dict contains the value returned by the successful storages.
+
+        A special kwargs is 'inputProtocol', which can be specified for putFile. It describes
+        the protocol used as source protocol, since there is in principle only one.
     """
 
 
@@ -686,24 +858,28 @@ class StorageElementItem( object ):
     else:
       if not self.valid:
         return S_ERROR( self.errorReason )
+    # In case executing putFile, we can assume that all the source urls
+    # are from the same protocol. This optional parameter, if defined
+    # can be used to ignore some storage plugins and thus save time
+    # and avoid fake failures showing in the accounting
+    inputProtocol = kwargs.pop( 'inputProtocol', None )
+
 
     successful = {}
     failed = {}
-    localSE = self.__isLocalSE()['Value']
+    filteredPlugins = self.__filterPlugins( self.methodName, kwargs.get( 'protocols' ), inputProtocol )
+    if not filteredPlugins:
+      return S_ERROR( errno.EPROTONOSUPPORT, "No storage plugins matching the requirements\
+                                           (operation %s protocols %s inputProtocol %s)"\
+                                            % ( self.methodName, kwargs.get( 'protocols' ), inputProtocol ) )
     # Try all of the storages one by one
-    for storage in self.storages:
+    for storage in filteredPlugins:
       # Determine whether to use this storage object
       storageParameters = storage.getParameters()
-      if not storageParameters:
-        log.debug( "Failed to get storage parameters.", "%s %s" % ( self.name, res['Message'] ) )
-        continue
       pluginName = storageParameters['PluginName']
+
       if not lfnDict:
         log.debug( "No lfns to be attempted for %s protocol." % pluginName )
-        continue
-      if not ( pluginName in self.remotePlugins ) and not localSE and not storage.pluginName == "Proxy":
-        # If the SE is not local then we can't use local protocols
-        log.debug( "Local protocol not appropriate for remote use: %s." % pluginName )
         continue
 
       log.verbose( "Generating %s protocol URLs for %s." % ( len( lfnDict ), pluginName ) )

@@ -315,10 +315,9 @@ class FileHelper:
     if compress:
       tarMode = "w|bz2"
 
-    tar = tarfile.open( name = "Pipe", mode = tarMode, fileobj = filePipe )
-    for entry in fileList:
-      tar.add( os.path.realpath( entry ), os.path.basename( entry ), recursive = True )
-    tar.close()
+    with tarfile.open( name = "Pipe", mode = tarMode, fileobj = filePipe ) as tar:
+      for entry in fileList:
+        tar.add( os.path.realpath( entry ), os.path.basename( entry ), recursive = True )
     if autoClose:
       try:
         filePipe.close()
@@ -359,10 +358,9 @@ class FileHelper:
     tarMode = "r|*"
     if compress:
       tarMode = "r|bz2"
-    tar = tarfile.open( mode = tarMode, fileobj = filePipe )
-    for tarInfo in tar:
-      tar.extract( tarInfo, destDir )
-    tar.close()
+    with tarfile.open( mode = tarMode, fileobj = filePipe ) as tar:
+      for tarInfo in tar:
+        tar.extract( tarInfo, destDir )
     try:
       filePipe.close()
     except:
@@ -394,10 +392,9 @@ class FileHelper:
       if compress:
         tarMode = "r|bz2"
       entries = []
-      tar = tarfile.open( mode = tarMode, fileobj = filePipe )
-      for tarInfo in tar:
-        entries.append( tarInfo.name )
-      tar.close()
+      with tarfile.open( mode = tarMode, fileobj = filePipe ) as tar:
+        for tarInfo in tar:
+          entries.append( tarInfo.name )
       filePipe.close()
       return S_OK( entries )
     except tarfile.ReadError, v:

@@ -183,6 +183,7 @@ class FileStorage( StorageBase ):
       except ( OSError, IOError ) as ose:
         failed[dest_url] = str( ose )
 
+
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
 
