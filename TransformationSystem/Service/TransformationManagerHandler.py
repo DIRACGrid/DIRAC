@@ -315,9 +315,21 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.getFileSummary( lfns )
     return self._parseRes( res )
 
+  types_addDirectory = [basestring]
+  def export_addDirectory( self, path, force = False ):
+    res = database.addDirectory( path, force = force )
+    return self._parseRes( res )
+
   types_exists = [list]
   def export_exists( self, lfns ):
     res = database.exists( lfns )
+    return self._parseRes( res )
+
+  types_addFile = [ [ list, dict, basestring] ]
+  def export_addFile( self, fileDicts, force = False ):
+    """ Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
+    """
+    res = database.addFile( fileDicts, force = force )
     return self._parseRes( res )
 
   types_removeFile = [[list,dict]]
@@ -329,10 +341,13 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.removeFile( lfns )
     return self._parseRes( res )
 
-  types_getFilters = []
-  def export_getFilters( self ):
-    res = database.filters
-    return S_OK( res )
+  types_setMetadata = [ [ list, dict, basestring], dict ]
+  def export_setMetadata( self, path, querydict ):
+    """ Set metadata to a file or to a directory (path)
+    """
+    res = database.setMetadata( path, querydict )
+    return self._parseRes( res )
+
 
   ####################################################################
   #
