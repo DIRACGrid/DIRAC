@@ -18,7 +18,7 @@ def executeRabbitmqctl(arg, *argv):
     argv(list): optional list of string parameters.
   Returns:
     S_OK:
-    Derror:
+    S_ERROR:
 
   """
   command =['sudo','/usr/sbin/rabbitmqctl','-q', arg] + list(argv)
