@@ -40,7 +40,7 @@ def getComponentSection (componentName, componentTuple = False, setup = False, c
                         e.g. 'WorkloadManagement/SandboxStoreHandler'
     componentTuple
     setup(str): Name of the setup.
-    componentCategory(str): Category of the component, it can be: 'Agents', 'Services', 'Executors', 'Consumers'
+    componentCategory(str): Category of the component, it can be: 'Agents', 'Services', 'Executors'
                             or 'Databases'.
 
   Returns:
@@ -56,9 +56,6 @@ def getComponentSection (componentName, componentTuple = False, setup = False, c
     componentTuple = divideFullName( componentName )
   systemSection = getSystemSection( componentName, componentTuple, setup = setup )
   return "%s/%s/%s" % ( systemSection,componentCategory,  componentTuple[1] )
-
-def getConsumerSection(consumerName, consumerTuple = False, setup = False):
-  return getComponentSection(consumerName, consumerTuple, setup , "Consumers")
 
 def getServiceSection( serviceName, serviceTuple = False, setup = False ):
   return getComponentSection(serviceName, serviceTuple, setup , "Services")
