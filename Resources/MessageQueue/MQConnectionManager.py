@@ -3,11 +3,21 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.MessageQueue.Utilities import getMQService
+from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress
 
 from DIRAC.Core.Utilities  import ObjectLoader
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.DErrno import EMQUKN
 
+import collections
+def update(d, u):
+    for k, v in u.iteritems():
+        if isinstance(v, collections.Mapping):
+            r = update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
 
 def getSpecializedMQConnector(mqType):
   subClassName = mqType + 'MQConnector'
@@ -67,17 +77,6 @@ class MQConnectionManager(object):
     finally:
       self.lock.release()
 
-  def addConnectionIfNotExist(self, connectionInfo, mqService):
-    self.lock.acquire()
-    try:
-      if not mqService in self._connectionStorage:
-        print "add connection"
-        self._connectionStorage[mqService] = connectionInfo
-      else :
-        print "connection already exists"
-      return self._connectionStorage[mqService]
-    finally:
-      self.lock.release()
 
   def deleteConnection(self, mqServiceId):
     """docstring for deleteConnection"""
@@ -93,27 +92,38 @@ class MQConnectionManager(object):
     finally:
       self.lock.release()
 
-  def updateConnection(self, mqServiceId, destInfoToAdd):
+  def updateConnection(self, mqURI, messangerType):
     """docstring for updateConnection"""
     self.lock.acquire()
     try:
-      res = self._connectionStorage.get(mqServiceId,  None)
-      return res
+      messangerList = self.getConnection(getMQService(mqURI)).get("destinations",{}).get(getDestinationAddress(mqURI),{}).get(messangerType,[])
+      messangerId = 1
+      if messangerList:
+        messangerId =  max(messangerList) + 1
+      self.getConnection(getMQService(mqURI)).get("destinations",{}).get(getDestinationAddress(mqURI),{}).get(messangerType,[]).append(messangerId)
+      return messangerId
     finally:
       self.lock.release()
 
   def addConnection(self, mqURI, connector, messangerType):
-    return 1
+    self.lock.acquire()
+    try:
+      messangers = {"producers":[], "consumers":[]}
+      messangers.get(messangerType, []).append(1)
+      conn = {"MQConnector":connector, "destinations":{getDestinationAddress(mqURI):messangers}}
+      self._connectionStorage.update({getMQService(mqURI):conn})
+      return 1 # it is first messanger so we return his id  = 1
+    finally:
+      self.lock.release()
+
 
   def addOrUpdateConnection(self, mqURI, params, messangerType):
     self.lock.acquire()
     try:
       if self.connectionExist(getMQService(mqURI)):
-        return self.updateConnection(mqURI, messangerType)
+        return self.updateConnection(mqURI = mqURI, messangerType = messangerType)
       else:
         connector = createMQConnector(parameters = params)
-        messangerId = self.addConnection(mqURI, connector, messangerType)
-        #connector.start()
-        return messangerId
+        return self.addConnection(mqURI = mqURI, connector = connector, messangerType = messangerType)
     finally:
       self.lock.release()
