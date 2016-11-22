@@ -1,3 +1,28 @@
+[v6r16p2]
+
+*Configuration
+CHANGE: VOMS2CSAgent - remove user DNs which are no more in VOMS. Fixes #3130
+
+*Monitoring
+CHANGE: WMSHistory - added user, jobgroup and usergroup selection keys
+
+*DMS
+FIX: DataManager - retry checksum calculation on putAndRegister, pass checksum to the DataManager
+     object in the FailoverTransfer object.
+FIX: DatasetManager, FileCatalogClientCLI - bug fixes in the dataset management and commands      
+     
+*WMS
+CHANGE: JobManager - added 'Killed' to list of jobs status that can be deleted     
+
+[v6r16p1]
+
+*Monitoring
+CHANGE: MonitorinDB - allow to use more than one filter condition
+
+*WMS
+CHANGE: StalledJobAgent - send a kill signal to the job before setting it Failed. This should 
+        prevent jobs to continue running after they have been found Stalled and then Failed.
+
 [v6r16]
 
 *Core
@@ -33,6 +58,16 @@ NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 NEW: SudoComputingElement - computing element to execute payload with a sudo to a dedicated
      UNIX account     
+
+[v6r15p24]
+
+*Resources
+CHANGE: HTCondorCE - added option to use remote scheduler daemon
+
+[v6r15p23]
+
+*DMS
+FIX: dirac-dms-find-lfns - fixed bug causing generl script failure
 
 [v6r15p22]
 
