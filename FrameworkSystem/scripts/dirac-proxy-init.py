@@ -200,6 +200,10 @@ class ProxyInit:
     if newestFTime > ( time.time() - ( 28 * 24 * 3600 ) ):
       # At least one of the files has been updated in the last 28 days
       return S_OK()
+    if not os.access(caDir, os.W_OK):
+      gLogger.error("Your CRLs appear to be outdated, but you have no access to update them.")
+      # Try to continue anyway...
+      return S_OK()
     # Update the CAs & CRLs
     gLogger.notice( "Your CRLs appear to be outdated; attempting to update them..." )
     bdc = BundleDeliveryClient()
