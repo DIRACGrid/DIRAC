@@ -19,7 +19,7 @@ def createProducer(mqURI):
   if not result['OK']:
     gLogger.error( 'Failed to createProducer:', '%s' % (result['Message'] ) )
     return result
-  return MQProducer(mqManager = connectionManager, mqURI  = mqURI)
+  return MQProducer(mqManager = connectionManager, mqURI  = mqURI, producerId = result['Value'])
 
 
 def setupConnection(mqURI, messangerType):

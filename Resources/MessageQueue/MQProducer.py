@@ -7,11 +7,11 @@ from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress, getMQS
 
 
 class MQProducer ( object ):
-  def __init__(self, mqManager, mqURI):
+  def __init__(self, mqManager, mqURI, producerId):
     self._connectionManager = mqManager
     self._mqURI = mqURI
     self._destination = getDestinationAddress(self._mqURI)
-    self._id = 1
+    self._id = producerId
 
 
   def put(self, msg):
@@ -19,17 +19,8 @@ class MQProducer ( object ):
     if conn:
       return conn.put(message = msg, destination = self._destination)
     else:
-      print "some error with connector"
-      #to change
-      return S_ERROR("")
+      return S_ERROR("No connection available")
 
   def close(self):
-    conn =  self._connectionManager.getConnector(getMQService(self._mqURI))
-    if conn:
-      #we should unsubscribe from connectionManager messangerType and Id?
-      return conn.disconnect()
-    else:
-      print "some error with connector"
-      #to change
-      return S_ERROR("")
+    return self._connectionManager.closeConnection(mqURI = self._mqURI, messangerId = self._id, messangerType = "producers")
 

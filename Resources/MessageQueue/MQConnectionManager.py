@@ -11,14 +11,6 @@ from DIRAC.Core.Utilities.DErrno import EMQUKN
 from itertools import chain
 
 import collections
-def update(d, u):
-    for k, v in u.iteritems():
-        if isinstance(v, collections.Mapping):
-            r = update(d.get(k, {}), v)
-            d[k] = r
-        else:
-            d[k] = u[k]
-    return d
 
 def getSpecializedMQConnector(mqType):
   subClassName = mqType + 'MQConnector'
@@ -123,7 +115,8 @@ class MQConnectionManager(object):
         self.getDestination(mqService = getMQService(mqURI), mqDestinationAddress = getDestinationAddress(mqURI)).update(messangers)
       messangerList = self.getAllMessangersIds(mqService = getMQService(mqURI))
       if not messangerList:
-        return self.deleteConnection(getMQService(mqURI))
+         self.getConnector(getMQService(mqURI)).disconnect()
+         self.deleteConnection(getMQService(mqURI))
       return S_OK()
     finally:
       self.lock.release()
@@ -134,9 +127,14 @@ class MQConnectionManager(object):
     try:
       if self.connectionExist(getMQService(mqURI)):
         return self.updateConnection(mqURI = mqURI, messangerType = messangerType)
-      else:
-        connector = createMQConnector(parameters = params)
-        return self.addConnection(mqURI = mqURI, connector = connector, messangerType = messangerType)
+      result = createMQConnector(parameters = params)
+      if not result['OK']:
+        return result
+      connector = result['Value']
+      result = connector.setupConnection(parameters = params)
+      if not result['OK']:
+        return result
+      return self.addConnection(mqURI = mqURI, connector = connector, messangerType = messangerType)
     finally:
       self.lock.release()
 
