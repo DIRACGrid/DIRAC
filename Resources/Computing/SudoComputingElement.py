@@ -118,7 +118,7 @@ class SudoComputingElement( ComputingElement ):
                         callbackFunction = self.sendOutput )
 
     # Run the executable (the wrapper in fact)
-    cmd = "/usr/bin/sudo -u %s PATH=$PATH DIRACSYSCONFIG=/scratch/%s/pilot.cfg LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH X509_USER_PROXY=/tmp/x509up_u%d sh -c '%s'" % ( payloadUsername, os.environ['USER'], payloadUID, executableFile )
+    cmd = "/usr/bin/sudo -u %s PATH=$PATH DIRACSYSCONFIG=/scratch/%s/pilot.cfg LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH X509_CERT_DIR=$X509_CERT_DIR X509_USER_PROXY=/tmp/x509up_u%d sh -c '%s'" % ( payloadUsername, os.environ['USER'], payloadUID, executableFile )
     self.log.info( 'CE submission command is: %s' % cmd )
     result = shellCall( 0, cmd, callbackFunction = self.sendOutput )
     if not result['OK']:
