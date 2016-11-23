@@ -8,6 +8,7 @@ from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress
 from DIRAC.Core.Utilities  import ObjectLoader
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.DErrno import EMQUKN
+from itertools import chain
 
 import collections
 def update(d, u):
@@ -62,45 +63,36 @@ class MQConnectionManager(object):
     return self._lock
 
 
-  def connectionExist(self, mqService):
-    return mqService in self._connectionStorage
 
-  def getConnection(self, mqService):
-    """docstring for getConnection"""
-    return self._connectionStorage.get(mqService, None)
-
-  def getConnector(self, mqService):
-    """docstring for getConnector"""
-    self.lock.acquire()
-    try:
-      return self._connectionStorage.get(mqService, {}).get("MQConnector", None)
-    finally:
-      self.lock.release()
-
-
-  def deleteConnection(self, mqServiceId):
+  def deleteConnection(self, mqService):
     """docstring for deleteConnection"""
     self.lock.acquire()
     try:
-      if mqServiceId in self._connectionStorage:
-        if self._connectionStorage[mqServiceId]['MQConnector']:
-          self._connectionStorage[mqServiceId]['MQConnector'].disconnect()
-        self._connectionStorage.pop(mqServiceId)
-        return True
+      if mqService in self._connectionStorage:
+        #if self._connectionStorage[mqService]['MQConnector']:
+          #self._connectionStorage[mqService]['MQConnector'].disconnect()
+        self._connectionStorage.pop(mqService)
+        return S_OK()
       else:
-        return False
+        return S_ERROR()
     finally:
       self.lock.release()
+
 
   def updateConnection(self, mqURI, messangerType):
     """docstring for updateConnection"""
     self.lock.acquire()
     try:
-      messangerList = self.getConnection(getMQService(mqURI)).get("destinations",{}).get(getDestinationAddress(mqURI),{}).get(messangerType,[])
+      messangerList = self.getMessangers(mqService = getMQService(mqURI),
+                                        mqDestinationAddress =  getDestinationAddress(mqURI),
+                                        messangerType = messangerType)
       messangerId = 1
       if messangerList:
         messangerId =  max(messangerList) + 1
-      self.getConnection(getMQService(mqURI)).get("destinations",{}).get(getDestinationAddress(mqURI),{}).get(messangerType,[]).append(messangerId)
+      self.addMessanger(mqService = getMQService(mqURI),
+                        mqDestinationAddress =  getDestinationAddress(mqURI),
+                        messangerType = messangerType,
+                        messangerId = messangerId)
       return messangerId
     finally:
       self.lock.release()
@@ -117,6 +109,26 @@ class MQConnectionManager(object):
       self.lock.release()
 
 
+  def closeConnection(self, mqURI, messangerId, messangerType):
+    """Its not really closing connection but more closing it for a given producer
+    """
+    self.lock.acquire()
+    try:
+      messangers = self.getMessangersOfAllTypes(getMQService(mqURI), getDestinationAddress(mqURI))
+      messangersNew = [m for m in messangers.get(messangerType,[]) if m != messangerId]
+      messangers.update({messangerType:messangersNew})
+      if not [m for mType in ["consumers", "producers"]  for m in messangers.get(mType, [])]:
+        self.getDestinations(mqService = getMQService(mqURI)).pop(getDestinationAddress(mqURI))
+      else:
+        self.getDestination(mqService = getMQService(mqURI), mqDestinationAddress = getDestinationAddress(mqURI)).update(messangers)
+      messangerList = self.getAllMessangersIds(mqService = getMQService(mqURI))
+      if not messangerList:
+        return self.deleteConnection(getMQService(mqURI))
+      return S_OK()
+    finally:
+      self.lock.release()
+
+
   def addOrUpdateConnection(self, mqURI, params, messangerType):
     self.lock.acquire()
     try:
@@ -127,3 +139,44 @@ class MQConnectionManager(object):
         return self.addConnection(mqURI = mqURI, connector = connector, messangerType = messangerType)
     finally:
       self.lock.release()
+
+
+  #some helper functions
+
+  def getAllMessangersIds(self, mqService):
+    self.lock.acquire()
+    try:
+      return [ mId for dest in self.getDestinations(mqService = mqService).keys() for mType in ['consumers', 'producers'] for mId in self.getMessangers(mqService = mqService, mqDestinationAddress = dest, messangerType = mType) ]
+    finally:
+      self.lock.release()
+
+  def getAllFullMessangersIds(self, mqService):
+    messangerList = [ dest + '/'+ mType+ '/'+ str(messanger_id)  for dest in self.getDestinations(mqService = mqService).keys() for mType in ['consumers', 'producers'] for messanger_id in self.getMessangers(mqService = mqService, mqDestinationAddress = dest, messangerType = mType) ]
+    print messangerList
+
+  def getConnection(self, mqService):
+    """docstring for getConnection"""
+    return self._connectionStorage.get(mqService, None)
+
+  def getDestinations(self, mqService):
+    """docstring for getDestinations"""
+    return self.getConnection(mqService).get("destinations",{})
+
+  def getDestination(self, mqService, mqDestinationAddress):
+    return self.getDestinations(mqService = mqService).get(mqDestinationAddress,{})
+
+  def getMessangersOfAllTypes(self, mqService, mqDestinationAddress):
+    return self.getDestination(mqService = mqService, mqDestinationAddress = mqDestinationAddress)
+
+  def getMessangers(self, mqService, mqDestinationAddress, messangerType):
+    return self.getMessangersOfAllTypes(mqService = mqService, mqDestinationAddress = mqDestinationAddress).get(messangerType,[])
+
+  def addMessanger(self, mqService, mqDestinationAddress, messangerType, messangerId):
+    return self.getMessangers(mqService = mqService, mqDestinationAddress =  mqDestinationAddress, messangerType = messangerType).append(messangerId)
+
+  def connectionExist(self, mqService):
+    return mqService in self._connectionStorage
+
+  def getConnector(self, mqService):
+    """docstring for getConnector"""
+    return self._connectionStorage.get(mqService, {}).get("MQConnector", None)
