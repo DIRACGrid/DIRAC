@@ -13,10 +13,7 @@ import stat
 import types
 import shutil
 import ssl
-try:
-  import hashlib as md5
-except ImportError:
-  import md5
+import hashlib
 
 __RCSID__ = "$Id$"
 
@@ -324,7 +321,7 @@ class ReleaseConfig( object ):
       md5Data = urlretrieveTimeout( urlcfg[:-4] + ".md5", timeout = 60 )
       md5Hex = md5Data.strip()
       #md5File.close()
-      if md5Hex != md5.md5( cfgData ).hexdigest():
+      if md5Hex != hashlib.md5( cfgData ).hexdigest():
         return S_ERROR( "Hash check failed on %s" % urlcfg )
     except Exception, excp:
       return S_ERROR( "Hash check failed on %s: %s" % ( urlcfg, excp ) )
@@ -906,7 +903,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
     md5Expected = fd.read().strip()
     fd.close()
     #Calculate md5
-    md5Calculated = md5.md5()
+    md5Calculated = hashlib.md5()
     fd = open( os.path.join( cliParams.targetPath, tarName ), "r" )
     buf = fd.read( 4096 )
     while buf:
