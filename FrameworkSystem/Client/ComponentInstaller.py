@@ -252,11 +252,11 @@ class ComponentInstaller( object ):
     else:
       self.mysqlUser = 'Dirac'
 
-    self.noSQLPassword = self.localCfg.getOption( cfgInstallPath( 'noSQLDatabase', 'Password' ), self.noSQLPassword )
+    self.noSQLPassword = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'Password' ), self.noSQLPassword )
     if verbose and self.noSQLPassword:
       gLogger.notice( 'Reading %s NoSQL Password from local configuration ' % self.noSQLUser )
 
-    self.noSQLHost = self.localCfg.getOption( cfgInstallPath( 'noSQLDatabase', 'Host' ), '' )
+    self.noSQLHost = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'Host' ), '' )
     if self.noSQLHost:
       if verbose:
         gLogger.notice( 'Using NoSQL Host from local configuration', self.noSQLHost )
@@ -264,7 +264,7 @@ class ComponentInstaller( object ):
       # if it is not defined use the same as for dirac services
       self.noSQLHost = self.host
 
-    self.noSQLPort = self.localCfg.getOption( cfgInstallPath( 'noSQLDatabase', 'Port' ), 0 )
+    self.noSQLPort = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'Port' ), 0 )
     if self.noSQLPort:
       if verbose:
         gLogger.notice( 'Using NoSQL Port from local configuration ', self.noSQLPort )
@@ -1691,7 +1691,7 @@ class ComponentInstaller( object ):
 
     if self.mysqlPassword:
       if not self._addMySQLToDiracCfg():
-        error = 'Failed to add MySQL user password to local configuration'
+        error = 'Failed to add MySQL user/password to local configuration'
         if self.exitOnError:
           gLogger.error( error )
           DIRAC.exit( -1 )
@@ -1699,7 +1699,7 @@ class ComponentInstaller( object ):
 
     if self.noSQLPassword:
       if not self._addNoSQLToDiracCfg():
-        error = 'Failed to add MySQL user password to local configuration'
+        error = 'Failed to add NoSQL user/password to local configuration'
         if self.exitOnError:
           gLogger.error( error )
           DIRAC.exit( -1 )
