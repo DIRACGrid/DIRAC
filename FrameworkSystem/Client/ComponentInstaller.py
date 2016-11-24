@@ -196,40 +196,41 @@ class ComponentInstaller( object ):
     self.mysqlRootPwd = self.localCfg.getOption( cfgInstallPath( 'Database', 'RootPwd' ), self.mysqlRootPwd )
     if verbose and self.mysqlRootPwd:
       gLogger.notice( 'Reading Root MySQL Password from local configuration' )
+    else:
+      gLogger.warn( 'MySQL root password not found' )
 
     self.mysqlUser = self.localCfg.getOption( cfgInstallPath( 'Database', 'User' ), self.mysqlUser )
-    if self.mysqlUser:
-      if verbose:
-        gLogger.notice( 'Reading MySQL User from local configuration' )
+    if verbose and self.mysqlUser:
+      gLogger.notice( 'Reading MySQL User from local configuration' )
     else:
+      gLogger.warn( "Using 'Dirac' as MySQL user name" )
       self.mysqlUser = 'Dirac'
 
     self.mysqlPassword = self.localCfg.getOption( cfgInstallPath( 'Database', 'Password' ), self.mysqlPassword )
     if verbose and self.mysqlPassword:
       gLogger.notice( 'Reading %s MySQL Password from local configuration ' % self.mysqlUser )
+    else:
+      gLogger.warn( 'MySQL password not found' )
 
     self.mysqlHost = self.localCfg.getOption( cfgInstallPath( 'Database', 'Host' ), '' )
-    if self.mysqlHost:
-      if verbose:
-        gLogger.notice( 'Using MySQL Host from local configuration', self.mysqlHost )
+    if verbose and self.mysqlHost:
+      gLogger.notice( 'Using MySQL Host from local configuration', self.mysqlHost )
     else:
-      # if it is not defined use the same as for dirac services
+      gLogger.warn( 'Using the same host for MySQL as dirac services' )
       self.mysqlHost = self.host
 
     self.mysqlPort = self.localCfg.getOption( cfgInstallPath( 'Database', 'Port' ), 0 )
-    if self.mysqlPort:
-      if verbose:
-        gLogger.notice( 'Using MySQL Port from local configuration ', self.mysqlPort )
+    if verbose and self.mysqlPort:
+      gLogger.notice( 'Using MySQL Port from local configuration ', self.mysqlPort )
     else:
-      # if it is not defined use the default one
+      gLogger.warn( "Using port '3306' as MySQL port" )
       self.mysqlPort = 3306
 
     self.mysqlRootUser = self.localCfg.getOption( cfgInstallPath( 'Database', 'RootUser' ), '' )
-    if self.mysqlRootUser:
-      if verbose:
-        gLogger.notice( 'Using MySQL root user from local configuration ', self.mysqlRootUser )
+    if verbose and self.mysqlRootUser:
+      gLogger.notice( 'Using MySQL root user from local configuration ', self.mysqlRootUser )
     else:
-      # if it is not defined use root
+      gLogger.warn( "Using 'root' as root MySQL user" )
       self.mysqlRootUser = 'root'
 
     self.mysqlMode = self.localCfg.getOption( cfgInstallPath( 'Database', 'MySQLMode' ), '' )
@@ -246,37 +247,36 @@ class ComponentInstaller( object ):
 
     # Now some noSQL defaults
     self.noSQLUser = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'User' ), self.noSQLUser )
-    if self.noSQLUser:
-      # if verbose:
-        gLogger.notice( 'Reading NoSQL User from local configuration' )
+    if verbose and self.noSQLUser:
+      gLogger.notice( 'Reading NoSQL User from local configuration' )
     else:
-      gLogger.notice( 'Using default NoSQL User' )
+      gLogger.warn( 'Using default NoSQL User' )
       self.noSQLUser = 'Dirac'
 
     self.noSQLPassword = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'Password' ), self.noSQLPassword )
     if verbose and self.noSQLPassword:
       gLogger.notice( 'Reading %s NoSQL Password from local configuration ' % self.noSQLUser )
+    else:
+      gLogger.warn( 'NoSQL password not found' )
 
     self.noSQLHost = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'Host' ), '' )
-    if self.noSQLHost:
-      if verbose:
-        gLogger.notice( 'Using NoSQL Host from local configuration', self.noSQLHost )
+    if verbose and self.noSQLHost:
+      gLogger.notice( 'Using NoSQL Host from local configuration', self.noSQLHost )
     else:
-      # if it is not defined use the same as for dirac services
+      gLogger.warn( 'Using the same host for NoSQL as dirac services' )
       self.noSQLHost = self.host
 
     self.noSQLPort = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'Port' ), 0 )
-    if self.noSQLPort:
-      if verbose:
-        gLogger.notice( 'Using NoSQL Port from local configuration ', self.noSQLPort )
+    if verbose and self.noSQLPort:
+      gLogger.notice( 'Using NoSQL Port from local configuration ', self.noSQLPort )
     else:
-      # if it is not defined use the default one
+      gLogger.warn( 'Using the default port 9200' )
       self.noSQLPort = 9200
 
 
     # Now ready to insert components in the Component Monitoring DB
     self.monitoringClient = ComponentMonitoringClient()
-    if verbose and self.monitoringClient:
+    if verbose:
       gLogger.notice( 'Client configured for Component Monitoring' )
 
   def getInfo( self, extensions ):
