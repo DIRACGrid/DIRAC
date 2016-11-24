@@ -247,10 +247,11 @@ class ComponentInstaller( object ):
     # Now some noSQL defaults
     self.noSQLUser = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'User' ), self.noSQLUser )
     if self.noSQLUser:
-      if verbose:
+      # if verbose:
         gLogger.notice( 'Reading NoSQL User from local configuration' )
     else:
-      self.mysqlUser = 'Dirac'
+      gLogger.notice( 'Using default NoSQL User' )
+      self.noSQLUser = 'Dirac'
 
     self.noSQLPassword = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'Password' ), self.noSQLPassword )
     if verbose and self.noSQLPassword:
