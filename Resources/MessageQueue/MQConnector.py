@@ -1,5 +1,5 @@
 """
-Class for management of MQ communication 
+Class for management of MQ communication
 """
 
 import time
@@ -14,60 +14,61 @@ __RCSID__ = "$Id$"
 class MQConnectionError( Exception ):
   pass
 
+#disable pylint warning: abstract class not referenced
+#pylint: disable=R0921
 class MQConnector( object ):
   """
   Class for management of message queue connections
-  Allows to both send and receive messages from a queue
   """
 
-  def __init__( self, parameters = {} ):
+  def __init__( self, parameters = None ):
     """ Standard constructor
     """
 
   def setupConnection( self, parameters = None):
     """
-    Establishes a new non-blocking connection to the message queue
-
     :param dict parameters: dictionary with additional MQ parameters if any
-    :param func messageCallback: function to be called when a new message is received from the queue ( only receiver mode ).
-                                If not set, the defaultCallback method is used instead
     :return: S_OK/S_ERROR
     """
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def put( self, message, destination = None):
+  def put(self, message, parameters = None):
     """ Send message to a MQ server
 
     :param message: any json encodable structure
     :return: S_OK/S_ERROR
     """
-
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def get( self , destination = None):
+  def connect(self, parameters = None):
     """
-    Retrieves a message, if any, from the internal queue. This method is only valid
-    if the default behaviour for the message callback is being used.
-
-    :return: S_OK( message )/S_ERROR if there are no messages in the queue
+    :param dict parameters: dictionary with additional parameters if any
+    :return: S_OK/S_ERROR
     """
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def connect( self, parameters = None ):
-
-    raise NotImplementedError( 'This method should be implemented by child class' )
-
-  def disconnect( self ):
+  def disconnect(self, parameters = None):
     """
     Disconnects from the message queue server
+    :param dict parameters: dictionary with additional parameters if any
+    :return: S_OK/S_ERROR
     """
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def subscribe( self, parameters = None ):
+  def subscribe(self, parameters = None):
+    """
+    Subscribes to the message queue server
+    :param dict parameters: dictionary with additional parameters if any
+    :return: S_OK/S_ERROR
+    """
 
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def unsubscribe( self, parameters = None ):
-
+  def unsubscribe(self, parameters = None):
+    """
+    Subscribes to the message queue server
+    :param dict parameters: dictionary with additional parameters if any
+    :return: S_OK/S_ERROR
+    """
     raise NotImplementedError( 'This method should be implemented by child class' )
 

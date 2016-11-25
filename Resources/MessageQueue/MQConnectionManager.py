@@ -78,6 +78,9 @@ class MQConnectionManager(object):
       messangerList = self.getMessangers(mqService = getMQService(mqURI),
                                         mqDestinationAddress =  getDestinationAddress(mqURI),
                                         messangerType = messangerType)
+      print "oo"
+      print messangerList 
+      print "oo"
       messangerId = 1
       if messangerList:
         messangerId =  max(messangerList) + 1
@@ -85,7 +88,7 @@ class MQConnectionManager(object):
                         mqDestinationAddress =  getDestinationAddress(mqURI),
                         messangerType = messangerType,
                         messangerId = messangerId)
-      return messangerId
+      return S_OK(messangerId)
     finally:
       self.lock.release()
 
@@ -96,7 +99,12 @@ class MQConnectionManager(object):
       messangers.get(messangerType, []).append(1)
       conn = {"MQConnector":connector, "destinations":{getDestinationAddress(mqURI):messangers}}
       self._connectionStorage.update({getMQService(mqURI):conn})
-      return 1 # it is first messanger so we return his id  = 1
+      print "ee"
+      print messangerType 
+      print messangers
+      print self._connectionStorage
+      print "ee"
+      return S_OK(1) # it is first messanger so we return his id  = 1
     finally:
       self.lock.release()
 
@@ -134,6 +142,9 @@ class MQConnectionManager(object):
       result = connector.setupConnection(parameters = params)
       if not result['OK']:
         return result
+      result = connector.connect()
+      if not result['OK']:
+        return result
       return self.addConnection(mqURI = mqURI, connector = connector, messangerType = messangerType)
     finally:
       self.lock.release()
@@ -167,11 +178,18 @@ class MQConnectionManager(object):
     return self.getDestination(mqService = mqService, mqDestinationAddress = mqDestinationAddress)
 
   def getMessangers(self, mqService, mqDestinationAddress, messangerType):
-    return self.getMessangersOfAllTypes(mqService = mqService, mqDestinationAddress = mqDestinationAddress).get(messangerType,[])
+    return self.getMessangersOfAllTypes(mqService = mqService, mqDestinationAddress = mqDestinationAddress).get(messangerType,None)
 
   def addMessanger(self, mqService, mqDestinationAddress, messangerType, messangerId):
-    return self.getMessangers(mqService = mqService, mqDestinationAddress =  mqDestinationAddress, messangerType = messangerType).append(messangerId)
-
+    #if queue address key doesnt exist
+    if not self.getDestination(mqService = mqService, mqDestinationAddress = mqDestinationAddress):
+      self.getDestinations(mqService = mqService)[mqDestinationAddress] = {messangerType:[messangerId]}
+    #if messanger type list does not exist 
+    elif not self.getMessangers(mqService = mqService, mqDestinationAddress =  mqDestinationAddress, messangerType = messangerType): 
+      self.getDestination(mqService = mqService, mqDestinationAddress = mqDestinationAddress)[messangerType]=[messangerId]
+    else: 
+      self.getMessangers(mqService = mqService, mqDestinationAddress =  mqDestinationAddress, messangerType = messangerType).append(messangerId)
+  
   def connectionExist(self, mqService):
     return mqService in self._connectionStorage
 

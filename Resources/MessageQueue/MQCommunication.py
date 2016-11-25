@@ -15,7 +15,10 @@ connectionManager = MQConnectionManager()
   #return MQConsumer(conn = conn)
 
 def createProducer(mqURI):
-  result = setupConnection(mqURI = mqURI, messangerType = "producer")
+  #todo change it to producer
+  result = setupConnection(mqURI = mqURI, messangerType = "producers")
+  print mqURI
+  print connectionManager._connectionStorage
   if not result['OK']:
     gLogger.error( 'Failed to createProducer:', '%s' % (result['Message'] ) )
     return result
@@ -28,8 +31,9 @@ def setupConnection(mqURI, messangerType):
     gLogger.error( 'Failed to setupConnection:', '%s' % (result['Message'] ) )
     return result
   params = result['Value']
-  messangerId = connectionManager.addOrUpdateConnection(mqURI, params, messangerType)
-  return S_OK(messangerId)
+  print params
+  return connectionManager.addOrUpdateConnection(mqURI, params, messangerType)
+
 
 
 #Resources

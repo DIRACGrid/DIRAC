@@ -13,11 +13,10 @@ class MQProducer ( object ):
     self._destination = getDestinationAddress(self._mqURI)
     self._id = producerId
 
-
   def put(self, msg):
     conn =  self._connectionManager.getConnector(getMQService(self._mqURI))
     if conn:
-      return conn.put(message = msg, destination = self._destination)
+      return conn.put(message = msg, parameters = {'destination':self._destination})
     else:
       return S_ERROR("No connection available")
 

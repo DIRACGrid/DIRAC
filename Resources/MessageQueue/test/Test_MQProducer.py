@@ -12,11 +12,6 @@ class FakeMQConnector( MQConnector ):
   def __init__( self, params={} ):
     super( FakeMQConnector, self ).__init__()
 
-  def start( self):
-    return "FakeMQConnection started"
-
-  def stop(self):
-    return "FakeMQConnection stopped"
 
   def disconnect(self):
     return S_OK("FakeMQConnection disconnecting")
