@@ -6,11 +6,10 @@ from DIRAC.Resources.MessageQueue.Utilities import getMQService
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress
 
 from DIRAC.Core.Utilities  import ObjectLoader
-from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.DErrno import EMQUKN
-from itertools import chain
 
-import collections
+
+
 
 def getSpecializedMQConnector(mqType):
   subClassName = mqType + 'MQConnector'
@@ -39,7 +38,6 @@ def createMQConnector(parameters = None):
 class MQConnectionManager(object):
   """Manages connections for the Message Queue resources."""
   def __init__(self, connectionStorage = None):
-    # We call disconnect() if the connection should be removed.
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self._lock = None
     if connectionStorage:
@@ -61,8 +59,6 @@ class MQConnectionManager(object):
     self.lock.acquire()
     try:
       if mqService in self._connectionStorage:
-        #if self._connectionStorage[mqService]['MQConnector']:
-          #self._connectionStorage[mqService]['MQConnector'].disconnect()
         self._connectionStorage.pop(mqService)
         return S_OK()
       else:
@@ -96,11 +92,6 @@ class MQConnectionManager(object):
       messangers.get(messangerType, []).append(1)
       conn = {"MQConnector":connector, "destinations":{getDestinationAddress(mqURI):messangers}}
       self._connectionStorage.update({getMQService(mqURI):conn})
-      print "ee"
-      print messangerType 
-      print messangers
-      print self._connectionStorage
-      print "ee"
       return S_OK(1) # it is first messanger so we return his id  = 1
     finally:
       self.lock.release()
@@ -196,3 +187,31 @@ class MQConnectionManager(object):
   def getConnector(self, mqService):
     """docstring for getConnector"""
     return self._connectionStorage.get(mqService, {}).get("MQConnector", None)
+
+def _getConnection(cStorage, mqConnection):
+  return cStorage.get(mqConnection, {})
+def _getConnector(cStorage, mqConnection):
+  return _getConnection(cStorage, mqConnection).get("MQConnector", None)
+def _getDestinations(cStorage, mqConnection):
+  return _getConnection(cStorage, mqConnection).get("destinations", {})
+def _getMessangersId(cStorage, mqConnection, mqDestination):
+  return _getDestinations(cStorage, mqConnection).get(mqDestination, [])
+def _getProducersId(cStorage, mqConnection, mqDestination):
+  return [p for p in _getMessangersId(cStorage, mqConnection, mqDestination) if "producer" in p]
+def _getConsumersId(cStorage, mqConnection, mqDestination):
+  return [c for c in _getMessangersId(cStorage, mqConnection, mqDestination) if "consumer" in c]
+
+def _connectionExists(cStorage, mqConnection):
+  return mqConnection in cStorage
+def _destinationExists(cStorage, mqConnection, mqDestination):
+  return mqDestination in _getDestinations(cStorage, mqConnection) 
+
+#fullPath
+
+#addConnection()
+#removeConnection()
+#addMessanger()
+#removeMessanger()
+
+#addDestination()
+#removeDestination()
