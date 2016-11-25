@@ -1,14 +1,22 @@
-""" Class to manage connections for the Message Queue resources. 
+""" Class to manage connections for the Message Queue resources.
+    Also, set of 'private' helper functions to access and modify the message queue connection storage.
+    They are ment to be used only internally by the MQConnectionManager, which should
+    assure thread-safe access to it and standard S_OK/S_ERROR error handling.
+    MQConnection storage is a dict structure that contains the MQ connections used and reused for
+    producer/consumer communication. Example structure:
+    {
+      mardirac3.in2p3.fr: {'MQConnector':StompConnector, 'destinations':{'/queue/test1':['consumer1', 'producer1'],
+                                                                         '/queue/test2':['consumer1', 'producer1']}},
+      blabal.cern.ch:     {'MQConnector':None,           'destinations':{'/queue/test2':['consumer2', 'producer2',]}}
+    }
 """
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.MessageQueue.Utilities import getMQService
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress
-
 from DIRAC.Core.Utilities  import ObjectLoader
 from DIRAC.Core.Utilities.DErrno import EMQUKN
-
 
 def getSpecializedMQConnector(mqType):
   subClassName = mqType + 'MQConnector'
@@ -187,17 +195,7 @@ class MQConnectionManager(object):
     """docstring for getConnector"""
     return self._connectionStorage.get(mqService, {}).get("MQConnector", None)
 
-""" Set of 'private' helper functions to access and modify the message queue connection storage.
-    They are ment to be used only internally by the MQConnectionManager, which should
-    assure thread-safe access to it and standard S_OK/S_ERROR error handling.
-    MQConnection storage is a dict structure that contains the MQ connections used and reused for
-    producer/consumer communication. Example structure:
-    {
-      mardirac3.in2p3.fr: {'MQConnector':StompConnector, 'destinations':{'/queue/test1':['consumer1', 'producer1'],
-                                                                         '/queue/test2':['consumer1', 'producer1']}},
-      blabal.cern.ch:     {'MQConnector':None,           'destinations':{'/queue/test2':['consumer2', 'producer2',]}}
-    }
-"""
+# Set of 'private' helper functions to access and modify the message queue connection storage.
 
 def _getConnection(cStorage, mqConnection):
   """ Function returns message queue connection from the storage.
