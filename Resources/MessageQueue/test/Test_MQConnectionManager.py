@@ -53,7 +53,8 @@ class TestMQConnectionManager_addConnection( TestMQConnectionManager ):
   def test_success( self ):
     connectionStorage =self.myManager._connectionStorage.copy()
     result = self.myManager.addConnection(mqURI = "test.ncbj.gov.pl::Queue::test1", connector = None, messangerType="producers" )
-    self.assertEqual(result, 1)
+    self.assertTrue(result['Ok'])
+    self.assertEqual(result['Value'], 1)
     dest = {"/queue/test1":{"producers":[1], "consumers":[]}}
     expectedConn = {"MQConnector":None, "destinations":dest}
     connectionStorage.update({"test.ncbj.gov.pl":expectedConn})
@@ -65,11 +66,15 @@ class TestMQConnectionManager_addConnection( TestMQConnectionManager ):
 class TestMQConnectionManager_updateConnection( TestMQConnectionManager ):
   def test_success( self ):
     result = self.myManager.updateConnection(mqURI = "mardirac3.in2p3.fr::Queue::test1", messangerType = "producers"  )
-    self.assertEqual(result, 5)
+    print result
+    self.assertTrue(result['Ok'])
+    self.assertEqual(result['Value'], 5)
     result = self.myManager.updateConnection(mqURI = "mardirac3.in2p3.fr::Topic::test1", messangerType = "consumers"  )
-    self.assertEqual(result, 1)
+    self.assertTrue(result['Ok'])
+    self.assertEqual(result['Value'], 1)
     result = self.myManager.updateConnection(mqURI = "testdir.blabla.ch::Queue::test3", messangerType = "consumers"  )
-    self.assertEqual(result, 5)
+    self.assertTrue(result['Ok'])
+    self.assertEqual(result['Value'], 5)
 
     dest = {}
     dest.update({"/queue/test1": {"producers":[4, 5], "consumers":[1,2,4]}})

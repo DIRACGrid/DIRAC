@@ -19,8 +19,8 @@ class FakeMQConnector( MQConnector ):
   def get(self, destination = ''):
     return "FakeMQConnection getting message"
 
-  def put(self, message, destination = ''):
-    return S_OK("FakeMQConnection sending message: " + str(message) + " to: " + destination)
+  def put(self, message, parameters = None ):
+    return S_OK("FakeMQConnection sending message: " + str(message))
 
 
 class TestMQProducer( unittest.TestCase ):
@@ -40,7 +40,7 @@ class TestMQProducer_put( TestMQProducer):
     producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", producerId = 1)
     result = producer.put("wow!")
     self.assertTrue(result['OK'])
-    self.assertEqual(result['Value'], "FakeMQConnection sending message: wow! to: /queue/FakeQueue")
+    self.assertEqual(result['Value'], "FakeMQConnection sending message: wow!")
 
   def test_failure( self ):
     producer = MQProducer(mqManager = self.myManager, mqURI  = "bad.cern.ch::Queue::FakeQueue", producerId = 1)

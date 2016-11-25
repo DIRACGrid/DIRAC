@@ -159,6 +159,7 @@ class StompMQConnector( MQConnector ):
     if self.parameters.get( 'Persistent', '' ).lower() in ['true', 'yes', '1']:
       headers = { 'persistent': 'true' }
     ack = 'auto'
+    acknowledgement = False 
     if self.parameters.get( 'Acknowledgement', '' ).lower() in ['true', 'yes', '1']:
       acknowledgement = True
       ack = 'client-individual'

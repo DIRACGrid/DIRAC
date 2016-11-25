@@ -1,24 +1,21 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.MessageQueue.MQProducer import MQProducer
+from DIRAC.Resources.MessageQueue.MQConsumer import MQConsumer
 from DIRAC.Resources.MessageQueue.MQConnectionManager import MQConnectionManager
 from DIRAC.Resources.MessageQueue.Utilities import getMQParamsFromCS
 
 
 connectionManager = MQConnectionManager()
 
-#def createConsumer(destination):
-  #result = setupConnection(destination)
-  #if not result['OK']:
-    #gLogger.error( 'Failed to createMQConnection:', '%s' % (result['Message'] ) )
-    #return result
-  #conn = result['Value']
-  #return MQConsumer(conn = conn)
+def createConsumer(mqURI, callback = None):
+  result = setupConnection(mqURI = mqURI, messangerType = "consumers")
+  if not result['OK']:
+    gLogger.error( 'Failed to createConsumer:', '%s' % (result['Message'] ) )
+    return result
+  return MQConsumer(mqManager = connectionManager, mqURI  = mqURI, consumerId = result['Value'], callback = callback)
 
 def createProducer(mqURI):
-  #todo change it to producer
   result = setupConnection(mqURI = mqURI, messangerType = "producers")
-  print mqURI
-  print connectionManager._connectionStorage
   if not result['OK']:
     gLogger.error( 'Failed to createProducer:', '%s' % (result['Message'] ) )
     return result
@@ -31,7 +28,6 @@ def setupConnection(mqURI, messangerType):
     gLogger.error( 'Failed to setupConnection:', '%s' % (result['Message'] ) )
     return result
   params = result['Value']
-  print params
   return connectionManager.addOrUpdateConnection(mqURI, params, messangerType)
 
 

@@ -78,9 +78,6 @@ class MQConnectionManager(object):
       messangerList = self.getMessangers(mqService = getMQService(mqURI),
                                         mqDestinationAddress =  getDestinationAddress(mqURI),
                                         messangerType = messangerType)
-      print "oo"
-      print messangerList 
-      print "oo"
       messangerId = 1
       if messangerList:
         messangerId =  max(messangerList) + 1
@@ -155,7 +152,10 @@ class MQConnectionManager(object):
   def getAllMessangersIds(self, mqService):
     self.lock.acquire()
     try:
-      return [ mId for dest in self.getDestinations(mqService = mqService).keys() for mType in ['consumers', 'producers'] for mId in self.getMessangers(mqService = mqService, mqDestinationAddress = dest, messangerType = mType) ]
+      destinationKeys =  self.getDestinations(mqService = mqService).keys()
+      if not destinationKeys:
+        return []
+      return [ mId for dest in destinationKeys for mType in ['consumers', 'producers'] for mId in self.getMessangers(mqService = mqService, mqDestinationAddress = dest, messangerType = mType) ]
     finally:
       self.lock.release()
 
@@ -178,7 +178,7 @@ class MQConnectionManager(object):
     return self.getDestination(mqService = mqService, mqDestinationAddress = mqDestinationAddress)
 
   def getMessangers(self, mqService, mqDestinationAddress, messangerType):
-    return self.getMessangersOfAllTypes(mqService = mqService, mqDestinationAddress = mqDestinationAddress).get(messangerType,None)
+    return self.getMessangersOfAllTypes(mqService = mqService, mqDestinationAddress = mqDestinationAddress).get(messangerType,[])
 
   def addMessanger(self, mqService, mqDestinationAddress, messangerType, messangerId):
     #if queue address key doesnt exist
