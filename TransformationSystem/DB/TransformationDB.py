@@ -212,6 +212,9 @@ class TransformationDB( DB ):
     if addFiles and fileMask:
       mqDict = json.loads( fileMask )
       res = catalog.findFilesByMetadata( mqDict )
+      if not res['OK']:
+        gLogger.error( "Failed to find files to be added to the transformation", res['Message'] )
+        return res
       filesToAdd = res['Value']
       gLogger.notice( 'filesToAdd', filesToAdd )
       if filesToAdd:
@@ -223,7 +226,7 @@ class TransformationDB( DB ):
          # Add the files to the transformations
         fileIDs = []
         for lfn in filesToAdd:
-          if lfnFileIDs.has_key( lfn ):
+          if lfn in lfnFileIDs:
             fileIDs.append( lfnFileIDs[lfn] )
         res = self.__addFilesToTransformation( transID, fileIDs, connection = connection )
         if not res['OK']:
@@ -494,7 +497,7 @@ class TransformationDB( DB ):
 
   def addFilesToTransformation( self, transName, lfns, connection = False ):
     """ Add a list of LFNs to the transformation directly """
-    gLogger.info( "TransformationDB.addFilesToTransformation: Attempting to add %s files." % lfns )
+    gLogger.info( "TransformationDB.addFilesToTransformation: Attempting to add %s files." % len(lfns) )
     gLogger.info( "TransformationDB.addFilesToTransformation: to Transformations: %s" % transName )
     if not lfns:
       return S_ERROR( 'Zero length LFN list' )
@@ -1429,8 +1432,9 @@ class TransformationDB( DB ):
       gLogger.info( "addFile: Attempting to add file %s" % lfn )
       res = catalog.getFileUserMetadata( lfn )
       if not res['OK']:
+        gLogger.error( "Failed to getFileUserMetadata for file", "%s: %s" % ( lfn, res['Message'] ) )
         failed[lfn] = res['Message']
-        return S_OK( {'Successful':successful, 'Failed':failed } )
+        continue
       else:
         metadatadict = res['Value']
       gLogger.info( 'Filter file with metadata', metadatadict )
@@ -1441,21 +1445,21 @@ class TransformationDB( DB ):
       else:
         filesToAdd.append( lfn )
         for trans in fileTrans:
-          if not transFiles.has_key( trans ):
+          if trans not in transFiles:
             transFiles[trans] = []
           transFiles[trans].append( lfn )
 
       # Add the files to the transformations
       gLogger.info( 'Files to add to transformations:', filesToAdd )
       if filesToAdd:
-        for transID, lfns in transFiles.items():
+        for transID, lfns in transFiles.iteritems():
           res = self.addFilesToTransformation( transID, lfns )
           if not res['OK']:
-            for lfn in lfns:
-              gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
-              failed[lfn] = res['Message']
+            gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
+            return res
           else:
-            successful[lfn] = True
+            successful.update( res['Value']['Successful'] )
+            failed.update( res['Value']['Failed'] )
 
     res = S_OK( {'Successful':successful, 'Failed':failed } )
     return res
@@ -1536,8 +1540,18 @@ class TransformationDB( DB ):
     filesToAdd = []
 
     catalog = FileCatalog()
-    isFile = catalog.isFile( path )['Value']['Successful'][path]
-    isDirectory = catalog.isDirectory( path )['Value']['Successful'][path]
+    res = catalog.isFile( path )
+    if res['OK']:
+      isFile = res['Value']['Successful'][path]
+    else:
+      gLogger.error( "Failed isFile %s: %s" % ( path, res['Message'] ) )
+      return res
+    res = catalog.isDirectory( path )
+    if res['OK']:
+      isDirectory = res['Value']['Successful'][path]
+    else:
+      gLogger.error( "Failed isDirectory %s: %s" % ( path, res['Message'] ) )
+      return res
 
     if isFile:
       res = catalog.getFileUserMetadata( path )
@@ -1552,13 +1566,16 @@ class TransformationDB( DB ):
     metadatadict.update( usermetadatadict )
     gLogger.info( 'Filter file with metadata:', metadatadict )
     fileTrans = self._filterFileByMetadata( metadatadict )
-    if not ( fileTrans ):
+    if not fileTrans:
       successful[path] = False
     elif isFile:
       filesToAdd.append( path )
       path = [path]
     else:
       res = catalog.findFilesByMetadata( metadatadict, path )
+      if not res['OK']:
+        gLogger.error( "Failed to findFilesByMetadata: %s" % res['Message'] )
+        return res
       path = res['Value']
       filesToAdd.extend( res['Value'] )
     for trans in fileTrans:
@@ -1569,15 +1586,14 @@ class TransformationDB( DB ):
     # Add the files to the transformations
     gLogger.info( 'Files to add to transformations:', filesToAdd )
     if filesToAdd:
-      for transID, lfns in transFiles.items():
+      for transID, lfns in transFiles.iteritems():
         res = self.addFilesToTransformation( transID, lfns )
         if not res['OK']:
-          for lfn in lfns:
-            gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
-            failed[lfn] = res['Message']
+          gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
+          return res
         else:
-          for lfn in lfns:
-            successful[lfn] = True
+          successful.update( res['Value']['Successful'] )
+          failed.update( res['Value']['Failed'] )
 
     res = S_OK( {'Successful':successful, 'Failed':failed } )
     return res
@@ -1605,7 +1621,7 @@ class TransformationDB( DB ):
       res = mq.applyQuery(metadatadict)
       if not res['OK']:
         gLogger.error( "Error in applying query: %s" % res['Message'] )
-      elif res['Value'] == True:
+      elif res['Value']:
         gLogger.info( "Apply query result is True" )
         result.append( transID )
       else:
