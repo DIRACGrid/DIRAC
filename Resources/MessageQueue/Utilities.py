@@ -1,10 +1,37 @@
 """ Utilities for the MessageQueue package
 """
 
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.CSAPI       import CSAPI
+from DIRAC.Core.Utilities  import ObjectLoader
+from DIRAC.Core.Utilities.DErrno import EMQUKN
 
 __RCSID__ = "$Id$"
+
+def getSpecializedMQConnector(mqType):
+  subClassName = mqType + 'MQConnector'
+  objectLoader = ObjectLoader.ObjectLoader()
+  result = objectLoader.loadObject( 'Resources.MessageQueue.%s' % subClassName, subClassName )
+  if not result['OK']:
+    gLogger.error( 'Failed to load object', '%s: %s' % ( subClassName, result['Message'] ) )
+  return result
+
+def createMQConnector(parameters = None):
+  mqType = parameters.get('MQType', None)
+  result = getSpecializedMQConnector(mqType = mqType)
+  if not result['OK']:
+    gLogger.error( 'Failed to getSpecializedMQConnector:', '%s' % (result['Message'] ) )
+    return result
+  ceClass = result['Value']
+  try:
+    mqConnector = ceClass(parameters)
+    if not result['OK']:
+      return result
+  except Exception as exc:
+    gLogger.exception( 'Could not instantiate MQConnector object',  lExcInfo = exc )
+    return S_ERROR( EMQUKN, '' )
+  return S_OK( mqConnector )
+
 
 def getMQParamsFromCS( destinationName ):
   """ Get parameter of a MQ destination (queue/topic) from the CS

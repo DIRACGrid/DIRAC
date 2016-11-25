@@ -15,32 +15,8 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.MessageQueue.Utilities import getMQService
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress
-from DIRAC.Core.Utilities  import ObjectLoader
-from DIRAC.Core.Utilities.DErrno import EMQUKN
+from DIRAC.Resources.MessageQueue.Utilities import createMQConnector
 
-def getSpecializedMQConnector(mqType):
-  subClassName = mqType + 'MQConnector'
-  objectLoader = ObjectLoader.ObjectLoader()
-  result = objectLoader.loadObject( 'Resources.MessageQueue.%s' % subClassName, subClassName )
-  if not result['OK']:
-    gLogger.error( 'Failed to load object', '%s: %s' % ( subClassName, result['Message'] ) )
-  return result
-
-def createMQConnector(parameters = None):
-  mqType = parameters.get('MQType', None)
-  result = getSpecializedMQConnector(mqType = mqType)
-  if not result['OK']:
-    gLogger.error( 'Failed to getSpecializedMQConnector:', '%s' % (result['Message'] ) )
-    return result
-  ceClass = result['Value']
-  try:
-    mqConnector = ceClass(parameters)
-    if not result['OK']:
-      return result
-  except Exception as exc:
-    gLogger.exception( 'Could not instantiate MQConnector object',  lExcInfo = exc )
-    return S_ERROR( EMQUKN, '' )
-  return S_OK( mqConnector )
 
 class MQConnectionManager(object):
   """Manages connections for the Message Queue resources in form of the interal connection storage."""
