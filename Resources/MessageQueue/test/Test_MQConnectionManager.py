@@ -3,6 +3,8 @@
 """
 
 import unittest
+import mock
+from DIRAC import S_OK
 from DIRAC.Resources.MessageQueue.MQConnectionManager import MQConnectionManager
 
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _connectionExists
@@ -10,6 +12,7 @@ from DIRAC.Resources.MessageQueue.MQConnectionManager import _destinationExists
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _MessangerExists
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _getConnection
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _getConnector
+from DIRAC.Resources.MessageQueue.MQConnectionManager import _setConnector
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _getDestinations
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _getMessangersId
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _getMessangersIdWithType
@@ -68,6 +71,13 @@ class TestMQConnectionStorageFunctions_getConnector( TestMQConnectionStorageFunc
     self.assertEqual(_getConnector(self.storage,'testdir.blabla.ch'),'TestConnector2')
   def test_failure( self ):
     self.assertIsNone(_getConnector(self.storage,'nonexisiting'))
+
+class TestMQConnectionStorageFunctions_setConnector( TestMQConnectionStorageFunctions ):
+  def test_success( self ):
+    self.assertTrue(_setConnector(self.storage,'testdir.blabla.ch', 'TestConnector5'))
+    self.assertEqual(_getConnector(self.storage,'testdir.blabla.ch'),'TestConnector5')
+  def test_failure( self ):
+    self.assertFalse(_setConnector(self.storage,'nonexisiting', 'TestConnector3'))
 
 class TestMQConnectionStorageFunctions_getDestinations( TestMQConnectionStorageFunctions ):
   def test_success( self ):
@@ -191,38 +201,53 @@ class TestMQConnectionManager( unittest.TestCase ):
 
   def tearDown( self ):
     pass
-class TestMQConnectionManager_updateConnection( TestMQConnectionManager ):
+
+class TestMQConnectionManager_addNewMessanger( TestMQConnectionManager ):
   def test_success( self ):
-    result = self.myManager.updateConnection(mqURI = "mardirac3.in2p3.fr::Queue::test1", messangerType = "producer"  )
+    result = self.myManager.addNewMessanger(mqURI = "mardirac3.in2p3.fr::Queue::test1", messangerType = "producer"  )
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'producer5')
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     self.assertEqual(sorted(_getAllMessangersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
 
   def test_success2( self ):
-    result = self.myManager.updateConnection(mqURI = "mardirac3.in2p3.fr::Topic::test1", messangerType = "consumer"  )
+    result = self.myManager.addNewMessanger(mqURI = "mardirac3.in2p3.fr::Topic::test1", messangerType = "consumer"  )
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'consumer1')
+
   def test_success3( self ):
-    result = self.myManager.updateConnection(mqURI = "testdir.blabla.ch::Queue::test3", messangerType = "consumer"  )
+    result = self.myManager.addNewMessanger(mqURI = "testdir.blabla.ch::Queue::test3", messangerType = "consumer"  )
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'consumer5')
 
-
   def test_success4( self ):
     #connection does not exist
-    result = self.myManager.updateConnection(mqURI = "noexisting.blabla.ch::Queue::test3", messangerType = "consumer"  )
+    result = self.myManager.addNewMessanger(mqURI = "noexisting.blabla.ch::Queue::test3", messangerType = "consumer"  )
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'consumer1')
     expectedOutput= ['noexisting.blabla.ch/queue/test3/consumer1', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     self.assertEqual(sorted(_getAllMessangersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
 
+class TestMQConnectionManager_setupConnection( TestMQConnectionManager ):
+  def test_success( self ):
+    #existing connection
+    result = self.myManager.setupConnection(mqURI = "mardirac3.in2p3.fr::Queue::test1", params ={}, messangerType = "producer")
+    self.assertTrue(result['OK'])
+    self.assertEqual(result['Value'], 'producer5')
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertEqual(sorted(_getAllMessangersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
 
-#class TestMQConnectionManager_connectionExists( TestMQConnectionManager ):
-  #def test_success( self ):
-    #self.assertTrue(self.myManager.connectionExist("mardirac3.in2p3.fr"))
-  #def test_failure( self ):
-    #self.assertFalse(self.myManager.connectionExist("nonexistent"))
+  @mock.patch('DIRAC.Resources.MessageQueue.MQConnectionManager.MQConnectionManager.createConnectorAndConnect')
+  def test_success2( self, mock_createConnectorAndConnect):
+    #connection does not exist
+    mock_createConnectorAndConnect.return_value = S_OK('MyConnector')
+    result = self.myManager.setupConnection(mqURI = "noexisting.blabla.ch::Queue::test3", params={}, messangerType = "consumer"  )
+    self.assertTrue(result['OK'])
+    self.assertEqual(result['Value'], 'consumer1')
+    expectedOutput= ['noexisting.blabla.ch/queue/test3/consumer1', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertEqual(sorted(_getAllMessangersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+    self.assertEqual(_getConnector(self.myManager._connectionStorage, 'noexisting.blabla.ch'), 'MyConnector')
+
 
 #class TestMQConnectionManager_getConnection( TestMQConnectionManager ):
   #def test_success( self ):
@@ -314,7 +339,8 @@ class TestMQConnectionManager_updateConnection( TestMQConnectionManager ):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_updateConnection ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_addNewMessanger ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_setupConnection ) )
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_connectionExists ) )
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_getConnection ) )
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_deleteConnection ) )
@@ -327,6 +353,7 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_messangerExists ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_getConnection ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_getConnector ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_setConnector ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_getDestinations ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_getMessangersId ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_getMessangersIdWithType ) )
