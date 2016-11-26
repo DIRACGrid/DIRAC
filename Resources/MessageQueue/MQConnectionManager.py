@@ -16,6 +16,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.MessageQueue.Utilities import getMQService
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress
 from DIRAC.Resources.MessageQueue.Utilities import createMQConnector
+import re
 
 
 class MQConnectionManager(object):
@@ -35,6 +36,36 @@ class MQConnectionManager(object):
     if not self._lock:
       self._lock = LockRing().getLock( self.__class__.__name__, recursive = True )
     return self._lock
+
+  def setupConnection(self, mqURI, params, messangerType):
+    """ Function adds or updates the MQ connection. If the connection
+        does not exists, MQconnector is created and added.
+    Args:
+      mqURI(str):
+      params(dict): parameters to initialize the MQConnector.
+      messangerType(str): 'consumer' or 'producer'.
+    Returns:
+      S_OK/S_ERROR: with the value of the messanger Id in S_OK.
+    """
+    self.lock.acquire()
+    try:
+      conn = getMQService(mqURI)
+      if _connectionExists(self._connectionStorage, conn):
+        return self.addNewMessanger(mqURI = mqURI, messangerType = messangerType)
+      else: #Connection does not exist so we create the connector and we add a new connection
+        result =  self.addNewMessanger(mqURI = mqURI, messangerType = messangerType)
+        if not result['OK']:
+          return result
+        mId = result['Value']
+        result = self.createConnectorAndConnect(parameters = params)
+        if not result['OK']:
+          return result
+        if _getConnector(self._connectionStorage, conn):
+          return S_ERROR("Failed to setup connection! The connector already exists!")
+        _setConnector(self._connectionStorage, conn, result['Value'])
+        return S_OK(mId)
+    finally:
+      self.lock.release()
 
   def addNewMessanger(self, mqURI, messangerType):
     """ Function updates the MQ connection by adding the messanger Id to the internal connection storage.
@@ -74,118 +105,67 @@ class MQConnectionManager(object):
       return result
     return S_OK(connector)
 
-  def setupConnection(self, mqURI, params, messangerType):
-    """ Function adds or updates the MQ connection. If the connection
-        does not exists, MQconnector is created and added.
+  def disconnect(self, connector):
+    if not connector:
+      return S_ERROR('Failed to disconnect! Connector is None!')
+    return connector.disconnect()
+
+  def stopConnection(self, mqURI, messangerId):
+    """ Function 'stops' the connection for given messanger, which means
+        it removes it from the messanger list. If this is the consumer, the
+        unsubscribe() connector method is called. If it is the last messanger
+        of this destination (queue or topic), then the destination is removed.
+        If it is the last destination from this connection. The disconnect function
+        is called and the connection is removed.
     Args:
       mqURI(str):
-      params(dict): parameters to initialize the MQConnector.
-      messangerType(str): 'consumer' or 'producer'.
+      messangerId(str): e.g. 'consumer1' or 'producer10'.
     Returns:
-      S_OK/S_ERROR: with the value of the messanger Id in S_OK.
+      S_OK: with the value of the messanger Id or S_ERROR if the messanger was not added,
+            cause the same id already exists.
     """
+    getMessangerType = lambda mId: next((mType for mType in ['consumer', 'producer'] if mType in mId), None)
     self.lock.acquire()
     try:
       conn = getMQService(mqURI)
-      if _connectionExists(self._connectionStorage, conn):
-        return self.addNewMessanger(mqURI = mqURI, messangerType = messangerType)
-      else: #Connection does not exist so we create the connector and we add a new connection
-        result =  self.addNewMessanger(mqURI = mqURI, messangerType = messangerType)
-        if not result['OK']:
-          return result
-        mId = result['Value']
-        result = self.createConnectorAndConnect(parameters = params)
-        if not result['OK']:
-          return result
-        if _getConnector(self._connectionStorage, conn):
-          return S_ERROR("Failed to setup connection! The connector already exists!")
-        _setConnector(self._connectionStorage, conn, result['Value'])
-        return S_OK(mId)
-    finally:
-      self.lock.release()
-
-  def stopConnection(self, mqURI, messangerId, messangerType):
-    """Its not really closing connection but more closing it for a given producer
-    """
-    self.lock.acquire()
-    try:
-      messangers = self.getMessangersOfAllTypes(getMQService(mqURI), getDestinationAddress(mqURI))
-      messangersNew = [m for m in messangers.get(messangerType,[]) if m != messangerId]
-      messangers.update({messangerType:messangersNew})
-      if not [m for mType in ["consumers", "producers"]  for m in messangers.get(mType, [])]:
-        self.getDestinations(mqService = getMQService(mqURI)).pop(getDestinationAddress(mqURI))
-      else:
-        self.getDestination(mqService = getMQService(mqURI), mqDestinationAddress = getDestinationAddress(mqURI)).update(messangers)
-      messangerList = self.getAllMessangersIds(mqService = getMQService(mqURI))
-      if not messangerList:
-         self.getConnector(getMQService(mqURI)).disconnect()
-         self.deleteConnection(getMQService(mqURI))
+      dest = getDestinationAddress(mqURI)
+      connector = _getConnector(self._connectionStorage, conn)
+      _removeMessanger(cStorage = self._connectionStorage, mqConnection = conn, destination = dest, messangerId = messangerId)
+      if not _connectionExists(self._connectionStorage, conn):
+        return self.disconnect(connector)
       return S_OK()
     finally:
       self.lock.release()
 
-
-
-  def deleteConnection(self, mqService):
-    """docstring for deleteConnection"""
+  def getAllMessangers(self):
+    """ Function returns a list of all messangers registered in connection storage.
+    Returns:
+      S_OK/S_ERROR: with the list of strings in the pseudo-path format e.g.
+            ['blabla.cern.ch/queue/test1/consumer1','blabal.cern.ch/topic/test2/producer2']
+    """
     self.lock.acquire()
     try:
-      if mqService in self._connectionStorage:
-        self._connectionStorage.pop(mqService)
-        return S_OK()
-      else:
-        return S_ERROR()
+      return S_OK(_getAllMessangersInfo(cStorage = self._connectionStorage))
     finally:
       self.lock.release()
 
-
-  def addConnection(self, mqURI, connector, messangerType):
+  def removeAllConnections(self):
+    """ Function removes all existing connections and calls the disconnect
+        for connectors.
+    Returns:
+      S_OK/S_ERROR:
+    """
     self.lock.acquire()
     try:
-      messangers = {"producers":[], "consumers":[]}
-      messangers.get(messangerType, []).append(1)
-      conn = {"MQConnector":connector, "destinations":{getDestinationAddress(mqURI):messangers}}
-      self._connectionStorage.update({getMQService(mqURI):conn})
-      return S_OK(1) # it is first messanger so we return his id  = 1
+      connections = _getAllConnections(cStorage = self._connectionStorage)
+      for conn in connections:
+        connector =_getConnector(self._connectionStorage, conn)
+        if connector:
+          self.disconnect(connector)
+      self._connectionStorage = {}
+      return S_OK()
     finally:
       self.lock.release()
-
-
-
-
-  #some helper functions
-
-  def getAllMessangersIds(self, mqService):
-    self.lock.acquire()
-    try:
-      destinationKeys =  self.getDestinations(mqService = mqService).keys()
-      if not destinationKeys:
-        return []
-      return [ mId for dest in destinationKeys for mType in ['consumers', 'producers'] for mId in self.getMessangers(mqService = mqService, mqDestinationAddress = dest, messangerType = mType) ]
-    finally:
-      self.lock.release()
-
-  def getConnection(self, mqService):
-    """docstring for getConnection"""
-    return self._connectionStorage.get(mqService, None)
-
-  def getDestinations(self, mqService):
-    """docstring for getDestinations"""
-    return self.getConnection(mqService).get("destinations",{})
-
-  def getDestination(self, mqService, mqDestinationAddress):
-    return self.getDestinations(mqService = mqService).get(mqDestinationAddress,{})
-
-  def getMessangersOfAllTypes(self, mqService, mqDestinationAddress):
-    return self.getDestination(mqService = mqService, mqDestinationAddress = mqDestinationAddress)
-
-  def getMessangers(self, mqService, mqDestinationAddress, messangerType):
-    return self.getMessangersOfAllTypes(mqService = mqService, mqDestinationAddress = mqDestinationAddress).get(messangerType,[])
-
-
-  def getConnector(self, mqService):
-    """docstring for getConnector"""
-    return self._connectionStorage.get(mqService, {}).get("MQConnector", None)
 
 # Set of 'private' helper functions to access and modify the message queue connection storage.
 
@@ -195,9 +175,18 @@ def _getConnection(cStorage, mqConnection):
     cStorage(dict): message queue connection storage.
     mqConnection(str): message queue connection name.
   Returns:
-    dict: or None
+    dict:
   """
   return cStorage.get(mqConnection, {})
+
+def _getAllConnections(cStorage):
+  """ Function returns a list of all connection names in the storage
+  Args:
+    cStorage(dict): message queue connection storage.
+  Returns:
+    list:
+  """
+  return cStorage.keys()
 
 def _getConnector(cStorage, mqConnection):
   """ Function returns MQConnector from the storage.
