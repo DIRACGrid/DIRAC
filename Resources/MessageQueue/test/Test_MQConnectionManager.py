@@ -180,17 +180,43 @@ class TestMQConnectionManager( unittest.TestCase ):
   def setUp( self ):
     self.maxDiff = None  # To show full difference between structures in  case of error
     dest = {}
-    dest.update({"/queue/test1": {"producers":[4], "consumers":[1,2,4]}})
-    dest.update({"/queue/test2": {"producers":[2], "consumers":[1,2]}})
-    dest.update({"/topic/test1": {"producers":[1], "consumers":[]}})
-    dest4 = {"/queue/test3": {"producers":[1], "consumers":[2,3,4]}}
-    conn1 = {"MQConnector":None, "destinations":dest}
-    conn2 = {"MQConnector":None, "destinations":dest4}
-    connectionStorage = {"mardirac3.in2p3.fr":conn1, "testdir.blabla.ch":conn2}
-    self.myManager = MQConnectionManager(connectionStorage = connectionStorage)
+    dest.update({'/queue/test1': ['producer4', 'consumer1', 'consumer2', 'consumer4']})
+    dest.update({'/queue/test2': ['producer2', 'consumer1', 'consumer2']})
+    dest.update({'/topic/test1': ['producer1']})
+    dest4 = {'/queue/test3': ['producer1', 'consumer2','consumer3','consumer4']}
+    conn1 = {'MQConnector':'TestConnector1', 'destinations':dest}
+    conn2 = {'MQConnector':'TestConnector2', 'destinations':dest4}
+    storage = {'mardirac3.in2p3.fr':conn1, 'testdir.blabla.ch':conn2}
+    self.myManager = MQConnectionManager(connectionStorage = storage)
 
   def tearDown( self ):
     pass
+class TestMQConnectionManager_updateConnection( TestMQConnectionManager ):
+  def test_success( self ):
+    result = self.myManager.updateConnection(mqURI = "mardirac3.in2p3.fr::Queue::test1", messangerType = "producer"  )
+    self.assertTrue(result['OK'])
+    self.assertEqual(result['Value'], 'producer5')
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertEqual(sorted(_getAllMessangersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+
+  def test_success2( self ):
+    result = self.myManager.updateConnection(mqURI = "mardirac3.in2p3.fr::Topic::test1", messangerType = "consumer"  )
+    self.assertTrue(result['OK'])
+    self.assertEqual(result['Value'], 'consumer1')
+  def test_success3( self ):
+    result = self.myManager.updateConnection(mqURI = "testdir.blabla.ch::Queue::test3", messangerType = "consumer"  )
+    self.assertTrue(result['OK'])
+    self.assertEqual(result['Value'], 'consumer5')
+
+
+  def test_success4( self ):
+    #connection does not exist
+    result = self.myManager.updateConnection(mqURI = "noexisting.blabla.ch::Queue::test3", messangerType = "consumer"  )
+    self.assertTrue(result['OK'])
+    self.assertEqual(result['Value'], 'consumer1')
+    expectedOutput= ['noexisting.blabla.ch/queue/test3/consumer1', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertEqual(sorted(_getAllMessangersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+
 
 #class TestMQConnectionManager_connectionExists( TestMQConnectionManager ):
   #def test_success( self ):
@@ -235,27 +261,6 @@ class TestMQConnectionManager( unittest.TestCase ):
   #def test_failure( self ):
     #pass #add what happens if the entry already exists
 
-#class TestMQConnectionManager_updateConnection( TestMQConnectionManager ):
-  #def test_success( self ):
-    #result = self.myManager.updateConnection(mqURI = "mardirac3.in2p3.fr::Queue::test1", messangerType = "producers"  )
-    #self.assertTrue(result['Ok'])
-    #self.assertEqual(result['Value'], 5)
-    #result = self.myManager.updateConnection(mqURI = "mardirac3.in2p3.fr::Topic::test1", messangerType = "consumers"  )
-    #self.assertTrue(result['Ok'])
-    #self.assertEqual(result['Value'], 1)
-    #result = self.myManager.updateConnection(mqURI = "testdir.blabla.ch::Queue::test3", messangerType = "consumers"  )
-    #self.assertTrue(result['Ok'])
-    #self.assertEqual(result['Value'], 5)
-
-    #dest = {}
-    #dest.update({"/queue/test1": {"producers":[4, 5], "consumers":[1,2,4]}})
-    #dest.update({"/queue/test2": {"producers":[2], "consumers":[1,2]}})
-    #dest.update({"/topic/test1": {"producers":[1], "consumers":[1]}})
-    #dest4 = {"/queue/test3": {"producers":[1], "consumers":[2,3,4,5]}}
-    #conn1 = {"MQConnector":None, "destinations":dest}
-    #conn2 = {"MQConnector":None, "destinations":dest4}
-    #connectionStorage = {"mardirac3.in2p3.fr":conn1, "testdir.blabla.ch":conn2}
-    #self.assertEqual(self.myManager._connectionStorage, connectionStorage)
 
 #class TestMQConnectionManager_closeConnection( TestMQConnectionManager ):
   #def test_success( self ):
@@ -309,10 +314,10 @@ class TestMQConnectionManager( unittest.TestCase ):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_updateConnection ) )
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_connectionExists ) )
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_getConnection ) )
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_deleteConnection ) )
-  #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_updateConnection ) )
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_addConnection ) )
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_closeConnection ) )
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_addOrUpdateConnection ) )

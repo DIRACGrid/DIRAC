@@ -36,11 +36,37 @@ class MQConnectionManager(object):
       self._lock = LockRing().getLock( self.__class__.__name__, recursive = True )
     return self._lock
 
+  def updateConnection(self, mqURI, messangerType):
+    """ Function updates the MQ connection by adding the messanger Id to the internal connection storage.
+    Args:
+      mqURI(str):
+      messangerType(str): 'consumer' or 'producer'.
+    Returns:
+      S_OK: with the value of the messanger Id or S_ERROR if the messanger was not added,
+            cause the same id already exists.
+    """
+    # 'consumer1' ->1
+    # 'producer21' ->21
+    msgIdToInt = lambda msgIds, msgType : [int(m.replace(msgType,'')) for m in msgIds]
+    # If the list is empty id is 0 + 1.
+    # The messangerId is str e.g.  'consumer5' or 'producer3'
+    generateMessangerId = lambda strg, conn, dest, msgT: msgT +str(max(msgIdToInt(_getMessangersIdWithType(strg, conn, dest, msgT), msgT) or [0]) + 1)
+    self.lock.acquire()
+    try:
+      conn = getMQService(mqURI)
+      dest = getDestinationAddress(mqURI)
+      mId = generateMessangerId(self._connectionStorage, conn, dest, messangerType)
+      if _addMessanger(cStorage = self._connectionStorage, mqConnection = conn, destination = dest, messangerId = mId):
+        return S_OK(mId)
+      return S_ERROR("Failed to update the connection, the messanger "+str(mId)+ "  already exists")
+    finally:
+      self.lock.release()
+
   def setupConnection(self, mqURI, params, messangerType):
     """ Function add or updates (if already exists) the MQ connection.
     Args:
       mqURI(str):
-      params(dict): 
+      params(dict):
       messangerType(str): 'consumer' or 'producer'.
     Returns:
       S_OK/S_ERROR:
@@ -50,7 +76,7 @@ class MQConnectionManager(object):
       mqConnectionId = getMQService(mqURI)
       if _connectionExists(self._connectionStorage, mqConnectionId):
         return self.updateConnection(mqURI = mqURI, messangerType = messangerType)
-        #_addMessanger(cStorage = self._connectionStorage, mqConnection = connId , destination = destId, messangerId = messangerType) 
+        #_addMessanger(cStorage = self._connectionStorage, mqConnection = connId , destination = destId, messangerId = messangerType)
       else:
         result = createMQConnector(parameters = params)
         if not result['OK']:
@@ -87,7 +113,6 @@ class MQConnectionManager(object):
       self.lock.release()
 
 
-  
 
   def deleteConnection(self, mqService):
     """docstring for deleteConnection"""
@@ -101,25 +126,6 @@ class MQConnectionManager(object):
     finally:
       self.lock.release()
 
-
-  def updateConnection(self, mqURI, messangerType):
-    """docstring for updateConnection"""
-    self.lock.acquire()
-    try:
-      
-      messangerList = self.getMessangers(mqService = getMQService(mqURI),
-                                        mqDestinationAddress =  getDestinationAddress(mqURI),
-                                        messangerType = messangerType)
-      messangerId = 1
-      if messangerList:
-        messangerId =  max(messangerList) + 1
-      self.addMessanger(mqService = getMQService(mqURI),
-                        mqDestinationAddress =  getDestinationAddress(mqURI),
-                        messangerType = messangerType,
-                        messangerId = messangerId)
-      return S_OK(messangerId)
-    finally:
-      self.lock.release()
 
   def addConnection(self, mqURI, connector, messangerType):
     self.lock.acquire()
