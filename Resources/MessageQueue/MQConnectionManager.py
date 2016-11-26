@@ -37,7 +37,7 @@ class MQConnectionManager(object):
       self._lock = LockRing().getLock( self.__class__.__name__, recursive = True )
     return self._lock
 
-  def setupConnection(self, mqURI, params, messangerType):
+  def startConnection(self, mqURI, params, messangerType):
     """ Function adds or updates the MQ connection. If the connection
         does not exists, MQconnector is created and added.
     Args:

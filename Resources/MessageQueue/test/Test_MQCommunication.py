@@ -7,8 +7,6 @@ from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
 from DIRAC.Resources.MessageQueue.MQCommunication import setupConnection
 from DIRAC import S_OK, S_ERROR
 import mock
-#from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
-#from DIRAC.Resources.MessageQueue.MQCommunication import setupConnection
 
 class TestMQCommunication( unittest.TestCase ):
   def setUp( self ):
@@ -59,24 +57,24 @@ class TestMQCommunication_myProducer( TestMQCommunication):
     mock_getMQParamsFromCS.return_value = S_OK({'VHost':'/', 'Queue':'test2', 'MQType':'Stomp', 'Host':'localhost', 'Port':'61613', 'User':'ala', 'Password':'ala'})
     producer = createProducer(mqURI = 'localhost::Queue::test2')
     result = producer.put( 'blabla')
-    self.assertTrue(result['OK']) 
+    self.assertTrue(result['OK'])
     result = producer.put( 'blable')
     mock_getMQParamsFromCS.return_value = S_OK({'VHost':'/', 'Queue':'test2', 'MQType':'Stomp', 'Host':'localhost', 'Port':'61613', 'User':'ala', 'Password':'ala'})
     producer2 = createProducer(mqURI = 'localhost::Queue::test2')
     result = producer2.put( 'blabla2')
-    self.assertTrue(result['OK']) 
+    self.assertTrue(result['OK'])
     result = producer2.put( 'blable2')
-    self.assertTrue(result['OK']) 
+    self.assertTrue(result['OK'])
     mock_getMQParamsFromCS.return_value = S_OK({'VHost':'/', 'Queue':'test3', 'MQType':'Stomp', 'Host':'localhost', 'Port':'61613', 'User':'ala', 'Password':'ala'})
     producer3 = createProducer(mqURI = 'localhost::Queue::test3')
     result = producer3.put( 'blabla3')
-    self.assertTrue(result['OK']) 
+    self.assertTrue(result['OK'])
     result = producer3.put( 'blable3')
-    self.assertTrue(result['OK']) 
+    self.assertTrue(result['OK'])
     result = producer2.close()
-    self.assertTrue(result['OK']) 
+    self.assertTrue(result['OK'])
     producer3.close()
-    
+
 class TestMQCommunication_myConsumer( TestMQCommunication):
   @mock.patch('DIRAC.Resources.MessageQueue.MQCommunication.getMQParamsFromCS')
   def test_success(self, mock_getMQParamsFromCS):
@@ -84,10 +82,9 @@ class TestMQCommunication_myConsumer( TestMQCommunication):
     consumer = createConsumer(mqURI = 'localhost::Queue::test2')
     producer2 = createProducer(mqURI = 'localhost::Queue::test2')
     result = producer2.put( 'blabla2')
-    self.assertTrue(result['OK']) 
+    self.assertTrue(result['OK'])
     result = producer2.put( 'blable2')
-    self.assertTrue(result['OK']) 
-    
+    self.assertTrue(result['OK'])
 
 
 

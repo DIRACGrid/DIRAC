@@ -232,10 +232,10 @@ class TestMQConnectionManager_addNewMessanger( TestMQConnectionManager ):
     expectedOutput= ['noexisting.blabla.ch/queue/test3/consumer1', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     self.assertEqual(sorted(_getAllMessangersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
 
-class TestMQConnectionManager_setupConnection( TestMQConnectionManager ):
+class TestMQConnectionManager_startConnection( TestMQConnectionManager ):
   def test_success( self ):
     #existing connection
-    result = self.myManager.setupConnection(mqURI = "mardirac3.in2p3.fr::Queue::test1", params ={}, messangerType = "producer")
+    result = self.myManager.startConnection(mqURI = "mardirac3.in2p3.fr::Queue::test1", params ={}, messangerType = "producer")
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'producer5')
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
@@ -245,7 +245,7 @@ class TestMQConnectionManager_setupConnection( TestMQConnectionManager ):
   def test_success2( self, mock_createConnectorAndConnect):
     #connection does not exist
     mock_createConnectorAndConnect.return_value = S_OK('MyConnector')
-    result = self.myManager.setupConnection(mqURI = "noexisting.blabla.ch::Queue::test3", params={}, messangerType = "consumer"  )
+    result = self.myManager.startConnection(mqURI = "noexisting.blabla.ch::Queue::test3", params={}, messangerType = "consumer"  )
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'consumer1')
     expectedOutput= ['noexisting.blabla.ch/queue/test3/consumer1', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
@@ -307,7 +307,7 @@ class TestMQConnectionManager_getConnector( TestMQConnectionManager ):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_addNewMessanger ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_setupConnection ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_startConnection ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_stopConnection ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_removeAllConnections ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_getAllMessangers ) )
