@@ -28,7 +28,7 @@ def setupConnection(mqURI, messangerType):
     gLogger.error( 'Failed to setupConnection:', '%s' % (result['Message'] ) )
     return result
   params = result['Value']
-  return connectionManager.addOrUpdateConnection(mqURI, params, messangerType)
+  return connectionManager.setupConnection(mqURI, params, messangerType)
 
 
 
