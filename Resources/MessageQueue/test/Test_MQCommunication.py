@@ -93,7 +93,7 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestMQCommunication )
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQCommunication_setupConnection))
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQCommunication_myProducer))
-  #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQCommunication_myConsumer))
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQCommunication_myConsumer))
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQCommunication_createFakeProducer))
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQCommunication_createFakeConsumer))
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )

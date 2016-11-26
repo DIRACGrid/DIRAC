@@ -266,9 +266,11 @@ class TestMQConnectionManager_stopConnection( TestMQConnectionManager ):
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     self.assertEqual(sorted(_getAllMessangersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
 
+  @mock.patch('DIRAC.Resources.MessageQueue.MQConnectionManager.MQConnectionManager.unsubscribe')
   @mock.patch('DIRAC.Resources.MessageQueue.MQConnectionManager.MQConnectionManager.disconnect')
-  def test_success3( self, mock_disconnect ):
+  def test_success3( self, mock_disconnect, mock_unsubscribe ):
     mock_disconnect.return_value = S_OK()
+    mock_unsubscribe.return_value = S_OK()
     result = self.myManager.stopConnection(mqURI = "testdir.blabla.ch::Queue::test3", messangerId = "consumer3")
     self.assertTrue(result['OK'])
     result = self.myManager.stopConnection(mqURI = "testdir.blabla.ch::Queue::test3", messangerId = "producer1")

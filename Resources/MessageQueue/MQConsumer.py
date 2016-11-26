@@ -1,7 +1,7 @@
 """ MQConsumer
 """
 
-from DIRAC import S_ERROR
+from DIRAC import S_ERROR, gLogger
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress, getMQService
 
 class MQConsumer ( object ):
@@ -11,14 +11,28 @@ class MQConsumer ( object ):
     self._destination = getDestinationAddress(self._mqURI)
     self._id = consumerId
     self._callback = callback
+    self.log = gLogger.getSubLogger( self.__class__.__name__ )
 #subscribing to connection
-    conn =  self._connectionManager.getConnector(getMQService(self._mqURI))
-    if conn:
-      conn.subscribe(parameters = {'messangerId':self._id, 'callback':callback, 'destination':self._destination})
+    result =  self._connectionManager.getConnector(getMQService(self._mqURI))
+    if result['OK']:
+      connector = result['Value']
+      if connector:
+        result = connector.subscribe(parameters = {'messangerId':self._id, 'callback':callback, 'destination':self._destination})
+        if not result['OK']:
+          self.log.error('Failed to subscirbe the consumer:'+ self._id)
+      else:
+        self.log.error('Failed to initialize MQConsumer! No MQConnector!')
+    else:
+      self.log.error('Failed to get MQConnector!')
 
   def close(self):
-    conn =  self._connectionManager.getConnector(getMQService(self._mqURI))
-    if conn:
-      conn.unsubscribe(parameters = {'destination':self._destination, 'messangerId':self._id})
-    return self._connectionManager.closeConnection(mqURI = self._mqURI, messangerId = self._id, messangerType = "consumers")
+    """ Function closes the connection for this client. 
+        The producer id is removed from the connection storage.
+        It is not guaranteed that the connection will be
+        removed cause other messangers can be still using it.
+    Returns:
+      S_OK/S_ERROR: Error appears in case if the connection was already
+        closed for this consumer.
+    """
+    return self._connectionManager.stopConnection(mqURI = self._mqURI, messangerId = self._id)
 

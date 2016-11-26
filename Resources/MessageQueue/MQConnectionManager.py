@@ -110,6 +110,11 @@ class MQConnectionManager(object):
       return S_ERROR('Failed to disconnect! Connector is None!')
     return connector.disconnect()
 
+  def unsubscribe(self, connector, destination, messangerId):
+    if not connector:
+      return S_ERROR('Failed to unsubscribe! Connector is None!')
+    return connector.unsubscribe(parameters = {'destination':destination, 'messangerId':messangerId})
+
   def getConnector(self, mqConnection):
     """ Function returns MQConnector assigned to the mqURI.
     Args:
@@ -146,8 +151,14 @@ class MQConnectionManager(object):
       conn = getMQService(mqURI)
       dest = getDestinationAddress(mqURI)
       connector = _getConnector(self._connectionStorage, conn)
+
       if not _removeMessanger(cStorage = self._connectionStorage, mqConnection = conn, destination = dest, messangerId = messangerId):
         return S_ERROR('Failed to stop the connection!The messanger:'+ messangerId + ' does not exists!')
+      else:
+        if 'consumer' in messangerId:
+          result = self.unsubscribe(connector, destination = dest, messangerId = messangerId)
+          if not result['OK']:
+            return result
       if not _connectionExists(self._connectionStorage, conn):
         return self.disconnect(connector)
       return S_OK()

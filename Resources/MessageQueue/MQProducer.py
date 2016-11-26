@@ -1,7 +1,7 @@
 """ MQProducer
 """
 
-from DIRAC import S_ERROR
+from DIRAC import S_ERROR, gLogger
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress, getMQService
 
 class MQProducer ( object ):
@@ -11,6 +11,7 @@ class MQProducer ( object ):
     self._destination = getDestinationAddress(self._mqURI)
     self._mqService = getMQService(self._mqURI)
     self._id = producerId
+    self.log = gLogger.getSubLogger( self.__class__.__name__ )
 
   def put(self, msg):
     result =  self._connectionManager.getConnector(self._mqService)
