@@ -6,9 +6,15 @@ from DIRAC.ConfigurationSystem.Client.CSAPI       import CSAPI
 from DIRAC.Core.Utilities  import ObjectLoader
 from DIRAC.Core.Utilities.DErrno import EMQUKN
 
-__RCSID__ = "$Id$"
-
 def getSpecializedMQConnector(mqType):
+  """ Function loads the specialized MQConnector class based on mqType.
+      It is assumed that MQConnector has a name in the format mqTypeMQConnector
+      e.g. if StompMQConnector.
+  Args:
+    mqType(str): prefix of specialized class name e.g. Stomp.
+  Returns:
+    S_OK/S_ERROR: with loaded specialized class of MQConnector.
+  """
   subClassName = mqType + 'MQConnector'
   objectLoader = ObjectLoader.ObjectLoader()
   result = objectLoader.loadObject( 'Resources.MessageQueue.%s' % subClassName, subClassName )
@@ -17,6 +23,15 @@ def getSpecializedMQConnector(mqType):
   return result
 
 def createMQConnector(parameters = None):
+  """ Function creates and returns the MQConnector object based.
+  Args:
+    parameters(dict): set of parameters for the MQConnector constructor,
+      it should also contain pair 'MQType':mqType, where
+      mqType is a string used as a prefix for the specialized MQConnector
+      class.
+  Returns:
+    S_OK/S_ERROR: with loaded specialized class of MQConnector.
+  """
   mqType = parameters.get('MQType', None)
   result = getSpecializedMQConnector(mqType = mqType)
   if not result['OK']:
