@@ -296,6 +296,14 @@ class TestMQConnectionManager_getAllMessangers( TestMQConnectionManager ):
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     self.assertEqual(sorted(_getAllMessangersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
 
+class TestMQConnectionManager_getConnector( TestMQConnectionManager ):
+  def test_success( self ):
+    result = self.myManager.getConnector('mardirac3.in2p3.fr')
+    self.assertTrue(result['OK'])
+  def test_failure( self ):
+    result = self.myManager.getConnector('nonexistent.in2p3.fr')
+    self.assertEqual(result['Message'], 'Failed to get the MQConnector!')
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_addNewMessanger ) )
@@ -303,6 +311,7 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_stopConnection ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_removeAllConnections ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_getAllMessangers ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionManager_getConnector ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_connectionExists ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_destinationExists ) )

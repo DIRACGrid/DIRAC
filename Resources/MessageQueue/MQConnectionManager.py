@@ -110,6 +110,22 @@ class MQConnectionManager(object):
       return S_ERROR('Failed to disconnect! Connector is None!')
     return connector.disconnect()
 
+  def getConnector(self, mqConnection):
+    """ Function returns MQConnector assigned to the mqURI.
+    Args:
+      mqConnection(str): connection name.
+    Returns:
+      S_OK/S_ERROR: with the value of the MQConnector in S_OK if not None
+    """
+    self.lock.acquire()
+    try:
+      connector = _getConnector(self._connectionStorage, mqConnection)
+      if not connector:
+        return S_ERROR('Failed to get the MQConnector!')
+      return S_OK(connector) 
+    finally:
+      self.lock.release()
+    
   def stopConnection(self, mqURI, messangerId):
     """ Function 'stops' the connection for given messanger, which means
         it removes it from the messanger list. If this is the consumer, the
