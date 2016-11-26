@@ -146,7 +146,8 @@ class MQConnectionManager(object):
       conn = getMQService(mqURI)
       dest = getDestinationAddress(mqURI)
       connector = _getConnector(self._connectionStorage, conn)
-      _removeMessanger(cStorage = self._connectionStorage, mqConnection = conn, destination = dest, messangerId = messangerId)
+      if not _removeMessanger(cStorage = self._connectionStorage, mqConnection = conn, destination = dest, messangerId = messangerId):
+        return S_ERROR('Failed to stop the connection!The messanger:'+ messangerId + ' does not exists!')
       if not _connectionExists(self._connectionStorage, conn):
         return self.disconnect(connector)
       return S_OK()

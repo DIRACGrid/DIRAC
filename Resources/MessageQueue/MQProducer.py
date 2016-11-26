@@ -20,4 +20,12 @@ class MQProducer ( object ):
     return result
 
   def close(self):
+    """ Function closes the connection for this client. 
+        The producer id is removed from the connection storage.
+        It is not guaranteed that the connection will be
+        removed cause other messangers can be still using it.
+    Returns:
+      S_OK/S_ERROR: Error appears in case if the connection was already
+        closed for this producer.
+    """
     return self._connectionManager.stopConnection(mqURI = self._mqURI, messangerId = self._id)
