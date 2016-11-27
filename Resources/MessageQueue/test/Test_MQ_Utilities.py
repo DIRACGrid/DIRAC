@@ -5,7 +5,7 @@ Unit tests of utility functions in the DIRAC.Resources.MessageQueue.Utilities
 import DIRAC.Resources.MessageQueue.Utilities as module
 import unittest
 
-from mock.mock import MagicMock
+from mock import MagicMock
 
 __RCSID__ = "$Id$"
 
