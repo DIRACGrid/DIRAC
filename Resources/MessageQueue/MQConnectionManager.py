@@ -69,6 +69,9 @@ class MQConnectionManager(object):
 
   def addNewMessanger(self, mqURI, messangerType):
     """ Function updates the MQ connection by adding the messanger Id to the internal connection storage.
+        Also the messangerId is chosen. 
+        Messanger Id is set to the maximum existing value (or 0 no messangers are connected) + 1. 
+        Messanger Id is calculated separately for consumers and producers
     Args:
       mqURI(str):
       messangerType(str): 'consumer' or 'producer'.
@@ -80,12 +83,12 @@ class MQConnectionManager(object):
     # 'producer21' ->21
     msgIdToInt = lambda msgIds, msgType : [int(m.replace(msgType,'')) for m in msgIds]
     # The messangerId is str e.g.  'consumer5' or 'producer3'
-    generateMessangerId = lambda strg, conn, dest, msgT: msgT +str(max(msgIdToInt(_getMessangersIdWithType(strg, conn, dest, msgT), msgT) or [0]) + 1)
+    generateMessangerId = lambda strg, msgT: msgT + str( max( msgIdToInt( _getAllMessangersIdWithType(strg, msgT), msgT) or [0] ) + 1 )
     self.lock.acquire()
     try:
       conn = getMQService(mqURI)
       dest = getDestinationAddress(mqURI)
-      mId = generateMessangerId(self._connectionStorage, conn, dest, messangerType)
+      mId = generateMessangerId(self._connectionStorage, messangerType)
       if _addMessanger(cStorage = self._connectionStorage, mqConnection = conn, destination = dest, messangerId = mId):
         return S_OK(mId)
       return S_ERROR("Failed to update the connection, the messanger "+str(mId)+ "  already exists")
@@ -273,6 +276,7 @@ def _getMessangersIdWithType(cStorage, mqConnection, mqDestination, messangerTyp
   """
   return [p for p in _getMessangersId(cStorage, mqConnection, mqDestination) if messangerType in p]
 
+
 def _getAllMessangersId(cStorage):
   """ Function returns list of all messangers ids.
       The list can contain duplicates because the same
@@ -283,6 +287,16 @@ def _getAllMessangersId(cStorage):
     list: of form ['producer1','consumer1', 'producer1'] or []
   """
   return [m for c in cStorage.keys() for d in _getDestinations(cStorage,c)  for m in _getMessangersId(cStorage,c, d)]
+
+def _getAllMessangersIdWithType(cStorage, messangerType):
+  """ Function returns list of all messangers ids for given messangerType
+  Args:
+    cStorage(dict): message queue connection storage.
+    messangerType(str): 'consumer' or 'producer'
+  Returns:
+    list: of form ['producer1','producer2'], ['consumer8', 'consumer20'] or []
+  """
+  return [p for p in _getAllMessangersId(cStorage) if messangerType in p]
 
 def _getAllMessangersInfo(cStorage):
   """ Function returns list of all messangers in the pseudo-path format.
