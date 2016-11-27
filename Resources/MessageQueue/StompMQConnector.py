@@ -9,11 +9,9 @@ import ssl
 import time
 
 from DIRAC.Resources.MessageQueue.MQConnector  import MQConnector
-from DIRAC.Core.Security                        import Locations
+from DIRAC.Core.Security import Locations
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.DErrno import EMQUKN, EMQCONN, EMQNOM
-
-__RCSID__ = "$Id$"
+from DIRAC.Core.Utilities.DErrno import EMQUKN, EMQCONN
 
 
 
@@ -30,26 +28,25 @@ class StompMQConnector( MQConnector ):
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.parameters = parameters
     self.connection =  None
+
   def setupConnection( self, parameters = None):
     #"""
     #Establishes a new connection to a Stomp server, e.g. RabbitMQ
-
     #:param dict parameters: dictionary with additional MQ parameters if any
-    #:param func messageCallback: function to be called when a new message is received from the queue ( only receiver mode ).
-                                #If None, the defaultCallback method is used instead
     #:return: S_OK/S_ERROR
     #"""
 
     if parameters is not None:
       self.parameters.update( parameters )
 
+    #Check that the minimum set of parameters is present
+    if not all(p in parameters for p in ('Host', 'VHost')):
+      return S_ERROR( 'Input parameters are missing!')
+
     # Make the actual connection
     host = self.parameters.get( 'Host' )
     port = self.parameters.get( 'Port', 61613 )
     vhost = self.parameters.get( 'VHost')
-
-    queueName = self.parameters.get( 'Queue' )
-    topicName = self.parameters.get( 'Topic' )
 
     sslVersion = self.parameters.get( 'SSLVersion' )
     hostcert = self.parameters.get( 'HostCertificate' )
@@ -189,7 +186,7 @@ class StompListener ( stomp.ConnectionListener ):
     """
     Initializes the internal listener object
 
-    :param func callback: an MQConnect.defaultCallback compatible function
+    :param func callback: a defaultCallback compatible function
     :param bool ack: if set to true an acknowledgement will be send back to the sender
     :param connection: a stomp.Connection object used to send the acknowledgement
     """
@@ -206,7 +203,6 @@ class StompListener ( stomp.ConnectionListener ):
   def on_message( self, headers, body ):
     """
     Function called upon receiving a message
-
     :param dict headers: message headers
     :param json body: message body
     """
@@ -221,5 +217,3 @@ class StompListener ( stomp.ConnectionListener ):
     """ Function called when an error happens
     """
     self.log.error( message )
-
-
