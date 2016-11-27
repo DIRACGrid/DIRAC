@@ -56,7 +56,7 @@ def setupConnection(mqURI, mType):
   Returns:
     S_OK/S_ERROR: with the value of the messanger Id (e.g. 'consumer4') in S_OK.
   """
-  result = getMQParamsFromCS(destinationName = mqURI)
+  result = getMQParamsFromCS(mqURI = mqURI)
   if not result['OK']:
     gLogger.error( 'Failed to setupConnection:', '%s' % (result['Message'] ) )
     return result
