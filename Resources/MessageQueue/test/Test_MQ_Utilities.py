@@ -4,6 +4,7 @@ Unit tests of utility functions in the DIRAC.Resources.MessageQueue.Utilities
 
 import DIRAC.Resources.MessageQueue.Utilities as module
 import unittest
+import Queue
 
 from mock import MagicMock
 
@@ -206,9 +207,42 @@ class _getMQParamFromCSFailureTestCase( unittest.TestCase ):
     result = module.getMQParamsFromCS( QUEUE_NAME )
     self.assertFalse( result['OK'] )
 
+class _generateDefaultCallbackTestCase( unittest.TestCase ):
+  """ Check default callback behaviour.
+  """
+  def test_EmptyMessage( self ):
+    myCallback = module.generateDefaultCallback()
+    self.assertRaises(Queue.Empty, myCallback.get)
 
+  def test_putOneGetOneMessage( self ):
+    myCallback = module.generateDefaultCallback()
+    myCallback("", "test message")
+    self.assertEqual(myCallback.get(), "test message")
+
+  def test_severalMessages( self ):
+    myCallback = module.generateDefaultCallback()
+    myCallback("", "test message1")
+    myCallback("", "test message2")
+    myCallback("", "test message3")
+    myCallback("", "test message4")
+    self.assertEqual(myCallback.get(), "test message1")
+    self.assertEqual(myCallback.get(), "test message2")
+    self.assertEqual(myCallback.get(), "test message3")
+    self.assertEqual(myCallback.get(), "test message4")
+    self.assertRaises(Queue.Empty, myCallback.get)
+  
+  def test_twoDifferentCallbacks( self ):
+    myCallback = module.generateDefaultCallback()
+    myCallback2 = module.generateDefaultCallback()
+    myCallback("", "test message")
+    myCallback2("", "test message2")
+    self.assertEqual(myCallback.get(), "test message")
+    self.assertRaises(Queue.Empty, myCallback.get)
+    self.assertEqual(myCallback2.get(), "test message2")
+    self.assertRaises(Queue.Empty, myCallback2.get)
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( _getMQParamFromCSSuccessTestCase )
   suite.addTests( unittest.defaultTestLoader.loadTestsFromTestCase( _getMQParamFromCSFailureTestCase ) )
+  suite.addTests( unittest.defaultTestLoader.loadTestsFromTestCase( _generateDefaultCallbackTestCase ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
