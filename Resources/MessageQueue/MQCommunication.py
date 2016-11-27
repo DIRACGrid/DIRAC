@@ -1,15 +1,16 @@
-""" General Message Queue Interface to create MQConsumers and MQProducer.
+""" General Message Queue Interface to create Consumers and Producers
 """
 from DIRAC import gLogger, S_OK
 from DIRAC.Resources.MessageQueue.MQProducer import MQProducer
 from DIRAC.Resources.MessageQueue.MQConsumer import MQConsumer
 from DIRAC.Resources.MessageQueue.MQConnectionManager import MQConnectionManager
 from DIRAC.Resources.MessageQueue.Utilities import getMQParamsFromCS
+from DIRAC.Resources.MessageQueue.Utilities import generateDefaultCallback
 
 
 connectionManager = MQConnectionManager() #To manage the active MQ connections.
 
-def createConsumer(mqURI, callback = None):
+def createConsumer(mqURI, callback = generateDefaultCallback()):
   """ Function creates MQConsumer. All parameters are taken
       from the Configuration Service based on the mqURI
       value.
@@ -44,13 +45,12 @@ def createProducer(mqURI):
     return result
   return S_OK(MQProducer(mqManager = connectionManager, mqURI  = mqURI, producerId = result['Value']))
 
-
 def setupConnection(mqURI, mType):
   """ Function sets up the active MQ connection. All parameters are taken
       from the Configuration Service based on the mqURI
       value and the messanger Type mType.
   Args:
-    mqURI(str):Pseudo URI identifing the MQ service. It has the following format
+    mqURI(str):Pseudo URI identifing the MQ service. It has the following format:
               mqConnection::DestinationType::DestinationName
               e.g. blabla.cern.ch::Queue::MyQueue1
     mType(str): 'consumer' or 'producer'
@@ -63,34 +63,3 @@ def setupConnection(mqURI, mType):
     return result
   params = result['Value']
   return connectionManager.startConnection(mqURI, params, mType)
-
-
-
-#Resources
-#{
-  #MQServices
-  #{
-    #mardirac3.in2p3.fr
-    #{
-      #MQType = Stomp
-      #Host = mardirac3.in2p3.fr
-      #Port = 9165
-      #User = guest
-      #Password = guest
-      #Queues
-      #{
-        #TestQueue
-        #{
-          #Acknowledgement = True
-        #}
-      #}
-      #Topics
-      #{
-        #TestTopic
-        #{
-          #Acknowledgement = True
-        #}
-      #}
-    #}
-  #}
-#}

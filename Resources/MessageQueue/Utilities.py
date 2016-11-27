@@ -5,6 +5,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.CSAPI       import CSAPI
 from DIRAC.Core.Utilities  import ObjectLoader
 from DIRAC.Core.Utilities.DErrno import EMQUKN
+import Queue
 
 def getSpecializedMQConnector(mqType):
   """ Function loads the specialized MQConnector class based on mqType.
@@ -118,3 +119,30 @@ def getDestinationName(mqURI):
 def getDestinationAddress(mqURI):
   mqType, mqName = mqURI.split("::")[-2:]
   return "/" + mqType.lower() + "/" + mqName
+
+def generateDefaultCallback():
+  """ Function generates a default callback that can
+      be used to handle the messages in the MQConsumer
+      clients. It contains the internal queue (as closure)
+      for the incoming messages. The queue can be accessed by the
+      callback.get() method. The callback.get() method returns
+      the first message or raise the exception Queue.Empty.
+      e.g. myCallback = generateDefaultCallback()
+          try:
+             print myCallback.get()
+          except Queue.Empty:
+            pass
+  Args:
+    mqURI(str):Pseudo URI identifing MQ connection. It has the following format
+              mqConnection::DestinationType::DestinationName
+              e.g. blabla.cern.ch::Queue::MyQueue1
+  Returns:
+    object: callback function
+  """
+  msgQueue = Queue.Queue()
+  def callback(headers, body):
+    msgQueue.put(body)
+  def get():
+    return msgQueue.get(block = False)
+  callback.get = get
+  return callback

@@ -207,6 +207,7 @@ class _getMQParamFromCSFailureTestCase( unittest.TestCase ):
     self.assertFalse( result['OK'] )
 
 
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( _getMQParamFromCSSuccessTestCase )
   suite.addTests( unittest.defaultTestLoader.loadTestsFromTestCase( _getMQParamFromCSFailureTestCase ) )

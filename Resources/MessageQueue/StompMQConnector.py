@@ -11,7 +11,7 @@ import time
 from DIRAC.Resources.MessageQueue.MQConnector  import MQConnector
 from DIRAC.Core.Security                        import Locations
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.DErrno import EMQUKN, EMQCONN
+from DIRAC.Core.Utilities.DErrno import EMQUKN, EMQCONN, EMQNOM
 
 __RCSID__ = "$Id$"
 
@@ -30,7 +30,6 @@ class StompMQConnector( MQConnector ):
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.parameters = parameters
     self.connection =  None
-
   def setupConnection( self, parameters = None):
     #"""
     #Establishes a new connection to a Stomp server, e.g. RabbitMQ
@@ -95,8 +94,6 @@ class StompMQConnector( MQConnector ):
                                               vhost = vhost,
                                              )
         else:
-      
-          #self.connection = stomp.Connection()
           self.connection = stomp.Connection(
                                               [ ( ip, int( port ) ) ],
                                               vhost = vhost
@@ -159,16 +156,20 @@ class StompMQConnector( MQConnector ):
     if self.parameters.get( 'Persistent', '' ).lower() in ['true', 'yes', '1']:
       headers = { 'persistent': 'true' }
     ack = 'auto'
-    acknowledgement = False 
+    acknowledgement = False
     if self.parameters.get( 'Acknowledgement', '' ).lower() in ['true', 'yes', '1']:
       acknowledgement = True
       ack = 'client-individual'
+    if not callback:
+      self.log.error("No callback specified!")
     listener = StompListener( callback, acknowledgement, self.connection, mId )
+
     self.connection.set_listener( '', listener )
     self.connection.subscribe( destination = dest,
                                id = mId,
                                ack = ack,
                                headers = headers )
+    return S_OK( 'Subscription successful' )
 
   def unsubscribe(self, parameters):
     dest = parameters.get('destination', '')
@@ -193,21 +194,22 @@ class StompListener ( stomp.ConnectionListener ):
     :param connection: a stomp.Connection object used to send the acknowledgement
     """
 
+    self.log = gLogger.getSubLogger( 'StompListener' )
+    if not callback:
+      self.log.error('Error initializing StompMQConnector!callback is None')
     self.callback = callback
     self.ack = ack
-    self.mId = messangerId 
+    self.mId = messangerId
     self.connection = connection
 
-    self.log = gLogger.getSubLogger( 'StompListener' )
 
   def on_message( self, headers, body ):
     """
-    Callback function called upon receiving a message
+    Function called upon receiving a message
 
     :param dict headers: message headers
     :param json body: message body
     """
-
     result = self.callback( headers, json.loads( body ) )
     if self.ack:
       if result['OK']:
@@ -216,7 +218,8 @@ class StompListener ( stomp.ConnectionListener ):
         self.connection.nack( headers['message-id'], self.mId )
 
   def on_error( self, headers, message ):
-    """ Callback function called when an error happens
+    """ Function called when an error happens
     """
     self.log.error( message )
+
 
