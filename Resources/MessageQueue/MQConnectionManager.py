@@ -273,6 +273,17 @@ def _getMessangersIdWithType(cStorage, mqConnection, mqDestination, messangerTyp
   """
   return [p for p in _getMessangersId(cStorage, mqConnection, mqDestination) if messangerType in p]
 
+def _getAllMessangersId(cStorage):
+  """ Function returns list of all messangers ids.
+      The list can contain duplicates because the same
+      producer id can be used for different queues.
+  Args:
+    cStorage(dict): message queue connection storage.
+  Returns:
+    list: of form ['producer1','consumer1', 'producer1'] or []
+  """
+  return [m for c in cStorage.keys() for d in _getDestinations(cStorage,c)  for m in _getMessangersId(cStorage,c, d)]
+
 def _getAllMessangersInfo(cStorage):
   """ Function returns list of all messangers in the pseudo-path format.
   Args:

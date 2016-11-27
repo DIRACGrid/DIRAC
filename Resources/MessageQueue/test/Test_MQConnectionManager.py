@@ -18,6 +18,7 @@ from DIRAC.Resources.MessageQueue.MQConnectionManager import _getDestinations
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _getMessangersId
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _getMessangersIdWithType
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _getAllMessangersInfo
+from DIRAC.Resources.MessageQueue.MQConnectionManager import _getAllMessangersId
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _addMessanger
 from DIRAC.Resources.MessageQueue.MQConnectionManager import _removeMessanger
 
@@ -128,6 +129,11 @@ class TestMQConnectionStorageFunctions_getAllMessangersInfo( TestMQConnectionSto
   def test_success( self ):
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     self.assertEqual(sorted(_getAllMessangersInfo(self.storage)),sorted(expectedOutput))
+
+class TestMQConnectionStorageFunctions_getAllMessangersId( TestMQConnectionStorageFunctions ):
+  def test_success( self ):
+    expectedOutput= ['producer4', 'consumer1', 'consumer2', 'consumer4', 'producer2', 'consumer1', 'consumer2', 'producer1', 'producer1', 'consumer2', 'consumer3', 'consumer4']
+    self.assertEqual(sorted(_getAllMessangersId(self.storage)),sorted(expectedOutput))
 
 class TestMQConnectionStorageFunctions_addMessanger( TestMQConnectionStorageFunctions ):
   def test_success( self ):
@@ -328,4 +334,5 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_addMessanger ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_removeMessanger ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_getAllMessangersInfo) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConnectionStorageFunctions_getAllMessangersId) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
