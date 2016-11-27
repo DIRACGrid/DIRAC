@@ -49,62 +49,51 @@ def createMQConnector(parameters = None):
   return S_OK( mqConnector )
 
 
-def getMQParamsFromCS( destinationName ):
-  """ Get parameter of a MQ destination (queue/topic) from the CS
-
-  :param str destinationName: name of the queue/topic either just the queue/topic name, in this case
-                       the default MQServer will be used, or in th form <MQServer>::<destinationName>
-  :return: S_OK( parameterDict )/ S_ERROR
+def getMQParamsFromCS( mqURI ):
+  """ Function gets parameters of a MQ destination (queue/topic) from the CS.
+  Args:
+    mqURI(str):Pseudo URI identifing the MQ service. It has the following format:
+              mqConnection::DestinationType::DestinationName
+              e.g. blabla.cern.ch::Queue::MyQueue1
+    mType(str): 'consumer' or 'producer'
+  Returns:
+    S_OK(param_dicts)/S_ERROR: 
   """
-
   # API initialization is required to get an up-to-date configuration from the CS
   csAPI = CSAPI()
   csAPI.initialize()
 
-  mqService = ''
-  elements = destinationName.split( '::' )
-  if len( elements ) == 2:
-    mqService, queue = elements
-  else:
-    queue = destinationName
+  try :
+    mqService, mqType, mqName = mqURI.split("::")
+  except ValueError:
+    return S_ERROR( 'Bad format of mqURI address:%s' % ( mqURI) )
 
-  # get both queues and topics
-  print "this is mqService:" + mqService
-  result = gConfig.getConfigurationTree( '/Resources/MQServices', mqService, queue )
+  result = gConfig.getConfigurationTree( '/Resources/MQServices', mqService, mqType, mqName )
   if not result['OK'] or len( result['Value'] ) == 0:
-    return S_ERROR( 'Requested MQService or queue/topic not found in the CS: %s::%s' % ( mqService, queue ) )
-
-  queuePath = None
+    return S_ERROR( 'Requested destination not found in the CS: %s::%s::%s' % ( mqService, mqType, mqName ) )
+  mqDestinationPath = None
   for path, value in result['Value'].iteritems():
-
-    # check section paths for duplicate names
-    # endswith() guarantees that similar queue names are discarded
-    if not value and path.endswith( queue ):
-      if queuePath:
-        return S_ERROR( 'Ambiguous queue/topic %s definition' % queue )
-      else:
-        queuePath = path
+    if not value and path.endswith( mqName ):
+        mqDestinationPath = path
 
   # set-up internal parameter depending on the destination type
-  tmp = queuePath.split( 'Queues' )[0].split( 'Topics' )
+  tmp = mqDestinationPath.split( 'Queue' )[0].split( 'Topic' )
   servicePath = tmp[0]
-
   serviceDict = {}
   if len(tmp) > 1:
-    serviceDict['Topic'] = queue
+    serviceDict['Topic'] = mqName
   else:
-    serviceDict['Queue'] = queue
+    serviceDict['Queue'] = mqName
 
-  result = gConfig.getOptionsDict( servicePath )
+  result = gConfig.getOptionsDict(servicePath )
   if not result['OK']:
     return result
   serviceDict.update( result['Value'] )
 
-  result = gConfig.getOptionsDict( queuePath )
+  result = gConfig.getOptionsDict( mqDestinationPath )
   if not result['OK']:
     return result
   serviceDict.update( result['Value'] )
-
   return S_OK( serviceDict )
 
 def getMQService(mqURI):

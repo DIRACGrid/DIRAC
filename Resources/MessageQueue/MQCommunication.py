@@ -7,7 +7,6 @@ from DIRAC.Resources.MessageQueue.MQConnectionManager import MQConnectionManager
 from DIRAC.Resources.MessageQueue.Utilities import getMQParamsFromCS
 from DIRAC.Resources.MessageQueue.Utilities import generateDefaultCallback
 
-
 connectionManager = MQConnectionManager() #To manage the active MQ connections.
 
 def createConsumer(mqURI, callback = generateDefaultCallback()):

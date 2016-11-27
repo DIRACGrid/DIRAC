@@ -11,8 +11,10 @@ from mock import MagicMock
 __RCSID__ = "$Id$"
 
 
-ROOT_PATH = '/Resources/MQService/'
+ROOT_PATH = '/Resources/MQServices/'
 MQSERVICE_NAME = 'mq.dirac.net'
+QUEUE_TYPE = 'Queue'
+TOPIC_TYPE = 'Topic'
 QUEUE_NAME = 'Test'
 
 CS_MQSERVICE_OPTIONS = { 'Host': MQSERVICE_NAME }
@@ -105,15 +107,12 @@ class _getMQParamFromCSSuccessTestCase( unittest.TestCase ):
                                                   {'OK': True, 'Value': CS_MQSERVICE_OPTIONS},
                                                   {'OK': True, 'Value': CS_QUEUE_OPTIONS}
                                                 ]
-
-  def test_getQueueByProperName( self ):
-    """ Try to get a queue by a proper queue name only
-    """
+  def test_getQueue( self ):
 
     module.gConfig.getConfigurationTree.return_value = {'OK': True, 'Value': QUEUE_CONFIG}
 
     # check returned value
-    result = module.getMQParamsFromCS( QUEUE_NAME )
+    result = module.getMQParamsFromCS(mqURI = MQSERVICE_NAME+"::" +QUEUE_TYPE+ "::"+ QUEUE_NAME )
     self.assertTrue( result['OK'] )
 
     # check queue parameters
@@ -124,53 +123,24 @@ class _getMQParamFromCSSuccessTestCase( unittest.TestCase ):
     with self.assertRaises( KeyError ):
       result['Value']['Topic']
 
-  def test_getQueueByProperName2( self ):
-    """ Try to get a queue by a service and queue name
+  def test_getTopic( self ):
+    """ Try to get a topic 
     """
-
-    module.gConfig.getConfigurationTree.return_value = {'OK': True, 'Value': QUEUE_CONFIG}
-
-    # check returned value
-    result = module.getMQParamsFromCS( '%s::%s' % ( MQSERVICE_NAME, QUEUE_NAME ) )
-    self.assertTrue( result['OK'] )
-
-    # check queue parameters
-    self.assertEqual( result['Value']['Queue'], QUEUE_NAME )
-    self.assertEqual( result['Value']['Host'], MQSERVICE_NAME )
-    self.assertTrue( result['Value']['Acknowledgement'] )
-
-    with self.assertRaises( KeyError ):
-      result['Value']['Topic']
-
-
-  def test_getTopicByProperName( self ):
-    """ Try to get a topic by a proper name
-    """
-
     module.gConfig.getConfigurationTree.return_value = {'OK': True, 'Value': TOPIC_CONFIG}
 
     # check returned value
-    result = module.getMQParamsFromCS( QUEUE_NAME )
+    TOPIC_NAME=QUEUE_NAME
+    result = module.getMQParamsFromCS(mqURI = MQSERVICE_NAME+"::" +TOPIC_TYPE+ "::"+ TOPIC_NAME )
     self.assertTrue( result['OK'] )
 
-    # check queue parameters
-    self.assertEqual( result['Value']['Topic'], QUEUE_NAME )
+    # check topic parameters
+    self.assertEqual( result['Value']['Topic'], TOPIC_NAME )
     self.assertEqual( result['Value']['Host'], MQSERVICE_NAME )
     self.assertTrue( result['Value']['Acknowledgement'] )
 
     with self.assertRaises( KeyError ):
       result['Value']['Queue']
 
-  def test_getQueueBySimilarName( self ):
-    """ Try to get a queue by a similar name
-    """
-
-    module.gConfig.getConfigurationTree.return_value = {'OK': True, 'Value': SIMILAR_QUEUE_CONFIG}
-
-    # check returned value
-    result = module.getMQParamsFromCS( QUEUE_NAME )
-    self.assertTrue( result['OK'] )
-    self.assertEqual( result['Value']['Queue'], QUEUE_NAME )
 
 class _getMQParamFromCSFailureTestCase( unittest.TestCase ):
   """ Test class to check known failure scenarios.
@@ -189,22 +159,16 @@ class _getMQParamFromCSFailureTestCase( unittest.TestCase ):
     module.gConfig.getConfigurationTree.return_value = {'OK': True, 'Value': {}}
 
     # try different possibilities
-    result = module.getMQParamsFromCS( QUEUE_NAME )
+    result = module.getMQParamsFromCS( '%s' % QUEUE_NAME )
+    self.assertFalse( result['OK'] )
+    
+    result = module.getMQParamsFromCS( mqURI = MQSERVICE_NAME+"::" +QUEUE_TYPE+ "::"+ "InvalidName" )
     self.assertFalse( result['OK'] )
 
     result = module.getMQParamsFromCS( '%s::' % MQSERVICE_NAME )
     self.assertFalse( result['OK'] )
 
     result = module.getMQParamsFromCS( '%s::%s' % ( MQSERVICE_NAME, QUEUE_NAME ) )
-    self.assertFalse( result['OK'] )
-
-  def test_getQueueByAmbiguousName( self ):
-    """ Try to get a queue by an ambiguous name
-    """
-
-    module.gConfig.getConfigurationTree.return_value = {'OK': True, 'Value': AMBIGIOUS_QUEUE_CONFIG }
-
-    result = module.getMQParamsFromCS( QUEUE_NAME )
     self.assertFalse( result['OK'] )
 
 class _generateDefaultCallbackTestCase( unittest.TestCase ):
