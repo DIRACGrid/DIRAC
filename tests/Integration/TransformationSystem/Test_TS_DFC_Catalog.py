@@ -49,7 +49,7 @@ class TestTSDFCCatalogTestCase( unittest.TestCase ):
     self.fc = FileCatalog()
     self.dm = DataManager()
     self.metaCatalog = 'DIRACFileCatalog'
-    gLogger.setLevel( 'INFO' )
+    gLogger.setLevel( 'DEBUG' )
 
   def tearDown( self ):
     pass
