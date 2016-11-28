@@ -1,9 +1,7 @@
 ########################################################################
-# $HeadURL$
-# File :   dirac-proxy-init.py
+# File :   ProxyGeneration.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__ = "$Id$"
 
 import sys
 import getpass
@@ -11,8 +9,10 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.NTP import getClockDeviation
 
+__RCSID__ = "$Id$"
 
-class CLIParams:
+
+class CLIParams(object):
 
   proxyLifeTime = 86400
   diracGroup = False
@@ -39,9 +39,9 @@ class CLIParams:
       return S_ERROR( "Can't parse time argument" )
     return S_OK()
 
-  def setRFC( self, arg ):
-      self.rfc = True
-      return S_OK()
+  def setRFC( self, _arg ):
+    self.rfc = True
+    return S_OK()
 
   def setProxyRemainingSecs( self, arg ):
     self.proxyLifeTime = int( arg )
@@ -70,11 +70,11 @@ class CLIParams:
       return S_ERROR( "Can't parse strength argument" )
     return S_OK()
 
-  def setProxyLimited( self, arg ):
+  def setProxyLimited( self, _arg ):
     self.limitedProxy = True
     return S_OK()
 
-  def setSummary( self, arg ):
+  def setSummary( self, _arg ):
     gLogger.info( "Enabling summary output" )
     self.summary = True
     return S_OK()
@@ -91,24 +91,24 @@ class CLIParams:
     self.proxyLoc = arg
     return S_OK()
 
-  def setDisableCSCheck( self, arg ):
+  def setDisableCSCheck( self, _arg ):
     self.checkWithCS = False
     return S_OK()
 
-  def setStdinPasswd( self, arg ):
+  def setStdinPasswd( self, _arg ):
     self.stdinPasswd = True
     return S_OK()
 
-  def setStrict( self, arg ):
+  def setStrict( self, _arg ):
     self.strict = True
     return S_OK()
 
-  def showVersion( self, arg ):
+  def showVersion( self, _arg ):
     gLogger.always( "Version: %s" % __RCSID__ )
     sys.exit( 0 )
     return S_OK()
 
-  def disableClockCheck( self, arg ):
+  def disableClockCheck( self, _arg ):
     self.checkClock = False
     return S_OK()
 
@@ -263,4 +263,3 @@ def generateProxy( params ):
     gLogger.warn( retVal[ 'Message' ] )
     return S_ERROR( "Couldn't generate proxy: %s" % retVal[ 'Message' ] )
   return S_OK( proxyLoc )
-

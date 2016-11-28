@@ -83,9 +83,9 @@ class ProxyDB( DB ):
                                                         'VOMSAttr' : 'VARCHAR(255) NOT NULL',
                                                         'Pem' : 'BLOB',
                                                         'ExpirationTime' : 'DATETIME',
-                                                  },
+                                                      },
                                            'PrimaryKey' : [ 'UserDN', 'UserGroup', 'vomsAttr'  ]
-                                     }
+                                         }
 
     if 'ProxyDB_Log' not in tablesInDB:
       tablesD[ 'ProxyDB_Log' ] = { 'Fields' : { 'ID': 'BIGINT NOT NULL AUTO_INCREMENT',
@@ -96,9 +96,9 @@ class ProxyDB( DB ):
                                                 'Action' : 'VARCHAR(128) NOT NULL',
                                                 'Timestamp' : 'DATETIME',
                                               },
-                                    'PrimaryKey': 'ID',
-                                    'Indexes' : { 'Timestamp' : [ 'Timestamp' ]}
-                                  }
+                                   'PrimaryKey': 'ID',
+                                   'Indexes' : { 'Timestamp' : [ 'Timestamp' ]}
+                                 }
 
     if 'ProxyDB_Tokens' not in tablesInDB:
       tablesD[ 'ProxyDB_Tokens' ] = { 'Fields' : { 'Token' : 'VARCHAR(64) NOT NULL',
@@ -108,7 +108,7 @@ class ProxyDB( DB ):
                                                    'UsesLeft' : 'SMALLINT UNSIGNED DEFAULT 1',
                                                  },
                                       'PrimaryKey' : 'Token'
-                                  }
+                                    }
 
     if 'ProxyDB_ExpNotifs' not in tablesInDB:
       tablesD[ 'ProxyDB_ExpNotifs' ] = { 'Fields' : { 'UserDN' : 'VARCHAR(255) NOT NULL',
@@ -191,8 +191,8 @@ class ProxyDB( DB ):
       return S_ERROR( "Cannot escape DN" )
     cmd = "INSERT INTO `ProxyDB_Requests` ( Id, UserDN, Pem, ExpirationTime )"
     cmd += " VALUES ( 0, %s, %s, TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() ) )" % ( sUserDN,
-                                                                              sAllStr,
-                                                                              int( self.__defaultRequestLifetime ) )
+                                                                                    sAllStr,
+                                                                                    int( self.__defaultRequestLifetime ) )
     retVal = self._update( cmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
@@ -223,8 +223,7 @@ class ProxyDB( DB ):
       sUserDN = self._escapeString( userDN )[ 'Value' ]
     except KeyError:
       return S_ERROR( "Cannot escape DN" )
-    cmd = "SELECT Pem FROM `ProxyDB_Requests` WHERE Id = %s AND UserDN = %s" % ( requestId,
-                                                                                   sUserDN )
+    cmd = "SELECT Pem FROM `ProxyDB_Requests` WHERE Id = %s AND UserDN = %s" % ( requestId, sUserDN )
     retVal = self._query( cmd )
     if not retVal[ 'OK' ]:
       return retVal
@@ -495,10 +494,10 @@ class ProxyDB( DB ):
     #If we have a chain that's 0.8 of max mplifetime don't ask to mp
     if originChainLifeTime > maxMyProxyLifeTime * 0.8:
       self.log.error( "Skipping myproxy download",
-                     "user %s %s  chain has %s secs and requested %s secs" % ( userDN,
-                                                                               userGroup,
-                                                                               originChainLifeTime,
-                                                                               maxMyProxyLifeTime ) )
+                      "user %s %s  chain has %s secs and requested %s secs" % ( userDN,
+                                                                                userGroup,
+                                                                                originChainLifeTime,
+                                                                                maxMyProxyLifeTime ) )
       return S_OK( chain )
 
     lifeTime *= 1.3
@@ -517,7 +516,7 @@ class ProxyDB( DB ):
     mpChainSecsLeft = retVal['Value']
     if mpChainSecsLeft < originChainLifeTime:
       self.log.info( "Chain downloaded from myproxy has less lifetime than the one stored in the db",
-                    "\n Downloaded from myproxy: %s secs\n Stored in DB: %s secs" % ( mpChainSecsLeft, originChainLifeTime ) )
+                     "\n Downloaded from myproxy: %s secs\n Stored in DB: %s secs" % ( mpChainSecsLeft, originChainLifeTime ) )
       return S_OK( chain )
     retVal = mpChain.getDIRACGroup()
     if not retVal[ 'OK' ]:
@@ -845,8 +844,8 @@ class ProxyDB( DB ):
       cmd += "( %s, %s, '', UTC_TIMESTAMP(), 'True' )" % ( sUserDN, sUserGroup )
     else:
       cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN=%s AND UserGroup=%s" % ( sqlFlag,
-                                                                                            sUserDN,
-                                                                                            sUserGroup )
+                                                                                                    sUserDN,
+                                                                                                    sUserGroup )
 
     retVal = self._update( cmd )
     if not retVal[ 'OK' ]:
@@ -948,10 +947,10 @@ class ProxyDB( DB ):
       qr = []
       if 'beforeDate' in selDict:
         qr.append( "Timestamp < %s" % self._escapeString( selDict[ 'beforeDate' ] )[ 'Value' ] )
-        del( selDict[ 'beforeDate' ] )
+        del selDict[ 'beforeDate' ]
       if 'afterDate' in selDict:
         qr.append( "Timestamp > %s" % self._escapeString( selDict[ 'afterDate' ] )[ 'Value' ] )
-        del( selDict[ 'afterDate' ] )
+        del selDict[ 'afterDate' ]
       for field in selDict:
         qr.append( "(%s)" % " OR ".join( [ "%s=%s" % ( field, self._escapeString( str( value ) )[ 'Value' ] ) for value in selDict[field] ] ) )
       whereStr = " WHERE %s" % " AND ".join( qr )
@@ -988,10 +987,10 @@ class ProxyDB( DB ):
     token = m.hexdigest()
     fieldsSQL = ", ".join( ( "Token", "RequesterDN", "RequesterGroup", "ExpirationTime", "UsesLeft" ) )
     valuesSQL = ", ".join( ( self._escapeString( token )['Value'],
-                              self._escapeString( requesterDN )['Value'],
-                              self._escapeString( requesterGroup )['Value'],
-                            "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int( lifeTime ),
-                            str( numUses ) ) )
+                             self._escapeString( requesterDN )['Value'],
+                             self._escapeString( requesterGroup )['Value'],
+                             "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int( lifeTime ),
+                             str( numUses ) ) )
 
     insertSQL = "INSERT INTO `ProxyDB_Tokens` ( %s ) VALUES ( %s )" % ( fieldsSQL, valuesSQL )
     result = self._update( insertSQL )
@@ -1105,7 +1104,7 @@ Dear %s,
   If you plan on keep using this credentials please upload a newer proxy to
   DIRAC by executing:
 
-  $ dirac-proxy-init -UP -g %s
+  $ dirac-proxy-init -P -g %s --rfc
 
   If you have been issued different certificate, please make sure you have a
   proxy uploaded with that certificate.
