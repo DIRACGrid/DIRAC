@@ -66,7 +66,7 @@ class ProxyInit:
   def certLifeTimeCheck( self ):
     minLife = Registry.getGroupOption( self.__piParams.diracGroup, "SafeCertificateLifeTime", 2592000 )
     issuerCert = self.getIssuerCert()
-    result = issuerCert.getRemainingSecs()
+    result = issuerCert.getRemainingSecs() #pylint: disable=no-member
     if not result[ 'OK' ]:
       gLogger.error( "Could not retrieve certificate expiration time", result[ 'Message' ] )
       return
@@ -89,7 +89,7 @@ class ProxyInit:
         return uploadGroups
 
     issuerCert = self.getIssuerCert()
-    userDN = issuerCert.getSubjectDN()[ 'Value' ]
+    userDN = issuerCert.getSubjectDN()[ 'Value' ] #pylint: disable=no-member
 
     result = Registry.getGroupsForDN( userDN )
     if not result[ 'OK' ]:
@@ -133,7 +133,7 @@ class ProxyInit:
 
   def uploadProxy( self, userGroup = False ):
     issuerCert = self.getIssuerCert()
-    userDN = issuerCert.getSubjectDN()[ 'Value' ]
+    userDN = issuerCert.getSubjectDN()[ 'Value' ] #pylint: disable=no-member
     if not userGroup:
       userGroup = self.__piParams.diracGroup
     gLogger.notice( "Uploading proxy for %s..." % userGroup )
@@ -143,13 +143,13 @@ class ProxyInit:
     if userDN in self.__uploadedInfo:
       expiry = self.__uploadedInfo[ userDN ].get( userGroup )
       if expiry:
-        if issuerCert.getNotAfterDate()[ 'Value' ] - datetime.timedelta( minutes = 10 ) < expiry:
+        if issuerCert.getNotAfterDate()[ 'Value' ] - datetime.timedelta( minutes = 10 ) < expiry: #pylint: disable=no-member
           gLogger.info( "SKipping upload for group %s. Already uploaded" % userGroup )
           return S_OK()
     gLogger.info( "Uploading %s proxy to ProxyManager..." % self.__piParams.diracGroup )
     upParams = ProxyUpload.CLIParams()
     upParams.onTheFly = True
-    upParams.proxyLifeTime = issuerCert.getRemainingSecs()[ 'Value' ] - 300
+    upParams.proxyLifeTime = issuerCert.getRemainingSecs()[ 'Value' ] - 300 #pylint: disable=no-member
     upParams.rfcIfPossible = self.__piParams.rfc
     upParams.diracGroup = userGroup
     for k in ( 'certLoc', 'keyLoc', 'userPasswd' ):
@@ -182,8 +182,8 @@ class ProxyInit:
       for userDN in self.__uploadedInfo:
         for group in self.__uploadedInfo[ userDN ]:
           gLogger.notice( " %s | %s | %s" % ( userDN.ljust( maxDNLen ),
-                                                  group.ljust( maxGroupLen ),
-                                                  self.__uploadedInfo[ userDN ][ group ].strftime( "%Y/%m/%d %H:%M" ) ) )
+                                              group.ljust( maxGroupLen ),
+                                              self.__uploadedInfo[ userDN ][ group ].strftime( "%Y/%m/%d %H:%M" ) ) )
 
   def doTheMagic( self ):
     result = self.createProxy()
