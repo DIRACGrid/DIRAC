@@ -497,8 +497,7 @@ class TransformationDB( DB ):
 
   def addFilesToTransformation( self, transName, lfns, connection = False ):
     """ Add a list of LFNs to the transformation directly """
-    gLogger.info( "TransformationDB.addFilesToTransformation: Attempting to add %s files." % len(lfns) )
-    gLogger.info( "TransformationDB.addFilesToTransformation: to Transformations: %s" % transName )
+    gLogger.info( "TransformationDB.addFilesToTransformation: Attempting to add %s files to transformations: %s" % ( len(lfns), transName ) )
     if not lfns:
       return S_ERROR( 'Zero length LFN list' )
     res = self._getConnectionTransID( connection, transName )
