@@ -45,7 +45,6 @@ class TSCatalogClient( FileCatalogClientBase ):
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
 
-  @checkCatalogArguments
   def setMetadata( self, path, metadatadict ):
     """ Set metadata parameter for the given path
         :return Successful/Failed dict.

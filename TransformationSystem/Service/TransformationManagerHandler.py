@@ -341,7 +341,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.removeFile( lfns )
     return self._parseRes( res )
 
-  types_setMetadata = [ [ list, dict, basestring], dict ]
+  types_setMetadata = [ basestring, dict ]
   def export_setMetadata( self, path, querydict ):
     """ Set metadata to a file or to a directory (path)
     """

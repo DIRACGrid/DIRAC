@@ -45,7 +45,7 @@ class TransformationDB( DB ):
       DB.__init__( self, dbname, dbconfig )
 
     self.lock = threading.Lock()
-    self.filters = ()
+    self.filters = []
     res = self.__updateFilters()
     if not res['OK']:
       gLogger.fatal( "Failed to create filters" )
@@ -1458,8 +1458,8 @@ class TransformationDB( DB ):
             gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
             return res
           else:
-            successful.update( res['Value']['Successful'] )
-            failed.update( res['Value']['Failed'] )
+            for lfn in lfns:
+              successful[lfn] = True
 
     res = S_OK( {'Successful':successful, 'Failed':failed } )
     return res
@@ -1533,9 +1533,6 @@ class TransformationDB( DB ):
     gLogger.info( "setMetadata: Attempting to set metadata %s to %s" % (usermetadatadict, path) )
     successful = {}
     failed = {}
-    if isinstance( path, dict ):
-      path = path.keys()[0]
-
     transFiles = {}
     filesToAdd = []
 
@@ -1592,8 +1589,8 @@ class TransformationDB( DB ):
           gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
           return res
         else:
-          successful.update( res['Value']['Successful'] )
-          failed.update( res['Value']['Failed'] )
+          for lfn in lfns:
+            successful[lfn] = True
 
     res = S_OK( {'Successful':successful, 'Failed':failed } )
     return res
@@ -1621,6 +1618,7 @@ class TransformationDB( DB ):
       res = mq.applyQuery(metadatadict)
       if not res['OK']:
         gLogger.error( "Error in applying query: %s" % res['Message'] )
+        return res
       elif res['Value']:
         gLogger.info( "Apply query result is True" )
         result.append( transID )
