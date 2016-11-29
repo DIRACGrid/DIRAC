@@ -1437,13 +1437,13 @@ class TransformationDB( DB ):
       else:
         metadatadict = res['Value']
       gLogger.info( 'Filter file with metadata', metadatadict )
-      fileTrans = self._filterFileByMetadata( metadatadict )
-      gLogger.info('fileTrans', fileTrans)
-      if not ( fileTrans or force ):  # not clear how force should be used for
-        successful[lfn] = False  # True -> False bug fix: otherwise it is set to True even if fileTrans is empty.
+      transIDs = self._filterFileByMetadata( metadatadict )
+      gLogger.info('Transformations passing the filter: %s' % transIDs)
+      if not ( transIDs or force ):  # not clear how force should be used for
+        successful[lfn] = False  # True -> False bug fix: otherwise it is set to True even if transIDs is empty.
       else:
         filesToAdd.append( lfn )
-        for trans in fileTrans:
+        for trans in transIDs:
           if trans not in transFiles:
             transFiles[trans] = []
           transFiles[trans].append( lfn )
@@ -1529,9 +1529,7 @@ class TransformationDB( DB ):
     """ It can be applied to a file or to a directory (path). For a file, add the file to Transformations if the updated metadata dictionary passes the filter.
         For a directory, add the files contained in the directory to the Transformations if the the updated metadata dictionary passes the filter.
     """
-    gLogger.info( "setMetadata: Attempting to set metadata %s to %s" % (usermetadatadict, path) )
-    successful = {}
-    failed = {}
+    gLogger.info( "setMetadata: Attempting to set metadata %s to: %s" % (usermetadatadict, path) )
     transFiles = {}
     filesToAdd = []
 
@@ -1555,29 +1553,26 @@ class TransformationDB( DB ):
       res = catalog.getDirectoryUserMetadata( path )
 
     if not res['OK']:
-      failed[path] = res['Message']
-      return S_OK( {'Successful':successful, 'Failed':failed } )
+      gLogger.error( "Failed to get User Metadata %s: %s" % ( path, res['Message'] ) )
+      return res
     else:
       metadatadict = res['Value']
     metadatadict.update( usermetadatadict )
     gLogger.info( 'Filter file with metadata:', metadatadict )
-    fileTrans = self._filterFileByMetadata( metadatadict )
-    if not fileTrans:
-      successful[path] = False
+    transIDs = self._filterFileByMetadata( metadatadict )
+    gLogger.info('Transformations passing the filter: %s' % transIDs)
+    if not transIDs:
+      return S_OK()
     elif isFile:
       filesToAdd.append( path )
-      path = [path]
-    else:
+    elif isDirectory:
       res = catalog.findFilesByMetadata( metadatadict, path )
       if not res['OK']:
-        gLogger.error( "Failed to findFilesByMetadata: %s" % res['Message'] )
+        gLogger.error( "Failed to findFilesByMetadata %s: %s" % ( path, res['Message'] ) )
         return res
-      path = res['Value']
       filesToAdd.extend( res['Value'] )
-    for trans in fileTrans:
-      if not transFiles.has_key( trans ):
-        transFiles[trans] = []
-      transFiles[trans].extend( path )
+    for trans in transIDs:
+      transFiles[trans].extend( filesToAdd )
 
     # Add the files to the transformations
     gLogger.info( 'Files to add to transformations:', filesToAdd )
@@ -1587,16 +1582,12 @@ class TransformationDB( DB ):
         if not res['OK']:
           gLogger.error( "Failed to add files to transformation", "%s %s" % ( transID, res['Message'] ) )
           return res
-        else:
-          for lfn in lfns:
-            successful[lfn] = True
 
-    res = S_OK( {'Successful':successful, 'Failed':failed } )
-    return res
+    return S_OK()
 
   def _filterFileByMetadata( self, metadatadict ):
     """Pass the input metadatadict through those currently active"""
-    result = []
+    transIDs = []
     queries = self.filters
     catalog = FileCatalog()
     gLogger.info( 'Filter file by queries', queries )
@@ -1620,8 +1611,8 @@ class TransformationDB( DB ):
         return res
       elif res['Value']:
         gLogger.info( "Apply query result is True" )
-        result.append( transID )
+        transIDs.append( transID )
       else:
         gLogger.info( "Apply query result is False" )
 
-    return result
+    return transIDs
