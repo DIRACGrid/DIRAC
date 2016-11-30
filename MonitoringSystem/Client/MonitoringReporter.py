@@ -13,8 +13,8 @@ import threading
 import json
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Resources.MessageQueue.MQCommunication import MQConsumer
-from DIRAC.Resources.MessageQueue.MQCommunication import MQProducer
+from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
+from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
 
 from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
 
@@ -43,7 +43,7 @@ class MonitoringReporter( object ):
     self.__mq = False
     self.__monitoringType = None
 
-    result = MQProducer( monitoringType )
+    result = createProducer( monitoringType )
     if not result['OK']:
       gLogger.warn( "Fail to create Producer: %s" )
     else:
@@ -57,7 +57,7 @@ class MonitoringReporter( object ):
     It consumes all messaged from the MQ (these are failover messages). In case of failure, the messages
     will be inserted to the MQ again.
     """
-    result = MQConsumer( self.__monitoringType  )
+    result = createConsumer( self.__monitoringType  )
     if not result['OK']:
       gLogger.error( "Fail to create Consumer: %s" % result['Message'] )
       return S_ERROR( "Fail to create Consumer: %s" % result['Message'] )
