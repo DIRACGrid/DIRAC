@@ -6,7 +6,7 @@ import os
 import sys
 import re
 import stat
-import distutils.spawn
+import distutils.spawn #pylint: disable=no-name-in-module,no-member,import-error
 
 from DIRAC.Core.Utilities.Subprocess    import shellCall
 from DIRAC                              import gLogger
@@ -14,6 +14,8 @@ from DIRAC                              import gLogger
 from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase
 
 class Script( ModuleBase ):
+  """ Module for running executable
+  """
 
   #############################################################################
   def __init__( self ):
@@ -66,7 +68,7 @@ class Script( ModuleBase ):
       self.command = '%s/%s' % ( os.getcwd(), self.executable )
     elif re.search( '.py$', self.executable ):
       self.command = '%s %s' % ( sys.executable, self.executable )
-    elif distutils.spawn.find_executable( self.executable ):
+    elif distutils.spawn.find_executable( self.executable ): #pylint: disable=no-member
       self.command = self.executable
 
     if self.arguments:
@@ -106,14 +108,14 @@ class Script( ModuleBase ):
     self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:
-      raise RuntimeError( "'%s' Exited With Status %s" % ( os.path.basename( self.executable ), status ) )
+      raise RuntimeError( "'%s' Exited With Status %s" % ( os.path.basename( self.executable ).split('_')[0], status ) )
 
 
   def _finalize( self ):
     """ simply finalize
     """
-    applicationString = os.path.basename( self.executable )
-    if self.applicationName:
+    applicationString = os.path.basename( self.executable ).split('_')[0]
+    if self.applicationName and self.applicationName.lower() != 'unknown':
       applicationString += ' (%s %s)' % ( self.applicationName, self.applicationVersion )
     status = "%s successful" % applicationString
 
