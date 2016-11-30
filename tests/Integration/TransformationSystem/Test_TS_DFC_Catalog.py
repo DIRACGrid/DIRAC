@@ -22,7 +22,7 @@
             TSCatalog
             {
             CatalogType = TSCatalog
-            AccessType = Read-Write
+            AccessType = Write
             Status = Active
             CatalogURL = Transformation/TransformationManager
             }
