@@ -38,6 +38,10 @@ FIX: TaskManager, TaskManagerAgentBase - standardize the logging information; re
      code; use iterators wherever possible     
 NEW: Introduced metadata-based filters when registering new data in the TS as catalog       
 
+[v6r16p3]
+
+FIX: incorporated fixes from v6r15p25
+
 [v6r16p2]
 
 *Configuration
@@ -98,6 +102,12 @@ NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 NEW: SudoComputingElement - computing element to execute payload with a sudo to a dedicated
      UNIX account     
+
+[v6r15p25]
+
+*Resources
+FIX: HTCondorCEComputingElement - cast useLocalSchedd to bool value even if it
+     is defined as srting
 
 [v6r15p24]
 

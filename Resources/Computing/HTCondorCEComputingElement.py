@@ -168,9 +168,15 @@ Queue %(nJobs)s
     self.daysToKeepLogs = self.ceParameters.get( 'DaysToKeepLogs', DEFAULT_DAYSTOKEEPLOGS )
     self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
     self.useLocalSchedd = self.ceParameters.get('UseLocalSchedd', self.useLocalSchedd)
+    if isinstance( self.useLocalSchedd, basestring ):
+      if self.useLocalSchedd == "False":
+        self.useLocalSchedd = False
+      else:
+        self.useLocalSchedd == True
+
     self.remoteScheddOptions = "" if self.useLocalSchedd else "-pool %s:9619 -name %s " %( self.ceName, self.ceName)
 
-    self.log.debug( "Using local schedd: %s " % self.useLocalSchedd )
+    self.log.debug( "Using local schedd: %r " % self.useLocalSchedd )
     self.log.debug( "Remote scheduler option: '%s' " % self.remoteScheddOptions )
 
   #############################################################################
