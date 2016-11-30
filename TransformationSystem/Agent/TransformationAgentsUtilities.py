@@ -60,6 +60,6 @@ class TransformationAgentsUtilities( object ):
 
   def _parseTaskName( self, taskName ):
     try:
-      return ( int( x ) for x in task_name.split( '_' ) )
-    except Exception as e:
+      return ( int( x ) for x in taskName.split( '_' ) )
+    except Exception:
       return ( 0, 0 )

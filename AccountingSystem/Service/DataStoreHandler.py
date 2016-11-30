@@ -1,7 +1,6 @@
 """ DataStore is the service for inserting accounting reports (rows) in the Accounting DB
 """
 
-__RCSID__ = "$Id$"
 
 import datetime
 
@@ -12,6 +11,8 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+
+__RCSID__ = "$Id$"
 
 class DataStoreHandler( RequestHandler ):
 

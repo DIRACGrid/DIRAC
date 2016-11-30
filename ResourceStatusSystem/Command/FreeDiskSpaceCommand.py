@@ -5,7 +5,7 @@
 '''
 
 from datetime                                        import datetime
-from DIRAC                                           import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC                                           import S_OK, S_ERROR, gLogger
 from DIRAC.ResourceStatusSystem.Command.Command      import Command
 from DIRAC.Core.DISET.RPCClient                      import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities            import CSHelpers
@@ -19,9 +19,9 @@ class FreeDiskSpaceCommand( Command ):
   Uses diskSpace method to get the free space
   '''
 
-  def __init__( self, args = None ):
+  def __init__( self, args = None, clients = None ):
 
-    super( FreeDiskSpaceCommand, self ).__init__( args )
+    super( FreeDiskSpaceCommand, self ).__init__( args, clients )
 
     self.rpc = None
     self.rsClient = None

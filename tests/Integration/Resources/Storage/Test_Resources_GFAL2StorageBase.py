@@ -127,8 +127,7 @@ class basicTest( unittest.TestCase ):
   def testWorkflow( self ):
 
     putDir = {os.path.join( DESTINATION_PATH, 'Workflow/FolderA' ) : os.path.join( self.LOCAL_PATH, 'Workflow/FolderA' ),
-              os.path.join( DESTINATION_PATH, 'Workflow/FolderB' ) : os.path.join( self.LOCAL_PATH, 'Workflow/FolderB' )
-              }
+              os.path.join( DESTINATION_PATH, 'Workflow/FolderB' ) : os.path.join( self.LOCAL_PATH, 'Workflow/FolderB' )}
 
     createDir = [os.path.join( DESTINATION_PATH, 'Workflow/FolderA/FolderAA' ),
                  os.path.join( DESTINATION_PATH, 'Workflow/FolderA/FolderABA' ),
@@ -267,4 +266,3 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_HTTP_Test ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( XROOT_Test ) )
   unittest.TextTestRunner( verbosity = 2 ).run( suite )
-

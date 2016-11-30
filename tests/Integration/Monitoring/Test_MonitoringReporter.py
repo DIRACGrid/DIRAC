@@ -41,7 +41,6 @@ Resources
 """
 
 import unittest
-
 from datetime import datetime
 
 from DIRAC import gLogger
@@ -50,6 +49,7 @@ from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 
 #pylint: disable=line-too-long
+#pylint: disable=missing-docstring
 
 class MonitoringTestCase( unittest.TestCase ):
 
@@ -57,8 +57,7 @@ class MonitoringTestCase( unittest.TestCase ):
     gLogger.setLevel( 'INFO' )
 
     self.monitoringDB = MonitoringDB()
-    self.monitoringReporter = MonitoringReporter( db = self.monitoringDB,
-                                                  monitoringType = "WMSHistory" )
+    self.monitoringReporter = MonitoringReporter( monitoringType = "WMSHistory" )
 
     self.data = [{u'Status': u'Waiting', 'Jobs': 2, u'time': 1458130176, u'JobSplitType': u'MCStripping', u'MinorStatus': u'unset', u'Site': u'LCG.GRIDKA.de', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00049848', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'time': 1458130176, u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.PIC.es', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton', u'JobGroup': u'lhcb', u'UserGroup': u'lhcb_user', u'metric': u'WMSHistory'},
