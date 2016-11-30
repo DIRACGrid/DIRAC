@@ -129,7 +129,7 @@ class ModuleBase( object ):
       return S_ERROR( e )
 
     # This catches everything that is not voluntarily thrown (here, really writing an exception)
-    except Exception as e:
+    except Exception as e: #pylint: disable=broad-except
       self.log.exception( e )
       self.setApplicationStatus( e )
       return S_ERROR( e )
@@ -290,7 +290,7 @@ class ModuleBase( object ):
 
     self.stepName = self.step_commons['STEP_INSTANCE_NAME']
 
-    if self.step_commons.has_key( 'executable' ) and self.step_commons['executable']:
+    if 'executable' in self.step_commons and self.step_commons['executable']:
       self.executable = self.step_commons['executable']
     else:
       self.executable = 'Unknown'

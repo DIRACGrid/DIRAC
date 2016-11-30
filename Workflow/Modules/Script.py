@@ -106,14 +106,14 @@ class Script( ModuleBase ):
     self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:
-      raise RuntimeError( "'%s' Exited With Status %s" % ( os.path.basename( self.executable ), status ) )
+      raise RuntimeError( "'%s' Exited With Status %s" % ( os.path.basename( self.executable ).split('_')[0], status ) )
 
 
   def _finalize( self ):
     """ simply finalize
     """
-    applicationString = os.path.basename( self.executable )
-    if self.applicationName:
+    applicationString = os.path.basename( self.executable ).split('_')[0]
+    if self.applicationName and self.applicationName.lower() != 'unknown':
       applicationString += ' (%s %s)' % ( self.applicationName, self.applicationVersion )
     status = "%s successful" % applicationString
 
