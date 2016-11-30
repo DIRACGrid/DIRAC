@@ -507,7 +507,7 @@ class Matcher ( TestWMSTestCase ):
 
     tqDB = TaskQueueDB()
     tqDefDict = {'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
-                 'OwnerGroup':'prod', 'Setup':'JenkinsSetup', 'CPUTime':86400}
+                 'OwnerGroup':'prod', 'Setup':'dirac-JenkinsSetup', 'CPUTime':86400}
     res = tqDB.insertJob( jobID, tqDefDict, 10 )
     self.assert_( res['OK'] )
 

@@ -1,5 +1,6 @@
 """ TaskManager contains WorkflowsTasks and RequestTasks modules, for managing jobs and requests tasks
 """
+
 import time
 import StringIO
 import json
@@ -337,7 +338,7 @@ class RequestTasks( TaskBase ):
 
       newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
       if not newStatus['OK']:
-        log = self._logVerbose if 'not exist' in newStatus['Message'] else self.__logWarn
+        log = self._logVerbose if 'not exist' in newStatus['Message'] else self._logWarn
         log( "getSubmittedTaskStatus: Failed to get requestID for request", newStatus['Message'],
              transID = taskDict['TransformationID'] )
       else:

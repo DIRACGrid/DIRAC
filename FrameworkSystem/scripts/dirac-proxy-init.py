@@ -4,7 +4,10 @@
 # Author :  Adrian Casajus
 ########################################################################
 
+import os
 import sys
+import glob
+import time
 import datetime
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -12,6 +15,7 @@ from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 __RCSID__ = "$Id$"
 
@@ -185,11 +189,39 @@ class ProxyInit:
                                                   group.ljust( maxGroupLen ),
                                                   self.__uploadedInfo[ userDN ][ group ].strftime( "%Y/%m/%d %H:%M" ) ) )
 
+  def checkCAs( self ):
+    if not "X509_CERT_DIR" in os.environ:
+      # Cert dir is unset? Nothing to check...
+      return
+    caDir = os.environ[ "X509_CERT_DIR" ]
+    searchExp = os.path.join( caDir, "*.r0" )
+    newestFPath = max( glob.glob( searchExp ), key=os.path.getmtime )
+    newestFTime = os.path.getmtime( newestFPath )
+    if newestFTime > ( time.time() - ( 28 * 24 * 3600 ) ):
+      # At least one of the files has been updated in the last 28 days
+      return S_OK()
+    if not os.access(caDir, os.W_OK):
+      gLogger.error("Your CRLs appear to be outdated, but you have no access to update them.")
+      # Try to continue anyway...
+      return S_OK()
+    # Update the CAs & CRLs
+    gLogger.notice( "Your CRLs appear to be outdated; attempting to update them..." )
+    bdc = BundleDeliveryClient()
+    res = bdc.syncCAs()
+    if not res[ 'OK' ]:
+      gLogger.error( "Failed to update CAs", res[ 'Message' ] )
+    res = bdc.syncCRLs()
+    if not res[ 'OK' ]:
+      gLogger.error( "Failed to update CRLs", res[ 'Message' ] )
+    # Continue even if the update failed...
+    return S_OK()
+
   def doTheMagic( self ):
     result = self.createProxy()
     if not result[ 'OK' ]:
       return result
 
+    self.checkCAs()
     pI.certLifeTimeCheck()
     result = pI.addVOMSExtIfNeeded()
     if not result[ 'OK' ]:

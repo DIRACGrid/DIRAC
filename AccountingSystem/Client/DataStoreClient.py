@@ -1,8 +1,6 @@
 """ Module that holds the DataStore Client class
 """
 
-__RCSID__ = "$Id$"
-
 import time
 import random
 import copy
@@ -15,6 +13,8 @@ from DIRAC.RequestManagementSystem.Client.Request   import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.Core.Utilities.DErrno import ERMSUKN
+
+__RCSID__ = "$Id$"
 
 random.seed()
 
@@ -109,7 +109,7 @@ class DataStoreClient(object):
         del registersList[ :self.__maxRecordsInABundle ]
     except Exception as e:  # pylint: disable=broad-except
       gLogger.exception( "Error committing", lException = e )
-      return S_ERROR( "Error committing %s" % repr( e ).replace( ',)', ')' ) )    
+      return S_ERROR( "Error committing %s" % repr( e ).replace( ',)', ')' ) )
     finally:
       # if something is left because of an error return it to the main list
       self.__registersList.extend(registersList)
