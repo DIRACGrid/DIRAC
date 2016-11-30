@@ -70,9 +70,9 @@ The destination name (queue or topic) in the consumer/producer instantiation mus
 fully qualified name like "mardirac3.in2p3.fr::Queue::TestQueue" or
 "mardirac3.in2p3.fr::Topic::TestTopic".
 
-==================================
+====================================
 Message Queue nomenclature in DIRAC
-==================================
+====================================
 
 * MQ - Message Queue System e.g. RabbitMQ
 * mqMessenger - processes that send or receive messages to/from the MQ system.
