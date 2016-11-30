@@ -6,7 +6,7 @@ import os
 import sys
 import re
 import stat
-import distutils.spawn
+import distutils.spawn #pylint: disable=no-name-in-module,no-member,import-error
 
 from DIRAC.Core.Utilities.Subprocess    import shellCall
 from DIRAC                              import gLogger
@@ -14,6 +14,8 @@ from DIRAC                              import gLogger
 from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase
 
 class Script( ModuleBase ):
+  """ Module for running executable
+  """
 
   #############################################################################
   def __init__( self ):
@@ -66,7 +68,7 @@ class Script( ModuleBase ):
       self.command = '%s/%s' % ( os.getcwd(), self.executable )
     elif re.search( '.py$', self.executable ):
       self.command = '%s %s' % ( sys.executable, self.executable )
-    elif distutils.spawn.find_executable( self.executable ):
+    elif distutils.spawn.find_executable( self.executable ): #pylint: disable=no-member
       self.command = self.executable
 
     if self.arguments:
