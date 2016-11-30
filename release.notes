@@ -1,10 +1,14 @@
-[v6r17-pre2]
+[v6r17-pre3]
 
 *Core
 FIX: Adler - check explicitly if the checksum value is "False"
+FIX: install_site.sh - added command line option to choose DIRAC version to install
+NEW: ComponentInstaller - added configuration parameters to setup NoSQL database
 
 *Framework
 CHANGE: Logger - test level before processing string (i.e. mostly converting objects to strings)  
+CHANGE: dirac-proxy-init - check and attempt to update local CRLs at the same time as
+        generating user proxy
 
 *DMS
 NEW: Next in implementation multi-protocol support for storage elements. When performing 
@@ -21,10 +25,18 @@ FIX: ReplicateAndRegister - fix the case when checksum is False in the FC
 NEW: FreeDiskSpace - added new command which is used to get the total and the remaining 
      disk space of all dirac storage elements that are found in the CS and inserts the 
      results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.    
+
+*Workflow
+FIX: Modulebase, Script - avoid too many unnecessarily different application states
+
+*WMS
+FIX: JobStateUpdate service - in setJobStatusBulk() avoid adding false information when adding 
+     an application status
      
 *TS
 FIX: TaskManager, TaskManagerAgentBase - standardize the logging information; removed unnecessary 
      code; use iterators wherever possible     
+NEW: Introduced metadata-based filters when registering new data in the TS as catalog       
 
 [v6r16p2]
 
