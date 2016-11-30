@@ -1,3 +1,9 @@
+[v6r15p25]
+
+*Resources
+FIX: HTCondorCEComputingElement - cast useLocalSchedd to bool value even if it
+     is defined as srting
+
 [v6r15p24]
 
 *Resources
