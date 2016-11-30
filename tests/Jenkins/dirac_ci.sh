@@ -113,7 +113,7 @@ function installSite(){
   sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
 
   echo '==> Started installing'
-  $SERVERINSTALLDIR/install_site.sh $SERVERINSTALLDIR/install.cfg
+  $SERVERINSTALLDIR/install_site.sh -v $projectVersion $SERVERINSTALLDIR/install.cfg
   echo '==> Completed installation'
 
   source $SERVERINSTALLDIR/bashrc

@@ -13,10 +13,7 @@ import stat
 import types
 import shutil
 import ssl
-try:
-  import hashlib as md5
-except ImportError:
-  import md5
+import hashlib
 
 __RCSID__ = "$Id$"
 
@@ -324,7 +321,7 @@ class ReleaseConfig( object ):
       md5Data = urlretrieveTimeout( urlcfg[:-4] + ".md5", timeout = 60 )
       md5Hex = md5Data.strip()
       #md5File.close()
-      if md5Hex != md5.md5( cfgData ).hexdigest():
+      if md5Hex != hashlib.md5( cfgData ).hexdigest():
         return S_ERROR( "Hash check failed on %s" % urlcfg )
     except Exception, excp:
       return S_ERROR( "Hash check failed on %s: %s" % ( urlcfg, excp ) )
@@ -538,7 +535,7 @@ class ReleaseConfig( object ):
       self.__prjDepends[ project ][ release ] = [ ( project, release ) ]
       relDeps = self.__prjDepends[ project ][ release ]
 
-      if not relCFG.getChild( "Releases/%s" % ( release ) ):
+      if not relCFG.getChild( "Releases/%s" % ( release ) ): # pylint: disable=no-member
         return S_ERROR( "Release %s is not defined for project %s in the release file" % ( release, project ) )
 
       initialDeps = self.getReleaseDependencies( project, release )
@@ -624,7 +621,7 @@ class ReleaseConfig( object ):
     modules = self.getReleaseOption( project, release, "Releases/%s/Modules" % release )
     if modules:
       dMods = {}
-      for entry in [ entry.split( ":" ) for entry in modules.split( "," ) if entry.strip() ]:
+      for entry in [ entry.split( ":" ) for entry in modules.split( "," ) if entry.strip() ]: # pylint: disable=no-member
         if len( entry ) == 1:
           dMods[ entry[0].strip() ] = release
         else:
@@ -634,7 +631,7 @@ class ReleaseConfig( object ):
       #Default modules with the same version as the release version
       modules = self.getReleaseOption( project, release, "DefaultModules" )
       if modules:
-        modules = dict( ( modName.strip() , release ) for modName in modules.split( "," ) if modName.strip() )
+        modules = dict( ( modName.strip() , release ) for modName in modules.split( "," ) if modName.strip() ) # pylint: disable=no-member
       else:
         #Mod = project and same version
         modules = { project : release }
@@ -651,7 +648,7 @@ class ReleaseConfig( object ):
     modLocation = self.getReleaseOption( self.__projectName, release, "Sources/%s" % modName )
     if not modLocation:
       return S_ERROR( "Source origin for module %s is not defined" % modName )
-    modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ]
+    modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ] # pylint: disable=no-member
     if len( modTpl ) == 1:
       return S_OK( ( False, modTpl[0] ) )
     return S_OK( ( modTpl[0], modTpl[1] ) )
@@ -799,7 +796,8 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     # Try to use insecure context explicitly, needed for python >= 2.7.9
     try:
       context = ssl._create_unverified_context()
-      remoteFD = urllib2.urlopen( url, context = context )
+      remoteFD = urllib2.urlopen( url, context = context ) # pylint: disable=unexpected-keyword-arg
+       # the keyword 'context' is present from 2.7.9+
     except AttributeError:
       remoteFD = urllib2.urlopen( url )
     expectedBytes = 0
@@ -906,7 +904,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
     md5Expected = fd.read().strip()
     fd.close()
     #Calculate md5
-    md5Calculated = md5.md5()
+    md5Calculated = hashlib.md5()
     fd = open( os.path.join( cliParams.targetPath, tarName ), "r" )
     buf = fd.read( 4096 )
     while buf:
