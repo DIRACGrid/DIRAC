@@ -229,11 +229,7 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     credDict = self.getRemoteCredentials()
-    self.__proxyDB.logAction( "set persistency to %s" % bool( persistentFlag ),
-                                                  credDict[ 'DN' ],
-                                                  credDict[ 'group' ],
-                                                  userDN,
-                                                  userGroup )
+    self.__proxyDB.logAction( "set persistency to %s" % bool( persistentFlag ), credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return S_OK()
 
   types_deleteProxyBundle = [ ( list, tuple ) ]
@@ -267,12 +263,10 @@ class ProxyManagerHandler( RequestHandler ):
     retVal = self.__proxyDB.deleteProxy( userDN, userGroup )
     if not retVal[ 'OK' ]:
       return retVal
-    self.__proxyDB.logAction( "delete proxy", credDict[ 'DN' ], credDict[ 'group' ],
-                                        userDN, userGroup )
+    self.__proxyDB.logAction( "delete proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return S_OK()
 
-  types_getContents = [ dict, ( list, tuple ),
-                       ( int, long ), ( int, long ) ]
+  types_getContents = [ dict, ( list, tuple ), ( int, long ), ( int, long ) ]
   def export_getContents( self, selDict, sortDict, start, limit ):
     """
     Retrieve the contents of the DB
