@@ -341,6 +341,14 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.removeFile( lfns )
     return self._parseRes( res )
 
+  types_setMetadata = [ basestring, dict ]
+  def export_setMetadata( self, path, querydict ):
+    """ Set metadata to a file or to a directory (path)
+    """
+    res = database.setMetadata( path, querydict )
+    return self._parseRes( res )
+
+
   ####################################################################
   #
   # These are the methods used for web monitoring
