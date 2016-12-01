@@ -32,7 +32,7 @@ class MonitoringReporter( object ):
   :param: list __documents contains the recods which will be inserted to the db
   :param: bool __mq we can use MQ if it is available... By default it is not allowed.
   :param: str __monitoringType type of the records which will be inserted to the db. For example: WMSHistory.
-  :param: object __mqProducer publisher used to publish the records to the MQ
+  :param: object__mqProducer publisher used to publish the records to the MQ.
   """
 
   def __init__( self, monitoringType = '' ):

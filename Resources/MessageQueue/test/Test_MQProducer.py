@@ -56,7 +56,7 @@ class TestMQProducer_close( TestMQProducer):
     self.assertTrue(result['OK'])
     result = producer.close()
     self.assertFalse(result['OK'])
-    self.assertEqual(result['Message'], 'Failed to stop the connection!The messanger:producer4 does not exists!')
+    self.assertEqual(result['Message'], 'Failed to stop the connection!The messenger:producer4 does not exists!')
 
   def test_failure2( self ):
     producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", producerId ='producer4')
@@ -65,12 +65,12 @@ class TestMQProducer_close( TestMQProducer):
     self.assertTrue(result['OK'])
     result = producer.close()
     self.assertFalse(result['OK'])
-    self.assertEqual(result['Message'], 'Failed to stop the connection!The messanger:producer4 does not exists!')
+    self.assertEqual(result['Message'], 'Failed to stop the connection!The messenger:producer4 does not exists!')
     result = producer2.close()
     self.assertTrue(result['OK'])
     result = producer2.close()
     self.assertFalse(result['OK'])
-    self.assertEqual(result['Message'], 'Failed to stop the connection!The messanger:producer2 does not exists!')
+    self.assertEqual(result['Message'], 'Failed to stop the connection!The messenger:producer2 does not exists!')
     #connection does not exist so put will not work
     result = producer.put("wow!")
     self.assertFalse(result['OK'])

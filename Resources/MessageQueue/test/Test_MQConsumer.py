@@ -55,7 +55,7 @@ class TestMQConsumer_close( TestMQConsumer):
     self.assertTrue(result['OK'])
     result = consumer.close()
     self.assertFalse(result['OK'])
-    self.assertEqual(result['Message'], 'Failed to stop the connection!The messanger:consumer4 does not exists!')
+    self.assertEqual(result['Message'], 'Failed to stop the connection!The messenger:consumer4 does not exists!')
 
   def test_failure2( self ):
     consumer = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", consumerId ='consumer4')
@@ -64,12 +64,12 @@ class TestMQConsumer_close( TestMQConsumer):
     self.assertTrue(result['OK'])
     result = consumer.close()
     self.assertFalse(result['OK'])
-    self.assertEqual(result['Message'], 'Failed to stop the connection!The messanger:consumer4 does not exists!')
+    self.assertEqual(result['Message'], 'Failed to stop the connection!The messenger:consumer4 does not exists!')
     result = consumer2.close()
     self.assertTrue(result['OK'])
     result = consumer2.close()
     self.assertFalse(result['OK'])
-    self.assertEqual(result['Message'], 'Failed to stop the connection!The messanger:consumer2 does not exists!')
+    self.assertEqual(result['Message'], 'Failed to stop the connection!The messenger:consumer2 does not exists!')
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestMQConsumer )

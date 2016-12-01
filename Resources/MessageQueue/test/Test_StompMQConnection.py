@@ -84,13 +84,13 @@ class StompMQConnectorSuccessTestCase( unittest.TestCase ):
 
   def test_createStompListener( self ):
     connection = module.stomp.Connection()
-    messangerId = 'producer1'
-    listener = module.StompListener( testCallback, ACKNOWLEDGEMENT, connection, messangerId )
+    messengerId = 'producer1'
+    listener = module.StompListener( testCallback, ACKNOWLEDGEMENT, connection, messengerId )
 
     self.assertEqual( listener.callback, testCallback )
     self.assertEqual( listener.ack, ACKNOWLEDGEMENT )
     self.assertEqual( listener.connection, connection )
-    self.assertEqual( listener.mId, messangerId )
+    self.assertEqual( listener.mId, messengerId )
 
   def test_makeConnection( self ):
     result = self.mqConnector.setupConnection( parameters = PARAMETERS)

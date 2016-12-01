@@ -146,7 +146,7 @@ class StompMQConnector( MQConnector ):
     return S_OK( 'Disconnection successful' )
 
   def subscribe( self, parameters = None):
-    mId = parameters.get('messangerId', '')
+    mId = parameters.get('messengerId', '')
     callback = parameters.get('callback', None)
     dest = parameters.get('destination', '')
     headers = {}
@@ -170,7 +170,7 @@ class StompMQConnector( MQConnector ):
 
   def unsubscribe(self, parameters):
     dest = parameters.get('destination', '')
-    mId = parameters.get('messangerId', '')
+    mId = parameters.get('messengerId', '')
     try:
       self.connection.unsubscribe(destination = dest, id = mId)
     except Exception as e:
@@ -182,7 +182,7 @@ class StompListener ( stomp.ConnectionListener ):
   Internal listener class responsible for handling new messages and errors.
   """
 
-  def __init__( self, callback, ack, connection, messangerId ):
+  def __init__( self, callback, ack, connection, messengerId ):
     """
     Initializes the internal listener object
 
@@ -196,7 +196,7 @@ class StompListener ( stomp.ConnectionListener ):
       self.log.error('Error initializing StompMQConnector!callback is None')
     self.callback = callback
     self.ack = ack
-    self.mId = messangerId
+    self.mId = messengerId
     self.connection = connection
 
 

@@ -47,14 +47,14 @@ def createProducer(mqURI):
 def setupConnection(mqURI, mType):
   """ Function sets up the active MQ connection. All parameters are taken
       from the Configuration Service based on the mqURI
-      value and the messanger Type mType.
+      value and the messenger Type mType.
   Args:
     mqURI(str):Pseudo URI identifing the MQ service. It has the following format:
               mqConnection::DestinationType::DestinationName
               e.g. blabla.cern.ch::Queue::MyQueue1
     mType(str): 'consumer' or 'producer'
   Returns:
-    S_OK/S_ERROR: with the value of the messanger Id (e.g. 'consumer4') in S_OK.
+    S_OK/S_ERROR: with the value of the messenger Id (e.g. 'consumer4') in S_OK.
   """
   result = getMQParamsFromCS(mqURI = mqURI)
   if not result['OK']:
