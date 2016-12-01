@@ -82,16 +82,7 @@ class ProxyManagerHandler( RequestHandler ):
       return S_ERROR( "%s is not a valid group for user %s" % ( userGroup, userName ) )
     clientChain = credDict[ 'x509Chain' ]
     clientSecs = clientChain.getIssuerCert()[ 'Value' ].getRemainingSecs()[ 'Value' ]
-    requestedUploadTime = min( requestedUploadTime, clientSecs )
-    retVal = self.__proxyDB.getRemainingTime( userDN, userGroup )
-    if not retVal[ 'OK' ]:
-      return retVal
-    remainingSecs = retVal[ 'Value' ]
-    # If we have a proxy longer than the one uploading it's not needed
-    # ten minute margin to compensate just in case
-    if remainingSecs >= requestedUploadTime - 600:
-      gLogger.info( "Upload request not necessary by %s:%s" % ( userName, userGroup ) )
-      return self.__addKnownUserProxiesInfo( S_OK() )
+    requestedUploadTime = min( requestedUploadTime, clientSecs ) #FIXME: this is useless now...
     result = self.__proxyDB.generateDelegationRequest( credDict[ 'x509Chain' ], userDN )
     if result[ 'OK' ]:
       gLogger.info( "Upload request by %s:%s given id %s" % ( userName, userGroup, result['Value']['id'] ) )
@@ -204,9 +195,9 @@ class ProxyManagerHandler( RequestHandler ):
 
   def __getVOMSProxy( self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited ):
     retVal = self.__proxyDB.getVOMSProxy( userDN,
-                                    userGroup,
-                                    requiredLifeTime = requiredLifetime,
-                                    requestedVOMSAttr = vomsAttribute )
+                                          userGroup,
+                                          requiredLifeTime = requiredLifetime,
+                                          requestedVOMSAttr = vomsAttribute )
     if not retVal[ 'OK' ]:
       return retVal
     chain, secsLeft = retVal[ 'Value' ]
@@ -276,8 +267,7 @@ class ProxyManagerHandler( RequestHandler ):
       selDict[ 'UserName' ] = credDict[ 'username' ]
     return self.__proxyDB.getProxiesContent( selDict, sortDict, start, limit )
 
-  types_getLogContents = [ dict, ( list, tuple ),
-                       ( int, long ), ( int, long ) ]
+  types_getLogContents = [ dict, ( list, tuple ), ( int, long ), ( int, long ) ]
   def export_getLogContents( self, selDict, sortDict, start, limit ):
     """
     Retrieve the contents of the DB
