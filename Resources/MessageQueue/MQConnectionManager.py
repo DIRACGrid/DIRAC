@@ -23,7 +23,7 @@ class MQConnectionManager(object):
   """Manages connections for the Message Queue resources in form of the interal connection storage."""
   def __init__(self, connectionStorage = None):
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
-    self._lock = None
+    self.__lock = None
     if connectionStorage:
       self._connectionStorage = connectionStorage
     else:
@@ -33,9 +33,9 @@ class MQConnectionManager(object):
   def lock( self ):
     """ Lock to assure thread-safe access to the internal connection storage.
     """
-    if not self._lock:
-      self._lock = LockRing().getLock( self.__class__.__name__, recursive = True )
-    return self._lock
+    if not self.__lock:
+      self.__lock = LockRing().getLock( self.__class__.__name__, recursive = True )
+    return self.__lock
 
   def startConnection(self, mqURI, params, messengerType):
     """ Function adds or updates the MQ connection. If the connection
