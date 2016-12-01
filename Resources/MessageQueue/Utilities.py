@@ -1,53 +1,9 @@
 """ Utilities for the MessageQueue package
 """
 
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI       import CSAPI
-from DIRAC.Core.Utilities  import ObjectLoader
-from DIRAC.Core.Utilities.DErrno import EMQUKN
 import Queue
-
-def getMQConnectorClass(mqType):
-  """ Function loads the specialized MQConnector class based on mqType.
-      It is assumed that MQConnector has a name in the format mqTypeMQConnector
-      e.g. if StompMQConnector.
-  Args:
-    mqType(str): prefix of specialized class name e.g. Stomp.
-  Returns:
-    S_OK/S_ERROR: with loaded specialized class of MQConnector.
-  """
-  subClassName = mqType + 'MQConnector'
-  objectLoader = ObjectLoader.ObjectLoader()
-  result = objectLoader.loadObject( 'Resources.MessageQueue.%s' % subClassName, subClassName )
-  if not result['OK']:
-    gLogger.error( 'Failed to load object', '%s: %s' % ( subClassName, result['Message'] ) )
-  return result
-
-def createMQConnector(parameters = None):
-  """ Function creates and returns the MQConnector object based.
-  Args:
-    parameters(dict): set of parameters for the MQConnector constructor,
-      it should also contain pair 'MQType':mqType, where
-      mqType is a string used as a prefix for the specialized MQConnector
-      class.
-  Returns:
-    S_OK/S_ERROR: with loaded specialized class of MQConnector.
-  """
-  mqType = parameters.get('MQType', None)
-  result = getMQConnectorClass(mqType = mqType)
-  if not result['OK']:
-    gLogger.error( 'Failed to getMQConnectorClass:', '%s' % (result['Message'] ) )
-    return result
-  ceClass = result['Value']
-  try:
-    mqConnector = ceClass(parameters)
-    if not result['OK']:
-      return result
-  except Exception as exc:
-    gLogger.exception( 'Could not instantiate MQConnector object',  lExcInfo = exc )
-    return S_ERROR( EMQUKN, '' )
-  return S_OK( mqConnector )
-
 
 def getMQParamsFromCS( mqURI ):
   """ Function gets parameters of a MQ destination (queue/topic) from the CS.
@@ -57,7 +13,7 @@ def getMQParamsFromCS( mqURI ):
               e.g. blabla.cern.ch::Queue::MyQueue1
     mType(str): 'consumer' or 'producer'
   Returns:
-    S_OK(param_dicts)/S_ERROR: 
+    S_OK(param_dicts)/S_ERROR:
   """
   # API initialization is required to get an up-to-date configuration from the CS
   csAPI = CSAPI()
@@ -74,7 +30,7 @@ def getMQParamsFromCS( mqURI ):
   mqDestinationPath = None
   for path, value in result['Value'].iteritems():
     if not value and path.endswith( mqName ):
-        mqDestinationPath = path
+      mqDestinationPath = path
 
   # set-up internal parameter depending on the destination type
   tmp = mqDestinationPath.split( 'Queue' )[0].split( 'Topic' )

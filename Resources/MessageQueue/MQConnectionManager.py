@@ -15,7 +15,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.MessageQueue.Utilities import getMQService
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress
-from DIRAC.Resources.MessageQueue.Utilities import createMQConnector
+from DIRAC.Resources.MessageQueue.MQConnector import createMQConnector
 from DIRAC.Core.Utilities.DErrno import EMQCONN
 
 
