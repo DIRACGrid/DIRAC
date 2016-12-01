@@ -38,7 +38,7 @@ class MQConsumer ( object ):
         S_OK with the message content otherwise.
     """
     if not self._callback:
-      return S_ERROR('get() can be only used with the default callback')
+      return S_ERROR('No callback set!')
     try:
       msg = self._callback.get()
     except Queue.Empty:
