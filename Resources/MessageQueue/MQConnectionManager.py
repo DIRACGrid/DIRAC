@@ -88,7 +88,7 @@ class MQConnectionManager(object):
       conn = getMQService(mqURI)
       dest = getDestinationAddress(mqURI)
       mId = generateMessengerId(self._connectionStorage, messengerType)
-      if _addMessenger(cStorage = self._connectionStorage, mqConnection = conn, destination = dest, messengerId = mId):
+      if _addMessenger(self._connectionStorage, conn, dest, mId):
         return S_OK(mId)
       return S_ERROR("Failed to update the connection, the messenger "+str(mId)+ "  already exists")
     finally:
@@ -153,7 +153,7 @@ class MQConnectionManager(object):
       dest = getDestinationAddress(mqURI)
       connector = _getConnector(self._connectionStorage, conn)
 
-      if not _removeMessenger(cStorage = self._connectionStorage, mqConnection = conn, destination = dest, messengerId = messengerId):
+      if not _removeMessenger(self._connectionStorage, conn, dest, messengerId):
         return S_ERROR('Failed to stop the connection!The messenger:'+ messengerId + ' does not exists!')
       else:
         if 'consumer' in messengerId:
@@ -236,9 +236,10 @@ def _setConnector(cStorage, mqConnection, connector):
   Returns:
     bool: False if connection does not exit
   """
-  if not _getConnection(cStorage, mqConnection):
+  connDict = _getConnection(cStorage, mqConnection)
+  if not connDict:
     return False
-  _getConnection(cStorage, mqConnection)["MQConnector"] = connector
+  connDict["MQConnector"] = connector
   return True
 
 def _getDestinations(cStorage, mqConnection):
