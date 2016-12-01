@@ -16,6 +16,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.MessageQueue.Utilities import getMQService
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress
 from DIRAC.Resources.MessageQueue.Utilities import createMQConnector
+from DIRAC.Core.Utilities.DErrno import EMQCONN
 
 
 class MQConnectionManager(object):
@@ -60,7 +61,7 @@ class MQConnectionManager(object):
         if not result['OK']:
           return result
         if _getConnector(self._connectionStorage, conn):
-          return S_ERROR("Failed to setup connection! The connector already exists!")
+          return S_ERROR(EMQCONN, "The connector already exists!")
         _setConnector(self._connectionStorage, conn, result['Value'])
         return S_OK(mId)
     finally:
@@ -109,12 +110,12 @@ class MQConnectionManager(object):
 
   def disconnect(self, connector):
     if not connector:
-      return S_ERROR('Failed to disconnect! Connector is None!')
+      return S_ERROR(EMQCONN, 'Failed to disconnect! Connector is None!')
     return connector.disconnect()
 
   def unsubscribe(self, connector, destination, messengerId):
     if not connector:
-      return S_ERROR('Failed to unsubscribe! Connector is None!')
+      return S_ERROR(EMQCONN,'Failed to unsubscribe! Connector is None!')
     return connector.unsubscribe(parameters = {'destination':destination, 'messengerId':messengerId})
 
   def getConnector(self, mqConnection):

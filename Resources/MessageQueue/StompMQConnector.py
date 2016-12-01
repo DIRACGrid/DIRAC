@@ -131,7 +131,7 @@ class StompMQConnector( MQConnector ):
         self.log.info( "Connected to %s:%s" % ( ip, port ) )
         return S_OK( "Connected to %s:%s" % ( ip, port ) )
       else:
-        return S_ERROR("Failed to connect to  %s:%s" % ( ip, port ))
+        return S_ERROR(EMQCONN, "Failed to connect to  %s:%s" % ( ip, port ))
     except Exception as e:
       return S_ERROR( EMQCONN, 'Failed to connect: %s' % e )
 
