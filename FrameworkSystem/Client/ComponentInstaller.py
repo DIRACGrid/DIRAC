@@ -133,9 +133,8 @@ class ComponentInstaller( object ):
 
     self.loadDiracCfg()
 
-  def loadDiracCfg( self, verbose = False ):
-    """
-    Read again defaults from dirac.cfg
+  def loadDiracCfg( self ):
+    """ Read again defaults from dirac.cfg
     """
 
     from DIRAC.Core.Utilities.Network import getFQDN
@@ -162,29 +161,24 @@ class ComponentInstaller( object ):
       # This option takes precedence
       self.instancePath = os.path.dirname( os.path.dirname( rootPath ) )
       self.linkedRootPath = os.path.join( self.instancePath, 'pro' )
-    if verbose:
-      gLogger.notice( 'Using Instance Base Dir at', self.instancePath )
+    gLogger.verbose( 'Using Instance Base Dir at', self.instancePath )
 
     self.runitDir = os.path.join( self.instancePath, 'runit' )
     self.runitDir = self.localCfg.getOption( cfgInstallPath( 'RunitDir' ), self.runitDir )
-    if verbose:
-      gLogger.notice( 'Using Runit Dir at', self.runitDir )
+    gLogger.verbose( 'Using Runit Dir at', self.runitDir )
 
     self.startDir = os.path.join( self.instancePath, 'startup' )
     self.startDir = self.localCfg.getOption( cfgInstallPath( 'StartupDir' ), self.startDir )
-    if verbose:
-      gLogger.notice( 'Using Startup Dir at', self.startDir )
+    gLogger.verbose( 'Using Startup Dir at', self.startDir )
 
     self.controlDir = os.path.join( self.instancePath, 'control' )
     self.controlDir = self.localCfg.getOption( cfgInstallPath( 'ControlDir' ), self.controlDir )
-    if verbose:
-      gLogger.notice( 'Using Control Dir at', self.controlDir )
+    gLogger.verbose( 'Using Control Dir at', self.controlDir )
 
     # Now some MySQL default values
     self.mysqlDir = os.path.join( self.instancePath, 'mysql' )
     self.mysqlDir = self.localCfg.getOption( cfgInstallPath( 'MySQLDir' ), self.mysqlDir )
-    if verbose:
-      gLogger.notice( 'Using MySQL Dir at', self.mysqlDir )
+    gLogger.verbose( 'Using MySQL Dir at', self.mysqlDir )
 
     self.mysqlDbDir = os.path.join( self.mysqlDir, 'db' )
     self.mysqlLogDir = os.path.join( self.mysqlDir, 'log' )
@@ -194,81 +188,81 @@ class ComponentInstaller( object ):
     self.mysqlStartupScript = os.path.join( rootPath, 'mysql', 'share', 'mysql', 'mysql.server' )
 
     self.mysqlRootPwd = self.localCfg.getOption( cfgInstallPath( 'Database', 'RootPwd' ), self.mysqlRootPwd )
-    if verbose and self.mysqlRootPwd:
-      gLogger.notice( 'Reading Root MySQL Password from local configuration' )
+    if self.mysqlRootPwd:
+      gLogger.verbose( 'Reading Root MySQL Password from local configuration' )
     else:
       gLogger.warn( 'MySQL root password not found' )
 
     self.mysqlUser = self.localCfg.getOption( cfgInstallPath( 'Database', 'User' ), self.mysqlUser )
-    if verbose and self.mysqlUser:
-      gLogger.notice( 'Reading MySQL User from local configuration' )
+    if self.mysqlUser:
+      gLogger.verbose( 'Reading MySQL User from local configuration' )
     else:
       gLogger.warn( "Using 'Dirac' as MySQL user name" )
       self.mysqlUser = 'Dirac'
 
     self.mysqlPassword = self.localCfg.getOption( cfgInstallPath( 'Database', 'Password' ), self.mysqlPassword )
-    if verbose and self.mysqlPassword:
-      gLogger.notice( 'Reading %s MySQL Password from local configuration ' % self.mysqlUser )
+    if self.mysqlPassword:
+      gLogger.verbose( 'Reading %s MySQL Password from local configuration ' % self.mysqlUser )
     else:
       gLogger.warn( 'MySQL password not found' )
 
     self.mysqlHost = self.localCfg.getOption( cfgInstallPath( 'Database', 'Host' ), '' )
-    if verbose and self.mysqlHost:
-      gLogger.notice( 'Using MySQL Host from local configuration', self.mysqlHost )
+    if self.mysqlHost:
+      gLogger.verbose( 'Using MySQL Host from local configuration', self.mysqlHost )
     else:
       gLogger.warn( 'Using the same host for MySQL as dirac services' )
       self.mysqlHost = self.host
 
     self.mysqlPort = self.localCfg.getOption( cfgInstallPath( 'Database', 'Port' ), 0 )
-    if verbose and self.mysqlPort:
-      gLogger.notice( 'Using MySQL Port from local configuration ', self.mysqlPort )
+    if self.mysqlPort:
+      gLogger.verbose( 'Using MySQL Port from local configuration ', self.mysqlPort )
     else:
       gLogger.warn( "Using port '3306' as MySQL port" )
       self.mysqlPort = 3306
 
     self.mysqlRootUser = self.localCfg.getOption( cfgInstallPath( 'Database', 'RootUser' ), '' )
-    if verbose and self.mysqlRootUser:
-      gLogger.notice( 'Using MySQL root user from local configuration ', self.mysqlRootUser )
+    if self.mysqlRootUser:
+      gLogger.verbose( 'Using MySQL root user from local configuration ', self.mysqlRootUser )
     else:
       gLogger.warn( "Using 'root' as root MySQL user" )
       self.mysqlRootUser = 'root'
 
     self.mysqlMode = self.localCfg.getOption( cfgInstallPath( 'Database', 'MySQLMode' ), '' )
-    if verbose and self.mysqlMode:
-      gLogger.notice( 'Configuring MySQL server as %s' % self.mysqlMode )
+    if self.mysqlMode:
+      gLogger.verbose( 'Configuring MySQL server as %s' % self.mysqlMode )
 
     self.mysqlSmallMem = self.localCfg.getOption( cfgInstallPath( 'Database', 'MySQLSmallMem' ), False )
-    if verbose and self.mysqlSmallMem:
-      gLogger.notice( 'Configuring MySQL server for Low Memory usage' )
+    if self.mysqlSmallMem:
+      gLogger.verbose( 'Configuring MySQL server for Low Memory usage' )
 
     self.mysqlLargeMem = self.localCfg.getOption( cfgInstallPath( 'Database', 'MySQLLargeMem' ), False )
-    if verbose and self.mysqlLargeMem:
-      gLogger.notice( 'Configuring MySQL server for Large Memory usage' )
+    if self.mysqlLargeMem:
+      gLogger.verbose( 'Configuring MySQL server for Large Memory usage' )
 
     # Now some noSQL defaults
     self.noSQLUser = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'User' ), self.noSQLUser )
-    if verbose and self.noSQLUser:
-      gLogger.notice( 'Reading NoSQL User from local configuration' )
+    if self.noSQLUser:
+      gLogger.verbose( 'Reading NoSQL User from local configuration' )
     else:
       gLogger.warn( 'Using default NoSQL User' )
       self.noSQLUser = 'Dirac'
 
     self.noSQLPassword = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'Password' ), self.noSQLPassword )
-    if verbose and self.noSQLPassword:
-      gLogger.notice( 'Reading %s NoSQL Password from local configuration ' % self.noSQLUser )
+    if self.noSQLPassword:
+      gLogger.verbose( 'Reading %s NoSQL Password from local configuration ' % self.noSQLUser )
     else:
       gLogger.warn( 'NoSQL password not found' )
 
     self.noSQLHost = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'Host' ), '' )
-    if verbose and self.noSQLHost:
-      gLogger.notice( 'Using NoSQL Host from local configuration', self.noSQLHost )
+    if self.noSQLHost:
+      gLogger.verbose( 'Using NoSQL Host from local configuration', self.noSQLHost )
     else:
       gLogger.warn( 'Using the same host for NoSQL as dirac services' )
       self.noSQLHost = self.host
 
     self.noSQLPort = self.localCfg.getOption( cfgInstallPath( 'NoSQLDatabase', 'Port' ), 0 )
-    if verbose and self.noSQLPort:
-      gLogger.notice( 'Using NoSQL Port from local configuration ', self.noSQLPort )
+    if self.noSQLPort:
+      gLogger.verbose( 'Using NoSQL Port from local configuration ', self.noSQLPort )
     else:
       gLogger.warn( 'Using the default port 9200' )
       self.noSQLPort = 9200
@@ -276,8 +270,7 @@ class ComponentInstaller( object ):
 
     # Now ready to insert components in the Component Monitoring DB
     self.monitoringClient = ComponentMonitoringClient()
-    if verbose:
-      gLogger.notice( 'Client configured for Component Monitoring' )
+    gLogger.verbose( 'Client configured for Component Monitoring' )
 
   def getInfo( self, extensions ):
     result = getVersion()
@@ -307,7 +300,7 @@ class ComponentInstaller( object ):
 
     return S_OK( extensions )
 
-  def _addCfgToDiracCfg( self, cfg, verbose = False ):
+  def _addCfgToDiracCfg( self, cfg ):
     """
     Merge cfg into existing dirac.cfg file
     """
@@ -318,7 +311,7 @@ class ComponentInstaller( object ):
     result = newCfg.writeToFile( self.cfgFile )
     if not result:
       return result
-    self.loadDiracCfg( verbose )
+    self.loadDiracCfg()
     return result
 
   def _addCfgToCS( self, cfg ):
@@ -642,7 +635,7 @@ class ComponentInstaller( object ):
       return S_OK( 'Successfully removed entries from CS' )
     return S_OK( 'Instances of this component still exist. It won\'t be completely removed' )
 
-  def addDefaultOptionsToCS( self, gConfig, componentType, systemName,
+  def addDefaultOptionsToCS( self, gConfig_o, componentType, systemName,
                              component, extensions, mySetup = None,
                              specialOptions = {}, overwrite = False,
                              addDefaultOptions = True ):
@@ -652,13 +645,13 @@ class ComponentInstaller( object ):
     if mySetup is None:
       mySetup = self.setup
 
-    if gConfig:
-      gConfig.forceRefresh()
+    if gConfig_o:
+      gConfig_o.forceRefresh()
 
     system = systemName.replace( 'System', '' )
     instanceOption = cfgPath( 'DIRAC', 'Setups', mySetup, system )
-    if gConfig:
-      compInstance = gConfig.getValue( instanceOption, '' )
+    if gConfig_o:
+      compInstance = gConfig_o.getValue( instanceOption, '' )
     else:
       compInstance = self.localCfg.getOption( instanceOption, '' )
     if not compInstance:
@@ -673,8 +666,8 @@ class ComponentInstaller( object ):
     addOptions = True
     componentSection = cfgPath( 'Systems', system, compInstance, sectionName, component )
     if not overwrite:
-      if gConfig:
-        result = gConfig.getOptions( componentSection )
+      if gConfig_o:
+        result = gConfig_o.getOptions( componentSection )
         if result['OK']:
           addOptions = False
 
@@ -693,7 +686,7 @@ class ComponentInstaller( object ):
       # Is it a container ?
       execList = compCfg.getOption( '%s/Load' % componentSection, [] )
       for element in execList:
-        result = self.addDefaultOptionsToCS( gConfig, componentType, systemName, element, extensions, self.setup,
+        result = self.addDefaultOptionsToCS( gConfig_o, componentType, systemName, element, extensions, self.setup,
                                              {}, overwrite )
         resultAddToCFG.setdefault( 'Modules', {} )
         resultAddToCFG['Modules'][element] = result['OK']
@@ -808,20 +801,20 @@ class ComponentInstaller( object ):
 
     return S_OK( cfg )
 
-  def addDatabaseOptionsToCS( self, gConfig, systemName, dbName, mySetup = None, overwrite = False ):
+  def addDatabaseOptionsToCS( self, gConfig_o, systemName, dbName, mySetup = None, overwrite = False ):
     """
     Add the section with the database options to the CS
     """
     if mySetup is None:
       mySetup = self.setup
 
-    if gConfig:
-      gConfig.forceRefresh()
+    if gConfig_o:
+      gConfig_o.forceRefresh()
 
     system = systemName.replace( 'System', '' )
     instanceOption = cfgPath( 'DIRAC', 'Setups', mySetup, system )
-    if gConfig:
-      compInstance = gConfig.getValue( instanceOption, '' )
+    if gConfig_o:
+      compInstance = gConfig_o.getValue( instanceOption, '' )
     else:
       compInstance = self.localCfg.getOption( instanceOption, '' )
     if not compInstance:
@@ -831,7 +824,7 @@ class ComponentInstaller( object ):
     addOptions = True
     if not overwrite:
       databasePath = cfgPath( 'Systems', system, compInstance, 'Databases', dbName )
-      result = gConfig.getOptions( databasePath )
+      result = gConfig_o.getOptions( databasePath )
       if result['OK']:
         addOptions = False
     if not addOptions:
@@ -1451,7 +1444,7 @@ class ComponentInstaller( object ):
             diracCfg.createNewSection( 'LocalSite' )
           diracCfg.setOption( cfgPath( 'LocalSite', 'InstancePath' ), self.instancePath )
 
-        self._addCfgToDiracCfg( diracCfg, verbose = True )
+        self._addCfgToDiracCfg( diracCfg )
       except Exception: #pylint: disable=broad-except
         error = 'Failed to load %s' % cfg
         gLogger.exception( error )
