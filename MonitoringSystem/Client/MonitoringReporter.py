@@ -45,7 +45,7 @@ class MonitoringReporter( object ):
 
     result = createProducer( monitoringType )
     if not result['OK']:
-      gLogger.warn( "Fail to create Producer: %s" )
+      gLogger.warn( "Fail to create Producer:", result['Message'])
     else:
       self.__mqProducer = result['Value']
       self.__mq = True

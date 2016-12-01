@@ -23,7 +23,7 @@ def createConsumer(mqURI, callback = generateDefaultCallback()):
   """
   result = setupConnection(mqURI = mqURI, mType = "consumer")
   if not result['OK']:
-    gLogger.error( 'Failed to createConsumer:', '%s' % (result['Message'] ) )
+    gLogger.error( 'Failed to createConsumer:', result['Message'] )
     return result
   return S_OK(MQConsumer(mqManager = connectionManager, mqURI  = mqURI, consumerId = result['Value'], callback = callback))
 
@@ -40,7 +40,7 @@ def createProducer(mqURI):
   """
   result = setupConnection(mqURI = mqURI, mType = "producer")
   if not result['OK']:
-    gLogger.error( 'Failed to createProducer:', '%s' % (result['Message'] ) )
+    gLogger.error( 'Failed to createProducer:', result['Message'] )
     return result
   return S_OK(MQProducer(mqManager = connectionManager, mqURI  = mqURI, producerId = result['Value']))
 
