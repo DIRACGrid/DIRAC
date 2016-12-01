@@ -7,7 +7,7 @@ from DIRAC.Core.Utilities  import ObjectLoader
 from DIRAC.Core.Utilities.DErrno import EMQUKN
 import Queue
 
-def getSpecializedMQConnector(mqType):
+def getMQConnectorClass(mqType):
   """ Function loads the specialized MQConnector class based on mqType.
       It is assumed that MQConnector has a name in the format mqTypeMQConnector
       e.g. if StompMQConnector.
@@ -34,9 +34,9 @@ def createMQConnector(parameters = None):
     S_OK/S_ERROR: with loaded specialized class of MQConnector.
   """
   mqType = parameters.get('MQType', None)
-  result = getSpecializedMQConnector(mqType = mqType)
+  result = getMQConnectorClass(mqType = mqType)
   if not result['OK']:
-    gLogger.error( 'Failed to getSpecializedMQConnector:', '%s' % (result['Message'] ) )
+    gLogger.error( 'Failed to getMQConnectorClass:', '%s' % (result['Message'] ) )
     return result
   ceClass = result['Value']
   try:
