@@ -1,6 +1,8 @@
 """
-This class is used to insert data to a db (currently elasticsearch). It uses an internal list which is used to keep messages in the memory.
-addRecord is used to insert messages to the internal queue. commit is used to insert the acumulated messages to elasticsearch.
+This class is used to insert data to a db (currently elasticsearch).
+It uses an internal list which is used to keep messages in the memory.
+addRecord is used to insert messages to the internal queue. commit is used
+to insert the acumulated messages to elasticsearch.
 It provides two failover mechanism:
 1.) If the database is not available, the data will be keept in the memory.
 2.) If a MQ is available, we store the messages in MQ service.
@@ -27,12 +29,12 @@ class MonitoringReporter( object ):
 
   This class is used to interact with the db using failover mechanism.
 
-  :param: int __maxRecordsInABundle limit the number of records to be inserted to the db.
-  :param: threading.RLock __documentLock is used to lock the local store when it is being modified.
-  :param: list __documents contains the recods which will be inserted to the db
-  :param: bool __mq we can use MQ if it is available... By default it is not allowed.
-  :param: str __monitoringType type of the records which will be inserted to the db. For example: WMSHistory.
-  :param: object__mqProducer publisher used to publish the records to the MQ.
+  :param int __maxRecordsInABundle: limit the number of records to be inserted to the db.
+  :param threading.RLock __documentLock: is used to lock the local store when it is being modified.
+  :param list __documents: contains the recods which will be inserted to the db
+  :param bool __mq: we can use MQ if it is available... By default it is not allowed.
+  :param str __monitoringType: type of the records which will be inserted to the db. For example: WMSHistory.
+  :param object __mqProducer: publisher used to publish the records to the MQ.
   """
 
   def __init__( self, monitoringType = '' ):
