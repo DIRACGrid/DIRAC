@@ -227,7 +227,8 @@ class TestMQConnectionManager_addNewmessenger( TestMQConnectionManager ):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'producer5')
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
-    self.assertEqual(sorted(_getAllMessengersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+    result = self.myManager.getAllMessengers()
+    self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
   def test_success2( self ):
     result = self.myManager.addNewMessenger(mqURI = "mardirac3.in2p3.fr::Topic::test1", messengerType = "consumer"  )
@@ -245,7 +246,8 @@ class TestMQConnectionManager_addNewmessenger( TestMQConnectionManager ):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'consumer5')
     expectedOutput= ['noexisting.blabla.ch/queue/test3/consumer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
-    self.assertEqual(sorted(_getAllMessengersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+    result = self.myManager.getAllMessengers()
+    self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
 class TestMQConnectionManager_startConnection( TestMQConnectionManager ):
   def test_success( self ):
@@ -254,7 +256,8 @@ class TestMQConnectionManager_startConnection( TestMQConnectionManager ):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'producer5')
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
-    self.assertEqual(sorted(_getAllMessengersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+    result = self.myManager.getAllMessengers()
+    self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
   @mock.patch('DIRAC.Resources.MessageQueue.MQConnectionManager.MQConnectionManager.createConnectorAndConnect')
   def test_success2( self, mock_createConnectorAndConnect):
@@ -264,8 +267,10 @@ class TestMQConnectionManager_startConnection( TestMQConnectionManager ):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'consumer5')
     expectedOutput= ['noexisting.blabla.ch/queue/test3/consumer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
-    self.assertEqual(sorted(_getAllMessengersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
-    self.assertEqual(_getConnector(self.myManager._connectionStorage, 'noexisting.blabla.ch'), 'MyConnector')
+    result = self.myManager.getAllMessengers()
+    self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
+    result = self.myManager.getConnector('noexisting.blabla.ch')
+    self.assertEqual(result['Value'], 'MyConnector')
 
 
 class TestMQConnectionManager_stopConnection( TestMQConnectionManager ):
@@ -273,13 +278,15 @@ class TestMQConnectionManager_stopConnection( TestMQConnectionManager ):
     result = self.myManager.stopConnection(mqURI = "mardirac3.in2p3.fr::Queue::test1", messengerId = "producer4")
     self.assertTrue(result['OK'])
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
-    self.assertEqual(sorted(_getAllMessengersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+    result = self.myManager.getAllMessengers()
+    self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
   def test_success2( self ):
     result = self.myManager.stopConnection(mqURI = "mardirac3.in2p3.fr::Topic::test1", messengerId = "producer1")
     self.assertTrue(result['OK'])
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
-    self.assertEqual(sorted(_getAllMessengersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+    result = self.myManager.getAllMessengers()
+    self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
   @mock.patch('DIRAC.Resources.MessageQueue.MQConnectionManager.MQConnectionManager.unsubscribe')
   @mock.patch('DIRAC.Resources.MessageQueue.MQConnectionManager.MQConnectionManager.disconnect')
@@ -295,7 +302,8 @@ class TestMQConnectionManager_stopConnection( TestMQConnectionManager ):
     result = self.myManager.stopConnection(mqURI = "testdir.blabla.ch::Queue::test3", messengerId = "consumer4")
     self.assertTrue(result['OK'])
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1']
-    self.assertEqual(sorted(_getAllMessengersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+    result = self.myManager.getAllMessengers()
+    self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
 class TestMQConnectionManager_removeAllConnections( TestMQConnectionManager ):
   @mock.patch('DIRAC.Resources.MessageQueue.MQConnectionManager.MQConnectionManager.disconnect')
@@ -304,14 +312,16 @@ class TestMQConnectionManager_removeAllConnections( TestMQConnectionManager ):
     result = self.myManager.removeAllConnections()
     self.assertTrue(result['OK'])
     expectedOutput= []
-    self.assertEqual(sorted(_getAllMessengersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+    result = self.myManager.getAllMessengers()
+    self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
 class TestMQConnectionManager_getAllMessengers( TestMQConnectionManager ):
   def test_success( self ):
     result = self.myManager.getAllMessengers()
     self.assertTrue(result['OK'])
     expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
-    self.assertEqual(sorted(_getAllMessengersInfo(self.myManager._connectionStorage)),sorted(expectedOutput))
+    result = self.myManager.getAllMessengers()
+    self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
 class TestMQConnectionManager_getConnector( TestMQConnectionManager ):
   def test_success( self ):

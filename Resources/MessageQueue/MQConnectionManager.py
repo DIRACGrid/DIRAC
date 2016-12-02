@@ -25,9 +25,9 @@ class MQConnectionManager( object ):
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.__lock = None
     if connectionStorage:
-      self._connectionStorage = connectionStorage
+      self.__connectionStorage = connectionStorage
     else:
-      self._connectionStorage = {}
+      self.__connectionStorage = {}
 
   @property
   def lock( self ):
@@ -50,7 +50,7 @@ class MQConnectionManager( object ):
     self.lock.acquire()
     try:
       conn = getMQService( mqURI )
-      if _connectionExists( self._connectionStorage, conn ):
+      if _connectionExists( self.__connectionStorage, conn ):
         return self.addNewMessenger( mqURI = mqURI, messengerType = messengerType )
       else: #Connection does not exist so we create the connector and we add a new connection
         result =  self.addNewMessenger( mqURI = mqURI, messengerType = messengerType )
@@ -60,9 +60,9 @@ class MQConnectionManager( object ):
         result = self.createConnectorAndConnect( parameters = params )
         if not result['OK']:
           return result
-        if _getConnector( self._connectionStorage, conn ):
+        if _getConnector( self.__connectionStorage, conn ):
           return S_ERROR( EMQCONN, "The connector already exists!" )
-        _setConnector( self._connectionStorage, conn, result['Value'] )
+        _setConnector( self.__connectionStorage, conn, result['Value'] )
         return S_OK( mId )
     finally:
       self.lock.release()
@@ -88,8 +88,8 @@ class MQConnectionManager( object ):
     try:
       conn = getMQService( mqURI )
       dest = getDestinationAddress( mqURI )
-      mId = generateMessengerId( self._connectionStorage, messengerType )
-      if _addMessenger( self._connectionStorage, conn, dest, mId ):
+      mId = generateMessengerId( self.__connectionStorage, messengerType )
+      if _addMessenger( self.__connectionStorage, conn, dest, mId ):
         return S_OK( mId )
       return S_ERROR( EMQCONN, "Failed to update the connection: the messenger %s  already exists"%  mId )
     finally:
@@ -127,7 +127,7 @@ class MQConnectionManager( object ):
     """
     self.lock.acquire()
     try:
-      connector = _getConnector( self._connectionStorage, mqConnection )
+      connector = _getConnector( self.__connectionStorage, mqConnection )
       if not connector:
         return S_ERROR( 'Failed to get the MQConnector!' )
       return S_OK( connector)
@@ -152,16 +152,16 @@ class MQConnectionManager( object ):
     try:
       conn = getMQService( mqURI )
       dest = getDestinationAddress( mqURI )
-      connector = _getConnector( self._connectionStorage, conn )
+      connector = _getConnector( self.__connectionStorage, conn )
 
-      if not _removeMessenger( self._connectionStorage, conn, dest, messengerId ):
+      if not _removeMessenger( self.__connectionStorage, conn, dest, messengerId ):
         return S_ERROR( EMQCONN, 'Failed to stop the connection!The messenger %s does not exist!' % messengerId )
       else:
         if 'consumer' in messengerId:
           result = self.unsubscribe( connector, destination = dest, messengerId = messengerId )
           if not result['OK']:
             return result
-      if not _connectionExists( self._connectionStorage, conn ):
+      if not _connectionExists( self.__connectionStorage, conn ):
         return self.disconnect( connector)
       return S_OK()
     finally:
@@ -175,7 +175,7 @@ class MQConnectionManager( object ):
     """
     self.lock.acquire()
     try:
-      return S_OK( _getAllMessengersInfo( cStorage = self._connectionStorage ))
+      return S_OK( _getAllMessengersInfo( cStorage = self.__connectionStorage ))
     finally:
       self.lock.release()
 
@@ -187,12 +187,12 @@ class MQConnectionManager( object ):
     """
     self.lock.acquire()
     try:
-      connections = _getAllConnections( cStorage = self._connectionStorage )
+      connections = _getAllConnections( cStorage = self.__connectionStorage )
       for conn in connections:
-        connector =_getConnector( self._connectionStorage, conn )
+        connector =_getConnector( self.__connectionStorage, conn )
         if connector:
           self.disconnect( connector )
-      self._connectionStorage = {}
+      self.__connectionStorage = {}
       return S_OK()
     finally:
       self.lock.release()
