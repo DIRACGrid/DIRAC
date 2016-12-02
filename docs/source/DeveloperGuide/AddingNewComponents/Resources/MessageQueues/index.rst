@@ -14,7 +14,7 @@ messages which are arbitrary json structures. The *MQProducer* objects are used 
 
    result = createProducer( "mardirac3.in2p3.fr::Queue::TestQueue" )
    if result['OK']:
-      producer = result['Value']  
+      producer = result['Value']
    # Publish a message which is an arbitrary json structure
    result = producer.put( message )
 
@@ -23,11 +23,11 @@ These objects can request messages explicitly:
 
 .. code-block:: python
 
-   from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer 
+   from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 
    result = createConsumer( "mardirac3.in2p3.fr::Queue::TestQueue" )
    if result['OK']:
-      consumer = result['Value']  
+      consumer = result['Value']
    result = consumer.get( message )
    if result['OK']:
      message = result['Value']
@@ -37,15 +37,19 @@ when new messages will arrive:
 
 .. code-block:: python
 
-  from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer 
+  from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 
   def myCallback( headers, message ):
     <function implementation>
 
    result = createConsumer( "mardirac3.in2p3.fr::Queue::TestQueue", callback = myCallback )
    if result['OK']:
-      consumer = result['Value']  
+      consumer = result['Value']
 
+
+The destination name (queue or topic) in the consumer/producer instantiation must be given as
+fully qualified name like "mardirac3.in2p3.fr::Queue::TestQueue" or
+"mardirac3.in2p3.fr::Topic::TestTopic".
 
 ====================================
 Message Queue nomenclature in DIRAC
