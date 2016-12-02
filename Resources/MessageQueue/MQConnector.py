@@ -8,7 +8,7 @@ from DIRAC.Core.Utilities.DErrno import EMQUKN
 
 __RCSID__ = "$Id$"
 
-def createMQConnector(parameters = None):
+def createMQConnector( parameters = None ):
   """ Function creates and returns the MQConnector object based.
   Args:
     parameters(dict): set of parameters for the MQConnector constructor,
@@ -18,14 +18,14 @@ def createMQConnector(parameters = None):
   Returns:
     S_OK/S_ERROR: with loaded specialized class of MQConnector.
   """
-  mqType = parameters.get('MQType', None)
-  result = getMQConnectorClass(mqType = mqType)
+  mqType = parameters.get( 'MQType', None )
+  result = getMQConnectorClass( mqType = mqType )
   if not result['OK']:
-    gLogger.error( 'Failed to getMQConnectorClass:', '%s' % (result['Message'] ) )
+    gLogger.error( 'Failed to getMQConnectorClass:', '%s' % ( result['Message'] ) )
     return result
   ceClass = result['Value']
   try:
-    mqConnector = ceClass(parameters)
+    mqConnector = ceClass( parameters )
     if not result['OK']:
       return result
   except Exception as exc:
@@ -33,7 +33,7 @@ def createMQConnector(parameters = None):
     return S_ERROR( EMQUKN, '' )
   return S_OK( mqConnector )
 
-def getMQConnectorClass(mqType):
+def getMQConnectorClass( mqType ):
   """ Function loads the specialized MQConnector class based on mqType.
       It is assumed that MQConnector has a name in the format mqTypeMQConnector
       e.g. if StompMQConnector.
@@ -63,14 +63,14 @@ class MQConnector( object ):
     """ Standard constructor
     """
 
-  def setupConnection( self, parameters = None):
+  def setupConnection( self, parameters = None ):
     """
     :param dict parameters: dictionary with additional MQ parameters if any
     :return: S_OK/S_ERROR
     """
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def put(self, message, parameters = None):
+  def put( self, message, parameters = None ):
     """ Send message to a MQ server
 
     :param message: any json encodable structure
@@ -78,14 +78,14 @@ class MQConnector( object ):
     """
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def connect(self, parameters = None):
+  def connect( self, parameters = None ):
     """
     :param dict parameters: dictionary with additional parameters if any
     :return: S_OK/S_ERROR
     """
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def disconnect(self, parameters = None):
+  def disconnect( self, parameters = None ):
     """
     Disconnects from the message queue server
     :param dict parameters: dictionary with additional parameters if any
@@ -93,7 +93,7 @@ class MQConnector( object ):
     """
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def subscribe(self, parameters = None):
+  def subscribe( self, parameters = None ):
     """
     Subscribes to the message queue server
     :param dict parameters: dictionary with additional parameters if any
@@ -102,7 +102,7 @@ class MQConnector( object ):
 
     raise NotImplementedError( 'This method should be implemented by child class' )
 
-  def unsubscribe(self, parameters = None):
+  def unsubscribe( self, parameters = None ):
     """
     Subscribes to the message queue server
     :param dict parameters: dictionary with additional parameters if any

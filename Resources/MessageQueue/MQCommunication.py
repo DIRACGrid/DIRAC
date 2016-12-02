@@ -9,7 +9,7 @@ from DIRAC.Resources.MessageQueue.Utilities import generateDefaultCallback
 
 connectionManager = MQConnectionManager() #To manage the active MQ connections.
 
-def createConsumer(mqURI, callback = generateDefaultCallback()):
+def createConsumer( mqURI, callback = generateDefaultCallback() ):
   """ Function creates MQConsumer. All parameters are taken
       from the Configuration Service based on the mqURI
       value.
@@ -21,13 +21,13 @@ def createConsumer(mqURI, callback = generateDefaultCallback()):
   Returns:
     S_OK/S_ERROR: with the consumer object in S_OK.
   """
-  result = _setupConnection(mqURI = mqURI, mType = "consumer")
+  result = _setupConnection( mqURI = mqURI, mType = "consumer" )
   if not result['OK']:
     gLogger.error( 'Failed to createConsumer:', result['Message'] )
     return result
-  return S_OK(MQConsumer(mqManager = connectionManager, mqURI  = mqURI, consumerId = result['Value'], callback = callback))
+  return S_OK( MQConsumer( mqManager = connectionManager, mqURI  = mqURI, consumerId = result['Value'], callback = callback ) )
 
-def createProducer(mqURI):
+def createProducer( mqURI ):
   """ Function creates MQProducer. All parameters are taken
       from the Configuration Service based on the mqURI
       value.
@@ -38,13 +38,13 @@ def createProducer(mqURI):
   Returns:
     S_OK/S_ERROR: with the producer object in S_OK.
   """
-  result = _setupConnection(mqURI = mqURI, mType = "producer")
+  result = _setupConnection( mqURI = mqURI, mType = "producer" )
   if not result['OK']:
     gLogger.error( 'Failed to createProducer:', result['Message'] )
     return result
-  return S_OK(MQProducer(mqManager = connectionManager, mqURI  = mqURI, producerId = result['Value']))
+  return S_OK( MQProducer( mqManager = connectionManager, mqURI  = mqURI, producerId = result['Value'] ) )
 
-def _setupConnection(mqURI, mType):
+def _setupConnection( mqURI, mType ):
   """ Function sets up the active MQ connection. All parameters are taken
       from the Configuration Service based on the mqURI
       value and the messenger Type mType.
@@ -54,11 +54,11 @@ def _setupConnection(mqURI, mType):
               e.g. blabla.cern.ch::Queue::MyQueue1
     mType(str): 'consumer' or 'producer'
   Returns:
-    S_OK/S_ERROR: with the value of the messenger Id (e.g. 'consumer4') in S_OK.
+    S_OK/S_ERROR: with the value of the messenger Id ( e.g. 'consumer4' ) in S_OK.
   """
-  result = getMQParamsFromCS(mqURI = mqURI)
+  result = getMQParamsFromCS( mqURI = mqURI )
   if not result['OK']:
-    gLogger.error( 'Failed to setupConnection:', '%s' % (result['Message'] ) )
+    gLogger.error( 'Failed to setupConnection:', '%s' % ( result['Message'] ) )
     return result
   params = result['Value']
-  return connectionManager.startConnection(mqURI, params, mType)
+  return connectionManager.startConnection( mqURI, params, mType )

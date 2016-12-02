@@ -20,9 +20,9 @@ def getMQParamsFromCS( mqURI ):
   csAPI.initialize()
 
   try :
-    mqService, mqType, mqName = mqURI.split("::")
+    mqService, mqType, mqName = mqURI.split( "::" )
   except ValueError:
-    return S_ERROR( 'Bad format of mqURI address:%s' % ( mqURI) )
+    return S_ERROR( 'Bad format of mqURI address:%s' % ( mqURI ) )
 
   result = gConfig.getConfigurationTree( '/Resources/MQServices', mqService, mqType, mqName )
   if not result['OK'] or len( result['Value'] ) == 0:
@@ -36,12 +36,12 @@ def getMQParamsFromCS( mqURI ):
   tmp = mqDestinationPath.split( 'Queue' )[0].split( 'Topic' )
   servicePath = tmp[0]
   serviceDict = {}
-  if len(tmp) > 1:
+  if len( tmp ) > 1:
     serviceDict['Topic'] = mqName
   else:
     serviceDict['Queue'] = mqName
 
-  result = gConfig.getOptionsDict(servicePath )
+  result = gConfig.getOptionsDict( servicePath )
   if not result['OK']:
     return result
   serviceDict.update( result['Value'] )
@@ -52,18 +52,18 @@ def getMQParamsFromCS( mqURI ):
   serviceDict.update( result['Value'] )
   return S_OK( serviceDict )
 
-def getMQService(mqURI):
-  return mqURI.split("::")[0]
+def getMQService( mqURI ):
+  return mqURI.split( "::" )[0]
 
-def getDestinationType(mqURI):
-  return mqURI.split("::")[1]
+def getDestinationType( mqURI ):
+  return mqURI.split( "::" )[1]
 
-def getDestinationName(mqURI):
-  return mqURI.split("::")[2]
+def getDestinationName( mqURI ):
+  return mqURI.split( "::" )[2]
 
-def getDestinationAddress(mqURI):
-  mqType, mqName = mqURI.split("::")[-2:]
-  return "/" + mqType.lower() + "/" + mqName
+def getDestinationAddress( mqURI ):
+  mqType, mqName = mqURI.split( "::" )[-2:]
+  return "/" + mqType.lower( ) + "/" + mqName
 
 def generateDefaultCallback():
   """ Function generates a default callback that can
@@ -85,9 +85,9 @@ def generateDefaultCallback():
     object: callback function
   """
   msgQueue = Queue.Queue()
-  def callback(headers, body):
-    msgQueue.put(body)
-  def get():
-    return msgQueue.get(block = False)
+  def callback( headers, body ):
+    msgQueue.put( body )
+  def get( ):
+    return msgQueue.get( block = False )
   callback.get = get
   return callback

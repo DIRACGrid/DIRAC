@@ -7,27 +7,27 @@ from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress, getMQS
 from DIRAC.Core.Utilities.DErrno import EMQNOM
 
 class MQConsumer ( object ):
-  def __init__(self, mqManager, mqURI, consumerId, callback = generateDefaultCallback()):
+  def __init__( self, mqManager, mqURI, consumerId, callback = generateDefaultCallback() ):
     self._connectionManager = mqManager
     self._mqURI = mqURI
-    self._destination = getDestinationAddress(self._mqURI)
+    self._destination = getDestinationAddress( self._mqURI )
     self._id = consumerId
     self._callback = callback
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     #subscribing to connection
-    result =  self._connectionManager.getConnector(getMQService(self._mqURI))
+    result =  self._connectionManager.getConnector( getMQService( self._mqURI ) )
     if result['OK']:
       connector = result['Value']
       if connector:
-        result = connector.subscribe(parameters = {'messengerId':self._id, 'callback':callback, 'destination':self._destination})
+        result = connector.subscribe( parameters = {'messengerId':self._id, 'callback':callback, 'destination':self._destination} )
         if not result['OK']:
-          self.log.error('Failed to subscirbe the consumer:'+ self._id)
+          self.log.error( 'Failed to subscirbe the consumer:'+ self._id )
       else:
-        self.log.error('Failed to initialize MQConsumer! No MQConnector!')
+        self.log.error( 'Failed to initialize MQConsumer! No MQConnector!' )
     else:
-      self.log.error('Failed to get MQConnector!')
+      self.log.error( 'Failed to get MQConnector!' )
 
-  def get(self):
+  def get( self ):
     """ Function gets the message
         using the default callback machinery.
         This function can be called only if the the default
@@ -38,7 +38,7 @@ class MQConsumer ( object ):
         S_OK with the message content otherwise.
     """
     if not self._callback:
-      return S_ERROR('No callback set!')
+      return S_ERROR( 'No callback set!' )
     try:
       msg = self._callback.get()
     except Queue.Empty:
@@ -46,9 +46,9 @@ class MQConsumer ( object ):
     except Exception, e:
       return S_ERROR( 'Exception: %s'% e )
     else:
-      return S_OK(msg)
+      return S_OK( msg )
 
-  def close(self):
+  def close( self ):
     """ Function closes the connection for this client.
         The producer id is removed from the connection storage.
         It is not guaranteed that the connection will be
@@ -57,5 +57,5 @@ class MQConsumer ( object ):
       S_OK/S_ERROR: Error appears in case if the connection was already
         closed for this consumer.
     """
-    return self._connectionManager.stopConnection(mqURI = self._mqURI, messengerId = self._id)
+    return self._connectionManager.stopConnection( mqURI = self._mqURI, messengerId = self._id )
 

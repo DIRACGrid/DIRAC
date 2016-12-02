@@ -19,9 +19,9 @@ from DIRAC.Resources.MessageQueue.MQConnector import createMQConnector
 from DIRAC.Core.Utilities.DErrno import EMQCONN
 
 
-class MQConnectionManager(object):
+class MQConnectionManager( object ):
   """Manages connections for the Message Queue resources in form of the interal connection storage."""
-  def __init__(self, connectionStorage = None):
+  def __init__( self, connectionStorage = None ):
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.__lock = None
     if connectionStorage:
@@ -37,7 +37,7 @@ class MQConnectionManager(object):
       self.__lock = LockRing().getLock( self.__class__.__name__, recursive = True )
     return self.__lock
 
-  def startConnection(self, mqURI, params, messengerType):
+  def startConnection( self, mqURI, params, messengerType ):
     """ Function adds or updates the MQ connection. If the connection
         does not exists, MQconnector is created and added.
     Args:
@@ -49,25 +49,25 @@ class MQConnectionManager(object):
     """
     self.lock.acquire()
     try:
-      conn = getMQService(mqURI)
-      if _connectionExists(self._connectionStorage, conn):
-        return self.addNewMessenger(mqURI = mqURI, messengerType = messengerType)
+      conn = getMQService( mqURI )
+      if _connectionExists( self._connectionStorage, conn ):
+        return self.addNewMessenger( mqURI = mqURI, messengerType = messengerType )
       else: #Connection does not exist so we create the connector and we add a new connection
-        result =  self.addNewMessenger(mqURI = mqURI, messengerType = messengerType)
+        result =  self.addNewMessenger( mqURI = mqURI, messengerType = messengerType )
         if not result['OK']:
           return result
         mId = result['Value']
-        result = self.createConnectorAndConnect(parameters = params)
+        result = self.createConnectorAndConnect( parameters = params )
         if not result['OK']:
           return result
-        if _getConnector(self._connectionStorage, conn):
-          return S_ERROR(EMQCONN, "The connector already exists!")
-        _setConnector(self._connectionStorage, conn, result['Value'])
-        return S_OK(mId)
+        if _getConnector( self._connectionStorage, conn ):
+          return S_ERROR( EMQCONN, "The connector already exists!" )
+        _setConnector( self._connectionStorage, conn, result['Value'] )
+        return S_OK( mId )
     finally:
       self.lock.release()
 
-  def addNewMessenger(self, mqURI, messengerType):
+  def addNewMessenger( self, mqURI, messengerType ):
     """ Function updates the MQ connection by adding the messenger Id to the internal connection storage.
         Also the messengerId is chosen.
         messenger Id is set to the maximum existing value (or 0 no messengers are connected) + 1.
@@ -81,44 +81,44 @@ class MQConnectionManager(object):
     """
     # 'consumer1' ->1
     # 'producer21' ->21
-    msgIdToInt = lambda msgIds, msgType : [int(m.replace(msgType,'')) for m in msgIds]
+    msgIdToInt = lambda msgIds, msgType : [int(m.replace( msgType,'' )) for m in msgIds]
     # The messengerId is str e.g.  'consumer5' or 'producer3'
-    generateMessengerId = lambda strg, msgT: msgT + str( max( msgIdToInt( _getAllMessengersIdWithType(strg, msgT), msgT) or [0] ) + 1 )
-    self.lock.acquire()
+    generateMessengerId = lambda strg, msgT: msgT + str( max( msgIdToInt( _getAllMessengersIdWithType( strg, msgT ), msgT ) or [0] ) + 1 )
+    self.lock.acquire( )
     try:
-      conn = getMQService(mqURI)
-      dest = getDestinationAddress(mqURI)
-      mId = generateMessengerId(self._connectionStorage, messengerType)
-      if _addMessenger(self._connectionStorage, conn, dest, mId):
-        return S_OK(mId)
-      return S_ERROR(EMQCONN, "Failed to update the connection: the messenger %s  already exists"%  mId)
+      conn = getMQService( mqURI )
+      dest = getDestinationAddress( mqURI )
+      mId = generateMessengerId( self._connectionStorage, messengerType )
+      if _addMessenger( self._connectionStorage, conn, dest, mId ):
+        return S_OK( mId )
+      return S_ERROR( EMQCONN, "Failed to update the connection: the messenger %s  already exists"%  mId )
     finally:
       self.lock.release()
 
-  def createConnectorAndConnect(self, parameters):
-    result = createMQConnector(parameters = parameters)
+  def createConnectorAndConnect( self, parameters ):
+    result = createMQConnector( parameters = parameters )
     if not result['OK']:
       return result
     connector = result['Value']
-    result = connector.setupConnection(parameters = parameters)
+    result = connector.setupConnection( parameters = parameters )
     if not result['OK']:
       return result
     result = connector.connect()
     if not result['OK']:
       return result
-    return S_OK(connector)
+    return S_OK( connector )
 
-  def disconnect(self, connector):
+  def disconnect( self, connector ):
     if not connector:
-      return S_ERROR(EMQCONN, 'Failed to disconnect! Connector is None!')
+      return S_ERROR( EMQCONN, 'Failed to disconnect! Connector is None!' )
     return connector.disconnect()
 
-  def unsubscribe(self, connector, destination, messengerId):
+  def unsubscribe( self, connector, destination, messengerId ):
     if not connector:
-      return S_ERROR(EMQCONN,'Failed to unsubscribe! Connector is None!')
-    return connector.unsubscribe(parameters = {'destination':destination, 'messengerId':messengerId})
+      return S_ERROR( EMQCONN,'Failed to unsubscribe! Connector is None!' )
+    return connector.unsubscribe( parameters = {'destination':destination, 'messengerId':messengerId} )
 
-  def getConnector(self, mqConnection):
+  def getConnector( self, mqConnection ):
     """ Function returns MQConnector assigned to the mqURI.
     Args:
       mqConnection(str): connection name.
@@ -127,14 +127,14 @@ class MQConnectionManager(object):
     """
     self.lock.acquire()
     try:
-      connector = _getConnector(self._connectionStorage, mqConnection)
+      connector = _getConnector( self._connectionStorage, mqConnection )
       if not connector:
-        return S_ERROR('Failed to get the MQConnector!')
-      return S_OK(connector)
+        return S_ERROR( 'Failed to get the MQConnector!' )
+      return S_OK( connector)
     finally:
       self.lock.release()
 
-  def stopConnection(self, mqURI, messengerId):
+  def stopConnection( self, mqURI, messengerId ):
     """ Function 'stops' the connection for given messenger, which means
         it removes it from the messenger list. If this is the consumer, the
         unsubscribe() connector method is called. If it is the last messenger
@@ -150,24 +150,24 @@ class MQConnectionManager(object):
     """
     self.lock.acquire()
     try:
-      conn = getMQService(mqURI)
-      dest = getDestinationAddress(mqURI)
-      connector = _getConnector(self._connectionStorage, conn)
+      conn = getMQService( mqURI )
+      dest = getDestinationAddress( mqURI )
+      connector = _getConnector( self._connectionStorage, conn )
 
-      if not _removeMessenger(self._connectionStorage, conn, dest, messengerId):
-        return S_ERROR(EMQCONN, 'Failed to stop the connection!The messenger %s does not exist!' % messengerId)
+      if not _removeMessenger( self._connectionStorage, conn, dest, messengerId ):
+        return S_ERROR( EMQCONN, 'Failed to stop the connection!The messenger %s does not exist!' % messengerId )
       else:
         if 'consumer' in messengerId:
-          result = self.unsubscribe(connector, destination = dest, messengerId = messengerId)
+          result = self.unsubscribe( connector, destination = dest, messengerId = messengerId )
           if not result['OK']:
             return result
-      if not _connectionExists(self._connectionStorage, conn):
-        return self.disconnect(connector)
+      if not _connectionExists( self._connectionStorage, conn ):
+        return self.disconnect( connector)
       return S_OK()
     finally:
       self.lock.release()
 
-  def getAllMessengers(self):
+  def getAllMessengers( self ):
     """ Function returns a list of all messengers registered in connection storage.
     Returns:
       S_OK/S_ERROR: with the list of strings in the pseudo-path format e.g.
@@ -175,11 +175,11 @@ class MQConnectionManager(object):
     """
     self.lock.acquire()
     try:
-      return S_OK(_getAllMessengersInfo(cStorage = self._connectionStorage))
+      return S_OK( _getAllMessengersInfo( cStorage = self._connectionStorage ))
     finally:
       self.lock.release()
 
-  def removeAllConnections(self):
+  def removeAllConnections( self ):
     """ Function removes all existing connections and calls the disconnect
         for connectors.
     Returns:
@@ -187,11 +187,11 @@ class MQConnectionManager(object):
     """
     self.lock.acquire()
     try:
-      connections = _getAllConnections(cStorage = self._connectionStorage)
+      connections = _getAllConnections( cStorage = self._connectionStorage )
       for conn in connections:
-        connector =_getConnector(self._connectionStorage, conn)
+        connector =_getConnector( self._connectionStorage, conn )
         if connector:
-          self.disconnect(connector)
+          self.disconnect( connector )
       self._connectionStorage = {}
       return S_OK()
     finally:
@@ -199,7 +199,7 @@ class MQConnectionManager(object):
 
 # Set of 'private' helper functions to access and modify the message queue connection storage.
 
-def _getConnection(cStorage, mqConnection):
+def _getConnection( cStorage, mqConnection ):
   """ Function returns message queue connection from the storage.
   Args:
     cStorage(dict): message queue connection storage.
@@ -207,9 +207,9 @@ def _getConnection(cStorage, mqConnection):
   Returns:
     dict:
   """
-  return cStorage.get(mqConnection, {})
+  return cStorage.get( mqConnection, {} )
 
-def _getAllConnections(cStorage):
+def _getAllConnections( cStorage ):
   """ Function returns a list of all connection names in the storage
   Args:
     cStorage(dict): message queue connection storage.
@@ -218,7 +218,7 @@ def _getAllConnections(cStorage):
   """
   return cStorage.keys()
 
-def _getConnector(cStorage, mqConnection):
+def _getConnector( cStorage, mqConnection ):
   """ Function returns MQConnector from the storage.
   Args:
     cStorage(dict): message queue connection storage.
@@ -226,9 +226,9 @@ def _getConnector(cStorage, mqConnection):
   Returns:
     MQConnector or None
   """
-  return _getConnection(cStorage, mqConnection).get("MQConnector", None)
+  return _getConnection( cStorage, mqConnection ).get( "MQConnector", None )
 
-def _setConnector(cStorage, mqConnection, connector):
+def _setConnector( cStorage, mqConnection, connector ):
   """ Function returns MQConnector from the storage.
   Args:
     cStorage(dict): message queue connection storage.
@@ -237,13 +237,13 @@ def _setConnector(cStorage, mqConnection, connector):
   Returns:
     bool: False if connection does not exit
   """
-  connDict = _getConnection(cStorage, mqConnection)
+  connDict = _getConnection( cStorage, mqConnection )
   if not connDict:
     return False
   connDict["MQConnector"] = connector
   return True
 
-def _getDestinations(cStorage, mqConnection):
+def _getDestinations( cStorage, mqConnection ):
   """ Function returns dict with destinations (topics and queues) for given connection.
   Args:
     cStorage(dict): message queue connection storage.
@@ -251,9 +251,9 @@ def _getDestinations(cStorage, mqConnection):
   Returns:
     dict: of form {'/queue/queue1':['producer1','consumer2']} or {}
   """
-  return _getConnection(cStorage, mqConnection).get("destinations", {})
+  return _getConnection( cStorage, mqConnection ).get( "destinations", {} )
 
-def _getMessengersId(cStorage, mqConnection, mqDestination):
+def _getMessengersId( cStorage, mqConnection, mqDestination ):
   """ Function returns list of messengers for given connection and given destination.
   Args:
     cStorage(dict): message queue connection storage.
@@ -262,22 +262,22 @@ def _getMessengersId(cStorage, mqConnection, mqDestination):
   Returns:
     list: of form ['producer1','consumer2'] or []
   """
-  return _getDestinations(cStorage, mqConnection).get(mqDestination, [])
+  return _getDestinations( cStorage, mqConnection).get( mqDestination, [] )
 
-def _getMessengersIdWithType(cStorage, mqConnection, mqDestination, messengerType):
+def _getMessengersIdWithType(cStorage, mqConnection, mqDestination, messengerType ):
   """ Function returns list of messnager for given connection, destination and type.
   Args:
-    cStorage(dict): message queue connection storage.
+    cStorage(dict ): message queue connection storage.
     mqConnection(str): message queue connection name.
     mqDestination(str): message queue or topic name e.g. '/queue/myQueue1' .
     messengerType(str): 'consumer' or 'producer'
   Returns:
     list: of form ['producer1','producer2'], ['consumer8', 'consumer20'] or []
   """
-  return [p for p in _getMessengersId(cStorage, mqConnection, mqDestination) if messengerType in p]
+  return [p for p in _getMessengersId( cStorage, mqConnection, mqDestination ) if messengerType in p]
 
 
-def _getAllMessengersId(cStorage):
+def _getAllMessengersId( cStorage ):
   """ Function returns list of all messengers ids.
       The list can contain duplicates because the same
       producer id can be used for different queues.
@@ -286,9 +286,9 @@ def _getAllMessengersId(cStorage):
   Returns:
     list: of form ['producer1','consumer1', 'producer1'] or []
   """
-  return [m for c in cStorage.keys() for d in _getDestinations(cStorage,c)  for m in _getMessengersId(cStorage,c, d)]
+  return [m for c in cStorage.keys() for d in _getDestinations( cStorage,c )  for m in _getMessengersId( cStorage,c, d )]
 
-def _getAllMessengersIdWithType(cStorage, messengerType):
+def _getAllMessengersIdWithType( cStorage, messengerType ):
   """ Function returns list of all messengers ids for given messengerType
   Args:
     cStorage(dict): message queue connection storage.
@@ -296,19 +296,19 @@ def _getAllMessengersIdWithType(cStorage, messengerType):
   Returns:
     list: of form ['producer1','producer2'], ['consumer8', 'consumer20'] or []
   """
-  return [p for p in _getAllMessengersId(cStorage) if messengerType in p]
+  return [p for p in _getAllMessengersId( cStorage ) if messengerType in p]
 
-def _getAllMessengersInfo(cStorage):
+def _getAllMessengersInfo( cStorage ):
   """ Function returns list of all messengers in the pseudo-path format.
   Args:
     cStorage(dict): message queue connection storage.
   Returns:
     list: of form ['blabla.cern.ch/queue/myQueue1/producer1','bibi.in2p3.fr/topic/myTopic331/consumer3'] or []
   """
-  output = lambda connection,dest,messenger: str(connection)+str(dest)+'/'+ str(messenger)
-  return [output(c, d, m) for c in cStorage.keys() for d in _getDestinations(cStorage,c)  for m in _getMessengersId(cStorage,c, d)]
+  output = lambda connection,dest,messenger: str( connection )+str( dest )+'/'+ str( messenger )
+  return [output( c, d, m ) for c in cStorage.keys() for d in _getDestinations( cStorage,c )  for m in _getMessengersId( cStorage,c, d )]
 
-def _connectionExists(cStorage, mqConnection):
+def _connectionExists( cStorage, mqConnection ):
   """ Function checks if given connection exists in the connection storage.
   Args:
     cStorage(dict): message queue connection storage.
@@ -318,7 +318,7 @@ def _connectionExists(cStorage, mqConnection):
   """
   return mqConnection in cStorage
 
-def _destinationExists(cStorage, mqConnection, mqDestination):
+def _destinationExists( cStorage, mqConnection, mqDestination ):
   """ Function checks if given destination(queue or topic) exists in the connection storage.
   Args:
     cStorage(dict): message queue connection storage.
@@ -327,9 +327,9 @@ def _destinationExists(cStorage, mqConnection, mqDestination):
   Returns:
     bool:
   """
-  return mqDestination in _getDestinations(cStorage, mqConnection)
+  return mqDestination in _getDestinations( cStorage, mqConnection )
 
-def _messengerExists(cStorage, mqConnection, mqDestination, messengerId):
+def _messengerExists( cStorage, mqConnection, mqDestination, messengerId ):
   """ Function checks if given messenger(producer or consumer) exists in the connection storage.
   Args:
     cStorage(dict): message queue connection storage.
@@ -339,9 +339,9 @@ def _messengerExists(cStorage, mqConnection, mqDestination, messengerId):
   Returns:
     bool:
   """
-  return messengerId in _getMessengersId(cStorage, mqConnection, mqDestination)
+  return messengerId in _getMessengersId( cStorage, mqConnection, mqDestination )
 
-def _addMessenger(cStorage, mqConnection, destination, messengerId):
+def _addMessenger( cStorage, mqConnection, destination, messengerId ):
   """ Function adds a messenger(producer or consumer) to given connection and destination.
       If connection or/and destination do not exist, they are created as well.
   Args:
@@ -352,18 +352,18 @@ def _addMessenger(cStorage, mqConnection, destination, messengerId):
   Returns:
     bool: True if messenger is added or False if the messenger already exists.
   """
-  if _messengerExists(cStorage, mqConnection, destination, messengerId):
+  if _messengerExists( cStorage, mqConnection, destination, messengerId ):
     return False
-  if _connectionExists(cStorage,mqConnection):
-    if _destinationExists(cStorage,mqConnection, destination):
-      _getMessengersId(cStorage, mqConnection, destination).append(messengerId)
+  if _connectionExists( cStorage,mqConnection ):
+    if _destinationExists( cStorage,mqConnection, destination ):
+      _getMessengersId( cStorage, mqConnection, destination ).append( messengerId )
     else:
-      _getDestinations(cStorage,mqConnection)[destination] = [messengerId]
+      _getDestinations( cStorage,mqConnection )[destination] = [messengerId]
   else:
     cStorage[mqConnection]={"MQConnector":None,"destinations":{destination:[messengerId]}}
   return True
 
-def _removeMessenger(cStorage, mqConnection, destination, messengerId):
+def _removeMessenger( cStorage, mqConnection, destination, messengerId ):
   """ Function removes  messenger(producer or consumer) from given connection and destination.
       If it is the last messenger in given destination and/or connection they are removed as well..
   Args:
@@ -374,14 +374,14 @@ def _removeMessenger(cStorage, mqConnection, destination, messengerId):
   Returns:
     bool: True if messenger is removed or False if the messenger was not in the storage.
   """
-  messengers = _getMessengersId(cStorage, mqConnection, destination)
-  destinations = _getDestinations(cStorage,mqConnection)
+  messengers = _getMessengersId( cStorage, mqConnection, destination )
+  destinations = _getDestinations( cStorage,mqConnection )
   if messengerId in messengers:
-    messengers.remove(messengerId)
+    messengers.remove( messengerId )
     if not messengers: #If no more messengers we remove the destination.
-      destinations.pop(destination)
+      destinations.pop( destination )
       if not destinations: #If no more destinations we remove the connection
-        cStorage.pop(mqConnection)
+        cStorage.pop( mqConnection )
     return True
   else:
     return False #messenger was not in the storage

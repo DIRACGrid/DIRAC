@@ -24,12 +24,12 @@ class StompMQConnector( MQConnector ):
   def __init__( self, parameters = {} ):
     """ Standard constructor
     """
-    super(StompMQConnector, self).__init__()
+    super( StompMQConnector, self ).__init__()
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.parameters = parameters
     self.connection =  None
 
-  def setupConnection( self, parameters = None):
+  def setupConnection( self, parameters = None ):
     #"""
     #Establishes a new connection to a Stomp server, e.g. RabbitMQ
     #:param dict parameters: dictionary with additional MQ parameters if any
@@ -40,13 +40,13 @@ class StompMQConnector( MQConnector ):
       self.parameters.update( parameters )
 
     #Check that the minimum set of parameters is present
-    if not all(p in parameters for p in ('Host', 'VHost')):
-      return S_ERROR( 'Input parameters are missing!')
+    if not all( p in parameters for p in ( 'Host', 'VHost' )):
+      return S_ERROR( 'Input parameters are missing!' )
 
     # Make the actual connection
     host = self.parameters.get( 'Host' )
     port = self.parameters.get( 'Port', 61613 )
-    vhost = self.parameters.get( 'VHost')
+    vhost = self.parameters.get( 'VHost' )
 
     sslVersion = self.parameters.get( 'SSLVersion' )
     hostcert = self.parameters.get( 'HostCertificate' )
@@ -77,8 +77,8 @@ class StompMQConnector( MQConnector ):
         return S_ERROR( EMQCONN, 'Invalid SSL version provided: %s' % sslVersion )
 
       #Im taking the first ip on the list
-      ip = next(iter(brokers[2] or []), None)
-      self.parameters.update({'IP':ip})
+      ip = next( iter( brokers[2] or [] ), None )
+      self.parameters.update( {'IP':ip} )
 
       if ip:
         if sslVersion:
@@ -100,14 +100,14 @@ class StompMQConnector( MQConnector ):
       return S_ERROR( EMQCONN, 'Failed to setup connection: %s' % e )
     return S_OK( 'Setup successful' )
 
-  def put( self, message, parameters = None):
+  def put( self, message, parameters = None ):
     """
     Sends a message to the queue
     message contains the body of the message
 
     :param str message: string or any json encodable structure
     """
-    destination = parameters.get('destination', '')
+    destination = parameters.get( 'destination', '' )
     try:
       if isinstance( message, ( list, set, tuple ) ):
         for msg in message:
@@ -119,19 +119,19 @@ class StompMQConnector( MQConnector ):
     return S_OK( 'Message sent successfully' )
 
   def connect( self, parameters = None ):
-    port = self.parameters.get('Port', '')
-    ip = self.parameters.get('IP', '')
-    user = self.parameters.get('User')
-    password = self.parameters.get('Password')
+    port = self.parameters.get( 'Port', '' )
+    ip = self.parameters.get( 'IP', '' )
+    user = self.parameters.get( 'User' )
+    password = self.parameters.get( 'Password' )
     try:
       self.connection.start()
-      self.connection.connect(username = user, passcode = password)
+      self.connection.connect( username = user, passcode = password )
       time.sleep( 1 )
       if self.connection.is_connected():
         self.log.info( "Connected to %s:%s" % ( ip, port ) )
         return S_OK( "Connected to %s:%s" % ( ip, port ) )
       else:
-        return S_ERROR(EMQCONN, "Failed to connect to  %s:%s" % ( ip, port ))
+        return S_ERROR( EMQCONN, "Failed to connect to  %s:%s" % ( ip, port ) )
     except Exception as e:
       return S_ERROR( EMQCONN, 'Failed to connect: %s' % e )
 
@@ -145,10 +145,10 @@ class StompMQConnector( MQConnector ):
       return S_ERROR( EMQUKN, 'Failed to disconnect: %s' % str( e ) )
     return S_OK( 'Disconnection successful' )
 
-  def subscribe( self, parameters = None):
-    mId = parameters.get('messengerId', '')
-    callback = parameters.get('callback', None)
-    dest = parameters.get('destination', '')
+  def subscribe( self, parameters = None ):
+    mId = parameters.get( 'messengerId', '' )
+    callback = parameters.get( 'callback', None )
+    dest = parameters.get( 'destination', '' )
     headers = {}
     if self.parameters.get( 'Persistent', '' ).lower() in ['true', 'yes', '1']:
       headers = { 'persistent': 'true' }
@@ -158,7 +158,7 @@ class StompMQConnector( MQConnector ):
       acknowledgement = True
       ack = 'client-individual'
     if not callback:
-      self.log.error("No callback specified!")
+      self.log.error( "No callback specified!" )
     listener = StompListener( callback, acknowledgement, self.connection, mId )
 
     self.connection.set_listener( '', listener )
@@ -168,11 +168,11 @@ class StompMQConnector( MQConnector ):
                                headers = headers )
     return S_OK( 'Subscription successful' )
 
-  def unsubscribe(self, parameters):
-    dest = parameters.get('destination', '')
-    mId = parameters.get('messengerId', '')
+  def unsubscribe( self, parameters ):
+    dest = parameters.get( 'destination', '' )
+    mId = parameters.get( 'messengerId', '' )
     try:
-      self.connection.unsubscribe(destination = dest, id = mId)
+      self.connection.unsubscribe( destination = dest, id = mId )
     except Exception as e:
       return S_ERROR( EMQUKN, 'Failed to unsubscibe: %s' % str( e ) )
     return S_OK( 'Unsubscription successful' )
@@ -193,7 +193,7 @@ class StompListener ( stomp.ConnectionListener ):
 
     self.log = gLogger.getSubLogger( 'StompListener' )
     if not callback:
-      self.log.error('Error initializing StompMQConnector!callback is None')
+      self.log.error( 'Error initializing StompMQConnector!callback is None' )
     self.callback = callback
     self.ack = ack
     self.mId = messengerId
