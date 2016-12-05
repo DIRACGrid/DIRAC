@@ -214,6 +214,39 @@ class ProxyInit:
 
 
 if __name__ == "__main__":
+  print """
+You are currently using DIRAC.
+You are probably trying to submit jobs, or access your data,
+or something like that.
+
+In any case, it will surely result in a brilliant
+physics paper (congrats in advance!).
+
+In order to be able to keep doing so
+and hence secure a full professorship position,
+please, show some support to DIRAC,
+and quote it (even better, praise it :-) ) in your superb paper.
+
+Look, I even spare you some time with this BibTex entry that you can just use as a reference:
+
+@article{1742-6596-219-6-062029,
+  author={A Tsaregorodtsev and N Brook and A Casajus Ramo and Ph Charpentier and J Closier and G Cowan and R Graciani Diaz and E
+Lanciotti and Z Mathe and R Nandakumar and S Paterson and V Romanovsky and R Santinelli and M Sapunov and A C Smith and M Seco
+Miguelez and A Zhelezov},
+  title={DIRAC3 – the new generation of the LHCb grid software},
+  journal={Journal of Physics: Conference Series},
+  volume={219},
+  number={6},
+  pages={062029},
+  url={http://stacks.iop.org/1742-6596/219/i=6/a=062029},
+  year={2010}
+}
+
+The DIRAC developers (that, thanks to this quote
+will be able to pay their rent and feed their
+family (but probably not themselves yet))
+thank you from the bottom of their heart"""
+
   piParams = Params()
   piParams.registerCLISwitches()
 
