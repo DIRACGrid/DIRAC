@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #
-echo "dirac-proxy-init -g lhcb_prod"
-dirac-proxy-init -g lhcb_prod
+echo "dirac-proxy-init -g dirac_prod"
+dirac-proxy-init -g dirac_prod
 if [ $? -ne 0 ]
 then
    exit $?
@@ -16,8 +16,7 @@ stamptime=$(date +%Y%m%d_%H%M%S)
 stime=$(date +"%H%M%S")
 tdate=$(date +"20%y-%m-%d")
 ttime=$(date +"%R")
-version=${dirac-version}  +++Script is broken
-#version=v6r17
+version=${dirac-version}
 mkdir -p TransformationSystemTest
 directory=/dirac/certification/Test/INIT/$version/$tdate/$stime
 #selecting a random USER Storage Element
@@ -52,21 +51,19 @@ echo "Creating unique test files"
 # Add the random files to the transformation
 echo ""
 echo "Adding files to Storage Element $randomSE"
-# filesToUpload=$(ls TransformationSystemTest/)
-# for file in $filesToUpload
-# do
-# 	random=$[ $RANDOM % $x ]
-# 	randomSE=${arrSE[$random]}
-# 	echo "$directory/$file \
-# 	     ./TransformationSystemTest/$file $randomSE" \
-# 	     >> TransformationSystemTest/LFNlist.txt
-# done
+filesToUpload=$(ls TransformationSystemTest/)
+for file in $filesToUpload
+do
+  random=$[ $RANDOM % $x ]
+  randomSE=${arrSE[$random]}
+  echo "$directory/$file ./TransformationSystemTest/$file $randomSE" >> TransformationSystemTest/LFNlist.txt
+done
 
 while IFS= read -r line
 do
-    random=$[ $RANDOM % $x ]
-    randomSE=${arrSE[$random]}
-    echo "$line $randomSE"
+  random=$[ $RANDOM % $x ]
+  randomSE=${arrSE[$random]}
+  echo "$line $randomSE"
 done < LFNlist.txt >> ./LFNlistNew.txt
 
 dirac-dms-add-file LFNlistNew.txt
@@ -79,10 +76,7 @@ dirac-transformation-add-files $transID --LFNs=$LFNlist
 
 if [ $? -ne 0 ]
 then
-   exit $?
+  exit $?
 fi
-
-
-
 
 # ___ Use Ramdom SEs___

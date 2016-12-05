@@ -67,5 +67,5 @@ if not result['OK']:
 
 transID = result['Value']
 with open('TransformationID', 'w') as fd:
-  fd.write(transID)
+  fd.write(str(transID))
 print "Created %s, stored in file 'TransformationID'" % transID
