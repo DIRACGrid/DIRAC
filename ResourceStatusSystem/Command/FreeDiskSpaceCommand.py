@@ -54,9 +54,11 @@ class FreeDiskSpaceCommand( Command ):
 
     se = StorageElement(elementName)
 
-    elementURL = se.getStorageParameters(protocol = "dips")['URLBase']
+    elementURL = se.getStorageParameters(protocol = "dips")
 
-    if not elementURL:
+    if elementURL['OK']:
+      elementURL = se.getStorageParameters(protocol = "dips")['Value']['URLBase']
+    else:  
       gLogger.info( "Not a DIPS storage element, skipping..." )
       return S_OK()
 
@@ -94,7 +96,7 @@ class FreeDiskSpaceCommand( Command ):
 
     elements = CSHelpers.getStorageElements()
 
-    for name in elements:
+    for name in elements['Value']:
       diskSpace = self.doNew( name )
       if not diskSpace[ 'OK' ]:
         return diskSpace
