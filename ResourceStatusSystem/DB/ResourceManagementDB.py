@@ -99,11 +99,11 @@ class ResourceManagementDB( object ):
 
   _tablesDB[ 'SpaceTokenOccupancyCache' ] = { 'Fields' :
                       {
-                       'Endpoint'       : 'VARCHAR( 64 ) NOT NULL',
+                       'Endpoint'       : 'VARCHAR( 128 ) NOT NULL',
                        'Token'          : 'VARCHAR( 64 ) NOT NULL',
-                       'Total'          : 'DOUBLE NOT NULL DEFAULT 0',
-                       'Guaranteed'     : 'DOUBLE NOT NULL DEFAULT 0',
-                       'Free'           : 'DOUBLE NOT NULL DEFAULT 0',
+                       'Total'          : 'DOUBLE DEFAULT NULL',
+                       'Guaranteed'     : 'DOUBLE DEFAULT NULL',
+                       'Free'           : 'DOUBLE DEFAULT NULL',
                        'LastCheckTime'  : 'DATETIME NOT NULL'
                       },
                       'PrimaryKey' : [ 'Endpoint', 'Token' ]
