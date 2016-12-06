@@ -102,7 +102,7 @@ class ResourceManagementDB( object ):
                        'Endpoint'       : 'VARCHAR( 128 ) NOT NULL',
                        'Token'          : 'VARCHAR( 64 ) NOT NULL',
                        'Total'          : 'DOUBLE DEFAULT NULL',
-                       'Guaranteed'     : 'DOUBLE DEFAULT NULL',
+                       'Guaranteed'     : 'DOUBLE NOT NULL DEFAULT 0',
                        'Free'           : 'DOUBLE DEFAULT NULL',
                        'LastCheckTime'  : 'DATETIME NOT NULL'
                       },
