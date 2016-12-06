@@ -50,7 +50,10 @@ class ResourceStatusClient( object ):
       fails, then tries to connect to the Service :class:ResourceStatusHandler.
     '''
 
-    self.rssDB = RPCClient( "ResourceStatus/ResourceStatus" )
+    if not serviceIn:
+      self.rssDB = RPCClient( "ResourceStatus/ResourceStatus" )
+    else:
+      self.rssDB = serviceIn
 
     self.validElements = RssConfiguration.getValidElements()
 
@@ -101,7 +104,7 @@ class ResourceStatusClient( object ):
   def updateStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
                            dateEffective = None, lastCheckTime = None,
-                           tokenOwner = None, tokenExpiration = None ):
+                           tokenOwner = None, tokenExpiration = None, ID = None ):
     '''
     Updates <element><tableType> with the parameters given.
 
@@ -138,7 +141,7 @@ class ResourceStatusClient( object ):
     # pylint: disable=unused-argument
     return self.rssDB.update(element, tableType, name, statusType, status,
                              elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration)
+                             tokenOwner, tokenExpiration, ID)
 
   def selectStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,

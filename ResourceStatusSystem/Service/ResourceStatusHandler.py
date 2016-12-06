@@ -141,7 +141,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_update( self, element, tableType, name = None, statusType = None,
                     status = None, elementType = None, reason = None,
                     dateEffective = None, lastCheckTime = None,
-                    tokenOwner = None, tokenExpiration = None ):
+                    tokenOwner = None, tokenExpiration = None, ID = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
@@ -177,14 +177,14 @@ class ResourceStatusHandler( RequestHandler ):
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'update: %s %s %s %s %s %s %s %s %s %s %s' %
+    gLogger.info( 'update: %s %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
                   elementType, reason, dateEffective, lastCheckTime,
-                  tokenOwner, tokenExpiration ) )
+                  tokenOwner, tokenExpiration, ID ) )
 
     res = db.update( element, tableType, name, statusType, status,
                      elementType, reason, dateEffective, lastCheckTime,
-                     tokenOwner, tokenExpiration )
+                     tokenOwner, tokenExpiration, ID )
 
     self.__logResult( 'update', res )
 
@@ -406,12 +406,12 @@ class ResourceStatusHandler( RequestHandler ):
 
     return res
 
-  types_addIfNotThere = [ basestring, basestring, basestring, basestring, basestring, basestring,
-                          basestring, datetime, datetime, basestring, datetime]
+  types_addIfNotThere = [ basestring, basestring ]
 
-  def export_addIfNotThere( self, element, tableType, name, statusType, status,
-                             elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration ):
+  def export_addIfNotThere( self, element, tableType, name = None, statusType = None,
+                            status = None, elementType = None, reason = None,
+                            dateEffective = None, lastCheckTime = None,
+                            tokenOwner = None, tokenExpiration = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
