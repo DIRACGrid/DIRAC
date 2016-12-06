@@ -64,10 +64,19 @@ class FreeDiskSpaceCommand( Command ):
       return S_OK()
 
     self.rpc = RPCClient( elementURL, timeout=120 )
+
     free = self.rpc.getFreeDiskSpace("/")
+
+    if not free[ 'OK' ]:
+      return free
+
     total = self.rpc.getTotalDiskSpace("/")
+
+    if not total[ 'OK' ]:
+      return total
+
     result = self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint = elementURL, lastCheckTime = datetime.utcnow(),
-                                                               free = free, total = total, token = elementName )
+                                                               free = free['Value'], total = total['Value'], token = elementName )
     if not result[ 'OK' ]:
       return result
 
