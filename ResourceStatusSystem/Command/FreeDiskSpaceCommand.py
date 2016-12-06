@@ -60,7 +60,7 @@ class FreeDiskSpaceCommand( Command ):
     if elementURL['OK']:
       elementURL = se.getStorageParameters(protocol = "dips")['Value']['URLBase']
     else:
-      gLogger.info( "Not a DIPS storage element, skipping..." )
+      gLogger.verbose( "Not a DIPS storage element, skipping..." )
       return S_OK()
 
     self.rpc = RPCClient( elementURL, timeout=120 )
