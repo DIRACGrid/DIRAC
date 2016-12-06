@@ -1,4 +1,4 @@
-[v6r17-pre3]
+[v6r17-pre4]
 
 *Core
 FIX: Adler - check explicitly if the checksum value is "False"
@@ -9,6 +9,9 @@ NEW: ComponentInstaller - added configuration parameters to setup NoSQL database
 CHANGE: Logger - test level before processing string (i.e. mostly converting objects to strings)  
 CHANGE: dirac-proxy-init - check and attempt to update local CRLs at the same time as
         generating user proxy
+CHANGE: ProxyManager service - always store the uploaded proxy even if the already stored
+        one is of the same validity length to allow replacement in case of proxy type
+        changes, e.g. RFC type proxies           
 
 *DMS
 NEW: Next in implementation multi-protocol support for storage elements. When performing 
@@ -24,7 +27,9 @@ FIX: ReplicateAndRegister - fix the case when checksum is False in the FC
 *RSS
 NEW: FreeDiskSpace - added new command which is used to get the total and the remaining 
      disk space of all dirac storage elements that are found in the CS and inserts the 
-     results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.    
+     results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.  
+NEW: GOCDBSync command to ensure that all the downtime dates in the DowntimeCache 
+     table are up to date       
 
 *Workflow
 FIX: Modulebase, Script - avoid too many unnecessarily different application states
