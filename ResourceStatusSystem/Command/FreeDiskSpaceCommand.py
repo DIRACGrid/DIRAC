@@ -4,12 +4,13 @@
 
 '''
 
-from datetime                                        import datetime
-from DIRAC                                           import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Command.Command      import Command
-from DIRAC.Core.DISET.RPCClient                      import RPCClient
-from DIRAC.ResourceStatusSystem.Utilities            import CSHelpers
-from DIRAC.Resources.Storage.StorageElement          import StorageElement
+from datetime                                                   import datetime
+from DIRAC                                                      import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.ResourceStatusSystem.Command.Command                 import Command
+from DIRAC.Core.DISET.RPCClient                                 import RPCClient
+from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.Resources.Storage.StorageElement                     import StorageElement
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
 __RCSID__ = '$Id:  $'
 
@@ -24,7 +25,7 @@ class FreeDiskSpaceCommand( Command ):
     super( FreeDiskSpaceCommand, self ).__init__( args )
 
     self.rpc = None
-    self.rsClient = None
+    self.rsClient = ResourceManagementClient()
 
   def _prepareCommand( self ):
     '''
