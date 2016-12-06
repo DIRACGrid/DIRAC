@@ -1,5 +1,4 @@
 # dirac job created by ganga
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
 j = Job()
@@ -13,11 +12,6 @@ j.setExecutable( "exe-script.py", "", "Ganga_Executable.log" )
 
 # <-- user settings
 j.setCPUTime( 172800 )
-try:
-  tier1s = DMSHelpers().getTiers( tier = ( 0, 1 ) )
-except AttributeError:
-  tier1s = ['LCG.CERN.ch', 'LCG.CNAF.it', 'LCG.GRIDKA.de', 'LCG.IN2P3.fr',
-            'LCG.NIKHEF.nl', 'LCG.PIC.es', 'LCG.RAL.uk', 'LCG.RRCKI.ru', 'LCG.SARA.nl']
 # user settings -->
 
 
