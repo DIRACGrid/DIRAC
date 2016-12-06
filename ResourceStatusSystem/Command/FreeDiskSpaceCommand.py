@@ -76,7 +76,8 @@ class FreeDiskSpaceCommand( Command ):
       return total
 
     result = self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint = elementURL, lastCheckTime = datetime.utcnow(),
-                                                               free = free['Value'], total = total['Value'], token = elementName )
+                                                               free = free['Value'], total = total['Value'],
+                                                               guaranteed = total['Value'], token = elementName )
     if not result[ 'OK' ]:
       return result
 
