@@ -4,12 +4,13 @@
 
 '''
 
-from datetime                                        import datetime
-from DIRAC                                           import S_OK, S_ERROR, gLogger
-from DIRAC.ResourceStatusSystem.Command.Command      import Command
-from DIRAC.Core.DISET.RPCClient                      import RPCClient
-from DIRAC.ResourceStatusSystem.Utilities            import CSHelpers
-from DIRAC.Resources.Storage.StorageElement          import StorageElement
+from datetime                                                   import datetime
+from DIRAC                                                      import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.ResourceStatusSystem.Command.Command                 import Command
+from DIRAC.Core.DISET.RPCClient                                 import RPCClient
+from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.Resources.Storage.StorageElement                     import StorageElement
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
 __RCSID__ = '$Id:  $'
 
@@ -19,12 +20,12 @@ class FreeDiskSpaceCommand( Command ):
   Uses diskSpace method to get the free space
   '''
 
-  def __init__( self, args = None, clients = None ):
+  def __init__( self, args = None ):
 
-    super( FreeDiskSpaceCommand, self ).__init__( args, clients )
+    super( FreeDiskSpaceCommand, self ).__init__( args )
 
     self.rpc = None
-    self.rsClient = None
+    self.rsClient = ResourceManagementClient()
 
   def _prepareCommand( self ):
     '''
@@ -54,9 +55,11 @@ class FreeDiskSpaceCommand( Command ):
 
     se = StorageElement(elementName)
 
-    elementURL = se.getStorageParameters(protocol = "dips")['URLBase']
+    elementURL = se.getStorageParameters(protocol = "dips")
 
-    if not elementURL:
+    if elementURL['OK']:
+      elementURL = se.getStorageParameters(protocol = "dips")['Value']['URLBase']
+    else:
       gLogger.info( "Not a DIPS storage element, skipping..." )
       return S_OK()
 
@@ -94,7 +97,7 @@ class FreeDiskSpaceCommand( Command ):
 
     elements = CSHelpers.getStorageElements()
 
-    for name in elements:
+    for name in elements['Value']:
       diskSpace = self.doNew( name )
       if not diskSpace[ 'OK' ]:
         return diskSpace
