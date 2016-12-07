@@ -25,15 +25,15 @@ class Params( ProxyGeneration.CLIParams ):
   uploadPilot = False
   addVOMSExt = False
 
-  def setUploadProxy( self, arg ):
+  def setUploadProxy( self, _arg ):
     self.uploadProxy = True
     return S_OK()
 
-  def setUploadPilotProxy( self, arg ):
+  def setUploadPilotProxy( self, _arg ):
     self.uploadPilot = True
     return S_OK()
 
-  def setVOMSExt( self, arg ):
+  def setVOMSExt( self, _arg ):
     self.addVOMSExt = True
     return S_OK()
 
@@ -43,7 +43,7 @@ class Params( ProxyGeneration.CLIParams ):
     Script.registerSwitch( "P", "uploadPilot", "Upload a long lived pilot proxy to the ProxyManager", self.setUploadPilotProxy )
     Script.registerSwitch( "M", "VOMS", "Add voms extension", self.setVOMSExt )
 
-class ProxyInit:
+class ProxyInit( object ):
 
   def __init__( self, piParams ):
     self.__piParams = piParams
@@ -56,25 +56,25 @@ class ProxyInit:
     if self.__issuerCert:
       return self.__issuerCert
     proxyChain = X509Chain.X509Chain()
-    result = proxyChain.loadChainFromFile( self.__piParams.certLoc )
-    if not result[ 'OK' ]:
-      gLogger.error( "Could not load the proxy: %s" % result[ 'Message' ] )
+    proxyChainFromFile = proxyChain.loadChainFromFile( self.__piParams.certLoc )
+    if not proxyChainFromFile[ 'OK' ]:
+      gLogger.error( "Could not load the proxy: %s" % proxyChainFromFile[ 'Message' ] )
       sys.exit( 1 )
-    result = proxyChain.getIssuerCert()
-    if not result[ 'OK' ]:
-      gLogger.error( "Could not load the proxy: %s" % result[ 'Message' ] )
+    issuerCert = proxyChain.getIssuerCert()
+    if not issuerCert[ 'OK' ]:
+      gLogger.error( "Could not load the proxy: %s" % issuerCert[ 'Message' ] )
       sys.exit( 1 )
-    self.__issuerCert = result[ 'Value' ]
+    self.__issuerCert = issuerCert[ 'Value' ]
     return self.__issuerCert
 
   def certLifeTimeCheck( self ):
     minLife = Registry.getGroupOption( self.__piParams.diracGroup, "SafeCertificateLifeTime", 2592000 )
     issuerCert = self.getIssuerCert()
-    result = issuerCert.getRemainingSecs() #pylint: disable=no-member
-    if not result[ 'OK' ]:
-      gLogger.error( "Could not retrieve certificate expiration time", result[ 'Message' ] )
+    remainingSecs = issuerCert.getRemainingSecs() #pylint: disable=no-member
+    if not remainingSecs[ 'OK' ]:
+      gLogger.error( "Could not retrieve certificate expiration time", remainingSecs[ 'Message' ] )
       return
-    lifeLeft = result[ 'Value' ]
+    lifeLeft = remainingSecs[ 'Value' ]
     if minLife > lifeLeft:
       daysLeft = int( lifeLeft / 86400 )
       msg = "Your certificate will expire in less than %d days. Please renew it!" % daysLeft
@@ -95,13 +95,12 @@ class ProxyInit:
     issuerCert = self.getIssuerCert()
     userDN = issuerCert.getSubjectDN()[ 'Value' ] #pylint: disable=no-member
 
-    result = Registry.getGroupsForDN( userDN )
-    if not result[ 'OK' ]:
+    groups = Registry.getGroupsForDN( userDN )
+    if not groups[ 'OK' ]:
       gLogger.error( "No groups defined for DN %s" % userDN )
       return []
-    availableGroups = result[ 'Value' ]
+    availableGroups = groups[ 'Value' ]
 
-    pilotGroups = []
     for group in availableGroups:
       groupProps = Registry.getPropertiesForGroup( group )
       if Properties.PILOT in groupProps or Properties.GENERIC_PILOT in groupProps:
@@ -117,23 +116,23 @@ class ProxyInit:
     if not vomsAttr:
       return S_ERROR( "Requested adding a VOMS extension but no VOMS attribute defined for group %s" % self.__piParams.diracGroup )
 
-    result = VOMS.VOMS().setVOMSAttributes( self.__proxyGenerated, attribute = vomsAttr, vo = Registry.getVOMSVOForGroup( self.__piParams.diracGroup ) )
-    if not result[ 'OK' ]:
-      return S_ERROR( "Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" % result[ 'Message' ] )
+    vomsAttributes = VOMS.VOMS().setVOMSAttributes( self.__proxyGenerated, attribute = vomsAttr, vo = Registry.getVOMSVOForGroup( self.__piParams.diracGroup ) )
+    if not vomsAttributes[ 'OK' ]:
+      return S_ERROR( "Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" % vomsAttributes[ 'Message' ] )
 
     gLogger.notice( "Added VOMS attribute %s" % vomsAttr )
-    chain = result['Value']
+    chain = vomsAttributes['Value']
     chain.dumpAllToFile( self.__proxyGenerated )
     return S_OK()
 
   def createProxy( self ):
     gLogger.notice( "Generating proxy..." )
-    result = ProxyGeneration.generateProxy( piParams )
-    if not result[ 'OK' ]:
-      gLogger.error( result[ 'Message' ] )
+    proxyGenerated = ProxyGeneration.generateProxy( piParams )
+    if not proxyGenerated[ 'OK' ]:
+      gLogger.error( proxyGenerated[ 'Message' ] )
       sys.exit( 1 )
-    self.__proxyGenerated = result[ 'Value' ]
-    return result
+    self.__proxyGenerated = proxyGenerated[ 'Value' ]
+    return proxyGenerated
 
   def uploadProxy( self, userGroup = False ):
     issuerCert = self.getIssuerCert()
@@ -158,11 +157,11 @@ class ProxyInit:
     upParams.diracGroup = userGroup
     for k in ( 'certLoc', 'keyLoc', 'userPasswd' ):
       setattr( upParams, k , getattr( self.__piParams, k ) )
-    result = ProxyUpload.uploadProxy( upParams )
-    if not result[ 'OK' ]:
-      gLogger.error( result[ 'Message' ] )
+    proxyUpload = ProxyUpload.uploadProxy( upParams )
+    if not proxyUpload[ 'OK' ]:
+      gLogger.error( proxyUpload[ 'Message' ] )
       sys.exit( 1 )
-    self.__uploadedInfo = result[ 'Value' ]
+    self.__uploadedInfo = proxyUpload[ 'Value' ]
     self.__proxiesUploaded.append( userGroup )
     gLogger.info( "Proxy uploaded" )
     return S_OK()
@@ -217,29 +216,29 @@ class ProxyInit:
     return S_OK()
 
   def doTheMagic( self ):
-    result = self.createProxy()
-    if not result[ 'OK' ]:
-      return result
+    proxy = self.createProxy()
+    if not proxy[ 'OK' ]:
+      return proxy
 
     self.checkCAs()
     pI.certLifeTimeCheck()
-    result = pI.addVOMSExtIfNeeded()
-    if not result[ 'OK' ]:
-      if "returning a valid AC for the user" in result['Message']:
-        gLogger.error( result[ 'Message' ] )
+    proxyWithVOMS = pI.addVOMSExtIfNeeded()
+    if not proxyWithVOMS[ 'OK' ]:
+      if "returning a valid AC for the user" in proxyWithVOMS['Message']:
+        gLogger.error( proxyWithVOMS[ 'Message' ] )
         gLogger.error("\n Are you sure you are properly registered in the VO?")
-      elif "Missing voms-proxy" in result['Message']:
+      elif "Missing voms-proxy" in proxyWithVOMS['Message']:
         gLogger.notice( "Failed to add VOMS extension: no standard grid interface available" )
       else:
-        gLogger.error( result['Message'] )
+        gLogger.error( proxyWithVOMS['Message'] )
       if self.__piParams.strict:
-        return result
+        return proxyWithVOMS
 
     for pilotGroup in pI.getGroupsToUpload():
-      result = pI.uploadProxy( userGroup = pilotGroup )
-      if not result[ 'OK' ]:
+      proxyUpload = pI.uploadProxy( userGroup = pilotGroup )
+      if not proxyUpload[ 'OK' ]:
         if self.__piParams.strict:
-          return result
+          return proxyUpload
 
     return S_OK()
 
