@@ -20,9 +20,9 @@ class FreeDiskSpaceCommand( Command ):
   Uses diskSpace method to get the free space
   '''
 
-  def __init__( self, args = None ):
+  def __init__( self, args = None, clients = None ):
 
-    super( FreeDiskSpaceCommand, self ).__init__( args )
+    super( FreeDiskSpaceCommand, self ).__init__( args, clients )
 
     self.rpc = None
     self.rsClient = ResourceManagementClient()
