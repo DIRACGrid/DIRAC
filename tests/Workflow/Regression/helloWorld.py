@@ -12,6 +12,8 @@ j.setExecutable( "exe-script.py", "", "Ganga_Executable.log" )
 
 # <-- user settings
 j.setCPUTime( 172800 )
+tier1s = DMSHelpers().getTiers( tier = ( 0, 1 ) )
+j.setBannedSites( tier1s )
 # user settings -->
 
 
