@@ -194,6 +194,8 @@ class ProxyInit( object ):
       return
     caDir = os.environ[ "X509_CERT_DIR" ]
     searchExp = os.path.join( caDir, "*.r0" )
+    if not searchExp:
+      return
     newestFPath = max( glob.glob( searchExp ), key=os.path.getmtime )
     newestFTime = os.path.getmtime( newestFPath )
     if newestFTime > ( time.time() - ( 28 * 24 * 3600 ) ):
