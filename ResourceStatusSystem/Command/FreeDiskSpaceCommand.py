@@ -22,7 +22,7 @@ class FreeDiskSpaceCommand( Command ):
 
   def __init__( self, args = None, clients = None ):
 
-    super( FreeDiskSpaceCommand, self ).__init__( args, clients )
+    super( FreeDiskSpaceCommand, self ).__init__( args, clients = clients )
 
     self.rpc = None
     self.rsClient = ResourceManagementClient()
