@@ -1,16 +1,16 @@
 ########################################################################
-# $HeadURL$
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ###########################################################from DIRAC.Core.Base import Script#############
-__RCSID__ = "$Id$"
 
 import sys
 import getpass
 import DIRAC
 from DIRAC.Core.Base import Script
 
-class CLIParams:
+__RCSID__ = "$Id$"
+
+class CLIParams(object):
 
   proxyLifeTime = 2592000
   diracGroup = False

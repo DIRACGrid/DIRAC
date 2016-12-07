@@ -444,7 +444,7 @@ To install the DIRAC Client, follow the procedure described in the User Guide.
 
   - Start admin command line interface using administrator DIRAC group::
 
-      dirac-proxy-init -g dirac_admin
+      dirac-proxy-init -g dirac_admin --rfc
       dirac-admin-sysadmin-cli --host <HOST_NAME>
 
       where the HOST_NAME is the name of the DIRAC service host
