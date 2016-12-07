@@ -1360,6 +1360,11 @@ def createBashrc():
                      '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'export OPENSSL_CONF=/tmp'] )
+
+      # gfal2 requires some environment variables to be set
+      lines.extend( ['# Gfal2 configuration and plugins',
+                     'export GFAL_CONFIG_DIR=%s' % os.path.join( "$DIRAC", cliParams.platform, 'etc/gfal2.d'),
+                     'export  GFAL_PLUGIN_DIR=%s' %os.path.join( "$DIRACLIB", 'gfal2-plugins')] )
       # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend( ['# DIRAC platform',
@@ -1437,7 +1442,11 @@ def createCshrc():
       lines.extend( ['# IPv6 support',
                      'setenv GLOBUS_IO_IPV6 TRUE',
                      'setenv GLOBUS_FTP_CLIENT_IPV6 TRUE'] )
-      # add DIRACPLAT environment variable for client installations
+      # gfal2 requires some environment variables to be set
+      lines.extend( ['# Gfal2 configuration and plugins',
+                     'setenv GFAL_CONFIG_DIR %s' % os.path.join( "$DIRAC", cliParams.platform, 'etc/gfal2.d'),
+                     'setenv  GFAL_PLUGIN_DIR %s' %os.path.join( "$DIRACLIB", 'gfal2-plugins')] )
+     # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend( ['# DIRAC platform',
                        'test $?DIRACPLAT -eq 1 || setenv DIRACPLAT `$DIRAC/scripts/dirac-platform`'] )
