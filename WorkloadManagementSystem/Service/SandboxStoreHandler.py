@@ -77,7 +77,7 @@ class SandboxStoreHandler( RequestHandler ):
       fileHelper.markAsTransferred()
       return S_ERROR( "Sandbox is too big. Please upload it to a grid storage element" )
 
-    if type( fileId ) in ( list, tuple ):
+    if isinstance( fileId, ( list, tuple ) ):
       if len( fileId ) > 1:
         assignTo = fileId[1]
         fileId = fileId[0]
