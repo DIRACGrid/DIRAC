@@ -420,9 +420,9 @@ function diracInstallCommand(){
 function prepareForServer(){
   echo '==> [prepareForServer]'
 
-  #get the necessary scripts: install_site.sh file
-  cp $TESTCODE/DIRAC/Core/scripts/install_site.sh $SERVERINSTALLDIR/
-  chmod +x $SERVERINSTALLDIR/install_site.sh
+  #get the necessary scripts: dirac-install.py file
+  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $SERVERINSTALLDIR/
+  chmod +x $SERVERINSTALLDIR/dirac-install.py
 }
 
 
