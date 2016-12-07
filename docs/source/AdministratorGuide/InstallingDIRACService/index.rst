@@ -166,7 +166,7 @@ be taken:
         #
         #  DIRAC release version (this is an example, you should find out the current
         #  production release)
-        Release = v6r10p4
+        Release = v6r17p1
         #  Python version of the installation
         PythonVersion = 26
         #  To install the Server version of DIRAC (the default is client)
@@ -183,7 +183,7 @@ be taken:
         #  this server).
         #  Only modules not defined as default to install in their projects need to be defined here:
         #   i.e. LHCb, LHCbWeb for LHCb
-        Externals = WebApp
+        Extensions = WebApp
 
         #
         #   These are options for the configuration of the installed DIRAC software
@@ -194,7 +194,7 @@ be taken:
         VirtualOrganization = Name of your VO
         #  Site name
         SiteName = DIRAC.HostName.ch
-        #  Setup name
+        #  Setup name (every installation can have multiple setups, but give a name to the first one)
         Setup = MyDIRAC-Production
         #  Default name of system instances
         InstanceName = Production
@@ -233,7 +233,10 @@ be taken:
         HostDN = /DC=ch/DC=country/OU=computers/CN=computer.dn
         # Define the Configuration Server as Master for your installations
         ConfigurationMaster = yes
-
+        #
+        # List of DataBases to be installed
+        Databases = InstalledComponentsDB
+        Databases += ResourceStatusDB
         #
         #  The following options define components to be installed
         #
@@ -244,9 +247,12 @@ be taken:
         Host =
         #  List of Services to be installed
         Services  = Configuration/Server
+        Services += Framework/ComponentMonitoring
         Services += Framework/SystemAdministrator
+        Services += ResourceStatus/ResourceStatus
         #  Flag determining whether the Web Portal will be installed
         WebPortal = yes
+        WebApp = yes
         #
         #  The following options defined the MySQL DB connectivity
         #
@@ -273,7 +279,7 @@ be taken:
   - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
     .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch::
 
-      ./install_site.sh -v v6r16p2 install.cfg
+      ./install_site.sh -v v6r17p1 install.cfg
 
   - If the installation is successful, in the end of the script execution you will see the report
     of the status of running DIRAC services, e.g.::
@@ -325,7 +331,7 @@ operation is the registration of the new host in the already functional Configur
         #
         #  DIRAC release version (this is an example, you should find out the current
         #  production release)
-        Release = v6r3p7
+        Release = v6r17p1
         #  To install the Server version of DIRAC (the default is client)
         InstallType = server
         #  LCG python bindings for SEs and LFC. Specify this option only if your installation
@@ -381,7 +387,7 @@ operation is the registration of the new host in the already functional Configur
 
   - Now run install_site.sh giving the edited CFG file as the argument:::
 
-        ./install_site.sh -v v6r3p7 install.cfg
+        ./install_site.sh -v v6r17p1 install.cfg
 
 If the installation is successful, the SystemAdministrator service will be up and running on the
 server. You can now set up the required components as described in :ref:`setting_with_CLI`

@@ -108,7 +108,7 @@ class ModuleBase( object ):
 
     if not self.jobID:
       # this is the real wms job ID
-      self.jobID = os.environ.get('JOBID', 0)
+      self.jobID = int(os.environ.get('JOBID', self.jobID))
 
     if not self.step_number:
       # self.STEP_NUMBER is always set by the workflow
