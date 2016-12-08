@@ -183,25 +183,29 @@ class StorageElementItem( object ):
       self.storages = factoryDict['StorageObjects']
       self.protocolOptions = factoryDict['ProtocolOptions']
       self.turlProtocols = factoryDict['TurlProtocols']
+
       for storage in self.storages:
+
         storage.setStorageElement( self )
 
 
     self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
-    self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
-    self.log.debug( "useCatalogURL: %s" % self.useCatalogURL )
 
+    if self.valid:
 
-    self.__dmsHelper = DMSHelpers( vo = vo )
+      self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
+      self.log.debug( "useCatalogURL: %s" % self.useCatalogURL )
 
-    # Allow SE to overwrite general operation config
-    accessProto = self.options.get( 'AccessProtocols' )
-    self.localAccessProtocolList = accessProto if accessProto else self.__dmsHelper.getAccessProtocols()
-    self.log.debug( "localAccessProtocolList %s" % self.localAccessProtocolList )
+      self.__dmsHelper = DMSHelpers( vo = vo )
 
-    writeProto = self.options.get( 'WriteProtocols' )
-    self.localWriteProtocolList = writeProto if writeProto else self.__dmsHelper.getWriteProtocols()
-    self.log.debug( "localWriteProtocolList %s" % self.localWriteProtocolList )
+      # Allow SE to overwrite general operation config
+      accessProto = self.options.get( 'AccessProtocols' )
+      self.localAccessProtocolList = accessProto if accessProto else self.__dmsHelper.getAccessProtocols()
+      self.log.debug( "localAccessProtocolList %s" % self.localAccessProtocolList )
+
+      writeProto = self.options.get( 'WriteProtocols' )
+      self.localWriteProtocolList = writeProto if writeProto else self.__dmsHelper.getWriteProtocols()
+      self.log.debug( "localWriteProtocolList %s" % self.localWriteProtocolList )
 
 
 
