@@ -166,7 +166,11 @@ class DMSHelpers( object ):
     return sorted( self.siteSet )
 
   def getTiers( self, withStorage = False, tier = None ):
-    return sorted( self.getShortSiteNames( withStorage = withStorage, tier = tier ).values() )
+    sites = sorted( self.getShortSiteNames( withStorage = withStorage, tier = tier ).values() )
+    if sites and isinstance( sites[0], list ):
+      # List of lists, flatten it
+      sites = [s for sl in sites for s in sl]
+    return sites
 
   def getShortSiteNames( self, withStorage = True, tier = None ):
     siteDict = {}
