@@ -263,7 +263,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
         self._logInfo( "Start processing transformation", method = method, transID = transID )
         clients['TaskManager'].transInThread = self.transInThread
         for operation in operations:
-          self._logInfo( "Start executing %s" % operation, method = method, transID = transID )
+          self._logInfo( "Executing %s" % operation, method = method, transID = transID )
           startOperation = time.time()
           res = getattr( self, operation )( transIDOPBody, clients )
           if not res['OK']:
