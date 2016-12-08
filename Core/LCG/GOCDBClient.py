@@ -203,7 +203,7 @@ class GOCDBClient( object ):
       params += '&ongoing_only=yes'
 
     try:
-      response = requests.get('https://goc.egi.eudd/gocdbpi_v4/public/?method=get_downtime&topentity=' + params)
+      response = requests.get('https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime&topentity=' + params)
       response.raise_for_status()
     except requests.exceptions.RequestException as e:
       return S_ERROR("Error %s" % e)
