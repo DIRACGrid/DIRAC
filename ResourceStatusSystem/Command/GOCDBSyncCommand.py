@@ -56,9 +56,9 @@ class GOCDBSyncCommand( Command ):
 
     for downtimes in result['Value']:
 
-      localDBdict = { 'DowntimeID': downtimes[1],
-                      'FORMATED_START_DATE': downtimes[0].strftime('%Y-%m-%d %H:%M'),
-                      'FORMATED_END_DATE': downtimes[3].strftime('%Y-%m-%d %H:%M') }
+      localDBdict = { 'DowntimeID': downtimes[3],
+                      'FORMATED_START_DATE': downtimes[6].strftime('%Y-%m-%d %H:%M'),
+                      'FORMATED_END_DATE': downtimes[7].strftime('%Y-%m-%d %H:%M') }
 
       response = self.gClient.getHostnameDowntime(hostname, datetime.utcnow().strftime('%Y-%m-%d'), True)
 
@@ -111,14 +111,14 @@ class GOCDBSyncCommand( Command ):
     for data in result['Value']:
 
       # If already processed don't do it again
-      if data[4] in self.seenHostnames:
+      if data[0] in self.seenHostnames:
         continue
 
-      # data[4] contains the hostname
-      result = self.doNew( data[4] )
+      # data[0] contains the hostname
+      result = self.doNew( data[0] )
       if not result[ 'OK' ]:
         return result
 
-      self.seenHostnames.add( data[4] )
+      self.seenHostnames.add( data[0] )
 
     return S_OK()
