@@ -60,7 +60,7 @@ class GOCDBSyncCommand( Command ):
                       'FORMATED_START_DATE': downtimes[6].strftime('%Y-%m-%d %H:%M'),
                       'FORMATED_END_DATE': downtimes[7].strftime('%Y-%m-%d %H:%M') }
 
-      response = self.gClient.getHostnameDowntime(hostname, datetime.utcnow().strftime('%Y-%m-%d'), True)
+      response = self.gClient.getHostnameDowntime( hostname, datetime.utcnow().strftime('%Y-%m-%d') )
 
       if not response['OK']:
         return response
