@@ -76,7 +76,7 @@ class EmailAction( BaseAction ):
                       StatusType VARCHAR(128) NOT NULL DEFAULT "all",
                       Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                      );''')
-        
+                     
       except sqlite3.OperationalError:
         self.log.error('Email cache database is locked')
 
