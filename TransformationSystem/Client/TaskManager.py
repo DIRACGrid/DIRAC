@@ -46,7 +46,6 @@ class TaskBase( TransformationAgentsUtilities ):
       self.log = logger
 
     self.pluginLocation = 'DIRAC.TransformationSystem.Client.TaskManagerPlugin'
-
     self.transInThread = {}
     self.debug = False
 

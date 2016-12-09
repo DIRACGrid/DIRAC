@@ -4,11 +4,11 @@
 #pylint: disable=protected-access
 
 import unittest
-import types
 import json
+import mock
 
 from mock import MagicMock
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK
 from DIRAC.RequestManagementSystem.Client.Request             import Request
 from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
@@ -17,6 +17,15 @@ from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 
 #############################################################################
 
+def ourgetSitesForSE( ses ):
+  if ses == ['CERN-DST'] or ses == 'CERN-DST':
+    return S_OK( ['CERN'] )
+  elif ses == ['IN2P3-DST'] or ses == 'IN2P3-DST':
+    return S_OK( ['IN2P3'] )
+  elif ses == ['CSCS-DST'] or ses == 'CSCS-DST':
+    return S_OK( ['CSCS'] )
+  elif ses == ['CERN-DST', 'CSCS-DST'] or ses == 'CERN-DST,CSCS-DST':
+    return S_OK( ['CERN', 'CSCS'] )
 
 class reqValFake_C(object):
   def validate(self, opsInput):
@@ -35,7 +44,9 @@ reqValFake = reqValFake_C()
 class ClientsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
   """
-  def setUp( self ):
+
+  @mock.patch( 'DIRAC.TransformationSystem.Client.TaskManagerPlugin.getSitesForSE', side_effect = ourgetSitesForSE )
+  def setUp( self, _ ):
 
     self.mockTransClient = MagicMock()
     self.mockTransClient.setTaskStatusAndWmsID.return_value = {'OK':True}
@@ -68,8 +79,7 @@ class ClientsTestCase( unittest.TestCase ):
 
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
                                       requestClient = self.mockReqClient,
-                                      requestValidator = reqValFake
-                                      )
+                                      requestValidator = reqValFake )
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
@@ -100,7 +110,7 @@ class PluginUtilitiesSuccess( ClientsTestCase ):
                                     '/this/is/at_123': ['SE1', 'SE2', 'SE3'],
                                     '/this/is/at_23': ['SE2', 'SE3'],
                                     '/this/is/at_4': ['SE4']},
-                                  'Flush' )
+                                   'Flush' )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], [( 'SE1', ['/this/is/at_123', '/this/is/at.12', '/this/is/at.1'] ),
                                      ( 'SE2', ['/this/is/at_23', '/this/is/at.2'] ),
@@ -109,7 +119,7 @@ class PluginUtilitiesSuccess( ClientsTestCase ):
     res = self.pu.groupByReplicas( {'/this/is/at.123': ['SE1', 'SE2', 'SE3'],
                                     '/this/is/at.12': ['SE1', 'SE2'],
                                     '/this/is/at.134': ['SE1', 'SE3', 'SE4']},
-                                    'Flush' )
+                                   'Flush' )
     self.assert_( res['OK'] )
     print res['Value']
     self.assertEqual( res['Value'], [( 'SE1', ['/this/is/at.123', '/this/is/at.134', '/this/is/at.12'] ) ] )
@@ -126,14 +136,14 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
     self.assertTrue(res['OK'])
     self.assertEqual( res, {'OK': True,
-                           'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
+                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
                                           'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
-                                     2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
-                                         'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'ANY', 'JobType': 'User'},
-                                     3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
-                                         'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
+                                      2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
+                                          'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'ANY', 'JobType': 'User'},
+                                      3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
+                                          'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
                                      }
-                            }
+                           }
                     )
 
     taskDict = {1:{'TransformationID':1, 'a1':'aa1', 'b1':'bb1', 'Site':'MySite'},
@@ -152,6 +162,8 @@ class WorkflowTasksSuccess( ClientsTestCase ):
 
 
   def test__handleDestination( self ):
+
+
     res = self.wfTasks._handleDestination( {'Site':'', 'TargetSE':''} )
     self.assertEqual( res, ['ANY'] )
     res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':''} )
@@ -419,7 +431,7 @@ class TransformationSuccess( ClientsTestCase ):
     self.assert_( res['OK'] )
     defaultParams = res['Value'].copy()
     for parameterName, defaultValue in res['Value'].items():
-      if type( defaultValue ) in types.StringTypes:
+      if isinstance( defaultValue, basestring ):
         testValue = 'TestValue'
       else:
         testValue = 99999
