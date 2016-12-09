@@ -1,4 +1,4 @@
-[v6r17-pre5]
+[v6r17-pre6]
 
 *Core
 FIX: Adler - check explicitly if the checksum value is "False"
@@ -30,6 +30,10 @@ NEW: FreeDiskSpace - added new command which is used to get the total and the re
      results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.  
 NEW: GOCDBSync command to ensure that all the downtime dates in the DowntimeCache 
      table are up to date       
+
+Resources*
+NEW: Updated Message Queue interface: MQ service connection management, support for
+     SSL connections, better code arrangement
 
 *Workflow
 FIX: Modulebase, Script - avoid too many unnecessarily different application states
