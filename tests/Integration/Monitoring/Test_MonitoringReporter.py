@@ -27,13 +27,21 @@ Resources
 {
   MQServices
   {
-    xxxx.cern.ch (hostname where we run MQ
+    xxxx.cern.ch (hostname where we run MQ)
     {
       MQType = Stomp
+      VHost = /
       Host = xxxx.cern.ch
       Port = 61613
       User = username
       Password = xxxx
+      Queues
+      {
+        QueueName
+        {
+          Acknowledgement = True
+        }
+      }
     }
   }
 }
