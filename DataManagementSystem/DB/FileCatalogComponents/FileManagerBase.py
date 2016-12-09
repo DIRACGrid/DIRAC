@@ -733,7 +733,7 @@ class FileManagerBase( object ):
   
 
   def setFileStatus( self, lfns, connection = False ):
-    """ Get set the group for the supplied files """
+    """ Set the status for the supplied files """
     connection = self._getConnection( connection )
     res = self._findFiles( lfns, ['FileID', 'UID'], connection = connection )
     if not res['OK']:
@@ -753,7 +753,7 @@ class FileManagerBase( object ):
 
 
   def _setFileStatus( self, fileID, status, connection = False ):
-    """ Set the file owner """
+    """ Set the file status """
     connection = self._getConnection( connection )
     if type( status ) in StringTypes:
       if not status in self.db.validFileStatus:
@@ -1289,7 +1289,7 @@ class FileManagerBase( object ):
     return S_OK( storageElement )
 
   def setFileGroup( self, lfns, uid=0, gid=0, connection = False ):
-    """ Get set the group for the supplied files
+    """ Set the group for the supplied files
         :param lfns : dictionary < lfn : group >
         :param uid : useless
         :param gid : useless
@@ -1320,8 +1320,8 @@ class FileManagerBase( object ):
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def setFileOwner( self, lfns, uid=0, gid=0, connection = False ):
-    """ Get set the group for the supplied files
-        :param lfns : dictionary < lfn : group >
+    """ Set the owner for the supplied files
+        :param lfns : dictionary < lfn : owner >
         :param uid : useless
         :param gid : useless
      """
@@ -1351,7 +1351,7 @@ class FileManagerBase( object ):
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def setFileMode( self, lfns, uid=0, gid=0, connection = False ):
-    """ Get set the mode for the supplied files """
+    """ Set the mode for the supplied files """
     connection = self._getConnection( connection )
     res = self._findFiles( lfns, ['FileID', 'Mode'], connection = connection )
     if not res['OK']:
@@ -1378,12 +1378,12 @@ class FileManagerBase( object ):
                                     self.setFileOwner, recursive )
 
   def changePathGroup( self, paths, credDict, recursive = False ):
-    """ Bulk method to change Owner for the given paths """
+    """ Bulk method to change Group for the given paths """
     return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryGroup,
                                     self.setFileGroup, recursive )
 
   def changePathMode( self, paths, credDict, recursive = False ):
-    """ Bulk method to change Owner for the given paths """
+    """ Bulk method to change Mode for the given paths """
     return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryMode,
                                     self.setFileMode, recursive )
 
@@ -1401,6 +1401,15 @@ class FileManagerBase( object ):
     for p in result['Value']['Successful']:
       if result['Value']['Successful'][p]:
         dirList.append( p )
+        if recursive:
+           result = self.db.dtree.getSubdirectories(p)
+           if not result['OK']:
+             return result
+           subDirIDs = result['Value'].keys()
+           result = self.db.dtree.getDirectoryPaths(subDirIDs)
+           if not result['OK']:
+             return result
+           dirList += result['Value'].values()
     fileList = []
     if len( dirList ) < len( paths ):
       result = self.isFile( paths )
