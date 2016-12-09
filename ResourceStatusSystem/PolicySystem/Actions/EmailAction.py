@@ -86,8 +86,6 @@ class EmailAction( BaseAction ):
 
       conn.commit()
 
-    conn.close()
-
     return S_OK()
 
 ################################################################################
