@@ -103,8 +103,6 @@ class EmailAgent( AgentModule ):
         conn.execute("DELETE FROM ResourceStatusCache;")
         conn.execute("VACUUM;")
 
-      conn.close()
-
     return S_OK()
 
   def _sendMail( self, subject, body, html = False ):
