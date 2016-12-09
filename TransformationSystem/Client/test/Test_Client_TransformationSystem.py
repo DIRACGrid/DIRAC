@@ -1,7 +1,7 @@
 """ unit tests for Transformation Clients
 """
 
-#pylint: disable=protected-access
+#pylint: disable=protected-access,missing-docstring,invalid-name
 
 import unittest
 import json
