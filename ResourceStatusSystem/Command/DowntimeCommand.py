@@ -74,7 +74,7 @@ class DowntimeCommand( Command ):
       currentDate = datetime.utcnow()
 
       if len(uniformResult) == 0:
-        return S_OK( None )
+        continue
 
       #get the list of all ongoing DTs from GocDB
       gDTLinkList = self.gClient.getCurrentDTLinkList()
