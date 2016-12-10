@@ -28,7 +28,7 @@ def createMQConnector( parameters = None ):
     mqConnector = ceClass( parameters )
     if not result['OK']:
       return result
-  except Exception as exc:
+  except Exception as exc: #pylint: disable=broad-except
     gLogger.exception( 'Could not instantiate MQConnector object',  lExcInfo = exc )
     return S_ERROR( EMQUKN, '' )
   return S_OK( mqConnector )
@@ -50,10 +50,10 @@ def getMQConnectorClass( mqType ):
   return result
 
 class MQConnectionError( Exception ):
+  """ specialized exception
+  """
   pass
 
-#disable pylint warning: abstract class not referenced
-#pylint: disable=R0921
 class MQConnector( object ):
   """
   Class for management of message queue connections

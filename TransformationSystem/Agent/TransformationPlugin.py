@@ -8,6 +8,7 @@ from DIRAC                              import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE, getSEsForSite
 from DIRAC.Core.Utilities.List          import breakListIntoChunks
 
+from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities, getFileGroups
@@ -20,7 +21,7 @@ class TransformationPlugin( PluginBase ):
   """ A TransformationPlugin object should be instantiated by every transformation.
   """
 
-  def __init__( self, plugin, transClient = None, dataManager = None ):
+  def __init__( self, plugin, transClient = None, dataManager = None, fc = None ):
     """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
         plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
     """
@@ -36,7 +37,13 @@ class TransformationPlugin( PluginBase ):
     if dataManager is None:
       dataManager = DataManager()
 
-    self.util = PluginUtilities( plugin, transClient, dataManager )
+    if fc is None:
+      fc = FileCatalog()
+
+    self.util = PluginUtilities( plugin,
+                                 transClient = transClient,
+                                 dataManager = dataManager,
+                                 fc = fc )
 
   def __del__( self ):
     self.util.logInfo( "Execution finished, timing: %.3f seconds" % ( time.time() - self.startTime ) )
