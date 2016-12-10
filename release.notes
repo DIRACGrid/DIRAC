@@ -1,4 +1,4 @@
-[v6r17-pre7]
+[v6r17-pre8]
 
 *Core
 FIX: Adler - check explicitly if the checksum value is "False"

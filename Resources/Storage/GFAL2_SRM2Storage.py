@@ -5,6 +5,8 @@
     :synopsis: SRM2 module based on the GFAL2_StorageBase class.
 """
 
+# pylint: disable=invalid-name
+
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -203,6 +205,3 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       return S_ERROR( "GFAL2_SRM2Storage.__getProtocols: No local protocols defined and no defaults found." )
 
     return S_OK( protocolsList )
-
-
-
