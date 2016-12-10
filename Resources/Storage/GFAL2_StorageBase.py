@@ -4,11 +4,14 @@
     .. module: python
     :synopsis: GFAL2 class from StorageElement using gfal2. Other modules can inherit from this use the gfal2 methods.
 """
+
+# pylint: disable=arguments-differ
+
 # # imports
 import os
 import datetime
 import errno
-import gfal2
+import gfal2 # pylint: disable=import-error
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
 # # from DIRAC
