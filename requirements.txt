@@ -1,9 +1,10 @@
 GSI>=0.6.4
 certifi
 coverage>=4.0.3
+elasticsearch-dsl>=2.0.0
 funcsigs
 futures
-elasticsearch-dsl>=2.0.0
+GitPython>=2.1.0
 matplotlib>=1.5.0
 mock>=1.0.1
 MySQL-python>=1.2.5

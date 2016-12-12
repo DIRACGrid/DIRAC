@@ -5,7 +5,7 @@
 '''
 
 from datetime                                                   import datetime
-from DIRAC                                                      import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
@@ -69,15 +69,22 @@ class FreeDiskSpaceCommand( Command ):
 
     if not free[ 'OK' ]:
       return free
+    free = free['Value']
 
     total = self.rpc.getTotalDiskSpace("/")
 
     if not total[ 'OK' ]:
       return total
+    total = total['Value']
 
-    result = self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint = elementURL, lastCheckTime = datetime.utcnow(),
-                                                               free = free['Value'], total = total['Value'],
-                                                               token = elementName )
+    if free and free < 1:
+      free = 1
+    if total and total < 1:
+      total = 1
+
+    result = self.rsClient.addOrModifySpaceTokenOccupancyCache( endpoint = elementURL, lastCheckTime = datetime.utcnow(),
+                                                                free = free, total = total,
+                                                                token = elementName )
     if not result[ 'OK' ]:
       return result
 
@@ -110,6 +117,7 @@ class FreeDiskSpaceCommand( Command ):
     for name in elements['Value']:
       diskSpace = self.doNew( name )
       if not diskSpace[ 'OK' ]:
-        return diskSpace
+        gLogger.error( "Unable to calculate free disk space" )
+        continue
 
     return S_OK()
