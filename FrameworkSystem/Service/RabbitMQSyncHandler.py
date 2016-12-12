@@ -8,7 +8,7 @@ __RCSID__ = "$Id: $"
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK
 from DIRAC import gConfig
-from DIRAC.WorkloadManagementSystem.Utilities import RabbitMQSynchronizer
+from DIRAC.FrameworkSystem.Utilities import RabbitMQSynchronizer
 
 class RabbitMQSyncHandler( RequestHandler ):
   """Service to synchronize the content of internal RabbitMQ database
