@@ -248,11 +248,10 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     """
     # Each thread will have its own clients
     clients = self._getClients()
-    startTime = time.time()
-    transID = None
     method = '_execute'
 
     while True:
+      startTime = time.time()
       transIDOPBody = self.transQueue.get()
       try:
         transID = transIDOPBody.keys()[0]
@@ -262,16 +261,15 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
                          method = method, transID = transID )
           break
         self.transInThread[transID] = ' [Thread%d] [%s] ' % ( threadID, str( transID ) )
+        self._logInfo( "Start processing transformation", method = method, transID = transID )
         clients['TaskManager'].transInThread = self.transInThread
         for operation in operations:
-          self._logInfo( "Starting processing operation %s" % operation,
-                         method = method, transID = transID )
-          startTime1 = time.time()
+          self._logInfo( "Executing %s" % operation, method = method, transID = transID )
+          startOperation = time.time()
           res = getattr( self, operation )( transIDOPBody, clients )
           if not res['OK']:
-            self._logError( "Failed to %s:" % operation, res['Message'],
-                            method = method, transID = transID )
-          self._logInfo( "Processed operation %s in %.1f seconds" % ( operation, time.time() - startTime1 ),
+            self._logError( "Failed to %s: %s" % ( operation, res['Message'] ), method = method, transID = transID )
+          self._logInfo( "Executed %s in %.1f seconds" % ( operation, time.time() - startOperation ),
                          method = method, transID = transID )
       except Exception as x:
         self._logException( 'Exception executing operation %s' % operation, lException = x,
