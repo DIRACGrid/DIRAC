@@ -357,7 +357,7 @@ class ModuleBase( object ):
       # The application status won't be updated in case the workflow or the step is failed already
       if not isinstance( status, basestring ):
         status = str( status )
-      self.log.verbose( 'setJobApplicationStatus(%d, %s)' % ( self.jobID, status ) )
+      self.log.verbose( 'setJobApplicationStatus(%s, %s)' % ( self.jobID, status ) )
       jobStatus = self.jobReport.setApplicationStatus( status, sendFlag )
       if not jobStatus['OK']:
         self.log.warn( jobStatus['Message'] )

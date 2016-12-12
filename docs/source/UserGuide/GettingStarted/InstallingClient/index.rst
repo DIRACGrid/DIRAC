@@ -43,7 +43,7 @@ other words, Virtual Organization. The managers of your Virtual Organization can
 be applied for the DIRAC client installation. In this case the installation procedure reduces to the following
 assuming the name of the Virtual Organization *dirac*::
 
-  wget -np -O dirac-install http://lhcbproject.web.cern.ch/lhcbproject/dist/Dirac_project/dirac-install --no-check-certificate
+  wget -np -O dirac-install https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py --no-check-certificate
   chmod +x dirac-install
   dirac-install -V formation
   source bashrc
