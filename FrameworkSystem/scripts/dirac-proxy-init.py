@@ -198,13 +198,16 @@ class ProxyInit( object ):
 
   def checkCAs( self ):
     if not "X509_CERT_DIR" in os.environ:
-      # Cert dir is unset? Nothing to check...
+      gLogger.warn( "X509_CERT_DIR is unset. Abort check of CAs" )
       return
     caDir = os.environ[ "X509_CERT_DIR" ]
+     # In globus standards .r0 files are CRLs. They have the same names of the CAs but diffent file extension
     searchExp = os.path.join( caDir, "*.r0" )
-    if not searchExp:
+    crlList = glob.glob( searchExp )
+    if not crlList:
+      gLogger.warn( "No CRL files found for %s. Abort check of CAs" % searchExp )
       return
-    newestFPath = max( glob.glob( searchExp ), key=os.path.getmtime )
+    newestFPath = max( crlList, key=os.path.getmtime )
     newestFTime = os.path.getmtime( newestFPath )
     if newestFTime > ( time.time() - ( 28 * 24 * 3600 ) ):
       # At least one of the files has been updated in the last 28 days

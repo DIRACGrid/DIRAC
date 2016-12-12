@@ -1,4 +1,4 @@
-[v6r17-pre8]
+[v6r17]
 
 *Core
 FIX: Adler - check explicitly if the checksum value is "False"
@@ -23,6 +23,8 @@ NEW: Next in implementation multi-protocol support for storage elements. When pe
      able to receive as input.
 NEW: StorageElement - added methods for monitoring used disk space
 FIX: ReplicateAndRegister - fix the case when checksum is False in the FC
+NEW: DMSHelpers - get list of sites from CS via methods; allow to add automatically sites 
+     with storage
 
 *RSS
 NEW: FreeDiskSpace - added new command which is used to get the total and the remaining 

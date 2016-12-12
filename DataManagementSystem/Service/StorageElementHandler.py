@@ -72,12 +72,12 @@ def getDiskSpace(path, size = 'TB', total = False):
       # return free space
       queried_size = st.f_bavail
 
-      result = float( queried_size * st.f_frsize ) / float(convert)
+    result = float( queried_size * st.f_frsize ) / float(convert)
 
   except OSError as e:
     return S_ERROR( errno.EIO, "Error while getting the available disk space: %s" % repr(e) )
 
-  return S_OK( round(result, 2) )
+  return S_OK( round(result, 4) )
 
 def initializeStorageElementHandler( serviceInfo ):
   """  Initialize Storage Element global settings
