@@ -32,29 +32,42 @@ def getSystemSection( serviceName, serviceTuple = False, instance = False, setup
     instance = getSystemInstance( serviceTuple[0], setup = setup )
   return "/Systems/%s/%s" % ( serviceTuple[0], instance )
 
+def getComponentSection (componentName, componentTuple = False, setup = False, componentCategory ="Services"):
+  """Function returns the path to the component.
+
+  Args:
+    componentName(str): Component name prefixed by the system in which it is placed.
+                        e.g. 'WorkloadManagement/SandboxStoreHandler'
+    componentTuple
+    setup(str): Name of the setup.
+    componentCategory(str): Category of the component, it can be: 'Agents', 'Services', 'Executors'
+                            or 'Databases'.
+
+  Returns:
+    str: Complete path to the component
+
+  Raises:
+    RuntimeException: If in the componentName - the system part does not correspond to any known system in DIRAC.
+
+  Example:
+    getComponentSection('WorkloadManagement/SandboxStoreHandler', False,False,'Services')
+  """
+  if not componentTuple:
+    componentTuple = divideFullName( componentName )
+  systemSection = getSystemSection( componentName, componentTuple, setup = setup )
+  return "%s/%s/%s" % ( systemSection,componentCategory,  componentTuple[1] )
+
 def getServiceSection( serviceName, serviceTuple = False, setup = False ):
-  if not serviceTuple:
-    serviceTuple = divideFullName( serviceName )
-  systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
-  return "%s/Services/%s" % ( systemSection, serviceTuple[1] )
+  return getComponentSection(serviceName, serviceTuple, setup , "Services")
 
 def getAgentSection( agentName, agentTuple = False, setup = False ):
-  if not agentTuple:
-    agentTuple = divideFullName( agentName )
-  systemSection = getSystemSection( agentName, agentTuple, setup = setup )
-  return "%s/Agents/%s" % ( systemSection, agentTuple[1] )
+  return getComponentSection(agentName, agentTuple, setup , "Agents")
 
-def getExecutorSection( agentName, agentTuple = False, setup = False ):
-  if not agentTuple:
-    agentTuple = divideFullName( agentName )
-  systemSection = getSystemSection( agentName, agentTuple, setup = setup )
-  return "%s/Executors/%s" % ( systemSection, agentTuple[1] )
+def getExecutorSection( executorName, executorTuple = False, setup = False ):
+  return getComponentSection(executorName, executorTuple, setup , "Executors")
 
 def getDatabaseSection( dbName, dbTuple = False, setup = False ):
-  if not dbTuple:
-    dbTuple = divideFullName( dbName )
-  systemSection = getSystemSection( dbName, dbTuple, setup = setup )
-  return "%s/Databases/%s" % ( systemSection, dbTuple[1] )
+  return getComponentSection(dbName, dbTuple, setup , "Databases")
 
 def getSystemURLSection( serviceName, serviceTuple = False, setup = False ):
   systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
