@@ -69,14 +69,21 @@ class FreeDiskSpaceCommand( Command ):
 
     if not free[ 'OK' ]:
       return free
+    free = free['Value']
 
     total = self.rpc.getTotalDiskSpace("/")
 
     if not total[ 'OK' ]:
       return total
+    total = total['Value']
+
+    if free and free < 1:
+      free = 1
+    if total and total < 1:
+      total = 1
 
     result = self.rsClient.addOrModifySpaceTokenOccupancyCache( endpoint = elementURL, lastCheckTime = datetime.utcnow(),
-                                                                free = free['Value'], total = total['Value'],
+                                                                free = free, total = total,
                                                                 token = elementName )
     if not result[ 'OK' ]:
       return result
