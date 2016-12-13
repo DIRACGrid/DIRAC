@@ -10,6 +10,7 @@ mock>=1.0.1
 MySQL-python>=1.2.5
 jinja2
 ipython
+M2Crypto
 numpy>=1.10.1
 pexpect>=4.0.1
 psutil>=4.2.0
@@ -28,17 +29,3 @@ six
 sqlalchemy>=1.0.9
 stomp.py>=3.1.5
 suds-jurko>=0.6
-<<<<<<< 4fbb85378265424a2beadc582e892e41751ca819
-=======
-mock>=1.0.1
-pylint>=1.4.4
-pytest>=2.8.5
-pytest-cov>=2.2.0
-coverage>=4.0.3
-rst2pdf>=0.93
-ipython
-python-coveralls
-elasticsearch-dsl>=2.0.0
-psutil>=4.2.0
-M2Crypto
->>>>>>> Fast fixes of debug/dependencies
