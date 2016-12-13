@@ -282,7 +282,7 @@ class X509Certificate( object ):
     return S_OK( ret )
 
   def get_subject( self ):
-    return self.getSubjectDN()['Value']
+    return self.getSubjectDN()['Value'] # XXX FIXME awful awful hack
 
   def asPem( self ):
     return self.__certObj.as_pem()

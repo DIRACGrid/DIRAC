@@ -428,7 +428,7 @@ class X509Chain( object ):
      1 = proxy match
      2 = limited proxy match
     """
-    return 1
+    return 1 # XXX FIXME awful awful hack
     issuerSubject = self.__certList[ issuerStep ].getSubjectNameObject()
     proxySubject = self.__certList[ certStep ].getSubjectNameObject()
     psEntries = proxySubject.num_entries()
