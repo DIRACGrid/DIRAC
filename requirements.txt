@@ -25,3 +25,4 @@ ipython
 python-coveralls
 elasticsearch-dsl>=2.0.0
 psutil>=4.2.0
+M2Crypto
