@@ -540,13 +540,6 @@ and this is thread %s
     return transport.receiveData()
 
   def __checkTransportSanity( self ):
-    """ Calls the sanity check of the underlying Transport object
-	and stores the result in self.__idDict.
-	It is checked at the creation of the BaseClient, and when connecting
-	if the use of the certificate has changed.
-
-    """
-    return S_OK() # XXX Very awful fix, will work on it MZ
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     retVal = gProtocolDict[ self.__URLTuple[0] ][ 'sanity' ]( self.__URLTuple[1:3], self.kwargs )
