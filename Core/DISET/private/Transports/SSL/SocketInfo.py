@@ -65,7 +65,6 @@ class SocketInfo:
         identitySubject = peerChain.getIssuerCert()['Value'].getSubjectNameObject()[ 'Value' ]
     else:
       identitySubject = peerChain.getCertInChain( 0 )['Value'].getSubjectNameObject()[ 'Value' ]
-    print identitySubject
     credDict = { 'DN' : str(identitySubject),
                  'CN' : str(identitySubject).split('CN')[1][1:],
                  'x509Chain' : peerChain,
