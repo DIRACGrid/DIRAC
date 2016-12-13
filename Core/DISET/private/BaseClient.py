@@ -353,6 +353,7 @@ and this is thread %s
     return transport.receiveData()
 
   def __checkTransportSanity( self ):
+    return S_OK() # XXX Very awful fix, will work on it MZ
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     retVal = gProtocolDict[ self.__URLTuple[0] ][ 'sanity' ]( self.__URLTuple[1:3], self.kwargs )
