@@ -31,6 +31,8 @@ class X509Chain( object ):
   __validExtensionValueTypes = types.StringTypes
   __validExtensionValueTypes = ( basestring, )
 
+  __validExtensionValueTypes = types.StringTypes
+
   def __init__( self, certList = False, keyObj = False ):
     self.__isProxy = False
     self.__firstProxyStep = 0
