@@ -12,7 +12,7 @@ from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB    import primaryKeystoL
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, Table, Column, MetaData, String, DateTime, BigInteger, exc
-from sqlalchemy.sql import update, select, delete, or_
+from sqlalchemy.sql import update, select, delete, and_, or_
 
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
@@ -227,7 +227,7 @@ class ResourceStatusDB( object ):
                             TokenOwner = tokenOwner, TokenExpiration = tokenExpiration )
 
       self.session.execute( update( table )
-                            .where( or_(*args) )
+                            .where( and_(*args) )
                             .values( **params )
                           )
 

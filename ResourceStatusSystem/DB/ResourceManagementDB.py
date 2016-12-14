@@ -9,7 +9,7 @@ from datetime                                      import datetime
 from DIRAC                                         import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
 from sqlalchemy.orm                                import sessionmaker
-from sqlalchemy.sql                                import update, delete, or_
+from sqlalchemy.sql                                import update, delete, and_, or_
 from sqlalchemy.dialects.mysql                     import DOUBLE
 from sqlalchemy.inspection                         import inspect
 from sqlalchemy                                    import create_engine, Table, Column, MetaData, String, \
@@ -163,7 +163,7 @@ class ResourceManagementDB( object ):
                                mysql_engine = 'InnoDB' )
 
     SpaceTokenOccupancyCache = Table( 'SpaceTokenOccupancyCache', self.metadata,
-                               Column( 'Endpoint', String( 64 ), nullable = False, primary_key = True ),
+                               Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True ),
                                Column( 'Token', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'Total', DOUBLE, nullable = False, server_default = '0'),
                                Column( 'Guaranteed', DOUBLE, nullable = False, server_default = '0' ),
@@ -402,7 +402,7 @@ class ResourceManagementDB( object ):
       params = toDict( **kwargs )
 
       self.session.execute( update( table )
-                            .where( or_(*args) )
+                            .where( and_(*args) )
                             .values( **params )
                           )
 
