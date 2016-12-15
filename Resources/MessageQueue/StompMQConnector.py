@@ -119,7 +119,7 @@ class StompMQConnector( MQConnector ):
     return S_OK( 'Message sent successfully' )
 
   def connect( self, parameters = None ):
-    port = self.parameters.get( 'Port', '' )
+    port = self.parameters.get( 'Port', 5672 )
     ip = self.parameters.get( 'IP', '' )
     user = self.parameters.get( 'User' )
     password = self.parameters.get( 'Password' )
