@@ -45,7 +45,7 @@ class MonitoringReporter( object ):
     self.__mq = False
     self.__monitoringType = None
 
-    result = createProducer( monitoringType )
+    result = createProducer( "pclhcb63.cern.ch::Queue::%s" % monitoringType )
     if not result['OK']:
       gLogger.warn( "Fail to create Producer:", result['Message'])
     else:
@@ -59,7 +59,7 @@ class MonitoringReporter( object ):
     It consumes all messaged from the MQ (these are failover messages). In case of failure, the messages
     will be inserted to the MQ again.
     """
-    result = createConsumer( self.__monitoringType  )
+    result = createConsumer( "pclhcb63.cern.ch::Queue::%s" % self.__monitoringType )
     if not result['OK']:
       gLogger.error( "Fail to create Consumer: %s" % result['Message'] )
       return S_ERROR( "Fail to create Consumer: %s" % result['Message'] )
