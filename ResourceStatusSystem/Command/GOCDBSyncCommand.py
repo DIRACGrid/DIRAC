@@ -80,13 +80,15 @@ class GOCDBSyncCommand( Command ):
           if localDBdict['FORMATED_START_DATE'] != GOCDBdict['FORMATED_START_DATE']:
             result = self.rmClient.addOrModifyDowntimeCache( downtimeID = localDBdict['DowntimeID'],
                                                         startDate = GOCDBdict['FORMATED_START_DATE'])
+            gLogger.verbose("The start date of %s has been changed!" % downtimes[3])
+
             if not result[ 'OK' ]:
               return result
 
           if localDBdict['FORMATED_END_DATE'] != GOCDBdict['FORMATED_END_DATE']:
             result = self.rmClient.addOrModifyDowntimeCache( downtimeID = localDBdict['DowntimeID'],
                                                         endDate = GOCDBdict['FORMATED_END_DATE'] )
-            gLogger.verbose("Downtime of %s has been changed!" % downtimes[3])
+            gLogger.verbose("The end date of %s has been changed!" % downtimes[3])
 
             if not result[ 'OK' ]:
               return result
