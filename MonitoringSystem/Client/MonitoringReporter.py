@@ -1,9 +1,11 @@
 """
-This class is used to insert data to a db (currently elasticsearch). It uses an internal list which is used to keep messages in the memory.
-addRecord is used to insert messages to the internal queue. commit is used to insert the acumulated messages to elasticsearch.
+This class is used to insert data to a db (currently elasticsearch).
+It uses an internal list which is used to keep messages in the memory.
+addRecord is used to insert messages to the internal queue. commit is used
+to insert the acumulated messages to elasticsearch.
 It provides two failover mechanism:
 1.) If the database is not available, the data will be keept in the memory.
-2.) If a MQ is avaulable, we store the messages in MQ service.
+2.) If a MQ is available, we store the messages in MQ service.
 
 Note: In order to not send too many rows to the db we use  __maxRecordsInABundle.
 
@@ -13,9 +15,8 @@ import threading
 import json
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Resources.MessageQueue.MQListener import MQListener
-from DIRAC.Resources.MessageQueue.MQPublisher import MQPublisher
-from DIRAC.Resources.MessageQueue.MQConnection import MQConnectionError
+from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
+from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
 
 from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
 
@@ -28,12 +29,12 @@ class MonitoringReporter( object ):
 
   This class is used to interact with the db using failover mechanism.
 
-  :param: int __maxRecordsInABundle limit the number of records to be inserted to the db.
-  :param: threading.RLock __documentLock is used to lock the local store when it is being modified.
-  :param: list __documents contains the recods which will be inserted to the db
-  :param: bool __mq we can use MQ if it is available... By default it is not allowed.
-  :param: str __monitoringType type of the records which will be inserted to the db. For example: WMSHistory.
-  :param: object __mqPublisher publisher used to publish the records to the MQ
+  :param int __maxRecordsInABundle: limit the number of records to be inserted to the db.
+  :param threading.RLock __documentLock: is used to lock the local store when it is being modified.
+  :param list __documents: contains the recods which will be inserted to the db
+  :param bool __mq: we can use MQ if it is available... By default it is not allowed.
+  :param str __monitoringType: type of the records which will be inserted to the db. For example: WMSHistory.
+  :param object __mqProducer: publisher used to publish the records to the MQ.
   """
 
   def __init__( self, monitoringType = '' ):
@@ -44,11 +45,12 @@ class MonitoringReporter( object ):
     self.__mq = False
     self.__monitoringType = None
 
-    try:
-      self.__mqPublisher = MQPublisher( monitoringType )
+    result = createProducer( monitoringType )
+    if not result['OK']:
+      gLogger.warn( "Fail to create Producer:", result['Message'])
+    else:
+      self.__mqProducer = result['Value']
       self.__mq = True
-    except MQConnectionError as exc:
-      gLogger.warn( "Fail to create Publisher: %s" % exc )
 
     self.__monitoringType = monitoringType
 
@@ -57,17 +59,18 @@ class MonitoringReporter( object ):
     It consumes all messaged from the MQ (these are failover messages). In case of failure, the messages
     will be inserted to the MQ again.
     """
-    try:
-      mqListener = MQListener( self.__monitoringType )
-    except MQConnectionError as exc:
-      gLogger.error( "Fail to create Listener: %s" % exc )
-      return S_ERROR( "Fail to create Listener: %s" % exc )
+    result = createConsumer( self.__monitoringType  )
+    if not result['OK']:
+      gLogger.error( "Fail to create Consumer: %s" % result['Message'] )
+      return S_ERROR( "Fail to create Consumer: %s" % result['Message'] )
+    else:
+      mqConsumer = result['Value']
 
     result = S_OK()
     while result['OK']:
-      # we consume all messages from the listener internal queue.
-      result = mqListener.get()
-      mqListener.stop()  # make sure that we will not proccess any more messages.
+      # we consume all messages from the consumer internal queue.
+      result = mqConsumer.get()
+      mqConsumer.close()  # make sure that we will not proccess any more messages.
       if result['OK']:
         records = json.loads( result['Value'] )
         retVal = monitoringDB.put( list( records ), self.__monitoringType )
@@ -91,7 +94,7 @@ class MonitoringReporter( object ):
     send data to the MQ
     :param: list records contains a list of key/value pairs (dictionaries)
     """
-    return self.__mqPublisher.put( json.dumps( records ) )
+    return self.__mqProducer.put( json.dumps( records ) )
 
   def commit( self ):
     """

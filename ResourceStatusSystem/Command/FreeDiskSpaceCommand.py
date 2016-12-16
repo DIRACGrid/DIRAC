@@ -4,12 +4,13 @@
 
 '''
 
-from datetime                                        import datetime
-from DIRAC                                           import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Command.Command      import Command
-from DIRAC.Core.DISET.RPCClient                      import RPCClient
-from DIRAC.ResourceStatusSystem.Utilities            import CSHelpers
-from DIRAC.Resources.Storage.StorageElement          import StorageElement
+from datetime                                                   import datetime
+from DIRAC                                                      import S_OK, S_ERROR, gLogger
+from DIRAC.ResourceStatusSystem.Command.Command                 import Command
+from DIRAC.Core.DISET.RPCClient                                 import RPCClient
+from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.Resources.Storage.StorageElement                     import StorageElement
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
 __RCSID__ = '$Id:  $'
 
@@ -19,12 +20,12 @@ class FreeDiskSpaceCommand( Command ):
   Uses diskSpace method to get the free space
   '''
 
-  def __init__( self, args = None ):
+  def __init__( self, args = None, clients = None ):
 
-    super( FreeDiskSpaceCommand, self ).__init__( args )
+    super( FreeDiskSpaceCommand, self ).__init__( args, clients = clients )
 
     self.rpc = None
-    self.rsClient = None
+    self.rsClient = ResourceManagementClient()
 
   def _prepareCommand( self ):
     '''
@@ -54,17 +55,36 @@ class FreeDiskSpaceCommand( Command ):
 
     se = StorageElement(elementName)
 
-    elementURL = se.getStorageParameters(protocol = "dips")['URLBase']
+    elementURL = se.getStorageParameters(protocol = "dips")
 
-    if not elementURL:
-      gLogger.info( "Not a DIPS storage element, skipping..." )
+    if elementURL['OK']:
+      elementURL = se.getStorageParameters(protocol = "dips")['Value']['URLBase']
+    else:
+      gLogger.verbose( "Not a DIPS storage element, skipping..." )
       return S_OK()
 
     self.rpc = RPCClient( elementURL, timeout=120 )
+
     free = self.rpc.getFreeDiskSpace("/")
+
+    if not free[ 'OK' ]:
+      return free
+    free = free['Value']
+
     total = self.rpc.getTotalDiskSpace("/")
-    result = self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint = elementURL, lastCheckTime = datetime.utcnow(),
-                                                               free = free, total = total, token = elementName )
+
+    if not total[ 'OK' ]:
+      return total
+    total = total['Value']
+
+    if free and free < 1:
+      free = 1
+    if total and total < 1:
+      total = 1
+
+    result = self.rsClient.addOrModifySpaceTokenOccupancyCache( endpoint = elementURL, lastCheckTime = datetime.utcnow(),
+                                                                free = free, total = total,
+                                                                token = elementName )
     if not result[ 'OK' ]:
       return result
 
@@ -94,9 +114,10 @@ class FreeDiskSpaceCommand( Command ):
 
     elements = CSHelpers.getStorageElements()
 
-    for name in elements:
+    for name in elements['Value']:
       diskSpace = self.doNew( name )
       if not diskSpace[ 'OK' ]:
-        return diskSpace
+        gLogger.error( "Unable to calculate free disk space" )
+        continue
 
     return S_OK()

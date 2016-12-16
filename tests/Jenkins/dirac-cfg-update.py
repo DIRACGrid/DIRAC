@@ -61,7 +61,7 @@ if not sMod:
   if not setup:
     setup = gConfig.getValue('/DIRAC/Setup')
     if not setup:
-      setup = 'JenkinsSetup'
+      setup = 'dirac-JenkinsSetup'
   if not vo:
     vo = gConfig.getValue('/DIRAC/VirtualOrganization')
     if not vo:

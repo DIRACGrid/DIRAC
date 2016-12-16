@@ -11,6 +11,12 @@ Script.setUsageMessage( '\n'.join( [ __doc__,
                                      '        LFNs: single LFN or file with LFNs',
                                      '    targetSE: target SE' ] ) )
 
+catalog = None
+Script.registerSwitch( "C:", "Catalog=", "   Catalog to use" )
+for switch in Script.getUnprocessedSwitches():
+  if switch[0] == "C" or switch[0].lower() == "catalog":
+    catalog = switch[1]
+
 def getLFNList( arg ):
   """ get list of LFNs """
   lfnList = []
@@ -87,6 +93,8 @@ if __name__ == "__main__":
     replicateAndRegister = Operation()
     replicateAndRegister.Type = "ReplicateAndRegister"
     replicateAndRegister.TargetSE = ",".join( targetSEs )
+    if catalog is not None:
+      replicateAndRegister.Catalog = catalog
 
     for lfn in lfnChunk:
       metaDict = metaDatas["Successful"][lfn]

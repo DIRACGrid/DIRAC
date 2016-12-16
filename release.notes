@@ -1,4 +1,17 @@
-[v6r17-pre1]
+[v6r17]
+
+*Core
+FIX: Adler - check explicitly if the checksum value is "False"
+FIX: install_site.sh - added command line option to choose DIRAC version to install
+NEW: ComponentInstaller - added configuration parameters to setup NoSQL database
+
+*Framework
+CHANGE: Logger - test level before processing string (i.e. mostly converting objects to strings)  
+CHANGE: dirac-proxy-init - check and attempt to update local CRLs at the same time as
+        generating user proxy
+CHANGE: ProxyManager service - always store the uploaded proxy even if the already stored
+        one is of the same validity length to allow replacement in case of proxy type
+        changes, e.g. RFC type proxies           
 
 *DMS
 NEW: Next in implementation multi-protocol support for storage elements. When performing 
@@ -9,11 +22,52 @@ NEW: Next in implementation multi-protocol support for storage elements. When pe
      possible protocols the source SE is able to produce, and all protocols the target is 
      able to receive as input.
 NEW: StorageElement - added methods for monitoring used disk space
+FIX: ReplicateAndRegister - fix the case when checksum is False in the FC
+NEW: DMSHelpers - get list of sites from CS via methods; allow to add automatically sites 
+     with storage
 
 *RSS
 NEW: FreeDiskSpace - added new command which is used to get the total and the remaining 
      disk space of all dirac storage elements that are found in the CS and inserts the 
-     results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.     
+     results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.  
+NEW: GOCDBSync command to ensure that all the downtime dates in the DowntimeCache 
+     table are up to date       
+
+Resources*
+NEW: Updated Message Queue interface: MQ service connection management, support for
+     SSL connections, better code arrangement
+
+*Workflow
+FIX: Modulebase, Script - avoid too many unnecessarily different application states
+
+*WMS
+FIX: JobStateUpdate service - in setJobStatusBulk() avoid adding false information when adding 
+     an application status
+     
+*TS
+FIX: TaskManager, TaskManagerAgentBase - standardize the logging information; removed unnecessary 
+     code; use iterators wherever possible     
+NEW: Introduced metadata-based filters when registering new data in the TS as catalog       
+
+[v6r16p3]
+
+FIX: incorporated fixes from v6r15p25
+
+[v6r16p2]
+
+*Configuration
+CHANGE: VOMS2CSAgent - remove user DNs which are no more in VOMS. Fixes #3130
+
+*Monitoring
+CHANGE: WMSHistory - added user, jobgroup and usergroup selection keys
+
+*DMS
+FIX: DataManager - retry checksum calculation on putAndRegister, pass checksum to the DataManager
+     object in the FailoverTransfer object.
+FIX: DatasetManager, FileCatalogClientCLI - bug fixes in the dataset management and commands      
+     
+*WMS
+CHANGE: JobManager - added 'Killed' to list of jobs status that can be deleted     
 
 [v6r16p1]
 
@@ -60,6 +114,17 @@ NEW: MessageQueue resources to manage MQ connections complemented with
 NEW: SudoComputingElement - computing element to execute payload with a sudo to a dedicated
      UNIX account     
 
+[v6r15p25]
+
+*Resources
+FIX: HTCondorCEComputingElement - cast useLocalSchedd to bool value even if it
+     is defined as srting
+
+[v6r15p24]
+
+*Resources
+CHANGE: HTCondorCE - added option to use remote scheduler daemon
+
 [v6r15p23]
 
 *DMS
@@ -98,7 +163,7 @@ FIX: RemoveFile operation - Remove all files that are not at banned SEs
 
 *TMS
 FIX: FileReport - after successful update of input files status, clear the 
-     cache disctionary to avoid double update      
+     cache dictionary to avoid double update      
 
 [v6r15p18]
 

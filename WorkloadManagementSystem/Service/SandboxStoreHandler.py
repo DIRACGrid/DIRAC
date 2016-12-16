@@ -1,9 +1,9 @@
 """ SandboxHandler is the implementation of the Sandbox service
     in the DISET framework
 """
+
 import os
 import time
-from types import StringTypes, ListType, DictType, TupleType
 import threading
 import tempfile
 
@@ -12,6 +12,7 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
+from DIRAC.DataManagementSystem.Service.StorageElementHandler import getDiskSpace
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -76,7 +77,7 @@ class SandboxStoreHandler( RequestHandler ):
       fileHelper.markAsTransferred()
       return S_ERROR( "Sandbox is too big. Please upload it to a grid storage element" )
 
-    if type( fileId ) in ( ListType, TupleType ):
+    if isinstance( fileId, ( list, tuple ) ):
       if len( fileId ) > 1:
         assignTo = fileId[1]
         fileId = fileId[0]
@@ -305,7 +306,7 @@ class SandboxStoreHandler( RequestHandler ):
   ##################
   # Assigning sbs to jobs
 
-  types_assignSandboxesToEntities = [ DictType ]
+  types_assignSandboxesToEntities = [ dict ]
   def export_assignSandboxesToEntities( self, enDict, ownerName = "", ownerGroup = "", entitySetup = False ):
     """
     Assign sandboxes to jobs.
@@ -320,7 +321,7 @@ class SandboxStoreHandler( RequestHandler ):
   ##################
   # Unassign sbs to jobs
 
-  types_unassignEntities = [ ( ListType, TupleType ) ]
+  types_unassignEntities = [ ( list, tuple ) ]
   def export_unassignEntities( self, entitiesList, entitiesSetup = False ):
     """
     Unassign a list of jobs
@@ -333,7 +334,7 @@ class SandboxStoreHandler( RequestHandler ):
   ##################
   # Getting assigned sandboxes
 
-  types_getSandboxesAssignedToEntity = [ StringTypes ]
+  types_getSandboxesAssignedToEntity = [ basestring ]
   def export_getSandboxesAssignedToEntity( self, entityId, entitySetup = False ):
     """
     Get the sandboxes associated to a job and the association type
@@ -351,6 +352,24 @@ class SandboxStoreHandler( RequestHandler ):
         sbDict[ SBType ] = []
       sbDict[ SBType ].append( "SB:%s|%s" % ( SEName, SEPFN ) )
     return S_OK( sbDict )
+
+
+  ##################
+  # Disk space left management
+
+  types_getFreeDiskSpace = [basestring]
+  def export_getFreeDiskSpace( self, path, size = 'TB' ):
+    """ Get the free disk space of the storage element
+        If no size is specified, terabytes will be used by default.
+    """
+    return getDiskSpace(path, size)
+
+  types_getTotalDiskSpace = [basestring]
+  def export_getTotalDiskSpace( self, path, size = 'TB' ):
+    """ Get the total disk space of the storage element
+        If no size is specified, terabytes will be used by default.
+    """
+    return getDiskSpace(path, size, total = True)
 
 
   ##################

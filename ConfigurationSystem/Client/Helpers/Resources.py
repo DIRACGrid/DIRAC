@@ -3,7 +3,7 @@
 
 
 import re
-from distutils.version import LooseVersion
+from distutils.version import LooseVersion #pylint: disable=no-name-in-module,import-error
 
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath

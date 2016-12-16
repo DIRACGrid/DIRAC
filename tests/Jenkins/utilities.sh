@@ -420,9 +420,9 @@ function diracInstallCommand(){
 function prepareForServer(){
   echo '==> [prepareForServer]'
 
-  #get the necessary scripts: install_site.sh file
-  cp $TESTCODE/DIRAC/Core/scripts/install_site.sh $SERVERINSTALLDIR/
-  chmod +x $SERVERINSTALLDIR/install_site.sh
+  #get the necessary scripts: dirac-install.py file
+  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $SERVERINSTALLDIR/
+  chmod +x $SERVERINSTALLDIR/dirac-install.py
 }
 
 
@@ -531,7 +531,7 @@ function diracCredentials(){
   echo '==> [diracCredentials]'
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
-  dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+  dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG --rfc
   sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
 
 }
@@ -573,9 +573,9 @@ function diracProxies(){
   echo '==> [diracProxies]'
 
   # User proxy, should be uploaded anyway
-  dirac-proxy-init -U -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+  dirac-proxy-init -U -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
   # group proxy, will be uploaded explicitly
-  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
 
 }
 
@@ -627,7 +627,7 @@ diracServices(){
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
-  #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+  #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
 
   for serv in $services
   do
@@ -654,7 +654,7 @@ diracUninstallServices(){
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
-  #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+  #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
 
   for serv in $services
   do

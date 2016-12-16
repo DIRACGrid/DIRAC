@@ -896,13 +896,13 @@ class Dirac( API ):
             self.log.warn( 'Failed to download %s with error:%s' % ( isFile, getFile['Message'] ) )
             return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
         basefname = os.path.basename( isFile )
-        try:
-          if tarfile.is_tarfile( basefname ):
-            tarFile = tarfile.open( basefname, 'r' )
-            for member in tarFile.getmembers():
-              tarFile.extract( member, os.getcwd() )
-        except Exception as x:
-          return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
+        if tarfile.is_tarfile( basefname ):
+          try:
+            with tarfile.open( basefname, 'r' ) as tf:
+              for member in tf.getmembers():
+                tf.extract( member, os.getcwd() )
+          except Exception as x:
+            return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
@@ -1676,15 +1676,15 @@ class Dirac( API ):
       return getFile
 
     fileName = os.path.basename( oversizedSandbox )
-    try:
-      result = S_OK()
-      if tarfile.is_tarfile( fileName ):
-        tarFile = tarfile.open( fileName, 'r' )
-        for member in tarFile.getmembers():
-          tarFile.extract( member, dirPath )
-    except Exception as x :
-      os.chdir( start )
-      result = S_ERROR( str( x ) )
+    result = S_OK()
+    if tarfile.is_tarfile( fileName ):
+      try:
+        with tarfile.open( fileName, 'r' ) as tf:
+          for member in tf.getmembers():
+            tf.extract( member, dirPath )
+      except Exception as x :
+        os.chdir( start )
+        result = S_ERROR( str( x ) )
 
     if os.path.exists( fileName ):
       os.unlink( fileName )

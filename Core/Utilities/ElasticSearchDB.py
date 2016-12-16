@@ -237,6 +237,10 @@ class ElasticSearchDB( object ):
           '_source': {}
       }
       body['_source'] = row
+
+      if 'timestamp' not in row:
+        gLogger.warn( "timestamp is not given! Note: the actual time is used!" )
+
       timestamp = row.get( 'timestamp', int( Time.toEpoch() ) ) #if the timestamp is not provided, we use the current utc time.
       try:
         if isinstance(timestamp, datetime):

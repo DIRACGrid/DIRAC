@@ -450,7 +450,15 @@ class DataManager( object ):
     if not checksum:
       log.debug( "Checksum information not provided. Calculating adler32." )
       checksum = fileAdler( fileName )
-      log.debug( "Checksum calculated to be %s." % checksum )
+      # Make another try
+      if not checksum:
+        log.debug( "Checksum calculation failed, try again" )
+        checksum = fileAdler( fileName )
+      if checksum:
+        log.debug( "Checksum calculated to be %s." % checksum )
+      else:
+        return S_ERROR( DErrno.EBADCKS, "Unable to calculate checksum" )
+
     res = self.fc.exists( {lfn:guid} )
     if not res['OK']:
       errStr = "Completely failed to determine existence of destination LFN."
@@ -698,7 +706,7 @@ class DataManager( object ):
 
     # Get the LFN replicas from the file catalog
     log.debug( "Attempting to obtain replicas for %s." % ( lfn ) )
-    res = returnSingleResult( self.getReplicas( lfn ) )
+    res = returnSingleResult( self.getReplicas( lfn, getUrl = False ) )
     if not res[ 'OK' ]:
       errStr = "Failed to get replicas for LFN."
       log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
@@ -822,7 +830,7 @@ class DataManager( object ):
 
       # THIS WOULD NOT WORK IF PROTO == file !!
       # Why did I write that comment ?!
-      
+
       # We try the protocols one by one
       # That obviously assumes that there is an overlap and not only
       # a compatibility between the  output protocols of the source
@@ -852,6 +860,7 @@ class DataManager( object ):
             log.debug( "Cannot get destURL", res['Message'] )
             continue
         else:
+          log.debug( "File does not exist: Expected error for TargetSE !!")
           destURL = res['Value']
 
         if sourceURL == destURL:

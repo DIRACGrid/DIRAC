@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: StorageElementHandler.py
 ########################################################################
 """
@@ -32,15 +31,13 @@ import shutil
 import stat
 import re
 import errno
-from stat import ST_MODE, ST_SIZE, ST_ATIME, ST_CTIME, ST_MTIME, S_ISDIR, S_IMODE
-from types import  StringTypes, ListType
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.Os import getDirectorySize
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Core.Utilities.Adler            import fileAdler
+from DIRAC.Core.Utilities.Adler import fileAdler
 
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 
@@ -54,33 +51,33 @@ USE_TOKENS = False
 UNIT_CONVERSION = { "KB": 1024, "MB": 1024 * 1024, "GB": 1024 * 1024 * 1024, "TB": 1024 * 1024 * 1024 * 1024 }
 
 def getDiskSpace(path, size = 'TB', total = False):
-    """
-      Returns disk usage of the given path.
-      If no size is specified, terabytes will be used by default.
-      If total is set to true, the total disk space will be returned instead.
-    """
+  """
+    Returns disk usage of the given path.
+    If no size is specified, terabytes will be used by default.
+    If total is set to true, the total disk space will be returned instead.
+  """
 
-    size_to_convert = size.upper()
-    if size_to_convert not in UNIT_CONVERSION:
-      return S_ERROR( "No valid size specified" )
-    convert = UNIT_CONVERSION[size_to_convert]
+  size_to_convert = size.upper()
+  if size_to_convert not in UNIT_CONVERSION:
+    return S_ERROR( "No valid size specified" )
+  convert = UNIT_CONVERSION[size_to_convert]
 
-    try:
-      st = os.statvfs(path)
+  try:
+    st = os.statvfs(path)
 
-      if total:
-        # return total space
-        queried_size = st.f_blocks
-      else:
-        # return free space
-        queried_size = st.f_bavail
+    if total:
+      # return total space
+      queried_size = st.f_blocks
+    else:
+      # return free space
+      queried_size = st.f_bavail
 
-      result = ( queried_size * st.f_frsize ) / convert
+    result = float( queried_size * st.f_frsize ) / float(convert)
 
-    except OSError as e:
-      return S_ERROR( errno.EIO, "Error while getting the available disk space: %s" % repr(e) )
+  except OSError as e:
+    return S_ERROR( errno.EIO, "Error while getting the available disk space: %s" % repr(e) )
 
-    return S_OK( round(result, 2) )
+  return S_OK( round(result, 4) )
 
 def initializeStorageElementHandler( serviceInfo ):
   """  Initialize Storage Element global settings
@@ -168,21 +165,21 @@ class StorageElementHandler( RequestHandler ):
         return S_ERROR( 'Failed to get metadata for %s' % path )
 
     resultDict['Exists'] = True
-    mode = statTuple[ST_MODE]
+    mode = statTuple[stat.ST_MODE]
     resultDict['Type'] = "File"
     resultDict['File'] = True
     resultDict['Directory'] = False
-    if S_ISDIR( mode ):
+    if stat.S_ISDIR( mode ):
       resultDict['Type'] = "Directory"
       resultDict['File'] = False
     resultDict['Directory'] = True
-    resultDict['Size'] = statTuple[ST_SIZE]
-    resultDict['TimeStamps'] = ( statTuple[ST_ATIME], statTuple[ST_MTIME], statTuple[ST_CTIME] )
+    resultDict['Size'] = statTuple[stat.ST_SIZE]
+    resultDict['TimeStamps'] = ( statTuple[stat.ST_ATIME], statTuple[stat.ST_MTIME], statTuple[stat.ST_CTIME] )
     resultDict['Cached'] = 1
     resultDict['Migrated'] = 0
     resultDict['Lost'] = 0
     resultDict['Unavailable'] = 0
-    resultDict['Mode'] = S_IMODE( mode )
+    resultDict['Mode'] = stat.S_IMODE( mode )
 
 
     if resultDict['File']:
@@ -195,14 +192,14 @@ class StorageElementHandler( RequestHandler ):
 
     return S_OK( resultDict )
 
-  types_exists = [StringTypes]
+  types_exists = [basestring]
   def export_exists( self, fileID ):
     """ Check existance of the fileID """
     if os.path.exists( self.__resolveFileID( fileID ) ):
       return S_OK( True )
     return S_OK( False )
 
-  types_getMetadata = [StringTypes]
+  types_getMetadata = [basestring]
   def export_getMetadata( self, fileID ):
     """ Get metadata for the file or directory specified by fileID
     """
@@ -222,7 +219,7 @@ class StorageElementHandler( RequestHandler ):
     """
     return getDiskSpace(path, size, total = True)
 
-  types_createDirectory = [StringTypes]
+  types_createDirectory = [basestring]
   def export_createDirectory( self, dir_path ):
     """ Creates the directory on the storage
     """
@@ -245,7 +242,7 @@ class StorageElementHandler( RequestHandler ):
       gLogger.error( "StorageElementHandler.createDirectory: %s" % errStr, str( x ) )
       return S_ERROR( errStr )
 
-  types_listDirectory = [StringTypes, StringTypes]
+  types_listDirectory = [basestring, basestring]
   def export_listDirectory( self, dir_path, mode ):
     """ Return the dir_path directory listing
     """
@@ -381,7 +378,7 @@ class StorageElementHandler( RequestHandler ):
       gLogger.error( 'Failed to send bulk to network', res['Message'] )
     return res
 
-  types_remove = [StringTypes, StringTypes]
+  types_remove = [basestring, basestring]
   def export_remove( self, fileID, token ):
     """ Remove fileID from the storage. token is used for access rights confirmation. """
     return self.__removeFile( self.__resolveFileID( fileID ), token )
@@ -403,7 +400,7 @@ class StorageElementHandler( RequestHandler ):
     else:
       return S_ERROR( 'File removal %s not authorized' % fileID )
 
-  types_getDirectorySize = [StringTypes]
+  types_getDirectorySize = [basestring]
   def export_getDirectorySize( self, fileID ):
     """ Get the size occupied by the given directory
     """
@@ -418,7 +415,7 @@ class StorageElementHandler( RequestHandler ):
     else:
       return S_ERROR( "Directory does not exists" )
 
-  types_removeDirectory = [StringTypes, StringTypes]
+  types_removeDirectory = [basestring, basestring]
   def export_removeDirectory( self, fileID, token ):
     """ Remove the given directory from the storage
     """
@@ -438,7 +435,7 @@ class StorageElementHandler( RequestHandler ):
           gLogger.error( str( error ) )
           return S_ERROR( "Failed to remove directory %s" % dir_path )
 
-  types_removeFileList = [ ListType, StringTypes ]
+  types_removeFileList = [ list, basestring ]
   def export_removeFileList( self, fileList, token ):
     """ Remove files in the given list
     """

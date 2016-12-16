@@ -55,3 +55,11 @@ class TransformationAgentsUtilities( object ):
     ''' error '''
     gLogger.fatal( self.__threadForTrans( transID ) + method + ' ' + message, param )
 
+  def _transTaskName( self, transID, taskID ):
+    return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
+
+  def _parseTaskName( self, taskName ):
+    try:
+      return ( int( x ) for x in taskName.split( '_' ) )
+    except Exception:
+      return ( 0, 0 )
