@@ -1,3 +1,8 @@
+[v6r17p1]
+
+*RSS
+FIX: GOCDBSync - make commmand more verbose and added some minor fixes
+
 [v6r17]
 
 *Core
