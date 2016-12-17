@@ -1,3 +1,9 @@
+[v6r15p26]
+
+*WMS
+FIX: SandboxStoreClient - ensure that the latest sandbox is returned in the Web
+     portal in the case the job was reset.
+
 [v6r15p25]
 
 *Resources
