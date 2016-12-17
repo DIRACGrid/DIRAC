@@ -1,3 +1,7 @@
+[v6r16p4]
+
+FIX: applied fixes from v6r15p26
+
 [v6r16p3]
 
 FIX: incorporated fixes from v6r15p25
@@ -62,6 +66,12 @@ NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 NEW: SudoComputingElement - computing element to execute payload with a sudo to a dedicated
      UNIX account     
+
+[v6r15p26]
+
+*WMS
+FIX: SandboxStoreClient - ensure that the latest sandbox is returned in the Web
+     portal in the case the job was reset.
 
 [v6r15p25]
 
