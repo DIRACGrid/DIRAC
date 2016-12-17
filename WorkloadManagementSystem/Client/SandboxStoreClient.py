@@ -252,11 +252,16 @@ class SandboxStoreClient( object ):
     sbDict = result[ 'Value' ]
     if sbType not in sbDict:
       return S_ERROR( "No %s sandbox registered for job %s" % ( sbType, jobId ) )
+
+    # If inMemory, ensure we return the newest sandbox only
+    if inMemory:
+      sbLocation = sbDict[ sbType ][ -1 ]
+      result = self.downloadSandbox( sbLocation, destinationPath, inMemory )
+      return result
+
     for sbLocation in sbDict[ sbType ]:
       result = self.downloadSandbox( sbLocation, destinationPath, inMemory )
       if not result[ 'OK' ]:
-        return result
-      if inMemory:
         return result
     return S_OK()
 

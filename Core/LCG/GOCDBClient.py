@@ -196,6 +196,9 @@ class GOCDBClient( object ):
 
     params = hostname
 
+    if startDate and ongoing:
+      return S_ERROR("Invalid parameter combination - do not specify startDate with ongoing")
+
     if startDate:
       params += '&startdate=' + startDate
 
