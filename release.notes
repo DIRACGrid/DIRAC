@@ -1,3 +1,9 @@
+[v6r17p2]
+
+*Monitoring
+FIX: ElasticSearchDB - fixes required to use host certificate for connection;
+     fixes required to pass to version 5.0.1 of the elasticsearch.py binding
+
 [v6r17p1]
 
 *RSS
