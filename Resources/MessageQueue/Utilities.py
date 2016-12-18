@@ -87,6 +87,7 @@ def generateDefaultCallback():
   msgQueue = Queue.Queue()
   def callback( headers, body ):
     msgQueue.put( body )
+    return S_OK()
   def get( ):
     return msgQueue.get( block = False )
   callback.get = get
