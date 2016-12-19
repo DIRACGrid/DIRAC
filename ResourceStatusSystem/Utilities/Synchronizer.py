@@ -195,9 +195,7 @@ class Synchronizer( object ):
       Remove resources that no longer exist in the CS.
     '''
 
-    url = getServiceURL( "ResourceStatus/ResourceManagement" )
-
-    if not url:
+    if not getServiceURL( "ResourceStatus/ResourceManagement" ):
       gLogger.verbose( 'ResourceManagement is not installed, skipping removal of non existing resources...' )
       return S_OK()
 
