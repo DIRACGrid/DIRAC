@@ -16,6 +16,7 @@ from DIRAC.ResourceStatusSystem.Utilities                  import CSHelpers
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 from DIRAC.ResourceStatusSystem.Utilities                  import Utils
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import getFTS3Servers
+from DIRAC.ConfigurationSystem.Client.PathFinder           import getServiceURL
 ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 
 class Synchronizer( object ):
@@ -193,6 +194,12 @@ class Synchronizer( object ):
     '''
       Remove resources that no longer exist in the CS.
     '''
+
+    url = getServiceURL( "ResourceStatus/ResourceManagement" )
+
+    if not url:
+      gLogger.verbose( 'ResourceManagement is not installed, skipping removal of non existing resources...' )
+      return S_OK()
 
     sesHosts = CSHelpers.getStorageElementsHosts()
     if not sesHosts[ 'OK' ]:
