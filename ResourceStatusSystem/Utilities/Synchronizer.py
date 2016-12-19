@@ -166,7 +166,7 @@ class Synchronizer( object ):
       gLogger.error( computingElements[ 'Message' ] )
 
     gLogger.verbose( '-> removing resources that no longer exist in the CS' )
-    removingResources = self.__removeNonExistingResources()
+    removingResources = self.__removeNonExistingResourcesFromRM()
     if not removingResources[ 'OK' ]:
       gLogger.error( removingResources[ 'Message' ] )
 
@@ -190,9 +190,9 @@ class Synchronizer( object ):
 
   ## Private methods ###########################################################
 
-  def __removeNonExistingResources( self ):
+  def __removeNonExistingResourcesFromRM( self ):
     '''
-      Remove resources that no longer exist in the CS.
+      Remove resources from DowntimeCache table that no longer exist in the CS.
     '''
 
     if not getServiceURL( "ResourceStatus/ResourceManagement" ):
