@@ -29,15 +29,6 @@ class X509Certificate( object ):
     if certString:
       self.loadFromString( certString )
 
-  @classmethod
-  def createFromString( cls, certString ):
-    cert = cls()
-    cert.loadFromString( certString )
-    return cert
-
-  def getObject( self ):
-    return self.__certObj
-
   def load( self, certificate ):
     """ Load a x509 certificate either from a file or from a string
     """
