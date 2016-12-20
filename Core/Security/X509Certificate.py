@@ -14,22 +14,20 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 class X509Certificate( object ):
 
   def __init__( self, x509Obj = None, certString = None ):
+    """
+    Constructor.
+
+    :param x509Obj: (optional) certificate instance
+    :type x509Obj: M2Crypto.X509.X509
+    :param certString: text representation of certificate
+    :type certString: String
+    """
     self.__valid = False
     if x509Obj:
       self.__certObj = x509Obj
       self.__valid = True
     if certString:
-      self.__certObj = M2Crypto.X509.load_cert_string( certString, M2Crypto.X509.FORMAT_PEM )
-      self.__valid = True
-
-  @classmethod
-  def createFromString( cls, certString ):
-    cert = cls()
-    cert.loadFromString( certString )
-    return cert
-
-  def getObject( self ):
-    return self.__certObj
+      self.loadFromString( certString )
 
   def load( self, certificate ):
     """ Load a x509 certificate either from a file or from a string
@@ -65,8 +63,8 @@ class X509Certificate( object ):
     return S_OK()
 
   def setCertificate( self, x509Obj ):
-    if not isinstance( x509Obj, GSI.crypto.X509Type ):
-      return S_ERROR( DErrno.ETYPE, "Object %s has to be of type X509" % str( x509Obj ) )
+    if not isinstance( x509Obj, M2Crypto.X509.X509 ):
+      return S_ERROR( DErrno.ETYPE, "Object %s has to be of type M2Crypto.X509.X509" % str( x509Obj ) )
     self.__certObj = x509Obj
     self.__valid = True
     return S_OK()
@@ -194,6 +192,7 @@ class X509Certificate( object ):
     """
     Has voms extensions
     """
+    # XXX This is HIDEOUS and totally unreadable. Will be rewritten.
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
     extList = self.__certObj.get_extensions()
@@ -282,7 +281,15 @@ class X509Certificate( object ):
     return S_OK( ret )
 
   def get_subject( self ):
+    # XXX This function should be deleted when all code depending on it is updated.
     return self.getSubjectDN()['Value'] # XXX FIXME awful awful hack
 
   def asPem( self ):
     return self.__certObj.as_pem()
+
+  def getExtension( self, name ):
+    try:
+      ext = self.__certObj.get_ext( name )
+    except LookupError as LE:
+      return S_ERROR( LE )
+    return S_OK( ext )
