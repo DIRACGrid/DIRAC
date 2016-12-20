@@ -41,10 +41,10 @@ class X509Chain( object ):
       self.__certList = []
       for cert in certList:
         if type( cert ) != type( M2Crypto.X509.X509 ):
-          tmpCert = X509Certificate.createFromString( GSI.crypto.dump_certificate( GSI.crypto.FILETYPE_PEM, cert) )
+          # XXX walkaround for legacy code that is not updated yet, should be removed later
+          tmpCert = X509Certificate( certString = GSI.crypto.dump_certificate( GSI.crypto.FILETYPE_PEM, cert) )
           cert = tmpCert
         self.__certList.append( cert )
-      #self.__certList = certList
     else:
       self.__loadedChain = False
     if keyObj:
@@ -94,8 +94,11 @@ class X509Chain( object ):
     self.__checkProxyness()
     return S_OK()
 
-  def __listFromString(self, certString, format):
-    return [ X509Certificate.createFromString( cert[0] ) for cert in re.findall(r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)", certString) ]
+  def __listFromString( self, certString, format = M2Crypto.X509.FORMAT_PEM ):
+    """
+    Create certificates list from string. String sould contain certificates, just like plain text proxy file.
+    """
+    return [ X509Certificate( certString = cert[0] ) for cert in re.findall(r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)", certString) ]
 
   def setChain( self, certList ):
     """
@@ -174,12 +177,14 @@ class X509Chain( object ):
                                           'digitalSignature, keyEncipherment, dataEncipherment', critical = 1 ) )
     if diracGroup and type( diracGroup ) in self.__validExtensionValueTypes:
       extList.append( M2Crypto.X509.new_extension( 'diracGroup', diracGroup) )
-    if rfc or rfcLimited:
+    if rfc or rfcLimited: # XXX one of first things to fix, something is really bad here, couldn't verify that code is executed even with rfc flag
+      # XXX this blob is some kind of format definition - needs to be investigated and redone in M2Crypto-way.
       blob = [ [ "1.3.6.1.5.5.7.21.1" ] ] if not rfcLimited else [ [ "1.3.6.1.4.1.3536.1.1.1.9" ] ]
       asn1Obj = crypto.ASN1( blob )
       asn1Obj[0][0].convert_to_object()
       asn1dump = binascii.hexlify( asn1Obj.dump() )
       extval = "critical,DER:" + ":".join( asn1dump[i:i + 2] for i in range( 0, len( asn1dump ), 2 ) )
+      print ">>>", extval
       ext = crypto.X509Extension( "proxyCertInfo", extval )
       extList.append( ext )
     return extList
@@ -249,6 +254,7 @@ class X509Chain( object ):
     issuerCert = self.__certList[0]
 
     if not proxyKey:
+      # Generating key is a two step process: create key object and then assign RSA key.
       proxyKey = M2Crypto.EVP.PKey()
       proxyKey.assign_rsa(M2Crypto.RSA.gen_key(strength, 65537, callback = M2Crypto.util.quiet_genparam_callback ))
 
@@ -256,6 +262,7 @@ class X509Chain( object ):
 
     if rfc:
       proxyCert.set_serial_number( str( int( random.random() * 10 ** 10 ) ) )
+      # No easy way to deep-copy certificate subject
       cloneSubject = M2Crypto.X509.X509_Name()
       for part in parts:
         nid, val = part.split('=')
@@ -265,8 +272,9 @@ class X509Chain( object ):
       for extension in self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ):
         proxyCert.add_ext( extension )
     else:
-      proxyCert.set_serial_number( issuerCert.getSerialNumber()['Value'] ) # XXX
+      proxyCert.set_serial_number( issuerCert.getSerialNumber()['Value'] ) # XXX 'Value' used without checking 'OK', may cause problems
       parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
+      # No easy way to deep-copy certificate subject
       cloneSubject = M2Crypto.X509.X509_Name()
       for part in parts:
         nid, val = part.split('=')
@@ -292,7 +300,7 @@ class X509Chain( object ):
     proxyString = "%s%s" % ( proxyCert.as_pem(), proxyKey.as_pem( cipher = None ) )
     for i in range( len( self.__certList ) ):
       crt = self.__certList[i]
-      proxyString += crt.getObject().as_pem()
+      proxyString += crt.asPEm()
     return S_OK( proxyString )
 
   def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, strength = 1024, limited = False, rfc = False ):
@@ -385,6 +393,7 @@ class X509Chain( object ):
 
 
   def __checkProxyness( self ):
+    # XXX to describe
     self.__hash = False
     self.__firstProxyStep = len( self.__certList ) - 2  # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
@@ -429,32 +438,39 @@ class X509Chain( object ):
      1 = proxy match
      2 = limited proxy match
     """
-    return 1 # XXX FIXME awful awful hack
     issuerSubject = self.__certList[ issuerStep ].getSubjectNameObject()
+    if issuerSubject[ 'OK' ]:
+      issuerSubject = issuerSubject[ 'Value' ]
+    else:
+      return 0
     proxySubject = self.__certList[ certStep ].getSubjectNameObject()
-    psEntries = proxySubject.num_entries()
-    lastEntry = proxySubject.get_entry( psEntries - 1 )
+    if proxySubject[ 'OK' ]:
+      proxySubject = proxySubject[ 'Value' ]
+    else:
+      return 0
+    lastEntry = str(proxySubject).split('/')[-1].split('=')
     limited = False
     if lastEntry[0] != 'CN':
       return 0
     if lastEntry[1] not in ( 'proxy', 'limited proxy' ):
-      extList = self.__certList[ certStep ].get_extensions()
-      for ext in extList:
-        if ext.get_sn() == "proxyCertInfo":
-          contraint = [ line.split( ":" )[1].strip() for line in ext.get_value().split( "\n" ) if line.split( ":" )[0] == "Path Length Constraint" ]
-          if len( contraint ) == 0:
-            return 0
-          if self.__isRFC == None:
-            self.__isRFC = True
-          if contraint[0] == "1.3.6.1.4.1.3536.1.1.1.9":
-            limited = True
+      ext = self.__certList[ certStep ].getExtension( 'proxyCertInfo' )
+      if ext[ 'OK' ]:
+        ext = ext[ 'Value' ]
+      else:
+        return 0
+      contraint = [ line.split( ":" )[1].strip() for line in ext.get_value().split( "\n" ) if line.split( ":" )[0] == "Path Length Constraint" ]
+      if len( contraint ) == 0:
+        return 0
+      if self.__isRFC == None:
+        self.__isRFC = True
+      if contraint[0] == "1.3.6.1.4.1.3536.1.1.1.9": # XXX verify this
+        limited = True
     else:
       if self.__isRFC == None:
         self.__isRFC = False
       if lastEntry[1] == "limited proxy":
         limited = True
-    proxySubject.remove_entry( psEntries - 1 )
-    if not issuerSubject.one_line() == proxySubject.one_line():
+    if not str(issuerSubject) == str(proxySubject)[:str( proxySubject ).rfind( '/' )]:
       return 0
     return 1 if not limited else 2
 
@@ -532,7 +548,7 @@ class X509Chain( object ):
     if not self.__loadedPKey:
       return S_ERROR( DErrno.ENOPKEY )
     try:
-      req = crypto.load_certificate_request( crypto.FILETYPE_PEM, pemData )
+      req = M2Crypto.X509.load_request_string( pemData )
     except Exception as e:
       return S_ERROR( DErrno.ECERTREAD, "Can't load request data: %s" % repr( e ).replace( ',)', ')' ) )
     limited = requireLimited and self.isLimitedProxy().get( 'Value', False )
@@ -601,7 +617,9 @@ class X509Chain( object ):
       return S_ERROR( DErrno.ENOCHAIN )
     data = ''
     for i in range( len( self.__certList ) ):
-      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
+      res =  self.__certList[i].asPem()
+      if res[ 'OK' ]:
+        data += res[ 'Value' ]
     return S_OK( data )
 
   def dumpPKeyToString( self ):
@@ -610,7 +628,7 @@ class X509Chain( object ):
     """
     if not self.__loadedPKey:
       return S_ERROR( DErrno.ENOCHAIN )
-    return S_OK( crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj ) )
+    return S_OK( self.__keyObj.as_pem( cipher = None ) )
 
   def __str__( self ):
     repStr = "<X509Chain"
@@ -630,6 +648,10 @@ class X509Chain( object ):
     if self.__isProxy:
       # Check if we have a subproxy
       dn = self.__certList[ self.__firstProxyStep ].getSubjectDN()
+      if dn[ 'OK' ]:
+        dn = dn[ 'Value' ]
+      else:
+        return dn
       subproxyUser = isPUSPdn( dn )
       if subproxyUser:
         result = S_OK( True )
