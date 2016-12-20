@@ -169,7 +169,6 @@ function fullInstallDIRAC(){
   #Now all the rest
 
   #DBs (not looking for FrameworkSystem ones, already installed)
-  #findDatabases 'exclude' 'FrameworkSystem'
   findDatabases 'exclude' 'FrameworkSystem'
   dropDBs
   diracDBs
