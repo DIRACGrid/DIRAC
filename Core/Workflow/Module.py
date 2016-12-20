@@ -1,6 +1,8 @@
 """ Implementation of Module
 """
 
+#pylint: disable=unused-wildcard-import,wildcard-import
+
 import copy
 import os
 
@@ -158,8 +160,8 @@ class DefinitionsPool( dict ):
         v = pool[k]
         if isinstance( v, ModuleDefinition ):
           obj = ModuleDefinition( None, v, self.parent )
-        elif  isinstance( v, StepDefinition ):
-          obj = StepDefinition( None, v, self.parent )
+        elif  isinstance( v, StepDefinition ): #pylint: disable=undefined-variable
+          obj = StepDefinition( None, v, self.parent ) #pylint: disable=undefined-variable
         else:
           raise TypeError( 'Error: __init__ Wrong type of object stored in the DefinitionPool ' + str( type( pool[v] ) ) )
         self.append( obj )
@@ -251,8 +253,8 @@ class InstancesPool( list ):
         self.append( copy.deepcopy( v ) )
         if isinstance( v, ModuleInstance ):
           obj = ModuleInstance( None, v, self.parent )
-        elif  isinstance( v, StepInstance ):
-          obj = StepInstance( None, v, self.parent )
+        elif isinstance( v, StepInstance ): #pylint: disable=undefined-variable
+          obj = StepInstance( None, v, self.parent ) #pylint: disable=undefined-variable
         else:
           raise TypeError( 'Error: __init__ Wrong type of object stored in the DefinitionPool ' + str( type( pool[v] ) ) )
         self.append( obj )

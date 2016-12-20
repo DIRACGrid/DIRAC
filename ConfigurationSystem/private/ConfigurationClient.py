@@ -1,13 +1,15 @@
-from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-__RCSID__ = "$Id$"
 
-import types
 import os
+import types
+
 import DIRAC
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+
+__RCSID__ = "$Id$"
 
 class ConfigurationClient( object ):
 
@@ -40,8 +42,8 @@ class ConfigurationClient( object ):
     try:
       if not raw and cfg.isSection( 'DIRAC' ):
         diracSec = cfg[ 'DIRAC' ]
-        if diracSec.isSection( 'Configuration' ):
-          confSec = diracSec[ 'Configuration' ]
+        if diracSec.isSection( 'Configuration' ): #pylint: disable=no-member
+          confSec = diracSec[ 'Configuration' ] #pylint: disable=unsubscriptable-object
           for opt in ( 'Servers', 'MasterServer' ):
             if confSec.isOption( opt ):
               confSec.deleteKey( opt )
@@ -70,11 +72,11 @@ class ConfigurationClient( object ):
     gRefresher.refreshConfigurationIfNeeded()
     optionValue = gConfigurationData.extractOptionFromCFG( optionPath )
 
-    if optionValue == None:
+    if optionValue is None:
       return S_ERROR( "Path %s does not exist or it's not an option" % optionPath )
 
     # Value has been returned from the configuration
-    if typeValue == None:
+    if typeValue is None:
       return S_OK( optionValue )
 
     # Casting to typeValue's type
@@ -102,7 +104,7 @@ class ConfigurationClient( object ):
   def getSections( self, sectionPath, listOrdered = True ):
     gRefresher.refreshConfigurationIfNeeded()
     sectionList = gConfigurationData.getSectionsFromCFG( sectionPath, ordered = listOrdered )
-    if type( sectionList ) == types.ListType:
+    if isinstance( sectionList, list ):
       return S_OK( sectionList )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
@@ -110,7 +112,7 @@ class ConfigurationClient( object ):
   def getOptions( self, sectionPath, listOrdered = True ):
     gRefresher.refreshConfigurationIfNeeded()
     optionList = gConfigurationData.getOptionsFromCFG( sectionPath, ordered = listOrdered )
-    if type( optionList ) == types.ListType:
+    if isinstance( optionList, list ):
       return S_OK( optionList )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
@@ -119,10 +121,9 @@ class ConfigurationClient( object ):
     gRefresher.refreshConfigurationIfNeeded()
     optionsDict = {}
     optionList = gConfigurationData.getOptionsFromCFG( sectionPath )
-    if type( optionList ) == types.ListType:
+    if isinstance( optionList, list ):
       for option in optionList:
-        optionsDict[ option ] = gConfigurationData.extractOptionFromCFG( "%s/%s" %
-                                                              ( sectionPath, option ) )
+        optionsDict[ option ] = gConfigurationData.extractOptionFromCFG( "%s/%s" % ( sectionPath, option ) )
       return S_OK( optionsDict )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
