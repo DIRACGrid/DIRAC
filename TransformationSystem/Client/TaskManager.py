@@ -4,6 +4,7 @@
 import time
 import StringIO
 import json
+import copy
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
@@ -438,6 +439,8 @@ class WorkflowTasks( TaskBase ):
 
     self.destinationPlugin_o = None
 
+    self.outputDataModule_o = None
+
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '',
                                   ownerDN = '', bulkSubmissionFlag = False ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
@@ -566,28 +569,37 @@ class WorkflowTasks( TaskBase ):
     """ Prepare transformation tasks with a job object per task
     """
     method = '__prepareTransformationTasks'
+    startTime = time.time()
+    oJobTemplate = self.jobClass( transBody )
+    oJobTemplate.setOwner( owner )
+    oJobTemplate.setOwnerGroup( ownerGroup )
+    oJobTemplate.setOwnerDN( ownerDN )
+    templateOK = False
+    outputTime = 0.
     for taskID, paramsDict in taskDict.iteritems():
       # Create a job for each task and add it to the taskDict
-      oJob = self.jobClass( transBody )
-      site = oJob.workflow.findParameter( 'Site' ).getValue()
+      if not templateOK:
+        templateOK = True
+        # Update the template with common information
+        transID = paramsDict['TransformationID']
+        self._logVerbose( 'Job owner:group to %s:%s' % ( owner, ownerGroup ),
+                          transID = transID, method = method )
+        site = oJobTemplate.workflow.findParameter( 'Site' ).getValue()
+        jobType = oJobTemplate.workflow.findParameter( 'JobType' ).getValue()
+        transGroup = str( transID ).zfill( 8 )
+        self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ),
+                          transID = transID, method = method )
+        oJobTemplate.setJobGroup( transGroup )
+        oJobTemplate._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
+
       paramsDict['Site'] = site
-      jobType = oJob.workflow.findParameter( 'JobType' ).getValue()
       paramsDict['JobType'] = jobType
-      transID = paramsDict['TransformationID']
-      self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ),
-                        transID = transID, method = method )
-      oJob.setOwner( owner )
-      oJob.setOwnerGroup( ownerGroup )
-      oJob.setOwnerDN( ownerDN )
-      transGroup = str( transID ).zfill( 8 )
-      self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ),
-                        transID = transID, method = method )
-      oJob.setJobGroup( transGroup )
+      # Now create the job from the template
+      oJob = copy.deepcopy( oJobTemplate )
       constructedName = self._transTaskName( transID, taskID )
       self._logVerbose( 'Setting task name to %s' % constructedName,
                         transID = transID, method = method )
       oJob.setName( constructedName )
-      oJob._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
       oJob._setParamValue( 'JOB_ID', str( taskID ).zfill( 8 ) )
       inputData = None
 
@@ -602,7 +614,7 @@ class WorkflowTasks( TaskBase ):
         paramsDict['TaskObject'] = ''
         continue
       else:
-        self._logVerbose( 'Setting Site: ', str( sites ),
+        self._logDebug( 'Setting Site: ', str( sites ),
                           transID = transID, method = method )
         res = oJob.setDestination( sites )
         if not res['OK']:
@@ -619,9 +631,11 @@ class WorkflowTasks( TaskBase ):
 
       paramsDict['TaskObject'] = ''
       if self.outputDataModule:
+        outputTime -= time.time()
         res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
                                    'TaskID':taskID, 'InputData':inputData},
                                   moduleLocation = self.outputDataModule )
+        outputTime += time.time()
         if not res ['OK']:
           self._logError( "Failed to generate output data", res['Message'],
                           transID = transID, method = method )
@@ -629,6 +643,11 @@ class WorkflowTasks( TaskBase ):
         for name, output in res['Value'].iteritems():
           oJob._addJDLParameter( name, ';'.join( output ) )
       paramsDict['TaskObject'] = oJob
+    if taskDict:
+      self._logVerbose( 'Average getOutputData time: %.1f per task' % ( float( outputTime ) / len( taskDict ) ),
+                        transID = transID, method = method )
+      self._logInfo( 'Prepared %d tasks' % len( taskDict ),
+                     transID = transID, method = method, reftime = startTime )
     return S_OK( taskDict )
 
   #############################################################################
@@ -653,6 +672,7 @@ class WorkflowTasks( TaskBase ):
         self._logFatal( "Could not generate a destination plugin object" )
         return res
       destinationPlugin_o = res['Value']
+      self.destinationPlugin_o = destinationPlugin_o
 
     destinationPlugin_o.setParameters( paramsDict )
     destSites = destinationPlugin_o.run()
@@ -670,17 +690,21 @@ class WorkflowTasks( TaskBase ):
     """ set job inputs (+ metadata)
     """
     inputData = paramsDict.get( 'InputData' )
+    transID = paramsDict['TransformationID']
     if inputData:
-      self._logVerbose( 'Setting input data to %s' % inputData )
+      self._logVerbose( 'Setting input data to %s' % inputData,
+                        transID = transID, method = 'handleInputs' )
       oJob.setInputData( inputData )
 
   def _handleRest( self, oJob, paramsDict ):
     """ add as JDL parameters all the other parameters that are not for inputs or destination
     """
+    transID = paramsDict['TransformationID']
     for paramName, paramValue in paramsDict.iteritems():
       if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
         if paramValue:
-          self._logVerbose( 'Setting %s to %s' % ( paramName, paramValue ) )
+          self._logDebug( 'Setting %s to %s' % ( paramName, paramValue ),
+                            transID = transID, method = 'handleRest' )
           oJob._addJDLParameter( paramName, paramValue )
 
   def _handleHospital( self, oJob ):
@@ -714,13 +738,15 @@ class WorkflowTasks( TaskBase ):
   #############################################################################
 
   def getOutputData( self, paramDict, moduleLocation ):
-    moduleFactory = ModuleFactory()
+    if not self.outputDataModule_o:
+      moduleFactory = ModuleFactory()
 
-    moduleInstance = moduleFactory.getModule( moduleLocation, paramDict )
-    if not moduleInstance['OK']:
-      return moduleInstance
-    module = moduleInstance['Value']
-    return module.execute()
+      moduleInstance = moduleFactory.getModule( moduleLocation, None )
+      if not moduleInstance['OK']:
+        return moduleInstance
+      self.outputDataModule_o = moduleInstance['Value']
+    self.outputDataModule_o.paramDict = paramDict
+    return self.outputDataModule_o.execute()
 
   def submitTransformationTasks( self, taskDict ):
 
