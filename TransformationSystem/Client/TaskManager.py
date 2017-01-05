@@ -574,6 +574,8 @@ class WorkflowTasks( TaskBase ):
     oJobTemplate.setOwner( owner )
     oJobTemplate.setOwnerGroup( ownerGroup )
     oJobTemplate.setOwnerDN( ownerDN )
+    site = oJobTemplate.workflow.findParameter( 'Site' ).getValue()
+    jobType = oJobTemplate.workflow.findParameter( 'JobType' ).getValue()
     templateOK = False
     outputTime = 0.
     for taskID, paramsDict in taskDict.iteritems():
@@ -584,8 +586,6 @@ class WorkflowTasks( TaskBase ):
         transID = paramsDict['TransformationID']
         self._logVerbose( 'Job owner:group to %s:%s' % ( owner, ownerGroup ),
                           transID = transID, method = method )
-        site = oJobTemplate.workflow.findParameter( 'Site' ).getValue()
-        jobType = oJobTemplate.workflow.findParameter( 'JobType' ).getValue()
         transGroup = str( transID ).zfill( 8 )
         self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ),
                           transID = transID, method = method )
