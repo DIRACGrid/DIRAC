@@ -544,8 +544,7 @@ class WorkflowTasks( TaskBase ):
 
       if self.outputDataModule:
         res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
-                                   'TaskID':taskID, 'InputData':inputData},
-                                  moduleLocation = self.outputDataModule )
+                                   'TaskID':taskID, 'InputData':inputData} )
         if not res ['OK']:
           self._logError( "Failed to generate output data", res['Message'],
                           transID = transID, method = method )
@@ -577,7 +576,7 @@ class WorkflowTasks( TaskBase ):
     site = oJobTemplate.workflow.findParameter( 'Site' ).getValue()
     jobType = oJobTemplate.workflow.findParameter( 'JobType' ).getValue()
     templateOK = False
-    outputTime = 0.
+    getOutputDataTiming = 0.
     for taskID, paramsDict in taskDict.iteritems():
       # Create a job for each task and add it to the taskDict
       if not templateOK:
@@ -631,11 +630,10 @@ class WorkflowTasks( TaskBase ):
 
       paramsDict['TaskObject'] = ''
       if self.outputDataModule:
-        outputTime -= time.time()
+        getOutputDataTiming -= time.time()
         res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
-                                   'TaskID':taskID, 'InputData':inputData},
-                                  moduleLocation = self.outputDataModule )
-        outputTime += time.time()
+                                   'TaskID':taskID, 'InputData':inputData} )
+        getOutputDataTiming += time.time()
         if not res ['OK']:
           self._logError( "Failed to generate output data", res['Message'],
                           transID = transID, method = method )
@@ -644,7 +642,7 @@ class WorkflowTasks( TaskBase ):
           oJob._addJDLParameter( name, ';'.join( output ) )
       paramsDict['TaskObject'] = oJob
     if taskDict:
-      self._logVerbose( 'Average getOutputData time: %.1f per task' % ( float( outputTime ) / len( taskDict ) ),
+      self._logVerbose( 'Average getOutputData time: %.1f per task' % ( getOutputDataTiming / len( taskDict ) ),
                         transID = transID, method = method )
       self._logInfo( 'Prepared %d tasks' % len( taskDict ),
                      transID = transID, method = method, reftime = startTime )
@@ -737,19 +735,24 @@ class WorkflowTasks( TaskBase ):
 
   #############################################################################
 
-  def getOutputData( self, paramDict, moduleLocation ):
+  def getOutputData( self, paramDict ):
+    """ Get the list of job output LFNs from the provided plugin
+    """
     if not self.outputDataModule_o:
+      # Create the module object
       moduleFactory = ModuleFactory()
 
-      moduleInstance = moduleFactory.getModule( moduleLocation, None )
+      moduleInstance = moduleFactory.getModule( self.outputDataModule, None )
       if not moduleInstance['OK']:
         return moduleInstance
       self.outputDataModule_o = moduleInstance['Value']
+    # This is the "argument" to the module, set it and then execute
     self.outputDataModule_o.paramDict = paramDict
     return self.outputDataModule_o.execute()
 
   def submitTransformationTasks( self, taskDict ):
-
+    """ Submit the tasks
+    """
     if 'BulkJobObject' in taskDict:
       return self.__submitTransformationTasksBulk( taskDict )
     else:
