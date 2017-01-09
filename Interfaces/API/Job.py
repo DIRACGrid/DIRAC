@@ -579,7 +579,7 @@ class Job( API ):
     """
     kwargs = {'destination':destination}
     if isinstance( destination, basestring ):
-      destination = [destination]
+      destination = destination.replace( ' ', '' ).split( ',' )
       description = 'User specified destination site'
     else:
       description = 'List of sites selected by user'
