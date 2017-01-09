@@ -11,6 +11,7 @@ if __name__ == "__main__":
   from DIRAC.Core.Base import Script
 
   Script.registerSwitch( '', 'Path=', '    Path to search for' )
+  Script.registerSwitch( '', 'SE=', '    (list of) SE to be search for' )
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                        'Usage:',
                                        '  %s [options] metaspec [metaspec ...]' % Script.scriptName,
@@ -27,12 +28,18 @@ if __name__ == "__main__":
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
   from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD_METAKEYS
   from DIRAC import gLogger
+  from DIRAC.DataManagementSystem.Utilities.DMSHelpers        import resolveSEGroup
 
   path = '/'
+  seList = None
   for opt, val in Script.getUnprocessedSwitches():
     if opt == 'Path':
       path = val
+    elif opt == 'SE':
+      seList = resolveSEGroup( val.split( ',' ) )
 
+  if seList:
+    args.append( "SE=%s" % ','.join( seList ) )
   fc = FileCatalog()
   result = fc.getMetadataFields()
   if not result['OK']:
