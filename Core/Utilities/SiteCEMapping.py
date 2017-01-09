@@ -2,6 +2,7 @@
 # $HeadURL$
 # File :   SiteCEMapping.py
 ########################################################################
+from DIRAC.Core.Utilities import SitesDIRACGOCDBmapping
 
 """  The SiteCEMapping module performs the necessary CS gymnastics to
      resolve site and CE combinations.  These manipulations are necessary
@@ -52,23 +53,18 @@ def getSiteCEMapping( gridName = None ):
       {'LCG.CERN.ch':['ce101.cern.ch',...]}
       If gridName is specified, result is restricted to that Grid type.
   """
-  siteCEMapping = {}
-  gridTypes = __getGridTypes( gridName )
-  if not gridTypes['OK']:
-    return gridTypes
-  gridTypes = gridTypes['Value']
+  sites = getSites( gridName = gridName )
+  if not sites['OK']:
+    return sites
 
-  for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
-    if not sites['OK']:
-      gLogger.error( 'Problem retrieving /Resources/Sites/%s section' % grid, sites['Message'] )
-      return sites
-    for candidate in sites['Value']:
-      candidateCEs = gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( grid, candidate ), [] )
-      if candidateCEs:
-        siteCEMapping[candidate] = candidateCEs
-      else:
-        gLogger.debug( 'No CEs defined for site %s' % candidate )
+  siteCEMapping = {}
+  for candidate in sites['Value']:
+    grid = candidate.split( '.' )[0]
+    candidateCEs = gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( grid, candidate ), [] )
+    if candidateCEs:
+      siteCEMapping[candidate] = candidateCEs
+    else:
+      gLogger.debug( 'No CEs defined for site %s' % candidate )
 
   return S_OK( siteCEMapping )
 
@@ -78,26 +74,20 @@ def getCESiteMapping( gridName = None ):
       {'ce101.cern.ch':'LCG.CERN.ch', ...]}
       Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
   """
-  ceSiteMapping = {}
-  gridTypes = __getGridTypes( gridName )
-  if not gridTypes['OK']:
-    return gridTypes
-  gridTypes = gridTypes['Value']
+  sites = getSites( gridName = gridName )
+  if not sites['OK']:
+    return sites
 
-  for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
-    if not sites['OK']:  # gConfig returns S_ERROR for empty sections until version
-      gLogger.error( 'Problem retrieving /Resources/Sites/%s section' % grid, sites['Message'] )
-      return sites
-    if sites:
-      for candidate in sites['Value']:
-        siteCEs = gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( grid, candidate ), [] )
-        for ce in siteCEs:
-          if ceSiteMapping.has_key( ce ):
-            current = ceSiteMapping[ce]
-            gLogger.error( 'CE %s already has a defined site %s but it is also defined for %s' % ( ce, current, candidate ) )
-          else:
-            ceSiteMapping[ce] = candidate
+  ceSiteMapping = {}
+  for candidate in sites['Value']:
+    grid = candidate.split( '.' )[0]
+    siteCEs = gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( grid, candidate ), [] )
+    for ce in siteCEs:
+      if ce in ceSiteMapping:
+        current = ceSiteMapping[ce]
+        gLogger.error( 'CE %s already has a defined site %s but it is also defined for %s' % ( ce, current, candidate ) )
+      else:
+        ceSiteMapping[ce] = candidate
 
   return S_OK( ceSiteMapping )
 
@@ -107,26 +97,18 @@ def getSiteForCE( computingElement ):
 
       WARNING: if two or more sites happen to have the same ceName/queueName, then only the first found is returned
   """
-  finalSite = ''
-  gridTypes = __getGridTypes()
-  if not gridTypes['OK']:
-    return gridTypes
-  gridTypes = gridTypes['Value']
+  sites = getSites( gridName = gridName )
+  if not sites['OK']:
+    return sites
 
-  for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
-    if not sites['OK']:
-      gLogger.error( 'Problem retrieving /Resources/Sites/%s section' % grid, sites['Message'] )
-      return sites
-    if sites:
-      siteList = sites['Value']
-      for candidate in siteList:
-        siteCEs = gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( grid, candidate ), [] )
-        if computingElement in siteCEs:
-          finalSite = candidate
-          break
-
-  return S_OK( finalSite )
+  for candidate in sites['Value']:
+    grid = candidate.split( '.' )[0]
+    siteCEs = gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( grid, candidate ), [] )
+    if computingElement in siteCEs:
+      finalSite = candidate
+      return S_OK( finalSite )
+  # FIXME: this is strange but this was how it was coded
+  return S_OK( '' )
 
 #############################################################################
 def getCEsForSite( siteName ):
@@ -135,9 +117,7 @@ def getCEsForSite( siteName ):
   if not re.search( '.', siteName ):
     return S_ERROR( '%s is not a valid site name' % siteName )
   gridName = siteName.split( '.' )[0]
-  siteSection = '/Resources/Sites/%s/%s/CE' % ( gridName, siteName )
-  ces = gConfig.getValue( siteSection, [] )
-  return S_OK( ces )
+  return S_OK( gConfig.getValue( '/Resources/Sites/%s/%s/CE' % ( gridName, siteName ), [] ) )
 
 #############################################################################
 def getQueueInfo( ceUniqueID, diracSiteName = '' ):
