@@ -197,17 +197,6 @@ class ResourceManagementDB( object ):
                                Column( 'Arguments', String( 512 ), nullable = False, server_default = "" ),
                                mysql_engine = 'InnoDB' )
 
-    PolicyResult             = Table( 'PolicyResult', self.metadata,
-                               Column( 'Status', String( 8 ), nullable = False ),
-                               Column( 'PolicyName', String( 64 ), nullable = False ),
-                               Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
-                               Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
-                               Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               Column( 'Element', String( 32 ), nullable = False ),
-                               mysql_engine = 'InnoDB' )
-
     PolicyResultWithID        = Table( 'PolicyResultWithID', self.metadata,
                                Column( 'Status', String( 8 ), nullable = False ),
                                Column( 'PolicyName', String( 64 ), nullable = False ),
