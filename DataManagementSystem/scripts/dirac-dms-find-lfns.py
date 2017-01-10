@@ -11,7 +11,7 @@ if __name__ == "__main__":
   from DIRAC.Core.Base import Script
 
   Script.registerSwitch( '', 'Path=', '    Path to search for' )
-  Script.registerSwitch( '', 'SE=', '    (list of) SE to be search for' )
+  Script.registerSwitch( '', 'SE=', '    (comma-separated list of) SEs/SE-groups to be searched' )
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                        'Usage:',
                                        '  %s [options] metaspec [metaspec ...]' % Script.scriptName,
