@@ -2,8 +2,6 @@
 # $HeadURL$
 # File :   SiteCEMapping.py
 ########################################################################
-from DIRAC.Core.Utilities import SitesDIRACGOCDBmapping
-
 """  The SiteCEMapping module performs the necessary CS gymnastics to
      resolve site and CE combinations.  These manipulations are necessary
      in several components.
@@ -97,7 +95,7 @@ def getSiteForCE( computingElement ):
 
       WARNING: if two or more sites happen to have the same ceName/queueName, then only the first found is returned
   """
-  sites = getSites( gridName = gridName )
+  sites = getSites()
   if not sites['OK']:
     return sites
 
