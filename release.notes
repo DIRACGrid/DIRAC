@@ -1,3 +1,20 @@
+[v6r17p3]
+
+*RSS
+FIX: Synchronizer - the sync method removes the resources that are no longer 
+     in the CS from the DowntimeCache table
+
+*DMS
+CHANGE: dirac-dms-find-lfns - added SE switch to look for files only having
+        replicas on a given SE (list)
+
+*TS
+FIX: TaskManager - optimization of the site checking while preparing job; optimized
+     creation of the job template
+
+*Resources
+CHANGE: GFAL2_SRM2Storage, SRM2Storage - added gsiftp to the list of OUTPUT protocols 
+
 [v6r17p2]
 
 *Monitoring
@@ -59,6 +76,10 @@ FIX: JobStateUpdate service - in setJobStatusBulk() avoid adding false informati
 FIX: TaskManager, TaskManagerAgentBase - standardize the logging information; removed unnecessary 
      code; use iterators wherever possible     
 NEW: Introduced metadata-based filters when registering new data in the TS as catalog       
+
+[v6r16p5]
+
+FIX: included patches from v6r15p27
 
 [v6r16p4]
 
@@ -128,6 +149,12 @@ NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 NEW: SudoComputingElement - computing element to execute payload with a sudo to a dedicated
      UNIX account     
+
+[v6r15p27]
+
+*Configuration
+FIX: CSAPI - changed so that empty but existing options in the CS can be still
+     modified
 
 [v6r15p26]
 
