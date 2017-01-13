@@ -1,3 +1,9 @@
+[v6r15p27]
+
+*Configuration
+FIX: CSAPI - changed so that empty but existing options in the CS can be still
+     modified
+
 [v6r15p26]
 
 *WMS
