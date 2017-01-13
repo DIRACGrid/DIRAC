@@ -1,3 +1,20 @@
+[v6r17p3]
+
+*RSS
+FIX: Synchronizer - the sync method removes the resources that are no longer 
+     in the CS from the DowntimeCache table
+
+*DMS
+CHANGE: dirac-dms-find-lfns - added SE switch to look for files only having
+        replicas on a given SE (list)
+
+*TS
+FIX: TaskManager - optimization of the site checking while preparing job; optimized
+     creation of the job template
+
+*Resources
+CHANGE: GFAL2_SRM2Storage, SRM2Storage - added gsiftp to the list of OUTPUT protocols 
+
 [v6r17p2]
 
 *Monitoring
