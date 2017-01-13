@@ -253,6 +253,9 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     while True:
       startTime = time.time()
       transIDOPBody = self.transQueue.get()
+      if not self.transInQueue:
+        # Queue was cleared, nothing to do
+        continue
       try:
         transID = transIDOPBody.keys()[0]
         operations = transIDOPBody[transID]['Operations']
@@ -437,16 +440,17 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     taskNameIDs = res['Value']['TaskNameIDs']
 
     # For the tasks with no associated request found re-set the status of the task in the transformationDB
-    for taskName in noTasks:
-      transID, taskID = self._parseTaskName( taskName )
-      self._logInfo( "Resetting status of %s to Created as no associated task found" % ( taskName ),
+    if noTasks:
+      self._logInfo( "Resetting status of %d tasks to Created as no associated job/request found" % len( noTasks ),
                      method = method, transID = transID )
-      res = clients['TransformationClient'].setTaskStatus( transID, taskID, 'Created' )
-      if not res['OK']:
-        self._logError( "Failed to update task status and ID after recovery:",
-                        '%s %s' % ( taskName, res['Message'] ),
-                        method = method, transID = transID )
-        return res
+      for taskName in noTasks:
+        transID, taskID = self._parseTaskName( taskName )
+        res = clients['TransformationClient'].setTaskStatus( transID, taskID, 'Created' )
+        if not res['OK']:
+          self._logError( "Failed to update task status and ID after recovery:",
+                          '%s %s' % ( taskName, res['Message'] ),
+                          method = method, transID = transID )
+          return res
 
     # For the tasks for which an associated request was found update the task details in the transformationDB
     for taskName, extTaskID in taskNameIDs.items():
