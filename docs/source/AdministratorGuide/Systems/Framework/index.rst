@@ -10,11 +10,27 @@ Framework System
 
 Static Component Monitoring
 ===========================
-As of v6r13, DIRAC includes a Component Monitoring system that logs information about what components are being installed and uninstalled on which machines, when and by whom.
+
+As of v6r13, DIRAC includes a Component Monitoring system that logs information about what components are being installed
+and uninstalled on which machines, when and by whom. Running this service is mandatory!
+
 This information is accessible from both the system administration CLI and the Component History page in the Web Portal.
 
-Using the CLI, it is possible to check the information about installations by using the 'show installations' command.
-This command accepts the following parameters:
+
+Installation
+============
+
+The service constitutes of one database (InstalledComponentsDB) and one service (Framework/ComponentMonitoring).
+These service and DB may have been installed already when DIRAC was installed the first time.
+
+The script **dirac-populate-component-db** should then be used to populate the DB tables with the necessary information.
+
+
+Interacting with the static component monitoring
+================================================
+
+Using the CLI (dirac-admin-sysadmin-cli), it is possible to check the information about installations
+by using the 'show installations' command. This command accepts the following parameters:
 
 - list: Changes the display mode of the results
 - current: Show only the components that are still installed

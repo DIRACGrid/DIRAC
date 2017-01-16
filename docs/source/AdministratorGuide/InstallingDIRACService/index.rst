@@ -297,12 +297,24 @@ be taken:
                                   Name : Runit    Uptime    PID
                   Configuration_Server : Run          41    30268
          Framework_SystemAdministrator : Run          21    30339
+         Framework_ComponentMonitoring : Run          11    30340
+         ResourceStatus_ResourceStatus : Run           9    30341
                              Web_httpd : Run           5    30828
                             Web_paster : Run           5    30829
 
-Now the basic services - Configuration and SystemAdministrator - are installed. The rest of the installation can proceed using
-the DIRAC Administrator interface, either command line (System Administrator Console) or using Web Portal (eventually,
-not available yet).
+Now the basic services - Configuration, SystemAdministrator, ComponentMonitoring and ResourceStatus - are installed,
+or at least their DBs should be installed, and their services up and running.
+
+There are anyway a couple more steps that should be done to fully activate the ComponentMonitoring and the ResourceStatus.
+These steps can be found in the respective administration sessions of this documentation:
+
+  - :ref:`static_component_monitoring` for the static component monitoring (the ComponentMonitoring service)
+  - :ref:`rss_installation` and :ref:`rss_populate` for the Resource Status System
+
+but, no hurry: you can do it later.
+
+The rest of the installation can proceed using the DIRAC Administrator interface,
+either command line (System Administrator Console) or using Web Portal (eventually, not available yet).
 
 It is also possible to include any number of additional systems, services, agents and databases to be installed by "install_site.sh".
 
