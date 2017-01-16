@@ -13,9 +13,19 @@ DIRAC server. There are two distinct cases of installations:
     existing DIRAC system, with the Master Configuration Service already up and running on another
     DIRAC server (:ref:`install_additional_server`).
 
-The primary server installation should install and start at least the Configuration Service which is the
-backbone for the entire DIRAC system. The SystemAdministrator Service, once installed, allows remote
-management of the DIRAC components on the server. In multi-server installations DIRAC components are
+The primary server installation should install and start at least the following services,
+which constitute what is considered as a minimal DIRAC installation:
+
+  - The *Configuration Service (CS)*: the CS is backbone for the entire DIRAC system.
+    Please refer to :ref:`dirac-configuration` for more information
+  - The *SystemAdministrator* service which, once installed, allows remote
+    management of the DIRAC components directly on the server.
+  - The *Component Monitoring* service is for keeping track of installed components.
+    Refer to :ref:`static_component_monitoring` for more info.
+  - The *Resource Status* service will keep track of the status of your distributed computing resources.
+    Refer to :ref:`resource_status_system` for more info.
+
+In multi-server installations DIRAC components are
 distributed among a number of servers installed using the procedure for additional host installation.
 
 For all DIRAC installations any number of client installations is possible.

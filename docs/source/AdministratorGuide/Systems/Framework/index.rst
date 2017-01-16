@@ -5,6 +5,9 @@ Framework System
 .. contents:: Table of contents
    :depth: 3
 
+
+.. _static_component_monitoring:
+
 Static Component Monitoring
 ===========================
 As of v6r13, DIRAC includes a Component Monitoring system that logs information about what components are being installed and uninstalled on which machines, when and by whom.
@@ -40,15 +43,15 @@ By pressing the 'Submit' button, a list with all the matching results will be sh
 Dynamic Component Monitoring
 ============================
 
-It shows information about running DIRAC components such as CPU, Memory, Running threads etc. The information can be accessed from the 'dirac-admin-sysadmin-cli' using 
+It shows information about running DIRAC components such as CPU, Memory, Running threads etc. The information can be accessed from the 'dirac-admin-sysadmin-cli' using
 'show profile'. The following parameters can be used::
 
- - <system>: The name of the system for example: DataManagementSystem 
- - <component>: The component name for example: FileCatalog 
- - -s <size>: number of elements to be shown 
- - h <host>: name of the host where a specific component is running 
+ - <system>: The name of the system for example: DataManagementSystem
+ - <component>: The component name for example: FileCatalog
+ - -s <size>: number of elements to be shown
+ - h <host>: name of the host where a specific component is running
  - id <initial date DD/MM/YYYY> the date where from we are interested for the log of a specific component
  - it <initial time hh:mm> the time where from we are interested for the log of a specific component
  - ed <end date DD/MM/YYYY>: the date before we are interested for   the log of a specific component
- - et <end time hh:mm>: the time before we are interested for   the log of a specific component 
+ - et <end time hh:mm>: the time before we are interested for   the log of a specific component
  - show <size>: log lines of profiling information for a component in the machine <host>
