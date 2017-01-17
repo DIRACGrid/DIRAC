@@ -4,7 +4,7 @@ Administrator Guide
 
 .. toctree::
    :maxdepth: 1
-   
+
    SetupStructure/index
    GettingStarted/index
    InstallingDIRACService/index
