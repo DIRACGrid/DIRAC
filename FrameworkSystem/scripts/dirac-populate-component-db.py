@@ -189,6 +189,7 @@ for host in finalSet:
 monitoringClient = ComponentMonitoringClient()
 
 # Add the installations to the database
+
 for record in records:
   result = MonitoringUtilities.monitorInstallation(
       record[ 'Component' ][ 'Type' ], record[ 'Component' ][ 'System' ],
