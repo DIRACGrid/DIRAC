@@ -543,6 +543,8 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ModulesTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ModuleBaseSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( FailoverRequestSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ScriptSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ScriptFailure ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
