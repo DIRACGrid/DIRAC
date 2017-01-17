@@ -414,7 +414,7 @@ class DataManager( object ):
       self.log.debug( errStr, lfn )
       return S_ERROR( errStr )
     if res['Value']['Successful'][lfn]:
-      if res['Value']['Successful'][lfn] == lfn:
+      if res['Value']['Successful'][lfn]:
         errStr = "putAndRegister: The supplied LFN already exists in the File Catalog."
         self.log.debug( errStr, lfn )
       else:
