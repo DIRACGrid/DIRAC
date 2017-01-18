@@ -276,12 +276,14 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
           if newMaxCPUTime == "4" * len( newMaxCPUTime ) or newMaxCPUTime == "9" * len( newMaxCPUTime ):
             newMaxCPUTime = ''
           wallTime = queueInfo.get( 'GlueCEPolicyMaxWallClockTime', '' )
+          if wallTime == "4" * len( wallTime ) or wallTime == "9" * len( wallTime ):
+             wallTime = ''
           if wallTime and int(wallTime)>0:
             if not newMaxCPUTime:
-              newMaxCPUTime = str(0.8*int(wallTime))
+              newMaxCPUTime = str(int(0.8*int(wallTime)))
             else:
               if int(wallTime) <= int(newMaxCPUTime):
-                newMaxCPUTime = str(0.8*int(wallTime))
+                newMaxCPUTime = str(int(0.8*int(wallTime)))
           newSI00 = ''
           caps = queueInfo['GlueCECapability']
           if isinstance( caps, basestring ):
