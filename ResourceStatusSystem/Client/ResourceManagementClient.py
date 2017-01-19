@@ -64,8 +64,6 @@ class ResourceManagementClient( object ):
       del sendDict[key]
       sendDict.update({self.uppercase_first_letter(key): value})
 
-    print sendDict
-
     return sendDict
 
   # AccountingCache Methods ....................................................
