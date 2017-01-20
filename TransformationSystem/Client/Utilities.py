@@ -14,7 +14,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
-from DIRAC.Core.Utilities.Time import timeThis
+# from DIRAC.Core.Utilities.Time import timeThis
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -98,7 +98,7 @@ class PluginUtilities( object ):
 
 
 
-  @timeThis
+  # @timeThis
   def groupByReplicas( self, files, status ):
     """
     Generates tasks based on the location of the input data
@@ -194,7 +194,7 @@ class PluginUtilities( object ):
     return tasks
 
 
-  @timeThis
+  # @timeThis
   def groupBySize( self, files, status ):
     """
     Generate a task for a given amount of data
@@ -273,7 +273,7 @@ class PluginUtilities( object ):
       usageDict = self._normaliseShares( usageDict )
     return S_OK( usageDict )
 
-  @timeThis
+  # @timeThis
   def _getFileSize( self, lfns ):
     """ Get file size from a cache, if not from the catalog
     #FIXME: have to fill the cachedLFNSize!
@@ -294,7 +294,7 @@ class PluginUtilities( object ):
       fileSizes = fileSizes['Value']
     return S_OK( fileSizes )
 
-  @timeThis
+  # @timeThis
   def _getFileSizeFromCatalog( self, lfns, fileSizes ):
     """
     Get file size from the catalog

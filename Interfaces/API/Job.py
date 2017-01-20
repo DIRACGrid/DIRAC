@@ -37,7 +37,7 @@ from DIRAC.Core.Security.ProxyInfo                            import getProxyInf
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess                          import shellCall
 from DIRAC.Core.Utilities.List                                import uniqueElements
-from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
+from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSites
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers                 import Resources
 from DIRAC.Interfaces.API.Dirac                               import Dirac
@@ -64,7 +64,7 @@ class Job( API ):
     if gConfig.getValue( self.section + '/LogLevel', 'DEBUG' ) == 'DEBUG':
       self.dbg = True
 
-    #gConfig.getValue('Tier0SE-tape','SEName')
+    # gConfig.getValue('Tier0SE-tape','SEName')
     self.stepCount = 0
     self.owner = 'NotSpecified'
     self.name = 'Name'
@@ -75,17 +75,17 @@ class Job( API ):
     if ret['OK'] and 'group' in ret['Value']:
       vo = getVOForGroup( ret['Value']['group'] )
     self.group = vo
-    self.site = 'ANY' #ANY
-    #self.setup = 'Development'
+    self.site = 'ANY'  # ANY
+    # self.setup = 'Development'
     self.origin = 'DIRAC'
     self.stdout = stdout
     self.stderr = stderr
     self.logLevel = 'info'
-    self.executable = '$DIRACROOT/scripts/dirac-jobexec' # to be clarified
+    self.executable = '$DIRACROOT/scripts/dirac-jobexec'  # to be clarified
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
     self.addToInputData = []
-    ##Add member to handle Parametric jobs
+    # #Add member to handle Parametric jobs
     self.numberOfParameters = 0
     self.parameterSeqs = {}
     self.wfArguments = {}
@@ -97,6 +97,7 @@ class Job( API ):
       self.__setJobDefaults()
     else:
       self.workflow = Workflow( script )
+    self.__siteSet = set( getSites().get( 'Value', [] ) )
 
   #############################################################################
 
@@ -149,9 +150,9 @@ class Job( API ):
 
     if logFile:
       if isinstance( logFile, basestring ):
-        logName = str(logFile)
+        logName = str( logFile )
     else:
-      logName = "Script%s_%s" %( self.stepCount, logName )
+      logName = "Script%s_%s" % ( self.stepCount, logName )
 
     if not modulesList:
       modulesList = ['Script']
@@ -233,12 +234,12 @@ class Job( API ):
       fileList = ';'.join( resolvedFiles )
       description = 'Input sandbox file list'
       self._addParameter( self.workflow, 'InputSandbox', 'JDL', fileList, description )
-      #self.sandboxFiles=resolvedFiles
+      # self.sandboxFiles=resolvedFiles
     elif isinstance( files, basestring ):
       resolvedFiles = self._resolveInputSandbox( [files] )
       fileList = ';'.join( resolvedFiles )
       description = 'Input sandbox file'
-      #self.sandboxFiles = [files]
+      # self.sandboxFiles = [files]
       self._addParameter( self.workflow, 'InputSandbox', 'JDL', fileList, description )
     else:
       kwargs = {'files':files}
@@ -523,7 +524,7 @@ class Job( API ):
        Choose submission pool on which job is executed.
        Default in place for users.
     """
-    #should add protection here for list of supported platforms
+    # should add protection here for list of supported platforms
     kwargs = {'backend':backend}
     if not isinstance( backend, basestring ):
       return self._reportError( 'Expected string for SubmitPool', **kwargs )
@@ -578,39 +579,33 @@ class Job( API ):
     """
     kwargs = {'destination':destination}
     if isinstance( destination, basestring ):
-      if not re.search( '^DIRAC.', destination ) and not destination.lower() == 'any':
-        result = self.__checkSiteIsValid( destination )
-        if not result['OK']:
-          self.log.error( "Site is not valid", result['Message'] )
-          return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
+      destination = destination.replace( ' ', '' ).split( ',' )
       description = 'User specified destination site'
-      self._addParameter( self.workflow, 'Site', 'JDL', destination, description )
-    elif isinstance( destination, list ):
-      for site in destination:
-        if not re.search( '^DIRAC.', site ) and not site.lower() == 'any':
-          result = self.__checkSiteIsValid( site )
-          if not result['OK']:
-            self.log.error( "Site is not valid", result['Message'] )
-            return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
-      destSites = ';'.join( destination )
+    else:
       description = 'List of sites selected by user'
+    if isinstance( destination, list ):
+      sites = set( site for site in destination if site.lower() != 'any' )
+      if sites:
+        result = self.__checkSiteIsValid( sites )
+        if not result['OK']:
+          return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
+      destSites = ';'.join( destination )
       self._addParameter( self.workflow, 'Site', 'JDL', destSites, description )
     else:
-      return self._reportError( '%s is not a valid destination site, expected string' % ( destination ), **kwargs )
+      return self._reportError( 'Invalid destination site, expected string or list', **kwargs )
     return S_OK()
 
   #############################################################################
   def __checkSiteIsValid( self, site ):
     """Internal function to check that a site name is valid.
     """
-    sites = getSiteCEMapping()
-    if not sites['OK']:
-      return S_ERROR( 'Could not get site CE mapping' )
-    siteList = sites['Value'].keys()
-    if not site in siteList:
-      return S_ERROR( 'Specified site %s is not in list of defined sites' % site )
-
-    return S_OK( '%s is valid' % site )
+    if isinstance( site, ( list, set, dict ) ):
+      site = set( site ) - self.__siteSet
+      if not site:
+        return S_OK()
+    elif site in self.__siteSet:
+      return S_OK()
+    return S_ERROR( 'Specified site %s is not in list of defined sites' % str( site ) )
 
   #############################################################################
   def setDestinationCE( self, ceName, diracSite = None ):
@@ -887,8 +882,8 @@ class Job( API ):
     self.log.info( '--------------------------------------' )
     self.log.info( 'Workflow parameter summary:           ' )
     self.log.info( '--------------------------------------' )
-    #print self.workflow.parameters
-    #print params.getParametersNames()
+    # print self.workflow.parameters
+    # print params.getParametersNames()
     for name, _props in paramsDict.iteritems():
       ptype = paramsDict[name]['type']
       value = paramsDict[name]['value']
@@ -909,7 +904,7 @@ class Job( API ):
     self._addParameter( self.workflow, 'Priority', 'JDL', self.priority, 'User Job Priority' )
     self._addParameter( self.workflow, 'JobGroup', 'JDL', self.group, 'Name of the JobGroup' )
     self._addParameter( self.workflow, 'JobName', 'JDL', self.name, 'Name of Job' )
-    #self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
+    # self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
     self._addParameter( self.workflow, 'Site', 'JDL', self.site, 'Site Requirement' )
     self._addParameter( self.workflow, 'Origin', 'JDL', self.origin, 'Origin of client' )
     self._addParameter( self.workflow, 'StdOutput', 'JDL', self.stdout, 'Standard output file' )
@@ -917,7 +912,7 @@ class Job( API ):
     self._addParameter( self.workflow, 'InputData', 'JDL', '', 'Default null input data value' )
     self._addParameter( self.workflow, 'LogLevel', 'JDL', self.logLevel, 'Job Logging Level' )
     self._addParameter( self.workflow, 'arguments', 'string', '', 'Arguments to executable Step' )
-    #Those 2 below are need for on-site resolution
+    # Those 2 below are need for on-site resolution
     self._addParameter( self.workflow, 'ParametricInputData', 'string', '',
                         'Default null parametric input data value' )
     self._addParameter( self.workflow, 'ParametricInputSandbox', 'string', '',
@@ -957,13 +952,13 @@ class Job( API ):
           resolvedIS.append( i )
 
     for name in inputSandbox:
-      if re.search( r'\*', name ): #escape the star character...
+      if re.search( r'\*', name ):  # escape the star character...
         cmd = 'ls -d ' + name
         output = shellCall( 10, cmd )
         if not output['OK']:
           self.log.error( 'Could not perform: ', cmd )
         elif output['Value'][0]:
-          self.log.error(" Failed getting the files ", output['Value'][2])
+          self.log.error( " Failed getting the files ", output['Value'][2] )
         else:
           files = output['Value'][1].split()
           for check in files:
@@ -971,10 +966,10 @@ class Job( API ):
               self.log.verbose( 'Found file ' + check + ' appending to Input Sandbox' )
               resolvedIS.append( check )
             if os.path.isdir( check ):
-              if re.search( '/$', check ): #users can specify e.g. /my/dir/lib/
+              if re.search( '/$', check ):  # users can specify e.g. /my/dir/lib/
                 check = check[:-1]
               tarName = os.path.basename( check )
-              directory = os.path.dirname( check ) #if just the directory this is null
+              directory = os.path.dirname( check )  # if just the directory this is null
               if directory:
                 cmd = 'tar cfz ' + tarName + '.tar.gz ' + ' -C ' + directory + ' ' + tarName
               else:
@@ -988,10 +983,10 @@ class Job( API ):
 
       if os.path.isdir( name ):
         self.log.verbose( 'Found specified directory ' + name + ', appending ' + name + '.tar.gz to Input Sandbox' )
-        if re.search( '/$', name ): #users can specify e.g. /my/dir/lib/
+        if re.search( '/$', name ):  # users can specify e.g. /my/dir/lib/
           name = name[:-1]
         tarName = os.path.basename( name )
-        directory = os.path.dirname( name ) #if just the directory this is null
+        directory = os.path.dirname( name )  # if just the directory this is null
         if directory:
           cmd = 'tar cfz ' + tarName + '.tar.gz ' + ' -C ' + directory + ' ' + tarName
         else:
@@ -1060,11 +1055,11 @@ class Job( API ):
   def _toJDL( self, xmlFile = '', jobDescriptionObject = None ):  # messy but need to account for xml file being in /tmp/guid dir
     """Creates a JDL representation of itself as a Job.
     """
-    #Check if we have to do old bootstrap...
+    # Check if we have to do old bootstrap...
     classadJob = ClassAd( '[]' )
 
     paramsDict = {}
-    params = self.workflow.parameters # ParameterCollection object
+    params = self.workflow.parameters  # ParameterCollection object
 
     paramList = params
     for param in paramList:
@@ -1122,10 +1117,10 @@ class Job( API ):
     self.addToOutputSandbox.append( self.stderr )
     self.addToOutputSandbox.append( self.stdout )
 
-    #Extract i/o sandbox parameters from steps and any input data parameters
-    #to do when introducing step-level api...
+    # Extract i/o sandbox parameters from steps and any input data parameters
+    # to do when introducing step-level api...
 
-    #To add any additional files to input and output sandboxes
+    # To add any additional files to input and output sandboxes
     if self.addToInputSandbox:
       extraFiles = ';'.join( self.addToInputSandbox )
       if paramsDict.has_key( 'InputSandbox' ):
@@ -1173,11 +1168,11 @@ class Job( API ):
 
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
-    #Add any JDL parameters to classad obeying lists with ';' rule
+    # Add any JDL parameters to classad obeying lists with ';' rule
     for name, props in paramsDict.iteritems():
       ptype = props['type']
       value = props['value']
-      if isinstance( value, basestring) and re.search( ';', value ):
+      if isinstance( value, basestring ) and re.search( ';', value ):
         value = value.split( ';' )
       if name.lower() == 'requirements' and ptype == 'JDL':
         self.log.verbose( 'Found existing requirements: %s' % ( value ) )
@@ -1231,4 +1226,4 @@ class Job( API ):
 
     return dirac.submitJob( self, mode = 'local' )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

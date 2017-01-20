@@ -51,9 +51,12 @@ class FileReport( object ):
     """ Commit pending file status update records
     """
     if not self.statusDict:
-      return S_OK({})
+      return S_OK( {} )
 
-    return self.transClient.setFileStatusForTransformation( self.transformation, self.statusDict, force = self.force )
+    result = self.transClient.setFileStatusForTransformation( self.transformation, self.statusDict, force = self.force )
+    if result['OK']:
+      self.statusDict = {}
+    return result
 
   def generateForwardDISET( self ):
     """ Commit the accumulated records and generate request eventually

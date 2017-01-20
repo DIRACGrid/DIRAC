@@ -68,7 +68,7 @@ class Dirac( API ):
   """
 
   #############################################################################
-  def __init__( self, withRepo = False, repoLocation = '', useCertificates = False ):
+  def __init__( self, withRepo = False, repoLocation = '', useCertificates = False, vo = None ):
     """Internal initialization of the DIRAC API.
     """
     super( Dirac, self ).__init__()
@@ -86,6 +86,7 @@ class Dirac( API ):
 
     # Determine the default file catalog
     self.defaultFileCatalog = gConfig.getValue( self.section + '/FileCatalog', None )
+    self.vo = vo
 
   def __checkFileArgument( self, fnList, prefix = None, single = False ):
     if prefix is None:
@@ -191,7 +192,7 @@ class Dirac( API ):
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.get( 'State' ) in requestedStates:
-        ## Value of 'Retrieved' is a string, e.g. '0' when read from file
+        # # Value of 'Retrieved' is a string, e.g. '0' when read from file
         if not int( jobDict.get( 'Retrieved' ) ) :
           self.getOutputSandbox( jobID, destinationDirectory )
     return S_OK()
@@ -219,7 +220,7 @@ class Dirac( API ):
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.get( 'State' ) in requestedStates:
-        ## Value of 'OutputData' is a string, e.g. '0' when read from file
+        # # Value of 'OutputData' is a string, e.g. '0' when read from file
         if not int( jobDict.get( 'OutputData' ) ):
           destDir = jobID
           if destinationDirectory:
@@ -716,7 +717,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  #FIXME: this seems unused
+  # FIXME: this seems unused
   def _runInputDataResolution( self, inputData, site = None ):
     """ Run the VO plugin input data resolution mechanism.
     """
@@ -877,7 +878,7 @@ class Dirac( API ):
       if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for isFile in sandbox:
-        if isFile.lower().startswith("lfn:"): #isFile is an LFN
+        if isFile.lower().startswith( "lfn:" ):  # isFile is an LFN
           isFile = isFile[4:]
         elif not os.path.isabs( isFile ):
           # if a relative path, it is relative to the user working directory
@@ -895,13 +896,13 @@ class Dirac( API ):
             self.log.warn( 'Failed to download %s with error:%s' % ( isFile, getFile['Message'] ) )
             return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
         basefname = os.path.basename( isFile )
-        try:
-          if tarfile.is_tarfile( basefname ):
-            tarFile = tarfile.open( basefname, 'r' )
-            for member in tarFile.getmembers():
-              tarFile.extract( member, os.getcwd() )
-        except Exception as x:
-          return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
+        if tarfile.is_tarfile( basefname ):
+          try:
+            with tarfile.open( basefname, 'r' ) as tf:
+              for member in tf.getmembers():
+                tf.extract( member, os.getcwd() )
+          except Exception as x:
+            return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
@@ -1116,6 +1117,16 @@ class Dirac( API ):
       print self.pPrint.pformat( repsResult['Value'] )
 
     return repsResult
+
+  def checkSEAccess( self, se, access = 'Write' ):
+    """ returns the value of a certain SE status flag (access or other)
+      :param se: Storage Element name
+      :type se: string
+      :param access: type of access
+      :type access: string in ('Read', 'Write', 'Remove', 'Check')
+      : returns: True or False
+    """
+    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( access, False )
 
   #############################################################################
   def splitInputData( self, lfns, maxFilesPerJob = 20, printOutput = False ):
@@ -1625,7 +1636,7 @@ class Dirac( API ):
       dirPath = '%s/%s' % ( os.getcwd(), jobID )
       if os.path.exists( dirPath ):
         return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
-    mkDir(dirPath)
+    mkDir( dirPath )
 
     # New download
     result = SandboxStoreClient( useCertificates = self.useCertificates ).downloadSandboxForJob( jobID, 'Output', dirPath )
@@ -1665,15 +1676,15 @@ class Dirac( API ):
       return getFile
 
     fileName = os.path.basename( oversizedSandbox )
-    try:
-      result = S_OK()
-      if tarfile.is_tarfile( fileName ):
-        tarFile = tarfile.open( fileName, 'r' )
-        for member in tarFile.getmembers():
-          tarFile.extract( member, dirPath )
-    except Exception as x :
-      os.chdir( start )
-      result = S_ERROR( str( x ) )
+    result = S_OK()
+    if tarfile.is_tarfile( fileName ):
+      try:
+        with tarfile.open( fileName, 'r' ) as tf:
+          for member in tf.getmembers():
+            tf.extract( member, dirPath )
+      except Exception as x :
+        os.chdir( start )
+        result = S_ERROR( str( x ) )
 
     if os.path.exists( fileName ):
       os.unlink( fileName )
@@ -2029,7 +2040,7 @@ class Dirac( API ):
     jobIDs = result['Value']
     self.log.verbose( '%s job(s) selected' % ( len( jobIDs ) ) )
     if not jobIDs:
-      self.log.error( "No jobs selected", "with date '%s' for conditions: %s" % (str(date), conditions))
+      self.log.error( "No jobs selected", "with date '%s' for conditions: %s" % ( str( date ), conditions ) )
       return S_ERROR( "No jobs selected" )
     else:
       return result

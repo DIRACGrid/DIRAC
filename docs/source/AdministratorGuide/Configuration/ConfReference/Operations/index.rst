@@ -19,6 +19,7 @@ In the short term, most of this schema will be moved into [vo]/[setup] dependent
    :maxdepth: 2
    
    Email/index
+   DataManagement/index
    InputDataPolicy/index
    JobDescription/index
    JobScheduling/index
