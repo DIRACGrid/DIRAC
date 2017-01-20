@@ -1,20 +1,20 @@
+""" This is the XROOTD StorageClass
 """
- This is the XROOTD StorageClass
- """
 
-__RCSID__ = "$Id$"
+# pylint: disable=arguments-differ
 
+import os
+
+from XRootD import client #pylint: disable=import-error
+from XRootD.client.flags import DirListFlags, MkDirFlags, StatInfoFlags  #pylint: disable=import-error
 
 from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities          import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
 from DIRAC.Core.Utilities.Pfn                   import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.File                  import getSize
-import os
 
-
-from XRootD import client
-from XRootD.client.flags import DirListFlags, OpenFlags, MkDirFlags, QueryCode, StatInfoFlags
+__RCSID__ = "$Id$"
 
 
 class XROOTStorage( StorageBase ):
@@ -22,6 +22,8 @@ class XROOTStorage( StorageBase ):
 
   Xroot interface to StorageElement using pyxrootd
   """
+  _INPUT_PROTOCOLS = ['file', 'root']
+  _OUTPUT_PROTOCOLS = ['root']
 
   DYNAMIC_OPTIONS = {'SpaceToken' : 'svcClass'}
 
@@ -1199,7 +1201,7 @@ class XROOTStorage( StorageBase ):
         successful[url] = True
       else:
         self.log.error( "XROOTStorage.createDirectory: Failed to create directory on storage.",
-                       "%s: %s" % ( url, res['Message'] ) )
+                        "%s: %s" % ( url, res['Message'] ) )
         failed[url] = res['Message']
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 

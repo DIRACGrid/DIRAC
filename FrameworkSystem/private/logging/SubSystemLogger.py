@@ -8,6 +8,7 @@ class SubSystemLogger( Logger ):
   def __init__( self, subName, masterLogger, child = True ):
     Logger.__init__( self )
     self.__child = child
+    self._minLevel = masterLogger._minLevel
     for attrName in dir( masterLogger ):
       attrValue = getattr( masterLogger, attrName )
       if isinstance( attrValue, basestring ):

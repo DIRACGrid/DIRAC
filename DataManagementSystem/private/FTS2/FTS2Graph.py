@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FTSGraph.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/10 20:02:32
@@ -13,12 +12,13 @@
 
     nodes are FTS sites sites and edges are routes between them
 """
-__RCSID__ = "$Id: $"
 # #
 # @file FTSGraph.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/05/10 20:03:00
 # @brief Definition of FTSGraph class.
+
+# pylint:disable=no-member
 
 # # imports
 # # from DIRAC
@@ -32,6 +32,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElement
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
+
+__RCSID__ = "$Id: $"
 
 class Site( Node ):
   """
@@ -283,4 +285,3 @@ class FTS2Graph( Graph ):
       ftsSite.MaxActiveJobs = self.maxActiveJobs
       ftsSites.append( ftsSite )
     return S_OK( ftsSites )
-

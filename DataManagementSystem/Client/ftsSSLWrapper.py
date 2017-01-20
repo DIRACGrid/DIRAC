@@ -18,14 +18,17 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+
+#pylint: disable=undefined-variable,bad-indentation
+
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
 import logging
 import requests
 import tempfile
-from fts3.rest.client.exceptions import *
+from fts3.rest.client.exceptions import * #pylint: disable=import-error
 import os
 
 class Request(object):
@@ -44,7 +47,7 @@ class Request(object):
         self.timeout = timeout
 
         self.session = requests.Session()
-        
+
 
     def _handle_error(self, url, code, response_body=None):
         # Try parsing the response, maybe we can get the error message
@@ -85,19 +88,19 @@ class Request(object):
         elif code >= 500:
             raise ServerError(str(code))
 
-    def method(self, method, url, body=None, headers=None):   
+    def method(self, method, url, body=None, headers=None):
         _headers = {'Accept': 'application/json'}
         if headers:
             _headers.update(headers)
         if self.access_token:
             _headers['Authorization'] = 'Bearer ' + self.access_token
-        
-        response = self.session.request(method=method, url=str(url), 
-                             data=body, headers=_headers, verify = self.verify, 
-                             timeout=(self.connectTimeout, self.timeout), 
+
+        response = self.session.request(method=method, url=str(url),
+                             data=body, headers=_headers, verify = self.verify,
+                             timeout=(self.connectTimeout, self.timeout),
                              cert=(self.ucert, self.ukey))
-        
-       
+
+
         #log.debug(response.text)
 
         self._handle_error(url, response.status_code, response.text)

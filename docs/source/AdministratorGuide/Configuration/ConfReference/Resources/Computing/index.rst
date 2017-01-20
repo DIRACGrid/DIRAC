@@ -71,6 +71,9 @@ Options for the HTCondorCEs
 |                     | files are kept here. This option is only read from  |                                                           |
 |                     | the global Resources/Computing/HTCondorCE location. |                                                           |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+| UseLocalSchedd      | If True use a local condor schedd to submit jobs, if| Default is True                                           |
+|                     | False submit to remote condor schedd                |                                                           |
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
 | DaysToKeepLogFiles  | How many days pilot log files are kept on the disk  | 15                                                        |
 |                     | before they are removed                             |                                                           |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+

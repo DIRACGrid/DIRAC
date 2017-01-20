@@ -69,8 +69,8 @@ source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
 #
 # installSite:
 #
-#   This function will install DIRAC using the install_site.sh script
-#     following (more or less) instructions at diracgrid.org
+#   This function will install DIRAC using the dirac-install.py script
+#     following (more or less) instructions at dirac.rtfd.org
 #
 #...............................................................................
 
@@ -105,11 +105,21 @@ function installSite(){
   sed -i s/VAR_DB_Host/$DB_HOST/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/install.cfg
 
+  sed -i s/VAR_NoSQLDB_User/$NoSQLDB_USER/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Password/$NoSQLDB_PASSWORD/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Host/$NoSQLDB_HOST/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
+
   echo '==> Started installing'
-  $SERVERINSTALLDIR/install_site.sh $SERVERINSTALLDIR/install.cfg
+  $SERVERINSTALLDIR/dirac-install.py -t server $SERVERINSTALLDIR/install.cfg
+
+  echo '==> Done installing, now configuring'
+  source $SERVERINSTALLDIR/bashrc
+  dirac-configure $SERVERINSTALLDIR/install.cfg $DEBUG
+  dirac-setup-site $DEBUG
+
   echo '==> Completed installation'
 
-  source $SERVERINSTALLDIR/bashrc
 }
 
 
