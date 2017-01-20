@@ -150,18 +150,60 @@ class ResourceManagementClient( object ):
 
   def selectGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None,
                               tickets = None, lastCheckTime = None ):
+    '''
+    Gets from GGUSTicketsCache all rows that match the parameters given.
+
+    :Parameters:
+      **gocSite** - `string`
+      **link** - `string`
+        url to the details
+      **openTickets** - `integer`
+      **tickets** - `string`
+      **lastCheckTime** - `datetime`
+         time-stamp setting last time the result was checked
+
+    :return: S_OK() || S_ERROR()
+    '''
 
     return self.rmsDB.select( 'GGUSTicketsCache', self._prepare(locals()) )
 
 
   def deleteGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None,
                               tickets = None, lastCheckTime = None ):
+    '''
+    Deletes from GGUSTicketsCache all rows that match the parameters given.
+
+    :Parameters:
+      **gocSite** - `string`
+      **link** - `string`
+        url to the details
+      **openTickets** - `integer`
+      **tickets** - `string`
+      **lastCheckTime** - `datetime`
+         time-stamp setting last time the result was checked
+
+    :return: S_OK() || S_ERROR()
+    '''
 
     return self.rmsDB.delete( 'GGUSTicketsCache', self._prepare(locals()) )
 
 
   def addOrModifyGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None,
                               tickets = None, lastCheckTime = None ):
+    '''
+    Adds or updates-if-duplicated to GGUSTicketsCache all rows that match the parameters given.
+
+    :Parameters:
+      **gocSite** - `string`
+      **link** - `string`
+        url to the details
+      **openTickets** - `integer`
+      **tickets** - `string`
+      **lastCheckTime** - `datetime`
+         time-stamp setting last time the result was checked
+
+    :return: S_OK() || S_ERROR()
+    '''
 
     return self.rmsDB.addOrModify( 'GGUSTicketsCache', self._prepare(locals()) )
 
@@ -851,7 +893,7 @@ class ResourceManagementClient( object ):
                                errorMessage = None, operation = None, arguments = None,
                                dateEffective = None ):
     '''
-    Deletes from ErrorReportBuffer all rows that match the parameters given.
+    Inserts to ErrorReportBuffer all rows that match the parameters given.
 
     :Parameters:
       **name** - `string`
@@ -876,7 +918,7 @@ class ResourceManagementClient( object ):
                                errorMessage = None, operation = None, arguments = None,
                                dateEffective = None ):
     '''
-    Deletes from ErrorReportBuffer all rows that match the parameters given.
+    Gets from ErrorReportBuffer all rows that match the parameters given.
 
     :Parameters:
       **name** - `string`
