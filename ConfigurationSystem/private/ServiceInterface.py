@@ -179,16 +179,14 @@ class ServiceInterface( threading.Thread ):
     backupDir = gConfigurationData.getBackupDir()
     files = self.__getCfgBackups( backupDir, date )
     for fileName in files:
-      zFile = zipfile.ZipFile( "%s/%s" % ( backupDir, fileName ), "r" )
-      cfgName = zFile.namelist()[0]
-      #retVal = S_OK( zlib.compress( str( fd.read() ), 9 ) )
-      retVal = S_OK( zlib.compress( zFile.read( cfgName ) , 9 ) )
-      zFile.close()
+      with zipfile.ZipFile( "%s/%s" % ( backupDir, fileName ), "r" ) as zFile:
+        cfgName = zFile.namelist()[0]
+        retVal = S_OK( zlib.compress( zFile.read( cfgName ) , 9 ) )
       return retVal
     return S_ERROR( "Version %s does not exist" % date )
 
   def __getCfgBackups( self, basePath, date = "", subPath = "" ):
-    rs = re.compile( "^%s\..*%s.*\.zip$" % ( gConfigurationData.getName(), date ) )
+    rs = re.compile( r"^%s\..*%s.*\.zip$" % ( gConfigurationData.getName(), date ) )
     fsEntries = os.listdir( "%s/%s" % ( basePath, subPath ) )
     fsEntries.sort( reverse = True )
     backupsList = []

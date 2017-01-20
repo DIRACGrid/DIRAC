@@ -41,9 +41,9 @@ class Torque( object ):
       cmd = "qsub -o %(OutputDir)s -e %(ErrorDir)s -q %(Queue)s -N DIRACPilot %(SubmitOptions)s %(Executable)s" % kwargs
       status,output = commands.getstatusoutput(cmd)
       if status == 0:
-        jobIDs.append(output)
+        jobIDs.append(output.split('.')[0])
       else:
-        break                                                         
+        break
   
     if jobIDs:
       resultDict['Status'] = 0
@@ -76,7 +76,7 @@ class Torque( object ):
     for job in jobIDList:
       if not job:
         continue
-      jobNumber = job.split( '.' )[0]
+      jobNumber = job
       jobDict[jobNumber] = job
 
     cmd = 'qstat ' + ' '.join( jobIDList )
@@ -98,9 +98,9 @@ class Torque( object ):
             statusDict[jobDict[job]] = 'Unknown'
           else:
             torqueStatus = line.split()[4]
-            if torqueStatus in ['E', 'C']:
+            if torqueStatus in ['E']:
               statusDict[jobDict[job]] = 'Done'
-            elif torqueStatus in ['R']:
+            elif torqueStatus in ['R', 'C']:
               statusDict[jobDict[job]] = 'Running'
             elif torqueStatus in ['S', 'W', 'Q', 'H', 'T']:
               statusDict[jobDict[job]] = 'Waiting'

@@ -280,8 +280,7 @@ class JobDB( DB ):
         if not ret['OK']:
           return ret
         paramNameList.append( ret['Value'] )
-      paramNames = ','.join( paramNameList )
-      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % ( e_jobID, paramNames )
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % ( e_jobID, ','.join( paramNameList ) )
       result = self._query( cmd )
       if result['OK']:
         if result['Value']:
@@ -1314,7 +1313,7 @@ class JobDB( DB ):
       return S_ERROR( 'Job ' + str( jobID ) + ' not found in the system' )
 
     if not resultDict['VerifiedFlag']:
-      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % (
+      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % ( 
                                                                              jobID,
                                                                              resultDict['Status'],
                                                                              resultDict['MinorStatus'] ) )
@@ -1445,6 +1444,27 @@ class JobDB( DB ):
     retVal['MinorStatus'] = 'Job Rescheduled'
 
     return retVal
+
+#############################################################################
+  def getUserSitesTuple( self, sites ):
+    """Returns tuple of active/banned/invalid sties from a user provided list."""
+    ret = self._escapeValues( sites )
+    if not ret['OK']:
+      return ret
+
+    sites = set( sites )
+    sitesSql = ret['Value']
+    sitesSql[0] = 'SELECT %s AS Site' % sitesSql[0]
+    sitesSql = ' UNION SELECT '.join( sitesSql )
+    cmd = "SELECT Site FROM (%s) AS tmptable WHERE Site NOT IN (SELECT Site FROM SiteMask WHERE Status='Active')" % sitesSql
+    result = self._query( cmd )
+    if not result['OK']:
+      return result
+    nonActiveSites = set( x[0] for x in result['Value'] )
+    activeSites = sites.difference( nonActiveSites )
+    bannedSites = nonActiveSites.intersection( set( self.getSiteMask( 'Banned' ) ) )
+    invalidSites = nonActiveSites.difference( bannedSites )
+    return S_OK( ( activeSites, bannedSites, invalidSites ) )
 
 #############################################################################
   def getSiteMask( self, siteState = 'Active' ):

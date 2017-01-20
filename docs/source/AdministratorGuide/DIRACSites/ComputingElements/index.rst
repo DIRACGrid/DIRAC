@@ -1,5 +1,5 @@
 =================================
-DIRAC Computing Elements
+Computing Elements
 =================================
 
 Direct access to the site computing clusters is done by sending pilot jobs in a similar way as 

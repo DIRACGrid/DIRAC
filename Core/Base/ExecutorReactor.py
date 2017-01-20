@@ -21,8 +21,6 @@
 
 """
 
-__RCSID__ = "$Id$"
-
 import time
 import threading
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -30,6 +28,8 @@ from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
+
+__RCSID__ = "$Id$"
 
 class ExecutorReactor( object ):
 
@@ -180,8 +180,8 @@ class ExecutorReactor( object ):
       modInstance = result[ 'Value' ]
       try:
         result = modInstance._ex_processTask( taskId, taskStub )
-      except Exception, excp:
-        gLogger.exception( "Error while processing task %s" % taskId )
+      except Exception as excp:
+        gLogger.exception( "Error while processing task %s" % taskId, lException = excp )
         return S_ERROR( "Error processing task %s: %s" % ( taskId, excp ) )
 
       self.__storeInstance( eType, modInstance )
@@ -197,7 +197,7 @@ class ExecutorReactor( object ):
           return self.__moduleProcess( fastTrackType, taskId, taskStub, fastTrackLevel + 1 )
         else:
           gLogger.notice( "Stopping %s fast track. Sending back to the mind" % ( taskId ) )
-      
+
       return S_OK( ( "TaskDone", taskStub, True ) )
 
 

@@ -33,7 +33,13 @@ from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+
 import fts3.rest.client.easy as fts3
+# Because of a bug in fts-rest, we can't use Request
+# This ftsSSLWrapper has the fix. we need to wait for 
+# the next fts release to get rid of it
+#from fts3.rest.client.request import Request
+from DIRAC.DataManagementSystem.Client.ftsSSLWrapper import Request as ftsSSLRequest
 
 ########################################################################
 class FTSJob( object ):
@@ -589,7 +595,7 @@ class FTSJob( object ):
     for ftsFile in self:
       trans = fts3.new_transfer( ftsFile.SourceSURL,
                                 ftsFile.TargetSURL,
-                                checksum = ftsFile.Checksum,
+                                checksum = 'ADLER32:%s'%ftsFile.Checksum,
                                 filesize = ftsFile.Size )
       transfers.append( trans )
 
@@ -604,7 +610,7 @@ class FTSJob( object ):
 
     try:
       if not self._fts3context:
-        self._fts3context = fts3.Context( endpoint = self.FTSServer )
+        self._fts3context = fts3.Context( endpoint = self.FTSServer, request_class = ftsSSLRequest, verify = False )
       context = self._fts3context
       self.FTSGUID = fts3.submit( context, job )
 
@@ -626,7 +632,7 @@ class FTSJob( object ):
     jobStatusDict = None
     try:
       if not self._fts3context:
-        self._fts3context = fts3.Context( endpoint = self.FTSServer )
+        self._fts3context = fts3.Context( endpoint = self.FTSServer, request_class = ftsSSLRequest, verify = False )
       context = self._fts3context
       jobStatusDict = fts3.get_job_status( context, self.FTSGUID, list_files = True )
     except Exception as e:

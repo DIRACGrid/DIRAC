@@ -87,9 +87,9 @@ class InProcessComputingElement( ComputingElement ):
       self.log.warn( 'InProcess Job Execution Failed' )
       self.log.info( 'Exit status:', result['Value'][0] - 256 )
       if result['Value'][0] - 256 == -2:
-        error = 'Error in the initialization of the DIRAC JobWrapper'
+        error = 'JobWrapper initialization error'
       elif result['Value'][0] - 256 == -1:
-        error = 'Error in the execution of the DIRAC JobWrapper'
+        error = 'JobWrapper execution error'
       else:
         error = 'InProcess Job Execution Failed'
       res = S_ERROR( error )

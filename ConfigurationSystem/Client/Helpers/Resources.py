@@ -1,14 +1,15 @@
 """ Helper for the CS Resources section
 """
 
-__RCSID__ = "$Id$"
 
 import re
-from distutils.version import LooseVersion
+from distutils.version import LooseVersion #pylint: disable=no-name-in-module,import-error
 
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.Core.Utilities.List                          import uniqueElements, fromChar
+
+__RCSID__ = "$Id$"
 
 
 gBaseResourcesSection = "/Resources"
@@ -30,7 +31,7 @@ def getSites():
 
   return S_OK( sites )
 
-def getStorageElementSiteMapping( siteList = [] ):
+def getStorageElementSiteMapping( siteList = None ):
   """ Get Storage Element belonging to the given sites
   """
   if not siteList:
@@ -47,7 +48,7 @@ def getStorageElementSiteMapping( siteList = [] ):
 
   return S_OK( siteDict )
 
-def getFTS2ServersForSites( self, siteList = None ):
+def getFTS2ServersForSites( siteList = None ):
   """ get FTSServers for sites
 
   :param list siteList: list of sites
@@ -69,7 +70,6 @@ def getFTS2ServersForSites( self, siteList = None ):
 
 def getFTS3Servers():
   """ get FTSServers for sites
-  :param list siteList: list of sites
   """
 
   csPath = cfgPath( gBaseResourcesSection, "FTSEndpoints/FTS3" )
@@ -120,11 +120,19 @@ def getStorageElementOptions( seName ):
   if not result['OK']:
     return result
   options = result['Value']
+  # If the SE is an baseSE or an alias, derefence it
+  if 'BaseSE' in options or 'Alias' in options:
+    storageConfigPath = '/Resources/StorageElements/%s' % options.get( 'BaseSE', options.get( 'Alias' ) )
+    result = gConfig.getOptionsDict( storageConfigPath )
+    if not result['OK']:
+      return result
+    result['Value'].update( options )
+    options = result['Value']
 
   # Help distinguishing storage type
   diskSE = True
   tapeSE = False
-  if options.has_key( 'SEType' ):
+  if 'SEType' in options:
     # Type should follow the convention TXDY
     seType = options['SEType']
     diskSE = re.search( 'D[1-9]', seType ) != None
@@ -160,7 +168,6 @@ def getQueue( site, ce, queue ):
   return S_OK( resultDict )
 
 
-
 def getQueues( siteList = None, ceList = None, ceTypeList = None, community = None, mode = None ):
   """ Get CE/queue options according to the specified selection
   """
@@ -184,27 +191,34 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
         comList = gConfig.getValue( '/Resources/Sites/%s/%s/VO' % ( grid, site ), [] )
         if comList and not community in comList:
           continue
+      siteCEParameters = {}
+      result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs' % ( grid, site ) )
+      if result['OK']:
+        siteCEParameters = result['Value']
       result = gConfig.getSections( '/Resources/Sites/%s/%s/CEs' % ( grid, site ) )
       if not result['OK']:
         continue
       ces = result['Value']
       for ce in ces:
         if mode:
-          ceMode = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/SubmissionMode' % ( grid, site, ce ), 'InDirect' )
+          ceMode = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/SubmissionMode' % ( grid, site, ce ), 'Direct' )
           if not ceMode or ceMode != mode:
             continue
         if ceTypeList:
           ceType = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/CEType' % ( grid, site, ce ), '' )
           if not ceType or not ceType in ceTypeList:
             continue
+        if ceList is not None and not ce in ceList:
+          continue
         if community:
           comList = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/VO' % ( grid, site, ce ), [] )
           if comList and not community in comList:
             continue
+        ceOptionsDict = dict( siteCEParameters )
         result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( grid, site, ce ) )
         if not result['OK']:
           continue
-        ceOptionsDict = result['Value']
+        ceOptionsDict.update( result['Value'] )
         result = gConfig.getSections( '/Resources/Sites/%s/%s/CEs/%s/Queues' % ( grid, site, ce ) )
         if not result['OK']:
           continue
@@ -300,11 +314,3 @@ def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
   """
   return '/Resources/FileCatalogs/%s' % catalogName
-
-def getRegistrationProtocols():
-  """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
-  return gConfig.getValue( '/Resources/FileCatalogs/RegistrationProtocols', ['srm', 'dips'] )
-
-def getThirdPartyProtocols():
-  """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
-  return gConfig.getValue( '/Resources/FileCatalogs/ThirdPartyProtocols', ['srm', 'dips'] )

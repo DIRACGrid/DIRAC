@@ -28,6 +28,12 @@ def getDNForUsername( username ):
     return S_OK( dnList )
   return S_ERROR( "No DN found for user %s" % username )
 
+def getDNForHost( host ):
+  dnList = gConfig.getValue( "%s/Hosts/%s/DN" % ( gBaseRegistrySection, host ), [] )
+  if dnList:
+    return S_OK( dnList )
+  return S_ERROR( "No DN found for host %s" % host )
+
 def getGroupsForDN( dn ):
   retVal = getUsernameForDN( dn )
   if not retVal[ 'OK' ]:
@@ -313,6 +319,7 @@ def getVOMSRoleGroupMapping( vo = '' ):
   vomsGroupDict = {}
   groupVomsDict = {}
   noVOMSGroupList = []
+  noVOMSSyncGroupList = []
 
   for group in groupList:
     vomsRole = getGroupOption( group, 'VOMSRole' )
@@ -320,9 +327,15 @@ def getVOMSRoleGroupMapping( vo = '' ):
       vomsGroupDict.setdefault( vomsRole, [] )
       vomsGroupDict[vomsRole].append( group )
       groupVomsDict[group] = vomsRole
+      syncVOMS = getGroupOption( group, 'AutoSyncVOMS', True )
+      if not syncVOMS:
+        noVOMSSyncGroupList.append( group )
 
   for group in groupList:
     if not group in groupVomsDict:
       noVOMSGroupList.append(group)
 
-  return S_OK( { "VOMSDIRAC": vomsGroupDict, "DIRACVOMS": groupVomsDict, "NoVOMS": noVOMSGroupList } )
+  return S_OK( { "VOMSDIRAC": vomsGroupDict,
+                 "DIRACVOMS": groupVomsDict,
+                 "NoVOMS": noVOMSGroupList,
+                 "NoSyncVOMS": noVOMSSyncGroupList } )

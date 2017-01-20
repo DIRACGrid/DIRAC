@@ -1,15 +1,16 @@
 """ GOCDBClient module is a client for the GOC DB, looking for Downtimes.
 """
-__RCSID__ = "$Id$"
 
-import urllib2
 import time
 import socket
+import requests
 
 from datetime import datetime, timedelta
 from xml.dom import minidom
 
 from DIRAC import S_OK, S_ERROR, gLogger
+
+__RCSID__ = "$Id$"
 
 def _parseSingleElement( element, attributes = None ):
   """
@@ -61,22 +62,23 @@ class GOCDBClient( object ):
 
     :return: (example)
       {'OK': True,
-       'Value': {'92569G0': {'DESCRIPTION': 'Annual site downtime for various major tasks in the area of network, storage, etc.',
-                             'FORMATED_END_DATE': '2014-05-27 15:21',
-                             'FORMATED_START_DATE': '2014-05-26 04:00',
-                             'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14051',
-                             'HOSTED_BY': 'FZK-LCG2',
-                             'HOSTNAME': 'lhcbsrm-kit.gridka.de',
-                             'SERVICE_TYPE': 'SRM.nearline',
-                             'SEVERITY': 'OUTAGE'},
-                 '93293G0': {'DESCRIPTION': 'Maintenance on KIT campus border routers. In the unlikely event that redundancy should fail, FZK-LCG2 connection to the GPN will be down. LHCOPN/LHCONE will stay up.',
-                             'FORMATED_END_DATE': '2014-07-12 14:00',
-                             'FORMATED_START_DATE': '2014-07-12 06:00',
-                             'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14771',
-                             'HOSTED_BY': 'FZK-LCG2',
-                             'HOSTNAME': 'lhcbsrm-kit.gridka.de',
-                             'SERVICE_TYPE': 'SRM.nearline',
-                             'SEVERITY': 'WARNING'}
+       'Value': {'92569G0 lhcbsrm-kit.gridka.de': {'DESCRIPTION': 'Annual site downtime for various major tasks i...',
+	       'FORMATED_END_DATE': '2014-05-27 15:21',
+	       'FORMATED_START_DATE': '2014-05-26 04:00',
+	       'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14051',
+	       'HOSTED_BY': 'FZK-LCG2',
+	       'HOSTNAME': 'lhcbsrm-kit.gridka.de',
+	       'SERVICE_TYPE': 'SRM.nearline',
+	       'SEVERITY': 'OUTAGE'},
+      '99873G0 srm.pic.esSRM': {'HOSTED_BY': 'pic',
+	      'ENDPOINT': 'srm.pic.esSRM',
+	      'SEVERITY': 'OUTAGE',
+	      'HOSTNAME': 'srm.pic.es',
+	      'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=21303',
+	      'FORMATED_START_DATE': '2016-09-14 06:00',
+	      'SERVICE_TYPE': 'SRM',
+	      'FORMATED_END_DATE': '2016-09-14 15:00',
+	      'DESCRIPTION': 'Outage declared due to network and dCache upgrades'}
                  }
         }
 
@@ -117,7 +119,7 @@ class GOCDBClient( object ):
         res_startDate = {}
       else:
         res_startDate = self._downTimeXMLParsing( resXML_startDate, granularity,
-                                                 name, startDateMax )
+                                                  name, startDateMax )
 
       # merge the results of the 2 queries:
       res = res_ongoing
@@ -158,7 +160,7 @@ class GOCDBClient( object ):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    assert( type( granularity ) == str and type( entity ) == str )
+    assert isinstance( granularity, basestring ) and isinstance( entity, basestring )
     try:
       serviceXML = self._getServiceEndpointCurlDownload( granularity, entity )
       return S_OK( self._serviceEndpointXMLParsing( serviceXML ) )
@@ -174,19 +176,42 @@ class GOCDBClient( object ):
     """
     Get the list of all current DTs' links
     """
-    
+
     gDTPage = self._downTimeCurlDownload() # xml format
     gResourceDT = self._downTimeXMLParsing( gDTPage, "Resource" ) # python dictionary format
     gSiteDT = self._downTimeXMLParsing( gDTPage, "Site" ) # python dictionary format
-    
+
     currentDTLinkList = []
     for dt in gResourceDT:
       currentDTLinkList.append(gResourceDT[dt]['GOCDB_PORTAL_URL'])
-      
+
     for dt in gSiteDT:
       currentDTLinkList.append(gSiteDT[dt]['GOCDB_PORTAL_URL'])
-      
+
     return S_OK(currentDTLinkList)
+
+#############################################################################
+
+  def getHostnameDowntime( self, hostname, startDate = None, ongoing = False):
+
+    params = hostname
+
+    if startDate and ongoing:
+      return S_ERROR("Invalid parameter combination - do not specify startDate with ongoing")
+
+    if startDate:
+      params += '&startdate=' + startDate
+
+    if ongoing:
+      params += '&ongoing_only=yes'
+
+    try:
+      response = requests.get('https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime&topentity=' + params)
+      response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+      return S_ERROR("Error %s" % e)
+
+    return S_OK(response.text)
 
 #############################################################################
 
@@ -234,12 +259,11 @@ class GOCDBClient( object ):
     if entity is not None:
       if isinstance( entity, basestring ):
         gocdb_ep = gocdb_ep + "&topentity=" + entity
-    gocdb_ep = gocdb_ep + when + gocdbpi_startDate
+    gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
-    req = urllib2.Request( gocdb_ep )
-    dtPage = urllib2.urlopen( req )
+    dtPage = requests.get( gocdb_ep )
 
-    dt = dtPage.read()
+    dt = dtPage.text
 
     return dt
 
@@ -255,16 +279,16 @@ class GOCDBClient( object ):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    if type( granularity ) != str or type( entity ) != str:
+    if not isinstance( granularity, basestring ) or not isinstance( entity, basestring ):
       raise ValueError( "Arguments must be strings." )
 
     # GOCDB-PI query
     gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_service_endpoint&" \
         + granularity + '=' + entity
 
-    service_endpoint_page = urllib2.urlopen( gocdb_ep )
+    service_endpoint_page = requests.get( gocdb_ep )
 
-    return service_endpoint_page.read()
+    return service_endpoint_page.text
 
 #############################################################################
 
@@ -279,10 +303,9 @@ class GOCDBClient( object ):
 #    # GOCDB-PI query
 #    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_site&sitename="+site
 #
-#    req = urllib2.Request(gocdb_ep)
-#    site_page = urllib2.urlopen(req)
+#    site_page = requests.get( gocdb_ep )
 #
-#    return site_page.read()
+#    return site_page.text
 
 #############################################################################
 
@@ -310,29 +333,29 @@ class GOCDBClient( object ):
 
     for dt_ID in dtDict.keys():
       if siteOrRes in ( 'Site', 'Sites' ):
-        if not ( 'SITENAME' in dtDict[dt_ID].keys() ):
+        if 'SITENAME' not in dtDict[dt_ID]:
           dtDict.pop( dt_ID )
           continue
         if entities is not None:
           if not isinstance( entities, list ):
             entities = [entities]
-          if not ( dtDict[dt_ID]['SITENAME'] in entities ):
+          if not dtDict[dt_ID]['SITENAME'] in entities:
             dtDict.pop( dt_ID )
 
       elif siteOrRes in ( 'Resource', 'Resources' ):
-        if not ( 'HOSTNAME' in dtDict[dt_ID].keys() ):
+        if 'HOSTNAME' not in dtDict[dt_ID]:
           dtDict.pop( dt_ID )
           continue
         if entities is not None:
           if not isinstance( entities, list ):
             entities = [entities]
-          if not ( dtDict[dt_ID]['HOSTNAME'] in entities ):
+          if dtDict[dt_ID]['HOSTNAME'] not in entities:
             dtDict.pop( dt_ID )
 
     if startDateMax is not None:
       for dt_ID in dtDict.keys():
         startDateMaxFromKeys = datetime( *time.strptime( dtDict[dt_ID]['FORMATED_START_DATE'],
-                                                        "%Y-%m-%d %H:%M" )[0:5] )
+                                                         "%Y-%m-%d %H:%M" )[0:5] )
         if startDateMaxFromKeys > startDateMax:
           dtDict.pop( dt_ID )
 

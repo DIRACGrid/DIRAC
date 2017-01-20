@@ -32,7 +32,7 @@ class ComputingElementFactory( object ):
       ceTypeLocal = self.ceType
     ceNameLocal = ceName
     if not ceNameLocal:
-      ceNameLocal = self.ceType 
+      ceNameLocal = self.ceType
     ceConfigDict = getCEConfigDict( ceNameLocal )
     self.log.verbose('CEConfigDict', ceConfigDict)
     if 'CEType' in ceConfigDict:
@@ -52,15 +52,16 @@ class ComputingElementFactory( object ):
     ceClass = result['Value']
     try:
       computingElement = ceClass( ceNameLocal )
+      # Always set the CEType parameter according to instantiated class
+      ceDict = { 'CEType': ceTypeLocal }
       if ceParametersDict:
-        computingElement.setParameters( ceParametersDict )
-      else:
-        computingElement._reset()
+        ceDict.update( ceParametersDict )
+      computingElement.setParameters( ceDict )
     except Exception as x:
       msg = 'ComputingElementFactory could not instantiate %s object: %s' % ( subClassName, str( x ) )
       self.log.exception()
       self.log.warn( msg )
-      return S_ERROR( msg )    
+      return S_ERROR( msg )
 
     return S_OK( computingElement )
 

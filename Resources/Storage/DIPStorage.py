@@ -27,6 +27,10 @@ from DIRAC.Core.Utilities.File                      import getSize
 
 class DIPStorage( StorageBase ):
 
+  _INPUT_PROTOCOLS = ['file', 'dip', 'dips']
+  _OUTPUT_PROTOCOLS = ['dip', 'dips']
+
+
   def __init__( self, storageName, parameters ):
     """
     """
@@ -109,8 +113,15 @@ class DIPStorage( StorageBase ):
     localCache = False
     srcDict = res['Value']
     if srcDict['Protocol'] in ['dips', 'dip']:
+      # Make the service URL from the file URL by stripping off the file part
+      serviceDict = dict( srcDict )
+      serviceDict['Path'] = '/'.join( srcDict['Path'].split('/')[:3] )
+      serviceDict['FileName'] = ''
+      res = pfnunparse( serviceDict )
+      if not res['OK']:
+        return res
+      srcSEURL = res['Value']
       localCache = True
-      srcSEURL = srcDict['Protocol'] + '://' + srcDict['Host'] + ':' + srcDict['Port'] + srcDict['WSUrl']
       transferClient = TransferClient( srcSEURL )
       res = transferClient.receiveFile( srcDict['FileName'], os.path.join( srcDict['Path'], srcDict['FileName'] ) )
       if not res['OK']:

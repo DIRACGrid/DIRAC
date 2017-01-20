@@ -25,7 +25,6 @@
 
 import unittest
 import datetime
-import os
 import tempfile
 # from mock import Mock
 
@@ -34,6 +33,7 @@ parseCommandLine()
 
 from DIRAC.tests.Utilities.utils import find_all
 
+from DIRAC import gLogger
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
@@ -42,7 +42,8 @@ from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAge
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
-from DIRAC import gLogger
+#pylint: disable=protected-access
+#pylint: disable=missing-docstring
 
 def helloWorldJob():
   job = Job()
@@ -55,9 +56,8 @@ def helloWorldJob():
 def createFile( job ):
   tmpdir = tempfile.mkdtemp()
   jobDescription = tmpdir + '/jobDescription.xml'
-  fd = os.open( jobDescription, os.O_RDWR | os.O_CREAT )
-  os.write( fd, job._toXML() )
-  os.close( fd )
+  with open( jobDescription, 'w' ) as fd:
+    fd.write( job._toXML() )
   return jobDescription
 
 
@@ -507,7 +507,7 @@ class Matcher ( TestWMSTestCase ):
 
     tqDB = TaskQueueDB()
     tqDefDict = {'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
-                 'OwnerGroup':'prod', 'Setup':'JenkinsSetup', 'CPUTime':86400}
+                 'OwnerGroup':'prod', 'Setup':'dirac-JenkinsSetup', 'CPUTime':86400}
     res = tqDB.insertJob( jobID, tqDefDict, 10 )
     self.assert_( res['OK'] )
 

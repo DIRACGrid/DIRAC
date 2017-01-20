@@ -5,7 +5,7 @@
 
 import os
 import multiprocessing
-import distutils.spawn
+import distutils.spawn #pylint: disable=no-name-in-module,import-error
 
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
@@ -201,4 +201,4 @@ def getNumberOfCores():
 
 def which( executable ):
 
-  return distutils.spawn.find_executable( executable )
+  return distutils.spawn.find_executable( executable ) #pylint: disable=no-member

@@ -37,7 +37,7 @@ class TestComponentInstallation( unittest.TestCase ):
       raise Exception( result[ 'Message' ] )
     cfg = result[ 'Value' ]
 
-    setup = cfg.getOption( 'DIRAC/Setup', 'JenkinsSetup' )
+    setup = cfg.getOption( 'DIRAC/Setup', 'dirac-JenkinsSetup' )
 
     self.frameworkSetup = cfg.getOption( 'DIRAC/Setups/' + setup + '/Framework' )
     self.rootPwd = cfg.getOption( 'Systems/Databases/Password' )

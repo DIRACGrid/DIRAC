@@ -23,7 +23,6 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 
 from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols
 from DIRAC.Resources.Storage.StorageElement                 import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                    import FileCatalog
 from DIRAC.RequestManagementSystem.Client.Request           import Request
@@ -31,6 +30,7 @@ from DIRAC.RequestManagementSystem.Client.Operation         import Operation
 from DIRAC.RequestManagementSystem.Client.File              import File
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers        import DMSHelpers
 
 class FailoverTransfer( object ):
   """ .. class:: FailoverTransfer
@@ -53,7 +53,7 @@ class FailoverTransfer( object ):
       self.request.SourceComponent = 'FailoverTransfer'
 
     self.defaultChecksumType = defaultChecksumType
-    self.registrationProtocols = getRegistrationProtocols()
+    self.registrationProtocols = DMSHelpers().getRegistrationProtocols()
 
   #############################################################################
   def transferAndRegisterFile( self,
@@ -68,15 +68,17 @@ class FailoverTransfer( object ):
     """
     errorList = []
     fileGUID = fileMetaDict.get( "GUID", None )
+    fileChecksum = fileMetaDict.get( "Checksum", None )
 
     for se in destinationSEList:
-      self.log.info( "Attempting dm.putAndRegister('%s','%s','%s',guid='%s',catalog='%s')" % ( lfn,
+      self.log.info( "Attempting dm.putAndRegister('%s','%s','%s',guid='%s',catalog='%s', checksum = '%s')" % ( lfn,
                                                                                                localPath,
                                                                                                se,
                                                                                                fileGUID,
-                                                                                               fileCatalog ) )
+                                                                                               fileCatalog, fileChecksum ) )
 
-      result = DataManager( catalogs = fileCatalog, masterCatalogOnly = masterCatalogOnly ).putAndRegister( lfn, localPath, se, guid = fileGUID )
+      result = DataManager( catalogs = fileCatalog, masterCatalogOnly = masterCatalogOnly ).putAndRegister( lfn, localPath, se, guid = fileGUID,
+                                                                                                            checksum = fileChecksum )
       self.log.verbose( result )
       if not result['OK']:
         self.log.error( 'dm.putAndRegister failed with message', result['Message'] )

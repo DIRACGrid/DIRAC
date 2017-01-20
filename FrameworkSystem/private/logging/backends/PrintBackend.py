@@ -33,7 +33,7 @@ class PrintBackend( BaseBackend ):
 
   def doMessage( self, messageObject ):
     msg = self.composeString( messageObject )
-    if not self._optionsDictionary[ 'Color' ] or not sys.stdout.isatty():
+    if not self._optionsDictionary[ 'Color' ] or not sys.stdout.isatty(): #pylint: disable=E1101
       print( msg )
       return
     params = []

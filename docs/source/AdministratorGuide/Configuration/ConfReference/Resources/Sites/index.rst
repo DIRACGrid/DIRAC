@@ -50,6 +50,10 @@ This sub-subsection specify the attributes of each particular CE of the site. Mu
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/wnTmpDir*                           | Worker node temporal directory                              | wnTmpDir = /tmp                |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/MaxProcessors*                      | Maximum number of available processors on worker nodes      | MaxProcessors = 12             |
++------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/WholeNode*                          | CE allows *whole node* jobs                                 | WholeNode = True               |
++------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/Queues*                             | Subsection. Queues available for this VO in the CE          | Queues                         |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/Queues/<QUEUE_NAME>*                | Name of the queue exactly how is published                  | jobmanager-pbs-formation       |
@@ -65,4 +69,8 @@ This sub-subsection specify the attributes of each particular CE of the site. Mu
 | *<CE_NAME>/Queues/<QUEUE_NAME>/OutputURL*      | If the CE is a CREAM CE the URL where to find the outputs   | OutputURL = gsiftp://localhost |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/Queues/<QUEUE_NAME>/SI00*           | CE CPU Scaling Reference                                    | SI00 = 2130                    |
++------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/Queues/<QUEUE_NAME>/MaxProcessors*  | overrides *<CE_NAME>/MaxProcessors* at queue level          | MaxProcessors = 12             |
++------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/Queues/<QUEUE_NAME>/WholeNode*      | overrides *<CE_NAME>/WholeNode* at queue level              | WholeNode = True               |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+

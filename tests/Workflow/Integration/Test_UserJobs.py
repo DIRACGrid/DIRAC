@@ -7,6 +7,7 @@ from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 import unittest
+import multiprocessing
 
 from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
 from DIRAC.tests.Utilities.utils import find_all
@@ -91,7 +92,10 @@ class MPSuccess( UserJobTestCase ):
     j.setInputSandbox( find_all( 'mpTest.py', '.', 'Utilities' )[0] )
     j.setTag( 'MultiProcessor' )
     res = j.runLocal( self.d )
-    self.assertTrue( res['OK'] )
+    if multiprocessing.cpu_count() > 1:
+      self.assertTrue( res['OK'] )
+    else:
+      self.assertFalse( res['OK'] )
 
 
 

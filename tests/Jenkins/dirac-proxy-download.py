@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 """ Get a proxy from the proxy manager
 """
+import os
 
 from DIRAC.Core.Base import Script
-
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgFile] UserName Role' % Script.scriptName,
                                      'Arguments:',
                                      '  UserName: User DN'] ) )
-
 Script.registerSwitch( 'R:', 'role=', "set the User DN." )
-
 Script.parseCommandLine()
 
 for unprocSw in Script.getUnprocessedSwitches():
@@ -21,9 +19,10 @@ for unprocSw in Script.getUnprocessedSwitches():
 args = Script.getPositionalArgs()
 dn = ' '.join( args )
 
-import os
 uid = os.getuid()
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
+
+print "Getting proxy for User DN: %s, User role %s" % (dn, role)
 
 res = gProxyManager.downloadProxyToFile( dn, role,
                                          limited = False, requiredTimeLeft = 1200,

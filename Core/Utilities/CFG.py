@@ -5,13 +5,9 @@ import types
 import copy
 import os
 import re
-try:
-  import zipfile
-  gZipEnabled = True
-except ImportError:
-  gZipEnabled = False
+import zipfile
 
-  __RCSID__ = "$Id$"
+__RCSID__ = "$Id$"
 
 try:
   from DIRAC.Core.Utilities              import List, ThreadSafe
@@ -21,7 +17,6 @@ try:
 except Exception:
   #We're out of python, define required utilities
   import threading
-  from types import StringTypes
 
   def S_ERROR( messageString = '' ):
     return { 'OK' : False, 'Message' : str( messageString )  }
@@ -879,7 +874,7 @@ class CFG( object ):
     :param fileName: File name to load the contents from
     :return: This CFG
     """
-    if gZipEnabled and fileName.find( ".zip" ) == len( fileName ) - 4:
+    if zipfile.is_zipfile( fileName ):
       #Zipped file
       zipHandler = zipfile.ZipFile( fileName )
       nameList = zipHandler.namelist()
@@ -887,9 +882,8 @@ class CFG( object ):
       fileData = zipHandler.read( fileToRead )
       zipHandler.close()
     else:
-      fd = file( fileName )
-      fileData = fd.read()
-      fd.close()
+      with open( fileName ) as fd:
+        fileData = fd.read()
     return self.loadFromBuffer( fileData )
 
   @gCFGSynchro
@@ -901,7 +895,7 @@ class CFG( object ):
     :param data: Contents of the CFG
     :return: This CFG
     """
-    commentRE = re.compile( "^\s*#" )
+    commentRE = re.compile( r"^\s*#" )
     self.reset()
     levelList = []
     currentLevel = self

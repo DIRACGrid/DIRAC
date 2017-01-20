@@ -2,11 +2,6 @@
 Request Management System
 -------------------------
 
-:author:  Krzysztof Daniel Ciba <Krzysztof.Ciba@NOSPAMgmail.com>
-:date:    Fri, 28th May 2013
-:version: v6r9
-
-
 System Overview
 ---------------
 
@@ -159,33 +154,10 @@ Nothing special here, just execute `ReqClient.deleteRequest( requestName )` to r
 Request validation
 ------------------
 
-The validation of a new Request that is about to enter the system for execution is checked at two levels:
-
-  * low-level: each property in `Request`, `Operation` and `File` classes is instrumented to check if value provided 
-    to its setter has a meaningful type and value::
-
-      >>> opFile.LFN = 1
-      Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-      File "DIRAC/RequestManagementSystem/private/Record.py", line 52, in __setattr__
-        object.__setattr__( self, name, value )
-      File "DIRAC/RequestManagementSystem/Client/File.py", line 137, in LFN
-        raise TypeError( "LFN has to be a string!" )
-      TypeError: LFN has to be a string!
-      >>> operation.SubmitTime = False
-      Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-      File "DIRAC/RequestManagementSystem/private/Record.py", line 52, in __setattr__
-        object.__setattr__( self, name, value )
-      File "DIRAC/RequestManagementSystem/Client/Operation.py", line 370, in SubmitTime
-        raise TypeError( "SubmitTime should be a datetime.datetime!" )
-      TypeError: SubmitTime should be a datetime.datetime!
-
-
-  * high-level: additionally there is also a request `validator` helper class (`RequestValidator` or its global 
-    instance `gRequestValidator`) - a gatekeeper checking if request 
-    is properly defined. The `validator` is blocking insertion of a new record to the `ReqDB` in case of missing or 
-    malformed attributes and returning `S_ERROR` describing the reason for rejection, i.e.::
+The validation of a new Request that is about to enter the system for execution is checked by the `RequestValidator`
+helper class - a gatekeeper checking if request is properly defined.
+The `validator` is blocking insertion of a new record to the `ReqDB` in case of missing or 
+malformed attributes and returning `S_ERROR` describing the reason for rejection, i.e.::
 
       >>> from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
       >>> from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -205,7 +177,7 @@ The validation of a new Request that is about to enter the system for execution 
       {'Message': "Operation #0 of type 'ForwardDISET' is missing Arguments attribute.", 'OK': False}
 
 
-A word of caution has to be clearly stated over here: both low- and high-level validation is not checking if 
+A word of caution has to be clearly stated over here: the validation is not checking if 
 actual value provided during `Request` definition makes sense, i.e. if you put to the `Operation.TargetSE` unknown 
 name of target storage element from the validation point of view your request will be OK, but  it will 
 miserably fail during execution.    
@@ -214,10 +186,8 @@ Request execution
 -----------------
 
 The execution of the all possible requests is done in only one agent: `RequestExecutingAgent` using special set 
-of handlers derived from `OperationHandlerBase` helper class. What is different from the previous attempt is 
-the way the request is treated: the agent will try to execute request as a whole in one go, while in the old RMS  
-there was several different agents in place, each trying to execute one sub-request type. This approach was
-a horrible complication for maintain request's state machine. 
+of handlers derived from `OperationHandlerBase` helper class.
+The agent will try to execute request as a whole in one go. 
 
 .. image:: ../../../_static/Systems/RMS/RequestExecution.png
    :alt: Treating of Request in the RequestExecutionAgent.
@@ -231,9 +201,32 @@ designated to execute requests read from `ReqDB`. Each worker is processing requ
   * creating on-demand and executing specific operation handler 
   * if operation status is not updated after treatment inside the handler, worker jumps out the loop 
     otherwise tries to pick up next waiting `Operation` 
+  * The Operation executions are attempted several times, and the delay between retry increments
     
 Outside the main execution loop worker is checking request status and depending of its value finalizes request 
 and puts it back to the ReqDB.
+
+Parameters
+^^^^^^^^^^
+
+The RequestExecutingAgent accepts the following configuration parameters:
+
+  * RequestsPerCycle (default 100): number of Requests to execute per cycle
+  * MinProcess (default 2): minimum number of workers process in the `ProcessPool`
+  * MaxProcess (default 4): maximum number of workers process in the `ProcessPool`
+  * ProcessPoolQueueSize (default 20): queue depth of the `ProcessPool`
+  * ProcessPoolTimeout (default 900 seconds): timeout for the `ProcessPool` finalization
+  * ProcessPoolSleep (default 5 seconds): sleep time before retrying to get a free slot in the `ProcessPool`
+  * BulkRequest (default 0): If a positive integer `n` is given, we fetch `n` requests at once from the DB. Otherwise, one by one
+  * OperationHandlers: There should be in this section one section per OperationHandler. The section name is the name of the Operation
+  
+ The OperationHandler sections share a few standard arguments:
+ 
+  * Location: Path (without .py) in the pythonpath to the handler
+  * LogLevel: self explanatory
+  * MaxAttempts (default 256): Maximum attempts to try an Operation, after what, it fails
+
+   
 
 Extending
 ---------
@@ -242,17 +235,23 @@ At the moment of writing following operation types are supported:
 
   * DataManagement (under DMS/Agent/RequestOperations):
 
-    - `PhysicalRemoval`
-    - `PutAndRegister` 
-    - `RegisterFile`
-    - `RemoveFile`
-    - `RemoveReplica`
-    - `ReplicateAndRegister`
-    - `ReTransfer`
+    - `PhysicalRemoval`: Remove files from an SE
+    - `PutAndRegister`: Upload local files to an SE and register it
+    - `RegisterFile`: Register files
+    - `RemoveFile`: Remove files from all SEs and the catalogs
+    - `RemoveReplica`: Remove replicas from an SE and the catalog
+    - `ReplicateAndRegister`: Replicate a file to an SE and register it
 
   * RequestManagement (under RMS/Agent/RequestOperation)
 
-    - `ForwardDISET`
+    - `ForwardDISET`: Asynchronous execution of DISET call
+    
+Note that all the DataManagement operation support an extra parameter in their respective Handler sections: `TimeOutPerfile`.
+The timeout for the operation is then calculated from this value and the number of files in the Operation.
+
+The `ReplicateAndRegister` section accepts extra attributes, specific to FTSTransfers:
+  * FTSMode (default False): if True, delegate transfers to FTS
+  * FTSBannedGroups: list of DIRAC group whose transfers should not go through FTS. 
 
 This of course does not cover all possible needs for a specific VO, hence all developers are encouraged to create and keep
 new operation handlers in VO spin-off projects. Definition of a new operation type should be easy within the context of 
@@ -369,71 +368,13 @@ You need at least one of these - they are backing up new requests in case the `R
 
      dirac-install-agent RequestManagement/RequestExecutingAgent
 
-If one `RequestExecutingAgent` is not enough (and this is a working horse replacing `DISETForwadingAgent`, 
-`TransferAgent`, `RemovalAgent` and `RegistrationAgent`), clone it several times.
+In principle, several `RequestExecutingAgent` can work in parallel, but be aware that their are race conditions 
+that might lead to requests being executed multiple time. 
 
-1. If VO is using FTS system, install `FTSDB`::
-
-     dirac-install-db FTSDB
-
-2. Stop `DataManagement/TransferDBMonitor` service and install `FTSManagerHandler`::
-
-      runsvctrl d runit/DataManagement/TransferDBMonitor
-      dirac-install-service DataManagement/FTSManager
-
-3. Configure FTS sites using command `dirac-dms-add-ftssite`::
-
-      dirac-dms-add-ftssite SITENAME FTSSERVERURL
-
-In case of LHCb VO::
-
-  dirac-admin-add-ftssite CERN.ch https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer 50
-  dirac-admin-add-ftssite CNAF.it https://fts.cr.cnaf.infn.it:8443/glite-data-transfer-fts/services/FileTransfer 50
-  dirac-admin-add-ftssite PIC.es https://fts.pic.es:8443/glite-data-transfer-fts/services/FileTransfer 50
-  dirac-admin-add-ftssite RAL.uk https://lcgfts.gridpp.rl.ac.uk:8443/glite-data-transfer-fts/services/FileTransfer 50
-  dirac-admin-add-ftssite SARA.nl https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer 50
-  dirac-admin-add-ftssite NIKHEF.nl https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer 50
-  dirac-admin-add-ftssite GRIDKA.de https://fts-fzk.gridka.de:8443/glite-data-transfer-fts/services/FileTransfer 50
-  dirac-admin-add-ftssite IN2P3.fr https://cclcgftsprod.in2p3.fr:8443/glite-data-transfer-fts/services/FileTransfer 50
- 
-4. Install `CleanFTSDBAgent`::
-
-     dirac-install-agent DataManagement/CleanFTSDBAgent
-
-
-5. Install `FTSAgent`::
-
-     dirac-install-agent DataManagement/FTSAgent
-
-Again, as in case of `RequestExecutingAgent`, if one instance is not enough, you should probably clone it several times.
-
-
-7. Once all requests from old version of system are processed, shutdown and remove agents:: 
-
-      RequestManagement/DISETForwardingAgent
-      RequestManagement/RequestCleaningAgent
-      DataManagement/TransferAgent
-      DataManagement/RegistrationAgent
-      DataManagement/RemovalAgent
-
-and services::
-
-  RequestManagement/RequestManager
-  RequestManagement/RequestProxy
-  DataManagement/TransferDBMonitor
-
-and dbs::
-
-  RequestManagement/RequestDB
-  DataManagement/TransferDB
 
 -------------------------
 ReqManager and ReqProxies
 -------------------------
-
-:author:  Krzysztof Daniel Ciba <Krzysztof.Ciba@NOSPAMgmail.com>
-:date:    Fri, 18th Jan 2013
-:version: first
 
 Overview
 --------
@@ -442,7 +383,7 @@ The `ReqManager` service is a handler for `ReqDB` using DISET protocol. It expos
 updating and deleting) plus several helper functions like getting requests/operation attributes, exposing some useful information 
 to the web interface/scripts and so on.
 
-The `ReqProxy` is a simple service which start to work only if `ReqManager` is down for some reason and newly created requests cannot be
+The `ReqProxy` is a simple service which starts to work only if `ReqManager` is down for some reason and newly created requests cannot be
 inserted to the `ReqDB`. In such case the `ReqClient` is sending them  to one of the `ReqProxies`, where
 the request is serialized and dumped to the file in the local file system for further processing. A separate background thread in the 
 `ReqProxy` is periodically trying to connect to the `ReqManager`, forwarding saved requests to the place they can 
@@ -498,29 +439,3 @@ Example configuration::
 
  
 Don't forget to put correct FQDNs instead of <central>, <hostA>, <hostB> in above example!   
-
-
-Upgrading from DIRAC v6r5
--------------------------
-
-The DIRAC releases prior to v6r6 were using different model for request forwarding: each CE 
-was able to run its own RequestManager (local), preferably with the file backend (which BTW is obsolete now). 
-Requests created by jobs were put to the local RequestDB using local RequestManager URL. A separate locally running 
-ZuziaAgent [#]_ was picking them up and sending to the central RequestManager service.
-
-For upgrading from the old to the new forwarding model you should follow this procedure:
-
-* install and configure the RequestProxy service in all the places where ZuziaAgent is running, make sure 
-  the port used by this service (9161) is visible to the outside world
-* stop ZuziaAgent when no more requests are held in the local RequestDB
-* stop local RequestManager
-* update DIRAC configuration by adding RequestProxy FQDN to the RequestProxyURLs 
-  and removing ZuziaAgent and local RequestManager sections 
-  
-
-.. rubric:: Footnotes
- 
-.. [#] Zuzia is a little Susan in Polish, the given name of a daugther of DIRAC team developer who
-  left the project a few years ago. 
-
-

@@ -1,8 +1,509 @@
-[v6r15-pre22]
+[v6r17p3]
+
+*RSS
+FIX: Synchronizer - the sync method removes the resources that are no longer 
+     in the CS from the DowntimeCache table
+
+*DMS
+CHANGE: dirac-dms-find-lfns - added SE switch to look for files only having
+        replicas on a given SE (list)
+
+*TS
+FIX: TaskManager - optimization of the site checking while preparing job; optimized
+     creation of the job template
+
+*Resources
+CHANGE: GFAL2_SRM2Storage, SRM2Storage - added gsiftp to the list of OUTPUT protocols 
+
+[v6r17p2]
+
+*Monitoring
+FIX: ElasticSearchDB - fixes required to use host certificate for connection;
+     fixes required to pass to version 5.0.1 of the elasticsearch.py binding
+
+[v6r17p1]
+
+*RSS
+FIX: GOCDBSync - make commmand more verbose and added some minor fixes
+
+[v6r17]
+
+*Core
+FIX: Adler - check explicitly if the checksum value is "False"
+FIX: install_site.sh - added command line option to choose DIRAC version to install
+NEW: ComponentInstaller - added configuration parameters to setup NoSQL database
+
+*Framework
+CHANGE: Logger - test level before processing string (i.e. mostly converting objects to strings)  
+CHANGE: dirac-proxy-init - check and attempt to update local CRLs at the same time as
+        generating user proxy
+CHANGE: ProxyManager service - always store the uploaded proxy even if the already stored
+        one is of the same validity length to allow replacement in case of proxy type
+        changes, e.g. RFC type proxies           
+
+*DMS
+NEW: Next in implementation multi-protocol support for storage elements. When performing 
+     an action on the StorageElement, instead of looping over all the protocol plugins, 
+     we loop over a filtered list. This list is built taking into account which action 
+     is taken (read vs write), and is also sorted according to lists defined in the CS.
+     The negotiation for third party transfer is also improved: it takes into account all 
+     possible protocols the source SE is able to produce, and all protocols the target is 
+     able to receive as input.
+NEW: StorageElement - added methods for monitoring used disk space
+FIX: ReplicateAndRegister - fix the case when checksum is False in the FC
+NEW: DMSHelpers - get list of sites from CS via methods; allow to add automatically sites 
+     with storage
+
+*RSS
+NEW: FreeDiskSpace - added new command which is used to get the total and the remaining 
+     disk space of all dirac storage elements that are found in the CS and inserts the 
+     results in the SpaceTokenOccupancyCache table of ResourceManagementDB database.  
+NEW: GOCDBSync command to ensure that all the downtime dates in the DowntimeCache 
+     table are up to date       
+
+Resources*
+NEW: Updated Message Queue interface: MQ service connection management, support for
+     SSL connections, better code arrangement
+
+*Workflow
+FIX: Modulebase, Script - avoid too many unnecessarily different application states
+
+*WMS
+FIX: JobStateUpdate service - in setJobStatusBulk() avoid adding false information when adding 
+     an application status
+     
+*TS
+FIX: TaskManager, TaskManagerAgentBase - standardize the logging information; removed unnecessary 
+     code; use iterators wherever possible     
+NEW: Introduced metadata-based filters when registering new data in the TS as catalog       
+
+[v6r16p5]
+
+FIX: included patches from v6r15p27
+
+[v6r16p4]
+
+FIX: applied fixes from v6r15p26
+
+[v6r16p3]
+
+FIX: incorporated fixes from v6r15p25
+
+[v6r16p2]
+
+*Configuration
+CHANGE: VOMS2CSAgent - remove user DNs which are no more in VOMS. Fixes #3130
+
+*Monitoring
+CHANGE: WMSHistory - added user, jobgroup and usergroup selection keys
+
+*DMS
+FIX: DataManager - retry checksum calculation on putAndRegister, pass checksum to the DataManager
+     object in the FailoverTransfer object.
+FIX: DatasetManager, FileCatalogClientCLI - bug fixes in the dataset management and commands      
+     
+*WMS
+CHANGE: JobManager - added 'Killed' to list of jobs status that can be deleted     
+
+[v6r16p1]
+
+*Monitoring
+CHANGE: MonitorinDB - allow to use more than one filter condition
+
+*WMS
+CHANGE: StalledJobAgent - send a kill signal to the job before setting it Failed. This should 
+        prevent jobs to continue running after they have been found Stalled and then Failed.
+
+[v6r16]
+
+*Core
+CHANGE: dirac-install, dirac-configure - use Extensions options consistently, drop
+        ExtraModule option
+CHANGE: dirac-install - use insecure ssl context for downloading files with urllib2.urlopen    
+CHANGE: GOCDBClient - replaced urllib2 with requests module
+        FIX: dirac-setup-site - added switch to exitOnError, do not exit on error by default
+CHANGE: Added environment variables to rc files to enable certificates verification (necessary for python 2.7.9+)
+FIX: ComponentInstaller - always update CS when a database is installed, even if it is
+     already existing in the db server 
+FIX: SSLSocketFactory - in __checkKWArgs() use correct host address composed of 2 parts      
+
+*Framework
+FIX: SystemAdministrator service - do not install WebAppDIRAC by default, only for the host
+     really running the web portal
+
+*Accounting
+FIX: JobPolicy - remove User field from the policy conditions to fix a problem that 
+     non-authenticated user gets more privileges on the Accounting info.
+
+*Monitoring
+NEW: New Monitoring system is introduced to collect, analyze and display various
+     monitoring information on DIRAC components status and behavior using ElasticSearch
+     database. The initial implementation is to collect WMSHistory counters.
+
+*DMS
+NEW: MoveReplica operation for the RMS system and a corresponding dirac-dms-move-replica-request
+     comand line tool
+
+*Resources
+NEW: MessageQueue resources to manage MQ connections complemented with
+     MQListener and MQPublisher helper classes
+NEW: SudoComputingElement - computing element to execute payload with a sudo to a dedicated
+     UNIX account     
+
+[v6r15p27]
+
+*Configuration
+FIX: CSAPI - changed so that empty but existing options in the CS can be still
+     modified
+
+[v6r15p26]
+
+*WMS
+FIX: SandboxStoreClient - ensure that the latest sandbox is returned in the Web
+     portal in the case the job was reset.
+
+[v6r15p25]
+
+*Resources
+FIX: HTCondorCEComputingElement - cast useLocalSchedd to bool value even if it
+     is defined as srting
+
+[v6r15p24]
+
+*Resources
+CHANGE: HTCondorCE - added option to use remote scheduler daemon
+
+[v6r15p23]
+
+*DMS
+FIX: dirac-dms-find-lfns - fixed bug causing generl script failure
+
+[v6r15p22]
+
+*Interfaces
+CHANGE: Dirac API - add possibility to define the VO in the API
+CHANGE: Dirac API - add checkSEAccess() method for checking SE status
+
+[v6r15p21]
+
+*WMS
+FIX: removed default LCG version from the pilot (dirac-install will use the one of the requested release)
+
+*RMS
+FIX: reject bad checksum
+
+[v6r15p20]
+
+*Framework
+FIX: SystemAdministratorHandler - in updateSoftware() put explicitly the project
+     name into the command
+FIX: ComponentInstaller - added baseDir option to the mysql_install_db call
+     while a fresh new database server installation     
+
+[v6r15p19]
+
+*Core
+FIX: dirac-install - lcg-binding version specified in the command switch
+     overrides the configuration option value
+     
+*DMS
+FIX: RemoveFile operation - Remove all files that are not at banned SEs
+
+*TMS
+FIX: FileReport - after successful update of input files status, clear the 
+     cache dictionary to avoid double update      
+
+[v6r15p18]
+
+*Configuration
+FIX: Utilities - take into account WallClock time limit while the MaxCPUTime
+     evaluation in the Bdii@CSAgent 
+
+*DMS
+FIX: FTSJob - specify checksum type at FTS request submission
+
+*StorageManagement
+FIX: StorageManagerClient - in getFilesToStage() avoid exception in case
+     of no active replicas
+
+*Resources
+FIX: StorageBase - in getParameters() added baseURL in the list of parameters returned 
+
+*WMS
+FIX: CPUNormalization - minor code rearrangement
+
+[v6r15p17]
+
+*Core
+CHANGE: GOCDBClient - catch all downtimes, independently of their scope
+FIX: LSFTimeLeft - accept 2 "word" output from bqueues command
+CHANGE: dirac-install - create bashrc/cshrc with the possibility to define
+        installation path in the $DIRAC env variable, this is needed for
+        the cvmfs DIRAC client installation
+
+[v6r15p16]
+
+*Core
+CHANGE: AgentModule - added a SIGALARM handler to set a hard timeout for each Agent
+        cycle to avoid agents stuck forever due to some faults in the execution code
+
+*DMS
+FIX: DataManager - cache SE status information in filterTapeReplicas() to speed up execution
+     
+*WMS
+BUGFIX: InputDataByProtocol - the failed resolution for local SEs was not considered correctly:
+        if there were other SEs that were ignored (e.g. because on tape)     
+     
+*TS
+FIX: TransformationAgent - in getDataReplicasDM() no need to get replica PFNs     
+
+[v6r15p15]
+
+*Configuration
+CHANGE: VOMS2CSAgent - added new features: deleting users no more registered in VOMS;
+        automatic creation of home directories in the File Catalog for new users
+
+*WMS
+CHANGE: JobScheduling - correct handling of user specified sites in the executor,
+        including non-existent (misspelled) site names
+FIX: CPUNormalization - accept if the JOBFEATURES information is zero or absent        
+
+[v6r15p14]
+
+*Core
+FIX: BaseClient - proper error propagation to avoid excessive output in the logger
+
+*Configuration
+CHANGE: Resources helper - in getStorageElementOptions() dereference SEs containing
+        BaseSE and Alias references
+
+*Accounting
+FIX: AccountingDB - changes to use DB index to speed-up removal query
+
+*DMS
+CHANGE: DMSHelpers - define SE groups SEsUsedForFailover, SEsNotToBeUsedForJobs, 
+        SEsUsedForArchive in the Operations/DataManagement and use them in the
+        corresponding helper functions
+FIX: FTSJob - temporary fix for the FTS rest interface Request object until it is
+     fixed in the FTS REST server         
+
+*Resources
+FIX: HTCondorCEComputingElement - check that some path was found in findFile(), return with error otherwise
+CHANGE: ARCComputingElement - consider jobs in Hold state as Failed as they never come back
+CHANGE: ARCComputingElement - do not use JobSupervisor tool for bulk job cancellation as
+        it does not seem to work, cancel jobs one by one
+FIX: ARCComputingElement - ensure that pilot jobs that are queued also get their proxies renewed on ARC-CE        
+
+*WMS
+FIX: SiteDirector - ensure that a proxy of at least 3 hours is available to the updatePilotStatus 
+     function so that if it renews any proxies, it's not renewing them with a very short proxy
+
+[v6r15p13]
+
+*Resources
+FIX: HTCondorCEComputingElement - fixed location of log/output files 
+  
+*TS
+FIX: ValidateOutputDataAgent - works now with the DataManager shifter proxy
+
+[v6r15p12]
+
+*Core
+FIX: Graphs - make sure matplotlib package is always using Agg backend
+FIX: cshrc - added protection for cases with undefined environment variables
+NEW: AuthManager - added possibility to define authorization rules by VO
+     and by user group
+
+*Configuration
+NEW: Resources, ComputingElement(Factory) - added possibility to define site-wide
+     CE parameters; added possibility to define common parameters for a given
+     CE type.
+
+*Framework
+FIX: SystemAdministrator service - avoid using its own client to connect
+     to itself for storing host information
+FIX: SystemAdministratorClientCLI, dirac-populate-component-db - fix insertion
+     of wrongly configured component to the ComponentMonitorDB     
+
+*DMS
+FIX: FileCatalog service - fix the argument type for getAncestor(), getDescendents()
+
+*WMS
+NEW: JobCleaningAgent - add an option (disabled by default) to remove Jobs from the 
+     dirac server irrespective of their state
+
+*Resources
+CHANGE: HTCondorCE - added new configurable options - ExtraSubmitString, WorkingDirectory
+        DaysToKeepLogs
+
+[v6r15p11]
+
+*Framework
+NEW: dirac-proxy-destroy command to destroy proxy locally and in the ProxyManager
+     service
+CHANGE: ProxyManagerClient - reduce the proxy caching time to be more suitable
+        for cases with short VOMS extensions     
+
+*Configuration
+FIX: VOMS2CSAgent - fixed typo bug in execute()
+
+*RMS
+FIX: RequestTask - fix if the problem when the processing of an operation times out, 
+     there was no increment of the attempts done.
+
+*DMS
+FIX: FTSAgent - avoid FTS to fetch a request that was canceled
+
+*Resources
+FIX: HTCondorCE - protect against non-standard line in 'job status' list in the getJobStatus()
+CHANGE: ComputingElement - reduce the default time length of the payload proxy to accomodate
+        the case with short VOMS extensions
+
+[v6r15p10]
+
+*Core
+FIX: MySQL - do not print database access password explicitly in the logs
+
+*Configuration
+CHANGE: VOMS2CSAgent - show in the log if there are changes ready to be committed
+CHANGE: Bdii2CSAgent - get information from alternative BDII's for sites not 
+        existing in central BDII
+
+*Framework
+FIX: ComponentInstaller - fixed location of stop_agent file in the content of t file
+     of the runsv tool 
+
+*RMS
+FIX: Changed default port of ReqProxy service to 9161 from 9198
+
+*Resources
+FIX: BatchSystem/Condor, HYCondroCEComputingElement - more resilient parsing 
+     of the status lookup command
+FIX: CREAMComputingElement - in case of glite-ce-job-submit error print our both 
+     std.err and std.out for completeness and better understanding    
+
+*DMS
+FIX: FileCatalogClient - bug fix in getDirectoryUserMetadata()
+
+*Interfaces
+FIX: Dirac - in replicateFile() in case of copying via the local cache check if 
+     there is another copy for the same file name is happening at the same time
+
+[v6r15p9]
+
+*Configuration
+FIX: fixed CS agents initialization bug
+
+*DMS
+FIX: fixed inconsistency between DataIntegrity and ConsistencyInspector modules
+
+*Interfaces
+FIX: Fix download of LFNs in InputSandbox when running job locally
+
+[v6r15p8]
+
+*Configuration
+NEW: Added DryRun option for CS agents (false by default, True for new installations)
+
+[v6r15p7]
+
+*Core
+CHANGE: Enabled attachments in the emails
+
+*TS
+*CHANGE: Added possibility for multiple operations in Data Operation Transformations
+
+[v6r15p6]
+
+*Resources
+FIX: FCConditionParser: ProxyPlugin handles the case of having no proxy
+
+*WMS
+FIX: MJF messages correctly parsed from the pilot
+NEW: Added integration test for TimeLeft utility and script calling it
+
+[v6r15p5]
+
+Included fixes from v6r14p36 patch release
+
+*Framework
+FIX: added GOCDB2CSAgent in template
+FIX: Fixed permissions for HostLogging
+
+*DMS
+FIX: Introduced hopefully temporary fix to circumvent globus bug in gfal2
+
+*WMS:
+FIX: added test for MJF and made code more robust
+
+*RSS
+NEW: HTML notification Emails
+
+
+[v6r15p4]
+
+Included fixes from v6r14p35 patch release
+
+*Core
+NEW: Added a new way of doing pfnparse and pfnunparse using the standard python library. 
+     The two methods now contains a flag to know which method to use. By default, the old 
+     hand made one is used. The new one works perfectly for all standard protocols, except SRM
+
+*RSS
+FIX: dirac-rss-sync - command fixed to work with calling services rather than 
+     databases directly
+     
+*Resources     
+CHANGE: In multiple Storage classes use pfnparse and pfnunparse methods to manipulate
+        url strings instead of using just string operations
+NEW: A new attribute is added to the storage plugins: DYNAMIC_OPTIONS. This allows to construct 
+     URLs with attributes going at the end of the URL, in the form ?key1=value1&key2=value2 
+     This is useful for xroot and http.         
+
+[v6r15p3]
+
+Included changes from v6r14p34 patch release
+
+*Accounting
+FIX: DataStoreClient - catch all exceptions in sending failover accounting 
+     requests as it could disrupt the logic of the caller 
+
+*DMS
+CHANGE: dirac-dms-show-se-status - added switches to show SEs only accessible by
+        a given VO and SEs not assigned to any VO
+FIX: dirac-dms-replicate-and-register-request - prints out the new request IDs
+     to allow their monitoring by ID rather than possibly ambiguous request name      
+
+[v6r15p2]
+
+*WMS
+FIX: pilotCommands - protect calls to external commands in case of empty
+     or erroneous output
+FIX: Matcher - fixed bug in the tag matching logic: if a site presented an empty
+     Tag list instead of no Tag field at all, it was interpreted as site accepts
+     all the tags
+FIX: Matcher - matching parameters are printed out in the Matcher rather than
+     in the TaskQueueDB, MaxRAM and Processors are not expanded into tags           
+
+[v6r15p1]
+
+Included patches for v6r14p32
+
+*Configuration
+CHANGE: Resources helper - remove "dips" protocol from the default list of third party
+        protocols
+
+*Resources
+FIX: XROOTStorage - bug fixed in __createSingleDirectory() - proper interpretation
+     of the xrootClient.mkdir return status
+FIX: XROOTStorage unit test reenabled by mocking the xrootd import      
+
+[v6r15]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
 Made service handlers systematically working with unicode string arguments
+Added requirements.txt and Makefile in the root of the project to support pip style installation
 
 DIRAC documentation moved to the "docs" directory if the DIRAC project from the
 DIRACDocs separate project.
@@ -110,6 +611,7 @@ FIX: Request - fix for the case when one of the request is malformed, the rest o
      the requests could not be swiped
 FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request is buggy     
 CHANGE: ReqProxyHandler - added monitoring counters
+NEW: ReqProxyHandler - added interface methods to list and show requests in a ReqProxy
 
 *Resources
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
@@ -122,6 +624,128 @@ NEW: Job API - added setParameterSequence() to add an arbitrary number of parame
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p39]
+
+Patch to include WebApp version v1r6p32
+
+[v6r14p38]
+
+*Core
+CHANGE: Unhashable objects as DAG graph nodes
+
+*RMS
+CHANGE: Added possibility of constant delay for RMS operations
+
+[v6r14p37]
+
+*Core
+NEW: Added soft implementation of a Direct Acyclic Graph
+
+*Configuration
+FIX: Bdii2CSAgent finds all CEs of a site (was finding only one)
+
+*Resources
+FIX: Make sure transferClient connects to the same ProxyStorage instance
+
+[v6r14p36]
+
+*Core
+FIX: Sending mails to multiple recipients was not working
+
+*WMS
+FIX: Allow staging from SEs accessible by protocol
+
+
+[v6r14p35]
+
+*Core
+FIX: SOAPFactory - fixes for import statements of suds module to work with the
+     suds-jurko package that replaces the suds package
+
+*Resources
+FIX: BatchSystems.Torque - take into account that in some cases jobID includes
+     a host name that should be stripped off
+FIX: SSHComputingElement - in _getJobOutputFiles() fixed bug where the output
+     of scpCall() call was wrongly interpreted    
+FIX: ProxyStorage - evaluate the service url as simple /DataManagement/StorageElementProxy
+     to solve the problem with redundant StorageElementProxy services with multiple
+     possible urls       
+     
+*RSS
+CHANGE: Configurations.py - Added DTScheduled3 policy (3 hours before downtime)     
+     
+*WMS
+FIX: pilotCommands - take into account that in the case of Torque batch system
+     jobID includes a host name that should be stripped off   
+       
+[v6r14p34]
+
+*Configuration
+FIX: Bdii2CSAgent - reinitilize the BDII info cache at each cycle in order not to 
+     carry on obsoleted stuff. Fixes #2959
+
+*Resources
+FIX: Slurm.py - use --partition rather --cluster for passing the DIRAC queue name
+FIX: DIPStorage - fixed bug in putFile preventing third party-like transfer from
+     another DIPS Storage Element. Fixes #2413
+
+*WMS
+CHANGE: JobWrapper - added BOINC user ID to the job parameters
+FIX: pilotCommands - interpret SLURM_JOBID environment if present
+FIX: WMSClient - strip of comments in the job JDL before any processing.
+     Passing jdl with comments to the WMS could provoke errors in the
+     job checking.
+
+[v6r14p33]
+
+*WMS
+FIX: JobAgent - included a mechanism to stop JobAgent if the host operator
+     creates /var/lib/dirac_drain
+FIX: CPUNormalization - fixed a typo in getPowerFromMJF() in the name of the
+     exception log message           
+
+[v6r14p32]
+
+*Core
+FIX: InstallTools - getStartupComponentStatus() uses "ps -p <pid>" variant of the
+     system call to be independent of the OS differences
+
+*DMS
+FIX: RemoveReplica - bulkRemoval() was modifying its input dict argument and returning it,
+     which was useless, only modify argument
+
+*WMS
+CHANGE: CPUNormalization - get HS'06 worker node value from JOBFEATURES if available
+
+*RMS
+FIX: ReqClient - bug fixed preventing the client to contact multiple instances of ReqManager
+     service
+
+[v6r14p31]
+
+*DMS
+FIX: FTSAgent - if a file was not Scheduled, the FTSAgent was setting it Done even if it had 
+     not been replicated.
+
+*Workflow
+FIX: FailoverRequest - forcing setting the input file Unused if it was already set Processed
+
+[v6r14p30]
+
+*Framework
+BUGFIX: MonitoringHandler - in deleteActivities() use retVal['Message'] if result is not OK
+
+*Resources
+FIX: XROOTStorage - in getFile() evaluate file URL without URL parameters
+                    in __putSingleFile() use result['Message'] in case of error
+                    
+*RMS
+FIX: dirac-rms-cancel-request - fixed crash because of gLogger object was not imported
+
+*TS
+FIX: TransformationCLI - in resetProcessedFile() added check that the Failed dictionary
+     is present in the result of a call                    
 
 [v6r14p29]
 
@@ -144,7 +768,7 @@ CHANGE: dirac-wms-cpu-normalization - reduce memory usage by using xrange() inst
 [v6r14p28]
 
 *TS
-FIX: TaskManager - protection against am empty task disctionary in 
+FIX: TaskManager - protection against am empty task dictionary in 
      prepareTransformationTasks()
 FIX: Test_Client_TransformationSystem - fixes ti run in the Travis CI 
      environment

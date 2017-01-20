@@ -26,7 +26,6 @@ from DIRAC.Core.Utilities.List import randomize, breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols, getThirdPartyProtocols
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -97,12 +96,12 @@ class DataManager( object ):
 
     self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
-    self.registrationProtocol = getRegistrationProtocols()
-    self.thirdPartyProtocols = getThirdPartyProtocols()
     self.resourceStatus = ResourceStatus()
     self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
     self.useCatalogPFN = Operations( self.vo ).getValue( 'DataManagement/UseCatalogPFN', True )
-    self.dmsHelper = DMSHelpers()
+    self.dmsHelper = DMSHelpers( vo = vo )
+    self.registrationProtocol = self.dmsHelper.getRegistrationProtocols()
+    self.thirdPartyProtocols = self.dmsHelper.getThirdPartyProtocols()
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -451,7 +450,15 @@ class DataManager( object ):
     if not checksum:
       log.debug( "Checksum information not provided. Calculating adler32." )
       checksum = fileAdler( fileName )
-      log.debug( "Checksum calculated to be %s." % checksum )
+      # Make another try
+      if not checksum:
+        log.debug( "Checksum calculation failed, try again" )
+        checksum = fileAdler( fileName )
+      if checksum:
+        log.debug( "Checksum calculated to be %s." % checksum )
+      else:
+        return S_ERROR( DErrno.EBADCKS, "Unable to calculate checksum" )
+
     res = self.fc.exists( {lfn:guid} )
     if not res['OK']:
       errStr = "Completely failed to determine existence of destination LFN."
@@ -499,7 +506,6 @@ class DataManager( object ):
 
       # We don't consider it a failure if the SE is not valid
       if not DErrno.cmpError( res, errno.EACCES ):
-        errStr = "Failed to put file to Storage Element."
         oDataOperation.setValueByKey( 'TransferOK', 0 )
         oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
         oDataOperation.setEndTime()
@@ -507,6 +513,7 @@ class DataManager( object ):
         gDataStoreClient.commit()
         startTime = time.time()
         log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
+      errStr = "Failed to put file to Storage Element."
       log.debug( errStr, "%s: %s" % ( fileName, res['Message'] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     successful[lfn] = {'put': putTime}
@@ -699,7 +706,7 @@ class DataManager( object ):
 
     # Get the LFN replicas from the file catalog
     log.debug( "Attempting to obtain replicas for %s." % ( lfn ) )
-    res = returnSingleResult( self.getReplicas( lfn ) )
+    res = returnSingleResult( self.getReplicas( lfn, getUrl = False ) )
     if not res[ 'OK' ]:
       errStr = "Failed to get replicas for LFN."
       log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
@@ -812,54 +819,75 @@ class DataManager( object ):
         continue
 
 
-      replicationProtocol = res['Value']
+      replicationProtocols = res['Value']
 
-      if not replicationProtocol:
+      if not replicationProtocols:
         possibleIntermediateSEs.append( candidateSE )
         log.debug( "No protocol suitable for replication found" )
         continue
 
-      log.debug( 'Found common protocols', replicationProtocol )
+      log.debug( 'Found common protocols', replicationProtocols )
 
       # THIS WOULD NOT WORK IF PROTO == file !!
+      # Why did I write that comment ?!
 
-      # Compare the urls to make sure we are not overwriting
-      res = returnSingleResult( candidateSE.getURL( lfn, protocol = replicationProtocol ) )
-      if not res['OK']:
-        log.debug( "Cannot get sourceURL", res['Message'] )
-        continue
+      # We try the protocols one by one
+      # That obviously assumes that there is an overlap and not only
+      # a compatibility between the  output protocols of the source
+      # and the input protocols of the destination.
+      # But that is the only way to make sure we are not replicating
+      # over ourselves.
+      for compatibleProtocol in replicationProtocols:
 
-      sourceURL = res['Value']
+        # Compare the urls to make sure we are not overwriting
+        res = returnSingleResult( candidateSE.getURL( lfn, protocol = compatibleProtocol ) )
+        if not res['OK']:
+          log.debug( "Cannot get sourceURL", res['Message'] )
+          continue
 
-      res = returnSingleResult( destStorageElement.getURL( destPath, protocol = replicationProtocol ) )
-      if not res['OK']:
-        log.debug( "Cannot get destURL", res['Message'] )
-        continue
-      destURL = res['Value']
+        sourceURL = res['Value']
 
-      if sourceURL == destURL:
-        log.debug( "Same source and destination, give up" )
-        continue
+        destURL = ''
+        res = returnSingleResult( destStorageElement.getURL( destPath, protocol = compatibleProtocol ) )
+        if not res['OK']:
 
-      # Attempt the transfer
-      res = returnSingleResult( destStorageElement.replicateFile( {destPath:sourceURL}, sourceSize = catalogSize ) )
+          # for some protocols, in particular srm
+          # you might get an error because the file does not exist
+          # which is exactly what we want
+          # in that case, we just keep going with the comparison
+          # since destURL will be an empty string
+          if not DErrno.cmpError( res, errno.ENOENT ):
+            log.debug( "Cannot get destURL", res['Message'] )
+            continue
+        else:
+          log.debug( "File does not exist: Expected error for TargetSE !!")
+          destURL = res['Value']
 
-      if not res['OK']:
-        log.debug( "Replication failed", "%s from %s to %s." % ( lfn, candidateSEName, destSEName ) )
-        continue
+        if sourceURL == destURL:
+          log.debug( "Same source and destination, give up" )
+          continue
+
+        # Attempt the transfer
+        res = returnSingleResult( destStorageElement.replicateFile( {destPath:sourceURL},
+                                                                     sourceSize = catalogSize,
+                                                                     inputProtocol = compatibleProtocol ) )
+
+        if not res['OK']:
+          log.debug( "Replication failed", "%s from %s to %s." % ( lfn, candidateSEName, destSEName ) )
+          continue
 
 
-      log.debug( "Replication successful.", res['Value'] )
+        log.debug( "Replication successful.", res['Value'] )
 
-      res = returnSingleResult( destStorageElement.getURL( destPath, protocol = self.registrationProtocol ) )
-      if not res['OK']:
-        log.debug( 'Error getting the registration URL', res['Message'] )
-        # it's maybe pointless to try the other candidateSEs...
-        continue
+        res = returnSingleResult( destStorageElement.getURL( destPath, protocol = self.registrationProtocol ) )
+        if not res['OK']:
+          log.debug( 'Error getting the registration URL', res['Message'] )
+          # it's maybe pointless to try the other candidateSEs...
+          continue
 
-      registrationURL = res['Value']
+        registrationURL = res['Value']
 
-      return S_OK( {'DestSE':destSEName, 'DestPfn':registrationURL} )
+        return S_OK( {'DestSE':destSEName, 'DestPfn':registrationURL} )
 
 
 
@@ -1474,7 +1502,8 @@ class DataManager( object ):
   def getActiveReplicas( self, lfns, getUrl = True, diskOnly = False, preferDisk = False ):
     """ Get all the replicas for the SEs which are in Active status for reading.
     """
-    return self.getReplicas( lfns, allStatus = False, getUrl = getUrl, diskOnly = diskOnly, preferDisk = preferDisk, active = True )
+    return self.getReplicas( lfns, allStatus = False, getUrl = getUrl, diskOnly = diskOnly,
+                             preferDisk = preferDisk, active = True )
 
   def __filterTapeReplicas( self, replicaDict, diskOnly = False ):
     """
@@ -1482,24 +1511,35 @@ class DataManager( object ):
     If there is a disk replica, removetape replicas, else keep all
     The input argument is modified
     """
-    for lfn, replicas in replicaDict['Successful'].items():  # Beware, tehre is a del below
-      self.__filterTapeSEs( replicas, diskOnly = diskOnly )
+    seList = set( se for ses in replicaDict['Successful'].itervalues() for se in ses )
+    # Get a cache of SE statuses for long list of replicas
+    seStatus = dict( ( se,
+                       ( self.__checkSEStatus( se, status = 'DiskSE' ),
+                        self.__checkSEStatus( se, status = 'TapeSE' ) ) ) for se in seList )
+    for lfn, replicas in replicaDict['Successful'].items():  # Beware, there is a del below
+      self.__filterTapeSEs( replicas, diskOnly = diskOnly, seStatus = seStatus )
       # If diskOnly, one may not have any replica in the end, set Failed
       if diskOnly and not replicas:
         del replicaDict['Successful'][lfn]
         replicaDict['Failed'][lfn] = 'No disk replicas'
     return
 
-  def __filterTapeSEs( self, replicas, diskOnly = False ):
+  def __filterTapeSEs( self, replicas, diskOnly = False, seStatus = None ):
     """ Remove the tape SEs as soon as there is one disk SE or diskOnly is requested
     The input argument is modified
     """
+    # Build the SE status cache if not existing
+    if seStatus is None:
+      seStatus = dict( ( se,
+                         ( self.__checkSEStatus( se, status = 'DiskSE' ),
+                          self.__checkSEStatus( se, status = 'TapeSE' ) ) ) for se in replicas )
+
     for se in replicas:  #  There is a del below but we then return!
       # First find a disk replica, otherwise do nothing unless diskOnly is set
-      if diskOnly or self.__checkSEStatus( se, status = 'DiskSE' ):
+      if diskOnly or seStatus[se][0]:
         # There is one disk replica, remove tape replicas and exit loop
         for se in replicas.keys():  # Beware: there is a pop below
-          if self.__checkSEStatus( se, status = 'TapeSE' ):
+          if seStatus[se][1]:
             replicas.pop( se )
         return
     return
@@ -1531,9 +1571,12 @@ class DataManager( object ):
     Check a replica dictionary for active replicas
     The input dict is modified, no returned value
     """
+    seList = set( se for ses in replicaDict['Successful'].itervalues() for se in ses )
+    # Get a cache of SE statuses for long list of replicas
+    seStatus = dict( ( se, self.__checkSEStatus( se, status = 'Read' ) ) for se in seList )
     for replicas in replicaDict['Successful'].itervalues():
       for se in replicas.keys():  # Beware: there is a pop below
-        if not self.__checkSEStatus( se, status = 'Read' ):
+        if not seStatus[se]:
           replicas.pop( se )
     return
 

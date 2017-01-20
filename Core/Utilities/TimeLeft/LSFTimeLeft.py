@@ -1,7 +1,6 @@
 """ The LSF TimeLeft utility interrogates the LSF batch system for the
     current CPU and Wallclock consumed, as well as their limits.
 """
-__RCSID__ = "$Id$"
 
 import os
 import re
@@ -11,6 +10,8 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 from DIRAC.Core.Utilities.Os import sourceEnv
+
+__RCSID__ = "$Id$"
 
 
 class LSFTimeLeft( object ):
@@ -49,6 +50,9 @@ class LSFTimeLeft( object ):
         if len( info ) >= 4:
           self.cpuLimit = float( info[0] ) * 60
           self.cpuRef = info[3]
+        elif len( info ) == 2 and info[1] == "min":
+          self.cpuLimit = float( info[0] ) * 60
+          self.cpuRef = None
         else:
           self.log.warn( 'Problem parsing "%s" for CPU limit' % lines[i + 1] )
           self.cpuLimit = -1
@@ -76,7 +80,7 @@ class LSFTimeLeft( object ):
         if len( l1 ) > len( l2 ):
           self.log.error( "Failed lshost command", "%s:\n %s\n %s" % ( cmd, lines[0], lines[0] ) )
         else:
-          for i in range( len( l1 ) ):
+          for i in xrange( len( l1 ) ):
             if l1[i] == 'cpuf':
               try:
                 self.normRef = float( l2[i] )
@@ -164,7 +168,7 @@ class LSFTimeLeft( object ):
         if len( l1 ) > len( l2 ):
           self.log.error( "Failed lshost command", "%s:\n %s\n %s" % ( cmd, lines[0], lines[0] ) )
         else:
-          for i in range( len( l1 ) ):
+          for i in xrange( len( l1 ) ):
             if l1[i] == 'cpuf':
               try:
                 self.hostNorm = float( l2[i] )
@@ -182,6 +186,7 @@ class LSFTimeLeft( object ):
         # Set the limits in real seconds
         self.cpuLimit /= self.hostNorm
         self.wallClockLimit /= self.hostNorm
+
 
   #############################################################################
   def getResourceUsage( self ):
@@ -210,7 +215,7 @@ class LSFTimeLeft( object ):
 
     sCPU = None
     sStart = None
-    for i in range( len( l1 ) ):
+    for i in xrange( len( l1 ) ):
       if l1[i] == 'CPU_USED':
         sCPU = l2[i]
         lCPU = sCPU.split( ':' )

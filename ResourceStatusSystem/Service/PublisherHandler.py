@@ -137,7 +137,7 @@ class PublisherHandler( RequestHandler ):
 
   types_getNodeStatuses = []
   def export_getNodeStatuses( self ):
-      return rsClient.selectStatusElement( 'Node', 'Status' )
+    return rsClient.selectStatusElement( 'Node', 'Status' )
 
   types_getTree = [ str, str, str ]
   def export_getTree( self, element, elementType, elementName ):
@@ -317,7 +317,7 @@ class PublisherHandler( RequestHandler ):
 
     elementInDB =rsClient.selectStatusElement( element, 'Status', name = name,
                                                statusType = statusType,
-                                            #   status = status,
+                                               # status = status,
                                                elementType = elementType,
                                                lastCheckTime = lastCheckTime )
     if not elementInDB[ 'OK' ]:

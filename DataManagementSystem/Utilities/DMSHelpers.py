@@ -65,11 +65,14 @@ def _getConnectionIndex( connectionLevel, default = None ):
 
 class DMSHelpers( object ):
 
-  def __init__( self ):
+  def __init__( self, vo = False ):
     self.siteSEMapping = {}
     self.storageElementSet = set()
     self.siteSet = set()
-    self.__opsHelper = Operations()
+    self.__opsHelper = Operations( vo = vo )
+    self.failoverSEs = None
+    self.archiveSEs = None
+    self.notForJobSEs = None
 
 
   def getSiteSEMapping( self ):
@@ -162,27 +165,56 @@ class DMSHelpers( object ):
     self.getSiteSEMapping()
     return sorted( self.siteSet )
 
+  def getTiers( self, withStorage = False, tier = None ):
+    sites = sorted( self.getShortSiteNames( withStorage = withStorage, tier = tier ).values() )
+    if sites and isinstance( sites[0], list ):
+      # List of lists, flatten it
+      sites = [s for sl in sites for s in sl]
+    return sites
+
+  def getShortSiteNames( self, withStorage = True, tier = None ):
+    siteDict = {}
+    result = self.getSiteSEMapping()
+    if result['OK']:
+      for site in self.siteSEMapping[LOCAL] if withStorage else self.siteSet:
+        grid, shortSite, _country = site.split( '.' )
+        if isinstance( tier, ( int, long ) ) and ( grid != 'LCG' or gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, site ), 999 ) != tier ):
+          continue
+        if isinstance( tier, ( list, tuple, dict, set ) ) and ( grid != 'LCG' or gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, site ), 999 ) not in tier ):
+          continue
+        if withStorage or tier is not None:
+          siteDict[shortSite] = site
+        else:
+          siteDict.setdefault( shortSite, [] ).append( site )
+    return siteDict
+
   def getStorageElements( self ):
     self.getSiteSEMapping()
     return sorted( self.storageElementSet )
 
   def isSEFailover( self, storageElement ):
-    seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForFailover', [] ) )
+    if self.failoverSEs is None:
+      seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForFailover', [] ) )
+      self.failoverSEs = resolveSEGroup( seList )
     # FIXME: remove string test at some point
-    return storageElement in resolveSEGroup( seList ) or ( not seList and isinstance( storageElement, basestring ) and 'FAILOVER' in storageElement.upper() )
+    return storageElement in self.failoverSEs or ( not self.failoverSEs and isinstance( storageElement, basestring ) and 'FAILOVER' in storageElement.upper() )
 
   def isSEForJobs( self, storageElement, checkSE = True ):
     if checkSE:
       self.getSiteSEMapping()
       if storageElement not in self.storageElementSet:
         return False
-    seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsNotToBeUsedForJobs', [] ) )
-    return storageElement not in resolveSEGroup( seList )
+    if self.notForJobSEs is None:
+      seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsNotToBeUsedForJobs', [] ) )
+      self.notForJobSEs = resolveSEGroup( seList )
+    return storageElement not in self.notForJobSEs
 
   def isSEArchive( self, storageElement ):
-    seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForArchive', [] ) )
+    if self.archiveSEs is None:
+      seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForArchive', [] ) )
+      self.archiveSEs = resolveSEGroup( seList )
     # FIXME: remove string test at some point
-    return storageElement in resolveSEGroup( seList ) or ( not seList and isinstance( storageElement, basestring ) and 'ARCHIVE' in storageElement.upper() )
+    return storageElement in self.archiveSEs or ( not self.archiveSEs and isinstance( storageElement, basestring ) and 'ARCHIVE' in storageElement.upper() )
 
   def getSitesForSE( self, storageElement, connectionLevel = None ):
     connectionIndex = _getConnectionIndex( connectionLevel, default = DOWNLOAD )
@@ -308,3 +340,21 @@ class DMSHelpers( object ):
       gLogger.warn( 'No SE found at that site', 'in group %s at %s' % ( seGroup, site ) )
       return S_OK()
     return S_OK( list( se )[0] )
+
+  def getRegistrationProtocols( self ):
+    """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/RegistrationProtocols', ['srm', 'dips'] )
+
+  def getThirdPartyProtocols( self ):
+    """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/ThirdPartyProtocols', ['srm'] )
+
+  def getAccessProtocols( self ):
+    """ Returns the Favorite access protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/AccessProtocols', ['srm', 'dips'] )
+
+
+  def getWriteProtocols( self ):
+    """ Returns the Favorite Write protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/WriteProtocols', ['srm', 'dips'] )
+

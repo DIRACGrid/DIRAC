@@ -71,10 +71,10 @@ class WMSHistoryCorrector( BaseCorrector ):
                                                  self.getGroup() )
       if not result[ 'OK' ]:
         self.__usageHistory = {}
-        self.__log.error( "Could not get history for slice", "%s: %s" % ( timeSlice, result[ 'Message' ] ) )
+        self.__log.warn( "Could not get history for slice", "%s: %s" % ( timeSlice, result[ 'Message' ] ) )
         return
       self.__usageHistory[ timeSlice ] = result[ 'Value' ]
-      self.__log.info( "Got history for slice %s (%s entities in slice)" % ( timeSlice, len( self.__usageHistory[ timeSlice ] ) ) )
+      self.__log.verbose( "Got history for slice %s (%s entities in slice)" % ( timeSlice, len( self.__usageHistory[ timeSlice ] ) ) )
     self.__log.info( "Updated history knowledge" )
 
   def _getUsageHistoryForTimeSpan( self, timeSpan, groupToUse = "" ):

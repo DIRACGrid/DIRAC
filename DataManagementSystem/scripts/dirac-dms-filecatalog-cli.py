@@ -1,12 +1,8 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
-__RCSID__ = "$Id$"
+
+import sys
 
 from DIRAC.Core.Base import Script
-from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
-
 Script.setUsageMessage( """
 Launch the File Catalog shell
 
@@ -16,12 +12,12 @@ Usage:
 
 fcType = 'FileCatalog'
 Script.registerSwitch( "f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType )
-
 Script.parseCommandLine( ignoreErrors = False )
-  
-import sys, os
-import DIRAC
-from DIRAC import gLogger, gConfig, exit as dexit
+
+from DIRAC import gConfig, exit as dexit
+from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
+
+__RCSID__ = "$Id$"
 
 fcType = gConfig.getValue("/LocalSite/FileCatalog","")
 

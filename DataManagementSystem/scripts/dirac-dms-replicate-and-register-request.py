@@ -11,6 +11,12 @@ Script.setUsageMessage( '\n'.join( [ __doc__,
                                      '        LFNs: single LFN or file with LFNs',
                                      '    targetSE: target SE' ] ) )
 
+catalog = None
+Script.registerSwitch( "C:", "Catalog=", "   Catalog to use" )
+for switch in Script.getUnprocessedSwitches():
+  if switch[0] == "C" or switch[0].lower() == "catalog":
+    catalog = switch[1]
+
 def getLFNList( arg ):
   """ get list of LFNs """
   lfnList = []
@@ -58,6 +64,7 @@ if __name__ == "__main__":
   count = 0
   reqClient = ReqClient()
   fc = FileCatalog()
+  requestIDs = []
   for lfnChunk in lfnChunks:
     metaDatas = fc.getFileMetadata( lfnChunk )
     if not metaDatas["OK"]:
@@ -86,6 +93,8 @@ if __name__ == "__main__":
     replicateAndRegister = Operation()
     replicateAndRegister.Type = "ReplicateAndRegister"
     replicateAndRegister.TargetSE = ",".join( targetSEs )
+    if catalog is not None:
+      replicateAndRegister.Catalog = catalog
 
     for lfn in lfnChunk:
       metaDict = metaDatas["Successful"][lfn]
@@ -106,13 +115,15 @@ if __name__ == "__main__":
       gLogger.error( "unable to put request '%s': %s" % ( request.RequestName, putRequest["Message"] ) )
       error = -1
       continue
-
+    requestIDs.append( str( putRequest["Value"] ) )
     if not multiRequests:
       gLogger.always( "Request '%s' has been put to ReqDB for execution." % request.RequestName )
 
   if multiRequests:
     gLogger.always( "%d requests have been put to ReqDB for execution, with name %s_<num>" % ( count, requestName ) )
-  gLogger.always( "You can monitor requests' status using command: 'dirac-rms-show-request <requestName>'" )
+  if requestIDs:
+    gLogger.always( "RequestID(s): %s" % " ".join( requestIDs ) )
+  gLogger.always( "You can monitor requests' status using command: 'dirac-rms-show-request <requestName/ID>'" )
   DIRAC.exit( error )
 
 

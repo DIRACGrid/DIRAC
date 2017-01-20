@@ -23,7 +23,7 @@ __RCSID__ = "$Id $"
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.Adler import compareAdler
+from DIRAC.Core.Utilities.Adler import compareAdler, hexAdlerToInt
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 from DIRAC.DataManagementSystem.Client.DataManager                                import DataManager
@@ -71,14 +71,17 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     else:
       return allReplicas
 
-  if not opFile.Checksum:
+  if not opFile.Checksum or hexAdlerToInt( opFile.Checksum ) == False:
     # Set Checksum to FC checksum if not set in the request
     fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
     fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum' )
     # Replace opFile.Checksum if it doesn't match a valid FC checksum
     if fcChecksum:
-      opFile.Checksum = fcChecksum
-      opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
+      if hexAdlerToInt( fcChecksum ) != False:
+        opFile.Checksum = fcChecksum
+        opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
+      else:
+        opFile.Checksum = None
 
   for repSEName in replicas:
     repSEMetadata = StorageElement( repSEName ).getFileMetadata( opFile.LFN )
@@ -92,12 +95,16 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     elif not noReplicas:
       repSEMetadata = repSEMetadata['Value']['Successful'][opFile.LFN]
 
-      seChecksum = repSEMetadata.get( "Checksum" )
-      if not seChecksum and opFile.Checksum:
+      seChecksum = hexAdlerToInt( repSEMetadata.get( "Checksum" ) )
+      if seChecksum == False and opFile.Checksum:
+        ret['NoMetadata'].append( repSEName )
+      elif not seChecksum and opFile.Checksum:
         opFile.Checksum = None
         opFile.ChecksumType = None
-      elif seChecksum and not opFile.Checksum:
+      elif seChecksum and ( not opFile.Checksum or opFile.Checksum == 'False' ):
+        # Use the SE checksum and force type to be Adler32
         opFile.Checksum = seChecksum
+        opFile.ChecksumType = 'Adler32'
       if not opFile.Checksum or not seChecksum or compareAdler( seChecksum, opFile.Checksum ):
         # # All checksums are OK
         ret["Valid"].append( repSEName )
@@ -182,14 +189,14 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
       return replicas
 
     reMissing = re.compile( r".*such file.*" )
-    for failedLFN, errStr in replicas["Value"]["Failed"].items():
+    for failedLFN, errStr in replicas["Value"]["Failed"].iteritems():
       waitingFiles[failedLFN].Error = errStr
       if reMissing.search( errStr.lower() ):
         self.log.error( "File does not exists", failedLFN )
         gMonitor.addMark( "ReplicateFail", len( targetSESet ) )
         waitingFiles[failedLFN].Status = "Failed"
 
-    for successfulLFN, reps in replicas["Value"]["Successful"].items():
+    for successfulLFN, reps in replicas["Value"]["Successful"].iteritems():
       if targetSESet.issubset( set( reps ) ):
         self.log.info( "file %s has been replicated to all targets" % successfulLFN )
         waitingFiles[successfulLFN].Status = "Done"
@@ -204,12 +211,11 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     """
     if toSchedule:
       self.log.info( "found %s files to schedule, getting metadata from FC" % len( toSchedule ) )
-      lfns = toSchedule.keys()
     else:
       self.log.info( "No files to schedule" )
       return S_OK()
 
-    res = self.fc.getFileMetadata( lfns )
+    res = self.fc.getFileMetadata( toSchedule.keys() )
     if not res['OK']:
       return res
     else:
@@ -220,16 +226,18 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
 
     filesToScheduleList = []
 
-    for lfnsToSchedule, lfnMetadata in metadata.items():
-      opFileToSchedule = toSchedule[lfnsToSchedule][0]
+    for lfn, lfnMetadata in metadata.iteritems():
+      opFileToSchedule = toSchedule[lfn][0]
       opFileToSchedule.GUID = lfnMetadata['GUID']
-      opFileToSchedule.Checksum = metadata[lfnsToSchedule]['Checksum']
-      opFileToSchedule.ChecksumType = metadata[lfnsToSchedule]['ChecksumType']
-      opFileToSchedule.Size = metadata[lfnsToSchedule]['Size']
+      # In principle this is defined already in filterReplicas()
+      if not opFileToSchedule.Checksum:
+        opFileToSchedule.Checksum = metadata[lfn]['Checksum']
+        opFileToSchedule.ChecksumType = metadata[lfn]['ChecksumType']
+      opFileToSchedule.Size = metadata[lfn]['Size']
 
       filesToScheduleList.append( ( opFileToSchedule.toJSON()['Value'],
-                                    toSchedule[lfnsToSchedule][1],
-                                    toSchedule[lfnsToSchedule][2] ) )
+                                    toSchedule[lfn][1],
+                                    toSchedule[lfn][2] ) )
 
     return S_OK( filesToScheduleList )
 

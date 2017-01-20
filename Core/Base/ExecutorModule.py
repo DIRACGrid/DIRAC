@@ -3,13 +3,13 @@
     Just provides a number of functions used by all executors
 """
 
-__RCSID__ = "$Id$"
-
 import os
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
+
+__RCSID__ = "$Id$"
 
 class ExecutorModule( object ):
   """ All executors should inherit from this module
@@ -29,11 +29,11 @@ class ExecutorModule( object ):
     cls.__defaults[ 'MonitoringEnabled' ] = True
     cls.__defaults[ 'Enabled' ] = True
     cls.__defaults[ 'ControlDirectory' ] = os.path.join( cls.__basePath,
-                                                          'control',
-                                                          *exeName.split( "/" ) )
+                                                         'control',
+                                                         *exeName.split( "/" ) )
     cls.__defaults[ 'WorkDirectory' ] = os.path.join( cls.__basePath,
-                                                       'work',
-                                                       *exeName.split( "/" ) )
+                                                      'work',
+                                                      *exeName.split( "/" ) )
     cls.__defaults[ 'ReconnectRetries' ] = 10
     cls.__defaults[ 'ReconnectSleep' ] = 5
     cls.__defaults[ 'shifterProxy' ] = ''
@@ -50,8 +50,8 @@ class ExecutorModule( object ):
 
     try:
       result = cls.initialize()
-    except Exception, excp:
-      gLogger.exception( "Exception while initializing %s" % loadName )
+    except Exception as excp:
+      gLogger.exception( "Exception while initializing %s" % loadName, lException = excp )
       return S_ERROR( "Exception while initializing: %s" % str( excp ) )
     if not isReturnStructure( result ):
       return S_ERROR( "Executor %s does not return an S_OK/S_ERROR after initialization" % loadName )
@@ -74,7 +74,7 @@ class ExecutorModule( object ):
 
   @classmethod
   def ex_getOption( cls, optName, defaultValue = None ):
-    if defaultValue == None:
+    if defaultValue is None:
       if optName in cls.__defaults:
         defaultValue = cls.__defaults[ optName ]
     if optName and optName[0] == "/":
@@ -113,8 +113,8 @@ class ExecutorModule( object ):
   def __serialize( self, taskId, taskObj ):
     try:
       result = self.serializeTask( taskObj )
-    except Exception, excp:
-      gLogger.exception( "Exception while serializing task %s" % taskId )
+    except Exception as excp:
+      gLogger.exception( "Exception while serializing task %s" % taskId, lException = excp )
       return S_ERROR( "Cannot serialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "serializeTask does not return a return structure" )
@@ -123,8 +123,8 @@ class ExecutorModule( object ):
   def __deserialize( self, taskId, taskStub ):
     try:
       result = self.deserializeTask( taskStub )
-    except Exception, excp:
-      gLogger.exception( "Exception while deserializing task %s" % taskId  )
+    except Exception as excp:
+      gLogger.exception( "Exception while deserializing task %s" % taskId, lException = excp )
       return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "deserializeTask does not return a return structure" )
@@ -203,4 +203,3 @@ class ExecutorModule( object ):
 
   def processTask( self, taskId, taskObj ):
     raise Exception( "Method processTask has to be coded!" )
-
