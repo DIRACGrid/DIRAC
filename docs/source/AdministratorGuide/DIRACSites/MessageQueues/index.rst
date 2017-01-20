@@ -6,7 +6,7 @@ Message Queues
 
 Message Queues are services for passing messages between DIRAC components.
 These services are not part necessarily of the DIRAC software and are provided
-by third parties. Access to the services is done via logical Queues which are
+by third parties. Access to the services is done via logical Queues (or Topics) which are
 described in the *Resources* section of the DIRAC configuration.
 
 A commented example of the Message Queues configuration is provided below.
@@ -29,6 +29,8 @@ Each option value is representing its default value::
           Host = mardirac3.in2p3.fr
           # The MQ server port number
           Port = 9165
+          # Virtual host
+          VHost = /
           # User name to access the MQ server
           User = guest
           # Password to access the MQ server. This option should never be defined
@@ -55,15 +57,18 @@ Each option value is representing its default value::
 Once Message Queues are defined in the configuration, they can be used in the DIRAC codes
 like described in :ref:`development_use_mq`, for example::
 
-   from DIRAC.Resources.MessageQueue.MQPublisher import MQPublisher
-   from DIRAC.Resources.MessageQueue.MQListener import MQListener
-   ...
-   publisher = MQPublisher( "TestQueue" )
-   listener = MQListener( "TestQueue" )
-   ...
-   result = publisher.put( message )
-   ...
-   result = listener.get( message )
+   from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
+   from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
+
+   result = createProducer( "mardirac3.in2p3.fr::Queue::TestQueue" )
+   if result['OK']:
+      producer = result['Value']
+
+   result = createConsumer( "mardirac3.in2p3.fr::Queue::TestQueue" )
+   if result['OK']:
+      consumer = result['Value']
+
+   result = producer.put( message )
+   result = consumer.get( message )
    if result['OK']:
      message = result['Value']
-

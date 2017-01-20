@@ -1,21 +1,17 @@
 """ A computing element class that uses sudo
 """
 
-__RCSID__ = "$Id$"
-
 import os
 import pwd
 import stat
-import distutils.spawn
-
-import DIRAC
 
 from DIRAC                                                  import S_OK, S_ERROR
-
-from DIRAC.ConfigurationSystem.Client.Config                import gConfig
-from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
-from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
+from DIRAC.Core.Utilities                                   import DErrno
 from DIRAC.Core.Utilities.Subprocess                        import shellCall
+from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
+from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
+
+__RCSID__ = "$Id$"
 
 class SudoComputingElement( ComputingElement ):
 
@@ -45,14 +41,14 @@ class SudoComputingElement( ComputingElement ):
     payloadProxy = result['Value']
     if not 'X509_USER_PROXY' in os.environ:
       self.log.error( 'X509_USER_PROXY variable for pilot proxy not found in local environment' )
-      return S_ERROR(DErrno.EPROXYFOUND, "X509_USER_PROXY not found")
+      return S_ERROR( DErrno.EPROXYFIND, "X509_USER_PROXY not found")
 
     pilotProxy = os.environ['X509_USER_PROXY']
     self.log.info( 'Pilot proxy X509_USER_PROXY=%s' % pilotProxy )
 
     # See if a fixed value has been given
     payloadUsername = self.ceParameters.get( 'PayloadUser' )
-    
+
     if payloadUsername:
       self.log.info( 'Payload username %s from PayloadUser in ceParameters' % payloadUsername )
     else:
@@ -88,7 +84,7 @@ class SudoComputingElement( ComputingElement ):
     try:
       os.chmod( os.path.abspath( executableFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except OSError as x:
-      self.log.error( 'Failed to change permissions of executable to 0755 with exception', 
+      self.log.error( 'Failed to change permissions of executable to 0755 with exception',
                       '\n%s' % ( x ) )
 
     result = self.sudoExecute( os.path.abspath( executableFile ), payloadProxy, payloadUsername, payloadUID, payloadGID )
@@ -116,13 +112,13 @@ class SudoComputingElement( ComputingElement ):
     os.chown( payloadProxy, -1, payloadGID )
     os.chmod( payloadProxy, stat.S_IRUSR + stat.S_IWUSR + stat.S_IRGRP )
 
-    # 2) Now create a copy of the proxy owned by the payload user          
-    result = shellCall( 0, 
+    # 2) Now create a copy of the proxy owned by the payload user
+    result = shellCall( 0,
                         '/usr/bin/sudo -u %s sh -c "cp -f %s /tmp/x509up_u%d ; chmod 0400 /tmp/x509up_u%d"' % ( payloadUsername,  payloadProxy, payloadUID, payloadUID ),
                         callbackFunction = self.sendOutput )
 
     # Run the executable (the wrapper in fact)
-    cmd = "/usr/bin/sudo -u %s PATH=$PATH DIRACSYSCONFIG=/scratch/%s/pilot.cfg LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH X509_USER_PROXY=/tmp/x509up_u%d sh -c '%s'" % ( payloadUsername, os.environ['USER'], payloadUID, executableFile )
+    cmd = "/usr/bin/sudo -u %s PATH=$PATH DIRACSYSCONFIG=/scratch/%s/pilot.cfg LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH X509_CERT_DIR=$X509_CERT_DIR X509_USER_PROXY=/tmp/x509up_u%d sh -c '%s'" % ( payloadUsername, os.environ['USER'], payloadUID, executableFile )
     self.log.info( 'CE submission command is: %s' % cmd )
     result = shellCall( 0, cmd, callbackFunction = self.sendOutput )
     if not result['OK']:
@@ -164,17 +160,17 @@ class SudoComputingElement( ComputingElement ):
     self.log.info( 'Re-executing sudo to make renewed payload proxy available as before' )
 
     # New version of the proxy file, so we have to do the copy again
-    
+
     # 1) Make sure the payload user can read its proxy via its per-user group
     os.chown( payloadProxy, -1, payloadGID )
     os.chmod( payloadProxy, stat.S_IRUSR + stat.S_IWUSR + stat.S_IRGRP )
 
     # 2) Now recreate the copy of the proxy owned by the payload user
-    result = shellCall( 0, 
-                        '/usr/bin/sudo -u %s sh -c "cp -f %s /tmp/x509up_u%d ; chmod 0400 /tmp/x509up_u%d"' 
+    result = shellCall( 0,
+                        '/usr/bin/sudo -u %s sh -c "cp -f %s /tmp/x509up_u%d ; chmod 0400 /tmp/x509up_u%d"'
                         % ( payloadUsername,  payloadProxy, payloadUID, payloadUID ),
                         callbackFunction = self.sendOutput )
-    
+
     return S_OK( 'Proxy checked' )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

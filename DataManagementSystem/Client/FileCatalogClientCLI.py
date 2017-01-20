@@ -2137,7 +2137,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if '-l' in argss:
       long_ = True
       del argss[argss.index('-l')]
-    datasetName = ''
+    datasetName = '*'
     if len( argss ) > 0:
       datasetName = argss[0]
 
@@ -2156,7 +2156,7 @@ File Catalog Client $Revision: 1.17 $Date:
       dsAnnotations = {}
       resultAnno = returnSingleResult( self.fc.getDatasetAnnotation( datasets ) )
       if resultAnno['OK']:
-        dsAnnotations = resultAnno['Value']['Successful']
+        dsAnnotations = resultAnno['Value']
       for dName in datasets:
         records = []
         print '\n'+dName+":"

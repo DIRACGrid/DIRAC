@@ -165,6 +165,29 @@ class DMSHelpers( object ):
     self.getSiteSEMapping()
     return sorted( self.siteSet )
 
+  def getTiers( self, withStorage = False, tier = None ):
+    sites = sorted( self.getShortSiteNames( withStorage = withStorage, tier = tier ).values() )
+    if sites and isinstance( sites[0], list ):
+      # List of lists, flatten it
+      sites = [s for sl in sites for s in sl]
+    return sites
+
+  def getShortSiteNames( self, withStorage = True, tier = None ):
+    siteDict = {}
+    result = self.getSiteSEMapping()
+    if result['OK']:
+      for site in self.siteSEMapping[LOCAL] if withStorage else self.siteSet:
+        grid, shortSite, _country = site.split( '.' )
+        if isinstance( tier, ( int, long ) ) and ( grid != 'LCG' or gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, site ), 999 ) != tier ):
+          continue
+        if isinstance( tier, ( list, tuple, dict, set ) ) and ( grid != 'LCG' or gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, site ), 999 ) not in tier ):
+          continue
+        if withStorage or tier is not None:
+          siteDict[shortSite] = site
+        else:
+          siteDict.setdefault( shortSite, [] ).append( site )
+    return siteDict
+
   def getStorageElements( self ):
     self.getSiteSEMapping()
     return sorted( self.storageElementSet )
@@ -317,3 +340,21 @@ class DMSHelpers( object ):
       gLogger.warn( 'No SE found at that site', 'in group %s at %s' % ( seGroup, site ) )
       return S_OK()
     return S_OK( list( se )[0] )
+
+  def getRegistrationProtocols( self ):
+    """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/RegistrationProtocols', ['srm', 'dips'] )
+
+  def getThirdPartyProtocols( self ):
+    """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/ThirdPartyProtocols', ['srm'] )
+
+  def getAccessProtocols( self ):
+    """ Returns the Favorite access protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/AccessProtocols', ['srm', 'dips'] )
+
+
+  def getWriteProtocols( self ):
+    """ Returns the Favorite Write protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/WriteProtocols', ['srm', 'dips'] )
+

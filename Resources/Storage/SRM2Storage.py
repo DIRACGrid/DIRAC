@@ -22,7 +22,6 @@ from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.File import getSize
 
-
 # # RCSID
 __RCSID__ = "$Id$"
 
@@ -31,6 +30,9 @@ class SRM2Storage( StorageBase ):
 
   SRM v2 interface to StorageElement using lcg_util and gfal
   """
+
+  _INPUT_PROTOCOLS = ['file', 'srm']
+  _OUTPUT_PROTOCOLS = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm', 'gsiftp']
 
   def __init__( self, storageName, parameters ):
     """ c'tor
@@ -769,7 +771,7 @@ class SRM2Storage( StorageBase ):
         self.log.debug( "__putFile: Unable to remove remote file remnant %s." % dest_url )
       return res
     res = res['Value']
-    if not res['OK']: #pylint: disable=invalid-sequence-index
+    if not res['OK']:  # pylint: disable=invalid-sequence-index
       # Remove the failed replica, just in case
       result = self.__executeOperation( dest_url, 'removeFile' )
       if result['OK']:
@@ -912,7 +914,7 @@ class SRM2Storage( StorageBase ):
     if not res['OK']:
       return res
     res = res['Value']
-    if not res['OK']: #pylint:disable=invalid-sequence-index
+    if not res['OK']:  # pylint:disable=invalid-sequence-index
       return res
     errCode, errStr = res['Value']
     if errCode == 0:
@@ -1885,8 +1887,8 @@ class SRM2Storage( StorageBase ):
     if not res['OK']:
       return res
     res = res['Value']
-    if res['OK']: #pylint: disable=invalid-sequence-index
-      for urlDict in res['Value']: #pylint: disable=invalid-sequence-index
+    if res['OK']:  # pylint: disable=invalid-sequence-index
+      for urlDict in res['Value']:  # pylint: disable=invalid-sequence-index
         if 'surl' in urlDict:
           urlDict['surl'] = self.__convertRandomSRMOutputIntoAFullURL( urlDict['surl'] )['Value']
 

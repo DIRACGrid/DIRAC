@@ -192,6 +192,29 @@ class GOCDBClient( object ):
 
 #############################################################################
 
+  def getHostnameDowntime( self, hostname, startDate = None, ongoing = False):
+
+    params = hostname
+
+    if startDate and ongoing:
+      return S_ERROR("Invalid parameter combination - do not specify startDate with ongoing")
+
+    if startDate:
+      params += '&startdate=' + startDate
+
+    if ongoing:
+      params += '&ongoing_only=yes'
+
+    try:
+      response = requests.get('https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime&topentity=' + params)
+      response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+      return S_ERROR("Error %s" % e)
+
+    return S_OK(response.text)
+
+#############################################################################
+
 #  def getSiteInfo(self, site):
 #    """
 #    Get site info (in a dictionary)

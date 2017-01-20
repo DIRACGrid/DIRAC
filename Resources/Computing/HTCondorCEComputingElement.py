@@ -11,10 +11,10 @@
    Configuration for the HTCondorCE submission can be done via the configuration system ::
 
      WorkingDirectory: Location to store the pilot and condor log files
-     DaysToKeepLogs:  how low to keep the log files until they are removed
+     DaysToKeepLogs:  how long to keep the log files until they are removed
      ExtraSubmitString: Additional option for the condor submit file, separate options with '\\n', for example:
         request_cpus = 8 \\n periodic_remove = ...
-
+     UseLocalSchedd: If False, directly submit to a remote condor schedule daemon, then one does not need to run condor daemons on the submit machine
 
    see :ref:`res-comp-htcondor`
 """
@@ -93,12 +93,13 @@ class HTCondorCEComputingElement( ComputingElement ):
     self.outputURL = 'gsiftp://localhost'
     self.gridEnv = ''
     self.proxyRenewal = 0
-    self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
-
+    self.daysToKeepLogs = DEFAULT_DAYSTOKEEPLOGS
+    self.extraSubmitString = ''
     ## see note on getCondorLogFile, why we can only use the global setting
     self.workingDirectory = gConfig.getValue( "Resources/Computing/HTCondorCE/WorkingDirectory",
                                               DEFAULT_WORKINGDIRECTORY )
-    self.daysToKeepLogs = self.ceParameters.get( "DaysToKeepLogs", DEFAULT_DAYSTOKEEPLOGS )
+    self.useLocalSchedd = True
+    self.remoteScheddOptions = ""
 
   #############################################################################
   def __writeSub( self, executable, nJobs ):
@@ -115,14 +116,23 @@ class HTCondorCEComputingElement( ComputingElement ):
 
     self.log.debug( "InitialDir: %s" % os.path.join( self.workingDirectory, initialDirPrefix ) )
 
+    self.log.debug( "ExtraSubmitString:\n### \n %s \n###" % self.extraSubmitString )
+
     fd, name = tempfile.mkstemp( suffix = '.sub', prefix = 'HTCondorCE_', dir = self.workingDirectory )
     subFile = os.fdopen( fd, 'w' )
 
     executable = os.path.join( self.workingDirectory, executable )
 
+    localScheddOptions = """
+ShouldTransferFiles = YES
+WhenToTransferOutput = ON_EXIT_OR_EVICT
+""" if self.useLocalSchedd else ""
+
+    targetUniverse = "grid" if self.useLocalSchedd else "vanilla"
+
     sub = """
 executable = %(executable)s
-universe = grid
+universe = %(targetUniverse)s
 use_x509userproxy = true
 output = $(Cluster).$(Process).out
 error = $(Cluster).$(Process).err
@@ -130,8 +140,9 @@ log = $(Cluster).$(Process).log
 environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
-ShouldTransferFiles = YES
-WhenToTransferOutput = ON_EXIT_OR_EVICT
+
+%(localScheddOptions)s
+
 kill_sig=SIGTERM
 
 %(extraString)s
@@ -143,6 +154,8 @@ Queue %(nJobs)s
             ceName=self.ceName,
             extraString=self.extraSubmitString,
             initialDir=os.path.join( self.workingDirectory, initialDirPrefix ),
+            localScheddOptions=localScheddOptions,
+            targetUniverse=targetUniverse,
           )
     subFile.write( sub )
     subFile.close()
@@ -152,6 +165,19 @@ Queue %(nJobs)s
     self.queue = self.ceParameters['Queue']
     self.outputURL = self.ceParameters.get( 'OutputURL', 'gsiftp://localhost' )
     self.gridEnv = self.ceParameters['GridEnv']
+    self.daysToKeepLogs = self.ceParameters.get( 'DaysToKeepLogs', DEFAULT_DAYSTOKEEPLOGS )
+    self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
+    self.useLocalSchedd = self.ceParameters.get('UseLocalSchedd', self.useLocalSchedd)
+    if isinstance( self.useLocalSchedd, basestring ):
+      if self.useLocalSchedd == "False":
+        self.useLocalSchedd = False
+      else:
+        self.useLocalSchedd == True
+
+    self.remoteScheddOptions = "" if self.useLocalSchedd else "-pool %s:9619 -name %s " %( self.ceName, self.ceName)
+
+    self.log.debug( "Using local schedd: %r " % self.useLocalSchedd )
+    self.log.debug( "Remote scheduler option: '%s' " % self.remoteScheddOptions )
 
   #############################################################################
   def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
@@ -169,6 +195,11 @@ Queue %(nJobs)s
       jobStamps.append( makeGuid()[:8] )
 
     cmd = ['condor_submit', '-terse', subName ]
+    # the options for submit to remote are different than the other remoteScheddOptions
+    scheddOptions = [] if self.useLocalSchedd else [ '-pool', '%s:9619'%self.ceName, '-remote', self.ceName ]
+    for op in scheddOptions:
+      cmd.insert( -1, op )
+
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     self.log.verbose( result )
     os.unlink( subName )
@@ -205,7 +236,7 @@ Queue %(nJobs)s
     for jobRef in jobIDList:
       job,jobID = condorIDFromJobRef( jobRef )
       self.log.verbose( "Killing pilot %s " % job )
-      status,stdout = commands.getstatusoutput( 'condor_rm %s' % jobID )
+      status,stdout = commands.getstatusoutput( 'condor_rm %s %s' % ( self.remoteScheddOptions, jobID ) )
       if status != 0:
         return S_ERROR( "Failed to kill pilot %s: %s" %( job, stdout ) )
 
@@ -257,7 +288,7 @@ Queue %(nJobs)s
       condorIDs[job] = jobID
 
     ##This will return a list of 1245.75 3
-    status,stdout_q = commands.getstatusoutput( 'condor_q %s -af:j JobStatus ' % ' '.join(condorIDs.values()) )
+    status,stdout_q = commands.getstatusoutput( 'condor_q %s %s -af:j JobStatus ' % ( self.remoteScheddOptions, ' '.join(condorIDs.values()) ) )
     if status != 0:
       return S_ERROR( stdout_q )
     qList = stdout_q.strip().split('\n')
@@ -265,7 +296,7 @@ Queue %(nJobs)s
     ##FIXME: condor_history does only support j for autoformat from 8.5.3,
     ## format adds whitespace for each field This will return a list of 1245 75 3
     ## needs to cocatenate the first two with a dot
-    condorHistCall = 'condor_history %s -af ClusterId ProcId JobStatus' % ' '.join( condorIDs.values() )
+    condorHistCall = 'condor_history %s %s -af ClusterId ProcId JobStatus' % ( self.remoteScheddOptions, ' '.join( condorIDs.values() ) )
 
     treatCondorHistory( condorHistCall, qList )
 
@@ -274,7 +305,7 @@ Queue %(nJobs)s
       pilotStatus = parseCondorStatus( qList, jobID )
       if pilotStatus == 'HELD':
         #make sure the pilot stays dead and gets taken out of the condor_q
-        _rmStat, _rmOut = commands.getstatusoutput( 'condor_rm %s ' % jobID )
+        _rmStat, _rmOut = commands.getstatusoutput( 'condor_rm %s %s ' % ( self.remoteScheddOptions, jobID ) )
         #self.log.debug( "condor job killed: job %s, stat %s, message %s " % ( jobID, rmStat, rmOut ) )
         pilotStatus = 'Aborted'
 

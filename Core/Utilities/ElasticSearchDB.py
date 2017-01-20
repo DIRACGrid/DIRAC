@@ -3,6 +3,8 @@ This class a wrapper around elasticsearch-py. It is used to query
 Elasticsearch database.
 
 """
+import os
+import tempfile
 
 from datetime import datetime
 from datetime import timedelta
@@ -15,8 +17,50 @@ from elasticsearch.helpers import BulkIndexError, bulk
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Security import Locations, X509Chain
 
 __RCSID__ = "$Id$"
+
+def getCert():
+  """
+  get the host certificate
+  """
+  cert = Locations.getHostCertificateAndKeyLocation()
+  if cert:
+    cert = cert[0]
+  else:
+    cert = "/opt/dirac/etc/grid-security/hostcert.pem"
+  return cert
+
+def generateCAFile():
+  """
+  Generate a single CA file with all the PEMs
+  """
+  caDir = Locations.getCAsLocation()
+  for fn in ( os.path.join( os.path.dirname( caDir ), "cas.pem" ),
+              os.path.join( os.path.dirname( getCert() ), "cas.pem" ),
+              False ):
+    if not fn:
+      fn = tempfile.mkstemp( prefix = "cas.", suffix = ".pem" )[1]
+    
+    try:
+      with open(fn, "w" ) as fd:
+        for caFile in os.listdir( caDir ):
+          caFile = os.path.join( caDir, caFile )
+          result = X509Chain.X509Chain.instanceFromFile( caFile )
+          if not result[ 'OK' ]:
+            continue
+          chain = result[ 'Value' ]
+          expired = chain.hasExpired()
+          if not expired[ 'OK' ] or expired[ 'Value' ]:
+            continue
+          fd.write( chain.dumpAllToString()[ 'Value' ] )
+          
+      return fn
+    except IOError as err:
+      gLogger.error(err)
+      
+  return False
 
 class ElasticSearchDB( object ):
 
@@ -48,7 +92,7 @@ class ElasticSearchDB( object ):
       self.__url = "https://%s:%s@%s:%d" % ( user, password, host, port )
     else:
       self.__url = "%s:%d" % ( host, port )
-    self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
+    self.__client = Elasticsearch( self.__url, timeout = self.__timeout, use_ssl = True, verify_certs = True, ca_certs = generateCAFile() )
     self.__tryToConnect()
 
   def getIndexPrefix( self ):
@@ -115,7 +159,7 @@ class ElasticSearchDB( object ):
     """
 
     #we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
-    return [ index for index in self.__client.indices.get_aliases( "%s*" % self.__indexPrefix ) ]
+    return [ index for index in self.__client.indices.get_alias( "%s*" % self.__indexPrefix ) ]
 
   ########################################################################
   def getDocTypes( self, indexName ):
@@ -237,6 +281,10 @@ class ElasticSearchDB( object ):
           '_source': {}
       }
       body['_source'] = row
+
+      if 'timestamp' not in row:
+        gLogger.warn( "timestamp is not given! Note: the actual time is used!" )
+
       timestamp = row.get( 'timestamp', int( Time.toEpoch() ) ) #if the timestamp is not provided, we use the current utc time.
       try:
         if isinstance(timestamp, datetime):
