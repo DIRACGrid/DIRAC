@@ -12,6 +12,8 @@ import tempfile
 import random
 import socket
 import hashlib
+import requests
+import json
 from collections import defaultdict
 
 
@@ -29,6 +31,7 @@ from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as Pilot
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Security                                   import CS
+from DIRAC.Core.Security.Locations                         import Locations
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 from DIRAC.Core.Utilities.List                             import fromChar
@@ -44,6 +47,7 @@ WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
+REST_URL = 'https://pclhcb192.cern.ch:9910'
 
 def getSubmitPools( group = None, vo = None ):
   if group:
@@ -152,6 +156,7 @@ class SiteDirector( AgentModule ):
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
     self.getOutput = self.am_getOption( 'GetPilotOutput', False )
     self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
+    self.sendOAToken = self.am_getOption( 'SendOAToken', False )
 
     # Get the site description dictionary
     siteNames = None
@@ -186,7 +191,8 @@ class SiteDirector( AgentModule ):
     #  else:
     #    siteNames = [siteName]
     #self.siteNames = siteNames
-
+    if self.sendOAToken:
+      self.log.always( 'OAToken requested' )
     if self.updateStatus:
       self.log.always( 'Pilot status update requested' )
     if self.getOutput:
@@ -214,6 +220,22 @@ class SiteDirector( AgentModule ):
                                                              queue ) )
     self.firstPass = False
     return S_OK()
+
+  def _getToken( self ):
+    """ Get the token from the REST Interface
+    """
+    params = {'grant_type':'client_credentials',
+          'group':'TrustedHost',
+          'setup':'LHCb-Certification'}
+
+    certFile, keyFile = Locations.getHostCertificateAndKeyLocation()
+    certificate = ( certFile, keyFile )
+
+    result = requests.get( REST_URL + "/oauth2/token", params = params, cert = certificate, verify = False )
+
+    # the output is returned as a json encoded string, decode it here
+    resultDict = json.loads( result.text )
+    return resultDict['token']
 
   def __generateQueueHash( self, queueDict ):
     """ Generate a hash of the queue description
@@ -523,7 +545,9 @@ class SiteDirector( AgentModule ):
           continue
 
       self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" % (totalWaitingPilots, totalTQJobs, queue) )
-
+      # Get the OAToken
+      if self.sendOAToken:
+        self.token = self._getToken()
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
       self.log.verbose( "Getting pilot proxy for %s/%s %d long" % ( self.pilotDN, self.pilotGroup, cpuTime ) )
@@ -824,6 +848,11 @@ class SiteDirector( AgentModule ):
     """
 
     try:
+      tokenFlag = 'False'
+      compressedAndEncodedOAToken = ''
+      if self.sendOAToken:
+        compressedAndEncodedOAToken = base64.encodestring( bz2.compress( self.token ) )
+        tokenFlag = 'True'
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
       if proxy is not None:
@@ -862,6 +891,10 @@ try:
     open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedProxy)s\"\"\" ) ) )
     os.chmod("proxy", stat.S_IRUSR | stat.S_IWUSR)
     os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
+  if %(tokenFlag)s:
+    open( 'token', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedOAToken)s\"\"\" ) ) )
+    os.chmod("token", stat.S_IRUSR | stat.S_IWUSR)
+    os.environ["OA_USER_TOKEN"]=os.path.join(pilotWorkingDirectory, 'token')
   open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedPilot)s\"\"\" ) ) )
   open( '%(installScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedInstall)s\"\"\" ) ) )
   os.chmod("%(pilotScript)s", stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
@@ -893,13 +926,15 @@ EOF
 """ % { 'compressedAndEncodedProxy': compressedAndEncodedProxy,
         'compressedAndEncodedPilot': compressedAndEncodedPilot,
         'compressedAndEncodedInstall': compressedAndEncodedInstall,
+        'compressedAndEncodedOAToken': compressedAndEncodedOAToken,
         'extraModuleString': extraModuleString,
         'httpProxy': httpProxy,
         'pilotExecDir': pilotExecDir,
         'pilotScript': os.path.basename( self.pilot ),
         'installScript': os.path.basename( self.install ),
         'pilotOptions': ' '.join( pilotOptions ),
-        'proxyFlag': proxyFlag }
+        'proxyFlag': proxyFlag,
+        'tokenFlag': tokenFlag }
 
     fd, name = tempfile.mkstemp( suffix = '_pilotwrapper.py', prefix = 'DIRAC_', dir = workingDirectory )
     pilotWrapper = os.fdopen( fd, 'w' )
