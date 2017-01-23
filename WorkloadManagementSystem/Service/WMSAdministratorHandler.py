@@ -64,18 +64,17 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
 ##############################################################################
-  types_getSiteMask = [basestring]
-  def export_getSiteMask(self, siteState = 'Active'):
+  types_getSiteMask = []
+  def export_getSiteMask(self):
     """ Get the site mask
     """
-    return jobDB.getSiteMask( siteState )
+    return jobDB.getSiteMask( 'Active' )
 
-##############################################################################
-  types_getSiteMaskStatus = [basestring]
-  def export_getSiteMaskStatus(self, sites = None):
-    """ Get the site mask of given site(s)
+  types_getSiteMaskStatus = []
+  def export_getSiteMaskStatus(self):
+    """ Get the site mask with columns site and status only
     """
-    return jobDB.getSiteMaskStatus( sites )
+    return jobDB.getSiteMaskStatus()
 
   types_getAllSiteMaskStatus = []
   def export_getAllSiteMaskStatus(self):
@@ -96,7 +95,7 @@ class WMSAdministratorHandler(RequestHandler):
       author = result['Value']
     else:
       author = dn
-    result = jobDB.banSiteInMask(site,author,comment)
+    result = jobDB.banSiteInMask(site, author, comment)
     return result
 
 ##############################################################################
