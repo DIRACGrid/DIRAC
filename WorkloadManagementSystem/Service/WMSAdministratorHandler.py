@@ -71,10 +71,11 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.getSiteMask( 'Active' )
 
   types_getSiteMaskStatus = []
-  def export_getSiteMaskStatus(self):
-    """ Get the site mask with columns site and status only
+  def export_getSiteMaskStatus(self, sites = None):
+    """ Get the site mask of given site(s) with columns 'site' and 'status' only
     """
-    return jobDB.getSiteMaskStatus()
+
+    return jobDB.getSiteMaskStatus( sites )
 
   types_getAllSiteMaskStatus = []
   def export_getAllSiteMaskStatus(self):
