@@ -329,11 +329,9 @@ class ResourceStatusDB( object ):
                                        dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
 
       if not result['Value']:
-        print "aaa"
         self.insert( element, tableType, name, statusType, status, elementType, reason ,
                      dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
       else:
-        print "eee"
         self.modify( element, tableType, name, statusType, status, elementType, reason ,
                      dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
 
