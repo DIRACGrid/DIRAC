@@ -1,10 +1,13 @@
+""" Basic functions for interacting with CS objects
+"""
+
 
 import os
-import types
 
 import DIRAC
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -81,15 +84,15 @@ class ConfigurationClient( object ):
 
     # Casting to typeValue's type
     requestedType = typeValue
-    if not type( typeValue ) == types.TypeType:
+    if not isinstance( typeValue, type ):
       requestedType = type( typeValue )
 
-    if requestedType == types.ListType:
+    if requestedType == list:
       try:
         return S_OK( List.fromChar( optionValue, ',' ) )
       except Exception:
         return S_ERROR( "Can't convert value (%s) to comma separated list" % str( optionValue ) )
-    elif requestedType == types.BooleanType:
+    elif requestedType == bool:
       try:
         return S_OK( optionValue.lower() in ( "y", "yes", "true", "1" ) )
       except Exception:
