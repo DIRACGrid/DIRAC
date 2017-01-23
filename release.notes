@@ -1,3 +1,12 @@
+[v6r16p6]
+
+*WMS
+NEW: Added MultiProcessorSiteDirector section to the ConfigTemplate.cfg
+
+*DMS
+FIX: FileCatalogClient - added missing read methods to the interface description
+     getDirectoryUserMetadata(), getFileUserMetadata()
+
 [v6r16p5]
 
 FIX: included patches from v6r15p27
