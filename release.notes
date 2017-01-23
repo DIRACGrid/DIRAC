@@ -1,3 +1,19 @@
+[v6r17p4]
+
+*Configuration
+FIX: Utilities - fixed interpretation of weird values of GlueCEPolicyMaxWallClockTime
+     BDII parameter; newMaxCPUTime should is made integer
+
+*Framework
+FIX: Logger - make subloggers processing messages with the same level
+     as the parent logger
+
+*Docs
+NEW: Updated documentation in several sections
+
+*DMS
+FIX: RemoveReplica operation - don't set file Done in RemoveReplicas if there is an error
+
 [v6r17p3]
 
 *RSS
@@ -76,6 +92,15 @@ FIX: JobStateUpdate service - in setJobStatusBulk() avoid adding false informati
 FIX: TaskManager, TaskManagerAgentBase - standardize the logging information; removed unnecessary 
      code; use iterators wherever possible     
 NEW: Introduced metadata-based filters when registering new data in the TS as catalog       
+
+[v6r16p6]
+
+*WMS
+NEW: Added MultiProcessorSiteDirector section to the ConfigTemplate.cfg
+
+*DMS
+FIX: FileCatalogClient - added missing read methods to the interface description
+     getDirectoryUserMetadata(), getFileUserMetadata()
 
 [v6r16p5]
 

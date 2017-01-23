@@ -97,7 +97,7 @@ class Job( API ):
       self.__setJobDefaults()
     else:
       self.workflow = Workflow( script )
-    self.__siteSet = set( getSites().get( 'Value', [] ) )
+    self._siteSet = set( getSites().get( 'Value', [] ) )
 
   #############################################################################
 
@@ -600,10 +600,10 @@ class Job( API ):
     """Internal function to check that a site name is valid.
     """
     if isinstance( site, ( list, set, dict ) ):
-      site = set( site ) - self.__siteSet
+      site = set( site ) - self._siteSet
       if not site:
         return S_OK()
-    elif site in self.__siteSet:
+    elif site in self._siteSet:
       return S_OK()
     return S_ERROR( 'Specified site %s is not in list of defined sites' % str( site ) )
 

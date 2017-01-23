@@ -112,11 +112,12 @@ class RemoveReplica( DMSRequestOperationsBase ):
         errors = list( set( error for error in removalStatus[opFile.LFN].itervalues() if error ) )
         if errors:
           opFile.Error = "\n".join( errors )
-          # This seems to be the only offending error
+          # This seems to be the only unrecoverable error
           if "Write access not permitted for this credential" in opFile.Error:
             failed += 1
-            continue
-        opFile.Status = "Done"
+            opFile.Status = "Failed"
+        else:
+          opFile.Status = "Done"
 
     if failed:
       self.operation.Error = "failed to remove %s replicas" % failed
