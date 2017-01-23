@@ -18,10 +18,13 @@ class Script( ModuleBase ):
   """
 
   #############################################################################
-  def __init__( self ):
+  def __init__( self, log = None ):
     """ c'tor
     """
-    self.log = gLogger.getSubLogger( 'Script' )
+    if log is not None:
+      self.log = log
+    else:
+      self.log = gLogger.getSubLogger( 'Script' )
     super( Script, self ).__init__( self.log )
 
     # Set defaults for all workflow parameters here

@@ -1,11 +1,15 @@
 """ This module will run some job descriptions defined with an older version of DIRAC
 """
 
+#pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
+
+import unittest
+import os
+import shutil
+
 #!/usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
-
-import unittest, os, shutil
 
 from DIRAC.tests.Utilities.utils import find_all
 
