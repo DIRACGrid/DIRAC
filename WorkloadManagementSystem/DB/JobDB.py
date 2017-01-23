@@ -1313,7 +1313,7 @@ class JobDB( DB ):
       return S_ERROR( 'Job ' + str( jobID ) + ' not found in the system' )
 
     if not resultDict['VerifiedFlag']:
-      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % ( 
+      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % (
                                                                              jobID,
                                                                              resultDict['Status'],
                                                                              resultDict['MinorStatus'] ) )
@@ -1494,14 +1494,8 @@ class JobDB( DB ):
     """
     if isinstance(sites, list):
 
-      cmd = "SELECT Site, Status FROM SiteMask WHERE"
-      first = True
-      for siteName in sites:
-        if first:
-          first = False
-          cmd += " Site='" + siteName + "'"
-        else:
-          cmd += " OR Site='" + siteName + "'"
+      sitesString = ",".join( "'%s'" % site for site in sites)
+      cmd = "SELECT Site, Status FROM SiteMask WHERE site in (%s)" % sitesString
 
       result = self._query( cmd )
       return S_OK( dict(result['Value']) )
