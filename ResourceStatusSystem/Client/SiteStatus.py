@@ -79,7 +79,7 @@ class SiteStatus( object ):
         siteStatusDict = self.wmsAdministrator.getSiteMask()
 
       if not siteStatusDict['OK']:
-       return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
+       return siteStatusDict
       else:
        siteStatusDict = siteStatusDict['Value']
 
@@ -95,7 +95,7 @@ class SiteStatus( object ):
         result = self.wmsAdministrator.getSiteMaskStatus(siteName)
 
       if not result['OK']:
-        return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
+        return result
       elif not result['Value']:
         #if one of the listed elements does not exist continue
         continue
@@ -134,7 +134,7 @@ class SiteStatus( object ):
       siteStatus = self.wmsAdministrator.getSiteMaskStatus(siteName)
 
     if not siteStatus['OK']:
-      return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
+      return siteStatus
 
     if not siteStatus['Value']:
       #Site does not exist, so it is not usable
@@ -184,7 +184,7 @@ class SiteStatus( object ):
         siteStatus = self.wmsAdministrator.getSiteMask()
 
       if not siteStatus['OK']:
-        return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
+        return siteStatus
       elif not siteStatus['Value']:
         #if one of the listed elements does not exist continue
         continue
@@ -227,7 +227,7 @@ class SiteStatus( object ):
       siteStatus = self.wmsAdministrator.getSiteMask(siteState)
 
     if not siteStatus['OK']:
-      return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
+      return siteStatus
     else:
 
       if not self.rssFlag:
