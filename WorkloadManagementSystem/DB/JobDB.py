@@ -1495,7 +1495,7 @@ class JobDB( DB ):
     if isinstance(sites, list):
 
       sitesString = ",".join( "'%s'" % site for site in sites)
-      cmd = "SELECT Site, Status FROM SiteMask WHERE site in (%s)" % sitesString
+      cmd = "SELECT Site, Status FROM SiteMask WHERE Site in (%s)" % sitesString
 
       result = self._query( cmd )
       return S_OK( dict(result['Value']) )
