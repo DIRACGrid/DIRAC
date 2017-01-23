@@ -100,7 +100,10 @@ class SiteStatus( object ):
         #if one of the listed elements does not exist continue
         continue
       else:
-        siteStatusDict[siteName] = result['Value'][0][0]
+        if self.rssFlag:
+          siteStatusDict[siteName] = result['Value'][0][0]
+        else:
+          siteStatusDict[siteName] = result['Value']
 
     return S_OK( siteStatusDict )
 
@@ -181,7 +184,7 @@ class SiteStatus( object ):
       if self.rssFlag:
         siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
       else:
-        siteStatus = self.wmsAdministrator.getSiteMask()
+        siteStatus = self.wmsAdministrator.getSiteMaskStatus(siteName)
 
       if not siteStatus['OK']:
         return siteStatus
@@ -189,7 +192,11 @@ class SiteStatus( object ):
         #if one of the listed elements does not exist continue
         continue
       else:
-        siteStatus = siteStatus['Value'][0][0]
+
+        if self.rssFlag:
+          siteStatus = siteStatus['Value'][0][0]
+        else:
+          siteStatus = siteStatus['Value']
 
       if siteStatus in ('Active', 'Degraded'):
         siteStatusList.append(siteName)
