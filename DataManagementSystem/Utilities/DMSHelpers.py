@@ -165,6 +165,25 @@ class DMSHelpers( object ):
     self.getSiteSEMapping()
     return sorted( self.siteSet )
 
+  def getTiers( self, withStorage = False, tier = None ):
+    return sorted( self.getShortSiteNames( withStorage = withStorage, tier = tier ).values() )
+
+  def getShortSiteNames( self, withStorage = True, tier = None ):
+    siteDict = {}
+    result = self.getSiteSEMapping()
+    if result['OK']:
+      for site in self.siteSEMapping[LOCAL] if withStorage else self.siteSet:
+        grid, shortSite, _country = site.split( '.' )
+        if isinstance( tier, ( int, long ) ) and ( grid != 'LCG' or gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, site ), 999 ) != tier ):
+          continue
+        if isinstance( tier, ( list, tuple, dict, set ) ) and ( grid != 'LCG' or gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, site ), 999 ) not in tier ):
+          continue
+        if withStorage or tier:
+          siteDict[shortSite] = site
+        else:
+          siteDict.setdefault( shortSite, [] ).append( site )
+    return siteDict
+
   def getStorageElements( self ):
     self.getSiteSEMapping()
     return sorted( self.storageElementSet )
