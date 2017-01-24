@@ -229,9 +229,9 @@ class SiteStatus( object ):
       return S_ERROR(DErrno.ERESUNK, 'siteState is empty')
 
     if self.rssFlag:
-      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'name' ] } )
+      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'Name' ] } )
     else:
-      siteStatus = self.wmsAdministrator.getSiteMask(siteState)
+      siteStatus = self.wmsAdministrator.getSiteMask()
 
     if not siteStatus['OK']:
       return siteStatus
