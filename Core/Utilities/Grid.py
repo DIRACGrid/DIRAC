@@ -1,17 +1,19 @@
 """
 The Grid module contains several utilities for grid operations
 """
-__RCSID__ = "$Id$"
 
 import os
-import types
 import re
+
 from DIRAC.Core.Utilities.Os                          import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers         import Local
 from DIRAC.Core.Utilities.ReturnValues                import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess                  import systemCall, shellCall
+
+__RCSID__ = "$Id$"
+
 
 def executeGridCommand( proxy, cmd, gridEnvScript = None ):
   """
@@ -44,7 +46,7 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
     if not res['OK']:
       return res
     gridEnv['X509_USER_PROXY' ] = res['Value']['path']
-  elif type( proxy ) in types.StringTypes:
+  elif isinstance( proxy, basestring ):
     if os.path.exists( proxy ):
       gridEnv[ 'X509_USER_PROXY' ] = proxy
     else:
@@ -74,16 +76,16 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
         'attr':               Dictionary of attributes
   """
 
-  if filt == None:
+  if filt is None:
     filt = ''
-  if attr == None:
+  if attr is None:
     attr = ''
-  if host == None:
+  if host is None:
     host = 'lcg-bdii.cern.ch:2170'
-  if base == None:
+  if base is None:
     base = 'Mds-Vo-name=local,o=grid'
 
-  if type( attr ) == types.ListType:
+  if isinstance( attr, list ):
     attr = ' '.join( attr )
 
   cmd = 'ldapsearch -x -LLL -o ldif-wrap=no -h %s -b %s "%s" %s' % ( host, base, filt, attr )
@@ -126,7 +128,7 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
           attr = line[:index]
           value = line[index + 1:].strip()
           if record['attr'].has_key( attr ):
-            if type( record['attr'][attr] ) == type( [] ):
+            if isinstance( record['attr'][attr], list ):
               record['attr'][attr].append( value )
             else:
               record['attr'][attr] = [record['attr'][attr], value]
@@ -258,7 +260,7 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
     dn = ce['dn']
     result = ldapsearchBDII( filt, attr, host, base = dn )
     if result['OK']:
-      views.append( result['Value'][0]['attr'] )
+      views.append( result['Value'][0]['attr'] ) #pylint: disable=unsubscriptable-object
 
   return S_OK( views )
 
@@ -402,7 +404,7 @@ def getBdiiCEInfo( vo, host = None ):
       ce = result['Value'][0]
       ceDict[ceID] = ce
 
-      fKey = ce['GlueForeignKey']
+      fKey = ce['GlueForeignKey'] #pylint: disable=unsubscriptable-object
       siteID = ''
       for key in fKey:
         if key.startswith('GlueSiteUniqueID'):
