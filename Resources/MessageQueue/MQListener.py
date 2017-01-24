@@ -17,8 +17,7 @@
 
 """
 
-import time
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.Resources.MessageQueue.MQConnectionFactory import MQConnectionFactory
 from DIRAC.Resources.MessageQueue.MQConnection import MQConnectionError
 
@@ -29,28 +28,21 @@ class MQListener( object ):
 
   def __init__(self, messageQueue, callback = None ):
 
-    self.callback = callback
     mqFactory = MQConnectionFactory()
     result = mqFactory.getMQListener( messageQueue )
     if not result['OK']:
       raise MQConnectionError( 'Failed to instantiate MQService connection: %s' % result['Message'] )
     self.mqConnection = result['Value']
+
     if callback:
-      self.mqConnection.callback = callback
+      self.setCallback( callback )
 
   def get( self ):
     """ Get one message, if any, from the MQ server
 
     :return: S_OK( message )/ S_ERROR if not message available or connection error
     """
-    if self.callback:
-      return S_ERROR( 'Can not do get(): the listener is configured with callback' )
-    if self.mqConnection.connection is None:
-      result = self.mqConnection.setupConnection( receive = True )
-      if not result['OK']:
-        return result
-      # Give some time for the first check for messages on the server
-      time.sleep(0.2)
+
     return self.mqConnection.get()
 
   def run( self ):
@@ -59,8 +51,8 @@ class MQListener( object ):
 
     :return: S_OK/S_ERROR
     """
-    result = self.mqConnection.run()
-    return result
+
+    return self.mqConnection.run()
 
   def stop( self ):
     """ Stops consuming messages and disconnects from the MQ server
@@ -68,8 +60,7 @@ class MQListener( object ):
     :return: S_OK/S_ERROR
     """
 
-    result = self.mqConnection.disconnect()
-    return result
+    return self.mqConnection.disconnect()
 
   def setCallback( self, callback ):
     """ Set the call back function in a consumer mode
@@ -77,5 +68,6 @@ class MQListener( object ):
     :param func callback: callback function
     :return: S_OK
     """
+
     self.mqConnection.callback = callback
     return S_OK()
