@@ -369,6 +369,7 @@ class CREAMComputingElement( ComputingElement ):
         output = "Standard Output is not available on the CREAM service"
         if os.path.exists( outFileName ):
           os.unlink( outFileName )
+        return S_ERROR( output )
       else:
         error = '\n'.join( result['Value'][1:] )
         return S_ERROR( error )
@@ -388,6 +389,7 @@ class CREAMComputingElement( ComputingElement ):
         error = "Standard Error is not available on the CREAM service"
         if os.path.exists( errFileName ):
           os.unlink( errFileName )
+        return S_ERROR( error )
     else:
       return S_ERROR( 'Failed to retrieve error for %s' % jobID )
 
