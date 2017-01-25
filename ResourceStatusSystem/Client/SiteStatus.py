@@ -4,6 +4,8 @@
 
 """
 
+import errno
+
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
@@ -245,6 +247,40 @@ class SiteStatus( object ):
         siteList.append(site[0])
 
       return S_OK( siteList )
+
+  def setSiteStatus( self, site, status, comment = 'No comment' ):
+    """
+    Set the status of a site from the 'SiteStatus' table
+
+    examples
+      >>> siteStatus.banSite( 'site1.test.test' )
+          S_OK()
+      >>> siteStatus.banSite( None )
+          S_ERROR( ... )
+
+    :Parameters:
+      **site** - `String`
+        the site that is going to be banned
+      **comment** - `String`
+        reason for banning
+
+    :return: S_OK() || S_ERROR()
+    """
+
+    # fix case sensitive string
+    status = status.capitalize()
+
+    allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
+
+    if status not in allowedStateList:
+      return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
+
+    result = self.rsClient.modifyStatusElement( 'Site', 'Status', status = status, name = site, reason = comment )
+
+    if not result['OK']:
+      return result
+
+    return S_OK()
 
 #################################################################################
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
