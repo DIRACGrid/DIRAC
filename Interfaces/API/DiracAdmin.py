@@ -18,6 +18,8 @@ from DIRAC.Core.DISET.RPCClient                               import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteCEMapping
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus         import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus             import SiteStatus
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSE
@@ -49,6 +51,8 @@ class DiracAdmin( API ):
 
     self.scratchDir = gConfig.getValue( self.section + '/ScratchDir', '/tmp' )
     self.currentDir = os.getcwd()
+    self.rssFlag = ResourceStatus().rssFlag
+    self.sitestatus = SiteStatus()
 
   #############################################################################
   def uploadProxy( self, group ):
@@ -119,8 +123,8 @@ class DiracAdmin( API ):
        :return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.getSiteMask()
+
+    result = self.sitestatus.getSites()
     if result['OK']:
       sites = result['Value']
       if printOutput:
@@ -215,8 +219,11 @@ class DiracAdmin( API ):
     if site in siteMask:
       return S_ERROR( 'Site %s already in mask of allowed sites' % site )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.allowSite( site, comment )
+    if self.rssFlag:
+      result = self.sitestatus.setSiteStatus( site, 'Active', comment )
+    else:
+      wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+      result = wmsAdmin.allowSite( site, comment )
     if not result['OK']:
       return result
 
@@ -288,8 +295,11 @@ class DiracAdmin( API ):
     if not site in siteMask:
       return S_ERROR( 'Site %s is already banned' % site )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.banSite( site, comment )
+    if self.rssFlag:
+      result = self.sitestatus.setSiteStatus( site, 'Banned', comment )
+    else:
+      wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+      result = wmsAdmin.banSite( site, comment )
     if not result['OK']:
       return result
 
@@ -299,7 +309,6 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
-  @classmethod
   def __checkSiteIsValid( self, site ):
     """Internal function to check that a site name is valid.
     """
