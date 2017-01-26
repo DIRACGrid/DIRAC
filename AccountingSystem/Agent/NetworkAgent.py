@@ -1,147 +1,84 @@
-__RCSID__ = "$Id: $"
-import time
-import ssl
-import stomp
-import socket
-import json
+"""
+Accounting agent to consume perfSONAR network metrics received via a message queue.
+"""
 
-from DIRAC import S_OK, S_ERROR
+from datetime import datetime
+
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.AgentModule                  import AgentModule
-from DIRAC.Core.Security                          import Locations
 from DIRAC.AccountingSystem.Client.Types.Network  import Network
 from DIRAC.ConfigurationSystem.Client.Config      import gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI       import CSAPI
+from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 
-from messaging.stomppy import MessageListener
-from datetime import datetime
-
-# required by stomp.py
-import logging
-logging.basicConfig()
-
+__RCSID__ = "$Id: $"
 
 class NetworkAgent ( AgentModule ):
   """
-  Class to retrieve messages containing perfSONAR data.
+  AccountingSystem agent to processes messages containing perfSONAR network metrics.
+  Results are stored in the accounting database.
   """
 
-  # supported messages
-  MESSAGE_TYPES = [
-                    'packet-loss-rate',
-                    # 'packet-count-sent',
-                    # 'packet-count-lost',
-                    # 'packet-trace',
-                    # 'throughput',
-                    'histogram-owdelay'
-                  ]
-
-  HostToDiracNameDict = {}  # one dictionary for all message listeners
+  BUFFER_TIMEOUT = 1800  # number of seconds after which network accounting objects
+                         # are removed form the the temporary buffer
 
   def initialize( self ):
+    
+    self.log = gLogger.getSubLogger( 'NetworkAgent' )
 
-    # API initialization is required to get the up-to-date configuration from CS
+    # API initialization is required to get an up-to-date configuration from the CS
     self.csAPI = CSAPI()
     self.csAPI.initialize()
 
-    # get paths to the key and certificate
-    paths = Locations.getHostCertificateAndKeyLocation()
-    if not paths:
-      self.log.error( "getHostCertificateAndKeyLocation() returned 'False'" )
-      return S_ERROR( 'Could not find a certificate!' )
-    else:
-      self.hostCertPath = paths[0]
-      self.hostKeyPath = paths[1]
+    # temporary buffer for network accounting objects + some parameters
+    self.buffer = {}  # { {addTime: datetime.now(), object: Network() }, ... }
+    self.bufferTiemout = self.am_getOption( 'BufferTimeout', NetworkAgent.BUFFER_TIMEOUT )
 
-    self.brokerName = self.am_getOption( 'MQBrokerName', None )  # FQDN of the broker
-    self.brokerPort = int( self.am_getOption( 'MQBrokerPort', None ) )  # port at which broker is listening
+    # internal list of message queue consumers
+    self.consumers = []
 
-    self.brokerConnections = {}  # holds connections that were established
+    # host-to-dirac name dictionary
+    self.nameDictionary = {}
+
+    # statistics
+    self.messagesCount = 0  # number of received messages
+    self.messagesCountOld = 0  # previous number of received messages (used to check connection status)
+    
+    self.skippedMessagesCount = 0  # number of skipped messages (errors, unsupported metrics, etc.)
+    self.PLRMetricCount = 0  # number of received packet-loss-rate metrics
+    self.OWDMetricCount = 0  # number of received one-way-delay metrics
+    self.skippedMetricCount = 0  # number of skipped metrics (errors, invalid data, etc.)
+    self.insertedCount = 0  # number of properly inserted accounting objects
+    self.removedCount = 0  # number of removed accounting objects (missing data)
 
     return S_OK()
+  
+  def finalize( self ):
+    '''
+    Gracefully close all consumer connections and commit last records to the DB.
+    '''
+
+    for consumer in self.consumers:
+      consumer.close()
+
+    self.commitData()
+
+    return S_OK()
+  
 
   def execute( self ):
     '''
-    During each cycle update the internal site name dictionary,
-    check connections and show statistics.
+    During each cycle update the internal host-to-dirac name dictionary,
+    check the consumers status (restart them if necessary),
+    commit data stored in the buffer and show statistics.
     '''
 
     self.updateNameDictionary()
-    self.checkConnections()
-
-    for ip, connection in self.brokerConnections.iteritems():
-      listener = connection.get_listener( ip )
-      self.log.info( "Broker IP: %s" % ip )
-      self.log.info( "\tReceived messages:           %s" % listener.messagesCount )
-      self.log.info( "\tPacket-loss-rate datapoints: %s" % listener.PLREventsCount )
-      self.log.info( "\tOne-way-delay datapoints:    %s" % listener.OWDEventsCount )
+    self.checkConsumers()
+    self.commitData()
+    self.showStatistics()
 
     return S_OK()
-
-  def checkConnections ( self ):
-    '''
-    Check if all required connections are OK (try to reconnect if needed).
-    '''
-
-    if self.brokerName is not None and self.brokerPort is not None:
-
-      # get IP addresses of the brokers and connect to them
-      brokers = socket.gethostbyname_ex( self.brokerName )
-      self.log.info( 'Broker name resolves to %s IP(s)' % len( brokers[2] ) )
-
-      for ip in brokers[2]:
-        try:
-          connection = self.brokerConnections[ip]
-        except KeyError:
-          connection = None
-
-        # (re)connect to the brokers
-        if connection is None or not connection.is_connected():
-          new_connection = self.connectToBroker( ip )
-          if new_connection is not None:
-            self.brokerConnections[ip] = new_connection
-          elif connection is None:
-            del self.brokerConnections[ip]
-
-    else:
-      self.log.warn( 'Broker name and port are not set in the configuration!' )
-
-
-  def connectToBroker( self, ip ):
-    '''
-    Connect to a message broker at given IP and subscribe required topics.
-    '''
-
-    connection = stomp.Connection( 
-                                  [( ip, self.brokerPort )],
-                                  use_ssl = True,
-                                  ssl_version = ssl.PROTOCOL_TLSv1,
-                                  ssl_key_file = self.hostKeyPath,
-                                  ssl_cert_file = self.hostCertPath,
-                                  reconnect_sleep_initial = 10,
-                                  reconnect_attempts_max = 1
-                                 )
-
-    self.log.debug( "Setting up the message listener (%s)." % ip )
-    connection.set_listener( ip, self.NetworkMessagesListener( self.log ) )
-
-    self.log.debug( "Starting the connection (%s)." % ip )
-    connection.start()
-
-    self.log.debug( "Connecting to the broker (%s)." % ip )
-    connection.connect()
-    time.sleep( 1 )
-
-    if connection.is_connected():
-      self.log.info( "Connected to %s:%s" % ( ip, self.brokerPort ) )
-      self.log.debug( "Subscribing topics" )
-      for eventType in self.MESSAGE_TYPES:
-        connection.subscribe( destination = '/topic/perfsonar.' + eventType, ack = 'auto' )
-
-      return connection
-
-    else:
-      self.log.error( "Could not connect to %s:%s" % ( ip, self.brokerPort ) )
-      return None
 
   def updateNameDictionary( self ):
     '''
@@ -161,82 +98,164 @@ class NetworkAgent ( AgentModule ):
         hostName = elements[6]
         tmpDict[hostName] = diracName
 
-    NetworkAgent.HostToDiracNameDict = tmpDict
+    self.nameDictionary = tmpDict
 
-
-  class NetworkMessagesListener( MessageListener ):
+  def checkConsumers( self ):
     '''
-    Internal message listener class that handle messages with perfSONAR data.
+    Check whether consumers exist and work properly.
+    (Re)create consumers if needed.
+    '''
+    
+    # recreate consumers if there are any problems
+    if not self.consumers or self.messagesCount == self.messagesCountOld:
+
+      for consumer in self.consumers:
+        consumer.close()
+
+      for uri in self.am_getOption( 'MessageQueueURI', '' ).replace( " ", "" ).split( ',' ):
+        result = createConsumer( uri, self.processMessage )
+        if not result['OK']:
+          self.log.error( 'Failed to create a consumer from URI: %s' % uri )
+          continue
+        else:
+          self.log.info( 'Successfully created a consumer from URI: %s' % uri )
+
+        self.consumers.append( result['Value'] )
+      
+      if len( self.consumers ) > 0:
+        return S_OK( 'Successfully created at least one consumer' )
+      else:
+        return S_ERROR( 'Failed to create at least one consumer' )
+
+    # if everything is OK just update the counter
+    else:
+      self.messagesCountOld = self.messagesCount
+
+  def processMessage( self, headers, body ):
+    '''
+    Process a message containing perfSONAR data and store the result in the Accounting DB.
+    Supports packet-loss-rate and one-way-delay metrics send in 5min summaries.
+
+    Function is designed to be an MQConsumer callback function.
     '''
 
-    def __init__( self, log ):
-      self.net = Network()
+    self.messagesCount += 1
+    metadata = {
+                 'SourceIP': body['meta']['source'],
+                 'SourceHostName': body['meta']['input_source'],
+                 'DestinationIP': body['meta']['destination'],
+                 'DestinationHostName': body['meta']['input_destination'],
+               }
 
-      # counters
-      self.messagesCount = 0
-      self.PLREventsCount = 0  # packet-loss-rate events
-      self.OWDEventsCount = 0  # one-way-delay events
+    try:
+      metadata['Source'] = self.nameDictionary[body['meta']['input_source']]
+      metadata['Destination'] = self.nameDictionary[body['meta']['input_destination']]
+    except KeyError as error:
+      # messages with unsupported source or destination host name can be safely skipped
+      self.skippedMessagesCount += 1
+      self.log.debug( 'Host "%s" does not exist in the host-to-dirac name dictionary (message skipped)' % error )
+      return S_OK()
 
-      self.log = log.getSubLogger( 'NetworkMessagesListener' )
+    metadataKey = ''
+    for value in metadata.values():
+      metadataKey += value
 
-    def error( self, message ):
-      '''
-      Log message errors if they appear.
-      '''
+    if body.has_key( 'summaries' ):
+      for summary in body['summaries']:
 
-      self.log.warn( "Message error: %s" % message )
+        # we are interested in 5 minutes summaries only
+        if summary['summary_window'] == '300':
+          for data in summary['summary_data']:
+            try:
 
-    def message( self, message ):
-      self.messagesCount += 1
+              # set the time and create a hash
+              startTime = datetime.utcfromtimestamp( float( data[0] ) )
+              endTime = datetime.utcfromtimestamp( float( data[0] ) + 300 )
 
-      # prepare DB entity
-      body = json.loads( message.get_body() )
+              key = metadataKey
+              key += str( startTime )
+              key += str( endTime )
 
-      meta_data = {
-              'SourceIP': body['meta']['source'],
-              'SourceHostName': body['meta']['input_source'],
-              'DestinationIP': body['meta']['destination'],
-              'DestinationHostName': body['meta']['input_destination'],
-             }
+              # use existing or create a new temporary accounting object to store the data in DB
+              if self.buffer.has_key( key ):
+                net = self.buffer[key]['object']
+              else:
+                net = Network()
+                net.setStartTime( startTime )
+                net.setEndTime( endTime )
+                net.setValuesFromDict( metadata )
 
-      # skip data from unknown source or destination
-      try:
-        meta_data['Source'] = NetworkAgent.HostToDiracNameDict[body['meta']['input_source']]
-      except KeyError:
-        self.log.debug( "Unknown source: %s (message skipped)" % body['meta']['input_source'] )
-        return
+              # look for supported event types
+              if summary['event_type'] == 'packet-loss-rate':
+                self.PLRMetricCount += 1
+                net.setValueByKey( 'PacketLossRate', data[1] * 100 )
+              elif summary['event_type'] == 'histogram-owdelay' and summary['summary_type'] == 'statistics':
+                self.OWDMetricCount += 1
 
-      try:
-        meta_data['Destination'] = NetworkAgent.HostToDiracNameDict[body['meta']['input_destination']]
-      except KeyError:
-        self.log.debug( "Unknown destination: %s (message skipped)" % body['meta']['input_destination'] )
-        return
-
-      self.net.setValuesFromDict( meta_data )
-
-      if body.has_key( 'summaries' ):
-        for summary in body['summaries']:
-
-          # we are interested in 5 minutes summaries only
-          if summary['summary_window'] == '300':
-            for data in summary['summary_data']:
-
-                # look for supported event types
-                if summary['event_type'] == 'packet-loss-rate':
-                  self.PLREventsCount += 1
-                  self.net.setValueByKey( 'PacketLossRate', data[1] * 100 )
-
-
-                elif summary['event_type'] == 'histogram-owdelay' and summary['summary_type'] == 'statistics':
-                  self.OWDEventsCount += 1
-
-                  # approximate jitter value as OWDMax - OWDMin
-                  self.net.setValueByKey( 'Jitter', data[1]['maximum'] - data[1]['minimum'] )
-                  self.net.setValueByKey( 'OneWayDelay', data[1]['mean'] )
+                # skip metrics with invalid data
+                if data[1]['mean'] < 0 or data[1]['minimum'] < 0 or data[1]['maximum'] < 0:
+                  raise Exception( 'Invalid OWD metric (%s, %s, %s)' % ( data[1]['mean'], data[1]['minimum'], data[1]['maximum'] ) )
                 else:
-                  continue
+                  # approximate jitter value as OWDMax - OWDMin
+                  net.setValueByKey( 'Jitter', data[1]['maximum'] - data[1]['minimum'] )
+                  net.setValueByKey( 'OneWayDelay', data[1]['mean'] )
+              else:
+                self.skippedMetricCount += 1
+                continue
+              
+              self.buffer[key] = {'addTime': datetime.now(), 'object': net}
 
-                # set the time and commit data to the database
-                self.net.setStartTime( datetime.utcfromtimestamp( float( data[0] ) ) )
-                self.net.setEndTime( datetime.utcfromtimestamp( float( data[0] ) + 300 ) )
-                self.net.delayedCommit()
+            # suppress all exceptions to protect the listener thread
+            except Exception as e:
+              self.skippedMetricCount += 1
+              self.log.warn( 'Metric skipped because of an exception: %s' % e )
+
+        else:
+          self.skippedMessagesCount += 1
+    
+    return S_OK()
+
+  def commitData(self):
+    '''
+    Iterates through all object in the temporary buffer and commit objects to DB
+    if both packet-loss-rate and one-way-delay values are set.
+
+    Objects in the buffer older than self.bufferTiemout seconds which still have
+    missing data are removed permanently (a warning is issued).
+    '''
+    
+    now = datetime.now()
+    removed = False
+    
+    for key, value in self.buffer.items():
+      result = value['object'].checkValues()
+      if not result['OK']:
+        if ( now - value['addTime'] ).total_seconds() > self.bufferTiemout:
+          del self.buffer[key]
+          self.removedCount += 1
+          removed = True
+      else:
+        value['object'].delayedCommit()
+        del self.buffer[key]
+        self.insertedCount += 1
+
+    if removed:
+      self.log.warn( 'Network accounting object(s) has been removed because of missing data' )
+      
+    return S_OK()
+
+  def showStatistics( self ):
+    ''' Display different statistics as info messages in the log file.
+    '''
+
+    self.log.info( "\tReceived messages:           %s" % self.messagesCount )
+    self.log.info( "\tSkipped messages:            %s" % self.skippedMessagesCount )
+    self.log.info( "\tPacket-Loss-Rate metrics:    %s" % self.PLRMetricCount )
+    self.log.info( "\tOne-Way-Delay metrics:       %s" % self.OWDMetricCount )
+    self.log.info( "\tSkipped metrics:             %s" % self.skippedMetricCount )
+    self.log.info( "" )
+    self.log.info( "\tObjects in the buffer:       %s" % len( self.buffer ) )
+    self.log.info( "\tObjects inserted to DB:      %s" % self.insertedCount )
+    self.log.info( "\tPermanently removed objects: %s" % self.removedCount )
+
+    return S_OK()
