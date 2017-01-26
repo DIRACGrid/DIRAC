@@ -1582,10 +1582,10 @@ class DataManager( object ):
         activeDict['Failed'][lfn] = 'Wrong replica info'
       else:
         activeDict['Successful'][lfn] = replicas.copy()
-    self.__checkActiveReplicas( activeDict )
+    self.__filterActiveReplicas( activeDict )
     return S_OK( activeDict )
 
-  def __checkActiveReplicas( self, replicaDict ):
+  def __filterActiveReplicas( self, replicaDict ):
     """
     Check a replica dictionary for active replicas
     The input dict is modified, no returned value
@@ -1604,12 +1604,11 @@ class DataManager( object ):
     return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( status, False )
 
   def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, forJobs = False, active = False ):
-    """ get replicas from catalogue """
+    """ get replicas from catalogue and filter if requested
+    Warning: all filters are independent, hence active and preferDisk should be set if using forJobs
+    """
     catalogReplicas = {}
     failed = {}
-    # If for jobs, must force active and preferDisk
-    active = forJobs or active
-    preferDisk = forJobs or preferDisk
     for lfnChunk in breakListIntoChunks( lfns, 1000 ):
       res = self.fc.getReplicas( lfnChunk, allStatus = allStatus )
       if res['OK']:
@@ -1638,13 +1637,27 @@ class DataManager( object ):
 
     result = {'Successful':catalogReplicas, 'Failed':failed}
     if active:
-      self.__checkActiveReplicas( result )
+      self.__filterActiveReplicas( result )
     if diskOnly or preferDisk:
       self.__filterTapeReplicas( result, diskOnly = diskOnly )
     if forJobs:
       self.__filterReplicasForJobs( result )
     return S_OK( result )
 
+  def getReplicasForJobs( self, lfns, allStatus = False, getUrl = True ):
+    """ get replicas useful for jobs
+    """
+    result = self.getReplicas( lfns, allStatus = allStatus, getUrl = getUrl )
+    if not result['OK']:
+      return result
+    replicaDict = result['Value']
+    # For jobs replicas must be active
+    self.__filterActiveReplicas( replicaDict )
+    # For jobs, give preference to disk replicas but not only
+    self.__filterTapeReplicas( replicaDict, diskOnly = False )
+    # don't use SEs excluded for jobs (e.g. Failover)
+    self.__filterReplicasForJobs( replicaDict )
+    return S_OK( replicaDict )
 
   ##################################################################################################3
   # Methods from the catalogToStorage. It would all work with the direct call to the SE, but this checks
