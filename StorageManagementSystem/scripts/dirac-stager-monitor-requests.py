@@ -56,7 +56,7 @@ def parseSwitches():
 
   for key in ( 'status', 'se', 'limit' ):
     if key not in switches:
-      print "You're not using switch --%s, query may take long!" % key
+      subLogger.warn( "You're not using switch --%s, query may take long!" % key )
 
   if 'status' in  switches and switches[ 'status' ] not in ( 'New', 'Offline', 'Waiting', 'Failed', 'StageSubmitted', 'Staged' ):
     subLogger.error( "Found \"%s\" as Status value. Incorrect value used!" % switches[ 'status' ] )
@@ -89,7 +89,7 @@ def run():
   # ugly fix:
   newer = '1903-08-02 06:24:38'  # select newer than
   if 'limit' in switchDict:
-    print "Query limited to %s entries" % switchDict['limit']
+    gLogger.notice( "Query limited to %s entries" % switchDict['limit'] )
     res = client.getCacheReplicas( queryDict, None, newer, None, None, int( switchDict['limit'] ) )
   else:
     res = client.getCacheReplicas( queryDict )
@@ -133,7 +133,7 @@ def run():
       # what if there's no request to the site yet?
       resStageRequests = client.getStageRequests( {'ReplicaID':crid} )
       if not resStageRequests['OK']:
-        print resStageRequests['Message']
+        gLogger.error( resStageRequests['Message'] )
       if resStageRequests['Records']:
         stageRequests = resStageRequests['Value']
         for info in stageRequests.itervalues():
