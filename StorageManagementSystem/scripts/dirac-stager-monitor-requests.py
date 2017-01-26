@@ -55,16 +55,14 @@ def parseSwitches():
   switches = dict( Script.getUnprocessedSwitches() )
 
   for key in ( 'status', 'se', 'limit' ):
-
-    if not key in switches:
+    if key not in switches:
       print "You're not using switch --%s, query may take long!" % key
 
-  if 'status' in  switches.keys():
-    if not switches[ 'status' ] in ( 'New', 'Offline', 'Waiting', 'Failed', 'StageSubmitted', 'Staged' ):
-      subLogger.error( "Found \"%s\" as Status value. Incorrect value used!" % switches[ 'status' ] )
-      subLogger.error( "Please, check documentation below" )
-      Script.showHelp()
-      DIRACExit( 1 )
+  if 'status' in  switches and switches[ 'status' ] not in ( 'New', 'Offline', 'Waiting', 'Failed', 'StageSubmitted', 'Staged' ):
+    subLogger.error( "Found \"%s\" as Status value. Incorrect value used!" % switches[ 'status' ] )
+    subLogger.error( "Please, check documentation below" )
+    Script.showHelp()
+    DIRACExit( 1 )
 
   subLogger.debug( "The switches used are:" )
   map( subLogger.debug, switches.iteritems() )
@@ -126,7 +124,7 @@ def run():
           if resTasks['Value']:
             tasks = resTasks['Value']
             jobs = []
-            for tid in tasks.keys():
+            for tid in tasks:
               jobs.append( tasks[tid]['SourceTaskID'] )
             outStr += ' %s ' % ( str( jobs ).ljust( 10 ) )
         else:
