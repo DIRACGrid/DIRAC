@@ -29,24 +29,6 @@ class NetworkPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
 
-    selectFields = ( "'Total', %s, %s, 100 - SUM(%s)/SUM(%s), 100",
-                     [ 'startTime', 'bucketLength', 'PacketLossRate', 'entriesInBucket']
-                   )
-    retVal = self._getTimedData( reportRequest[ 'startTime' ],
-                                 reportRequest[ 'endTime' ],
-                                 selectFields,
-                                 reportRequest[ 'condDict' ],
-                                 reportRequest[ 'groupingFields' ],
-                                 { 'convertToGranularity' : 'average' }
-                               )
-    if not retVal[ 'OK' ]:
-      return retVal
-    totalDict = retVal[ 'Value' ][0]
-
-    self.stripDataField( totalDict, 0 )
-    for key in totalDict:
-      dataDict[ key ] = totalDict[ key ]
-
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotPacketLossRate( self, reportRequest, plotInfo, filename ):

@@ -4,7 +4,7 @@ from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountin
 
 class Network( BaseAccountingType ):
   '''
-  Accounting type to stores network statistics gathered by perfSONARs.
+  Accounting type to stores network metrics gathered by perfSONARs.
   '''
 
   def __init__( self ):
