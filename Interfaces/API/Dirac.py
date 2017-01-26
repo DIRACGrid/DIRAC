@@ -666,7 +666,7 @@ class Dirac( API ):
 
     self.log.info( 'Attempting to resolve data for %s' % siteName )
     self.log.verbose( '%s' % ( '\n'.join( lfns ) ) )
-    replicaDict = self.getReplicas( lfns )
+    replicaDict = self.getReplicas( lfns, forJobs = True, active = True, preferDisk = True )
     if not replicaDict['OK']:
       return replicaDict
     catalogFailed = replicaDict['Value'].get( 'Failed', {} )
@@ -735,7 +735,7 @@ class Dirac( API ):
 
     self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
     self.log.verbose( '\n'.join( inputData ) )
-    replicaDict = self.getReplicas( inputData )
+    replicaDict = self.getReplicas( inputData, active = True, forJobs = True, preferDisk = True )
     if not replicaDict['OK']:
       return replicaDict
     catalogFailed = replicaDict['Value'].get( 'Failed', {} )
@@ -823,7 +823,7 @@ class Dirac( API ):
 
       self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
       self.log.verbose( '\n'.join( inputData ) )
-      replicaDict = self.getReplicas( inputData )
+      replicaDict = self.getReplicas( inputData, active = True, forJobs = True, preferDisk = True )
       if not replicaDict['OK']:
         return replicaDict
       guidDict = self.getMetadata( inputData )
@@ -1022,7 +1022,7 @@ class Dirac( API ):
   #       print self.pPrint.pformat( metaDict )
 
   #############################################################################
-  def getReplicas( self, lfns, active = True, preferDisk = False, diskOnly = False, printOutput = False ):
+  def getReplicas( self, lfns, active = True, preferDisk = False, diskOnly = False, forJobs = False, printOutput = False ):
     """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
 
        Example usage:
@@ -1046,10 +1046,7 @@ class Dirac( API ):
 
     start = time.time()
     dm = DataManager()
-    if active:
-      repsResult = dm.getActiveReplicas( lfns, diskOnly = diskOnly, preferDisk = preferDisk )
-    else:
-      repsResult = dm.getReplicas( lfns )
+    repsResult = dm.getReplicas( lfns, active = active, preferDisk = preferDisk, diskOnly = diskOnly, forJobs = forJobs )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     self.log.debug( repsResult )
@@ -1161,7 +1158,7 @@ class Dirac( API ):
       except Exception as x:
         return self._errorReport( str( x ), 'Expected integer for maxFilesPerJob' )
 
-    replicaDict = self.getReplicas( lfns, active = True, preferDisk = True )
+    replicaDict = self.getReplicas( lfns, active = True, preferDisk = True, forJobs = True )
     if not replicaDict['OK']:
       return replicaDict
     if len( replicaDict['Value']['Successful'] ) == 0:
