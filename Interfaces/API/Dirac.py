@@ -1022,7 +1022,7 @@ class Dirac( API ):
   #       print self.pPrint.pformat( metaDict )
 
   #############################################################################
-  def getReplicas( self, lfns, active = True, preferDisk = False, diskOnly = False, forJobs = False, printOutput = False ):
+  def getReplicas( self, lfns, active = True, preferDisk = False, diskOnly = False, printOutput = False, forJobs = False ):
     """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
 
        Example usage:

@@ -1603,7 +1603,7 @@ class DataManager( object ):
     """ returns the value of a certain SE status flag (access or other) """
     return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( status, False )
 
-  def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, forJobs = False, active = False ):
+  def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, active = False, forJobs = False ):
     """ get replicas from catalogue and filter if requested
     Warning: all filters are independent, hence active and preferDisk should be set if using forJobs
     """
