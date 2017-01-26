@@ -860,7 +860,7 @@ class DataManager( object ):
             log.debug( "Cannot get destURL", res['Message'] )
             continue
         else:
-          log.debug( "File does not exist: Expected error for TargetSE !!")
+          log.debug( "File does not exist: Expected error for TargetSE !!" )
           destURL = res['Value']
 
         if sourceURL == destURL:
@@ -1499,11 +1499,11 @@ class DataManager( object ):
   # File catalog methods
   #
 
-  def getActiveReplicas( self, lfns, getUrl = True, diskOnly = False, preferDisk = False ):
+  def getActiveReplicas( self, lfns, getUrl = True, diskOnly = False, preferDisk = False, forJobs = False ):
     """ Get all the replicas for the SEs which are in Active status for reading.
     """
     return self.getReplicas( lfns, allStatus = False, getUrl = getUrl, diskOnly = diskOnly,
-                             preferDisk = preferDisk, active = True )
+                             preferDisk = preferDisk, forJobs = forJobs, active = True )
 
   def __filterTapeReplicas( self, replicaDict, diskOnly = False ):
     """
@@ -1522,6 +1522,25 @@ class DataManager( object ):
       if diskOnly and not replicas:
         del replicaDict['Successful'][lfn]
         replicaDict['Failed'][lfn] = 'No disk replicas'
+    return
+
+  def __filterReplicasForJobs( self, replicaDict ):
+    """ Remove the SEs that are not to be used for jobs, and archive SEs if there are others
+    The input argument is modified
+    """
+    seList = set( se for ses in replicaDict['Successful'].itervalues() for se in ses )
+    # Get a cache of SE statuses for long list of replicas
+    seStatus = dict( ( se, ( self.dmsHelper.isSEForJobs( se ), self.dmsHelper.isSEArchive( se ) ) ) for se in seList )
+    for lfn, replicas in replicaDict['Successful'].items():  # Beware, there is a del below
+      otherThanArchive = set( se for se in replicas if not seStatus[se][1] )
+      for se in replicas.keys():
+        # Remove the SE if it should not be used for jobs or if it is an archive and there are other SEs
+        if not seStatus[se][0] or ( otherThanArchive and seStatus[se][1] ):
+          replicas.pop( se )
+      # If in the end there is no replica, set Failed
+      if not replicas:
+        del replicaDict['Successful'][lfn]
+        replicaDict['Failed'][lfn] = 'No replicas for jobs'
     return
 
   def __filterTapeSEs( self, replicas, diskOnly = False, seStatus = None ):
@@ -1584,10 +1603,13 @@ class DataManager( object ):
     """ returns the value of a certain SE status flag (access or other) """
     return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( status, False )
 
-  def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, active = False ):
+  def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, forJobs = False, active = False ):
     """ get replicas from catalogue """
     catalogReplicas = {}
     failed = {}
+    # If for jobs, must force active and preferDisk
+    active = forJobs or active
+    preferDisk = forJobs or preferDisk
     for lfnChunk in breakListIntoChunks( lfns, 1000 ):
       res = self.fc.getReplicas( lfnChunk, allStatus = allStatus )
       if res['OK']:
@@ -1619,6 +1641,8 @@ class DataManager( object ):
       self.__checkActiveReplicas( result )
     if diskOnly or preferDisk:
       self.__filterTapeReplicas( result, diskOnly = diskOnly )
+    if forJobs:
+      self.__filterReplicasForJobs( result )
     return S_OK( result )
 
 
