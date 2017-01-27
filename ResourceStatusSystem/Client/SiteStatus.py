@@ -5,6 +5,7 @@
 """
 
 import errno
+from datetime import datetime, timedelta
 
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
@@ -275,7 +276,10 @@ class SiteStatus( object ):
     if status not in allowedStateList:
       return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
-    result = self.rsClient.modifyStatusElement( 'Site', 'Status', status = status, name = site, reason = comment )
+    tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
+
+    result = self.rsClient.modifyStatusElement( 'Site', 'Status', status = status, name = site,
+                                                tokenExpiration = tokenExpiration, reason = comment )
 
     if not result['OK']:
       return result
