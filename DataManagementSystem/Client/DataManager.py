@@ -1603,7 +1603,7 @@ class DataManager( object ):
     """ returns the value of a certain SE status flag (access or other) """
     return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( status, False )
 
-  def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, active = False, forJobs = False ):
+  def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, active = False ):
     """ get replicas from catalogue and filter if requested
     Warning: all filters are independent, hence active and preferDisk should be set if using forJobs
     """
@@ -1640,13 +1640,12 @@ class DataManager( object ):
       self.__filterActiveReplicas( result )
     if diskOnly or preferDisk:
       self.__filterTapeReplicas( result, diskOnly = diskOnly )
-    if forJobs:
-      self.__filterReplicasForJobs( result )
     return S_OK( result )
 
-  def getReplicasForJobs( self, lfns, allStatus = False, getUrl = True ):
+  def getReplicasForJobs( self, lfns, allStatus = False, getUrl = True, diskOnly = False ):
     """ get replicas useful for jobs
     """
+    # Call getReplicas with no filter and enforce filters in this method
     result = self.getReplicas( lfns, allStatus = allStatus, getUrl = getUrl )
     if not result['OK']:
       return result
@@ -1654,7 +1653,7 @@ class DataManager( object ):
     # For jobs replicas must be active
     self.__filterActiveReplicas( replicaDict )
     # For jobs, give preference to disk replicas but not only
-    self.__filterTapeReplicas( replicaDict, diskOnly = False )
+    self.__filterTapeReplicas( replicaDict, diskOnly = diskOnly )
     # don't use SEs excluded for jobs (e.g. Failover)
     self.__filterReplicasForJobs( replicaDict )
     return S_OK( replicaDict )
