@@ -112,7 +112,7 @@ class DiracAdmin( API ):
     return gProxyManager.userHasProxy( userDN, userGroup, requiredTime )
 
   #############################################################################
-  def getSiteMask( self, printOutput = False ):
+  def getSiteMask( self, printOutput = False, status = 'Active' ):
     """Retrieve current site mask from WMS Administrator service.
 
        Example usage:
@@ -124,7 +124,7 @@ class DiracAdmin( API ):
 
     """
 
-    result = self.sitestatus.getSites()
+    result = self.sitestatus.getSites(siteState=status)
     if result['OK']:
       sites = result['Value']
       if printOutput:
@@ -212,7 +212,7 @@ class DiracAdmin( API ):
     if not result['OK']:
       return result
 
-    mask = self.getSiteMask()
+    mask = self.getSiteMask( status = 'Active' )
     if not mask['OK']:
       return mask
     siteMask = mask['Value']
@@ -288,11 +288,11 @@ class DiracAdmin( API ):
     if not result['OK']:
       return result
 
-    mask = self.getSiteMask()
+    mask = self.getSiteMask( status = 'Banned' )
     if not mask['OK']:
       return mask
     siteMask = mask['Value']
-    if not site in siteMask:
+    if site in siteMask:
       return S_ERROR( 'Site %s is already banned' % site )
 
     if self.rssFlag:
