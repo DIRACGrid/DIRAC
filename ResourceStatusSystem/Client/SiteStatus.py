@@ -15,6 +15,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatu
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus       import ResourceStatus
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
 from DIRAC.Core.Utilities                                   import DErrno
+from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
 
 __RCSID__ = '$Id: $'
 
@@ -276,10 +277,17 @@ class SiteStatus( object ):
     if status not in allowedStateList:
       return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
+    res = getProxyInfo()
+    if res['OK']:
+      authorDN = res['Value']['username']
+    else:
+      return S_ERROR( "Unable to get uploaded proxy Info %s " % res['Message'] )
+
     tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
 
     result = self.rsClient.modifyStatusElement( 'Site', 'Status', status = status, name = site,
-                                                tokenExpiration = tokenExpiration, reason = comment )
+                                                tokenExpiration = tokenExpiration, reason = comment,
+                                                tokenOwner = authorDN )
 
     if not result['OK']:
       return result
