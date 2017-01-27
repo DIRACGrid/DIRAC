@@ -1,3 +1,20 @@
+[v6r17p6]
+
+*DMS
+NEW: DataManager - add key argument forJobs (default False) in getReplicas() in order 
+     to get only replicas that can be used for jobs (as defined in the CS); added
+     getReplicasForJobs(), also used in the Dirac API
+
+*SMS
+FIX: Stager agents - monitor files even when there is no requestID, e.g. dCache returns None 
+     when staging a file that is already staged    
+
+*Resources
+FIX: StorageFactory - bug fixes when interpreting SEs inheriting other SE parameters
+NEW: Test_StorageFactory unit test and corresponding docs
+FIX: Torque - some sites put advertising in the command answer that can not be parsed:
+     redirect stderr to /dev/null
+
 [v6r17p5]
 
 *Resources
