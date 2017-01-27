@@ -180,12 +180,12 @@ dErrorCode = {
                1604 : "EFCERR",
 
                # RMS
-               1700 : ERMSUKN,
+               1700 : 'ERMSUKN',
 
                # Resources and RSS
-               2000 : ERESGEN,
-               2001 : ERESUNA,
-               2002 : ERESUNK,
+               2000 : 'ERESGEN',
+               2001 : 'ERESUNA',
+               2002 : 'ERESUNK',
 
                # TS
                1900 : "ETSUKN",
