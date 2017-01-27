@@ -10,6 +10,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.PromptUser import promptUser
 
 Script.registerSwitch( "E:", "email=", "Boolean True/False (True by default)" )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -53,7 +54,8 @@ if not setup:
   exitCode = 2
   DIRACExit( exitCode )
 
-if not Script.confirmDecision('All the elements that are associated with this site will be banned, are you sure about this action?'):
+result = promptUser( 'All the elements that are associated with this site will be banned, are you sure about this action?' )
+if not result['OK'] or result['Value'] is 'n':
   print 'Script stopped'
   DIRACExit( 0 )
 
