@@ -666,7 +666,7 @@ class Dirac( API ):
 
     self.log.info( 'Attempting to resolve data for %s' % siteName )
     self.log.verbose( '%s' % ( '\n'.join( lfns ) ) )
-    replicaDict = self.getReplicas( lfns, forJobs = True, active = True, preferDisk = True )
+    replicaDict = self.getReplicasForJobs( lfns )
     if not replicaDict['OK']:
       return replicaDict
     catalogFailed = replicaDict['Value'].get( 'Failed', {} )
@@ -735,7 +735,7 @@ class Dirac( API ):
 
     self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
     self.log.verbose( '\n'.join( inputData ) )
-    replicaDict = self.getReplicas( inputData, active = True, forJobs = True, preferDisk = True )
+    replicaDict = self.getReplicasForJobs( inputData )
     if not replicaDict['OK']:
       return replicaDict
     catalogFailed = replicaDict['Value'].get( 'Failed', {} )
@@ -823,7 +823,7 @@ class Dirac( API ):
 
       self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
       self.log.verbose( '\n'.join( inputData ) )
-      replicaDict = self.getReplicas( inputData, active = True, forJobs = True, preferDisk = True )
+      replicaDict = self.getReplicasForJobs( inputData )
       if not replicaDict['OK']:
         return replicaDict
       guidDict = self.getMetadata( inputData )
@@ -1022,7 +1022,7 @@ class Dirac( API ):
   #       print self.pPrint.pformat( metaDict )
 
   #############################################################################
-  def getReplicas( self, lfns, active = True, preferDisk = False, diskOnly = False, printOutput = False, forJobs = False ):
+  def getReplicas( self, lfns, active = True, preferDisk = False, diskOnly = False, printOutput = False ):
     """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
 
        Example usage:
@@ -1035,6 +1035,12 @@ class Dirac( API ):
 
        :param lfns: Logical File Name(s) to query
        :type lfns: LFN string or list []
+       :param active: restrict to only replicas at SEs that are not banned
+       :type active: boolean
+       :param preferDisk: give preference to disk replicas if True
+       :type preferDisk: boolean
+       :param diskOnly: restrict to only disk replicas if True
+       :type diskOnly: boolean
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
@@ -1046,7 +1052,56 @@ class Dirac( API ):
 
     start = time.time()
     dm = DataManager()
-    repsResult = dm.getReplicas( lfns, active = active, preferDisk = preferDisk, diskOnly = diskOnly, forJobs = forJobs )
+    repsResult = dm.getReplicas( lfns, active = active, preferDisk = preferDisk, diskOnly = diskOnly )
+    timing = time.time() - start
+    self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
+    self.log.debug( repsResult )
+    if not repsResult['OK']:
+      self.log.warn( repsResult['Message'] )
+      return repsResult
+
+    if printOutput:
+      fields = [ 'LFN', 'StorageElement', 'URL' ]
+      records = []
+      for lfn in repsResult['Value']['Successful']:
+        lfnPrint = lfn
+        for se, url in repsResult['Value']['Successful'][lfn].iteritems():
+          records.append( ( lfnPrint, se, url ) )
+          lfnPrint = ''
+      for lfn in repsResult['Value']['Failed']:
+        records.append( ( lfn, 'Unknown', str( repsResult['Value']['Failed'][lfn] ) ) )
+
+      printTable( fields, records, numbering = False )
+
+    return repsResult
+
+  def getReplicasForJobs( self, lfns, diskOnly = False, printOutput = False ):
+    """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
+
+       Example usage:
+
+       >>> print dirac.getReplicasForJobs('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+       {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
+       {'CERN-RDST':
+       'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
+       'Failed': {}}}
+
+       :param lfns: Logical File Name(s) to query
+       :type lfns: LFN string or list []
+       :param diskOnly: restrict to only disk replicas if True
+       :type diskOnly: boolean
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
+    """
+    ret = self.__checkFileArgument( lfns, 'LFN' )
+    if not ret['OK']:
+      return ret
+    lfns = ret['Value']
+
+    start = time.time()
+    dm = DataManager()
+    repsResult = dm.getReplicasForJobs( lfns, diskOnly = diskOnly )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     self.log.debug( repsResult )
@@ -1158,7 +1213,7 @@ class Dirac( API ):
       except Exception as x:
         return self._errorReport( str( x ), 'Expected integer for maxFilesPerJob' )
 
-    replicaDict = self.getReplicas( lfns, active = True, preferDisk = True, forJobs = True )
+    replicaDict = self.getReplicasForJobs( lfns )
     if not replicaDict['OK']:
       return replicaDict
     if len( replicaDict['Value']['Successful'] ) == 0:

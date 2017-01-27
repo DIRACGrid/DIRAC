@@ -1499,11 +1499,11 @@ class DataManager( object ):
   # File catalog methods
   #
 
-  def getActiveReplicas( self, lfns, getUrl = True, diskOnly = False, preferDisk = False, forJobs = False ):
+  def getActiveReplicas( self, lfns, getUrl = True, diskOnly = False, preferDisk = False ):
     """ Get all the replicas for the SEs which are in Active status for reading.
     """
     return self.getReplicas( lfns, allStatus = False, getUrl = getUrl, diskOnly = diskOnly,
-                             preferDisk = preferDisk, forJobs = forJobs, active = True )
+                             preferDisk = preferDisk, active = True )
 
   def __filterTapeReplicas( self, replicaDict, diskOnly = False ):
     """
