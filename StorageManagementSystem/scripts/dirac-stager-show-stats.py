@@ -29,11 +29,11 @@ outStr += "  %s" % ( "NumberOfFiles".ljust( 20 ) )
 outStr += "  %s" % ( "Size(GB)".ljust( 20 ) )
 outStr += " \n--------------------------------------------------------------------------\n" % outStr
 if stagerInfo:
-  for sid in stagerInfo:
-    outStr += "  %s" % ( stagerInfo[sid]['Status'].ljust( 20 ) )
-    outStr += "  %s" % ( stagerInfo[sid]['SE'].ljust( 20 ) )
-    outStr += "  %s" % ( str( stagerInfo[sid]['NumFiles'] ).ljust( 20 ) )
-    outStr += "  %s\n" % ( str( stagerInfo[sid]['SumFiles'] ).ljust( 20 ) )
+  for info in stagerInfo.itervalues():
+    outStr += "  %s" % ( info['Status'].ljust( 20 ) )
+    outStr += "  %s" % ( info['SE'].ljust( 20 ) )
+    outStr += "  %s" % ( str( info['NumFiles'] ).ljust( 20 ) )
+    outStr += "  %s\n" % ( str( info['SumFiles'] ).ljust( 20 ) )
 else:
   outStr += "  %s" % ( "Nothing to see here...Bye" )
 outStr += "  %s" % ( "\nWARNING: the Size for files with Status=New is not yet determined at the point of selection!\n\n" )

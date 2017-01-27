@@ -110,7 +110,7 @@ def run():
     outStr += " %s" % ( "PinLength(sec)".ljust( 15 ) )
     outStr += "\n"
 
-    for info in replicas.itervalues():
+    for crid, info in replicas.iteritems():
       outStr += " %s" % ( info['Status'].ljust( 15 ) )
       outStr += " %s" % ( str( info['LastUpdate'] ).ljust( 20 ) )
       outStr += " %s" % ( info['LFN'].ljust( 30 ) )
