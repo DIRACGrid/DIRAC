@@ -53,13 +53,6 @@ GETHOSTBYNAME = ( HOST, [], [IP1, IP2] )
 def testCallback():
   pass
 
-listeners = {}
-def setListener( name, listener ):
-  listeners[name] = listener
-
-def getListener( name ):
-  return listeners[name]
-
 class StompMQConnectorSuccessTestCase( unittest.TestCase ):
   """ Test class to check success scenarios.
   """

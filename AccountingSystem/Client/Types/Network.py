@@ -1,3 +1,6 @@
+'''
+Accounting class to stores network metrics gathered by perfSONARs.
+'''
 __RCSID__ = "$Id$"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
