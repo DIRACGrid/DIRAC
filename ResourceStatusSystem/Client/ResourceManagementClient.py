@@ -69,7 +69,7 @@ class ResourceManagementClient( object ):
   # AccountingCache Methods ....................................................
 
   def selectAccountingCache( self, name = None, plotType = None, plotName = None,
-                                   result = None, dateEffective = None, lastCheckTime = None ):
+                                   result = None, dateEffective = None, lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
 
@@ -149,7 +149,7 @@ class ResourceManagementClient( object ):
   # GGUSTicketsCache Methods ...................................................
 
   def selectGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None,
-                              tickets = None, lastCheckTime = None ):
+                              tickets = None, lastCheckTime = None, meta = None ):
     '''
     Gets from GGUSTicketsCache all rows that match the parameters given.
 
@@ -213,7 +213,7 @@ class ResourceManagementClient( object ):
   def selectDowntimeCache( self, downtimeID = None, element = None, name = None,
                            startDate = None, endDate = None, severity = None,
                            description = None, link = None, dateEffective = None,
-                           lastCheckTime = None, gocdbServiceType = None ):
+                           lastCheckTime = None, gocdbServiceType = None, meta = None ):
     '''
     Gets from DowntimeCache all rows that match the parameters given.
 
@@ -325,7 +325,7 @@ class ResourceManagementClient( object ):
   # JobCache Methods ...........................................................
 
   def selectJobCache( self, site = None, maskStatus = None, efficiency = None,
-                      status = None, lastCheckTime = None ):
+                      status = None, lastCheckTime = None, meta = None ):
     '''
     Gets from JobCache all rows that match the parameters given.
 
@@ -397,7 +397,7 @@ class ResourceManagementClient( object ):
   # TransferCache Methods ......................................................
 
   def selectTransferCache( self, sourceName = None, destinationName = None, metric = None,
-                           value = None, lastCheckTime = None ):
+                           value = None, lastCheckTime = None, meta = None ):
     '''
 #    Gets from TransferCache all rows that match the parameters given.
 #
@@ -478,7 +478,7 @@ class ResourceManagementClient( object ):
   # PilotCache Methods .........................................................
 
   def selectPilotCache( self, site = None, cE = None, pilotsPerJob = None,
-                        pilotJobEff = None, status = None, lastCheckTime = None ):
+                        pilotJobEff = None, status = None, lastCheckTime = None, meta = None ):
     '''
     Gets from TransferCache all rows that match the parameters given.
 
@@ -556,7 +556,7 @@ class ResourceManagementClient( object ):
 
   def selectPolicyResult( self, element = None, name = None, policyName = None,
                           statusType = None, status = None, reason = None,
-                          lastCheckTime = None ):
+                          lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
 
@@ -651,7 +651,7 @@ class ResourceManagementClient( object ):
 
   def selectPolicyResultLog( self, element = None, name = None, policyName = None,
                           statusType = None, status = None, reason = None,
-                          lastCheckTime = None ):
+                          lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResultLog all rows that match the parameters given.
 
@@ -744,7 +744,7 @@ class ResourceManagementClient( object ):
 
   def selectSpaceTokenOccupancyCache( self, endpoint = None, token = None,
                                       total = None, guaranteed = None, free = None,
-                                      lastCheckTime = None ):
+                                      lastCheckTime = None, meta = None ):
     '''
     Gets from SpaceTokenOccupancyCache all rows that match the parameters given.
 
@@ -824,7 +824,7 @@ class ResourceManagementClient( object ):
   # UserRegistryCache Methods ..................................................
 
   def selectUserRegistryCache( self, login = None, name = None, email = None,
-                               lastCheckTime = None ):
+                               lastCheckTime = None, meta = None ):
     '''
     Gets from UserRegistryCache all rows that match the parameters given.
 
@@ -916,7 +916,7 @@ class ResourceManagementClient( object ):
 
   def selectErrorReportBuffer( self, name = None, elementType = None, reporter = None,
                                errorMessage = None, operation = None, arguments = None,
-                               dateEffective = None ):
+                               dateEffective = None, meta = None ):
     '''
     Gets from ErrorReportBuffer all rows that match the parameters given.
 

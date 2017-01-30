@@ -9,7 +9,7 @@ from datetime                                      import datetime
 from DIRAC                                         import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
 from sqlalchemy.orm                                import sessionmaker
-from sqlalchemy.sql                                import update, delete, and_, or_
+from sqlalchemy.sql                                import update, delete, select, and_, or_
 from sqlalchemy.dialects.mysql                     import DOUBLE
 from sqlalchemy.inspection                         import inspect
 from sqlalchemy                                    import create_engine, Table, Column, MetaData, String, \
@@ -52,8 +52,11 @@ def toList(table, **kwargs):
 
   filters = []
   for name, argument in kwargs.items():
-    if argument:
-      filters.append( getattr(table.c, name) == argument )
+    if name == "Meta":
+      continue
+    else:
+      if argument:
+        filters.append( getattr(table.c, name) == argument )
 
   return filters
 
@@ -351,6 +354,8 @@ class ResourceManagementDB( object ):
 
     try:
 
+      meta = False
+
       # refresh metadata
       self.metadata.create_all( self.engine )
 
@@ -358,7 +363,19 @@ class ResourceManagementDB( object ):
 
       args = toList(table, **kwargs)
 
-      result = self.session.query( table ).filter(*args)
+      columns = []
+      for name, argument in kwargs.items():
+        if argument and name == "Meta":
+          meta = True
+          for column in argument['columns']:
+            columns.append( getattr(table.c, column) )
+
+      if meta:
+        result = self.session.execute( select( columns )
+                                      .where( and_(*args) )
+                                     )
+      else :
+        result = self.session.query( table ).filter(*args)
 
       arr = []
 
