@@ -86,6 +86,9 @@ class ResourceManagementClient( object ):
         time-stamp from which the result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the result was checked
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -161,6 +164,9 @@ class ResourceManagementClient( object ):
       **tickets** - `string`
       **lastCheckTime** - `datetime`
          time-stamp setting last time the result was checked
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -240,6 +246,9 @@ class ResourceManagementClient( object ):
         time-stamp setting last time the result was checked
       **gocdbServiceType** - `string`
         service type assigned by gocdb
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -340,6 +349,9 @@ class ResourceManagementClient( object ):
         status for the site computed
       **lastCheckTime** - `[, datetime, list ]`
         time-stamp setting last time the result was checked
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -399,24 +411,24 @@ class ResourceManagementClient( object ):
   def selectTransferCache( self, sourceName = None, destinationName = None, metric = None,
                            value = None, lastCheckTime = None, meta = None ):
     '''
-#    Gets from TransferCache all rows that match the parameters given.
-#
-#    :Parameters:
-#      **elementName** - `[, string, list ]`
-#        name of the element
-#      **direction** - `[, string, list ]`
-#        the element taken as Source or Destination of the transfer
-#      **metric** - `[, string, list ]`
-#        measured quality of failed transfers
-#      **value** - `[, float, list ]`
-#        percentage
-#      **lastCheckTime** - `[, float, list ]`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+     Gets from TransferCache all rows that match the parameters given.
+
+     :Parameters:
+       **elementName** - `[, string, list ]`
+         name of the element
+       **direction** - `[, string, list ]`
+         the element taken as Source or Destination of the transfer
+       **metric** - `[, string, list ]`
+         measured quality of failed transfers
+       **value** - `[, float, list ]`
+         percentage
+       **lastCheckTime** - `[, float, list ]`
+         time-stamp setting last time the result was checked
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+
+     :return: S_OK() || S_ERROR()
     '''
 
     return self.rmsDB.select( 'TransferCache', self._prepare(locals()) )
@@ -425,24 +437,21 @@ class ResourceManagementClient( object ):
   def deleteTransferCache( self, sourceName = None, destinationName = None, metric = None,
                            value = None, lastCheckTime = None ):
     '''
-#    Deletes from TransferCache all rows that match the parameters given.
-#
-#    :Parameters:
-#      **elementName** - `[, string, list ]`
-#        name of the element
-#      **direction** - `[, string, list ]`
-#        the element taken as Source or Destination of the transfer
-#      **metric** - `[, string, list ]`
-#        measured quality of failed transfers
-#      **value** - `[, float, list ]`
-#        percentage
-#      **lastCheckTime** - `[, float, list ]`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+     Deletes from TransferCache all rows that match the parameters given.
+
+     :Parameters:
+       **elementName** - `[, string, list ]`
+         name of the element
+       **direction** - `[, string, list ]`
+         the element taken as Source or Destination of the transfer
+       **metric** - `[, string, list ]`
+         measured quality of failed transfers
+       **value** - `[, float, list ]`
+         percentage
+       **lastCheckTime** - `[, float, list ]`
+         time-stamp setting last time the result was checked
+
+     :return: S_OK() || S_ERROR()
     '''
 
     return self.rmsDB.delete( 'TransferCache', self._prepare(locals()) )
@@ -451,25 +460,22 @@ class ResourceManagementClient( object ):
   def addOrModifyTransferCache( self, sourceName = None, destinationName = None, metric = None,
                            value = None, lastCheckTime = None ):
     '''
-#    Adds or updates-if-duplicated to TransferCache. Using `elementName`, `direction`
-#    and `metric` to query the database, decides whether to insert or update the table.
-#
-#    :Parameters:
-#      **elementName** - `string`
-#        name of the element
-#      **direction** - `string`
-#        the element taken as Source or Destination of the transfer
-#      **metric** - `string`
-#        measured quality of failed transfers
-#      **value** - `float`
-#        percentage
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the result was checked
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
+     Adds or updates-if-duplicated to TransferCache. Using `elementName`, `direction`
+     and `metric` to query the database, decides whether to insert or update the table.
+
+     :Parameters:
+       **elementName** - `string`
+         name of the element
+       **direction** - `string`
+         the element taken as Source or Destination of the transfer
+       **metric** - `string`
+         measured quality of failed transfers
+       **value** - `float`
+         percentage
+       **lastCheckTime** - `datetime`
+         time-stamp setting last time the result was checked
+
+     :return: S_OK() || S_ERROR()
     '''
 
     return self.rmsDB.addOrModify( 'TransferCache', self._prepare(locals()) )
@@ -495,6 +501,9 @@ class ResourceManagementClient( object ):
         status of the CE / Site
       **lastCheckTime** - `[, datetime, list ]`
         measure calculated
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -577,6 +586,9 @@ class ResourceManagementClient( object ):
         decision that triggered the assigned status
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the policy result was checked
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -672,6 +684,9 @@ class ResourceManagementClient( object ):
         decision that triggered the assigned status
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the policy result was checked
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -761,6 +776,9 @@ class ResourceManagementClient( object ):
         free terabytes
       **lastCheckTime** - `[, datetime, list]`
         time-stamp from which the result is effective
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -837,6 +855,9 @@ class ResourceManagementClient( object ):
         user's email
       **lastCheckTime** - `[, datetime, list]`
         time-stamp from which the result is effective
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -932,6 +953,9 @@ class ResourceManagementClient( object ):
       **arguments** - `string`
       **dateEffective** - `datetime`
         time-stamp from which the policy result is effective
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''

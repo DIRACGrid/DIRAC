@@ -144,8 +144,8 @@ class ResourceManagementHandler( RequestHandler ):
         arguments for the mysql query ( must match table columns ! ).
 
       **meta** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -167,10 +167,6 @@ class ResourceManagementHandler( RequestHandler ):
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
-
-      **meta** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''
