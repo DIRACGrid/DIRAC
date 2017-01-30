@@ -132,8 +132,7 @@ class ResourceStatusDB( object ):
                         dateEffective = None, lastCheckTime = None,
                         tokenOwner = None, tokenExpiration = None ):
 
-    # refresh metadata
-    metadata.create_all( self.engine )
+    self.session.commit()
 
     try:
 
@@ -165,8 +164,7 @@ class ResourceStatusDB( object ):
               dateEffective = None, lastCheckTime = None,
               tokenOwner = None, tokenExpiration = None, meta = None ):
 
-    # refresh metadata
-    metadata.create_all( self.engine )
+    self.session.commit()
 
     try:
 
