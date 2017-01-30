@@ -160,7 +160,7 @@ class ResourceStatusDB( object ):
   def select( self, element, tableType, name = None, statusType = None,
               status = None, elementType = None, reason = None,
               dateEffective = None, lastCheckTime = None,
-              tokenOwner = None, tokenExpiration = None ):
+              tokenOwner = None, tokenExpiration = None, meta = None ):
 
     try:
 
@@ -170,7 +170,17 @@ class ResourceStatusDB( object ):
                            Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
                            TokenOwner = tokenOwner, TokenExpiration = tokenExpiration)
 
-      result = self.session.query( table ).filter(*args)
+      # if meta['columns'] is specified select only these columns
+      if meta['columns']:
+        columns = []
+        for column in meta['columns']:
+          columns.append( getattr(table.c, column) )
+
+        result = self.session.execute( select( columns )
+                                       .where( and_(*args) )
+                                     )
+      else:
+        result = self.session.query( table ).filter(*args)
 
       arr = []
 

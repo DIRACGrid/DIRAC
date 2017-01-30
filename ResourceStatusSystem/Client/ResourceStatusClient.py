@@ -146,7 +146,7 @@ class ResourceStatusClient( object ):
   def selectStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
                            dateEffective = None, lastCheckTime = None,
-                           tokenOwner = None, tokenExpiration = None ):
+                           tokenOwner = None, tokenExpiration = None, meta = None ):
     '''
     Gets from <element><tableType> all rows that match the parameters given.
 
@@ -183,7 +183,7 @@ class ResourceStatusClient( object ):
     # pylint: disable=unused-argument
     return self.rssDB.select(element, tableType, name, statusType, status,
                              elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration)
+                             tokenOwner, tokenExpiration, meta)
 
   def deleteStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,

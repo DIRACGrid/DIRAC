@@ -195,7 +195,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_select( self, element, tableType, name = None, statusType = None,
                     status = None, elementType = None, reason = None,
                     dateEffective = None, lastCheckTime = None,
-                    tokenOwner = None, tokenExpiration = None ):
+                    tokenOwner = None, tokenExpiration = None, meta = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
@@ -238,7 +238,7 @@ class ResourceStatusHandler( RequestHandler ):
 
     res = db.select( element, tableType, name, statusType, status,
                              elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration )
+                             tokenOwner, tokenExpiration, meta )
 
     self.__logResult( 'select', res )
 
