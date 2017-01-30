@@ -132,6 +132,9 @@ class ResourceStatusDB( object ):
                         dateEffective = None, lastCheckTime = None,
                         tokenOwner = None, tokenExpiration = None ):
 
+    # refresh metadata
+    metadata.create_all( self.engine )
+
     try:
 
       table = metadata.tables.get( element + tableType )
@@ -161,6 +164,9 @@ class ResourceStatusDB( object ):
               status = None, elementType = None, reason = None,
               dateEffective = None, lastCheckTime = None,
               tokenOwner = None, tokenExpiration = None, meta = None ):
+
+    # refresh metadata
+    metadata.create_all( self.engine )
 
     try:
 
