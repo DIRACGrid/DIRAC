@@ -136,7 +136,7 @@ class DiracAdmin( API ):
 
   #############################################################################
   def getBannedSites( self, gridType = [], printOutput = False ):
-    """Retrieve current list of banned sites.
+    """Retrieve current list of banned  and probing sites.
 
        Example usage:
 
@@ -146,35 +146,22 @@ class DiracAdmin( API ):
        :return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    bannedSites = []
-    totalList = []
 
-    result = wmsAdmin.getSiteMask()
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-      return result
-    sites = result['Value']
+    bannedSites = self.sitestatus.getSites( siteState = 'Banned' )
+    if not bannedSites['OK']:
+      return bannedSites
 
-    if not gridType:
-      result = gConfig.getSections( '/Resources/Sites' )
-      if not result['OK']:
-        return result
-      gridType = result['Value']
+    probingSites = self.sitestatus.getSites( siteState = 'Probing' )
+    if not probingSites['OK']:
+      return probingSites
 
-    for grid in gridType:
-      result = gConfig.getSections( '/Resources/Sites/%s' % grid )
-      if not result['OK']:
-        return result
-      totalList += result['Value']
+    mergedList = bannedSites['Value'] + probingSites['Value']
 
-    for site in totalList:
-      if not site in sites:
-        bannedSites.append( site )
-    bannedSites.sort()
+    mergedList.sort()
     if printOutput:
-      print '\n'.join( bannedSites )
-    return S_OK( bannedSites )
+      print '\n'.join( mergedList )
+
+    return S_OK( mergedList )
 
   #############################################################################
   def getSiteSection( self, site, printOutput = False ):
