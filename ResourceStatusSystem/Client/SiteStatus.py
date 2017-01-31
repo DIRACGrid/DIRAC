@@ -230,7 +230,13 @@ class SiteStatus( object ):
     """
 
     if not siteState:
-      return S_ERROR(DErrno.ERESUNK, 'siteState is empty')
+      return S_ERROR(DErrno.ERESUNK, 'siteState parameter is empty')
+
+    # fix case sensitive string
+    siteState = siteState.capitalize()
+    allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
+    if siteState not in allowedStateList:
+      return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
     if self.rssFlag:
       siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'Name' ] } )
@@ -269,11 +275,12 @@ class SiteStatus( object ):
     :return: S_OK() || S_ERROR()
     """
 
+    if not status:
+      return S_ERROR(DErrno.ERESUNK, 'status parameter is empty')
+
     # fix case sensitive string
     status = status.capitalize()
-
     allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
-
     if status not in allowedStateList:
       return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
