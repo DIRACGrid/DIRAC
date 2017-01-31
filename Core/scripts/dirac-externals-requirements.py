@@ -1,21 +1,25 @@
 #!/usr/bin/env python
 ########################################################################
-# File :   dirac-externals-refresh
-# Author : Adri
+# File :   dirac-externals-requirements
+# Author : Adri/Federico
 ########################################################################
+""" If /RequiredExternals/ is found in releases.cfg, then some packages to install with pip may be found. This will do it.
 """
-"""
-__RCSID__ = "$Id$"
-#
+
+import os
+import sys
+from pip.index import PackageFinder
+from pip.req import InstallRequirement, RequirementSet
+from pip.locations import user_dir, src_prefix
+from pip.download import PipSession
+
 from DIRAC.Core.Base import Script
 Script.disableCS()
+
 from DIRAC import gLogger, rootPath, S_OK
 from DIRAC.Core.Utilities.CFG import CFG
-import os, sys
-try:
-  import pip
-except ImportError:
-  gLogger.fatal( "pip is missing! Houston, we've got a problem..." )
+
+__RCSID__ = "$Id$"
 
 instType = "server"
 
@@ -69,14 +73,11 @@ if not reqDict:
 
 gLogger.notice( "Requesting installation of %s" % ", ".join( [ "%s%s" % ( reqName, reqDict[ reqName ][0] ) for reqName in reqDict ] ) )
 
-from pip.index import PackageFinder
-from pip.req import InstallRequirement, RequirementSet
-from pip.locations import build_prefix, src_prefix
-
 requirement_set = RequirementSet(
-    build_dir = build_prefix,
+    build_dir = user_dir,
     src_dir = src_prefix,
-    download_dir = None
+    download_dir = None,
+    session = PipSession()
     )
 
 for reqName in reqDict:
@@ -86,8 +87,7 @@ install_options = []
 global_options = []
 finder = PackageFinder( find_links = [], index_urls = ["http://pypi.python.org/simple/"] )
 
-requirement_set.prepare_files( finder, force_root_egg_info = False, bundle = False )
-requirement_set.locate_files()
+requirement_set.prepare_files( finder )
 requirement_set.install( install_options, global_options )
 
 

@@ -1,5 +1,6 @@
 # ##WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING #
 #                                           Under development                                                   #
+# pylint: skip-file
 # ##WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING###WARNING #
 
 """ Module to upload specified job output files according to the parameters
