@@ -1,3 +1,17 @@
+[v6r18-pre1]
+
+*Accounting
+NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
+     present jitter, one-way delay, packet-loss rate and some derived functions.
+
+*RSS
+NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
+     RSS system 
+NEW: SiteStatus client to interrogate site status with respect to RSS
+
+*WMS
+NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS    
+
 [v6r17p6]
 
 *DMS
