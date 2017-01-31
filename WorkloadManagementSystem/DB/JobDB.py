@@ -45,6 +45,7 @@ __RCSID__ = "$Id$"
 import sys
 import operator
 
+from DIRAC.Core.Utilities                                    import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
 from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERROR
 from DIRAC.Core.Utilities                                    import Time
@@ -1482,20 +1483,51 @@ class JobDB( DB ):
     siteList = []
     if result['OK']:
       siteList = [ x[0] for x in result['Value']]
+    else:
+      return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     return S_OK( siteList )
 
 #############################################################################
-  def getSiteMaskStatus( self ):
+  def getSiteMaskStatus( self, sites = None ):
     """ Get the currently site mask status
     """
-    cmd = "SELECT Site,Status FROM SiteMask"
+    if isinstance(sites, list):
+
+      cmd = "SELECT Site, Status FROM SiteMask WHERE"
+      first = True
+      for siteName in sites:
+        if first:
+          first = False
+          cmd += " Site='" + siteName + "'"
+        else:
+          cmd += " OR Site='" + siteName + "'"
+
+      result = self._query( cmd )
+      if result['OK']:
+        return S_OK( dict(result['Value']) )
+      else:
+        return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
+
+    elif isinstance(sites, basestring):
+
+      cmd = "SELECT Status FROM SiteMask WHERE Site='%s'" % sites
+      result = self._query( cmd )
+      if result['OK']:
+        return S_OK( result['Value'][0][0] )
+      else:
+        return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
+
+    else:
+      cmd = "SELECT Site,Status FROM SiteMask"
 
     result = self._query( cmd )
     siteDict = {}
     if result['OK']:
       for site, status in result['Value']:
         siteDict[site] = status
+    else:
+      return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     return S_OK( siteDict )
 
