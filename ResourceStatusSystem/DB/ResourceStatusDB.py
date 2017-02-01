@@ -4,438 +4,363 @@
 
 '''
 
-from datetime                                              import datetime
+import datetime
 
-from DIRAC                                                 import S_OK, S_ERROR
-from DIRAC.Core.Base.DB                                    import DB
-from DIRAC.ResourceStatusSystem.Utilities                  import MySQLWrapper
+from DIRAC                                                 import S_OK, S_ERROR, gLogger
+from DIRAC.ConfigurationSystem.Client.Utilities            import getDBParameters
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB    import primaryKeystoList, toList, toDict
 
-__RCSID__ = '$Id: $'
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, Table, Column, MetaData, String, DateTime, BigInteger, exc
+from sqlalchemy.sql import update, select, delete, and_, or_
+
+# Metadata instance that is used to bind the engine, Object and tables
+metadata = MetaData()
+
+def generateElementStatus(name):
+
+  # Description of the ElementStatus table
+
+  Table( name, metadata,
+  Column( 'Status', String( 8 ), nullable = False, server_default = '' ),
+  Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' ),
+  Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
+  Column( 'DateEffective', DateTime, nullable = False ),
+  Column( 'TokenExpiration', String( 255 ), nullable = False , server_default = '9999-12-31 23:59:59' ),
+  Column( 'ElementType', String( 32 ), nullable = False, server_default = '' ),
+  Column( 'StatusType', String( 128 ), nullable = False, server_default = 'all', primary_key = True ),
+  Column( 'LastCheckTime', DateTime, nullable = False , server_default = '1000-01-01 00:00:00' ),
+  Column( 'TokenOwner', String( 16 ), nullable = False , server_default = 'rs_svc'),
+  mysql_engine = 'InnoDB' )
+
+
+def generateElementWithID(name):
+
+  # Description of the ElementWithID table
+
+  Table( name, metadata,
+  Column( 'Status', String( 8 ), nullable = False, server_default = '' ),
+  Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' ),
+  Column( 'Name', String( 64 ), nullable = False ),
+  Column( 'DateEffective', DateTime, nullable = False ),
+  Column( 'TokenExpiration', String( 255 ), nullable = False , server_default = '9999-12-31 23:59:59' ),
+  Column( 'ElementType', String( 32 ), nullable = False, server_default = '' ),
+  Column( 'StatusType', String( 128 ), nullable = False, server_default = 'all' ),
+  Column( 'ID', BigInteger, nullable = False, autoincrement= True, primary_key = True ),
+  Column( 'LastCheckTime', DateTime, nullable = False , server_default = '1000-01-01 00:00:00' ),
+  Column( 'TokenOwner', String( 16 ), nullable = False , server_default = 'rs_svc'),
+  mysql_engine = 'InnoDB' )
+
 
 class ResourceStatusDB( object ):
-  '''
-    Class that defines the tables for the ResourceStatusDB on a python dictionary.
-  '''
-
-  # Written PrimaryKey as list on purpose !!
-  _tablesDB = {}
-
-  _tablesLike = {}
-  _tablesLike[ 'ElementStatus' ]    = { 'Fields' :{'Name'            : 'VARCHAR(64) NOT NULL',
-                                                   'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
-                                                   'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
-                                                   'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
-                                                   'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
-                                                   'DateEffective'   : 'DATETIME NOT NULL',
-                                                   'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT "1000-01-01 00:00:00"',
-                                                   'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
-                                                   'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
-                                                  },
-
-                                       'PrimaryKey' : [ 'Name', 'StatusType' ]#, 'ElementType' ] #FIXME: elementType is needed to be part of the key ??
-                                      }
-
-  _tablesLike[ 'ElementWithID' ]       = { 'Fields' : {'ID'              : 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
-                                                       'Name'            : 'VARCHAR(64) NOT NULL',
-                                                       'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
-                                                       'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
-                                                       'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
-                                                       'Reason'          : 'VARCHAR(512) NOT NULL DEFAULT "Unspecified"',
-                                                       'DateEffective'   : 'DATETIME NOT NULL',
-                                                       'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT "1000-01-01 00:00:00"',
-                                                       'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
-                                                       'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
-                                                      },
-                                           'PrimaryKey' : [ 'ID' ]
-                                         }
-
-  _likeToTable = {  'SiteStatus'        : 'ElementStatus',
-                    'SiteLog'           : 'ElementWithID',
-                    'SiteHistory'       : 'ElementWithID',
-                    'ResourceStatus'    : 'ElementStatus',
-                    'ResourceLog'       : 'ElementWithID',
-                    'ResourceHistory'   : 'ElementWithID',
-                    'NodeStatus'        : 'ElementStatus',
-                    'NodeLog'           : 'ElementWithID',
-                    'NodeHistory'       : 'ElementWithID',
-                    'ComponentStatus'   : 'ElementStatus',
-                    'ComponentLog'      : 'ElementWithID',
-                    'ComponentHistory'  : 'ElementWithID',
-                 }
-
-  def __init__( self, mySQL = None ):
-    '''
-      Constructor, accepts any DB or mySQL connection, mostly used for testing
-      purposes.
-    '''
-
-    self._tableDict = self.__generateTables()
-
-    if mySQL is not None:
-      self.database = mySQL
-    else:
-      self.database = DB( 'ResourceStatusDB',
-                          'ResourceStatus/ResourceStatusDB' )
-
-  ## SQL Methods ###############################################################
-
-  def insert( self, params, meta ):
-    '''
-    Inserts args in the DB making use of kwargs where parameters such as
-    the 'table' are specified ( filled automatically by the Client). Typically you
-    will not pass kwargs to this function, unless you know what are you doing
-    and you have a very special use case.
-
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **meta** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-
-    utcnow = datetime.utcnow().replace( microsecond = 0 )
-    # We force lastCheckTime to utcnow if it is not present on the params
-    #if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
-    if 'lastCheckTime' in params and params[ 'lastCheckTime' ] is None:
-      params[ 'lastCheckTime' ] = utcnow
-
-    # If it is a XStatus table, we force dateEffective to now.
-    if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
-      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-        params[ 'dateEffective' ] = utcnow
-
-    return MySQLWrapper.insert( self, params, meta )
-
-  def update( self, params, meta ):
-    '''
-    Updates row with values given on args. The row selection is done using the
-    default of MySQLMonkey ( column.primary or column.keyColumn ). It can be
-    modified using kwargs. The 'table' keyword argument is mandatory, and
-    filled automatically by the Client. Typically you will not pass kwargs to
-    this function, unless you know what are you doing and you have a very
-    special use case.
+  """
+      Collect from the CS all the info needed to connect to the DB.
+  """
 
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
+  def __getDBConnectionInfo( self, fullname ):
+    """ Collect from the CS all the info needed to connect to the DB.
+        This should be in a base class eventually
+    """
 
-      **meta** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+    result = getDBParameters( fullname )
+    if not result[ 'OK' ]:
+      raise Exception( 'Cannot get database parameters: %s' % result[ 'Message' ] )
 
-    :return: S_OK() || S_ERROR()
-    '''
-    # We force lastCheckTime to utcnow if it is not present on the params
-    if not( 'lastCheckTime' in params and not params[ 'lastCheckTime' ] is None ):
-      params[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )
+    dbParameters = result[ 'Value' ]
+    self.dbHost = dbParameters[ 'Host' ]
+    self.dbPort = dbParameters[ 'Port' ]
+    self.dbUser = dbParameters[ 'User' ]
+    self.dbPass = dbParameters[ 'Password' ]
+    self.dbName = dbParameters[ 'DBName' ]
 
-    return MySQLWrapper.update( self, params, meta )
+  def __init__( self ):
+    """c'tor
 
-  def select( self, params, meta ):
-    '''
-    Uses arguments to build conditional SQL statement ( WHERE ... ). If the
-    sql statement desired is more complex, you can use kwargs to interact with
-    the MySQL buildCondition parser and generate a more sophisticated query.
+    :param self: self reference
+    """
 
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
+    self.log = gLogger.getSubLogger( 'ResourceStatusDB' )
+    # Initialize the connection info
+    self.__getDBConnectionInfo( 'ResourceStatus/ResourceStatusDB' )
 
-      **meta** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+    runDebug = ( gLogger.getLevel() == 'DEBUG' )
+    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
+                                 echo = runDebug )
 
-    :return: S_OK() || S_ERROR()
-    '''
-    return MySQLWrapper.select( self, params, meta )
+    metadata.bind = self.engine
 
-  def delete( self, params, meta ):
-    '''
-    Uses arguments to build conditional SQL statement ( WHERE ... ). If the
-    sql statement desired is more complex, you can use kwargs to interact with
-    the MySQL buildCondition parser and generate a more sophisticated query.
-    There is only one forbidden query, with all parameters None ( this would
-    mean a query of the type DELETE * from TableName ). The usage of kwargs
-    is the same as in the get function.
+    self.metadataTables = set()
 
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
+    self.DBSession = sessionmaker( bind = self.engine )
+    self.session = self.DBSession()
 
-      **meta** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+    self.ElementStatusTables = [ 'SiteStatus', 'ResourceStatus',
+                                 'NodeStatus', 'ComponentStatus' ]
 
-    :return: S_OK() || S_ERROR()
-    '''
-    return MySQLWrapper.delete( self, params, meta )
+    self.ElementWithIDTables = [ 'SiteLog', 'SiteHistory', 'ResourceLog', 'ResourceHistory',
+                                 'NodeLog', 'NodeHistory', 'ComponentLog', 'ComponentHistory' ]
 
-  ## Extended SQL methods ######################################################
+    # Create tables if they are not already created
+    self.createTables()
 
-  def addOrModify( self, params, meta ):
-    '''
-    Using the PrimaryKeys of the table, it looks for the record in the database.
-    If it is there, it is updated, if not, it is inserted as a new entry.
+  def createTables( self ):
+    """ create tables """
 
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
+    try:
 
-      **meta** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      for names in self.ElementStatusTables:
+        if names not in self.metadataTables:
+          generateElementStatus(names)
+          self.metadataTables.add(names)
 
-    :return: S_OK() || S_ERROR()
-    '''
+      for names in self.ElementWithIDTables:
+        if names not in self.metadataTables:
+          generateElementWithID(names)
+          self.metadataTables.add(names)
 
-    selectQuery = self.select( params, meta )
-    if not selectQuery[ 'OK' ]:
-      return selectQuery
+      metadata.create_all( self.engine )
 
-    isUpdate = False
+    except exc.SQLAlchemyError as e:
+      self.log.exception( "createTables: unexpected exception", lException = e )
+      return S_ERROR( "createTables: unexpected exception %s" % e )
+    return S_OK()
 
-    if selectQuery[ 'Value' ]:
+  # SQL Methods ###############################################################
 
-      columns = selectQuery[ 'Columns' ]
-      values  = selectQuery[ 'Value' ]
+  def selectPrimaryKeys( self, element, tableType, name = None, statusType = None,
+                        status = None, elementType = None, reason = None,
+                        dateEffective = None, lastCheckTime = None,
+                        tokenOwner = None, tokenExpiration = None ):
 
-      if len( values ) != 1:
-        return S_ERROR( 'More than one value returned on addOrModify, please report !!' )
+    self.session.commit()
 
-      selectDict = dict( zip( columns, values[ 0 ] ) )
+    try:
 
-      newDateEffective = None
+      table = metadata.tables.get( element + tableType )
 
-      for key, value in params.items():
-        if key in ( 'lastCheckTime', 'dateEffective' ):
-          continue
+      args = primaryKeystoList(table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,
+                                      Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
+                                      TokenOwner = tokenOwner, TokenExpiration = tokenExpiration)
 
-        if value is None:
-          continue
+      result = self.session.query( table ).filter(*args)
 
-        if value != selectDict[ key[0].upper() + key[1:] ]:
-          newDateEffective = datetime.utcnow().replace( microsecond = 0 )
-          break
+      arr = []
 
-      if 'dateEffective' in params:
-        params[ 'dateEffective' ] = newDateEffective
+      for u in result:
+        rel = []
+        for j in u:
+         rel.append(j)
 
-      userQuery  = self.update( params, meta )
-      isUpdate   = True
-    else:
-      userQuery = self.insert( params, meta )
+        arr.append(rel)
 
-    logResult = self._logRecord( params, meta, isUpdate )
-    if not logResult[ 'OK' ]:
-      return logResult
+      return S_OK( arr )
 
-    return userQuery
+    except exc.SQLAlchemyError as e:
+      self.log.exception( "select: unexpected exception", lException = e )
+      return S_ERROR( "select: unexpected exception %s" % e )
 
-  def modify( self, params, meta ):
-    '''
-    Using the PrimaryKeys of the table, it looks for the record in the database.
-    If it is there, it is updated, if not, it does nothing.
+  def select( self, element, tableType, name = None, statusType = None,
+              status = None, elementType = None, reason = None,
+              dateEffective = None, lastCheckTime = None,
+              tokenOwner = None, tokenExpiration = None, meta = None ):
 
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
+    self.session.commit()
 
-      **meta** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+    try:
 
-    :return: S_OK() || S_ERROR()
-    '''
+      table = metadata.tables.get( element + tableType )
 
-    selectQuery = self.select( params, meta )
-    if not selectQuery[ 'OK' ]:
-      return selectQuery
+      args = toList(table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,
+                           Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
+                           TokenOwner = tokenOwner, TokenExpiration = tokenExpiration)
 
-    if not selectQuery[ 'Value' ]:
-      return S_ERROR( 'Nothing to update for %s' % str( params ) )
+      # if meta['columns'] is specified select only these columns
+      if meta['columns']:
+        columns = []
+        for column in meta['columns']:
+          columns.append( getattr(table.c, column) )
 
-    columns = selectQuery[ 'Columns' ]
-    values  = selectQuery[ 'Value' ]
+        result = self.session.execute( select( columns )
+                                       .where( and_(*args) )
+                                     )
+      else:
+        result = self.session.query( table ).filter(*args)
 
-    if len( values ) != 1:
-      return S_ERROR( 'More than one value returned on addOrModify, please report !!' )
+      arr = []
 
-    selectDict = dict( zip( columns, values[ 0 ] ) )
+      for u in result:
+        rel = []
+        for j in u:
+         rel.append(j)
 
-    newDateEffective = None
+        arr.append(rel)
 
-    for key, value in params.items():
-      if key in ( 'lastCheckTime', 'dateEffective' ):
-        continue
+      return S_OK( arr )
 
-      if value is None:
-        continue
+    except exc.SQLAlchemyError as e:
+      self.log.exception( "select: unexpected exception", lException = e )
+      return S_ERROR( "select: unexpected exception %s" % e )
 
-      if value != selectDict[ key[0].upper() + key[1:] ]:
-        newDateEffective = datetime.utcnow().replace( microsecond = 0 )
-        break
+  def insert(self, element, tableType, name, statusType, status,
+             elementType, reason, dateEffective, lastCheckTime,
+             tokenOwner, tokenExpiration ):
 
-    if 'dateEffective' in params:
-      params[ 'dateEffective' ] = newDateEffective
+    try:
 
-    userQuery = self.update( params, meta )
+      table = metadata.tables.get( element + tableType ).insert()
+      self.engine.execute( table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,
+                           Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
+                           TokenOwner = tokenOwner, TokenExpiration = tokenExpiration )
 
-    logResult = self._logRecord( params, meta, True )
-    if not logResult[ 'OK' ]:
-      return logResult
+      self.session.commit()
 
-    return userQuery
-
-  def addIfNotThere( self, params, meta ):
-    '''
-    Using the PrimaryKeys of the table, it looks for the record in the database.
-    If it is not there, it is inserted as a new entry.
-
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **meta** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    selectQuery = self.select( params, meta )
-    if not selectQuery[ 'OK' ]:
-      return selectQuery
-
-    if selectQuery[ 'Value' ]:
-      return selectQuery
-
-    insertQuery = self.insert( params, meta )
-
-    # Record logs
-    if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
-
-      meta[ 'table' ] = meta[ 'table' ].replace( 'Status', 'Log' )
-
-      logRes = self.insert( params, meta )
-      if not logRes[ 'OK' ]:
-        return logRes
-
-    return insertQuery
-
-  ## Auxiliar methods ##########################################################
-
-  def getTable( self, tableName ):
-    '''
-      Returns a table dictionary description given its name
-    '''
-    if tableName in self._tableDict:
-      return S_OK( self._tableDict[ tableName ] )
-
-    return S_ERROR( '%s is not on the schema' % tableName )
-
-  def getTablesList( self ):
-    '''
-      Returns a list of the table names in the schema.
-    '''
-    return S_OK( self._tableDict.keys() )
-
-  ## Protected methods #########################################################
-
-  def _checkTable( self ):
-    '''
-      Method used by database tools to write the schema
-    '''
-    return self.__createTables()
-
-  def _logRecord( self, params, meta, isUpdate ):
-    '''
-      Method that records every change on a LogTable, if activated on the CS.
-    '''
-
-    if not ( 'table' in meta and meta[ 'table' ].endswith( 'Status' ) ):
       return S_OK()
 
-    if isUpdate:
-      updateRes = self.select( params, meta )
-      if not updateRes[ 'OK' ]:
-        return updateRes
+    except exc.SQLAlchemyError as e:
+      self.log.exception( "insert: unexpected exception", lException = e )
+      return S_ERROR( "insert: unexpected exception %s" % e )
 
-      # If we are updating more that one result at a time, this is most likely
-      # going to be a mess. All queries must be one at a time, if need to do
-      if len( updateRes[ 'Value' ] ) != 1:
-        return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
-      if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
-        # Uyyy, something went seriously wrong !!
-        return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
+  def update( self, element, tableType, name = None, statusType = None,
+              status = None, elementType = None, reason = None,
+              dateEffective = None, lastCheckTime = None,
+              tokenOwner = None, tokenExpiration = None, ID = None ):
 
-      params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] ))
+    try:
 
-    meta[ 'table' ] = meta[ 'table' ].replace( 'Status', 'Log' )
+      table = metadata.tables.get( element + tableType )
 
-    logRes = self.insert( params, meta )
+      # fields to be selected (primary keys)
+      if table in self.ElementWithIDTables:
+        args = toList(table, ID = ID)
+      else:
+        args = toList(table, Name = name, StatusType = statusType)
 
-    return logRes
+      # fields to be updated
+      params = toDict( Name = name, StatusType = statusType, Status = status, ElementType = elementType,
+                            Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
+                            TokenOwner = tokenOwner, TokenExpiration = tokenExpiration )
 
-  ## Private methods ###########################################################
+      self.session.execute( update( table )
+                            .where( and_(*args) )
+                            .values( **params )
+                          )
 
-  def __createTables( self, tableName = None ):
-    '''
-      Writes the schema in the database. If no tableName is given, all tables
-      are written in the database. If a table is already in the schema, it is
-      skipped to avoid problems trying to create a table that already exists.
-    '''
+      self.session.commit()
 
-    # Horrible SQL here !!
-    tablesCreatedRes = self.database._query( "show tables" )
-    if not tablesCreatedRes[ 'OK' ]:
-      return tablesCreatedRes
-    tablesCreated = [ tableCreated[0] for tableCreated in tablesCreatedRes[ 'Value' ] ]
+      return S_OK()
 
-    tables = {}
-    if tableName is None:
-      tables.update( self._tableDict )
+    except exc.SQLAlchemyError as e:
+      self.log.exception( "update: unexpected exception", lException = e )
+      return S_ERROR( "update: unexpected exception %s" % e )
 
-    elif tableName in self._tableDict:
-      tables = { tableName : self._tableDict[ tableName ] }
+  def delete( self, element, tableType, name = None, statusType = None,
+              status = None, elementType = None, reason = None,
+              dateEffective = None, lastCheckTime = None,
+              tokenOwner = None, tokenExpiration = None ):
 
-    else:
-      return S_ERROR( '"%s" is not a known table' % tableName )
+    try:
 
-    for tableName in tablesCreated:
-      if tableName in tables:
-        del tables[ tableName ]
+      table = metadata.tables.get( element + tableType )
 
-    res = self.database._createTables( tables )
-    if not res[ 'OK' ]:
-      return res
+      args = toList(table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,
+                                Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
+                                TokenOwner = tokenOwner, TokenExpiration = tokenExpiration)
 
-    # Human readable S_OK message
-    if res[ 'Value' ] == 0:
-      res[ 'Value' ] = 'No tables created'
-    else:
-      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
-    return res
+      self.session.execute( delete( table )
+                            .where( or_(*args) )
+                          )
 
-  def __generateTables( self ):
-    '''
-      Method used to transform the class variables into instance variables,
-      for safety reasons.
-    '''
+      self.session.commit()
 
-    # Avoids copying object.
-    tables = {}
-    tables.update( self._tablesDB )
+      return S_OK()
 
-    for tableName, tableLike in self._likeToTable.items():
+    except exc.SQLAlchemyError as e:
+      self.log.exception( "delete: unexpected exception", lException = e )
+      return S_ERROR( "delete: unexpected exception %s" % e )
 
-      tables[ tableName ] = self._tablesLike[ tableLike ]
+  # Extended SQL methods ######################################################
 
-    return tables
+  def modify( self, element, tableType, name = None, statusType = None,
+              status = None, elementType = None, reason = None,
+              dateEffective = None, lastCheckTime = None,
+              tokenOwner = None, tokenExpiration = None, log = None ):
+
+    self.update( element, tableType, name, statusType, status, elementType, reason ,
+                 dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
+
+    if log:
+      try:
+
+        table = metadata.tables.get( element + 'Log' ).insert()
+        self.engine.execute( table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,
+                             Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
+                             TokenOwner = tokenOwner, TokenExpiration = tokenExpiration )
+
+        self.session.commit()
+
+      except exc.SQLAlchemyError as e:
+        self.log.exception( "modify: unexpected exception", lException = e )
+        return S_ERROR( "modify: unexpected exception %s" % e )
+
+    return S_OK()
+
+  def addIfNotThere( self, element, tableType, name, statusType,
+                     status, elementType, reason,
+                     dateEffective, lastCheckTime,
+                     tokenOwner, tokenExpiration, log = None ):
+
+    result = self.select( element, tableType, name, statusType, status, elementType, reason ,
+                          dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
+
+    if not result['Value']:
+      self.insert( element, tableType, name, statusType, status, elementType, reason ,
+                   dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
+
+    if log:
+      try:
+
+        table = metadata.tables.get( element + 'Log' ).insert()
+        self.engine.execute( table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,
+                             Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
+                             TokenOwner = tokenOwner, TokenExpiration = tokenExpiration )
+
+        self.session.commit()
+
+      except exc.SQLAlchemyError as e:
+        self.log.exception( "addIfNotThere: unexpected exception", lException = e )
+        return S_ERROR( "addIfNotThere: unexpected exception %s" % e )
+
+    return S_OK()
+
+  def addOrModify( self, element, tableType, name = None, statusType = None,
+                   status = None, elementType = None, reason = None,
+                   dateEffective = None, lastCheckTime = None,
+                   tokenOwner = None, tokenExpiration = None, log = None ):
+
+    try:
+
+      result = self.selectPrimaryKeys( element, tableType, name, statusType, status, elementType, reason ,
+                                       dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
+
+      if not result['Value']:
+        self.insert( element, tableType, name, statusType, status, elementType, reason ,
+                     dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
+      else:
+        self.modify( element, tableType, name, statusType, status, elementType, reason ,
+                     dateEffective, lastCheckTime, tokenOwner, tokenExpiration )
+
+      if log:
+
+        table = metadata.tables.get( element + 'Log' ).insert()
+        self.engine.execute( table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,
+                             Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
+                             TokenOwner = tokenOwner, TokenExpiration = tokenExpiration )
+
+    except exc.SQLAlchemyError as e:
+      self.log.exception( "addOrModify: unexpected exception", lException = e )
+      return S_ERROR( "addOrModify: unexpected exception %s" % e )
+
+    return S_OK()
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
