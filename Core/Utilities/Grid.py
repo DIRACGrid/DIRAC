@@ -259,7 +259,7 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
     dn = ce['dn']
     result = ldapsearchBDII( filt, attr, host, base = dn )
     if result['OK']:
-      views.append( result['Value'][0]['attr'] )
+      views.append( result['Value'][0]['attr'] ) #pylint: disable=unsubscriptable-object
 
   return S_OK( views )
 
@@ -403,7 +403,7 @@ def getBdiiCEInfo( vo, host = None ):
       ce = result['Value'][0]
       ceDict[ceID] = ce
 
-      fKey = ce['GlueForeignKey']
+      fKey = ce['GlueForeignKey'] #pylint: disable=unsubscriptable-object
       siteID = ''
       for key in fKey:
         if key.startswith('GlueSiteUniqueID'):
