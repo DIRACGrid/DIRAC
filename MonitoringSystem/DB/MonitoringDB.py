@@ -172,7 +172,7 @@ class MonitoringDB( ElasticDB ):
     s = self._Search( indexName )
     s = s.filter( 'bool', must = q )
     s.aggs.bucket( '2', a1 )
-    s.fields( ['timestamp'] + selectFields )
+    #s.fields( ['timestamp'] + selectFields )
     gLogger.debug( 'Query:', s.to_dict() )
     retVal = s.execute()
 
@@ -270,7 +270,7 @@ class MonitoringDB( ElasticDB ):
                    field = 'timestamp',
                    interval = interval ).metric( 'tt', a1 )
 
-    s.fields( ['timestamp'] + selectFields )
+    #s.fields( ['timestamp'] + selectFields )
     s = s.extra( size = 0 )  # do not get the hits!
 
     gLogger.debug( 'Query:', s.to_dict() )

@@ -1,5 +1,7 @@
 """ Implementation of a step
 """
+#pylint: disable=unused-wildcard-import,wildcard-import
+
 import os
 import time
 import traceback
@@ -42,7 +44,7 @@ class StepDefinition( AttributeCollection ):
       self.parameters = ParameterCollection( self, obj.parameters )
       self.module_instances = InstancesPool( self, obj.module_instances )
       if obj.module_definitions != None:
-        self.module_definitions = DefinitionsPool( self.obj.module_definitions )
+        self.module_definitions = DefinitionsPool( obj.module_definitions )
     else:
       raise TypeError( 'Can not create object type ' + str( type( self ) ) + ' from the ' + str( type( obj ) ) )
     if step_type :
@@ -106,9 +108,9 @@ class StepDefinition( AttributeCollection ):
     """
     """
     AttributeCollection.updateParents( self, parent )
-    self.module_instances.updateParent( self )
+    self.module_instances.updateParents( self )
     if self.module_definitions is not None :
-      self.module_definitions.updateParent( self )
+      self.module_definitions.updateParents( self )
 
   def createCode( self ):
     """ Create Step code

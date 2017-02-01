@@ -211,7 +211,7 @@ class OperationHandlerBase( object ):
     """
     # Allow a transient failure
     for _i in range( retries ):
-      rssStatus = self.rssClient().getStorageElementStatus( se, status )
+      rssStatus = self.rssClient().getElementStatus( se, "StorageElement", status )
       # gLogger.always( rssStatus )
       if rssStatus["OK"]:
         return S_OK( rssStatus["Value"][se][status] != "Banned" )

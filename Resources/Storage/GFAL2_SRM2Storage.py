@@ -20,7 +20,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
   """
 
   _INPUT_PROTOCOLS = ['file', 'root', 'srm']
-  _OUTPUT_PROTOCOLS = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm']
+  _OUTPUT_PROTOCOLS = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm', 'gsiftp']
 
 
 

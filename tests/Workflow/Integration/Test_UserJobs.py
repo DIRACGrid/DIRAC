@@ -3,11 +3,13 @@
     Can be automatized.
 """
 
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
+#pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
 
 import unittest
 import multiprocessing
+
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
 
 from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
 from DIRAC.tests.Utilities.utils import find_all
@@ -43,6 +45,7 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
   def test_execute( self ):
 
     job = Job()
+    job._siteSet = {'DIRAC.someSite.ch'}
 
     job.setName( "helloWorld-test" )
     job.setExecutable( find_all( "helloWorld.py", '.', 'Integration' )[0],

@@ -640,7 +640,7 @@ class CSAPI( object ):
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     prevVal = self.__csMod.getValue( optionPath )
-    if not prevVal:
+    if prevVal is None:
       return S_ERROR( 'Trying to set %s to %s but option does not exist' % ( optionPath, newValue ) )
     gLogger.verbose( "Changing %s from \n%s \nto \n%s" % ( optionPath, prevVal, newValue ) )
     self.__csMod.setOptionValue( optionPath, newValue )

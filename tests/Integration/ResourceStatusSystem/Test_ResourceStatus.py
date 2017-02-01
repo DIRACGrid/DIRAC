@@ -1,22 +1,19 @@
 """ This is a test of the chain
-    ResourceStatusClient -> ResourceStatusHandler -> ResourceStatusDB
+    ResourceStatus -> ResourceStatusHandler -> ResourceStatusDB
     It supposes that the DB is present, and that the service is running
 
     this is pytest!
 """
 
-import datetime
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 gLogger.setLevel('DEBUG')
 
-rsClient = ResourceStatusClient()
-
-Datetime = datetime.datetime.now()
+rssClient = ResourceStatus()
 
 def test_addAndRemove():
 
@@ -151,4 +148,7 @@ def test_addAndRemove():
   #check if the returned value is empty
   assert not res['Value']
 
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+  rssClient.rssCache.refreshCache()
+  result = rssClient.getElementStatus("test_element2", "ComputingElement")
+  assert result['OK'] == True
+  assert result['Value']['test_element2']['all'] == 'Banned'

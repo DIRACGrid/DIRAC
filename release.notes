@@ -1,3 +1,83 @@
+[v6r18-pre1]
+
+*Accounting
+NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
+     present jitter, one-way delay, packet-loss rate and some derived functions.
+
+*RSS
+NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
+     RSS system 
+NEW: SiteStatus client to interrogate site status with respect to RSS
+
+*WMS
+NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS    
+
+[v6r17p6]
+
+*DMS
+NEW: DataManager - add key argument forJobs (default False) in getReplicas() in order 
+     to get only replicas that can be used for jobs (as defined in the CS); added
+     getReplicasForJobs(), also used in the Dirac API
+
+*SMS
+FIX: Stager agents - monitor files even when there is no requestID, e.g. dCache returns None 
+     when staging a file that is already staged    
+
+*Resources
+FIX: StorageFactory - bug fixes when interpreting SEs inheriting other SE parameters
+NEW: Test_StorageFactory unit test and corresponding docs
+FIX: Torque - some sites put advertising in the command answer that can not be parsed:
+     redirect stderr to /dev/null
+
+[v6r17p5]
+
+*Resources
+FIX: LcgFileCatalogClient - do not evaluate GUID if it is not a string
+
+[v6r17p4]
+
+*Configuration
+FIX: Utilities - fixed interpretation of weird values of GlueCEPolicyMaxWallClockTime
+     BDII parameter; newMaxCPUTime should is made integer
+
+*Framework
+FIX: Logger - make subloggers processing messages with the same level
+     as the parent logger
+
+*Docs
+NEW: Updated documentation in several sections
+
+*DMS
+FIX: RemoveReplica operation - don't set file Done in RemoveReplicas if there is an error
+
+[v6r17p3]
+
+*RSS
+FIX: Synchronizer - the sync method removes the resources that are no longer 
+     in the CS from the DowntimeCache table
+
+*DMS
+CHANGE: dirac-dms-find-lfns - added SE switch to look for files only having
+        replicas on a given SE (list)
+
+*TS
+FIX: TaskManager - optimization of the site checking while preparing job; optimized
+     creation of the job template
+
+*Resources
+CHANGE: GFAL2_SRM2Storage, SRM2Storage - added gsiftp to the list of OUTPUT protocols 
+
+[v6r17p2]
+
+*Monitoring
+FIX: ElasticSearchDB - fixes required to use host certificate for connection;
+     fixes required to pass to version 5.0.1 of the elasticsearch.py binding
+
+[v6r17p1]
+
+*RSS
+FIX: GOCDBSync - make commmand more verbose and added some minor fixes
+
 [v6r17]
 
 *Core
@@ -48,6 +128,23 @@ FIX: JobStateUpdate service - in setJobStatusBulk() avoid adding false informati
 FIX: TaskManager, TaskManagerAgentBase - standardize the logging information; removed unnecessary 
      code; use iterators wherever possible     
 NEW: Introduced metadata-based filters when registering new data in the TS as catalog       
+
+[v6r16p6]
+
+*WMS
+NEW: Added MultiProcessorSiteDirector section to the ConfigTemplate.cfg
+
+*DMS
+FIX: FileCatalogClient - added missing read methods to the interface description
+     getDirectoryUserMetadata(), getFileUserMetadata()
+
+[v6r16p5]
+
+FIX: included patches from v6r15p27
+
+[v6r16p4]
+
+FIX: applied fixes from v6r15p26
 
 [v6r16p3]
 
@@ -113,6 +210,18 @@ NEW: MessageQueue resources to manage MQ connections complemented with
      MQListener and MQPublisher helper classes
 NEW: SudoComputingElement - computing element to execute payload with a sudo to a dedicated
      UNIX account     
+
+[v6r15p27]
+
+*Configuration
+FIX: CSAPI - changed so that empty but existing options in the CS can be still
+     modified
+
+[v6r15p26]
+
+*WMS
+FIX: SandboxStoreClient - ensure that the latest sandbox is returned in the Web
+     portal in the case the job was reset.
 
 [v6r15p25]
 

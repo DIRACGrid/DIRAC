@@ -276,12 +276,14 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
           if newMaxCPUTime == "4" * len( newMaxCPUTime ) or newMaxCPUTime == "9" * len( newMaxCPUTime ):
             newMaxCPUTime = ''
           wallTime = queueInfo.get( 'GlueCEPolicyMaxWallClockTime', '' )
+          if wallTime == "4" * len( wallTime ) or wallTime == "9" * len( wallTime ):
+             wallTime = ''
           if wallTime and int(wallTime)>0:
             if not newMaxCPUTime:
-              newMaxCPUTime = str(0.8*int(wallTime))
+              newMaxCPUTime = str(int(0.8*int(wallTime)))
             else:
               if int(wallTime) <= int(newMaxCPUTime):
-                newMaxCPUTime = str(0.8*int(wallTime))
+                newMaxCPUTime = str(int(0.8*int(wallTime)))
           newSI00 = ''
           caps = queueInfo['GlueCECapability']
           if isinstance( caps, basestring ):
@@ -591,30 +593,22 @@ def getElasticDBParameters( fullname ):
     dbPort = int( result['Value'] )
   parameters[ 'Port' ] = dbPort
 
-  dbuserName = None
   result = gConfig.getOption( cs_path + '/User' )
   if not result['OK']:
-    # No individual port number found, try at the common place
+    # No individual user name found, try at the common place
     result = gConfig.getOption( '/Systems/NoSQLDatabases/User' )
-    if result['OK']:
-      dbuserName = result['Value']
-  else:
-    dbuserName = result['Value']
-    
-  if dbuserName:
-    parameters[ 'User' ] = dbuserName
+    if not result['OK']:
+      return S_ERROR( 'Failed to get the configuration parameter: User' )
+  dbUser = result['Value']
+  parameters[ 'User' ] = dbUser
 
-  dbPassword = None
   result = gConfig.getOption( cs_path + '/Password' )
   if not result['OK']:
-    # No individual port number found, try at the common place
+    # No individual password found, try at the common place
     result = gConfig.getOption( '/Systems/NoSQLDatabases/Password' )
-    if result['OK']:
-      dbPassword = result['Value']
-  else:
-    dbPassword = result['Value']
-  
-  if dbPassword:
-    parameters[ 'Password' ] = dbPassword
+    if not result['OK']:
+      return S_ERROR( 'Failed to get the configuration parameter: Password' )
+  dbPass = result['Value']
+  parameters[ 'Password' ] = dbPass
 
   return S_OK( parameters )
