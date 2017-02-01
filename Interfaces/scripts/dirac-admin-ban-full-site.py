@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-admin-allow-site
+# File :    dirac-admin-ban-site
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Add Site to Active mask for current Setup
+  Remove Site from Active mask for current Setup
 """
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.PromptUser import promptUser
 
 Script.registerSwitch( "E:", "email=", "Boolean True/False (True by default)" )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -53,9 +54,14 @@ if not setup:
   exitCode = 2
   DIRACExit( exitCode )
 
+result = promptUser( 'All the elements that are associated with this site will be banned, are you sure about this action?' )
+if not result['OK'] or result['Value'] is 'n':
+  print 'Script stopped'
+  DIRACExit( 0 )
+
 site = args[0]
 comment = args[1]
-result = diracAdmin.addSiteInMask( site, comment, printOutput = True )
+result = diracAdmin.banSiteFromMask( site, comment, printOutput = True )
 if not result['OK']:
   errorList.append( ( site, result['Message'] ) )
   exitCode = 2
@@ -67,9 +73,10 @@ else:
       exitCode = 2
       DIRACExit( exitCode )
     userName = userName['Value']
-    subject = '%s is added in site mask for %s setup' % ( site, setup )
-    body = 'Site %s is added to the site mask for %s setup by %s on %s.\n\n' % ( site, setup, userName, time.asctime() )
+    subject = '%s is banned for %s setup' % ( site, setup )
+    body = 'Site %s is removed from site mask for %s setup by %s on %s.\n\n' % ( site, setup, userName, time.asctime() )
     body += 'Comment:\n%s' % comment
+
     addressPath = 'EMail/Production'
     address = Operations().getValue( addressPath, '' )
     if not address:

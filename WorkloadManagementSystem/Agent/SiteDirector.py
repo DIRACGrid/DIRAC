@@ -23,7 +23,7 @@ from DIRAC.Core.Utilities.File                             import mkDir
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
@@ -34,6 +34,7 @@ from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 from DIRAC.Core.Utilities.List                             import fromChar
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 
 __RCSID__ = "$Id$"
 
@@ -95,6 +96,8 @@ class SiteDirector( AgentModule ):
     self.sendAccounting = True
     self.rssClient = ResourceStatus()
     self.sstClient = SiteStatus()
+
+    self.siteClient = SiteStatus()
 
   def initialize( self ):
     """ Standard constructor
@@ -423,7 +426,7 @@ class SiteDirector( AgentModule ):
     #  return S_OK()
 
     # Check if the site is allowed in the mask
-    result = jobDB.getSiteMask()
+    result = self.siteClient.getSites()
     if not result['OK']:
       return S_ERROR( 'Can not get the site mask' )
     siteMaskList = result['Value']
