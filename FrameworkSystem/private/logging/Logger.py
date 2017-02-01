@@ -211,7 +211,7 @@ class Logger( object ):
                                msgText,
                                variableText,
                                self.__discoverCallingFrame() )
-      self._processMessage( messageObject )
+      self.processMessage( messageObject )
     return True
 
   def processMessage( self, messageObject ):

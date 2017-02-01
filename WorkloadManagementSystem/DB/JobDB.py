@@ -45,13 +45,14 @@ __RCSID__ = "$Id$"
 import sys
 import operator
 
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight                    import ClassAd
-from DIRAC.Core.Utilities.ReturnValues                            import S_OK, S_ERROR
-from DIRAC.Core.Utilities                                         import Time
-from DIRAC.ConfigurationSystem.Client.Config                      import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry            import getVOForGroup, getVOOption, getGroupOption
-from DIRAC.Core.Base.DB                                           import DB
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources           import getDIRACPlatform
+from DIRAC.Core.Utilities                                    import DErrno
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
+from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERROR
+from DIRAC.Core.Utilities                                    import Time
+from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
+from DIRAC.Core.Base.DB                                      import DB
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources      import getDIRACPlatform
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
 from DIRAC.ResourceStatusSystem.Client.SiteStatus                 import SiteStatus
 
@@ -1485,6 +1486,8 @@ class JobDB( DB ):
     siteList = []
     if result['OK']:
       siteList = [ x[0] for x in result['Value']]
+    else:
+      return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     return S_OK( siteList )
 
@@ -1493,7 +1496,6 @@ class JobDB( DB ):
     """ Get the currently site mask status
     """
     if isinstance(sites, list):
-
       sitesString = ",".join( "'%s'" % site for site in sites)
       cmd = "SELECT Site, Status FROM SiteMask WHERE Site in (%s)" % sitesString
 
@@ -1514,6 +1516,8 @@ class JobDB( DB ):
     if result['OK']:
       for site, status in result['Value']:
         siteDict[site] = status
+    else:
+      return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     return S_OK( siteDict )
 

@@ -11,21 +11,21 @@ __RCSID__ = "$Id $"
 
 def mock_getProxyInfo():
   return S_OK( {'VOMS': ['/lhcb/Role=user'],
-            'chain': '[/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen]',
-            'group': 'lhcb_user',
-            'groupProperties': ['NormalUser', 'SuperProperty'],
-            'hasVOMS': True,
-            'identity': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen',
-            'isLimitedProxy': False,
-            'isProxy': True,
-            'issuer': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy',
-            'path': '/tmp/x509up_u12345',
-            'rfc': False,
-            'secondsLeft': 86026,
-            'subject': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy/CN=proxy',
-            'username': 'chaen',
-            'validDN': True,
-            'validGroup': True} )
+                'chain': '[/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen]',
+                'group': 'lhcb_user',
+                'groupProperties': ['NormalUser', 'SuperProperty'],
+                'hasVOMS': True,
+                'identity': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen',
+                'isLimitedProxy': False,
+                'isProxy': True,
+                'issuer': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy',
+                'path': '/tmp/x509up_u12345',
+                'rfc': False,
+                'secondsLeft': 86026,
+                'subject': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy/CN=proxy',
+                'username': 'chaen',
+                'validDN': True,
+                'validGroup': True} )
 
 def mock_getNoProxyInfo():
   return S_ERROR( "No proxy" )

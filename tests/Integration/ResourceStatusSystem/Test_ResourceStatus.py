@@ -1,151 +1,34 @@
 """ This is a test of the chain
-    ResourceStatusClient -> ResourceStatusHandler -> ResourceStatusDB
+    ResourceStatus -> ResourceStatusHandler -> ResourceStatusDB
     It supposes that the DB is present, and that the service is running
 
     this is pytest!
 """
 
-import datetime
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 gLogger.setLevel('DEBUG')
 
-rsClient = ResourceStatusClient()
-
-Datetime = datetime.datetime.now()
+rssClient = ResourceStatus()
 
 def test_addAndRemove():
 
-  # TEST insertStatusElement
-  # ...............................................................................
+  result = rssClient.setElementStatus("test_element", "StorageElement", "ReadAccess", "Banned")
+  assert result['OK'] == True
 
-  #add an element
-  res = rsClient.insertStatusElement('Resource', 'Log', 'TestName1234', 'statusType',
-                                   'Active', 'elementType', 'reason', Datetime,
-                                   Datetime, 'tokenOwner', Datetime)
-  #check if the insert query was executed properly
-  assert res['OK'] == True
+  rssClient.rssCache.refreshCache()
+  result = rssClient.getElementStatus("test_element", "StorageElement", "ReadAccess")
+  assert result['OK'] == True
+  assert result['Value']['test_element']['ReadAccess'] == 'Banned'
 
+  result = rssClient.setElementStatus("test_element2", "ComputingElement", "all", "Banned")
+  assert result['OK'] == True
 
-  #select the previously entered element
-  res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234')
-  #check if the select query was executed properly
-  assert res['OK'] == True
-  #check if the name that we got is equal to the previously added 'TestName1234'
-  assert res['Value'][0][2] == 'TestName1234'
-
-
-  # TEST addOrModifyStatusElement
-  # ...............................................................................
-
-  #modify the previously entered element
-  res = rsClient.addOrModifyStatusElement('Resource', 'Log', 'TestName1234_Modified')
-  #check if the addOrModify query was executed properly
-  assert res['OK'] == True
-
-
-  #select the previously modified element
-  res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified')
-  #check if the select query was executed properly
-  assert res['OK'] == True
-  #check if the name that we got is equal to the previously added 'TestName1234_Modified'
-  assert res['Value'][0][2] == 'TestName1234_Modified'
-
-
-  # TEST modifyStatusElement
-  # ...............................................................................
-
-  #modify the previously entered element
-  res = rsClient.modifyStatusElement('Resource', 'Log', 'TestName1234_Modified2')
-  #check if the modify query was executed properly
-  assert res['OK'] == True
-
-
-  #select the previously modified element
-  res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified2')
-  #check if the select query was executed properly
-  assert res['OK'] == True
-  #check if the name that we got is equal to the previously added 'TestName1234_Modified2'
-  assert res['Value'][0][2] == 'TestName1234_Modified2'
-
-
-  # TEST updateStatusElement
-  # ...............................................................................
-
-  #update the previously entered element
-  res = rsClient.updateStatusElement('Resource', 'Log', 'TestName1234_Modified3',
-                                     'statusType', 'Active', 'elementType', 'reason',
-                                     Datetime, Datetime, 'tokenOwner', Datetime)
-  #check if the updateStatusElement query was executed properly
-  assert res['OK'] == True
-
-
-  #select the previously modified element
-  res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified3')
-  #check if the select query was executed properly
-  assert res['OK'] == True
-  #check if the name that we got is equal to the previously added 'TestName1234_Modified3'
-  assert res['Value'][0][2] == 'TestName1234_Modified3'
-
-
-  # TEST deleteStatusElement
-  # ...............................................................................
-
-  #delete the element
-  res = rsClient.deleteStatusElement('Resource', 'Log', 'TestName1234_Modified3')
-  #check if the delete query was executed properly
-  assert res['OK'] == True
-
-
-  #try to select the previously deleted element
-  res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified3')
-  #check if the select query was executed properly
-  assert res['OK'] == True
-  #check if the returned value is empty
-  assert not res['Value']
-
-
-  # TEST addIfNotThereStatusElement
-  # ...............................................................................
-
-  #delete the element
-  res = rsClient.addIfNotThereStatusElement('Resource', 'Log', 'TestName1234_Test')
-  #check if the addIfNotThereStatus query was executed properly
-  assert res['OK'] == True
-
-
-  #try to select the previously deleted element
-  res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Test')
-  #check if the select query was executed properly
-  assert res['OK'] == True
-  #check if the name that we got is equal to the previously added 'TestName1234_Test'
-  assert res['Value'][0][2] == 'TestName1234_Test'
-
-  #delete it
-  res = rsClient.deleteStatusElement('Resource', 'Log', 'TestName1234_Test')
-  #check if the delete query was executed properly
-  assert res['OK'] == True
-
-
-  # ...............................................................................
-  # The below values should be empty since they were modified
-
-  #try to select the previously modified element
-  res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified2')
-  #check if the select query was executed properly
-  assert res['OK'] == True
-  #check if the returned value is empty
-  assert not res['Value']
-
-  #try to select the previously modified element
-  res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified')
-  #check if the select query was executed properly
-  assert res['OK'] == True
-  #check if the returned value is empty
-  assert not res['Value']
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+  rssClient.rssCache.refreshCache()
+  result = rssClient.getElementStatus("test_element2", "ComputingElement")
+  assert result['OK'] == True
+  assert result['Value']['test_element2']['all'] == 'Banned'

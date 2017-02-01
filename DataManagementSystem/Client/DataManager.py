@@ -860,7 +860,7 @@ class DataManager( object ):
             log.debug( "Cannot get destURL", res['Message'] )
             continue
         else:
-          log.debug( "File does not exist: Expected error for TargetSE !!")
+          log.debug( "File does not exist: Expected error for TargetSE !!" )
           destURL = res['Value']
 
         if sourceURL == destURL:
@@ -1524,6 +1524,25 @@ class DataManager( object ):
         replicaDict['Failed'][lfn] = 'No disk replicas'
     return
 
+  def __filterReplicasForJobs( self, replicaDict ):
+    """ Remove the SEs that are not to be used for jobs, and archive SEs if there are others
+    The input argument is modified
+    """
+    seList = set( se for ses in replicaDict['Successful'].itervalues() for se in ses )
+    # Get a cache of SE statuses for long list of replicas
+    seStatus = dict( ( se, ( self.dmsHelper.isSEForJobs( se ), self.dmsHelper.isSEArchive( se ) ) ) for se in seList )
+    for lfn, replicas in replicaDict['Successful'].items():  # Beware, there is a del below
+      otherThanArchive = set( se for se in replicas if not seStatus[se][1] )
+      for se in replicas.keys():
+        # Remove the SE if it should not be used for jobs or if it is an archive and there are other SEs
+        if not seStatus[se][0] or ( otherThanArchive and seStatus[se][1] ):
+          replicas.pop( se )
+      # If in the end there is no replica, set Failed
+      if not replicas:
+        del replicaDict['Successful'][lfn]
+        replicaDict['Failed'][lfn] = 'No replicas for jobs'
+    return
+
   def __filterTapeSEs( self, replicas, diskOnly = False, seStatus = None ):
     """ Remove the tape SEs as soon as there is one disk SE or diskOnly is requested
     The input argument is modified
@@ -1563,10 +1582,10 @@ class DataManager( object ):
         activeDict['Failed'][lfn] = 'Wrong replica info'
       else:
         activeDict['Successful'][lfn] = replicas.copy()
-    self.__checkActiveReplicas( activeDict )
+    self.__filterActiveReplicas( activeDict )
     return S_OK( activeDict )
 
-  def __checkActiveReplicas( self, replicaDict ):
+  def __filterActiveReplicas( self, replicaDict ):
     """
     Check a replica dictionary for active replicas
     The input dict is modified, no returned value
@@ -1585,7 +1604,9 @@ class DataManager( object ):
     return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( status, False )
 
   def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, active = False ):
-    """ get replicas from catalogue """
+    """ get replicas from catalogue and filter if requested
+    Warning: all filters are independent, hence active and preferDisk should be set if using forJobs
+    """
     catalogReplicas = {}
     failed = {}
     for lfnChunk in breakListIntoChunks( lfns, 1000 ):
@@ -1616,11 +1637,26 @@ class DataManager( object ):
 
     result = {'Successful':catalogReplicas, 'Failed':failed}
     if active:
-      self.__checkActiveReplicas( result )
+      self.__filterActiveReplicas( result )
     if diskOnly or preferDisk:
       self.__filterTapeReplicas( result, diskOnly = diskOnly )
     return S_OK( result )
 
+  def getReplicasForJobs( self, lfns, allStatus = False, getUrl = True, diskOnly = False ):
+    """ get replicas useful for jobs
+    """
+    # Call getReplicas with no filter and enforce filters in this method
+    result = self.getReplicas( lfns, allStatus = allStatus, getUrl = getUrl )
+    if not result['OK']:
+      return result
+    replicaDict = result['Value']
+    # For jobs replicas must be active
+    self.__filterActiveReplicas( replicaDict )
+    # For jobs, give preference to disk replicas but not only
+    self.__filterTapeReplicas( replicaDict, diskOnly = diskOnly )
+    # don't use SEs excluded for jobs (e.g. Failover)
+    self.__filterReplicasForJobs( replicaDict )
+    return S_OK( replicaDict )
 
   ##################################################################################################3
   # Methods from the catalogToStorage. It would all work with the direct call to the SE, but this checks

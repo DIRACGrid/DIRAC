@@ -186,6 +186,17 @@ class BaseAccountingType:
     if not retVal[ 'OK' ]:
       return retVal
     return gDataStoreClient.commit()
+  
+  def delayedCommit( self ):
+    """
+    Commit register to the server. Delayed commit allows to speed up
+    the operation as more registers will be sent at once.
+    """
+    
+    retVal = gDataStoreClient.addRegister( self )
+    if not retVal[ 'OK' ]:
+      return retVal
+    return gDataStoreClient.delayedCommit()
 
   def remove( self ):
     """

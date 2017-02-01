@@ -13,7 +13,9 @@ from DIRAC.Core.Security import Locations
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.DErrno import EMQUKN, EMQCONN
 
-
+# needed by stomp.py (without import there is an exception when it tries to log something)
+import logging
+logging.basicConfig()
 
 class StompMQConnector( MQConnector ):
   """
@@ -26,8 +28,8 @@ class StompMQConnector( MQConnector ):
     """
     super( StompMQConnector, self ).__init__()
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
-    self.parameters = parameters
-    self.connection =  None
+    self.parameters = parameters.copy()
+    self.connections = {}
 
   def setupConnection( self, parameters = None ):
     #"""
@@ -60,9 +62,6 @@ class StompMQConnector( MQConnector ):
         hostcert = paths[0]
         hostkey = paths[1]
 
-    headers = {}
-    if self.parameters.get( 'Persistent', '' ).lower() in ['true', 'yes', '1']:
-      headers = { 'persistent': 'true' }
     try:
 
       # get IP addresses of brokers
@@ -76,25 +75,23 @@ class StompMQConnector( MQConnector ):
       else:
         return S_ERROR( EMQCONN, 'Invalid SSL version provided: %s' % sslVersion )
 
-      #Im taking the first ip on the list
-      ip = next( iter( brokers[2] or [] ), None )
-      self.parameters.update( {'IP':ip} )
-
-      if ip:
+      for ip in brokers[2]:
         if sslVersion:
-          self.connection = stomp.Connection(
-                                              [ ( ip, int( port ) ) ],
-                                              use_ssl = True,
-                                              ssl_version = sslVersion,
-                                              ssl_key_file = hostkey,
-                                              ssl_cert_file = hostcert,
-                                              vhost = vhost,
-                                             )
+          self.connections[ip] = stomp.Connection( 
+                                                  [ ( ip, int( port ) ) ],
+                                                  use_ssl = True,
+                                                  ssl_version = sslVersion,
+                                                  ssl_key_file = hostkey,
+                                                  ssl_cert_file = hostcert,
+                                                  vhost = vhost,
+                                                  keepalive = True
+                                                )
         else:
-          self.connection = stomp.Connection(
-                                              [ ( ip, int( port ) ) ],
-                                              vhost = vhost
-                                             )
+          self.connections[ip] = stomp.Connection( 
+                                                  [ ( ip, int( port ) ) ],
+                                                  vhost = vhost,
+                                                  keepalive = True
+                                                )
 
     except Exception as e:
       return S_ERROR( EMQCONN, 'Failed to setup connection: %s' % e )
@@ -108,42 +105,66 @@ class StompMQConnector( MQConnector ):
     :param str message: string or any json encodable structure
     """
     destination = parameters.get( 'destination', '' )
-    try:
-      if isinstance( message, ( list, set, tuple ) ):
-        for msg in message:
-          self.connection.send( body = json.dumps( msg ), destination = destination )
-      else:
-        self.connection.send( body = json.dumps( message ), destination = destination )
-    except Exception as e:
-      return S_ERROR( EMQUKN, 'Failed to send message: %s' % e )
+    error = False
+    for connection in self.connections.itervalues():
+      try:
+        if isinstance( message, ( list, set, tuple ) ):
+          for msg in message:
+            connection.send( body = json.dumps( msg ), destination = destination )
+            error = False
+            break
+        else:
+          connection.send( body = json.dumps( message ), destination = destination )
+          error = False
+          break
+      except Exception as e:
+        error = e
+
+    if error is not False:
+      return S_ERROR( EMQUKN, 'Failed to send message: %s' % error )
+
     return S_OK( 'Message sent successfully' )
 
   def connect( self, parameters = None ):
-    port = self.parameters.get( 'Port', 61613 )
-    ip = self.parameters.get( 'IP', '' )
+    host = self.parameters.get( 'Host' )
+    port = self.parameters.get( 'Port' )
     user = self.parameters.get( 'User' )
     password = self.parameters.get( 'Password' )
-    try:
-      self.connection.start()
-      self.connection.connect( username = user, passcode = password )
-      time.sleep( 1 )
-      if self.connection.is_connected():
-        self.log.info( "Connected to %s:%s" % ( ip, port ) )
-        return S_OK( "Connected to %s:%s" % ( ip, port ) )
-      else:
-        return S_ERROR( EMQCONN, "Failed to connect to  %s:%s" % ( ip, port ) )
-    except Exception as e:
-      return S_ERROR( EMQCONN, 'Failed to connect: %s' % e )
+    
+    connected = False
+    for ip, connection in self.connections.iteritems():
+      try:
+        connection.start()
+        connection.connect( username = user, passcode = password )
+        time.sleep( 1 )
+        if connection.is_connected():
+          self.log.info( "Connected to %s:%s" % ( ip, port ) )
+          connected = True
+      except Exception as e:
+        self.log.error( 'Failed to connect: %s' % e )
+
+    if connected:
+      return S_OK( "Connected to %s" % host )
+    else:
+      return S_ERROR( EMQCONN, "Failed to connect to  %s" % host )
+
 
   def disconnect( self, parameters = None ):
     """
     Disconnects from the message queue server
     """
-    try:
-      self.connection.disconnect()
-    except Exception as e:
-      return S_ERROR( EMQUKN, 'Failed to disconnect: %s' % str( e ) )
-    return S_OK( 'Disconnection successful' )
+    fail = False
+    for connection in self.connections.itervalues():
+      try:
+        connection.disconnect()
+      except Exception as e:
+        self.log.error( 'Failed to disconnect: %s' % e )
+        fail = True
+
+    if fail:
+      return S_ERROR( EMQUKN, 'Failed to disconnect from at least one broker' )
+    else:
+      return S_OK( 'Successfully disconnected from all brokers' )
 
   def subscribe( self, parameters = None ):
     mId = parameters.get( 'messengerId', '' )
@@ -159,23 +180,31 @@ class StompMQConnector( MQConnector ):
       ack = 'client-individual'
     if not callback:
       self.log.error( "No callback specified!" )
-    listener = StompListener( callback, acknowledgement, self.connection, mId )
 
-    self.connection.set_listener( '', listener )
-    self.connection.subscribe( destination = dest,
-                               id = mId,
-                               ack = ack,
-                               headers = headers )
+    for connection in self.connections.itervalues():
+      listener = StompListener( callback, acknowledgement, connection, mId )
+      connection.set_listener( '', listener )
+      connection.subscribe( destination = dest,
+                            id = mId,
+                            ack = ack,
+                            headers = headers )
     return S_OK( 'Subscription successful' )
 
   def unsubscribe( self, parameters ):
     dest = parameters.get( 'destination', '' )
     mId = parameters.get( 'messengerId', '' )
-    try:
-      self.connection.unsubscribe( destination = dest, id = mId )
-    except Exception as e:
-      return S_ERROR( EMQUKN, 'Failed to unsubscibe: %s' % str( e ) )
-    return S_OK( 'Unsubscription successful' )
+    fail = False
+    for connection in self.connections.itervalues():
+      try:
+        connection.unsubscribe( destination = dest, id = mId )
+      except Exception as e:
+        self.log.error( 'Failed to unsubscribe: %s' % e )
+        fail = True
+
+    if fail:
+      return S_ERROR( EMQUKN, 'Failed to unsubscribe from at least one destination' )
+    else:
+      return S_OK( 'Successfully unsubscribed from all destinations' )
 
 class StompListener ( stomp.ConnectionListener ):
   """
@@ -217,3 +246,8 @@ class StompListener ( stomp.ConnectionListener ):
     """ Function called when an error happens
     """
     self.log.error( message )
+
+  def on_disconnected( self ):
+    """ Callback function called after disconnecting from broker.
+    """
+    self.log.warn( 'Disconnected from broker' )
