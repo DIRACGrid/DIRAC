@@ -14,7 +14,6 @@ from DIRAC.Core.Utilities.Subprocess                  import systemCall, shellCa
 
 __RCSID__ = "$Id$"
 
-
 def executeGridCommand( proxy, cmd, gridEnvScript = None ):
   """
   Execute cmd tuple after sourcing GridEnv
@@ -100,7 +99,7 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
   stdout = result['Value'][1]
   stderr = result['Value'][2]
 
-  if not status == 0:
+  if status != 0:
     return S_ERROR( stderr )
 
   lines = []
@@ -434,7 +433,7 @@ def getBdiiCEInfo( vo, host = None ):
     ceID = queueDict[queueID]['CE']
     siteID = ceDict[ceID]['Site']
     siteDict[siteID]['CEs'][ceID].setdefault('Queues',{})
-    queueName = re.split( ':\d+/', queueDict[queueID]['GlueCEUniqueID'] )[1]
+    queueName = re.split( r':\d+/', queueDict[queueID]['GlueCEUniqueID'] )[1]
     siteDict[siteID]['CEs'][ceID]['Queues'][queueName] = queueDict[queueID]
 
   return S_OK( siteDict )

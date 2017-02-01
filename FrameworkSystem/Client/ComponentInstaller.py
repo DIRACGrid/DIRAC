@@ -2656,6 +2656,8 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     sectionPath = cfgPath( 'Systems', 'Databases' )
     cfg = self.__getCfg( sectionPath, 'User', self.mysqlUser )
     cfg.setOption( cfgPath( sectionPath, 'Password' ), self.mysqlPassword )
+    cfg.setOption( cfgPath( sectionPath, 'Host' ), self.mysqlHost )
+    cfg.setOption( cfgPath( sectionPath, 'Port' ), self.mysqlPort )
 
     return self._addCfgToDiracCfg( cfg )
 
@@ -2669,6 +2671,8 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     sectionPath = cfgPath( 'Systems', 'NoSQLDatabases' )
     cfg = self.__getCfg( sectionPath, 'User', self.noSQLUser )
     cfg.setOption( cfgPath( sectionPath, 'Password' ), self.noSQLPassword )
+    cfg.setOption( cfgPath( sectionPath, 'Host' ), self.noSQLHost )
+    cfg.setOption( cfgPath( sectionPath, 'Port' ), self.noSQLPort )
 
     return self._addCfgToDiracCfg( cfg )
 
