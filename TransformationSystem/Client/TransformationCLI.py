@@ -1,15 +1,11 @@
 """ Transformation Database Client Command Line Interface.
 """
 
-__RCSID__ = '$Id:  $'
-
 #! /usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-import sys
-
-from DIRAC.Core.Base.CLI import                              CLI
+from DIRAC.Core.Base.CLI                                     import CLI
 from DIRAC.Core.Base.API                                     import API
 from DIRAC.Core.Utilities.Subprocess                         import shellCall
 from DIRAC.TransformationSystem.Client.Transformation        import Transformation
@@ -122,7 +118,7 @@ The first argument is the authorDN or username. The authorDN
 is preferred: it need to be inside quotes because contains
 white spaces. Only authorDN should be quoted.
 
-When the username is provided instead, 
+When the username is provided instead,
 the authorDN is retrieved from the uploaded proxy,
 so that the retrieved transformations are those created by
 the user who uploaded that proxy: that user could be different
@@ -489,8 +485,8 @@ that the username provided to the function.
     """ Reset file status for the given transformation
         usage: resetFile <transName|ID> <lfn>
     """
-    argss = args.split() 
-    
+    argss = args.split()
+
     if not len( argss ) > 1:
       print "transformation and file(s) not supplied"
       return
