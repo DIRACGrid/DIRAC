@@ -8,23 +8,25 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
+import datetime
 from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
 gLogger.setLevel('DEBUG')
 
-rssClient = ResourceStatus()
+rssClient = ResourceStatusClient()
+Datetime = datetime.datetime.now()
 
 def test_addAndRemove():
 
-  rsClient.deleteStatusElement('Resource', 'Status', 'TestName1234')
-  rsClient.deleteStatusElement('Resource', 'Status', 'TestName123456789')
+  rssClient.deleteStatusElement('Resource', 'Status', 'TestName1234')
+  rssClient.deleteStatusElement('Resource', 'Status', 'TestName123456789')
 
   # TEST insertStatusElement
   # ...............................................................................
 
   #add an element
-  res = rsClient.insertStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
+  res = rssClient.insertStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
                                    'Active', 'elementType', 'reason', Datetime,
                                    Datetime, 'tokenOwner', Datetime)
   #check if the insert query was executed properly
@@ -32,7 +34,7 @@ def test_addAndRemove():
 
 
   #select the previously entered element
-  res = rsClient.selectStatusElement('Resource', 'Status', 'TestName1234')
+  res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
   #check if the select query was executed properly
   assert res['OK'] == True
   assert res['Value'][0][0] == 'Active'
@@ -42,7 +44,7 @@ def test_addAndRemove():
   # ...............................................................................
 
   #modify the previously entered element
-  res = rsClient.addOrModifyStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
+  res = rssClient.addOrModifyStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
                                    'Banned', 'elementType', 'reason', Datetime,
                                    Datetime, 'tokenOwner', Datetime)
   #check if the addOrModify query was executed properly
@@ -50,7 +52,7 @@ def test_addAndRemove():
 
 
   #select the previously modified element
-  res = rsClient.selectStatusElement('Resource', 'Status', 'TestName1234')
+  res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
   #check if the select query was executed properly
   assert res['OK'] == True
   assert res['Value'][0][0] == 'Banned'
@@ -60,7 +62,7 @@ def test_addAndRemove():
   # ...............................................................................
 
   #modify the previously entered element
-  res = rsClient.modifyStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
+  res = rssClient.modifyStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
                                    'Active', 'elementType', 'reason', Datetime,
                                    Datetime, 'tokenOwner', Datetime)
   #check if the modify query was executed properly
@@ -68,7 +70,7 @@ def test_addAndRemove():
 
 
   #select the previously modified element
-  res = rsClient.selectStatusElement('Resource', 'Status', 'TestName1234')
+  res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
   #check if the select query was executed properly
   assert res['OK'] == True
   assert res['Value'][0][0] == 'Active'
@@ -78,7 +80,7 @@ def test_addAndRemove():
   # ...............................................................................
 
   #update the previously entered element
-  res = rsClient.updateStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
+  res = rssClient.updateStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
                                    'Banned', 'elementType', 'reason', Datetime,
                                    Datetime, 'tokenOwner', Datetime)
   #check if the updateStatusElement query was executed properly
@@ -86,7 +88,7 @@ def test_addAndRemove():
 
 
   #select the previously modified element
-  res = rsClient.selectStatusElement('Resource', 'Status', 'TestName1234')
+  res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
   #check if the select query was executed properly
   assert res['OK'] == True
   assert res['Value'][0][0] == 'Banned'
@@ -96,13 +98,13 @@ def test_addAndRemove():
   # ...............................................................................
 
   #delete the element
-  res = rsClient.deleteStatusElement('Resource', 'Status', 'TestName1234')
+  res = rssClient.deleteStatusElement('Resource', 'Status', 'TestName1234')
   #check if the delete query was executed properly
   assert res['OK'] == True
 
 
   #try to select the previously deleted element
-  res = rsClient.selectStatusElement('Resource', 'Status', 'TestName1234')
+  res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
   #check if the select query was executed properly
   assert res['OK'] == True
   #check if the returned value is empty
@@ -113,20 +115,20 @@ def test_addAndRemove():
   # ...............................................................................
 
   #delete the element
-  res = rsClient.addIfNotThereStatusElement('Resource', 'Status', 'TestName123456789', 'statusType',
+  res = rssClient.addIfNotThereStatusElement('Resource', 'Status', 'TestName123456789', 'statusType',
                                    'Active', 'elementType', 'reason', Datetime,
                                    Datetime, 'tokenOwner', Datetime)
   #check if the addIfNotThereStatus query was executed properly
   assert res['OK'] == True
 
-  res = rsClient.selectStatusElement('Resource', 'Status', 'TestName123456789')
+  res = rssClient.selectStatusElement('Resource', 'Status', 'TestName123456789')
   #check if the select query was executed properly
   assert res['OK'] == True
   #check if the name that we got is equal to the previously added 'TestName1234_Test'
   assert res['Value'][0][0] == 'Active'
 
   #delete it
-  res = rsClient.deleteStatusElement('Resource', 'Status', 'TestName123456789')
+  res = rssClient.deleteStatusElement('Resource', 'Status', 'TestName123456789')
   #check if the delete query was executed properly
   assert res['OK'] == True
 
@@ -135,20 +137,15 @@ def test_addAndRemove():
   # The below values should be empty since they were modified
 
   #try to select the previously modified element
-  res = rsClient.selectStatusElement('Resource', 'Status', 'TestName123456789')
+  res = rssClient.selectStatusElement('Resource', 'Status', 'TestName123456789')
   #check if the select query was executed properly
   assert res['OK'] == True
   #check if the returned value is empty
   assert not res['Value']
 
   #try to select the previously modified element
-  res = rsClient.selectStatusElement('Resource', 'Status', 'TestName1234')
+  res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
   #check if the select query was executed properly
   assert res['OK'] == True
   #check if the returned value is empty
   assert not res['Value']
-
-  rssClient.rssCache.refreshCache()
-  result = rssClient.getElementStatus("test_element2", "ComputingElement")
-  assert result['OK'] == True
-  assert result['Value']['test_element2']['all'] == 'Banned'
