@@ -6,9 +6,10 @@ import os
 import sys
 import re
 import stat
+import shlex
 import distutils.spawn #pylint: disable=no-name-in-module,no-member,import-error
 
-from DIRAC.Core.Utilities.Subprocess    import shellCall
+from DIRAC.Core.Utilities.Subprocess    import systemCall
 from DIRAC                              import gLogger
 
 from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase
@@ -84,10 +85,11 @@ class Script( ModuleBase ):
     """
     failed = False
 
-    outputDict = shellCall( 0, self.command,
-                            env = self.environment,
-                            callbackFunction = self.callbackFunction,
-                            bufferLimit = self.bufferLimit )
+    outputDict = systemCall( timeout = 0,
+                             cmdSeq = shlex.split( self.command ),
+                             env = self.environment,
+                             callbackFunction = self.callbackFunction,
+                             bufferLimit = self.bufferLimit )
     if not outputDict['OK']:
       failed = True
       self.log.error( 'Shell call execution failed:', '\n' + str( outputDict['Message'] ) )
