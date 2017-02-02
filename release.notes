@@ -1,3 +1,16 @@
+[v6r17p7]
+
+*DMS
+FIX: dirac-dms-user-lfns - do not print out empty directories
+
+*WMS
+FIX: InputData Executor, JobWrapper - use DataManager.getReplicasForJobs() for
+     getting input data replicas
+
+*TS
+FIX: TransformationAgent - use DataManager.getReplicasForJobs() for transformations
+     creating jobs  
+
 [v6r17p6]
 
 *DMS
