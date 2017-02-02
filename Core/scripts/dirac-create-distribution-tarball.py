@@ -12,6 +12,7 @@ import os
 import shutil
 import tempfile
 import subprocess
+import shutil
 
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -161,7 +162,7 @@ class TarModuleCreator( object ):
   def __checkoutFromCVS( self ):
     cmd = "cvs export -d '%s' '%s'" % ( self.params.sourceURL, os.path.join( self.params.destination, self.params.name ) )
     gLogger.verbose( "Executing: %s" % cmd )
-    result = Subprocess.shellCall( 900, cmd )
+    result = Subprocess.systemCall( 900, shutil.split(cmd) )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while retrieving sources from CVS: %s" % result[ 'Message' ] )
     exitStatus, stdData, errData = result[ 'Value' ]
@@ -173,7 +174,7 @@ class TarModuleCreator( object ):
     cmd = "svn export --trust-server-cert --non-interactive '%s/%s' '%s'" % ( self.params.sourceURL, self.params.version,
                                                                               os.path.join( self.params.destination, self.params.name ) )
     gLogger.verbose( "Executing: %s" % cmd )
-    result = Subprocess.shellCall( 900, cmd )
+    result = Subprocess.systemCall( 900, shutil.split(cmd) )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while retrieving sources from SVN: %s" % result[ 'Message' ] )
     exitStatus, stdData, errData = result[ 'Value' ]

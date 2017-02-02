@@ -81,7 +81,7 @@ class Script( ModuleBase ):
     self.log.info( 'Command is: %s' % self.command )
 
   def _executeCommand( self ):
-    """ execute the self.command (uses shellCall)
+    """ execute the self.command (uses systemCall)
     """
     failed = False
 
