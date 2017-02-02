@@ -1,4 +1,7 @@
-[v6r18-pre1]
+[v6r18-pre2]
+
+FIX: In multiple places - use systemCall() rather than shellCall() to avoid
+     potential shell injection problems
 
 *Accounting
 NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
