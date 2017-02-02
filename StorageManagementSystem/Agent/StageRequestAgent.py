@@ -96,13 +96,13 @@ class StageRequestAgent( AgentModule ):
 
     # Merge info from both results
     for storageElement, seReplicaIDs in res['Value']['SEReplicas'].iteritems():
-      seReplicas.setdefault( storageElement, set() ).update( seReplicaIDs )
+      seReplicas.setdefault( storageElement, [] ).extend( seReplicaIDs )
     allReplicaInfo.update( res['Value']['AllReplicaInfo'] )
 
     gLogger.info( "StageRequest.submitStageRequests: Obtained %s replicas for staging." % len( allReplicaInfo ) )
     for storageElement, seReplicaIDs in seReplicas.iteritems():
       gLogger.debug( 'Staging at %s:' % storageElement, seReplicaIDs )
-      self._issuePrestageRequests( storageElement, list( seReplicaIDs ), allReplicaInfo )
+      self._issuePrestageRequests( storageElement, seReplicaIDs, allReplicaInfo )
     return S_OK()
 
   def _getMissingReplicas( self ):
