@@ -118,7 +118,7 @@ class InputData( OptimizerExecutor ):
         if not result['OK']:
           return S_ERROR( "Could not retrieve job owner group" )
         userGroup = result['Value']
-        result = self._resolveInputData( jobState, inputData, proxyUserName = userName, proxyUserGroup = userGroup ) #pylint: disable=unexpected-keyword-arg
+        result = self._resolveInputData( jobState, inputData, proxyUserName = userName, proxyUserGroup = userGroup )  # pylint: disable=unexpected-keyword-arg
       else:
         result = self._resolveInputData( jobState, inputData )
       if not result['OK']:
@@ -151,7 +151,7 @@ class InputData( OptimizerExecutor ):
       return S_ERROR( 'Failed to instantiate DataManager for vo %s' % vo )
     else:
       # This will return already active replicas, excluding banned SEs, and removing tape replicas if there are disk replicas
-      result = dm.getActiveReplicas( lfns, preferDisk = True )
+      result = dm.getReplicasForJobs( lfns )
     self.jobLog.info( 'Catalog replicas lookup time: %.2f seconds ' % ( time.time() - startTime ) )
     if not result['OK']:
       self.log.warn( result['Message'] )
