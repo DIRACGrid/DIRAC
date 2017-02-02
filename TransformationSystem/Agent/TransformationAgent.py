@@ -231,7 +231,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     forJobs = transDict['Type'].lower() not in ( 'replication', 'removal' )
 
     # First get the LFNs associated to the transformation
-    transFiles = self._getTransformationFiles( transDict, clients, replicateOrRemove = replicateOrRemove )
+    transFiles = self._getTransformationFiles( transDict, clients, replicateOrRemove = not forJobs )
     if not transFiles['OK']:
       return transFiles
     if not transFiles['Value']:
@@ -244,7 +244,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     unusedFiles = len( lfns )
 
     # Limit the number of LFNs to be considered for replication or removal as they are treated individually
-    if replicateOrRemove:
+    if not forJobs:
       totLfns = len( lfns )
       lfns = self.__applyReduction( lfns )
       if len( lfns ) != totLfns:
