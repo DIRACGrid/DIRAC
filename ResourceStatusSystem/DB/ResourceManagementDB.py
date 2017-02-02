@@ -309,7 +309,7 @@ class ResourceManagementDB( object ):
     try:
 
       # refresh metadata
-      self.metadata.create_all( self.engine )
+      self.session.commit()
 
       table = self.metadata.tables.get( table )
 
@@ -351,7 +351,7 @@ class ResourceManagementDB( object ):
       meta = False
 
       # refresh metadata
-      self.metadata.create_all( self.engine )
+      self.session.commit()
 
       table = self.metadata.tables.get( table )
 
