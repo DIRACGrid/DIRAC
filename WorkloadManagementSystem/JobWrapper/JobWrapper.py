@@ -295,7 +295,7 @@ class JobWrapper( object ):
     jobMemory = 0.
     if "Memory" in self.jobArgs:
       # Job specifies memory in GB, internally use KB
-      jobMemory = int( self.jobArgs['Memory'] )*1024.*1024.
+      jobMemory = int( self.jobArgs['Memory'] ) * 1024.*1024.
 
     if 'Executable' in self.jobArgs:
       executable = self.jobArgs['Executable'].strip()
@@ -644,7 +644,8 @@ class JobWrapper( object ):
         and check the result.
     """
     start = time.time()
-    repsResult = self.dm.getReplicas( lfns )
+    # We are in a job, therefore interested in replicas for jobs
+    repsResult = self.dm.getReplicasForJobs( lfns )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     if not repsResult['OK']:
