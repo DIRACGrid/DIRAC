@@ -480,7 +480,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     method = '_getDataReplicasDM'
 
     startTime = time.time()
-    self._logVerbose( "Getting replicas%s for %d files from catalog" % ( ' for jobs' if forJobs else '', len( lfns ) ),
+    self._logVerbose( "Getting replicas%s from catalog for %d files" % ( ' for jobs' if forJobs else '', len( lfns ) ),
                       method = method, transID = transID )
     if forJobs:
       # Get only replicas eligible for jobs
