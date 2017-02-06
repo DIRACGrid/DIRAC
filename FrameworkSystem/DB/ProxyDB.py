@@ -265,7 +265,7 @@ class ProxyDB( DB ):
     retVal = chain.isValidProxy( ignoreDefault = True )
     noGroupFlag = False
     if not retVal[ 'OK' ]:
-      if retVal['Message'] == "Proxy does not have an explicit group":
+      if "Proxy does not have an explicit group" in retVal['Message']:
         noGroupFlag = True
       else:
         return retVal
