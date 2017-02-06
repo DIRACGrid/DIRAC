@@ -2,7 +2,9 @@
 """
 __RCSID__ = "$Id$"
 
-import GSI
+import M2Crypto
+import datetime
+
 import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
@@ -11,11 +13,23 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 class X509Certificate( object ):
 
-  def __init__( self, x509Obj = None ):
+  def __init__( self, x509Obj = None, certString = None ):
     self.__valid = False
     if x509Obj:
       self.__certObj = x509Obj
       self.__valid = True
+    if certString:
+      self.__certObj = M2Crypto.X509.load_cert_string( certString, M2Crypto.X509.FORMAT_PEM )
+      self.__valid = True
+
+  @classmethod
+  def createFromString( cls, certString ):
+    cert = cls()
+    cert.loadFromString( certString )
+    return cert
+
+  def getObject( self ):
+    return self.__certObj
 
   def load( self, certificate ):
     """ Load a x509 certificate either from a file or from a string
@@ -32,9 +46,8 @@ class X509Certificate( object ):
     Return : S_OK / S_ERROR
     """
     try:
-      fd = file( certLocation )
-      pemData = fd.read()
-      fd.close()
+      with file( certLocation ) as fd:
+        pemData = fd.read()
     except IOError:
       return S_ERROR( DErrno.EOF, "Can't open %s file" % certLocation )
     return self.loadFromString( pemData )
@@ -45,7 +58,7 @@ class X509Certificate( object ):
     Return : S_OK / S_ERROR
     """
     try:
-      self.__certObj = GSI.crypto.load_certificate( GSI.crypto.FILETYPE_PEM, pemData )
+      self.__certObj = M2Crypto.X509.load_cert_string( pemData, M2Crypto.X509.FORMAT_PEM )
     except Exception, e:
       return S_ERROR( DErrno.ECERTREAD, "Can't load pem data: %s" % e )
     self.__valid = True
@@ -65,7 +78,9 @@ class X509Certificate( object ):
     """
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__certObj.has_expired() )
+    notAfter = self.__certObj.get_not_after().get_datetime()
+    notAfter = notAfter.replace( tzinfo = Time.dateTime().tzinfo )
+    return S_OK( notAfter < Time.dateTime() )
 
   def getNotAfterDate( self ):
     """
@@ -92,7 +107,7 @@ class X509Certificate( object ):
     """
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__certObj.get_subject().one_line() )
+    return S_OK( str( self.__certObj.get_subject() ) )
 
   def getIssuerDN( self ):
     """
@@ -101,7 +116,7 @@ class X509Certificate( object ):
     """
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__certObj.get_issuer().one_line() )
+    return S_OK( str(self.__certObj.get_issuer()) )
 
   def getSubjectNameObject( self ):
     """
@@ -129,6 +144,11 @@ class X509Certificate( object ):
       return S_ERROR( DErrno.ENOCERT )
     return S_OK( self.__certObj.get_pubkey() )
 
+  def getVersion( self ):
+    if not self.__valid:
+      return S_ERROR(DErrno.ENOCERT)
+    return S_OK(self.__certObj.get_version())
+
   def getSerialNumber( self ):
     """
     Get certificate serial number
@@ -144,9 +164,10 @@ class X509Certificate( object ):
     """
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
-    extList = self.__certObj.get_extensions()
-    for ext in extList:
-      if ext.get_sn() == "diracGroup":
+    extCount = self.__certObj.get_ext_count()
+    for extIdx in xrange(extCount):
+      ext = self.__certObj.get_ext_at(extIdx)
+      if ext.get_name() == "diracGroup":
         return S_OK( ext.get_value() )
     if ignoreDefault:
       return S_OK( False )
@@ -161,10 +182,12 @@ class X509Certificate( object ):
     """
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
-    extList = self.__certObj.get_extensions()
-    for ext in extList:
-      if ext.get_sn() == "vomsExtensions":
-        return S_OK( True )
+    try:
+      extList = self.__certObj.get_ext('vomsExtensions')
+      return S_OK( True )
+    except:
+      # no extension found
+      pass
     return S_OK( False )
 
   def getVOMSData( self ):
@@ -233,7 +256,8 @@ class X509Certificate( object ):
     """
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
-    notAfter = self.__certObj.get_not_after()
+    notAfter = self.__certObj.get_not_after().get_datetime()
+    notAfter = notAfter.replace( tzinfo = Time.dateTime().tzinfo )
     remaining = notAfter - Time.dateTime()
     return S_OK( max( 0, remaining.days * 86400 + remaining.seconds ) )
 
@@ -252,3 +276,13 @@ class X509Certificate( object ):
         value = "Cannot decode value"
       extList.append( ( sn, value ) )
     return S_OK( sorted( extList ) )
+
+  def verify( self, pkey ):
+    ret = self.__certObj.verify( pkey )
+    return S_OK( ret )
+
+  def get_subject( self ):
+    return self.getSubjectDN()['Value'] # XXX FIXME awful awful hack
+
+  def asPem( self ):
+    return self.__certObj.as_pem()
