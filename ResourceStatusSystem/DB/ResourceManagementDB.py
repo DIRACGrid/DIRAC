@@ -359,7 +359,7 @@ class ResourceManagementDB( object ):
 
       columns = []
       for name, argument in kwargs.items():
-        if argument and name == "Meta":
+        if argument and name == "Meta" and 'columns' in argument:
           meta = True
           for column in argument['columns']:
             columns.append( getattr(table.c, column) )

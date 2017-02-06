@@ -175,7 +175,7 @@ class ResourceStatusDB( object ):
                            TokenOwner = tokenOwner, TokenExpiration = tokenExpiration)
 
       # if meta['columns'] is specified select only these columns
-      if meta and meta['columns']:
+      if meta and 'columns' in meta:
         columns = []
         for column in meta['columns']:
           columns.append( getattr(table.c, column) )
