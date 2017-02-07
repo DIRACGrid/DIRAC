@@ -9,7 +9,7 @@
       This Executor will fail affected jobs meaningfully.
 
 """
-
+import threading
 import random
 
 from DIRAC import S_OK, S_ERROR
@@ -41,6 +41,7 @@ class JobScheduling( OptimizerExecutor ):
     """ Initialization of the optimizer.
     """
     cls.__jobDB = JobDB()
+    cls.__lock = threading.RLock()
     return S_OK()
 
   def optimizeJob( self, jid, jobState ):
@@ -102,7 +103,7 @@ class JobScheduling( OptimizerExecutor ):
 
         if not userSites:
           return self.__holdJob( jobState, "No requested site(s) are active/valid" )
-        userSites = list(userSites)
+        userSites = list( userSites )
 
     # Check if there is input data
     result = jobState.getInputData()
@@ -131,7 +132,10 @@ class JobScheduling( OptimizerExecutor ):
         return userGroup
       userGroup = userGroup['Value']
 
-      res = getFilesToStage( inputData, proxyUserName = userName, proxyUserGroup = userGroup ) #pylint: disable=unexpected-keyword-arg
+      # Lock in order to use the proxy which is not thread safe
+      self.__lock.acquire()
+      res = getFilesToStage( inputData, proxyUserName = userName, proxyUserGroup = userGroup )  # pylint: disable=unexpected-keyword-arg
+      self.__lock.release()
 
       if not res['OK']:
         return self.__holdJob( jobState, res['Message'] )
