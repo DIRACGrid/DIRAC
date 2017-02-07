@@ -61,12 +61,12 @@ def executeWithUserProxy( fcn ):
         result = getDNForUsername( userName )
         if not result[ 'OK' ]:
           return result
-        userDNs = result['Value'] # a same user may have more than one DN
+        userDNs = result['Value']  # a same user may have more than one DN
       vomsAttr = ''
       if vomsFlag:
         vomsAttr = getVOMSAttributeForGroup( userGroup )
 
-      result = getProxy(userDNs, userGroup, vomsAttr, proxyFilePath)
+      result = getProxy( userDNs, userGroup, vomsAttr, proxyFilePath )
 
       if not result['OK']:
         return result
@@ -81,7 +81,7 @@ def executeWithUserProxy( fcn ):
 
       try:
         return fcn( *args, **kwargs )
-      except Exception as lException: #pylint: disable=broad-except
+      except Exception as lException:  # pylint: disable=broad-except
         value = ','.join( [str( arg ) for arg in lException.args] )
         exceptType = lException.__class__.__name__
         return S_ERROR( "Exception - %s: %s" % ( exceptType, value ) )
@@ -101,7 +101,7 @@ def executeWithUserProxy( fcn ):
   return wrapped_fcn
 
 
-def getProxy(userDNs, userGroup, vomsAttr, proxyFilePath):
+def getProxy( userDNs, userGroup, vomsAttr, proxyFilePath ):
   """ do the actual download of the proxy, trying the different DNs
   """
   for userDN in userDNs:
@@ -118,8 +118,10 @@ def getProxy(userDNs, userGroup, vomsAttr, proxyFilePath):
                                                   cacheTime = 3600 )
 
     if not result['OK']:
-      gLogger.warn( "Can't download proxy of '%s' to file" %userDN, result['Message'] )
+      gLogger.error( "Can't download %sproxy " % ( 'VOMS' if vomsAttr else '' ),
+                     "of '%s', group %s to file: " % ( userDN, userGroup ) + result['Message'] )
     else:
       return result
 
-    return S_ERROR("Can't download proxy")
+  # If proxy not found for any DN, return an error
+  return S_ERROR( "Can't download proxy" )
