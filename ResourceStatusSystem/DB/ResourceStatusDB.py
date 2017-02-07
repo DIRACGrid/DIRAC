@@ -174,17 +174,25 @@ class ResourceStatusDB( object ):
                            Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
                            TokenOwner = tokenOwner, TokenExpiration = tokenExpiration)
 
+      # this is the variable where we store the column names that correspond to the values that we are going to return
+      columnNames = []
+
       # if meta['columns'] is specified select only these columns
       if meta and 'columns' in meta:
         columns = []
         for column in meta['columns']:
           columns.append( getattr(table.c, column) )
+          columnNames.append( column )
 
         result = self.session.execute( select( columns )
                                        .where( and_(*args) )
                                      )
+
       else:
         result = self.session.query( table ).filter(*args)
+
+        for name in table.columns.keys():
+          columnNames.append( str(name) )
 
       arr = []
 
@@ -195,7 +203,12 @@ class ResourceStatusDB( object ):
 
         arr.append(rel)
 
-      return S_OK( arr )
+      finalResult = S_OK( arr )
+
+      # add column names
+      finalResult['Columns'] = columnNames
+
+      return finalResult
 
     except exc.SQLAlchemyError as e:
       self.log.exception( "select: unexpected exception", lException = e )
