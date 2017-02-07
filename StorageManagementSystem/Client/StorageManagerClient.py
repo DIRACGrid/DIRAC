@@ -23,7 +23,7 @@ def getFilesToStage( lfnList ):
 
   dm = DataManager()
 
-  lfnListReplicas = dm.getActiveReplicas( lfnList, getUrl = False )
+  lfnListReplicas = dm.getReplicasForJobs( lfnList, getUrl = False )
   if not lfnListReplicas['OK']:
     return lfnListReplicas
 
@@ -51,16 +51,18 @@ def getFilesToStage( lfnList ):
           onlineLFNs.add( lfn )
 
   # If the file was found staged, ignore possible errors, but print out errors
-  for se, seFailed in failed.items():
+  for se, failedLfns in failed.items():
     gLogger.error( "Errors when getting files metadata", 'at %s' % se )
-    for lfn, reason in seFailed.items():
-      gLogger.info( '%s: %s' % ( lfn, reason ) )
+    for lfn, reason in failedLfns.items():
       if lfn in onlineLFNs:
+        gLogger.info( '%s: %s, but there is an online replica' % ( lfn, reason ) )
         failed[se].pop( lfn )
+      else:
+        gLogger.info( '%s: %s, no online replicas' % ( lfn, reason ) )
     if not failed[se]:
       failed.pop( se )
   if failed:
-    gLogger.error( "Could not get metadata", "for %d files" % len( set( [lfn for lfnList in failed.values() for lfn in lfnList] ) ) )
+    gLogger.error( "Could not get metadata", "for %d files" % len( set( [lfn for lfnList in failed.itervalues() for lfn in lfnList] ) ) )
     return S_ERROR( "Could not get metadata for files" )
   offlineLFNs = set( lfnList ) - onlineLFNs
 
