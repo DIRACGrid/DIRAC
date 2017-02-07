@@ -21,7 +21,7 @@ random.seed()
 
 class X509Chain( object ):
 
-  __validExtensionValueTypes = types.StringTypes
+  __validExtensionValueTypes = ( basestring, )
 
   def __init__( self, certList = False, keyObj = False ):
     self.__isProxy = False
@@ -156,7 +156,7 @@ class X509Chain( object ):
     extList = []
     extList.append( crypto.X509Extension( 'keyUsage',
                                           'critical, digitalSignature, keyEncipherment, dataEncipherment' ) )
-    if diracGroup and type( diracGroup ) in self.__validExtensionValueTypes:
+    if diracGroup and isinstance( diracGroup, self.__validExtensionValueTypes ):
       extList.append( crypto.X509Extension( 'diracGroup', diracGroup ) )
     if rfc or rfcLimited:
       blob = [ [ "1.3.6.1.5.5.7.21.1" ] ] if not rfcLimited else [ [ "1.3.6.1.4.1.3536.1.1.1.9" ] ]
