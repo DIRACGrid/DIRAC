@@ -328,7 +328,7 @@ class X509Chain( object ):
       if not groupRes[ 'OK' ]:
         return groupRes
       if not groupRes[ 'Value' ]:
-        return S_ERROR( DErrno.EDISET, "Proxy does not have an explicit group" )
+        return S_ERROR( DErrno.ENOGROUP )
     return S_OK( True )
 
   def isVOMS( self ):
