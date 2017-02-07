@@ -58,7 +58,7 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     # we end up in trouble for interactive sessions. This
     # environment variable enforces the use of certificates
     if 'XrdSecPROTOCOL' not in os.environ:
-      os.environ['XrdSecPROTOCOL'] = 'gsi'
+      os.environ['XrdSecPROTOCOL'] = 'gsi,unix'
 
   def __addDoubleSlash( self, res ):
     """ Utilities to add the double slash between the host(:port) and the path
