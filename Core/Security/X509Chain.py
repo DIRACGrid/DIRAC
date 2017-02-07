@@ -2,7 +2,6 @@
 """
 __RCSID__ = "$Id$"
 
-import types
 import os
 import stat
 import tempfile
