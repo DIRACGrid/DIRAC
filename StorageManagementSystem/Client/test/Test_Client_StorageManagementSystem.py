@@ -27,6 +27,9 @@ class ClientsTestCase( unittest.TestCase ):
     self.mockSE = MagicMock()
     self.mockSE.return_value = mockObjectSE
 
+    self.mockDM = MagicMock()
+    self.mockDM.return_value = dm_mock
+
 
   def tearDown( self ):
     pass
@@ -42,12 +45,12 @@ class StorageManagerSuccess( ClientsTestCase ):
     self.assertEqual( res['Value']['offlineLFNs'], {} )
 
     ourSMC = importlib.import_module( 'DIRAC.StorageManagementSystem.Client.StorageManagerClient' )
-    ourSMC.DataManager = dm_mock
+    ourSMC.DataManager = self.mockDM
     ourSMC.StorageElement = self.mockSE
 
 
     res = getFilesToStage( ['/a/lfn/1.txt'] )
-    self.assert_( res['OK'] )
+    self.assert_( res['OK'], res )
     self.assertEqual( res['Value']['onlineLFNs'], ['/a/lfn/2.txt'] )
     self.assert_( res['Value']['offlineLFNs'], {'SE1':['/a/lfn/1.txt']} or {'SE2':['/a/lfn/1.txt']} )
 
