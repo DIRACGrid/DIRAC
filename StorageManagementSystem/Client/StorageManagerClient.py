@@ -29,7 +29,6 @@ def getFilesToStage( lfnList ):
 
   seToLFNs = dict()
 
-  print lfnListReplicas
   if lfnListReplicas['Value']['Failed']:
     return S_ERROR( "Failures in getting replicas" )
   for lfn, ld in lfnListReplicas['Value']['Successful'].iteritems():
