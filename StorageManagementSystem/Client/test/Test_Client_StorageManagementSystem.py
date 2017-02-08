@@ -8,6 +8,7 @@ from mock import MagicMock
 
 from DIRAC import S_OK
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import getFilesToStage
+from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
 
 
 class ClientsTestCase( unittest.TestCase ):
@@ -17,19 +18,6 @@ class ClientsTestCase( unittest.TestCase ):
 
     from DIRAC import gLogger
     gLogger.setLevel( 'DEBUG' )
-
-    mockObjectDM = MagicMock()
-    mockObjectDM.getActiveReplicas.return_value = S_OK( {'Successful': {'/a/lfn/1.txt':{'SE1':'/a/lfn/at/SE1.1.txt',
-                                                                                        'SE2':'/a/lfn/at/SE2.1.txt'},
-                                                                        '/a/lfn/2.txt':{'SE1':'/a/lfn/at/SE1.1.txt'}
-                                                                        },
-                                                         'Failed':{}} )
-    mockObjectDM.getReplicasForJobs.return_value = mockObjectDM.getActiveReplicas.return_value
-
-    self.mockDM = MagicMock()
-    self.mockDM.return_value = mockObjectDM
-
-
 
     mockObjectSE = MagicMock()
     mockObjectSE.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Cached':0},
@@ -54,7 +42,7 @@ class StorageManagerSuccess( ClientsTestCase ):
     self.assertEqual( res['Value']['offlineLFNs'], {} )
 
     ourSMC = importlib.import_module( 'DIRAC.StorageManagementSystem.Client.StorageManagerClient' )
-    ourSMC.DataManager = self.mockDM
+    ourSMC.DataManager = dm_mock
     ourSMC.StorageElement = self.mockSE
 
 
