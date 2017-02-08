@@ -357,12 +357,16 @@ class ResourceManagementDB( object ):
 
       args = toList(table, **kwargs)
 
+      # this is the variable where we store the column names that correspond to the values that we are going to return
+      columnNames = []
+
       columns = []
       for name, argument in kwargs.items():
         if argument and name == "Meta" and 'columns' in argument:
           meta = True
           for column in argument['columns']:
             columns.append( getattr(table.c, column) )
+            columnNames.append( column )
 
       if meta:
         result = self.session.execute( select( columns )
@@ -370,6 +374,9 @@ class ResourceManagementDB( object ):
                                      )
       else :
         result = self.session.query( table ).filter(*args)
+
+        for name in table.columns.keys():
+          columnNames.append( str(name) )
 
       arr = []
 
@@ -380,7 +387,12 @@ class ResourceManagementDB( object ):
 
         arr.append(rel)
 
-      return S_OK( arr )
+      finalResult = S_OK( arr )
+
+      # add column names
+      finalResult['Columns'] = columnNames
+
+      return finalResult
 
     except exc.SQLAlchemyError as e:
       self.log.exception( "select: unexpected exception", lException = e )
