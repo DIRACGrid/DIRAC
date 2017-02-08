@@ -24,6 +24,7 @@ class ClientsTestCase( unittest.TestCase ):
                                                                         '/a/lfn/2.txt':{'SE1':'/a/lfn/at/SE1.1.txt'}
                                                                         },
                                                          'Failed':{}} )
+    mockObjectDM.getReplicasForJobs.return_value = mockObjectDM.getActiveReplicas.return_value
 
     self.mockDM = MagicMock()
     self.mockDM.return_value = mockObjectDM
@@ -45,7 +46,7 @@ class ClientsTestCase( unittest.TestCase ):
 #############################################################################
 
 class StorageManagerSuccess( ClientsTestCase ):
-  
+
   def test_getFilesToStage( self ):
     res = getFilesToStage( [] )
     self.assert_( res['OK'] )
