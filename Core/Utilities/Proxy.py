@@ -23,6 +23,7 @@ from DIRAC                                               import gConfig, gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.ConfigurationSystem.Client.ConfigurationData  import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getVOMSAttributeForGroup, getDNForUsername
+from DIRAC.Core.Utilities.LockRing                       import LockRing
 
 __RCSID__ = "$Id$"
 
@@ -41,6 +42,7 @@ def executeWithUserProxy( fcn ):
   :param str proxyUserDN: the user DN of the proxy to be used
   :param str proxyWithVOMS: optional flag to dress or not the user proxy with VOMS extension ( default True )
   :param str proxyFilePath: optional file location for the temporary proxy
+  :param bool executionLock: flag to execute with a lock for the time of user proxy application ( default False )
   """
 
   def wrapped_fcn( *args, **kwargs ):
@@ -50,6 +52,9 @@ def executeWithUserProxy( fcn ):
     userGroup = kwargs.pop( 'proxyUserGroup', '' )
     vomsFlag = kwargs.pop( 'proxyWithVOMS', True )
     proxyFilePath = kwargs.pop( 'proxyFilePath', False )
+    executionLockFlag = kwargs.pop( 'executionLock', False )
+    if executionLockFlag:
+      executionLock = LockRing().getLock( '_UseUserProxy_', recursive = True )
 
     if ( userName or userDN ) and userGroup:
 
@@ -70,6 +75,9 @@ def executeWithUserProxy( fcn ):
 
       if not result['OK']:
         return result
+
+      if executionLockFlag:
+        executionLock.acquire()
 
       proxyFile = result['Value']
       os.environ['X509_USER_PROXY'] = proxyFile
@@ -93,6 +101,8 @@ def executeWithUserProxy( fcn ):
           os.environ['X509_USER_PROXY'] = originalUserProxy
         else:
           os.environ.pop( 'X509_USER_PROXY' )
+        if executionLockFlag:
+          executionLock.release()
 
     else:
       # No proxy substitution requested
