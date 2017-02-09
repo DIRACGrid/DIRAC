@@ -42,9 +42,7 @@ def executeWithUserProxy( fcn ):
   :param str proxyUserDN: the user DN of the proxy to be used
   :param str proxyWithVOMS: optional flag to dress or not the user proxy with VOMS extension ( default True )
   :param str proxyFilePath: optional file location for the temporary proxy
-  :param executionLock: optional lock object for execution of the original function;
-                        if string, then a named LockRing lock object will be created
-  :type executionLock: str or object
+  :param bool executionLock: flag to execute with a lock for the time of user proxy application ( default False )
   """
 
   def wrapped_fcn( *args, **kwargs ):
@@ -54,9 +52,9 @@ def executeWithUserProxy( fcn ):
     userGroup = kwargs.pop( 'proxyUserGroup', '' )
     vomsFlag = kwargs.pop( 'proxyWithVOMS', True )
     proxyFilePath = kwargs.pop( 'proxyFilePath', False )
-    executionLock = kwargs.pop( 'executionLock', False )
-    if isinstance( executionLock, basestring ):
-      executionLock = LockRing().getLock( executionLock, recursive = True )
+    executionLockFlag = kwargs.pop( 'executionLock', False )
+    if executionLockFlag:
+      executionLock = LockRing().getLock( '_UseUserProxy_', recursive = True )
 
     if ( userName or userDN ) and userGroup:
 
@@ -78,7 +76,7 @@ def executeWithUserProxy( fcn ):
       if not result['OK']:
         return result
 
-      if executionLock:
+      if executionLockFlag:
         executionLock.acquire()
 
       proxyFile = result['Value']
@@ -103,7 +101,7 @@ def executeWithUserProxy( fcn ):
           os.environ['X509_USER_PROXY'] = originalUserProxy
         else:
           os.environ.pop( 'X509_USER_PROXY' )
-        if executionLock:
+        if executionLockFlag:
           executionLock.release()
 
     else:
