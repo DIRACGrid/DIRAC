@@ -79,7 +79,7 @@ def executeWithUserProxy( fcn ):
         return result
 
       if executionLock:
-          executionLock.acquire()
+        executionLock.acquire()
 
       proxyFile = result['Value']
       os.environ['X509_USER_PROXY'] = proxyFile
