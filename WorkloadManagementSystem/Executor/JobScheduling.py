@@ -9,7 +9,7 @@
       This Executor will fail affected jobs meaningfully.
 
 """
-import threading
+
 import random
 
 from DIRAC import S_OK, S_ERROR
