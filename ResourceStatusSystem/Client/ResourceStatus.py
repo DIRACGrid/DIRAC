@@ -40,8 +40,7 @@ class ResourceStatus( object ):
     # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
     cacheLifeTime = int( self.rssConfig.getConfigCache() )
 
-    # RSSCache only affects the calls directed to RSS, if using the CS it is not
-    # used.
+    # RSSCache only affects the calls directed to RSS, if using the CS it is not used.
     self.rssCache = RSSCache( cacheLifeTime, self.__updateRssCache )
 
   def getElementStatus( self, elementName, elementType, statusType = None, default = None ):
@@ -50,7 +49,7 @@ class ResourceStatus( object ):
     Element, otherwise, it gets it from the CS.
 
     example:
-      >>> getElementStatus('CE42', 'ComputingElement')
+      >>> getElementStatus('CE42', 'CE')
           S_OK( { 'CE42': { 'all': 'Active' } } } )
       >>> getElementStatus('SE1', 'StorageElement', 'ReadAccess')
           S_OK( { 'SE1': { 'ReadAccess': 'Banned' } } } )
@@ -61,9 +60,26 @@ class ResourceStatus( object ):
 
     """
 
+    allowedParameters = ["StorageElement", "CE", "FTS", "Catalog"]
+
+    if elementType not in allowedParameters:
+      return S_ERROR("%s in not in the list of the allowed parameters: %s" % (elementType, allowedParameters))
+
     if self.rssFlag:
-    #We do not apply defaults. If is not on the cache, S_ERROR is returned.
-       return self.__getRSSElementStatus( elementName, elementType, statusType )
+
+      # Apply defaults
+      if not statusType:
+        if elementType == "StorageElement":
+          statusType = ['ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess']
+        elif elementType == "CE":
+          statusType = 'all'
+        elif elementType == "FTS":
+          statusType = 'all'
+        elif elementType == "Catalog":
+          statusType = 'all'
+
+      return self.__getRSSElementStatus( elementName, elementType, statusType )
+
     else:
        return self.__getCSElementStatus( elementName, elementType, statusType, default )
 
@@ -73,7 +89,7 @@ class ResourceStatus( object ):
     Helper function, tries set information in RSS and in CS.
 
     example:
-      >>> setElementStatus('CE42', 'ComputingElement', 'all', 'Active')
+      >>> setElementStatus('CE42', 'CE', 'all', 'Active')
           S_OK(  xyz.. )
       >>> setElementStatus('SE1', 'StorageElement', 'ReadAccess', 'Banned')
           S_OK(  xyz.. )
@@ -108,7 +124,7 @@ class ResourceStatus( object ):
 
 ################################################################################
 
-  def __getRSSElementStatus( self, elementName, elementType, statusType ):
+  def __getRSSElementStatus( self, elementName, elementType, statusTypes ):
     """
     Gets from the cache or the RSS the Elements status. The cache is a
     copy of the DB table. If it is not on the cache, most likely is not going
@@ -120,7 +136,7 @@ class ResourceStatus( object ):
     minutes.
     """
 
-    cacheMatch = self.rssCache.match( elementName, elementType, statusType )
+    cacheMatch = self.rssCache.match( elementName, elementType, statusTypes )
 
     self.log.debug( '__getRSSElementStatus' )
     self.log.debug( cacheMatch )
@@ -269,7 +285,7 @@ class ResourceStatus( object ):
 
 def getDictFromList( fromList ):
   """
-  Auxiliar method that given a list returns a dictionary of dictionaries:
+  Auxiliary method that given a list returns a dictionary of dictionaries:
   { site1 : { statusType1 : st1, statusType2 : st2 }, ... }
   """
 
@@ -295,11 +311,14 @@ def getCacheDictFromRawData( rawList ):
     **rawList** - `list`
       list of three element tuples [( element1, element2, element3 ),... ]
 
-  :return: dict of the form { ( elementName, statusType ) : status, ... }
+  :return: dict of the form { ( elementName, elementType, statusType ) : status, ... }
   """
 
-  res = [ ( ( name, elemType, sType ), status ) for name, elemType, sType, status in rawList ]
-  return dict( res )
+  res = {}
+  for entry in rawList:
+    res.update( { (entry[0], entry[1], entry[2]) : entry[3] } )
+
+  return res
 
 ################################################################################
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

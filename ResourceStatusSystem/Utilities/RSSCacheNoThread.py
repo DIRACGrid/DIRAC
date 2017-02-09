@@ -210,6 +210,8 @@ class RSSCache( Cache ):
     :Parameters:
       **elementNames** - [ None, `string`, `list` ]
         name(s) of the elements to be matched
+      **elementType** - [ `string` ]
+        type of the elements to be matched
       **statusTypes** - [ None, `string`, `list` ]
         name(s) of the statusTypes to be matched
 
@@ -264,7 +266,7 @@ class RSSCache( Cache ):
 
     cacheMatches = cacheMatches[ 'Value' ]
     if not cacheMatches:
-      return S_ERROR( 'Empty cache for: %s, %s, %s' % ( elementNames, elementType, statusTypes ) )
+      return S_ERROR( 'Empty cache for: %s, %s' % ( elementNames, elementType ) )
 
     # We undo the key into <elementName> and <statusType>
     cacheMatchesDict = self.__getDictFromCacheMatches( cacheMatches )
