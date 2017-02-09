@@ -23,6 +23,7 @@ from DIRAC                                               import gConfig, gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.ConfigurationSystem.Client.ConfigurationData  import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getVOMSAttributeForGroup, getDNForUsername
+from DIRAC.Core.Utilities.LockRing                       import LockRing
 
 __RCSID__ = "$Id$"
 
@@ -41,6 +42,8 @@ def executeWithUserProxy( fcn ):
   :param str proxyUserDN: the user DN of the proxy to be used
   :param str proxyWithVOMS: optional flag to dress or not the user proxy with VOMS extension ( default True )
   :param str proxyFilePath: optional file location for the temporary proxy
+  :param str or object executionLock: optional lock object for execution of the original function;
+                                      if string, then named LockRing lock will be created
   """
 
   def wrapped_fcn( *args, **kwargs ):
@@ -51,6 +54,8 @@ def executeWithUserProxy( fcn ):
     vomsFlag = kwargs.pop( 'proxyWithVOMS', True )
     proxyFilePath = kwargs.pop( 'proxyFilePath', False )
     executionLock = kwargs.pop( 'executionLock', False )
+    if isinstance( executionLock, basestring ):
+      executionLock = LockRing().getLock( executionLock )
 
     if ( userName or userDN ) and userGroup:
 
