@@ -1,4 +1,4 @@
-[v6r18-pre2]
+[v6r18-pre3]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -11,6 +11,8 @@ NEW: new functionality to plot the data gathered by perfSONARs. It allows to
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
      RSS system 
 NEW: SiteStatus client to interrogate site status with respect to RSS
+BUGFIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
+FIX: ResourceStatus, RSSCacheNoThread - fixed RSS cache generation 
 
 *WMS
 NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS    
