@@ -10,6 +10,7 @@ import hashlib
 import urllib
 
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn
@@ -265,7 +266,7 @@ class ProxyDB( DB ):
     retVal = chain.isValidProxy( ignoreDefault = True )
     noGroupFlag = False
     if not retVal[ 'OK' ]:
-      if retVal['Message'] == "Proxy does not have an explicit group":
+      if DErrno.cmpError( retVal, DErrno.ENOGROUP ):
         noGroupFlag = True
       else:
         return retVal

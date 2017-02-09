@@ -80,6 +80,7 @@ ECERTREAD = 1104
 ENOCERT = 1105
 ENOCHAIN = 1106
 ENOPKEY = 1107
+ENOGROUP = 1108
 # DISET: 1X
 EDISET = 1110
 # 3rd party security: 2X
@@ -151,6 +152,7 @@ dErrorCode = {
                1105 : 'ENOCERT',
                1106 : 'ENOCHAIN',
                1107 : 'ENOPKEY',
+               1108 : 'ENOGROUP',
                # 111X: DISET
                1110 : 'EDISET',
                # 112X: 3rd party security
@@ -218,6 +220,7 @@ dStrError = {
               ENOCERT : "No certificate loaded",
               ENOCHAIN : "No chain loaded",
               ENOPKEY : "No private key loaded",
+              ENOGROUP: "No DIRAC group",
               # 111X: DISET
               EDISET : "DISET Error",
               # 112X: 3rd party security

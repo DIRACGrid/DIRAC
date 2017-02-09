@@ -73,6 +73,9 @@ class GFAL2_StorageBase( StorageBase ):
     # FIXME: Avoid caching because of a bug in globus (https://its.cern.ch/jira/browse/DMC-853)
     self.ctx.set_opt_boolean( "GRIDFTP PLUGIN", "SESSION_REUSE", False )
 
+    # Enable IPV6 for gsiftp
+    self.ctx.set_opt_boolean( "GRIDFTP PLUGIN", "IPV6", True )
+
     # spaceToken used for copying from and to the storage element
     self.spaceToken = parameters.get( 'SpaceToken', '' )
     # stageTimeout, default timeout to try and stage/pin a file

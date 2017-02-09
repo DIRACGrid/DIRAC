@@ -1219,6 +1219,18 @@ def compileExternals( extVersion ):
     return False
   return True
 
+def getPlatform():
+  platformPath = os.path.join( cliParams.targetPath, "DIRAC", "Core", "Utilities", "Platform.py" )
+  try:
+    platFD = open( platformPath, "r" )
+  except IOError:
+    logERROR( "Cannot open Platform.py. Is DIRAC installed?" )
+    return ''
+
+  Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
+  platFD.close()
+  return Platform.getPlatformString()
+
 def installExternals( releaseConfig ):
   externalsVersion = releaseConfig.getExtenalsVersion()
   if not externalsVersion:
@@ -1226,16 +1238,9 @@ def installExternals( releaseConfig ):
     return False
 
   if not cliParams.platform:
-    platformPath = os.path.join( cliParams.targetPath, "DIRAC", "Core", "Utilities", "Platform.py" )
-    try:
-      platFD = open( platformPath, "r" )
-    except IOError:
-      logERROR( "Cannot open Platform.py. Is DIRAC installed?" )
-      return False
-
-    Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-    platFD.close()
-    cliParams.platform = Platform.getPlatformString()
+    cliParams.platform = getPlatform()
+  if not cliParams.platform:
+    return False
 
   if cliParams.installSource:
     tarsURL = cliParams.installSource
@@ -1524,7 +1529,16 @@ if __name__ == "__main__":
     logNOTICE( "Deploying scripts..." )
     ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" )
     if os.path.isfile( ddeLocation ):
-      os.system( ddeLocation )
+      cmd = ddeLocation
+      # In MacOS /usr/bin/env does not find python in the $PATH, passing binary path
+      # as an argument to the dirac-deploy-scripts
+      if not cliParams.platform:
+        cliParams.platform = getPlatform()
+      if "Darwin" in cliParams.platform:
+        binaryPath = os.path.join( cliParams.targetPath, cliParams.platform )
+        logNOTICE( "For MacOS (Darwin) use explicit binary path %s" % binaryPath )
+        cmd += ' %s' % binaryPath
+      os.system( cmd )
     else:
       logDEBUG( "No dirac-deploy-scripts found. This doesn't look good" )
   else:

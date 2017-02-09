@@ -102,7 +102,7 @@ class JobScheduling( OptimizerExecutor ):
 
         if not userSites:
           return self.__holdJob( jobState, "No requested site(s) are active/valid" )
-        userSites = list(userSites)
+        userSites = list( userSites )
 
     # Check if there is input data
     result = jobState.getInputData()
@@ -130,8 +130,8 @@ class JobScheduling( OptimizerExecutor ):
       if not userGroup[ 'OK' ]:
         return userGroup
       userGroup = userGroup['Value']
-
-      res = getFilesToStage( inputData, proxyUserName = userName, proxyUserGroup = userGroup ) #pylint: disable=unexpected-keyword-arg
+    # Lock in order to use the proxy which is not thread safe
+      res = getFilesToStage( inputData, proxyUserName = userName, proxyUserGroup = userGroup, executionLock = True )  # pylint: disable=unexpected-keyword-arg
 
       if not res['OK']:
         return self.__holdJob( jobState, res['Message'] )

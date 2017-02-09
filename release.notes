@@ -15,6 +15,36 @@ NEW: SiteStatus client to interrogate site status with respect to RSS
 *WMS
 NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS    
 
+[v6r17p8]
+
+*Core
+NEW: DErrno.ENOGROUP error to denote proxies without DIRAC group extension embedded
+CHANGE: X509Chain - use DErrno.ENOGROUP error
+FIX: dirac-install, dirac-deploy-scripts - fixes to allow DIRAC client installation on
+     recent MacOS versions with System Integrity Protection feature
+CHANGE: Proxy - added executionLock optional argument to executeWithUserProxy() decorator
+        to lock while executing the function with user proxy 
+FIX: Proxy - fix indentation in getProxy() preventing looping on the DNs            
+
+*Framework
+FIX: ProxyDB - fix of error message check in completeDelegation()
+
+*WMS
+FIX: TaskQueueDB - when an empty TaskQueue is marked for deletion, it can still get matches 
+     which result in no selected jobs that produced unnecessary error messages 
+FIX: JobScheduling executor - calls getFilesToStage() with a flag to lock while file lookup
+     with user proxy; same for InputData executor for calling _resolveInputData()      
+
+*TS
+FIX: FileReport - fix in setFileStatus() for setting status for multiple LFNs at once
+
+*SMS
+FIX: 
+
+*Resources
+FIX: GFAL2_XROOTStorage - fix to allow interactive use of xroot plugin
+FIX: GFAL2_StorageBase - enable IPV6 for gsiftp
+
 [v6r17p7]
 
 *DMS
