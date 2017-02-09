@@ -27,19 +27,18 @@ def getFilesToStage( lfnList ):
   if not lfnListReplicas['OK']:
     return lfnListReplicas
 
-  seToLFNs = dict()
-
   if lfnListReplicas['Value']['Failed']:
     return S_ERROR( "Failures in getting replicas" )
 
   lfnListReplicas = lfnListReplicas['Value']['Successful']
   # Check whether there is any file that is only at a tape SE
   # If a file is reported here at a tape SE, it is not at a disk SE as we use disk in priority
+  seToLFNs = dict()
   for lfn, ld in lfnListReplicas.iteritems():
     for se in ld:
       status = StorageElement( se ).getStatus()
       if status.get( 'Value', {} ).get( 'DiskSE', False ):
-        # File is not at a tape SE, no need to stage
+        # File is at a disk SE, no need to stage
         onlineLFNs.add( lfn )
         break
       else:
