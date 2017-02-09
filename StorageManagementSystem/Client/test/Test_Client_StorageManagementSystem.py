@@ -23,6 +23,7 @@ class ClientsTestCase( unittest.TestCase ):
     mockObjectSE.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Cached':0},
                                                                      '/a/lfn/2.txt':{'Cached':1}},
                                                        'Failed':{}} )
+    mockObjectSE.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
 
     self.mockSE = MagicMock()
     self.mockSE.return_value = mockObjectSE
