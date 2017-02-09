@@ -41,7 +41,7 @@ class FileReport( object ):
   def setCommonStatus( self, status ):
     """ Set common status for all files in the internal cache
     """
-    for lfn in self.statusDict.keys():
+    for lfn in self.statusDict:
       self.statusDict[lfn] = status
     return S_OK()
 
