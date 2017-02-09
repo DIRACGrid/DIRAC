@@ -92,7 +92,7 @@ class Script( ModuleBase ):
                              bufferLimit = self.bufferLimit )
     if not outputDict['OK']:
       failed = True
-      self.log.error( 'Shell call execution failed:', '\n' + str( outputDict['Message'] ) )
+      self.log.error( 'System call execution failed:', '\n' + str( outputDict['Message'] ) )
     status, stdout, stderr = outputDict['Value'][0:3]
     if status:
       failed = True

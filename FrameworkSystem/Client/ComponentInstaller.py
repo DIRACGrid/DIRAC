@@ -271,7 +271,7 @@ class ComponentInstaller( object ):
     self.monitoringClient = ComponentMonitoringClient()
     gLogger.verbose( 'Client configured for Component Monitoring' )
 
-  def getInfo( self, extensions ):
+  def getInfo( self ):
     result = getVersion()
     if not result['OK']:
       return result
@@ -1200,7 +1200,7 @@ class ComponentInstaller( object ):
 
     return S_OK( componentDict )
 
-  def getComponentModule( self, gConfig, system, component, compType ):
+  def getComponentModule( self, system, component, compType ):
     """
     Get the component software module
     """
@@ -1611,7 +1611,6 @@ class ComponentInstaller( object ):
       return S_ERROR( error )
 
     # We need to make sure components are connecting to the Master CS, that is the only one being update
-    from DIRAC import gConfig
     localServers = self.localCfg.getOption( cfgPath( 'DIRAC', 'Configuration', 'Servers' ) )
     masterServer = gConfig.getValue( cfgPath( 'DIRAC', 'Configuration', 'MasterServer' ), '' )
     initialCfg = self.__getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'Servers' , localServers )
