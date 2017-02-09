@@ -56,7 +56,7 @@ def executeWithUserProxy( fcn ):
     proxyFilePath = kwargs.pop( 'proxyFilePath', False )
     executionLock = kwargs.pop( 'executionLock', False )
     if isinstance( executionLock, basestring ):
-      executionLock = LockRing().getLock( executionLock )
+      executionLock = LockRing().getLock( executionLock, recursive = True )
 
     if ( userName or userDN ) and userGroup:
 
