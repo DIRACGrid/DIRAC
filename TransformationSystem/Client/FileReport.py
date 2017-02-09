@@ -30,7 +30,10 @@ class FileReport( object ):
     """
     if not self.transformation:
       self.transformation = transformation
-    self.statusDict[lfn] = status
+    if isinstance( lfn, ( list, dict, tuple ) ):
+      self.statusDict.update( dict.fromkeys( lfn, status ) )
+    else:
+      self.statusDict[lfn] = status
     if sendFlag:
       return self.commit()
     return S_OK()
