@@ -50,6 +50,7 @@ def executeWithUserProxy( fcn ):
     userGroup = kwargs.pop( 'proxyUserGroup', '' )
     vomsFlag = kwargs.pop( 'proxyWithVOMS', True )
     proxyFilePath = kwargs.pop( 'proxyFilePath', False )
+    executionLock = kwargs.pop( 'executionLock', False )
 
     if ( userName or userDN ) and userGroup:
 
@@ -70,6 +71,9 @@ def executeWithUserProxy( fcn ):
 
       if not result['OK']:
         return result
+
+      if executionLock:
+          executionLock.acquire()
 
       proxyFile = result['Value']
       os.environ['X509_USER_PROXY'] = proxyFile
@@ -93,6 +97,8 @@ def executeWithUserProxy( fcn ):
           os.environ['X509_USER_PROXY'] = originalUserProxy
         else:
           os.environ.pop( 'X509_USER_PROXY' )
+        if executionLock:
+          executionLock.release()
 
     else:
       # No proxy substitution requested
