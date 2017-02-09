@@ -86,7 +86,7 @@ if len( sys.argv ) == 2:
 wrapperTemplate = wrapperTemplate.replace( '$PYTHONLOCATION$', pythonLocation )
 
 # On the newest MacOS the DYLD_LIBRARY_PATH variable is not passed to the shell of
-# the os.system() - bug or feature ?
+# the os.system() due to System Integrity Protection feature
 if platform.system() == "Darwin":
   wrapperTemplate += """
 sys.exit( os.system( 'DYLD_LIBRARY_PATH=%s python "%s"%s' % ( DiracLibraryPath, DiracScript, args )  ) / 256 )
