@@ -42,8 +42,9 @@ def executeWithUserProxy( fcn ):
   :param str proxyUserDN: the user DN of the proxy to be used
   :param str proxyWithVOMS: optional flag to dress or not the user proxy with VOMS extension ( default True )
   :param str proxyFilePath: optional file location for the temporary proxy
-  :param str or object executionLock: optional lock object for execution of the original function;
-                                      if string, then named LockRing lock will be created
+  :param executionLock: optional lock object for execution of the original function;
+                        if string, then a named LockRing lock object will be created
+  :type executionLock: str or object
   """
 
   def wrapped_fcn( *args, **kwargs ):
