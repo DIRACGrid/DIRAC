@@ -164,6 +164,11 @@ for rootModule in listDir:
         print " Copying %s" % scriptName
       shutil.copy( os.path.join( rootPath, scriptPath ), targetScriptsPath )
       copyPath = os.path.join( targetScriptsPath, scriptName )
+      if platform.system() == 'Darwin':
+        with open( copyPath, 'r+' ) as script:
+          scriptStr = script.read()
+          script.seek( 0 )
+          script.write( scriptStr.replace( '/usr/bin/env python', pythonLocation ) )
       os.chmod( copyPath, gDefaultPerms )
       cLen = len( copyPath )
       reFound = pythonScriptRE.match( copyPath )
