@@ -497,3 +497,5 @@ class PilotParams( object ):
           pass
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v
+      elif o in ( '-o', '--option' ):
+        self.genericOption = v
