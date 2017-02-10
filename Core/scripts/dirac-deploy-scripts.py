@@ -93,7 +93,7 @@ sys.exit( os.system( 'DYLD_LIBRARY_PATH=%s python "%s"%s' % ( DiracLibraryPath, 
 """
 else:
   wrapperTemplate += """
-sys.exit( os.system('python "%s"%s' % ( DiracLibraryPath, DiracScript, args )  ) / 256 )
+sys.exit( os.system('python "%s"%s' % ( DiracScript, args )  ) / 256 )
 """
 
 def lookForScriptsInPath( basePath, rootModule ):
