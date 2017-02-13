@@ -26,9 +26,7 @@ FIX: dirac-install, dirac-deploy-scripts - fixes to allow DIRAC client installat
      recent MacOS versions with System Integrity Protection feature
 CHANGE: Proxy - added executionLock optional argument to executeWithUserProxy() decorator
         to lock while executing the function with user proxy 
-FIX: Proxy - fix indentation in getProxy() preventing looping on the DNs 
-NEW: Proxy - added executionLock argument to the executeWithUserProxy decorator
-     in order to execute the decorated function with a global lock           
+FIX: Proxy - fix indentation in getProxy() preventing looping on the DNs  
 
 *Framework
 FIX: ProxyDB - fix of error message check in completeDelegation()
