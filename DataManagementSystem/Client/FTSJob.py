@@ -18,7 +18,8 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
-import datetime, time
+import datetime
+import time
 import re
 import tempfile
 # # from DIRAC
@@ -60,12 +61,12 @@ class FTSJob( object ):
 
   # # missing source regexp patterns
   missingSourceErrors = [
-    re.compile( r".*INVALID_PATH\] Failed" ),
-    re.compile( r".*INVALID_PATH\] No such file or directory" ),
-    re.compile( r".*INVALID_PATH\] The requested file either does not exist" ),
-    re.compile( r".*INVALID_PATH\] the server sent an error response: 500 500"\
-               " Command failed. : open error: No such file or directory" ),
-    re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist" ) ]
+      re.compile( r".*INVALID_PATH\] Failed" ),
+      re.compile( r".*INVALID_PATH\] No such file or directory" ),
+      re.compile( r".*INVALID_PATH\] The requested file either does not exist" ),
+      re.compile( r".*INVALID_PATH\] the server sent an error response: 500 500"\
+                 " Command failed. : open error: No such file or directory" ),
+      re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist" ) ]
 
   def __init__( self, fromDict = None ):
     """c'tor
@@ -242,7 +243,7 @@ class FTSJob( object ):
   def FailedFiles( self ):
     """ nb failed files getter """
     self.__data__["FailedFiles"] = len( [ ftsFile for ftsFile in self
-                                         if ftsFile.Status in FTSFile.FAILED_STATES ] )
+                                          if ftsFile.Status in FTSFile.FAILED_STATES ] )
     return self.__data__["FailedFiles"]
 
   @FailedFiles.setter
@@ -444,11 +445,11 @@ class FTSJob( object ):
     surlFile.close()
     submitCommand = command.split() + \
                      [ "-s",
-                     self.FTSServer,
-                     "-f",
-                     fileName,
-                     "-o",
-                     "-K" ]
+                       self.FTSServer,
+                       "-f",
+                       fileName,
+                       "-o",
+                       "-K" ]
     if self.TargetToken:
       submitCommand += [ "-t", self.TargetToken]
     if self.SourceToken:
@@ -483,9 +484,9 @@ class FTSJob( object ):
 
     monitorCommand = command.split() + \
                        ["--verbose",
-                       "-s",
-                       self.FTSServer,
-                       self.FTSGUID ]
+                        "-s",
+                        self.FTSServer,
+                        self.FTSGUID ]
 
     if full:
       monitorCommand.append( "-l" )
@@ -596,9 +597,9 @@ class FTSJob( object ):
 
     for ftsFile in self:
       trans = fts3.new_transfer( ftsFile.SourceSURL,
-                                ftsFile.TargetSURL,
-                                checksum = 'ADLER32:%s'%ftsFile.Checksum,
-                                filesize = ftsFile.Size )
+                                 ftsFile.TargetSURL,
+                                 checksum = 'ADLER32:%s'%ftsFile.Checksum,
+                                 filesize = ftsFile.Size )
       transfers.append( trans )
 
     source_spacetoken = self.SourceToken if self.SourceToken else None
@@ -607,8 +608,8 @@ class FTSJob( object ):
     bring_online = 86400 if pinTime else None
 
     job = fts3.new_job( transfers = transfers, overwrite = True,
-            source_spacetoken = source_spacetoken, spacetoken = dest_spacetoken,
-            bring_online = bring_online, copy_pin_lifetime = copy_pin_lifetime, retry = 3 )
+                        source_spacetoken = source_spacetoken, spacetoken = dest_spacetoken,
+                        bring_online = bring_online, copy_pin_lifetime = copy_pin_lifetime, retry = 3 )
 
     try:
       if not self._fts3context:
@@ -808,12 +809,12 @@ def overlap( s1, s2 ):
   """ Method returning the common end of 2 strings """
   s = ''
   while s1 and s2:
-      c1 = s1[-1]
-      c2 = s2[-1]
-      if c1 == c2:
-          s = c1 + s
-      else:
-          break
-      s1 = s1[:-1]
-      s2 = s2[:-1]
+    c1 = s1[-1]
+    c2 = s2[-1]
+    if c1 == c2:
+      s = c1 + s
+    else:
+      break
+    s1 = s1[:-1]
+    s2 = s2[:-1]
   return s
