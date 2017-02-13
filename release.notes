@@ -1,4 +1,4 @@
-[v6r18-pre3]
+[v6r18-pre4]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -6,6 +6,10 @@ FIX: In multiple places - use systemCall() rather than shellCall() to avoid
 *Accounting
 NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
      present jitter, one-way delay, packet-loss rate and some derived functions.
+
+*DMS
+CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
+        client
 
 *RSS
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
