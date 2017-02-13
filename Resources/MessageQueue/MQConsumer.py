@@ -21,7 +21,7 @@ class MQConsumer ( object ):
       if connector:
         result = connector.subscribe( parameters = {'messengerId':self._id, 'callback':callback, 'destination':self._destination} )
         if not result['OK']:
-          self.log.error( 'Failed to subscirbe the consumer:'+ self._id )
+          self.log.error( 'Failed to subscribe the consumer:' + self._id )
       else:
         self.log.error( 'Failed to initialize MQConsumer! No MQConnector!' )
     else:

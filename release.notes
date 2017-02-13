@@ -1,3 +1,22 @@
+[v6r18-pre3]
+
+FIX: In multiple places - use systemCall() rather than shellCall() to avoid
+     potential shell injection problems
+
+*Accounting
+NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
+     present jitter, one-way delay, packet-loss rate and some derived functions.
+
+*RSS
+NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
+     RSS system 
+NEW: SiteStatus client to interrogate site status with respect to RSS
+BUGFIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
+FIX: ResourceStatus, RSSCacheNoThread - fixed RSS cache generation 
+
+*WMS
+NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS    
+
 [v6r17p8]
 
 *Core
@@ -304,7 +323,7 @@ FIX: RemoveFile operation - Remove all files that are not at banned SEs
 
 *TMS
 FIX: FileReport - after successful update of input files status, clear the 
-     cache disctionary to avoid double update      
+     cache dictionary to avoid double update      
 
 [v6r15p18]
 

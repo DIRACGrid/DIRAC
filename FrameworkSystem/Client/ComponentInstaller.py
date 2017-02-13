@@ -65,8 +65,7 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.Core.Utilities.File import mkDir, mkLink
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, \
-                                                     cfgInstallSection, ResourcesDefaults, CSGlobals
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, CSGlobals
 from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR, \
                                            CS_ADMINISTRATOR, JOB_ADMINISTRATOR, \
                                            FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR, \
@@ -272,7 +271,7 @@ class ComponentInstaller( object ):
     self.monitoringClient = ComponentMonitoringClient()
     gLogger.verbose( 'Client configured for Component Monitoring' )
 
-  def getInfo( self, extensions ):
+  def getInfo( self ):
     result = getVersion()
     if not result['OK']:
       return result
@@ -1201,7 +1200,7 @@ class ComponentInstaller( object ):
 
     return S_OK( componentDict )
 
-  def getComponentModule( self, gConfig, system, component, compType ):
+  def getComponentModule( self, system, component, compType ):
     """
     Get the component software module
     """
@@ -1612,7 +1611,6 @@ class ComponentInstaller( object ):
       return S_ERROR( error )
 
     # We need to make sure components are connecting to the Master CS, that is the only one being update
-    from DIRAC import gConfig
     localServers = self.localCfg.getOption( cfgPath( 'DIRAC', 'Configuration', 'Servers' ) )
     masterServer = gConfig.getValue( cfgPath( 'DIRAC', 'Configuration', 'MasterServer' ), '' )
     initialCfg = self.__getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'Servers' , localServers )
@@ -2657,6 +2655,8 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     sectionPath = cfgPath( 'Systems', 'Databases' )
     cfg = self.__getCfg( sectionPath, 'User', self.mysqlUser )
     cfg.setOption( cfgPath( sectionPath, 'Password' ), self.mysqlPassword )
+    cfg.setOption( cfgPath( sectionPath, 'Host' ), self.mysqlHost )
+    cfg.setOption( cfgPath( sectionPath, 'Port' ), self.mysqlPort )
 
     return self._addCfgToDiracCfg( cfg )
 
@@ -2670,66 +2670,10 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     sectionPath = cfgPath( 'Systems', 'NoSQLDatabases' )
     cfg = self.__getCfg( sectionPath, 'User', self.noSQLUser )
     cfg.setOption( cfgPath( sectionPath, 'Password' ), self.noSQLPassword )
+    cfg.setOption( cfgPath( sectionPath, 'Host' ), self.noSQLHost )
+    cfg.setOption( cfgPath( sectionPath, 'Port' ), self.noSQLPort )
 
     return self._addCfgToDiracCfg( cfg )
-
-  def configureCE( self, ceName = '', ceType = '', cfg = None, currentSectionPath = '' ):
-    """
-    Produce new dirac.cfg including configuration for new CE
-    """
-    from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
-    cesCfg = ResourcesDefaults.getComputingElementDefaults( ceName, ceType, cfg, currentSectionPath )
-    ceNameList = cesCfg.listSections()
-    if not ceNameList:
-      error = 'No CE Name provided'
-      gLogger.error( error )
-      if self.exitOnError:
-        DIRAC.exit( -1 )
-      return S_ERROR( error )
-
-    for ceName in ceNameList:
-      if 'CEType' not in cesCfg[ceName]:
-        error = 'Missing Type for CE "%s"' % ceName
-        gLogger.error( error )
-        if self.exitOnError:
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
-
-    localsiteCfg = self.localCfg['LocalSite']
-    # Replace Configuration under LocalSite with new Configuration
-    for ceName in ceNameList:
-      if localsiteCfg.existsKey( ceName ):
-        gLogger.notice( ' Removing existing CE:', ceName )
-        localsiteCfg.deleteKey( ceName )
-      gLogger.notice( 'Configuring CE:', ceName )
-      localsiteCfg.createNewSection( ceName, contents = cesCfg[ceName] )
-
-    # Apply configuration and try to instantiate the CEs
-    gConfig.loadCFG( self.localCfg )
-
-    for ceName in ceNameList:
-      ceFactory = ComputingElementFactory()
-      try:
-        ceInstance = ceFactory.getCE( ceType, ceName )
-      except Exception:
-        error = 'Fail to instantiate CE'
-        gLogger.exception( error )
-        if self.exitOnError:
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
-      if not ceInstance['OK']:
-        error = 'Fail to instantiate CE: %s' % ceInstance['Message']
-        gLogger.error( error )
-        if self.exitOnError:
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
-
-    # Everything is OK, we can save the new cfg
-    self.localCfg.writeToFile( self.cfgFile )
-    gLogger.always( 'LocalSite section in %s has been uptdated with new configuration:' % os.path.basename( self.cfgFile ) )
-    gLogger.always( str( self.localCfg['LocalSite'] ) )
-
-    return S_OK( ceNameList )
 
   def execCommand( self, timeout, cmd ):
     """

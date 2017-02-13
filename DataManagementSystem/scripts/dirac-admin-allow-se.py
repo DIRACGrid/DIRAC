@@ -106,7 +106,7 @@ statusFlagDict['RemoveAccess'] = remove
 
 resourceStatus = ResourceStatus()
 
-res = resourceStatus.getStorageElementStatus( ses )
+res = resourceStatus.getElementStatus( ses, "StorageElement" )
 if not res[ 'OK' ]:
   gLogger.error( 'Storage Element %s does not exist' % ses )
   DIRAC.exit( -1 )
@@ -131,7 +131,7 @@ for se, seOptions in res[ 'Value' ].items():
           gLogger.notice( 'Try specifying the command switches' )
           continue
 
-        resR = resourceStatus.setStorageElementStatus( se, statusType, 'Active', reason, userName )
+        resR = resourceStatus.setElementStatus( se, "StorageElement", statusType, 'Active', reason, userName )
         if not resR['OK']:
           gLogger.error( "Failed to update %s %s to Active" % ( se, statusType ) )
         else:

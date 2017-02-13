@@ -5,6 +5,8 @@
 
 '''
 
+import datetime
+
 from DIRAC                                             import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
@@ -20,8 +22,6 @@ def initializeResourceStatusHandler( _serviceInfo ):
 
   global db
   db = ResourceStatusDB()
-  # Regenerates DB tables if needed
-  db._checkTable()
 
   return S_OK()
 
@@ -52,6 +52,10 @@ class ResourceStatusHandler( RequestHandler ):
   '''
 
   def __init__( self, *args, **kwargs ):
+
+    # create tables for empty db
+    db.createTables()
+
     super( ResourceStatusHandler, self ).__init__( *args, **kwargs )
 
   @staticmethod
@@ -78,177 +82,383 @@ class ResourceStatusHandler( RequestHandler ):
     global db
     db = database
 
-  types_insert = [ dict, dict ]
-  def export_insert( self, params, meta ):
+  types_insert = [ basestring, basestring, basestring, basestring, basestring, basestring,
+                   basestring, datetime.datetime, datetime.datetime, basestring, datetime.datetime]
+
+  def export_insert( self, element, tableType, name, statusType, status,
+                     elementType, reason, dateEffective, lastCheckTime,
+                     tokenOwner, tokenExpiration ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
+      **name** - `string`
+        name of the individual of class element
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
+        `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the different elements in the same element
+        table.
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'insert: %s %s' % ( params, meta ) )
+    gLogger.info( 'insert: %s %s %s %s %s %s %s %s %s %s %s' %
+                  ( element, tableType, name, statusType, status,
+                  elementType, reason, dateEffective, lastCheckTime,
+                  tokenOwner, tokenExpiration ) )
 
-    res = db.insert( params, meta )
+    res = db.insert( element, tableType, name, statusType, status,
+                     elementType, reason, dateEffective, lastCheckTime,
+                     tokenOwner, tokenExpiration )
+
     self.__logResult( 'insert', res )
 
     return res
 
-  types_update = [ dict, dict ]
-  def export_update( self, params, meta ):
+  types_update = [ basestring, basestring ]
+
+  def export_update( self, element, tableType, name = None, statusType = None,
+                    status = None, elementType = None, reason = None,
+                    dateEffective = None, lastCheckTime = None,
+                    tokenOwner = None, tokenExpiration = None, ID = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
+      **name** - `string`
+        name of the individual of class element
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
+        `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the different elements in the same element
+        table.
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'update: %s %s' % ( params, meta ) )
+    gLogger.info( 'update: %s %s %s %s %s %s %s %s %s %s %s %s' %
+                  ( element, tableType, name, statusType, status,
+                  elementType, reason, dateEffective, lastCheckTime,
+                  tokenOwner, tokenExpiration, ID ) )
 
-    res = db.update( params, meta )
+    res = db.update( element, tableType, name, statusType, status,
+                     elementType, reason, dateEffective, lastCheckTime,
+                     tokenOwner, tokenExpiration, ID )
+
     self.__logResult( 'update', res )
 
     return res
 
-  types_select = [ dict, dict ]
-  def export_select( self, params, meta ):
+  types_select = [ basestring, basestring ]
+
+  def export_select( self, element, tableType, name = None, statusType = None,
+                    status = None, elementType = None, reason = None,
+                    dateEffective = None, lastCheckTime = None,
+                    tokenOwner = None, tokenExpiration = None, meta = None ):
     '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It \
-    does not add neither processing nor validation. If you need to know more about
+    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
+    not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
+      **name** - `string`
+        name of the individual of class element
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
+        `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the different elements in the same element
+        table.
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership
+      **meta** - `dict`
+        metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'select: %s %s' % ( params, meta ) )
+    gLogger.info( 'select: %s %s %s %s %s %s %s %s %s %s %s' %
+                  ( element, tableType, name, statusType, status,
+                  elementType, reason, dateEffective, lastCheckTime,
+                  tokenOwner, tokenExpiration ) )
 
-    res = db.select( params, meta )
+    res = db.select( element, tableType, name, statusType, status,
+                             elementType, reason, dateEffective, lastCheckTime,
+                             tokenOwner, tokenExpiration, meta )
+
     self.__logResult( 'select', res )
 
     return res
 
-  types_delete = [ dict, dict ]
-  def export_delete( self, params, meta ):
+  types_delete = [ basestring, basestring ]
+
+  def export_delete( self, element, tableType, name = None, statusType = None,
+                    status = None, elementType = None, reason = None,
+                    dateEffective = None, lastCheckTime = None,
+                    tokenOwner = None, tokenExpiration = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
+      **name** - `string`
+        name of the individual of class element
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
+        `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the different elements in the same element
+        table.
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'delete: %s %s' % ( params, meta ) )
+    gLogger.info( 'delete: %s %s %s %s %s %s %s %s %s %s %s' %
+                  ( element, tableType, name, statusType, status,
+                  elementType, reason, dateEffective, lastCheckTime,
+                  tokenOwner, tokenExpiration ) )
 
-    res = db.delete( params, meta )
+    res = db.delete( element, tableType, name, statusType, status,
+                     elementType, reason, dateEffective, lastCheckTime,
+                     tokenOwner, tokenExpiration )
+
     self.__logResult( 'delete', res )
 
     return res
 
-  types_addOrModify = [ dict, dict ]
-  def export_addOrModify( self, params, meta ):
+  types_addOrModify = [ basestring, basestring ]
+
+  def export_addOrModify( self, element, tableType, name = None, statusType = None,
+                          status = None, elementType = None, reason = None,
+                          dateEffective = None, lastCheckTime = None,
+                          tokenOwner = None, tokenExpiration = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
+      **name** - `string`
+        name of the individual of class element
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
+        `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the different elements in the same element
+        table.
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'addOrModify: %s %s' % ( params, meta ) )
+    gLogger.info( 'addOrModify: %s %s %s %s %s %s %s %s %s %s %s' %
+                  ( element, tableType, name, statusType, status,
+                  elementType, reason, dateEffective, lastCheckTime,
+                  tokenOwner, tokenExpiration ) )
 
-    res = db.addOrModify( params, meta )
+    res = db.addOrModify( element, tableType, name, statusType, status,
+                          elementType, reason, dateEffective, lastCheckTime,
+                          tokenOwner, tokenExpiration )
+
     self.__logResult( 'addOrModify', res )
 
     return res
 
-  types_modify = [ dict, dict ]
-  def export_modify( self, params, meta ):
+  types_modify = [ basestring, basestring ]
+
+  def export_modify( self, element, tableType, name = None, statusType = None,
+                    status = None, elementType = None, reason = None,
+                    dateEffective = None, lastCheckTime = None,
+                    tokenOwner = None, tokenExpiration = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
+      **name** - `string`
+        name of the individual of class element
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
+        `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the different elements in the same element
+        table.
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'modify: %s %s' % ( params, meta ) )
+    gLogger.info( 'modify: %s %s %s %s %s %s %s %s %s %s %s' %
+                  ( element, tableType, name, statusType, status,
+                  elementType, reason, dateEffective, lastCheckTime,
+                  tokenOwner, tokenExpiration ) )
 
-    res = db.modify( params, meta )
+    res = db.modify( element, tableType, name, statusType, status,
+                     elementType, reason, dateEffective, lastCheckTime,
+                     tokenOwner, tokenExpiration )
+
     self.__logResult( 'modify', res )
 
     return res
 
-  types_addIfNotThere = [ dict, dict ]
-  def export_addIfNotThere( self, params, meta ):
+  types_addIfNotThere = [ basestring, basestring ]
+
+  def export_addIfNotThere( self, element, tableType, name = None, statusType = None,
+                            status = None, elementType = None, reason = None,
+                            dateEffective = None, lastCheckTime = None,
+                            tokenOwner = None, tokenExpiration = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
+      **name** - `string`
+        name of the individual of class element
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
+        `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the different elements in the same element
+        table.
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'addIfNotThere: %s %s' % ( params, meta ) )
+    gLogger.info( 'addIfNotThere: %s %s %s %s %s %s %s %s %s %s %s' %
+                  ( element, tableType, name, statusType, status,
+                  elementType, reason, dateEffective, lastCheckTime,
+                  tokenOwner, tokenExpiration ) )
 
-    res = db.addIfNotThere( params, meta )
+    res = db.addIfNotThere( element, tableType, name, statusType, status,
+                            elementType, reason, dateEffective, lastCheckTime,
+                            tokenOwner, tokenExpiration )
+
     self.__logResult( 'addIfNotThere', res )
 
     return res

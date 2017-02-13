@@ -197,7 +197,7 @@ def mock_StorageFactory__generateStorageObject(*args, **kwargs):
   return S_OK(object())
 
 
-def mock_resourceStatus_getStorageElementStatus(seName):
+def mock_resourceStatus_getElementStatus(seName, elementType = 'StorageElement'):
   """ We shut up RSS
   """
   return S_OK({seName: {}})
@@ -220,8 +220,8 @@ mandatoryProtocolOptions = {
     'DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
     side_effect = mock_StorageFactory__generateStorageObject)
 @mock.patch(
-    'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getStorageElementStatus',
-    side_effect = mock_resourceStatus_getStorageElementStatus)
+    'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getElementStatus',
+    side_effect = mock_resourceStatus_getElementStatus)
 class StorageFactoryStandaloneTestCase(unittest.TestCase):
   """ Base class for the StorageFactory test cases
   """
@@ -259,8 +259,8 @@ class StorageFactoryStandaloneTestCase(unittest.TestCase):
     'DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
     side_effect = mock_StorageFactory__generateStorageObject)
 @mock.patch(
-    'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getStorageElementStatus',
-    side_effect = mock_resourceStatus_getStorageElementStatus)
+    'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getElementStatus',
+    side_effect = mock_resourceStatus_getElementStatus)
 class StorageFactorySimpleInheritance(unittest.TestCase):
   """ In this class we perform simple inheritance test, with only one
     protocol and no extra protocol definition
@@ -376,8 +376,8 @@ class StorageFactorySimpleInheritance(unittest.TestCase):
     'DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
     side_effect = mock_StorageFactory__generateStorageObject)
 @mock.patch(
-    'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getStorageElementStatus',
-    side_effect = mock_resourceStatus_getStorageElementStatus)
+    'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getElementStatus',
+    side_effect = mock_resourceStatus_getElementStatus)
 class StorageFactoryWeirdDefinition(unittest.TestCase):
   """ In this class, we test error cases
   """
@@ -395,7 +395,7 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
   def test_bad_plugin_name(self, _sf_generateStorageObject, _rss_getSEStatus):
     """ In this test, we load a storage element CERN-BAD-PLUGIN-NAME that inherits from CERN-BASE,
         and redifine the same protocol but with a different PluginName.
-        
+
         Currently this results in two different protocols, but this should change
     """
 
@@ -432,7 +432,7 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
   def test_redefine_plugin_name(self, _sf_generateStorageObject, _rss_getSEStatus):
     """ In this test, we load a storage element CERN-REDEFINE-PLUGIN-NAME that inherits from CERN-BASE,
         and uses the same Plugin with a different section.
-        
+
         Currently this results in a single protocol, but this should change
     """
 
@@ -496,8 +496,8 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
     'DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
     side_effect = mock_StorageFactory__generateStorageObject)
 @mock.patch(
-    'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getStorageElementStatus',
-    side_effect = mock_resourceStatus_getStorageElementStatus)
+    'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getElementStatus',
+    side_effect = mock_resourceStatus_getElementStatus)
 class StorageFactoryPureAbstract(unittest.TestCase):
   """ In this class, we test pure abstract inheritance
   """

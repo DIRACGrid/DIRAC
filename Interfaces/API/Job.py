@@ -25,6 +25,7 @@
 import re
 import os
 import urllib
+import shlex
 import StringIO
 
 from DIRAC                                                    import S_OK, S_ERROR, gLogger
@@ -35,7 +36,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight                import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config                  import gConfig
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
-from DIRAC.Core.Utilities.Subprocess                          import shellCall
+from DIRAC.Core.Utilities.Subprocess                          import systemCall
 from DIRAC.Core.Utilities.List                                import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSites
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
@@ -954,7 +955,7 @@ class Job( API ):
     for name in inputSandbox:
       if re.search( r'\*', name ):  # escape the star character...
         cmd = 'ls -d ' + name
-        output = shellCall( 10, cmd )
+        output = systemCall( 10, shlex.split(cmd) )
         if not output['OK']:
           self.log.error( 'Could not perform: ', cmd )
         elif output['Value'][0]:
@@ -975,7 +976,7 @@ class Job( API ):
               else:
                 cmd = 'tar cfz ' + tarName + '.tar.gz ' + tarName
 
-              output = shellCall( 60, cmd )
+              output = systemCall( 60, shlex.split( cmd ) )
               if not output['OK']:
                 self.log.error( 'Could not perform: %s' % ( cmd ) )
               resolvedIS.append( tarName + '.tar.gz' )
@@ -992,7 +993,7 @@ class Job( API ):
         else:
           cmd = 'tar cfz ' + tarName + '.tar.gz ' + tarName
 
-        output = shellCall( 60, cmd )
+        output = systemCall( 60, shlex.split( cmd ) )
         if not output['OK']:
           self.log.error( 'Could not perform: %s' % ( cmd ) )
         else:

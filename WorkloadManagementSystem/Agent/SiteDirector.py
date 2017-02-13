@@ -17,11 +17,13 @@ from collections import defaultdict
 
 import DIRAC
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus      import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 from DIRAC.Core.Utilities.File                             import mkDir
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
@@ -32,6 +34,7 @@ from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 from DIRAC.Core.Utilities.List                             import fromChar
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 
 __RCSID__ = "$Id$"
 
@@ -91,6 +94,10 @@ class SiteDirector( AgentModule ):
     self.updateStatus = True
     self.getOutput = False
     self.sendAccounting = True
+    self.rssClient = ResourceStatus()
+    self.sstClient = SiteStatus()
+
+    self.siteClient = SiteStatus()
 
   def initialize( self ):
     """ Standard constructor
@@ -360,7 +367,6 @@ class SiteDirector( AgentModule ):
   def submitJobs( self ):
     """ Go through defined computing elements and submit jobs if necessary
     """
-
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
     tqDict = { 'Setup':setup,
@@ -370,7 +376,6 @@ class SiteDirector( AgentModule ):
       tqDict['Community'] = self.vo
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
-
     result = Resources.getCompatiblePlatforms( self.platforms )
     if not result['OK']:
       return result
@@ -421,7 +426,7 @@ class SiteDirector( AgentModule ):
     #  return S_OK()
 
     # Check if the site is allowed in the mask
-    result = jobDB.getSiteMask()
+    result = self.siteClient.getSites()
     if not result['OK']:
       return S_ERROR( 'Can not get the site mask' )
     siteMaskList = result['Value']
@@ -446,6 +451,30 @@ class SiteDirector( AgentModule ):
       siteName = self.queueDict[queue]['Site']
       platform = self.queueDict[queue]['Platform']
       siteMask = siteName in siteMaskList
+
+      # Check the status of the Site
+      result = self.sstClient.getSiteStatuses({siteName})
+      if not result['OK']:
+        self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
+        continue
+      if result['Value']:
+        result = result['Value'][siteName]   #get the value of the status
+
+      if result not in ('Active', 'Degraded'):
+        self.log.verbose( "Skipping site %s: site not usable" % siteName )
+        continue
+
+      # Check the status of the ComputingElement
+      result = self.rssClient.getElementStatus(ceName, "ComputingElement")
+      if not result['OK']:
+        self.log.error( "Can not get the status of computing element %s: %s" % (siteName, result['Message']) )
+        continue
+      if result['Value']:
+        result = result['Value'][ceName]['all']   #get the value of the status
+
+      if result not in ('Active', 'Degraded'):
+        self.log.verbose( "Skipping computing element %s at %s: resource not usable" % (ceName, siteName) )
+        continue
 
       if not anySite and siteName not in jobSites:
         self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )
@@ -817,7 +846,7 @@ class SiteDirector( AgentModule ):
 
     return [ pilotOptions, pilotsToSubmit ]
 
-#####################################################################################
+####################################################################################
   def _writePilotScript( self, workingDirectory, pilotOptions, proxy = None,
                          httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
