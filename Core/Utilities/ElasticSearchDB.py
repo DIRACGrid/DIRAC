@@ -60,7 +60,7 @@ def generateCAFile():
       gLogger.info( "CAs used from: %s" % str( fn ) )    
       return fn
     except IOError as err:
-      gLogger.warn(err)
+      gLogger.warn( err )
       
   return False
 
