@@ -1,3 +1,15 @@
+[v6r17p9]
+
+*WMS
+BUGFIX: JobScheduling - bug fixed introduced in the previous patch 
+NEW: pilotTools - introduced -o swicth for a generic CS option
+
+*SMS
+FIX: StorageManagerClient - fixes in the unit test
+
+*DMS
+FIX: FileManagerPs - in _getFileLFNs() - break a long list of LFNs into smaller chunks
+
 [v6r17p8]
 
 *Core
