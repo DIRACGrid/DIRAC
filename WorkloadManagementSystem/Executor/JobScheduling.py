@@ -121,7 +121,7 @@ class JobScheduling( OptimizerExecutor ):
     if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
       self.jobLog.info( "Production job: sending to TQ, but first checking if staging is requested" )
 
-      res = getFilesToStage( inputData, jobsState = jobState )
+      res = getFilesToStage( inputData, jobState = jobState )
 
       if not res['OK']:
         return self.__holdJob( jobState, res['Message'] )

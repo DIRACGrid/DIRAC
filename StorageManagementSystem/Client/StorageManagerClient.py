@@ -61,7 +61,10 @@ def getFilesToStage( lfnList, jobState = None ):
     else:
       userName = None
       userGroup = None
-    result = _checkFilesToStage( seToLFNs, onlineLFNs, proxyUserName = userName, proxyUserGroup = userGroup, executionLock = True )
+    result = _checkFilesToStage( seToLFNs, onlineLFNs,  #pylint: disable=unexpected-keyword-arg
+                                 proxyUserName = userName,
+                                 proxyUserGroup = userGroup,
+                                 executionLock = True )
     if not result['OK']:
       return result
     offlineLFNs = set( lfnList ) - onlineLFNs
