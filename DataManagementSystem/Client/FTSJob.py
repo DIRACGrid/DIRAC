@@ -35,11 +35,13 @@ from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 import fts3.rest.client.easy as fts3
-# Because of a bug in fts-rest, we can't use Request
-# This ftsSSLWrapper has the fix. we need to wait for 
-# the next fts release to get rid of it
-#from fts3.rest.client.request import Request
-from DIRAC.DataManagementSystem.Client.ftsSSLWrapper import Request as ftsSSLRequest
+
+# We can't use the default pycurl because of known bugs
+# memory leak: https://bugzilla.mozilla.org/show_bug.cgi?id=1202413
+# SIGALRM handling: https://curl.haxx.se/mail/lib-2008-09/0197.html
+# So we need to use the Request module. The correct version is available
+# from fts-rest v3.5.2 or in the lcg-bundle 2017-01-27
+from fts3.rest.client.request import Request as ftsSSLRequest
 
 ########################################################################
 class FTSJob( object ):
@@ -525,7 +527,7 @@ class FTSJob( object ):
     # In order: new fts-, old fts-, glite-
     realJob = len( self ) != 0
     iExptr = None
-    for iExptr, exptr in enumerate( ( 
+    for iExptr, exptr in enumerate( (
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Staging:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)'
