@@ -140,8 +140,8 @@ class WMSClient( object ):
     # Submit the job now and get the new job ID
     if not self.jobManager:
       self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
-                                    useCertificates = self.useCertificates,
-                                    timeout = self.timeout )
+                                   useCertificates = self.useCertificates,
+                                   timeout = self.timeout )
     result = self.jobManager.submitJob( classAdJob.asJDL() )
     if 'requireProxyUpload' in result and result['requireProxyUpload']:
       gLogger.warn( "Need to upload the proxy" )
@@ -153,8 +153,8 @@ class WMSClient( object ):
     """
     if not self.jobManager:
       self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
-                                    useCertificates = self.useCertificates,
-                                    timeout = self.timeout )
+                                   useCertificates = self.useCertificates,
+                                   timeout = self.timeout )
     return self.jobManager.killJob( jobID )
 
   def deleteJob( self, jobID ):
@@ -163,8 +163,8 @@ class WMSClient( object ):
     """
     if not self.jobManager:
       self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
-                                    useCertificates = self.useCertificates,
-                                    timeout = self.timeout )
+                                   useCertificates = self.useCertificates,
+                                   timeout = self.timeout )
     return self.jobManager.deleteJob( jobID )
 
   def rescheduleJob( self, jobID ):
@@ -173,8 +173,8 @@ class WMSClient( object ):
     """
     if not self.jobManager:
       self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
-                                    useCertificates = self.useCertificates,
-                                    timeout = self.timeout )
+                                   useCertificates = self.useCertificates,
+                                   timeout = self.timeout )
     return self.jobManager.rescheduleJob( jobID )
 
   def resetJob( self, jobID ):
@@ -183,6 +183,6 @@ class WMSClient( object ):
     """
     if not self.jobManager:
       self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
-                                    useCertificates = self.useCertificates,
-                                    timeout = self.timeout )
+                                   useCertificates = self.useCertificates,
+                                   timeout = self.timeout )
     return self.jobManager.resetJob( jobID )

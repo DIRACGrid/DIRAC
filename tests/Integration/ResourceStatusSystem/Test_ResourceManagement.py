@@ -5,10 +5,13 @@
     this is pytest!
 '''
 
+#pylint: disable=invalid-name,wrong-import-position,missing-docstring
+
+import datetime
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-import datetime
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
@@ -27,15 +30,15 @@ def test_addAndRemove():
   # ...............................................................................
 
   res = rsClient.addOrModifyAccountingCache('TestName12345', 'plotType', 'plotName', 'result', dateEffective, lastCheckTime)
-  assert res['OK'] == True
+  assert res['OK'] is True
 
   res = rsClient.selectAccountingCache('TestName12345')
-  assert res['OK'] == True
+  assert res['OK'] is True
   #check if the name that we got is equal to the previously added 'TestName12345'
   assert res['Value'][0][0] == 'TestName12345'
 
   res = rsClient.addOrModifyAccountingCache('TestName12345', 'plotType', 'plotName', 'changedresult', dateEffective, lastCheckTime)
-  assert res['OK'] == True
+  assert res['OK'] is True
 
   res = rsClient.selectAccountingCache('TestName12345')
   #check if the result has changed
@@ -45,13 +48,11 @@ def test_addAndRemove():
   # TEST deleteAccountingCache
   # ...............................................................................
   res = rsClient.deleteAccountingCache('TestName12345')
-  assert res['OK'] == True
+  assert res['OK'] is True
 
   res = rsClient.selectAccountingCache('TestName12345')
-  assert res['OK'] == True
+  assert res['OK'] is True
   assert not res['Value']
 
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
-
-
