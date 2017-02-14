@@ -334,7 +334,7 @@ class ElasticSearchDB( object ):
       query.aggs.bucket( key,
                          'terms',
                          field = key,
-                         size = 0,
+                         size = 1,
                          order = orderBy ).metric( key,
                                                    'cardinality',
                                                    field = key )
@@ -342,12 +342,12 @@ class ElasticSearchDB( object ):
       query.aggs.bucket( key,
                          'terms',
                          field = key,
-                         size = 0 ).metric( key,
+                         size = 1 ).metric( key,
                                             'cardinality',
                                             field = key )
 
     try:
-      query = query.extra( size = 0 ) #do not need the raw data.
+      query = query.extra( size = 1 ) #do not need the raw data.
       gLogger.debug( "Query", query.to_dict() )
       result = query.execute()
     except TransportError as e:
