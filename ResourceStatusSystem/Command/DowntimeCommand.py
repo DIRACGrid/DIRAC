@@ -50,7 +50,7 @@ class DowntimeCommand( Command ):
                                                          severity = dt[ 'Severity' ],
                                                          description = dt[ 'Description' ],
                                                          link = dt[ 'Link' ],
-                                                         gocdbServiceType = dt[ 'GOCDBServiceType' ] )
+                                                         gOCDBServiceType = dt[ 'gOCDBServiceType' ] )
     return resQuery
 
 
@@ -122,7 +122,7 @@ class DowntimeCommand( Command ):
     if 'hours' in self.args:
       hours = self.args[ 'hours' ]
 
-    gocdbServiceType = None
+    gOCDBServiceType = None
 
     # Transform DIRAC site names into GOCDB topics
     if element == 'Site':
@@ -139,9 +139,9 @@ class DowntimeCommand( Command ):
       if not seOptions['OK']:
         return seOptions
       if seOptions['Value'].get( 'TapeSE' ):
-        gocdbServiceType = "srm.nearline"
+        gOCDBServiceType = "srm.nearline"
       elif seOptions['Value'].get( 'DiskSE' ):
-        gocdbServiceType = "srm"
+        gOCDBServiceType = "srm"
 
       seHost = CSHelpers.getSEHost( elementName )
       if not seHost['OK']:
@@ -153,14 +153,14 @@ class DowntimeCommand( Command ):
       elementName = seHost
 
     elif elementType in ['FTS','FTS3']:
-      gocdbServiceType = 'FTS'
+      gOCDBServiceType = 'FTS'
       try:
         #WARNING: this method presupposes that the server is an FTS3 type
         elementName  = getGOCFTSName(elementName)
       except:
         return S_ERROR( 'No FTS3 server specified in dirac.cfg (see Resources/FTSEndpoints)' )
 
-    return S_OK( ( element, elementName, hours, gocdbServiceType ) )
+    return S_OK( ( element, elementName, hours, gOCDBServiceType ) )
 
 
   def doNew( self, masterParams = None ):
@@ -179,13 +179,13 @@ class DowntimeCommand( Command ):
       element, elementNames = masterParams
       hours = 120
       elementName = None
-      gocdbServiceType = None
+      gOCDBServiceType = None
 
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
         return params
-      element, elementName, hours, gocdbServiceType = params[ 'Value' ]
+      element, elementName, hours, gOCDBServiceType = params[ 'Value' ]
       elementNames = [ elementName ]
 
     #WARNING: checking all the DT that are ongoing or starting in given <hours> from now
@@ -228,15 +228,15 @@ class DowntimeCommand( Command ):
 
 
       if 'SERVICE_TYPE' in downDic.keys():
-        dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
-        if gocdbServiceType:
-          gocdbST = gocdbServiceType.lower()
+        dt[ 'gOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
+        if gOCDBServiceType:
+          gocdbST = gOCDBServiceType.lower()
           csST = downDic[ 'SERVICE_TYPE' ].lower()
           if gocdbST != csST:
             return S_ERROR( "SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST, csST, dt[ 'Name' ]) )
       else:
         #WARNING: do we want None as default value?
-        dt[ 'GOCDBServiceType' ] = None
+        dt[ 'gOCDBServiceType' ] = None
 
       dt[ 'DowntimeID' ] = downtime
       dt[ 'Element' ] = element
@@ -264,10 +264,10 @@ class DowntimeCommand( Command ):
     params = self._prepareCommand()
     if not params[ 'OK' ]:
       return params
-    element, elementName, hours, gocdbServiceType = params[ 'Value' ]
+    element, elementName, hours, gOCDBServiceType = params[ 'Value' ]
 
     result = self.rmClient.selectDowntimeCache( element = element, name = elementName,
-                                                gocdbServiceType = gocdbServiceType )
+                                                gOCDBServiceType = gOCDBServiceType )
 
     if not result[ 'OK' ]:
       return result
