@@ -48,16 +48,35 @@ class ResourceStatus( object ):
     Helper function, tries to get information from the RSS for the given
     Element, otherwise, it gets it from the CS.
 
-    example:
-      >>> getElementStatus('CE42', 'CE')
-          S_OK( { 'CE42': { 'all': 'Active' } } } )
-      >>> getElementStatus('SE1', 'StorageElement', 'ReadAccess')
-          S_OK( { 'SE1': { 'ReadAccess': 'Banned' } } } )
-      >>> getElementStatus('SE1', 'ThisIsAWrongElementType', 'ReadAccess')
-          S_ERROR( xyz.. )
-      >>> getElementStatus('ThisIsAWrongName', 'StorageElement', 'WriteAccess')
-          S_ERROR( xyz.. )
+    :param elementName: name of the element
+    :type elementName: str
+    :param elementType: type of the element (StorageElement, CE, FTS, Catalog)
+    :type elementType: str
+    :param statusType: type of the status (meaningful only when elementType==StorageElement)
+    :type statusType: None, str, list
+    :param default: defult value (meaningful only when rss is InActive)
+    :type default: str
+    :return: S_OK/S_ERROR
+    :rtype: dict
 
+    :Example:
+    >>> getElementStatus('CE42', 'CE')
+        S_OK( { 'CE42': { 'all': 'Active' } } } )
+    >>> getElementStatus('SE1', 'StorageElement', 'ReadAccess')
+        S_OK( { 'SE1': { 'ReadAccess': 'Banned' } } } )
+    >>> getElementStatus('SE1', 'ThisIsAWrongElementType', 'ReadAccess')
+        S_ERROR( xyz.. )
+    >>> getElementStatus('ThisIsAWrongName', 'StorageElement', 'WriteAccess')
+        S_ERROR( xyz.. )
+    >>> getElementStatus('A_file_catalog', 'FileCatalog')
+        S_OK( { 'A_file_catalog': { 'all': 'Active' } } } )
+    >>> getElementStatus('SE1', 'StorageElement', ['ReadAccess', 'WriteAccess'])
+        S_OK( { 'SE1': { 'ReadAccess': 'Banned' , 'WriteAccess': 'Active'} } } )
+    >>> getElementStatus('SE1', 'StorageElement')
+        S_OK( { 'SE1': { 'ReadAccess': 'Probing' ,
+                         'WriteAccess': 'Active',
+                         'CheckAccess': 'Degraded',
+                         'RemoveAccess': 'Banned'} } } )
     """
 
     allowedParameters = ["StorageElement", "CE", "FTS", "Catalog"]
@@ -65,34 +84,43 @@ class ResourceStatus( object ):
     if elementType not in allowedParameters:
       return S_ERROR("%s in not in the list of the allowed parameters: %s" % (elementType, allowedParameters))
 
+    # Apply defaults
+    if not statusType:
+      if elementType == "StorageElement":
+        statusType = ['ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess']
+      elif elementType == "CE":
+        statusType = ['all']
+      elif elementType == "FTS":
+        statusType = ['all']
+      elif elementType == "Catalog":
+        statusType = ['all']
+
     if self.rssFlag:
-
-      # Apply defaults
-      if not statusType:
-        if elementType == "StorageElement":
-          statusType = 'ReadAccess' # This should never happen: we apply a default but this makes little sense
-        elif elementType == "CE":
-          statusType = 'all'
-        elif elementType == "FTS":
-          statusType = 'all'
-        elif elementType == "Catalog":
-          statusType = 'all'
-
       return self.__getRSSElementStatus( elementName, elementType, statusType )
-
     else:
       return self.__getCSElementStatus( elementName, elementType, statusType, default )
 
   def setElementStatus( self, elementName, elementType, statusType, status, reason = None, tokenOwner = None ):
+    """ Tries set information in RSS and in CS.
 
-    """
-    Helper function, tries set information in RSS and in CS.
+    :param elementName: name of the element
+    :type elementName: str
+    :param elementType: type of the element (StorageElement, CE, FTS, Catalog)
+    :type elementType: str
+    :param statusType: type of the status (meaningful only when elementType==StorageElement)
+    :type statusType: str
+    :param reason: reason for setting the status
+    :type reason: str
+    :param tokenOwner: owner of the token (meaningful only when rss is Active)
+    :type tokenOwner: str
+    :return: S_OK/S_ERROR
+    :rtype: dict
 
-    example:
-      >>> setElementStatus('CE42', 'CE', 'all', 'Active')
-          S_OK(  xyz.. )
-      >>> setElementStatus('SE1', 'StorageElement', 'ReadAccess', 'Banned')
-          S_OK(  xyz.. )
+    :Example:
+    >>> setElementStatus('CE42', 'CE', 'all', 'Active')
+        S_OK(  xyz.. )
+    >>> setElementStatus('SE1', 'StorageElement', 'ReadAccess', 'Banned')
+        S_OK(  xyz.. )
     """
 
     if self.rssFlag:
@@ -125,16 +153,22 @@ class ResourceStatus( object ):
 ################################################################################
 
   def __getRSSElementStatus( self, elementName, elementType, statusType ):
-    """
-    Gets from the cache or the RSS the Elements status. The cache is a
-    copy of the DB table. If it is not on the cache, most likely is not going
-    to be on the DB.
+    """ Gets from the cache or the RSS the Elements status. The cache is a
+        copy of the DB table. If it is not on the cache, most likely is not going
+        to be on the DB.
 
-    There is one exception: item just added to the CS, e.g. new Element.
-    The period between it is added to the DB and the changes are propagated
-    to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
-    minutes.
-    """
+        There is one exception: item just added to the CS, e.g. new Element.
+        The period between it is added to the DB and the changes are propagated
+        to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
+        minutes.
+
+  :param elementName: name of the element
+  :type elementName: str
+  :param elementType: type of the element (StorageElement, CE, FTS, Catalog)
+  :type elementType: str
+  :param statusType: type of the status (meaningful only when elementType==StorageElement, otherwise it is 'all' or ['all'])
+  :type statusType: str, list
+  """
 
     cacheMatch = self.rssCache.match( elementName, elementType, statusType )
 
@@ -144,8 +178,16 @@ class ResourceStatus( object ):
     return cacheMatch
 
   def __getCSElementStatus( self, elementName, elementType, statusType, default ):
-    """
-    Gets from the CS the Element status
+    """ Gets from the CS the Element status
+
+    :param elementName: name of the element
+    :type elementName: str
+    :param elementType: type of the element (StorageElement, CE, FTS, Catalog)
+    :type elementType: str
+    :param statusType: type of the status (meaningful only when elementType==StorageElement)
+    :type statusType: str, list
+    :param default: defult value
+    :type default: None, str
     """
 
     # DIRAC doesn't store the status of CEs nor FTS in the CS, so here we can just return 'Active'
@@ -157,42 +199,23 @@ class ResourceStatus( object ):
       cs_path = "/Resources/StorageElements"
     elif elementType == 'Catalog':
       cs_path = "/Resources/FileCatalogs"
-      statusType = 'Status'
+      statusType = ['Status']
 
     if not isinstance( elementName, list ):
       elementName = [ elementName ]
 
-    statuses = self.rssConfig.getConfigStatusType( elementType )
-
     result = {}
     for element in elementName:
 
-      if statusType is not None:
-        # Added Active by default
-        res = gConfig.getValue( "%s/%s/%s" % ( cs_path, element, statusType ), 'Active' )
+      for sType in statusType:
+        # Look in standard location, 'Active' by default
+        res = gConfig.getValue( "%s/%s/%s" % ( cs_path, element, sType ), 'Active' )
         result[element] = {(elementType, statusType): res}
-      else: # this is here for backward compatibility, and is in practice valid only for StorageElements
-        res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, element ) )
-        if res[ 'OK' ] and res[ 'Value' ]:
-          elementStatuses = {}
-          for elementStatusType, value in res[ 'Value' ].items():
-            if elementStatusType in statuses:
-              elementStatuses[ elementStatusType ] = value
-
-          # If there is no status defined in the CS, we add by default Read and Write as Active
-          if not elementStatuses:
-            elementStatuses = { 'ReadAccess' : 'Active', 'WriteAccess' : 'Active' }
-
-          result[ element ] = elementStatuses
 
     if result:
       return S_OK( result )
 
     if default is not None:
-      # sec check
-      if statusType is None:
-        statusType = 'none'
-
       defList = [ [ el, statusType, default ] for el in elementName ]
       return S_OK( getDictFromList( defList ) )
 
