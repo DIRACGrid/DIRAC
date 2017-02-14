@@ -70,7 +70,7 @@ class ResourceStatus( object ):
       # Apply defaults
       if not statusType:
         if elementType == "StorageElement":
-          statusType = ['ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess']
+          statusType = 'ReadAccess' # This should never happen: we apply a default but this makes little sense
         elif elementType == "CE":
           statusType = 'all'
         elif elementType == "FTS":
@@ -81,7 +81,7 @@ class ResourceStatus( object ):
       return self.__getRSSElementStatus( elementName, elementType, statusType )
 
     else:
-       return self.__getCSElementStatus( elementName, elementType, statusType, default )
+      return self.__getCSElementStatus( elementName, elementType, statusType, default )
 
   def setElementStatus( self, elementName, elementType, statusType, status, reason = None, tokenOwner = None ):
 
@@ -124,7 +124,7 @@ class ResourceStatus( object ):
 
 ################################################################################
 
-  def __getRSSElementStatus( self, elementName, elementType, statusTypes ):
+  def __getRSSElementStatus( self, elementName, elementType, statusType ):
     """
     Gets from the cache or the RSS the Elements status. The cache is a
     copy of the DB table. If it is not on the cache, most likely is not going
@@ -136,7 +136,7 @@ class ResourceStatus( object ):
     minutes.
     """
 
-    cacheMatch = self.rssCache.match( elementName, elementType, statusTypes )
+    cacheMatch = self.rssCache.match( elementName, elementType, statusType )
 
     self.log.debug( '__getRSSElementStatus' )
     self.log.debug( cacheMatch )
@@ -148,10 +148,16 @@ class ResourceStatus( object ):
     Gets from the CS the Element status
     """
 
-    if elementType in ('ComputingElement', 'FTS'):
+    # DIRAC doesn't store the status of CEs nor FTS in the CS, so here we can just return 'Active'
+    if elementType in ('CE', 'FTS'):
       return S_OK( { elementName: { (elementType, 'all'): 'Active'} } )
 
-    cs_path = "/Resources/" + elementType
+    # If we are here it is because elementType is either 'StorageElement' or 'Catalog'
+    if elementType == 'StorageElement':
+      cs_path = "/Resources/StorageElements"
+    elif elementType == 'Catalog':
+      cs_path = "/Resources/FileCatalogs"
+      statusType = 'Status'
 
     if not isinstance( elementName, list ):
       elementName = [ elementName ]
@@ -165,8 +171,7 @@ class ResourceStatus( object ):
         # Added Active by default
         res = gConfig.getValue( "%s/%s/%s" % ( cs_path, element, statusType ), 'Active' )
         result[element] = {(elementType, statusType): res}
-
-      else:
+      else: # this is here for backward compatibility, and is in practice valid only for StorageElements
         res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, element ) )
         if res[ 'OK' ] and res[ 'Value' ]:
           elementStatuses = {}
@@ -174,8 +179,7 @@ class ResourceStatus( object ):
             if elementStatusType in statuses:
               elementStatuses[ elementStatusType ] = value
 
-          # If there is no status defined in the CS, we add by default Read and
-          # Write as Active
+          # If there is no status defined in the CS, we add by default Read and Write as Active
           if not elementStatuses:
             elementStatuses = { 'ReadAccess' : 'Active', 'WriteAccess' : 'Active' }
 
@@ -185,7 +189,6 @@ class ResourceStatus( object ):
       return S_OK( result )
 
     if default is not None:
-
       # sec check
       if statusType is None:
         statusType = 'none'
@@ -206,9 +209,9 @@ class ResourceStatus( object ):
     self.rssCache.acquireLock()
     try:
       res = self.rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = elementName,
-                                                elementType = elementType, status = status,
-                                                statusType = statusType, reason = reason,
-                                                tokenOwner = tokenOwner, tokenExpiration = expiration )
+                                                     elementType = elementType, status = status,
+                                                     statusType = statusType, reason = reason,
+                                                     tokenOwner = tokenOwner, tokenExpiration = expiration )
 
       if res[ 'OK' ]:
         self.rssCache.refreshCache()
@@ -228,15 +231,23 @@ class ResourceStatus( object ):
     Sets on the CS the Elements status
     """
 
+    # DIRAC doesn't store the status of CEs nor FTS in the CS, so here we can just do nothing
+    if elementType in ('CE', 'FTS'):
+      return S_OK()
+
+    # If we are here it is because elementType is either 'StorageElement' or 'Catalog'
     statuses = self.rssConfig.getConfigStatusType( elementType )
     if statusType not in statuses:
       gLogger.error( "%s is not a valid statusType" % statusType )
       return S_ERROR( "%s is not a valid statusType: %s" % ( statusType, statuses ) )
 
+    if elementType == 'StorageElement':
+      cs_path = "/Resources/StorageElements"
+    elif elementType == 'Catalog':
+      cs_path = "/Resources/FileCatalogs"
+      statusType = 'Status'
+
     csAPI = CSAPI()
-
-    cs_path = "/Resources/" + elementType
-
     csAPI.setOption( "%s/%s/%s/%s" % ( cs_path, elementName, elementType, statusType ), status )
 
     res = csAPI.commitChanges()
@@ -254,7 +265,6 @@ class ResourceStatus( object ):
     res = self.rssConfig.getConfigState()
 
     if res == 'Active':
-
       if self.rssClient is None:
         self.rssClient = ResourceStatusClient()
       return True
@@ -263,13 +273,12 @@ class ResourceStatus( object ):
     return False
 
   def isStorageElementAlwaysBanned( self, seName, statusType ):
-    """ Checks if the AlwaysBanned policy is applied to the SE
-        given as parameter
+    """ Checks if the AlwaysBanned policy is applied to the SE given as parameter
 
-        :param seName : string, name of the SE
-        :param statusType : ReadAcces, WriteAccess, RemoveAccess, CheckAccess
+    :param seName : string, name of the SE
+    :param statusType : ReadAcces, WriteAccess, RemoveAccess, CheckAccess
 
-        :returns: S_OK(True/False)
+    :returns: S_OK(True/False)
     """
 
     res = getPoliciesThatApply( {'name' : seName, 'statusType' : statusType} )
