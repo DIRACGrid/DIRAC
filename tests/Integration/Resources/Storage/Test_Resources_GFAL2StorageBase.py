@@ -272,7 +272,6 @@ class XROOT_Test( basicTest ):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_SRM2_Test )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_SRM2_Test ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_HTTP_Test ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_XROOT_Test ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( XROOT_Test ) )
