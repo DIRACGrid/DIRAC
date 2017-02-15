@@ -295,7 +295,7 @@ class ResourceStatusDB( object ):
 
       args = toList(table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,
                                 Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
-                                TokenOwner = tokenOwner, TokenExpiration = tokenExpiration)
+                                TokenOwner = tokenOwner, TokenExpiration = tokenExpiration, Meta = meta)
 
       session.execute( delete( table )
                             .where( or_(*args) )
