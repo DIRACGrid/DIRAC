@@ -152,6 +152,7 @@ class ResourceStatusDB( object ):
       return S_OK( arr )
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "select: unexpected exception", lException = e )
       return S_ERROR( "select: unexpected exception %s" % e )
     finally:
@@ -209,6 +210,7 @@ class ResourceStatusDB( object ):
       return finalResult
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "select: unexpected exception", lException = e )
       return S_ERROR( "select: unexpected exception %s" % e )
     finally:
@@ -218,7 +220,8 @@ class ResourceStatusDB( object ):
              elementType, reason, dateEffective, lastCheckTime,
              tokenOwner, tokenExpiration ):
 
-    session = self.DBSession()
+    # expire_on_commit is set to False so that we can still use the object after we close the session
+    session = self.DBSession( expire_on_commit = False )
 
     try:
 
@@ -233,6 +236,7 @@ class ResourceStatusDB( object ):
       return S_OK()
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "insert: unexpected exception", lException = e )
       return S_ERROR( "insert: unexpected exception %s" % e )
     finally:
@@ -243,7 +247,8 @@ class ResourceStatusDB( object ):
               dateEffective = None, lastCheckTime = None,
               tokenOwner = None, tokenExpiration = None, ID = None ):
 
-    session = self.DBSession()
+    # expire_on_commit is set to False so that we can still use the object after we close the session
+    session = self.DBSession( expire_on_commit = False )
 
     try:
 
@@ -271,6 +276,7 @@ class ResourceStatusDB( object ):
       return S_OK()
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "update: unexpected exception", lException = e )
       return S_ERROR( "update: unexpected exception %s" % e )
     finally:
@@ -279,7 +285,7 @@ class ResourceStatusDB( object ):
   def delete( self, element, tableType, name = None, statusType = None,
               status = None, elementType = None, reason = None,
               dateEffective = None, lastCheckTime = None,
-              tokenOwner = None, tokenExpiration = None ):
+              tokenOwner = None, tokenExpiration = None, meta = None ):
 
     session = self.DBSession()
 
@@ -296,11 +302,11 @@ class ResourceStatusDB( object ):
                           )
 
       session.commit()
-      session.expunge_all()
 
       return S_OK()
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "delete: unexpected exception", lException = e )
       return S_ERROR( "delete: unexpected exception %s" % e )
     finally:

@@ -291,6 +291,7 @@ class ResourceManagementDB( object ):
       return S_OK()
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "insert: unexpected exception", lException = e )
       return S_ERROR( "insert: unexpected exception %s" % e )
     finally:
@@ -307,8 +308,7 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    # expire_on_commit is set to False so that we can still use the object after we close the session
-    session = self.DBSession( expire_on_commit = False )
+    session = self.DBSession()
 
     try:
 
@@ -330,6 +330,7 @@ class ResourceManagementDB( object ):
       return S_OK( arr )
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "select: unexpected exception", lException = e )
       return S_ERROR( "select: unexpected exception %s" % e )
     finally:
@@ -349,8 +350,7 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    # expire_on_commit is set to False so that we can still use the object after we close the session
-    session = self.DBSession( expire_on_commit = False )
+    session = self.DBSession()
 
     try:
 
@@ -398,6 +398,7 @@ class ResourceManagementDB( object ):
       return finalResult
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "select: unexpected exception", lException = e )
       return S_ERROR( "select: unexpected exception %s" % e )
     finally:
@@ -440,6 +441,7 @@ class ResourceManagementDB( object ):
       return S_OK()
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "update: unexpected exception", lException = e )
       return S_ERROR( "update: unexpected exception %s" % e )
     finally:
@@ -459,8 +461,7 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     """
 
-    # expire_on_commit is set to False so that we can still use the object after we close the session
-    session = self.DBSession( expire_on_commit = False )
+    session = self.DBSession()
 
     try:
 
@@ -473,11 +474,10 @@ class ResourceManagementDB( object ):
                           )
 
       session.commit()
-      session.expunge_all()
-
       return S_OK()
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "delete: unexpected exception", lException = e )
       return S_ERROR( "delete: unexpected exception %s" % e )
     finally:

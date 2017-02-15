@@ -285,8 +285,7 @@ class ResourceStatusHandler( RequestHandler ):
       **tokenExpiration** - `datetime`
         time-stamp setting validity of token ownership
       **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+        metadata for the mysql query
 
     :return: S_OK() || S_ERROR()
     '''
