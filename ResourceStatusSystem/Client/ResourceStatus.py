@@ -268,6 +268,8 @@ class ResourceStatus( object ):
       cs_path = "/Resources/StorageElements"
     elif elementType == 'Catalog':
       cs_path = "/Resources/FileCatalogs"
+      #FIXME: This a probably outdated location (new one is in /Operations/[]/Services/Catalogs)
+      # but needs to be VO-aware
       statusType = 'Status'
 
     csAPI = CSAPI()
