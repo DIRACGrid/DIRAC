@@ -54,11 +54,11 @@ def toList(table, **kwargs):
     if name == "Meta":
 
       if 'older' in argument:
-        # match everything that is older than the specified ID
+        # match everything that is older than the specified column name
         filters.append( getattr(table.c, argument['older'][0]) > argument['older'][1] )
         # argument['older'][0] must match a column name, otherwise this is going to fail
       elif 'newer' in argument:
-        # match everything that is newer than the specified ID
+        # match everything that is newer than the specified column name
         filters.append( getattr(table.c, argument['newer'][0]) < argument['newer'][1] )
       else:
         continue
