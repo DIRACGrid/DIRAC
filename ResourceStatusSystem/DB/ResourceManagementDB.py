@@ -11,8 +11,9 @@ from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
 from sqlalchemy.orm                                import sessionmaker
 from sqlalchemy.sql                                import update, delete, select, and_, or_
 from sqlalchemy.inspection                         import inspect
+from sqlalchemy.dialects.mysql.base                import DOUBLE
 from sqlalchemy                                    import create_engine, Table, Column, MetaData, String, \
-                                                          DateTime, exc, Integer, Text, FLOAT
+                                                          DateTime, exc, Integer, Text
 
 # Helper functions
 
@@ -53,11 +54,11 @@ def toList(table, **kwargs):
   for name, argument in kwargs.items():
     if name == "Meta":
 
-      if 'older' in argument:
+      if argument and 'older' in argument:
         # match everything that is older than the specified column name
         filters.append( getattr(table.c, argument['older'][0]) > argument['older'][1] )
         # argument['older'][0] must match a column name, otherwise this is going to fail
-      elif 'newer' in argument:
+      elif argument and 'newer' in argument:
         # match everything that is newer than the specified column name
         filters.append( getattr(table.c, argument['newer'][0]) < argument['newer'][1] )
       else:
@@ -148,7 +149,7 @@ class ResourceManagementDB( object ):
 
     JobCache                 = Table( 'JobCache', self.metadata,
                                Column( 'Status', String( 16 ), nullable = False ),
-                               Column( 'Efficiency', FLOAT, nullable = False, server_default = '0'),
+                               Column( 'Efficiency', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
                                Column( 'MaskStatus', String( 32 ), nullable = False ),
                                Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'LastCheckTime', DateTime, nullable = True ),
@@ -159,8 +160,8 @@ class ResourceManagementDB( object ):
                                Column( 'LastCheckTime', DateTime, nullable = True ),
                                Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'CE', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'PilotsPerJob', FLOAT, nullable = False, server_default = '0'),
-                               Column( 'PilotJobEff', FLOAT, nullable = False, server_default = '0' ),
+                               Column( 'PilotsPerJob', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
+                               Column( 'PilotJobEff', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
                                mysql_engine = 'InnoDB' )
 
     PolicyResult             = Table( 'PolicyResult', self.metadata,
@@ -177,17 +178,17 @@ class ResourceManagementDB( object ):
     SpaceTokenOccupancyCache = Table( 'SpaceTokenOccupancyCache', self.metadata,
                                Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True ),
                                Column( 'LastCheckTime', DateTime, nullable = True ),
-                               Column( 'Guaranteed', FLOAT, nullable = False, server_default = '0' ),
-                               Column( 'Free', FLOAT, nullable = False, server_default = '0' ),
+                               Column( 'Guaranteed', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+                               Column( 'Free', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
                                Column( 'Token', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'Total', FLOAT, nullable = False, server_default = '0'),
+                               Column( 'Total', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
                                mysql_engine = 'InnoDB' )
 
     TransferCache            = Table( 'TransferCache', self.metadata,
                                Column( 'SourceName', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'LastCheckTime', DateTime, nullable = True ),
                                Column( 'Metric', String( 16 ), nullable = False, primary_key = True ),
-                               Column( 'Value', FLOAT, nullable = False, server_default = '0' ),
+                               Column( 'Value', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
                                Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True ),
                                mysql_engine = 'InnoDB' )
 
