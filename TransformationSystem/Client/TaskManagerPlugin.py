@@ -120,8 +120,9 @@ class TaskManagerPlugin( PluginBase ):
       # Add all sites with storage, such that jobs can run wherever data is
       autoAddedSites.remove( 'WithStorage' )
       autoAddedSites |= set( DMSHelpers().getTiers( withStorage = True, tier = ( 0, 1, 2 ) ) )
-    excludedSites |= autoAddedSites
-    gLogger.debug( "Full list of excluded sites for %s task: %s" % ( jobType, ','.join( excludedSites ) ) )
+    # If there are explicitly excluded sites, they should not be autoadded
+    autoAddedSites -= excludedSites
+    gLogger.debug( "Auto-added sites for %s task: %s" % ( jobType, ','.join( autoAddedSites ) ) )
 
     # 3. removing sites in Exclude
     if not excludedSites:
