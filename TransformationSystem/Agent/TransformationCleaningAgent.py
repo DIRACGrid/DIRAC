@@ -45,8 +45,6 @@ class TransformationCleaningAgent( AgentModule ):
     """
     AgentModule.__init__( self, *args, **kwargs )
 
-    # # data manager
-    self.dm = None
     # # transformation client
     self.transClient = None
     # # wms client
@@ -71,6 +69,9 @@ class TransformationCleaningAgent( AgentModule ):
     # # enable/disable execution
     self.enableFlag = None
 
+    self.dataProcTTypes = ['MCSimulation', 'Merge']
+    self.dataManipTTypes = ['Replication', 'Removal']
+
   def initialize( self ):
     """ agent initialisation
 
@@ -81,8 +82,8 @@ class TransformationCleaningAgent( AgentModule ):
     # # shifter proxy
     self.am_setOption( 'shifterProxy', 'DataManager' )
     # # transformations types
-    self.dataProcTTypes = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
-    self.dataManipTTypes = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
+    self.dataProcTTypes = Operations().getValue( 'Transformations/DataProcessing', self.dataProcTTypes )
+    self.dataManipTTypes = Operations().getValue( 'Transformations/DataManipulation', self.dataManipTTypes )
     agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
     if agentTSTypes:
       self.transformationTypes = sorted( agentTSTypes )
@@ -108,8 +109,6 @@ class TransformationCleaningAgent( AgentModule ):
     # # enable/disable execution, should be using CS option Status?? with default value as 'Active'??
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
 
-    # # data manager
-#     self.dm = DataManager()
     # # transformation client
     self.transClient = TransformationClient()
     # # wms client
@@ -143,11 +142,21 @@ class TransformationCleaningAgent( AgentModule ):
         if transDict[ 'Type' ] in self.dataManipTTypes:
           res = self.archiveTransformation( transDict['TransformationID'] )
           if not res['OK']:
+<<<<<<< Updated upstream
             self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'], res['Message'] ) )
         else:
           res = self.cleanTransformation( transDict['TransformationID'] )
           if not res['OK']:
             self.log.error( "Problems cleaning transformation %s: %s" % ( transDict['TransformationID'], res['Message'] ) )
+=======
+            self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'],
+                                                                           res['Message'] ) )
+        else:
+          res = self.cleanTransformation( transDict['TransformationID'] )
+          if not res['OK']:
+            self.log.error( "Problems cleaning transformation %s: %s" % ( transDict['TransformationID'],
+                                                                          res['Message'] ) )
+>>>>>>> Stashed changes
 
 
     # # Obtain the transformations in RemovingFiles status and (wait for it) removes the output files
@@ -157,7 +166,12 @@ class TransformationCleaningAgent( AgentModule ):
       for transDict in res['Value']:
         res = self.removeTransformationOutput( transDict['TransformationID'] )
         if not res['OK']:
+<<<<<<< Updated upstream
           self.log.error( "Problems removing transformation %s: %s" % ( transDict['TransformationID'], res['Message'] ) )
+=======
+          self.log.error( "Problems removing transformation %s: %s" % ( transDict['TransformationID'],
+                                                                        res['Message'] ) )
+>>>>>>> Stashed changes
 
     # # Obtain the transformations in Completed status and archive if inactive for X days
     olderThanTime = datetime.utcnow() - timedelta( days = self.archiveAfter )
@@ -169,7 +183,12 @@ class TransformationCleaningAgent( AgentModule ):
       for transDict in res['Value']:
         res = self.archiveTransformation( transDict['TransformationID'] )
         if not res['OK']:
+<<<<<<< Updated upstream
           self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'], res['Message'] ) )
+=======
+          self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'],
+                                                                         res['Message'] ) )
+>>>>>>> Stashed changes
     else:
       self.log.error( "Could not get the transformations" )
 
@@ -181,7 +200,8 @@ class TransformationCleaningAgent( AgentModule ):
   #
 
   def getTransformationDirectories( self, transID ):
-    """ get the directories for the supplied transformation from the transformation system
+    """ get the directories for the supplied transformation from the transformation system.
+        These directories are used by removeTransformationOutput and cleanTransformation for removing output.
 
     :param self: self reference
     :param int transID: transformation ID
@@ -216,7 +236,7 @@ class TransformationCleaningAgent( AgentModule ):
 
   @classmethod
   def _addDirs( cls, transID, newDirs, existingDirs ):
-    """ append uniqe :newDirs: list to :existingDirs: list
+    """ append unique :newDirs: list to :existingDirs: list
 
     :param self: self reference
     :param int transID: transformationID

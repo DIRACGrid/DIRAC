@@ -11,7 +11,9 @@ Examples:
 
 """
 
-#pylint: disable=invalid-name,wrong-import-position,missing-docstring
+
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
 
 import unittest
 import sys
@@ -19,17 +21,12 @@ import os
 import tempfile
 import shutil
 
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
-
 from DIRAC import gLogger
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOForGroup
 
 #### GLOBAL VARIABLES: ################
-
-gLogger.setLevel( 'DEBUG' )
 
 # Name of the storage element that has to be tested
 
@@ -45,11 +42,11 @@ STORAGE_NAME = sys.argv[1]
 DESTINATION_PATH = ''
 
 try:
-  proxyInfoRes = getProxyInfo()
-  if not proxyInfoRes['OK']:
-    gLogger.error( "Failed to get client proxy information.", proxyInfoRes['Message'] )
+  res = getProxyInfo()
+  if not res['OK']:
+    gLogger.error( "Failed to get client proxy information.", res['Message'] )
     sys.exit( 2 )
-  proxyInfo = proxyInfoRes['Value']
+  proxyInfo = res['Value']
   username = proxyInfo['username']
   vo = ''
   if 'group' in proxyInfo:
@@ -67,11 +64,7 @@ except Exception as e:  # pylint: disable=broad-except
 if len( sys.argv ) == 3:
   AVAILABLE_PLUGINS = sys.argv[2].split( ',' )
 else:
-  AVAILABLE_PLUGINS = StorageElement( STORAGE_NAME ).getPlugins()
-  if not AVAILABLE_PLUGINS['OK']:
-    print AVAILABLE_PLUGINS['Message']
-    exit(1)
-  AVAILABLE_PLUGINS = AVAILABLE_PLUGINS['Value']
+  AVAILABLE_PLUGINS = StorageElement( STORAGE_NAME ).getPlugins()['Value']
 
 
 # local path containing test files. There should be a folder called Workflow containing (the files can be simple textfiles)
@@ -226,10 +219,8 @@ class basicTest( unittest.TestCase ):
     self.assertEqual( res['OK'], True )
     self.assertEqual( res['Value']['Successful'][rmdir[0]], False )
 
-
-
 @unittest.skipIf( 'GFAL2_SRM2' not in AVAILABLE_PLUGINS,
-                  "StorageElement %s does not have plugin GFAL2_SRM defined" % STORAGE_NAME )
+                 "StorageElement %s does not have plugin GFAL2_SRM defined" % STORAGE_NAME )
 class GFAL2_SRM2_Test( basicTest ):
 
   def setUp( self ):
@@ -237,11 +228,10 @@ class GFAL2_SRM2_Test( basicTest ):
     self.tbt = StorageElement( self.storageName, plugins = 'GFAL2_SRM2' )
     basicTest.clearDirectory( self )
 
-
-
 @unittest.skipIf( 'GFAL2_HTTP' not in AVAILABLE_PLUGINS,
-                  "StorageElement %s does not have plugin GFAL2_HTTP defined" % STORAGE_NAME )
+                   "StorageElement %s does not have plugin GFAL2_HTTP defined" % STORAGE_NAME )
 class GFAL2_HTTP_Test( basicTest ):
+
   def setUp( self ):
     basicTest.setUp( self )
     self.tbt = StorageElement( self.storageName, plugins = 'GFAL2_HTTP' )
@@ -272,7 +262,7 @@ class XROOT_Test( basicTest ):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_SRM2_Test )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_HTTP_Test ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_XROOT_Test ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GFAL2_HTTP_Test ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( XROOT_Test ) )
   unittest.TextTestRunner( verbosity = 2 ).run( suite )
