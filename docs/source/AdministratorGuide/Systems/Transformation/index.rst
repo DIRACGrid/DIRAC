@@ -220,8 +220,11 @@ TransformationAgent plugins
 TaskManager plugins
 -------------------
 
-By default the standard plugin (BySE) sets job's destination depending on the location of its input data. Starting from v6r13 a new **ByJobType**
-TaskManager plugin has been introduced, so that different rules for site destinations can be specified for each JobType.
+By default the standard plugin (BySE) sets job's destination depending on the location of its input data. 
+
+Starting from v6r13 a new **ByJobType**
+TaskManager plugin has been introduced, so that different rules for site destinations can be specified for each JobType. This plugin allows so-called "mesh processing",
+i.e. depending on the job type, some sites may become eligible for "helping" other sites to run jobs that normally would only be running at the site where data is located.
 In order to use the ByJobType plugin, one has to:
 
 * Set CS section Operations/Transformations/DestinationPlugin = ByJobType
@@ -254,6 +257,15 @@ In order to use the ByJobType plugin, one has to:
           AutoAddedSites += LCG.RAL.uk
           AutoAddedSites += LCG.SARA.nl
           AutoAddedSites += LCG.RRCKI.ru
+          DataReconstruction
+          {
+            Exclude = ALL
+            Exclude += LCG.CERN.cern
+            Allow
+            {
+              CLOUD.CERN.cern = LCG.CERN.cern
+            }
+          }
           DataReprocessing
           {
             Exclude = ALL
@@ -282,16 +294,21 @@ In order to use the ByJobType plugin, one has to:
 
 
   * By default, all sites are allowed to do every job
-  * "AutoAddedSites" contains the list of sites allowed to run jobs with files in their local SEs
+  * "AutoAddedSites" contains the list of sites allowed to run jobs with files in their local SEs.
+  If it contains 'WithStorage', all sites with an associated local storage will be added automatically.
   * Sections under "JobTypeMapping" correspond to the different JobTypes one may want to define, *e.g.*: DataReprocessing, Merge, etc.
   * For each JobType one has to define:
 
-    * "Exclude": the list of sites that will be removed as destination sites ("ALL" for all sites)
-    * "Allow": the list of 'helpers', specifying sites helping another site
+    * "Exclude": the list of sites that will be removed as destination sites ("ALL" for all sites). 
+    If a site is explicitly excluded, it is removed from the AutoAddedSites. This is an easy way to disallow jobs to run at the site
+    holding their input data.
+    * "Allow": the list of 'helpers', specifying sites helping another site.
+    For each "helper" one specifies a list of sites that it helps, i.e. if the input data is at one of these sites, the job is eligible to the helper site.
 
   * In the example above all sites in "AutoAddedSites" are allowed to run jobs with input files in their local SEs.
-  These sites won't be excluded, even if set in the Exclude list.
+  These sites won't be excluded, unless they are set in the Exclude list.
   For DataReprocessing jobs, jobs having input files at LCG.SARA.nl local SEs can run both at LCG.SARA.nl and at LCG.NIKHEF.nl, etc.
+  For DataReconstruction jobs, jobs will run at the Tier1 where the input data is, except when the data is at CERN, where they will run exclusively at CLOUD.CERN.cern.
 
 ---------
 Use-cases
