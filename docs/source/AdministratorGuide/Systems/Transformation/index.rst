@@ -249,7 +249,7 @@ In order to use the ByJobType plugin, one has to:
 
         JobTypeMapping
         {
-          AutoAddedSites = LCG.CERN.ch
+          AutoAddedSites = LCG.CERN.cern
           AutoAddedSites += LCG.IN2P3.fr
           AutoAddedSites += LCG.CNAF.it
           AutoAddedSites += LCG.PIC.es
@@ -260,10 +260,15 @@ In order to use the ByJobType plugin, one has to:
           DataReconstruction
           {
             Exclude = ALL
-            Exclude += LCG.CERN.cern
+            AutoAddedSites = LCG.IN2P3.fr
+            AutoAddedSites += LCG.CNAF.it
+            AutoAddedSites += LCG.PIC.es
+            AutoAddedSites += LCG.GRIDKA.de
+            AutoAddedSites += LCG.RAL.uk
+            AutoAddedSites += LCG.RRCKI.ru
             Allow
             {
-              CLOUD.CERN.cern = LCG.CERN.cern
+              CLOUD.CERN.cern = LCG.CERN.cern, LCG.SARA.nl
             }
           }
           DataReprocessing
@@ -275,10 +280,10 @@ In order to use the ByJobType plugin, one has to:
               LCG.UKI-LT2-QMUL.uk = LCG.RAL.uk
               LCG.CPPM.fr = LCG.SARA.nl
               LCG.USC.es = LCG.PIC.es
-              LCG.LAL.fr = LCG.CERN.ch
+              LCG.LAL.fr = LCG.CERN.cern
               LCG.LAL.fr += LCG.IN2P3.fr
               LCG.BariRECAS.it = LCG.CNAF.it
-              LCG.CBPF.br = LCG.CERN.ch
+              LCG.CBPF.br = LCG.CERN.cern
               VAC.Manchester.uk = LCG.RAL.uk
             }
           }
@@ -300,15 +305,13 @@ In order to use the ByJobType plugin, one has to:
   * For each JobType one has to define:
 
     * "Exclude": the list of sites that will be removed as destination sites ("ALL" for all sites). 
-    If a site is explicitly excluded, it is removed from the AutoAddedSites. This is an easy way to disallow jobs to run at the site
-    holding their input data.
+    * Optionally one may redefine the "AutoAddedSites" (including setting it empty)
     * "Allow": the list of 'helpers', specifying sites helping another site.
     For each "helper" one specifies a list of sites that it helps, i.e. if the input data is at one of these sites, the job is eligible to the helper site.
 
   * In the example above all sites in "AutoAddedSites" are allowed to run jobs with input files in their local SEs.
-  These sites won't be excluded, unless they are set in the Exclude list.
   For DataReprocessing jobs, jobs having input files at LCG.SARA.nl local SEs can run both at LCG.SARA.nl and at LCG.NIKHEF.nl, etc.
-  For DataReconstruction jobs, jobs will run at the Tier1 where the input data is, except when the data is at CERN, where they will run exclusively at CLOUD.CERN.cern.
+  For DataReconstruction jobs, jobs will run at the Tier1 where the input data is, except when the data is at CERN or SARA, where they will run exclusively at CLOUD.CERN.cern.
 
 ---------
 Use-cases
