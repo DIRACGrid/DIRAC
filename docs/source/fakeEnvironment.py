@@ -89,6 +89,9 @@ sys.modules[ 'XRootD' ]                          = mock.Mock()
 sys.modules[ 'XRootD.client' ] = mock.Mock()
 sys.modules[ 'XRootD.client.flags' ] = mock.Mock()
 
+sys.modules[ 'elasticsearch' ] = mock.Mock()
+sys.modules[ 'elasticsearch.Elasticsearch' ] = mock.Mock()
+
 #PlotCache and PlottingHandler create a thread and prevent sphinx from exiting
 #sys.modules[ 'DIRAC.FrameworkSystem.Service.PlotCache' ] = mock.MagicMock()
 #sys.modules[ 'DIRAC.FrameworkSystem.Service.PlottingHandler' ] = mock.MagicMock()
