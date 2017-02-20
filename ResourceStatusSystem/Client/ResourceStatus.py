@@ -210,7 +210,7 @@ class ResourceStatus( object ):
       for sType in statusType:
         # Look in standard location, 'Active' by default
         res = gConfig.getValue( "%s/%s/%s" % ( cs_path, element, sType ), 'Active' )
-        result[element] = {(elementType, statusType): res}
+        result[element] = {(elementType, sType): res}
 
     if result:
       return S_OK( result )
