@@ -142,21 +142,11 @@ class TransformationCleaningAgent( AgentModule ):
         if transDict[ 'Type' ] in self.dataManipTTypes:
           res = self.archiveTransformation( transDict['TransformationID'] )
           if not res['OK']:
-<<<<<<< Updated upstream
             self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'], res['Message'] ) )
         else:
           res = self.cleanTransformation( transDict['TransformationID'] )
           if not res['OK']:
             self.log.error( "Problems cleaning transformation %s: %s" % ( transDict['TransformationID'], res['Message'] ) )
-=======
-            self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'],
-                                                                           res['Message'] ) )
-        else:
-          res = self.cleanTransformation( transDict['TransformationID'] )
-          if not res['OK']:
-            self.log.error( "Problems cleaning transformation %s: %s" % ( transDict['TransformationID'],
-                                                                          res['Message'] ) )
->>>>>>> Stashed changes
 
 
     # # Obtain the transformations in RemovingFiles status and (wait for it) removes the output files
@@ -166,12 +156,7 @@ class TransformationCleaningAgent( AgentModule ):
       for transDict in res['Value']:
         res = self.removeTransformationOutput( transDict['TransformationID'] )
         if not res['OK']:
-<<<<<<< Updated upstream
           self.log.error( "Problems removing transformation %s: %s" % ( transDict['TransformationID'], res['Message'] ) )
-=======
-          self.log.error( "Problems removing transformation %s: %s" % ( transDict['TransformationID'],
-                                                                        res['Message'] ) )
->>>>>>> Stashed changes
 
     # # Obtain the transformations in Completed status and archive if inactive for X days
     olderThanTime = datetime.utcnow() - timedelta( days = self.archiveAfter )
@@ -183,12 +168,7 @@ class TransformationCleaningAgent( AgentModule ):
       for transDict in res['Value']:
         res = self.archiveTransformation( transDict['TransformationID'] )
         if not res['OK']:
-<<<<<<< Updated upstream
           self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'], res['Message'] ) )
-=======
-          self.log.error( "Problems archiving transformation %s: %s" % ( transDict['TransformationID'],
-                                                                         res['Message'] ) )
->>>>>>> Stashed changes
     else:
       self.log.error( "Could not get the transformations" )
 
