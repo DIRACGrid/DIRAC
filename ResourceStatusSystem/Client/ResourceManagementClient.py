@@ -219,7 +219,7 @@ class ResourceManagementClient( object ):
   def selectDowntimeCache( self, downtimeID = None, element = None, name = None,
                            startDate = None, endDate = None, severity = None,
                            description = None, link = None, dateEffective = None,
-                           lastCheckTime = None, gocdbServiceType = None, meta = None ):
+                           lastCheckTime = None, gOCDBServiceType = None, meta = None ):
     '''
     Gets from DowntimeCache all rows that match the parameters given.
 
@@ -244,7 +244,7 @@ class ResourceManagementClient( object ):
         time when the entry was created in this database
       **lastCheckTime** - [, `datetime`, `list`]
         time-stamp setting last time the result was checked
-      **gocdbServiceType** - `string`
+      **gOCDBServiceType** - `string`
         service type assigned by gocdb
       **meta** - `dict`
         metadata for the mysql query. Currently it is being used only for column selection.
@@ -259,7 +259,7 @@ class ResourceManagementClient( object ):
   def deleteDowntimeCache( self, downtimeID = None, element = None, name = None,
                            startDate = None, endDate = None, severity = None,
                            description = None, link = None, dateEffective = None,
-                           lastCheckTime = None, gocdbServiceType = None ):
+                           lastCheckTime = None, gOCDBServiceType = None ):
     '''
     Deletes from DowntimeCache all rows that match the parameters given.
 
@@ -284,7 +284,7 @@ class ResourceManagementClient( object ):
         time when the entry was created in this database
       **lastCheckTime** - [, `datetime`, `list`]
         time-stamp setting last time the result was checked
-      **gocdbServiceType** - `string`
+      **gOCDBServiceType** - `string`
         service type assigned by gocdb
 
     :return: S_OK() || S_ERROR()
@@ -296,7 +296,7 @@ class ResourceManagementClient( object ):
   def addOrModifyDowntimeCache( self, downtimeID = None, element = None, name = None,
                            startDate = None, endDate = None, severity = None,
                            description = None, link = None, dateEffective = None,
-                           lastCheckTime = None, gocdbServiceType = None ):
+                           lastCheckTime = None, gOCDBServiceType = None ):
     '''
     Adds or updates-if-duplicated to DowntimeCache. Using `downtimeID` to query
     the database, decides whether to insert or update the table.
@@ -322,7 +322,7 @@ class ResourceManagementClient( object ):
         time when the entry was created in this database
       **lastCheckTime** - `datetime`
         time-stamp setting last time the result was checked
-      **gocdbServiceType** - `string`
+      **gOCDBServiceType** - `string`
         service type assigned by gocdb
 
     :return: S_OK() || S_ERROR()

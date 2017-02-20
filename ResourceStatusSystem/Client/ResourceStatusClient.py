@@ -191,7 +191,7 @@ class ResourceStatusClient( object ):
   def deleteStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
                            dateEffective = None, lastCheckTime = None,
-                           tokenOwner = None, tokenExpiration = None ):
+                           tokenOwner = None, tokenExpiration = None, meta = None ):
     '''
     Deletes from <element><tableType> all rows that match the parameters given.
 
@@ -221,6 +221,8 @@ class ResourceStatusClient( object ):
         token assigned to the site & status type
       **tokenExpiration** - `[, datetime, list]`
         time-stamp setting validity of token ownership
+      **meta** - `dict`
+        metadata for the mysql query
 
     :return: S_OK() || S_ERROR()
     '''
@@ -228,7 +230,7 @@ class ResourceStatusClient( object ):
     # pylint: disable=unused-argument
     return self.rssDB.delete(element, tableType, name, statusType, status,
                              elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration)
+                             tokenOwner, tokenExpiration, meta)
 
   def addOrModifyStatusElement( self, element, tableType, name = None,
                                 statusType = None, status = None,
@@ -394,53 +396,6 @@ class ResourceStatusClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     return self.__extermineStatusElement( element, name, keepLogs )
-
-  def _query( self, queryType, parameters ):
-    '''
-    It is a simple helper, this way inheriting classes can use it.
-    '''
-    return self.__query( queryType, parameters )
-
-  ##############################################################################
-  # Private methods - where magic happens ;)
-
-  def __query( self, queryType, parameters ):
-    '''
-      This method is a rather important one. It will format the input for the DB
-      queries, instead of doing it on a decorator. Two dictionaries must be passed
-      to the DB. First one contains 'columnName' : value pairs, being the key
-      lower camel case. The second one must have, at lease, a key named 'table'
-      with the right table name.
-    '''
-    # Functions we can call, just a light safety measure.
-    _gateFunctions = [ 'insert', 'update', 'select', 'delete', 'addOrModify', 'modify', 'addIfNotThere' ]
-    if not queryType in _gateFunctions:
-      return S_ERROR( '"%s" is not a proper gate call' % queryType )
-
-    gateFunction = getattr( self.gate, queryType )
-
-    # If meta is None, we set it to {}
-    meta = ( True and parameters.pop( 'meta' ) ) or {}
-    # Remove self, added by locals()
-    del parameters[ 'self' ]
-
-    # This is an special case with the Element tables.
-    #if tableName.startswith( 'Element' ):
-    element   = parameters.pop( 'element' )
-    if not element in self.validElements:
-      gLogger.debug( '"%s" is not a valid element like %s' % ( element, self.validElements ) )
-      return S_ERROR( '"%s" is not a valid element like %s' % ( element, self.validElements ) )
-
-    tableType = parameters.pop( 'tableType' )
-    #tableName = tableName.replace( 'Element', element )
-    tableName = '%s%s' % ( element, tableType )
-
-    meta[ 'table' ] = tableName
-
-    gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, parameters, meta ) )
-    userRes = gateFunction( parameters, meta )
-
-    return userRes
 
   def __extermineStatusElement( self, element, name, keepLogs ):
     '''

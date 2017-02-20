@@ -10,8 +10,8 @@ from DIRAC                                         import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
 from sqlalchemy.orm                                import sessionmaker
 from sqlalchemy.sql                                import update, delete, select, and_, or_
-from sqlalchemy.dialects.mysql                     import DOUBLE
 from sqlalchemy.inspection                         import inspect
+from sqlalchemy.dialects.mysql.base                import DOUBLE
 from sqlalchemy                                    import create_engine, Table, Column, MetaData, String, \
                                                           DateTime, exc, Integer, Text
 
@@ -53,7 +53,17 @@ def toList(table, **kwargs):
   filters = []
   for name, argument in kwargs.items():
     if name == "Meta":
-      continue
+
+      if argument and 'older' in argument:
+        # match everything that is older than the specified column name
+        filters.append( getattr(table.c, argument['older'][0]) > argument['older'][1] )
+        # argument['older'][0] must match a column name, otherwise this is going to fail
+      elif argument and 'newer' in argument:
+        # match everything that is newer than the specified column name
+        filters.append( getattr(table.c, argument['newer'][0]) < argument['newer'][1] )
+      else:
+        continue
+
     else:
       if argument:
         filters.append( getattr(table.c, name) == argument )
@@ -108,10 +118,10 @@ class ResourceManagementDB( object ):
 
     AccountingCache         = Table( 'AccountingCache', self.metadata,
                               Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
-                              Column( 'LastCheckTime', DateTime, nullable = False ),
+                              Column( 'LastCheckTime', DateTime, nullable = True ),
                               Column( 'PlotName', String( 64 ), nullable = False, primary_key = True ),
                               Column( 'Result', Text, nullable = False ),
-                              Column( 'DateEffective', DateTime, nullable = False ),
+                              Column( 'DateEffective', DateTime, nullable = True ),
                               Column( 'PlotType', String( 16 ), nullable = False, primary_key = True ),
                               mysql_engine = 'InnoDB' )
 
@@ -121,10 +131,10 @@ class ResourceManagementDB( object ):
                                Column( 'Link', String( 255 ), nullable = False ),
                                Column( 'EndDate', DateTime, nullable = False ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
+                               Column( 'DateEffective', DateTime, nullable = True ),
                                Column( 'Description', String( 512 ), nullable = False ),
                                Column( 'Severity', String( 32 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
                                Column( 'Element', String( 32 ), nullable = False ),
                                Column( 'GOCDBServiceType', String( 32 ), nullable = False ),
                                mysql_engine = 'InnoDB' )
@@ -134,24 +144,24 @@ class ResourceManagementDB( object ):
                                Column( 'OpenTickets', Integer, nullable = False, server_default = '0'),
                                Column( 'GocSite', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'Link', String( 1024 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
                                mysql_engine = 'InnoDB' )
 
     JobCache                 = Table( 'JobCache', self.metadata,
                                Column( 'Status', String( 16 ), nullable = False ),
-                               Column( 'Efficiency', DOUBLE, nullable = False, server_default = '0'),
+                               Column( 'Efficiency', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
                                Column( 'MaskStatus', String( 32 ), nullable = False ),
                                Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
                                mysql_engine = 'InnoDB' )
 
     PilotCache               = Table( 'PilotCache', self.metadata,
                                Column( 'Status', String( 16 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
                                Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'CE', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'PilotsPerJob', DOUBLE, nullable = False, server_default = '0'),
-                               Column( 'PilotJobEff', DOUBLE, nullable = False, server_default = '0' ),
+                               Column( 'PilotsPerJob', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
+                               Column( 'PilotJobEff', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
                                mysql_engine = 'InnoDB' )
 
     PolicyResult             = Table( 'PolicyResult', self.metadata,
@@ -159,40 +169,40 @@ class ResourceManagementDB( object ):
                                Column( 'PolicyName', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' ),
                                Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
+                               Column( 'DateEffective', DateTime, nullable = True ),
                                Column( 'StatusType', String( 16 ), nullable = False, server_default = '', primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
                                Column( 'Element', String( 32 ), nullable = False, primary_key = True ),
                                mysql_engine = 'InnoDB' )
 
     SpaceTokenOccupancyCache = Table( 'SpaceTokenOccupancyCache', self.metadata,
                                Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               Column( 'Guaranteed', DOUBLE, nullable = False, server_default = '0' ),
-                               Column( 'Free', DOUBLE, nullable = False, server_default = '0' ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'Guaranteed', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+                               Column( 'Free', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
                                Column( 'Token', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'Total', DOUBLE, nullable = False, server_default = '0'),
+                               Column( 'Total', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
                                mysql_engine = 'InnoDB' )
 
     TransferCache            = Table( 'TransferCache', self.metadata,
                                Column( 'SourceName', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
                                Column( 'Metric', String( 16 ), nullable = False, primary_key = True ),
-                               Column( 'Value', DOUBLE, nullable = False, server_default = '0' ),
+                               Column( 'Value', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
                                Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True ),
                                mysql_engine = 'InnoDB' )
 
     UserRegistryCache        = Table( 'UserRegistryCache', self.metadata,
                                Column( 'Login', String( 14 ), primary_key = True ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
                                Column( 'Email', String( 64 ), nullable = False ),
                                mysql_engine = 'InnoDB' )
 
     ErrorReportBuffer        = Table( 'ErrorReportBuffer', self.metadata,
                                Column( 'ErrorMessage', String( 512 ), nullable = False ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
+                               Column( 'DateEffective', DateTime, nullable = True ),
                                Column( 'Reporter', String( 64 ), nullable = False ),
                                Column( 'Operation', String( 64 ), nullable = False ),
                                Column( 'ElementType', String( 32 ), nullable = False ),
@@ -205,10 +215,10 @@ class ResourceManagementDB( object ):
                                Column( 'PolicyName', String( 64 ), nullable = False ),
                                Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
+                               Column( 'DateEffective', DateTime, nullable = True ),
                                Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
                                Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
                                Column( 'Element', String( 32 ), nullable = False ),
                                mysql_engine = 'InnoDB' )
 
@@ -217,10 +227,10 @@ class ResourceManagementDB( object ):
                                Column( 'PolicyName', String( 64 ), nullable = False ),
                                Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
+                               Column( 'DateEffective', DateTime, nullable = True ),
                                Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
                                Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
                                Column( 'Element', String( 32 ), nullable = False ),
                                mysql_engine = 'InnoDB' )
 
@@ -229,10 +239,10 @@ class ResourceManagementDB( object ):
                                Column( 'PolicyName', String( 64 ), nullable = False ),
                                Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
+                               Column( 'DateEffective', DateTime, nullable = True ),
                                Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
                                Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
+                               Column( 'LastCheckTime', DateTime, nullable = True ),
                                Column( 'Element', String( 32 ), nullable = False ),
                                mysql_engine = 'InnoDB' )
 
@@ -249,10 +259,6 @@ class ResourceManagementDB( object ):
     self.metadataTables = set()
 
     self.DBSession = sessionmaker( bind = self.engine )
-    self.session = self.DBSession()
-
-    # Create tables if they are not already created
-    self.createTables()
 
   def _checkTable( self ):
     """ backward compatibility """
@@ -282,18 +288,25 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     '''
 
+    # expire_on_commit is set to False so that we can still use the object after we close the session
+    session = self.DBSession( expire_on_commit = False )
+
     try:
 
       table = self.metadata.tables.get( table ).insert()
       self.engine.execute( table, **kwargs )
 
-      self.session.commit()
+      session.commit()
+      session.expunge_all()
 
       return S_OK()
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "insert: unexpected exception", lException = e )
       return S_ERROR( "insert: unexpected exception %s" % e )
+    finally:
+      session.close()
 
   def selectPrimaryKeys( self, table, **kwargs ):
     '''
@@ -306,16 +319,15 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    try:
+    session = self.DBSession()
 
-      # refresh metadata
-      self.session.commit()
+    try:
 
       table = self.metadata.tables.get( table )
 
       args = primaryKeystoList(table, **kwargs)
 
-      result = self.session.query( table ).filter(*args)
+      result = session.query( table ).filter(*args)
 
       arr = []
 
@@ -329,8 +341,11 @@ class ResourceManagementDB( object ):
       return S_OK( arr )
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "select: unexpected exception", lException = e )
       return S_ERROR( "select: unexpected exception %s" % e )
+    finally:
+      session.close()
 
   def select( self, table, **kwargs ):
     '''
@@ -346,12 +361,11 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     '''
 
+    session = self.DBSession()
+
     try:
 
       meta = False
-
-      # refresh metadata
-      self.session.commit()
 
       table = self.metadata.tables.get( table )
 
@@ -369,11 +383,11 @@ class ResourceManagementDB( object ):
             columnNames.append( column )
 
       if meta:
-        result = self.session.execute( select( columns )
+        result = session.execute( select( columns )
                                       .where( and_(*args) )
                                      )
       else :
-        result = self.session.query( table ).filter(*args)
+        result = session.query( table ).filter(*args)
 
         for name in table.columns.keys():
           columnNames.append( str(name) )
@@ -395,8 +409,11 @@ class ResourceManagementDB( object ):
       return finalResult
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "select: unexpected exception", lException = e )
       return S_ERROR( "select: unexpected exception %s" % e )
+    finally:
+      session.close()
 
   def update( self, table, **kwargs ):
     '''
@@ -412,6 +429,9 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     '''
 
+    # expire_on_commit is set to False so that we can still use the object after we close the session
+    session = self.DBSession( expire_on_commit = False )
+
     try:
 
       table = self.metadata.tables.get( table )
@@ -421,18 +441,22 @@ class ResourceManagementDB( object ):
       # fields to be updated
       params = toDict( **kwargs )
 
-      self.session.execute( update( table )
+      session.execute( update( table )
                             .where( and_(*args) )
                             .values( **params )
                           )
 
-      self.session.commit()
+      session.commit()
+      session.expunge_all()
 
       return S_OK()
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "update: unexpected exception", lException = e )
       return S_ERROR( "update: unexpected exception %s" % e )
+    finally:
+      session.close()
 
   def delete( self, table, **kwargs ):
     """
@@ -448,23 +472,27 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     """
 
+    session = self.DBSession()
+
     try:
 
       table = self.metadata.tables.get( table )
 
       args = toList(table, **kwargs)
 
-      self.session.execute( delete( table )
+      session.execute( delete( table )
                             .where( or_(*args) )
                           )
 
-      self.session.commit()
-
+      session.commit()
       return S_OK()
 
     except exc.SQLAlchemyError as e:
+      session.rollback()
       self.log.exception( "delete: unexpected exception", lException = e )
       return S_ERROR( "delete: unexpected exception %s" % e )
+    finally:
+      session.close()
 
   ## Extended SQL methods ######################################################
 
@@ -481,6 +509,9 @@ class ResourceManagementDB( object ):
     try:
 
       result = self.selectPrimaryKeys( table, **kwargs )
+
+      if not result['OK']:
+        return result
 
       if not result['Value']:
         self.insert( table, **kwargs )
@@ -507,6 +538,9 @@ class ResourceManagementDB( object ):
     try:
 
       result = self.select( table, **kwargs )
+
+      if not result['OK']:
+        return result
 
       if not result['Value']:
         self.insert( table, **kwargs )

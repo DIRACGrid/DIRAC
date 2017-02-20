@@ -251,9 +251,9 @@ class ResourceStatusHandler( RequestHandler ):
   types_delete = [ basestring, basestring ]
 
   def export_delete( self, element, tableType, name = None, statusType = None,
-                     status = None, elementType = None, reason = None,
-                     dateEffective = None, lastCheckTime = None,
-                     tokenOwner = None, tokenExpiration = None ):
+                    status = None, elementType = None, reason = None,
+                    dateEffective = None, lastCheckTime = None,
+                    tokenOwner = None, tokenExpiration = None, meta = None):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
@@ -285,6 +285,8 @@ class ResourceStatusHandler( RequestHandler ):
         token assigned to the site & status type
       **tokenExpiration** - `datetime`
         time-stamp setting validity of token ownership
+      **meta** - `dict`
+        metadata for the mysql query
 
     :return: S_OK() || S_ERROR()
     '''
@@ -296,7 +298,7 @@ class ResourceStatusHandler( RequestHandler ):
 
     res = db.delete( element, tableType, name, statusType, status,
                      elementType, reason, dateEffective, lastCheckTime,
-                     tokenOwner, tokenExpiration )
+                     tokenOwner, tokenExpiration, meta )
 
     self.__logResult( 'delete', res )
 
