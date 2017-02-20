@@ -232,6 +232,8 @@ class InstallDIRAC( CommandBase ):
     installCmd = "%s %s" % ( self.installScript, " ".join( self.installOpts ) )
     self.log.debug( "Installing with: %s" % installCmd )
 
+    # Tt this point self.pp.installEnv may coincide with os.environ
+    # If extensions want to pass in a modified environment, it's easy to set self.pp.installEnv in an extended command
     retCode, output = self.executeAndGetOutput( installCmd, self.pp.installEnv )
     self.log.info( output, header = False )
 
@@ -242,14 +244,21 @@ class InstallDIRAC( CommandBase ):
 
 
     # Parsing the bashrc then adding its content to the installEnv
-    retCode, output = self.executeAndGetOutput( "bash -c source bashrc && env", self.pp.installEnv )
+    # at this point self.pp.installEnv may still coincide with os.environ
+    retCode, output = self.executeAndGetOutput( 'bash -c "source bashrc && env"', self.pp.installEnv )
     if retCode:
       self.log.error( "Could not parse the bashrc file [ERROR %d]" % retCode )
       self.exitWithError( retCode )
     for line in output:
-      (key, _, value) = line.partition( "=" )
-      self.pp.installEnv[key] = value
-
+      try:
+        var = line.split( '=' )[0].strip()
+        value = line.split( '=' )[1].strip()
+        if var == '_' or 'SSH' in var or '{' in value or '}' in value: # Avoiding useless/confusing stuff
+          continue
+        self.pp.installEnv[var] = value
+      except IndexError:
+        continue
+    # At this point self.pp.installEnv should contain all content of bashrc, sourced "on top" of (maybe) os.environ
 
     self.pp.diracInstalled = True
 
