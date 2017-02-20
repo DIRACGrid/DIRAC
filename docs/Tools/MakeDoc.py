@@ -20,6 +20,18 @@ ORIGDIR = os.getcwd()
 
 BASEPATH = os.path.join( DIRACPATH, BASEPATH )
 
+## files that call parseCommandLine or similar issues
+BAD_FILES = ( "lfc_dfc_copy",
+              "lfc_dfc_db_copy",
+              "JobWrapperTemplate",
+              "PlotCache", ## PlotCache creates a thread on import, which keeps sphinx from exiting
+              "PlottingHandler",
+              "__init__.py",
+           )
+
+FORCE_ADD_PRIVATE = [ "FCConditionParser" ]
+
+
 def mkRest( filename, modulename, fullmodulename, subpackages=None, modules=None ):
   """make a rst file for filename"""
   if modulename == "scripts":
@@ -51,9 +63,10 @@ def mkRest( filename, modulename, fullmodulename, subpackages=None, modules=None
     for package in sorted(subpackages):
       lines.append("   %s/%s_Module.rst" % (package,package.split("/")[-1] ) )
       #lines.append("   %s " % (package, ) )
+    lines.append("")
 
   ##remove CLI because we drop them earlier
-  modules = [ m for m in modules if not m.endswith("CLI") ]
+  modules = [ m for m in modules if not m.endswith("CLI") and m not in BAD_FILES and "-" not in m ]
   if modules:
     lines.append( "Modules" )
     lines.append( "......." )
@@ -64,6 +77,7 @@ def mkRest( filename, modulename, fullmodulename, subpackages=None, modules=None
     for module in sorted(modules):
       lines.append("   %s.rst" % (module.split("/")[-1],) )
       #lines.append("   %s " % (package, ) )
+    lines.append("")
 
   with open(filename, 'w') as rst:
     rst.write("\n".join(lines))
@@ -90,6 +104,9 @@ def mkModuleRest( classname, fullclassname, buildtype="full"):
     lines.append("   :inherited-members:" )
     lines.append("   :undoc-members:" )
     lines.append("   :show-inheritance:" )
+    if classname in FORCE_ADD_PRIVATE:
+      lines.append( "   :special-members:" )
+      lines.append( "   :private-members:" )
     if classname.startswith("_"):
       lines.append( "   :private-members:" )
 
@@ -101,7 +118,7 @@ def getsubpackages( abspath, direc):
   """return list of subpackages with full path"""
   packages = []
   for dire in direc:
-    if "/test" in dire.lower():
+    if dire.lower() == "test" or dire.lower() == "tests" or "/test" in dire.lower():
       print "MakeDoc: skipping this directory", dire
       continue
     if os.path.exists( os.path.join( DIRACPATH,abspath,dire, "__init__.py" ) ):
@@ -159,14 +176,11 @@ def createDoc(buildtype = "full"):
 
     for filename in files:
       ## Skip things that call parseCommandLine or similar issues
-      if any( f in filename for f in ("lfc_dfc_copy", "lfc_dfc_db_copy", "JobWrapperTemplate",
-                                      "PlotCache", ## PlotCache creates a thread on import, which keeps sphinx from exiting
-                                      "PlottingHandler",
-                                      "__init__.py",
-                                     ) ) or \
-        not filename.endswith(".py") or \
-        filename.endswith("CLI.py") or \
-        filename.lower().startswith("test"):
+      if any( f in filename for f in BAD_FILES ) or \
+              not filename.endswith(".py") or \
+              filename.endswith("CLI.py") or \
+              filename.lower().startswith("test") or \
+              "-" in filename: ## not valid python identifier, e.g. dirac-pilot
         continue
       fullclassname = ".".join(abspath.split("/")+[filename])
       if not fullclassname.startswith( "DIRAC." ):
