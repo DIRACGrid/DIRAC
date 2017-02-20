@@ -3,7 +3,6 @@
 
 import sqlite3
 import os
-import types
 import hashlib
 import time
 
@@ -35,7 +34,7 @@ class MonitoringCatalog( object ):
     """
     Execute a sql statement
     """
-    cursor = self.dbConn.cursor()
+    cursor = self.dbConn.cursor() #pylint: disable=no-member
     self.log.debug( "Executing %s" % query )
     executed = False
     while not executed:
@@ -94,7 +93,7 @@ class MonitoringCatalog( object ):
     valuesList = []
     keysList = []
     for key in dataDict:
-      if type( dataDict[ key ] ) == types.ListType:
+      if isinstance( dataDict[ key ], list ):
         orList = []
         for keyValue in dataDict[ key ]:
           valuesList.append( keyValue )
@@ -115,7 +114,7 @@ class MonitoringCatalog( object ):
     valuesList = []
     keysList = []
     for key in dataDict:
-      if type( dataDict[ key ] ) == types.ListType:
+      if isinstance( dataDict[ key ], list ):
         orList = []
         for keyValue in dataDict[ key ]:
           valuesList.append( keyValue )
@@ -135,12 +134,11 @@ class MonitoringCatalog( object ):
         whereCond += " AND %s" % extraCond
       else:
         whereCond = "WHERE %s" % extraCond
-    query = "SELECT %s FROM %s %s %s;" % ( 
-                                           ",".join( fields ),
+    query = "SELECT %s FROM %s %s %s;" % ( ",".join( fields ),
                                            table,
                                            whereCond,
                                            queryEnd
-                                           )
+                                         )
     c = self.__dbExecute( query, values = valuesList )
     return c.fetchall()
 
@@ -175,7 +173,7 @@ class MonitoringCatalog( object ):
       updateFields.append( "%s = ?" % key )
       valuesList.append( newValues[ key ] )
     for key in dataDict:
-      if type( dataDict[ key ] ) == types.ListType:
+      if isinstance( dataDict[ key ] , list ):
         orList = []
         for keyValue in dataDict[ key ]:
           valuesList.append( keyValue )
@@ -196,7 +194,7 @@ class MonitoringCatalog( object ):
     query = "UPDATE %s SET %s %s;" % ( table,
                                        ",".join( updateFields ),
                                        whereCond
-                                           )
+                                     )
     c = self.__dbExecute( query, values = valuesList )
     return c.rowcount
 
@@ -229,11 +227,10 @@ class MonitoringCatalog( object ):
       filePath = m.hexdigest()
       filePath = "%s/%s.rrd" % ( filePath[:2], filePath )
       self.log.info( "Registering activity", str( acDict ) )
-      if self.__insert( "activities", {
-                               'id' : 'NULL',
-                               'filename' : "'%s'" % filePath,
-                               },
-                               acDict ) == 0:
+      if self.__insert( "activities", { 'id' : 'NULL',
+                                        'filename' : "'%s'" % filePath,
+                                      },
+                        acDict ) == 0:
         return -1
       return self.__select( "filename", "activities", acDict )[0][0]
 
@@ -363,7 +360,7 @@ class MonitoringCatalog( object ):
   def getActivities( self, dbCond ):
     return self.__select( "id, name, category, unit, type, description, bucketLength",
                           "activities",
-                        dbCond )
+                          dbCond )
 
   def deleteActivity( self, sourceId, activityId ):
     """

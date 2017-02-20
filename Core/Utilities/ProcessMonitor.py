@@ -3,17 +3,19 @@
 # Author : Stuart Paterson
 ########################################################################
 
-""" The Process Monitor utility allows to calculate cumulative CPU time and memory 
-    for a given PID and it's process group.  This is only implemented for linux /proc 
+""" The Process Monitor utility allows to calculate cumulative CPU time and memory
+    for a given PID and it's process group.  This is only implemented for linux /proc
     file systems but could feasibly be extended in the future.
 """
+
+import os
+import re
+import platform
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
 __RCSID__ = "$Id$"
-
-import os, re, platform
 
 class ProcessMonitor( object ):
 
@@ -34,7 +36,7 @@ class ProcessMonitor( object ):
     else:
       self.log.warn( 'Platform %s is not supported' % ( currentOS ) )
       return S_ERROR( 'Unsupported platform' )
-    
+
   def getMemoryConsumed( self, pid ):
     """Returns the CPU consumed for supported platforms when supplied a PID.
     """
@@ -43,7 +45,7 @@ class ProcessMonitor( object ):
       return self.getMemoryConsumedLinux( pid )
     else:
       self.log.warn( 'Platform %s is not supported' % ( currentOS ) )
-      return S_ERROR( 'Unsupported platform' )  
+      return S_ERROR( 'Unsupported platform' )
 
   def getResourceConsumedLinux( self, pid ):
     """Returns the CPU consumed given a PID assuming a proc file system exists.
@@ -84,7 +86,7 @@ class ProcessMonitor( object ):
 
     self.log.verbose( 'Current memory estimate is Vsize: %s, RSS: %s' % ( vsize, rss ) )
     return S_OK( {'Vsize': vsize, 'RSS': rss } )
- 
+
 
   #############################################################################
   def __getProcListLinux( self ):
@@ -132,7 +134,7 @@ class ProcessMonitor( object ):
         if result['OK']:
           childCPU += result['Value']['CPU']
           vsize += result['Value']['Vsize']
-          rss += result['Value']['RSS'] 
+          rss += result['Value']['RSS']
 
 
     #Next add any contributions from orphan processes in same process group
@@ -416,6 +418,6 @@ class ProcessMonitor( object ):
     else:
       localOS = 'Linux'
       self.log.debug( 'Will determine CPU consumed for %s flavour OS' % ( localOS ) )
-    return localOS    
+    return localOS
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

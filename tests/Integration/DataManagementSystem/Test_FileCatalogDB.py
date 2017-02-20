@@ -1,11 +1,13 @@
-#FIXME: to be bring back to life
 
-from DIRAC.Core.Base import Script
-Script.parseCommandLine()
+#pylint: disable=invalid-name,wrong-import-position,missing-docstring
 
 import unittest
 import itertools
 import os
+
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 
 from DIRAC.Core.Security.Properties import FC_MANAGEMENT
@@ -53,30 +55,30 @@ proxyGroup = 'visitor'
 
 
 
-DATABASE_CONFIG = {  'UserGroupManager'  : 'UserAndGroupManagerDB',  # UserAndGroupManagerDB, UserAndGroupManagerCS
-                       'SEManager'         : 'SEManagerDB',  # SEManagerDB, SEManagerCS
-                       'SecurityManager'   : 'NoSecurityManager',  # NoSecurityManager, DirectorySecurityManager, FullSecurityManager
-                       'DirectoryManager'  : 'DirectoryLevelTree',  # DirectorySimpleTree, DirectoryFlatTree, DirectoryNodeTree, DirectoryLevelTree
-                       'FileManager'       : 'FileManager',  # FileManagerFlat, FileManager
-                       'DirectoryMetadata' : 'DirectoryMetadata',
-                       'FileMetadata'      : 'FileMetadata',
-                       'DatasetManager'    : 'DatasetManager',
-                       'UniqueGUID'          : True,
-                       'GlobalReadAccess'    : True,
-                       'LFNPFNConvention'    : 'Strong',
-                       'ResolvePFN'          : True,
-                       'DefaultUmask'        : 0775,
-                       'ValidFileStatus'     : ['AprioriGood', 'Trash', 'Removing', 'Probing'],
-                       'ValidReplicaStatus'  : ['AprioriGood', 'Trash', 'Removing', 'Probing'],
-                       'VisibleFileStatus'   : ['AprioriGood'],
-                       'VisibleReplicaStatus': ['AprioriGood'] }
+DATABASE_CONFIG = { 'UserGroupManager'  : 'UserAndGroupManagerDB',  # UserAndGroupManagerDB, UserAndGroupManagerCS
+                    'SEManager'         : 'SEManagerDB',  # SEManagerDB, SEManagerCS
+                    'SecurityManager'   : 'NoSecurityManager',  # NoSecurityManager, DirectorySecurityManager, FullSecurityManager
+                    'DirectoryManager'  : 'DirectoryLevelTree',  # DirectorySimpleTree, DirectoryFlatTree, DirectoryNodeTree, DirectoryLevelTree
+                    'FileManager'       : 'FileManager',  # FileManagerFlat, FileManager
+                    'DirectoryMetadata' : 'DirectoryMetadata',
+                    'FileMetadata'      : 'FileMetadata',
+                    'DatasetManager'    : 'DatasetManager',
+                    'UniqueGUID'          : True,
+                    'GlobalReadAccess'    : True,
+                    'LFNPFNConvention'    : 'Strong',
+                    'ResolvePFN'          : True,
+                    'DefaultUmask'        : 0775,
+                    'ValidFileStatus'     : ['AprioriGood', 'Trash', 'Removing', 'Probing'],
+                    'ValidReplicaStatus'  : ['AprioriGood', 'Trash', 'Removing', 'Probing'],
+                    'VisibleFileStatus'   : ['AprioriGood'],
+                    'VisibleReplicaStatus': ['AprioriGood'] }
 
 ALL_MANAGERS = { "UserGroupManager"  : ["UserAndGroupManagerDB", "UserAndGroupManagerCS"],
-                    "SEManager" : ["SEManagerDB", "SEManagerCS"],
-                    "SecurityManager" : ["NoSecurityManager", "DirectorySecurityManager", "FullSecurityManager"],
-                    "DirectoryManager" : ["DirectorySimpleTree", "DirectoryFlatTree", "DirectoryNodeTree", "DirectoryLevelTree"],
-                    "FileManager" : ["FileManagerFlat", "FileManager"],
-                    }
+                 "SEManager" : ["SEManagerDB", "SEManagerCS"],
+                 "SecurityManager" : ["NoSecurityManager", "DirectorySecurityManager", "FullSecurityManager"],
+                 "DirectoryManager" : ["DirectorySimpleTree", "DirectoryFlatTree", "DirectoryNodeTree", "DirectoryLevelTree"],
+                 "FileManager" : ["FileManagerFlat", "FileManager"],
+               }
 
 ALL_MANAGERS_NO_CS = { "UserGroupManager"  : ["UserAndGroupManagerDB"],
                     "SEManager" : ["SEManagerDB"],
@@ -90,13 +92,13 @@ DEFAULT_MANAGER = { "UserGroupManager"  : ["UserAndGroupManagerDB"],
                     "SecurityManager" : ["DirectorySecurityManagerWithDelete"],
                     "DirectoryManager" : ["DirectoryClosure"],
                     "FileManager" : ["FileManagerPs"],
-                    }
+                  }
 
 DEFAULT_MANAGER_2 = { "UserGroupManager"  : ["UserAndGroupManagerDB"],
-                    "SEManager" : ["SEManagerDB"],
-                    "SecurityManager" : ["NoSecurityManager"],
-                    "DirectoryManager" : ["DirectoryLevelTree"],
-                    "FileManager" : ["FileManager"],
+                      "SEManager" : ["SEManagerDB"],
+                      "SecurityManager" : ["NoSecurityManager"],
+                      "DirectoryManager" : ["DirectoryLevelTree"],
+                      "FileManager" : ["FileManager"],
                     }
 
 MANAGER_TO_TEST = DEFAULT_MANAGER
