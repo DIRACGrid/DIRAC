@@ -932,22 +932,21 @@ class FileManagerPs( FileManagerBase ):
     """ Get the file LFNs for a given list of file IDs
         We need to override this method because the base class hard codes the column names
     """
-    # Format the filenames and status to be used in a IN clause in the sotred procedure
-    formatedFileIds = intListToString( fileIDs )
-    result = self.db.executeStoredProcedureWithCursor( 'ps_get_full_lfn_for_file_ids', ( formatedFileIds, ) )
-    if not result['OK']:
-      return result
-
-    # The result contains FileID, LFN
 
     successful = {}
-    for row in result['Value']:
-      successful[row[0]] = row[1]
+    for chunks in breakListIntoChunks(fileIDs, 1000):
+      # Format the filenames and status to be used in a IN clause in the sotred procedure
+      formatedFileIds = intListToString( chunks )
+      result = self.db.executeStoredProcedureWithCursor( 'ps_get_full_lfn_for_file_ids', ( formatedFileIds, ) )
+      if not result['OK']:
+        return result
+
+      # The result contains FileID, LFN
+      for row in result['Value']:
+        successful[row[0]] = row[1]
 
 
     missingIds = set( fileIDs ) - set( successful )
     failed = dict.fromkeys( missingIds, "File ID not found" )
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
-
-

@@ -1,4 +1,4 @@
-[v6r18-pre3]
+[v6r18-pre5]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -7,15 +7,44 @@ FIX: In multiple places - use systemCall() rather than shellCall() to avoid
 NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
      present jitter, one-way delay, packet-loss rate and some derived functions.
 
+*DMS
+CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
+        client
+
 *RSS
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
      RSS system 
 NEW: SiteStatus client to interrogate site status with respect to RSS
 BUGFIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
 FIX: ResourceStatus, RSSCacheNoThread - fixed RSS cache generation 
+FIX: ResourceStatus - fixes for getting status from the CS information
 
 *WMS
 NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS    
+
+[v6r17p10]
+
+*Core
+NEW: Logger - printing methods return True/False if the message was printed or not
+FIX: ElastocSearchDB - error messages demoted to warnings
+
+*Monitoring
+FIX: MonitoringReporter - create producers if the CS definitions are properly in place
+
+*TS
+CHANGE: TaskManagerPlugin - allow to redefine the AutoAddedSites for each job type
+
+[v6r17p9]
+
+*WMS
+BUGFIX: JobScheduling - bug fixed introduced in the previous patch 
+NEW: pilotTools - introduced -o swicth for a generic CS option
+
+*SMS
+FIX: StorageManagerClient - fixes in the unit test
+
+*DMS
+FIX: FileManagerPs - in _getFileLFNs() - break a long list of LFNs into smaller chunks
 
 [v6r17p8]
 
@@ -26,7 +55,7 @@ FIX: dirac-install, dirac-deploy-scripts - fixes to allow DIRAC client installat
      recent MacOS versions with System Integrity Protection feature
 CHANGE: Proxy - added executionLock optional argument to executeWithUserProxy() decorator
         to lock while executing the function with user proxy 
-FIX: Proxy - fix indentation in getProxy() preventing looping on the DNs            
+FIX: Proxy - fix indentation in getProxy() preventing looping on the DNs  
 
 *Framework
 FIX: ProxyDB - fix of error message check in completeDelegation()
@@ -41,7 +70,8 @@ FIX: JobScheduling executor - calls getFilesToStage() with a flag to lock while 
 FIX: FileReport - fix in setFileStatus() for setting status for multiple LFNs at once
 
 *SMS
-FIX: 
+FIX: StorageManagerClient - in getFilesToStage() avoid using proxy if no files to check
+     on a storage element
 
 *Resources
 FIX: GFAL2_XROOTStorage - fix to allow interactive use of xroot plugin

@@ -17,7 +17,7 @@ import json
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
-
+from DIRAC.Resources.MessageQueue.Utilities import getMQParamsFromCS
 from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
 
 __RCSID__ = "$Id$"
@@ -44,13 +44,16 @@ class MonitoringReporter( object ):
     self.__documents = []
     self.__mq = False
     self.__monitoringType = None
-
-    result = createProducer( monitoringType )
-    if not result['OK']:
-      gLogger.warn( "Fail to create Producer:", result['Message'])
-    else:
-      self.__mqProducer = result['Value']
-      self.__mq = True
+    
+    #check the existence of a MQ
+    retVal = getMQParamsFromCS ( monitoringType )
+    if retVal['OK']:
+      result = createProducer( monitoringType )
+      if not result['OK']:
+        gLogger.warn( "Fail to create Producer:", result['Message'] )
+      else:
+        self.__mqProducer = result['Value']
+        self.__mq = True
 
     self.__monitoringType = monitoringType
 

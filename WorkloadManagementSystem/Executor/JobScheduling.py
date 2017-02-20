@@ -24,6 +24,7 @@ from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import Stora
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.ResourceStatusSystem.Client.SiteStatus                   import SiteStatus
+from DIRAC.WorkloadManagementSystem.DB.JobDB                        import JobDB
 
 
 __RCSID__ = "$Id: $"
@@ -41,6 +42,7 @@ class JobScheduling( OptimizerExecutor ):
     """ Initialization of the optimizer.
     """
     cls.siteClient = SiteStatus()
+    cls.__jobDB = JobDB()
     return S_OK()
 
   def optimizeJob( self, jid, jobState ):
@@ -121,17 +123,7 @@ class JobScheduling( OptimizerExecutor ):
     if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
       self.jobLog.info( "Production job: sending to TQ, but first checking if staging is requested" )
 
-      userName = jobState.getAttribute( 'Owner' )
-      if not userName[ 'OK' ]:
-        return userName
-      userName = userName['Value']
-
-      userGroup = jobState.getAttribute( 'OwnerGroup' )
-      if not userGroup[ 'OK' ]:
-        return userGroup
-      userGroup = userGroup['Value']
-    # Lock in order to use the proxy which is not thread safe
-      res = getFilesToStage( inputData, proxyUserName = userName, proxyUserGroup = userGroup, executionLock = True )  # pylint: disable=unexpected-keyword-arg
+      res = getFilesToStage( inputData, jobState = jobState )
 
       if not res['OK']:
         return self.__holdJob( jobState, res['Message'] )

@@ -5,6 +5,8 @@
     this is pytest!
 """
 
+#pylint: disable=invalid-name,wrong-import-position,missing-docstring
+
 import datetime
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -25,16 +27,16 @@ def test_addAndRemove():
 
   #add an element
   res = rsClient.insertStatusElement('Resource', 'Log', 'TestName1234', 'statusType',
-                                   'Active', 'elementType', 'reason', Datetime,
-                                   Datetime, 'tokenOwner', Datetime)
+                                     'Active', 'elementType', 'reason', Datetime,
+                                     Datetime, 'tokenOwner', Datetime)
   #check if the insert query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
 
 
   #select the previously entered element
   res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234')
   #check if the select query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
   #check if the name that we got is equal to the previously added 'TestName1234'
   assert res['Value'][0][2] == 'TestName1234'
 
@@ -45,13 +47,13 @@ def test_addAndRemove():
   #modify the previously entered element
   res = rsClient.addOrModifyStatusElement('Resource', 'Log', 'TestName1234_Modified')
   #check if the addOrModify query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
 
 
   #select the previously modified element
   res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified')
   #check if the select query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
   #check if the name that we got is equal to the previously added 'TestName1234_Modified'
   assert res['Value'][0][2] == 'TestName1234_Modified'
 
@@ -62,13 +64,13 @@ def test_addAndRemove():
   #modify the previously entered element
   res = rsClient.modifyStatusElement('Resource', 'Log', 'TestName1234_Modified2')
   #check if the modify query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
 
 
   #select the previously modified element
   res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified2')
   #check if the select query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
   #check if the name that we got is equal to the previously added 'TestName1234_Modified2'
   assert res['Value'][0][2] == 'TestName1234_Modified2'
 
@@ -81,13 +83,13 @@ def test_addAndRemove():
                                      'statusType', 'Active', 'elementType', 'reason',
                                      Datetime, Datetime, 'tokenOwner', Datetime)
   #check if the updateStatusElement query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
 
 
   #select the previously modified element
   res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified3')
   #check if the select query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
   #check if the name that we got is equal to the previously added 'TestName1234_Modified3'
   assert res['Value'][0][2] == 'TestName1234_Modified3'
 
@@ -98,13 +100,13 @@ def test_addAndRemove():
   #delete the element
   res = rsClient.deleteStatusElement('Resource', 'Log', 'TestName1234_Modified3')
   #check if the delete query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
 
 
   #try to select the previously deleted element
   res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified3')
   #check if the select query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
   #check if the returned value is empty
   assert not res['Value']
 
@@ -115,20 +117,20 @@ def test_addAndRemove():
   #delete the element
   res = rsClient.addIfNotThereStatusElement('Resource', 'Log', 'TestName1234_Test')
   #check if the addIfNotThereStatus query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
 
 
   #try to select the previously deleted element
   res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Test')
   #check if the select query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
   #check if the name that we got is equal to the previously added 'TestName1234_Test'
   assert res['Value'][0][2] == 'TestName1234_Test'
 
   #delete it
   res = rsClient.deleteStatusElement('Resource', 'Log', 'TestName1234_Test')
   #check if the delete query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
 
 
   # ...............................................................................
@@ -137,14 +139,14 @@ def test_addAndRemove():
   #try to select the previously modified element
   res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified2')
   #check if the select query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
   #check if the returned value is empty
   assert not res['Value']
 
   #try to select the previously modified element
   res = rsClient.selectStatusElement('Resource', 'Log', 'TestName1234_Modified')
   #check if the select query was executed properly
-  assert res['OK'] == True
+  assert res['OK'] is True
   #check if the returned value is empty
   assert not res['Value']
 

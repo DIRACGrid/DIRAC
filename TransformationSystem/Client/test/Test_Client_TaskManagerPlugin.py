@@ -1,28 +1,37 @@
 """ unit tests for Transformation Clients
 """
 
-#pylint: disable=missing-docstring,blacklisted-name,invalid-name
+# pylint: disable=missing-docstring,blacklisted-name,invalid-name
 
 import unittest
 import importlib
 from mock import MagicMock
 
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.TransformationSystem.Client.TaskManagerPlugin      import TaskManagerPlugin
 
 class opsHelperFakeUser( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
       return ['CERN', 'IN2P3']
-    return ['PAK', 'Ferrara', 'Bologna', 'Paris']
+    # This is for 'JobTypeMapping/<jobType>/AutoAddedSites
+    elif foo.endswith( 'AutoAddedSites' ):
+      return bar
+    # and this is for 'JobTypeMapping/<jobType>/Exclude
+    return ['PAK', 'Ferrara', 'Bologna', 'Paris', 'Hospital']
   def getOptionsDict( self, foo = '' ):
+    # The only call to this method is for /JobTypeMapping/<type>/Allow
     return {'OK': True, 'Value': {'Paris': 'IN2P3'}}
 
 class opsHelperFakeUser2( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
       return ''
-    return ['PAK', 'Ferrara', 'Bologna', 'Paris', 'CERN', 'IN2P3']
+    # This is for 'JobTypeMapping/<jobType>/AutoAddedSites
+    elif foo.endswith( 'AutoAddedSites' ):
+      return bar
+    # and this is for 'JobTypeMapping/<jobType>/Exclude
+    return ['PAK', 'Ferrara', 'Bologna', 'Paris', 'CERN', 'IN2P3', 'Hospital']
   def getOptionsDict( self, foo = '' ):
     return {'OK': True, 'Value': {'Paris': 'IN2P3', 'CERN': 'CERN', 'IN2P3':'IN2P3'}}
 
@@ -30,14 +39,34 @@ class opsHelperFakeDataReco( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
       return ['CERN', 'IN2P3']
-    return ['PAK', 'Ferrara', 'CERN', 'IN2P3']
-  def getOptionsDict(self, foo = ''):
+    # This is for 'JobTypeMapping/<jobType>/AutoAddedSites
+    elif foo.endswith( 'AutoAddedSites' ):
+      return bar
+    # and this is for 'JobTypeMapping/<jobType>/Exclude
+    return ['PAK', 'Ferrara', 'CERN', 'IN2P3', 'Hospital']
+  def getOptionsDict( self, foo = '' ):
     return {'OK': True, 'Value': {'Ferrara': 'CERN', 'IN2P3': 'IN2P3, CERN'}}
+
+class opsHelperFakeHospital( object ):
+  def getValue( self, foo = '', bar = '' ):
+    if foo == 'JobTypeMapping/AutoAddedSites':
+      return ['CERN', 'IN2P3']
+    # This is for 'JobTypeMapping/<jobType>/AutoAddedSites
+    elif foo.endswith( 'AutoAddedSites' ):
+      return []
+    # and this is for 'JobTypeMapping/<jobType>/Exclude
+    return ['ALL']
+  def getOptionsDict( self, foo = '' ):
+    return {'OK': True, 'Value': {'Hospital': 'CERN, IN2P3'}}
 
 class opsHelperFakeMerge( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
-      return ['CERN', 'IN2P3']
+      return ['CERN', 'IN2P3', 'Hospital']
+    # This is for 'JobTypeMapping/<jobType>/AutoAddedSites
+    elif foo.endswith( 'AutoAddedSites' ):
+      return bar
+    # and this is for 'JobTypeMapping/<jobType>/Exclude
     return ['ALL']
   def getOptionsDict( self, foo = '' ):
     return {'OK': False, 'Message': 'JobTypeMapping/MCSimulation/Allow in Operations does not exist'}
@@ -46,6 +75,10 @@ class opsHelperFakeMerge2( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
       return ''
+    # This is for 'JobTypeMapping/<jobType>/AutoAddedSites
+    elif foo.endswith( 'AutoAddedSites' ):
+      return bar
+    # and this is for 'JobTypeMapping/<jobType>/Exclude
     return ['ALL']
   def getOptionsDict( self, foo = '' ):
     return {'OK': True, 'Value': {'CERN': 'CERN', 'IN2P3': 'IN2P3'}}
@@ -54,13 +87,17 @@ class opsHelperFakeMC( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
       return ['CERN', 'IN2P3']
+    # This is for 'JobTypeMapping/<jobType>/AutoAddedSites
+    elif foo.endswith( 'AutoAddedSites' ):
+      return bar
+    # and this is for 'JobTypeMapping/<jobType>/Exclude
     return ['']
   def getOptionsDict( self, foo = '' ):
     return {'OK': False, 'Message': 'JobTypeMapping/MCSimulation/Allow in Operations does not exist'}
 
 
 def getSitesFake():
-  return S_OK( ['Ferrara', 'Bologna', 'Paris', 'CSCS', 'PAK', 'CERN', 'IN2P3'] )
+  return S_OK( ['Ferrara', 'Bologna', 'Paris', 'CSCS', 'PAK', 'CERN', 'IN2P3', 'Hospital'] )
 
 def getSitesForSE( ses ):
   if ses == ['CERN-DST'] or ses == 'CERN-DST':
@@ -79,7 +116,6 @@ class ClientsTestCase( unittest.TestCase ):
   """
   def setUp( self ):
 
-    from DIRAC import gLogger
     gLogger.setLevel( 'DEBUG' )
 
     self.mockTransClient = MagicMock()
@@ -108,7 +144,7 @@ class ClientsTestCase( unittest.TestCase ):
 
 #############################################################################
 
-class TaskManagerPluginSuccess(ClientsTestCase):
+class TaskManagerPluginSuccess( ClientsTestCase ):
 
   def test__BySE( self ):
 
@@ -160,15 +196,15 @@ class TaskManagerPluginSuccess(ClientsTestCase):
 
     p_o.params = {'Site':'', 'TargetSE':'CERN-DST', 'JobType':'User'}
     res = p_o.run()
-    self.assertEqual( res, set( ['CERN', 'CSCS'] ) )
+    self.assertEqual( res, set( ['CERN', 'CSCS', 'IN2P3'] ) )
 
     p_o.params = {'Site':'', 'TargetSE':'IN2P3-DST', 'JobType':'User'}
     res = p_o.run()
-    self.assertEqual( res, set( ['IN2P3', 'Paris', 'CSCS'] ) )
+    self.assertEqual( res, set( ['IN2P3', 'Paris', 'CSCS', 'CERN'] ) )
 
     p_o.params = {'Site':'', 'TargetSE':['CERN-DST', 'CSCS-DST'], 'JobType':'User'}
     res = p_o.run()
-    self.assertEqual( res, set( ['CERN', 'CSCS'] ) )
+    self.assertEqual( res, set( ['CERN', 'CSCS', 'IN2P3'] ) )
 
     # "User" case - 2
     p_o = TaskManagerPlugin( 'ByJobType', operationsHelper = opsHelperFakeUser2() )
@@ -190,11 +226,22 @@ class TaskManagerPluginSuccess(ClientsTestCase):
 
     p_o.params = {'Site':'', 'TargetSE':'CERN-DST', 'JobType':'DataReconstruction'}
     res = p_o.run()
-    self.assertEqual( res, set( ['Bologna', 'Ferrara', 'Paris', 'CSCS', 'CERN', 'IN2P3'] ) )
+    self.assertEqual( res, set( ['Bologna', 'Ferrara', 'Paris', 'CSCS', 'IN2P3', 'CERN'] ) )
 
     p_o.params = {'Site':'', 'TargetSE':'IN2P3-DST', 'JobType':'DataReconstruction'}
     res = p_o.run()
     self.assertEqual( res, set( ['Bologna', 'Paris', 'CSCS', 'IN2P3'] ) )
+
+    # "Hospital" case: all sites go to hospital only
+    p_o = TaskManagerPlugin( 'ByJobType', operationsHelper = opsHelperFakeHospital() )
+
+    p_o.params = {'Site':'', 'TargetSE':'CERN-DST', 'JobType':'DataReconstruction'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['Hospital'] ) )
+
+    p_o.params = {'Site':'', 'TargetSE':'IN2P3-DST', 'JobType':'DataReconstruction'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['Hospital'] ) )
 
 
     # "Merge" case - 1
@@ -224,11 +271,11 @@ class TaskManagerPluginSuccess(ClientsTestCase):
 
     p_o.params = {'Site':'', 'TargetSE':'', 'JobType':'MC'}
     res = p_o.run()
-    self.assertEqual( res, set( ['CERN', 'IN2P3', 'Bologna', 'Ferrara', 'Paris', 'CSCS', 'PAK'] ) )
+    self.assertEqual( res, set( ['CERN', 'IN2P3', 'Bologna', 'Ferrara', 'Paris', 'CSCS', 'PAK', 'Hospital'] ) )
 
     p_o.params = {'Site':'', 'TargetSE':'', 'JobType':'MC'}
     res = p_o.run()
-    self.assertEqual( res, set( ['CERN', 'IN2P3', 'Bologna', 'Ferrara', 'Paris', 'CSCS', 'PAK'] ) )
+    self.assertEqual( res, set( ['CERN', 'IN2P3', 'Bologna', 'Ferrara', 'Paris', 'CSCS', 'PAK', 'Hospital'] ) )
 
 
 #############################################################################
