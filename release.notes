@@ -1,3 +1,11 @@
+[v6r17p10]
+
+*Core
+NEW: Logger - printing methods return True/False if the message was printed or not
+
+*TS
+CHANGE: TaskManagerPlugin - allow to redefine the AutoAddedSites for each job type
+
 [v6r17p9]
 
 *WMS
