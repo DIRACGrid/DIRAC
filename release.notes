@@ -2,6 +2,10 @@
 
 *Core
 NEW: Logger - printing methods return True/False if the message was printed or not
+FIX: ElastocSearchDB - error messages demoted to warnings
+
+*Monitoring
+FIX: MonitoringReporter - create producers if the CS definitions are properly in place
 
 *TS
 CHANGE: TaskManagerPlugin - allow to redefine the AutoAddedSites for each job type
