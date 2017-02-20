@@ -12,7 +12,6 @@
 
 __RCSID__ = "$Id$"
 
-import types
 from zlib import adler32
 
 def intAdlerToHex( intAdler ):
@@ -34,7 +33,7 @@ def hexAdlerToInt( hexAdler, pos = True ):
   :param mixed hexAdler: hex based adler32 checksum integer or a string
   :param boolean pos: flag to determine sign (default True = positive)
   """
-  if type( hexAdler ) in [ types.LongType, types.IntType ]:
+  if isinstance( hexAdler, (int, long) ):
     return hexAdler & 0xffffffff
   # First make sure we can parse the hex properly
   if hexAdler == 'False' or hexAdler == '-False':
@@ -86,12 +85,12 @@ def fileAdler( fileName ):
       if not data:
         break
       yield data
+
   try:
     with open( fileName ) as inputFile:
       myAdler = 1
       for data in readChunk( inputFile ):
         myAdler = adler32( data, myAdler )
-      inputFile.close()
       return intAdlerToHex( myAdler )
   except Exception as error:
     print repr( error ).replace( ',)', ')' )
