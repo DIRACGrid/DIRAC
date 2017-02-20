@@ -56,14 +56,14 @@ A technical drawing explaining the interactions between the various components f
 * **Agents**
 
   * TransformationAgent: it processes transformations found in the TransformationDB and creates the associated tasks,
-  by connecting input files with tasks given a plugin. It's not useful for MCSimulation type
+    by connecting input files with tasks given a plugin. It's not useful for MCSimulation type
 
   * WorkflowTaskAgent: it takes workflow tasks created in the TransformationDB and it submits to the WMS.
-  Since version `v6r13 <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r13#changes-for-transformation-system>`_
-  there are some new capabilities in the form of TaskManager plugins. These plugins determine how the destination site is chosen.
+    Since version `v6r13 <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r13#changes-for-transformation-system>`_
+    there are some new capabilities in the form of TaskManager plugins. These plugins determine how the destination site is chosen.
 
   * RequestTaskAgent: it takes request tasks created in the TransformationDB and submits to the RMS.
-  Both RequestTaskAgent and WorkflowTaskAgent inherits from the same agent, "TaskManagerAgentBase", whose code contains large part of the logic that will be executed. But, TaskManagerAgentBase should not be run standalone.
+    Both RequestTaskAgent and WorkflowTaskAgent inherits from the same agent, "TaskManagerAgentBase", whose code contains large part of the logic that will be executed. But, TaskManagerAgentBase should not be run standalone.
 
   * MCExtensionAgent: it extends the number of tasks given the Transformation definition. To work it needs to know how many events each production will need, and how many events each job will produce. It is only used for 'MCSimulation' type
 
