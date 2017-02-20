@@ -249,7 +249,7 @@ class InstallDIRAC( CommandBase ):
     if retCode:
       self.log.error( "Could not parse the bashrc file [ERROR %d]" % retCode )
       self.exitWithError( retCode )
-    for line in output:
+    for line in output.split('\n'):
       try:
         var = line.split( '=' )[0].strip()
         value = line.split( '=' )[1].strip()
