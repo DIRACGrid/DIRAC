@@ -24,16 +24,16 @@
 
      SubmitPools may refer to:
        - a full GRID infrastructure (like EGEE, OSG, NDG,...) access remotely through RBs or WMSs servers
-       distributing the load over all available resources (CEs) using ad hoc middleware (gLite, LCG, ...).
+         distributing the load over all available resources (CEs) using ad hoc middleware (gLite, LCG, ...).
        - individual GRID Computing Elements again access remotely through their corresponding GRID
-       interface using ad hoc middleware.
+         interface using ad hoc middleware.
        - classic batch systems (like LSF, BQS, PBS, Torque, Condor, ...) access locally trough
-       their corresponding head nodes using their onw specific tools
+         their corresponding head nodes using their onw specific tools
        - standalone computers access by direct execution (fork or exec)
 
-       In first two cases, the middleware takes care of properly handling the secure transfer of the
-       payload to the executing node. In the last two DIRAC will take care of all relevant security
-       aspects.
+     In first two cases, the middleware takes care of properly handling the secure transfer of the
+     payload to the executing node. In the last two DIRAC will take care of all relevant security
+     aspects.
 
      For every SubmitPool category (GRID or DIRAC) and there must be a corresponding Section with the
      necessary parameters:
@@ -42,38 +42,35 @@
 
      GRID:
        - GridMiddleware: <GridMiddleware>PilotDirector module from the PilotAgent directory will
-               be used, currently LCG, gLite types are supported
+         be used, currently LCG, gLite types are supported
 
      For every supported GridMiddleware there must be a corresponding Section with the
      necessary parameters:
-       gLite:
 
-       LCG:
-
-     DIRAC:
+       * gLite:
+       * LCG:
+       * DIRAC:
 
      For every supported "Local backend" there must be a corresponding Section with the
      necessary parameters:
-       PBS:
 
-       Torque:
-
-       LSF:
-
-       BQS:
-
-       Condor:
+       * PBS:
+       * Torque:
+       * LSF:
+       * BQS:
+       * Condor:
 
      (This are the parameters referring to the corresponding SubmitPool and PilotDirector classes,
-      not the ones referring to the CE object that does the actual submission to the backend)
+     not the ones referring to the CE object that does the actual submission to the backend)
 
-       The following parameters are taken from the TaskQueueDirector section if not
-       present in the corresponding SubmitPool section
+     The following parameters are taken from the TaskQueueDirector section if not
+     present in the corresponding SubmitPool section:
+
        - GenericPilotDN:
        - GenericPilotGroup:
 
 
-      The pilot submission logic is as follows:
+     The pilot submission logic is as follows:
 
         - Determine prioritySum: sum of the Priorities for all TaskQueues in the system.
 
@@ -81,7 +78,7 @@
           per iteration by the prioritySum.
 
         - select TaskQueues from the WMS system appropriated for PilotSubmission by the supported
-        SubmitPools
+          SubmitPools
 
         - For each TaskQueue determine a target number of pilots to submit:
 
@@ -144,12 +141,12 @@ random.seed()
 class TaskQueueDirector( AgentModule ):
   """
       The specific agents must provide the following methods:
-      - initialize() for initial settings
-      - beginExecution()
-      - execute() - the main method called in the agent cycle
-      - endExecution()
-      - finalize() - the graceful exit of the method, this one is usually used
-                 for the agent restart
+        - initialize() for initial settings
+        - beginExecution()
+        - execute() - the main method called in the agent cycle
+        - endExecution()
+        - finalize() - the graceful exit of the method, this one is usually used
+                   for the agent restart
   """
 
   def initialize( self ):
