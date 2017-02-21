@@ -154,6 +154,7 @@ class XROOTStorage( StorageBase ):
 
   def isFile( self, path ):
     """Check if the given path exists and it is a file
+
       :param self: self reference
       :param path: path (or list of path) on storage
       :returns: Successful dict {path : boolean}
@@ -207,8 +208,8 @@ class XROOTStorage( StorageBase ):
     :param self: self reference
     :param str path: path (pfn root://) on storage
     :param mixed localPath: if not specified, self.cwd
-    :returns Successful dict {path : size}
-             Failed dict {path : error message }
+    :returns: Successful dict {path : size}
+                Failed dict {path : error message }
     """
 
     res = checkArgumentFormat( path )
@@ -328,11 +329,12 @@ class XROOTStorage( StorageBase ):
   def putFile( self, path, sourceSize = 0 ):
     """Put a copy of the local file to the current directory on the
        physical storage
+
        :param path: dictionnary {pfn (root://...) : localFile}
-       :param sourceSize : size in B (NOT USED)
-       :returns Successful dict {path : size}
-                Failed dict {path : error message }
-                S_ERROR(errMsg) in case of arguments problems
+       :param sourceSize: size in B (NOT USED)
+       :returns: Successful dict {path : size}
+                   Failed dict {path : error message }
+                   S_ERROR(errMsg) in case of arguments problems
     """
 
     if isinstance( path, basestring ):
@@ -499,7 +501,7 @@ class XROOTStorage( StorageBase ):
       A non existing file will be considered as successfully removed.
 
       :param path: path (or list of path) on storage (pfn : root://...)
-      :returns Successful dict {path : True}
+      :returns: Successful dict {path : True}
                Failed dict {path : error message }
     """
 
@@ -576,7 +578,7 @@ class XROOTStorage( StorageBase ):
 
       :param self: self reference
       :param path: path (or list of path) on storage (pfn : root://...)
-      :returns Successful dict {path : metadata}
+      :returns: Successful dict {path : metadata}
          Failed dict {path : error message }
     """
 
@@ -740,7 +742,7 @@ class XROOTStorage( StorageBase ):
 
       :param self: self reference
       :param path: path (or list of path) on storage (pfn : root://...)
-      :returns Successful dict {path : size}
+      :returns: Successful dict {path : size}
              Failed dict {path : error message }
     """
 
@@ -809,7 +811,7 @@ class XROOTStorage( StorageBase ):
     :param self: self reference
     :param str path: path on storage (pfn : root://...)
     :param mixed protocols: protocols to use (must be or include 'root')
-    :returns Successful dict {path : path}
+    :returns: Successful dict {path : path}
              Failed dict {path : error message }
     """
     res = checkArgumentFormat( path )
@@ -871,6 +873,7 @@ class XROOTStorage( StorageBase ):
 
   def isDirectory( self, path ):
     """Check if the given path exists and it is a directory
+
       :param self: self reference
       :param path: path (or list of path) on storage (pfn : root://...)
       :returns: Successful dict {path : boolean}
@@ -922,6 +925,7 @@ class XROOTStorage( StorageBase ):
   def getDirectory( self, path, localPath = False ):
     """Get locally a directory from the physical storage together with all its
        files and subdirectories.
+
        :param: path: path (or list of path) on storage (pfn : root://...)
        :param: localPath: local path where to store what is downloaded
        :return: successful and failed dictionaries. The keys are the pathes,
@@ -1078,8 +1082,9 @@ class XROOTStorage( StorageBase ):
 
   def putDirectory( self, path ):
     """ puts a or several local directory to the physical storage together with all its files and subdirectories
+
         :param self: self reference
-        :param str  path: dictionnary {pfn (root://...) : local dir}
+        :param str path: dictionnary {pfn (root://...) : local dir}
         :return: successful and failed dictionaries. The keys are the pathes,
              the values are dictionary {'Files': amount of files uploaded, 'Size': amount of data uploaded}
     """
@@ -1183,7 +1188,7 @@ class XROOTStorage( StorageBase ):
 
     :param self: self reference
     :param str path: path (or list of path) on storage (pfn : root://...)
-    :returns Successful dict {path : True}
+    :returns: Successful dict {path : True}
          Failed dict {path : error message }
     """
     urls = checkArgumentFormat( path )
@@ -1240,8 +1245,9 @@ class XROOTStorage( StorageBase ):
   def removeDirectory( self, path, recursive = False ):
     """Remove a directory on the physical storage together with all its files and
        subdirectories.
-       :param path : single or list of path (root://..)
-       :param recursive : if True, we recursively delete the subdir
+
+       :param path: single or list of path (root://..)
+       :param recursive: if True, we recursively delete the subdir
        :return: successful and failed dictionaries. The keys are the pathes,
              the values are dictionary {'Files': amount of files deleted, 'Size': amount of data deleted}
     """
@@ -1396,11 +1402,13 @@ class XROOTStorage( StorageBase ):
 
   def listDirectory( self, path ):
     """ List the supplied path
-        CAUTION : It is not recursive!
-       :param path : single or list of path (root://..)
+
+        .. warning:: It is not recursive!
+
+       :param path: single or list of path (root://..)
        :return: successful and failed dictionaries. The keys are the pathes,
-             the values are dictionary 'SubDirs' and 'Files'. Each are dictionaries with
-            path as key and metadata as values (for Files only, SubDirs has just True as value)
+                  the values are dictionary 'SubDirs' and 'Files'. Each are dictionaries with
+                  path as key and metadata as values (for Files only, SubDirs has just True as value)
     """
 
     res = checkArgumentFormat( path )
@@ -1547,10 +1555,11 @@ class XROOTStorage( StorageBase ):
 
   def getDirectoryMetadata( self, path ):
     """  Get metadata associated to the directory(ies)
+
       :param self: self reference
       :param path: path (or list of path) on storage (pfn : root://...)
-      :returns Successful dict {path : metadata}
-               Failed dict {path : error message }
+      :returns: Successful dict {path : metadata}
+                  Failed dict {path : error message }
     """
 
     res = checkArgumentFormat( path )
@@ -1613,14 +1622,19 @@ class XROOTStorage( StorageBase ):
 
   def getDirectorySize( self, path ):
     """ Get the size of the directory on the storage
-      CAUTION : the size is not recursive, and does not go into subfolders
+
+      .. warning:: the size is not recursive, and does not go into subfolders
+
       :param self: self reference
       :param path: path (or list of path) on storage (pfn : root://...)
       :returns: list of successfull and failed dictionnary, both indexed by the path
-                In the failed, the value is the error message
-                In the successful the values are dictionnaries : Files : amount of files in the directory
-                                                                Size : summed up size of files
-                                                                subDirs : amount of sub directories
+
+                   * In the failed, the value is the error message
+                   * In the successful the values are dictionnaries :
+
+                         * Files : amount of files in the directory
+                         * Size : summed up size of files
+                         * subDirs : amount of sub directories
     """
     res = checkArgumentFormat( path )
     if not res['OK']:

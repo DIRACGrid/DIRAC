@@ -1,7 +1,9 @@
 """ :mod: GFAL2_XROOTStorage
+
     =================
 
     .. module: python
+
     :synopsis: XROOT module based on the GFAL2_StorageBase class.
 """
 
