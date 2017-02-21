@@ -192,6 +192,9 @@ def createDoc(buildtype = "full"):
       os.chdir( abspath )
     if modulename == "DIRAC":
       createCodeDocIndex(subpackages=packages, modules=getmodules(abspath, direc, files), buildtype=buildtype)
+    elif buildtype == "limited":
+      os.chdir(BASEPATH)
+      return 0
     else:
       mkRest( modulename+"_Module.rst", modulename, fullmodulename, subpackages=packages, modules=getmodules(abspath, direc, files) )
 
