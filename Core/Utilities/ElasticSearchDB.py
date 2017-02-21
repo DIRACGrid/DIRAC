@@ -77,6 +77,7 @@ class ElasticSearchDB( object ):
   __url = ""
   __timeout = 120
   clusterName = ''
+  RESULT_SIZE = 10000
   ########################################################################
   def __init__( self, host, port, user = None, password=None, indexPrefix = ''):
     """ c'tor
@@ -334,7 +335,7 @@ class ElasticSearchDB( object ):
       query.aggs.bucket( key,
                          'terms',
                          field = key,
-                         size = 10000,
+                         size = self.RESULT_SIZE,
                          order = orderBy ).metric( key,
                                                    'cardinality',
                                                    field = key )
@@ -342,12 +343,12 @@ class ElasticSearchDB( object ):
       query.aggs.bucket( key,
                          'terms',
                          field = key,
-                         size = 10000 ).metric( key,
+                         size = self.RESULT_SIZE ).metric( key,
                                             'cardinality',
                                             field = key )
 
     try:
-      query = query.extra( size = 10000 ) #do not need the raw data.
+      query = query.extra( size = self.RESULT_SIZE ) #do not need the raw data.
       gLogger.debug( "Query", query.to_dict() )
       result = query.execute()
     except TransportError as e:
