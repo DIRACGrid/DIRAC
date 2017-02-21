@@ -26,12 +26,14 @@ BAD_FILES = ( "lfc_dfc_copy",
               "JobWrapperTemplate",
               "PlotCache", ## PlotCache creates a thread on import, which keeps sphinx from exiting
               "PlottingHandler",
-              "DataStoreClient", # instantiates itself
-              "ComponentInstaller", # tries to connect to a DB
-              "ProxyDB", # tries to connect to security log server
-              "SystemAdministratorHandler", # tries to connect to monitoring
-              "GlobusComputingElement", # tries to connect to a DB
-              "TaskManager", #Tries to connect to security logging
+              # "DataStoreClient", # instantiates itself
+              # "ReportsClient", ## causes gDataCache to start
+              # "ComponentInstaller", # tries to connect to a DB
+              # "ProxyDB", # tries to connect to security log server
+              # "SystemAdministratorHandler", # tries to connect to monitoring
+              # "GlobusComputingElement", # tries to connect to a DB
+              # "HTCondorCEComputingElememt", # tries to connect to a DB
+              # "TaskManager", #Tries to connect to security logging
            )
 
 FORCE_ADD_PRIVATE = [ "FCConditionParser" ]
