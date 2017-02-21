@@ -13,7 +13,7 @@ class MonitoringClient( object ):
 
   This class expose the methods of the Monitoring Service
 
-  :param: RPCClient __rpcClient stores the rpc client used to connect to the service
+  :param ~DIRAC.Core.DISET.RPCClient.RPCClient __rpcClient: stores the rpc client used to connect to the service
 
   """
 
@@ -30,7 +30,7 @@ class MonitoringClient( object ):
   #############################################################################
   def listUniqueKeyValues( self, typeName ):
     """
-    :param str typeName is the monitoring type registered in the Types.
+    :param str typeName: is the monitoring type registered in the Types.
 
     :return: S_OK({key:[]}) or S_ERROR()   The key is element of the __keyFields of the BaseType
     """
@@ -40,9 +40,9 @@ class MonitoringClient( object ):
   #############################################################################
   def listReports( self, typeName ):
     """
-    :param str typeName monitoring type for example WMSHistory
+    :param str typeName: monitoring type for example WMSHistory
 
-    :return S_OK([]) or S_ERROR() the list of available plots
+    :return: S_OK([]) or S_ERROR() the list of available plots
     """
     rpcClient = self.__getServer()
     return rpcClient.listReports( typeName )
@@ -51,15 +51,15 @@ class MonitoringClient( object ):
     """
     It is used to encode the plot parameters used to create a certain plot.
 
-    :param str typeName the type of the monitoring
-    :param int startTime epoch time, start time of the plot
-    :param int endTime epoch time, end time of the plot
-    :param dict condDict is the conditions used to gnerate the plot: {'Status':['Running'],'grouping': ['Site'] }
-    :param str grouping is the grouping of the data for example: 'Site'
-    :paran dict extraArgs epoch time which can be last day, last week, last month
-    :param bool compress apply compression of the encoded values.
+    :param str typeName: the type of the monitoring
+    :param int startTime: epoch time, start time of the plot
+    :param int endTime: epoch time, end time of the plot
+    :param dict condDict: is the conditions used to gnerate the plot: {'Status':['Running'],'grouping': ['Site'] }
+    :param str grouping: is the grouping of the data for example: 'Site'
+    :param dict extraArgs: epoch time which can be last day, last week, last month
+    :param bool compress: apply compression of the encoded values.
 
-    :return S_OK(str) or S_ERROR() it returns the encoded plot parameters
+    :return: S_OK(str) or S_ERROR() it returns the encoded plot parameters
     """
     if not isinstance( extraArgs, dict ):
       extraArgs = {}
@@ -101,9 +101,9 @@ class MonitoringClient( object ):
 
   def addMonitoringRecords( self, monitoringtype, doc_type, data ):
     """
-    :param str monitoringtype
-    :param str doc_type
-    :param dict data
+    :param str monitoringtype:
+    :param str doc_type:
+    :param dict data:
     """
     rpcClient = self.__getServer()
     return rpcClient.addMonitoringRecords( monitoringtype, doc_type, data )
@@ -111,9 +111,10 @@ class MonitoringClient( object ):
   def addRecords( self, indexName, doc_type, data ):
     """
     add records to the database
-    :param str indexName
-    :param str doc_type
-    :param dict data
+
+    :param str indexName:
+    :param str doc_type:
+    :param dict data:
     """
     rpcClient = self.__getServer()
     return rpcClient.addRecords( indexName, doc_type, data )
@@ -121,7 +122,8 @@ class MonitoringClient( object ):
   def deleteIndex(self, indexName):
     """
     It deletes a specific index...
-    :param str indexName
+
+    :param str indexName:
     """
     rpcClient = self.__getServer()
     return rpcClient.deleteIndex(indexName)
@@ -129,10 +131,12 @@ class MonitoringClient( object ):
   def getLastDayData( self, typeName, condDict ):
     """
     It returns the data from the last day index. Note: we create daily indexes.
-    :param str typeName name of the monitoring type
-    :param dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
+
+    :param str typeName: name of the monitoring type
+    :param dict condDict: conditions for the query
+
+                  * key -> name of the field
+                  * value -> list of possible values
     """
     rpcClient = self.__getServer()
     return rpcClient.getLastDayData( typeName, condDict )
@@ -141,11 +145,13 @@ class MonitoringClient( object ):
   def getLimitedData( self, typeName, condDict, size = 10 ):
     '''
     Returns a list of records for a given selection.
-    :param str typeName name of the monitoring type
-    :param dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
-    :param int size: Indicates how many entries should be retrieved from the log
+
+    :param str typeName: name of the monitoring type
+    :param dict condDict: conditions for the query
+
+                  * key -> name of the field
+                  * value -> list of possible values
+
     :return: Up to size entries for the given component from the database
     '''
     rpcClient = self.__getServer()
@@ -154,10 +160,13 @@ class MonitoringClient( object ):
   def getDataForAGivenPeriod( self, typeName, condDict, initialDate = '', endDate = '' ):
     """
     Retrieves the history of logging entries for the given component during a given given time period
-    :param: str typeName name of the monitoring type
-    :param: dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
+
+    :param str typeName: name of the monitoring type
+    :param dict condDict: conditions for the query
+
+                  * key -> name of the field
+                  * value -> list of possible values
+
     :param str initialDate: Indicates the start of the time period in the format 'DD/MM/YYYY hh:mm'
     :param str endDate: Indicate the end of the time period in the format 'DD/MM/YYYY hh:mm'
     :return: Entries from the database for the given component recorded between the initial and the end dates

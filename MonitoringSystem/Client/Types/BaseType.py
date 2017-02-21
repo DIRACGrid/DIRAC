@@ -12,8 +12,10 @@ class BaseType( object ):
 
   :param str doc_type: Each document belong to a category. For example: WMSHistory
   :param str index: we use daily indexes for example:wmshistory_index-2015-10-09
-  :param list keyFields: The attributes what we monitor.
-  :param list monitoringFields: This is the value what we plot
+  :param keyFields: The attributes what we monitor.
+  :type keyFields: python:list
+  :param monitoringFields: This is the value what we plot
+  :type monitoringFields: python:list
   :param int dataToKeep: Data retention. We keep all data by default.
   :param dict mapping: We can specify the mapping of the documents. It is used during the creation of an index.
                        Note: If you do not want to be analysed a string, you have to set the mapping
@@ -108,7 +110,8 @@ class BaseType( object ):
   ########################################################################
   def setKeyFields( self, fields ):
     """
-    :param list fields: it is a list of attributes
+    :param fields: it is a list of attributes
+    :type fields: python:list
     """
     self.__keyFields = fields
 
@@ -122,7 +125,8 @@ class BaseType( object ):
   ########################################################################
   def setMonitoringFields( self, fields ):
     """
-    :param list fields: list of attributes what we plot
+    :param fields: list of attributes what we plot
+    :type fields: python:list
     """
     self.__monitoringFields = fields
 
