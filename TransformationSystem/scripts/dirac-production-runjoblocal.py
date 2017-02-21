@@ -13,7 +13,6 @@
 
 __RCSID__ = "$Id$"
 
-import sys
 import os
 import shutil
 
@@ -31,6 +30,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  Protocol (Job ID): Defines data acquisition as InputDataByProtocol\n'] ) )
 
 from DIRAC import S_OK
+from DIRAC.Core.Utilities.File import mkDir
 
 
 _downloadinputdata = False
@@ -54,16 +54,7 @@ def __runSystemDefaults(jobID, vo):
 
   tempdir = str(vo) + "job" + str(jobID) + "temp"
 
-  try:
-    os.mkdir(tempdir)
-    if not sys.exc_info()[1][0]:
-      S_OK("Temporary directory created.")
-  except:
-    if sys.exc_info()[1][0] == 17:
-      S_OK("Temporary directory already exists.")
-    elif sys.exc_info()[1][0] == 30:
-      print sys.exc_info()[1], "Unable to create temporary directory"
-
+  mkDir(tempdir)
   basepath = os.getcwd()
   return basepath + os.path.sep + tempdir + os.path.sep
 
