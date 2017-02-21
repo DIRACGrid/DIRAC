@@ -26,7 +26,12 @@ BAD_FILES = ( "lfc_dfc_copy",
               "JobWrapperTemplate",
               "PlotCache", ## PlotCache creates a thread on import, which keeps sphinx from exiting
               "PlottingHandler",
-              "__init__.py",
+              "DataStoreClient", # instantiates itself
+              "ComponentInstaller", # tries to connect to a DB
+              "ProxyDB", # tries to connect to security log server
+              "SystemAdministratorHandler", # tries to connect to monitoring
+              "GlobusComputingElement", # tries to connect to a DB
+              "TaskManager", #Tries to connect to security logging
            )
 
 FORCE_ADD_PRIVATE = [ "FCConditionParser" ]
@@ -65,8 +70,8 @@ def mkRest( filename, modulename, fullmodulename, subpackages=None, modules=None
       #lines.append("   %s " % (package, ) )
     lines.append("")
 
-  ##remove CLI because we drop them earlier
-  modules = [ m for m in modules if not m.endswith("CLI") and m not in BAD_FILES and "-" not in m ]
+  ##remove CLI etc. because we drop them earlier
+  modules = [ m for m in modules if not m.endswith("CLI") and "-" not in m ]
   if modules:
     lines.append( "Modules" )
     lines.append( "......." )
@@ -82,7 +87,19 @@ def mkRest( filename, modulename, fullmodulename, subpackages=None, modules=None
   with open(filename, 'w') as rst:
     rst.write("\n".join(lines))
 
-    
+def mkDummyRest( classname, fullclassname):
+  """ create a dummy rst file for files that behave badly """
+  filename = classname+".rst"
+
+  lines = []
+  lines.append("%s" % classname)
+  lines.append("="*len(classname))
+  lines.append("")
+  lines.append(" This is an empty file, because we cannot parse this file correctly or it causes problems")
+  lines.append(" , please look at the source code directly")
+  with open(filename, 'w') as rst:
+    rst.write("\n".join(lines))
+
 def mkModuleRest( classname, fullclassname, buildtype="full"):
   """ create rst file for class"""
   filename = classname+".rst"
@@ -176,13 +193,16 @@ def createDoc(buildtype = "full"):
 
     for filename in files:
       ## Skip things that call parseCommandLine or similar issues
-      if any( f in filename for f in BAD_FILES ) or \
-              not filename.endswith(".py") or \
-              filename.endswith("CLI.py") or \
-              filename.lower().startswith("test") or \
-              "-" in filename: ## not valid python identifier, e.g. dirac-pilot
-        continue
       fullclassname = ".".join(abspath.split("/")+[filename])
+      if any( f in filename for f in BAD_FILES ):
+        mkDummyRest( filename.split(".py")[0], fullclassname.split(".py")[0] )
+        continue
+      elif not filename.endswith(".py") or \
+           filename.endswith("CLI.py") or \
+           filename.lower().startswith("test") or \
+           filename == "__init__.py" or \
+           "-" in filename: ## not valid python identifier, e.g. dirac-pilot
+        continue
       if not fullclassname.startswith( "DIRAC." ):
         fullclassname = "DIRAC."+fullclassname
       ##Remove some FrameworkServices because things go weird
