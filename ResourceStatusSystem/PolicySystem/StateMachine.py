@@ -260,7 +260,7 @@ class RSSMachine( StateMachine ):
       >>> rsm0.levelOfPolicyState( { 'Status' : 'Rubbish', 'R' : 'R' } )
           -1
 
-    :param doct policyResult: dictionary that must have the `Status` key.
+    :param dict policyResult: dictionary that must have the `Status` key.
     :return: int || -1 ( if policyResult[ 'Status' ] is not known by the StateMachine )
     """
 
