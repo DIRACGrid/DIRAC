@@ -72,6 +72,7 @@ class ElasticSearchDB( object ):
   :param str url: the url to the database for example: el.cern.ch:9200
   :param str gDebugFile: is used to save the debug information to a file
   :param int timeout the default time out to Elasticsearch
+  :param int RESULT_SIZE: The number of data points which will be returned by the query.
   """
   __chunk_size = 1000
   __url = ""
