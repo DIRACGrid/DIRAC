@@ -1,7 +1,8 @@
-#!/usr/bin/env python
+#!/bin/env python
 """ create rst files for documentation of DIRAC """
 import os
 import shutil
+import socket
 import sys
 
 def mkdir( folder ):
@@ -162,6 +163,7 @@ def createDoc(buildtype = "full"):
   """create the rst files for all the things we want them for"""
   print "MakeDoc: DIRACPATH",DIRACPATH
   print "MakeDoc: BASEPATH", BASEPATH
+  print "Host", socket.gethostname()
 
   ## we need to replace existing rst files so we can decide how much code-doc to create
   if os.path.exists(BASEPATH):
@@ -228,41 +230,41 @@ def createCodeDocIndex( subpackages, modules, buildtype="full"):
     lines.append( ".. warning::" )
     lines.append( "  This a limited build of the code documentation, for the full code documentation please look at the website" )
     lines.append( "" )
+  else:
+    if subpackages or modules:
+      lines.append(".. toctree::")
+      lines.append("   :maxdepth: 1")
+      lines.append("")
 
-  if subpackages or modules:
-    lines.append(".. toctree::")
-    lines.append("   :maxdepth: 1")
-    lines.append("")
+    if subpackages:
+      systemPackages = sorted([ pck for pck in subpackages if pck.endswith("System") ])
+      otherPackages = sorted([ pck for pck in subpackages if not pck.endswith("System") ])
 
-  if subpackages:
-    systemPackages = sorted([ pck for pck in subpackages if pck.endswith("System") ])
-    otherPackages = sorted([ pck for pck in subpackages if not pck.endswith("System") ])
+      lines.append( "=======" )
+      lines.append( "Systems" )
+      lines.append( "=======" )
+      lines.append("")
+      lines.append(".. toctree::")
+      lines.append("   :maxdepth: 1")
+      lines.append("")
+      for package in systemPackages:
+        lines.append("   %s/%s_Module.rst" % (package,package.split("/")[-1] ) )
 
-    lines.append( "=======" )
-    lines.append( "Systems" )
-    lines.append( "=======" )
-    lines.append("")
-    lines.append(".. toctree::")
-    lines.append("   :maxdepth: 1")
-    lines.append("")
-    for package in systemPackages:
-      lines.append("   %s/%s_Module.rst" % (package,package.split("/")[-1] ) )
+      lines.append("")
+      lines.append( "=====" )
+      lines.append( "Other" )
+      lines.append( "=====" )
+      lines.append("")
+      lines.append(".. toctree::")
+      lines.append("   :maxdepth: 1")
+      lines.append("")
+      for package in otherPackages:
+        lines.append("   %s/%s_Module.rst" % (package,package.split("/")[-1] ) )
 
-    lines.append("")
-    lines.append( "=====" )
-    lines.append( "Other" )
-    lines.append( "=====" )
-    lines.append("")
-    lines.append(".. toctree::")
-    lines.append("   :maxdepth: 1")
-    lines.append("")
-    for package in otherPackages:
-      lines.append("   %s/%s_Module.rst" % (package,package.split("/")[-1] ) )
-
-  if modules:
-    for module in sorted(modules):
-      lines.append("   %s.rst" % (module.split("/")[-1],) )
-      #lines.append("   %s " % (package, ) )
+    if modules:
+      for module in sorted(modules):
+        lines.append("   %s.rst" % (module.split("/")[-1],) )
+        #lines.append("   %s " % (package, ) )
 
   with open(filename, 'w') as rst:
     rst.write("\n".join(lines))
