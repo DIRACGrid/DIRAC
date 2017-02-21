@@ -71,7 +71,7 @@ class ElasticSearchDB( object ):
 
   :param str url: the url to the database for example: el.cern.ch:9200
   :param str gDebugFile: is used to save the debug information to a file
-  :param int timeout the default time out to Elasticsearch
+  :param int timeout: the default time out to Elasticsearch
   :param int RESULT_SIZE: The number of data points which will be returned by the query.
   """
   __chunk_size = 1000
@@ -88,7 +88,7 @@ class ElasticSearchDB( object ):
     :param bool debug: save the debug information to a file
     :param str user: user name to access the db
     :param str password: if the db is password protected we need to provide a password
-    :param str indexPrefix it is the indexPrefix used to get all indexes
+    :param str indexPrefix: it is the indexPrefix used to get all indexes
     """
     self.__indexPrefix = indexPrefix
     self._connected = False
@@ -242,10 +242,10 @@ class ElasticSearchDB( object ):
 
   def index( self, indexName, doc_type, body ):
     """
-    :param str indexName the name of the index to be deleted...
-    :param str doc_type the type of the document
-    :param dict body the data which will be indexed
-    :return the index name in case of success.
+    :param str indexName: the name of the index to be deleted...
+    :param str doc_type: the type of the document
+    :param dict body: the data which will be indexed
+    :return: the index name in case of success.
     """
     try:
       res = self.__client.index( index = indexName,
@@ -264,8 +264,9 @@ class ElasticSearchDB( object ):
   def bulk_index( self, indexprefix, doc_type, data, mapping = None ):
     """
     :param str indexPrefix: it is the index name.
-    :param str doc_type
-    :param list data contains a list of dictionary
+    :param str doc_type: the type of the document
+    :param data: contains a list of dictionary
+    :type data: python:list
     """
     gLogger.info( "%d records will be insert to %s" % ( len( data ), doc_type ) )
     if mapping is None:

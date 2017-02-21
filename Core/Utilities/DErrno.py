@@ -1,7 +1,9 @@
 """ :mod: DErrno
+
     ==========================
 
     .. module: DErrno
+
     :synopsis: Error list and utilities for handling errors in DIRAC
 
 
@@ -16,10 +18,11 @@
 
     In order to add extension specific error, you need to create in your extension the file
     Core/Utilities/DErrno.py, which will contain the following dictionary:
+
       * extra_dErrName: keys are the error name, values the number of it
       * extra_dErrorCode: same as dErrorCode. keys are the error code, values the name
                           (we don't simply revert the previous dict in case we do not
-                           have a one to one mapping)
+                          have a one to one mapping)
       * extra_dStrError: same as dStrError, Keys are the error code, values the error description
       * extra_compatErrorString: same as compatErrorString. The compatible error strings are
                                  added to the existing one, and not replacing them.
@@ -27,10 +30,10 @@
 
     Example of extension file :
 
-      extra_dErrName = { 'ELHCBSPE' : 3001 }
-      extra_dErrorCode = { 3001 : 'ELHCBSPE'}
-      extra_dStrError = { 3001 : "This is a description text of the specific LHCb error" }
-      extra_compatErrorString = { 3001 : ["living easy, living free"],
+       * extra_dErrName = { 'ELHCBSPE' : 3001 }
+       * extra_dErrorCode = { 3001 : 'ELHCBSPE'}
+       * extra_dStrError = { 3001 : "This is a description text of the specific LHCb error" }
+       * extra_compatErrorString = { 3001 : ["living easy, living free"],
                              DErrno.ERRX : ['An error message for ERRX that is specific to LHCb']}
 
 """
@@ -271,10 +274,11 @@ def cmpError( inErr, candidate ):
   """ This function compares an error (in its old form (a string or dictionary) or in its int form
       with a candidate error code.
 
-      :param inErr : a string, an integer, a S_ERROR dictionary
-      :param int candidate : error code to compare with
+      :param inErr: a string, an integer, a S_ERROR dictionary
+      :type inErr: str or int or S_ERROR
+      :param int candidate: error code to compare with
 
-      :return True or False
+      :return: True or False
 
       If an S_ERROR instance is passed, we compare the code with S_ERROR['Errno']
       If it is a Integer, we do a direct comparison

@@ -27,8 +27,10 @@ def printTable( fields, records, sortField='', numbering=True,
                 printOut = True, columnSeparator = ' ' ):
   """ Utility to pretty print tabular data
 
-  :param list fields: list of column names
-  :param list records: list of records, each record is a list or tuple of string values
+  :param fields: list of column names
+  :type fields: python:list
+  :param records: list of records, each record is a list or tuple of string values
+  :type records: python:list
   :param str sortField: name of the column by which the output will be sorted
   :param bool numbering: flag for numbering rows
   :param bool printOut: flag for printing into the stdout
