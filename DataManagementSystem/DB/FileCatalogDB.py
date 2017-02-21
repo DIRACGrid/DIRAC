@@ -448,7 +448,8 @@ class FileCatalogDB( DB ):
     """
        Remove files
 
-      :param list lfns: list of LFNs to remove
+      :param lfns: list of LFNs to remove
+      :type lfns: python:list
       :param creDict: credential
       :return: Successful/Failed dict.
     """
@@ -594,7 +595,8 @@ class FileCatalogDB( DB ):
     """
         Checks whether a list of LFNS are files or not
 
-        :param list lfns: list of LFN to check
+        :param lfns: list of LFN to check
+        :type lfns: python:list
         :param creDict: credential
 
         :return: Successful/Failed dict.
@@ -621,7 +623,8 @@ class FileCatalogDB( DB ):
     """
         Gets the size of a list of lfns
 
-        :param list lfns: list of LFN to check
+        :param lfns: list of LFN to check
+        :type lfns: python:list
         :param creDict: credential
 
         :return: Successful/Failed dict.
@@ -647,7 +650,8 @@ class FileCatalogDB( DB ):
     """
         Gets the metadata of a list of lfns
 
-        :param list lfns: list of LFN to check
+        :param lfns: list of LFN to check
+        :type lfns: python:list
         :param creDict: credential
 
         :return: Successful/Failed dict.
@@ -673,14 +677,14 @@ class FileCatalogDB( DB ):
 
   def getReplicas( self, lfns, allStatus, credDict ):
     """
-        Gets the list of replicas of a list of lfns
+    Gets the list of replicas of a list of lfns
 
-        :param list lfns: list of LFN to check
-        :param allStatus : if all the status are visible, or only those defined in config['ValidReplicaStatus']
-        :param creDict: credential
+    :param lfns: list of LFN to check
+    :type lfns: python:list
+    :param allStatus: if all the status are visible, or only those defined in config['ValidReplicaStatus']
+    :param creDict: credential
 
-        :return: Successful/Failed dict.
-           Successful is indexed on the LFN, and the values are dictionary with the SEName as keys
+    :return: Successful/Failed dict. Successful is indexed on the LFN, and the values are dictionary with the SEName as keys
     """
 
     res = self._checkPathPermissions( 'getReplicas', lfns, credDict )
@@ -792,7 +796,8 @@ class FileCatalogDB( DB ):
     """
         Gets the lfns that match a list of guids
 
-        :param list lfns: list of guid to look for
+        :param lfns: list of guid to look for
+        :type lfns: python:list
         :param creDict: credential
 
         :return: S_OK({guid:lfn}) dict.
@@ -815,7 +820,8 @@ class FileCatalogDB( DB ):
     """
         Create new directories
 
-        :param list lfns: list of directories
+        :param lfns: list of directories
+        :type lfns: python:list
         :param creDict: credential
 
         :return: Successful/Failed dict.
@@ -840,7 +846,8 @@ class FileCatalogDB( DB ):
     """
         Remove directories
 
-        :param list lfns: list of directories
+        :param lfns: list of directories
+        :type lfns: python:list
         :param creDict: credential
 
         :return: Successful/Failed dict.
@@ -886,7 +893,8 @@ class FileCatalogDB( DB ):
     """
         List directories
 
-        :param list lfns: list of directories
+        :param lfns: list of directories
+        :type lfns: python:list
         :param creDict: credential
 
         :return: Successful/Failed dict.
@@ -913,7 +921,8 @@ class FileCatalogDB( DB ):
     """
         Checks whether a list of LFNS are directories or not
 
-        :param list lfns: list of LFN to check
+        :param lfns: list of LFN to check
+        :type lfns: python:list
         :param creDict: credential
 
         :return: Successful/Failed dict.
@@ -957,7 +966,8 @@ class FileCatalogDB( DB ):
     """
         Get the sizes of a list of directories
 
-        :param list lfns: list of LFN to check
+        :param lfns: list of LFN to check
+        :type lfns: python:list
         :param creDict: credential
 
         :return: Successful/Failed dict.
@@ -985,7 +995,9 @@ class FileCatalogDB( DB ):
 
   def getDirectoryMetadata( self, lfns, credDict ):
     ''' Get standard directory metadata
-    :param list lfns: list of directory paths
+
+    :param lfns: list of directory paths
+    :type lfns: python:list
     :param dict credDict: credentials
     :return: Successful/Failed dict.
     '''

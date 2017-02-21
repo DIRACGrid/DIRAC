@@ -902,10 +902,11 @@ class FileManagerPs( FileManagerBase ):
 
 
         Get the replicas for all the Files in the given Directory
-        :param DirID : ID of the directory
-        :param path : useless
-        :param allStatus : whether all replicas and file status are considered
-                          If False, take the visibleFileStatus and visibleReplicaStatus values from the configuration
+
+        :param DirID: ID of the directory
+        :param path: useless
+        :param allStatus: whether all replicas and file status are considered
+                            If False, take the visibleFileStatus and visibleReplicaStatus values from the configuration
     """
 
     # We format the visible file/replica satus so we can give it as argument to the ps

@@ -1,4 +1,5 @@
 """ :mod: DMSRequestOperationsBase
+
     ====================
 
     Just a collector of common functions
@@ -85,7 +86,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
   def getRegisterOperation( self, opFile, targetSE, type = 'RegisterFile', catalog = None ):
     """ add RegisterReplica operation for file
 
-    :param File opFile: operation file
+    :param ~DIRAC.RequestManagementSystem.Client.File.File opFile: operation file
     :param str targetSE: target SE
     """
     # # add RegisterReplica operation

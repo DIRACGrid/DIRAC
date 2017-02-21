@@ -4,10 +4,13 @@
 # Date: 2013/05/10 20:02:32
 ########################################################################
 """ :mod: FTSGraph
+
     ==============
 
     .. module: FTSGraph
+
     :synopsis: FTS graph
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     nodes are FTS sites sites and edges are routes between them
@@ -122,8 +125,10 @@ class FTS2Graph( Graph ):
   def initialize( self, ftsHistoryViews = None ):
     """ initialize FTSGraph  given FTSSites and FTSHistoryViews
 
-    :param list ftsSites: list with FTSSites instances
-    :param list ftsHistoryViews: list with FTSHistoryViews instances
+    :param ftsSites: list with FTSSites instances
+    :type ftsSites: python:list
+    :param ftsHistoryViews: list with FTSHistoryViews instances
+    :type ftsHistoryViews: python:list
     """
     self.log.debug( "initializing FTS graph..." )
 
@@ -224,7 +229,8 @@ class FTS2Graph( Graph ):
   def updateRWAccess( self ):
     """ get RSS R/W for :seList:
 
-    :param list seList: SE list
+    :param seList: SE list
+    :type seList: python:list
     """
     self.log.debug( "updateRWAccess: updating RW access..." )
     for site in self.nodes():
