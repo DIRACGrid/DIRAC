@@ -452,20 +452,23 @@ class SiteDirector( AgentModule ):
       platform = self.queueDict[queue]['Platform']
       siteMask = siteName in siteMaskList
 
+      # TODO: The following lines must be uncommented when the PropagationPolicy works properly
+      # =====================================================================================================
       # Check the status of the Site
-      result = self.sstClient.getSiteStatuses({siteName})
-      if not result['OK']:
-        self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
-        continue
-      if result['Value']:
-        result = result['Value'][siteName]   #get the value of the status
-
-      if result not in ('Active', 'Degraded'):
-        self.log.verbose( "Skipping site %s: site not usable" % siteName )
-        continue
+      # result = self.sstClient.getSiteStatuses({siteName})
+      # if not result['OK']:
+      #   self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
+      #   continue
+      # if result['Value']:
+      #   result = result['Value'][siteName]   #get the value of the status
+      #
+      # if result not in ('Active', 'Degraded'):
+      #   self.log.verbose( "Skipping site %s: site not usable" % siteName )
+      #   continue
+      # =====================================================================================================
 
       # Check the status of the ComputingElement
-      result = self.rssClient.getElementStatus(ceName, "ComputingElement")
+      result = self.rssClient.getElementStatus(ceName, "CE")
       if not result['OK']:
         self.log.error( "Can not get the status of computing element %s: %s" % (siteName, result['Message']) )
         continue
