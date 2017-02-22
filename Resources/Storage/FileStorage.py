@@ -60,7 +60,7 @@ class FileStorage( StorageBase ):
 
     :param self: self reference
     :param path: path (or list of path) on storage
-    :returns Failed dictionary: {pfn : errorMsg}
+    :returns: Failed dictionary: {pfn : errorMsg}
             Successful dictionary: {pfn : bool}
     """
 
@@ -476,7 +476,7 @@ class FileStorage( StorageBase ):
        subdirectories.
 
        :param path: single or list of path
-       :param recursive: if True, we recursively delete the subdir
+       :param bool recursive: if True, we recursively delete the subdir
        :return: successful and failed dictionaries. The keys are the pathes,
              the values are dictionary {'Files': amount of files deleted, 'Size': amount of data deleted}
 

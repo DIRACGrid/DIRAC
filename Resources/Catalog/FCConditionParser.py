@@ -249,9 +249,9 @@ class FCConditionParser(object):
         If this does not exist either, we check the global ALL condition.
         If none is defined, we return None
 
-        :param catalogName: the catalog we want to work on
-        :param operationName: the operation we want to perform
-                              The operationName must be in the read or write method from FileCatalog
+        :param str catalogName: the catalog we want to work on
+        :param str operationName: the operation we want to perform
+                                  The operationName must be in the read or write method from FileCatalog
 
         :returns: a condition string or None
 
@@ -288,8 +288,8 @@ class FCConditionParser(object):
       Ultimately, it does not really matter, since you will not be able to find
       any catalog beforehand if you can't contact the CS...
 
-    :param catalogName: name of the catalog we want to work on
-    :param operationName: name of the operation we want to perform
+    :param str catalogName: name of the catalog we want to work on
+    :param str operationName: name of the operation we want to perform
                           The operationName must be in the read or write method from FileCatalog
                           if it should be retrieve from the CS
     :param lfns: list/dict of lfns
