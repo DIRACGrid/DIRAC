@@ -5,10 +5,13 @@
     this is pytest!
 """
 
+#pylint: disable=invalid-name,wrong-import-position,missing-docstring
+
+from datetime import datetime
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-from datetime                                               import datetime
 from DIRAC.ResourceStatusSystem.Client.SiteStatus           import SiteStatus
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
@@ -28,15 +31,15 @@ def test_addAndRemove():
 
   # add test site
   res = rsClient.insertStatusElement('Site', 'Status', testSite, 'all',
-                                   'Active', 'Site', 'Synchronized', Datetime,
-                                   Datetime, 'tokenOwner', Datetime)
-  assert res['OK'] == True
+                                     'Active', 'Site', 'Synchronized', Datetime,
+                                     Datetime, 'tokenOwner', Datetime)
+  assert res['OK'] is True
 
   # TEST getSites
   # ...............................................................................
 
   result = StClient.getSites()
-  assert result['OK'] == True
+  assert result['OK'] is True
 
   assert testSite in result['Value']
 
@@ -44,7 +47,7 @@ def test_addAndRemove():
   # ...............................................................................
 
   result = StClient.getSiteStatuses( [ testSite ] )
-  assert result['OK'] == True
+  assert result['OK'] is True
 
   assert result['Value'][testSite] == "Active"
 
@@ -52,7 +55,7 @@ def test_addAndRemove():
   # ...............................................................................
 
   result = StClient.getUsableSites( [testSite] )
-  assert result['OK'] == True
+  assert result['OK'] is True
 
   assert result['Value'][0] == testSite
 
@@ -60,9 +63,9 @@ def test_addAndRemove():
   # ...............................................................................
 
   result = StClient.isUsableSite(testSite)
-  assert result['OK'] == True
-  assert result['Value'] == True
+  assert result['OK'] is True
+  assert result['Value'] is True
 
   # finally delete the test site
   res = rsClient.deleteStatusElement('Site', 'Status', testSite)
-  assert res['OK'] == True
+  assert res['OK'] is True

@@ -115,13 +115,11 @@ class TaskManagerPlugin( PluginBase ):
       raise RuntimeError( "No jobType specified" )
     excludedSites = set( self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, [] ) )
     gLogger.debug( "Explicitly excluded sites for %s task: %s" % ( jobType, ','.join( excludedSites ) ) )
-    autoAddedSites = set( self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] ) )
+    autoAddedSites = self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
     if 'WithStorage' in autoAddedSites:
       # Add all sites with storage, such that jobs can run wherever data is
       autoAddedSites.remove( 'WithStorage' )
-      autoAddedSites |= set( DMSHelpers().getTiers( withStorage = True, tier = ( 0, 1, 2 ) ) )
-    excludedSites |= autoAddedSites
-    gLogger.debug( "Full list of excluded sites for %s task: %s" % ( jobType, ','.join( excludedSites ) ) )
+      autoAddedSites += DMSHelpers().getTiers( withStorage = True, tier = ( 0, 1, 2 ) )
 
     # 3. removing sites in Exclude
     if not excludedSites:
@@ -139,6 +137,8 @@ class TaskManagerPlugin( PluginBase ):
     else:
       allowed = dict( ( site, set( fromChar( fromSites ) ) ) for site, fromSites in res['Value'].iteritems() )
 
+    autoAddedSites = set( self.opsH.getValue( 'JobTypeMapping/%s/AutoAddedSites' % jobType, autoAddedSites ) )
+    gLogger.debug( "Auto-added sites for %s task: %s" % ( jobType, ','.join( autoAddedSites ) ) )
     # 5. add autoAddedSites, if requested
     for autoAddedSite in autoAddedSites:
       allowed.setdefault( autoAddedSite, set() ).add( autoAddedSite )

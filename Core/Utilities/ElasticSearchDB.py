@@ -44,6 +44,7 @@ def generateCAFile():
       fn = tempfile.mkstemp( prefix = "cas.", suffix = ".pem" )[1]
     
     try:
+      
       with open(fn, "w" ) as fd:
         for caFile in os.listdir( caDir ):
           caFile = os.path.join( caDir, caFile )
@@ -55,10 +56,11 @@ def generateCAFile():
           if not expired[ 'OK' ] or expired[ 'Value' ]:
             continue
           fd.write( chain.dumpAllToString()[ 'Value' ] )
-          
+      
+      gLogger.info( "CAs used from: %s" % str( fn ) )    
       return fn
     except IOError as err:
-      gLogger.error(err)
+      gLogger.warn( err )
       
   return False
 
@@ -332,7 +334,7 @@ class ElasticSearchDB( object ):
       query.aggs.bucket( key,
                          'terms',
                          field = key,
-                         size = 0,
+                         size = 1,
                          order = orderBy ).metric( key,
                                                    'cardinality',
                                                    field = key )
@@ -340,12 +342,12 @@ class ElasticSearchDB( object ):
       query.aggs.bucket( key,
                          'terms',
                          field = key,
-                         size = 0 ).metric( key,
+                         size = 1 ).metric( key,
                                             'cardinality',
                                             field = key )
 
     try:
-      query = query.extra( size = 0 ) #do not need the raw data.
+      query = query.extra( size = 1 ) #do not need the raw data.
       gLogger.debug( "Query", query.to_dict() )
       result = query.execute()
     except TransportError as e:

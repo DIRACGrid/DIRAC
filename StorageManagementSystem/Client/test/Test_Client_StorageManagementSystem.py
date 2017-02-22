@@ -1,14 +1,20 @@
 """ Test for StorageManagement clients
 """
 
-import unittest
-import importlib
+#pylint: disable=protected-access,missing-docstring,invalid-name
 
-from mock import MagicMock
+import unittest
+from mock import MagicMock, patch
 
 from DIRAC import S_OK
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import getFilesToStage
 from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
+
+mockObjectSE = MagicMock()
+mockObjectSE.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Cached':0},
+                                                                 '/a/lfn/2.txt':{'Cached':1}},
+                                                   'Failed':{}} )
+mockObjectSE.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 
 class ClientsTestCase( unittest.TestCase ):
@@ -19,19 +25,6 @@ class ClientsTestCase( unittest.TestCase ):
     from DIRAC import gLogger
     gLogger.setLevel( 'DEBUG' )
 
-    mockObjectSE = MagicMock()
-    mockObjectSE.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Cached':0},
-                                                                     '/a/lfn/2.txt':{'Cached':1}},
-                                                       'Failed':{}} )
-    mockObjectSE.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
-
-    self.mockSE = MagicMock()
-    self.mockSE.return_value = mockObjectSE
-
-    self.mockDM = MagicMock()
-    self.mockDM.return_value = dm_mock
-
-
   def tearDown( self ):
     pass
 
@@ -39,21 +32,30 @@ class ClientsTestCase( unittest.TestCase ):
 
 class StorageManagerSuccess( ClientsTestCase ):
 
-  def test_getFilesToStage( self ):
+  @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.DataManager", return_value = dm_mock )
+  @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.StorageElement", return_value = MagicMock() )
+  def test_getFilesToStage( self, _patch, _patched ):
+    """ Simple test - the StorageElement mock will return all the files online
+    """
     res = getFilesToStage( [] )
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )
 
-    ourSMC = importlib.import_module( 'DIRAC.StorageManagementSystem.Client.StorageManagerClient' )
-    ourSMC.DataManager = self.mockDM
-    ourSMC.StorageElement = self.mockSE
-
-
     res = getFilesToStage( ['/a/lfn/1.txt'] )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( res['Value']['onlineLFNs'], ['/a/lfn/1.txt', '/a/lfn/2.txt'] )
+    self.assertEqual( res['Value']['offlineLFNs'], {} )
+
+  @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.DataManager", return_value = dm_mock )
+  @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.StorageElement", return_value = mockObjectSE )
+  def test_getFilesToStage_withFilesToStage( self, _patch, _patched ):
+    """ Test where the StorageElement mock will return files offline
+    """
+    res = getFilesToStage( ['/a/lfn/1.txt'] )
+    self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], ['/a/lfn/2.txt'] )
-    self.assert_( res['Value']['offlineLFNs'], {'SE1':['/a/lfn/1.txt']} or {'SE2':['/a/lfn/1.txt']} )
+    self.assert_( res['Value']['offlineLFNs'], {'SE1': ['/a/lfn/1.txt']} or {'SE2': ['/a/lfn/1.txt']} )
 
 
 if __name__ == '__main__':

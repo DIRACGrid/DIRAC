@@ -12,7 +12,8 @@ from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
 
 __RCSID__ = '$Id: $'
-db        = None
+
+db = None
 
 def initializeResourceStatusHandler( _serviceInfo ):
   '''
@@ -125,8 +126,8 @@ class ResourceStatusHandler( RequestHandler ):
 
     gLogger.info( 'insert: %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
-                  elementType, reason, dateEffective, lastCheckTime,
-                  tokenOwner, tokenExpiration ) )
+                    elementType, reason, dateEffective, lastCheckTime,
+                    tokenOwner, tokenExpiration ) )
 
     res = db.insert( element, tableType, name, statusType, status,
                      elementType, reason, dateEffective, lastCheckTime,
@@ -139,9 +140,9 @@ class ResourceStatusHandler( RequestHandler ):
   types_update = [ basestring, basestring ]
 
   def export_update( self, element, tableType, name = None, statusType = None,
-                    status = None, elementType = None, reason = None,
-                    dateEffective = None, lastCheckTime = None,
-                    tokenOwner = None, tokenExpiration = None, ID = None ):
+                     status = None, elementType = None, reason = None,
+                     dateEffective = None, lastCheckTime = None,
+                     tokenOwner = None, tokenExpiration = None, ID = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
@@ -179,8 +180,8 @@ class ResourceStatusHandler( RequestHandler ):
 
     gLogger.info( 'update: %s %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
-                  elementType, reason, dateEffective, lastCheckTime,
-                  tokenOwner, tokenExpiration, ID ) )
+                    elementType, reason, dateEffective, lastCheckTime,
+                    tokenOwner, tokenExpiration, ID ) )
 
     res = db.update( element, tableType, name, statusType, status,
                      elementType, reason, dateEffective, lastCheckTime,
@@ -193,9 +194,9 @@ class ResourceStatusHandler( RequestHandler ):
   types_select = [ basestring, basestring ]
 
   def export_select( self, element, tableType, name = None, statusType = None,
-                    status = None, elementType = None, reason = None,
-                    dateEffective = None, lastCheckTime = None,
-                    tokenOwner = None, tokenExpiration = None, meta = None ):
+                     status = None, elementType = None, reason = None,
+                     dateEffective = None, lastCheckTime = None,
+                     tokenOwner = None, tokenExpiration = None, meta = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
@@ -236,12 +237,12 @@ class ResourceStatusHandler( RequestHandler ):
 
     gLogger.info( 'select: %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
-                  elementType, reason, dateEffective, lastCheckTime,
-                  tokenOwner, tokenExpiration ) )
+                    elementType, reason, dateEffective, lastCheckTime,
+                    tokenOwner, tokenExpiration ) )
 
     res = db.select( element, tableType, name, statusType, status,
-                             elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration, meta )
+                     elementType, reason, dateEffective, lastCheckTime,
+                     tokenOwner, tokenExpiration, meta )
 
     self.__logResult( 'select', res )
 
@@ -292,8 +293,8 @@ class ResourceStatusHandler( RequestHandler ):
 
     gLogger.info( 'delete: %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
-                  elementType, reason, dateEffective, lastCheckTime,
-                  tokenOwner, tokenExpiration ) )
+                    elementType, reason, dateEffective, lastCheckTime,
+                    tokenOwner, tokenExpiration ) )
 
     res = db.delete( element, tableType, name, statusType, status,
                      elementType, reason, dateEffective, lastCheckTime,
@@ -346,8 +347,8 @@ class ResourceStatusHandler( RequestHandler ):
 
     gLogger.info( 'addOrModify: %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
-                  elementType, reason, dateEffective, lastCheckTime,
-                  tokenOwner, tokenExpiration ) )
+                    elementType, reason, dateEffective, lastCheckTime,
+                    tokenOwner, tokenExpiration ) )
 
     res = db.addOrModify( element, tableType, name, statusType, status,
                           elementType, reason, dateEffective, lastCheckTime,
@@ -360,9 +361,9 @@ class ResourceStatusHandler( RequestHandler ):
   types_modify = [ basestring, basestring ]
 
   def export_modify( self, element, tableType, name = None, statusType = None,
-                    status = None, elementType = None, reason = None,
-                    dateEffective = None, lastCheckTime = None,
-                    tokenOwner = None, tokenExpiration = None ):
+                     status = None, elementType = None, reason = None,
+                     dateEffective = None, lastCheckTime = None,
+                     tokenOwner = None, tokenExpiration = None ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
@@ -400,8 +401,8 @@ class ResourceStatusHandler( RequestHandler ):
 
     gLogger.info( 'modify: %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
-                  elementType, reason, dateEffective, lastCheckTime,
-                  tokenOwner, tokenExpiration ) )
+                    elementType, reason, dateEffective, lastCheckTime,
+                    tokenOwner, tokenExpiration ) )
 
     res = db.modify( element, tableType, name, statusType, status,
                      elementType, reason, dateEffective, lastCheckTime,
@@ -454,8 +455,8 @@ class ResourceStatusHandler( RequestHandler ):
 
     gLogger.info( 'addIfNotThere: %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
-                  elementType, reason, dateEffective, lastCheckTime,
-                  tokenOwner, tokenExpiration ) )
+                    elementType, reason, dateEffective, lastCheckTime,
+                    tokenOwner, tokenExpiration ) )
 
     res = db.addIfNotThere( element, tableType, name, statusType, status,
                             elementType, reason, dateEffective, lastCheckTime,
