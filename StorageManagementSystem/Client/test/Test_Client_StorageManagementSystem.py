@@ -11,7 +11,7 @@ from DIRAC.StorageManagementSystem.Client.StorageManagerClient import getFilesTo
 from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
 
 mockObjectSE = MagicMock()
-mockObjectSE.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Cached':0, 'Accessible':False},
+mockObjectSE.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Accessible':False},
                                                                  '/a/lfn/2.txt':{'Cached':1, 'Accessible':True}},
                                                    'Failed':{}} )
 mockObjectSE.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
