@@ -23,7 +23,12 @@ COMPONENT_NAME = 'DownloadInputData'
 
 def _isCached( lfn, seName ):
   result = StorageElement( seName ).getFileMetadata( lfn )
-  return result['OK'] and result['Value']['Successful'].get( lfn, {} ).get( 'Cached', False )
+  if not result['OK']:
+    return False
+  if lfn in result['Value']['Failed']:
+    return False
+  metadata = result['Value']['Successful'][lfn]
+  return metadata.get( 'Cached', metadata['Accessible'] )
 
 class DownloadInputData:
   """
@@ -160,11 +165,11 @@ class DownloadInputData:
           failedReplicas.add( lfn )
           continue
         metadata = result['Value']['Successful'][lfn]
-        if metadata['Lost']:
+        if metadata.get( 'Lost', False ):
           error = "PFN has been Lost by the StorageElement"
-        elif metadata['Unavailable']:
+        elif metadata.get( 'Unavailable', False ):
           error = "PFN is declared Unavailable by the StorageElement"
-        elif seName in tapeSEs and not metadata['Cached']:
+        elif seName in tapeSEs and not metadata.get( 'Cached', metadata['Accessible'] ):
           error = "PFN is no longer in StorageElement Cache"
         else:
           error = ''

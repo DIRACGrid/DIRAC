@@ -61,7 +61,7 @@ def getFilesToStage( lfnList, jobState = None ):
     else:
       userName = None
       userGroup = None
-    result = _checkFilesToStage( seToLFNs, onlineLFNs,  #pylint: disable=unexpected-keyword-arg
+    result = _checkFilesToStage( seToLFNs, onlineLFNs,  # pylint: disable=unexpected-keyword-arg
                                  proxyUserName = userName,
                                  proxyUserGroup = userGroup,
                                  executionLock = True )
@@ -93,9 +93,8 @@ def _checkFilesToStage( seToLFNs, onlineLFNs ):
         failed[se] = fileMetadata['Value']['Failed']
       # is there at least one online?
       for lfn, mDict in fileMetadata['Value']['Successful'].iteritems():
-        if 'Cached' not in mDict:
-          failed.setdefault( se, {} )[lfn] = 'No Cached item returned as metadata'
-        elif mDict['Cached']:
+        # SRM returns Cached, but others may only return Accessible
+        if mDict.get( 'Cached', mDict['Accessible'] ):
           onlineLFNs.add( lfn )
 
   # If the file was found staged, ignore possible errors, but print out errors
