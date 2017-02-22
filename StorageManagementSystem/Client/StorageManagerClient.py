@@ -91,7 +91,7 @@ def _checkFilesToStage( seToLFNs, onlineLFNs ):
     else:
       if fileMetadata['Value']['Failed']:
         failed[se] = fileMetadata['Value']['Failed']
-      # is there at least one online?
+      # is there at least one replica online?
       for lfn, mDict in fileMetadata['Value']['Successful'].iteritems():
         # SRM returns Cached, but others may only return Accessible
         if mDict.get( 'Cached', mDict['Accessible'] ):
