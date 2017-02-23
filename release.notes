@@ -1,3 +1,20 @@
+[v6r17p11]
+
+*Core
+FIX: ElasticSearchDB - set a very high number (10K) for the size of the ElasticSearch result
+
+*Monitoring
+FIX: MonitoringDB - et a very high number (10K) for the size of the ElasticSearch result
+
+*WMS
+FIX: pilotCommands - get the pilot environment from the contents of the bashrc script
+
+*DMS
+FIX: RemoveReplica - fix for the problem that if an error was set it was never reset
+FIX: SE metadata usage in several components: ConsistencyInspector, DataIntwgrityClient,
+     FTSRequest, dirac-dms-replica-metadata, StageMonitorAgent, StageRequestAgent,
+     StorageManagerClient, DownloadInputData, InputDataByProtocol
+
 [v6r17p10]
 
 *Core
