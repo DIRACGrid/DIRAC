@@ -20,14 +20,17 @@ class VOBOXAvailabilityCommand( Command ):
     '''
       The Command pings a service on a vobox, it needs a service URL to ping it.
 
-      It returns a dict with the following:
-      {
-        'serviceUpTime' : <serviceUpTime>,
-        'machineUpTime' : <machineUpTime>,
-        'site'          : <site>,
-        'system'        : <system>,
-        'service'       : <service>
-      }
+      :returns: a dict with the following:
+
+        .. code-block:: python
+  
+          {
+            'serviceUpTime' : <serviceUpTime>,
+            'machineUpTime' : <machineUpTime>,
+            'site'          : <site>,
+            'system'        : <system>,
+            'service'       : <service>
+          }
 
     '''
 

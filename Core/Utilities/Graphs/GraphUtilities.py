@@ -111,13 +111,14 @@ week_switch = 7
 
 def add_time_to_title( begin, end, metadata = {} ):
   """ Given a title and two times, adds the time info to the title.
-      Example results:
-         "Number of Attempted Transfers\n(24 Hours from 4:45 12-14-2006 to
-          5:56 12-15-2006)"
+      Example results::
+
+         "Number of Attempted Transfers
+         (24 Hours from 4:45 12-14-2006 to 5:56 12-15-2006)"
 
       There are two important pieces to the subtitle we add - the duration
       (i.e., '48 Hours') and the time interval (i.e., 11:00 07-02-2007 to
-       11:00 07-04-2007).
+      11:00 07-04-2007).
 
       We attempt to make the duration match the size of the span (for a bar
       graph, this would be the width of the individual bar) in order for it

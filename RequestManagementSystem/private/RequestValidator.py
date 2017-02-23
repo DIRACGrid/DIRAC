@@ -5,10 +5,13 @@
 # Date: 2012/09/18 07:55:16
 ########################################################################
 """ :mod: RequestValidator
+
     ======================
 
     .. module: RequestValidator
+
     :synopsis: request validator
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     A general and simple request validator checking for required attributes and logic.
@@ -19,32 +22,32 @@
 
     If you need to extend this one with your own specific checks consider:
 
-    * for adding Operation or Files required attributes use :addReqAttrsCheck: function::
+      * for adding Operation or Files required attributes use :any:`addReqAttrsCheck` function::
 
-    RequestValidator().addReqAttrsCheck( "FooOperation", operationAttrs = [ "Bar", "Buzz"], filesAttrs = [ "LFN" ] )
+          RequestValidator().addReqAttrsCheck( "FooOperation", operationAttrs = [ "Bar", "Buzz"], filesAttrs = [ "LFN" ] )
 
-    * for adding generic check define a new callable object ( function or functor ) which takes only one argument,
-      say for functor::
+      * for adding generic check define a new callable object ( function or functor ) which takes only one argument,
+        say for functor::
 
-    class MyValidator( RequestValidator ):
+          class MyValidator( RequestValidator ):
 
-      @staticmethod
-      def hasFoo( request ):
-        if not request.Foo:
-          return S_ERROR("Foo not set")
-        return S_OK()
+            @staticmethod
+            def hasFoo( request ):
+              if not request.Foo:
+                return S_ERROR("Foo not set")
+              return S_OK()
 
-    or function::
+      * or function::
 
-    def hasBar( request ):
-      if not request.Bar:
-        return S_ERROR("Bar not set")
-      return S_OK()
+          def hasBar( request ):
+            if not request.Bar:
+              return S_ERROR("Bar not set")
+            return S_OK()
 
-    and add this one to the validators set by calling RequestValidator().addValidator, i.e.::
+    and add this one to the validators set by calling `RequestValidator().addValidator`, i.e.::
 
-    RequestValidator().addValidator( MyValidator.hasFoo )
-    RequestValidator().addValidator( hasFoo )
+      RequestValidator().addValidator( MyValidator.hasFoo )
+      RequestValidator().addValidator( hasFoo )
 
     Notice that all validators should always return S_ERROR/S_OK, no exceptions from that whatsoever!
 """
@@ -116,8 +119,10 @@ class RequestValidator( object ):
     """ add required attributes of Operation of type :operationType:
 
     :param str operationType: Operation.Type
-    :param list operationAttrs: required Operation attributes
-    :param list filesAttrs: required Files attributes
+    :param operationAttrs: required Operation attributes
+    :type operationAttrs: python:list
+    :param filesAttrs: required Files attributes
+    :type filesAttrs: python:list
     """
     toUpdate = { "Operation" : operationAttrs if operationAttrs else [],
                  "Files" : filesAttrs if filesAttrs else [] }
@@ -128,7 +133,7 @@ class RequestValidator( object ):
 
   @classmethod
   def addValidator( cls, fcnObj ):
-    """ add :fcnObj: validator """
+    """ add `fcnObj` validator """
     if not callable( fcnObj ):
       return S_ERROR( "supplied argument is not callable" )
     args = inspect.getargspec( fcnObj ).args
@@ -138,9 +143,9 @@ class RequestValidator( object ):
     return S_OK()
 
   def validate( self, request ):
-    """ validation of a given :request:
+    """ validation of a given `request`
 
-    :param Request request: Request instance
+    :param ~Request.Request request: Request instance
     """
     for validator in self.validator:
       isValid = validator( request )

@@ -1,7 +1,9 @@
 """ JobRunningWaitingRatioPolicy
 
-  Policy that calculates the efficiency following the formula:
+  Policy that calculates the efficiency following the formula::
+
     ( running ) / ( running + waiting + staging )
+
   if the denominator is smaller than 10, it does not take any decision.
 
 """

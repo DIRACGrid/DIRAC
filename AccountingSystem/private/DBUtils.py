@@ -236,15 +236,30 @@ class DBUtils:
   def stripDataField( self, dataDict, fieldId ):
     """
     Strip <fieldId> data and sum the rest as it was data from one key
-    In:
-      - dataDict : { 'key' : { <timeEpoch1>: [1, 2, 3],
-                               <timeEpoch2>: [3, 4, 5].. } }
-      - fieldId : 0
-    Out
-      - dataDict : { 'key' : { <timeEpoch1>: 1,
-                               <timeEpoch2>: 3.. } }
-      - return : [ { <timeEpoch1>: 2, <timeEpoch2>: 4... }
+
+    :param dict dataDict: dictionary of the form::
+
+        { 'key' : { <timeEpoch1>: [1, 2, 3],
+                    <timeEpoch2>: [3, 4, 5].. } }
+
+      The dataDict is modified in this function and the return structure is:
+
+      .. code-block :: python
+
+              dataDict : { 'key' : { <timeEpoch1>: 1,
+                                     <timeEpoch2>: 3.. } }
+
+    :param int fieldId:
+
+    :returns: list of dictionaries
+
+      .. code-block:: python
+
+                 [ { <timeEpoch1>: 2, <timeEpoch2>: 4... }
                    { <timeEpoch1>: 3, <timeEpoch2>): 5... } ]
+
+    :rtype: python:list
+
     """
     remainingData = [{}] #Hack for empty data
     for key in dataDict:

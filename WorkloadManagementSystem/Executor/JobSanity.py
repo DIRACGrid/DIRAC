@@ -1,11 +1,12 @@
 """
   The Job Sanity Agent accepts all jobs from the Job
   receiver and screens them for the following problems:
-   - Output data already exists
-   - Problematic JDL
-   - Jobs with too much input data e.g. > 100 files
-   - Jobs with input data incorrectly specified e.g. castor:/
-   - Input sandbox not correctly uploaded.
+
+     - Output data already exists
+     - Problematic JDL
+     - Jobs with too much input data e.g. > 100 files
+     - Jobs with input data incorrectly specified e.g. castor:/
+     - Input sandbox not correctly uploaded.
 """
 
 __RCSID__ = "$Id$"
@@ -21,9 +22,9 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient   import SandboxSt
 class JobSanity( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
-      - optimizeJob() - the main method called for each job
+        - optimizeJob() - the main method called for each job
       and it can provide:
-      - initializeOptimizer() before each execution cycle
+        - initializeOptimizer() before each execution cycle
   """
 
   @classmethod

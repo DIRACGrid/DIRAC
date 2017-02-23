@@ -26,10 +26,12 @@ Configuration file
 ~~~~~~~~~~~~~~~~~~
 You can use a standard configuration file for example :ref:`install_primary_server`. Please make sure that the following lines are exists in the
 configuration file::
+
    Externals = WebApp
    WebApp = yes
-But you can also use the following configuration file to install the web portal.
+
 $installCfg::
+
    LocalInstallation
    {
      #
@@ -66,7 +68,8 @@ $installCfg::
 
 Before you start the installation please make sure that you have the host certificate in the /opt/dirac/etc directory... More info in the Server Certificates section in :ref:`server_requirements` .
 
- Create the configuration file::
+Create the configuration file::
+
    - vim /home/dirac/DIRAC/install.cfg
    - copy the lines above the this file...
    - cd /home/dirac/DIRAC
@@ -233,13 +236,14 @@ If your version is not grater than 1.4 you have to install NGinx manually.
 
 Due to differences between how CentOS, RHEL, and Scientific Linux populate the $releasever variable, it is necessary to manually replace $releasever with either 5 (for 5.x) or 6 (for 6.x),
 depending upon your OS version. For example::
+
    [nginx]
    name=nginx repo
    baseurl=http://nginx.org/packages/rhel/6/$basearch/
    gpgcheck=0
    enabled=1
 
- If it is successful installed::
+If it is successful installed::
 
     Verifying  : nginx-1.10.1-1.el6.ngx.x86_64                                                                                                                                                                                                                    1/1
    Installed:
@@ -248,11 +252,11 @@ depending upon your OS version. For example::
 
 * Configure NGINX
 
-    You have to found the nginx.conf file. You can see which configuration used in /etc/init.d/nginx. For example::
+  You have to find the nginx.conf file. You can see which configuration used in /etc/init.d/nginx. For example::
 
     vim /etc/nginx/nginx.conf
 
-  If the file contains 'include /etc/nginx/conf.d/*.conf;' line, you have to create a site.conf under /etc/nginx/conf.d/ otherwise you have to do: 'include /etc/nginx/site.conf'
+  If the file contains 'include /etc/nginx/conf.d/\*.conf;' line, you have to create a site.conf under /etc/nginx/conf.d/ otherwise you have to do: 'include /etc/nginx/site.conf'
 
  The content of the site.conf (please modify it!!!)::
 

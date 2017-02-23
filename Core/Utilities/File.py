@@ -180,7 +180,8 @@ def getGlobbedFiles( files ):
 def getCommonPath( files ):
   """Get the common path for all files in the file list.
 
-  :param list files: list of strings with paths
+  :param files: list of strings with paths
+  :type files: python:list
   """
   def properSplit( dirPath ):
     """Splitting of path to drive and path parts for non-Unix file systems.
@@ -211,7 +212,8 @@ def getCommonPath( files ):
 def getMD5ForFiles( fileList ):
   """Calculate md5 for the content of all the files.
 
-  :param list fileList: list of paths
+  :param fileList: list of paths
+  :type fileList: python:list
   """
   fileList.sort()
   hashMD5 = md5.md5()

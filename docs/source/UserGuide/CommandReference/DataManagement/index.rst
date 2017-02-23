@@ -37,3 +37,5 @@ In this subsection the Data Management commands are collected.
    dirac-dms-show-se-status
    dirac-dms-user-lfns
    dirac-dms-user-quota
+   dirac-dls-sequence
+   dirac-dls-method-call

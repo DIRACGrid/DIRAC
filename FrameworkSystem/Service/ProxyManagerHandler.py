@@ -137,12 +137,16 @@ class ProxyManagerHandler( RequestHandler ):
   def export_getProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
     """
     Get a proxy for a userDN/userGroup
-      - requestPem : PEM encoded request object for delegation
-      - requiredLifetime: Argument for length of proxy
-      * Properties :
-        FullDelegation <- permits full delegation of proxies
-        LimitedDelegation <- permits downloading only limited proxies
-        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+
+    
+    :param requestPem: PEM encoded request object for delegation
+    :param requiredLifetime: Argument for length of proxy
+
+      * Properties:
+           * FullDelegation <- permits full delegation of proxies
+           * LimitedDelegation <- permits downloading only limited proxies
+           * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+
     """
     credDict = self.getRemoteCredentials()
 
@@ -175,13 +179,15 @@ class ProxyManagerHandler( RequestHandler ):
   def export_getVOMSProxy( self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute = False ):
     """
     Get a proxy for a userDN/userGroup
-      - requestPem : PEM encoded request object for delegation
-      - requiredLifetime: Argument for length of proxy
-      - vomsAttribute : VOMS attr to add to the proxy
+
+    :param requestPem: PEM encoded request object for delegation
+    :param requiredLifetime: Argument for length of proxy
+    :param vomsAttribute: VOMS attr to add to the proxy
+
       * Properties :
-        FullDelegation <- permits full delegation of proxies
-        LimitedDelegation <- permits downloading only limited proxies
-        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+          * FullDelegation <- permits full delegation of proxies
+          * LimitedDelegation <- permits downloading only limited proxies
+          * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
     """
     credDict = self.getRemoteCredentials()
 
@@ -290,13 +296,15 @@ class ProxyManagerHandler( RequestHandler ):
   def export_getProxyWithToken( self, userDN, userGroup, requestPem, requiredLifetime, token ):
     """
     Get a proxy for a userDN/userGroup
-      - requestPem : PEM encoded request object for delegation
-      - requiredLifetime: Argument for length of proxy
-      - token : Valid token to get a proxy
-      * Properties :
-        FullDelegation <- permits full delegation of proxies
-        LimitedDelegation <- permits downloading only limited proxies
-        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+
+    :param requestPem: PEM encoded request object for delegation
+    :param requiredLifetime: Argument for length of proxy
+    :param token: Valid token to get a proxy
+
+      * Properties:
+          * FullDelegation <- permits full delegation of proxies
+          * LimitedDelegation <- permits downloading only limited proxies
+          * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
     """
     credDict = self.getRemoteCredentials()
     result = self.__proxyDB.useToken( token, credDict[ 'DN' ], credDict[ 'group' ] )
@@ -319,13 +327,15 @@ class ProxyManagerHandler( RequestHandler ):
   def export_getVOMSProxyWithToken( self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute = False ):
     """
     Get a proxy for a userDN/userGroup
-      - requestPem : PEM encoded request object for delegation
-      - requiredLifetime: Argument for length of proxy
-      - vomsAttribute : VOMS attr to add to the proxy
+
+    :param requestPem: PEM encoded request object for delegation
+    :param requiredLifetime: Argument for length of proxy
+    :param vomsAttribute: VOMS attr to add to the proxy
+
       * Properties :
-        FullDelegation <- permits full delegation of proxies
-        LimitedDelegation <- permits downloading only limited proxies
-        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+          * FullDelegation <- permits full delegation of proxies
+          * LimitedDelegation <- permits downloading only limited proxies
+          * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
     """
     credDict = self.getRemoteCredentials()
     result = self.__proxyDB.useToken( token, credDict[ 'DN' ], credDict[ 'group' ] )

@@ -25,12 +25,12 @@ AGENT_NAME = 'WorkloadManagement/DiracSiteAgent'
 class DiracSiteAgent( AgentModule ):
   """
       The specific agents must provide the following methods:
-      - initialize() for initial settings
-      - beginExecution()
-      - execute() - the main method called in the agent cycle
-      - endExecution()
-      - finalize() - the graceful exit of the method, this one is usually used
-                 for the agent restart
+
+        * initialize() for initial settings
+        * beginExecution()
+        * execute() - the main method called in the agent cycle
+        * endExecution()
+        * finalize() - the graceful exit of the method, this one is usually used for the agent restart
   """
 
   #############################################################################

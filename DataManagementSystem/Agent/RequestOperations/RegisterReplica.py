@@ -1,7 +1,9 @@
 """ :mod: RegisterReplica
+
     ==================
 
     .. module: RegisterReplica
+
     :synopsis: register replica handler
 
     RegisterReplica operation handler
@@ -19,14 +21,15 @@ class RegisterReplica( DMSRequestOperationsBase ):
   .. class:: RegisterReplica
 
   RegisterReplica operation handler
+
+  :param self: self reference
+  :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: Operation instance
+  :param str csPath: CS path for this handler
   """
 
   def __init__( self, operation = None, csPath = None ):
     """c'tor
 
-    :param self: self reference
-    :param Operation operation: Operation instance
-    :param str csPath: CS path for this handler
     """
     DMSRequestOperationsBase.__init__( self, operation, csPath )
     # # RegisterReplica specific monitor info

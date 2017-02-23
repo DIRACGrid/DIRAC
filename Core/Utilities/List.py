@@ -11,7 +11,8 @@ __RCSID__ = "$Id$"
 def uniqueElements( aList ):
   """Utility to retrieve list of unique elements in a list (order is kept).
 
-  :param list aList: list of elements
+  :param aList: list of elements
+  :type aList: python:list
   :return: list of unique elements
   """
   result = []
@@ -28,7 +29,8 @@ def uniqueElements( aList ):
 def appendUnique( aList, anObject ):
   """ Append to list if object does not exist.
 
-     :param list aList: list of elements
+     :param aList: list of elements
+     :type aList: python:list
      :param anObject: object you want to append
   """
   if anObject not in aList:
@@ -51,7 +53,8 @@ def fromChar( inputString, sepChar = "," ):
 def randomize( aList ):
   """Return a randomly sorted list.
 
-     :param list aList: list to permute
+     :param aList: list to permute
+     :type aList: python:list
   """
   tmpList = list( aList )
   random.shuffle( tmpList )
@@ -60,7 +63,8 @@ def randomize( aList ):
 def pop( aList, popElement ):
   """ Pop the first element equal to popElement from the list.
 
-      :param list aList: list
+      :param aList: list
+      :type aList: python:list
       :param popElement: element to pop
   """
   if popElement in aList:
@@ -69,22 +73,25 @@ def pop( aList, popElement ):
 def stringListToString( aList ):
   """This method is used for making MySQL queries with a list of string elements.
 
-    :param list aList: list to be serialized to string for making queries
+    :param aList: list to be serialized to string for making queries
+    :type aList: python:list
   """
   return ",".join( ["'" + str( x ) + "'" for x in aList ] )
 
 def intListToString( aList ):
   """This method is used for making MySQL queries with a list of int elements.
 
-  :param list aList: list to be serialized to string for making queries
+  :param aList: list to be serialized to string for making queries
+  :type aList: python:list
   """
   return ",".join( [str( x ) for x in aList ] )
 
 def getChunk( aList, chunkSize ):
   """Generator yielding chunk from a list of a size chunkSize.
 
-  :param list aList: list to be splitted
-  :param integer chunkSize: lenght of one chunk
+  :param aList: list to be splitted
+  :type aList: python:list
+  :param int chunkSize: lenght of one chunk
   :raise: StopIteration
 
   Usage:
@@ -99,8 +106,9 @@ def getChunk( aList, chunkSize ):
 def breakListIntoChunks( aList, chunkSize ):
   """This method takes a list as input and breaks it into list of size 'chunkSize'. It returns a list of lists.
 
-  :param list aList: list of elements
-  :param integer chunkSize: len of a single chunk
+  :param aList: list of elements
+  :type aList: python:list
+  :param int chunkSize: len of a single chunk
   :return: list of lists of length of chunkSize
   :raise: RuntimeError if numberOfFilesInChunk is less than 1
   """

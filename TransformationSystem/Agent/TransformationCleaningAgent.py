@@ -1,7 +1,9 @@
 """ :mod: TransformationCleaningAgent
+
     =================================
 
     .. module: TransformationCleaningAgent
+
     :synopsis: clean up of finalised transformations
 """
 
@@ -34,9 +36,9 @@ class TransformationCleaningAgent( AgentModule ):
   """
   .. class:: TransformationCleaningAgent
 
-  :param DataManger dm: DataManager instance
-  :param TransfromationClient transClient: TransfromationClient instance
-  :param FileCatalogClient metadataClient: FileCatalogClient instance
+  :param ~DIRAC.DataManagementSystem.Client.DataManager.DataManager dm: DataManager instance
+  :param ~TransformationClient.TransformationClient transClient: TransformationClient instance
+  :param ~FileCatalogClient.FileCatalogClient metadataClient: FileCatalogClient instance
 
   """
 

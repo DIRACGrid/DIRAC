@@ -6,10 +6,13 @@
 ########################################################################
 
 """ :mod: RemoveFile
+
     ================
 
     .. module: RemoveFile
+
     :synopsis: removeFile operation handler
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     removeFile operation handler

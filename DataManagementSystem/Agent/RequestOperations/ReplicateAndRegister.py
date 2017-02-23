@@ -4,10 +4,13 @@
 # Date: 2013/03/13 18:49:12
 ########################################################################
 """ :mod: ReplicateAndRegister
+
     ==========================
 
     .. module: ReplicateAndRegister
+
     :synopsis: ReplicateAndRegister operation handler
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     ReplicateAndRegister operation handler

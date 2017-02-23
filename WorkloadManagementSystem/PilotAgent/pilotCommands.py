@@ -272,26 +272,29 @@ class InstallDIRAC( CommandBase ):
 
 class ConfigureBasics( CommandBase ):
   """ This command completes DIRAC installation, e.g. calls dirac-configure to:
-      - download, by default, the CAs
-      - creates a standard or custom (defined by self.pp.localConfigFile) cfg file
-        to be used where all the pilot configuration is to be set, e.g.:
-      - adds to it basic info like the version
-      - adds to it the security configuration
+        - download, by default, the CAs
+        - creates a standard or custom (defined by self.pp.localConfigFile) cfg file
+          to be used where all the pilot configuration is to be set, e.g.:
+        - adds to it basic info like the version
+        - adds to it the security configuration
 
       If there is more than one command calling dirac-configure, this one should be always the first one called.
 
-      Nota Bene: Further commands should always call dirac-configure using the options -FDMH
-      Nota Bene: If custom cfg file is created further commands should call dirac-configure with
-                 "-O %s %s" % ( self.pp.localConfigFile, self.pp.localConfigFile )
+      .. note:: Further commands should always call dirac-configure using the options -FDMH
+
+      .. note:: If custom cfg file is created further commands should call dirac-configure with
+        "-O %s %s" % ( self.pp.localConfigFile, self.pp.localConfigFile )
 
       From here on, we have to pay attention to the paths. Specifically, we need to know where to look for
-      - executables (scripts)
-      - DIRAC python code
+        - executables (scripts)
+        - DIRAC python code
+
       If the pilot has installed DIRAC (and extensions) in the traditional way, so using the dirac-install.py script,
       simply the current directory is used, and:
-      - scripts will be in $CWD/scripts.
-      - DIRAC python code will be all sitting in $CWD
-      - the local dirac.cfg file will be found in $CWD/etc
+
+        - scripts will be in $CWD/scripts.
+        - DIRAC python code will be all sitting in $CWD
+        - the local dirac.cfg file will be found in $CWD/etc
 
       For a more general case of non-traditional installations, we should use the PATH and PYTHONPATH as set by the
       installation phase. Executables and code will be searched there.

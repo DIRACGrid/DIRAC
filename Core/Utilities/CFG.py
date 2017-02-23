@@ -445,7 +445,8 @@ class CFG( object ):
 
     :type path: string
     :param path: Path to retrieve as dict
-    :return : Dictionary containing the data
+    :return: Dictionary containing the data
+
     """
     resVal = {}
     if path:
@@ -727,7 +728,7 @@ class CFG( object ):
     """
     Compare two cfgs
 
-    :type newerCfg: CFG
+    :type newerCfg: ~DIRAC.Core.Utilities.CFG.CFG
     :param newerCfg: Cfg to compare with
     :type prefix: string
     :param prefix: Internal use only
