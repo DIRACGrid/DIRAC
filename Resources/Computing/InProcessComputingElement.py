@@ -1,5 +1,4 @@
 ########################################################################
-# $Id$
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,11 +11,11 @@ __RCSID__ = "$Id$"
 import os
 import stat
 
+from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.ThreadScheduler                import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                     import systemCall
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-from DIRAC                                               import S_OK, S_ERROR
 
 
 class InProcessComputingElement( ComputingElement ):
@@ -63,7 +62,9 @@ class InProcessComputingElement( ComputingElement ):
     self.log.verbose( 'Starting process for monitoring payload proxy' )
 
     renewTask = None
-    result = gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy, taskArgs = ( pilotProxy, payloadProxy ), executions = 0, elapsedTime = 0 )
+    result = gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
+                                               taskArgs = ( pilotProxy, payloadProxy ),
+                                               executions = 0, elapsedTime = 0 )
     if result[ 'OK' ]:
       renewTask = result[ 'Value' ]
 

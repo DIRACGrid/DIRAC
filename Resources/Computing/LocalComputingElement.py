@@ -1,14 +1,15 @@
 ########################################################################
-# File :   BatchComputingElement.py
+# File :   LocalComputingElement.py
 # Author : Ricardo Graciani, A.T.
 ########################################################################
 
-""" BatchComputingElement is a class to handle non-grid computing clusters
+""" LocalComputingElement is a class to handle non-grid computing clusters
 """
 
 import os
 import stat
-import shutil, tempfile
+import shutil
+import tempfile
 import getpass
 from urlparse import urlparse
 
@@ -76,8 +77,8 @@ class LocalComputingElement( ComputingElement ):
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower()  in ['no', 'false', '0']:
         self.removeOutput = False
-        
-    return S_OK()    
+
+    return S_OK()
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -166,7 +167,7 @@ class LocalComputingElement( ComputingElement ):
 
     if resultSubmit['Status'] == 0:
       self.submittedJobs += len( resultSubmit['Jobs'] )
-      jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+_id for _id in resultSubmit['Jobs'] ]  
+      jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+_id for _id in resultSubmit['Jobs'] ]
       result = S_OK( jobIDs )
     else:
       result = S_ERROR( resultSubmit['Message'] )
@@ -273,15 +274,15 @@ class LocalComputingElement( ComputingElement ):
     """
     jobStamp = os.path.basename( urlparse( jobID ).path )
     host = urlparse( jobID ).hostname
-    
+
     if hasattr( self.batch, 'getOutputFiles' ):
-      output, error = self.batch.getOutputFiles( jobStamp, 
+      output, error = self.batch.getOutputFiles( jobStamp,
                                                  self.batchOutput,
                                                  self.batchError )
     else:
       output = '%s/%s.out' % ( self.batchOutput, jobStamp )
       error = '%s/%s.out' % ( self.batchError, jobStamp )
-  
+
     return S_OK( ( jobStamp, host, output, error ) )
 
 
