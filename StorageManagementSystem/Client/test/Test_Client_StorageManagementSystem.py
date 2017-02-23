@@ -1,7 +1,7 @@
 """ Test for StorageManagement clients
 """
 
-#pylint: disable=protected-access,missing-docstring,invalid-name
+# pylint: disable=protected-access,missing-docstring,invalid-name
 
 import unittest
 from mock import MagicMock, patch
@@ -11,8 +11,8 @@ from DIRAC.StorageManagementSystem.Client.StorageManagerClient import getFilesTo
 from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
 
 mockObjectSE = MagicMock()
-mockObjectSE.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Cached':0},
-                                                                 '/a/lfn/2.txt':{'Cached':1}},
+mockObjectSE.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Accessible':False},
+                                                                 '/a/lfn/2.txt':{'Cached':1, 'Accessible':True}},
                                                    'Failed':{}} )
 mockObjectSE.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
 
