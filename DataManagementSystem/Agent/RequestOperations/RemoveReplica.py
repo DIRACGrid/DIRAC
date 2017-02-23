@@ -130,6 +130,9 @@ class RemoveReplica( DMSRequestOperationsBase ):
     :param dict toRemoveDict: { lfn: opFile, ... }
     :param str targetSE: target SE name
     """
+    # Clear the error
+    for opFile in toRemoveDict.itervalues():
+      opFile.Error = ''
     removeReplicas = self.dm.removeReplica( targetSE, toRemoveDict.keys() )
     if not removeReplicas["OK"]:
       for opFile in toRemoveDict.itervalues():

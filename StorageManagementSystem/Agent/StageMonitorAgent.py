@@ -89,7 +89,7 @@ class StageMonitorAgent( AgentModule ):
     for lfn, metadata in prestageStatus['Successful'].iteritems():
       if not metadata:
         continue
-      staged = metadata.get( 'Cached' )
+      staged = metadata.get( 'Cached', metadata['Accessible'] )
       if staged:
         accountingDict['TransferTotal'] += 1
         accountingDict['TransferOK'] += 1

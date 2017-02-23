@@ -153,7 +153,7 @@ class MonitoringDB( ElasticDB ):
           query = self._Q( 'match', **kwargs )
       q += [query]
 
-    a1 = self._A( 'terms', field = grouping, size = 1 )
+    a1 = self._A( 'terms', field = grouping, size = self.RESULT_SIZE )
     a2 = self._A( 'terms', field = 'timestamp' )
     a2.metric( 'total_jobs', 'sum', field = selectFields[0] )
     a1.bucket( 'end_data',
@@ -226,12 +226,12 @@ class MonitoringDB( ElasticDB ):
                   value -> list of possible values
 
     """
-#    {'query': {'bool': {'filter': [{'bool': {'must': [{'range': {'timestamp': {'gte': 1474271462000, 'lte': 1474357862000}}}]}}]}}, 'aggs': {'end_data': {'date_histogram': {'field': 'timestamp', 'interval': '30m'}, 'aggs': {'tt': {'terms': {'field': 'component', 'size': 1}, 'aggs': {'m1': {'avg': {'
+#    {'query': {'bool': {'filter': [{'bool': {'must': [{'range': {'timestamp': {'gte': 1474271462000, 'lte': 1474357862000}}}]}}]}}, 'aggs': {'end_data': {'date_histogram': {'field': 'timestamp', 'interval': '30m'}, 'aggs': {'tt': {'terms': {'field': 'component', 'size': 10000}, 'aggs': {'m1': {'avg': {'
 #    field': 'threads'}}}}}}}}
 #
 #     query = [Q( 'range',timestamp = {'lte':1474357862000,'gte': 1474271462000} )]
 #
-#     a = A('terms', field = 'component', size = 1 )
+#     a = A('terms', field = 'component', size = 10000 )
 #     a.metric('m1', 'avg', field = 'threads' )
 #
 #     s = Search(using=cl, index = 'lhcb-certification_componentmonitoring-index-*')
@@ -260,7 +260,7 @@ class MonitoringDB( ElasticDB ):
           query = self._Q( 'match', **kwargs )
       q += [query]
 
-    a1 = self._A( 'terms', field = grouping, size = 1 )
+    a1 = self._A( 'terms', field = grouping, size = self.RESULT_SIZE )
     a1.metric( 'm1', aggregator, field = selectFields[0] )
 
     s = self._Search( indexName )
@@ -271,7 +271,7 @@ class MonitoringDB( ElasticDB ):
                    interval = interval ).metric( 'tt', a1 )
 
     #s.fields( ['timestamp'] + selectFields )
-    s = s.extra( size = 1 )  # do not get the hits!
+    s = s.extra( size = self.RESULT_SIZE )  # do not get the hits!
 
     gLogger.debug( 'Query:', s.to_dict() )
     retVal = s.execute()
@@ -327,7 +327,7 @@ class MonitoringDB( ElasticDB ):
       mapping = self.__documents[monitoringType].get( "mapping", {} )
     return mapping
 
-  def __getRawData( self, typeName, condDict, size = 1 ):
+  def __getRawData( self, typeName, condDict, size = -1 ):
     """
     It returns the last day data for a given monitoring type.
     for example: {'sort': [{'timestamp': {'order': 'desc'}}],
@@ -339,6 +339,8 @@ class MonitoringDB( ElasticDB ):
                   value -> list of possible values
     :param int size number of rows which whill be returned. By default is all
     """
+    if size < 0: 
+      size = self.RESULT_SIZE 
     retVal = self.getIndexName( typeName )
     if not retVal['OK']:
       return retVal

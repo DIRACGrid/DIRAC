@@ -422,20 +422,19 @@ class StageRequestAgent( AgentModule ):
         gLogger.error( "StageRequest.__checkIntegrity: LFN StorageElement size does not match FileCatalog", lfn )
         terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN StorageElement size does not match FileCatalog'
         lfnRepIDs.pop( lfn )
-      elif metadata['Lost']:
+      elif metadata.get( 'Lost', False ):
         gLogger.error( "StageRequest.__checkIntegrity: LFN has been Lost by the StorageElement", lfn )
         terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN has been Lost by the StorageElement'
         lfnRepIDs.pop( lfn )
-      elif metadata['Unavailable']:
+      elif metadata.get( 'Unavailable', False ):
         gLogger.error( "StageRequest.__checkIntegrity: LFN is declared Unavailable by the StorageElement", lfn )
         terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN is declared Unavailable by the StorageElement'
         lfnRepIDs.pop( lfn )
+      elif metadata.get( 'Cached', metadata['Accessible'] ):
+        gLogger.verbose( "StageRequest.__checkIntegrity: Cache hit for file." )
+        onlineReplicaIDs.append( lfnRepIDs[lfn] )
       else:
-        if metadata['Cached']:
-          gLogger.verbose( "StageRequest.__checkIntegrity: Cache hit for file." )
-          onlineReplicaIDs.append( lfnRepIDs[lfn] )
-        else:
-          offlineReplicaIDs.append( lfnRepIDs[lfn] )
+        offlineReplicaIDs.append( lfnRepIDs[lfn] )
 
     for lfn, reason in res['Value']['Failed'].iteritems():
       if re.search( 'File does not exist', reason ):
