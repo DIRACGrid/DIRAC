@@ -219,6 +219,8 @@ class SiteStatus( object ):
           S_OK( ['test1.test1.uk', 'test3.test3.org'] )
       >>> siteStatus.getSites( 'Banned' )
           S_OK( ['test0.test0.uk', ... ] )
+      >>> siteStatus.getSites( 'All' )
+          S_OK( ['test1.test1.uk', 'test3.test3.org', 'test4.test4.org', 'test5.test5.org'...] )
       >>> siteStatus.getSites( None )
           S_ERROR( ... )
 
@@ -232,16 +234,26 @@ class SiteStatus( object ):
     if not siteState:
       return S_ERROR(DErrno.ERESUNK, 'siteState parameter is empty')
 
-    # fix case sensitive string
-    siteState = siteState.capitalize()
-    allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
-    if siteState not in allowedStateList:
-      return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
+    elif siteState.capitalize() == 'All':
 
-    if self.rssFlag:
-      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'Name' ] } )
+      # if no siteState is set return everything
+      if self.rssFlag:
+        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name' ] } )
+      else:
+        siteStatus = self.wmsAdministrator.getSiteMask( 'All' )
+
     else:
-      siteStatus = self.wmsAdministrator.getSiteMask()
+
+      # fix case sensitive string
+      siteState = siteState.capitalize()
+      allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
+      if siteState not in allowedStateList:
+        return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
+
+      if self.rssFlag:
+        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'Name' ] } )
+      else:
+        siteStatus = self.wmsAdministrator.getSiteMask()
 
     if not siteStatus['OK']:
       return siteStatus

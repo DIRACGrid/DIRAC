@@ -468,7 +468,7 @@ class SiteDirector( AgentModule ):
       # =====================================================================================================
 
       # Check the status of the ComputingElement
-      result = self.rssClient.getElementStatus(ceName, "CE")
+      result = self.rssClient.getElementStatus(ceName, "ComputingElement")
       if not result['OK']:
         self.log.error( "Can not get the status of computing element %s: %s" % (siteName, result['Message']) )
         continue

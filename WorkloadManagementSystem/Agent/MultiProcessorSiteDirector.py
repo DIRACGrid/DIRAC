@@ -126,8 +126,8 @@ class MultiProcessorSiteDirector( SiteDirector ):
 
     siteClient = SiteStatus()
 
-    # Check if the site is allowed in the mask
-    result = siteClient.getSites()
+    # TODO: remove the 'All' parameter once the PropagationPolicy works properly
+    result = siteClient.getSites('All')
     if not result['OK']:
       return S_ERROR( 'Can not get the site mask' )
     siteMaskList = result['Value']
