@@ -226,12 +226,15 @@ class InstallDIRAC( CommandBase ):
       pass
 
   def _installDIRAC( self ):
-    """ launch the installation script
+    """ Install DIRAC or its extension, then parse the environment file created, and use it for subsequent calls
     """
+    # Installing
     installCmd = "%s %s" % ( self.installScript, " ".join( self.installOpts ) )
     self.log.debug( "Installing with: %s" % installCmd )
 
-    retCode, output = self.executeAndGetOutput( installCmd )
+    # Tt this point self.pp.installEnv may coincide with os.environ
+    # If extensions want to pass in a modified environment, it's easy to set self.pp.installEnv in an extended command
+    retCode, output = self.executeAndGetOutput( installCmd, self.pp.installEnv )
     self.log.info( output, header = False )
 
     if retCode:
@@ -239,31 +242,24 @@ class InstallDIRAC( CommandBase ):
       self.exitWithError( retCode )
     self.log.info( "%s completed successfully" % self.installScriptName )
 
-    diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )
-    platformScript = os.path.join( diracScriptsPath, "dirac-platform" )
-    if not self.pp.platform:
-      retCode, output = self.executeAndGetOutput( platformScript )
-      if retCode:
-        self.log.error( "Failed to determine DIRAC platform [ERROR %d]" % retCode )
-        self.exitWithError( retCode )
-      self.pp.platform = output
-    diracBinPath = os.path.join( self.pp.rootPath, self.pp.platform, 'bin' )
-    diracLibPath = os.path.join( self.pp.rootPath, self.pp.platform, 'lib' )
 
-    for envVarName in ( 'LD_LIBRARY_PATH', 'PYTHONPATH' ):
-      if envVarName in os.environ:
-        os.environ[ '%s_SAVE' % envVarName ] = os.environ[ envVarName ]
-        del os.environ[ envVarName ]
-      else:
-        os.environ[ '%s_SAVE' % envVarName ] = ""
+    # Parsing the bashrc then adding its content to the installEnv
+    # at this point self.pp.installEnv may still coincide with os.environ
+    retCode, output = self.executeAndGetOutput( 'bash -c "source bashrc && env"', self.pp.installEnv )
+    if retCode:
+      self.log.error( "Could not parse the bashrc file [ERROR %d]" % retCode )
+      self.exitWithError( retCode )
+    for line in output.split('\n'):
+      try:
+        var = line.split( '=' )[0].strip()
+        value = line.split( '=' )[1].strip()
+        if var == '_' or 'SSH' in var or '{' in value or '}' in value: # Avoiding useless/confusing stuff
+          continue
+        self.pp.installEnv[var] = value
+      except IndexError:
+        continue
+    # At this point self.pp.installEnv should contain all content of bashrc, sourced "on top" of (maybe) os.environ
 
-    os.environ['LD_LIBRARY_PATH'] = "%s" % ( diracLibPath )
-    sys.path.insert( 0, self.pp.rootPath )
-    sys.path.insert( 0, diracScriptsPath )
-    if "PATH" in os.environ:
-      os.environ['PATH'] = '%s:%s:%s' % ( diracBinPath, diracScriptsPath, os.getenv( 'PATH' ) )
-    else:
-      os.environ['PATH'] = '%s:%s' % ( diracBinPath, diracScriptsPath )
     self.pp.diracInstalled = True
 
   def execute( self ):
