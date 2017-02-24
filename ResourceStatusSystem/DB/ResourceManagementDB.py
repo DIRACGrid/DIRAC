@@ -118,10 +118,10 @@ class ResourceManagementDB( object ):
 
     AccountingCache         = Table( 'AccountingCache', self.metadata,
                               Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
-                              Column( 'LastCheckTime', DateTime, nullable = True ),
+                              Column( 'LastCheckTime', DateTime, nullable = False ),
                               Column( 'PlotName', String( 64 ), nullable = False, primary_key = True ),
                               Column( 'Result', Text, nullable = False ),
-                              Column( 'DateEffective', DateTime, nullable = True ),
+                              Column( 'DateEffective', DateTime, nullable = False ),
                               Column( 'PlotType', String( 16 ), nullable = False, primary_key = True ),
                               mysql_engine = 'InnoDB' )
 
@@ -131,10 +131,10 @@ class ResourceManagementDB( object ):
                                Column( 'Link', String( 255 ), nullable = False ),
                                Column( 'EndDate', DateTime, nullable = False ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = True ),
+                               Column( 'DateEffective', DateTime, nullable = False ),
                                Column( 'Description', String( 512 ), nullable = False ),
                                Column( 'Severity', String( 32 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                Column( 'Element', String( 32 ), nullable = False ),
                                Column( 'GOCDBServiceType', String( 32 ), nullable = False ),
                                mysql_engine = 'InnoDB' )
@@ -144,7 +144,7 @@ class ResourceManagementDB( object ):
                                Column( 'OpenTickets', Integer, nullable = False, server_default = '0'),
                                Column( 'GocSite', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'Link', String( 1024 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                mysql_engine = 'InnoDB' )
 
     JobCache                 = Table( 'JobCache', self.metadata,
@@ -152,12 +152,12 @@ class ResourceManagementDB( object ):
                                Column( 'Efficiency', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
                                Column( 'MaskStatus', String( 32 ), nullable = False ),
                                Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                mysql_engine = 'InnoDB' )
 
     PilotCache               = Table( 'PilotCache', self.metadata,
                                Column( 'Status', String( 16 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'CE', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'PilotsPerJob', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
@@ -169,15 +169,15 @@ class ResourceManagementDB( object ):
                                Column( 'PolicyName', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' ),
                                Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'DateEffective', DateTime, nullable = True ),
+                               Column( 'DateEffective', DateTime, nullable = False ),
                                Column( 'StatusType', String( 16 ), nullable = False, server_default = '', primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                Column( 'Element', String( 32 ), nullable = False, primary_key = True ),
                                mysql_engine = 'InnoDB' )
 
     SpaceTokenOccupancyCache = Table( 'SpaceTokenOccupancyCache', self.metadata,
                                Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                Column( 'Guaranteed', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
                                Column( 'Free', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
                                Column( 'Token', String( 64 ), nullable = False, primary_key = True ),
@@ -186,7 +186,7 @@ class ResourceManagementDB( object ):
 
     TransferCache            = Table( 'TransferCache', self.metadata,
                                Column( 'SourceName', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                Column( 'Metric', String( 16 ), nullable = False, primary_key = True ),
                                Column( 'Value', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
                                Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True ),
@@ -195,14 +195,14 @@ class ResourceManagementDB( object ):
     UserRegistryCache        = Table( 'UserRegistryCache', self.metadata,
                                Column( 'Login', String( 14 ), primary_key = True ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                Column( 'Email', String( 64 ), nullable = False ),
                                mysql_engine = 'InnoDB' )
 
     ErrorReportBuffer        = Table( 'ErrorReportBuffer', self.metadata,
                                Column( 'ErrorMessage', String( 512 ), nullable = False ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = True ),
+                               Column( 'DateEffective', DateTime, nullable = False ),
                                Column( 'Reporter', String( 64 ), nullable = False ),
                                Column( 'Operation', String( 64 ), nullable = False ),
                                Column( 'ElementType', String( 32 ), nullable = False ),
@@ -215,10 +215,10 @@ class ResourceManagementDB( object ):
                                Column( 'PolicyName', String( 64 ), nullable = False ),
                                Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = True ),
+                               Column( 'DateEffective', DateTime, nullable = False ),
                                Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
                                Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                Column( 'Element', String( 32 ), nullable = False ),
                                mysql_engine = 'InnoDB' )
 
@@ -227,10 +227,10 @@ class ResourceManagementDB( object ):
                                Column( 'PolicyName', String( 64 ), nullable = False ),
                                Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = True ),
+                               Column( 'DateEffective', DateTime, nullable = False ),
                                Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
                                Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                Column( 'Element', String( 32 ), nullable = False ),
                                mysql_engine = 'InnoDB' )
 
@@ -239,10 +239,10 @@ class ResourceManagementDB( object ):
                                Column( 'PolicyName', String( 64 ), nullable = False ),
                                Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
                                Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = True ),
+                               Column( 'DateEffective', DateTime, nullable = False ),
                                Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
                                Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = True ),
+                               Column( 'LastCheckTime', DateTime, nullable = False ),
                                Column( 'Element', String( 32 ), nullable = False ),
                                mysql_engine = 'InnoDB' )
 
