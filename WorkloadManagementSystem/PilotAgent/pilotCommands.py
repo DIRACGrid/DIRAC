@@ -232,7 +232,7 @@ class InstallDIRAC( CommandBase ):
     installCmd = "%s %s" % ( self.installScript, " ".join( self.installOpts ) )
     self.log.debug( "Installing with: %s" % installCmd )
 
-    # Tt this point self.pp.installEnv may coincide with os.environ
+    # At this point self.pp.installEnv may coincide with os.environ
     # If extensions want to pass in a modified environment, it's easy to set self.pp.installEnv in an extended command
     retCode, output = self.executeAndGetOutput( installCmd, self.pp.installEnv )
     self.log.info( output, header = False )
@@ -252,7 +252,7 @@ class InstallDIRAC( CommandBase ):
     for line in output.split('\n'):
       try:
         var = line.split( '=' )[0].strip()
-        value = line.split( '=' )[1].strip()
+        value = '='.join( line.split( "=" )[1:] ).strip()
         if var == '_' or 'SSH' in var or '{' in value or '}' in value: # Avoiding useless/confusing stuff
           continue
         self.pp.installEnv[var] = value
