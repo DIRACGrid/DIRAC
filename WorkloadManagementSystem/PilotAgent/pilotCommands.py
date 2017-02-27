@@ -251,8 +251,7 @@ class InstallDIRAC( CommandBase ):
       self.exitWithError( retCode )
     for line in output.split('\n'):
       try:
-        var = line.split( '=' )[0].strip()
-        value = '='.join( line.split( "=" )[1:] ).strip()
+        var, value = [vx.strip() for vx in line.split( '=', 1 )]
         if var == '_' or 'SSH' in var or '{' in value or '}' in value: # Avoiding useless/confusing stuff
           continue
         self.pp.installEnv[var] = value
