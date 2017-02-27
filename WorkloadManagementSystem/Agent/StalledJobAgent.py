@@ -44,6 +44,7 @@ for the agent restart
     self.jobDB = JobDB()
     self.logDB = JobLoggingDB()
     self.am_setOption( 'PollingTime', 60 * 60 )
+    self.ExcludeJobsfromSite = self.am_getOption( 'ExcludeJobsfromSite' )
     if not self.am_getOption( 'Enable', True ):
       self.log.info( 'Stalled Job Agent running in disabled mode' )
     return S_OK()
@@ -115,13 +116,15 @@ for the agent restart
 # jobs = jobs[:10] #for debugging
     for job in jobs:
       result = self.__getStalledJob( job, stalledTime )
-      if result['OK']:
-        self.log.verbose( 'Updating status to Stalled for job %s' % ( job ) )
-        self.__updateJobStatus( job, 'Stalled' )
-        stalledCounter += 1
-      else:
-        self.log.verbose( result['Message'] )
-        runningCounter += 1
+      site = self.jobDB.getJobAttribute( job, 'site' )
+      if self.ExcludeJobsfromSite != site:
+        if result['OK']:
+          self.log.verbose( 'Updating status to Stalled for job %s' % ( job ) )
+          self.__updateJobStatus( job, 'Stalled' )
+          stalledCounter += 1
+        else:
+          self.log.verbose( result['Message'] )
+          runningCounter += 1
 
     self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' %
                    ( len( jobs ), stalledCounter, runningCounter ) )
