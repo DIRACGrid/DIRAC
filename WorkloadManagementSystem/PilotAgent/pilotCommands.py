@@ -255,7 +255,7 @@ class InstallDIRAC( CommandBase ):
         if var == '_' or 'SSH' in var or '{' in value or '}' in value: # Avoiding useless/confusing stuff
           continue
         self.pp.installEnv[var] = value
-      except IndexError:
+      except (IndexError, ValueError):
         continue
     # At this point self.pp.installEnv should contain all content of bashrc, sourced "on top" of (maybe) os.environ
 
