@@ -96,7 +96,6 @@ class SiteDirector( AgentModule ):
     self.sendAccounting = True
     self.rssClient = ResourceStatus()
     self.rssFlag = self.rssClient.rssFlag
-    self.sstClient = SiteStatus()
 
     self.siteClient = SiteStatus()
 
@@ -466,7 +465,7 @@ class SiteDirector( AgentModule ):
       # TODO: The following lines must be uncommented when the PropagationPolicy works properly
       # =====================================================================================================
       # Check the status of the Site
-      # result = self.sstClient.getSiteStatuses({siteName})
+      # result = self.siteClient.getSiteStatuses({siteName})
       # if not result['OK']:
       #   self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
       #   continue
