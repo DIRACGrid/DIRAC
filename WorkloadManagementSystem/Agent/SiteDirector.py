@@ -428,6 +428,7 @@ class SiteDirector( AgentModule ):
 
     if self.rssFlag:
 
+      # TODO: remove the 'All' parameter once the PropagationPolicy works properly
       result = self.siteClient.getSites('All')
       if not result['OK']:
         return S_ERROR( 'Can not get the site status' )
