@@ -175,9 +175,9 @@ These are the plugins that you should define in the `PluginName` option of your 
   - SRM2: for the srm protocol, using the deprecated gfal libraries.
   - RFIO: for the rfio protocol.
   - Proxy: to be used with the StorageElementProxy.
-  - XROOT: for the xroot protocol, using the python xroot binding.
+  - XROOT: for the xroot protocol, using the python xroot binding (http://xrootd.org/doc/python/xrootd-python-0.1.0/#).
 
-There are also a set of plugins based on the gfal2 libraries.
+There are also a set of plugins based on the gfal2 libraries (https://dmc.web.cern.ch/projects).
 
   - GFAL2_SRM2: for srm, replaces SRM2
   - GFAL2_XROOT: for xroot, replaces XROOT
