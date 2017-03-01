@@ -247,7 +247,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     plugin = transDict.get( 'Plugin', 'Standard' )
     # Limit the number of LFNs to be considered for replication or removal as they are treated individually
     if not forJobs:
-      maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFilesToProcess' % plugin, 0 )
+      maxFiles = Operations().getValue( 'TransformationPlugins/%s/MaxFilesToProcess' % plugin, 0 )
       # Get plugin-specific limit in number of files (0 means no limit)
       totLfns = len( unusedLfns )
       lfnsToProcess = self.__applyReduction( unusedLfns, maxFiles = maxFiles )
