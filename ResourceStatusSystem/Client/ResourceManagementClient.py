@@ -67,6 +67,8 @@ class ResourceManagementClient( object ):
       # apply default values
       if key in ['dateEffective', 'lastCheckTime'] and value is None:
         sendDict.update({uppercase_first_letter(key): datetime.utcnow() })
+      elif key == 'tokenExpiration' and value is None:
+        sendDict.update({uppercase_first_letter(key): datetime.utcnow() + datetime.timedelta(hours=24)})
       else:
         sendDict.update({uppercase_first_letter(key): value})
 

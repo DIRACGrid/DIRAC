@@ -225,6 +225,14 @@ class ResourceStatusDB( object ):
 
     try:
 
+      # defaults
+      if not dateEffective:
+        dateEffective = datetime.datetime.utcnow()
+      if not lastCheckTime:
+        lastCheckTime = datetime.datetime.utcnow()
+      if not tokenExpiration:
+        tokenExpiration = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+
       table = metadata.tables.get( element + tableType ).insert()
       self.engine.execute( table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,
                            Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
