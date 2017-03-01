@@ -248,9 +248,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # Limit the number of LFNs to be considered for replication or removal as they are treated individually
     if not forJobs:
       # Get plugin-specific limit in number of files (0 means no limit)
-      maxFiles = Operations().getValue( '/TransformationPlugins/%s/MaxFilesToProcess' % plugin, self.maxFiles )
       totLfns = len( unusedLfns )
-      lfnsToProcess = self.__applyReduction( unusedLfns, maxFiles = maxFiles )
+      lfnsToProcess = self.__applyReduction( unusedLfns )
       if len( lfnsToProcess ) != totLfns:
         self._logInfo( "Reduced number of files from %d to %d" % ( totLfns, len( lfnsToProcess ) ),
                        method = method, transID = transID )
@@ -336,7 +335,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # Check if files should be sorted and limited in number
     operations = Operations()
     sortedBy = operations.getValue( 'TransformationPlugins/%s/SortedBy' % plugin, None )
-    maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFiles' % plugin, 0 )
+    maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFilesToProcess' % plugin, 0 )
     noUnusedDelay = 0 if self.pluginTimeout.get( transID, False ) else operations.getValue( 'TransformationPlugins/%s/NoUnusedDelay' % plugin,
                                                                                             self.noUnusedDelay )
     method = '_getTransformationFiles'
@@ -407,14 +406,12 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         self.__removeFilesFromCache( transID, notUnused )
     return S_OK( transFiles )
 
-  def __applyReduction( self, lfns, maxFiles = None ):
+  def __applyReduction( self, lfns ):
     """ eventually remove the number of files to be considered
     """
-    if maxFiles is None:
-      maxFiles = self.maxFiles
-    if not maxFiles or len( lfns ) <= maxFiles:
+    if len( lfns ) <= self.maxFiles:
       return lfns
-    return randomize( lfns )[:maxFiles]
+    return randomize( lfns )[:self.maxFiles]
 
   def __getDataReplicas( self, transDict, lfns, clients, forJobs = True ):
     """ Get the replicas for the LFNs and check their statuses. It first looks within the cache.
