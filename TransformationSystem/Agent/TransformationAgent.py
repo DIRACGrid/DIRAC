@@ -247,9 +247,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     plugin = transDict.get( 'Plugin', 'Standard' )
     # Limit the number of LFNs to be considered for replication or removal as they are treated individually
     if not forJobs:
+      maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFilesToProcess' % plugin, 0 )
       # Get plugin-specific limit in number of files (0 means no limit)
       totLfns = len( unusedLfns )
-      lfnsToProcess = self.__applyReduction( unusedLfns )
+      lfnsToProcess = self.__applyReduction( unusedLfns, maxFiles = maxFiles )
       if len( lfnsToProcess ) != totLfns:
         self._logInfo( "Reduced number of files from %d to %d" % ( totLfns, len( lfnsToProcess ) ),
                        method = method, transID = transID )
@@ -410,12 +411,14 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         self.__removeFilesFromCache( transID, notUnused )
     return S_OK( transFiles )
 
-  def __applyReduction( self, lfns ):
+  def __applyReduction( self, lfns, maxFiles = None ):
     """ eventually remove the number of files to be considered
     """
-    if len( lfns ) <= self.maxFiles:
+    if maxFiles is None:
+      maxFiles = self.maxFiles
+    if not maxFiles or len( lfns ) <= maxFiles:
       return lfns
-    return randomize( lfns )[:self.maxFiles]
+    return randomize( lfns )[:maxFiles]
 
   def __getDataReplicas( self, transDict, lfns, clients, forJobs = True ):
     """ Get the replicas for the LFNs and check their statuses. It first looks within the cache.
