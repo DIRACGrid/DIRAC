@@ -329,13 +329,17 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   def _getTransformationFiles( self, transDict, clients, statusList = None, replicateOrRemove = False ):
     """ get the data replicas for a certain transID
     """
-
+    # By default, don't skip if no new Unused for DM transformations
+    skipIfNoNewUnused = not replicateOrRemove
     transID = transDict['TransformationID']
     plugin = transDict.get( 'Plugin', 'Standard' )
     # Check if files should be sorted and limited in number
     operations = Operations()
     sortedBy = operations.getValue( 'TransformationPlugins/%s/SortedBy' % plugin, None )
     maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFilesToProcess' % plugin, 0 )
+    # If the NoUnuse delay is explicitly set, we want to take it into account, and skip if no new Unused
+    if operations.getValue( 'TransformationPlugins/%s/NoUnusedDelay' % plugin, 0 ):
+      skipIfNoNewUnused = True
     noUnusedDelay = 0 if self.pluginTimeout.get( transID, False ) else operations.getValue( 'TransformationPlugins/%s/NoUnusedDelay' % plugin,
                                                                                             self.noUnusedDelay )
     method = '_getTransformationFiles'
@@ -384,7 +388,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     # Check if something new happened
     now = datetime.datetime.utcnow()
-    if not kickTrans and not replicateOrRemove and noUnusedDelay:
+    if not kickTrans and skipIfNoNewUnused and noUnusedDelay:
       nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = noUnusedDelay )
       skip = now < nextStamp
       if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
