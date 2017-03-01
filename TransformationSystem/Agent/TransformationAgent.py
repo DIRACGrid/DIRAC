@@ -449,7 +449,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     cachedReplicaSets = self.replicaCache.get( transID, {} )
     cachedReplicas = {}
     # Merge all sets of replicas
-    for replicas in cachedReplicaSets.values():
+    for replicas in cachedReplicaSets.itervalues():
       cachedReplicas.update( replicas )
     self._logInfo( "Number of cached replicas: %d" % len( cachedReplicas ), method = method, transID = transID )
     setCached = set( cachedReplicas )
@@ -560,7 +560,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ Remove cached replicas that are not in a list
     """
     cachedReplicas = set()
-    for replicas in self.replicaCache.get( transID, {} ).values():
+    for replicas in self.replicaCache.get( transID, {} ).itervalues():
       cachedReplicas.update( replicas )
     toRemove = cachedReplicas - set( lfns )
     if toRemove:
@@ -630,7 +630,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
   def __filesInCache( self, transID ):
     cache = self.replicaCache.get( transID, {} )
-    return sum( len( lfns ) for lfns in cache.values() )
+    return sum( len( lfns ) for lfns in cache.itervalues() )
 
   @gSynchro
   def __writeCache( self, transID = None ):
