@@ -13,6 +13,7 @@ import M2Crypto
 import re
 import time
 import GSI # XXX Still needed for some parts I haven't finished yet
+from GSI import crypto
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -171,22 +172,19 @@ class X509Chain( object ):
     """
     Get the list of extensions for a proxy
     """
-    extList = []
-    extList.append( M2Crypto.X509.new_extension( 'keyUsage',
-                                          'digitalSignature, keyEncipherment, dataEncipherment', critical = 1 ) )
+    extStack = M2Crypto.X509.X509_Extension_Stack()
+    kUext = M2Crypto.X509.new_extension( 'keyUsage',
+                                          'digitalSignature, keyEncipherment, dataEncipherment', critical = 1 )
+    extStack.push( kUext )
     if diracGroup and type( diracGroup ) in self.__validExtensionValueTypes:
-      extList.append( M2Crypto.X509.new_extension( 'diracGroup', diracGroup) )
-    if rfc or rfcLimited: # XXX one of first things to fix, something is really bad here, couldn't verify that code is executed even with rfc flag
-      # XXX this blob is some kind of format definition - needs to be investigated and redone in M2Crypto-way.
-      blob = [ [ "1.3.6.1.5.5.7.21.1" ] ] if not rfcLimited else [ [ "1.3.6.1.4.1.3536.1.1.1.9" ] ]
-      asn1Obj = crypto.ASN1( blob )
-      asn1Obj[0][0].convert_to_object()
-      asn1dump = binascii.hexlify( asn1Obj.dump() )
-      extval = "critical,DER:" + ":".join( asn1dump[i:i + 2] for i in range( 0, len( asn1dump ), 2 ) )
-      print ">>>", extval
-      ext = crypto.X509Extension( "proxyCertInfo", extval )
-      extList.append( ext )
-    return extList
+      dGext = M2Crypto.X509.new_extension( 'diracGroup', diracGroup)
+      extStack.push( dGext )
+    if rfc or rfcLimited:
+      if rfc:
+        ext =  M2Crypto.X509.new_extension( 'proxyCertInfo', 'critical, language:1.3.6.1.5.5.7.21.1', critical = 1 )
+      elif rfcLimited:
+        ext = M2Crypto.X509.new_extension( 'proxyCertInfo', 'critical, language:1.3.6.1.4.1.3536.1.1.1.9', critical = 1 )
+    return extStack
 
   def getCertInChain( self, certPos = 0 ):
     """
@@ -260,13 +258,14 @@ class X509Chain( object ):
     proxyCert = M2Crypto.X509.X509()
 
     if rfc:
-      proxyCert.set_serial_number( str( int( random.random() * 10 ** 10 ) ) )
+      proxyCert.set_serial_number( int( random.random() * 10 ** 10 ) )
       # No easy way to deep-copy certificate subject
       cloneSubject = M2Crypto.X509.X509_Name()
+      parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
       for part in parts:
         nid, val = part.split('=')
         cloneSubject.add_entry_by_txt(field = nid, type = M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
-      cloneSubject.add_entry_by_text( "CN", M2Crypto.X509.ASN1.ASN1_String, str( int( random.random() * 10 ** 10 ) ) )
+      cloneSubject.add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  str( int( random.random() * 10 ** 10 ) ), len=-1, loc=-1, set=0 )
       proxyCert.set_subject( cloneSubject )
       for extension in self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ):
         proxyCert.add_ext( extension )
@@ -299,7 +298,7 @@ class X509Chain( object ):
     proxyString = "%s%s" % ( proxyCert.as_pem(), proxyKey.as_pem( cipher = None ) )
     for i in range( len( self.__certList ) ):
       crt = self.__certList[i]
-      proxyString += crt.asPEm()
+      proxyString += crt.asPem()
     return S_OK( proxyString )
 
   def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, strength = 1024, limited = False, rfc = False ):
