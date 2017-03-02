@@ -157,7 +157,12 @@ class DMSHelpers( object ):
         siteSEMapping[DOWNLOAD].setdefault( site, set() ).update( ses )
 
     self.siteSEMapping = siteSEMapping
-    self.storageElementSet = storageElementSet
+    # Add storage elements that may not be associated with a site
+    result = gConfig.getSections( '/Resources/StorageElements' )
+    if not result['OK']:
+      gLogger.warn( 'Problem retrieving /Resources/StorageElements section', result['Message'] )
+      return result
+    self.storageElementSet = storageElementSet | set( result['Value'] )
     self.siteSet = siteSet
     return S_OK( siteSEMapping )
 
