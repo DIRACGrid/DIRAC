@@ -415,5 +415,3 @@ class StorageBase( object ):
       return S_OK( True )
 
     return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
-
-

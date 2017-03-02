@@ -11,11 +11,15 @@
 
 # # imports
 import os
+import sys
 import datetime
 import errno
-import gfal2 # pylint: disable=import-error
+import logging
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
+
+import gfal2# pylint: disable=import-error
+
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -62,6 +66,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     dlevel = self.log.getLevel()
     if dlevel == 'DEBUG':
+      logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
       gfal2.set_verbose( gfal2.verbose_level.trace )
 
     self.isok = True
@@ -714,7 +719,6 @@ class GFAL2_StorageBase( StorageBase ):
 
     try:
       statInfo = self.ctx.stat( path )
-
     except gfal2.GError as e:
       errStr = "Failed to retrieve metadata"
       self.log.debug( errStr, repr( e ) )
@@ -1911,7 +1915,6 @@ class GFAL2_StorageBase( StorageBase ):
       for attribute in attributes:
         log.debug( "Fetching %s" % attribute )
         attributeDict[attribute] = self.ctx.getxattr( path, attribute )
-
       return S_OK( attributeDict )
     # simple error messages, the method that is calling them adds the source of error.
     except gfal2.GError as e:
