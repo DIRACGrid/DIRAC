@@ -7,6 +7,7 @@
   Base PilotDirector class to be inherited by DIRAC and Grid specific PilotDirectors, inherited by MW
   specific PilotDirectors if appropriated.
   It includes:
+
    - basic configuration functionality
 
   The main difference between DIRAC and Grid Pilot Directors is that in the first case
@@ -65,6 +66,7 @@ class PilotDirector( object ):
   """
     Base Pilot Director class.
     Derived classes must implement:
+
       * __init__( self, submitPool ):
           that must call the parent class __init__ method and then do its own initialization
       * configure( self, csSection, submitPool ):
@@ -76,10 +78,12 @@ class PilotDirector( object ):
 
 
     Derived classes might implement:
+
       * configureFromSection( self, mySection ):
           to reload from a CS section the additional datamembers they might have defined.
 
     If additional datamembers are defined, they must:
+
       - be declared in the __init__
       - be reconfigured in the configureFromSection method by executing
         self.reloadConfiguration( csSection, submitPool ) in their configure method

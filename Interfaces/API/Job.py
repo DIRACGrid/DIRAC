@@ -127,11 +127,11 @@ class Job( API ):
        :param logFile: Optional log file name
        :type logFile: string
        :param modulesList: Optional list of modules (to be used mostly when extending this method)
-       :type modulesList: list
+       :type modulesList: python:list
        :param parameters: Optional list of parameters (to be used mostly when extending this method)
-       :type parameters: list of tuples
+       :type parameters: python:list of tuples
        :param paramValues: Optional list of parameters values (to be used mostly when extending this method)
-       :type parameters: list of tuples
+       :type parameters: python:list of tuples
     """
     kwargs = {'executable':executable, 'arguments':arguments, 'logFile':logFile}
     if not isinstance( executable, basestring ) or not isinstance( arguments, basestring ) or \
@@ -373,7 +373,8 @@ class Job( API ):
     """ Function to define a sequence of values for parametric jobs.
 
     :param str name: sequence parameter name
-    :param list parameterList: list of parameter values
+    :param parameterList: list of parameter values
+    :type parameterList: python:list
     :param bool addToWorkflow: flag to add parameter to the workflow on the fly, if str, then
                                use as the workflow parameter
     :return:
@@ -458,7 +459,7 @@ class Job( API ):
        :param outputSE: Optional parameter to specify the Storage Element
        :param outputPath: Optional parameter to specify part of the path in the storage (see above)
                           Element to store data or files, e.g. CERN-tape
-       :type outputSE: string or list
+       :type outputSE: string or python:list
        :type outputPath: string
 
     """
@@ -576,7 +577,7 @@ class Job( API ):
        >>> job.setDestination('LCG.CERN.ch')
 
        :param destination: site string
-       :type destination: string or list
+       :type destination: str or python:list
     """
     kwargs = {'destination':destination}
     if isinstance( destination, basestring ):
@@ -644,7 +645,7 @@ class Job( API ):
        >>> job.setBannedSites(['LCG.GRIDKA.de','LCG.CNAF.it'])
 
        :param sites: single site string or list
-       :type sites: string or list
+       :type sites: str or python:list
     """
     if isinstance( sites, list ) and sites:
       bannedSites = ';'.join( sites )
@@ -717,7 +718,7 @@ class Job( API ):
         >>> job.setTag( ['WholeNode','8GBMemory'] )
 
         :param tags: single tag string or a list of tags
-        :type tags: string or list
+        :type tags: str or python:list
     """
 
     if isinstance( tags, basestring ):

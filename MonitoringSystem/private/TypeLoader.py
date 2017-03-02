@@ -16,10 +16,11 @@ class TypeLoader( object ):
 
   """
   .. class:: BaseType
-  :param DIRACSingleton metaclass : this is a singleton
+
+  :param ~DIRACSingleton.DIRACSingleton metaclass: this is a singleton
   :param dict loaded: it stores the loaded classes
-  :param srt path: The location of the classes
-  :param BaseType parentCls: it is the parent class
+  :param str path: The location of the classes
+  :param ~DIRAC.MonitoringSystem.Client.Types.BaseType.BaseType parentCls: it is the parent class
   :param regexp: regular expression...
   """
   __metaclass__ = DIRACSingleton.DIRACSingleton

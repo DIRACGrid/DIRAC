@@ -3,12 +3,13 @@
     They are ment to be used only internally by the MQConnectionManager, which should
     assure thread-safe access to it and standard S_OK/S_ERROR error handling.
     MQConnection storage is a dict structure that contains the MQ connections used and reused for
-    producer/consumer communication. Example structure:
-    {
-      mardirac3.in2p3.fr: {'MQConnector':StompConnector, 'destinations':{'/queue/test1':['consumer1', 'producer1'],
-                                                                         '/queue/test2':['consumer1', 'producer1']}},
-      blabal.cern.ch:     {'MQConnector':None,           'destinations':{'/queue/test2':['consumer2', 'producer2',]}}
-    }
+    producer/consumer communication. Example structure::
+
+      {
+        mardirac3.in2p3.fr: {'MQConnector':StompConnector, 'destinations':{'/queue/test1':['consumer1', 'producer1'],
+                                                                           '/queue/test2':['consumer1', 'producer1']}},
+        blabal.cern.ch:     {'MQConnector':None,           'destinations':{'/queue/test2':['consumer2', 'producer2',]}}
+      }
 """
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -40,6 +41,7 @@ class MQConnectionManager( object ):
   def startConnection( self, mqURI, params, messengerType ):
     """ Function adds or updates the MQ connection. If the connection
         does not exists, MQconnector is created and added.
+
     Args:
       mqURI(str):
       params(dict): parameters to initialize the MQConnector.
@@ -72,6 +74,7 @@ class MQConnectionManager( object ):
         Also the messengerId is chosen.
         messenger Id is set to the maximum existing value (or 0 no messengers are connected) + 1.
         messenger Id is calculated separately for consumers and producers
+
     Args:
       mqURI(str):
       messengerType(str): 'consumer' or 'producer'.
@@ -141,6 +144,7 @@ class MQConnectionManager( object ):
         of this destination (queue or topic), then the destination is removed.
         If it is the last destination from this connection. The disconnect function
         is called and the connection is removed.
+
     Args:
       mqURI(str):
       messengerId(str): e.g. 'consumer1' or 'producer10'.
@@ -169,8 +173,9 @@ class MQConnectionManager( object ):
 
   def getAllMessengers( self ):
     """ Function returns a list of all messengers registered in connection storage.
+
     Returns:
-      S_OK/S_ERROR: with the list of strings in the pseudo-path format e.g.
+      S_OK or S_ERROR: with the list of strings in the pseudo-path format e.g.
             ['blabla.cern.ch/queue/test1/consumer1','blabal.cern.ch/topic/test2/producer2']
     """
     self.lock.acquire()
@@ -182,8 +187,9 @@ class MQConnectionManager( object ):
   def removeAllConnections( self ):
     """ Function removes all existing connections and calls the disconnect
         for connectors.
+
     Returns:
-      S_OK/S_ERROR:
+      S_OK or S_ERROR:
     """
     self.lock.acquire()
     try:

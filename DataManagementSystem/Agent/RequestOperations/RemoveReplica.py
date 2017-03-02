@@ -6,10 +6,13 @@
 ########################################################################
 
 """ :mod: RemoveReplica
+
     ===================
 
     .. module: RemoveReplica
+
     :synopsis: removeReplica operation handler
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     RemoveReplica operation handler

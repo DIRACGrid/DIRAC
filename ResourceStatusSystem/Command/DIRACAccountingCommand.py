@@ -40,7 +40,8 @@ class DIRACAccountingCommand( Command ):
   def doCommand( self ):
     """
     Returns jobs accounting info for sites in the last 24h
-    `args`:
+
+    Args:
        - args[0]: string - should be a ValidElement
 
        - args[1]: string - should be the name of the ValidElement

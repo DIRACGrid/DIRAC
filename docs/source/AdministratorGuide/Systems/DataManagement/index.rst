@@ -6,13 +6,13 @@ Data Management System
 
 .. toctree::
    :maxdepth: 1
-   
+
    agents
    fts
 
 .. contents:: Table of contents
    :depth: 4
-  
+
 
 The DIRAC Data Management System (DMS), together with the DIRAC Storage Management System (SMS) provides the necessary functionality to execute and control all activities related with your data. the DMS provides from the basic functionality to upload a local file in a StorageElement (SE) and register the corresponding replica in the FileCatalog (FC) to massive data replications using FTS or retrievals of data archived on Tape for it later processing.
 
@@ -74,8 +74,8 @@ In order to factorize the configuration, it is possible to use BaseSE, which act
       SpaceToken = LHCb_USER
      }
    }
-   
-   
+
+
 This definition would be strictly equivalent to::
 
    CERN-EOS
@@ -138,7 +138,7 @@ There are several aspects of multi protocol:
    - One SE supports several protocols
    - SEs with different protocols need to interact
    - We want to use different protocols for different operations
-   
+
 DIRAC supports all of them. The bottom line is that before executing an action on an SE, we check among all the plugins defined for it, which plugins are the most suitable.
 There are 4 Operation options under the `DataManagement` section used for that:
 
@@ -146,7 +146,7 @@ There are 4 Operation options under the `DataManagement` section used for that:
   - `AccessProtocols`: used to perform the read operations
   - `WriteProtocols`: used to perform the write and remove operations
   - `ThirdPartyProtocols`: used in case of replications
-  
+
 When performing an action on an SE, the StorageElement class will evaluate, based on these lists, and following this preference order, which StoragePlugins to use.
 The behavior is straightforward for simple read or write actions. It is however a bit more tricky when it comes to third party copies.
 
@@ -160,7 +160,30 @@ GFAL2_SRM2 plugins because only srm is allowed as a write plugin, but since this
 
 
 The WriteProtocols and AccessProtocols list can be locally overwritten in the SE definition.
-  
+
+
+
+--------------------------
+Available protocol plugins
+--------------------------
+
+DIRAC comes with a bunch of plugins that you can use to interact with StorageElements.
+These are the plugins that you should define in the `PluginName` option of your StorageElement definition.
+
+  - DIP: used for dips, the DIRAC custom protocol (useful for example for DIRAC SEs).
+  - File: offers an abstraction of the local access as an SE.
+  - SRM2: for the srm protocol, using the deprecated gfal libraries.
+  - RFIO: for the rfio protocol.
+  - Proxy: to be used with the StorageElementProxy.
+  - XROOT: for the xroot protocol, using the python xroot binding (http://xrootd.org/doc/python/xrootd-python-0.1.0/#).
+
+There are also a set of plugins based on the gfal2 libraries (https://dmc.web.cern.ch/projects).
+
+  - GFAL2_SRM2: for srm, replaces SRM2
+  - GFAL2_XROOT: for xroot, replaces XROOT
+  - GFAL2_HTTPS: for https
+  - GFAL2_GSIFTP: for gsiftp
+
 
 ----------------------
 FTS transfers in DIRAC
@@ -213,8 +236,8 @@ In order to configure and test support for FTS transfers in your DIRAC installat
  VO 'dteam' share is: 50
  VO 'lhcb' share is: 50
  VO 'ops' share is: 50
- 
-   
+
+
 - Include the URL of the FTS server in the DIRAC Configuration:
 
 ::
@@ -241,7 +264,7 @@ In order to configure and test support for FTS transfers in your DIRAC installat
    from DIRAC.Core.Base import Script
    Script.parseCommandLine()
    from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-   
+
    sourceSite = 'ShortSite-Name1'         # LCG.CERN.ch -> CERN
    destinationSite = 'ShortSite-Name2'
 

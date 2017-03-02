@@ -297,9 +297,9 @@ class Dirac( API ):
        {'OK': True, 'Value': '12345'}
 
        :param job: Instance of Job class or JDL string
-       :type job: Job() or string
+       :type job: ~DIRAC.Interfaces.API.Job.Job or str
        :param mode: Submit job locally with mode = 'wms' (default), 'local' to run workflow or 'agent' to run full Job Wrapper locally
-       :type mode: string
+       :type mode: str
        :returns: S_OK,S_ERROR
     """
     self.__printInfo()
@@ -635,7 +635,7 @@ class Dirac( API ):
         'se': 'CERN-disk'}}, 'Failed': [], 'OK': True, 'Value': ''}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list []
        :param siteName: DIRAC site name
        :type siteName: string
        :param fileName: Catalogue name (can include path)
@@ -1034,7 +1034,7 @@ class Dirac( API ):
        'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list []
        :param active: restrict to only replicas at SEs that are not banned
        :type active: boolean
        :param preferDisk: give preference to disk replicas if True
@@ -1087,7 +1087,7 @@ class Dirac( API ):
        'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list []
        :param diskOnly: restrict to only disk replicas if True
        :type diskOnly: boolean
        :param printOutput: Optional flag to print result
@@ -1140,9 +1140,9 @@ class Dirac( API ):
        'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list
        :param printOutput: Optional flag to print result
-       :type printOutput: boolean
+       :type printOutput: bool
        :returns: S_OK,S_ERROR
     """
     ret = self.__checkFileArgument( lfns, 'LFN' )
@@ -1193,7 +1193,7 @@ class Dirac( API ):
 
 
        :param lfns: Logical File Name(s) to split
-       :type lfns: list
+       :type lfns: python:list
        :param maxFilesPerJob: Number of files per bunch
        :type maxFilesPerJob: integer
        :param printOutput: Optional flag to print result
@@ -1249,7 +1249,7 @@ class Dirac( API ):
        'CheckSumValue': ''}}, 'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list []
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
@@ -1466,7 +1466,7 @@ class Dirac( API ):
        {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
        :param lfn: Logical File Name (LFN)
-       :type lfn: string or list
+       :type lfn: str or python:list
        :param storageElement: DIRAC SE name e.g. CERN-RAW
        :type storageElement: string
        :param printOutput: Optional flag to print result
@@ -1498,7 +1498,7 @@ class Dirac( API ):
        'Successful': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst': {'RFIO': 'castor://...'}}}}
 
        :param pfn: Physical File Name (PFN)
-       :type pfn: string or list
+       :type pfn: str or python:list
        :param storageElement: DIRAC SE name e.g. CERN-RAW
        :type storageElement: string
        :param printOutput: Optional flag to print result
@@ -1530,7 +1530,7 @@ class Dirac( API ):
        {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
        :param pfn: Physical File Name (PFN)
-       :type pfn: string or list
+       :type pfn: str or python:list
        :param storageElement: DIRAC SE name e.g. CERN-RAW
        :type storageElement: string
        :param printOutput: Optional flag to print result
@@ -1760,7 +1760,7 @@ class Dirac( API ):
        {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
 
     """
@@ -1791,7 +1791,7 @@ class Dirac( API ):
        {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
 
     """
@@ -1822,7 +1822,7 @@ class Dirac( API ):
         {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
 
     """
@@ -1850,7 +1850,7 @@ class Dirac( API ):
        {79241: {'status': 'Done', 'site': 'LCG.CERN.ch'}}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
     """
     ret = self.__checkJobArgument( jobID, multiple = True )
@@ -1902,7 +1902,7 @@ class Dirac( API ):
         ['LFN:/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst']}}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
     """
     ret = self.__checkJobArgument( jobID, multiple = True )
@@ -1974,7 +1974,7 @@ class Dirac( API ):
        :param jobID: JobID
        :type jobID: int or string
        :param outputFiles: Optional files to download
-       :type outputFiles: string or list
+       :type outputFiles: str or python:list
        :returns: S_OK,S_ERROR
     """
     try:
@@ -2354,7 +2354,7 @@ class Dirac( API ):
        'CPUTime': '0.0','DIRACSetup': 'LHCb-Production'}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :param printOutput: Flag to print to stdOut
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR

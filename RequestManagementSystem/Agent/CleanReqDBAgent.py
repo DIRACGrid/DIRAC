@@ -5,10 +5,13 @@
 # Date: 2013/05/17 08:31:26
 ########################################################################
 """ :mod: CleanReqDBAgent
+
     =====================
 
     .. module: CleanReqDBAgent
+
     :synopsis: cleaning RequestDB from obsolete records and kicking assigned requests
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     cleaning ReqDB from obsolete records and kicking assigned requests

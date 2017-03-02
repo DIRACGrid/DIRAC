@@ -5,30 +5,46 @@
 # Date: 2013/05/31 10:00:13
 ########################################################################
 """ :mod: FTSAgent
+
     ==============
 
     .. module: FTSAgent
+
     :synopsis: agent propagating scheduled RMS request in FTS
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     DIRAC agent propagating scheduled RMS request in FTS
 
     Request processing phases (each in a separate thread):
 
-    1. MONITOR
-      ...active FTSJobs, prepare FTSFiles dictionary with files to submit, fail, register and reschedule
-    2. CHECK REPLICAS
-      ...just in case if all transfers are done, if yes, end processing
-    3. FAILED FILES:
-      ...if at least one Failed FTSFile is found, set Request.Operation.File to 'Failed', end processing
-    4. UPDATE Waiting#SourceSE FTSFiles
-      ...if any found in FTSDB
-    5. REGISTER REPLICA
-      ...insert RegisterReplica operation to request, if some FTSFiles failed to register, end processing
-    6. RESCHEDULE FILES
-      ...for FTSFiles failed with missing sources error
-    7. SUBMIT
-      ...but read 'Waiting' FTSFiles first from FTSDB and merge those with FTSFiles to retry
+      1. MONITOR
+
+         ...active FTSJobs, prepare FTSFiles dictionary with files to submit, fail, register and reschedule
+
+      2. CHECK REPLICAS
+
+         ...just in case if all transfers are done, if yes, end processing
+
+      3. FAILED FILES:
+
+         ...if at least one Failed FTSFile is found, set Request.Operation.File to 'Failed', end processing
+
+      4. UPDATE Waiting#SourceSE FTSFiles
+
+         ...if any found in FTSDB
+
+      5. REGISTER REPLICA
+
+         ...insert RegisterReplica operation to request, if some FTSFiles failed to register, end processing
+
+      6. RESCHEDULE FILES
+
+         ...for FTSFiles failed with missing sources error
+
+      7. SUBMIT
+
+         ...but read 'Waiting' FTSFiles first from FTSDB and merge those with FTSFiles to retry
 
 """
 __RCSID__ = "$Id: $"
@@ -199,7 +215,7 @@ class FTSAgent( AgentModule ):
   def putRequest( cls, request, clearCache = True ):
     """ put request back to ReqDB
 
-    :param Request request: Request instance
+    :param ~DIRAC.RequestManagementSystem.Client.Request.Request request: Request instance
     :param bool clearCache: clear the cache?
 
     also finalize request if status == Done
@@ -231,7 +247,7 @@ class FTSAgent( AgentModule ):
 
   @staticmethod
   def updateFTSFileDict( ftsFilesDict, toUpdateDict ):
-    """ update :ftsFilesDict: with FTSFiles in :toUpdateDict: """
+    """ update `ftsFilesDict` with FTSFiles in `toUpdateDict` """
     for category, ftsFileList in ftsFilesDict.iteritems():
       for ftsFile in toUpdateDict.get( category, [] ):
         if ftsFile not in ftsFileList:
@@ -446,7 +462,7 @@ class FTSAgent( AgentModule ):
   def processRequest( self, request ):
     """ process one request
 
-    :param Request request: ReqDB.Request
+    :param ~DIRAC.RequestManagementSystem.Client.Request.Request request: ReqDB.Request
     """
     log = self.log.getSubLogger( "req_%s/%s" % ( request.RequestID, request.RequestName ) )
 
@@ -944,7 +960,7 @@ class FTSAgent( AgentModule ):
   def __finalizeFTSJob( self, request, ftsJob ):
     """ finalize FTSJob
 
-    :param Request request: ReqDB.Request instance
+    :param ~DIRAC.RequestManagementSystem.Client.Request.Request request: ReqDB.Request instance
     :param FTSJob ftsJob: FTSDB.FTSJob instance
     """
     log = self.log.getSubLogger( "req_%s/%s/monitor/%s/finalize" % ( request.RequestID,

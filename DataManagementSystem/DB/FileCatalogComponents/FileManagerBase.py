@@ -169,15 +169,16 @@ class FileManagerBase( object ):
 
   def _getDirectoryReplicas( self, dirID, allStatus = False, connection = False ):
     """ To be implemented on derived class
+
     Should return with only one value, being a list of all the replicas (FileName,FileID,SEID,PFN)
-     """
+    """
 
     return S_ERROR( "To be implemented on derived class" )
 
   def countFilesInDir( self, dirId ):
     """ Count how many files there is in a given Directory
 
-        :param dirID : directory id
+        :param int dirID: directory id
 
         :returns: S_OK(value) or S_ERROR
     """
@@ -209,7 +210,8 @@ class FileManagerBase( object ):
 
   def addFile( self, lfns, credDict, connection = False ):
     """ Add files to the catalog
-        :param lfns : dict { lfn : info}. 'info' is a dict containing PFN, SE, Size and Checksum
+
+        :param dict lfns: dict{ lfn : info}. 'info' is a dict containing PFN, SE, Size and Checksum
                       the SE parameter can be a list if we have several replicas to register
 
 
@@ -1116,8 +1118,10 @@ class FileManagerBase( object ):
   def getFileIDsInDirectory( self, dirID, requestString = False ):
     """ Get a list of IDs for all the files stored in given directories or their
         subdirectories
-    :param mixt dirID: single directory ID or a list of directory IDs
-    :param boolean requestString: if True return result as a SQL SELECT string
+
+    :param dirID: single directory ID or a list of directory IDs
+    :type dirID: int or python:list[int]
+    :param bool requestString: if True return result as a SQL SELECT string
     :return: list of file IDs or SELECT string
     """
     return self._getDirectoryFileIDs( dirID, requestString = requestString )
@@ -1153,10 +1157,11 @@ class FileManagerBase( object ):
 
   def getDirectoryReplicas( self, dirID, path, allStatus = False, connection = False ):
     """ Get the replicas for all the Files in the given Directory
-        :param DirID : ID of the directory
-        :param path : useless
-        :param allStatus : whether all replicas and file status are considered
-                          If False, take the visibleFileStatus and visibleReplicaStatus values from the configuration
+
+        :param int dirID: ID of the directory
+        :param unused path: useless
+        :param bool allStatus: whether all replicas and file status are considered
+                            If False, take the visibleFileStatus and visibleReplicaStatus values from the configuration
     """
     connection = self._getConnection( connection )
     result = self._getDirectoryReplicas( dirID, allStatus, connection)
@@ -1183,6 +1188,7 @@ class FileManagerBase( object ):
         the files in that directory. It does not make any query, just splits the names
 
         :param lfns: list of lfns
+        :type lfns: python:list
     """
     dirDict = {}
     for lfn in lfns:
@@ -1293,8 +1299,10 @@ class FileManagerBase( object ):
   def setFileOwner( self, path, owner ):
     """ Set the file owner
 
-        :param mixed path: file path as a string or int or list of ints or select statement
-        :param mixt group: new user as a string or int uid
+        :param path: file path as a string or int or list of ints or select statement
+        :type path: str, int or python:list[int]
+        :param owner: new user as a string or int uid
+        :type owner: str or int
     """
 
     result = self.db.ugManager.findUser( owner )
@@ -1308,8 +1316,10 @@ class FileManagerBase( object ):
   def setFileGroup( self, path, gname ):
     """ Set the file group
 
-        :param mixed path: file path as a string or int or list of ints or select statement
-        :param mixt group: new group as a string or int gid
+        :param path: file path as a string or int or list of ints or select statement
+        :type path: str, int or python:list[int]
+        :param gname: new group as a string or int gid
+        :type gname: str or int
     """
 
     result = self.db.ugManager.findGroup( gname )
@@ -1323,7 +1333,8 @@ class FileManagerBase( object ):
   def setFileMode( self, path, mode ):
     """ Set the file mode
 
-        :param mixed path: file path as a string or int or list of ints or select statement
+        :param path: file path as a string or int or list of ints or select statement
+        :type path: str, int or python:list[int]
         :param int mode: new mode
     """
     return self._setFileParameter( path, 'Mode', mode )

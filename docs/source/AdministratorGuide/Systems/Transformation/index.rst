@@ -300,16 +300,20 @@ In order to use the ByJobType plugin, one has to:
 
   * By default, all sites are allowed to do every job
   * "AutoAddedSites" contains the list of sites allowed to run jobs with files in their local SEs.
+
   If it contains 'WithStorage', all sites with an associated local storage will be added automatically.
+
   * Sections under "JobTypeMapping" correspond to the different JobTypes one may want to define, *e.g.*: DataReprocessing, Merge, etc.
   * For each JobType one has to define:
 
     * "Exclude": the list of sites that will be removed as destination sites ("ALL" for all sites). 
     * Optionally one may redefine the "AutoAddedSites" (including setting it empty)
     * "Allow": the list of 'helpers', specifying sites helping another site.
+
     For each "helper" one specifies a list of sites that it helps, i.e. if the input data is at one of these sites, the job is eligible to the helper site.
 
   * In the example above all sites in "AutoAddedSites" are allowed to run jobs with input files in their local SEs.
+
   For DataReprocessing jobs, jobs having input files at LCG.SARA.nl local SEs can run both at LCG.SARA.nl and at LCG.NIKHEF.nl, etc.
   For DataReconstruction jobs, jobs will run at the Tier1 where the input data is, except when the data is at CERN or SARA, where they will run exclusively at CLOUD.CERN.cern.
 

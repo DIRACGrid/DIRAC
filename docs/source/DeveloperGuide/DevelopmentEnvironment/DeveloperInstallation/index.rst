@@ -28,7 +28,7 @@ What is this NOT for?
 Notes before continuing
 ------------------------
 
-*OS*: any *nix should be fine
+*OS*: any \*nix should be fine
 (maybe even windows is fine but I would not know how).
 Examples below are given for Linux (and specifically, the writer used Ubuntu)
 
@@ -92,7 +92,7 @@ From now on we will call that directory *$DEVROOT*
 
 2. Check out DIRAC source code. DIRAC source is hosted on *github.com*. Fork it, then::
 
-   git clone https://github.com/YOUR_GITHUB_USERNAME/DIRAC.git
+     git clone https://github.com/YOUR_GITHUB_USERNAME/DIRAC.git
 
 Obviously, we must replace 'YOUR_GITHUB_USERNAME' with the username that we have registered on github. 
 This will create a *$DEVROOT/DIRAC* for you and the git repository will be cloned in.
@@ -120,7 +120,7 @@ will tell you a lot about the DIRAC code structure. Note that:
 
 * there is a tests/ directory
 * there is a docs/ directory
-* there are several *System/ directories
+* there are several \*System/ directories
 * there is an \__init__.py file
 * there are some base files (README, LICENCE, etc.) and some dotfiles
 
@@ -128,7 +128,7 @@ Unsurprisingly:
 
 * "tests" contains tests - and specifically, it contains all the non-unit tests
 * "docs" contains... documentation (including this very same page!)
-* all the *System/ directories contain the (python) code of the DIRAC systems
+* all the \*System/ directories contain the (python) code of the DIRAC systems
 
 
 Adding an extension

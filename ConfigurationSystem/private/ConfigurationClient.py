@@ -136,13 +136,9 @@ class ConfigurationClient( object ):
     Create a dictionary with all sections, subsections and options
     starting from given root. Result can be filtered.
 
-    :param:`root` - string:
-            Starting point in the configuration tree.
-
-    :param:`filters` - string(s):
-            Select results that contain given substrings
-            (check full path, i.e. with option name)
-
+    :param str root: Starting point in the configuration tree.
+    :param filters: Select results that contain given substrings (check full path, i.e. with option name)
+    :type filters: str or python:list[str]
     :return: Return a dictionary where keys are paths taken from
              the configuration (e.g. /Systems/Configuration/...).
              Value is "None" when path points to a section

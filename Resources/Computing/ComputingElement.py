@@ -243,7 +243,8 @@ class ComputingElement(object):
        instance polls for waiting and running jobs and compares to the limits
        in the CE parameters.
 
-       :param list jobIDList: list of already existing job IDs to be checked against
+       :param jobIDList: list of already existing job IDs to be checked against
+       :type jobIDList: python:list
     """
 
     # If there are no already registered jobs

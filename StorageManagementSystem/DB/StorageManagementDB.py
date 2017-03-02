@@ -1071,7 +1071,7 @@ class StorageManagementDB( DB ):
   def removeUnlinkedReplicas( self, connection = False ):
     """ This will remove Replicas from the CacheReplicas that are not associated to any Task.
         If the Replica has been Staged,
-          wait until StageRequest.PinExpiryTime and remove the StageRequest and CacheReplicas entries
+        wait until StageRequest.PinExpiryTime and remove the StageRequest and CacheReplicas entries
     """
     connection = self.__getConnection( connection )
     # First, check if there is a StageRequest and PinExpiryTime has arrived

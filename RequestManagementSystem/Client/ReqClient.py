@@ -24,9 +24,9 @@ from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValida
 class ReqClient( Client ):
   """ReqClient is a class manipulating and operation on Requests.
 
-  :param RPCClient requestManager: RPC client to RequestManager
+  :param ~RPCClient.RPCClient requestManager: RPC client to RequestManager
   :param dict requestProxiesDict: RPC client to ReqestProxy
-  :param RequestValidator requestValidator: RequestValidator instance
+  :param ~DIRAC.RequestManagementSystem.private.RequestValidator.RequestValidator requestValidator: RequestValidator instance
   """
 
   __requestProxiesDict = {}
@@ -68,7 +68,7 @@ class ReqClient( Client ):
     """Put request to RequestManager
 
       :param self: self reference
-      :param Request request: Request instance
+      :param ~Request.Request request: Request instance
       :param bool useFailoverProxy: if False, will not attempt to forward the request to ReqProxies
       :param int retryMainService: Amount of time we retry on the main ReqHandler in case of failures
 
@@ -264,7 +264,8 @@ class ReqClient( Client ):
 
     :param self: self reference
     :param int requestID: request id
-    :param list lfns: list of LFNs
+    :param lfns: list of LFNs
+    :type lfns: python:list
     """
     self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestID )
     fileStatus = self._getRPC().getRequestFileStatus( int( requestID ), lfns )
@@ -346,7 +347,8 @@ class ReqClient( Client ):
     """ get the request ids for the supplied jobIDs.
 
     :param self: self reference
-    :param list jobID: list of job IDs (integers)
+    :param jobIDs: list of job IDs (integers)
+    :type jobIDs: python:list
     :return: S_ERROR or S_OK( "Successful": { jobID1: reqID1, jobID2: requID2, ... },
                               "Failed" : { jobIDn: errMsg, jobIDm: errMsg, ...}  )
     """
@@ -360,7 +362,8 @@ class ReqClient( Client ):
   def readRequestsForJobs( self, jobIDs ):
     """ read requests for jobs
 
-    :param list jobIDs: list with jobIDs
+    :param jobIDs: list with jobIDs
+    :type jobIDs: python:list
     :return: S_OK( { "Successful" : { jobID1 : Request, ... },
                      "Failed" : { jobIDn : "Fail reason" } } )
     """

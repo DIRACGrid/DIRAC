@@ -179,7 +179,8 @@ class CREAMComputingElement( ComputingElement ):
   def getCEStatus( self, jobIDList = None ):
     """ Method to return information on running and pending jobs.
 
-        :param list jobIDList: list of job IDs to be considered
+        :param jobIDList: list of job IDs to be considered
+        :type jobIDList: python:list
     """
     statusList = ['REGISTERED', 'PENDING', 'IDLE', 'RUNNING', 'REALLY-RUNNING']
     cmd = ['glite-ce-job-status', '-n', '-a', '-e',

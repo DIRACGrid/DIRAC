@@ -24,8 +24,8 @@ class MonitoringHandler( RequestHandler ):
   """
   .. class:: MonitoringHandler
 
-  :param dict __reportRequestDict contains the arguments used to create a certain plot
-  :param object __db used to retrieve the data from the db.
+  :param dict __reportRequestDict: contains the arguments used to create a certain plot
+  :param object __db: used to retrieve the data from the db.
 
   """
 
@@ -61,7 +61,7 @@ class MonitoringHandler( RequestHandler ):
   types_listUniqueKeyValues = [ basestring ]
   def export_listUniqueKeyValues( self, typeName ):
     """
-    :param str typeName is the monitoring type registered in the Types.
+    :param str typeName: is the monitoring type registered in the Types.
 
     :return: S_OK({key:[]}) or S_ERROR()   The key is element of the __keyFields of the BaseType
     """
@@ -74,9 +74,9 @@ class MonitoringHandler( RequestHandler ):
   types_listReports = [ basestring ]
   def export_listReports( self, typeName ):
     """
-    :param str typeName monitoring type for example WMSHistory
+    :param str typeName: monitoring type for example WMSHistory
 
-    :return S_OK([]) or S_ERROR() the list of available plots
+    :return: S_OK([]) or S_ERROR() the list of available plots
     """
 
     reporter = MainReporter( self.__db, self.serviceInfoDict[ 'clientSetup' ] )
@@ -86,9 +86,9 @@ class MonitoringHandler( RequestHandler ):
     """
     Get graphs data
 
-    :param str fileId encoded plot attributes
-    :param object
-    :param DIRAC.Core.DISET.private.FileHelper.FileHelper fileHelper
+    :param str fileId: encoded plot attributes
+    :param object token: ???
+    :param DIRAC.Core.DISET.private.FileHelper.FileHelper fileHelper:
 
     """
 
@@ -119,7 +119,8 @@ class MonitoringHandler( RequestHandler ):
   def __generatePlotFromFileId( self, fileId ):
     """
     It create the plots using the encode parameters
-    :param str fileId the encoded plot attributes
+
+    :param str fileId: the encoded plot attributes
     :return S_OK or S_ERROR returns the file name
     """
 
@@ -159,7 +160,7 @@ class MonitoringHandler( RequestHandler ):
     """
     It check the plot attributes. We have to make sure that all attributes which are needed are provided.
 
-    :param dict reportRequest contains the plot attributes.
+    :param dict reportRequest: contains the plot attributes.
 
     """
     # If extraArgs is not there add it
@@ -204,7 +205,8 @@ class MonitoringHandler( RequestHandler ):
   def export_generatePlot( self, reportRequest ):
     """
     It creates a plots for a given request
-    :param dict reportRequest contains the plot arguments...
+
+    :param dict reportRequest: contains the plot arguments...
     """
     retVal = self.__checkPlotRequest( reportRequest )
     if not retVal[ 'OK' ]:
@@ -217,14 +219,15 @@ class MonitoringHandler( RequestHandler ):
   def export_getReport( self, reportRequest ):
     """
     It is used to get the raw data used to create a plot. The reportRequest has the following parameters:
-    :param str typeName the type of the monitoring
-    :param str reportName the name of the plotter used to create the plot for example:  NumberOfJobs
-    :param int startTime epoch time, start time of the plot
-    :param int endTime epoch time, end time of the plot
-    :param dict condDict is the conditions used to gnerate the plot: {'Status':['Running'],'grouping': ['Site'] }
-    :param str grouping is the grouping of the data for example: 'Site'
-    :param dict extraArgs epoch time which can be last day, last week, last month
-    :return S_OK or S_ERROR S_OK value is a dictionary which contains all values used to create the plot
+
+    :param str typeName: the type of the monitoring
+    :param str reportName: the name of the plotter used to create the plot for example:  NumberOfJobs
+    :param int startTime: epoch time, start time of the plot
+    :param int endTime: epoch time, end time of the plot
+    :param dict condDict: is the conditions used to gnerate the plot: {'Status':['Running'],'grouping': ['Site'] }
+    :param str grouping: is the grouping of the data for example: 'Site'
+    :param dict extraArgs: epoch time which can be last day, last week, last month
+    :return: S_OK or S_ERROR S_OK value is a dictionary which contains all values used to create the plot
     """
     retVal = self.__checkPlotRequest( reportRequest )
     if not retVal[ 'OK' ]:
@@ -238,8 +241,10 @@ class MonitoringHandler( RequestHandler ):
   def export_addMonitoringRecords( self, monitoringtype, doc_type, data ):
     """
     It is used to insert data directly to the given monitoring type
-    :param str monitoringtype
-    :param list data
+
+    :param str monitoringtype:
+    :param data:
+    :type data: python:list
     """
 
     retVal = self.__db.getIndexName( monitoringtype )
@@ -253,8 +258,11 @@ class MonitoringHandler( RequestHandler ):
   def export_addRecords( self, indexname, doc_type, data ):
     """
     It is used to insert data directly to the database... The data will be inserted to the given index.
-    :param str indexname
-    :param list data
+
+    :param str indexname:
+    :param data:
+    :type data: python:list
+
     """
     setup = self.serviceInfoDict.get( 'clientSetup', '' )
     indexname = "%s_%s" % ( setup.lower(), indexname )
@@ -266,7 +274,8 @@ class MonitoringHandler( RequestHandler ):
     """
     It is used to delete an index!
     Note this is for experienced users!!!
-    :param str indexName
+
+    :param str indexName:
     """
     setup = self.serviceInfoDict.get( 'clientSetup', '' )
     indexName = "%s_%s" % ( setup.lower(), indexName )
@@ -277,10 +286,12 @@ class MonitoringHandler( RequestHandler ):
   def export_getLastDayData( self, typeName, condDict ):
     """
     It returns the data from the last day index. Note: we create daily indexes.
-    :param str typeName name of the monitoring type
-    :param dict condDict -> conditions for the query
-                  key -> name of the field
-		  value -> list of possible values
+
+    :param str typeName: name of the monitoring type
+    :param dict condDict: conditions for the query
+
+                   * key -> name of the field
+                   * value -> list of possible values
     """
 
     return self.__db.getLastDayData( typeName, condDict )
@@ -289,10 +300,13 @@ class MonitoringHandler( RequestHandler ):
   def export_getLimitedData( self, typeName, condDict, size ):
     '''
     Returns a list of records for a given selection.
-    :param str typeName name of the monitoring type
-    :param dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
+
+    :param str typeName: name of the monitoring type
+    :param dict condDict: conditions for the query
+
+                   * key -> name of the field
+                   * value -> list of possible values
+
     :param int size: Indicates how many entries should be retrieved from the log
     :return: Up to size entries for the given component from the database
     '''
@@ -302,10 +316,13 @@ class MonitoringHandler( RequestHandler ):
   def export_getDataForAGivenPeriod( self, typeName, condDict, initialDate = '', endDate = '' ):
     """
     Retrieves the history of logging entries for the given component during a given given time period
-    :param: str typeName name of the monitoring type
-    :param: dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
+
+    :param str typeName: name of the monitoring type
+    :param dict condDict: conditions for the query
+
+                   * key -> name of the field
+                   * value -> list of possible values
+
     :param str initialDate: Indicates the start of the time period in the format 'DD/MM/YYYY hh:mm'
     :param str endDate: Indicate the end of the time period in the format 'DD/MM/YYYY hh:mm'
     :return: Entries from the database for the given component recorded between the initial and the end dates
@@ -318,8 +335,11 @@ class MonitoringHandler( RequestHandler ):
     
     """
     It is used to insert records to the db.
-    :param list recordsToInsert records to be inserted to the db
-    :param basestring monitoringType monitoring type...
+
+    :param recordsToInsert: records to be inserted to the db
+    :param str monitoringType: monitoring type...
+    :type recordsToInsert: python:list
+    
     """
     
     return self.__db.put( recordsToInsert, monitoringType )

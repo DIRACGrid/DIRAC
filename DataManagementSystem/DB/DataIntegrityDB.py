@@ -10,6 +10,8 @@ __RCSID__ = "$Id$"
 class DataIntegrityDB( DB ):
   """ Only 1 table, that can be created with:
 
+  .. code-block:: sql
+
       CREATE TABLE Problematics(
         FileID INTEGER NOT NULL AUTO_INCREMENT,
         Prognosis VARCHAR(32) NOT NULL,
@@ -26,6 +28,7 @@ class DataIntegrityDB( DB ):
         PRIMARY KEY(FileID),
         INDEX (Prognosis,Status)
       );
+
   """
 
   def __init__( self ):

@@ -4,10 +4,13 @@
 # Date: 2013/03/19 13:55:14
 ########################################################################
 """ :mod: RegisterFile
+
     ==================
 
     .. module: RegisterFile
+
     :synopsis: register operation handler
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     RegisterFile operation handler
@@ -33,14 +36,16 @@ class RegisterFile( OperationHandlerBase ):
   .. class:: RegisterOperation
 
   RegisterFile operation handler
+
+  :param self: self reference
+  :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: Operation instance
+  :param str csPath: CS path for this handler
+
   """
 
   def __init__( self, operation = None, csPath = None ):
     """c'tor
 
-    :param self: self reference
-    :param Operation operation: Operation instance
-    :param str csPath: CS path for this handler
     """
     OperationHandlerBase.__init__( self, operation, csPath )
     # # RegisterFile specific monitor info

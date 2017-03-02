@@ -32,8 +32,9 @@ class MQConsumer ( object ):
         using the default callback machinery.
         This function can be called only if the the default
         callback function was used !!!!
+
     Returns:
-      S_OK/S_ERROR: Error in case if there are no messages in the
+      S_OK or S_ERROR: Error in case if there are no messages in the
         queue or other error appeared.
         S_OK with the message content otherwise.
     """
@@ -53,8 +54,9 @@ class MQConsumer ( object ):
         The producer id is removed from the connection storage.
         It is not guaranteed that the connection will be
         removed cause other messengers can be still using it.
+
     Returns:
-      S_OK/S_ERROR: Error appears in case if the connection was already
+      S_OK or S_ERROR: Error appears in case if the connection was already
         closed for this consumer.
     """
     return self._connectionManager.stopConnection( mqURI = self._mqURI, messengerId = self._id )

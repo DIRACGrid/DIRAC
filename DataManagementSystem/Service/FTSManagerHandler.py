@@ -387,7 +387,8 @@ class FTSManagerHandler( RequestHandler ):
     """ get list of FTSJobs for request given its :requestID: and statues in :statusList:
 
     :param int requestID: ReqDB.Request.RequestID
-    :param list statusList: FTSJobs status list
+    :param statusList: FTSJobs status list
+    :type statusList: python:list
     """
     statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
     try:
