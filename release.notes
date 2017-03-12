@@ -22,6 +22,15 @@ FIX: ResourceStatus - fixes for getting status from the CS information
 *WMS
 NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS    
 
+[v6r17p13]
+
+*Core
+NEW: Proxy - added executeWithoutServerCertificate() decorator function 
+
+*Resources
+FIX: CREAMComputingElement - split CREAM proxy renewal operation into smaller chunks for 
+     improved reliability
+
 [v6r17p12]
 
 *Framework
