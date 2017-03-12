@@ -1,3 +1,12 @@
+[v6r17p13]
+
+*Core
+NEW: Proxy - added executeWithoutServerCertificate() decorator function 
+
+*Resources
+FIX: CREAMComputingElement - split CREAM proxy renewal operation into smaller chunks for 
+     improved reliability
+
 [v6r17p12]
 
 *Framework
