@@ -18,19 +18,17 @@ def int_with_commas( inputValue ):
   """
   s = str( inputValue )
   news = ''
-  while len(s) > 0:
-    news = s[-3:]+","+news
-    s = s[:-3] 
+  while len( s ) > 0:
+    news = s[-3:] + "," + news
+    s = s[:-3]
   return news[:-1]
 
-def printTable( fields, records, sortField='', numbering=True, 
+def printTable( fields, records, sortField = '', numbering = True,
                 printOut = True, columnSeparator = ' ' ):
   """ Utility to pretty print tabular data
 
-  :param fields: list of column names
-  :type fields: python:list
-  :param records: list of records, each record is a list or tuple of string values
-  :type records: python:list
+  :param list fields: list of column names
+  :param list records: list of records, each record is a list or tuple of string values
   :param str sortField: name of the column by which the output will be sorted
   :param bool numbering: flag for numbering rows
   :param bool printOut: flag for printing into the stdout
@@ -38,75 +36,73 @@ def printTable( fields, records, sortField='', numbering=True,
   :return: pretty table string
   """
 
-  stringBuffer = StringIO.StringIO()
-
   if not records:
     if printOut:
       print "No output"
     return "No output"
 
-  fieldList = list( fields )
-  recordList = []
-  for r in records:
-    recordList.append( list( r ) )
+  nFields = len( fields )
+  for rec in records:
+    if nFields != len( rec ):
+      out = "Incorrect data structure to print, nFields %d, nRecords %d" % ( nFields, len( rec ) )
+      if printOut:
+        print out
+      return out
 
-
-  nFields = len( fieldList )
-  if nFields != len( recordList[0] ):
-    out = "Incorrect data structure to print, nFields %d, nRecords %d" % ( nFields, len( recordList[0] ) )
-    if printOut:
-      print out
-    return out
+  # Strip all strings
+  fieldList = [f.strip() for f in fields]
+  recordList = [[r.strip() for r in rec] for rec in records]
 
   if sortField:
     recordList.sort( None, lambda x: x[fieldList.index( sortField )] )
 
-  lengths = []
-  for i in range(nFields):
-    fieldList[i] = fieldList[i].strip()
-    lengths.append( len( fieldList[i] ) )
-    for r in recordList:
-      r[i] = r[i].strip()
-      if len( r[i] ) > lengths[i]:
-        lengths[i] = len( r[i] )
-
+  # Compute the maximum width for each field
+  fieldWidths = []
+  integerField = []
+  for i in range( nFields ):
+    l = max( len( fieldList[i] ), max( len( r[i] ) for r in recordList ) )
+    fieldWidths.append( l )
+    integerField.append( False not in set( r[i].isdigit() for r in recordList ) )
 
   numberWidth = len( str( len( recordList ) ) ) + 1
   separatorWidth = len( columnSeparator )
-  totalLength = 0
-  for i in lengths:
-    totalLength += i
-    totalLength += separatorWidth
-
+  totalLength = sum( fieldWidths ) + separatorWidth * nFields
   if numbering:
-    totalLength += (numberWidth + separatorWidth)
+    totalLength += ( numberWidth + separatorWidth )
 
-  if numbering:
-    stringBuffer.write( ' '*(numberWidth+separatorWidth) )
-  for i in range(nFields):
-    stringBuffer.write( fieldList[i].ljust(lengths[i]+separatorWidth) )
-  stringBuffer.write( '\n' )
-  stringBuffer.write( '='*totalLength + '\n' )
-  count = 1
-  for r in recordList:
+  stringBuffer = StringIO.StringIO()
+
+  topLength = ( numberWidth + separatorWidth ) if numbering else 0
+  stringBuffer.write( ' ' * ( topLength ) )
+  for n, ( field, l ) in enumerate( zip( fieldList, fieldWidths ) ):
+    # If the separator is ' ', no need to pas last field
+    if n != ( nFields - 1 ) or columnSeparator != ' ':
+      field = field.ljust( l + separatorWidth )
+    stringBuffer.write( field )
+    topLength += len( f )
+  stringBuffer.write( '\n' + ' ' * topLength + '\n' )
+
+  for count, r in enumerate( recordList ):
+    total = ( count == len( recordList ) - 1 and recordList[-1][0] == "Total" )
     if numbering:
-      if count == len( recordList ) and recordList[-1][0] == "Total":
-        stringBuffer.write( " "*(numberWidth+separatorWidth) )
+      # Do not number the line with the total
+      if total:
+        stringBuffer.write( " "*( numberWidth + separatorWidth ) )
       else:
-        stringBuffer.write( str(count).rjust(numberWidth)+columnSeparator )
+        stringBuffer.write( str( count ).rjust( numberWidth ) + columnSeparator )
 
-    for i in range( nFields ):
-      #try casting to int and then align to the right, if it fails align to the left
-      try:
-        _val = int( "".join( r[i].split(",") ) )
-        stringBuffer.write( r[i].rjust( lengths[i] )+columnSeparator )
-      except ValueError:
-        stringBuffer.write( r[i].ljust( lengths[i] )+columnSeparator )
+    for n, ( field, l ) in enumerate( zip( r, fieldWidths ) ):
+      if integerField[n]:
+        # If the field is a set of integers, right justify, else left
+        field = field.rjust( l ) + columnSeparator
+      elif n != ( nFields - 1 ) or columnSeparator != ' ':
+        # Last column doesn't require padding if sep is ' '
+        field = field.ljust( l ) + columnSeparator
+      stringBuffer.write( field )
 
     stringBuffer.write( '\n' )
-    if count == len( recordList )-1 and recordList[-1][0] == "Total":
-      stringBuffer.write( '-'*totalLength + '\n' )
-    count += 1
+    if total:
+      stringBuffer.write( '-' * totalLength + '\n' )
 
   output = stringBuffer.getvalue()
   if printOut:
@@ -130,7 +126,7 @@ def printDict( dDict, printOut = False ):
     line = "%s: " % key
     line = line.ljust( keyLength + 2 )
     value = dDict[ key ]
-    if isinstance( value, (list, tuple) ):
+    if isinstance( value, ( list, tuple ) ):
       line += ','.join( list( value ) )
     else:
       line += str( value )
