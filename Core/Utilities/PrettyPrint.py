@@ -79,8 +79,8 @@ def printTable( fields, records, sortField = '', numbering = True,
     if n != ( nFields - 1 ) or columnSeparator != ' ':
       field = field.ljust( l + separatorWidth )
     stringBuffer.write( field )
-    topLength += len( f )
-  stringBuffer.write( '\n' + ' ' * topLength + '\n' )
+    topLength += len( field )
+  stringBuffer.write( '\n' + '=' * topLength + '\n' )
 
   for count, r in enumerate( recordList ):
     total = ( count == len( recordList ) - 1 and recordList[-1][0] == "Total" )
