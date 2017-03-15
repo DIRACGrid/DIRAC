@@ -1455,7 +1455,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def getAccessURL( self, lfn, storageElement, printOutput = False ):
+  def getAccessURL( self, lfn, storageElement, printOutput = False, protocol = False ):
     """Allows to retrieve an access URL for an LFN replica given a valid DIRAC SE
        name.  Contacts the file catalog and contacts the site SRM endpoint behind
        the scenes.
@@ -1471,6 +1471,8 @@ class Dirac( API ):
        :type storageElement: string
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
+       :param protocol: protocol requested
+       :type protocol: str or python:list
        :returns: S_OK,S_ERROR
     """
     ret = self.__checkFileArgument( lfn, 'LFN' )
@@ -1479,7 +1481,7 @@ class Dirac( API ):
     lfn = ret['Value']
 
     dm = DataManager()
-    result = dm.getReplicaAccessUrl( lfn, storageElement )
+    result = dm.getReplicaAccessUrl( lfn, storageElement, protocol = protocol )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if printOutput:
