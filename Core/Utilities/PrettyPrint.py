@@ -154,7 +154,7 @@ def printTable( fields, records, sortField = '', numbering = True,
   stringBuffer.write( ' ' * ( topLength ) )
 
   for i in range(nFields):
-    stringBuffer.write( fieldList[i].ljust(fieldWidths[i] + separatorWidth ) )
+    stringBuffer.write( fieldList[i].ljust( fieldWidths[i] + separatorWidth ) )
   stringBuffer.write( '\n' )
   stringBuffer.write( '='*totalLength + '\n' )
 
