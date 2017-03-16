@@ -7,9 +7,10 @@ import datetime
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler,getServiceOption
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.DISET.RPCClient import RPCClient
 
 __RCSID__ = "$Id$"
 
@@ -21,11 +22,14 @@ class DataStoreHandler( RequestHandler ):
   def initializeHandler( cls, svcInfoDict ):
     multiPath = PathFinder.getDatabaseSection( "Accounting/MultiDB" )
     cls.__acDB = MultiAccountingDB( multiPath )
-    cls.__acDB.autoCompactDB() #pylint: disable=no-member
-    result = cls.__acDB.markAllPendingRecordsAsNotTaken() #pylint: disable=no-member
-    if not result[ 'OK' ]:
-      return result
-    gThreadScheduler.addPeriodicTask( 60, cls.__acDB.loadPendingRecords ) #pylint: disable=no-member
+    #we can run multiple services in read only mode. In that case we do not bucket
+    cls.runBucketing = getServiceOption( svcInfoDict, 'RunBucketing', True )
+    if cls.runBucketing:
+      cls.__acDB.autoCompactDB() #pylint: disable=no-member
+      result = cls.__acDB.markAllPendingRecordsAsNotTaken() #pylint: disable=no-member
+      if not result[ 'OK' ]:
+        return result
+      gThreadScheduler.addPeriodicTask( 60, cls.__acDB.loadPendingRecords ) #pylint: disable=no-member
     return S_OK()
 
   types_registerType = [ basestring, list, list, list ]
@@ -146,7 +150,10 @@ class DataStoreHandler( RequestHandler ):
     """
     Compact the db by grouping buckets
     """
-    return self.__acDB.compactBuckets() #pylint: disable=no-member
+    if self.runBucketing:
+      return self.__acDB.compactBuckets() #pylint: disable=no-member
+    else:
+      return RPCClient('Accounting/DataStoreMaster').compactDB()
 
   types_remove = [ basestring, datetime.datetime, datetime.datetime, list ]
   def export_remove( self, typeName, startTime, endTime, valuesList ):
