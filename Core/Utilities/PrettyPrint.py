@@ -188,7 +188,7 @@ def printTable( fields, records, sortField = '', numbering = True,
     # If the field has a list type value, print out one value per line
     if listMode:
       stringBuffer.write( '\n' )
-      for ll in range( 1, listMode - 1 ):
+      for ll in range( 1, listMode ):
         # Do not number continuation lines
         if numbering:
           stringBuffer.write( " "*(numberWidth + separatorWidth) )
