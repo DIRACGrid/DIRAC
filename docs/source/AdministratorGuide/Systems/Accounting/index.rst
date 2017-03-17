@@ -42,8 +42,7 @@ With the previous configuration all accounting data will be stored and retrieved
 
 DataStore Helpers
 ======================
-From DIRAC v8r17p14 we are able to run multiple services. The master will creates the proper buckets and the helpers only insert the records to the 'in' table.
-When you install the DataStore helper service you have to set RunBucketing parameter False.
+From DIRAC v6r17p14 there is the possibility to to run multiple 'DataStore' services, where one need to be called 'master', while all the others may be called slaves. The master will creates the proper buckets and the helpers only insert the records to the 'in' table.
 For example:
 install service Accounting DataStoreHelper -m DataStore -p RunBucketing=True -p Port=1966
 In the CS you have to define DataStoreMaster. For example::

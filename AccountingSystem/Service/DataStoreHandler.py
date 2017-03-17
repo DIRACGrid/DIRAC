@@ -150,7 +150,10 @@ class DataStoreHandler( RequestHandler ):
     """
     Compact the db by grouping buckets
     """
-    if self.runBucketing:
+    #if we are running slaves (not only one service) we can redirect the request to the master
+    #For more information please read the Administrative guide Accounting part!
+    #ADVICE: If you want to trigger the bucketing, please make sure the bucketing is not running!!!!
+    if self.runBucketing:  
       return self.__acDB.compactBuckets() #pylint: disable=no-member
     else:
       return RPCClient('Accounting/DataStoreMaster').compactDB()
