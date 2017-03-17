@@ -172,7 +172,7 @@ class PEP( object ):
     # We expect to have an exact match. If not, then something has changed and
     # we cannot proceed with the actions.
     if decisionParams[ 'element' ] == 'Site':
-      unchangedRow = self.clients['SiteStatus'].getSiteStatuses([ decisionParams['site'] ])
+      unchangedRow = self.clients['SiteStatus'].getSiteStatuses([ decisionParams['name'] ])
     else:
       unchangedRow = self.clients['ResourceStatusClient'].selectStatusElement( decisionParams[ 'element' ],
                                                                              'Status', **selectParams )

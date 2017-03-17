@@ -20,14 +20,6 @@ ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.C
 __RCSID__  = '$Id$'
 AGENT_NAME = 'ResourceStatus/ElementInspectorAgent'
 
-def getSiteName( site ):
-    try:
-        start = site.index( '.' ) + len( '.' )
-        end = site.index( '.', start )
-        return site[start:end]
-    except ValueError:
-        return ""
-
 class SiteInspectorAgent( AgentModule ):
   """ ElementInspectorAgent
 
@@ -143,8 +135,6 @@ class SiteInspectorAgent( AgentModule ):
     # filter elements by Type
     for site in sites[ 'Value' ]:
 
-      name = getSiteName(site)
-
       # get the current status
       status = self.siteClient.getSiteStatuses( [site] )
       if not status['OK']:
@@ -156,7 +146,7 @@ class SiteInspectorAgent( AgentModule ):
         status = status['Value'][site]
 
       # We add lowerElementDict to the queue
-      toBeChecked.put( { 'status': status, 'name': name, 'site' : site, 'element' : 'Site', 'statusType': 'all', 'elementType': 'Site' } )
+      toBeChecked.put( { 'status': status, 'name': site, 'site' : site, 'element' : 'Site', 'statusType': 'all', 'elementType': 'Site' } )
 
     return S_OK( toBeChecked )
 
