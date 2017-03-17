@@ -14,6 +14,7 @@
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
 from DIRAC.ResourceStatusSystem.Utilities                       import Utils
+SiteStatus = getattr( Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.SiteStatus' ),'SiteStatus')
 ResourceManagementClient = getattr( Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 ResourceStatusClient = getattr( Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceStatusClient' ), 'ResourceStatusClient' )
 
@@ -47,6 +48,8 @@ class PEP( object ):
       self.clients['ResourceStatusClient'] = ResourceStatusClient()
     if 'ResourceManagementClient' not in clients:
       self.clients['ResourceManagementClient'] = ResourceManagementClient()
+    if 'SiteStatus' not in clients:
+      self.clients['SiteStatus'] = SiteStatus()
 
     # Pass to the PDP the clients that are going to be used on the Commands
     self.pdp = PDP( self.clients )
@@ -168,7 +171,10 @@ class PEP( object ):
 
     # We expect to have an exact match. If not, then something has changed and
     # we cannot proceed with the actions.
-    unchangedRow = self.clients['ResourceStatusClient'].selectStatusElement( decisionParams[ 'element' ],
+    if decisionParams[ 'element' ] == 'Site':
+      unchangedRow = self.clients['SiteStatus'].getSiteStatuses([ decisionParams['site'] ])
+    else:
+      unchangedRow = self.clients['ResourceStatusClient'].selectStatusElement( decisionParams[ 'element' ],
                                                                              'Status', **selectParams )
     if not unchangedRow[ 'OK' ]:
       return unchangedRow

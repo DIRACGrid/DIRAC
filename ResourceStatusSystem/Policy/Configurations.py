@@ -85,6 +85,13 @@ POLICIESMETA = { # DownTime POLICIES
         'args'        : { 'onlyCache' : True, 'timespan' : 1800 }
     },
 
+    # Site status propagation POLICIES..............................................................
+    'Propagation': {
+        'description' : "Site status propagation",
+        'module'      : 'PropagationPolicy',
+        'command'     : ( 'PropagationCommand', 'PropagationCommand' ),
+        'args'        : { 'onlyCache' : False, 'timespan' : 1800 }
+    },
 
     # ALWAYS SOMETHING POLICIES...................................................
     'AlwaysActive': {
