@@ -72,7 +72,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.pluginLocation = self.am_getOption( 'PluginLocation',
                                              'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
-    self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
+    # Prepare to change the name of the CS option as MaxFiles is ambiguous
+    self.maxFiles = self.am_getOption( 'MaxFilesToProcess', self.am_getOption( 'MaxFiles', 5000 ) )
 
     agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
     if agentTSTypes:
@@ -240,20 +241,25 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     if transID not in self.replicaCache:
       self.__readCache( transID )
     transFiles = transFiles['Value']
-    lfns = [ f['LFN'] for f in transFiles ]
-    unusedFiles = len( lfns )
+    unusedLfns = [ f['LFN'] for f in transFiles ]
+    unusedFiles = len( unusedLfns )
 
+    plugin = transDict.get( 'Plugin', 'Standard' )
     # Limit the number of LFNs to be considered for replication or removal as they are treated individually
     if not forJobs:
-      totLfns = len( lfns )
-      lfns = self.__applyReduction( lfns )
-      if len( lfns ) != totLfns:
-        self._logInfo( "Reduced number of files from %d to %d" % ( totLfns, len( lfns ) ),
+      maxFiles = Operations().getValue( 'TransformationPlugins/%s/MaxFilesToProcess' % plugin, 0 )
+      # Get plugin-specific limit in number of files (0 means no limit)
+      totLfns = len( unusedLfns )
+      lfnsToProcess = self.__applyReduction( unusedLfns, maxFiles = maxFiles )
+      if len( lfnsToProcess ) != totLfns:
+        self._logInfo( "Reduced number of files from %d to %d" % ( totLfns, len( lfnsToProcess ) ),
                        method = method, transID = transID )
-        transFiles = [f for f in transFiles if f['LFN'] in lfns]
+        transFiles = [f for f in transFiles if f['LFN'] in lfnsToProcess]
+    else:
+      lfnsToProcess = unusedLfns
 
     # Check the data is available with replicas
-    res = self.__getDataReplicas( transDict, lfns, clients, forJobs = forJobs )
+    res = self.__getDataReplicas( transDict, lfnsToProcess, clients, forJobs = forJobs )
     if not res['OK']:
       self._logError( "Failed to get data replicas:", res['Message'],
                       method = method, transID = transID )
@@ -261,7 +267,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     dataReplicas = res['Value']
 
     # Get the plug-in type and create the plug-in object
-    plugin = transDict.get( 'Plugin', 'Standard' )
     self._logInfo( "Processing transformation with '%s' plug-in." % plugin,
                    method = method, transID = transID )
     res = self.__generatePluginObject( plugin, clients )
@@ -292,7 +297,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         allCreated = False
       else:
         created += 1
-        lfnsInTasks += lfns
+        lfnsInTasks += [lfn for lfn in lfns if lfn in lfnsToProcess]
     if created:
       self._logInfo( "Successfully created %d tasks for transformation." % created,
                      method = method, transID = transID )
@@ -325,13 +330,17 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   def _getTransformationFiles( self, transDict, clients, statusList = None, replicateOrRemove = False ):
     """ get the data replicas for a certain transID
     """
-
+    # By default, don't skip if no new Unused for DM transformations
+    skipIfNoNewUnused = not replicateOrRemove
     transID = transDict['TransformationID']
     plugin = transDict.get( 'Plugin', 'Standard' )
     # Check if files should be sorted and limited in number
     operations = Operations()
     sortedBy = operations.getValue( 'TransformationPlugins/%s/SortedBy' % plugin, None )
-    maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFiles' % plugin, 0 )
+    maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFilesToProcess' % plugin, 0 )
+    # If the NoUnuse delay is explicitly set, we want to take it into account, and skip if no new Unused
+    if operations.getValue( 'TransformationPlugins/%s/NoUnusedDelay' % plugin, 0 ):
+      skipIfNoNewUnused = True
     noUnusedDelay = 0 if self.pluginTimeout.get( transID, False ) else operations.getValue( 'TransformationPlugins/%s/NoUnusedDelay' % plugin,
                                                                                             self.noUnusedDelay )
     method = '_getTransformationFiles'
@@ -380,7 +389,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     # Check if something new happened
     now = datetime.datetime.utcnow()
-    if not kickTrans and not replicateOrRemove and noUnusedDelay:
+    if not kickTrans and skipIfNoNewUnused and noUnusedDelay:
       nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = noUnusedDelay )
       skip = now < nextStamp
       if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
@@ -402,12 +411,14 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         self.__removeFilesFromCache( transID, notUnused )
     return S_OK( transFiles )
 
-  def __applyReduction( self, lfns ):
+  def __applyReduction( self, lfns, maxFiles = None ):
     """ eventually remove the number of files to be considered
     """
-    if len( lfns ) <= self.maxFiles:
+    if maxFiles is None:
+      maxFiles = self.maxFiles
+    if not maxFiles or len( lfns ) <= maxFiles:
       return lfns
-    return randomize( lfns )[:self.maxFiles]
+    return randomize( lfns )[:maxFiles]
 
   def __getDataReplicas( self, transDict, lfns, clients, forJobs = True ):
     """ Get the replicas for the LFNs and check their statuses. It first looks within the cache.
@@ -438,7 +449,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     cachedReplicaSets = self.replicaCache.get( transID, {} )
     cachedReplicas = {}
     # Merge all sets of replicas
-    for replicas in cachedReplicaSets.values():
+    for replicas in cachedReplicaSets.itervalues():
       cachedReplicas.update( replicas )
     self._logInfo( "Number of cached replicas: %d" % len( cachedReplicas ), method = method, transID = transID )
     setCached = set( cachedReplicas )
@@ -549,7 +560,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ Remove cached replicas that are not in a list
     """
     cachedReplicas = set()
-    for replicas in self.replicaCache.get( transID, {} ).values():
+    for replicas in self.replicaCache.get( transID, {} ).itervalues():
       cachedReplicas.update( replicas )
     toRemove = cachedReplicas - set( lfns )
     if toRemove:
@@ -619,7 +630,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
   def __filesInCache( self, transID ):
     cache = self.replicaCache.get( transID, {} )
-    return sum( len( lfns ) for lfns in cache.values() )
+    return sum( len( lfns ) for lfns in cache.itervalues() )
 
   @gSynchro
   def __writeCache( self, transID = None ):

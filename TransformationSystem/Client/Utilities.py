@@ -173,7 +173,8 @@ class PluginUtilities( object ):
     if not self.groupSize:
       self.groupSize = float( self.getPluginParam( 'GroupSize', 1. ) ) * 1000 * 1000 * 1000  # input size in GB converted to bytes
     if not self.maxFiles:
-      self.maxFiles = self.getPluginParam( 'MaxFiles', 100 )
+      # FIXME: prepare for chaging the name of the ambiguoug  CS option
+      self.maxFiles = self.getPluginParam( 'MaxFilesPerTask', self.getPluginParam( 'MaxFiles', 100 ) )
     lfns = sorted( lfns, key = fileSizes.get )
     for lfn in lfns:
       size = fileSizes.get( lfn, 0 )

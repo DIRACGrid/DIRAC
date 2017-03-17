@@ -216,7 +216,8 @@ class ReqManagerHandler( RequestHandler ):
         :param dict selectDict: parameter on which to restrain the query {key : Value}
                                 key can be any of the Request columns, 'Type' (interpreted as Operation.Type)
                                 and 'FromData' and 'ToData' are matched against the LastUpdate field
-        :param list sortList: [sorting column, ASC/DESC]
+        :param sortList: [sorting column, ASC/DESC]
+        :type sortList: python:list
         :param int startItem: start item (for pagination)
         :param int maxItems: max items (for pagination)
     """

@@ -13,13 +13,14 @@ def executeRabbitmqctl(arg, *argv):
     For every command the -q argument ("quit mode")
     is used, since in some cases the output must be processed,
     so we don't want any additional informations printed.
+
   Args:
     arg(str): command recognized by the rabbitmqctl.
-    argv(list): optional list of string parameters.
-  Returns:
-    S_OK:
-    S_ERROR:
+    argv: optional list of string parameters.
 
+  :rtype: S_OK or S_ERROR
+  :type argv: python:list
+  
   """
   command =['sudo','/usr/sbin/rabbitmqctl','-q', arg] + list(argv)
   timeOut = 30
@@ -63,8 +64,9 @@ def deleteUser(user):
 
 def getAllUsers():
   '''Returns all existing users in the internal RabbitMQ database.
-  Returns:
-    S_OK: with a list of all users
+
+  :returns: S_OK with a list of all users
+  :rtype: S_OK
   '''
   ret = executeRabbitmqctl('list_users')
   if not ret['OK']:

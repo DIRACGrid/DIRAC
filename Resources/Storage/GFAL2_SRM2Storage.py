@@ -1,7 +1,9 @@
 """ :mod: GFAL2_SRM2Storage
+
     =================
 
     .. module: python
+
     :synopsis: SRM2 module based on the GFAL2_StorageBase class.
 """
 
@@ -82,7 +84,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     :param self: self reference
     :param str path: path on storage
     :param mixed protocols: protocols to use
-    :returns Failed dict {path : error message}
+    :returns: Failed dict {path : error message}
              Successful dict {path : transport url}
              S_ERROR in case of argument problems
     """

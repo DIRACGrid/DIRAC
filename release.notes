@@ -1,3 +1,30 @@
+[v6r17p13]
+
+*Core
+NEW: Proxy - added executeWithoutServerCertificate() decorator function 
+
+*Resources
+FIX: CREAMComputingElement - split CREAM proxy renewal operation into smaller chunks for 
+     improved reliability
+
+[v6r17p12]
+
+*Framework
+FIX: SecurityFileLog  - when the security logs are rotated, the buffer size is reduced
+     to 1 MB to avoid gzip failures ( was 2 GBs )
+
+*WMS
+FIX: pilotCommands - fix for interpreting DNs when saving the installation environment
+FIX: SandboxStoreClient - do not check/make destination directory if requested sandbox 
+     is returned InMemory
+
+*TS
+FIX: TransformationAgent CS option MaxFiles split in MaxFilesToProcess and MaxFilesPerTask,
+     MaxFiles option is interpreted as MaxFilesPerTask for backward compatibility
+
+*Resources
+NEW: Added plug-ins for GSIFTP and HTTPS Storage protocols 
+
 [v6r17p11]
 
 *Core

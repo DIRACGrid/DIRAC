@@ -18,6 +18,7 @@ Two extensions are required for developing DIRAC with *Eclipse*. To install them
 
 - *pyDev* : Use `http://pydev.org/updates` as the URL to install from. For more info go `Pydev updates page <http://pydev.org/updates>`_.
 - *EGit* : Git team provider for eclipse. The latest of Eclipse come with this extension ready to be installed. If this is not the case, use `http://download.eclipse.org/egit/updates` as the URL. 
+
 For more info go `Eclipse site <http://www.eclipse.org/egit/>`_.
  
 Now you need to configure the *pyDev* plugin. Go to *Window->Preferences* (*Eclipse->preferences* if you're in a MacOSX box). 
@@ -82,22 +83,22 @@ Eclipse can manage several projects and developers may need have more than one d
 1. Click on the small arrow on the package explorer and then on *Select working set...*
 
 .. image:: images/workingsets-01.png
-:align: center
+	   :align: center
 
 2. Click on *New...* and then selecte *Resource* and then click *Next>*
 
 .. image:: images/workingsets-02.png
-:align: center
+	   :align: center
 
 3. Give it a meaningful name and select all the projects you want to include in the *working set* and click *Finish*
 
 .. image:: images/workingsets-03.png
-:align: center
+	   :align: center
 
 4. Now the new working set will appear. If you want to activate it just select it and click *OK*
 
 .. image:: images/workingsets-04.png
-:align: center
+	   :align: center
  
 Now, to change the active working set or to disable them:
 

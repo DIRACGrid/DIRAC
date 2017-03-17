@@ -299,7 +299,8 @@ class StorageBase( object ):
 
     :param dict pathDict: URL obtained from File Catalog or constructed according
                     to convention
-    :param list protocols: a list of acceptable transport protocols in priority order
+    :param protocols: a list of acceptable transport protocols in priority order
+    :type protocols: `python:list`
     """
     res = checkArgumentFormat( pathDict )
     if not res['OK']:
@@ -414,5 +415,3 @@ class StorageBase( object ):
       return S_OK( True )
 
     return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
-
-

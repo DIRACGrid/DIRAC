@@ -6,7 +6,7 @@ Add or Modify a Host info in DIRAC
 
 Usage::
 
-dirac-admin-add-host [option|cfgfile] ... Property=<Value> ...
+  dirac-admin-add-host [option|cfgfile] ... Property=<Value> ...
 
 Arguments::
 

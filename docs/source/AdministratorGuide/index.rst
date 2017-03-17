@@ -12,6 +12,7 @@ Administrator Guide
    SystemAdministratorInterface/index
    Configuration/index
    Systems/index
+   Resources/index
    DIRACSites/index
    MultiVO/index
    CommandReference/index

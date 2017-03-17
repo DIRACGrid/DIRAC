@@ -64,7 +64,7 @@ class ElasticDB( ElasticSearchDB ):
     """
      It is used to set the cluster host
 
-      :param str hostname it is the host name of the elasticsearch
+    :param str hostname: it is the host name of the elasticsearch
     """
     self.__dbHost = hostName
 

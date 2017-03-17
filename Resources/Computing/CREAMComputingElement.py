@@ -179,7 +179,8 @@ class CREAMComputingElement( ComputingElement ):
   def getCEStatus( self, jobIDList = None ):
     """ Method to return information on running and pending jobs.
 
-        :param list jobIDList: list of job IDs to be considered
+        :param jobIDList: list of job IDs to be considered
+        :type jobIDList: python:list
     """
     statusList = ['REGISTERED', 'PENDING', 'IDLE', 'RUNNING', 'REALLY-RUNNING']
     cmd = ['glite-ce-job-status', '-n', '-a', '-e',
@@ -248,15 +249,19 @@ class CREAMComputingElement( ComputingElement ):
             if delegationID not in delegationIDs:
               delegationIDs.append( delegationID )
         if delegationIDs:
-          cmd = ['glite-ce-proxy-renew', '-e', self.ceName ]
-          cmd.extend( delegationIDs )
-          self.log.info( 'Refreshing proxy for:', ' '.join( delegationIDs ) )
-          result = executeGridCommand( self.proxy, cmd, self.gridEnv )
-          if result['OK']:
-            status, output, error = result['Value']
-            if status:
-              self.log.error( "Failed to renew proxy delegation",
-                              'Output:\n' + output + '\nError:\n' + error )
+          # Renew proxies in batches to avoid timeouts
+          chunkSize = 10
+          for i in xrange(0, len( delegationIDs ), chunkSize):
+            chunk = delegationIDs[ i:i+chunkSize ]
+            cmd = ['glite-ce-proxy-renew', '-e', self.ceName ]
+            cmd.extend( chunk )
+            self.log.info( 'Refreshing proxy for:', ' '.join( chunk ) )
+            result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+            if result['OK']:
+              status, output, error = result['Value']
+              if status:
+                self.log.error( "Failed to renew proxy delegation",
+                                'Output:\n' + output + '\nError:\n' + error )
 
     workingDirectory = self.ceParameters['WorkingDirectory']
     fd, idFileName = tempfile.mkstemp( suffix = '.ids', prefix = 'CREAM_', dir = workingDirectory )

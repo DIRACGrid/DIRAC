@@ -167,12 +167,6 @@ class SandboxStoreClient( object ):
       return S_ERROR( "Invalid sandbox URL" )
     SEName = sbSplit[0]
     SEPFN = "|".join( sbSplit[1:] )
-    # If destination dir is not specified use current working dir
-    # If its defined ensure the dir structure is there
-    if not destinationDir:
-      destinationDir = os.getcwd()
-    else:
-      mkDir(destinationDir)
 
     try:
       tmpSBDir = tempfile.mkdtemp( prefix = "TMSB." )
@@ -201,6 +195,13 @@ class SandboxStoreClient( object ):
         os.rmdir( tmpSBDir )
         return S_ERROR( 'Failed to read the sandbox archive: %s' % str( e ) )
       return S_OK( data )
+
+    # If destination dir is not specified use current working dir
+    # If its defined ensure the dir structure is there
+    if not destinationDir:
+      destinationDir = os.getcwd()
+    else:
+      mkDir(destinationDir)
 
     if not unpack:
       result[ 'Value' ] = tarFileName

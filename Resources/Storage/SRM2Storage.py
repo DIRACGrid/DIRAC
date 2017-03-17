@@ -1,7 +1,9 @@
 """ :mod: SRM2Storage
+
     =================
 
     .. module: python
+
     :synopsis: SRM v2 interface to StorageElement
 """
 # # imports
@@ -1088,10 +1090,11 @@ class SRM2Storage( StorageBase ):
 
   def listDirectory( self, path, internalCall = False ):
     """ List the contents of the directory on the storage
-        :param interalCall : if this method is called from within
-                             that class, we should return index on SURL, not LFNs
-                             Do not set it to True for a normal call, unless you really
-                             know what you are doing !!
+
+        :param interalCall: if this method is called from within
+                               that class, we should return index on SURL, not LFNs
+                               Do not set it to True for a normal call, unless you really
+                               know what you are doing !!
 
     """
     res = checkArgumentFormat( path )

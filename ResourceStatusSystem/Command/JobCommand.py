@@ -265,15 +265,12 @@ class JobsWMSCommand( Command ):
     """
     Returns simple jobs efficiency
 
-    :attr:`args`:
+    :param args:
        - args[0]: string: should be a ValidElement
 
        - args[1]: string should be the name of the ValidElement
 
-    returns:
-      {
-        'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-      }
+    :returns: { 'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad' }
     """
 
     if 'siteName' not in self.args:

@@ -6,10 +6,13 @@
 ########################################################################
 
 """ :mod: FTSHistoryView
+
     ====================
 
     .. module: FTSHistoryView
+
     :synopsis: last hour history of FTS transfers as read from FTSHistoryView
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     last hour history of FTS transfers as read from FTSHistoryView

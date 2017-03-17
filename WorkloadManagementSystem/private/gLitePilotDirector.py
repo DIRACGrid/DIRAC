@@ -28,6 +28,7 @@ class gLitePilotDirector( GridPilotDirector ):
   """
     gLitePilotDirector class,
     It includes:
+
      - basic configuration for gLite
      - submit and monitor methods for gLite MiddleWare.
   """

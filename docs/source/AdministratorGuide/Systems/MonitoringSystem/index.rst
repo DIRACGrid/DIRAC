@@ -36,9 +36,8 @@ The User name and Password must be added to the local cfg file while the other c
 You have to handle the EL secret information in a similar way to what is done for the other supported SQL databases, e.g. MySQL
 
 
-For example:
+For example::
 
-::
 	Systems
 	{
 	  NoSQLDatabases
@@ -57,9 +56,8 @@ You have to install the WorkloadManagemet/StatesMonitoringAgent. This agent is u
 If you install this agent, you can stop the StatesAccounting agent.
 
 Note: You can use RabbitMQ for failover. This is optional as the agent already has a failover mechanism. You can configure RabbitMQ in the local dirac.cfg file
-where the agent is running:
+where the agent is running::
 
-::
 	Resources
 	{
 	  MQServices
@@ -86,9 +84,8 @@ where the agent is running:
 Enable Component monitoring
 ===========================
 
-You have to set DynamicMonitoring=True in the CS:
+You have to set DynamicMonitoring=True in the CS::
 
-::
 	Systems
 	{
 		Framework

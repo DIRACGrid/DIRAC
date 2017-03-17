@@ -82,7 +82,7 @@ class RequestHandler( object ):
     """
     Get the address of the remote peer.
 
-    :return : Address of remote peer.
+    :return: Address of remote peer.
     """
     return self.__trPool.get( self.__trid ).getRemoteAddress()
 
@@ -90,7 +90,7 @@ class RequestHandler( object ):
     """
     Get the credentials of the remote peer.
 
-    :return : Credentials dictionary of remote peer.
+    :return: Credentials dictionary of remote peer.
     """
     return self.__trPool.get( self.__trid ).getConnectingCredentials()
 
@@ -99,7 +99,7 @@ class RequestHandler( object ):
     """
     Get an option from the CS section of the services
 
-    :return : Value for serviceSection/optionName in the CS being defaultValue the default
+    :return: Value for serviceSection/optionName in the CS being defaultValue the default
     """
     return cls.srv_getCSOption( optionName, defaultValue )
 
@@ -487,7 +487,7 @@ class RequestHandler( object ):
     """
     Get the address of the remote peer.
 
-    :return : Address of remote peer.
+    :return: Address of remote peer.
     """
     return self.__trPool.get( self.__trid ).getRemoteAddress()
 
@@ -495,7 +495,7 @@ class RequestHandler( object ):
     """
     Get the credentials of the remote peer.
 
-    :return : Credentials dictionary of remote peer.
+    :return: Credentials dictionary of remote peer.
     """
     return self.__trPool.get( self.__trid ).getConnectingCredentials()
 
@@ -511,7 +511,7 @@ class RequestHandler( object ):
     """
     Get an option from the CS section of the services
 
-    :return : Value for serviceSection/optionName in the CS being defaultValue the default
+    :return: Value for serviceSection/optionName in the CS being defaultValue the default
     """
     if optionName[0] == "/":
       return gConfig.getValue( optionName, defaultValue )

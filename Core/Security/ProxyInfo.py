@@ -17,24 +17,26 @@ __RCSID__ = "$Id$"
 
 def getProxyInfo( proxy = False, disableVOMS = False ):
   """
-  Returns a dict with all the proxy info
-  * values that will be there always
-   'chain' : chain object containing the proxy
-   'subject' : subject of the proxy
-   'issuer' : issuer of the proxy
-   'isProxy' : bool
-   'isLimitedProxy' : bool
-   'validDN' : Valid DN in DIRAC
-   'validGroup' : Valid Group in DIRAC
-   'secondsLeft' : Seconds left
-  * values that can be there
-   'path' : path to the file,
-   'group' : DIRAC group
-   'groupProperties' : Properties that apply to the DIRAC Group
-   'username' : DIRAC username
-   'identity' : DN that generated the proxy
-   'hostname' : DIRAC host nickname
-   'VOMS'
+  :Returns: a dict with all the proxy info:
+
+    * values that will be there always
+        * 'chain' : chain object containing the proxy
+        * 'subject' : subject of the proxy
+        * 'issuer' : issuer of the proxy
+        * 'isProxy' : bool
+        * 'isLimitedProxy' : bool
+        * 'validDN' : Valid DN in DIRAC
+        * 'validGroup' : Valid Group in DIRAC
+        * 'secondsLeft' : Seconds left
+    * values that can be there
+        * 'path' : path to the file,
+        * 'group' : DIRAC group
+        * 'groupProperties' : Properties that apply to the DIRAC Group
+        * 'username' : DIRAC username
+        * 'identity' : DN that generated the proxy
+        * 'hostname' : DIRAC host nickname
+        * 'VOMS'
+
   """
   #Discover proxy location
   proxyLocation = False

@@ -46,6 +46,7 @@ class RabbitMQSynchronizer(object):
 def getAllowedGroupName():
   """Returns name of the group of which users are allowed
      to connect to RabbitMQ server.
+
   Returns:
     str: group name
   """
@@ -54,6 +55,7 @@ def getAllowedGroupName():
 def getAllowedHostProperty():
   """Returns property. The hosts that contain it
      are allowed to connect to RabbitMQ server.
+
   Returns:
     str: property name
   """
@@ -64,10 +66,15 @@ def getAllowedHostProperty():
 def getDNsForValidHosts(accessProperty):
   """Returns DN of hosts which contains accessProperty based on current
      CS settings.
+
   Args:
     accessProperty(str):
+
   Returns:
-    list: of hosts with accessProperty set.
+    list of hosts with accessProperty set.
+
+  :rtype: python:list
+  
   """
 
   retVal = getHosts()
@@ -92,9 +99,14 @@ def updateRabbitMQDatabase(newUsers, specialUsers = None):
      are added. The users that are present in the database, but are not in
      newUsers list are deleted. The specialUser list contains logins that
      will not be processed at all.
+
   Args:
     newUsers(list): user logins to be processed.
     specialUsers(list): special users that will not be processed.
+
+  :type newUsers: python:list
+  :type specialUsers: python:list
+
   """
   if specialUsers is None:
     #I think specialUsers should be read from CS and not taken as the argument
@@ -120,8 +132,12 @@ def getSpecialUsersForRabbitMQDatabase():
   """Returns a list of special users
      that will not be processed (e.g. removed)
      while updating the RabbitMQ database.
+
   Returns:
-    list: of user logins.
+    list of user logins.
+
+  :rtype: python:list
+
   """
   #For a moment it is hardcoded but should be read from
   #some location in CS
@@ -130,7 +146,7 @@ def getSpecialUsersForRabbitMQDatabase():
 def listDifference(list1, list2):
   """Calculates differences between two lists.
      The original order of the list is not preserved.
-  Returns:
-    list:
+
+  :rtype: python:list
   """
   return list(set(list1) - set(list2))

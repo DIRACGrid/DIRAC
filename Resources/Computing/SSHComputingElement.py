@@ -128,7 +128,8 @@ class SSH( object ):
     """ Execute remote command via a ssh remote call
 
     :param int timeout: timeout of the command
-    :param list cmdSeq: list of command components
+    :param cmdSeq: list of command components
+    :type cmdSeq: python:list
     """
 
     command = cmdSeq

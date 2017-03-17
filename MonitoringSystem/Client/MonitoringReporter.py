@@ -31,7 +31,8 @@ class MonitoringReporter( object ):
 
   :param int __maxRecordsInABundle: limit the number of records to be inserted to the db.
   :param threading.RLock __documentLock: is used to lock the local store when it is being modified.
-  :param list __documents: contains the recods which will be inserted to the db
+  :param __documents: contains the recods which will be inserted to the db\
+  :type __documents: python:list
   :param bool __mq: we can use MQ if it is available... By default it is not allowed.
   :param str __monitoringType: type of the records which will be inserted to the db. For example: WMSHistory.
   :param object __mqProducer: publisher used to publish the records to the MQ.

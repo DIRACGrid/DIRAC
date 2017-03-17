@@ -935,18 +935,21 @@ class AccountingDB( DB ):
   def retrieveBucketedData( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, connObj = False ):
     """
     Get data from the DB
+
     Parameters:
      - typeName -> typeName
-     - startTime & endTime -> int epoch objects. Do I need to explain the meaning?
-     - selectFields -> tuple containing a string and a list of fields:
-                      ( "SUM(%s), %s/%s", ( "field1name", "field2name", "field3name" ) )
+     - startTime & endTime -> int
+         epoch objects. Do I need to explain the meaning?
+     - selectFields: tuple containing a string and a list of fields:
+                       ( "SUM(%s), %s/%s", ( "field1name", "field2name", "field3name" ) )
      - condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
+                   key -> name of the field
+                   value -> list of possible values
      - groupFields -> list of fields to group by
-                  ( "%s, %s, %s", ( "field1name", "field2name", "field3name" ) )
+                      ( "%s, %s, %s", ( "field1name", "field2name", "field3name" ) )
      - orderFields -> list of fields to order by
-                  ( "%s, %s, %s", ( "field1name", "field2name", "field3name" ) )
+                      ( "%s, %s, %s", ( "field1name", "field2name", "field3name" ) )
+
     """
     if typeName not in self.dbCatalog:
       return S_ERROR( "Type %s is not defined" % typeName )

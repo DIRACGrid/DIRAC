@@ -5,10 +5,13 @@
 ########################################################################
 
 """ :mod: RequestExecutingAgent
+
     ===========================
 
     .. module: RequestExecutingAgent
+
     :synopsis: request executing agent
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     request processing agent
@@ -186,7 +189,7 @@ class RequestExecutingAgent( AgentModule ):
   def cacheRequest( self, request ):
     """ put request into requestCache
 
-    :param Request request: Request instance
+    :param ~Request.Request request: Request instance
     """
     count = 5
     # Wait a bit as there may be a race condition between RequestTask putting back the request and the callback clearing the cache

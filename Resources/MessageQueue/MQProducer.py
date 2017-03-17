@@ -25,8 +25,9 @@ class MQProducer ( object ):
         The producer id is removed from the connection storage.
         It is not guaranteed that the connection will be
         removed cause other messengers can be still using it.
+
     Returns:
-      S_OK/S_ERROR: Error appears in case if the connection was already
+      S_OK or S_ERROR: Error appears in case if the connection was already
         closed for this producer.
     """
     return self._connectionManager.stopConnection( mqURI = self._mqURI, messengerId = self._id )

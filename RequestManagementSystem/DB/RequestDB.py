@@ -7,9 +7,11 @@
 """ Frontend for ReqDB
 
     :mod: RequestDB
+
     =======================
 
     .. module: RequestDB
+
     :synopsis: db holding Requests
 
     db holding Request, Operation and File
@@ -224,7 +226,7 @@ class RequestDB( object ):
   def putRequest( self, request ):
     """ update or insert request into db
 
-    :param Request request: Request instance
+    :param ~Request.Request request: Request instance
     """
 
     session = self.DBSession( expire_on_commit = False )
@@ -553,7 +555,8 @@ class RequestDB( object ):
     :param dict selectDict: parameter on which to restrain the query {key : Value}
                             key can be any of the Request columns, 'Type' (interpreted as Operation.Type)
                             and 'FromData' and 'ToData' are matched against the LastUpdate field
-    :param list sortList: [sorting column, ASC/DESC]
+    :param sortList: [sorting column, ASC/DESC]
+    :type sortList: python:list
     :param int startItem: start item (for pagination)
     :param int maxItems: max items (for pagination)
     """
@@ -728,7 +731,8 @@ class RequestDB( object ):
   def getRequestIDsForJobs( self, jobIDs ):
     """ read request ids for jobs given jobIDs
 
-    :param list jobIDs: list of jobIDs
+    :param jobIDs: list of jobIDs
+    :type jobIDs: python:list
     """
     self.log.debug( "getRequestIDsForJobs: got %s jobIDs to check" % str( jobIDs ) )
     if not jobIDs:
@@ -760,7 +764,8 @@ class RequestDB( object ):
   def readRequestsForJobs( self, jobIDs = None ):
     """ read request for jobs
 
-    :param list jobIDs: list of JobIDs
+    :param jobIDs: list of JobIDs
+    :type jobIDs: python:list
     :return: S_OK( "Successful" : { jobID1 : Request, jobID2: Request, ... }
                    "Failed" : { jobID3: "error message", ... } )
     """
@@ -811,7 +816,8 @@ class RequestDB( object ):
     """ get status for files in request given its id
 
     :param str requestID: Request.RequestID
-    :param list lfnList: list of LFNs
+    :param lfnList: list of LFNs
+    :type lfnList: python:list
     """
 
     session = self.DBSession()

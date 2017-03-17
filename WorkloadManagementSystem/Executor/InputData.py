@@ -21,8 +21,8 @@ __RCSID__ = "$Id$"
 class InputData( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
-      - initializeOptimizer() before each execution cycle
-      - optimizeJob() - the main method called for each job
+        - initializeOptimizer() before each execution cycle
+        - optimizeJob() - the main method called for each job
   """
 
   @classmethod
@@ -78,9 +78,9 @@ class InputData( OptimizerExecutor ):
     """ This is the method that needs to be implemented by each and every Executor
 
         This optimizer will run if and only if it is needed:
-        - it will run only if there are input files
-        - for production jobs this can be skipped,
-          since the logic is already applied by the transformation system, via the TaskManagerPlugins
+          - it will run only if there are input files
+          - for production jobs this can be skipped,
+            since the logic is already applied by the transformation system, via the TaskManagerPlugins
     """
     # Is it a production job?
     result = jobState.getAttribute( "JobType" )

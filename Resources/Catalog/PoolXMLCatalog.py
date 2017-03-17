@@ -370,7 +370,9 @@ class PoolXMLCatalog( object ):
   def addReplica( self, replicaTuple ):
     """ This adds a replica to the catalogue
         The tuple to be supplied is of the following form:
+
           (lfn,pfn,se,master)
+
         where master = True or False
     """
     if type( replicaTuple ) == types.TupleType:
