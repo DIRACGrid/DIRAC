@@ -30,7 +30,7 @@ class PEPSuccess(PolicySystemTestCase):
 
   def test_enforce(self):
 
-    pep = PEP( {'ResourceStatusClient':self.RSMock, 'ResourceManagementClient': self.RMMock} )
+    pep = PEP( {'ResourceStatusClient':self.RSMock, 'ResourceManagementClient': self.RMMock, 'SiteStatus': self.RMMock} )
     pep.pdp = self.mockPDP
     res = pep.enforce( None )
     self.assert_( res['OK'] )
@@ -56,6 +56,8 @@ class PEPSuccess(PolicySystemTestCase):
                                                                                 'EndDate': '2010-02-16 15:00:00'}],
                                                        'decisionParams':decParamsPDP}}
     res = pep.enforce( decisionParams )
+    print "WWWWWWWWWWWWW"
+    print res
     self.assert_( res['OK'] )
 
     decisionParams = {'element':'Resource', 'name': 'StorageElement', 'statusType': 'ReadAccess'}
