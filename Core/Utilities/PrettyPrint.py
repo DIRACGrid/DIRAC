@@ -38,7 +38,7 @@ def printTable( fields, records, sortField = '', numbering = True,
   :return: pretty table string
   """
 
-  def __writeField( buffer, value, length, columnSeparator ):
+  def __writeField( buffer, value, length, columnSeparator, lastColumn = False ):
 
     justification = None
     if isinstance( value, dict ):
@@ -54,17 +54,21 @@ def printTable( fields, records, sortField = '', numbering = True,
         justification = "l"
 
     if justification.lower() == "l":
-      buffer.write( value.ljust( length ) + columnSeparator )
+      output = value.ljust( length ) + columnSeparator
     elif justification.lower() == "r":
-      buffer.write( value.rjust( length ) + columnSeparator )
+      output =  value.rjust( length ) + columnSeparator
     elif justification.lower() == "c":
       margin = length - len( value )
       if margin <= 1:
-        buffer.write( value.ljust( length ) + columnSeparator )
+        output =  value.ljust( length ) + columnSeparator
       else:
         m1 = margin/2
         m2 = margin - m1
-        buffer.write( " "*m1 + value + " "*m2 + columnSeparator )
+        output =  " "*m1 + value + " "*m2 + columnSeparator
+    if lastColumn:
+      output = output.rstrip()
+    buffer.write( output )
+    return len( output )
 
   if not records:
     if printOut:
@@ -154,9 +158,14 @@ def printTable( fields, records, sortField = '', numbering = True,
   stringBuffer.write( ' ' * ( topLength ) )
 
   for i in range(nFields):
-    stringBuffer.write( fieldList[i].ljust( fieldWidths[i] + separatorWidth ) )
+    lastColumn = False if i < nFields - 1 else True
+    length = __writeField( stringBuffer, fieldList[i], fieldWidths[i], columnSeparator, lastColumn )
+    topLength += length
   stringBuffer.write( '\n' )
-  stringBuffer.write( '='*totalLength + '\n' )
+  if columnSeparator == ' ':
+    stringBuffer.write( '='*topLength + '\n' )
+  else:
+    stringBuffer.write( '='*totalLength + '\n' )
 
   for count, record in enumerate( recordList ):
     total = ( count == len( recordList ) - 1 and recordList[-1][0] == "Total" )
@@ -174,8 +183,8 @@ def printTable( fields, records, sortField = '', numbering = True,
       elif isinstance( item, dict ) and isinstance( item['Value'], list ):
         listMode = max( len( item['Value'] ), listMode )
 
-    for fieldValue, fieldWidth in zip( record, fieldWidths ):
-
+    for i, (fieldValue, fieldWidth) in enumerate( zip( record, fieldWidths ) ):
+      lastColumn = False if i < nFields - 1 else True
       value = fieldValue
       if isinstance( fieldValue, list ):
         value = fieldValue[0]
@@ -183,7 +192,7 @@ def printTable( fields, records, sortField = '', numbering = True,
         value = dict( fieldValue )
         value.update( { 'Value': value['Value'][0] } )
 
-      __writeField( stringBuffer, value, fieldWidth, columnSeparator )
+      __writeField( stringBuffer, value, fieldWidth, columnSeparator, lastColumn )
 
     # If the field has a list type value, print out one value per line
     if listMode:
@@ -192,7 +201,8 @@ def printTable( fields, records, sortField = '', numbering = True,
         # Do not number continuation lines
         if numbering:
           stringBuffer.write( " "*(numberWidth + separatorWidth) )
-        for fieldValue, fieldWidth in zip( record, fieldWidths ):
+        for i, (fieldValue, fieldWidth) in enumerate( zip( record, fieldWidths ) ):
+          lastColumn = False if i < nFields - 1 else True
           valueList = fieldValue
           if isinstance( valueList, list ) and ll < len( valueList ):
             value = valueList[ll]
@@ -204,7 +214,7 @@ def printTable( fields, records, sortField = '', numbering = True,
           else:
             value = ''
 
-          __writeField( stringBuffer, value, fieldWidth, columnSeparator )
+          __writeField( stringBuffer, value, fieldWidth, columnSeparator, lastColumn )
 
         stringBuffer.write( '\n' )
 
