@@ -32,7 +32,7 @@ and MinCheckingTime options
 |                            | are declared failed, unless their minor  |                                 |
 |                            | status is "Pending Requests"             |                                 |
 +----------------------------+------------------------------------------+---------------------------------+
-|                            | List of site for which the               | excludeJobsfromSite =           |
+|                            | List of site for which the               | StalledJobsTolerantSites =      |
 | *StalledJobsTolerantSites* | StalledJobAgent will increase the        | siteA.cern.ch, siteB.cern.ch    |
 |                            | tolerance for stalled jobs               |                                 |
 +----------------------------+------------------------------------------+---------------------------------+
