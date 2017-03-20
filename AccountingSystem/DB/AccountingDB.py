@@ -38,17 +38,16 @@ class AccountingDB( DB ):
     self.__threadPool.daemonize()
     self.catalogTableName = _getTableName( "catalog", "Types" )
     self._createTables( {
-	self.catalogTableName : {
-	    'Fields' : {
-		'name' : "VARCHAR(64) UNIQUE NOT NULL",
-		'keyFields' : "VARCHAR(255) NOT NULL",
-		'valueFields' : "VARCHAR(255) NOT NULL",
-		'bucketsLength' : "VARCHAR(255) NOT NULL",
-		},
-	    'PrimaryKey' : 'name'
-	    }
-	}
-                      )
+        self.catalogTableName : {
+            'Fields' : {
+                'name' : "VARCHAR(64) UNIQUE NOT NULL",
+                'keyFields' : "VARCHAR(255) NOT NULL",
+                'valueFields' : "VARCHAR(255) NOT NULL",
+                'bucketsLength' : "VARCHAR(255) NOT NULL",
+                },
+            'PrimaryKey' : 'name'
+            }
+        })
     self.__loadCatalogFromDB()
     gMonitor.registerActivity( "registeradded",
                                "Register added",
@@ -268,12 +267,12 @@ class AccountingDB( DB ):
       bucketsLength.sort()
       bucketsEncoding = DEncode.encode( bucketsLength )
       retVal = self._update(
-	  "UPDATE `%s` set bucketsLength = '%s' where name = '%s'" % (
-	      self.catalogTableName,
-	      bucketsEncoding,
-	      typeName
-	      )
-	  )
+          "UPDATE `%s` set bucketsLength = '%s' where name = '%s'" % (
+              self.catalogTableName,
+              bucketsEncoding,
+              typeName
+              )
+          )
       if not retVal[ 'OK' ]:
         return retVal
       self.dbBucketsLength[ typeName ] = bucketsLength
@@ -579,10 +578,10 @@ class AccountingDB( DB ):
                                                                                      numRcv,
                                                                                      numExp ) )
     retVal = self.insertFields(
-	_getTableName( "in", typeName ),
-	sqlFields,
-	sqlValues
-	)
+        _getTableName( "in", typeName ),
+        sqlFields,
+        sqlValues
+        )
     if not retVal[ 'OK' ]:
       return retVal
     return S_OK( retVal[ 'lastRowId' ] )
@@ -664,11 +663,11 @@ class AccountingDB( DB ):
     connObj = retVal[ 'Value' ]
     try:
       retVal = self.insertFields(
-	  _getTableName( "type", typeName ),
-	  self.dbCatalog[ typeName ][ 'typeFields' ],
-	  insertList,
-	  conn = connObj
-	  )
+          _getTableName( "type", typeName ),
+          self.dbCatalog[ typeName ][ 'typeFields' ],
+          insertList,
+          conn = connObj
+          )
       if not retVal[ 'OK' ]:
         return retVal
       #HACK: One more record to split in the buckets to be able to count total entries
@@ -824,11 +823,11 @@ class AccountingDB( DB ):
     sqlFields.append( "`%s`.`entriesInBucket`" % ( tableName ) )
     cmd = "SELECT %s FROM `%s`" % ( ", ".join( sqlFields ), _getTableName( "bucket", typeName ) )
     cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
-	tableName,
-	startTime,
-	tableName,
-	bucketLength
-	)
+        tableName,
+        startTime,
+        tableName,
+        bucketLength
+        )
     cmd += self.__generateSQLConditionForKeys( typeName, keyValues )
     return self._query( cmd, conn = connObj )
 
@@ -850,11 +849,11 @@ class AccountingDB( DB ):
                                                                                                proportion ) )
     cmd += ", ".join( sqlValList )
     cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
-	tableName,
-	startTime,
-	tableName,
-	bucketLength
-	)
+        tableName,
+        startTime,
+        tableName,
+        bucketLength
+        )
     cmd += self.__generateSQLConditionForKeys( typeName, keyValues )
     return self._update( cmd, conn = connObj )
 
@@ -976,16 +975,16 @@ class AccountingDB( DB ):
     bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch , startTime )
     startTime = startTime - startTime % bucketTimeLength
     result = self.__queryType(
-	typeName,
-	startTime,
-	endTime,
-	selectFields,
-	condDict,
-	groupFields,
-	orderFields,
-	"bucket",
-	connObj = connObj
-	)
+        typeName,
+        startTime,
+        endTime,
+        selectFields,
+        condDict,
+        groupFields,
+        orderFields,
+        "bucket",
+        connObj = connObj
+        )
     gMonitor.addMark( "querytime", Time.toEpoch() - startQueryEpoch )
     return result
 
@@ -1331,11 +1330,11 @@ class AccountingDB( DB ):
         sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d LIMIT %d" % ( table, field, dataTimespan, deleteLimit )
         result = self._update( sqlCmd )
         if not result[ 'OK' ]:
-	  self.log.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % (
-	      table,
-	      dataTimespan,
-	      result[ 'Message' ]
-	      ))
+          self.log.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % (
+              table,
+              dataTimespan,
+              result[ 'Message' ]
+              ))
           break
         self.log.info( "[COMPACT] Deleted %d records for %s table" % ( result[ 'Value' ], table ) )
         deleted = result[ 'Value' ]
@@ -1400,21 +1399,21 @@ class AccountingDB( DB ):
                                      endRangeTime )
       else:
         whereString = "%s > %d AND %s <= %d" % ( startTimeTableField,
-						 startRangeTime,
-						 endTimeTableField,
-						 endRangeTime )
+                                                 startRangeTime,
+                                                 endTimeTableField,
+                                                 endRangeTime )
       sameBucketCondition = "(%s) = (%s)" % ( bucketizedStart, bucketizedEnd )
       #Records that fit in a bucket
       sqlQuery = "SELECT %s, %s, COUNT(%s) FROM `%s` WHERE %s AND %s GROUP BY %s, %s" % (
-	  timeSelectString,
-	  sumSelectString,
-	  countedField,
-	  rawTableName,
-	  whereString,
-	  sameBucketCondition,
-	  groupingString,
-	  bucketizedStart
-	  )
+          timeSelectString,
+          sumSelectString,
+          countedField,
+          rawTableName,
+          whereString,
+          sameBucketCondition,
+          groupingString,
+          bucketizedStart
+          )
       sqlQueries.append( sqlQuery )
       #Records that fit in more than one bucket
       sqlQuery = "SELECT %s, %s, %s, 1 FROM `%s` WHERE %s AND NOT %s" % ( startTimeTableField,
@@ -1428,12 +1427,12 @@ class AccountingDB( DB ):
       dateInclusiveConditions.append( "( %s )" % whereString )
     #Query for records that are in between two ranges
     sqlQuery = "SELECT %s, %s, %s, 1 FROM `%s` WHERE NOT %s" % (
-	startTimeTableField,
-	endTimeTableField,
-	selectString,
-	rawTableName,
-	" AND NOT ".join( dateInclusiveConditions )
-	)
+        startTimeTableField,
+        endTimeTableField,
+        selectString,
+        rawTableName,
+        " AND NOT ".join( dateInclusiveConditions )
+        )
     sqlQueries.append( sqlQuery )
     self.log.info( "[REBUCKET] Retrieving data for rebuilding buckets for type %s..." % ( typeName ) )
     queryNum = 0
