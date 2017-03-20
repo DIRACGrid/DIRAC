@@ -145,7 +145,9 @@ class RemoveReplica( DMSRequestOperationsBase ):
     # # filter out failed
     for lfn, opFile in toRemoveDict.iteritems():
       if lfn in removeReplicas["Failed"]:
-        opFile.Error = str( removeReplicas["Failed"][lfn] )
+        opFile.Error = str(  removeReplicas['Failed'][lfn] )
+        self.log.error("Failed removing lfn", "%s:%s"%(lfn, opFile.Error))
+
     return S_OK()
 
   def _removeWithOwnerProxy( self, opFile, targetSE ):
