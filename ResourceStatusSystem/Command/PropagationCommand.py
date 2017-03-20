@@ -1,4 +1,8 @@
-''' PropagationCommand module
+'''
+PropagationCommand module
+This command gets all the elements that exist under a given site and applies the following logic:
+if even one element is 'Active' for the given site then it marks the site as 'Active', if all elements
+are set in a different status (like banned or error) then it marks the site as 'Banned'
 '''
 
 from DIRAC                                                      import S_OK, S_ERROR

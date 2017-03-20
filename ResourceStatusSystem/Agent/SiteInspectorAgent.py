@@ -1,4 +1,3 @@
-# $HeadURL:  $
 """ SiteInspectorAgent
 
   This agent inspect Sites, and evaluates policies that apply.
@@ -18,16 +17,13 @@ from DIRAC.ResourceStatusSystem.Utilities                       import Utils
 ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ), 'ResourceManagementClient')
 
 __RCSID__  = '$Id$'
-AGENT_NAME = 'ResourceStatus/ElementInspectorAgent'
+AGENT_NAME = 'ResourceStatus/SiteInspectorAgent'
 
 class SiteInspectorAgent( AgentModule ):
-  """ ElementInspectorAgent
+  """ SiteInspectorAgent
 
-  The ElementInspector agent is a generic agent used to check the elements
-  of one of the elementTypes ( e.g. Site, Resource, Node ).
-
-  This Agent takes care of the Elements. In order to do so, it gathers
-  the eligible ones and then evaluates their statuses with the PEP.
+  The SiteInspectorAgent agent is an agent that is used to get the all the site names
+  and trigger PEP to evaluate their status.
 
   """
 
@@ -46,8 +42,6 @@ class SiteInspectorAgent( AgentModule ):
 
 
   def __init__( self, *args, **kwargs ):
-    """ c'tor
-    """
 
     AgentModule.__init__( self, *args, **kwargs )
 
@@ -77,15 +71,14 @@ class SiteInspectorAgent( AgentModule ):
   def execute( self ):
     """ execute
 
-    This is the main method of the agent. It gets the elements from the Database
-    which are eligible to be re-checked, calculates how many threads should be
-    started and spawns them. Each thread will get an element from the queue until
+    This is the main method of the agent. It gets the sites from the Database, calculates how many threads should be
+    started and spawns them. Each thread will get a site from the queue until
     it is empty. At the end, the method will join the queue such that the agent
-    will not terminate a cycle until all elements have been processed.
+    will not terminate a cycle until all sites have been processed.
 
     """
 
-    # Gets elements to be checked ( returns a Queue )
+    # Gets sites to be checked ( returns a Queue )
     sitesToBeChecked = self.getSitesToBeChecked()
     if not sitesToBeChecked[ 'OK' ]:
       self.log.error( sitesToBeChecked[ 'Message' ] )
@@ -108,7 +101,7 @@ class SiteInspectorAgent( AgentModule ):
       if not jobUp[ 'OK' ]:
         self.log.error( jobUp[ 'Message' ] )
 
-    self.log.info( 'blocking until all elements have been processed' )
+    self.log.info( 'blocking until all sites have been processed' )
     # block until all tasks are done
     self.sitesToBeChecked.join()
     self.log.info( 'done')
@@ -119,10 +112,8 @@ class SiteInspectorAgent( AgentModule ):
   def getSitesToBeChecked( self ):
     """ getElementsToBeChecked
 
-    This method gets all the rows in the <self.elementType>Status table, and then
-    discards entries with TokenOwner != rs_svc. On top of that, there are check
-    frequencies that are applied: depending on the current status of the element,
-    they will be checked more or less often.
+    This method gets all the site names from the SiteStatus table, after that it get the details of each
+    site (status, name, etc..) and adds them to a queue.
 
     """
 
@@ -145,7 +136,6 @@ class SiteInspectorAgent( AgentModule ):
       else:
         status = status['Value'][site]
 
-      # We add lowerElementDict to the queue
       toBeChecked.put( { 'status': status, 'name': site, 'site' : site, 'element' : 'Site', 'statusType': 'all', 'elementType': 'Site' } )
 
     return S_OK( toBeChecked )
@@ -155,9 +145,9 @@ class SiteInspectorAgent( AgentModule ):
 
   def _execute( self ):
     """
-      Method run by the thread pool. It enters a loop until there are no elements
-      on the queue. On each iteration, it evaluates the policies for such element
-      and enforces the necessary actions. If there are no more elements in the
+      Method run by the thread pool. It enters a loop until there are no sites
+      on the queue. On each iteration, it evaluates the policies for such site
+      and enforces the necessary actions. If there are no more sites in the
       queue, the loop is finished.
     """
 

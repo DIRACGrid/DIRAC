@@ -18,6 +18,9 @@ class PropagationPolicy( PolicyBase ):
   @staticmethod
   def _evaluate( commandResult ):
     """
+    commandResult is the result of 'PropagationCommand' which
+    indicates if a site should be 'Active' or 'Banned'
+
     :returns:
        {
        `Status`:Error|Unknown|Active|Banned,

@@ -56,8 +56,6 @@ class PEPSuccess(PolicySystemTestCase):
                                                                                 'EndDate': '2010-02-16 15:00:00'}],
                                                        'decisionParams':decParamsPDP}}
     res = pep.enforce( decisionParams )
-    print "WWWWWWWWWWWWW"
-    print res
     self.assert_( res['OK'] )
 
     decisionParams = {'element':'Resource', 'name': 'StorageElement', 'statusType': 'ReadAccess'}
