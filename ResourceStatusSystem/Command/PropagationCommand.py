@@ -29,24 +29,16 @@ class PropagationCommand( Command ):
 
     site = self.args['site']
 
-    storageElements = CSHelpers.getSiteStorageElements(site)
-    computingElements = CSHelpers.getSiteComputingElements(site)
+    elements = CSHelpers.getSiteElements(site)
 
-    for element in storageElements:
-      status = self.rssClient.selectStatusElement("Resource", "Status", element, meta = { 'columns' : [ 'Status' ] })
-      if not status[ 'OK' ]:
-        return status
+    if elements['OK']:
+      for element in elements['Value']:
+        status = self.rssClient.selectStatusElement("Resource", "Status", element, meta = { 'columns' : [ 'Status' ] })
+        if not status[ 'OK' ]:
+          return status
 
-      if status['Value'] == 'Active':
-        return S_OK({ 'Status': 'Active', 'Reason': 'An element that belongs to the site is Active' })
-
-    for element in computingElements:
-      status = self.rssClient.selectStatusElement("Resource", "Status", element, meta = { 'columns' : [ 'Status' ] })
-      if not status[ 'OK' ]:
-        return status
-
-      if status['Value'] == 'Active':
-        return S_OK({ 'Status': 'Active', 'Reason': 'An element that belongs to the site is Active' })
+        if status['Value'][0][0] in ['Active']:
+          return S_OK({ 'Status': 'Active', 'Reason': 'An element that belongs to the site is Active' })
 
     return S_OK({ 'Status': 'Banned', 'Reason': 'There is no Active element in the site' })
 
