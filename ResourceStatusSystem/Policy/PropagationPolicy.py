@@ -3,6 +3,16 @@
    PropagationPolicy.__bases__:
      DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase.PolicyBase
 
+    The following lines are needed in the CS:
+    PropagationPolicy
+    {
+      matchParams
+      {
+        element = Site
+      }
+      policyType = PropagationPolicy
+    }
+
 '''
 
 from DIRAC                                              import S_OK

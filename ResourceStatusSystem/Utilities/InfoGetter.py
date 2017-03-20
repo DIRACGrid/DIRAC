@@ -20,10 +20,6 @@ def getPoliciesThatApply( decisionParams ):
   """
 
   # InfoGetter is being called from SiteInspector Agent
-  if 'site' in decisionParams:
-    policiesToBeLoaded = [{ 'command': ('PropagationCommand', 'PropagationCommand'), 'name': 'PropagationPolicy',
-                            'module': 'PropagationPolicy', 'args': None }]
-    return S_OK( policiesToBeLoaded )
 
   decisionParams = _sanitizedecisionParams( decisionParams )
   gLogger.debug("Sanitized decisionParams: %s" % str(decisionParams))
