@@ -1,3 +1,19 @@
+[v6r17p14]
+
+*Core
+FIX: PrettyPrint.printTable utility enhanced to allow multi-row fields and
+     justification specification for each field value  
+
+*Accounting
+NEW: DataStore - allow to run several instances of the service with only one which
+     is enabled to do the bucketing
+
+*RMS
+NEW: new dirac-rms-list-req-cache command to list the requests in the ReqProxies services
+
+*Interfaces
+CHANGE: Dirac API - make several private methods visible to derived class
+
 [v6r17p13]
 
 *Core
