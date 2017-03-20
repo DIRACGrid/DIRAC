@@ -36,7 +36,7 @@ and MinCheckingTime options
 | *StalledJobsTolerantSites* | StalledJobAgent will increase the        | siteA.cern.ch, siteB.cern.ch    |
 |                            | tolerance for stalled jobs               |                                 |
 +----------------------------+------------------------------------------+---------------------------------+
-|                            | Time to be added to the StalledTimeHours |                                 |
-| *StalledJobsToleranceTime* | in order to increase the                 | StalledJobsToleranceTime = 3    |
+|                            | Time in seconds to be added to the       |                                 |
+| *StalledJobsToleranceTime* | StalledTimeHours in order to increase the| StalledJobsToleranceTime = 3000 |
 |                            | time tolerance for stalled jobs.         |                                 |
 +----------------------------+------------------------------------------+---------------------------------+
