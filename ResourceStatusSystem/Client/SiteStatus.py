@@ -191,15 +191,11 @@ class SiteStatus( object ):
         return activeSites['Value'] + degradedSites['Value']
 
       else:
-        activeSites = self.wmsAdministrator.getSiteMask('Active')
+        activeSites = self.wmsAdministrator.getSiteMask()
         if not activeSites['OK']:
           return activeSites
 
-        degradedSites = self.wmsAdministrator.getSiteMask('Degraded')
-        if not degradedSites['OK']:
-          return degradedSites
-
-        return activeSites['Value'] + degradedSites['Value']
+        return activeSites['Value']
 
     siteStatusList = []
 
