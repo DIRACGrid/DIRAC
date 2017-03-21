@@ -158,7 +158,7 @@ class SiteStatus( object ):
       return S_OK(False)
 
 
-  def getUsableSites( self, siteNamesList ):
+  def getUsableSites( self, siteNamesList = None ):
     """
     Returns all sites that are usable if their
     statusType is either Active or Degraded; in a list.
@@ -167,7 +167,7 @@ class SiteStatus( object ):
       >>> siteStatus.getUsableSites( [ 'test1.test1.uk', 'test2.test2.net', 'test3.test3.org' ] )
           S_OK( ['test1.test1.uk', 'test3.test3.org'] )
       >>> siteStatus.getUsableSites( None )
-          S_ERROR( ... )
+          S_OK( ['test1.test1.uk', 'test3.test3.org', 'test4.test4.org', 'test5.test5.org', ...] )
       >>> siteStatus.getUsableSites( 'NotExists' )
           S_ERROR( ... )
 
@@ -179,7 +179,27 @@ class SiteStatus( object ):
     """
 
     if not siteNamesList:
-      return S_ERROR(DErrno.ERESUNK, 'siteNamesList is empty')
+      if self.rssFlag:
+        activeSites = self.rsClient.selectStatusElement( 'Site', 'Status', status = 'Active', meta = { 'columns' : [ 'Name' ] } )
+        if not activeSites['OK']:
+          return activeSites
+
+        degradedSites = self.rsClient.selectStatusElement( 'Site', 'Status', status = 'Degraded', meta = { 'columns' : [ 'Name' ] } )
+        if not degradedSites['OK']:
+          return degradedSites
+
+        return activeSites['Value'] + degradedSites['Value']
+
+      else:
+        activeSites = self.wmsAdministrator.getSiteMask('Active')
+        if not activeSites['OK']:
+          return activeSites
+
+        degradedSites = self.wmsAdministrator.getSiteMask('Degraded')
+        if not degradedSites['OK']:
+          return degradedSites
+
+        return activeSites['Value'] + degradedSites['Value']
 
     siteStatusList = []
 

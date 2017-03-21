@@ -40,6 +40,14 @@ class PropagationCommand( Command ):
         if status['Value'][0][0] in ['Active']:
           return S_OK({ 'Status': 'Active', 'Reason': 'An element that belongs to the site is Active' })
 
+      for element in elements['Value']:
+        status = self.rssClient.selectStatusElement("Resource", "Status", element, meta = { 'columns' : [ 'Status' ] })
+        if not status[ 'OK' ]:
+          return status
+
+        if status['Value'][0][0] in ['Degraded']:
+          return S_OK({ 'Status': 'Degraded', 'Reason': 'An element that belongs to the site is Degraded' })
+
     return S_OK({ 'Status': 'Banned', 'Reason': 'There is no Active element in the site' })
 
   def doMaster( self ):

@@ -125,8 +125,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
 
     if self.rssFlag:
 
-      # TODO: remove the 'All' parameter once the PropagationPolicy works properly
-      result = self.siteClient.getSites('All')
+      result = self.siteClient.getUsableSites()
       if not result['OK']:
         return S_ERROR( 'Can not get the site status' )
       siteMaskList = result['Value']
