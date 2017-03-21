@@ -31,22 +31,21 @@ class PropagationCommand( Command ):
 
     elements = CSHelpers.getSiteElements(site)
 
+    statusList = []
+
     if elements['OK']:
       for element in elements['Value']:
         status = self.rssClient.selectStatusElement("Resource", "Status", element, meta = { 'columns' : [ 'Status' ] })
         if not status[ 'OK' ]:
           return status
 
-        if status['Value'][0][0] in ['Active']:
-          return S_OK({ 'Status': 'Active', 'Reason': 'An element that belongs to the site is Active' })
+        statusList.append( status['Value'][0][0] )
 
-      for element in elements['Value']:
-        status = self.rssClient.selectStatusElement("Resource", "Status", element, meta = { 'columns' : [ 'Status' ] })
-        if not status[ 'OK' ]:
-          return status
+      if 'Active' in statusList:
+        return S_OK({ 'Status': 'Active', 'Reason': 'An element that belongs to the site is Active' })
 
-        if status['Value'][0][0] in ['Degraded']:
-          return S_OK({ 'Status': 'Degraded', 'Reason': 'An element that belongs to the site is Degraded' })
+      if 'Degraded' in statusList:
+        return S_OK({ 'Status': 'Degraded', 'Reason': 'An element that belongs to the site is Degraded' })
 
     return S_OK({ 'Status': 'Banned', 'Reason': 'There is no Active element in the site' })
 
