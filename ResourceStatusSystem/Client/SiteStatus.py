@@ -188,14 +188,14 @@ class SiteStatus( object ):
         if not degradedSites['OK']:
           return degradedSites
 
-        return activeSites['Value'] + degradedSites['Value']
+        return S_OK( activeSites['Value'] + degradedSites['Value'] )
 
       else:
         activeSites = self.wmsAdministrator.getSiteMask()
         if not activeSites['OK']:
           return activeSites
 
-        return activeSites['Value']
+        return S_OK( activeSites['Value'] )
 
     siteStatusList = []
 
