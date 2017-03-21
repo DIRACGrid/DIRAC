@@ -4,7 +4,7 @@
 
 """
 
-import datetime
+from datetime import datetime, timedelta
 import math
 from time import sleep
 
@@ -228,7 +228,7 @@ class ResourceStatus( object ):
     Sets on the RSS the Elements status
     """
 
-    expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
+    expiration = datetime.utcnow() + timedelta( days = 1 )
 
     self.rssCache.acquireLock()
     try:
