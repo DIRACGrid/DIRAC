@@ -28,6 +28,12 @@ NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS
 *Interfaces
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
 
+[v6r17p15]
+
+*WMS
+CHANGE: StalledJobAgent - ignore or prolong the Stalled state period for jobs 
+        at particular sites which can be suspended, e.g. Boinc sites
+
 [v6r17p14]
 
 *Core
