@@ -4,7 +4,7 @@
 
 '''
 
-import datetime
+from datetime import datetime, timedelta
 
 from DIRAC                                                 import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities            import getDBParameters
@@ -224,6 +224,14 @@ class ResourceStatusDB( object ):
     session = self.DBSession( expire_on_commit = False )
 
     try:
+
+      # defaults
+      if not dateEffective:
+        dateEffective = datetime.utcnow()
+      if not lastCheckTime:
+        lastCheckTime = datetime.utcnow()
+      if not tokenExpiration:
+        tokenExpiration = datetime.utcnow() + timedelta(hours=24)
 
       table = metadata.tables.get( element + tableType ).insert()
       self.engine.execute( table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,

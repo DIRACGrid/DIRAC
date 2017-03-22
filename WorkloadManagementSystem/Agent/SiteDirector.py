@@ -23,7 +23,7 @@ from DIRAC.Core.Utilities.File                             import mkDir
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
@@ -34,7 +34,6 @@ from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 from DIRAC.Core.Utilities.List                             import fromChar
-from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 
 __RCSID__ = "$Id$"
 
@@ -95,7 +94,7 @@ class SiteDirector( AgentModule ):
     self.getOutput = False
     self.sendAccounting = True
     self.rssClient = ResourceStatus()
-    self.sstClient = SiteStatus()
+    self.rssFlag = self.rssClient.rssFlag
 
     self.siteClient = SiteStatus()
 
@@ -425,11 +424,20 @@ class SiteDirector( AgentModule ):
     #  self.log.info( 'No more pilots to be submitted in this cycle' )
     #  return S_OK()
 
-    # Check if the site is allowed in the mask
-    result = self.siteClient.getSites()
-    if not result['OK']:
-      return S_ERROR( 'Can not get the site mask' )
-    siteMaskList = result['Value']
+    if self.rssFlag:
+
+      result = self.siteClient.getUsableSites()
+      if not result['OK']:
+        return S_ERROR( 'Can not get the site status' )
+      siteMaskList = result['Value']
+
+    else:
+
+      # Use the old way, check if the site is allowed in the mask
+      result = jobDB.getSiteMask()
+      if not result['OK']:
+        return S_ERROR( 'Can not get the site mask' )
+      siteMaskList = result['Value']
 
     queues = self.queueDict.keys()
     random.shuffle( queues )
@@ -452,29 +460,30 @@ class SiteDirector( AgentModule ):
       platform = self.queueDict[queue]['Platform']
       siteMask = siteName in siteMaskList
 
-      # Check the status of the Site
-      result = self.sstClient.getSiteStatuses({siteName})
-      if not result['OK']:
-        self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
-        continue
-      if result['Value']:
-        result = result['Value'][siteName]   #get the value of the status
+      if self.rssFlag:
+        # Check the status of the Site
+        result = self.siteClient.getSiteStatuses({siteName})
+        if not result['OK']:
+          self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
+          continue
+        if result['Value']:
+          result = result['Value'][siteName]   #get the value of the status
 
-      if result not in ('Active', 'Degraded'):
-        self.log.verbose( "Skipping site %s: site not usable" % siteName )
-        continue
+        if result not in ('Active', 'Degraded'):
+          self.log.verbose( "Skipping site %s: site not usable" % siteName )
+          continue
 
-      # Check the status of the ComputingElement
-      result = self.rssClient.getElementStatus(ceName, "ComputingElement")
-      if not result['OK']:
-        self.log.error( "Can not get the status of computing element %s: %s" % (siteName, result['Message']) )
-        continue
-      if result['Value']:
-        result = result['Value'][ceName]['all']   #get the value of the status
+        # Check the status of the ComputingElement
+        result = self.rssClient.getElementStatus(ceName, "ComputingElement")
+        if not result['OK']:
+          self.log.error( "Can not get the status of computing element %s: %s" % (siteName, result['Message']) )
+          continue
+        if result['Value']:
+          result = result['Value'][ceName]['all']   #get the value of the status
 
-      if result not in ('Active', 'Degraded'):
-        self.log.verbose( "Skipping computing element %s at %s: resource not usable" % (ceName, siteName) )
-        continue
+        if result not in ('Active', 'Degraded'):
+          self.log.verbose( "Skipping computing element %s at %s: resource not usable" % (ceName, siteName) )
+          continue
 
       if not anySite and siteName not in jobSites:
         self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )

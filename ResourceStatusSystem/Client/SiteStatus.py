@@ -158,7 +158,7 @@ class SiteStatus( object ):
       return S_OK(False)
 
 
-  def getUsableSites( self, siteNamesList ):
+  def getUsableSites( self, siteNamesList = None ):
     """
     Returns all sites that are usable if their
     statusType is either Active or Degraded; in a list.
@@ -167,7 +167,7 @@ class SiteStatus( object ):
       >>> siteStatus.getUsableSites( [ 'test1.test1.uk', 'test2.test2.net', 'test3.test3.org' ] )
           S_OK( ['test1.test1.uk', 'test3.test3.org'] )
       >>> siteStatus.getUsableSites( None )
-          S_ERROR( ... )
+          S_OK( ['test1.test1.uk', 'test3.test3.org', 'test4.test4.org', 'test5.test5.org', ...] )
       >>> siteStatus.getUsableSites( 'NotExists' )
           S_ERROR( ... )
 
@@ -179,7 +179,23 @@ class SiteStatus( object ):
     """
 
     if not siteNamesList:
-      return S_ERROR(DErrno.ERESUNK, 'siteNamesList is empty')
+      if self.rssFlag:
+        activeSites = self.rsClient.selectStatusElement( 'Site', 'Status', status = 'Active', meta = { 'columns' : [ 'Name' ] } )
+        if not activeSites['OK']:
+          return activeSites
+
+        degradedSites = self.rsClient.selectStatusElement( 'Site', 'Status', status = 'Degraded', meta = { 'columns' : [ 'Name' ] } )
+        if not degradedSites['OK']:
+          return degradedSites
+
+        return S_OK( activeSites['Value'] + degradedSites['Value'] )
+
+      else:
+        activeSites = self.wmsAdministrator.getSiteMask()
+        if not activeSites['OK']:
+          return activeSites
+
+        return S_OK( activeSites['Value'] )
 
     siteStatusList = []
 
@@ -219,6 +235,8 @@ class SiteStatus( object ):
           S_OK( ['test1.test1.uk', 'test3.test3.org'] )
       >>> siteStatus.getSites( 'Banned' )
           S_OK( ['test0.test0.uk', ... ] )
+      >>> siteStatus.getSites( 'All' )
+          S_OK( ['test1.test1.uk', 'test3.test3.org', 'test4.test4.org', 'test5.test5.org'...] )
       >>> siteStatus.getSites( None )
           S_ERROR( ... )
 
@@ -232,16 +250,26 @@ class SiteStatus( object ):
     if not siteState:
       return S_ERROR(DErrno.ERESUNK, 'siteState parameter is empty')
 
-    # fix case sensitive string
-    siteState = siteState.capitalize()
-    allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
-    if siteState not in allowedStateList:
-      return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
+    elif siteState.capitalize() == 'All':
 
-    if self.rssFlag:
-      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'Name' ] } )
+      # if no siteState is set return everything
+      if self.rssFlag:
+        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name' ] } )
+      else:
+        siteStatus = self.wmsAdministrator.getSiteMask( 'All' )
+
     else:
-      siteStatus = self.wmsAdministrator.getSiteMask()
+
+      # fix case sensitive string
+      siteState = siteState.capitalize()
+      allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
+      if siteState not in allowedStateList:
+        return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
+
+      if self.rssFlag:
+        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'Name' ] } )
+      else:
+        siteStatus = self.wmsAdministrator.getSiteMask()
 
     if not siteStatus['OK']:
       return siteStatus

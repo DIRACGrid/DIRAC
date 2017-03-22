@@ -4,7 +4,7 @@
 
 """
 
-import datetime
+from datetime import datetime, timedelta
 import math
 from time import sleep
 
@@ -60,7 +60,7 @@ class ResourceStatus( object ):
     :rtype: dict
 
     :Example:
-    >>> getElementStatus('CE42', 'CE')
+    >>> getElementStatus('CE42', 'ComputingElement')
         S_OK( { 'CE42': { 'all': 'Active' } } } )
     >>> getElementStatus('SE1', 'StorageElement', 'ReadAccess')
         S_OK( { 'SE1': { 'ReadAccess': 'Banned' } } } )
@@ -79,7 +79,7 @@ class ResourceStatus( object ):
                          'RemoveAccess': 'Banned'} } } )
     """
 
-    allowedParameters = ["StorageElement", "CE", "FTS", "Catalog"]
+    allowedParameters = ["StorageElement", "ComputingElement", "FTS", "Catalog"]
 
     if elementType not in allowedParameters:
       return S_ERROR("%s in not in the list of the allowed parameters: %s" % (elementType, allowedParameters))
@@ -88,7 +88,8 @@ class ResourceStatus( object ):
     if not statusType:
       if elementType == "StorageElement":
         statusType = ['ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess']
-      elif elementType == "CE":
+      elif elementType == "ComputingElement":
+        elementType = "CE"
         statusType = ['all']
       elif elementType == "FTS":
         statusType = ['all']
@@ -227,7 +228,7 @@ class ResourceStatus( object ):
     Sets on the RSS the Elements status
     """
 
-    expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
+    expiration = datetime.utcnow() + timedelta( days = 1 )
 
     self.rssCache.acquireLock()
     try:
