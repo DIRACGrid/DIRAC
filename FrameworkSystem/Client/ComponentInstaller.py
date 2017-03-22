@@ -1,6 +1,6 @@
 """
-Class for managing the installation of DIRAC components:
-MySQL, DB's, Services's, Agents, Executors and Consumers
+Module for managing the installation of DIRAC components:
+MySQL, DB's, NoSQL DBs, Services, Agents, Executors and Consumers
 
 It only makes use of defaults in LocalInstallation Section in dirac.cfg
 
@@ -19,15 +19,21 @@ The Following Options are used::
   /LocalInstallation/MySQLDir:        Location where mysql databases are created (default InstancePath/mysql)
   /LocalInstallation/Database/User:                 (default Dirac)
   /LocalInstallation/Database/Password:             (must be set for SystemAdministrator Service to work)
+  /LocalInstallation/Database/RootUser:             (default root)
   /LocalInstallation/Database/RootPwd:              (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/Host:                 (must be set for SystemAdministrator Service to work)
+  /LocalInstallation/Database/Port:                 (default 3306)
   /LocalInstallation/Database/MySQLSmallMem:        Configure a MySQL with small memory requirements for testing purposes innodb_buffer_pool_size=200MB
   /LocalInstallation/Database/MySQLLargeMem:        Configure a MySQL with high memory requirements for production purposes innodb_buffer_pool_size=10000MB
+  /LocalInstallation/NoSQLDatabase/User:            (default Dirac)
+  /LocalInstallation/NoSQLDatabase/Password:        (must be set for SystemAdministrator Service to work)
+  /LocalInstallation/NoSQLDatabase/Host:            (must be set for SystemAdministrator Service to work)
+  /LocalInstallation/NoSQLDatabase/Port:            (default 9200)
 
 The setupSite method (used by the dirac-setup-site command) will use the following info::
 
   /LocalInstallation/Systems:       List of Systems to be defined for this instance in the CS (default: Configuration, Framework)
-  /LocalInstallation/Databases:     List of Databases to be installed and configured
+  /LocalInstallation/Databases:     List of MySQL Databases to be installed and configured
   /LocalInstallation/Services:      List of System/ServiceName to be setup
   /LocalInstallation/Agents:        List of System/AgentName to be setup
   /LocalInstallation/WebPortal:     Boolean to setup the Web Portal (default no)

@@ -1,6 +1,6 @@
-"""  TopErrorMessagesReporter produces a list with the most common errors 
-   injected in the SystemLoggingDB and sends a notification to a mailing 
-   list and specific users. 
+"""  TopErrorMessagesReporter produces a list with the most common errors
+   injected in the SystemLoggingDB and sends a notification to a mailing
+   list and specific users.
 """
 __RCSID__ = "$Id$"
 

@@ -37,15 +37,15 @@ class AccountingDB( DB ):
     self.__threadPool = ThreadPool( 1, maxParallelInsertions )
     self.__threadPool.daemonize()
     self.catalogTableName = _getTableName( "catalog", "Types" )
-    self._createTables({
-        self.catalogTableName: {
-            'Fields': {
-                'name': "VARCHAR(64) UNIQUE NOT NULL",
-                'keyFields': "VARCHAR(255) NOT NULL",
-                'valueFields': "VARCHAR(255) NOT NULL",
-                'bucketsLength': "VARCHAR(255) NOT NULL",
+    self._createTables( {
+        self.catalogTableName : {
+            'Fields' : {
+                'name' : "VARCHAR(64) UNIQUE NOT NULL",
+                'keyFields' : "VARCHAR(255) NOT NULL",
+                'valueFields' : "VARCHAR(255) NOT NULL",
+                'bucketsLength' : "VARCHAR(255) NOT NULL",
                 },
-            'PrimaryKey': 'name'
+            'PrimaryKey' : 'name'
             }
         })
     self.__loadCatalogFromDB()
@@ -266,9 +266,13 @@ class AccountingDB( DB ):
         return S_ERROR( "%s is not a valid type name" % typeName )
       bucketsLength.sort()
       bucketsEncoding = DEncode.encode( bucketsLength )
-      retVal = self._update( "UPDATE `%s` set bucketsLength = '%s' where name = '%s'" % ( self.catalogTableName,
-                                                                                bucketsEncoding,
-                                                                                typeName ) )
+      retVal = self._update(
+          "UPDATE `%s` set bucketsLength = '%s' where name = '%s'" % (
+              self.catalogTableName,
+              bucketsEncoding,
+              typeName
+              )
+          )
       if not retVal[ 'OK' ]:
         return retVal
       self.dbBucketsLength[ typeName ] = bucketsLength
@@ -573,9 +577,11 @@ class AccountingDB( DB ):
       return S_ERROR( "Fields mismatch for record %s. %s fields and %s expected" % ( typeName,
                                                                                      numRcv,
                                                                                      numExp ) )
-    retVal = self.insertFields( _getTableName( "in", typeName ),
-                           sqlFields,
-                           sqlValues )
+    retVal = self.insertFields(
+        _getTableName( "in", typeName ),
+        sqlFields,
+        sqlValues
+        )
     if not retVal[ 'OK' ]:
       return retVal
     return S_OK( retVal[ 'lastRowId' ] )
@@ -656,10 +662,12 @@ class AccountingDB( DB ):
       return retVal
     connObj = retVal[ 'Value' ]
     try:
-      retVal = self.insertFields( _getTableName( "type", typeName ),
-                             self.dbCatalog[ typeName ][ 'typeFields' ],
-                             insertList,
-                             conn = connObj )
+      retVal = self.insertFields(
+          _getTableName( "type", typeName ),
+          self.dbCatalog[ typeName ][ 'typeFields' ],
+          insertList,
+          conn = connObj
+          )
       if not retVal[ 'OK' ]:
         return retVal
       #HACK: One more record to split in the buckets to be able to count total entries
@@ -968,15 +976,17 @@ class AccountingDB( DB ):
     nowEpoch = Time.toEpoch( Time.dateTime () )
     bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch , startTime )
     startTime = startTime - startTime % bucketTimeLength
-    result = self.__queryType( typeName,
-                             startTime,
-                             endTime,
-                             selectFields,
-                             condDict,
-                             groupFields,
-                             orderFields,
-                             "bucket",
-                             connObj = connObj )
+    result = self.__queryType(
+        typeName,
+        startTime,
+        endTime,
+        selectFields,
+        condDict,
+        groupFields,
+        orderFields,
+        "bucket",
+        connObj = connObj
+        )
     gMonitor.addMark( "querytime", Time.toEpoch() - startQueryEpoch )
     return result
 
@@ -1325,9 +1335,11 @@ class AccountingDB( DB ):
         sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d LIMIT %d" % ( table, field, dataTimespan, deleteLimit )
         result = self._update( sqlCmd )
         if not result[ 'OK' ]:
-          self.log.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % ( table,
-                                                                                            dataTimespan,
-                                                                                            result[ 'Message' ] ) )
+          self.log.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % (
+              table,
+              dataTimespan,
+              result[ 'Message' ]
+              ))
           break
         self.log.info( "[COMPACT] Deleted %d records for %s table" % ( result[ 'Value' ], table ) )
         deleted = result[ 'Value' ]
@@ -1419,11 +1431,13 @@ class AccountingDB( DB ):
       sqlQueries.append( sqlQuery )
       dateInclusiveConditions.append( "( %s )" % whereString )
     #Query for records that are in between two ranges
-    sqlQuery = "SELECT %s, %s, %s, 1 FROM `%s` WHERE NOT %s" % ( startTimeTableField,
-                                                       endTimeTableField,
-                                                       selectString,
-                                                       rawTableName,
-                                                       " AND NOT ".join( dateInclusiveConditions ) )
+    sqlQuery = "SELECT %s, %s, %s, 1 FROM `%s` WHERE NOT %s" % (
+        startTimeTableField,
+        endTimeTableField,
+        selectString,
+        rawTableName,
+        " AND NOT ".join( dateInclusiveConditions )
+        )
     sqlQueries.append( sqlQuery )
     self.log.info( "[REBUCKET] Retrieving data for rebuilding buckets for type %s..." % ( typeName ) )
     queryNum = 0
