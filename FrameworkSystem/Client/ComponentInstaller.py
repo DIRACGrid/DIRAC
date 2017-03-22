@@ -2522,13 +2522,13 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
     # now creating the Database
     result = self.execMySQL( 'CREATE DATABASE `%s`' % dbName )
-    if not result['OK'] and not 'database exists' in result[ 'Message' ]:
+    if not result['OK'] and 'database exists' not in result[ 'Message' ]:
       gLogger.error( 'Failed to create databases', result['Message'] )
       if self.exitOnError:
         DIRAC.exit( -1 )
       return result
 
-    perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER," \
+    perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES," \
             "CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE"
     for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, self.mysqlUser,
                                                                                 self.mysqlPassword ),
