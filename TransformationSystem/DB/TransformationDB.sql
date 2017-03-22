@@ -1,17 +1,17 @@
 -- -------------------------------------------------------------------------------
 --  Schema definition for the TransformationDB database a generic
---  engine to define input data streams and support dynamic data 
+--  engine to define input data streams and support dynamic data
 --  grouping per unit of execution.
 
 -- When installing via dirac tools, the following is not needed (still here for reference)
--- 
+--
 -- DROP DATABASE IF EXISTS TransformationDB;
 -- CREATE DATABASE TransformationDB;
 -- ------------------------------------------------------------------------------
 -- Database owner definition
 -- USE mysql;
 -- Must set passwords for database user by replacing "must_be_set".
--- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON TransformationDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON TransformationDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 -- FLUSH PRIVILEGES;
 
 -- -----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ CREATE TABLE AdditionalParameters (
     TransformationID INTEGER NOT NULL,
     ParameterName VARCHAR(32) NOT NULL,
     ParameterValue LONGBLOB NOT NULL,
-    ParameterType VARCHAR(32) DEFAULT 'StringType', 
+    ParameterType VARCHAR(32) DEFAULT 'StringType',
     PRIMARY KEY(TransformationID,ParameterName),
     FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
