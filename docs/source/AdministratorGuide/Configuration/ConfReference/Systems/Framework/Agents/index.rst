@@ -41,3 +41,4 @@ Agents associated with Framework System:
    CAUpdateAgent/index
    MyProxyRenewalAgent/index
    SystemLoggingDBCleaner/index
+   TopErrorMessagesReporter/index
