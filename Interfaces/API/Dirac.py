@@ -88,7 +88,7 @@ class Dirac( API ):
     self.defaultFileCatalog = gConfig.getValue( self.section + '/FileCatalog', None )
     self.vo = vo
 
-  def __checkFileArgument( self, fnList, prefix = None, single = False ):
+  def _checkFileArgument( self, fnList, prefix = None, single = False ):
     if prefix is None:
       prefix = 'LFN'
     if isinstance( fnList, basestring ):
@@ -106,7 +106,7 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string or list of strings for %s(s)' % prefix )
 
-  def __checkJobArgument( self, jobID, multiple = False ):
+  def _checkJobArgument( self, jobID, multiple = False ):
     try:
       if isinstance( jobID, ( str, int, long ) ):
         jobID = int( jobID )
@@ -643,7 +643,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1045,7 +1045,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1094,7 +1094,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1145,7 +1145,7 @@ class Dirac( API ):
        :type printOutput: bool
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1202,7 +1202,7 @@ class Dirac( API ):
     """
     from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
     sitesForSE = {}
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1254,7 +1254,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1298,7 +1298,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self._checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1336,7 +1336,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1382,7 +1382,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self._checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1435,7 +1435,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self._checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1455,7 +1455,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def getAccessURL( self, lfn, storageElement, printOutput = False ):
+  def getAccessURL( self, lfn, storageElement, printOutput = False, protocol = False ):
     """Allows to retrieve an access URL for an LFN replica given a valid DIRAC SE
        name.  Contacts the file catalog and contacts the site SRM endpoint behind
        the scenes.
@@ -1471,15 +1471,17 @@ class Dirac( API ):
        :type storageElement: string
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
+       :param protocol: protocol requested
+       :type protocol: str or python:list
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
 
     dm = DataManager()
-    result = dm.getReplicaAccessUrl( lfn, storageElement )
+    result = dm.getReplicaAccessUrl( lfn, storageElement, protocol = protocol )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if printOutput:
@@ -1505,7 +1507,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( pfn, 'PFN' )
+    ret = self._checkFileArgument( pfn, 'PFN' )
     if not ret['OK']:
       return ret
     pfn = ret['Value']
@@ -1537,7 +1539,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( pfn, 'PFN' )
+    ret = self._checkFileArgument( pfn, 'PFN' )
     if not ret['OK']:
       return ret
     pfn = ret['Value']
@@ -1566,7 +1568,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1593,7 +1595,7 @@ class Dirac( API ):
        :type storageElement: string
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1624,7 +1626,7 @@ class Dirac( API ):
        :type outputDir: string
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1674,7 +1676,7 @@ class Dirac( API ):
        :type oversized: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1764,7 +1766,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1795,7 +1797,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1826,7 +1828,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1853,7 +1855,7 @@ class Dirac( API ):
        :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1905,7 +1907,7 @@ class Dirac( API ):
        :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2119,7 +2121,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2311,7 +2313,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2359,7 +2361,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2396,7 +2398,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2433,7 +2435,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
      """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2474,7 +2476,7 @@ class Dirac( API ):
        :type jobID: int or string
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2562,7 +2564,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']

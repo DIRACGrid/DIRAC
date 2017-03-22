@@ -471,7 +471,7 @@ class AccountingDB( DB ):
     if not retVal[ 'OK' ]:
       return retVal
     retVal = self._update( "DELETE FROM `%s` WHERE name='%s'" % ( _getTableName( "catalog", "Types" ), typeName ) )
-    del( self.dbCatalog[ typeName ] )
+    del self.dbCatalog[ typeName ]
     return S_OK()
 
   def __getIdForKeyValue( self, typeName, keyName, keyValue, conn = False ):
@@ -843,10 +843,12 @@ class AccountingDB( DB ):
       value = bucketValues[ pos ]
       fullFieldName = "`%s`.`%s`" % ( tableName, valueField )
       sqlValList.append( "%s=GREATEST(0,%s-(%s*%s))" % ( fullFieldName, fullFieldName, value, proportion ) )
-    sqlValList.append( "`%s`.`entriesInBucket`=GREATEST(0,`%s`.`entriesInBucket`-(%s*%s))" % ( tableName,
-                                                                                               tableName,
-                                                                                               bucketValues[-1],
-                                                                                               proportion ) )
+    sqlValList.append( "`%s`.`entriesInBucket`=GREATEST(0,`%s`.`entriesInBucket`-(%s*%s))" % (
+        tableName,
+        tableName,
+        bucketValues[-1],
+        proportion
+        ))
     cmd += ", ".join( sqlValList )
     cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
         tableName,
@@ -1217,18 +1219,21 @@ class AccountingDB( DB ):
       secondsLimit = self.dbBucketsLength[ typeName ][ bPos ][0]
       bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
       timeLimit = ( nowEpoch - nowEpoch % bucketLength ) - secondsLimit
-      nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
-      self.log.info( "[COMPACT] Compacting data newer that %s with bucket size %s for %s" % ( Time.fromEpoch( timeLimit ), bucketLength, typeName ) )
+      self.log.info( "[COMPACT] Compacting data newer that %s with bucket size %s for %s" % (
+          Time.fromEpoch( timeLimit ),
+          bucketLength,
+          typeName))
       querySize = 10000
       previousRecordsSelected = querySize
       totalCompacted = 0
       while previousRecordsSelected == querySize:
         #Retrieve the data
-        self.log.info( "[COMPACT] Retrieving buckets to compact newer that %s with size %s" % ( Time.fromEpoch( timeLimit ),
-                                                                                                       bucketLength ) )
+        self.log.info( "[COMPACT] Retrieving buckets to compact newer that %s with size %s" % (
+            Time.fromEpoch( timeLimit ),
+            bucketLength))
         roundStartTime = time.time()
         result = self.__selectIndividualForCompactBuckets( typeName, timeLimit, bucketLength,
-                                                           nextBucketLength, querySize )
+                                                           querySize )
         if not result[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
           return result
@@ -1265,7 +1270,7 @@ class AccountingDB( DB ):
     #return self.__commitTransaction( connObj )
     return S_OK()
 
-  def __selectIndividualForCompactBuckets( self, typeName, timeLimit, bucketLength, nextBucketLength, querySize, connObj = False ):
+  def __selectIndividualForCompactBuckets( self, typeName, timeLimit, bucketLength, querySize, connObj = False ):
     """
     Nasty SQL query to get ideal buckets using grouping by date calculations and adding value contents
     """
@@ -1398,10 +1403,11 @@ class AccountingDB( DB ):
         whereString = "%s <= %d" % ( endTimeTableField,
                                      endRangeTime )
       else:
-        whereString = "%s > %d AND %s <= %d" % ( startTimeTableField,
-                                                 startRangeTime,
-                                                 endTimeTableField,
-                                                 endRangeTime )
+        whereString = "%s > %d AND %s <= %d" % (
+            startTimeTableField,
+            startRangeTime,
+            endTimeTableField,
+            endRangeTime)
       sameBucketCondition = "(%s) = (%s)" % ( bucketizedStart, bucketizedEnd )
       #Records that fit in a bucket
       sqlQuery = "SELECT %s, %s, COUNT(%s) FROM `%s` WHERE %s AND %s GROUP BY %s, %s" % (
@@ -1412,8 +1418,7 @@ class AccountingDB( DB ):
           whereString,
           sameBucketCondition,
           groupingString,
-          bucketizedStart
-          )
+          bucketizedStart)
       sqlQueries.append( sqlQuery )
       #Records that fit in more than one bucket
       sqlQuery = "SELECT %s, %s, %s, 1 FROM `%s` WHERE %s AND NOT %s" % ( startTimeTableField,
