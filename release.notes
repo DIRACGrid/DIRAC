@@ -1,3 +1,9 @@
+[v6r17p15]
+
+*WMS
+CHANGE: StalledJobAgent - ignore or prolong the Stalled state period for jobs 
+        at particular sites which can be suspended, e.g. Boinc sites
+
 [v6r17p14]
 
 *Core
