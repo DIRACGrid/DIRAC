@@ -1,7 +1,10 @@
-[v6r18-pre6]
+[v6r18-pre7]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
+
+FIX: All Databases are granting also REFERENCES grant to Dirac user to comply with
+     more strict policies of MySQL version >= 5.7
 
 *Accounting
 NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
@@ -21,6 +24,9 @@ FIX: ResourceStatus - fixes for getting status from the CS information
 
 *WMS
 NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS    
+
+*Interfaces
+CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
 
 [v6r17p14]
 
