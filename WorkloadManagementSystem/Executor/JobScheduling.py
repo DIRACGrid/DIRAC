@@ -125,6 +125,14 @@ class JobScheduling( OptimizerExecutor ):
 
       if not res['OK']:
         return self.__holdJob( jobState, res['Message'] )
+      if res['Value']['absentLFNs']:
+        # Some files do not exist at all... set the job Failed
+        error = 'Some files do not exist at SE'
+        self.jobLog.error( error, ':' + ','.join( res['Value']['absentLFNs'] ) )
+        jobState.setStatus( 'Failed', appStatus = error )
+        return S_ERROR( error )
+      if res['Value']['failedLFNs']:
+        return self.__holdJob( jobState, "Couldn't get storage metadata of some files" )
       stageLFNs = res['Value']['offlineLFNs']
       if stageLFNs:
         res = self.__checkStageAllowed( jobState )
