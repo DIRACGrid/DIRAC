@@ -3,7 +3,7 @@
 # Author : A.T.
 ########################################################################
 
-""" CREAM Computing Element 
+""" CREAM Computing Element
 """
 
 __RCSID__ = "$Id$"
@@ -12,7 +12,6 @@ import os
 import re
 import tempfile
 import stat
-from types import StringTypes
 
 from DIRAC                                               import S_OK, S_ERROR
 
@@ -81,13 +80,11 @@ class CREAMComputingElement( ComputingElement ):
   OutputSandboxBaseDestUri="%(outputURL)s";
   %(multiProcessorFields)s
 ]
-    """ % {
-            'executableFile':executableFile,
+    """ % { 'executableFile':executableFile,
             'executable':os.path.basename( executableFile ),
             'outputURL':self.outputURL,
             'diracStamp':diracStamp,
-            'multiProcessorFields':multiProcessorFields,
-           }
+            'multiProcessorFields':multiProcessorFields,}
 
     jdlFile.write( jdl )
     jdlFile.close()
@@ -96,7 +93,8 @@ class CREAMComputingElement( ComputingElement ):
   def _reset( self ):
     self.queue = self.ceParameters['Queue']
     self.outputURL = self.ceParameters.get( 'OutputURL', 'gsiftp://localhost' )
-    self.gridEnv = self.ceParameters['GridEnv']
+    if 'GridEnv' in self.ceParameters:
+      self.gridEnv = self.ceParameters['GridEnv']
 
   #############################################################################
   def submitJob( self, executableFile, proxy, numberOfJobs = 1, processors = 1 ):
@@ -164,7 +162,7 @@ class CREAMComputingElement( ComputingElement ):
     """ Kill the specified jobs
     """
     jobList = list( jobIDList )
-    if type( jobIDList ) in StringTypes:
+    if isinstance( jobIDList, basestring ):
       jobList = [ jobIDList ]
 
     cmd = ['glite-ce-job-cancel', '-n', '-N'] + jobList
@@ -180,8 +178,9 @@ class CREAMComputingElement( ComputingElement ):
 #############################################################################
   def getCEStatus( self, jobIDList = None ):
     """ Method to return information on running and pending jobs.
-    
-        :param list jobIDList: list of job IDs to be considered
+
+        :param jobIDList: list of job IDs to be considered
+        :type jobIDList: python:list
     """
     statusList = ['REGISTERED', 'PENDING', 'IDLE', 'RUNNING', 'REALLY-RUNNING']
     cmd = ['glite-ce-job-status', '-n', '-a', '-e',
@@ -199,12 +198,12 @@ class CREAMComputingElement( ComputingElement ):
       elif "Authorization error" in result['Value'][1]:
         return S_ERROR( "Authorization error" )
       elif "FaultString" in result['Value'][1]:
-        res = re.search( 'FaultString=\[([\w\s]+)\]', result['Value'][1] )
+        res = re.search( r'FaultString=\[([\w\s]+)\]', result['Value'][1] )
         fault = ''
         if res:
           fault = res.group( 1 )
         detail = ''
-        res = re.search( 'FaultDetail=\[([\w\s]+)\]', result['Value'][1] )  
+        res = re.search( r'FaultDetail=\[([\w\s]+)\]', result['Value'][1] )
         if res:
           detail = res.group( 1 )
           return S_ERROR( "Error: %s:%s" % (fault,detail) )
@@ -223,7 +222,7 @@ class CREAMComputingElement( ComputingElement ):
         waiting += 1
       if status == 'Running':
         running += 1
-      statusDict[ref] = status  
+      statusDict[ref] = status
 
     result = S_OK()
     result['RunningJobs'] = running
@@ -250,15 +249,19 @@ class CREAMComputingElement( ComputingElement ):
             if delegationID not in delegationIDs:
               delegationIDs.append( delegationID )
         if delegationIDs:
-          cmd = ['glite-ce-proxy-renew', '-e', self.ceName ]
-          cmd.extend( delegationIDs )
-          self.log.info( 'Refreshing proxy for:', ' '.join( delegationIDs ) )
-          result = executeGridCommand( self.proxy, cmd, self.gridEnv )
-          if result['OK']:
-            status, output, error = result['Value']
-            if status:
-              self.log.error( "Failed to renew proxy delegation",
-                              'Output:\n' + output + '\nError:\n' + error )
+          # Renew proxies in batches to avoid timeouts
+          chunkSize = 10
+          for i in xrange(0, len( delegationIDs ), chunkSize):
+            chunk = delegationIDs[ i:i+chunkSize ]
+            cmd = ['glite-ce-proxy-renew', '-e', self.ceName ]
+            cmd.extend( chunk )
+            self.log.info( 'Refreshing proxy for:', ' '.join( chunk ) )
+            result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+            if result['OK']:
+              status, output, error = result['Value']
+              if status:
+                self.log.error( "Failed to renew proxy delegation",
+                                'Output:\n' + output + '\nError:\n' + error )
 
     workingDirectory = self.ceParameters['WorkingDirectory']
     fd, idFileName = tempfile.mkstemp( suffix = '.ids', prefix = 'CREAM_', dir = workingDirectory )
@@ -305,10 +308,10 @@ class CREAMComputingElement( ComputingElement ):
     for line in output.split( '\n' ):
       if not line:
         continue
-      match = re.search( 'JobID=\[(.*)\]', line )
+      match = re.search( r'JobID=\[(.*)\]', line )
       if match and len( match.groups() ) == 1:
         ref = match.group( 1 )
-      match = re.search( 'Status.*\[(.*)\]', line )
+      match = re.search( r'Status.*\[(.*)\]', line )
       if match and len( match.groups() ) == 1:
         creamStatus = match.group( 1 )
         if creamStatus in ['DONE-OK']:
@@ -332,8 +335,8 @@ class CREAMComputingElement( ComputingElement ):
 
   def getJobOutput( self, jobID, localDir = None ):
     """ Get the specified job standard output and error files. If the localDir is provided,
-        the output is returned as file in this directory. Otherwise, the output is returned 
-        as strings. 
+        the output is returned as file in this directory. Otherwise, the output is returned
+        as strings.
     """
     if jobID.find( ':::' ) != -1:
       pilotRef, stamp = jobID.split( ':::' )
@@ -385,9 +388,9 @@ class CREAMComputingElement( ComputingElement ):
         errFile.close()
         os.unlink( errFileName )
     elif result['Value'][0] == 1 and "No such file or directory" in result['Value'][2]:
-        error = "Standard Error is not available on the CREAM service"
-        if os.path.exists( errFileName ):
-          os.unlink( errFileName )
+      error = "Standard Error is not available on the CREAM service"
+      if os.path.exists( errFileName ):
+        os.unlink( errFileName )
     else:
       return S_ERROR( 'Failed to retrieve error for %s' % jobID )
 
@@ -407,7 +410,7 @@ class CREAMComputingElement( ComputingElement ):
         for line in output.split( '\n' ):
           line = line.strip()
           if line.find( 'OSB' ) != -1:
-            match = re.search( '\[(.*)\]', line )
+            match = re.search( r'\[(.*)\]', line )
             if match:
               url = match.group( 1 )
       if url:
@@ -418,4 +421,3 @@ class CREAMComputingElement( ComputingElement ):
       return S_ERROR( 'Failed to retrieve long status for %s' % pilotRef )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
-

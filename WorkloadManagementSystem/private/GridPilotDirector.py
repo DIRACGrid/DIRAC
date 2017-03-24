@@ -6,6 +6,7 @@
 """
   Base Grid PilotDirector class to be inherited MW specific PilotDirectors gLite/LCG.
   It includes:
+
    - basic configuration for Grid PilotDirector
 
   A Grid PilotDirector make use of a Grid Resource Broker to place the pilots on the
@@ -44,10 +45,11 @@ class GridPilotDirector( PilotDirector ):
   """
     Base Grid PilotDirector class
     Derived classes must declare:
-      self.Middleware: It must correspond to the string before "PilotDirector".
-        (For proper naming of the logger)
-      self.ResourceBrokers: list of Brokers used by the Director.
-        (For proper error reporting)
+
+      * self.Middleware: It must correspond to the string before "PilotDirector".
+          (For proper naming of the logger)
+      * self.ResourceBrokers: list of Brokers used by the Director.
+          (For proper error reporting)
   """
   def __init__( self, submitPool ):
     """

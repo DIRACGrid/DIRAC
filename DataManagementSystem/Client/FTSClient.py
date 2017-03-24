@@ -92,7 +92,8 @@ class FTSClient( Client ):
     """ read FTSFiles for a given :requestID:
 
     :param int requestID: ReqDB.Request.RequestID
-    :param list statusList: List of statuses (default: Waiting)
+    :param statusList: List of statuses (default: Waiting)
+    :type statusList: python:list
     """
     ftsFiles = self.ftsManager.getFTSFilesForRequest( requestID, statusList )
     if not ftsFiles['OK']:
@@ -115,7 +116,8 @@ class FTSClient( Client ):
     """ get list of FTSJobs with statues in :statusList: given requestID
 
     :param int requestID: ReqDB.Request.RequestID
-    :param list statusList: list with FTSJob statuses
+    :param statusList: list with FTSJob statuses
+    :type statusList: python:list
 
     :return: [ FTSJob, FTSJob, ... ]
     """
@@ -237,7 +239,8 @@ class FTSClient( Client ):
     """ delete FTSFiles for rescheduling
 
     :param int operationID: ReqDB.Operation.OperationID
-    :param list opFileIDList: [ ReqDB.File.FileID, ... ]
+    :param opFileIDList: [ ReqDB.File.FileID, ... ]
+    :type opFileIDList: python:list
     """
     return self.ftsManager.deleteFTSFiles( operationID, opFileIDList )
 
@@ -246,7 +249,8 @@ class FTSClient( Client ):
 
     :param int requestID: RequestDB.Request.RequestID
     :param int operationID: RequestDB.Operation.OperationID
-    :param list opFileList: list of tuples ( File.toJSON()['Value'], sourcesList, targetList )
+    :param opFileList: list of tuples ( File.toJSON()['Value'], sourcesList, targetList )
+    :type opFileList: python:list
     """
 
     # Check whether there are duplicates

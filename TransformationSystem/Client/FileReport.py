@@ -30,7 +30,10 @@ class FileReport( object ):
     """
     if not self.transformation:
       self.transformation = transformation
-    self.statusDict[lfn] = status
+    if isinstance( lfn, ( list, dict, tuple ) ):
+      self.statusDict.update( dict.fromkeys( lfn, status ) )
+    else:
+      self.statusDict[lfn] = status
     if sendFlag:
       return self.commit()
     return S_OK()
@@ -38,7 +41,7 @@ class FileReport( object ):
   def setCommonStatus( self, status ):
     """ Set common status for all files in the internal cache
     """
-    for lfn in self.statusDict.keys():
+    for lfn in self.statusDict:
       self.statusDict[lfn] = status
     return S_OK()
 

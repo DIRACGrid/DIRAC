@@ -6,7 +6,7 @@ import datetime
 from mock import MagicMock
 
 from DIRAC import gLogger
-from DIRAC.Resources.Catalog.test.mock_FC import fileCatalogMock
+from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
 
 # sut
 from DIRAC.DataManagementSystem.Client.ConsistencyInspector import ConsistencyInspector
@@ -26,7 +26,7 @@ class UtilitiesTestCase( unittest.TestCase ):
     dmMock = MagicMock()
     dicMock = MagicMock()
 
-    self.ci = ConsistencyInspector( transClient = MagicMock(), dm = dmMock, fc = fileCatalogMock, dic = dicMock )
+    self.ci = ConsistencyInspector( transClient = MagicMock(), dm = dmMock, fc = fc_mock, dic = dicMock )
     self.ci.fileType = ['SEMILEPTONIC.DST', 'LOG', 'RAW']
     self.ci.fileTypesExcluded = ['LOG']
     self.ci.prod = 0

@@ -102,7 +102,7 @@ class JobScheduling( OptimizerExecutor ):
 
         if not userSites:
           return self.__holdJob( jobState, "No requested site(s) are active/valid" )
-        userSites = list(userSites)
+        userSites = list( userSites )
 
     # Check if there is input data
     result = jobState.getInputData()
@@ -121,17 +121,7 @@ class JobScheduling( OptimizerExecutor ):
     if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
       self.jobLog.info( "Production job: sending to TQ, but first checking if staging is requested" )
 
-      userName = jobState.getAttribute( 'Owner' )
-      if not userName[ 'OK' ]:
-        return userName
-      userName = userName['Value']
-
-      userGroup = jobState.getAttribute( 'OwnerGroup' )
-      if not userGroup[ 'OK' ]:
-        return userGroup
-      userGroup = userGroup['Value']
-
-      res = getFilesToStage( inputData, proxyUserName = userName, proxyUserGroup = userGroup ) #pylint: disable=unexpected-keyword-arg
+      res = getFilesToStage( inputData, jobState = jobState )
 
       if not res['OK']:
         return self.__holdJob( jobState, res['Message'] )

@@ -255,26 +255,25 @@ class ModuleBaseSuccess( ModulesTestCase ):
     fileMasks = ( ['dst'], 'dst', ['sim'], ['digi'], ['digi', 'sim'], 'allstreams.dst' )
     stepMasks = ( '', '5', '', ['2'], ['1', '3'], '' )
 
-    results = (
-               {'00012345_00012345_4.dst':
-                  {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_4.dst',
-                   'type': 'dst',
-                   'workflowSE': 'Tier1_MC_M-DST'}
-                },
+    results = ({'00012345_00012345_4.dst':
+                {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_4.dst',
+                 'type': 'dst',
+                 'workflowSE': 'Tier1_MC_M-DST'}
+               },
                {},
-                {'00012345_00012345_1.sim': {'type': 'sim', 'workflowSE': 'Tier1-RDST'}
-                },
-                {'00012345_00012345_2.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
-                },
-                {'00012345_00012345_3.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
-                 '00012345_00012345_1.sim': {'type': 'sim', 'workflowSE': 'Tier1-RDST'}
-                },
-                {'00012345_00012345_5.AllStreams.dst':
-                  {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_5.AllStreams.dst',
-                   'type': 'allstreams.dst',
-                   'workflowSE': 'Tier1_MC_M-DST'}
-                }
-               )
+               {'00012345_00012345_1.sim': {'type': 'sim', 'workflowSE': 'Tier1-RDST'}
+               },
+               {'00012345_00012345_2.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
+               },
+               {'00012345_00012345_3.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
+                '00012345_00012345_1.sim': {'type': 'sim', 'workflowSE': 'Tier1-RDST'}
+               },
+               {'00012345_00012345_5.AllStreams.dst':
+                {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_5.AllStreams.dst',
+                 'type': 'allstreams.dst',
+                 'workflowSE': 'Tier1_MC_M-DST'}
+               }
+              )
 
 
 
@@ -287,15 +286,15 @@ class ModuleBaseSuccess( ModulesTestCase ):
   def test__checkSanity( self ):
 
     candidateFiles = {'00012345_00012345_4.dst':
-                        {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_4.dst',
-                         'type': 'dst',
-                         'workflowSE': 'Tier1_MC_M-DST'},
+                      {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_4.dst',
+                       'type': 'dst',
+                       'workflowSE': 'Tier1_MC_M-DST'},
                       '00012345_00012345_2.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
                       '00012345_00012345_3.digi': {'type': 'digi', 'workflowSE': 'Tier1-RDST'},
                       '00012345_00012345_5.AllStreams.dst':
-                        {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_5.AllStreams.dst',
-                         'type': 'DST',
-                         'workflowSE': 'Tier1_MC_M-DST'},
+                      {'lfn': '/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_5.AllStreams.dst',
+                       'type': 'DST',
+                       'workflowSE': 'Tier1_MC_M-DST'},
                       '00012345_00012345_1.sim': {'type': 'sim', 'workflowSE': 'Tier1-RDST'}}
 
     self.assertRaises( ValueError, self.mb._checkSanity, candidateFiles )
@@ -328,7 +327,7 @@ class ModuleBaseSuccess( ModulesTestCase ):
               'bar_2.py': {'lfn': '/lhcb/MC/2010/DST/00012345/0001/bar_2.py',
                            'type': outputList[1]['outputDataType'],
                            'workflowSE': outputList[1]['outputDataSE']},
-              }
+             }
     res = self.mb.getCandidateFiles( outputList, outputLFNs, fileMask, stepMask )
     self.assertEqual( res, result )
 
@@ -402,17 +401,17 @@ class ModuleBaseSuccess( ModulesTestCase ):
     inputData = 'previousStep'
     self.mb.appSteps = ['Brunel_1', 'DaVinci_2']
     self.mb.workflow_commons = {'outputList': [{'stepName': 'Brunel_1',
-                                               'outputDataType': 'brunelhist',
-                                               'outputBKType': 'BRUNELHIST',
-                                               'outputDataSE': 'CERN-HIST',
-                                               'outputDataName': 'Brunel_00012345_00006789_1_Hist.root'},
-                                              {'stepName': 'Brunel_1',
-                                               'outputDataType': 'sdst',
-                                               'outputBKType': 'SDST',
-                                               'outputDataSE': 'Tier1-BUFFER',
-                                               'outputDataName': '00012345_00006789_1.sdst'}
+                                                'outputDataType': 'brunelhist',
+                                                'outputBKType': 'BRUNELHIST',
+                                                'outputDataSE': 'CERN-HIST',
+                                                'outputDataName': 'Brunel_00012345_00006789_1_Hist.root'},
+                                               {'stepName': 'Brunel_1',
+                                                'outputDataType': 'sdst',
+                                                'outputBKType': 'SDST',
+                                                'outputDataSE': 'Tier1-BUFFER',
+                                                'outputDataName': '00012345_00006789_1.sdst'}
                                               ]
-                                }
+                               }
     self.mb.inputDataType = 'SDST'
 
     first = self.mb._determineStepInputData( inputData )
@@ -436,7 +435,7 @@ class ModuleBaseSuccess( ModulesTestCase ):
                                                'outputBKType': 'SDST',
                                                'outputDataSE': 'Tier1-BUFFER',
                                                'outputDataName': '00012345_00006789_1.sdst'}
-                                              ]
+                                             ]
     self.mb.inputDataType = 'SDST'
     first = self.mb._determineStepInputData( inputData )
     second = ['some.sdst', '00012345_00006789_1.sdst']
@@ -544,6 +543,8 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ModulesTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ModuleBaseSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( FailoverRequestSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ScriptSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ScriptFailure ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

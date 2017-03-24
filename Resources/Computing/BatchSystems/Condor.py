@@ -17,7 +17,8 @@ import re, tempfile, commands, os
 def parseCondorStatus( lines, jobID ):
   """parse the condor_q or condor_history output for the job status
 
-  :param list lines: list of lines from the output of the condor commands, each line is a pair of jobID and statusID
+  :param lines: list of lines from the output of the condor commands, each line is a pair of jobID and statusID
+  :type lines: python:list
   :param str jobID: jobID of condor job, e.g.: 123.53
   :returns: Status as known by DIRAC
   """
@@ -42,7 +43,8 @@ def treatCondorHistory( condorHistCall, qList ):
   until we can expect condor version 8.5.3 everywhere
 
   :param str condorHistCall: condor_history command to run
-  :param list qList: list of jobID and status from condor_q output, will be modified in this function
+  :param qList: list of jobID and status from condor_q output, will be modified in this function
+  :type qList: python:list
   :returns: None
   """
   status_history,stdout_history_temp = commands.getstatusoutput( condorHistCall )

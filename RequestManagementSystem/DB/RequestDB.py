@@ -5,23 +5,27 @@
 ########################################################################
 
 """ Frontend for ReqDB
-"""
 
+    :mod: RequestDB
 
-from types import ListType
-""" :mod: RequestDB
     =======================
 
     .. module: RequestDB
+
     :synopsis: db holding Requests
 
     db holding Request, Operation and File
 """
-__RCSID__ = "$Id $"
-
 import random
 
 import datetime
+
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper
+from sqlalchemy.sql import update
+from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey,\
+                       Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
+
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -29,11 +33,9 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper
-from sqlalchemy.sql import update
-from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey,\
-                       Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
+
+
+__RCSID__ = "$Id $"
 
 
 # Metadata instance that is used to bind the engine, Object and tables
@@ -224,7 +226,7 @@ class RequestDB( object ):
   def putRequest( self, request ):
     """ update or insert request into db
 
-    :param Request request: Request instance
+    :param ~Request.Request request: Request instance
     """
 
     session = self.DBSession( expire_on_commit = False )
@@ -553,7 +555,8 @@ class RequestDB( object ):
     :param dict selectDict: parameter on which to restrain the query {key : Value}
                             key can be any of the Request columns, 'Type' (interpreted as Operation.Type)
                             and 'FromData' and 'ToData' are matched against the LastUpdate field
-    :param list sortList: [sorting column, ASC/DESC]
+    :param sortList: [sorting column, ASC/DESC]
+    :type sortList: python:list
     :param int startItem: start item (for pagination)
     :param int maxItems: max items (for pagination)
     """
@@ -676,7 +679,7 @@ class RequestDB( object ):
           elif key == 'Status':
             key = '_Status'
 
-          if type( value ) == ListType:
+          if isinstance( value, list ):
             summaryQuery = summaryQuery.filter( eval( '%s.%s.in_(%s)' % ( objectType, key, value ) ) )
           else:
             summaryQuery = summaryQuery.filter( eval( '%s.%s' % ( objectType, key ) ) == value )
@@ -728,12 +731,13 @@ class RequestDB( object ):
   def getRequestIDsForJobs( self, jobIDs ):
     """ read request ids for jobs given jobIDs
 
-    :param list jobIDs: list of jobIDs
+    :param jobIDs: list of jobIDs
+    :type jobIDs: python:list
     """
     self.log.debug( "getRequestIDsForJobs: got %s jobIDs to check" % str( jobIDs ) )
     if not jobIDs:
       return S_ERROR( "Must provide jobID list as argument." )
-    if type( jobIDs ) in ( long, int ):
+    if isinstance( jobIDs,( long, int ) ):
       jobIDs = [ jobIDs ]
     jobIDs = set( jobIDs )
 
@@ -760,14 +764,15 @@ class RequestDB( object ):
   def readRequestsForJobs( self, jobIDs = None ):
     """ read request for jobs
 
-    :param list jobIDs: list of JobIDs
+    :param jobIDs: list of JobIDs
+    :type jobIDs: python:list
     :return: S_OK( "Successful" : { jobID1 : Request, jobID2: Request, ... }
                    "Failed" : { jobID3: "error message", ... } )
     """
     self.log.debug( "readRequestForJobs: got %s jobIDs to check" % str( jobIDs ) )
     if not jobIDs:
       return S_ERROR( "Must provide jobID list as argument." )
-    if type( jobIDs ) in ( long, int ):
+    if isinstance( jobIDs, ( long, int ) ):
       jobIDs = [ jobIDs ]
     jobIDs = set( jobIDs )
 
@@ -811,7 +816,8 @@ class RequestDB( object ):
     """ get status for files in request given its id
 
     :param str requestID: Request.RequestID
-    :param list lfnList: list of LFNs
+    :param lfnList: list of LFNs
+    :type lfnList: python:list
     """
 
     session = self.DBSession()

@@ -5,6 +5,7 @@ from DIRAC import gLogger
 
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
 
@@ -112,10 +113,13 @@ class TaskManagerPlugin( PluginBase ):
     jobType = self.params['JobType']
     if not jobType:
       raise RuntimeError( "No jobType specified" )
-    excludedSites = self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, [] )
+    excludedSites = set( self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, [] ) )
     gLogger.debug( "Explicitly excluded sites for %s task: %s" % ( jobType, ','.join( excludedSites ) ) )
-    excludedSites += self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
-    gLogger.debug( "Full list of excluded sites for %s task: %s" % ( jobType, ','.join( excludedSites ) ) )
+    autoAddedSites = self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
+    if 'WithStorage' in autoAddedSites:
+      # Add all sites with storage, such that jobs can run wherever data is
+      autoAddedSites.remove( 'WithStorage' )
+      autoAddedSites += DMSHelpers().getTiers( withStorage = True, tier = ( 0, 1, 2 ) )
 
     # 3. removing sites in Exclude
     if not excludedSites:
@@ -123,7 +127,7 @@ class TaskManagerPlugin( PluginBase ):
     elif 'ALL' in excludedSites:
       destSites = set()
     else:
-      destSites = destSites.difference( set( excludedSites ) )
+      destSites -= excludedSites
 
     # 4. get JobTypeMapping "Allow" section
     res = self.opsH.getOptionsDict( 'JobTypeMapping/%s/Allow' % jobType )
@@ -131,32 +135,21 @@ class TaskManagerPlugin( PluginBase ):
       gLogger.verbose( res['Message'] )
       allowed = {}
     else:
-      allowed = res['Value']
-      for site in allowed:
-        allowed[site] = fromChar( allowed[site] )
+      allowed = dict( ( site, set( fromChar( fromSites ) ) ) for site, fromSites in res['Value'].iteritems() )
 
+    autoAddedSites = set( self.opsH.getValue( 'JobTypeMapping/%s/AutoAddedSites' % jobType, autoAddedSites ) )
+    gLogger.debug( "Auto-added sites for %s task: %s" % ( jobType, ','.join( autoAddedSites ) ) )
     # 5. add autoAddedSites, if requested
-    autoAddedSites = self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
-    if autoAddedSites:
-      for autoAddedSite in autoAddedSites:
-        allowed.setdefault( autoAddedSite, [autoAddedSite] )
-        if autoAddedSite not in allowed:
-          allowed[autoAddedSite] = [autoAddedSite]
-        else:
-          allowed[autoAddedSite] = [autoAddedSite] + allowed[autoAddedSite]
+    for autoAddedSite in autoAddedSites:
+      allowed.setdefault( autoAddedSite, set() ).add( autoAddedSite )
     gLogger.debug( "Allowed sites for %s task: %s" % ( jobType, ','.join( allowed ) ) )
 
     # 6. Allowing sites that should be allowed
-    if not self.params['TargetSE'] or self.params['TargetSE'] == 'Unknown':
-      gLogger.warn( "TargetSE is not set: the destination sites list will be incomplete" )
     taskSiteDestination = self._BySE()
 
     for destSite, fromSites in allowed.iteritems():
       for fromSite in fromSites:
-        if taskSiteDestination:
-          if fromSite in taskSiteDestination:
-            destSites.add( destSite )
-        else:
+        if not taskSiteDestination or fromSite in taskSiteDestination:
           destSites.add( destSite )
 
     gLogger.verbose( "Computed list of destination sites for %s task with TargetSE %s: %s" % ( jobType,

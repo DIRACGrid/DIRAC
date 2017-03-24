@@ -27,7 +27,7 @@ args = Script.getPositionalArgs()
 records = []
 
 records.append( ('Setup', gConfig.getValue( '/DIRAC/Setup', 'Unknown' ) ) )
-records.append( ('ConfigurationServer', str( gConfig.getValue( '/DIRAC/Configuration/Servers', [] ) ) ) )
+records.append( ('ConfigurationServer', gConfig.getValue( '/DIRAC/Configuration/Servers', [] ) ) )
 records.append( ('Installation path', DIRAC.rootPath ) )
 
 if os.path.exists( os.path.join( DIRAC.rootPath, DIRAC.getPlatform(), 'bin', 'mysql' ) ):
@@ -40,13 +40,16 @@ records.append( ( 'Platform', DIRAC.getPlatform() ) )
 ret = getProxyInfo( disableVOMS = True )
 if ret['OK']:
   if 'group' in ret['Value']:
-    records.append( ('VirtualOrganization', getVOForGroup( ret['Value']['group'] ) ) )
+    vo = getVOForGroup( ret['Value']['group'] )
   else:
-    records.append( ('VirtualOrganization', getVOForGroup( '' ) ) )
+    vo = getVOForGroup( '' )
+  if not vo:
+    vo = "None"
+  records.append( ('VirtualOrganization', vo ) )
   if 'identity' in ret['Value']:
     records.append( ('User DN', ret['Value']['identity'] ) )
   if 'secondsLeft' in ret['Value']:
-    records.append( ('Proxy validity, secs', str( ret['Value']['secondsLeft'] ) ) )
+    records.append( ('Proxy validity, secs', { 'Value': str( ret['Value']['secondsLeft'] ), 'Just': 'L' } ) )
   
 if gConfig.getValue( '/DIRAC/Security/UseServerCertificate', True ):
   records.append( ('Use Server Certificate', 'Yes' ) )

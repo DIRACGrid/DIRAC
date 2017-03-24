@@ -6,7 +6,8 @@
 """
   Dirac PilotDirector class, it uses DIRAC CE backends to submit and monitor pilots.
   It includes:
-   - basic configuration for Dirac PilotDirector
+
+    - basic configuration for Dirac PilotDirector
 
   A DIRAC PilotDirector make use directly to CE methods to place the pilots on the
   underlying resources.

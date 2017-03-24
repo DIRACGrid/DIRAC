@@ -94,10 +94,11 @@ else:
     tqData = tqDict[ tqId ]
     for key in sorted( tqData ):
       value = tqData[ key ]
-      if type( value ) == types.ListType:
-        value = ",".join( value )
+      if isinstance( value, list ):
+        records.append( [key, { "Value": value, 'Just': 'L'} ] )
       else:
         value = str( value )
-      records.append( [key, value] )
-    printTable( fields, records )    
+        records.append( [key, { "Value": value, 'Just': 'L' } ] )
+
+    printTable( fields, records, numbering = False )
     

@@ -56,12 +56,12 @@ def getSubmitPools( group = None, vo = None ):
 class SiteDirector( AgentModule ):
   """
       The specific agents must provide the following methods:
-      - initialize() for initial settings
-      - beginExecution()
-      - execute() - the main method called in the agent cycle
-      - endExecution()
-      - finalize() - the graceful exit of the method, this one is usually used
-                 for the agent restart
+        - initialize() for initial settings
+        - beginExecution()
+        - execute() - the main method called in the agent cycle
+        - endExecution()
+        - finalize() - the graceful exit of the method, this one is usually used
+                   for the agent restart
   """
 
   def __init__( self, *args, **kwargs ):
@@ -155,15 +155,15 @@ class SiteDirector( AgentModule ):
 
     # Get the site description dictionary
     siteNames = None
-    if not self.am_getOption( 'Site', 'Any' ).lower() == "any":
+    if self.am_getOption( 'Site', 'Any' ).lower() != "any":
       siteNames = self.am_getOption( 'Site', [] )
       if not siteNames:
         siteNames = None
     ceTypes = None
-    if not self.am_getOption( 'CETypes', 'Any' ).lower() == "any":
+    if self.am_getOption( 'CETypes', 'Any' ).lower() != "any":
       ceTypes = self.am_getOption( 'CETypes', [] )
     ces = None
-    if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
+    if self.am_getOption( 'CEs', 'Any' ).lower() != "any":
       ces = self.am_getOption( 'CEs', [] )
       if not ces:
         ces = None
@@ -411,7 +411,7 @@ class SiteDirector( AgentModule ):
     tqIDList = result['Value'].keys()
     result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
                                           'Status': WAITING_PILOT_STATUS },
-                                          None )
+                                        None )
     totalWaitingPilots = 0
     if result['OK']:
       totalWaitingPilots = result['Value']
@@ -509,7 +509,7 @@ class SiteDirector( AgentModule ):
         lastUpdateTime = dateTime() - self.pilotWaitingTime * second
         result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
                                               'Status': WAITING_PILOT_STATUS },
-                                              None, lastUpdateTime )
+                                            None, lastUpdateTime )
         if not result['OK']:
           self.log.error( 'Failed to get Number of Waiting pilots', result['Message'] )
           totalWaitingPilots = 0
@@ -532,7 +532,7 @@ class SiteDirector( AgentModule ):
         return result
       self.proxy = result['Value']
       # Check returned proxy lifetime
-      result = self.proxy.getRemainingSecs()
+      result = self.proxy.getRemainingSecs() #pylint: disable=no-member
       if not result['OK']:
         return result
       lifetime_secs = result['Value']

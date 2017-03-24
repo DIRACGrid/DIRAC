@@ -59,6 +59,17 @@ class ModuleBase( object ):
     self.workflow_commons = None
     self.step_commons = None
 
+    self.applicationName = ''
+    self.applicationVersion = ''
+    self.outputDataFileMask = []
+    self.stepName = ''
+    self.stepInputData = []
+    self.applicationLog = 'applicationLog.txt'
+
+    self.appSteps = []
+    self.inputDataList = []
+    self.InputData = []
+
     # These are useful objects (see the getFileReporter(), getJobReporter() and getRequestContainer() functions)
     self.fileReport = None
     self.jobReport = None
@@ -97,8 +108,7 @@ class ModuleBase( object ):
 
     if not self.jobID:
       # this is the real wms job ID
-      if os.environ.has_key( 'JOBID' ):
-        self.jobID = int( os.environ['JOBID'] )
+      self.jobID = int(os.environ.get('JOBID', self.jobID))
 
     if not self.step_number:
       # self.STEP_NUMBER is always set by the workflow
@@ -129,7 +139,7 @@ class ModuleBase( object ):
       return S_ERROR( e )
 
     # This catches everything that is not voluntarily thrown (here, really writing an exception)
-    except Exception as e:
+    except Exception as e: #pylint: disable=broad-except
       self.log.exception( e )
       self.setApplicationStatus( e )
       return S_ERROR( e )
@@ -213,7 +223,7 @@ class ModuleBase( object ):
     """ just return the job reporter (object, always defined by dirac-jobexec)
     """
 
-    if self.workflow_commons.has_key( 'JobReport' ):
+    if 'JobReport' in self.workflow_commons:
       return self.workflow_commons['JobReport']
     else:
       jobReport = JobReport( self.jobID )
@@ -226,7 +236,7 @@ class ModuleBase( object ):
     """ just return the file reporter (object)
     """
 
-    if self.workflow_commons.has_key( 'FileReport' ):
+    if 'FileReport' in self.workflow_commons:
       return self.workflow_commons['FileReport']
     else:
       fileReport = FileReport()
@@ -239,7 +249,7 @@ class ModuleBase( object ):
     """ just return the RequestContainer reporter (object)
     """
 
-    if self.workflow_commons.has_key( 'Request' ):
+    if 'Request' in self.workflow_commons:
       return self.workflow_commons['Request']
     else:
       request = Request()
@@ -252,18 +262,16 @@ class ModuleBase( object ):
     """ Resolve the input variables that are in the workflow_commons
     """
 
-    if self.workflow_commons.has_key( 'JobType' ):
-      self.jobType = self.workflow_commons['JobType']
+    self.jobType = self.workflow_commons.get('JobType', self.jobType)
 
     self.InputData = ''
-    if self.workflow_commons.has_key( 'InputData' ):
-      if self.workflow_commons['InputData']:
-        self.InputData = self.workflow_commons['InputData']
+    if 'InputData' in self.workflow_commons and self.workflow_commons['InputData']:
+      self.InputData = self.workflow_commons['InputData']
 
-    if self.workflow_commons.has_key( 'ParametricInputData' ):
+    if 'ParametricInputData' in self.workflow_commons:
       pID = copy.deepcopy( self.workflow_commons['ParametricInputData'] )
       if pID:
-        if type( pID ) == type( [] ):
+        if isinstance( pID, list ):
           pID = ';'.join( pID )
   #      self.InputData += ';' + pID
         self.InputData = pID
@@ -274,13 +282,12 @@ class ModuleBase( object ):
 
     self.inputDataList = [lfn.strip( 'LFN:' ) for lfn in self.InputData.split( ';' ) if lfn]
 
-    if self.workflow_commons.has_key( 'appSteps' ):
-      self.appSteps = self.workflow_commons['appSteps']
+    self.appSteps = self.workflow_commons.get('appSteps', self.appSteps)
 
-    if self.workflow_commons.has_key( 'outputDataFileMask' ):
+    if 'outputDataFileMask' in self.workflow_commons:
       self.outputDataFileMask = self.workflow_commons['outputDataFileMask']
-      if not type( self.outputDataFileMask ) == type( [] ):
-        self.outputDataFileMask = [i.lower().strip() for i in self.outputDataFileMask.split( ';' )]
+      if isinstance( self.outputDataFileMask, basestring ):
+        self.outputDataFileMask = [i.lower().strip() for i in self.outputDataFileMask.split( ';' )] # pylint: disable=no-member
 
   #############################################################################
 
@@ -290,7 +297,7 @@ class ModuleBase( object ):
 
     self.stepName = self.step_commons['STEP_INSTANCE_NAME']
 
-    if self.step_commons.has_key( 'executable' ) and self.step_commons['executable']:
+    if 'executable' in self.step_commons and self.step_commons['executable']:
       self.executable = self.step_commons['executable']
     else:
       self.executable = 'Unknown'
@@ -305,15 +312,11 @@ class ModuleBase( object ):
     else:
       self.applicationVersion = 'Unknown'
 
-    if self.step_commons.has_key( 'applicationLog' ):
-      self.applicationLog = self.step_commons['applicationLog']
-    else:
-      self.applicationLog = 'applicationLog.txt'
+    self.applicationLog = self.step_commons.get('applicationLog', self.applicationLog)
 
     stepInputData = []
-    if self.step_commons.has_key( 'inputData' ):
-      if self.step_commons['inputData']:
-        stepInputData = self.step_commons['inputData']
+    if 'inputData' in self.step_commons and self.step_commons['inputData']:
+      stepInputData = self.step_commons['inputData']
     elif self.InputData:
       stepInputData = copy.deepcopy( self.InputData )
     if stepInputData:
@@ -354,7 +357,7 @@ class ModuleBase( object ):
       # The application status won't be updated in case the workflow or the step is failed already
       if not isinstance( status, basestring ):
         status = str( status )
-      self.log.verbose( 'setJobApplicationStatus(%d, %s)' % ( self.jobID, status ) )
+      self.log.verbose( 'setJobApplicationStatus(%s, %s)' % ( self.jobID, status ) )
       jobStatus = self.jobReport.setApplicationStatus( status, sendFlag )
       if not jobStatus['OK']:
         self.log.warn( jobStatus['Message'] )
@@ -456,11 +459,11 @@ class ModuleBase( object ):
     """
     candidateFiles = copy.deepcopy( candidateFilesIn )
 
-    if fileMask and type( fileMask ) != type( [] ):
+    if fileMask and not isinstance( fileMask, list ):
       fileMask = [fileMask]
-    if type( stepMask ) == type( 1 ):
+    if isinstance( stepMask, int ):
       stepMask = str( stepMask )
-    if stepMask and type( stepMask ) != type( [] ):
+    if stepMask and not isinstance( stepMask, list ):
       stepMask = [stepMask]
 
     if fileMask and fileMask != ['']:
@@ -476,9 +479,9 @@ class ModuleBase( object ):
       # This supposes that the LFN contains the step ID
       for fileName, metadata in candidateFiles.items():
         if fileName.split( '_' )[-1].split( '.' )[0] not in stepMask:
-          del( candidateFiles[fileName] )
+          del candidateFiles[fileName]
           self.log.info( 'Output file %s was produced but will not be treated (stepMask is %s)' % ( fileName,
-                                                                                               ', '.join( stepMask ) ) )
+                                                                                                    ', '.join( stepMask ) ) )
     else:
       self.log.info( 'No outputDataStep provided, the files output of all the steps will be considered' )
 
@@ -495,7 +498,7 @@ class ModuleBase( object ):
     mandatoryKeys = ['type', 'workflowSE', 'lfn']  # filedict is used for requests
     for fileName, metadata in candidateFiles.items():
       for key in mandatoryKeys:
-        if not metadata.has_key( key ):
+        if key not in metadata:
           notPresentKeys.append( ( fileName, key ) )
 
     if notPresentKeys:

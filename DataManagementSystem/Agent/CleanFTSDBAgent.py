@@ -5,10 +5,13 @@
 # Date: 2013/05/17 07:46:34
 ########################################################################
 """ :mod: CleanFTSDBAgent
+
     =====================
 
     .. module: CleanFTSDBAgent
+
     :synopsis: cleaning FTSDB from old records
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     cleaning FTSDB from old records

@@ -23,6 +23,7 @@ from DIRAC                                               import gConfig, gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.ConfigurationSystem.Client.ConfigurationData  import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getVOMSAttributeForGroup, getDNForUsername
+from DIRAC.Core.Utilities.LockRing                       import LockRing
 
 __RCSID__ = "$Id$"
 
@@ -41,6 +42,7 @@ def executeWithUserProxy( fcn ):
   :param str proxyUserDN: the user DN of the proxy to be used
   :param str proxyWithVOMS: optional flag to dress or not the user proxy with VOMS extension ( default True )
   :param str proxyFilePath: optional file location for the temporary proxy
+  :param bool executionLock: flag to execute with a lock for the time of user proxy application ( default False )
   """
 
   def wrapped_fcn( *args, **kwargs ):
@@ -50,6 +52,9 @@ def executeWithUserProxy( fcn ):
     userGroup = kwargs.pop( 'proxyUserGroup', '' )
     vomsFlag = kwargs.pop( 'proxyWithVOMS', True )
     proxyFilePath = kwargs.pop( 'proxyFilePath', False )
+    executionLockFlag = kwargs.pop( 'executionLock', False )
+    if executionLockFlag:
+      executionLock = LockRing().getLock( '_UseUserProxy_', recursive = True )
 
     if ( userName or userDN ) and userGroup:
 
@@ -61,15 +66,18 @@ def executeWithUserProxy( fcn ):
         result = getDNForUsername( userName )
         if not result[ 'OK' ]:
           return result
-        userDNs = result['Value'] # a same user may have more than one DN
+        userDNs = result['Value']  # a same user may have more than one DN
       vomsAttr = ''
       if vomsFlag:
         vomsAttr = getVOMSAttributeForGroup( userGroup )
 
-      result = getProxy(userDNs, userGroup, vomsAttr, proxyFilePath)
+      result = getProxy( userDNs, userGroup, vomsAttr, proxyFilePath )
 
       if not result['OK']:
         return result
+
+      if executionLockFlag:
+        executionLock.acquire()
 
       proxyFile = result['Value']
       os.environ['X509_USER_PROXY'] = proxyFile
@@ -81,7 +89,7 @@ def executeWithUserProxy( fcn ):
 
       try:
         return fcn( *args, **kwargs )
-      except Exception as lException: #pylint: disable=broad-except
+      except Exception as lException:  # pylint: disable=broad-except
         value = ','.join( [str( arg ) for arg in lException.args] )
         exceptType = lException.__class__.__name__
         return S_ERROR( "Exception - %s: %s" % ( exceptType, value ) )
@@ -93,6 +101,8 @@ def executeWithUserProxy( fcn ):
           os.environ['X509_USER_PROXY'] = originalUserProxy
         else:
           os.environ.pop( 'X509_USER_PROXY' )
+        if executionLockFlag:
+          executionLock.release()
 
     else:
       # No proxy substitution requested
@@ -101,7 +111,7 @@ def executeWithUserProxy( fcn ):
   return wrapped_fcn
 
 
-def getProxy(userDNs, userGroup, vomsAttr, proxyFilePath):
+def getProxy( userDNs, userGroup, vomsAttr, proxyFilePath ):
   """ do the actual download of the proxy, trying the different DNs
   """
   for userDN in userDNs:
@@ -118,8 +128,58 @@ def getProxy(userDNs, userGroup, vomsAttr, proxyFilePath):
                                                   cacheTime = 3600 )
 
     if not result['OK']:
-      gLogger.warn( "Can't download proxy of '%s' to file" %userDN, result['Message'] )
+      gLogger.error( "Can't download %sproxy " % ( 'VOMS' if vomsAttr else '' ),
+                     "of '%s', group %s to file: " % ( userDN, userGroup ) + result['Message'] )
     else:
       return result
 
-    return S_ERROR("Can't download proxy")
+  # If proxy not found for any DN, return an error
+  return S_ERROR( "Can't download proxy" )
+
+
+
+def executeWithoutServerCertificate( fcn ):
+  """
+  Decorator function to execute a call without the server certificate.
+  This shows useful in Agents when we want to call a DIRAC service
+  and use the shifter proxy (for example Write calls to the DFC).
+
+  The method does not fetch any proxy, it assumes it is already
+  set up in the environment.
+  Note that because it modifies the configuration for all thread,
+  it uses a lock (the same as ExecuteWithUserProxy)
+
+  Potential problem:
+    * there is a lock for this particular method, but any other method
+      changing the UseServerCertificate value can clash with this.
+
+  :param fcn: function to be decorated
+  :return: the result of the fcn execution
+
+  """
+
+  def wrapped_fcn( *args, **kwargs ):
+
+    # Get the lock and acquire it
+    executionLock = LockRing().getLock( '_UseUserProxy_', recursive = True )
+    executionLock.acquire()
+
+    # Check if the caller is executing with the host certificate
+    useServerCertificate = gConfig.useServerCertificate()
+    if useServerCertificate:
+      gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+
+    try:
+      return fcn( *args, **kwargs )
+    except Exception as lException:  # pylint: disable=broad-except
+      value = ','.join( [str( arg ) for arg in lException.args] )
+      exceptType = lException.__class__.__name__
+      return S_ERROR( "Exception - %s: %s" % ( exceptType, value ) )
+    finally:
+      # Restore the default host certificate usage if necessary
+      if useServerCertificate:
+        gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
+      # release the lock
+      executionLock.release()
+
+  return wrapped_fcn

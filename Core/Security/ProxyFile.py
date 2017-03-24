@@ -80,16 +80,24 @@ def deleteMultiProxy( multiProxyDict ):
 def multiProxyArgument( proxy = False ):
   """
   Load a proxy:
-    proxyChain param can be:
-      : Default -> use current proxy
-      : string -> upload file specified as proxy
-      : X509Chain -> use chain
-    returns:
-      S_OK( { 'file' : <string with file location>,
-              'chain' : X509Chain object,
-              'tempFile' : <True if file is temporal>
-            }
-      S_ERROR
+
+
+  :param proxy: param can be:
+  
+      * Default -> use current proxy
+      * string -> upload file specified as proxy
+      * X509Chain -> use chain
+
+  :returns:  S_OK/S_ERROR
+  
+    .. code-block:: python
+
+        S_OK( { 'file' : <string with file location>,
+                'chain' : X509Chain object,
+                'tempFile' : <True if file is temporal>
+              } )
+        S_ERROR
+
   """
   tempFile = False
   # Set env

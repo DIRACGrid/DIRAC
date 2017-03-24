@@ -1,14 +1,17 @@
 """ The POOL XML File module provides a means to extract the GUID of a file or list
     of files by searching for an appropriate POOL XML Catalog in the specified directory.
 """
-__RCSID__ = "$Id$"
 
-import os, glob, tarfile
+import os
+import glob
+import tarfile
 
+from DIRAC                                            import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.Catalog.PoolXMLCatalog           import PoolXMLCatalog
 from DIRAC.Core.Utilities.List                        import uniqueElements
 from DIRAC.Core.Utilities.File                        import makeGuid
-from DIRAC                                            import S_OK, S_ERROR, gLogger
+
+__RCSID__ = "$Id$"
 
 #############################################################################
 
@@ -24,7 +27,7 @@ def getGUID( fileNames, directory = '' ):
   if not os.path.isdir( directory ):
     return S_ERROR( '%s is not a directory' % directory )
 
-  if not type( fileNames ) == type( [] ):
+  if not isinstance( fileNames, list ):
     fileNames = [fileNames]
 
   gLogger.verbose( 'Will look for POOL XML Catalog GUIDs in %s for %s' % ( directory, ', '.join( fileNames ) ) )
@@ -67,7 +70,7 @@ def getType( fileNames, directory = '' ):
   if not os.path.isdir( directory ):
     return S_ERROR( '%s is not a directory' % directory )
 
-  if not type( fileNames ) == type( [] ):
+  if not isinstance( fileNames, list ):
     fileNames = [fileNames]
 
   gLogger.verbose( 'Will look for POOL XML Catalog file types in %s for %s' % ( directory, ', '.join( fileNames ) ) )
@@ -113,15 +116,11 @@ def _getPoolCatalogs( directory = '' ):
       if fname.endswith( '.bak' ):
         gLogger.verbose( 'Ignoring BAK file: %s' % fname )
       elif tarfile.is_tarfile( fname ):
-        try:
-          gLogger.debug( 'Unpacking catalog XML file %s' % ( os.path.join( directory, fname ) ) )
-          tarFile = tarfile.open( os.path.join( directory, fname ), 'r' )
-          for member in tarFile.getmembers():
-            tarFile.extract( member, directory )
+        gLogger.debug( 'Unpacking catalog XML file %s' % ( os.path.join( directory, fname ) ) )
+        with tarfile.open( os.path.join( directory, fname ), 'r' ) as tf:
+          for member in tf.getmembers():
+            tf.extract( member, directory )
             poolCatalogList.append( os.path.join( directory, member.name ) )
-        except Exception, x :
-          gLogger.error( 'Could not untar with exception', 
-                         ' %s: %s' % ( fname, str( x ) ) )
       else:
         poolCatalogList.append( fname )
 

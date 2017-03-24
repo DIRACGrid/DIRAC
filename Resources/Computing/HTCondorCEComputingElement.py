@@ -32,7 +32,9 @@ from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
 from DIRAC.Core.Utilities.File                           import mkDir
 
+#BEWARE: this import makes it impossible to instantiate this CE client side
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
+
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_STATUS
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import Subprocess

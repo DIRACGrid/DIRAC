@@ -40,4 +40,3 @@ class PluginBase( object ):
     except Exception as x:
       gLogger.exception( 'Exception in plugin', self.plugin, x )
       raise Exception( x )
-

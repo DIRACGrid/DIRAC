@@ -88,7 +88,7 @@ class Dirac( API ):
     self.defaultFileCatalog = gConfig.getValue( self.section + '/FileCatalog', None )
     self.vo = vo
 
-  def __checkFileArgument( self, fnList, prefix = None, single = False ):
+  def _checkFileArgument( self, fnList, prefix = None, single = False ):
     if prefix is None:
       prefix = 'LFN'
     if isinstance( fnList, basestring ):
@@ -106,7 +106,7 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string or list of strings for %s(s)' % prefix )
 
-  def __checkJobArgument( self, jobID, multiple = False ):
+  def _checkJobArgument( self, jobID, multiple = False ):
     try:
       if isinstance( jobID, ( str, int, long ) ):
         jobID = int( jobID )
@@ -297,9 +297,9 @@ class Dirac( API ):
        {'OK': True, 'Value': '12345'}
 
        :param job: Instance of Job class or JDL string
-       :type job: Job() or string
+       :type job: ~DIRAC.Interfaces.API.Job.Job or str
        :param mode: Submit job locally with mode = 'wms' (default), 'local' to run workflow or 'agent' to run full Job Wrapper locally
-       :type mode: string
+       :type mode: str
        :returns: S_OK,S_ERROR
     """
     self.__printInfo()
@@ -635,7 +635,7 @@ class Dirac( API ):
         'se': 'CERN-disk'}}, 'Failed': [], 'OK': True, 'Value': ''}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list []
        :param siteName: DIRAC site name
        :type siteName: string
        :param fileName: Catalogue name (can include path)
@@ -643,7 +643,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -666,7 +666,7 @@ class Dirac( API ):
 
     self.log.info( 'Attempting to resolve data for %s' % siteName )
     self.log.verbose( '%s' % ( '\n'.join( lfns ) ) )
-    replicaDict = self.getReplicas( lfns )
+    replicaDict = self.getReplicasForJobs( lfns )
     if not replicaDict['OK']:
       return replicaDict
     catalogFailed = replicaDict['Value'].get( 'Failed', {} )
@@ -735,7 +735,7 @@ class Dirac( API ):
 
     self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
     self.log.verbose( '\n'.join( inputData ) )
-    replicaDict = self.getReplicas( inputData )
+    replicaDict = self.getReplicasForJobs( inputData )
     if not replicaDict['OK']:
       return replicaDict
     catalogFailed = replicaDict['Value'].get( 'Failed', {} )
@@ -823,7 +823,7 @@ class Dirac( API ):
 
       self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
       self.log.verbose( '\n'.join( inputData ) )
-      replicaDict = self.getReplicas( inputData )
+      replicaDict = self.getReplicasForJobs( inputData )
       if not replicaDict['OK']:
         return replicaDict
       guidDict = self.getMetadata( inputData )
@@ -896,13 +896,13 @@ class Dirac( API ):
             self.log.warn( 'Failed to download %s with error:%s' % ( isFile, getFile['Message'] ) )
             return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
         basefname = os.path.basename( isFile )
-        try:
-          if tarfile.is_tarfile( basefname ):
-            tarFile = tarfile.open( basefname, 'r' )
-            for member in tarFile.getmembers():
-              tarFile.extract( member, os.getcwd() )
-        except Exception as x:
-          return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
+        if tarfile.is_tarfile( basefname ):
+          try:
+            with tarfile.open( basefname, 'r' ) as tf:
+              for member in tf.getmembers():
+                tf.extract( member, os.getcwd() )
+          except Exception as x:
+            return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
@@ -1034,22 +1034,74 @@ class Dirac( API ):
        'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list []
+       :param active: restrict to only replicas at SEs that are not banned
+       :type active: boolean
+       :param preferDisk: give preference to disk replicas if True
+       :type preferDisk: boolean
+       :param diskOnly: restrict to only disk replicas if True
+       :type diskOnly: boolean
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
 
     start = time.time()
     dm = DataManager()
-    if active:
-      repsResult = dm.getActiveReplicas( lfns, diskOnly = diskOnly, preferDisk = preferDisk )
-    else:
-      repsResult = dm.getReplicas( lfns )
+    repsResult = dm.getReplicas( lfns, active = active, preferDisk = preferDisk, diskOnly = diskOnly )
+    timing = time.time() - start
+    self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
+    self.log.debug( repsResult )
+    if not repsResult['OK']:
+      self.log.warn( repsResult['Message'] )
+      return repsResult
+
+    if printOutput:
+      fields = [ 'LFN', 'StorageElement', 'URL' ]
+      records = []
+      for lfn in repsResult['Value']['Successful']:
+        lfnPrint = lfn
+        for se, url in repsResult['Value']['Successful'][lfn].iteritems():
+          records.append( ( lfnPrint, se, url ) )
+          lfnPrint = ''
+      for lfn in repsResult['Value']['Failed']:
+        records.append( ( lfn, 'Unknown', str( repsResult['Value']['Failed'][lfn] ) ) )
+
+      printTable( fields, records, numbering = False )
+
+    return repsResult
+
+  def getReplicasForJobs( self, lfns, diskOnly = False, printOutput = False ):
+    """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
+
+       Example usage:
+
+       >>> print dirac.getReplicasForJobs('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+       {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
+       {'CERN-RDST':
+       'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
+       'Failed': {}}}
+
+       :param lfns: Logical File Name(s) to query
+       :type lfns: LFN str or python:list []
+       :param diskOnly: restrict to only disk replicas if True
+       :type diskOnly: boolean
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
+    """
+    ret = self._checkFileArgument( lfns, 'LFN' )
+    if not ret['OK']:
+      return ret
+    lfns = ret['Value']
+
+    start = time.time()
+    dm = DataManager()
+    repsResult = dm.getReplicasForJobs( lfns, diskOnly = diskOnly )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     self.log.debug( repsResult )
@@ -1088,12 +1140,12 @@ class Dirac( API ):
        'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list
        :param printOutput: Optional flag to print result
-       :type printOutput: boolean
+       :type printOutput: bool
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1141,7 +1193,7 @@ class Dirac( API ):
 
 
        :param lfns: Logical File Name(s) to split
-       :type lfns: list
+       :type lfns: python:list
        :param maxFilesPerJob: Number of files per bunch
        :type maxFilesPerJob: integer
        :param printOutput: Optional flag to print result
@@ -1150,7 +1202,7 @@ class Dirac( API ):
     """
     from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
     sitesForSE = {}
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1161,7 +1213,7 @@ class Dirac( API ):
       except Exception as x:
         return self._errorReport( str( x ), 'Expected integer for maxFilesPerJob' )
 
-    replicaDict = self.getReplicas( lfns, active = True, preferDisk = True )
+    replicaDict = self.getReplicasForJobs( lfns )
     if not replicaDict['OK']:
       return replicaDict
     if len( replicaDict['Value']['Successful'] ) == 0:
@@ -1197,12 +1249,12 @@ class Dirac( API ):
        'CheckSumValue': ''}}, 'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list []
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1246,7 +1298,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self._checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1284,7 +1336,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1330,7 +1382,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self._checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1383,7 +1435,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self._checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1414,14 +1466,14 @@ class Dirac( API ):
        {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
        :param lfn: Logical File Name (LFN)
-       :type lfn: string or list
+       :type lfn: str or python:list
        :param storageElement: DIRAC SE name e.g. CERN-RAW
        :type storageElement: string
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1446,14 +1498,14 @@ class Dirac( API ):
        'Successful': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst': {'RFIO': 'castor://...'}}}}
 
        :param pfn: Physical File Name (PFN)
-       :type pfn: string or list
+       :type pfn: str or python:list
        :param storageElement: DIRAC SE name e.g. CERN-RAW
        :type storageElement: string
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( pfn, 'PFN' )
+    ret = self._checkFileArgument( pfn, 'PFN' )
     if not ret['OK']:
       return ret
     pfn = ret['Value']
@@ -1478,14 +1530,14 @@ class Dirac( API ):
        {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
        :param pfn: Physical File Name (PFN)
-       :type pfn: string or list
+       :type pfn: str or python:list
        :param storageElement: DIRAC SE name e.g. CERN-RAW
        :type storageElement: string
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( pfn, 'PFN' )
+    ret = self._checkFileArgument( pfn, 'PFN' )
     if not ret['OK']:
       return ret
     pfn = ret['Value']
@@ -1514,7 +1566,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1541,7 +1593,7 @@ class Dirac( API ):
        :type storageElement: string
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1572,7 +1624,7 @@ class Dirac( API ):
        :type outputDir: string
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1622,7 +1674,7 @@ class Dirac( API ):
        :type oversized: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1676,15 +1728,15 @@ class Dirac( API ):
       return getFile
 
     fileName = os.path.basename( oversizedSandbox )
-    try:
-      result = S_OK()
-      if tarfile.is_tarfile( fileName ):
-        tarFile = tarfile.open( fileName, 'r' )
-        for member in tarFile.getmembers():
-          tarFile.extract( member, dirPath )
-    except Exception as x :
-      os.chdir( start )
-      result = S_ERROR( str( x ) )
+    result = S_OK()
+    if tarfile.is_tarfile( fileName ):
+      try:
+        with tarfile.open( fileName, 'r' ) as tf:
+          for member in tf.getmembers():
+            tf.extract( member, dirPath )
+      except Exception as x :
+        os.chdir( start )
+        result = S_ERROR( str( x ) )
 
     if os.path.exists( fileName ):
       os.unlink( fileName )
@@ -1708,11 +1760,11 @@ class Dirac( API ):
        {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1739,11 +1791,11 @@ class Dirac( API ):
        {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1770,11 +1822,11 @@ class Dirac( API ):
         {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1798,10 +1850,10 @@ class Dirac( API ):
        {79241: {'status': 'Done', 'site': 'LCG.CERN.ch'}}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1850,10 +1902,10 @@ class Dirac( API ):
         ['LFN:/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst']}}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1922,7 +1974,7 @@ class Dirac( API ):
        :param jobID: JobID
        :type jobID: int or string
        :param outputFiles: Optional files to download
-       :type outputFiles: string or list
+       :type outputFiles: str or python:list
        :returns: S_OK,S_ERROR
     """
     try:
@@ -2067,7 +2119,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2259,7 +2311,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2302,12 +2354,12 @@ class Dirac( API ):
        'CPUTime': '0.0','DIRACSetup': 'LHCb-Production'}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :param printOutput: Flag to print to stdOut
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2344,7 +2396,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2381,7 +2433,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
      """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2422,7 +2474,7 @@ class Dirac( API ):
        :type jobID: int or string
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2510,7 +2562,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']

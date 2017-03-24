@@ -71,9 +71,9 @@ class JobAgent( AgentModule ):
   def initialize( self, loops = 0 ):
     """Sets default parameters and creates CE instance
     """
-    # Disable monitoring
+    # Disable monitoring, logLevel INFO, limited cycles
     self.am_setOption( 'MonitoringEnabled', False )
-    # self.log.setLevel('debug') #temporary for debugging
+    self.log.setLevel('INFO')
     self.am_setOption( 'MaxCycles', loops )
 
     ceType = self.am_getOption( 'CEType', 'InProcess' )
@@ -321,8 +321,8 @@ class JobAgent( AgentModule ):
           self.log.info( message )
 
       self.log.debug( 'After %sCE submitJob()' % ( self.ceName ) )
-    except Exception:
-      self.log.exception()
+    except Exception as subExcept: #pylint: disable=broad-except
+      self.log.exception("Exception in submission", "", lException = subExcept, lExcInfo = True)
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception', self.stopOnApplicationFailure )
 
     # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
@@ -550,19 +550,6 @@ class JobAgent( AgentModule ):
     return jobStatus
 
   #############################################################################
-  # FIXME: this is not called anywhere...?
-  def __setJobSite( self, jobID, site ):
-    """Wraps around setJobSite of state update client
-    """
-    jobReport = RPCClient( 'WorkloadManagement/JobStateUpdate' )
-    jobSite = jobReport.setJobSite( int( jobID ), site )
-    self.log.verbose( 'setJobSite(%s,%s)' % ( jobID, site ) )
-    if not jobSite['OK']:
-      self.log.warn( jobSite['Message'] )
-
-    return jobSite
-
-  #############################################################################
   def __setJobParam( self, jobID, name, value ):
     """Wraps around setJobParameter of state update client
     """
@@ -620,7 +607,8 @@ class JobAgent( AgentModule ):
     """
     tag = gConfig.getValue( '/Resources/Computing/CEDefaults/Tag', None )
 
-    if tag is None: return 1, False
+    if tag is None:
+      return 1, False
 
     self.log.verbose( "__getProcessors: /Resources/Computing/CEDefaults/Tag", repr( tag ) )
 

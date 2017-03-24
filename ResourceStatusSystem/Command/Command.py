@@ -1,4 +1,3 @@
-# $HeadURL:  $
 ''' Command
 
   Base class for all commands.

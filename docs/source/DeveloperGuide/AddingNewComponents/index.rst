@@ -20,5 +20,6 @@ What starts here is a guide to develop DIRAC components. This guide is done in t
    DevelopingExecutors/index
    DevelopingCommands/index
    Utilities/index
-   DevelopingWebPages/index  
+   Resources/index
+   DevelopingWebPages/index
    CodeQuality/index

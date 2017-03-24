@@ -205,7 +205,7 @@ class StorageFactory( object ):
         return S_ERROR( errStr )
       for option in set( res['Value'] ) - set( ( 'ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess' ) ):
         optionConfigPath = cfgPath( storageConfigPath, option )
-        default = [] if option in [ 'VO' ] else ''
+        default = [] if option in [ 'VO', 'AccessProtocols', 'WriteProtocols' ] else ''
         optionsDict[option] = gConfig.getValue( optionConfigPath, default )
 
     # The status is that of the derived SE only
@@ -255,21 +255,27 @@ class StorageFactory( object ):
       if not res['OK']:
         return res
       for protocolSection in res['Value']:
-        res = self._getConfigStorageProtocolDetails( derivedStorageName, protocolSection, checkAccess = False )
+        res = self._getConfigStorageProtocolDetails( derivedStorageName, protocolSection )
         if not res['OK']:
           return res
         detail = res['Value']
         pluginName = detail.get( 'PluginName' )
         if pluginName:
+          # If we found the plugin section from which we inherit
+          inheritanceMatched = False
           for protocolDetail in protocolDetails:
             if protocolDetail.get( 'PluginName' ) == pluginName:
+              inheritanceMatched = True
               for key, val in detail.iteritems():
                 if val:
                   protocolDetail[key] = val
-            break
+              break
+          # If not matched, consider it a new protocol
+          if not inheritanceMatched:
+            protocolDetails.append(detail)
     return S_OK( protocolDetails )
 
-  def _getConfigStorageProtocolDetails( self, storageName, protocolSection, checkAccess = True ):
+  def _getConfigStorageProtocolDetails( self, storageName, protocolSection ):
     """
       Parse the contents of the protocol block
     """
@@ -302,15 +308,16 @@ class StorageFactory( object ):
         protocolDict['Path'] = voPath
 
     # Now update the local and remote protocol lists.
-    # A warning will be given if the Access option is not set.
-    if checkAccess:
-      if protocolDict['Access'].lower() == 'remote':
-        self.remotePlugins.append( protocolDict['PluginName'] )
-      elif protocolDict['Access'].lower() == 'local':
-        self.localPlugins.append( protocolDict['PluginName'] )
-      else:
-        errStr = "StorageFactory.__getProtocolDetails: The 'Access' option for %s:%s is neither 'local' or 'remote'." % ( storageName, protocolSection )
-        gLogger.warn( errStr )
+    # A warning will be given if the Access option is not set and the plugin is not already in remote or local.
+    if protocolDict['Access'].lower() == 'remote':
+      self.remotePlugins.append( protocolDict['PluginName'] )
+
+    elif protocolDict['Access'].lower() == 'local':
+      self.localPlugins.append( protocolDict['PluginName'] )
+    elif protocolDict['PluginName'] not in self.remotePlugins and protocolDict['PluginName'] not in self.localPlugins:
+      errStr = "StorageFactory.__getProtocolDetails: The 'Access' option \
+      for %s:%s is neither 'local' or 'remote'." % ( storageName, protocolSection )
+      gLogger.warn( errStr )
 
     # The PluginName option must be defined
     if not protocolDict['PluginName']:

@@ -31,9 +31,7 @@ class StageMonitorAgent( AgentModule ):
       return res
     self.proxyInfoDict = res['Value']
 
-    res = self.monitorStageRequests()
-
-    return res
+    return self.monitorStageRequests()
 
   def monitorStageRequests( self ):
     """ This is the third logical task manages the StageSubmitted->Staged transition of the Replicas
@@ -48,7 +46,7 @@ class StageMonitorAgent( AgentModule ):
     seReplicas = res['Value']['SEReplicas']
     replicaIDs = res['Value']['ReplicaIDs']
     gLogger.info( "StageMonitor.monitorStageRequests: Obtained %s StageSubmitted replicas for monitoring." % len( replicaIDs ) )
-    for storageElement, seReplicaIDs in seReplicas.items():
+    for storageElement, seReplicaIDs in seReplicas.iteritems():
       self.__monitorStorageElementStageRequests( storageElement, seReplicaIDs, replicaIDs )
 
     gDataStoreClient.commit()
@@ -62,20 +60,20 @@ class StageMonitorAgent( AgentModule ):
 
     # Since we are in a given SE, the LFN is a unique key
     lfnRepIDs = {}
-    lfnReqIDs = {}
     for replicaID in seReplicaIDs:
       lfn = replicaIDs[replicaID]['LFN']
       lfnRepIDs[lfn] = replicaID
-      requestID = replicaIDs[replicaID].get( 'RequestID', None )
-      if requestID:
-        lfnReqIDs[lfn] = replicaIDs[replicaID]['RequestID']
 
-    gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % ( len( lfnRepIDs ),
-                                                                                                                storageElement ) )
+    if lfnRepIDs:
+      gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % ( len( lfnRepIDs ),
+                                                                                                                  storageElement ) )
+    else:
+      gLogger.warn( "StageMonitor.__monitorStorageElementStageRequests: No requests to monitor for %s." % storageElement )
+      return
     oAccounting = DataOperation()
     oAccounting.setStartTime()
 
-    res = StorageElement( storageElement ).getFileMetadata( lfnReqIDs )
+    res = StorageElement( storageElement ).getFileMetadata( lfnRepIDs )
     if not res['OK']:
       gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.", res['Message'] )
       return
@@ -83,19 +81,22 @@ class StageMonitorAgent( AgentModule ):
 
     accountingDict = self.__newAccountingDict( storageElement )
 
-    for lfn, reason in prestageStatus['Failed'].items():
+    for lfn, reason in prestageStatus['Failed'].iteritems():
       accountingDict['TransferTotal'] += 1
       if re.search( 'File does not exist', reason ):
         gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: LFN did not exist in the StorageElement", lfn )
         terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN did not exist in the StorageElement'
-    for lfn, staged in prestageStatus['Successful'].items():
-      if staged and 'Cached' in staged and staged['Cached']:
+    for lfn, metadata in prestageStatus['Successful'].iteritems():
+      if not metadata:
+        continue
+      staged = metadata.get( 'Cached', metadata['Accessible'] )
+      if staged:
         accountingDict['TransferTotal'] += 1
         accountingDict['TransferOK'] += 1
-        accountingDict['TransferSize'] += staged['Size']
+        accountingDict['TransferSize'] += metadata['Size']
         stagedReplicas.append( lfnRepIDs[lfn] )
-      if staged and 'Cached' in staged and not staged['Cached']:
-        oldRequests.append( lfnRepIDs[lfn] );  # only ReplicaIDs
+      elif staged is not None:
+        oldRequests.append( lfnRepIDs[lfn] )  # only ReplicaIDs
 
     oAccounting.setValuesFromDict( accountingDict )
     oAccounting.setEndTime()
@@ -157,11 +158,9 @@ class StageMonitorAgent( AgentModule ):
 
     seReplicas = {}
     replicaIDs = res['Value']
-    for replicaID, info in replicaIDs.items():
+    for replicaID, info in replicaIDs.iteritems():
       storageElement = info['SE']
-      if not seReplicas.has_key( storageElement ):
-        seReplicas[storageElement] = []
-      seReplicas[storageElement].append( replicaID )
+      seReplicas.setdefault( storageElement, [] ).append( replicaID )
 
     # RequestID was missing from replicaIDs dictionary BUGGY?
     res = self.stagerClient.getStageRequests( {'ReplicaID':replicaIDs.keys()} )
@@ -170,9 +169,8 @@ class StageMonitorAgent( AgentModule ):
     if not res['Value']:
       return S_ERROR( 'Could not obtain request IDs for replicas %s from StageRequests table' % ( replicaIDs.keys() ) )
 
-    for replicaID, info in res['Value'].items():
-      reqID = info['RequestID']
-      replicaIDs[replicaID]['RequestID'] = reqID
+    for replicaID, info in res['Value'].iteritems():
+      replicaIDs[replicaID]['RequestID'] = info['RequestID']
 
     return S_OK( {'SEReplicas':seReplicas, 'ReplicaIDs':replicaIDs} )
 

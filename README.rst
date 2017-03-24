@@ -11,8 +11,6 @@
 
 DIRAC
 =====
-.. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=rel-v6r14
-    :target: https://travis-ci.org/DIRACGrid/DIRAC
 .. image:: https://img.shields.io/coveralls/DIRACGrid/DIRAC/rel-v6r14.svg?maxAge=2592000
     :target: https://coveralls.io/github/DIRACGrid/DIRAC
 .. image:: https://landscape.io/github/DIRACGrid/DIRAC/rel-v6r14/landscape.svg?style=flat

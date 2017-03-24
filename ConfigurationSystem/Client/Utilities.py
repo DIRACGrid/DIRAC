@@ -10,12 +10,12 @@
   getSiteUpdates
   getSEUpdates
 """
-__RCSID__ = "$Id$"
 
 import re
 import types
 import socket
 from urlparse import urlparse
+
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
@@ -23,6 +23,8 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+
+__RCSID__ = "$Id$"
 
 def getGridVOs():
   """ Get all the VOMS VO names served by this DIRAC service
@@ -274,12 +276,14 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
           if newMaxCPUTime == "4" * len( newMaxCPUTime ) or newMaxCPUTime == "9" * len( newMaxCPUTime ):
             newMaxCPUTime = ''
           wallTime = queueInfo.get( 'GlueCEPolicyMaxWallClockTime', '' )
+          if wallTime == "4" * len( wallTime ) or wallTime == "9" * len( wallTime ):
+             wallTime = ''
           if wallTime and int(wallTime)>0:
             if not newMaxCPUTime:
-              newMaxCPUTime = str(0.8*int(wallTime))
+              newMaxCPUTime = str(int(0.8*int(wallTime)))
             else:
               if int(wallTime) <= int(newMaxCPUTime):
-                newMaxCPUTime = str(0.8*int(wallTime))
+                newMaxCPUTime = str(int(0.8*int(wallTime)))
           newSI00 = ''
           caps = queueInfo['GlueCECapability']
           if isinstance( caps, basestring ):
@@ -549,5 +553,70 @@ def getDBParameters( fullname ):
     return S_ERROR( 'Failed to get the configuration parameter: DBName' )
   dbName = result['Value']
   parameters[ 'DBName' ] = dbName
+
+  return S_OK( parameters )
+
+def getElasticDBParameters( fullname ):
+  """
+  Retrieve Database parameters from CS
+  fullname should be of the form <System>/<DBname>
+
+  """
+
+  cs_path = getDatabaseSection( fullname )
+  parameters = {}
+
+  result = gConfig.getOption( cs_path + '/Host' )
+  if not result['OK']:
+    # No host name found, try at the common place
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/Host' )
+    if not result['OK']:
+      return S_ERROR( 'Failed to get the configuration parameter: Host' )
+  dbHost = result['Value']
+  # Check if the host is the local one and then set it to 'localhost' to use
+  # a socket connection
+  if dbHost != 'localhost':
+    localHostName = socket.getfqdn()
+    if localHostName == dbHost:
+      dbHost = 'localhost'
+  parameters[ 'Host' ] = dbHost
+
+  # Elasticsearch standard port
+  dbPort = 9200
+  result = gConfig.getOption( cs_path + '/Port' )
+  if not result['OK']:
+    # No individual port number found, try at the common place
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/Port' )
+    if result['OK']:
+      dbPort = int( result['Value'] )
+  else:
+    dbPort = int( result['Value'] )
+  parameters[ 'Port' ] = dbPort
+
+  dbuserName = None
+  result = gConfig.getOption( cs_path + '/User' )
+  if not result['OK']:
+    # No individual port number found, try at the common place
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/User' )
+    if result['OK']:
+      dbuserName = result['Value']
+  else:
+    dbuserName = result['Value']
+    
+  if dbuserName:
+    parameters[ 'User' ] = dbuserName
+
+  dbPassword = None
+  result = gConfig.getOption( cs_path + '/Password' )
+  if not result['OK']:
+    # No individual port number found, try at the common place
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/Password' )
+    if result['OK']:
+      dbPassword = result['Value']
+  else:
+    dbPassword = result['Value']
+  
+  if dbPassword:
+    parameters[ 'Password' ] = dbPassword
 
   return S_OK( parameters )

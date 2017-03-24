@@ -1,6 +1,8 @@
 """ Test class for JobWrapper
 """
 
+#pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
+
 # imports
 import unittest
 import importlib
@@ -8,7 +10,11 @@ import os
 
 from mock import MagicMock
 
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger
+
+from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
+from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
+
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogLinux import WatchdogLinux
 
@@ -18,15 +24,6 @@ class JobWrapperTestCase( unittest.TestCase ):
   def setUp( self ):
     gLogger.setLevel( 'DEBUG' )
 
-    self.mockDM = MagicMock()
-    self.mockDM.getReplicas.return_value = S_OK( {'Successful': {'/a/lfn/1.txt':{'SE1':'/a/lfn/at/SE1.1.txt',
-                                                                                 'SE2':'/a/lfn/at/SE2.1.txt'},
-                                                                 '/a/lfn/2.txt':{'SE1':'/a/lfn/at/SE1.1.txt'}},
-                                                  'Failed':{}} )
-    self.mockFC = MagicMock()
-    self.mockFC.getFileMetadata.return_value = S_OK( {'Successful': {'/a/lfn/1.txt':{'GUID':'AABB11'},
-                                                                     '/a/lfn/2.txt':{'GUID':'AABB22'}},
-                                                      'Failed':{}} )
   def tearDown( self ):
     pass
 
@@ -46,8 +43,8 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
 
     jw = JobWrapper()
     jw.jobArgs['InputData'] = 'pippo'
-    jw.dm = self.mockDM
-    jw.fc = self.mockFC
+    jw.dm = dm_mock
+    jw.fc = fc_mock
     res = jw.resolveInputData()
     self.assert_( res['OK'] )
 
@@ -55,8 +52,8 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     jw.jobArgs['InputData'] = 'pippo'
     jw.jobArgs['LocalSE'] = 'mySE'
     jw.jobArgs['InputDataModule'] = 'aa.bb'
-    jw.dm = self.mockDM
-    jw.fc = self.mockFC
+    jw.dm = dm_mock
+    jw.fc = fc_mock
     res = jw.resolveInputData()
     self.assert_( res['OK'] )
 

@@ -4,10 +4,13 @@
 # Date: 2013/03/13 13:48:52
 ########################################################################
 """ :mod: OperationHandlerBase
+
     ==========================
 
     .. module: OperationHandlerBase
+
     :synopsis: request operation handler base class
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     RMS Operation handler base class.
@@ -122,8 +125,9 @@ class OperationHandlerBase( object ):
   def setOperation( self, operation ):
     """ operation and request setter
 
-      :param Operation operation: operation instance
-      :raises: TypeError is :operation: in not an instance of Operation
+      :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: operation instance
+      :raises TypeError: if `operation` in not an instance of :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
+
     """
     if not isinstance( operation, Operation ):
       raise TypeError( "expecting Operation instance" )

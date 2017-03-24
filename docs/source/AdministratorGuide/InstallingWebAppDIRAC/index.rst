@@ -13,10 +13,10 @@ Install WebAppDIRAC
 Requirements
 ------------
 
-It is required CERN provided OS (slc5,slc6, etc.) distribution. We recommend you to use a supported Linux distribution. 
-Please follow the :ref:`server_requirements` instructions 
+It is required CERN provided OS (slc5,slc6, etc.) distribution. We recommend you to use a supported Linux distribution.
+Please follow the :ref:`server_requirements` instructions
 to setup the machine. In principle there is no magic to install the web portal. It has to be installed as another DIRAC component...
-When the machine is ready you can start to install the portal. But before that you need the install_site.sh script and a configuration file.  
+When the machine is ready you can start to install the portal. But before that you need the install_site.sh script and a configuration file.
 
 Getting the install script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -24,12 +24,14 @@ You can found the instruction about were to get the install_site.sh at the end o
 
 Configuration file
 ~~~~~~~~~~~~~~~~~~
-You can use a standard configuration file for example :ref:`install_primary_server`. Please make sure that the following lines are exists in the 
+You can use a standard configuration file for example :ref:`install_primary_server`. Please make sure that the following lines are exists in the
 configuration file::
-   ExtraModules = WebAppDIRAC
+
+   Externals = WebApp
    WebApp = yes
-But you can also use the following configuration file to install the web portal.
+
 $installCfg::
+
    LocalInstallation
    {
      #
@@ -51,7 +53,7 @@ $installCfg::
      #  this server).
      #  Only modules not defined as default to install in their projects need to be defined here:
      #   i.e. LHCb, LHCbWeb for LHCb for example: ExtraModules = WebAppDIRAC,LHCb,LHCbWeb
-     ExtraModules = WebAppDIRAC
+     Externals = WebApp
      Project = DIRAC
      WebPortal = yes
      WebApp = yes
@@ -62,28 +64,29 @@ $installCfg::
      ConfigurationMaster = no
      ConfigurationServer = your configuration service
    }
- 
+
 
 Before you start the installation please make sure that you have the host certificate in the /opt/dirac/etc directory... More info in the Server Certificates section in :ref:`server_requirements` .
- 
- Create the configuration file::
+
+Create the configuration file::
+
    - vim /home/dirac/DIRAC/install.cfg
    - copy the lines above the this file...
    - cd /home/dirac/DIRAC
    - chmod +x install_site.sh
-   - ./install_site.sh install.cfg
+   - ./install_site.sh install.cfg # use -v for specifying a version
    - source /opt/dirac/bashrc
- 
- Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`server_requirements` section. 
-   
+
+ Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`server_requirements` section.
+
 
 Checks to be done after the installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the installation is successful, you will see the following lines::
-   
+
    Status of installed components:
-   
+
       Name                          Runit Uptime PID
    ====================================================
     1 Web_WebApp                    Run   6      19887
@@ -95,22 +98,22 @@ Make sure that the portal is listening in the correct port::
    Without NGinx::
 
    tail -200f /opt/dirac/runit/Web/WebApp/log/current
-   
+
    2016-06-02 12:44:18 UTC WebApp/Web   INFO: Configuring in developer mode...
    2016-06-02 12:44:18 UTC WebApp/Web NOTICE: Configuring HTTP on port 8080
    2016-06-02 12:44:18 UTC WebApp/Web NOTICE: Configuring HTTPS on port 8443
    2016-06-02 12:44:19 UTC WebApp/Web ALWAYS: Listening on https://0.0.0.0:8443/DIRAC/ and http://0.0.0.0:8080/DIRAC/
-   
-   
-   Using Nginx:: 
+
+
+   Using Nginx::
 
    tail -200f /opt/dirac/runit/Web/WebApp/log/current
-   
-   The output of the command::   
+
+   The output of the command::
 
    2016-06-02 12:35:46 UTC WebApp/Web NOTICE: Configuring HTTP on port 8000
    2016-06-02 12:35:46 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
-   
+
 
 If you are not using NGinx and the web server is listening on 8000, please open vim /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg and add Balancer=None.
 Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. It contains Extensions = WebApp. For example::
@@ -120,7 +123,7 @@ Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. I
      Setup = LHCb-Certification
      Configuration
      {
-       Servers = 
+       Servers =
      }
      Security
      {
@@ -135,13 +138,13 @@ Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. I
        }
      }
    }
-   
+
 
 * Update using: **dirac-admin-sysadmin-cli**
-  
+
          * dirac-admin-sysadmin-cli -H hostname
          * update version of DIRAC, for example v8r1
-         
+
 
 Web configuration file
 ----------------------
@@ -180,16 +183,16 @@ We use **web.cfg** configuration file. The location of the file is /opt/dirac/pr
             Pilot Summary = DIRAC.PilotSummary
             Resource Summary = DIRAC.ResourceSummary
             Site Summary = DIRAC.SiteSummary
-            Proxy Manager = DIRAC.ProxyManager 
+            Proxy Manager = DIRAC.ProxyManager
             #ExampleApp = DIRAC.ExampleApp
           }
           DIRAC = link|http://diracgrid.org
         }
       }
- 
+
 
 Define external links::
-   
+
    Web
    {
        Lemon Host Monitor
@@ -197,24 +200,24 @@ Define external links::
          volhcb01 = link|https://lemonweb.cern.ch/lemon-web/info.php?entity=lbvobox01&detailed=yes
        }
    }
-   
+
 Install and configure NGINX
 ---------------------------
 
-The official site of NGINX is the following: `<http://nginx.org/>`_ 
-The required NGINX version has to be grater than 1.4. 
+The official site of NGINX is the following: `<http://nginx.org/>`_
+The required NGINX version has to be grater than 1.4.
 
   * Install Nginx using package manager::
-         
+
          yum install nginx
-   
-   
-If your version is not grater than 1.4 you have to install NGinx manually. 
-  
+
+
+If your version is not grater than 1.4 you have to install NGinx manually.
+
 * Manual install
-   
+
      vim /etc/yum.repos.d/nginx.repo
-     
+
      CentOS::
 
       [nginx]
@@ -231,47 +234,48 @@ If your version is not grater than 1.4 you have to install NGinx manually.
       gpgcheck=0
       enabled=1
 
-Due to differences between how CentOS, RHEL, and Scientific Linux populate the $releasever variable, it is necessary to manually replace $releasever with either 5 (for 5.x) or 6 (for 6.x), 
+Due to differences between how CentOS, RHEL, and Scientific Linux populate the $releasever variable, it is necessary to manually replace $releasever with either 5 (for 5.x) or 6 (for 6.x),
 depending upon your OS version. For example::
+
    [nginx]
    name=nginx repo
    baseurl=http://nginx.org/packages/rhel/6/$basearch/
    gpgcheck=0
    enabled=1
-  
- If it is successful installed::
- 
+
+If it is successful installed::
+
     Verifying  : nginx-1.10.1-1.el6.ngx.x86_64                                                                                                                                                                                                                    1/1
    Installed:
       nginx.x86_64 0:1.10.1-1.el6.ngx
-  
-  
+
+
 * Configure NGINX
-  
-    You have to found the nginx.conf file. You can see which configuration used in /etc/init.d/nginx. For example::
-    
+
+  You have to find the nginx.conf file. You can see which configuration used in /etc/init.d/nginx. For example::
+
     vim /etc/nginx/nginx.conf
-   
-  If the file contains 'include /etc/nginx/conf.d/*.conf;' line, you have to create a site.conf under /etc/nginx/conf.d/ otherwise you have to do: 'include /etc/nginx/site.conf'  
-   
+
+  If the file contains 'include /etc/nginx/conf.d/\*.conf;' line, you have to create a site.conf under /etc/nginx/conf.d/ otherwise you have to do: 'include /etc/nginx/site.conf'
+
  The content of the site.conf (please modify it!!!)::
-      
+
    #Generated by gen.py
 
    upstream tornadoserver {
      #One for every tornado instance you're running that you want to balance
      server 127.0.0.1:8000;
    }
-   
+
    server {
      listen 80;
-   
+
      #Your server name if you have weird network config. Otherwise leave commented
      #server_name  lbvobox33.cern.ch;
      server_name dzmathe.cern.ch;
-   
+
      root /opt/dirac/pro;
-   
+
      location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+\.(jpg|jpeg|gif|png|bmp|ico|pdf))$ {
        alias /opt/dirac/pro/;
        #Add one more for every static path. For instance for LHCbWebDIRAC:
@@ -283,7 +287,7 @@ depending upon your OS version. For example::
        add_header Cache-Control public;
        break;
      }
-   
+
      location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+)$ {
        alias /opt/dirac/pro/;
        #Add one more for every static path. For instance for LHCbWebDIRAC:
@@ -295,7 +299,7 @@ depending upon your OS version. For example::
        add_header Cache-Control public;
        break;
      }
-   
+
      location ~ /DIRAC/ {
        proxy_pass_header Server;
        proxy_set_header Host $http_host;
@@ -305,12 +309,12 @@ depending upon your OS version. For example::
        proxy_pass http://tornadoserver;
        proxy_read_timeout 3600;
        proxy_send_timeout 3600;
-   
+
        gzip on;
        gzip_proxied any;
        gzip_comp_level 9;
        gzip_types text/plain text/css application/javascript application/xml application/json;
-     
+
       # WebSocket support (nginx 1.4)
       proxy_http_version 1.1;
       proxy_set_header Upgrade $http_upgrade;
@@ -324,27 +328,27 @@ depending upon your OS version. For example::
     }
    server {
      listen 443 default ssl; ## listen for ipv4
-   
+
      #server_name  lbvobox33.cern.ch;
      server_name  dzmathe.cern.ch;
-   
+
      ssl_prefer_server_ciphers On;
      ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
      ssl_ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS;
-   
+
      #Certs that will be shown to the user connecting to the web.
      #Preferably NOT grid certs. Use something that the user cert will not complain about
      ssl_certificate    /opt/dirac/etc/grid-security/hostcert.pem;
      ssl_certificate_key /opt/dirac/etc/grid-security/hostkey.pem;
-   
+
      ssl_client_certificate /opt/dirac/pro/etc/grid-security/cas.pem;
    #  ssl_crl /opt/dirac/pro/etc/grid-security/allRevokedCerts.pem;
      ssl_verify_client on;
      ssl_verify_depth 10;
      ssl_session_cache shared:SSL:10m;
-   
+
      root /opt/dirac/pro;
-   
+
      location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+\.(jpg|jpeg|gif|png|bmp|ico|pdf))$ {
        alias /opt/dirac/pro/;
        #Add one more for every static path. For instance for LHCbWebDIRAC:
@@ -356,7 +360,7 @@ depending upon your OS version. For example::
        add_header Cache-Control public;
        break;
      }
-   
+
      location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+)$ {
        alias /opt/dirac/pro/;
        #Add one more for every static path. For instance for LHCbWebDIRAC:
@@ -377,51 +381,50 @@ depending upon your OS version. For example::
       proxy_pass http://tornadoserver;
       proxy_read_timeout 3600;
       proxy_send_timeout 3600;
-   
+
       proxy_set_header X-Ssl_client_verify $ssl_client_verify;
       proxy_set_header X-Ssl_client_s_dn $ssl_client_s_dn;
       proxy_set_header X-Ssl_client_i_dn $ssl_client_i_dn;
-   
+
        gzip on;
        gzip_proxied any;
        gzip_comp_level 9;
        gzip_types text/plain text/css application/javascript application/xml application/json;
-   
+
        # WebSocket support (nginx 1.4)
        proxy_http_version 1.1;
        proxy_set_header Upgrade $http_upgrade;
        proxy_set_header Connection "upgrade";
-   
+
        break;
      }
-   
+
      location / {
        rewrite ^ https://$server_name/DIRAC/ permanent;
      }
    }
-   
+
 
 You can start NGinx now.
 
 * Start, Stop and restart nginx::
-   
+
    /etc/init.d/nginx start|stop|restart
-  
-  
+
+
 You have to add to the web.cfg the following lines in order to use NGinx::
-  
+
        DevelopMode = False
        Balancer = nginx
        NumProcesses = 1
- 
+
  You can try to use the web portal. For example: http://dzmathe.cern.ch/DIRAC/
- If you get 502 Bad Gateway error, you need to generate rules for SE linus. 
+ If you get 502 Bad Gateway error, you need to generate rules for SE linus.
  You can see the error in tail -200f /var/log/nginx/error.log::
-     
+
      016/06/02 15:55:24 [crit] 20317#20317: *4 connect() to 127.0.0.1:8000 failed (13: Permission denied) while connecting to upstream, client: 128.141.170.23, server: dzmathe.cern.ch, request: "GET /DIRAC/?view=tabs&theme=Grey&url_state=1| HTTP/1.1", upstream: "http://127.0.0.1:8000/DIRAC/?view=tabs&theme=Grey&url_state=1|", host: "dzmathe.cern.ch"
 
 * Generate the the rule::
    - grep nginx /var/log/audit/audit.log | audit2allow -M nginx
    - semodule -i nginx.pp
    - rferesh the page
-   

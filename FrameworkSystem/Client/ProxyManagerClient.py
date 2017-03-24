@@ -1,9 +1,9 @@
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id$"
-
 import os
 import datetime
+
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security import Locations, CS
@@ -12,13 +12,14 @@ from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import S_OK, S_ERROR, gLogger
+
+__RCSID__ = "$Id$"
 
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
 gVOMSProxiesSync = ThreadSafe.Synchronizer()
 
-class ProxyManagerClient:
+class ProxyManagerClient( object ):
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__( self ):
@@ -199,7 +200,7 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     if token:
       retVal = rpcClient.getProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
-                                   long( cacheTime + requiredTimeLeft ), token )
+                                            long( cacheTime + requiredTimeLeft ), token )
     else:
       retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
                                    long( cacheTime + requiredTimeLeft ) )
@@ -300,12 +301,11 @@ class ProxyManagerClient:
       return S_ERROR( "No group found that has %s as voms attrs" % vomsAttr )
 
     for userGroup in groups:
-      result = self.downloadVOMSProxy( userDN,
-                                     userGroup,
-                                     limited = False,
-                                     requiredTimeLeft = requiredTimeLeft,
-                                     requiredVOMSAttribute = vomsAttr,
-                                     proxyToConnect = proxyToConnect )
+      result = self.downloadVOMSProxy( userDN, userGroup,
+                                       limited = False,
+                                       requiredTimeLeft = requiredTimeLeft,
+                                       requiredVOMSAttribute = vomsAttr,
+                                       proxyToConnect = proxyToConnect )
       if result['OK']:
         return result
     return result

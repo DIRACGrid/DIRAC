@@ -17,13 +17,13 @@ Static Component Monitoring
 The Component Monitoring system takes care of logging information about the components that have been installed and uninstalled in different hosts, like the date or author of the change.
 The following figure illustrates how different components from this system communicate with each other:
 
-.. image:: ../../_static/Systems/FS/InteractionsDiagram.png
+.. image:: /_static/Systems/FS/InteractionsDiagram.png
    :alt: Interaction between components.
    :align: center
 
 All of the static information is stored in a MySQL database, InstalledComponentsDB. This database contains 3 tables, as illustrated below:
 
-.. image:: ../../_static/Systems/FS/InstalledComponentsDB.png
+.. image:: /_static/Systems/FS/InstalledComponentsDB.png
    :alt: InstalledComponentsDB schema.
    :align: center
 
@@ -106,3 +106,11 @@ The MonitoringUtilities module provides the functionality needed to store or del
   result = MonitoringUtilities.monitorInstallation( 'service', 'Framework', 'SystemAdministrator' )
   if not result[ 'OK' ]:
     print 'Something went wrong'
+
+Dynamic Component Monitoring
+============================
+
+This system takes care of managing monitoring information of DIRAC component. It is based on ElasticSearch database. It is based on MonitoringSystem.
+The information is collected by the __storeProfiling periodic task on the SystemAdministartor. The task is disabled by default.
+The MonitoringReporter is used to propagate the DB whith the collected values. 
+
