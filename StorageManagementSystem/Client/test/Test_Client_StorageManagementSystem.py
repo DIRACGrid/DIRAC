@@ -6,7 +6,7 @@
 import unittest
 from mock import MagicMock, patch
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import getFilesToStage
 from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
 import errno
@@ -29,7 +29,7 @@ mockObjectSE3.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
 mockObjectSE4 = MagicMock()
 mockObjectSE4.getFileMetadata.return_value = S_OK( {'Successful':{},
                                                     'Failed':{'/a/lfn/2.txt':
-                                                              "No such file or directory ( 2 : [SE][Ls][SRM_INVALID_PATH] No such file or directory, 2))"}} )
+                                                              S_ERROR( errno.ENOENT, '' )['Message']}} )
 mockObjectSE4.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 mockObjectSE5 = MagicMock()
@@ -60,7 +60,8 @@ class StorageManagerSuccess( ClientsTestCase ):
     res = getFilesToStage( ['/a/lfn/1.txt'] )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
-    self.assert_( res['Value']['offlineLFNs'], ['SE1'] or ['SE2'] )
+    self.assertIn( res['Value']['offlineLFNs'], [{'SE1':['/a/lfn/1.txt']},
+                                                 {'SE2':['/a/lfn/1.txt']}] )
     self.assertEqual( res['Value']['absentLFNs'], {} )
     self.assertEqual( res['Value']['failedLFNs'], [] )
 
