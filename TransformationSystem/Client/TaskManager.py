@@ -333,18 +333,23 @@ class RequestTasks( TaskBase ):
     Check if tasks changed status, and return a list of tasks per new status
     """
     updateDict = {}
+    badRequestID = 0
     for taskDict in taskDicts:
       oldStatus = taskDict['ExternalStatus']
-
-      newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
-      if not newStatus['OK']:
-        log = self._logVerbose if 'not exist' in newStatus['Message'] else self._logWarn
-        log( "getSubmittedTaskStatus: Failed to get requestID for request", newStatus['Message'],
-             transID = taskDict['TransformationID'] )
+      if taskDict['ExternalID']:
+        newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
+        if not newStatus['OK']:
+          log = self._logVerbose if 'not exist' in newStatus['Message'] else self._logWarn
+          log( "getSubmittedTaskStatus: Failed to get requestID for request", newStatus['Message'],
+               transID = taskDict['TransformationID'] )
+        else:
+          newStatus = newStatus['Value']
+          if newStatus != oldStatus:
+            updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
       else:
-        newStatus = newStatus['Value']
-        if newStatus != oldStatus:
-          updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
+        badRequestID += 1
+    if badRequestID:
+      self._logWarn( "%d requests have identifier 0" % badRequestID )
     return S_OK( updateDict )
 
   def getSubmittedFileStatus( self, fileDicts ):

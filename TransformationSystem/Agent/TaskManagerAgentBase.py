@@ -23,6 +23,7 @@ from DIRAC.Core.Security.ProxyInfo                                  import getPr
 from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 __RCSID__ = "$Id$"
 
@@ -282,9 +283,9 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
           transID = 'None'
         self._logInfo( "Processed transformation in %.1f seconds" % ( time.time() - startTime ),
                        method = method, transID = transID )
-        self._logVerbose( "%d transformations still in queue" % ( len( self.transInQueue ) - 1 ),
-                          method = method, transID = transID )
         self.transInThread.pop( transID, None )
+        self._logVerbose( "%d transformations still in queue" % ( len( self.transInThread ) ),
+                          method = method, transID = transID )
         if transID in self.transInQueue:
           self.transInQueue.remove( transID )
         self._logDebug( "transInQueue = ", self.transInQueue,
@@ -325,31 +326,36 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
                       method = method, transID = transID )
 
     # Get status for the transformation tasks
-    submittedTaskStatus = clients['TaskManager'].getSubmittedTaskStatus( transformationTasks['Value'] )
-    self._logDebug( "getSubmittedTaskStatus return value:", submittedTaskStatus,
-                    method = method, transID = transID )
-    if not submittedTaskStatus['OK']:
-      self._logError( "Failed to get updated task states:", submittedTaskStatus['Message'],
+    updated = {}
+    for taskChunk in breakListIntoChunks( transformationTasks['Value'], 100 ):
+      submittedTaskStatus = clients['TaskManager'].getSubmittedTaskStatus( taskChunk )
+      self._logDebug( "getSubmittedTaskStatus return value:", submittedTaskStatus,
                       method = method, transID = transID )
-      return submittedTaskStatus
-    statusDict = submittedTaskStatus['Value']
-    if not statusDict:
-      self._logInfo( "No tasks to update",
-                     method = method, transID = transID )
-      return S_OK()
-
-    # Set status for tasks that changes
-    for status, taskIDs in statusDict.iteritems():
-      self._logInfo( "Updating %d task(s) to %s" % ( len( taskIDs ), status ),
-                     method = method, transID = transID )
-      setTaskStatus = clients['TransformationClient'].setTaskStatus( transID, taskIDs, status )
-      self._logDebug( "setTaskStatus return value:", setTaskStatus,
-                      method = method, transID = transID )
-      if not setTaskStatus['OK']:
-        self._logError( "Failed to update task status for transformation:", setTaskStatus['Message'],
+      if not submittedTaskStatus['OK']:
+        self._logError( "Failed to get updated task states:", submittedTaskStatus['Message'],
                         method = method, transID = transID )
-        return setTaskStatus
+        return submittedTaskStatus
+      statusDict = submittedTaskStatus['Value']
+      if not statusDict:
+        self._logVerbose( "No tasks to update",
+                          method = method, transID = transID )
 
+      # Set status for tasks that changes
+      for status, taskIDs in statusDict.iteritems():
+        self._logVerbose( "Updating %d task(s) to %s" % ( len( taskIDs ), status ),
+                       method = method, transID = transID )
+        setTaskStatus = clients['TransformationClient'].setTaskStatus( transID, taskIDs, status )
+        self._logDebug( "setTaskStatus return value:", setTaskStatus,
+                        method = method, transID = transID )
+        if not setTaskStatus['OK']:
+          self._logError( "Failed to update task status for transformation:", setTaskStatus['Message'],
+                          method = method, transID = transID )
+          return setTaskStatus
+        updated[status] = updated.setdefault( status, 0 ) + len( taskIDs )
+
+    for status, nb in updated.iteritems():
+      self._logInfo( "Updated %d tasks to status %s" % ( nb, status ),
+                     method = method, transID = transID )
     return S_OK()
 
   def updateFileStatus( self, transIDOPBody, clients ):
@@ -376,34 +382,49 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       return transformationFiles
 
     # Get the status of the transformation files
-    submittedFileStatus = clients['TaskManager'].getSubmittedFileStatus( transformationFiles['Value'] )
-    self._logDebug( "getSubmittedFileStatus return value:", submittedFileStatus,
-                    method = method, transID = transID )
-    if not submittedFileStatus['OK']:
-      self._logError( "Failed to get updated file states for transformation:", submittedFileStatus['Message'],
-                      method = method, transID = transID )
-      return submittedFileStatus
-    statusDict = submittedFileStatus['Value']
-    if not statusDict:
-      self._logInfo( "No file states to be updated",
-                     method = method, transID = transID )
-      return S_OK()
+    # Sort the files by taskID
+    taskFiles = {}
+    for fileDict in transformationFiles['Value']:
+      taskFiles.setdefault( fileDict['TaskID'], [] ).append( fileDict )
 
-    # Set the status of files
-    fileReport = FileReport( server = clients['TransformationClient'].getServer() )
-    for lfn, status in statusDict.iteritems():
-      setFileStatus = fileReport.setFileStatus( transID, lfn, status )
-      if not setFileStatus['OK']:
-        return  setFileStatus
-    commit = fileReport.commit()
-    if not commit['OK']:
-      self._logError( "Failed to update file states for transformation:", commit['Message'],
+    updated = {}
+    # Process 100 tasks at a time
+    for taskIDs in breakListIntoChunks( taskFiles, 100 ):
+      fileChunk = []
+      for taskID in taskIDs:
+        fileChunk += taskFiles[taskID]
+      submittedFileStatus = clients['TaskManager'].getSubmittedFileStatus( fileChunk )
+      self._logDebug( "getSubmittedFileStatus return value:", submittedFileStatus,
                       method = method, transID = transID )
-      return commit
-    else:
-      self._logInfo( "Updated the states of %d files" % len( commit['Value'] ),
-                     method = method, transID = transID )
+      if not submittedFileStatus['OK']:
+        self._logError( "Failed to get updated file states for transformation:", submittedFileStatus['Message'],
+                        method = method, transID = transID )
+        return submittedFileStatus
+      statusDict = submittedFileStatus['Value']
+      if not statusDict:
+        self._logVerbose( "No file states to be updated",
+                          method = method, transID = transID )
+        continue
 
+      # Set the status of files
+      fileReport = FileReport( server = clients['TransformationClient'].getServer() )
+      for lfn, status in statusDict.iteritems():
+        updated[status] = updated.setdefault( status, 0 ) + 1
+        setFileStatus = fileReport.setFileStatus( transID, lfn, status )
+        if not setFileStatus['OK']:
+          return  setFileStatus
+      commit = fileReport.commit()
+      if not commit['OK']:
+        self._logError( "Failed to update file states for transformation:", commit['Message'],
+                        method = method, transID = transID )
+        return commit
+      else:
+        self._logVerbose( "Updated the states of %d files" % len( commit['Value'] ),
+                          method = method, transID = transID )
+
+    for status, nb in updated.iteritems():
+      self._logInfo( "Updated %d files to status %s" % ( nb, status ),
+                     method = method, transID = transID )
     return S_OK()
 
   def checkReservedTasks( self, transIDOPBody, clients ):
