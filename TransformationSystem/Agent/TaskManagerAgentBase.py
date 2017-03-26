@@ -312,8 +312,6 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     transformationTasks = clients['TransformationClient'].getTransformationTasks( condDict = condDict,
                                                                                   older = timeStamp,
                                                                                   timeStamp = 'LastUpdateTime' )
-    self._logDebug( "getTransformationTasks(%s) return value:" % str( condDict ), transformationTasks,
-                    method = method, transID = transID )
     if not transformationTasks['OK']:
       self._logError( "Failed to get tasks to update:", transformationTasks['Message'],
                       method = method, transID = transID )
@@ -322,31 +320,29 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self._logVerbose( "No tasks found to update",
                         method = method, transID = transID )
       return transformationTasks
-    self._logVerbose( "Getting %d tasks status" % len( transformationTasks['Value'] ),
-                      method = method, transID = transID )
 
     # Get status for the transformation tasks
-    updated = {}
-    for taskChunk in breakListIntoChunks( transformationTasks['Value'], 100 ):
-      submittedTaskStatus = clients['TaskManager'].getSubmittedTaskStatus( taskChunk )
-      self._logDebug( "getSubmittedTaskStatus return value:", submittedTaskStatus,
+    chunkSize = 100
+    self._logVerbose( "Getting %d tasks status (chunks of %d)" %
+                      ( len( transformationTasks['Value'] ), chunkSize ),
                       method = method, transID = transID )
+    updated = {}
+    for nb, taskChunk in enumerate( breakListIntoChunks( transformationTasks['Value'], chunkSize ) ):
+      submittedTaskStatus = clients['TaskManager'].getSubmittedTaskStatus( taskChunk )
       if not submittedTaskStatus['OK']:
         self._logError( "Failed to get updated task states:", submittedTaskStatus['Message'],
                         method = method, transID = transID )
         return submittedTaskStatus
       statusDict = submittedTaskStatus['Value']
       if not statusDict:
-        self._logVerbose( "No tasks to update",
+        self._logVerbose( "%4d: No tasks to update" % nb,
                           method = method, transID = transID )
 
       # Set status for tasks that changes
       for status, taskIDs in statusDict.iteritems():
-        self._logVerbose( "Updating %d task(s) to %s" % ( len( taskIDs ), status ),
+        self._logVerbose( "%4d: Updating %d task(s) to %s" % ( nb, len( taskIDs ), status ),
                        method = method, transID = transID )
         setTaskStatus = clients['TransformationClient'].setTaskStatus( transID, taskIDs, status )
-        self._logDebug( "setTaskStatus return value:", setTaskStatus,
-                        method = method, transID = transID )
         if not setTaskStatus['OK']:
           self._logError( "Failed to update task status for transformation:", setTaskStatus['Message'],
                           method = method, transID = transID )
@@ -370,8 +366,6 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     condDict = {'TransformationID' : transID, 'Status' : ['Assigned']}
     transformationFiles = clients['TransformationClient'].getTransformationFiles( condDict = condDict,
                                                                                   older = timeStamp, timeStamp = 'LastUpdate' )
-    self._logDebug( "getTransformationFiles(%s) return value:" % str( condDict ), transformationFiles,
-                    method = method, transID = transID )
     if not transformationFiles['OK']:
       self._logError( "Failed to get transformation files to update:", transformationFiles['Message'],
                       method = method, transID = transID )
@@ -387,22 +381,24 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     for fileDict in transformationFiles['Value']:
       taskFiles.setdefault( fileDict['TaskID'], [] ).append( fileDict )
 
+    chunkSize = 100
+    self._logVerbose( "Getting file status for %d tasks (chunks of %d)" %
+                      ( len( taskFiles ), chunkSize ),
+                      method = method, transID = transID )
     updated = {}
     # Process 100 tasks at a time
-    for taskIDs in breakListIntoChunks( taskFiles, 100 ):
+    for nb, taskIDs in enumerate( breakListIntoChunks( taskFiles, chunkSize ) ):
       fileChunk = []
       for taskID in taskIDs:
         fileChunk += taskFiles[taskID]
       submittedFileStatus = clients['TaskManager'].getSubmittedFileStatus( fileChunk )
-      self._logDebug( "getSubmittedFileStatus return value:", submittedFileStatus,
-                      method = method, transID = transID )
       if not submittedFileStatus['OK']:
         self._logError( "Failed to get updated file states for transformation:", submittedFileStatus['Message'],
                         method = method, transID = transID )
         return submittedFileStatus
       statusDict = submittedFileStatus['Value']
       if not statusDict:
-        self._logVerbose( "No file states to be updated",
+        self._logVerbose( "%4d: No file states to be updated" % nb,
                           method = method, transID = transID )
         continue
 
@@ -419,7 +415,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
                         method = method, transID = transID )
         return commit
       else:
-        self._logVerbose( "Updated the states of %d files" % len( commit['Value'] ),
+        self._logVerbose( "%4d: Updated the states of %d files" % ( nb, len( commit['Value'] ) ),
                           method = method, transID = transID )
 
     for status, nb in updated.iteritems():
