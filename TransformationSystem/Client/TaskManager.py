@@ -345,7 +345,8 @@ class RequestTasks( TaskBase ):
                transID = taskDict['TransformationID'] )
         else:
           newStatus = newStatus['Value']
-          if newStatus != oldStatus:
+          # We don't care updating the tasks to Assigned while the request is being processed
+          if newStatus != oldStatus and newStatus != 'Assigned':
             updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
       else:
         badRequestID += 1
