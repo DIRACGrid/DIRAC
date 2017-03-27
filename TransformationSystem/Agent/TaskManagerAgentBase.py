@@ -322,12 +322,19 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       return transformationTasks
 
     # Get status for the transformation tasks
-    chunkSize = 100
-    self._logVerbose( "Getting %d tasks status (chunks of %d)" %
-                      ( len( transformationTasks['Value'] ), chunkSize ),
-                      method = method, transID = transID )
+    chunkSize = self.am_getOption( 'TaskUpdateChunkSize', 0 )
+    if chunkSize:
+      self._logVerbose( "Getting %d tasks status (chunks of %d)" %
+                        ( len( transformationTasks['Value'] ), chunkSize ),
+                        method = method, transID = transID )
+    else:
+      self._logVerbose( "Getting %d tasks status" %
+                        len( transformationTasks['Value'] ),
+                        method = method, transID = transID )
     updated = {}
-    for nb, taskChunk in enumerate( breakListIntoChunks( transformationTasks['Value'], chunkSize ) ):
+    for nb, taskChunk in enumerate( breakListIntoChunks( transformationTasks['Value'], chunkSize )
+                                    if chunkSize else
+                                    [transformationTasks['Value']] ):
       submittedTaskStatus = clients['TaskManager'].getSubmittedTaskStatus( taskChunk )
       if not submittedTaskStatus['OK']:
         self._logError( "Failed to get updated task states:", submittedTaskStatus['Message'],
