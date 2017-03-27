@@ -870,7 +870,7 @@ class WorkflowTasks( TaskBase ):
     Check the status of a list of tasks and return lists of taskIDs for each new status
     """
     if taskDicts:
-      wmsIDs = [int( taskDict['ExternalID'] ) for taskDict in taskDicts]
+      wmsIDs = [int( taskDict['ExternalID'] ) for taskDict in taskDicts if int( taskDict['ExternalID'] )]
       transID = taskDicts[0]['TransformationID']
     else:
       return S_OK( {} )
