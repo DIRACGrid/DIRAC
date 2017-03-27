@@ -115,7 +115,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self.log.verbose( "Monitoring of tasks is disabled. To enable it, create the 'MonitorTasks' option" )
     else:
       # Get the transformations for which the tasks have to be updated
-      status = self.am_getOption( 'UpdateTasksStatus', ['Active', 'Completing', 'Stopped'] )
+      status = self.am_getOption( 'UpdateTasksTransformationStatus', self.am_getOption( 'UpdateTasksStatus', ['Active', 'Completing', 'Stopped'] ) )
       transformations = self._selectTransformations( transType = self.transType, status = status, agentType = [] )
       if not transformations['OK']:
         self.log.warn( "Could not select transformations:", transformations['Message'] )
@@ -131,7 +131,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self.log.verbose( "Monitoring of files is disabled. To enable it, create the 'MonitorFiles' option" )
     else:
       # Get the transformations for which the files have to be updated
-      status = self.am_getOption( 'UpdateFilesStatus', ['Active', 'Completing', 'Stopped'] )
+      status = self.am_getOption( 'UpdateFilesTransformationStatus', self.am_getOption( 'UpdateFilesStatus', ['Active', 'Completing', 'Stopped'] ) )
       transformations = self._selectTransformations( transType = self.transType, status = status, agentType = [] )
       if not transformations['OK']:
         self.log.warn( "Could not select transformations:", transformations['Message'] )
@@ -150,7 +150,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self.log.verbose( "Checking of reserved tasks is disabled. To enable it, create the 'CheckReserved' option" )
     else:
       # Get the transformations for which the check of reserved tasks have to be performed
-      status = self.am_getOption( 'CheckReservedStatus', ['Active', 'Completing', 'Stopped'] )
+      status = self.am_getOption( 'CheckReservedTransformationStatus', self.am_getOption( 'CheckReservedStatus', ['Active', 'Completing', 'Stopped'] ) )
       transformations = self._selectTransformations( transType = self.transType, status = status, agentType = [] )
       if not transformations['OK']:
         self.log.warn( "Could not select transformations:", transformations['Message'] )
@@ -179,7 +179,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self.ownerDN = proxyInfo['identity']
       self.log.info( "Tasks will be submitted with the credentials %s:%s" % ( self.owner, self.ownerGroup ) )
       # Get the transformations for which the check of reserved tasks have to be performed
-      status = self.am_getOption( 'SubmitStatus', ['Active', 'Completing'] )
+      status = self.am_getOption( 'SubmitTransformationStatus', self.am_getOption( 'SubmitStatus', ['Active', 'Completing'] ) )
       transformations = self._selectTransformations( transType = self.transType, status = status )
       if not transformations['OK']:
         self.log.warn( "Could not select transformations:", transformations['Message'] )
