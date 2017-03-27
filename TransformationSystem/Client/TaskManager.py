@@ -336,7 +336,8 @@ class RequestTasks( TaskBase ):
     badRequestID = 0
     for taskDict in taskDicts:
       oldStatus = taskDict['ExternalStatus']
-      if taskDict['ExternalID']:
+      # ExternalID is normally a string
+      if taskDict['ExternalID'] and int( taskDict['ExternalID'] ):
         newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
         if not newStatus['OK']:
           log = self._logVerbose if 'not exist' in newStatus['Message'] else self._logWarn
@@ -375,8 +376,8 @@ class RequestTasks( TaskBase ):
     for taskDict in res['Value']:
       taskID = taskDict['TaskID']
       externalID = taskDict['ExternalID']
-      # Only consider tasks that are submitted
-      if taskDict['ExternalStatus'] != 'Created' and externalID:
+      # Only consider tasks that are submitted, ExternalID is a string
+      if taskDict['ExternalStatus'] != 'Created' and externalID and int( externalID ):
         requestFiles[externalID] = taskFiles[taskID]
 
     updateDict = {}
