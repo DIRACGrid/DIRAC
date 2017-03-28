@@ -285,7 +285,10 @@ class RequestExecutingAgent( AgentModule ):
         # # set task id
         taskID = request.RequestID
         # # save current request in cache
-        self.cacheRequest( request )
+        res = self.cacheRequest( request )
+        if not res['OK']:
+          self.log.error( res['Message'] )
+          continue
         # # serialize to JSON
         result = request.toJSON()
         if not result['OK']:
