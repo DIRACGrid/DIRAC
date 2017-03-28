@@ -323,6 +323,11 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     # Get status for the transformation tasks
     chunkSize = self.am_getOption( 'TaskUpdateChunkSize', 0 )
+    # FIXME: Stupid piece of code to make tests happy...
+    try:
+      chunkSize = int( chunkSize )
+    except:
+      chunkSize = 0
     if chunkSize:
       self._logVerbose( "Getting %d tasks status (chunks of %d)" %
                         ( len( transformationTasks['Value'] ), chunkSize ),
