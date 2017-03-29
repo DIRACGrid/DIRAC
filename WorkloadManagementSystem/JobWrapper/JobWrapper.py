@@ -291,11 +291,14 @@ class JobWrapper( object ):
       self.log.info( 'Job %s has no CPU time limit specified, '
                      'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
       jobCPUTime = self.defaultCPUTime
+    processors = 1
+    if 'NumberOfProcessors' in self.jobArgs:
+      processors = int( self.jobArgs['NumberOfProcessors'] )
 
     jobMemory = 0.
     if "Memory" in self.jobArgs:
       # Job specifies memory in GB, internally use KB
-      jobMemory = int( self.jobArgs['Memory'] ) * 1024.*1024.
+      jobMemory = int( self.jobArgs['Memory'] )*1024.*1024.
 
     if 'Executable' in self.jobArgs:
       executable = self.jobArgs['Executable'].strip()
@@ -354,7 +357,12 @@ class JobWrapper( object ):
 
     self.__setJobParam( 'PayloadPID', payloadPID )
 
-    watchdogInstance = WatchdogFactory().getWatchdog( self.currentPID, exeThread, spObject, jobCPUTime, jobMemory )
+    watchdogInstance = WatchdogFactory().getWatchdog( self.currentPID,
+                                                      exeThread,
+                                                      spObject,
+                                                      jobCPUTime,
+                                                      jobMemory,
+                                                      processors )
     if not watchdogInstance['OK']:
       self.log.error( 'Could not create Watchdog instance', watchdogInstance['Message'] )
       return S_ERROR( 'Could not create Watchdog instance' )
@@ -644,8 +652,7 @@ class JobWrapper( object ):
         and check the result.
     """
     start = time.time()
-    # We are in a job, therefore interested in replicas for jobs
-    repsResult = self.dm.getReplicasForJobs( lfns )
+    repsResult = self.dm.getReplicas( lfns )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     if not repsResult['OK']:
@@ -1070,9 +1077,9 @@ class JobWrapper( object ):
       try:
         if os.path.isfile( possibleTarFile ) and tarfile.is_tarfile( possibleTarFile ):
           self.log.info( 'Unpacking input sandbox file %s' % ( possibleTarFile ) )
-          with tarfile.open( possibleTarFile, 'r' ) as tarFile:
-            for member in tarFile.getmembers():
-              tarFile.extract( member, os.getcwd() )
+          tarFile = tarfile.open( possibleTarFile, 'r' )
+          for member in tarFile.getmembers():
+            tarFile.extract( member, os.getcwd() )
       except Exception as x:
         return S_ERROR( 'Could not untar %s with exception %s' % ( possibleTarFile, str( x ) ) )
 
