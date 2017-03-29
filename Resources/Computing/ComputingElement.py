@@ -40,10 +40,12 @@ from DIRAC.Core.Security                              import Properties
 from DIRAC.Core.Utilities.Time                        import dateTime, second
 from DIRAC                                            import S_OK, S_ERROR, gLogger, version
 from DIRAC.Core.Utilities.ObjectLoader                import ObjectLoader
+from DIRAC.Core.Utilities.Os                          import getNumberOfCores
+
 
 __RCSID__ = "$Id$"
 
-INTEGER_PARAMETERS = ['CPUTime']
+INTEGER_PARAMETERS = ['CPUTime', 'NumberOfProcessors']
 FLOAT_PARAMETERS = []
 LIST_PARAMETERS = ['Tag']
 WAITING_TO_RUNNING_RATIO = 0.5
@@ -205,6 +207,12 @@ class ComputingElement(object):
         generalCEDict = result['Value']
         generalCEDict.update( self.ceParameters )
         self.ceParameters = generalCEDict
+
+    # If NumberOfProcessors is present in the description but is equal to zero
+    # interpret it as needing local evaluation
+    if "NumberOfProcessors" in self.ceParameters:
+      if self.ceParameters['NumberOfProcessors'] == 0:
+        self.ceParameters["NumberOfProcessors"] = getNumberOfCores()
 
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:
