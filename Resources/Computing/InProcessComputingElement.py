@@ -36,7 +36,7 @@ class InProcessComputingElement( ComputingElement ):
     # Now InProcess specific ones
 
   #############################################################################
-  def submitJob( self, executableFile, proxy, dummy = None ):
+  def submitJob( self, executableFile, proxy, **kwargs ):
     """ Method to submit job, should be overridden in sub-class.
     """
     ret = getProxyInfo()

@@ -30,7 +30,7 @@ class SudoComputingElement( ComputingElement ):
     super(SudoComputingElement, self)._addCEConfigDefaults()
 
   #############################################################################
-  def submitJob( self, executableFile, proxy, dummy = None ):
+  def submitJob( self, executableFile, proxy, **kwargs ):
     """ Method to submit job, overridden from super-class.
     """
     self.log.verbose( 'Setting up proxy for payload' )
