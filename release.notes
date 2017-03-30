@@ -1,3 +1,33 @@
+[v6r18-pre7]
+
+FIX: In multiple places - use systemCall() rather than shellCall() to avoid
+     potential shell injection problems
+
+FIX: All Databases are granting also REFERENCES grant to Dirac user to comply with
+     more strict policies of MySQL version >= 5.7
+
+*Accounting
+NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
+     present jitter, one-way delay, packet-loss rate and some derived functions.
+
+*DMS
+CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
+        client
+
+*RSS
+NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
+     RSS system 
+NEW: SiteStatus client to interrogate site status with respect to RSS
+BUGFIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
+FIX: ResourceStatus, RSSCacheNoThread - fixed RSS cache generation 
+FIX: ResourceStatus - fixes for getting status from the CS information
+
+*WMS
+NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS    
+
+*Interfaces
+CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
+
 [v6r17p15]
 
 *WMS
@@ -97,9 +127,7 @@ FIX: dirac-install, dirac-deploy-scripts - fixes to allow DIRAC client installat
      recent MacOS versions with System Integrity Protection feature
 CHANGE: Proxy - added executionLock optional argument to executeWithUserProxy() decorator
         to lock while executing the function with user proxy 
-FIX: Proxy - fix indentation in getProxy() preventing looping on the DNs 
-NEW: Proxy - added executionLock argument to the executeWithUserProxy decorator
-     in order to execute the decorated function with a global lock           
+FIX: Proxy - fix indentation in getProxy() preventing looping on the DNs  
 
 *Framework
 FIX: ProxyDB - fix of error message check in completeDelegation()
@@ -394,7 +422,7 @@ FIX: RemoveFile operation - Remove all files that are not at banned SEs
 
 *TMS
 FIX: FileReport - after successful update of input files status, clear the 
-     cache disctionary to avoid double update      
+     cache dictionary to avoid double update      
 
 [v6r15p18]
 

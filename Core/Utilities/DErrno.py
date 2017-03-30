@@ -56,7 +56,7 @@ import sys
 # 1700: RMS
 # 1800: Accounting
 # 1900: TS
-# 2000: RSS
+# 2000: Resources and RSS
 
 # ## Generic (10XX)
 # Python related: 0X
@@ -123,6 +123,11 @@ ERMSUKN = 1700
 ETSUKN = 1900
 ETSDATA = 1901
 
+# ## Resources and RSS (20XX)
+ERESGEN = 2000
+ERESUNA = 2001
+ERESUNK = 2002
+
 # This translates the integer number into the name of the variable
 dErrorCode = {
                # ## Generic (10XX)
@@ -180,7 +185,12 @@ dErrorCode = {
                1604 : "EFCERR",
 
                # RMS
-               1700 : "ERMSUKN",
+               1700 : 'ERMSUKN',
+
+               # Resources and RSS
+               2000 : 'ERESGEN',
+               2001 : 'ERESUNA',
+               2002 : 'ERESUNK',
 
                # TS
                1900 : "ETSUKN",
@@ -243,6 +253,13 @@ dStrError = {
               EFCERR : "FileCatalog error",
               # RMS
               ERMSUKN : "Unknown RMS error",
+
+
+              # Resources and RSS
+              ERESGEN: "Unknown Resource Failure",
+              ERESUNA: "Resource not available",
+              ERESUNK: "Unknown Resource",
+
               # TS
               ETSUKN : "Unknown Transformation System Error",
               ETSDATA : "Invalid Input Data definition"}

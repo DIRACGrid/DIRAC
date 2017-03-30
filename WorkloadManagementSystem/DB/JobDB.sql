@@ -8,7 +8,7 @@
 -- ------------------------------------------------------------------------------
 
 -- When installing via dirac tools, the following is not needed (still here for reference)
--- 
+--
 -- DROP DATABASE IF EXISTS JobDB;
 -- CREATE DATABASE JobDB;
 -- ------------------------------------------------------------------------------
@@ -18,8 +18,8 @@
 --
 -- Must set passwords for database user by replacing "must_be_set".
 --
--- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
--- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON JobDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON JobDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 -- FLUSH PRIVILEGES;
 
 -- -----------------------------------------------------------------------------
@@ -173,4 +173,3 @@ CREATE TABLE `JobCommands` (
   PRIMARY KEY (`JobID`,`Arguments`,`ReceptionTime`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-

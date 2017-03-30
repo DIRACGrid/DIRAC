@@ -169,7 +169,6 @@ function fullInstallDIRAC(){
   #Now all the rest
 
   #DBs (not looking for FrameworkSystem ones, already installed)
-  #findDatabases 'exclude' 'FrameworkSystem'
   findDatabases 'exclude' 'FrameworkSystem'
   dropDBs
   diracDBs
@@ -189,7 +188,7 @@ function fullInstallDIRAC(){
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py $DEBUG
 
   #fix the SandboxStore and other stuff
-  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py JenkinsSetup $DEBUG
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py dirac-JenkinsSetup $DEBUG
 
   echo '==> Restarting WorkloadManagement SandboxStore'
   dirac-restart-component WorkloadManagement SandboxStore $DEBUG

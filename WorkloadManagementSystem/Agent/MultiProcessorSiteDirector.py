@@ -15,6 +15,7 @@ from DIRAC.Core.Utilities.Time                             import dateTime, seco
 __RCSID__ = "$Id$"
 
 class MultiProcessorSiteDirector( SiteDirector ):
+
   def getQueues( self, resourceDict ):
     """ Get the list of relevant CEs and their descriptions
     """
@@ -122,11 +123,20 @@ class MultiProcessorSiteDirector( SiteDirector ):
     #  self.log.info( 'No more pilots to be submitted in this cycle' )
     #  return S_OK()
 
-    # Check if the site is allowed in the mask
-    result = jobDB.getSiteMask()
-    if not result['OK']:
-      return S_ERROR( 'Can not get the site mask' )
-    siteMaskList = result['Value']
+    if self.rssFlag:
+
+      result = self.siteClient.getUsableSites()
+      if not result['OK']:
+        return S_ERROR( 'Can not get the site status' )
+      siteMaskList = result['Value']
+
+    else:
+
+      # Use the old way, check if the site is allowed in the mask
+      result = jobDB.getSiteMask()
+      if not result['OK']:
+        return S_ERROR( 'Can not get the site mask' )
+      siteMaskList = result['Value']
 
     random.shuffle( queues )
     totalSubmittedPilots = 0

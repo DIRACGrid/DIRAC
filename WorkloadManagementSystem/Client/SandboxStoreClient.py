@@ -35,7 +35,7 @@ class SandboxStoreClient( object ):
     self.__vo = None
     if 'delegatedGroup' in kwargs:
       self.__vo = getVOForGroup( kwargs['delegatedGroup'] )
-    if SandboxStoreClient.__smdb == None:
+    if SandboxStoreClient.__smdb is None:
       try:
         from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
         SandboxStoreClient.__smdb = SandboxMetadataDB()

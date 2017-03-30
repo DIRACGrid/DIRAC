@@ -55,15 +55,18 @@ class EmailAction( BaseAction ):
     if reason is None:
       return S_ERROR( 'reason should not be None' )
 
-    siteName = getSitesForSE(name)
-
-    if not siteName['OK']:
-      self.log.error('Resource %s does not exist at any site: %s' % (name, siteName['Message']))
-      siteName = "Unassigned Resources"
-    elif not siteName['Value']:
-      siteName = "Unassigned Resources"
+    if self.decisionParams[ 'element' ] == 'Site':
+      siteName = self.decisionParams[ 'name' ]
     else:
-      siteName = siteName['Value'][0]
+      siteName = getSitesForSE(name)
+
+      if not siteName['OK']:
+        self.log.error('Resource %s does not exist at any site: %s' % (name, siteName['Message']))
+        siteName = "Unassigned Resources"
+      elif not siteName['Value']:
+        siteName = "Unassigned Resources"
+      else:
+        siteName = siteName['Value'][0]
 
     with sqlite3.connect(self.cacheFile) as conn:
 
@@ -76,7 +79,7 @@ class EmailAction( BaseAction ):
                       StatusType VARCHAR(128) NOT NULL DEFAULT "all",
                       Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                      );''')
-                     
+
       except sqlite3.OperationalError:
         self.log.error('Email cache database is locked')
 

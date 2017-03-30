@@ -18,6 +18,7 @@ PASSWORD = 'guest'
 QUEUE = 'TestQueue'
 TOPIC = 'TestTopic'
 ACKNOWLEDGEMENT = 'True'
+MESSENGERID = 'Producer1'
 
 PARAMETERS = \
 {
@@ -52,13 +53,6 @@ GETHOSTBYNAME = ( HOST, [], [IP1, IP2] )
 def testCallback():
   pass
 
-listeners = {}
-def setListener( name, listener ):
-  listeners[name] = listener
-
-def getListener( name ):
-  return listeners[name]
-
 class StompMQConnectorSuccessTestCase( unittest.TestCase ):
   """ Test class to check success scenarios.
   """
@@ -70,50 +64,61 @@ class StompMQConnectorSuccessTestCase( unittest.TestCase ):
 
     module.time = MagicMock()
     module.ssl = MagicMock()
+    module.json = MagicMock()
 
     connectionMock = MagicMock()
-    connectionMock.is_connected.return_value = False
+    connectionMock.is_connected.return_value = True
 
-    module.stomp.Connection = MagicMock()
+    module.stomp = MagicMock()
     module.stomp.Connection.return_value = connectionMock
-    module.stomp.ConnectionListener = MagicMock()
+
+    # internal dependencies
+    module.MQConnector = MagicMock()
+    module.gLogger = MagicMock()
 
     # prepare test object
     self.mqConnector = module.StompMQConnector()
-    self.mqConnector.log = MagicMock()
 
   def test_createStompListener( self ):
     connection = module.stomp.Connection()
-    messengerId = 'producer1'
-    listener = module.StompListener( testCallback, ACKNOWLEDGEMENT, connection, messengerId )
+    listener = module.StompListener( testCallback, ACKNOWLEDGEMENT, connection, MESSENGERID )
 
     self.assertEqual( listener.callback, testCallback )
     self.assertEqual( listener.ack, ACKNOWLEDGEMENT )
     self.assertEqual( listener.connection, connection )
-    self.assertEqual( listener.mId, messengerId )
+    self.assertEqual( listener.mId, MESSENGERID )
 
   def test_makeConnection( self ):
-    result = self.mqConnector.setupConnection( parameters = PARAMETERS)
+    result = self.mqConnector.setupConnection( parameters = PARAMETERS )
     self.assertTrue( result['OK'] )
 
     # check parameters
-    PARAMETERS.update({'IP':IP1})
     self.assertEqual( sorted(self.mqConnector.parameters), sorted(PARAMETERS) )
     
     # check calls
     module.stomp.Connection.assert_any_call( 
                                             [ ( IP1, int( PORT ) ) ],
-                                            vhost = VHOST
+                                            vhost = VHOST,
+                                            keepalive = True
                                            )
+
+    module.stomp.Connection.assert_any_call( 
+                                            [ ( IP2, int( PORT ) ) ],
+                                            vhost = VHOST,
+                                            keepalive = True
+                                           )
+
+    result = self.mqConnector.connect()
+    self.assertTrue( result['OK'] )
 
   def test_makeSSLConnection( self ):
 
-    result = self.mqConnector.setupConnection( SSL_PARAMETERS)
+    result = self.mqConnector.setupConnection( SSL_PARAMETERS )
     self.assertTrue( result['OK'] )
 
     ## check parameters
-    for ip in [IP1]:
-      self.assertIsNotNone( self.mqConnector.connection[ip] )
+    for ip in [IP1, IP2]:
+      self.assertIsNotNone( self.mqConnector.connections[ip] )
 
     # check calls
     module.stomp.Connection.assert_any_call( 
@@ -123,8 +128,22 @@ class StompMQConnectorSuccessTestCase( unittest.TestCase ):
                                             ssl_key_file = HOSTKEY,
                                             ssl_cert_file = HOSTCERT,
                                             vhost = VHOST,
+                                            keepalive = True
                                            )
     
+    module.stomp.Connection.assert_any_call( 
+                                            [ ( IP2, int( PORT ) ) ],
+                                            use_ssl = True,
+                                            ssl_version = module.ssl.PROTOCOL_TLSv1,
+                                            ssl_key_file = HOSTKEY,
+                                            ssl_cert_file = HOSTCERT,
+                                            vhost = VHOST,
+                                            keepalive = True
+                                           )
+
+    result = self.mqConnector.connect()
+    self.assertTrue( result['OK'] )
+
 class StompMQConnectorFailureTestCase( unittest.TestCase ):
   """ Test class to check failure scenarios.
   """
@@ -136,17 +155,21 @@ class StompMQConnectorFailureTestCase( unittest.TestCase ):
 
     module.time = MagicMock()
     module.ssl = MagicMock()
+    module.json = MagicMock()
 
     # fake connection object
     self.connectionMock = MagicMock()
     self.connectionMock.is_connected.return_value = False
 
-    module.stomp.Connection = MagicMock()
+    module.stomp = MagicMock()
     module.stomp.Connection.return_value = self.connectionMock
+
+    # internal dependencies
+    module.MQConnector = MagicMock()
+    module.gLogger = MagicMock()
 
     # prepare test object
     self.mqConnector = module.StompMQConnector()
-    self.mqConnector.log = MagicMock()
 
 
   def test_invalidSSLVersion( self ):

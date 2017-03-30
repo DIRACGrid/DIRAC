@@ -45,6 +45,7 @@ __RCSID__ = "$Id$"
 import sys
 import operator
 
+from DIRAC.Core.Utilities                                    import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
 from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERROR
 from DIRAC.Core.Utilities                                    import Time
@@ -53,6 +54,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGrou
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources      import getDIRACPlatform
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                 import SiteStatus
 
 #############################################################################
 
@@ -67,6 +69,8 @@ class JobDB( DB ):
     self.maxRescheduling = self.getCSOption( 'MaxRescheduling', 3 )
 
     self.jobAttributeNames = []
+
+    self.siteClient = SiteStatus()
 
     result = self.__getAttributeNames()
 
@@ -1310,7 +1314,7 @@ class JobDB( DB ):
       return S_ERROR( 'Job ' + str( jobID ) + ' not found in the system' )
 
     if not resultDict['VerifiedFlag']:
-      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % ( 
+      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % (
                                                                              jobID,
                                                                              resultDict['Status'],
                                                                              resultDict['MinorStatus'] ) )
@@ -1482,20 +1486,38 @@ class JobDB( DB ):
     siteList = []
     if result['OK']:
       siteList = [ x[0] for x in result['Value']]
+    else:
+      return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     return S_OK( siteList )
 
 #############################################################################
-  def getSiteMaskStatus( self ):
+  def getSiteMaskStatus( self, sites = None ):
     """ Get the currently site mask status
     """
-    cmd = "SELECT Site,Status FROM SiteMask"
+    if isinstance(sites, list):
+      sitesString = ",".join( "'%s'" % site for site in sites)
+      cmd = "SELECT Site, Status FROM SiteMask WHERE Site in (%s)" % sitesString
+
+      result = self._query( cmd )
+      return S_OK( dict(result['Value']) )
+
+    elif isinstance(sites, str):
+
+      cmd = "SELECT Status FROM SiteMask WHERE Site='%s'" % sites
+      result = self._query( cmd )
+      return S_OK( result['Value'][0][0] )
+
+    else:
+      cmd = "SELECT Site,Status FROM SiteMask"
 
     result = self._query( cmd )
     siteDict = {}
     if result['OK']:
       for site, status in result['Value']:
         siteDict[site] = status
+    else:
+      return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     return S_OK( siteDict )
 
@@ -1741,15 +1763,15 @@ class JobDB( DB ):
 
     # Get the site mask status
     siteMask = {}
-    resultMask = self.getSiteMask( 'All' )
+    resultMask = self.siteClient.getSites( 'All' )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'NoMask'
-    resultMask = self.getSiteMask( 'Active' )
+    resultMask = self.siteClient.getSites( 'Active' )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'Active'
-    resultMask = self.getSiteMask( 'Banned' )
+    resultMask = self.siteClient.getSites( 'Banned' )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'Banned'

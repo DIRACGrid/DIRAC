@@ -23,6 +23,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Opera
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import StorageManagerClient, getFilesToStage
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                   import SiteStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB                        import JobDB
 
 
@@ -40,6 +41,7 @@ class JobScheduling( OptimizerExecutor ):
   def initializeOptimizer( cls ):
     """ Initialization of the optimizer.
     """
+    cls.siteClient = SiteStatus()
     cls.__jobDB = JobDB()
     return S_OK()
 
@@ -78,7 +80,7 @@ class JobScheduling( OptimizerExecutor ):
     jobType = result[ 'Value' ]
 
     # Get banned sites from DIRAC
-    result = self.__jobDB.getSiteMask( 'Banned' )
+    result = self.siteClient.getSites( 'Banned' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve banned sites from JobDB" )
     wmsBannedSites = result[ 'Value' ]
