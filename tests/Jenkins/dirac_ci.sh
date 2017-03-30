@@ -270,14 +270,17 @@ function DIRACPilotInstall(){
 
   if [ "$customCommands" ]
   then
+    echo 'Using custom command list'
     commandList=$customCommands
   fi
 
   if [ "$customOptions" ]
   then
+    echo 'Using custom options'
     options="$options $customOptions"
   fi
 
+  echo $( eval echo Executing python dirac-pilot.py $options -X $commandList $DEBUG)
   python dirac-pilot.py $options -X $commandList $DEBUG
   if [ $? -ne 0 ]
   then
