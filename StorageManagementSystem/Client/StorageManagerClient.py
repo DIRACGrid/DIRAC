@@ -3,15 +3,14 @@
 __RCSID__ = "$Id$"
 
 import random
+import errno
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client                         import Client
+from DIRAC.Core.Utilities.DErrno                    import cmpError
 from DIRAC.Core.Utilities.Proxy                     import executeWithUserProxy
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
 from DIRAC.Resources.Storage.StorageElement         import StorageElement
-from DIRAC.Core.Utilities.DErrno                    import cmpError
-
-import errno
 
 def getFilesToStage( lfnList, jobState = None ):
   """ Utility that returns out of a list of LFNs those files that are offline,
