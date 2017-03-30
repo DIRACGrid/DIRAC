@@ -275,7 +275,7 @@ function DIRACPilotInstall(){
 
   if [ "$customOptions" ]
   then
-    options=$customOptions
+    options="$options $customOptions"
   fi
 
   python dirac-pilot.py $options -X $commandList $DEBUG
