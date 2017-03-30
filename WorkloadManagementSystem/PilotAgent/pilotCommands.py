@@ -268,6 +268,34 @@ class InstallDIRAC( CommandBase ):
     self._locateInstallationScript()
     self._installDIRAC()
 
+class ReplaceDIRACCode( CommandBase ):
+  """ This command will replace DIRAC code with the one taken from a different location.
+      This command is mostly for testing purposes, and should NOT be added in default configurations.
+      It uses generic -o option for specifying a zip location (like an archive file from github).
+  """
+
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( ReplaceDIRACCode, self ).__init__( pilotParams )
+
+  def execute(self):
+    """ Download/unzip an archive file
+    """
+    from io import BytesIO
+    from urllib2 import urlopen
+    from zipfile import ZipFile
+
+    zipresp = urlopen(self.pp.genericOption)
+    zfile = ZipFile(BytesIO(zipresp.read()))
+    os.mkdir(os.getcwd() + os.path.sep + 'AlternativeCode')
+    zfile.extractall(os.getcwd() + os.path.sep + 'AlternativeCode')
+    zfile.close()
+    zipresp.close()
+    os.rename(os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + os.listdir('./AlternativeCode')[0],
+              os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + 'DIRAC')
+    self.pp.installEnv['PYTHONPATH'] = os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + 'DIRAC' ':' \
+                                       + self.pp.installEnv['PYTHONPATH']
 
 class ConfigureBasics( CommandBase ):
   """ This command completes DIRAC installation, e.g. calls dirac-configure to:
