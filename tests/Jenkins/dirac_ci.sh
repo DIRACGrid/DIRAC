@@ -277,7 +277,7 @@ function DIRACPilotInstall(){
   if [ "$customOptions" ]
   then
     echo 'Using custom options'
-    options="$options $customOptions"
+    options="$options -o $customOptions"
   fi
 
   echo $( eval echo Executing python dirac-pilot.py $options -X $commandList $DEBUG)
