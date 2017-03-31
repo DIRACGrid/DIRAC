@@ -264,7 +264,23 @@ function DIRACPilotInstall(){
     return
   fi
 
-  python dirac-pilot.py -S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ -X GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements $DEBUG
+  commandList="GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements"
+  options="-S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/"
+
+  if [ "$customCommands" ]
+  then
+    echo 'Using custom command list'
+    commandList=$customCommands
+  fi
+
+  if [ "$customOptions" ]
+  then
+    echo 'Using custom options'
+    options="$options -o $customOptions"
+  fi
+
+  echo $( eval echo Executing python dirac-pilot.py $options -X $commandList $DEBUG)
+  python dirac-pilot.py $options -X $commandList $DEBUG
   if [ $? -ne 0 ]
   then
     echo 'ERROR: pilot script failed'
