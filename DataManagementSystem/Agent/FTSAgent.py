@@ -57,6 +57,7 @@ __RCSID__ = "$Id: $"
 import time
 import datetime
 import re
+import math
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 # # from CS
@@ -340,6 +341,7 @@ class FTSAgent( AgentModule ):
     self.PROCESS_JOB_REQUESTS = {'True':True, 'False':False}.get( self.PROCESS_JOB_REQUESTS, self.PROCESS_JOB_REQUESTS )
     if self.PROCESS_JOB_REQUESTS is not None:
       log.info( "Process job requests           = ", str( self.PROCESS_JOB_REQUESTS ) )
+    self.__factorOnMaxRequest = 3.
 
     self.__ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
     log.info( "FTSVersion : %s" % self.__ftsVersion )
@@ -428,8 +430,8 @@ class FTSAgent( AgentModule ):
         return resetFTSPlacement
       self.__ftsPlacementValidStamp = now + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
-    # To be sure we have enough requests, ask for 3 times as much
-    requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = 3 * self.MAX_REQUESTS, getJobID = True )
+    # To be sure we have enough requests, ask for several times as much
+    requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = self.__factorOnMaxRequest * self.MAX_REQUESTS, getJobID = True )
     if not requestIDs["OK"]:
       log.error( "unable to read scheduled request ids" , requestIDs["Message"] )
       return requestIDs
@@ -440,8 +442,14 @@ class FTSAgent( AgentModule ):
     else:
       # If we want to process requests only with JobID or only without jobID, make a selection
       requestIDs = [ req[0] for req in requestIDs["Value"] if req[0] not in self.__reqCache and ( len( req ) >= 4 and bool( req[3] ) == self.PROCESS_JOB_REQUESTS ) ]
+
+    # Correct the factor by the observed ratio between needed and obtained, but limit between 1 and 5
+    gotRequests = len( requestIDs ) + 1
+    neededRequests = self.MAX_REQUESTS - len( self.__reqCache )
+    self.__factorOnMaxRequest = max( 1, min( 5, math.ceil( self.__factorOnMaxRequest * neededRequests / float( gotRequests ) ) ) )
+
     # We took more but keep only the maximum number
-    requestIDs = requestIDs[:self.MAX_REQUESTS - len( self.__reqCache )] + self.__reqCache.keys()
+    requestIDs = requestIDs[:neededRequests] + self.__reqCache.keys()
 
     if not requestIDs:
       log.info( "no 'Scheduled' requests to process" )
