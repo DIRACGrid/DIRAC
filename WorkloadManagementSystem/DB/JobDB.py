@@ -152,7 +152,7 @@ class JobDB( DB ):
     """ Get distinct values of the job attribute under specified conditions
     """
     return self.getDistinctAttributeValues( 'Jobs', attribute, condDict = condDict,
-                                              older = older, newer = newer, timeStamp = timeStamp )
+                                            older = older, newer = newer, timeStamp = timeStamp )
 
 
 #############################################################################
@@ -172,9 +172,9 @@ class JobDB( DB ):
     if not attributeList:
       attributeList = []
     attributeList = list( set( attributeList ) | set( ['StartExecTime', 'SubmissionTime', 'HeartBeatTime',
-                                                    'EndExecTime', 'JobName', 'OwnerDN', 'OwnerGroup'] ) )
+                                                       'EndExecTime', 'JobName', 'OwnerDN', 'OwnerGroup'] ) )
     try:
-      if type( localIDs ) == type( [] ) or type( localIDs ) == type( {} ):
+      if isinstance( localIDs, (list, dict) ):
         localIDs = [int( localID ) for localID in localIDs]
       else:
         localIDs = [int( localIDs )]
@@ -581,7 +581,7 @@ class JobDB( DB ):
     self.log.debug( 'JobDB.selectJobs: retrieving jobs.' )
 
     res = self.getFields( 'Jobs', ['JobID'], condDict = condDict, limit = limit,
-                            older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute )
+                          older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute )
 
     if not res['OK']:
       return res
@@ -925,7 +925,9 @@ class JobDB( DB ):
 
     err = 'JobDB.__insertNewJDL: Failed to retrieve a new Id.'
 
-    result = self.insertFields( 'JobJDLs' , ['OriginalJDL'], [jdl] )
+    result = self.insertFields('JobJDLs' ,
+                               ['JDL', 'JobRequirements', 'OriginalJDL'],
+                               ['', '', jdl] )
     if not result['OK']:
       self.log.error( 'Can not insert New JDL', result['Message'] )
       return result
@@ -1250,7 +1252,7 @@ class JobDB( DB ):
     #  return ret
     # e_jobID = ret['Value']
 
-    if type( jobIDs ) != type( [] ):
+    if not isinstance(jobIDs, list):
       jobIDList = [jobIDs]
     else:
       jobIDList = jobIDs
@@ -1304,7 +1306,7 @@ class JobDB( DB ):
     """
     # Check Verified Flag
     result = self.getJobAttributes( jobID, ['Status', 'MinorStatus', 'VerifiedFlag', 'RescheduleCounter',
-                                     'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup'] )
+                                            'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup'] )
     if result['OK']:
       resultDict = result['Value']
     else:
@@ -1315,9 +1317,9 @@ class JobDB( DB ):
 
     if not resultDict['VerifiedFlag']:
       return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % (
-                                                                             jobID,
-                                                                             resultDict['Status'],
-                                                                             resultDict['MinorStatus'] ) )
+          jobID,
+          resultDict['Status'],
+          resultDict['MinorStatus'] ) )
 
 
     # Check the Reschedule counter first
@@ -1754,12 +1756,12 @@ class JobDB( DB ):
       del selectDict['LastUpdateTime']
 
     result = self.getCounters( 'Jobs', ['Site', 'Status'],
-                              {}, newer = last_update,
-                              timeStamp = 'LastUpdateTime' )
+                               {}, newer = last_update,
+                               timeStamp = 'LastUpdateTime' )
     last_day = Time.dateTime() - Time.day
     resultDay = self.getCounters( 'Jobs', ['Site', 'Status'],
-                                 {}, newer = last_day,
-                                 timeStamp = 'EndExecTime' )
+                                  {}, newer = last_day,
+                                  timeStamp = 'EndExecTime' )
 
     # Get the site mask status
     siteMask = {}
@@ -1850,7 +1852,7 @@ class JobDB( DB ):
       for item in selectDict:
         selectItem = paramNames.index( item )
         values = selectDict[item]
-        if type( values ) != type( [] ):
+        if not isinstance(values, list):
           values = [values]
         indices = range( len( records ) )
         indices.reverse()
@@ -2046,7 +2048,8 @@ class JobDB( DB ):
     """
     if not requestedFields:
       requestedFields = [ 'Status', 'MinorStatus',
-                  'Site', 'Owner', 'OwnerGroup', 'JobGroup', 'JobSplitType' ]
+                          'Site', 'Owner', 'OwnerGroup',
+                          'JobGroup', 'JobSplitType' ]
     defFields = [ 'DIRACSetup' ] + requestedFields
     valueFields = [ 'COUNT(JobID)', 'SUM(RescheduleCounter)' ]
     defString = ", ".join( defFields )
