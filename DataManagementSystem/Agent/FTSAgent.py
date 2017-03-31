@@ -428,8 +428,8 @@ class FTSAgent( AgentModule ):
         return resetFTSPlacement
       self.__ftsPlacementValidStamp = now + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
-    # To be sure we have enough requests, ask for twice as much
-    requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = 2 * self.MAX_REQUESTS, getJobID = True )
+    # To be sure we have enough requests, ask for 3 times as much
+    requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = 3 * self.MAX_REQUESTS, getJobID = True )
     if not requestIDs["OK"]:
       log.error( "unable to read scheduled request ids" , requestIDs["Message"] )
       return requestIDs
