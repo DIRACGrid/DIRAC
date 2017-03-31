@@ -103,8 +103,6 @@ class RequestExecutingAgent( AgentModule ):
     self.log.info( "ProcessPool timeout = %d seconds" % self.__poolTimeout )
     self.__poolSleep = int( self.am_getOption( "ProcessPoolSleep", self.__poolSleep ) )
     self.log.info( "ProcessPool sleep time = %d seconds" % self.__poolSleep )
-    self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
-    self.log.info( "ProcessTask timeout = %d seconds" % self.__taskTimeout )
     self.__bulkRequest = self.am_getOption( "BulkRequest", 0 )
     self.log.info( "Bulk request size = %d" % self.__bulkRequest )
 
@@ -285,7 +283,10 @@ class RequestExecutingAgent( AgentModule ):
         # # set task id
         taskID = request.RequestID
         # # save current request in cache
-        self.cacheRequest( request )
+        res = self.cacheRequest( request )
+        if not res['OK']:
+          self.log.error( res['Message'] )
+          continue
         # # serialize to JSON
         result = request.toJSON()
         if not result['OK']:

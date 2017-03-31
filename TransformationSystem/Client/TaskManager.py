@@ -333,18 +333,25 @@ class RequestTasks( TaskBase ):
     Check if tasks changed status, and return a list of tasks per new status
     """
     updateDict = {}
+    badRequestID = 0
     for taskDict in taskDicts:
       oldStatus = taskDict['ExternalStatus']
-
-      newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
-      if not newStatus['OK']:
-        log = self._logVerbose if 'not exist' in newStatus['Message'] else self._logWarn
-        log( "getSubmittedTaskStatus: Failed to get requestID for request", newStatus['Message'],
-             transID = taskDict['TransformationID'] )
+      # ExternalID is normally a string
+      if taskDict['ExternalID'] and int( taskDict['ExternalID'] ):
+        newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
+        if not newStatus['OK']:
+          log = self._logVerbose if 'not exist' in newStatus['Message'] else self._logWarn
+          log( "getSubmittedTaskStatus: Failed to get requestID for request", newStatus['Message'],
+               transID = taskDict['TransformationID'] )
+        else:
+          newStatus = newStatus['Value']
+          # We don't care updating the tasks to Assigned while the request is being processed
+          if newStatus != oldStatus and newStatus != 'Assigned':
+            updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
       else:
-        newStatus = newStatus['Value']
-        if newStatus != oldStatus:
-          updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
+        badRequestID += 1
+    if badRequestID:
+      self._logWarn( "%d requests have identifier 0" % badRequestID )
     return S_OK( updateDict )
 
   def getSubmittedFileStatus( self, fileDicts ):
@@ -370,8 +377,8 @@ class RequestTasks( TaskBase ):
     for taskDict in res['Value']:
       taskID = taskDict['TaskID']
       externalID = taskDict['ExternalID']
-      # Only consider tasks that are submitted
-      if taskDict['ExternalStatus'] != 'Created' and externalID:
+      # Only consider tasks that are submitted, ExternalID is a string
+      if taskDict['ExternalStatus'] != 'Created' and externalID and int( externalID ):
         requestFiles[externalID] = taskFiles[taskID]
 
     updateDict = {}
@@ -864,7 +871,7 @@ class WorkflowTasks( TaskBase ):
     Check the status of a list of tasks and return lists of taskIDs for each new status
     """
     if taskDicts:
-      wmsIDs = [int( taskDict['ExternalID'] ) for taskDict in taskDicts]
+      wmsIDs = [int( taskDict['ExternalID'] ) for taskDict in taskDicts if int( taskDict['ExternalID'] )]
       transID = taskDicts[0]['TransformationID']
     else:
       return S_OK( {} )
