@@ -1,10 +1,13 @@
-[v6r18-pre7]
+[v6r18-pre8]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
 
 FIX: All Databases are granting also REFERENCES grant to Dirac user to comply with
      more strict policies of MySQL version >= 5.7
+
+*Core
+FIX: dirac-install - allow to use local md5 files
 
 *Accounting
 NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
@@ -13,6 +16,7 @@ NEW: new functionality to plot the data gathered by perfSONARs. It allows to
 *DMS
 CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
         client
+CHANGE: FTSHistoryView - frop FTSServer field from the view description        
 
 *RSS
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
@@ -23,10 +27,13 @@ FIX: ResourceStatus, RSSCacheNoThread - fixed RSS cache generation
 FIX: ResourceStatus - fixes for getting status from the CS information
 
 *WMS
-NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS    
+NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS  
+FIX: JobDB - fixes necessary to suite MySQL 5.7   
+NEW: pilotCommands - new ReplaceDIRACCode command mostly for testing purposes
 
 *Interfaces
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
+CHANGE: Dirac API - added runLocal as an API method
 
 [v6r17p15]
 
