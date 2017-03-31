@@ -148,8 +148,13 @@ class TransformationClient( Client ):
         return res
       else:
         retries = 5
-        gLogger.verbose( "For conditions %s: result for limit %d, offset %d: %d files" %
-                         ( str( condDict ), limit, offsetToApply, len( res['Value'] ) ) )
+        condDictStr = str( condDict )
+        log = gLogger.debug if len( condDictStr ) > 100 else gLogger.verbose
+        if not log( "For conditions %s: result for limit %d, offset %d: %d files" %
+                    ( condDictStr, limit, offsetToApply, len( res['Value'] ) ) ):
+          gLogger.verbose( "For condition keys %s (trans %s): result for limit %d, offset %d: %d files" %
+                           ( str( condDict.keys() ), condDict.get( 'TransformationID', 'None' ),
+                             limit, offsetToApply, len( res['Value'] ) ) )
         if res['Value']:
           transformationFiles += res['Value']
           offsetToApply += limit

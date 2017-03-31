@@ -35,6 +35,27 @@ NEW: pilotCommands - new ReplaceDIRACCode command mostly for testing purposes
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
 CHANGE: Dirac API - added runLocal as an API method
 
+[v6r17p16]
+
+*Configuration
+FIX: VOMS2CSAgent - create user home directory in the catalog without
+     recursion in the chown command
+     
+*RMS
+FIX: RequestExecutingAgent - catch error of the cacheRequest() call
+FIX: ReqClient - enhanced log error message
+
+*SMS
+FIX: StorageManagerClient - treat the case of absent and offline files on an SE 
+     while staging
+     
+*TS
+FIX: TaskManagerBase - process tasks in chunks of 100 in order to 
+     update faster the TS (tasks and files)          
+
+*WMS
+FIX: JobScheduling - do not assume that all non-online files required staging
+
 [v6r17p15]
 
 *WMS
