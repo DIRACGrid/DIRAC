@@ -652,7 +652,8 @@ class JobWrapper( object ):
         and check the result.
     """
     start = time.time()
-    repsResult = self.dm.getReplicas( lfns )
+    # We are in a job, therefore interested in replicas for jobs
+    repsResult = self.dm.getReplicasForJobs( lfns )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     if not repsResult['OK']:
@@ -1077,9 +1078,9 @@ class JobWrapper( object ):
       try:
         if os.path.isfile( possibleTarFile ) and tarfile.is_tarfile( possibleTarFile ):
           self.log.info( 'Unpacking input sandbox file %s' % ( possibleTarFile ) )
-          tarFile = tarfile.open( possibleTarFile, 'r' )
-          for member in tarFile.getmembers():
-            tarFile.extract( member, os.getcwd() )
+          with tarfile.open( possibleTarFile, 'r' ) as tarFile:
+            for member in tarFile.getmembers():
+              tarFile.extract( member, os.getcwd() )
       except Exception as x:
         return S_ERROR( 'Could not untar %s with exception %s' % ( possibleTarFile, str( x ) ) )
 
