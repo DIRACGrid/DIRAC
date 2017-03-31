@@ -132,6 +132,8 @@ class FTSAgent( AgentModule ):
   MAX_REQUESTS = 100
   # Minimum interval (seconds) between 2 job monitoring
   MONITORING_INTERVAL = 600
+  # Flag to know if one selects JOb requests (True) or not (False) or don't care (None)
+  PROCESS_JOB_REQUESTS = None
 
   # # placeholder for FTS client
   __ftsClient = None
@@ -333,6 +335,12 @@ class FTSAgent( AgentModule ):
     self.MONITORING_INTERVAL = self.am_getOption( "MonitoringInterval", self.MONITORING_INTERVAL )
     log.info( "Minimum monitoring interval    = ", str( self.MONITORING_INTERVAL ) )
 
+    self.PROCESS_JOB_REQUESTS = self.am_getOption( "ProcessJobRequests", self.PROCESS_JOB_REQUESTS )
+    # We get a string as the default value is None... better than an eval()!
+    self.PROCESS_JOB_REQUESTS = {'True':True, 'False':False}.get( self.PROCESS_JOB_REQUESTS, self.PROCESS_JOB_REQUESTS )
+    if self.PROCESS_JOB_REQUESTS is not None:
+      log.info( "Process job requests           = ", str( self.PROCESS_JOB_REQUESTS ) )
+
     self.__ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
     log.info( "FTSVersion : %s" % self.__ftsVersion )
     log.info( "initialize: creation of FTSPlacement..." )
@@ -420,15 +428,20 @@ class FTSAgent( AgentModule ):
         return resetFTSPlacement
       self.__ftsPlacementValidStamp = now + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
-    requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = self.MAX_REQUESTS )
+    # To be sure we have enough requests, ask for twice as much
+    requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = 2 * self.MAX_REQUESTS, getJobID = True )
     if not requestIDs["OK"]:
       log.error( "unable to read scheduled request ids" , requestIDs["Message"] )
       return requestIDs
     if not requestIDs["Value"]:
       requestIDs = []
-    else:
+    elif self.PROCESS_JOB_REQUESTS is None:
       requestIDs = [ req[0] for req in requestIDs["Value"] if req[0] not in self.__reqCache ]
-    requestIDs += self.__reqCache.keys()
+    else:
+      # If we want to process requests only with JobID or only without jobID, make a selection
+      requestIDs = [ req[0] for req in requestIDs["Value"] if req[0] not in self.__reqCache and ( len( req ) >= 4 and bool( req[3] ) == self.PROCESS_JOB_REQUESTS ) ]
+    # We took more but keep only the maximum number
+    requestIDs = requestIDs[:self.MAX_REQUESTS - len( self.__reqCache )] + self.__reqCache.keys()
 
     if not requestIDs:
       log.info( "no 'Scheduled' requests to process" )
