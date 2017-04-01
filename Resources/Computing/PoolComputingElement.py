@@ -23,16 +23,15 @@ MandatoryParameters = [ ]
 
 def executeJob( executableFile, proxy, taskID, **kwargs ):
 
-  useSudo = kwargs.get( 'UseSudo', False )
+  useSudo = kwargs.pop( 'UseSudo', False )
   if useSudo:
     ce = SudoComputingElement( "Task-" + str( taskID ) )
-    useSudo.pop( 'UseSudo' )
+    payloadUser = kwargs.get( 'PayloadUser' )
+    if payloadUser:
+      ce.setParameters( { 'PayloadUser': payloadUser } )
   else:
     ce = InProcessComputingElement( "Task-" + str( taskID ) )
-  payloadUser = kwargs.get( 'PayloadUser' )
-  if payloadUser:
-    parameters = { 'PayloadUser': payloadUser }
-  ce.setParameters( parameters )
+
   result = ce.submitJob( executableFile, proxy )
   return result
 
