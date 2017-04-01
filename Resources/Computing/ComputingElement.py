@@ -274,6 +274,7 @@ class ComputingElement(object):
     runningJobs = result['RunningJobs']
     waitingJobs = result['WaitingJobs']
     submittedJobs = result['SubmittedJobs']
+    availableProcessors = result['AvailableProcessors']
     ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.ceParameters.get( 'MaxTotalJobs', 0 ) )
@@ -309,6 +310,7 @@ class ComputingElement(object):
       if int( self.ceParameters.get( 'MaxWaitingJobs', 0 ) ) == 0:
         additionalJobs = maxTotalJobs - runningJobs
 
+      additionalJobs = min( additionalJobs, availableProcessors )
       result['Value'] = additionalJobs
 
     result['Message'] = message
@@ -447,8 +449,8 @@ class ComputingElement(object):
 
     result = self.getCEStatus()
     if result['OK']:
-      if 'AvailableCores' in result:
-        cores = result['AvailableCores']
+      if 'AvailableProcessors' in result:
+        cores = result['AvailableProcessors']
         if cores > 1:
           ceDict['NumberOfProcessors'] = cores
 
