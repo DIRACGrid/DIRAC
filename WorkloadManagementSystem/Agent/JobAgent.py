@@ -154,7 +154,7 @@ class JobAgent( AgentModule ):
 
     self.log.verbose( 'Job Agent execution loop' )
     result = self.computingElement.available()
-    if not result['OK'] or not result['Value']:
+    if not result['OK']:
       self.log.info( 'Resource is not available' )
       self.log.info( result['Message'] )
       return self.__finish( 'CE Not Available' )
@@ -167,7 +167,7 @@ class JobAgent( AgentModule ):
 
     if not availableSlots:
       if runningJobs:
-        self.log.info( 'No available slots with %s running jobs' % runningJobs )
+        self.log.info( 'No available slots with %d running jobs' % runningJobs )
         return S_OK( 'Job Agent cycle complete with %d running jobs' % runningJobs )
       else:
         self.log.info( 'CE is not available' )
@@ -177,9 +177,6 @@ class JobAgent( AgentModule ):
     if not result['OK']:
       return result
     ceDict = result['Value']
-
-    print "AT >>> computingElement.getDescription", ceDict
-
     # Add pilot information
     gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
     if gridCE != 'Unknown':
