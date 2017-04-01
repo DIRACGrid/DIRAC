@@ -74,8 +74,8 @@ class Matcher( object ):
     toPrintDict = dict( resourceDict )
     if "MaxRAM" in resourceDescription:
       toPrintDict['MaxRAM'] = resourceDescription['MaxRAM']
-    if "Processors" in resourceDescription:
-      toPrintDict['Processors'] = resourceDescription['Processors']
+    if "NumberOfProcessors" in resourceDescription:
+      toPrintDict['NumberOfProcessors'] = resourceDescription['NumberOfProcessors']
     toPrintDict['Tag'] = []
     if "Tag" in resourceDict:
       for tag in resourceDict['Tag']:
@@ -189,14 +189,14 @@ class Matcher( object ):
     if 'JobID' in resourceDescription:
       resourceDict['JobID'] = resourceDescription['JobID']
 
-    # Convert MaxRAM and Processors parameters into a list of tags
+    # Convert MaxRAM and NumberOfProcessors parameters into a list of tags
     maxRAM = resourceDescription.get( 'MaxRAM' )
     if maxRAM:
       try:
         maxRAM = int( maxRAM )/1000
       except ValueError:
         maxRAM = None
-    nProcessors = resourceDescription.get( 'Processors' )
+    nProcessors = resourceDescription.get( 'NumberOfProcessors' )
     if nProcessors:
       try:
         nProcessors = int( nProcessors )
