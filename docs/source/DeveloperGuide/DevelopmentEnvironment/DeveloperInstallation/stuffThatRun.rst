@@ -1,4 +1,4 @@
-.. _developer_installation:
+.. _stuff_that_run:
 
 ===========================
 Developing "stuff that run"
@@ -18,6 +18,17 @@ What is this for?
 Here we describe the suggested method for developing those part of DIRAC that "run", e.g. databases, services, and agents.
 
 
+Do I need this?
+-----------------
+
+Maybe. It depends from you want to develop.
+
+If you only need to develop "clients" and "utilities" code, you won't need this.
+But if you are going to change databases and DIRAC components, and if you want to run integration tests,
+you better keep reading.
+
+
+
 Notes before continuing, on top of what is in section :ref:`editing_code`
 ---------------------------------------------------------------------------
 
@@ -31,25 +42,7 @@ Or, using a Virtual Machine, or a docker instance. We'll go through this.
 Stuff you need to have installed, on top of what is in section :ref:`editing_code`
 -------------------------------------------------------------------------------------
 
-*python*: make sure python 2.7.x is installed and set as default
-(beware: the latest versions of Ubuntu use python 3.X as default).
-
-*python-pip*: the tool for installing python packages hosted
-on `PyPi <https://pypi.python.org/pypi>`_.
-
-*git*: DIRAC's version control system of choice is git, so install it.
-
-*basic packages*: you will need at least gcc, python-devel (python all-dev),
-openssl-devel (libssl-dev), mysql-client, libmysqlclient-dev,
-libfreetype6-dev, libncurses5-dev, libjpeg-dev.
-The names above are OS-dependant, distribution dependant, and version dependant,
-so you'll need to figure it out by yourself how to install them.
-Some equivalent packages for Fedora/CentOS: python-devel, openssl-devel, mysql, ncurses-libs freetype, libjpeg-devel, MySQL-python.
-
-*editor*: get your favourite one.
-Examples include IDE like Eclipse or PyCharm, or whatever you prefer
-(vim, sublime, atom...) - anyway you'll need some plugins!
-
+docker [expand]
 
 
 
@@ -57,134 +50,27 @@ Setting up your development installation
 ==================================================
 
 The following steps will try to guide
-you on setting up a development installation for DIRAC
+you on setting up a development environment for DIRAC (or its extensions)
+that combines what you have learned in :ref:`editing_code`
+with a docker image with which you will run code that you develop.
 
 
-Checking out the source
--------------------------
+Install the DIRAC docker image
+------------------------------
 
-0. Go to a clean directory, e.g. $HOME/pyDevs/.
-
-From now on we will call that directory *$DEVROOT*, just for our own convenience
-
-1.
-
-   export DEVROOT=$PWD && export WORKSPACE=$PWD
-
-(persist this in the way you prefer)
-
-2. Check out DIRAC source code. DIRAC source is hosted on *github.com*. Fork it (online!), then::
-
-   git clone https://github.com/YOUR_GITHUB_USERNAME/DIRAC.git
-
-Obviously, you must replace 'YOUR_GITHUB_USERNAME' with the username that we have registered on github.
-This will create a *$DEVROOT/DIRAC* for you and the git repository will be cloned in.
-
-3. This will create a *remote* pointer (in git terms) in the local git
-repository called *origin* that points to your source repository on GitHub.
-In that repository you will publish your code to be released. But all the releases
-will be done from the https://github.com/DIRACGrid/DIRAC repository. You
-need to define a *remote* for that repository to be able to pull newly
-released changes into your working repo. We will name that repository *release*::
-
-   cd DIRAC
-   git remote add release https://github.com/DIRACGrid/DIRAC.git
-   git fetch release
+[to expand]
 
 
-Repository structure
---------------------
+What's in this image?
+----------------------
 
-Just looking at the root directory::
-
-   ls -al $DEVROOT/DIRAC/
-
-will tell you a lot about the DIRAC code structure. Note that:
-
-* there is a tests/ directory
-* there is a docs/ directory
-* there are several \*System/ directories
-* there is an \__init__.py file
-* there are some base files (README, LICENCE, etc.) and some dotfiles, which will become useful reading further.
-
-Unsurprisingly:
-
-* "tests" contains tests - and specifically, it contains all the non-unit tests
-* "docs" contains... documentation (including this very same page!)
-* all the \*System/ directories contain the (python) code of the DIRAC systems
+[to expand]
 
 
-Adding an extension
--------------------------
+Sorting out the PATHs
+---------------------
 
-You can add an extension of DIRAC, of course.
-The repository structure may be the same of the DIRAC one, or something slightly different.
-The only important thing is what you are going to put in the $PYTHONPATH.
-
-
-Installing the dependencies
----------------------------
-
-First first, be sure setuptools is at the latest version::
-
-   [sudo] pip install --upgrade setuptools
-
-We'll use `virtualenv <https://virtualenv.readthedocs.org/en/latest/>`_.
-and `virtualenvwrapper <https://virtualenvwrapper.readthedocs.org/en/latest/>`_.
-for working in a separate virtual python environment,
-and for creating and deleting such environments::
-
-   [sudo] pip install virtualenv
-   [sudo] pip install virtualenvwrapper
-   export WORKON_HOME=~/Envs
-   mkdir -p $WORKON_HOME
-   source /usr/local/bin/virtualenvwrapper.sh
-
-Now, let's create the virtual environment, and populate it::
-
-   mkvirtualenv DIRAC # this creates the "DIRAC"
-   pip install -r $DEVROOT/DIRAC/requirements.txt
-
-This will create a virtual python environment in which we can install
-all python packages that DIRAC use
-(this may take a while, and you might need to manually install some package
-from your distribution).
-
-Some usuful commands::
-
-   "pip install -r requirements.txt --upgrade" will upgrade the packages
-   "deactivate" will exit from a virtualenv
-   "workon DIRAC" will get you back in DIRAC virtualenv
-
-
-Adding to the PYTHONPATH
--------------------------
-
-You may either add the PATH to the global PYTHONPATH, as following::
-
-   export PYTHONPATH=$PYTHONPATH:$DEVROOT
-
-And repeat for the extension development root,
-or use virtualenv for managing the path,
-using `add2virtualenv <http://virtualenvwrapper.readthedocs.io/en/latest/command_ref.html#add2virtualenv>`
-
-And now you should be able to do::
-
-   ipython
-   In [1]: import DIRAC
-   In [2]: import GSI
-
-If the above fails, check the log of the pip installations you just done.
-
-
-Deploy DIRAC scripts
---------------------
-
-By running::
-
-   $DEVROOT/DIRAC/Core/scripts/dirac-deploy-scripts.py
-
-It is a good idea to add the scripts directory to your $PATH.
+[to expand]
 
 
 Configure DIRAC
@@ -214,8 +100,8 @@ If you want to create an isolated installation just create a
      {
        DeveloperSetup
        {
-	 Framework = DevInstance
-	 Test = DevInstance
+         Framework = DevInstance
+         Test = DevInstance
        }
      }
    }
@@ -225,24 +111,24 @@ If you want to create an isolated installation just create a
      {
        DevInstance
        {
-	 URLs
-	 {
-	 }
-	 Services
-	 {
-	 }
+         URLs
+         {
+         }
+         Services
+         {
+         }
        }
      }
      Test
      {
        DevInstance
        {
-	 URLs
-	 {
-	 }
-	 Services
-	 {
-	 }
+         URLs
+         {
+         }
+         Services
+         {
+         }
        }
      }
    }
@@ -252,24 +138,24 @@ If you want to create an isolated installation just create a
      {
        yourusername
        {
-	 DN = /your/dn/goes/here
-	 Email = youremail@yourprovider.com
+         DN = /your/dn/goes/here
+         Email = youremail@yourprovider.com
        }
      }
      Groups
      {
        devGroup
        {
-	 Users = yourusername
-	 Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
+         Users = yourusername
+         Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
        }
      }
      Hosts
      {
        mydevbox
        {
-	 DN = /your/box/dn/goes/here
-	 Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
+         DN = /your/box/dn/goes/here
+         Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
        }
      }
    }
@@ -302,4 +188,44 @@ to register the host replace "/your/box/dn/goes/here"
 
    openssl x509 -noout -subject -in $DEVROOT/etc/grid-security/hostcert.pem | sed 's:^subject= ::g'
 
-You're ready for DIRAC development !
+
+
+Is my installation correctly done?
+--------------------------------------
+
+[add dirac-proxy-init]
+
+
+We will now do few, very simple checks. The first can be done by using the python interactive shell.
+For these examples I will actually use `iPython <http://ipython.org/>`_, which is a highly recommended shell.
+
+.. code-block:: python
+
+  In [1]: from DIRAC.Core.Base.Script import parseCommandLine
+
+  In [2]: parseCommandLine()
+  Out[2]: True
+
+Was this good? If it wasn't, then you should probably hit the "previous" button of this guide.
+
+So, what's that about? These 2 lines will initialize DIRAC.
+They are used in several places, especially for the scripts: each and every script in DIRAC start with those 2 lines above.
+
+Let's do one more check:
+
+.. code-block:: python
+
+  In [14]: from DIRAC import gConfig
+
+  In [15]: gConfig.getValue('/DIRAC/Setup')
+  Out[15]: 'DeveloperSetup'
+
+Was this good? If it wasn't, again, then you should probably hit the "previous" button of this guide.
+
+Do not think about you just typed right now. It will become more clear later.
+
+
+Ready!
+------
+
+You're (even more) ready for DIRAC development!

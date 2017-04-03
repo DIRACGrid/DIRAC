@@ -174,26 +174,12 @@ And repeat for the extension development root,
 or use virtualenv for managing the path,
 using `add2virtualenv <http://virtualenvwrapper.readthedocs.io/en/latest/command_ref.html#add2virtualenv>`
 
-And now you should be able to do::
-
-   ipython
-   In [1]: import DIRAC
-   In [2]: import GSI
-
-If the above fails, check the log of the pip installations you just done.
-
-
-Deploy DIRAC scripts
---------------------
-
-By running::
-
-   $DEVROOT/DIRAC/Core/scripts/dirac-deploy-scripts.py
-
-It is a good idea to add the scripts directory to your $PATH.
 
 
 Ready!
 ------
 
-You're ready for DIRAC development!
+You're ready for DIRAC development! (or at least, good part of it).
+
+You may now either proceed to :ref:`stuff_that_run`,
+or look into sections :ref:`check_your_installation` and the following :ref:`your_first_dirac_code`
