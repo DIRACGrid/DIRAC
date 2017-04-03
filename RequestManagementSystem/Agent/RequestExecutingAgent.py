@@ -194,8 +194,12 @@ class RequestExecutingAgent( AgentModule ):
     while request.RequestID in self.__requestCache:
       count -= 1
       if not count:
-        self.requestClient().putRequest( request, useFailoverProxy = False, retryMainService = 2 )
-        return S_ERROR( "Duplicate request, ignore: %s" % request.RequestID )
+        # Comment out the putRequest as we have got back the request that is still being executed. Better keep it
+        # The main reason for this is that it lasted longer than the kick time of CleanReqAgent
+        # self.requestClient().putRequest( request, useFailoverProxy = False, retryMainService = 2 )
+        # return S_ERROR( "Duplicate request, ignore: %s" % request.RequestID )
+        self.log.warn( "Duplicate request, keep it: %s" % request.RequestID )
+        break
       time.sleep( 1 )
     self.__requestCache[ request.RequestID ] = request
     return S_OK()

@@ -23,7 +23,7 @@ import datetime
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper
 from sqlalchemy.sql import update
-from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey,\
+from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey, \
                        Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
 
 # # from DIRAC
@@ -206,7 +206,7 @@ class RequestDB( object ):
                          .where( Request.RequestID == requestID )\
                          .values( {Request._Status : 'Canceled',
                                    Request._LastUpdate : datetime.datetime.utcnow()\
-                                                        .strftime( Request._datetimeFormat )}))
+                                                        .strftime( Request._datetimeFormat )} ) )
       session.commit()
 
       # No row was changed
@@ -423,7 +423,7 @@ class RequestDB( object ):
                           .filter( Request.RequestID.in_( requestIDs ) )\
                           .all()
         log.debug( "Got %s Request objects " % len( requests ) )
-        requestDict = dict((req.RequestID, req) for req in requests)
+        requestDict = dict( ( req.RequestID, req ) for req in requests )
       # No Waiting requests
       except NoResultFound, e:
         pass
@@ -459,15 +459,19 @@ class RequestDB( object ):
 
 
 
-  def getRequestIDsList( self, statusList = None, limit = None, since = None, until = None ):
+  def getRequestIDsList( self, statusList = None, limit = None, since = None, until = None, getJobID = False ):
     """ select requests with status in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
     session = self.DBSession()
     requestIDs = []
     try:
-      reqQuery = session.query( Request.RequestID, Request._Status, Request._LastUpdate )\
-                        .filter( Request._Status.in_( statusList ) )
+      if getJobID:
+        reqQuery = session.query( Request.RequestID, Request._Status, Request._LastUpdate, Request.JobID )\
+                          .filter( Request._Status.in_( statusList ) )
+      else:
+        reqQuery = session.query( Request.RequestID, Request._Status, Request._LastUpdate )\
+                          .filter( Request._Status.in_( statusList ) )
       if since:
         reqQuery = reqQuery.filter( Request._LastUpdate > since )
       if until:
@@ -525,7 +529,7 @@ class RequestDB( object ):
       for status, count in requestQuery:
         retDict["Request"][status] = count
 
-      operationQuery = session.query(Operation.Type, Operation._Status, func.count(Operation.OperationID))\
+      operationQuery = session.query( Operation.Type, Operation._Status, func.count( Operation.OperationID ) )\
                               .group_by( Operation.Type, Operation._Status )\
                               .all()
 
@@ -737,7 +741,7 @@ class RequestDB( object ):
     self.log.debug( "getRequestIDsForJobs: got %s jobIDs to check" % str( jobIDs ) )
     if not jobIDs:
       return S_ERROR( "Must provide jobID list as argument." )
-    if isinstance( jobIDs,( long, int ) ):
+    if isinstance( jobIDs, ( long, int ) ):
       jobIDs = [ jobIDs ]
     jobIDs = set( jobIDs )
 
@@ -751,7 +755,7 @@ class RequestDB( object ):
                   .all()
 
       reqDict['Successful'] = dict( ( jobId, reqID ) for jobId, reqID in ret )
-      reqDict['Failed'] = dict( (jobid, 'Request not found') for jobid in jobIDs - set(reqDict['Successful']))
+      reqDict['Failed'] = dict( ( jobid, 'Request not found' ) for jobid in jobIDs - set( reqDict['Successful'] ) )
     except Exception as e:
       self.log.exception( "getRequestIDsForJobs: unexpected exception", lException = e )
       return S_ERROR( "getRequestIDsForJobs: unexpected exception : %s" % e )
