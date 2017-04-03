@@ -16,6 +16,7 @@ What is this for?
 -----------------
 
 Here we describe the suggested method for developing those part of DIRAC that "run", e.g. databases, services, and agents.
+You need this type of installation for running so-called unit tests.
 
 
 Do I need this?
@@ -42,8 +43,10 @@ Or, using a Virtual Machine, or a docker instance. We'll go through this.
 Stuff you need to have installed, on top of what is in section :ref:`editing_code`
 -------------------------------------------------------------------------------------
 
-docker [expand]
+*docker*: `docker <https://docs.docker.com/>`_ is as of today a "standard" for applications' containerization.
+The following examples use a DIRAC's base docker image for running DIRAC components.
 
+If you don't want to use *docker*, you can use a virtual machine.
 
 
 Setting up your development installation
