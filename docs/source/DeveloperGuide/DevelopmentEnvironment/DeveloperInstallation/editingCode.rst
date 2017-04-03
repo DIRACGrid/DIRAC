@@ -4,11 +4,6 @@
 Editing DIRAC code
 ======================================
 
-We'll do a step-by-step set up of what we call a developer installation.
-A developer installation is a *closed* installation: an installation that
-can even be used while being disconnected from the Internet.
-
-
 What is this for?
 -----------------
 
