@@ -446,7 +446,7 @@ class FTSAgent( AgentModule ):
     # Correct the factor by the observed ratio between needed and obtained, but limit between 1 and 5
     gotRequests = len( requestIDs ) + 1
     neededRequests = self.MAX_REQUESTS - len( self.__reqCache )
-    self.__factorOnMaxRequest = max( 1, min( 5, math.ceil( self.__factorOnMaxRequest * neededRequests / float( gotRequests ) ) ) )
+    self.__factorOnMaxRequest = max( 1, min( 10, math.ceil( self.__factorOnMaxRequest * neededRequests / float( gotRequests ) ) ) )
 
     # We took more but keep only the maximum number
     requestIDs = requestIDs[:neededRequests] + self.__reqCache.keys()
@@ -466,14 +466,18 @@ class FTSAgent( AgentModule ):
         continue
       request = request["Value"]
       sTJId = request.RequestID
+      fullLogged = 0
       while True:
         queue = self.threadPool().generateJobAndQueueIt( self.processRequest,
                                                          args = ( request, ),
                                                          sTJId = sTJId )
         if queue["OK"]:
-          log.info( "Request enqueued for execution", sTJId )
+          log.info( "Request enqueued for execution%s" % ( ( ' (after waiting %d seconds)' % fullLogged ) if fullLogged else '' ), sTJId )
           gMonitor.addMark( "RequestsAtt", 1 )
           break
+        if not fullLogged:
+          log.info( "Queue is full, wait 1 second to enqueue" )
+        fullLogged += 1
         time.sleep( 1 )
 
     # # process all results
