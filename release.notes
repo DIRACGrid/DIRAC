@@ -35,6 +35,16 @@ NEW: pilotCommands - new ReplaceDIRACCode command mostly for testing purposes
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
 CHANGE: Dirac API - added runLocal as an API method
 
+[v6r17p17]
+
+*DMS
+NEW: FTSAgent has a new CS parameter ProcessJobRequests to be able to process job
+     requests only. This allows to run 2 FTS agents in parallel
+     
+*Resources
+FIX: GFAL2_StorageBase - only set the space token if there is one to avoid problems
+     with some SEs     
+
 [v6r17p16]
 
 *Configuration

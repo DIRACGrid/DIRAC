@@ -352,7 +352,8 @@ class GFAL2_StorageBase( StorageBase ):
     else:
       params.nbstreams = 1
     params.overwrite = True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
-    params.dst_spacetoken = self.spaceToken
+    if self.spaceToken:
+      params.dst_spacetoken = self.spaceToken
 
 
     # Params set, copying file now
@@ -477,7 +478,8 @@ class GFAL2_StorageBase( StorageBase ):
     else:
       params.nbstreams = 1
     params.overwrite = True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
-    params.src_spacetoken = self.spaceToken
+    if self.spaceToken:
+      params.src_spacetoken = self.spaceToken
 
     params.checksum_check = bool( self.checksumType and not disableChecksum )
 

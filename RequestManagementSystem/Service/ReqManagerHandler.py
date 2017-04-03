@@ -257,13 +257,13 @@ class ReqManagerHandler( RequestHandler ):
 
   types_getRequestIDsList = [ ListType, IntType, StringTypes ]
   @classmethod
-  def export_getRequestIDsList( cls, statusList = None, limit = None, since = None, until = None ):
+  def export_getRequestIDsList( cls, statusList = None, limit = None, since = None, until = None, getJobID = False ):
     """ get requests' IDs with status in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
     since = since if since else ""
     until = until if until else ""
-    reqIDsList = cls.__requestDB.getRequestIDsList( statusList, limit, since = since, until = until )
+    reqIDsList = cls.__requestDB.getRequestIDsList( statusList, limit, since = since, until = until, getJobID = getJobID )
     if not reqIDsList["OK"]:
       gLogger.error( "getRequestIDsList: %s" % reqIDsList["Message"] )
     return reqIDsList
