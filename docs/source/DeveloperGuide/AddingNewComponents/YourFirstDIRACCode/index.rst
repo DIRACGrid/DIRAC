@@ -4,11 +4,15 @@
 Your first DIRAC code
 =====================
 
-We will now code some very simple exercises, based on what we have seen in the previous section. Before going through the exercise, you should verify in which GIT branch you are, so go to the directory where you cloned DIRAC and issue::
+We will now code some very simple exercises, based on what we have seen in the previous section.
+Before going through the exercise, you should verify in which GIT branch you are, so go to the directory where you cloned DIRAC and issue::
 
   > git branch
 
-this will show all your local branches. Now, remember that you have to base your development on a *remote* branch. This is clearly explained in :ref:`contributing_code`, so be careful on what you choose: checkout a new branch from a remote one before proceeding.
+this will show all your local branches. Now,
+remember that you have to base your development on a *remote* branch.
+ This is clearly explained in :ref:`contributing_code`,
+ so be careful on what you choose: checkout a new branch from a remote one before proceeding.
 
 
 Exercise 1:
@@ -27,7 +31,11 @@ This function should:
 * Get from the CS the registered Certification Authority for the user
 * if the CA is the expected one return S_OK, else return S_ERROR
 
-To code this exercise, albeit very simple, we will use TDD (Test Driven Development), and we will use the *unittest* and *mock* python packages, as explained in :ref:`testing_environment`. What we will code here will be a real *unit test*, in the sense that we will test only this function, in isolation. In general, it is always an excellent idea to code a unit test for every development you do. We will put the unit test in DIRAC.Core.Utilities.test. The unit test has been fully coded already:
+To code this exercise, albeit very simple, we will use TDD (Test Driven Development),
+and we will use the *unittest* and *mock* python packages, as explained in :ref:`testing_environment`.
+What we will code here will be a real *unit test*, in the sense that we will test only this function, in isolation.
+In general, it is always an excellent idea to code a unit test for every development you do.
+We will put the unit test in DIRAC.Core.Utilities.test. The unit test has been fully coded already:
 
 
 .. code-block:: python

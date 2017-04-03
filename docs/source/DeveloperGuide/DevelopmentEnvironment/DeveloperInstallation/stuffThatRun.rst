@@ -4,7 +4,7 @@
 Developing "stuff that run"
 ===========================
 
-Which means developing for databases, services, and agents.
+Which means developing for databases, services, and agents. But also for the configuration service.
 
 We'll guide you through using what we made in section :ref:`editing_code`
 for developing and testing for databases, services, and agents. To do that, we'll create a "developer installation".
@@ -192,9 +192,6 @@ to register the host replace "/your/box/dn/goes/here"
 
 Is my installation correctly done?
 --------------------------------------
-
-[add dirac-proxy-init]
-
 
 We will now do few, very simple checks. The first can be done by using the python interactive shell.
 For these examples I will actually use `iPython <http://ipython.org/>`_, which is a highly recommended shell.

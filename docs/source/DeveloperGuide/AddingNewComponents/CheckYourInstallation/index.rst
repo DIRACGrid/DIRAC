@@ -7,7 +7,7 @@ Check your installation
 If you are here, we suppose you have read the documentation that came before. Specifically:
 
 * you should know about our :ref:`development_model`
-* you should have your :ref:`development_environment` already set up, specifically you should already have a developer installation.
+* you should have read about :ref:`development_environment`, at least until the :ref:`editing_code` part.
 
 Within this part we'll check the basics, and we'll do few exercises.
 
@@ -18,13 +18,18 @@ Is my installation correctly done?
 We will now do few, very simple checks. The first can be done by using the python interactive shell.
 For these examples I will actually use `iPython <http://ipython.org/>`_, which is a highly recommended shell.
 
+Make sure that you are running these commands inside the python virtual environment
+that you have created with *virtualenv* as explained in :ref:`editing_code`.
+
 .. code-block:: python
 
    In [1]: import GSI
    In [2]: import pyparsing
-   In [3]: import DIRAC
+   In [3]: import MySQLdb
+   In [4]: import DIRAC
 
-Were these imports OK? If not, then you should probably hit the "previous" button of this guide.
+Were these imports OK? If not, then you should probably hit the "previous" button of this guide,
+or check the *pip install* log.
 
 
 The real basic stuff
@@ -40,7 +45,8 @@ Let's start with the **logger**
    Hello world
    Out[4]: True
 
-What's that? It is a `singleton <http://en.wikipedia.org/wiki/Singleton_pattern>`_ object for logging in DIRAC. Needless to say, you'll use it a lot.
+What's that? It is a `singleton <http://en.wikipedia.org/wiki/Singleton_pattern>`_ object for logging in DIRAC.
+Needless to say, you'll use it a lot.
 
 .. code-block:: python
 
@@ -100,8 +106,10 @@ Quite clear, isn't it? Often, you'll end up doing a lot of code like that:
 Playing with the Configuration Service
 --------------------------------------
 
-If you are here, it means that your developer installation contains a **dirac.cfg** file, that should stay in the $DIRACDEVS/etc directory.
-We'll play a bit with it now.
+Note: please, read and complete :ref:`stuff_that_run` before continuing.
+
+If you are here, it means that your developer installation contains a **dirac.cfg** file,
+that should stay in the $DIRACDEVS/etc directory. We'll play a bit with it now.
 
 You have already done this:
 
@@ -127,7 +135,7 @@ So, gConfig is another singleton: it is the guy you need to call for basic inter
 If you are here, we assume you already know about the CS servers and layers. More information can be found in the Administration guide.
 We remind that, for a developer installation, we will work in ISOLATION, so with only the local dirac.cfg
 
-Mostly, gConfig exposes get type of methods:
+Mostly, gConfig exposes *get* type of methods:
 
 .. code-block:: python
 
