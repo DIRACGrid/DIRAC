@@ -1,3 +1,5 @@
+.. _your_first_dirac_code:
+
 =====================
 Your first DIRAC code
 =====================
@@ -34,37 +36,37 @@ To code this exercise, albeit very simple, we will use TDD (Test Driven Developm
    import unittest, mock, importlib
    # sut
    from DIRAC.Core.Utilities.checkCAOfUser import checkCAOfUser
-   
+
    class TestcheckCAOfUser( unittest.TestCase ):
-   
+
      def setUp( self ):
        self.gConfigMock = mock.Mock()
        self.checkCAOfUser = importlib.import_module( 'DIRAC.Core.Utilities.checkCAOfUser' )
        self.checkCAOfUser.gConfig = self.gConfigMock
-   
+
      def tearDown( self ):
        pass
-   
+
    class TestcheckCAOfUserSuccess(TestcheckCAOfUser):
-   
+
      def test_success( self ):
        self.gConfigMock.getValue.return_value = 'attendedValue'
        res = checkCAOfUser( 'aUser', 'attendedValue' )
        self.assert_( res['OK'] )
-   
+
      def test_failure( self ):
        self.gConfigMock.getValue.return_value = 'unAttendedValue'
        res = checkCAOfUser( 'aUser', 'attendedValue' )
        self.assertFalse( res['OK'] )
-   
-   
+
+
    if __name__ == '__main__':
      suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestcheckCAOfUser )
      suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestcheckCAOfUserSuccess ) )
      testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
 
-Now, try to run it. In case you are using Eclipse, it's time to try to run this test within Eclipse itself (run as: Python unit-test): it shows a graphical interface that you can find convenient. If you won't manage to run, it's probably because there is a missing configuration of the PYTHONPATH within Eclipse. 
+Now, try to run it. In case you are using Eclipse, it's time to try to run this test within Eclipse itself (run as: Python unit-test): it shows a graphical interface that you can find convenient. If you won't manage to run, it's probably because there is a missing configuration of the PYTHONPATH within Eclipse.
 
 Then, code ``checkCAOfUser`` and run the test again.
 
@@ -89,4 +91,3 @@ Remember to start the script with:
 
 
 Then run it.
-
