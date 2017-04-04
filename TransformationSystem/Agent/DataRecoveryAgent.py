@@ -363,6 +363,8 @@ class DataRecoveryAgent(AgentModule):
               job.getTaskInfo(tasksDict, lfnTaskDict)
             except TaskInfoException as e:
               self.log.error(" Skip Task, due to TaskInfoException: %s" % e)
+              if job.inputFile is None and job.tType != "MCGeneration":
+                self.__failJobHard(job, tInfo)
               break
             fileJobDict[job.inputFile].append(job.jobID)
           self.checkJob(job, tInfo)
@@ -387,3 +389,13 @@ class DataRecoveryAgent(AgentModule):
     for _name, checks in self.todo.iteritems():
       for do in checks:
         do['Counter'] = 0
+
+  def __failJobHard(self, job, tInfo):
+    """ set job to failed and remove output files if there are any """
+    self.log.notice("Failing job %s" % job)
+    self.notesToSend += "Failing job: no input file?" + '\n'
+    self.notesToSend += str(job) + '\n'
+    job.cleanOutputs(tInfo)
+    job.setJobFailed(tInfo)
+    if job.inputFile is not None:
+      job.setInputDeleted(tInfo)

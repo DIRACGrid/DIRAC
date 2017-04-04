@@ -1,6 +1,7 @@
 """Job Information"""
 
 from itertools import izip_longest
+from DIRAC import gLogger
 
 __RCSID__ = "$Id$"
 
@@ -76,9 +77,18 @@ class JobInfo(object):
 
   def getTaskInfo(self, tasksDict, lfnTaskDict):
     """extract the task information from the taskDict"""
+
+    if self.inputFile is None and self.tType != "MCGeneration":
+      raise TaskInfoException("InputFile is None: %s" % str(self))
+
     if self.taskID not in tasksDict:
       #print "taskID %d not in tasksDict" % self.taskID
-      taskDict = tasksDict[lfnTaskDict[self.inputFile]]
+      try:
+        taskDict = tasksDict[lfnTaskDict[self.inputFile]]
+      except KeyError as ke:
+        gLogger.error("ERROR for key:", str(ke))
+        gLogger.error("Failed to get taskDict", "%s, %s" % (self.taskID, self.inputFile))
+        raise
       self.otherTasks = lfnTaskDict[self.inputFile]
     else:
       taskDict = tasksDict[self.taskID]
