@@ -20,6 +20,9 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.X509Certificate import X509Certificate
 
+#from xext import xext
+#print xext("1.2.42.42", "diracGroup", "DIRAC group")
+
 random.seed()
 
 class X509Chain( object ):
@@ -180,13 +183,16 @@ class X509Chain( object ):
                                           'digitalSignature, keyEncipherment, dataEncipherment', critical = 1 )
     extStack.push( kUext )
     if diracGroup and type( diracGroup ) in self.__validExtensionValueTypes:
-      dGext = M2Crypto.X509.new_extension( 'diracGroup', diracGroup)
-      extStack.push( dGext )
+      pass
+      #dGext = M2Crypto.X509.new_extension( 'diracGroup', 'ASN1:UTF8:' + diracGroup)  # needs that ans1 utf8 bit
+      #extStack.push( dGext )
     if rfc or rfcLimited:
       if rfc:
         ext =  M2Crypto.X509.new_extension( 'proxyCertInfo', 'critical, language:1.3.6.1.5.5.7.21.1', critical = 1 )
+        extStack.push(ext)
       elif rfcLimited:
         ext = M2Crypto.X509.new_extension( 'proxyCertInfo', 'critical, language:1.3.6.1.4.1.3536.1.1.1.9', critical = 1 )
+        extStack.push(ext)
     return extStack
 
   def getCertInChain( self, certPos = 0 ):
@@ -666,15 +672,15 @@ class X509Chain( object ):
   def getCredentials( self, ignoreDefault = False ):
     if not self.__loadedChain:
       return S_ERROR( DErrno.ENOCHAIN )
-    credDict = { 'subject' : str(self.__certList[0].getSubjectNameObject()),
-                 'issuer' : self.__certList[0].getIssuerDN(),
+    credDict = { 'subject' : str(self.__certList[0].getSubjectDN()['Value']),  # ['Value'] :(
+                 'issuer' : self.__certList[0].getIssuerDN()['Value'],  # ['Value'] :(
                  'secondsLeft' : self.getRemainingSecs()[ 'Value' ],
                  'isProxy' : self.__isProxy,
                  'isLimitedProxy' : self.__isProxy and self.__isLimitedProxy,
                  'validDN' : False,
                  'validGroup' : False }
     if self.__isProxy:
-      credDict[ 'identity'] = str(self.__certList[ self.__firstProxyStep + 1 ].getSubjectNameObject())
+      credDict[ 'identity'] = str(self.__certList[ self.__firstProxyStep + 1 ].getSubjectDN()['Value'])  # ['Value'] :(
 
       # Check if we have the PUSP case
       result = self.isPUSP()
