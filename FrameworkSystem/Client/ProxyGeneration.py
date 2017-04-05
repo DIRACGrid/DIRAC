@@ -170,7 +170,7 @@ def generateProxy( params ):
   timeLeft = testChain.getRemainingSecs()[ 'Value' ] / 86400
   if timeLeft < 30:
     gLogger.notice( "\nYour certificate will expire in %d days. Please renew it!\n" % timeLeft )
-  #retVal = testChain.loadKeyFromFile( params.keyLoc, password = params.userPasswd )
+  #retVal = testChain.loadKeyFromFile( params.keyLoc, password = params.userPasswd )  # XXX why so commented?
   #if not retVal[ 'OK' ]:
   passwdPrompt = "Enter Certificate password:"
   if params.stdinPasswd:
