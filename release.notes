@@ -1,3 +1,13 @@
+[v6r17p17]
+
+*DMS
+NEW: FTSAgent has a new CS parameter ProcessJobRequests to be able to process job
+     requests only. This allows to run 2 FTS agents in parallel
+     
+*Resources
+FIX: GFAL2_StorageBase - only set the space token if there is one to avoid problems
+     with some SEs     
+
 [v6r17p16]
 
 *Configuration
