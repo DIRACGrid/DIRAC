@@ -7,6 +7,7 @@ import re
 import commands
 import getpass
 import importlib
+import subprocess
 from datetime import datetime, timedelta
 
 import DIRAC
@@ -54,7 +55,12 @@ class SystemAdministratorHandler( RequestHandler ):
       global gMonitoringReporter
       gMonitoringReporter = MonitoringReporter( monitoringType = "ComponentMonitoring" )
       gThreadScheduler.addPeriodicTask( 120, cls.__storeProfiling )
-      
+    
+    automaticCleanup = cls.srv_getCSOption( 'AutomaticCleanup', -1 )
+    if automaticCleanup:
+      gLogger.info( "The last %s software version will be kept and the rest will be deleted!" % automaticCleanup )
+      gThreadScheduler.addPeriodicTask( 120, cls.__deleteOldSoftware, ( automaticCleanup ), executions = 2 ) #it is enough to try 2 times
+    
     return S_OK( 'Initialization went well' )
 
   types_getInfo = [ ]
@@ -710,3 +716,18 @@ class SystemAdministratorHandler( RequestHandler ):
             return result
     gMonitoringReporter.commit()
     return S_OK( 'Profiling information logged correctly' )
+  
+  @staticmethod
+  def __deleteOldSoftware( keepLast ):
+    """
+    It removes all versions except the last x
+    :param int keepLast: the number of the software version, what we keep
+    """
+        
+    verDirectory = os.path.split( DIRAC.rootPath )[0]
+    cmd = "ls -1tr %s | head --lines=-%s | xargs rm -rf" % ( verDirectory, keepLast )
+    task = subprocess.Popen( cmd, shell = True, stdout = subprocess.PIPE )
+    exitStatus = task.wait()
+    if exitStatus > 0:
+      gLogger.error( "Can not delete old DIRAC versions from the file system, please check %s directory:" % verDirectory, exitStatus )
+    
