@@ -725,7 +725,7 @@ class SystemAdministratorHandler( RequestHandler ):
     """
         
     verDirectory = os.path.split( DIRAC.rootPath )[0]
-    cmd = "ls -1tr %s | head --lines=-%s | xargs rm -rf" % ( verDirectory, keepLast )
+    cmd = "ls -1trd %s/* | head --lines=-%s | xargs rm -rf" % ( verDirectory, keepLast )
     task = subprocess.Popen( cmd, shell = True, stdout = subprocess.PIPE )
     exitStatus = task.wait()
     if exitStatus > 0:
