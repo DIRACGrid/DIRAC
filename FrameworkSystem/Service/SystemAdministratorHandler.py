@@ -7,7 +7,7 @@ import re
 import commands
 import getpass
 import importlib
-import subprocess
+import shutil
 from datetime import datetime, timedelta
 
 import DIRAC
@@ -723,11 +723,11 @@ class SystemAdministratorHandler( RequestHandler ):
     It removes all versions except the last x
     :param int keepLast: the number of the software version, what we keep
     """
-        
-    verDirectory = os.path.split( DIRAC.rootPath )[0]
-    cmd = "ls -1trd %s/* | head --lines=-%s | xargs rm -rf" % ( verDirectory, keepLast )
-    task = subprocess.Popen( cmd, shell = True, stdout = subprocess.PIPE )
-    exitStatus = task.wait()
-    if exitStatus > 0:
-      gLogger.error( "Can not delete old DIRAC versions from the file system, please check %s directory:" % verDirectory, exitStatus )
+    versionsDirectory = os.path.split( DIRAC.rootPath )[0]
+    softwareDirs = sorted( shutil.os.listdir( versionsDirectory ) )
+    try:
+      for directoryName in softwareDirs[:-1 * int( keepLast )]:
+        shutil.rmtree( versionsDirectory, os.path.join( directoryName ) )
+    except Exception as e:
+      gLogger.error( "Can not delete old DIRAC versions from the file system", str( e ) )
     
