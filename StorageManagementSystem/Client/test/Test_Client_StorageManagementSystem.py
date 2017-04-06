@@ -57,7 +57,7 @@ class StorageManagerSuccess( ClientsTestCase ):
   def test_getFilesToStage_withFilesToStage( self, _patch, _patched ):
     """ Test where the StorageElement mock will return files offline
     """
-    res = getFilesToStage( ['/a/lfn/1.txt'] )
+    res = getFilesToStage( ['/a/lfn/1.txt'], checkOnlyTapeSEs = False )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertIn( res['Value']['offlineLFNs'], [{'SE1':['/a/lfn/1.txt']},
@@ -70,7 +70,7 @@ class StorageManagerSuccess( ClientsTestCase ):
   def test_getFilesToStage_noFilesToStage( self, _patch, _patched ):
     """ Test where the StorageElement mock will return files online
     """
-    res = getFilesToStage( ['/a/lfn/2.txt'] )
+    res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = False )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], ['/a/lfn/2.txt'] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )
@@ -82,7 +82,7 @@ class StorageManagerSuccess( ClientsTestCase ):
   def test_getFilesToStage_seErrors( self, _patch, _patched ):
     """ Test where the StorageElement will return failure
     """
-    res = getFilesToStage( ['/a/lfn/2.txt'] )
+    res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = False )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )
@@ -94,7 +94,7 @@ class StorageManagerSuccess( ClientsTestCase ):
   def test_getFilesToStage_noSuchFile( self, _patch, _patched ):
     """ Test where the StorageElement will return file is absent
     """
-    res = getFilesToStage( ['/a/lfn/2.txt'] )
+    res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = False )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )
@@ -106,7 +106,7 @@ class StorageManagerSuccess( ClientsTestCase ):
   def test_getFilesToStage_fileInaccessibleAtDisk( self, _patch, _patched ):
     """ Test where the StorageElement will return file is unavailable at a Disk SE
     """
-    res = getFilesToStage( ['/a/lfn/1.txt'] )
+    res = getFilesToStage( ['/a/lfn/1.txt'], checkOnlyTapeSEs = False )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )
