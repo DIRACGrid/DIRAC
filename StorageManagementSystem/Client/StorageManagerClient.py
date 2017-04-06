@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.Proxy                     import executeWithUserProxy
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
 from DIRAC.Resources.Storage.StorageElement         import StorageElement
 
-def getFilesToStage( lfnList, jobState = None ):
+def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog = None ):
   """ Utility that returns out of a list of LFNs those files that are offline,
       and those for which at least one copy is online
   """
@@ -57,6 +57,7 @@ def getFilesToStage( lfnList, jobState = None ):
       userGroup = None
     # Check whether files are Online or Offline, or missing at SE
     result = _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,  # pylint: disable=unexpected-keyword-arg
+                                 checkOnlyTapeSEs = checkOnlyTapeSEs, jobLog = jobLog,
                                  proxyUserName = userName,
                                  proxyUserGroup = userGroup,
                                  executionLock = True )
@@ -73,21 +74,33 @@ def getFilesToStage( lfnList, jobState = None ):
   return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict, 'failedLFNs':list( failedLFNs ), 'absentLFNs':absentLFNs} )
 
 @executeWithUserProxy
-def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs ):
+def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs, checkOnlyTapeSEs = None, jobLog = None ):
   """
   Checks on SEs whether the file is NEARLINE or ONLINE
   onlineLFNs is modified to contain the files found online
   """
   # Only check on storage if it is a tape SE
+  if jobLog is None:
+    logger = gLogger
+  else:
+    logger = jobLog
+  if checkOnlyTapeSEs is None:
+    # Default value is True
+    checkOnlyTapeSEs = True
+
   failed = {}
   for se, lfnsInSEList in seToLFNs.iteritems():
     seObj = StorageElement( se )
     status = seObj.getStatus()
     if not status['OK']:
-      gLogger.error( "Could not get SE status", "%s - %s" % ( se, status['Message'] ) )
+      logger.error( "Could not get SE status", "%s - %s" % ( se, status['Message'] ) )
       return status
     tapeSE = status['Value']['TapeSE']
-        # File is at a disk SE, no need to stage
+    # If requested to check only Tape SEs and  the file is at a diskSE, we guess it is Online...
+    if checkOnlyTapeSEs and status['Value']['DiskSE']:
+      onlineLFNs.update( lfnsInSEList )
+      continue
+
     fileMetadata = seObj.getFileMetadata( lfnsInSEList )
     if not fileMetadata['OK']:
       failed[se] = dict.fromkeys( lfnsInSEList, fileMetadata['Message'] )
@@ -112,13 +125,13 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs ):
 
   # If the file was found staged, ignore possible errors, but print out errors
   for se, failedLfns in failed.items():
-    gLogger.error( "Errors when getting files metadata", 'at %s' % se )
+    logger.error( "Errors when getting files metadata", 'at %s' % se )
     for lfn, reason in failedLfns.items():
       if lfn in onlineLFNs:
-        gLogger.info( '%s: %s, but there is an online replica' % ( lfn, reason ) )
+        logger.info( '%s: %s, but there is an online replica' % ( lfn, reason ) )
         failed[se].pop( lfn )
       else:
-        gLogger.error( '%s: %s, no online replicas' % ( lfn, reason ) )
+        logger.error( '%s: %s, no online replicas' % ( lfn, reason ) )
         if cmpError( reason, errno.ENOENT ):
           absentLFNs.setdefault( lfn, [] ).append( se )
           failed[se].pop( lfn )
@@ -126,7 +139,7 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs ):
       failed.pop( se )
   # Find the files that do not exist at SE
   if failed:
-    gLogger.error( "Error getting metadata", "for %d files" % len( set( lfn for lfnList in failed.itervalues() for lfn in lfnList ) ) )
+    logger.error( "Error getting metadata", "for %d files" % len( set( lfn for lfnList in failed.itervalues() for lfn in lfnList ) ) )
 
   return S_OK()
 
