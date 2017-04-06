@@ -59,7 +59,7 @@ class SystemAdministratorHandler( RequestHandler ):
     automaticCleanup = cls.srv_getCSOption( 'AutomaticCleanup', -1 )
     if automaticCleanup:
       gLogger.info( "The last %s software version will be kept and the rest will be deleted!" % automaticCleanup )
-      gThreadScheduler.addPeriodicTask( 120, cls.__deleteOldSoftware, ( automaticCleanup ), executions = 2 ) #it is enough to try 2 times
+      gThreadScheduler.addPeriodicTask( 120, cls.__deleteOldSoftware, ( automaticCleanup, ), executions = 2 ) #it is enough to try 2 times
     
     return S_OK( 'Initialization went well' )
 
