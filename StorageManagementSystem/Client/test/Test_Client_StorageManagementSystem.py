@@ -98,7 +98,7 @@ class StorageManagerSuccess( ClientsTestCase ):
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )
-    self.assertEqual( res['Value']['absentLFNs'], {'/a/lfn/2.txt':['SE2']} )
+    self.assertEqual( res['Value']['absentLFNs'], {'/a/lfn/2.txt': 'No such file or directory ( 2 : File not at SE2)'} )
     self.assertEqual( res['Value']['failedLFNs'], [] )
 
   @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.DataManager", return_value = dm_mock )
