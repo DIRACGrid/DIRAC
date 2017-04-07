@@ -49,6 +49,7 @@ class InProcessComputingElement( ComputingElement ):
 
     payloadEnv = dict( os.environ )
     payloadProxy = ''
+    renewTask = None
     if proxy:
       self.log.verbose( 'Setting up proxy for payload' )
       result = self.writeProxyToFile( proxy )
@@ -59,14 +60,13 @@ class InProcessComputingElement( ComputingElement ):
       # pilotProxy = os.environ['X509_USER_PROXY']
       payloadEnv[ 'X509_USER_PROXY' ] = payloadProxy
 
-    self.log.verbose( 'Starting process for monitoring payload proxy' )
+      self.log.verbose( 'Starting process for monitoring payload proxy' )
 
-    renewTask = None
-    result = gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
-                                               taskArgs = ( pilotProxy, payloadProxy ),
-                                               executions = 0, elapsedTime = 0 )
-    if result[ 'OK' ]:
-      renewTask = result[ 'Value' ]
+      result = gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
+                                                 taskArgs = ( pilotProxy, payloadProxy ),
+                                                 executions = 0, elapsedTime = 0 )
+      if result[ 'OK' ]:
+        renewTask = result[ 'Value' ]
 
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
