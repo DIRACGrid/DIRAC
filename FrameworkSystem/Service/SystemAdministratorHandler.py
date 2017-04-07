@@ -721,13 +721,18 @@ class SystemAdministratorHandler( RequestHandler ):
   def __deleteOldSoftware( keepLast ):
     """
     It removes all versions except the last x
+    
     :param int keepLast: the number of the software version, what we keep
     """
+    
     versionsDirectory = os.path.split( DIRAC.rootPath )[0]
-    softwareDirs = sorted( shutil.os.listdir( versionsDirectory ) )
-    try:
-      for directoryName in softwareDirs[:-1 * int( keepLast )]:
-        shutil.rmtree( versionsDirectory, os.path.join( directoryName ) )
-    except Exception as e:
-      gLogger.error( "Can not delete old DIRAC versions from the file system", str( e ) )
+    if versionsDirectory.endswith( 'versions' ):  # make sure we are not deleting from a wrong directory.
+      softwareDirs = sorted( shutil.os.listdir( versionsDirectory ) )
+      try:
+        for directoryName in softwareDirs[:-1 * int( keepLast )]:
+          shutil.rmtree( shutil.os.path.join( versionsDirectory, directoryName ) )
+      except Exception as e:
+        gLogger.error( "Can not delete old DIRAC versions from the file system", repr( e ) )
+    else:
+      gLogger.error( "The DIRAC.rootPath is not correct: %s" % versionsDirectory )
     
