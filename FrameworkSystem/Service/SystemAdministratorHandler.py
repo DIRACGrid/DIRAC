@@ -57,7 +57,7 @@ class SystemAdministratorHandler( RequestHandler ):
       gThreadScheduler.addPeriodicTask( 120, cls.__storeProfiling )
     
     keepSoftwareVersions = cls.srv_getCSOption( 'KeepSoftwareVersions', 0 )
-    if keepSoftwareVersions:
+    if keepSoftwareVersions > 0:
       gLogger.info( "The last %s software version will be kept and the rest will be deleted!" % keepSoftwareVersions )
       gThreadScheduler.addPeriodicTask( 120, cls.__deleteOldSoftware, ( keepSoftwareVersions, ), executions = 2 ) #it is enough to try 2 times
     
