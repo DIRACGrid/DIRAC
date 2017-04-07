@@ -11,6 +11,9 @@ from DIRAC.Core.Utilities.DErrno                    import cmpError
 from DIRAC.Core.Utilities.Proxy                     import executeWithUserProxy
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
 from DIRAC.Resources.Storage.StorageElement         import StorageElement
+from DIRAC.Core.Utilities.DErrno                    import cmpError
+
+import errno
 
 def getFilesToStage( lfnList, jobState = None ):
   """ Utility that returns out of a list of LFNs those files that are offline,
