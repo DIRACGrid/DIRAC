@@ -20,12 +20,28 @@ def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog =
     return S_OK( {'onlineLFNs':[], 'offlineLFNs': {}, 'failedLFNs':[], 'absentLFNs':{}} )
 
   dm = DataManager()
+  if isinstance( lfnList, basestring ):
+    lfnList = [lfnList]
 
   lfnListReplicas = dm.getReplicasForJobs( lfnList, getUrl = False )
   if not lfnListReplicas['OK']:
     return lfnListReplicas
 
+  offlineLFNsDict = {}
+  onlineLFNs = set()
+  offlineLFNs = {}
+  absentLFNs = {}
+  failedLFNs = set()
   if lfnListReplicas['Value']['Failed']:
+    # Check if files are not existing
+    for lfn, reason in lfnListReplicas['Value']['Failed'].iteritems():
+      # FIXME: awful check until FC returns a proper error
+      if cmpError( reason, errno.ENOENT ) or 'No such file' in reason:
+        # The file doesn't exist, job must be Failed
+        # FIXME: it is not possible to return here an S_ERROR(), return the message only
+        absentLFNs[lfn] = S_ERROR( errno.ENOENT, 'File not in FC' )['Message']
+    if absentLFNs:
+      return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict, 'failedLFNs':list( failedLFNs ), 'absentLFNs':absentLFNs} )
     return S_ERROR( "Failures in getting replicas" )
 
   lfnListReplicas = lfnListReplicas['Value']['Successful']
@@ -36,10 +52,6 @@ def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog =
     for se in ses:
       seToLFNs.setdefault( se, list() ).append( lfn )
 
-  offlineLFNsDict = {}
-  onlineLFNs = set()
-  offlineLFNs = {}
-  absentLFNs = {}
   if seToLFNs:
     if jobState:
       # Get user name and group from the job state
@@ -73,8 +85,11 @@ def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog =
 
   return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict, 'failedLFNs':list( failedLFNs ), 'absentLFNs':absentLFNs} )
 
-@executeWithUserProxy
-def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs, checkOnlyTapeSEs = None, jobLog = None ):
+def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
+                        checkOnlyTapeSEs = None, jobLog = None,
+                        proxyUserName = None,
+                        proxyUserGroup = None,
+                        executionLock = None ):
   """
   Checks on SEs whether the file is NEARLINE or ONLINE
   onlineLFNs is modified to contain the files found online
@@ -90,6 +105,11 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs, checkOnly
 
   failed = {}
   for se, lfnsInSEList in seToLFNs.iteritems():
+    # No need to check files that are already known to be Online
+    lfnsInSEList = list( set( lfnsInSEList ) - onlineLFNs )
+    if not lfnsInSEList:
+      continue
+
     seObj = StorageElement( se )
     status = seObj.getStatus()
     if not status['OK']:
@@ -97,11 +117,17 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs, checkOnly
       return status
     tapeSE = status['Value']['TapeSE']
     # If requested to check only Tape SEs and  the file is at a diskSE, we guess it is Online...
-    if checkOnlyTapeSEs and status['Value']['DiskSE']:
+    if checkOnlyTapeSEs and not tapeSE:
       onlineLFNs.update( lfnsInSEList )
       continue
 
-    fileMetadata = seObj.getFileMetadata( lfnsInSEList )
+    # Wrap the SE method with executeWithUserProxy
+    fileMetadata = ( executeWithUserProxy( seObj.getFileMetadata )
+                    ( lfnsInSEList,
+                      proxyUserName = proxyUserName,
+                      proxyUserGroup = proxyUserGroup,
+                      executionLock = executionLock ) )
+
     if not fileMetadata['OK']:
       failed[se] = dict.fromkeys( lfnsInSEList, fileMetadata['Message'] )
     else:
@@ -128,10 +154,10 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs, checkOnly
     logger.error( "Errors when getting files metadata", 'at %s' % se )
     for lfn, reason in failedLfns.items():
       if lfn in onlineLFNs:
-        logger.info( '%s: %s, but there is an online replica' % ( lfn, reason ) )
+        logger.warn( reason, 'for %s, but there is an online replica' % lfn )
         failed[se].pop( lfn )
       else:
-        logger.error( '%s: %s, no online replicas' % ( lfn, reason ) )
+        logger.error( reason, 'for %s, no online replicas' % lfn )
         if cmpError( reason, errno.ENOENT ):
           absentLFNs.setdefault( lfn, [] ).append( se )
           failed[se].pop( lfn )
@@ -141,6 +167,11 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs, checkOnly
   if failed:
     logger.error( "Error getting metadata", "for %d files" % len( set( lfn for lfnList in failed.itervalues() for lfn in lfnList ) ) )
 
+  for lfn in absentLFNs:
+    seList = absentLFNs[lfn]
+    # FIXME: it is not possible to return here an S_ERROR(), return the message only
+    absentLFNs[lfn] = S_ERROR( errno.ENOENT, "File not at %s" % ','.join( seList ) )['Message']
+  # Format the error for absent files
   return S_OK()
 
 
