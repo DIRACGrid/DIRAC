@@ -725,12 +725,12 @@ class SystemAdministratorHandler( RequestHandler ):
     :param int keepLast: the number of the software version, what we keep
     """
     
-    versionsDirectory = shutil.os.path.split( DIRAC.rootPath )[0]
+    versionsDirectory = os.path.split( DIRAC.rootPath )[0]
     if versionsDirectory.endswith( 'versions' ):  # make sure we are not deleting from a wrong directory.
-      softwareDirs = sorted( shutil.os.listdir( versionsDirectory ) )
+      softwareDirs = sorted( os.listdir( versionsDirectory ) )
       try:
         for directoryName in softwareDirs[:-1 * int( keepLast )]:
-          fullPath = shutil.os.path.join( versionsDirectory, directoryName )
+          fullPath = os.path.join( versionsDirectory, directoryName )
           gLogger.info( "Removing %s directory." % fullPath )
           shutil.rmtree( fullPath )
       except Exception as e:
