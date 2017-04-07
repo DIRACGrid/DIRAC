@@ -92,7 +92,9 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
                         executionLock = None ):
   """
   Checks on SEs whether the file is NEARLINE or ONLINE
-  onlineLFNs is modified to contain the files found online
+  onlineLFNs, offlineLFNs and absentLFNs are modified to contain the files found online
+  If checkOnlyTapeSEs is True, disk replicas are not checked
+  As soon as a replica is found Online for a file, no further check is made
   """
   # Only check on storage if it is a tape SE
   if jobLog is None:

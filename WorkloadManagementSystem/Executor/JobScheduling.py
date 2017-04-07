@@ -137,8 +137,7 @@ class JobScheduling( OptimizerExecutor ):
           # Some files are missing in the FC or in SEs, fail the job
           self.jobLog.error( reason, ','.join( lfns ) )
         error = ','.join( reasons )
-        jobState.setStatus( 'Failed', appStatus = error )
-        return S_ERROR( errno.ENOENT, error )
+        return S_ERROR( error )
 
       if res['Value']['failedLFNs']:
         return self.__holdJob( jobState, "Couldn't get storage metadata of some files" )
