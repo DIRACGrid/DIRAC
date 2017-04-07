@@ -103,8 +103,8 @@ If you want to create an isolated installation just create a
      {
        DeveloperSetup
        {
-	 Framework = DevInstance
-	 Test = DevInstance
+         Framework = DevInstance
+         Test = DevInstance
        }
      }
    }
@@ -114,24 +114,24 @@ If you want to create an isolated installation just create a
      {
        DevInstance
        {
-	 URLs
-	 {
-	 }
-	 Services
-	 {
-	 }
+         URLs
+         {
+         }
+         Services
+         {
+         }
        }
      }
      Test
      {
        DevInstance
        {
-	 URLs
-	 {
-	 }
-	 Services
-	 {
-	 }
+         URLs
+         {
+         }
+         Services
+         {
+         }
        }
      }
    }
@@ -141,24 +141,24 @@ If you want to create an isolated installation just create a
      {
        yourusername
        {
-	 DN = /your/dn/goes/here
-	 Email = youremail@yourprovider.com
+         DN = /your/dn/goes/here
+         Email = youremail@yourprovider.com
        }
      }
      Groups
      {
        devGroup
        {
-	 Users = yourusername
-	 Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
+         Users = yourusername
+         Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
        }
      }
      Hosts
      {
        mydevbox
        {
-	 DN = /your/box/dn/goes/here
-	 Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
+         DN = /your/box/dn/goes/here
+         Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
        }
      }
    }

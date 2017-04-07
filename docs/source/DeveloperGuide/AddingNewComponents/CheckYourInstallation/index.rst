@@ -215,7 +215,7 @@ So, let's add the groups within the /Registry section::
        {
          devGroup
          {
-	   Users = fstagni
+           Users = fstagni
          }
        }
 
