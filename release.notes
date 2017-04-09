@@ -16,7 +16,7 @@ NEW: new functionality to plot the data gathered by perfSONARs. It allows to
 *DMS
 CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
         client
-CHANGE: FTSHistoryView - frop FTSServer field from the view description        
+CHANGE: FTSHistoryView - drop FTSServer field from the view description        
 
 *RSS
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
