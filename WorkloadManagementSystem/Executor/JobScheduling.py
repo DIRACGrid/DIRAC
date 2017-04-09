@@ -11,12 +11,14 @@
 """
 
 import random
+import errno
 
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
 from DIRAC.Core.Utilities.Time                                      import fromString, toEpoch
 from DIRAC.Core.Security                                            import Properties
+from DIRAC.Core.Utilities.DErrno                                    import cmpError
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources             import getSiteTier
 from DIRAC.ConfigurationSystem.Client.Helpers                       import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
@@ -121,16 +123,22 @@ class JobScheduling( OptimizerExecutor ):
     if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
       self.jobLog.info( "Production job: sending to TQ, but first checking if staging is requested" )
 
-      res = getFilesToStage( inputData, jobState = jobState )
+      res = getFilesToStage( inputData, jobState = jobState, checkOnlyTapeSEs = self.ex_getOption( 'CheckOnlyTapeSEs', True ), jobLog = self.jobLog )
 
       if not res['OK']:
         return self.__holdJob( jobState, res['Message'] )
       if res['Value']['absentLFNs']:
         # Some files do not exist at all... set the job Failed
-        error = 'Some files do not exist at SE'
-        self.jobLog.error( error, ':' + ','.join( res['Value']['absentLFNs'] ) )
-        jobState.setStatus( 'Failed', appStatus = error )
+        # Reverse errors
+        reasons = {}
+        for lfn, reason in res['Value']['absentLFNs'].iteritems():
+          reasons.setdefault( reason, [] ).append( lfn )
+        for reason, lfns in reasons.iteritems():
+          # Some files are missing in the FC or in SEs, fail the job
+          self.jobLog.error( reason, ','.join( lfns ) )
+        error = ','.join( reasons )
         return S_ERROR( error )
+
       if res['Value']['failedLFNs']:
         return self.__holdJob( jobState, "Couldn't get storage metadata of some files" )
       stageLFNs = res['Value']['offlineLFNs']
