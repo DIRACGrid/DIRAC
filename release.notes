@@ -35,6 +35,20 @@ NEW: pilotCommands - new ReplaceDIRACCode command mostly for testing purposes
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
 CHANGE: Dirac API - added runLocal as an API method
 
+[v6r17p18]
+
+*DMS
+FIX: RemoveReplica - removing replica of a non-existing file is considered successful
+
+*SMS
+CHANGE: StorageManagerClient - restrict usage of executeWithUserProxy decorator 
+        to calling the SE.getFileMetadata only; added flag to check only replicas 
+        at tape SEs
+        
+*WMS
+FIX: JobScheduling - added CS option to flag checking only replicas at tape SEs;
+     fail jobs with input data not available in the File Catalog        
+
 [v6r17p17]
 
 *DMS

@@ -145,8 +145,13 @@ class RemoveReplica( DMSRequestOperationsBase ):
     # # filter out failed
     for lfn, opFile in toRemoveDict.iteritems():
       if lfn in removeReplicas["Failed"]:
-        opFile.Error = str(  removeReplicas['Failed'][lfn] )
-        self.log.error("Failed removing lfn", "%s:%s"%(lfn, opFile.Error))
+        errorReason = str(removeReplicas['Failed'][lfn])
+        # If the reason is that the file does not exist,
+        # we consider the removal successful
+        # TODO: use cmpError once the FC returns the proper error msg corresponding to ENOENT
+        if 'No such file' not in errorReason:
+          opFile.Error = errorReason
+          self.log.error("Failed removing lfn", "%s:%s"%(lfn, opFile.Error))
 
     return S_OK()
 
