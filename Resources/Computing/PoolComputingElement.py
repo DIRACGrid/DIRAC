@@ -51,7 +51,9 @@ class PoolComputingElement( ComputingElement ):
       self.processors = processors
     else:
       self.processors = getNumberOfCores()
-    self.pPool = ProcessPool( self.processors, self.processors, poolCallback = self.finalizeJob )
+    self.pPool = ProcessPool( minSize = self.processors,
+                              maxSize = self.processors,
+                              poolCallback = self.finalizeJob )
     self.taskID = 0
     self.processorsPerTask = {}
     self.userNumberPerTask = {}
@@ -65,7 +67,7 @@ class PoolComputingElement( ComputingElement ):
 
   def _reset( self ):
 
-    self.processors = self.ceParameters.get( 'NumberOfProcessors', self.processors )
+    self.processors = int( self.ceParameters.get( 'NumberOfProcessors', self.processors ) )
     self.ceParameters['MaxTotalJobs'] = self.processors
     self.useSudo = self.ceParameters.get( 'SudoExecution', False )
 
@@ -85,7 +87,7 @@ class PoolComputingElement( ComputingElement ):
     self.pPool.processResults()
 
     processorsInUse = self.getProcessorsInUse()
-    if "wholeNode" in kwargs and kwargs['wholeNode']:
+    if kwargs.get('wholeNode'):
       if processorsInUse > 0:
         return S_ERROR('Can not take WholeNode job') #, %d/%d slots used' % (self.slotsInUse,self.slots) )
       else:
@@ -117,9 +119,9 @@ class PoolComputingElement( ComputingElement ):
       kwargs['UseSudo'] = True
 
     result = self.pPool.createAndQueueTask( executeJob,
-                                            (executableFile,proxy,self.taskID),
-                                            kwargs,
-                                            self.taskID,
+                                            args = (executableFile,proxy,self.taskID),
+                                            kwargs = kwargs,
+                                            taskID = self.taskID,
                                             usePoolCallbacks = True )
     self.processorsPerTask[self.taskID] = requestedProcessors
     self.taskID += 1
@@ -145,7 +147,7 @@ class PoolComputingElement( ComputingElement ):
     result = S_OK()
     result['SubmittedJobs'] = 0
     nJobs = 0
-    for _j, value in self.processorsPerTask.items():
+    for _j, value in self.processorsPerTask.iteritems():
       if value > 0:
         nJobs += 1
     result['RunningJobs'] = nJobs
