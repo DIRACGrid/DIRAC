@@ -210,9 +210,8 @@ class ComputingElement(object):
 
     # If NumberOfProcessors is present in the description but is equal to zero
     # interpret it as needing local evaluation
-    if "NumberOfProcessors" in self.ceParameters:
-      if self.ceParameters['NumberOfProcessors'] == 0:
-        self.ceParameters["NumberOfProcessors"] = multiprocessing.cpu_count()
+    if self.ceParameters.get( "NumberOfProcessors", -1 ) == 0:
+      self.ceParameters["NumberOfProcessors"] = multiprocessing.cpu_count()
 
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:
