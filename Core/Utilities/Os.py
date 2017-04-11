@@ -188,17 +188,6 @@ def unifyLdLibraryPath( path, newpath ):
     # Windows does nothing for the moment
     return path
 
-def getNumberOfCores():
-  """ Get the number of processor cores
-  """
-  cores = 0
-  try:
-    cores = multiprocessing.cpu_count()
-  except:
-    return 0
-
-  return cores
-
 def which( executable ):
 
   return distutils.spawn.find_executable( executable ) #pylint: disable=no-member
