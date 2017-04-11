@@ -10,6 +10,7 @@
 __RCSID__ = "$Id$"
 
 import os
+import multiprocessing
 
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 from DIRAC.Resources.Computing.SudoComputingElement      import SudoComputingElement
@@ -17,7 +18,6 @@ from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 from DIRAC                                               import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ProcessPool                    import ProcessPool
-from DIRAC.Core.Utilities.Os                             import getNumberOfCores
 
 MandatoryParameters = [ ]
 
@@ -50,7 +50,7 @@ class PoolComputingElement( ComputingElement ):
     if processors > 0:
       self.processors = processors
     else:
-      self.processors = getNumberOfCores()
+      self.processors = multiprocessing.cpu_count()
     self.pPool = ProcessPool( minSize = self.processors,
                               maxSize = self.processors,
                               poolCallback = self.finalizeJob )

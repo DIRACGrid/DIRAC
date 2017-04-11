@@ -27,6 +27,7 @@
 """
 
 import os
+import multiprocessing
 
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
 from DIRAC.Core.Security.ProxyFile                    import writeToProxyFile
@@ -40,7 +41,6 @@ from DIRAC.Core.Security                              import Properties
 from DIRAC.Core.Utilities.Time                        import dateTime, second
 from DIRAC                                            import S_OK, S_ERROR, gLogger, version
 from DIRAC.Core.Utilities.ObjectLoader                import ObjectLoader
-from DIRAC.Core.Utilities.Os                          import getNumberOfCores
 
 
 __RCSID__ = "$Id$"
@@ -212,7 +212,7 @@ class ComputingElement(object):
     # interpret it as needing local evaluation
     if "NumberOfProcessors" in self.ceParameters:
       if self.ceParameters['NumberOfProcessors'] == 0:
-        self.ceParameters["NumberOfProcessors"] = getNumberOfCores()
+        self.ceParameters["NumberOfProcessors"] = multiprocessing.cpu_count()
 
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:
