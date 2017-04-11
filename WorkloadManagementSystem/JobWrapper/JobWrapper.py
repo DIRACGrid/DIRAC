@@ -291,9 +291,7 @@ class JobWrapper( object ):
       self.log.info( 'Job %s has no CPU time limit specified, '
                      'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
       jobCPUTime = self.defaultCPUTime
-    processors = 1
-    if 'NumberOfProcessors' in self.jobArgs:
-      processors = int( self.jobArgs['NumberOfProcessors'] )
+    processors = int( self.jobArgs.get( 'NumberOfProcessors', 1 ) )
 
     jobMemory = 0.
     if "Memory" in self.jobArgs:
