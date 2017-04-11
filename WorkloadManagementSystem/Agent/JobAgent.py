@@ -281,7 +281,7 @@ class JobAgent( AgentModule ):
     processors = 1
     if 'NumberOfProcessors' in params:
       processors = int( params['NumberOfProcessors'] )
-    wholeNode = True if 'WholeNode' in params else False
+    wholeNode = 'WholeNode' in params
 
     if self.extraOptions:
       params['Arguments'] += ' ' + self.extraOptions
