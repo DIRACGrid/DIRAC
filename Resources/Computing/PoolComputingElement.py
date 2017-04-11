@@ -20,6 +20,8 @@ from DIRAC                                               import S_OK, S_ERROR, g
 from DIRAC.Core.Utilities.ProcessPool                    import ProcessPool
 
 MandatoryParameters = [ ]
+# Number of unix users to run job payloads with sudo
+MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
 def executeJob( executableFile, proxy, taskID, **kwargs ):
 
@@ -111,7 +113,7 @@ class PoolComputingElement( ComputingElement ):
 
     kwargs = { 'UseSudo': False }
     if self.useSudo:
-      for nUser in range( 16 ):
+      for nUser in range( MAX_NUMBER_OF_SUDO_UNIX_USERS ):
         if nUser not in self.userNumberPerTask.values():
           break
       kwargs['NUser'] = nUser
