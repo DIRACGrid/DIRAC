@@ -82,7 +82,7 @@ class Watchdog( object ):
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = 0
     self.littleTimeLeft = False
-    self.scaleFactor = 0.0
+    self.scaleFactor = 1.0
     self.processors = processors
 
 
