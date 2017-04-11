@@ -579,7 +579,7 @@ def getUserNameFromDN( dn, vo ):
     shortVO = '.'.join( vos )
 
   # Weird case of just a name as DN !
-  if '/' not in dn:
+  if '/' not in dn and 'CN=' not in dn:
     dn = 'CN=' + dn
   entries = dn.split( '/' )
   entries.reverse()
