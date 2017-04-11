@@ -278,9 +278,7 @@ class JobAgent( AgentModule ):
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
 
     # Job requirement for a number of processors
-    processors = 1
-    if 'NumberOfProcessors' in params:
-      processors = int( params['NumberOfProcessors'] )
+    processors = int( params.get( 'NumberOfProcessors', 1 ) )
     wholeNode = 'WholeNode' in params
 
     if self.extraOptions:
