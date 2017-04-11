@@ -135,7 +135,7 @@ class Watchdog( object ):
     # the self.checkingTime and self.pollingTime are in seconds,
     # thus they need to be multiplied by a large enough factor
     self.fineTimeLeftLimit = gConfig.getValue( self.section + '/TimeLeftLimit', 150 * self.pollingTime )
-    self.scaleFactor = gConfig.getValue( '/LocalSite/CPUScalingFactor', 0.0 )
+    self.scaleFactor = gConfig.getValue( '/LocalSite/CPUScalingFactor', 1.0 )
 
     return S_OK()
 
