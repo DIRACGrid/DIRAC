@@ -2,7 +2,7 @@
 
 *Framework
 NEW: SystemAdministrator - added possibility to remove old software installations keeping
-     anly a predefined number of the most recent ones.
+     only a predefined number of the most recent ones.
 
 *DMS
 FIX: RemoveReplica - removing replica of a non-existing file is considered successful
