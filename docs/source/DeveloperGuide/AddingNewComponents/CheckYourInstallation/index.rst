@@ -51,7 +51,7 @@ Needless to say, you'll use it a lot.
 .. code-block:: python
 
    In [5]: gLogger.info('Hello world')
-   Out[5]: True
+   Out[5]: False
 
 Why "Hello world" was not printed? Because the logging level is too high:
 
@@ -88,7 +88,10 @@ These 2 are the basic return codes that you should use. How do they work?
    Out[12]: {'OK': True, 'Value': 'All is good'}
 
    In [13]: S_ERROR('Damn it')
-   Out[13]: {'Message': 'Damn it', 'OK': False}
+   Out[13]:  {'Errno': 0, 'Message': 'Damn it', 'OK': False, 'CallStack': ['  File "<stdin>", line 1, in <module>\n']}
+
+   In [14]: S_ERROR( errno.EPERM, 'But I want to!')
+   Out[14]:  {'Errno': 1, 'Message': 'Operation not permitted ( 1 : But I want to!)', 'OK': False, 'CallStack': ['  File "<stdin>", line 1, in <module>\n']}
 
 Quite clear, isn't it? Often, you'll end up doing a lot of code like that:
 
