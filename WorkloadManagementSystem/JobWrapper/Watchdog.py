@@ -33,7 +33,7 @@ from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
 class Watchdog( object ):
 
   #############################################################################
-  def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'linux2.4' ):
+  def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux2.4' ):
     """ Constructor, takes system flag as argument.
     """
     self.log = gLogger.getSubLogger( "Watchdog" )
@@ -82,6 +82,8 @@ class Watchdog( object ):
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = 0
     self.littleTimeLeft = False
+    self.scaleFactor = 1.0
+    self.processors = processors
 
 
   #############################################################################
@@ -133,6 +135,7 @@ class Watchdog( object ):
     # the self.checkingTime and self.pollingTime are in seconds,
     # thus they need to be multiplied by a large enough factor
     self.fineTimeLeftLimit = gConfig.getValue( self.section + '/TimeLeftLimit', 150 * self.pollingTime )
+    self.scaleFactor = gConfig.getValue( '/LocalSite/CPUScalingFactor', 1.0 )
 
     return S_OK()
 
@@ -783,9 +786,11 @@ class Watchdog( object ):
     if not result['OK']:
       self.log.warn( "Failed determining wall clock time", result['Message'] )
       summary['WallClockTime(s)'] = 0
+      summary['ScaledCPUTime(s)'] = 0
     else:
       wallClock = result['Value']
       summary['WallClockTime(s)'] = wallClock
+      summary['ScaledCPUTime(s)'] = wallClock * self.scaleFactor * self.processors
 
     self.__reportParameters( summary, 'UsageSummary', True )
     self.currentStats = summary
