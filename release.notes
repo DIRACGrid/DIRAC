@@ -1,4 +1,4 @@
-[v6r18-pre9]
+[v6r18-pre10]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -30,6 +30,8 @@ FIX: ResourceStatus - fixes for getting status from the CS information
 NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS  
 FIX: JobDB - fixes necessary to suite MySQL 5.7   
 NEW: pilotCommands - new ReplaceDIRACCode command mostly for testing purposes
+NEW: JobAgent, JobWrapper - several fixes to allow the work with PoolComputingElement
+     to support multiprocessor jobs
 
 *Interfaces
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
