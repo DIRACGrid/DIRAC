@@ -644,6 +644,8 @@ class FileManager( FileManagerBase ):
 
     if paramName in ['UID','GID','Status','Size']:
       # Treat primary file attributes specially
+      # Different statement for the fileIDString with SELECT is for performance optimization
+      # since in this case the MySQL engine manages to use index on FileID.
       if 'select' in fileIDString.lower():
         tmpreq = "UPDATE FC_Files as FF1, ( %s ) as FF2 %%s WHERE FF1.FileID=FF2.FileID" % fileIDString
       else:
@@ -657,6 +659,8 @@ class FileManager( FileManagerBase ):
       else:
         req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % fileIDString
     else:
+      # Different statement for the fileIDString with SELECT is for performance optimization
+      # since in this case the MySQL engine manages to use index on FileID.
       if 'select' in fileIDString.lower():
         req = "UPDATE FC_FileInfo as FF1, ( %s ) as FF2 SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FF1.FileID=FF2.FileID" % \
               ( fileIDString, paramName, paramValue )
