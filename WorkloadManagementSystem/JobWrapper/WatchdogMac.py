@@ -12,18 +12,20 @@
 
 __RCSID__ = "$Id$"
 
+import string
+import re
+
+from DIRAC                                              import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 from DIRAC.Core.Utilities.Subprocess                    import shellCall
-from DIRAC                                              import S_OK, S_ERROR
 
-import string,re
 
 class WatchdogMac( Watchdog ):
 
-  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'mac' ):
+  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'mac' ):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, systemFlag )
+    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, processors, systemFlag )
     self.systemFlag = systemFlag
     self.pid = pid
 
@@ -45,7 +47,7 @@ class WatchdogMac( Watchdog ):
           if re.search('=',val):
             hostname = val.split('=')[1].strip()
           else:
-            hostname = val.split(':')[1].strip()  
+            hostname = val.split(':')[1].strip()
           result['Value']['HostName']=hostname
         if re.search('^hw.model',val):
           model = val.split('=')[1].strip()

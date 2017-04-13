@@ -12,20 +12,21 @@
 
 __RCSID__ = "$Id$"
 
+import string
+import socket
+
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog  import Watchdog
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Os import getDiskSpace
 
-import string
-import socket
 
 class WatchdogLinux( Watchdog ):
 
-  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'linux' ):
+  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux' ):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, systemFlag )
+    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, processors, systemFlag )
     self.systemFlag = systemFlag
     self.pid = pid
 

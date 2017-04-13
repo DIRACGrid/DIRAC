@@ -33,7 +33,7 @@ from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
 class Watchdog( object ):
 
   #############################################################################
-  def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux2.4' ):
+  def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux' ):
     """ Constructor, takes system flag as argument.
     """
     self.log = gLogger.getSubLogger( "Watchdog" )
@@ -257,7 +257,7 @@ class Watchdog( object ):
     if result['OK']:
       self.parameters['DiskSpace'].append( result['Value'] )
       heartBeatDict['AvailableDiskSpace'] = result['Value']
-    
+
     cpu = self.__getCPU()
     if not cpu['OK']:
       msg += 'CPU: ERROR '
@@ -272,7 +272,7 @@ class Watchdog( object ):
       rawCPU = self.__convertCPUTime( hmsCPU )
       if rawCPU['OK']:
         heartBeatDict['CPUConsumed'] = rawCPU['Value']
-    
+
     result = self.__getWallClockTime()
     if not result['OK']:
       self.log.warn( "Failed determining wall clock time", result['Message'] )
@@ -438,7 +438,7 @@ class Watchdog( object ):
       report += 'CPULimit OK, '
     else:
       report += 'CPULimit: NA, '
-        
+
     if self.testTimeLeft:
       self.__timeLeft()
       if self.timeLeft:
@@ -575,13 +575,13 @@ class Watchdog( object ):
     """
     if self.parameters.has_key( 'Vsize' ):
       vsize = self.parameters['Vsize'][-1]
-      
+
     if vsize and self.memoryLimit:
       if vsize > self.memoryLimit:
         vsize = vsize
         # Just a warning for the moment
-        self.log.warn( "Job has consumed %f.2 KB of memory with the limit of %f.2 KB" % ( vsize, self.memoryLimit ) )  
-    
+        self.log.warn( "Job has consumed %f.2 KB of memory with the limit of %f.2 KB" % ( vsize, self.memoryLimit ) )
+
     return S_OK()
 
   #############################################################################
@@ -676,7 +676,7 @@ class Watchdog( object ):
 
     self.initialValues['MemoryUsed'] = memUsed
     self.parameters['MemoryUsed'] = []
-    
+
     result = self.processMonitor.getMemoryConsumed( self.wrapperPID )
     self.log.verbose( 'Job Memory: %s' % ( result['Value'] ) )
     if not result['OK']:
