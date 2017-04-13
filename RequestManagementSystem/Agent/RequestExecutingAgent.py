@@ -189,6 +189,10 @@ class RequestExecutingAgent( AgentModule ):
 
     :param ~Request.Request request: Request instance
     """
+    maxProcess = max( self.__minProcess, self.__maxProcess )
+    if len( self.__requestCache ) > maxProcess + 4:
+      self.log.warn( "Too many requests in cache", ': %d' % len( self.__requestCache ) )
+#      return S_ERROR( "Too many requests in cache" )
     count = 5
     # Wait a bit as there may be a race condition between RequestTask putting back the request and the callback clearing the cache
     while request.RequestID in self.__requestCache:
@@ -214,6 +218,9 @@ class RequestExecutingAgent( AgentModule ):
       if taskResult:
         if taskResult['OK']:
           request = taskResult['Value']
+          # The RequestTask is putting back the Done tasks, no need to redo it
+          if request.Status == 'Done':
+            return S_OK()
         # In case of timeout, we need to increment ourselves all the attempts
         elif cmpError( taskResult, errno.ETIME ):
           waitingOp = request.getWaiting()
@@ -286,16 +293,6 @@ class RequestExecutingAgent( AgentModule ):
       for request in requestsToExecute:
         # # set task id
         taskID = request.RequestID
-        # # save current request in cache
-        res = self.cacheRequest( request )
-        if not res['OK']:
-          self.log.error( res['Message'] )
-          continue
-        # # serialize to JSON
-        result = request.toJSON()
-        if not result['OK']:
-          continue
-        requestJSON = result['Value']
 
         self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                       self.processPool().getNumWorkingProcesses() ) )
@@ -311,6 +308,18 @@ class RequestExecutingAgent( AgentModule ):
             if looping:
               self.log.info( "Free slot found after %d seconds" % looping * self.__poolSleep )
             looping = 0
+            # # save current request in cache
+            res = self.cacheRequest( request )
+            if not res['OK']:
+              # There are too many requests in the cache, commit suicide
+              self.log.error( res['Message'], '(%d requests): put back all requests and exit cycle' % len( self.__requestCache ) )
+              self.putAllRequests()
+              return res
+            # # serialize to JSON
+            result = request.toJSON()
+            if not result['OK']:
+              continue
+            requestJSON = result['Value']
             self.log.info( "spawning task for request '%s/%s'" % ( request.RequestID, request.RequestName ) )
             timeOut = self.getTimeout( request )
             enqueue = self.processPool().createAndQueueTask( RequestTask,
@@ -334,6 +343,8 @@ class RequestExecutingAgent( AgentModule ):
               time.sleep( 0.1 )
               break
 
+    self.log.info( 'Flushing callbacks (%d requests still in cache)' % len( self.__requestCache ) )
+    self.processPool().processResults()
     # # clean return
     return S_OK()
 
