@@ -273,7 +273,7 @@ class ComputingElement(object):
     runningJobs = result['RunningJobs']
     waitingJobs = result['WaitingJobs']
     submittedJobs = result['SubmittedJobs']
-    availableProcessors = result['AvailableProcessors']
+    availableProcessors = result.get('AvailableProcessors', 1)
     ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.ceParameters.get( 'MaxTotalJobs', 0 ) )
