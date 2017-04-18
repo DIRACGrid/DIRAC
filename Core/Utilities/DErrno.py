@@ -85,6 +85,7 @@ EVOMS = 1121
 # Databases : 3X
 EDB = 1130
 EMYSQL = 1131
+ESQLA = 1132
 
 # ## WMS/Workflow
 EWMSUKN = 1500
@@ -136,6 +137,8 @@ dErrorCode = {
                # 113X: Databases
                1130 : 'EDB',
                1131 : 'EMYSQL',
+               1132 : 'ESQLA',
+
                # WMS/Workflow
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
@@ -186,6 +189,8 @@ dStrError = {
               # 113X: Databases
               EDB : "Database Error",
               EMYSQL : "MySQL Error",
+              ESQLA : "SQLAlchemy Error",
+
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid JDL",

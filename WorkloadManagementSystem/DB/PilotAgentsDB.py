@@ -202,6 +202,7 @@ class PilotAgentsDB( DB ):
       return S_ERROR( 'Input argument is not a List' )
 
     failed = []
+
     for table in ['PilotOutput', 'PilotRequirements', 'JobToPilotMapping', 'PilotAgents']:
       idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
@@ -233,6 +234,8 @@ class PilotAgentsDB( DB ):
     reqList.append( "SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % interval )
     reqList.append( "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % aborted_interval )
 
+    idList = None
+
     for req in reqList:
       result = self._query( req )
       if not result['OK']:
@@ -244,7 +247,7 @@ class PilotAgentsDB( DB ):
           if not result['OK']:
             gLogger.warn( 'Error while deleting pilots' )
 
-    return S_OK()
+    return S_OK( idList )
 
 ##########################################################################################
   def getPilotInfo( self, pilotRef = False, parentId = False, conn = False, paramNames = [], pilotID = False ):
@@ -638,7 +641,7 @@ class PilotAgentsDB( DB ):
 #       result[ 'Total' ][ statusName ] += int( statusCount )
 #
 #     return S_OK( result )
- 
+
 ##########################################################################################
   def getPilotSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get summary of the pilot jobs status by CE/site in a standard structure
@@ -1061,4 +1064,3 @@ class PilotAgentsDB( DB ):
     resultDict['Records'] = records
 
     return S_OK( resultDict )
-
