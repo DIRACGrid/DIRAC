@@ -390,7 +390,7 @@ class CheckCECapabilities( CommandBase ):
       self.log.error( "The pilot command output is not json compatible." )
       sys.exit( 1 )
     if resourceDict.get( 'Tag' ):
-      self.pp.tags += resourceDict['Tag']
+      self.pp.tags.append( resourceDict['Tag'] )
       self.cfg.append( '-FDMH' )
 
       if self.pp.useServerCertificate:
@@ -403,7 +403,7 @@ class CheckCECapabilities( CommandBase ):
       if self.debugFlag:
         self.cfg.append( '-ddd' )
 
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( ( str( x ) for x in self.pp.tags ) ) )
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( self.pp.tags ) )
 
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
@@ -437,7 +437,7 @@ class CheckWNCapabilities( CommandBase ):
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
       self.exitWithError( retCode )
     try:
-      result = result.split( ' ' )
+      result = result.split()
       numberOfProcessor = int( result[0] )
       maxRAM = int( result[1] )
     except ValueError:
