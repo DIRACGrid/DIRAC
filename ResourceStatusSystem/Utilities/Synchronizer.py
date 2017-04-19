@@ -92,7 +92,7 @@ class Synchronizer( object ):
       gLogger.verbose( '%s sites found in CS for %s domain' % ( len( sitesCS ), domainName ) )
 
       sitesDB = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName,
-                                                  meta = { 'columns' : [ 'name' ] } )
+                                                  meta = { 'columns' : [ 'Name' ] } )
       if not sitesDB[ 'OK' ]:
         return sitesDB
       sitesDB = [ siteDB[0] for siteDB in sitesDB[ 'Value' ] ]
@@ -111,10 +111,11 @@ class Synchronizer( object ):
           return deleteQuery
 
       sitesTuple  = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName,
-                                                      meta = { 'columns' : [ 'name', 'statusType' ] } )
+                                                      meta = { 'columns' : [ 'Name', 'StatusType' ] } )
       if not sitesTuple[ 'OK' ]:
         return sitesTuple
       sitesTuple = sitesTuple[ 'Value' ]
+      sitesTuple = [ (x[0],x[1]) for x in sitesTuple ]
 
       statusTypes = self.rssConfig.getConfigStatusType( domainName )
 
