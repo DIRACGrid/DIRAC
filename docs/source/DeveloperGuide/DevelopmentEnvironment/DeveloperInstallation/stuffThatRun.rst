@@ -176,7 +176,7 @@ The following commands should do the trick for you, by creating a fake CA, a fak
    cd $DEVROOT/DIRAC
    git checkout release/integration
    source tests/Jenkins/utilities.sh
-   generateCertificates
+   generateCertificates 365
    generateUserCredentials
    mkdir -p ~/.globus/
    cp $DEVROOT/user/*.{pem,key} ~/.globus/
