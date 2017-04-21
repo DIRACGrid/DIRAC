@@ -190,7 +190,9 @@ class RequestExecutingAgent( AgentModule ):
     :param ~Request.Request request: Request instance
     """
     maxProcess = max( self.__minProcess, self.__maxProcess )
-    if len( self.__requestCache ) > maxProcess + 4:
+    if len( self.__requestCache ) > maxProcess + 50:
+      # For the time being we just print a warning... If the ProcessPool is working well, this is not needed
+      # We don't know how much is acceptable as it depends on many factors
       self.log.warn( "Too many requests in cache", ': %d' % len( self.__requestCache ) )
 #      return S_ERROR( "Too many requests in cache" )
     if request.RequestID in self.__requestCache:
