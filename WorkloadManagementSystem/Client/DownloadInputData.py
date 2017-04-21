@@ -119,7 +119,7 @@ class DownloadInputData:
             downloadReplicas[lfn]['SE'].append( seName )
 
     totalSize = 0
-    self.log.verbose( 'Replicas to download are:' )
+    verbose = self.log.verbose( 'Replicas to download are:' )
     for lfn, reps in downloadReplicas.iteritems():
       self.log.verbose( lfn )
       if not reps['SE']:
@@ -132,9 +132,10 @@ class DownloadInputData:
         # get SE and pfn from tuple
         reps['SE'] = reps['SE'][0]
       totalSize += int( reps.get( 'Size', 0 ) )
-      for item, value in sorted( reps.items() ):
-        if value:
-          self.log.verbose( '\t%s %s' % ( item, value ) )
+      if verbose:
+        for item, value in sorted( reps.items() ):
+          if value:
+            self.log.verbose( '\t%s %s' % ( item, value ) )
 
     self.log.info( 'Total size of files to be downloaded is %s bytes' % ( totalSize ) )
     for lfn in failedReplicas:
@@ -264,7 +265,7 @@ class DownloadInputData:
     """ Download a local copy of a single LFN from a list of Storage Elements.
         This is used as a last resort to attempt to retrieve the file.
     """
-    self.log.verbose( "Attempting to download file from all SEs (%s):" % ','.join( reps.keys() ), lfn )
+    self.log.verbose( "Attempting to download file from all SEs (%s):" % ','.join( reps ), lfn )
     diskSEs = set()
     tapeSEs = set()
     for seName in reps:
