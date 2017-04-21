@@ -879,8 +879,11 @@ class ProcessPool( object ):
         log.debug( "__spawnNeededWorkingProcesses", 't=%.2f' % ( time.time() - start ) )
       time.sleep( 0.1 )
       if self.__resultsQueue.empty():
+        if self.__resultsQueue.qsize():
+          log.warn( "Results queue is empty but has non zero size: %d" % self.__resultsQueue.qsize() )
+          return -1
         if processed == 0:
-          log.info( "Process results, but queue is empty..." )
+          log.verbose( "Process results, but queue is empty..." )
         break
       # # get task
       task = self.__resultsQueue.get()
@@ -896,7 +899,8 @@ class ProcessPool( object ):
           if self.__poolCallback and task.taskResults():
             self.__poolCallback( task.getTaskID(), task.taskResults() )
             log.debug( "__poolCallback", 't=%.2f' % ( time.time() - start ) )
-      except Exception, error:
+      except Exception as error:
+        log.exception( "Exception in callback", lException = error )
         pass
       processed += 1
     if processed:
