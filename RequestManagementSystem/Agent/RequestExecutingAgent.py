@@ -193,18 +193,11 @@ class RequestExecutingAgent( AgentModule ):
     if len( self.__requestCache ) > maxProcess + 4:
       self.log.warn( "Too many requests in cache", ': %d' % len( self.__requestCache ) )
 #      return S_ERROR( "Too many requests in cache" )
-    count = 5
-    # Wait a bit as there may be a race condition between RequestTask putting back the request and the callback clearing the cache
-    while request.RequestID in self.__requestCache:
-      count -= 1
-      if not count:
-        # Comment out the putRequest as we have got back the request that is still being executed. Better keep it
-        # The main reason for this is that it lasted longer than the kick time of CleanReqAgent
-        # self.requestClient().putRequest( request, useFailoverProxy = False, retryMainService = 2 )
-        # return S_ERROR( "Duplicate request, ignore: %s" % request.RequestID )
-        self.log.warn( "Duplicate request, keep it: %s" % request.RequestID )
-        break
-      time.sleep( 1 )
+    if request.RequestID in self.__requestCache:
+      # We don't call  putRequest as we have got back the request that is still being executed. Better keep it
+      # The main reason for this is that it lasted longer than the kick time of CleanReqAgent
+      self.log.warn( "Duplicate request, keep it but don't execute", ': %d/%s' % ( request.RequestID, request.RequestName ) )
+      return S_ERROR( errno.EALREADY, 'Request already in cache' )
     self.__requestCache[ request.RequestID ] = request
     return S_OK()
 
@@ -311,6 +304,9 @@ class RequestExecutingAgent( AgentModule ):
             # # save current request in cache
             res = self.cacheRequest( request )
             if not res['OK']:
+              if cmpError( res, errno.EALREADY ):
+                # The request is already in the cache, skip it
+                continue
               # There are too many requests in the cache, commit suicide
               self.log.error( res['Message'], '(%d requests): put back all requests and exit cycle' % len( self.__requestCache ) )
               self.putAllRequests()
@@ -344,7 +340,9 @@ class RequestExecutingAgent( AgentModule ):
               break
 
     self.log.info( 'Flushing callbacks (%d requests still in cache)' % len( self.__requestCache ) )
-    self.processPool().processResults()
+    processed = self.processPool().processResults()
+    if processed < 0:
+      return S_ERROR( "Results queue is screwed up" )
     # # clean return
     return S_OK()
 
