@@ -450,6 +450,13 @@ function prepareForServer(){
 function generateCertificates(){
   echo '==> [generateCertificates]'
 
+  if [ -z ${1} ];
+  then
+    nDays=1;
+  else:
+    nDays=$1;
+  fi
+
   mkdir -p $SERVERINSTALLDIR/etc/grid-security/certificates
   cd $SERVERINSTALLDIR/etc/grid-security
   if [ $? -ne 0 ]
@@ -468,8 +475,8 @@ function generateCertificates(){
   sed -i "s/#hostname#/$fqdn/g" openssl_config
 
   # Generate X509 Certificate based on the private key and the OpenSSL configuration
-  # file, valid for one day.
-  openssl req -new -x509 -key hostkey.pem -out hostcert.pem -days 1 -config openssl_config
+  # file, valid for nDays days (default 1).
+  openssl req -new -x509 -key hostkey.pem -out hostcert.pem -days $nDays -config openssl_config
 
   # Copy hostcert, hostkey to certificates ( CA dir )
   cp host{cert,key}.pem certificates/
