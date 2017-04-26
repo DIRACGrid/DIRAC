@@ -31,8 +31,6 @@ class X509Chain( object ):
   def __getPass(self):
     return self.__pass
 
-  __validExtensionValueTypes = types.StringTypes
-
   __validExtensionValueTypes = ( basestring, )
 
   def __init__( self, certList = False, keyObj = False ):
