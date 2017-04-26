@@ -189,15 +189,33 @@ class X509Certificate( object ):
     return S_OK( False )
 
   def getVOMSData( self ):
+    #return S_ERROR( DErrno.EVOMS, "No VOMS data available" )
     """
     Has voms extensions
     """
     # XXX This is HIDEOUS and totally unreadable. Will be rewritten.
+    data = {}
+    data[ 'issuer' ] = 'fake'
+    data[ 'notBefore' ] = datetime.datetime.now()
+    data[ 'notAfter' ] = datetime.datetime.now()
+    data[ 'fqan' ] = 'fake'
+    data[ 'attribute' ] = 'fake'
+    data[ 'vo' ] = 'fake'
+    data[ 'subject' ] = 'fake'
+    return S_OK(data)
+
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
-    extList = self.__certObj.get_extensions()
-    for ext in extList:
-      if ext.get_sn() == "vomsExtensions":
+    extCount = self.__certObj.get_ext_count()
+    for extIdx in xrange(extCount):
+      ext = self.__certObj.get_ext_at(extIdx)
+      if ext.get_name() == "vomsExtensions":
+        for i in xrange(65535):
+          try:
+            print ext.get_value(flag=i)
+          except:
+            pass
+        print '>>>>>>', ext.get_value()
         data = {}
         raw = ext.get_asn1_value().get_value()
         name = self.__certObj.get_subject().clone()

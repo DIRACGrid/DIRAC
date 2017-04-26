@@ -183,9 +183,9 @@ class X509Chain( object ):
                                           'digitalSignature, keyEncipherment, dataEncipherment', critical = 1 )
     extStack.push( kUext )
     if diracGroup and type( diracGroup ) in self.__validExtensionValueTypes:
-      pass
-      #dGext = M2Crypto.X509.new_extension( 'diracGroup', 'ASN1:UTF8:' + diracGroup)  # needs that ans1 utf8 bit
-      #extStack.push( dGext )
+      diracGroupStr = diracGroup
+      dGext = M2Crypto.X509.new_extension( 'diracGroup', diracGroupStr )  # needs that ans1 utf8 bit
+      extStack.push( dGext )
     if rfc or rfcLimited:
       if rfc:
         ext =  M2Crypto.X509.new_extension( 'proxyCertInfo', 'critical, language:1.3.6.1.5.5.7.21.1', critical = 1 )
