@@ -92,6 +92,7 @@ class DataRecoveryAgent(AgentModule):
                   ],
                  'OtherProductions':
                  [ \
+                     ## should always be first!
                      dict(Message="One of many Successful: clean others",
                           ShortMessage="Other Tasks --> Keep",
                           Counter=0,
@@ -282,7 +283,7 @@ class DataRecoveryAgent(AgentModule):
       self.log.notice("Running over Production: %s " % prodID)
       self.treatProduction(int(prodID), transName, transType)
 
-      if self.notesToSend:
+      if self.notesToSend and self.__notOnlyKeepers(transType):
         ##remove from the jobCache because something happened
         self.jobCache.pop(int(prodID), None)
         notification = NotificationClient()
@@ -399,7 +400,7 @@ class DataRecoveryAgent(AgentModule):
 
   def __failJobHard(self, job, tInfo):
     """ set job to failed and remove output files if there are any """
-    self.log.notice("Failing job %s" % job)
+    self.log.notice("Failing job hard %s" % job)
     self.notesToSend += "Failing job: no input file?" + '\n'
     self.notesToSend += str(job) + '\n'
     self.todo['OtherProductions'][-1]['Counter'] += 1
@@ -407,3 +408,19 @@ class DataRecoveryAgent(AgentModule):
     job.setJobFailed(tInfo)
     if job.inputFile is not None:
       job.setInputDeleted(tInfo)
+
+  def __notOnlyKeepers(self, transType):
+    """check of we only have 'Keep' messages
+
+    in this case we do not have to send report email or run again next time
+
+    """
+    if transType.startswith('MCGeneration'):
+      return True
+
+    checks = self.todo['OtherProductions']
+    totalCount = 0
+    for check in checks[1:]:
+      totalCount += check['Counter']
+
+    return totalCount > 0
