@@ -225,6 +225,13 @@ class DataRecoveryAgent(AgentModule):
                           Check=lambda job: job.status not in ("Failed", "Done"),
                           Actions=lambda job, tInfo: []
                           ),
+                     # should always be the last one!
+                     dict(Message="Failed Hard",
+                          ShortMessage="Failed Hard",
+                          Counter=0,
+                          Check=lambda job: False,  # never
+                          Actions=lambda job, tInfo: []
+                          ),
                  ]
                  }
     self.jobCache = defaultdict(lambda: (0, 0))
@@ -395,6 +402,7 @@ class DataRecoveryAgent(AgentModule):
     self.log.notice("Failing job %s" % job)
     self.notesToSend += "Failing job: no input file?" + '\n'
     self.notesToSend += str(job) + '\n'
+    self.todo['OtherProductions'][-1]['Counter'] += 1
     job.cleanOutputs(tInfo)
     job.setJobFailed(tInfo)
     if job.inputFile is not None:
