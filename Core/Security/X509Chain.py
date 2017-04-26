@@ -31,6 +31,8 @@ class X509Chain( object ):
   def __getPass(self):
     return self.__pass
 
+  __validExtensionValueTypes = types.StringTypes
+
   __validExtensionValueTypes = ( basestring, )
 
   def __init__( self, certList = False, keyObj = False ):
@@ -180,8 +182,7 @@ class X509Chain( object ):
                                           'digitalSignature, keyEncipherment, dataEncipherment', critical = 1 )
     extStack.push( kUext )
     if diracGroup and type( diracGroup ) in self.__validExtensionValueTypes:
-      diracGroupStr = diracGroup
-      dGext = M2Crypto.X509.new_extension( 'diracGroup', diracGroupStr )  # needs that ans1 utf8 bit
+      dGext = M2Crypto.X509.new_extension( 'diracGroup', diracGroup)
       extStack.push( dGext )
     if rfc or rfcLimited:
       if rfc:
