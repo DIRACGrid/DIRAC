@@ -74,12 +74,13 @@ class TestDbUtilsChain( Test_DB ):
 
     result = client._determineBucketSize( 1427038370, 1458660770 )
     self.assert_( result['OK'] )
-    self.assertEqual( result['Value'], ( '1w', 86400 * 7 ) )
+    self.assertEqual( result['Value'], ( '7w', 86400 * 7 * 7 ) )
 
 
     result = client._determineBucketSize( 1300807841, 1458660641 )
-    self.assert_( result['Message'] )
-
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'], ( '7w', 86400 * 7 * 7 ) )
+    
 
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase( Test_DB )
