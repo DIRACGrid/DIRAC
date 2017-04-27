@@ -13,15 +13,11 @@ import M2Crypto
 import re
 import time
 import GSI # XXX Still needed for some parts I haven't finished yet
-from GSI import crypto
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.X509Certificate import X509Certificate
-
-#from xext import xext
-#print xext("1.2.42.42", "diracGroup", "DIRAC group")
 
 random.seed()
 
@@ -103,6 +99,7 @@ class X509Chain( object ):
     """
     Create certificates list from string. String sould contain certificates, just like plain text proxy file.
     """
+    # To get list of X509 certificates (not X509 Certificate Chain) from string it has to be parsed like that (constructors are not able to deal with big string)
     return [ X509Certificate( certString = cert[0] ) for cert in re.findall(r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)", certString) ]
 
   def setChain( self, certList ):
@@ -187,9 +184,11 @@ class X509Chain( object ):
       extStack.push( dGext )
     if rfc or rfcLimited:
       if rfc:
+        # this OID defines proxy as RFC proxy
         ext =  M2Crypto.X509.new_extension( 'proxyCertInfo', 'critical, language:1.3.6.1.5.5.7.21.1', critical = 1 )
         extStack.push(ext)
       elif rfcLimited:
+        # this OID defines proxy as RFC Limited proxy
         ext = M2Crypto.X509.new_extension( 'proxyCertInfo', 'critical, language:1.3.6.1.4.1.3536.1.1.1.9', critical = 1 )
         extStack.push(ext)
     return extStack
@@ -278,7 +277,11 @@ class X509Chain( object ):
       for extension in self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ):
         proxyCert.add_ext( extension )
     else:
-      proxyCert.set_serial_number( issuerCert.getSerialNumber()['Value'] ) # XXX 'Value' used without checking 'OK', may cause problems
+      serial = issuerCert.getSerialNumber()
+      if serial['OK']:
+        proxyCert.set_serial_number( serial['Value'] )
+      else:
+        return serial
       parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
       # No easy way to deep-copy certificate subject
       cloneSubject = M2Crypto.X509.X509_Name()
@@ -293,8 +296,16 @@ class X509Chain( object ):
       for extension in self.__getProxyExtensionList( diracGroup ):
         proxyCert.add_ext( extension )
 
-    proxyCert.set_issuer( issuerCert.getSubjectNameObject()['Value'] )
-    proxyCert.set_version( issuerCert.getVersion()['Value'] )
+    subject = issuerCert.getSubjectNameObject()
+    if subject['OK']:
+      proxyCert.set_issuer( subject['Value'] )
+    else:
+      return subject
+    version = issuerCert.getVersion()
+    if version['OK']:
+      proxyCert.set_version( version['Value'] )
+    else:
+      return version
     proxyCert.set_pubkey( proxyKey )
     proxyNotBefore = M2Crypto.ASN1.ASN1_UTCTIME()
     proxyNotBefore.set_time( int( time.time() ) - 900 )
@@ -399,7 +410,6 @@ class X509Chain( object ):
 
 
   def __checkProxyness( self ):
-    # XXX to describe
     self.__hash = False
     self.__firstProxyStep = len( self.__certList ) - 2  # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
@@ -469,7 +479,7 @@ class X509Chain( object ):
         return 0
       if self.__isRFC == None:
         self.__isRFC = True
-      if contraint[0] == "1.3.6.1.4.1.3536.1.1.1.9": # XXX verify this
+      if contraint[0] == "1.3.6.1.4.1.3536.1.1.1.9":
         limited = True
     else:
       if self.__isRFC == None:
@@ -486,7 +496,11 @@ class X509Chain( object ):
     """
     issuerCert = self.__certList[ issuerStep ]
     cert = self.__certList[ certStep ]
-    return cert.verify( issuerCert.getPublicKey()['Value'] )
+    pubKey = issuerCert.getPublicKey()
+    if pubKey['OK']:
+      return cert.verify( pubKey['Value'] )
+    else:
+      return pubKey
 
   def getDIRACGroup( self, ignoreDefault = False ):
     """
@@ -514,8 +528,12 @@ class X509Chain( object ):
     if not self.__loadedChain:
       return S_ERROR( DErrno.ENOCHAIN )
     for iC in range( len( self.__certList ) - 1, -1, -1 ):
-      if self.__certList[iC].hasExpired()[ 'Value' ]:
-        return S_OK( True )
+      expired = self.__certList[iC].hasExpired()
+      if expired['OK']:
+        if expired[ 'Value' ]:
+          return S_OK( True )
+      else:
+        return expired
     return S_OK( False )
 
   def getNotAfterDate( self ):

@@ -189,11 +189,10 @@ class X509Certificate( object ):
     return S_OK( False )
 
   def getVOMSData( self ):
-    #return S_ERROR( DErrno.EVOMS, "No VOMS data available" )
     """
-    Has voms extensions
+    Get voms extensions
     """
-    # XXX This is HIDEOUS and totally unreadable. Will be rewritten.
+    # XXX Temporary "fix". There are issues with reading vomsExtensions using M2Crypto and this seems to be used only for displaying info.
     data = {}
     data[ 'issuer' ] = 'fake'
     data[ 'notBefore' ] = datetime.datetime.now()
@@ -204,6 +203,7 @@ class X509Certificate( object ):
     data[ 'subject' ] = 'fake'
     return S_OK(data)
 
+    # XXX This is HIDEOUS and totally unreadable. Will be rewritten.
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
     extCount = self.__certObj.get_ext_count()
