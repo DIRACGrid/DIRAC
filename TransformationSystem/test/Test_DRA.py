@@ -643,7 +643,7 @@ class TestDRA(unittest.TestCase):
 
     ### Test failHard
     tInfoMock.reset_mock()
-    testJob = JobInfo(jobID=1234567, status="Done", tID=123, tType="MCSimulation")
+    testJob = JobInfo(jobID=666, status="Done", tID=123, tType="MCSimulation")
     testJob.outputFiles = ["/my/stupid/file.lfn"]
     testJob.outputFileStatus = ["Exists"]
     testJob.otherTasks = True
@@ -651,7 +651,7 @@ class TestDRA(unittest.TestCase):
     testJob.inputFileExists = True
     testJob.fileStatus = "Processed"
     self.dra.inputFilesProcessed = set()
-    self.dra._DataRecoveryAgent__failJobHard(testJob, tInfoMock)  # pylint: disable=no-member
+    self.dra._DataRecoveryAgent__failJobHard(testJob, tInfoMock)  # pylint: disable=protected-access, no-member
     self.assertIn("cleanOutputs", tInfoMock.method_calls[0])
     self.assertIn("setJobFailed", tInfoMock.method_calls[1])
     self.assertEqual(self.dra.todo["OtherProductions"][0]["Counter"], 1)
@@ -671,20 +671,18 @@ class TestDRA(unittest.TestCase):
     self.assertEqual(self.dra.todo["OtherProductions"][14]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][-1]["Counter"], 1)
 
-    ### Test failHard2
+    ### Test failHard, do nothing because already cleaned
     tInfoMock.reset_mock()
-    testJob = JobInfo(jobID=1234567, status="Done", tID=123, tType="MCSimulation")
+    testJob = JobInfo(jobID=667, status="Failed", tID=123, tType="MCSimulation")
     testJob.outputFiles = ["/my/stupid/file.lfn"]
-    testJob.outputFileStatus = ["Exists"]
+    testJob.outputFileStatus = ["Missing"]
     testJob.otherTasks = True
-    testJob.inputFile = "/dummy"
-    testJob.inputFileExists = True
+    testJob.inputFile = None
+    testJob.inputFileExists = False
     testJob.fileStatus = "Processed"
     self.dra.inputFilesProcessed = set()
     self.dra._DataRecoveryAgent__failJobHard(testJob, tInfoMock)  # pylint: disable=protected-access, no-member
-    self.assertIn("cleanOutputs", tInfoMock.method_calls[0])
-    self.assertIn("setJobFailed", tInfoMock.method_calls[1])
-    self.assertIn("setInputDeleted", tInfoMock.method_calls[2])
+    self.assertEqual([], tInfoMock.method_calls)
     self.assertEqual(self.dra.todo["OtherProductions"][0]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][1]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][2]["Counter"], 1)
@@ -700,7 +698,40 @@ class TestDRA(unittest.TestCase):
     self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][13]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][14]["Counter"], 1)
-    self.assertEqual(self.dra.todo["OtherProductions"][-1]["Counter"], 2)
+    self.assertEqual(self.dra.todo["OtherProductions"][-1]["Counter"], 1)
+
+    self.assertNotIn("Failing job 667", self.dra.notesToSend)
+
+    ### Test failHard3, do nothing because inputFile not None
+    tInfoMock.reset_mock()
+    testJob = JobInfo(jobID=668, status="Failed", tID=123, tType="MCSimulation")
+    testJob.outputFiles = ["/my/stupid/file.lfn"]
+    testJob.outputFileStatus = ["Missing"]
+    testJob.otherTasks = True
+    testJob.inputFile = "NotNone"
+    testJob.inputFileExists = False
+    testJob.fileStatus = "Processed"
+    self.dra.inputFilesProcessed = set()
+    self.dra._DataRecoveryAgent__failJobHard(testJob, tInfoMock)  # pylint: disable=protected-access, no-member
+    self.assertEqual([], tInfoMock.method_calls)
+    self.assertEqual(self.dra.todo["OtherProductions"][0]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][1]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][2]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][3]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][4]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][5]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][6]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][7]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][8]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][9]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][10]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][13]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][14]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][-1]["Counter"], 1)
+
+    self.assertNotIn("Failing job 668", self.dra.notesToSend)
 
   def test_notOnlyKeepers(self):
     """ test for __notOnlyKeepers function """

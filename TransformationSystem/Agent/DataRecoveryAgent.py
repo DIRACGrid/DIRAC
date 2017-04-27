@@ -400,14 +400,19 @@ class DataRecoveryAgent(AgentModule):
 
   def __failJobHard(self, job, tInfo):
     """ set job to failed and remove output files if there are any """
+    if job.inputFile is not None:
+      return
+    if job.status in ("Failed",) \
+       and job.allFilesMissing():
+      return
     self.log.notice("Failing job hard %s" % job)
-    self.notesToSend += "Failing job: no input file?" + '\n'
+    self.notesToSend += "Failing job %s: no input file?\n" % job.jobID
     self.notesToSend += str(job) + '\n'
     self.todo['OtherProductions'][-1]['Counter'] += 1
     job.cleanOutputs(tInfo)
     job.setJobFailed(tInfo)
-    if job.inputFile is not None:
-      job.setInputDeleted(tInfo)
+    # if job.inputFile is not None:
+    #   job.setInputDeleted(tInfo)
 
   def __notOnlyKeepers(self, transType):
     """check of we only have 'Keep' messages
