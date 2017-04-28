@@ -29,6 +29,7 @@ Script.registerSwitch( '', 'Since=', '      Associated to --Status, start date y
 Script.registerSwitch( '', 'Until=', '      Associated to --Status, end date (default= now' )
 Script.registerSwitch( '', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures' )
 Script.registerSwitch( '', 'Reset', '   Reset Failed files to Waiting if any' )
+Script.registerSwitch( '', 'FixJob', '   Set job Done if the request is Done' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
                                      ' %s [option|cfgfile] requestID/requestName(if unique)' % Script.scriptName,
@@ -57,6 +58,7 @@ if __name__ == "__main__":
   terse = False
   allR = False
   reset = False
+  fixJob = False
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
       try:
@@ -89,9 +91,13 @@ if __name__ == "__main__":
       since = convertDate( switch[1] )
     elif switch[0] == 'Until':
       until = convertDate( switch[1] )
+    elif switch[0] == 'FixJob':
+      fixJob = True
 
   if reset:
     status = 'Failed'
+  if fixJob:
+    status = 'Done'
   if terse:
     verbose = True
   if status:
@@ -128,6 +134,8 @@ if __name__ == "__main__":
     requests = sorted( res['Value']['Successful'].values() )
     if requests:
       allR = True
+    else:
+      DIRAC.exit( 0 )
 
 
   if status and not requests:
@@ -169,6 +177,15 @@ if __name__ == "__main__":
       if not warningPrinted:
         gLogger.always( "Some requests are not in status %s" % status )
         warningPrinted = True
+      continue
+
+    if fixJob and request.Status == 'Done' and request.JobID:
+      # The request is for a job and is Done, verify that the job is in the proper status
+      result = reqClient.finalizeRequest( request.RequestID, request.JobID, useCertificates = False )
+      if not result['OK']:
+        gLogger.error( "Error finalizing job", result['Message'] )
+      else:
+        gLogger.notice( "Job %d updated to %s" % ( request.JobID, result['Value'] ) )
       continue
 
     if allR or recoverableRequest( request ):
