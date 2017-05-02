@@ -1,3 +1,34 @@
+[v6r17p19]
+
+*Core
+FIX: Adler - fix checksum with less than 8 characters to be 8 chars long
+
+*Configuration
+FIX: VOMS2CSAgent - fix to accomodate some weird new user DNs (containing only CN field)
+
+*DMS
+FIX: FileCatalog - fix for the doc strings usage in file catalog CLI, fixes #3306
+FIX: FileCatalog - modified recursive file parameter setting to enable usage of the index
+
+*SMS
+CHANGE: StorageManagerClient - try to get sites with data online if possible in getFilesToStage
+
+*RMS
+FIX: RequestExecutingAgent - tuning of the request caching while execution
+
+*WMS
+FIX: DownloadInputData - do not mistakenly use other metadata from the replica info than SEs
+FIX: JobScheduling - put sites holding data before others in the list of available sites
+FIX: JobScheduling - try and select replicas for staging at the same site as online files
+FIX: SiteDirector - keep the old pilot status if the new one can not be obtained in updatePilotStatus()
+
+*Resources
+FIX: CREAMComputingElement - return error when pilot output is missing in getJobOutput()
+
+*Monitoring
+FIX: DBUtils - change the buckets in order to support queries which require more than one year 
+     data. The maximum buckets size is 7 weeks
+
 [v6r17p18]
 
 *Framework
