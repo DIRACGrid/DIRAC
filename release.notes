@@ -1,4 +1,4 @@
-[v6r18-pre10]
+[v6r18-pre11]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -8,6 +8,8 @@ FIX: All Databases are granting also REFERENCES grant to Dirac user to comply wi
 
 *Core
 FIX: dirac-install - allow to use local md5 files
+CHANGE: X509Chain - fixes to allow robot proxies with embedded DIRAC group extension
+        ( allow DIRAC group extension not in the first certificate chain step )
 
 *Accounting
 NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
@@ -31,7 +33,7 @@ NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS
 FIX: JobDB - fixes necessary to suite MySQL 5.7   
 NEW: pilotCommands - new ReplaceDIRACCode command mostly for testing purposes
 NEW: JobAgent, JobWrapper - several fixes to allow the work with PoolComputingElement
-     to support multiprocessor jobs
+     to support multiprocessor jobs     
 
 *Interfaces
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
