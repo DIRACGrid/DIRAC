@@ -103,8 +103,6 @@ class RequestExecutingAgent( AgentModule ):
     self.log.info( "ProcessPool timeout = %d seconds" % self.__poolTimeout )
     self.__poolSleep = int( self.am_getOption( "ProcessPoolSleep", self.__poolSleep ) )
     self.log.info( "ProcessPool sleep time = %d seconds" % self.__poolSleep )
-    self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
-    self.log.info( "ProcessTask timeout = %d seconds" % self.__taskTimeout )
     self.__bulkRequest = self.am_getOption( "BulkRequest", 0 )
     self.log.info( "Bulk request size = %d" % self.__bulkRequest )
 
@@ -196,8 +194,12 @@ class RequestExecutingAgent( AgentModule ):
     while request.RequestID in self.__requestCache:
       count -= 1
       if not count:
-        self.requestClient().putRequest( request, useFailoverProxy = False, retryMainService = 2 )
-        return S_ERROR( "Duplicate request, ignore: %s" % request.RequestID )
+        # Comment out the putRequest as we have got back the request that is still being executed. Better keep it
+        # The main reason for this is that it lasted longer than the kick time of CleanReqAgent
+        # self.requestClient().putRequest( request, useFailoverProxy = False, retryMainService = 2 )
+        # return S_ERROR( "Duplicate request, ignore: %s" % request.RequestID )
+        self.log.warn( "Duplicate request, keep it: %s" % request.RequestID )
+        break
       time.sleep( 1 )
     self.__requestCache[ request.RequestID ] = request
     return S_OK()
@@ -285,7 +287,10 @@ class RequestExecutingAgent( AgentModule ):
         # # set task id
         taskID = request.RequestID
         # # save current request in cache
-        self.cacheRequest( request )
+        res = self.cacheRequest( request )
+        if not res['OK']:
+          self.log.error( res['Message'] )
+          continue
         # # serialize to JSON
         result = request.toJSON()
         if not result['OK']:

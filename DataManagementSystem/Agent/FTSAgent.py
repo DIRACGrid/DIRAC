@@ -57,6 +57,7 @@ __RCSID__ = "$Id: $"
 import time
 import datetime
 import re
+import math
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 # # from CS
@@ -132,6 +133,8 @@ class FTSAgent( AgentModule ):
   MAX_REQUESTS = 100
   # Minimum interval (seconds) between 2 job monitoring
   MONITORING_INTERVAL = 600
+  # Flag to know if one selects JOb requests (True) or not (False) or don't care (None)
+  PROCESS_JOB_REQUESTS = None
 
   # # placeholder for FTS client
   __ftsClient = None
@@ -333,6 +336,13 @@ class FTSAgent( AgentModule ):
     self.MONITORING_INTERVAL = self.am_getOption( "MonitoringInterval", self.MONITORING_INTERVAL )
     log.info( "Minimum monitoring interval    = ", str( self.MONITORING_INTERVAL ) )
 
+    self.PROCESS_JOB_REQUESTS = self.am_getOption( "ProcessJobRequests", self.PROCESS_JOB_REQUESTS )
+    # We get a string as the default value is None... better than an eval()!
+    self.PROCESS_JOB_REQUESTS = {'True':True, 'False':False}.get( self.PROCESS_JOB_REQUESTS, self.PROCESS_JOB_REQUESTS )
+    if self.PROCESS_JOB_REQUESTS is not None:
+      log.info( "Process job requests           = ", str( self.PROCESS_JOB_REQUESTS ) )
+    self.__factorOnMaxRequest = 3.
+
     self.__ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
     log.info( "FTSVersion : %s" % self.__ftsVersion )
     log.info( "initialize: creation of FTSPlacement..." )
@@ -420,15 +430,26 @@ class FTSAgent( AgentModule ):
         return resetFTSPlacement
       self.__ftsPlacementValidStamp = now + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
-    requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = self.MAX_REQUESTS )
+    # To be sure we have enough requests, ask for several times as much
+    requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = int( self.__factorOnMaxRequest * self.MAX_REQUESTS ), getJobID = True )
     if not requestIDs["OK"]:
       log.error( "unable to read scheduled request ids" , requestIDs["Message"] )
       return requestIDs
     if not requestIDs["Value"]:
       requestIDs = []
-    else:
+    elif self.PROCESS_JOB_REQUESTS is None:
       requestIDs = [ req[0] for req in requestIDs["Value"] if req[0] not in self.__reqCache ]
-    requestIDs += self.__reqCache.keys()
+    else:
+      # If we want to process requests only with JobID or only without jobID, make a selection
+      requestIDs = [ req[0] for req in requestIDs["Value"] if req[0] not in self.__reqCache and ( len( req ) >= 4 and bool( req[3] ) == self.PROCESS_JOB_REQUESTS ) ]
+
+    # Correct the factor by the observed ratio between needed and obtained, but limit between 1 and 5
+    gotRequests = len( requestIDs ) + 1
+    neededRequests = self.MAX_REQUESTS - len( self.__reqCache )
+    self.__factorOnMaxRequest = max( 1, min( 10, math.ceil( self.__factorOnMaxRequest * neededRequests / float( gotRequests ) ) ) )
+
+    # We took more but keep only the maximum number
+    requestIDs = requestIDs[:neededRequests] + self.__reqCache.keys()
 
     if not requestIDs:
       log.info( "no 'Scheduled' requests to process" )
@@ -445,14 +466,18 @@ class FTSAgent( AgentModule ):
         continue
       request = request["Value"]
       sTJId = request.RequestID
+      fullLogged = 0
       while True:
         queue = self.threadPool().generateJobAndQueueIt( self.processRequest,
                                                          args = ( request, ),
                                                          sTJId = sTJId )
         if queue["OK"]:
-          log.info( "Request enqueued for execution", sTJId )
+          log.info( "Request enqueued for execution%s" % ( ( ' (after waiting %d seconds)' % fullLogged ) if fullLogged else '' ), sTJId )
           gMonitor.addMark( "RequestsAtt", 1 )
           break
+        if not fullLogged:
+          log.info( "Queue is full, wait 1 second to enqueue" )
+        fullLogged += 1
         time.sleep( 1 )
 
     # # process all results

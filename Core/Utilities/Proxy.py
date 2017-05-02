@@ -135,3 +135,51 @@ def getProxy( userDNs, userGroup, vomsAttr, proxyFilePath ):
 
   # If proxy not found for any DN, return an error
   return S_ERROR( "Can't download proxy" )
+
+
+
+def executeWithoutServerCertificate( fcn ):
+  """
+  Decorator function to execute a call without the server certificate.
+  This shows useful in Agents when we want to call a DIRAC service
+  and use the shifter proxy (for example Write calls to the DFC).
+
+  The method does not fetch any proxy, it assumes it is already
+  set up in the environment.
+  Note that because it modifies the configuration for all thread,
+  it uses a lock (the same as ExecuteWithUserProxy)
+
+  Potential problem:
+    * there is a lock for this particular method, but any other method
+      changing the UseServerCertificate value can clash with this.
+
+  :param fcn: function to be decorated
+  :return: the result of the fcn execution
+
+  """
+
+  def wrapped_fcn( *args, **kwargs ):
+
+    # Get the lock and acquire it
+    executionLock = LockRing().getLock( '_UseUserProxy_', recursive = True )
+    executionLock.acquire()
+
+    # Check if the caller is executing with the host certificate
+    useServerCertificate = gConfig.useServerCertificate()
+    if useServerCertificate:
+      gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+
+    try:
+      return fcn( *args, **kwargs )
+    except Exception as lException:  # pylint: disable=broad-except
+      value = ','.join( [str( arg ) for arg in lException.args] )
+      exceptType = lException.__class__.__name__
+      return S_ERROR( "Exception - %s: %s" % ( exceptType, value ) )
+    finally:
+      # Restore the default host certificate usage if necessary
+      if useServerCertificate:
+        gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
+      # release the lock
+      executionLock.release()
+
+  return wrapped_fcn

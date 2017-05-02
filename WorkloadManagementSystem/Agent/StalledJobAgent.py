@@ -44,6 +44,7 @@ for the agent restart
     self.jobDB = JobDB()
     self.logDB = JobLoggingDB()
     self.am_setOption( 'PollingTime', 60 * 60 )
+    self.stalledJobsTolerantSites = self.am_getOption( 'StalledJobsTolerantSites', [] )
     if not self.am_getOption( 'Enable', True ):
       self.log.info( 'Stalled Job Agent running in disabled mode' )
     return S_OK()
@@ -61,6 +62,7 @@ for the agent restart
 
     stalledTime = self.am_getOption( 'StalledTimeHours', 2 )
     failedTime = self.am_getOption( 'FailedTimeHours', 6 )
+    self.stalledJobsToleranceTime = self.am_getOption( 'StalledJobsToleranceTime', 0 )
 
     self.matchedTime = self.am_getOption( 'MatchedTime', self.matchedTime )
     self.rescheduledTime = self.am_getOption( 'RescheduledTime', self.rescheduledTime )
@@ -114,7 +116,11 @@ for the agent restart
     jobs.sort()
 # jobs = jobs[:10] #for debugging
     for job in jobs:
-      result = self.__getStalledJob( job, stalledTime )
+      site = self.jobDB.getJobAttribute( job, 'site' )['Value']
+      if site in self.stalledJobsTolerantSites:
+        result = self.__getStalledJob( job, stalledTime + self.stalledJobsToleranceTime )
+      else:
+        result = self.__getStalledJob( job, stalledTime )
       if result['OK']:
         self.log.verbose( 'Updating status to Stalled for job %s' % ( job ) )
         self.__updateJobStatus( job, 'Stalled' )

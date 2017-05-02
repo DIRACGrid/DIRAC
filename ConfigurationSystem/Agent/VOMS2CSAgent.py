@@ -483,11 +483,11 @@ class VOMS2CSAgent( AgentModule ):
       if not result['OK']:
         failed[user] = "createDirectory"
         continue
-      result = fc.changePathOwner( { dirName: user }, recursive = True )
+      result = fc.changePathOwner( { dirName: user }, recursive = False )
       if not result['OK']:
         failed[user] = "changePathOwner"
         continue
-      result = fc.changePathGroup( { dirName: defaultVOGroup }, recursive = True )
+      result = fc.changePathGroup( { dirName: defaultVOGroup }, recursive = False )
       if not result['OK']:
         failed[user] = "changePathGroup"
         continue

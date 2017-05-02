@@ -185,14 +185,14 @@ class ReqClient( Client ):
                       "'%s' request: %s" % ( requestID, deleteRequest["Message"] ) )
     return deleteRequest
 
-  def getRequestIDsList( self, statusList = None, limit = None, since = None, until = None ):
+  def getRequestIDsList( self, statusList = None, limit = None, since = None, until = None, getJobID = False ):
     """ get at most :limit: request ids with statuses in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
     since = since.strftime( '%Y-%m-%d' ) if since else ""
     until = until.strftime( '%Y-%m-%d' ) if until else ""
 
-    return self._getRPC().getRequestIDsList( statusList, limit, since, until )
+    return self._getRPC().getRequestIDsList( statusList, limit, since, until, getJobID )
 
   def getScheduledRequest( self, operationID ):
     """ get scheduled request given its scheduled OperationID """
@@ -239,7 +239,7 @@ class ReqClient( Client ):
     requestStatus = self._getRPC().getRequestStatus( requestID )
     if not requestStatus["OK"]:
       self.log.error( "getRequestStatus: unable to get status for request",
-                      "request: '%d' %s" % ( requestID, requestStatus["Message"] ) )
+                      ": '%d' %s" % ( requestID, requestStatus["Message"] ) )
     return requestStatus
 
 #   def getRequestName( self, requestID ):

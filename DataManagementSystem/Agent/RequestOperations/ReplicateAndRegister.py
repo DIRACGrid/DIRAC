@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.Adler import compareAdler, hexAdlerToInt
+from DIRAC.Core.Utilities.Adler import compareAdler, hexAdlerToInt, intAdlerToHex
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 from DIRAC.DataManagementSystem.Client.DataManager                                import DataManager
@@ -99,23 +99,24 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
       repSEMetadata = repSEMetadata['Value']['Successful'][opFile.LFN]
 
       seChecksum = hexAdlerToInt( repSEMetadata.get( "Checksum" ) )
+      # As from here seChecksum is an integer or False, not a hex string!
       if seChecksum == False and opFile.Checksum:
         ret['NoMetadata'].append( repSEName )
       elif not seChecksum and opFile.Checksum:
         opFile.Checksum = None
         opFile.ChecksumType = None
       elif seChecksum and ( not opFile.Checksum or opFile.Checksum == 'False' ):
-        # Use the SE checksum and force type to be Adler32
-        opFile.Checksum = seChecksum
+        # Use the SE checksum (convert to hex) and force type to be Adler32
+        opFile.Checksum = intAdlerToHex( seChecksum )
         opFile.ChecksumType = 'Adler32'
-      if not opFile.Checksum or not seChecksum or compareAdler( seChecksum, opFile.Checksum ):
+      if not opFile.Checksum or not seChecksum or compareAdler( intAdlerToHex( seChecksum ), opFile.Checksum ):
         # # All checksums are OK
         ret["Valid"].append( repSEName )
       else:
         log.warn( " %s checksum mismatch, FC: '%s' @%s: '%s'" % ( opFile.LFN,
                                                               opFile.Checksum,
                                                               repSEName,
-                                                              seChecksum ) )
+                                                              intAdlerToHex( seChecksum ) ) )
         ret["Bad"].append( repSEName )
     else:
       # If a replica was found somewhere, don't set the file as no replicas

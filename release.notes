@@ -1,3 +1,83 @@
+[v6r17p18]
+
+*Framework
+NEW: SystemAdministrator - added possibility to remove old software installations keeping
+     anly a predefined number of the most recent ones.
+
+*DMS
+FIX: RemoveReplica - removing replica of a non-existing file is considered successful
+
+*SMS
+CHANGE: StorageManagerClient - restrict usage of executeWithUserProxy decorator 
+        to calling the SE.getFileMetadata only; added flag to check only replicas 
+        at tape SEs
+        
+*WMS
+FIX: JobScheduling - added CS option to flag checking only replicas at tape SEs;
+     fail jobs with input data not available in the File Catalog        
+
+[v6r17p17]
+
+*DMS
+NEW: FTSAgent has a new CS parameter ProcessJobRequests to be able to process job
+     requests only. This allows to run 2 FTS agents in parallel
+     
+*Resources
+FIX: GFAL2_StorageBase - only set the space token if there is one to avoid problems
+     with some SEs     
+
+[v6r17p16]
+
+*Configuration
+FIX: VOMS2CSAgent - create user home directory in the catalog without
+     recursion in the chown command
+     
+*RMS
+FIX: RequestExecutingAgent - catch error of the cacheRequest() call
+FIX: ReqClient - enhanced log error message
+
+*SMS
+FIX: StorageManagerClient - treat the case of absent and offline files on an SE 
+     while staging
+     
+*TS
+FIX: TaskManagerBase - process tasks in chunks of 100 in order to 
+     update faster the TS (tasks and files)          
+
+*WMS
+FIX: JobScheduling - do not assume that all non-online files required staging
+
+[v6r17p15]
+
+*WMS
+CHANGE: StalledJobAgent - ignore or prolong the Stalled state period for jobs 
+        at particular sites which can be suspended, e.g. Boinc sites
+
+[v6r17p14]
+
+*Core
+FIX: PrettyPrint.printTable utility enhanced to allow multi-row fields and
+     justification specification for each field value  
+
+*Accounting
+NEW: DataStore - allow to run several instances of the service with only one which
+     is enabled to do the bucketing
+
+*RMS
+NEW: new dirac-rms-list-req-cache command to list the requests in the ReqProxies services
+
+*Interfaces
+CHANGE: Dirac API - make several private methods visible to derived class
+
+[v6r17p13]
+
+*Core
+NEW: Proxy - added executeWithoutServerCertificate() decorator function 
+
+*Resources
+FIX: CREAMComputingElement - split CREAM proxy renewal operation into smaller chunks for 
+     improved reliability
+
 [v6r17p12]
 
 *Framework

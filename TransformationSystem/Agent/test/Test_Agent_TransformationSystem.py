@@ -8,7 +8,7 @@ from mock import MagicMock
 from DIRAC import gLogger
 gLogger.setLevel( 'DEBUG' )
 
-#sut
+# sut
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Agent.TransformationAgent import TransformationAgent
 
@@ -25,7 +25,7 @@ class AgentsTestCase( unittest.TestCase ):
     self.tmab.log = gLogger
     self.tmab.am_getOption = self.mockAM
     self.tmab.log.setLevel( 'DEBUG' )
-    
+
     self.ta_m = importlib.import_module( 'DIRAC.TransformationSystem.Agent.TransformationAgent' )
     self.ta_m.AgentModule = self.mockAM
     self.ta = TransformationAgent()
@@ -41,7 +41,7 @@ class AgentsTestCase( unittest.TestCase ):
 #     sys.modules.pop( 'DIRAC.TransformationSystem.Agent.TransformationAgent' )
     pass
 
-class TaskManagerAgentBaseSuccess(AgentsTestCase):
+class TaskManagerAgentBaseSuccess( AgentsTestCase ):
 
   def test__fillTheQueue( self ):
     operationsOnTransformationsDict = {1:{'Operations':['op1', 'op2'], 'Body':'veryBigBody'}}
@@ -58,7 +58,7 @@ class TaskManagerAgentBaseSuccess(AgentsTestCase):
     self.tmab._fillTheQueue( operationsOnTransformationsDict )
     self.assert_( self.tmab.transInQueue == [1, 2] )
     self.assert_( self.tmab.transQueue.qsize() == 2 )
-    
+
   def test_updateTaskStatusSuccess( self ):
     clients = {'TransformationClient':self.tc_mock, 'TaskManager':self.tm_mock}
 
@@ -160,19 +160,19 @@ class TaskManagerAgentBaseSuccess(AgentsTestCase):
     self.assert_( res['OK'] )
 
     # files, failing to update
-    self.tc_mock.getTransformationFiles.return_value = {'OK': True, 'Value': [{'file1': 'boh'}]}
+    self.tc_mock.getTransformationFiles.return_value = {'OK': True, 'Value': [{'file1': 'boh', 'TaskID':1}]}
     self.tm_mock.getSubmittedFileStatus.return_value = {'OK': False, 'Message': 'a mess'}
     res = self.tmab.updateFileStatus( transIDOPBody, clients )
     self.assertFalse( res['OK'] )
 
     # files, nothing to update
-    self.tc_mock.getTransformationFiles.return_value = {'OK': True, 'Value': [{'file1': 'boh'}]}
+    self.tc_mock.getTransformationFiles.return_value = {'OK': True, 'Value': [{'file1': 'boh', 'TaskID':1}]}
     self.tm_mock.getSubmittedFileStatus.return_value = {'OK': True, 'Value': []}
     res = self.tmab.updateFileStatus( transIDOPBody, clients )
     self.assert_( res['OK'] )
 
     # files, something to update
-    self.tc_mock.getTransformationFiles.return_value = {'OK': True, 'Value': [{'file1': 'boh'}]}
+    self.tc_mock.getTransformationFiles.return_value = {'OK': True, 'Value': [{'file1': 'boh', 'TaskID':1}]}
     self.tm_mock.getSubmittedFileStatus.return_value = {'OK': True, 'Value': {'file1': 'OK', 'file2': 'NOK'}}
     res = self.tmab.updateFileStatus( transIDOPBody, clients )
     self.assert_( res['OK'] )
