@@ -37,6 +37,10 @@ mockObjectSE5.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt'
                                                     'Failed':{}} )
 mockObjectSE5.getStatus.return_value = S_OK( {'DiskSE': True, 'TapeSE':False} )
 
+mockObjectDMSHelper = MagicMock()
+mockObjectDMSHelper.getLocalSiteForSE.return_value = S_OK( 'mySite' )
+mockObjectDMSHelper.getSitesForSE.return_value = S_OK( ['mySite'] )
+
 class ClientsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
   """

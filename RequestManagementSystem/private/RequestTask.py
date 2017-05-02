@@ -367,7 +367,7 @@ class RequestTask( object ):
       if self.request.JobID:
         attempts = 0
         while True:
-          finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestID, self.request.JobID ) #pylint: disable=no-member
+          finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestID, self.request.JobID )  # pylint: disable=no-member
           if not finalizeRequest["OK"]:
             if not attempts:
               self.log.error( "unable to finalize request %s: %s, will retry" % ( self.request.RequestName,
@@ -386,4 +386,5 @@ class RequestTask( object ):
             break
 
     # Request will be updated by the callBack method
+    self.log.verbose( "RequestTasks exiting, request %s" % self.request.Status )
     return S_OK( self.request )
