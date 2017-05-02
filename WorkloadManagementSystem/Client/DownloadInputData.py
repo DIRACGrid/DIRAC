@@ -16,6 +16,7 @@ from DIRAC                                                          import S_OK,
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.Core.Utilities.Os                                        import getDiskSpace
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers                import  DMSHelpers
 
 __RCSID__ = "$Id$"
 
@@ -43,12 +44,13 @@ class DownloadInputData:
     self.log = gLogger.getSubLogger( self.name )
     self.inputData = argumentsDict['InputData']
     self.configuration = argumentsDict['Configuration']
+    # Warning: this contains not only the SEs but also the file metadata
     self.fileCatalogResult = argumentsDict['FileCatalog']
     # By default put each input data file into a separate directory
     self.inputDataDirectory = argumentsDict.get( 'InputDataDirectory', 'PerFile' )
     self.jobID = None
     self.counter = 1
-
+    self.availableSEs = DMSHelpers().getStorageElements()
 
   #############################################################################
   def execute( self, dataToResolve = None ):
@@ -86,7 +88,7 @@ class DownloadInputData:
       elif seStatus['Read'] and seStatus['TapeSE']:
         tapeSEs.add( localSE )
 
-    for lfn, reps in replicas.items():
+    for lfn, reps in replicas.iteritems():
       if lfn not in self.inputData:
         self.log.verbose( 'LFN %s is not in requested input data to download' )
         failedReplicas.add( lfn )
@@ -100,6 +102,10 @@ class DownloadInputData:
       # Get and remove size and GUIS
       size = reps.pop( 'Size' )
       guid = reps.pop( 'GUID' )
+      # Remove all other items that are not SEs
+      for item in reps.keys():
+        if item not in self.availableSEs:
+          reps.pop( item )
       downloadReplicas[lfn] = {'SE':[], 'Size':size, 'GUID':guid}
       # First get Disk replicas
       for seName in diskSEs:
@@ -113,8 +119,8 @@ class DownloadInputData:
             downloadReplicas[lfn]['SE'].append( seName )
 
     totalSize = 0
-    self.log.verbose( 'Replicas to download are:' )
-    for lfn, reps in downloadReplicas.items():
+    verbose = self.log.verbose( 'Replicas to download are:' )
+    for lfn, reps in downloadReplicas.iteritems():
       self.log.verbose( lfn )
       if not reps['SE']:
         self.log.info( 'Failed to find data at local SEs, will try to download from anywhere', lfn )
@@ -126,9 +132,10 @@ class DownloadInputData:
         # get SE and pfn from tuple
         reps['SE'] = reps['SE'][0]
       totalSize += int( reps.get( 'Size', 0 ) )
-      for item, value in sorted( reps.items() ):
-        if value:
-          self.log.verbose( '\t%s %s' % ( item, value ) )
+      if verbose:
+        for item, value in sorted( reps.items() ):
+          if value:
+            self.log.verbose( '\t%s %s' % ( item, value ) )
 
     self.log.info( 'Total size of files to be downloaded is %s bytes' % ( totalSize ) )
     for lfn in failedReplicas:
@@ -150,9 +157,9 @@ class DownloadInputData:
 
     resolvedData = {}
     localSECount = 0
-    for lfn in downloadReplicas:
-      seName = downloadReplicas[lfn]['SE']
-      guid = downloadReplicas[lfn]['GUID']
+    for lfn, info in downloadReplicas.iteritems():
+      seName = info['SE']
+      guid = info['GUID']
       reps = replicas.get( lfn, {} )
       if seName:
         result = StorageElement( seName ).getFileMetadata( lfn )
@@ -258,7 +265,7 @@ class DownloadInputData:
     """ Download a local copy of a single LFN from a list of Storage Elements.
         This is used as a last resort to attempt to retrieve the file.
     """
-    self.log.verbose( "Attempting to download file from all SEs (%s):" % ','.join( reps.keys() ), lfn )
+    self.log.verbose( "Attempting to download file from all SEs (%s):" % ','.join( reps ), lfn )
     diskSEs = set()
     tapeSEs = set()
     for seName in reps:

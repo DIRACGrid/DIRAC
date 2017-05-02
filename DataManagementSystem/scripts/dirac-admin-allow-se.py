@@ -48,6 +48,7 @@ for switch in Script.getUnprocessedSwitches():
 
 if not ( read or write or check or remove ):
   # No switch was specified, means we need all of them
+  gLogger.notice( "No option given, all accesses will be allowed if they were not" )
   read = True
   write = True
   check = True
@@ -113,10 +114,7 @@ if not res[ 'OK' ]:
 
 reason = 'Forced with dirac-admin-allow-se by %s' % userName
 
-for se, seOptions in res[ 'Value' ].items():
-
-  resW = resC = resR = { 'OK' : False }
-
+for se, seOptions in res[ 'Value' ].iteritems():
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
   for statusType in STATUS_TYPES:
@@ -124,22 +122,19 @@ for se, seOptions in res[ 'Value' ].items():
       if seOptions.get( statusType ) == "Active":
         gLogger.notice( '%s status of %s is already Active' % ( statusType, se ) )
         continue
-      if seOptions.has_key( statusType ):
+      if statusType in seOptions:
         if not seOptions[ statusType ] in ALLOWED_STATUSES:
           gLogger.notice( '%s option for %s is %s, instead of %s' %
                           ( statusType, se, seOptions[ 'ReadAccess' ], ALLOWED_STATUSES ) )
           gLogger.notice( 'Try specifying the command switches' )
-          continue
-
-        resR = resourceStatus.setElementStatus( se, "StorageElement", statusType, 'Active', reason, userName )
-        if not resR['OK']:
-          gLogger.error( "Failed to update %s %s to Active" % ( se, statusType ) )
         else:
-          gLogger.notice( "Successfully updated %s %s to Active" % ( se, statusType ) )
-          statusAllowedDict[statusType].append( se )
-
-  if not( resR['OK'] or resW['OK'] or resC['OK'] ):
-    DIRAC.exit( -1 )
+          resR = resourceStatus.setStorageElementStatus( se, statusType, 'Active', reason, userName )
+          if not resR['OK']:
+            gLogger.fatal( "Failed to update %s %s to Active, exit -" % ( se, statusType ), resR['Message'] )
+            DIRAC.exit( -1 )
+          else:
+            gLogger.notice( "Successfully updated %s %s to Active" % ( se, statusType ) )
+            statusAllowedDict[statusType].append( se )
 
 totalAllowed = 0
 totalAllowedSEs = []

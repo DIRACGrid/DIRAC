@@ -910,7 +910,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     if (len(argss)==0):
-      print self.do_group.__doc__
+      print self.do_mkdir.__doc__
       return
     path = argss[0] 
     if path.find('/') == 0:
@@ -1994,7 +1994,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     argss = args.split()
     if (len(argss)==0):
-      print self.do_meta.__doc__
+      print self.do_dataset.__doc__
       return
     command = argss[0]
     del argss[0]
