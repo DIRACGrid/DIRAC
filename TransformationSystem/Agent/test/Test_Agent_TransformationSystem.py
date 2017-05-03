@@ -1,16 +1,21 @@
 """ Test class for agents
 """
 
+# pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
+
 # imports
-import unittest, importlib, datetime
+import unittest
+import importlib
+import datetime
 from mock import MagicMock
 
 from DIRAC import gLogger
-gLogger.setLevel( 'DEBUG' )
-
 # sut
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Agent.TransformationAgent import TransformationAgent
+
+gLogger.setLevel( 'DEBUG' )
+
 
 
 class AgentsTestCase( unittest.TestCase ):
@@ -302,7 +307,7 @@ class TransformationAgentSuccess( AgentsTestCase ):
                            'TaskID': '82',
                            'TransformationID': 17042L,
                            'UsedSE': 'CERN-DST,CNAF-DST,RAL_M-DST,SARA-DST'}]
-                  }
+                }
     noFiles = {'OK':True, 'Value':[]}
 
     for getTFiles in [goodFiles, noFiles]:

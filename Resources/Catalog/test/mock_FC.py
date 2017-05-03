@@ -1,7 +1,7 @@
 """ Module that contains a mock object of the FileCatalog(s)
 """
 
-#pylint: disable=line-too-long
+#pylint: disable=invalid-name, line-too-long
 
 import datetime
 from mock import MagicMock
