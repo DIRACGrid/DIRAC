@@ -225,7 +225,8 @@ Let's do one more check:
 
 Was this good? If it wasn't, again, then you should probably hit the "previous" button of this guide.
 
-Do not think about you just typed right now. It will become more clear later.
+Do not think about you just typed right now. It will become more clear later. 
+Please, look into :ref:`check_your_installation` section for further checks. 
 
 
 Ready!
