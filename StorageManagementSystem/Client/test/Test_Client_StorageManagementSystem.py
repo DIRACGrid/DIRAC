@@ -37,6 +37,10 @@ mockObjectSE5.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt'
                                                     'Failed':{}} )
 mockObjectSE5.getStatus.return_value = S_OK( {'DiskSE': True, 'TapeSE':False} )
 
+mockObjectDMSHelper = MagicMock()
+mockObjectDMSHelper.getLocalSiteForSE.return_value = S_OK( 'mySite' )
+mockObjectDMSHelper.getSitesForSE.return_value = S_OK( ['mySite'] )
+
 class ClientsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
   """
@@ -57,7 +61,7 @@ class StorageManagerSuccess( ClientsTestCase ):
   def test_getFilesToStage_withFilesToStage( self, _patch, _patched ):
     """ Test where the StorageElement mock will return files offline
     """
-    res = getFilesToStage( ['/a/lfn/1.txt'] )
+    res = getFilesToStage( ['/a/lfn/1.txt'], checkOnlyTapeSEs = False )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertIn( res['Value']['offlineLFNs'], [{'SE1':['/a/lfn/1.txt']},
@@ -70,7 +74,7 @@ class StorageManagerSuccess( ClientsTestCase ):
   def test_getFilesToStage_noFilesToStage( self, _patch, _patched ):
     """ Test where the StorageElement mock will return files online
     """
-    res = getFilesToStage( ['/a/lfn/2.txt'] )
+    res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = False )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], ['/a/lfn/2.txt'] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )
@@ -82,7 +86,7 @@ class StorageManagerSuccess( ClientsTestCase ):
   def test_getFilesToStage_seErrors( self, _patch, _patched ):
     """ Test where the StorageElement will return failure
     """
-    res = getFilesToStage( ['/a/lfn/2.txt'] )
+    res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = False )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )
@@ -94,11 +98,11 @@ class StorageManagerSuccess( ClientsTestCase ):
   def test_getFilesToStage_noSuchFile( self, _patch, _patched ):
     """ Test where the StorageElement will return file is absent
     """
-    res = getFilesToStage( ['/a/lfn/2.txt'] )
+    res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = False )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )
-    self.assertEqual( res['Value']['absentLFNs'], {'/a/lfn/2.txt':['SE2']} )
+    self.assertEqual( res['Value']['absentLFNs'], {'/a/lfn/2.txt': 'No such file or directory ( 2 : File not at SE2)'} )
     self.assertEqual( res['Value']['failedLFNs'], [] )
 
   @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.DataManager", return_value = dm_mock )
@@ -106,7 +110,7 @@ class StorageManagerSuccess( ClientsTestCase ):
   def test_getFilesToStage_fileInaccessibleAtDisk( self, _patch, _patched ):
     """ Test where the StorageElement will return file is unavailable at a Disk SE
     """
-    res = getFilesToStage( ['/a/lfn/1.txt'] )
+    res = getFilesToStage( ['/a/lfn/1.txt'], checkOnlyTapeSEs = False )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )

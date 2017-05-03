@@ -19,13 +19,13 @@ from types import ListType, TupleType, StringTypes
 # The logic of some methods is basically a copy/paste from the FileManager class,
 # so I could have inherited from it. However, I did not want to depend on it
 class FileManagerPs( FileManagerBase ):
-  
 
-  
+
+
   def __init__(self, database = None ):
     super( FileManagerPs, self ).__init__( database )
 
-  
+
 
   ######################################################
   #
@@ -87,7 +87,7 @@ class FileManagerPs( FileManagerBase ):
       fileId = result['Value'][0]
 
       if not fileId:
-        failed[lfn] = "No such file"
+        failed[lfn] = "No such file or directory"
       else:
         successful[lfn] = fileId
 
@@ -118,7 +118,7 @@ class FileManagerPs( FileManagerBase ):
 
       # The lfns that are not in successful dont exist
       for failedLfn in ( set( lfns ) - set( successful ) ):
-        failed[failedLfn] = "No such file"
+        failed[failedLfn] = "No such file or directory"
 
     return S_OK({"Successful":successful,"Failed":failed})
 
@@ -306,10 +306,10 @@ class FileManagerPs( FileManagerBase ):
     chunkSize = 200
     allChunks = list( self.__chunks( lfns.keys(), chunkSize ) )
 
-    
+
     for lfnChunk in allChunks:
       result = self.__insertMultipleFiles( fileValues, lfnChunk )
-      
+
       if result['OK']:
         allIds = result['Value']
         for dirId, fileName, fileID in allIds:

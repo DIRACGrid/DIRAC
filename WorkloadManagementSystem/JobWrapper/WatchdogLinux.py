@@ -12,22 +12,20 @@
 
 __RCSID__ = "$Id$"
 
+import socket
+
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog  import Watchdog
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Os import getDiskSpace
 
-import string
-import socket
 
 class WatchdogLinux( Watchdog ):
 
-  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'linux' ):
+  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux' ):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, systemFlag )
-    self.systemFlag = systemFlag
-    self.pid = pid
+    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, processors, systemFlag )
 
   ############################################################################
   def getNodeInformation( self ):
@@ -37,17 +35,15 @@ class WatchdogLinux( Watchdog ):
     """
     result = S_OK()
     try:
-      cpuInfo = open ( "/proc/cpuinfo", "r" )
-      info = cpuInfo.readlines()
-      cpuInfo.close()
       result["HostName"] = socket.gethostname()
-      result["CPU(MHz)"] = string.replace( string.replace( string.split( info[6], ":" )[1], " ", "" ), "\n", "" )
-      result["ModelName"] = string.replace( string.replace( string.split( info[4], ":" )[1], " ", "" ), "\n", "" )
-      result["CacheSize(kB)"] = string.replace( string.replace( string.split( info[7], ":" )[1], " ", "" ), "\n", "" )
-      memInfo = open ( "/proc/meminfo", "r" )
-      info = memInfo.readlines()
-      memInfo.close()
-      result["Memory(kB)"] = string.replace( string.replace( string.split( info[3], ":" )[1], " ", "" ), "\n", "" )
+      with open( "/proc/cpuinfo", "r" ) as cpuInfo:
+        info = cpuInfo.readlines()
+        result["CPU(MHz)"] = info[7].split(':')[1].replace(' ', '').replace('\n', '')
+        result["ModelName"] = info[4].split(':')[1].replace(' ', '').replace('\n', '')
+        result["CacheSize(kB)"] = info[8].split(':')[1].replace(' ', '').replace('\n', '')
+      with open( "/proc/meminfo", "r" ) as memInfo:
+        info = memInfo.readlines()
+        result["Memory(kB)"] = info[3].split(':')[1].replace(' ', '').replace('\n', '')
       account = 'Unknown'
       localID = shellCall(10,'whoami')
       if localID['OK']:
@@ -69,7 +65,7 @@ class WatchdogLinux( Watchdog ):
     comm = '/bin/cat /proc/loadavg'
     loadAvgDict = shellCall( 5, comm )
     if loadAvgDict['OK']:
-      return S_OK( float( string.split( loadAvgDict['Value'][1] )[0] ) )
+      return S_OK( float( loadAvgDict['Value'][1].split( )[0] ) )
     else:
       self.log.warn( 'Could not obtain load average' )
       return S_ERROR( 'Could not obtain load average' )
@@ -81,7 +77,7 @@ class WatchdogLinux( Watchdog ):
     comm = '/usr/bin/free'
     memDict = shellCall( 5, comm )
     if memDict['OK']:
-      mem = string.split(memDict['Value'][1]) [8]
+      mem = memDict['Value'][1].split()[8]
       return S_OK( float( mem ) )
     else:
       self.log.warn( 'Could not obtain memory used' )

@@ -165,7 +165,14 @@ def uploadProxy( params ):
       return S_ERROR( "Can't load proxy file %s: %s" % ( params.proxyLoc, retVal[ 'Message' ] ) )
 
     chain = proxyChain
-    diracGroup = False
+    diracGroup = params.diracGroup
+    if params.diracGroup:
+      # Check that there is no conflict with the already present DIRAC group
+      result = chain.getDIRACGroup( ignoreDefault = True )
+      if result['OK'] and result['Value'] and result['Value'] == params.diracGroup:
+        # No need to embed a new DIRAC group
+        diracGroup = False
+
     restrictLifeTime = 0
 
   DIRAC.gLogger.info( " Uploading..." )

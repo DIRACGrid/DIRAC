@@ -1004,7 +1004,10 @@ EOF
       for pRef in pilotRefs:
         newStatus = ''
         oldStatus = pilotDict[pRef]['Status']
-        ceStatus = pilotCEDict[pRef]
+        if pRef in pilotCEDict:
+          ceStatus = pilotCEDict[pRef]
+        else:
+          ceStatus = oldStatus
         lastUpdateTime = pilotDict[pRef]['LastUpdateTime']
         sinceLastUpdate = dateTime() - lastUpdateTime
 

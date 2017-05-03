@@ -27,6 +27,7 @@
 """
 
 import os
+import multiprocessing
 
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
 from DIRAC.Core.Security.ProxyFile                    import writeToProxyFile
@@ -41,9 +42,10 @@ from DIRAC.Core.Utilities.Time                        import dateTime, second
 from DIRAC                                            import S_OK, S_ERROR, gLogger, version
 from DIRAC.Core.Utilities.ObjectLoader                import ObjectLoader
 
+
 __RCSID__ = "$Id$"
 
-INTEGER_PARAMETERS = ['CPUTime']
+INTEGER_PARAMETERS = ['CPUTime', 'NumberOfProcessors']
 FLOAT_PARAMETERS = []
 LIST_PARAMETERS = ['Tag']
 WAITING_TO_RUNNING_RATIO = 0.5
@@ -206,6 +208,11 @@ class ComputingElement(object):
         generalCEDict.update( self.ceParameters )
         self.ceParameters = generalCEDict
 
+    # If NumberOfProcessors is present in the description but is equal to zero
+    # interpret it as needing local evaluation
+    if self.ceParameters.get( "NumberOfProcessors", -1 ) == 0:
+      self.ceParameters["NumberOfProcessors"] = multiprocessing.cpu_count()
+
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:
         self.ceParameters[key] = int( self.ceParameters[key] )
@@ -266,6 +273,7 @@ class ComputingElement(object):
     runningJobs = result['RunningJobs']
     waitingJobs = result['WaitingJobs']
     submittedJobs = result['SubmittedJobs']
+    availableProcessors = result.get( 'AvailableProcessors' )
     ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.ceParameters.get( 'MaxTotalJobs', 0 ) )
@@ -301,6 +309,8 @@ class ComputingElement(object):
       if int( self.ceParameters.get( 'MaxWaitingJobs', 0 ) ) == 0:
         additionalJobs = maxTotalJobs - runningJobs
 
+      if availableProcessors is not None:
+        additionalJobs = min( additionalJobs, availableProcessors )
       result['Value'] = additionalJobs
 
     result['Message'] = message
@@ -439,8 +449,8 @@ class ComputingElement(object):
 
     result = self.getCEStatus()
     if result['OK']:
-      if 'AvailableCores' in result:
-        cores = result['AvailableCores']
+      if 'AvailableProcessors' in result:
+        cores = result['AvailableProcessors']
         if cores > 1:
           ceDict['NumberOfProcessors'] = cores
 

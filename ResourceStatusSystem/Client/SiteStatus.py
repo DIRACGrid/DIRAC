@@ -180,15 +180,19 @@ class SiteStatus( object ):
 
     if not siteNamesList:
       if self.rssFlag:
-        activeSites = self.rsClient.selectStatusElement( 'Site', 'Status', status = 'Active', meta = { 'columns' : [ 'Name' ] } )
-        if not activeSites['OK']:
-          return activeSites
+        result = self.rsClient.selectStatusElement( 'Site', 'Status', status = 'Active', meta = { 'columns' : [ 'Name' ] } )
+        if not result['OK']:
+          return result
 
-        degradedSites = self.rsClient.selectStatusElement( 'Site', 'Status', status = 'Degraded', meta = { 'columns' : [ 'Name' ] } )
-        if not degradedSites['OK']:
-          return degradedSites
+        activeSites = [ x[0] for x in result['Value'] ]
 
-        return S_OK( activeSites['Value'] + degradedSites['Value'] )
+        result = self.rsClient.selectStatusElement( 'Site', 'Status', status = 'Degraded', meta = { 'columns' : [ 'Name' ] } )
+        if not result['OK']:
+          return result
+
+        degradedSites = [ x[0] for x in result['Value'] ]
+
+        return S_OK( activeSites + degradedSites )
 
       else:
         activeSites = self.wmsAdministrator.getSiteMask()

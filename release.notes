@@ -1,4 +1,4 @@
-[v6r18-pre8]
+[v6r18-pre11]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -8,6 +8,8 @@ FIX: All Databases are granting also REFERENCES grant to Dirac user to comply wi
 
 *Core
 FIX: dirac-install - allow to use local md5 files
+CHANGE: X509Chain - fixes to allow robot proxies with embedded DIRAC group extension
+        ( allow DIRAC group extension not in the first certificate chain step )
 
 *Accounting
 NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
@@ -16,7 +18,7 @@ NEW: new functionality to plot the data gathered by perfSONARs. It allows to
 *DMS
 CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
         client
-CHANGE: FTSHistoryView - frop FTSServer field from the view description        
+CHANGE: FTSHistoryView - drop FTSServer field from the view description        
 
 *RSS
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
@@ -30,10 +32,61 @@ FIX: ResourceStatus - fixes for getting status from the CS information
 NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS  
 FIX: JobDB - fixes necessary to suite MySQL 5.7   
 NEW: pilotCommands - new ReplaceDIRACCode command mostly for testing purposes
+NEW: JobAgent, JobWrapper - several fixes to allow the work with PoolComputingElement
+     to support multiprocessor jobs     
 
 *Interfaces
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
 CHANGE: Dirac API - added runLocal as an API method
+
+[v6r17p19]
+
+*Core
+FIX: Adler - fix checksum with less than 8 characters to be 8 chars long
+
+*Configuration
+FIX: VOMS2CSAgent - fix to accomodate some weird new user DNs (containing only CN field)
+
+*DMS
+FIX: FileCatalog - fix for the doc strings usage in file catalog CLI, fixes #3306
+FIX: FileCatalog - modified recursive file parameter setting to enable usage of the index
+
+*SMS
+CHANGE: StorageManagerClient - try to get sites with data online if possible in getFilesToStage
+
+*RMS
+FIX: RequestExecutingAgent - tuning of the request caching while execution
+
+*WMS
+FIX: DownloadInputData - do not mistakenly use other metadata from the replica info than SEs
+FIX: JobScheduling - put sites holding data before others in the list of available sites
+FIX: JobScheduling - try and select replicas for staging at the same site as online files
+FIX: SiteDirector - keep the old pilot status if the new one can not be obtained in updatePilotStatus()
+
+*Resources
+FIX: CREAMComputingElement - return error when pilot output is missing in getJobOutput()
+
+*Monitoring
+FIX: DBUtils - change the buckets in order to support queries which require more than one year 
+     data. The maximum buckets size is 7 weeks
+
+[v6r17p18]
+
+*Framework
+NEW: SystemAdministrator - added possibility to remove old software installations keeping
+     only a predefined number of the most recent ones.
+
+*DMS
+FIX: RemoveReplica - removing replica of a non-existing file is considered successful
+
+*SMS
+CHANGE: StorageManagerClient - restrict usage of executeWithUserProxy decorator 
+        to calling the SE.getFileMetadata only; added flag to check only replicas 
+        at tape SEs
+        
+*WMS
+FIX: JobScheduling - added CS option to flag checking only replicas at tape SEs;
+     fail jobs with input data not available in the File Catalog        
 
 [v6r17p17]
 

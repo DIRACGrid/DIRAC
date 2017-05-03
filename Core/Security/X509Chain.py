@@ -447,14 +447,15 @@ class X509Chain( object ):
       return S_ERROR( DErrno.ENOCHAIN )
     if not self.__isProxy:
       return S_ERROR( DErrno.EX509, "Chain does not contain a valid proxy" )
-    # ADRI: Below will find first match of dirac group
-    # for i in range( len( self.__certList ) -1, -1, -1 ):
-    #  retVal = self.getCertInChain( i )[ 'Value' ].getDIRACGroup()
-    #  if retVal[ 'OK' ] and 'Value' in retVal and retVal[ 'Value' ]:
-    #    return retVal
     if self.isPUSP()['Value']:
       return self.getCertInChain( self.__firstProxyStep - 2 )[ 'Value' ].getDIRACGroup( ignoreDefault = ignoreDefault )
     else:
+      # The code below will find the first match of the DIRAC group
+      for i in range( len( self.__certList ) -1, -1, -1 ):
+        retVal = self.getCertInChain( i )[ 'Value' ].getDIRACGroup( ignoreDefault = True )
+        if retVal[ 'OK' ] and 'Value' in retVal and retVal[ 'Value' ]:
+          return retVal
+      # No DIRAC group found, try to get the default one
       return self.getCertInChain( self.__firstProxyStep )[ 'Value' ].getDIRACGroup( ignoreDefault = ignoreDefault )
 
   def hasExpired( self ):
