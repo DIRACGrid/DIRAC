@@ -1,4 +1,4 @@
-Introduction
+gLogger
 ============
 
 *gLogger* is the current logging solution within DIRAC. It allows
@@ -7,9 +7,6 @@ middleware.
 
 In this document, we will focus on functionalities proposed by the
 logger and its integration in the middleware.
-
-Developer Guide
-===============
 
 Logger creation
 ---------------
@@ -61,8 +58,6 @@ Level names and numbers
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 There are 9 different levels in DIRAC :
-
-[!ht]
 
 +--------------+----------------+
 | Level name   | Level number   |
@@ -119,32 +114,15 @@ Message
 Naturally, it exists some functions to send a message. These methods
 take level names. In this way, we have :
 
-[!ht]
-
-+-------------------------------------+
-| method signature                    |
-+=====================================+
-| always(msg, varMsg)                 |
-+-------------------------------------+
-| notice(msg, varMsg)                 |
-+-------------------------------------+
-| info(msg, varMsg)                   |
-+-------------------------------------+
-| verbose(msg, varMsg)                |
-+-------------------------------------+
-| debug(msg, varMsg)                  |
-+-------------------------------------+
-| warn(msg, varMsg)                   |
-+-------------------------------------+
-| error(msg, varMsg)                  |
-+-------------------------------------+
-| exception(msg, varMsg,              |
-+-------------------------------------+
-| lException=False, lExcInfo=False)   |
-+-------------------------------------+
-| fatal(msg, varMsg)                  |
-+-------------------------------------+
-+-------------------------------------+
++ always(msg, varMsg='') 
++ notice(msg, varMsg='')               
++ info(msg, varMsg='')       
++ verbose(msg, varMsg='')
++ debug(msg, varMsg='')                 
++ warn(msg, varMsg='')              
++ error(msg, varMsg='')                  
++ exception(msg, varMsg='', lException=False, lExcInfo=False)
++ fatal(msg, varMsg='')  
 
 There are a *Msg* and *varMsg* where you can put any string you want in.
 There is no real difference between the two parameters.
@@ -193,15 +171,17 @@ Display
 Basic display
 ~~~~~~~~~~~~~
 
-| The basic display for log message is:
+The basic display for log message is:
 
-| [Year]-[Month]-[Day] [Hour]:[Minute]:[Second] UTC
-| /[Component]/[Logname] [Levelname] : [Message]
+::
+ 
+    [Year]-[Month]-[Day] [Hour]:[Minute]:[Second] UTC /[Component]/[Logname] [Levelname] : [Message]
 
-| Example:
+Example:
 
-2017-04-25 15:51:01 UTC Framework/logMultipleLines ALWAYS: this is a
-message
+::
+
+    2017-04-25 15:51:01 UTC Framework/logMultipleLines ALWAYS: this is a message
 
 The date is UTC formatted and the system and the component names come
 from the configuration file. This display can vary according to the
@@ -213,10 +193,11 @@ Component
 Client component
 ^^^^^^^^^^^^^^^^
 
-| All messages from a client , wherever located, are displayed like:
+All messages from a client , wherever located, are displayed like:
 
-[Year]-[Month]-[Day] [Hour]:[Minute]:[Second] UTC Framework/[Logname]
-[Levelname] : [Message]
+::
+
+    [Year]-[Month]-[Day] [Hour]:[Minute]:[Second] UTC Framework/[Logname][Levelname] : [Message]
 
 The component name disappears and the system name becomes *Framework*.
 That is because there are no Client component in configuration files and
@@ -225,9 +206,11 @@ That is because there are no Client component in configuration files and
 Script Component
 ^^^^^^^^^^^^^^^^
 
-| All messages from a script are displayed like:
+All messages from a script are displayed like:
 
-[Message]
+::
+
+    [Message]
 
 That is because the *parseCommandLine()* method modify one option
 parameter in *gLogger* : *showHeaders* to False. Let is talk more about
@@ -247,14 +230,15 @@ True.
 *showThreads* option
 ^^^^^^^^^^^^^^^^^^^^
 
-| As the previous option, *showThreads* is a boolean variable inside
+As the previous option, *showThreads* is a boolean variable inside
 *gLogger* which allow us to hide or not the thread ID in the log. This
 thread ID is created from the original thread ID of Python and modified
 by the backend to become a word. It is positioned between the log name
 and the level name like this:
 
-2017-04-25 15:51:01 UTC Framework/logMultipleLines [PokJl] ALWAYS: this
-is a message
+::
+
+    2017-04-25 15:51:01 UTC Framework/logMultipleLines [PokJl] ALWAYS: this is a message
 
 Its default value is False and we can set it via *showThreadIDs(val)*
 method. Nevertheless, if the *showHeaders* option is False, this option
@@ -263,13 +247,13 @@ will have no effect on the display.
 *LogShowLine* option
 ^^^^^^^^^^^^^^^^^^^^
 
-| This option is only available from the *cfg* file and allows us to add
+This option is only available from the *cfg* file and allows us to add
 extra information about the logger call between the logger name and the
 level of the message, like this:
 
-2017-04-28 14:56:54 UTC
-TestLogger/SimplestAgent[opt/dirac/DIRAC/FrameworkSystem/private/logging/Logger.py:160]
-INFO: Result
+::
+
+    2017-04-28 14:56:54 UTC TestLogger/SimplestAgent[opt/dirac/DIRAC/FrameworkSystem/private/logging/Logger.py:160] INFO: Result
 
 It is composed by the caller object path and the line in the file. As
 the previous option, it has no effect on the display if the
@@ -278,13 +262,15 @@ the previous option, it has no effect on the display if the
 *LogColor* option
 ^^^^^^^^^^^^^^^^^
 
-| This option is only available from the *cfg* file too, and only for
+This option is only available from the *cfg* file too, and only for
 *PrintBackend*. It allows us to add some colors according to the message
 level in the standard output like this:
 
-| 2017-04-28 14:56:54 UTC TestLogger/SimplestAgent DEBUG: Result
-| 2017-04-28 14:56:54 UTC TestLogger/SimplestAgent WARN: Result
-| 2017-04-28 14:56:54 UTC TestLogger/SimplestAgent ERROR: Result
+::
+
+    2017-04-28 14:56:54 UTC TestLogger/SimplestAgent DEBUG: Result
+    2017-04-28 14:56:54 UTC TestLogger/SimplestAgent WARN: Result
+    2017-04-28 14:56:54 UTC TestLogger/SimplestAgent ERROR: Result
 
 *child* attribute from *getSubLogger()* method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -296,9 +282,10 @@ illogic and buggy, so be careful using this attribute with a sublogger
 of a sublogger. Here is a simple example of its use with an agent
 running:
 
-| child = True: 2017-05-04 08:37:10 UTC TestLogger/SimplestAgent/log
-ALWAYS: LoggingChildTrue
-| child = False: 2017-05-04 08:37:10 UTC log ALWAYS: LoggingChildFalse
+::
+
+    child = True: 2017-05-04 08:37:10 UTC TestLogger/SimplestAgent/log ALWAYS: LoggingChildTrue
+    child = False: 2017-05-04 08:37:10 UTC log ALWAYS: LoggingChildFalse
 
 Backends
 --------
@@ -307,8 +294,6 @@ Currently, there are four different backends inherited from a base which
 build the message according to the options seen above and another called
 *LogShowLine*. These four backends just write the message at associated
 place. There are :
-
-[!ht]
 
 +-----------------+--------------------+
 | Backend         | Output             |
@@ -339,8 +324,6 @@ Logger configuration
 It is possible to configure some options of the logger via the *cfg*
 file. These options are :
 
-[!ht]
-
 +---------------+------------------------------------------------+--------------------------------+
 | Option        | Description                                    | Excpected value(s)             |
 +===============+================================================+================================+
@@ -358,10 +341,7 @@ Backend configuration
 
 We also have the possibility to configure backend options via this file.
 To do a such operation, we just have to create a *BackendsOptions*
-section inside the component. Inside, we can add these following options
-:
-
-[!ht]
+section inside the component. Inside, we can add these following options:
 
 +-----------------+---------------------------------------------+----------------------+
 | Option          | Description                                 | Excpected value(s)   |
@@ -407,8 +387,6 @@ Moreover, it is possible to change the display via one program argument
 which is picked up by *gLogger* at its initalization. According to the
 number of *d* in the argument, the logger active or not different
 options and set a certain level. Here is a table explaining the working:
-
-[!ht]
 
 +----------------------------------+----------------+----------------+-----------+
 | Argument                         | ShowHeader     | showThread     | Level     |
