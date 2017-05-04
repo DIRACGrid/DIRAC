@@ -2,7 +2,7 @@
 Developing Databases
 ==============================================
 
-Before starting developing databases, you have to make sure that MySQL is installed, as well as python-mysql, as explained in :ref:`developer_installation`
+Before starting developing databases, you have to make sure that MySQL is installed, as well as python-mysql, as explained in :ref:`editing_code`, and make sure that MySQL service is on.
 
 Develop the database
 =====================
@@ -47,6 +47,8 @@ The last step is to configure the database credentials for DIRAC to be able to c
      }
   }
   
+If you encounter any problem with sockets, you should replace "localhost" (DIRAC/Systems/Test/<instance name>/AtomDB/Host) by 127.0.0.1.
+
 Keep in mind that <instance name> is the name of the instance defined under */DIRAC/Setups/<your setup>/Test* and <your setup> is defined under */DIRAC/Setup*.
 
 Once that is defined you're ready to go

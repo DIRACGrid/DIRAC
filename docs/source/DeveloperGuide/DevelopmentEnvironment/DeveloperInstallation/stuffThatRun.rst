@@ -185,13 +185,16 @@ The following commands should do the trick for you, by creating a fake CA, a fak
 
 Now we need to register those certificates in DIRAC. To do so you
 must modify *$DEVROOT/etc/dirac.cfg* file and set the correct
-certificate DNs for you and your development box. For instance,
-to register the host replace "/your/box/dn/goes/here"
+certificate DNs for you and your development box. 
+To register the host, replace "/your/box/dn/goes/here"
 (/Registry/Hosts/mydevbox/DN option) with the result of::
 
    openssl x509 -noout -subject -in $DEVROOT/etc/grid-security/hostcert.pem | sed 's:^subject= ::g'
 
+Same process to register yourself, replace "/your/box/dn/goes/here"
+(/Registry/Users/yourusername/DN option) with the result of::
 
+   openssl x509 -noout -subject -in ~/.globus/usercert.pem | sed 's:^subject= ::g'
 
 Is my installation correctly done?
 --------------------------------------
@@ -222,7 +225,8 @@ Let's do one more check:
 
 Was this good? If it wasn't, again, then you should probably hit the "previous" button of this guide.
 
-Do not think about you just typed right now. It will become more clear later.
+Do not think about you just typed right now. It will become more clear later. 
+Please, look into :ref:`check_your_installation` section for further checks. 
 
 
 Ready!
