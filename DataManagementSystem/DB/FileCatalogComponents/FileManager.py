@@ -644,6 +644,8 @@ class FileManager( FileManagerBase ):
 
     if paramName in ['UID','GID','Status','Size']:
       # Treat primary file attributes specially
+      # Different statement for the fileIDString with SELECT is for performance optimization
+      # since in this case the MySQL engine manages to use index on FileID.
       if 'select' in fileIDString.lower():
         tmpreq = "UPDATE FC_Files as FF1, ( %s ) as FF2 %%s WHERE FF1.FileID=FF2.FileID" % fileIDString
       else:
@@ -652,10 +654,19 @@ class FileManager( FileManagerBase ):
       result = self.db._update(req,connection)
       if not result['OK']:
         return result
-      req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % fileIDString
+      if 'select' in fileIDString.lower():
+        req = "UPDATE FC_FileInfo as FF1, ( %s ) as FF2 SET ModificationDate=UTC_TIMESTAMP() WHERE FF1.FileID=FF2.FileID" % fileIDString
+      else:
+        req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % fileIDString
     else:
-      req = "UPDATE FC_FileInfo SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % ( paramName, paramValue,
-                                                                                                        fileIDString )
+      # Different statement for the fileIDString with SELECT is for performance optimization
+      # since in this case the MySQL engine manages to use index on FileID.
+      if 'select' in fileIDString.lower():
+        req = "UPDATE FC_FileInfo as FF1, ( %s ) as FF2 SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FF1.FileID=FF2.FileID" % \
+              ( fileIDString, paramName, paramValue )
+      else:
+        req = "UPDATE FC_FileInfo SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % \
+              ( paramName, paramValue, fileIDString )
     return self.db._update( req, connection )
 
   def __getRepIDForReplica( self, fileID, seID, connection = False ):

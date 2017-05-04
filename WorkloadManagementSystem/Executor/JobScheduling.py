@@ -121,7 +121,9 @@ class JobScheduling( OptimizerExecutor ):
     self.jobLog.verbose( "Has an input data requirement" )
     inputData = result[ 'Value' ]
 
+    # ===================================================================================
     # Production jobs are sent to TQ, but first we have to verify if staging is necessary
+    # ===================================================================================
     if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
       self.jobLog.info( "Production job: sending to TQ, but first checking if staging is requested" )
 
@@ -153,9 +155,18 @@ class JobScheduling( OptimizerExecutor ):
         self.__requestStaging( jobState, stageLFNs )
         return S_OK()
       else:
+        # No staging required
+        onlineSites = res['Value']['onlineSites']
+        if onlineSites:
+          # Set the online site(s) first
+          userSites = set( userSites )
+          onlineSites &= userSites
+          userSites = list( onlineSites ) + list( userSites - onlineSites )
         return self.__sendToTQ( jobState, userSites, userBannedSites )
 
+    # ===================================================
     # From now on we know it's a user job with input data
+    # ===================================================
 
     idAgent = self.ex_getOption( 'InputDataAgent', 'InputData' )
     result = self.retrieveOptimizerParam( idAgent )

@@ -10,6 +10,7 @@ from DIRAC.Core.Base.Client                         import Client
 from DIRAC.Core.Utilities.DErrno                    import cmpError
 from DIRAC.Core.Utilities.Proxy                     import executeWithUserProxy
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement         import StorageElement
 
 def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog = None ):
@@ -28,7 +29,7 @@ def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog =
     return lfnListReplicas
 
   offlineLFNsDict = {}
-  onlineLFNs = set()
+  onlineLFNs = {}
   offlineLFNs = {}
   absentLFNs = {}
   failedLFNs = set()
@@ -76,14 +77,34 @@ def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog =
 
     if not result['OK']:
       return result
-    failedLFNs = set( lfnList ) - onlineLFNs - set( offlineLFNs ) - set( absentLFNs )
+    failedLFNs = set( lfnList ) - set( onlineLFNs ) - set( offlineLFNs ) - set( absentLFNs )
 
+    # Get the online SEs
+    dmsHelper = DMSHelpers()
+    onlineSEs = set( se for ses in onlineLFNs.values() for se in ses )
+    onlineSites = set( dmsHelper.getLocalSiteForSE( se ).get( 'Value' ) for se in onlineSEs ) - {None}
     for lfn in offlineLFNs:
       ses = offlineLFNs[lfn]
-      if ses:
+      if len( ses ) == 1:
+        # No choice, let's go
+        offlineLFNsDict.setdefault( ses[0], list() ).append( lfn )
+        continue
+      # Try and get an SE at a site already with online files
+      found = False
+      if onlineSites:
+        # If there is at least one online site, select one
+        for se in ses:
+          site = dmsHelper.getLocalSiteForSE( se )
+          if site in onlineSites:
+            offlineLFNsDict.setdefault( se, list() ).append( lfn )
+            found = True
+            break
+      # No online site found in common, select randomly
+      if not found:
         offlineLFNsDict.setdefault( random.choice( ses ), list() ).append( lfn )
 
-  return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict, 'failedLFNs':list( failedLFNs ), 'absentLFNs':absentLFNs} )
+
+  return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict, 'failedLFNs':list( failedLFNs ), 'absentLFNs':absentLFNs, 'onlineSites':onlineSites} )
 
 def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
                         checkOnlyTapeSEs = None, jobLog = None,
@@ -108,7 +129,7 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
   failed = {}
   for se, lfnsInSEList in seToLFNs.iteritems():
     # No need to check files that are already known to be Online
-    lfnsInSEList = list( set( lfnsInSEList ) - onlineLFNs )
+    lfnsInSEList = list( set( lfnsInSEList ) - set( onlineLFNs ) )
     if not lfnsInSEList:
       continue
 
@@ -120,7 +141,8 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
     tapeSE = status['Value']['TapeSE']
     # If requested to check only Tape SEs and  the file is at a diskSE, we guess it is Online...
     if checkOnlyTapeSEs and not tapeSE:
-      onlineLFNs.update( lfnsInSEList )
+      for lfn in lfnsInSEList:
+        onlineLFNs.setdefault( lfn, [] ).append( se )
       continue
 
     # Wrap the SE method with executeWithUserProxy
@@ -139,7 +161,7 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
       for lfn, mDict in fileMetadata['Value']['Successful'].iteritems():
         # SRM returns Cached, but others may only return Accessible
         if mDict.get( 'Cached', mDict['Accessible'] ):
-          onlineLFNs.add( lfn )
+          onlineLFNs.setdefault( lfn, [] ).append( se )
         elif tapeSE:
           # A file can be staged only at Tape SE
           offlineLFNs.setdefault( lfn, [] ).append( se )
@@ -148,7 +170,7 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
           pass
 
   # Doesn't matter if some files are Offline if they are also online
-  for lfn in set( offlineLFNs ) & onlineLFNs:
+  for lfn in set( offlineLFNs ) & set( onlineLFNs ):
     offlineLFNs.pop( lfn )
 
   # If the file was found staged, ignore possible errors, but print out errors

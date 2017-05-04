@@ -22,7 +22,7 @@ def intAdlerToHex( intAdler ):
   """
   try:
     # Will always be 8 hex digits made from a positive integer
-    return hex( intAdler & 0xffffffff ).lower().replace( 'l', '' ).replace( 'x', '0' )[-8:]
+    return hex( intAdler & 0xffffffff ).lower().replace( 'l', '' ).replace( 'x', '0000' )[-8:]
   except Exception as error:
     print repr( error ).replace( ',)', ')' )
     return False
