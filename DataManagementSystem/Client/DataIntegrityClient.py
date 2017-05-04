@@ -55,7 +55,7 @@ class DataIntegrityClient( Client ):
 
   def __init__( self, **kwargs ):
 
-    super(DataIntegrityClient, self).__init__( **kwargs )
+    super( DataIntegrityClient, self ).__init__( **kwargs )
     self.setServer( 'DataManagement/DataIntegrity' )
     self.dm = DataManager()
     self.fc = FileCatalog()
@@ -211,7 +211,7 @@ class DataIntegrityClient( Client ):
     gLogger.info( "CatalogPFNSizeMismatch replica (%d) all sizes found mismatch. Updating retry count" % fileID )
     return self.incrementProblematicRetry( fileID )
 
-  #FIXME: Unused?
+  # FIXME: Unused?
   def resolvePFNNotRegistered( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNNotRegistered prognosis
     """
@@ -236,21 +236,21 @@ class DataIntegrityClient( Client ):
     elif not res['OK']:
       return self.__returnProblematicError( fileID, res )
     storageMetadata = res['Value']
-    if storageMetadata['Lost']:
+    if storageMetadata.get( 'Lost', False ):
       gLogger.info( "PFNNotRegistered replica (%d) found to be Lost. Updating prognosis" % fileID )
       return self.changeProblematicPrognosis( fileID, 'PFNLost' )
-    if storageMetadata['Unavailable']:
+    if storageMetadata.get( 'Unavailable', not storageMetadata['Accessible'] ):
       gLogger.info( "PFNNotRegistered replica (%d) found to be Unavailable. Updating retry count" % fileID )
       return self.incrementProblematicRetry( fileID )
 
     # HACK until we can obtain the space token descriptions through GFAL
     site = seName.split( '_' )[0].split( '-' )[0]
-    if not storageMetadata['Cached']:
+    if not storageMetadata.get( 'Cached', storageMetadata['Accessible'] ):
       if lfn.endswith( '.raw' ):
         seName = '%s-RAW' % site
       else:
         seName = '%s-RDST' % site
-    elif storageMetadata['Migrated']:
+    elif storageMetadata.get( 'Migrated' ):
       if lfn.startswith( '/lhcb/data' ):
         seName = '%s_M-DST' % site
       else:
@@ -279,7 +279,7 @@ class DataIntegrityClient( Client ):
       return self.changeProblematicPrognosis( fileID, 'CatalogPFNSizeMismatch' )
     return self.__updateCompletedFiles( 'PFNNotRegistered', fileID )
 
-  #FIXME: Unused?
+  # FIXME: Unused?
   def resolveLFNCatalogMissing( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the LFNCatalogMissing prognosis
     """
@@ -298,7 +298,7 @@ class DataIntegrityClient( Client ):
       return self.__returnProblematicError( fileID, res )
     return self.__updateCompletedFiles( 'LFNCatalogMissing', fileID )
 
-  #FIXME: Unused?
+  # FIXME: Unused?
   def resolvePFNMissing( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNMissing prognosis
     """
@@ -348,7 +348,7 @@ class DataIntegrityClient( Client ):
     # If we get here the problem is solved so we can update the integrityDB
     return self.__updateCompletedFiles( 'PFNMissing', fileID )
 
-  #FIXME: Unused?
+  # FIXME: Unused?
   def resolvePFNUnavailable( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNUnavailable prognosis
     """
@@ -361,17 +361,18 @@ class DataIntegrityClient( Client ):
       # The file is no longer Unavailable but has now dissapeared completely
       gLogger.info( "PFNUnavailable replica (%d) found to be missing. Updating prognosis" % fileID )
       return self.changeProblematicPrognosis( fileID, 'PFNMissing' )
-    if ( not res['OK'] ) or res['Value']['Unavailable']:
+    metadata = res['Value']
+    if ( not res['OK'] ) or metadata.get( 'Unavailable', not metadata['Accessible'] ):
       gLogger.info( "PFNUnavailable replica (%d) found to still be Unavailable" % fileID )
       return self.incrementProblematicRetry( fileID )
-    if res['Value']['Lost']:
+    if metadata.get( 'Lost', False ):
       gLogger.info( "PFNUnavailable replica (%d) is now found to be Lost. Updating prognosis" % fileID )
       return self.changeProblematicPrognosis( fileID, 'PFNLost' )
     gLogger.info( "PFNUnavailable replica (%d) is no longer Unavailable" % fileID )
     # Need to make the replica okay in the Catalog
     return self.__updateReplicaToChecked( problematicDict )
 
-  #FIXME: Unused?
+  # FIXME: Unused?
   def resolvePFNZeroSize( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolves the PFNZeroSize prognosis
     """
@@ -413,7 +414,7 @@ class DataIntegrityClient( Client ):
 
   ############################################################################################
 
-  #FIXME: Unused?
+  # FIXME: Unused?
   def resolveLFNZeroReplicas( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolves the LFNZeroReplicas prognosis
     """

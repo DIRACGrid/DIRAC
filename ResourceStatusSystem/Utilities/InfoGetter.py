@@ -19,6 +19,8 @@ def getPoliciesThatApply( decisionParams ):
     the CS. It returns a list of policy dictionaries that matched.
   """
 
+  # InfoGetter is being called from SiteInspector Agent
+
   decisionParams = _sanitizedecisionParams( decisionParams )
   gLogger.debug("Sanitized decisionParams: %s" % str(decisionParams))
 
@@ -73,7 +75,6 @@ def getPoliciesThatApply( decisionParams ):
   gLogger.debug("policies that apply: %s" %str(policiesThatApply))
 
   policiesToBeLoaded = []
-
   # Gets policies parameters from code.
   for policyName, policyType, _policyConfigParams in policiesThatApply:
 

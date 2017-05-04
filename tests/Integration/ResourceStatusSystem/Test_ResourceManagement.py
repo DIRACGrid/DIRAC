@@ -5,6 +5,10 @@
     this is pytest!
 '''
 
+#pylint: disable=invalid-name,wrong-import-position,missing-docstring
+
+import datetime
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -15,274 +19,40 @@ gLogger.setLevel('DEBUG')
 
 rsClient = ResourceManagementClient()
 
+dateEffective = datetime.datetime.now()
+lastCheckTime = datetime.datetime.now()
+
 def test_addAndRemove():
+
+  rsClient.deleteAccountingCache('TestName12345')
 
   # TEST addOrModifyAccountingCache
   # ...............................................................................
 
-  res = rsClient.addOrModifyAccountingCache('TestName1234')
-  assert res['OK'] == True
+  res = rsClient.addOrModifyAccountingCache('TestName12345', 'plotType', 'plotName', 'result', dateEffective, lastCheckTime)
+  assert res['OK'] is True
 
-  res = rsClient.selectAccountingCache('TestName1234')
-  assert res['OK'] == True
-  #check if the name that we got is equal to the previously added 'TestName1234'
-  assert res['Value'][0][0] == 'TestName1234'
+  res = rsClient.selectAccountingCache('TestName12345')
+  assert res['OK'] is True
+  #check if the name that we got is equal to the previously added 'TestName12345'
+  assert res['Value'][0][0] == 'TestName12345'
+
+  res = rsClient.addOrModifyAccountingCache('TestName12345', 'plotType', 'plotName', 'changedresult', dateEffective, lastCheckTime)
+  assert res['OK'] is True
+
+  res = rsClient.selectAccountingCache('TestName12345')
+  #check if the result has changed
+  assert res['Value'][0][3] == 'changedresult'
 
 
   # TEST deleteAccountingCache
   # ...............................................................................
-  res = rsClient.deleteAccountingCache('TestName1234')
-  assert res['OK'] == True
+  res = rsClient.deleteAccountingCache('TestName12345')
+  assert res['OK'] is True
 
-  res = rsClient.selectAccountingCache('TestName1234')
-  assert res['OK'] == True
+  res = rsClient.selectAccountingCache('TestName12345')
+  assert res['OK'] is True
   assert not res['Value']
-
-
-
-  # TEST addOrModifyGGUSTicketsCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyGGUSTicketsCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectGGUSTicketsCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][2] == 'TestName1234'
-
-
-  # TEST deleteGGUSTicketsCache
-  # ...............................................................................
-
-  res = rsClient.deleteGGUSTicketsCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectGGUSTicketsCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyDowntimeCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyDowntimeCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectDowntimeCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][3] == 'TestName1234'
-
-
-  # TEST deleteDowntimeCache
-  # ...............................................................................
-
-  res = rsClient.deleteDowntimeCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectDowntimeCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyJobCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyJobCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectJobCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][3] == 'TestName1234'
-
-
-  # TEST deleteJobCache
-  # ...............................................................................
-
-  res = rsClient.deleteJobCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectJobCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyTransferCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyTransferCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectTransferCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][0] == 'TestName1234'
-
-
-  # TEST deleteTransferCache
-  # ...............................................................................
-
-  res = rsClient.deleteTransferCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectTransferCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyPilotCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyPilotCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPilotCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][2] == 'TestName1234'
-
-
-  # TEST deletePilotCache
-  # ...............................................................................
-
-  res = rsClient.deletePilotCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPilotCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyPolicyResult
-  # ...............................................................................
-
-  res = rsClient.addOrModifyPolicyResult('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPolicyResult('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][7] == 'TestName1234'
-
-
-  # TEST deletePolicyResult
-  # ...............................................................................
-
-  res = rsClient.deletePolicyResult('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPolicyResult('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyPolicyResultLog
-  # ...............................................................................
-
-  res = rsClient.addOrModifyPolicyResultLog('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPolicyResultLog('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][8] == 'TestName1234'
-
-
-  # TEST deletePolicyResultLog
-  # ...............................................................................
-
-  res = rsClient.deletePolicyResultLog('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPolicyResultLog('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifySpaceTokenOccupancyCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifySpaceTokenOccupancyCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectSpaceTokenOccupancyCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][0] == 'TestName1234'
-
-
-  # TEST deleteSpaceTokenOccupancyCache
-  # ...............................................................................
-
-  res = rsClient.deleteSpaceTokenOccupancyCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectSpaceTokenOccupancyCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyUserRegistryCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyUserRegistryCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectUserRegistryCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][0] == 'TestName1234'
-
-
-  # TEST deleteUserRegistryCache
-  # ...............................................................................
-
-  res = rsClient.deleteUserRegistryCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectUserRegistryCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyVOBOXCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyVOBOXCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectVOBOXCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][2] == 'TestName1234'
-
-
-  # TEST deleteVOBOXCache
-  # ...............................................................................
-
-  res = rsClient.deleteVOBOXCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectVOBOXCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST insertErrorReportBuffer
-  # ...............................................................................
-
-  res = rsClient.insertErrorReportBuffer('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectErrorReportBuffer('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][1] == 'TestName1234'
-
-
-  # TEST deleteErrorReportBuffer
-  # ...............................................................................
-
-  res = rsClient.deleteErrorReportBuffer('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectErrorReportBuffer('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
 
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
-
-

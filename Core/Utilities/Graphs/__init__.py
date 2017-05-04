@@ -29,7 +29,9 @@ common_prefs = {
   'legend_position':'bottom',
   'legend_max_rows':99,
   'legend_max_columns':4,
-  'square_axis':False
+  'square_axis':False,
+  'scale_data': None,
+  'scale_ticks': None
 }
 
 graph_large_prefs = {

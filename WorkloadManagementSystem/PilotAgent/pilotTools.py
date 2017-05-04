@@ -378,6 +378,7 @@ class PilotParams( object ):
     self.gateway = ""
     self.useServerCertificate = False
     self.pilotScriptName = ''
+    self.genericOption = ''
     # DIRAC client installation environment
     self.diracInstalled = False
     self.diracExtensions = []
@@ -497,3 +498,5 @@ class PilotParams( object ):
           pass
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v
+      elif o in ( '-o', '--option' ):
+        self.genericOption = v

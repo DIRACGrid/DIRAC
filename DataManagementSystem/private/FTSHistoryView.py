@@ -6,10 +6,13 @@
 ########################################################################
 
 """ :mod: FTSHistoryView
+
     ====================
 
     .. module: FTSHistoryView
+
     :synopsis: last hour history of FTS transfers as read from FTSHistoryView
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     last hour history of FTS transfers as read from FTSHistoryView
@@ -63,7 +66,6 @@ class FTSHistoryView( object ):
     return { "Fields": {  "SourceSE": "`FTSJob`.`SourceSE`",
                           "TargetSE": "`FTSJob`.`TargetSE`",
                           "FTSJobs": "COUNT(DISTINCT `FTSJob`.`FTSJobID`)",
-                          "FTSServer": "`FTSJob`.`FTSServer`",
                           "Status": "`FTSJob`.`Status`",
                           "Files": "SUM(`FTSJob`.`Files`)",
                           "Size": "SUM(`FTSJob`.`Size`)",
@@ -113,19 +115,6 @@ class FTSHistoryView( object ):
     """ FTSJob count setter """
     self.__data__["FTSJobs"] = long( ftsJobs ) if ftsJobs else 0
 
-  @property
-  def FTSServer( self ):
-    """ FTS server getter """
-    return self.__data__["FTSServer"]
-
-  @FTSServer.setter
-  def FTSServer( self, ftsServer ):
-    """ FTS server setter """
-    if type( ftsServer ) != str:
-      raise TypeError( "FTSServer has to be a string!" )
-    if not urlparse.urlparse( ftsServer ).scheme:
-      raise ValueError( "Wrongly formatted URI!" )
-    self.__data__["FTSServer"] = ftsServer
 
   @property
   def Status( self ):
@@ -190,4 +179,3 @@ class FTSHistoryView( object ):
   def toJSON( self ):
     """ serialize to JSON format """
     return S_OK( self.__data__ )
-

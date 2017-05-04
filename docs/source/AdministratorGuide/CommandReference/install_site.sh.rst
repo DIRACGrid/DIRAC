@@ -2,12 +2,11 @@
 install_site.sh
 ======================
 
-Options::
+Usage::
 
-Usage:
   install_site.sh [Options] ... CFG_file"
 
-Options:
+Options::
   -v, --version  for a specific version"
   -d, --debug    debug mode"
   -h, --help     print this"

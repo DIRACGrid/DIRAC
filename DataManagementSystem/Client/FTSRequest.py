@@ -164,7 +164,7 @@ class FTSRequest( object ):
     if self.__cksmTest:
       res = self.oSourceSE.getChecksumType()
       if not res["OK"]:
-        self.log.error( "Unable to get checksum type for SourceSE", 
+        self.log.error( "Unable to get checksum type for SourceSE",
                         "%s: %s" % ( self.sourceSE, res["Message"] ) )
         cksmType = res["Value"]
         if cksmType in ( "NONE", "NULL" ):
@@ -219,7 +219,7 @@ class FTSRequest( object ):
     if self.__cksmTest:
       res = self.oTargetSE.getChecksumType()
       if not res["OK"]:
-        self.log.error( "Unable to get checksum type for TargetSE", 
+        self.log.error( "Unable to get checksum type for TargetSE",
                         "%s: %s" % ( self.targetSE, res["Message"] ) )
         cksmType = res["Value"]
         if cksmType in ( "NONE", "NULL" ):
@@ -582,15 +582,15 @@ class FTSRequest( object ):
     nbStagedFiles = 0
     for lfn, metadata in res['Value']['Successful'].items():
       lfnStatus = self.fileDict.get( lfn, {} ).get( 'Status' )
-      if metadata['Unavailable']:
+      if metadata.get( 'Unavailable', False ):
         gLogger.warn( "resolveSource: skipping %s - source file unavailable" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source file Unavailable" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
-      elif metadata['Lost']:
+      elif metadata.get( 'Lost', False ):
         gLogger.warn( "resolveSource: skipping %s - source file lost" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source file Lost" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
-      elif not metadata['Cached']:
+      elif not metadata.get( 'Cached', metadata['Accessible'] ):
         if lfnStatus != 'Staging':
           toStage.append( lfn )
       elif metadata['Size'] != self.catalogMetadata[lfn]['Size']:

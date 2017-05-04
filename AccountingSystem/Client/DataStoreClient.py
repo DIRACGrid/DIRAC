@@ -115,6 +115,18 @@ class DataStoreClient(object):
       self.__registersList.extend(registersList)
 
     return S_OK( sent )
+  
+  def delayedCommit( self ):
+    """
+    If needed start a timer that will run the commit later
+    allowing to send more registers at once (reduces overheads).
+    """
+    
+    if not self.__commitTimer.isAlive():
+      self.__commitTimer = threading.Timer(5, self.commit)
+      self.__commitTimer.start()
+    
+    return S_OK()
 
   def remove( self, register ):
     """

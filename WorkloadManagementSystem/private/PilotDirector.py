@@ -7,6 +7,7 @@
   Base PilotDirector class to be inherited by DIRAC and Grid specific PilotDirectors, inherited by MW
   specific PilotDirectors if appropriated.
   It includes:
+
    - basic configuration functionality
 
   The main difference between DIRAC and Grid Pilot Directors is that in the first case
@@ -49,13 +50,13 @@ ERROR_TOKEN = 'Invalid proxy token request'
 ERROR_GENERIC_CREDENTIALS = "Cannot find generic pilot credentials"
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup, getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations   import Operations
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
@@ -65,6 +66,7 @@ class PilotDirector( object ):
   """
     Base Pilot Director class.
     Derived classes must implement:
+
       * __init__( self, submitPool ):
           that must call the parent class __init__ method and then do its own initialization
       * configure( self, csSection, submitPool ):
@@ -76,10 +78,12 @@ class PilotDirector( object ):
 
 
     Derived classes might implement:
+
       * configureFromSection( self, mySection ):
           to reload from a CS section the additional datamembers they might have defined.
 
     If additional datamembers are defined, they must:
+
       - be declared in the __init__
       - be reconfigured in the configureFromSection method by executing
         self.reloadConfiguration( csSection, submitPool ) in their configure method
@@ -122,6 +126,8 @@ class PilotDirector( object ):
     self.errorMailAddress = DIRAC.errorMail
     self.alarmMailAddress = DIRAC.alarmMail
     self.mailFromAddress = FROM_MAIL
+
+    self.siteClient = SiteStatus()
 
     if not  'log' in self.__dict__:
       self.log = gLogger.getSubLogger( 'PilotDirector' )
@@ -213,7 +219,7 @@ class PilotDirector( object ):
       return taskQueueDict['GridCEs']
 
     # Get the mask
-    ret = jobDB.getSiteMask()
+    ret = self.siteClient.getSites()
     if not ret['OK']:
       self.log.error( 'Can not retrieve site Mask from DB:', ret['Message'] )
       return []

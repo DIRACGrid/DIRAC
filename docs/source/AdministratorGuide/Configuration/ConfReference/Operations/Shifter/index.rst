@@ -1,28 +1,33 @@
 Operations / Shifter - Subsection
 =================================
 
-In this subsection managers are described for some systems. User credentials for the agents than will be used during execution of some tasks.
+In this subsection administrators may specify a list of user/group pairs whom
+proxy certificates will be used for executing actions outside of the DIRAC environment.
+
+Examples include, but are not limited to::
+   - issuing transfer requests to an external system (e.g. FTS3)
+   - querying grid databases (e.g. GOC DB)
 
 
-+--------------------------+--------------------------+---------------------+
-| **Name**                 | **Description**          | **Example**         |
-+--------------------------+--------------------------+---------------------+
-| *<Service_Manager>*      | Name of service managers | Admin               |
-|                          |                          | ProductionManager   |
-|                          |                          | SAMManager          |
-|                          |                          | DataManager         |
-+--------------------------+--------------------------+---------------------+
-| *<Service_Manager>/User* | DIRAC user name          | User = vhamar       |
-+--------------------------+--------------------------+---------------------+
-| *<Service_Manager/Group* | DIRAC user group         | Group = dirac_admin |
-+--------------------------+--------------------------+---------------------+
 
-Agents requiring to act with a credential have always the option **shifterProxy** with a certain default: DataManager, ... At each installation this default identity can be changed for each of them provided the corresponding section is created here.
++--------------------------+--------------------------+----------------------+
+| **Name**                 | **Description**          | **Example**          |
++--------------------------+--------------------------+----------------------+
+| *<ShifterName>*          | Name of service managers | Admin                |
+|                          |                          | ProductionManager    |
+|                          |                          | DataManager          |
+|                          |                          | MonteCarloGeneration |
+|                          |                          | DataProcessing       |
++--------------------------+--------------------------+----------------------+
+| *<ShifterName>/User*     | DIRAC user name          | User = vhamar        |
++--------------------------+--------------------------+----------------------+
+| *<ShifterName/Group*     | DIRAC user group         | Group = dirac_admin  |
++--------------------------+--------------------------+----------------------+
 
-The default identities currently used by DIRAC Agents are:
+Running agents can use these "shifters" for executing the examples above:
+agents requiring to act with a credential can specify the option **shifterProxy**,
+or using a certain default, like "DataManager".
 
-- **SAMManager**: Configuration/CE2CSAgent
-- **DataManager**: DataManagement/FTSCleaningAgent, DataManagement/FTSMonitorAgent, DataManagement/FTSSubmitAgent, DataManagement/LFCvsSEAgent, DataManagement/RegistrationAgent, DataManagement/RemovalAgent, DataManagement/ReplicationScheduler, DataManagement/SEvsLFCAgent,DataManagement/TransferAgent, StorageManagement/MigrationMonitoringAgent, StorageManagement/PinRequestAgent, StorageManagement/RequestFinalizationAgent, StorageManagement/RequestPreparationAgent, StorageManagement/SENamespaceCatalogCheckAgent, StorageManagement/StageMonitorAgent, StorageManagement/StageRequestAgent, *Transformation/MCExtensionAgent*, Transformation/TransformationCleaningAgent, Transformation/ValidateOutputDataAgent
-- **ProductionManager**: Transformation/RequestTaskAgent, Transformation/TransformationAgent, Transformation/WorkflowTaskAgent, WorkloadManagement/InputDataAgent
-
-In general, to force any Agent to execute using a "manager" credential, instead of the certificate of the server it is only necessary to add a valid **shifterProxy** option in its configuration.
+In general, to force any Agent to execute using a "shifter" credential,
+instead of the certificate of the server it is only necessary to add a valid **shifterProxy**
+option in its configuration (in the /Systems section).

@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """

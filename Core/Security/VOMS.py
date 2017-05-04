@@ -87,23 +87,29 @@ class VOMS( BaseSecurity ):
     return self.getVOMSProxyInfo( proxy, "fqan" )
 
   def getVOMSProxyInfo( self, proxy, option = False ):
-    """ Returns information about a proxy certificate (both grid and voms).
+    """
+	
+    Returns information about a proxy certificate (both grid and voms).
         Available information is:
+
           1. Full (grid)voms-proxy-info output
           2. Proxy Certificate Timeleft in seconds (the output is an int)
           3. DN
           4. voms group (if any)
-        :type  proxy: a string
-        :param proxy: the proxy certificate location.
-        :type  option: a string
-        :param option: None is the default value. Other option available are:
-          - timeleft
-          - actimeleft
-          - identity
-          - fqan
-          - all
-        :rtype:   tuple
-        :return:  status, output, error, pyerror.
+    
+    :type proxy: str
+    :param proxy: the proxy certificate location.
+    :type  option: str
+    :param option: None is the default value. Other option available are:
+
+       * timeleft
+       * actimeleft
+       * identity
+       * fqan
+       * all
+
+    :rtype:   tuple
+    :return:  status, output, error, pyerror.
     """
     validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
     if option:

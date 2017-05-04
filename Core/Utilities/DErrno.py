@@ -1,7 +1,9 @@
 """ :mod: DErrno
+
     ==========================
 
     .. module: DErrno
+
     :synopsis: Error list and utilities for handling errors in DIRAC
 
 
@@ -16,10 +18,11 @@
 
     In order to add extension specific error, you need to create in your extension the file
     Core/Utilities/DErrno.py, which will contain the following dictionary:
+
       * extra_dErrName: keys are the error name, values the number of it
       * extra_dErrorCode: same as dErrorCode. keys are the error code, values the name
                           (we don't simply revert the previous dict in case we do not
-                           have a one to one mapping)
+                          have a one to one mapping)
       * extra_dStrError: same as dStrError, Keys are the error code, values the error description
       * extra_compatErrorString: same as compatErrorString. The compatible error strings are
                                  added to the existing one, and not replacing them.
@@ -27,10 +30,10 @@
 
     Example of extension file :
 
-      extra_dErrName = { 'ELHCBSPE' : 3001 }
-      extra_dErrorCode = { 3001 : 'ELHCBSPE'}
-      extra_dStrError = { 3001 : "This is a description text of the specific LHCb error" }
-      extra_compatErrorString = { 3001 : ["living easy, living free"],
+       * extra_dErrName = { 'ELHCBSPE' : 3001 }
+       * extra_dErrorCode = { 3001 : 'ELHCBSPE'}
+       * extra_dStrError = { 3001 : "This is a description text of the specific LHCb error" }
+       * extra_compatErrorString = { 3001 : ["living easy, living free"],
                              DErrno.ERRX : ['An error message for ERRX that is specific to LHCb']}
 
 """
@@ -53,7 +56,7 @@ import sys
 # 1700: RMS
 # 1800: Accounting
 # 1900: TS
-# 2000: RSS
+# 2000: Resources and RSS
 
 # ## Generic (10XX)
 # Python related: 0X
@@ -80,6 +83,7 @@ ECERTREAD = 1104
 ENOCERT = 1105
 ENOCHAIN = 1106
 ENOPKEY = 1107
+ENOGROUP = 1108
 # DISET: 1X
 EDISET = 1110
 # 3rd party security: 2X
@@ -119,6 +123,11 @@ ERMSUKN = 1700
 ETSUKN = 1900
 ETSDATA = 1901
 
+# ## Resources and RSS (20XX)
+ERESGEN = 2000
+ERESUNA = 2001
+ERESUNK = 2002
+
 # This translates the integer number into the name of the variable
 dErrorCode = {
                # ## Generic (10XX)
@@ -146,6 +155,7 @@ dErrorCode = {
                1105 : 'ENOCERT',
                1106 : 'ENOCHAIN',
                1107 : 'ENOPKEY',
+               1108 : 'ENOGROUP',
                # 111X: DISET
                1110 : 'EDISET',
                # 112X: 3rd party security
@@ -175,7 +185,12 @@ dErrorCode = {
                1604 : "EFCERR",
 
                # RMS
-               1700 : "ERMSUKN",
+               1700 : 'ERMSUKN',
+
+               # Resources and RSS
+               2000 : 'ERESGEN',
+               2001 : 'ERESUNA',
+               2002 : 'ERESUNK',
 
                # TS
                1900 : "ETSUKN",
@@ -208,6 +223,7 @@ dStrError = {
               ENOCERT : "No certificate loaded",
               ENOCHAIN : "No chain loaded",
               ENOPKEY : "No private key loaded",
+              ENOGROUP: "No DIRAC group",
               # 111X: DISET
               EDISET : "DISET Error",
               # 112X: 3rd party security
@@ -237,6 +253,13 @@ dStrError = {
               EFCERR : "FileCatalog error",
               # RMS
               ERMSUKN : "Unknown RMS error",
+
+
+              # Resources and RSS
+              ERESGEN: "Unknown Resource Failure",
+              ERESUNA: "Resource not available",
+              ERESUNK: "Unknown Resource",
+
               # TS
               ETSUKN : "Unknown Transformation System Error",
               ETSDATA : "Invalid Input Data definition"}
@@ -268,10 +291,11 @@ def cmpError( inErr, candidate ):
   """ This function compares an error (in its old form (a string or dictionary) or in its int form
       with a candidate error code.
 
-      :param inErr : a string, an integer, a S_ERROR dictionary
-      :param int candidate : error code to compare with
+      :param inErr: a string, an integer, a S_ERROR dictionary
+      :type inErr: str or int or S_ERROR
+      :param int candidate: error code to compare with
 
-      :return True or False
+      :return: True or False
 
       If an S_ERROR instance is passed, we compare the code with S_ERROR['Errno']
       If it is a Integer, we do a direct comparison

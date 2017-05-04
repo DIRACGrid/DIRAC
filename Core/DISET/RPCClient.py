@@ -32,12 +32,12 @@ class RPCClient( object ):
     """
     Execute the RPC action
     """
-    retVal = self.__innerRPCClient.executeRPC( sFunctionName, args )
-    return retVal
+    return self.__innerRPCClient.executeRPC( sFunctionName, args )
 
   def __getattr__( self, attrName ):
-    """
-    Function for emulating the existance of functions
+    """ Function for emulating the existance of functions.
+
+	In literature this is usually called a "stub function".
     """
     if attrName in dir( self.__innerRPCClient ):
       return getattr( self.__innerRPCClient, attrName )

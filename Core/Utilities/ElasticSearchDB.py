@@ -3,6 +3,8 @@ This class a wrapper around elasticsearch-py. It is used to query
 Elasticsearch database.
 
 """
+import os
+import tempfile
 
 from datetime import datetime
 from datetime import timedelta
@@ -15,8 +17,52 @@ from elasticsearch.helpers import BulkIndexError, bulk
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Security import Locations, X509Chain
 
 __RCSID__ = "$Id$"
+
+def getCert():
+  """
+  get the host certificate
+  """
+  cert = Locations.getHostCertificateAndKeyLocation()
+  if cert:
+    cert = cert[0]
+  else:
+    cert = "/opt/dirac/etc/grid-security/hostcert.pem"
+  return cert
+
+def generateCAFile():
+  """
+  Generate a single CA file with all the PEMs
+  """
+  caDir = Locations.getCAsLocation()
+  for fn in ( os.path.join( os.path.dirname( caDir ), "cas.pem" ),
+              os.path.join( os.path.dirname( getCert() ), "cas.pem" ),
+              False ):
+    if not fn:
+      fn = tempfile.mkstemp( prefix = "cas.", suffix = ".pem" )[1]
+    
+    try:
+      
+      with open(fn, "w" ) as fd:
+        for caFile in os.listdir( caDir ):
+          caFile = os.path.join( caDir, caFile )
+          result = X509Chain.X509Chain.instanceFromFile( caFile )
+          if not result[ 'OK' ]:
+            continue
+          chain = result[ 'Value' ]
+          expired = chain.hasExpired()
+          if not expired[ 'OK' ] or expired[ 'Value' ]:
+            continue
+          fd.write( chain.dumpAllToString()[ 'Value' ] )
+      
+      gLogger.info( "CAs used from: %s" % str( fn ) )    
+      return fn
+    except IOError as err:
+      gLogger.warn( err )
+      
+  return False
 
 class ElasticSearchDB( object ):
 
@@ -25,12 +71,14 @@ class ElasticSearchDB( object ):
 
   :param str url: the url to the database for example: el.cern.ch:9200
   :param str gDebugFile: is used to save the debug information to a file
-  :param int timeout the default time out to Elasticsearch
+  :param int timeout: the default time out to Elasticsearch
+  :param int RESULT_SIZE: The number of data points which will be returned by the query.
   """
   __chunk_size = 1000
   __url = ""
   __timeout = 120
   clusterName = ''
+  RESULT_SIZE = 10000
   ########################################################################
   def __init__( self, host, port, user = None, password=None, indexPrefix = ''):
     """ c'tor
@@ -40,7 +88,7 @@ class ElasticSearchDB( object ):
     :param bool debug: save the debug information to a file
     :param str user: user name to access the db
     :param str password: if the db is password protected we need to provide a password
-    :param str indexPrefix it is the indexPrefix used to get all indexes
+    :param str indexPrefix: it is the indexPrefix used to get all indexes
     """
     self.__indexPrefix = indexPrefix
     self._connected = False
@@ -48,7 +96,7 @@ class ElasticSearchDB( object ):
       self.__url = "https://%s:%s@%s:%d" % ( user, password, host, port )
     else:
       self.__url = "%s:%d" % ( host, port )
-    self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
+    self.__client = Elasticsearch( self.__url, timeout = self.__timeout, use_ssl = True, verify_certs = True, ca_certs = generateCAFile() )
     self.__tryToConnect()
 
   def getIndexPrefix( self ):
@@ -115,7 +163,7 @@ class ElasticSearchDB( object ):
     """
 
     #we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
-    return [ index for index in self.__client.indices.get_aliases( "%s*" % self.__indexPrefix ) ]
+    return [ index for index in self.__client.indices.get_alias( "%s*" % self.__indexPrefix ) ]
 
   ########################################################################
   def getDocTypes( self, indexName ):
@@ -194,10 +242,10 @@ class ElasticSearchDB( object ):
 
   def index( self, indexName, doc_type, body ):
     """
-    :param str indexName the name of the index to be deleted...
-    :param str doc_type the type of the document
-    :param dict body the data which will be indexed
-    :return the index name in case of success.
+    :param str indexName: the name of the index to be deleted...
+    :param str doc_type: the type of the document
+    :param dict body: the data which will be indexed
+    :return: the index name in case of success.
     """
     try:
       res = self.__client.index( index = indexName,
@@ -216,8 +264,9 @@ class ElasticSearchDB( object ):
   def bulk_index( self, indexprefix, doc_type, data, mapping = None ):
     """
     :param str indexPrefix: it is the index name.
-    :param str doc_type
-    :param list data contains a list of dictionary
+    :param str doc_type: the type of the document
+    :param data: contains a list of dictionary
+    :type data: python:list
     """
     gLogger.info( "%d records will be insert to %s" % ( len( data ), doc_type ) )
     if mapping is None:
@@ -288,7 +337,7 @@ class ElasticSearchDB( object ):
       query.aggs.bucket( key,
                          'terms',
                          field = key,
-                         size = 0,
+                         size = self.RESULT_SIZE,
                          order = orderBy ).metric( key,
                                                    'cardinality',
                                                    field = key )
@@ -296,12 +345,12 @@ class ElasticSearchDB( object ):
       query.aggs.bucket( key,
                          'terms',
                          field = key,
-                         size = 0 ).metric( key,
+                         size = self.RESULT_SIZE ).metric( key,
                                             'cardinality',
                                             field = key )
 
     try:
-      query = query.extra( size = 0 ) #do not need the raw data.
+      query = query.extra( size = self.RESULT_SIZE ) #do not need the raw data.
       gLogger.debug( "Query", query.to_dict() )
       result = query.execute()
     except TransportError as e:

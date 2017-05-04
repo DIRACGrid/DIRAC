@@ -17,7 +17,7 @@ import json
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
-
+from DIRAC.Resources.MessageQueue.Utilities import getMQParamsFromCS
 from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
 
 __RCSID__ = "$Id$"
@@ -31,7 +31,8 @@ class MonitoringReporter( object ):
 
   :param int __maxRecordsInABundle: limit the number of records to be inserted to the db.
   :param threading.RLock __documentLock: is used to lock the local store when it is being modified.
-  :param list __documents: contains the recods which will be inserted to the db
+  :param __documents: contains the recods which will be inserted to the db\
+  :type __documents: python:list
   :param bool __mq: we can use MQ if it is available... By default it is not allowed.
   :param str __monitoringType: type of the records which will be inserted to the db. For example: WMSHistory.
   :param object __mqProducer: publisher used to publish the records to the MQ.
@@ -44,13 +45,16 @@ class MonitoringReporter( object ):
     self.__documents = []
     self.__mq = False
     self.__monitoringType = None
-
-    result = createProducer( monitoringType )
-    if not result['OK']:
-      gLogger.warn( "Fail to create Producer:", result['Message'])
-    else:
-      self.__mqProducer = result['Value']
-      self.__mq = True
+    
+    #check the existence of a MQ
+    retVal = getMQParamsFromCS ( monitoringType )
+    if retVal['OK']:
+      result = createProducer( monitoringType )
+      if not result['OK']:
+        gLogger.warn( "Fail to create Producer:", result['Message'] )
+      else:
+        self.__mqProducer = result['Value']
+        self.__mq = True
 
     self.__monitoringType = monitoringType
 
@@ -59,7 +63,7 @@ class MonitoringReporter( object ):
     It consumes all messaged from the MQ (these are failover messages). In case of failure, the messages
     will be inserted to the MQ again.
     """
-    result = createConsumer( self.__monitoringType  )
+    result = createConsumer( self.__monitoringType )
     if not result['OK']:
       gLogger.error( "Fail to create Consumer: %s" % result['Message'] )
       return S_ERROR( "Fail to create Consumer: %s" % result['Message'] )

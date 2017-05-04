@@ -144,7 +144,6 @@ def initSites():
     DIRACExit( 1 )
 
   for site, elements in sites['Value'].iteritems():
-    table  = { 'table': 'SiteStatus' }
     parameters = { 'status': elements[0],
                    'reason': 'Synchronized',
                    'name': site,
@@ -153,8 +152,7 @@ def initSites():
                    'elementType': 'Site',
                    'statusType': 'all',
                    'lastCheckTime': None,
-                   'tokenOwner': elements[2],
-                   'meta': table }
+                   'tokenOwner': elements[2] }
 
     result = rssClient.addIfNotThereStatusElement( "Site", "Status", **parameters )
 

@@ -5,15 +5,15 @@
 
 """  The Computing Element class is a base class for all the various
      types CEs. It serves several purposes:
-     
-      - collects general CE related parameters to generate CE description 
+
+      - collects general CE related parameters to generate CE description
         for the job matching
       - provides logic for evaluation of the number of available CPU slots
-      - provides logic for the proxy renewal while executing jobs  
-      
+      - provides logic for the proxy renewal while executing jobs
+
      The CE parameters are collected from the following sources, in hierarchy
      descending order:
-     
+
       - parameters provided through setParameters() method of the class
       - parameters in /LocalSite configuration section
       - parameters in /LocalSite/<ceName>/ResourceDict configuration section
@@ -21,12 +21,13 @@
       - parameters in /LocalSite/<ceName> configuration section
       - parameters in /Resources/Computing/<ceName> configuration section
       - parameters in /Resources/Computing/CEDefaults configuration section
-      
-     The ComputingElement objects are usually instantiated with the help of 
-     ComputingElementFactory.    
+
+     The ComputingElement objects are usually instantiated with the help of
+     ComputingElementFactory.
 """
 
-__RCSID__ = "$Id$"
+import os
+import multiprocessing
 
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
 from DIRAC.Core.Security.ProxyFile                    import writeToProxyFile
@@ -40,9 +41,11 @@ from DIRAC.Core.Security                              import Properties
 from DIRAC.Core.Utilities.Time                        import dateTime, second
 from DIRAC                                            import S_OK, S_ERROR, gLogger, version
 from DIRAC.Core.Utilities.ObjectLoader                import ObjectLoader
-import os
 
-INTEGER_PARAMETERS = ['CPUTime']
+
+__RCSID__ = "$Id$"
+
+INTEGER_PARAMETERS = ['CPUTime', 'NumberOfProcessors']
 FLOAT_PARAMETERS = []
 LIST_PARAMETERS = ['Tag']
 WAITING_TO_RUNNING_RATIO = 0.5
@@ -127,14 +130,14 @@ class ComputingElement(object):
           if key in FLOAT_PARAMETERS:
             ceOptions[key] = float( ceOptions[key] )
           if key in LIST_PARAMETERS:
-            ceOptions[key] = gConfig.getValue( os.path.join( section, key ), [] )  
+            ceOptions[key] = gConfig.getValue( os.path.join( section, key ), [] )
         self.ceParameters.update( ceOptions )
 
     # Get local CE configuration
     localConfigDict = getCEConfigDict( self.ceName )
     self.ceParameters.update( localConfigDict )
 
-    # Adds site level parameters 
+    # Adds site level parameters
     section = '/LocalSite'
     result = gConfig.getOptionsDict( section )
     if result['OK'] and result['Value']:
@@ -205,6 +208,11 @@ class ComputingElement(object):
         generalCEDict.update( self.ceParameters )
         self.ceParameters = generalCEDict
 
+    # If NumberOfProcessors is present in the description but is equal to zero
+    # interpret it as needing local evaluation
+    if self.ceParameters.get( "NumberOfProcessors", -1 ) == 0:
+      self.ceParameters["NumberOfProcessors"] = multiprocessing.cpu_count()
+
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:
         self.ceParameters[key] = int( self.ceParameters[key] )
@@ -228,7 +236,7 @@ class ComputingElement(object):
       return S_OK()
     try:
       intCPUTimeLeft = int( cpuTimeLeft )
-    except:
+    except ValueError:
       return S_ERROR( 'Wrong type for setCPUTimeLeft argument' )
 
     self.ceParameters['CPUTime'] = intCPUTimeLeft
@@ -242,9 +250,10 @@ class ComputingElement(object):
        instance polls for waiting and running jobs and compares to the limits
        in the CE parameters.
 
-       :param list jobIDList: list of already existing job IDs to be checked against
+       :param jobIDList: list of already existing job IDs to be checked against
+       :type jobIDList: python:list
     """
-    
+
     # If there are no already registered jobs
     if jobIDList is not None and len( jobIDList ) == 0:
       result = S_OK()
@@ -264,6 +273,7 @@ class ComputingElement(object):
     runningJobs = result['RunningJobs']
     waitingJobs = result['WaitingJobs']
     submittedJobs = result['SubmittedJobs']
+    availableProcessors = result.get( 'AvailableProcessors' )
     ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.ceParameters.get( 'MaxTotalJobs', 0 ) )
@@ -299,6 +309,8 @@ class ComputingElement(object):
       if int( self.ceParameters.get( 'MaxWaitingJobs', 0 ) ) == 0:
         additionalJobs = maxTotalJobs - runningJobs
 
+      if availableProcessors is not None:
+        additionalJobs = min( additionalJobs, availableProcessors )
       result['Value'] = additionalJobs
 
     result['Message'] = message
@@ -421,8 +433,8 @@ class ComputingElement(object):
       elif isinstance( value, basestring ):
         try:
           ceDict[option] = int( value )
-        except:
-          ceDict[option] = value  
+        except ValueError:
+          ceDict[option] = value
       elif isinstance( value, ( int, long, float ) ):
         ceDict[option] = value
       else:
@@ -434,24 +446,24 @@ class ComputingElement(object):
     project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
     if project:
       ceDict['ReleaseProject'] = project
-      
+
     result = self.getCEStatus()
     if result['OK']:
-      if 'AvailableCores' in result:
-        cores = result['AvailableCores']
+      if 'AvailableProcessors' in result:
+        cores = result['AvailableProcessors']
         if cores > 1:
           ceDict['NumberOfProcessors'] = cores
 
     return S_OK( ceDict )
 
   #############################################################################
-  def sendOutput( self, stdid, line ):
+  def sendOutput( self, stdid, line ): #pylint: disable=unused-argument
     """ Callback function such that the results from the CE may be returned.
     """
     print line
 
   #############################################################################
-  def submitJob( self, executableFile, proxy, dummy = None, processors = 1 ):
+  def submitJob( self, executableFile, proxy, dummy = None, processors = 1 ): #pylint: disable=unused-argument
     """ Method to submit job, should be overridden in sub-class.
     """
     name = 'submitJob()'
@@ -459,7 +471,7 @@ class ComputingElement(object):
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
 
   #############################################################################
-  def getCEStatus( self, jobIDList = None ):
+  def getCEStatus( self, jobIDList = None ): #pylint: disable=unused-argument
     """ Method to get dynamic job information, can be overridden in sub-class.
     """
     name = 'getCEStatus()'

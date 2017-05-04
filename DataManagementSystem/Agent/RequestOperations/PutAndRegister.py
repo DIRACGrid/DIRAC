@@ -6,10 +6,13 @@
 ########################################################################
 
 """ :mod: PutAndRegister
+
     ====================
 
     .. module: PutAndRegister
+
     :synopsis: putAndRegister operation handler
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     PutAndRegister operation handler

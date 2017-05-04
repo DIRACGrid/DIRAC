@@ -17,6 +17,8 @@ from collections import defaultdict
 
 import DIRAC
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus      import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 from DIRAC.Core.Utilities.File                             import mkDir
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
@@ -56,12 +58,12 @@ def getSubmitPools( group = None, vo = None ):
 class SiteDirector( AgentModule ):
   """
       The specific agents must provide the following methods:
-      - initialize() for initial settings
-      - beginExecution()
-      - execute() - the main method called in the agent cycle
-      - endExecution()
-      - finalize() - the graceful exit of the method, this one is usually used
-                 for the agent restart
+        - initialize() for initial settings
+        - beginExecution()
+        - execute() - the main method called in the agent cycle
+        - endExecution()
+        - finalize() - the graceful exit of the method, this one is usually used
+                   for the agent restart
   """
 
   def __init__( self, *args, **kwargs ):
@@ -91,6 +93,10 @@ class SiteDirector( AgentModule ):
     self.updateStatus = True
     self.getOutput = False
     self.sendAccounting = True
+    self.rssClient = ResourceStatus()
+    self.rssFlag = self.rssClient.rssFlag
+
+    self.siteClient = SiteStatus()
 
   def initialize( self ):
     """ Standard constructor
@@ -360,7 +366,6 @@ class SiteDirector( AgentModule ):
   def submitJobs( self ):
     """ Go through defined computing elements and submit jobs if necessary
     """
-
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
     tqDict = { 'Setup':setup,
@@ -370,7 +375,6 @@ class SiteDirector( AgentModule ):
       tqDict['Community'] = self.vo
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
-
     result = Resources.getCompatiblePlatforms( self.platforms )
     if not result['OK']:
       return result
@@ -420,11 +424,20 @@ class SiteDirector( AgentModule ):
     #  self.log.info( 'No more pilots to be submitted in this cycle' )
     #  return S_OK()
 
-    # Check if the site is allowed in the mask
-    result = jobDB.getSiteMask()
-    if not result['OK']:
-      return S_ERROR( 'Can not get the site mask' )
-    siteMaskList = result['Value']
+    if self.rssFlag:
+
+      result = self.siteClient.getUsableSites()
+      if not result['OK']:
+        return S_ERROR( 'Can not get the site status' )
+      siteMaskList = result['Value']
+
+    else:
+
+      # Use the old way, check if the site is allowed in the mask
+      result = jobDB.getSiteMask()
+      if not result['OK']:
+        return S_ERROR( 'Can not get the site mask' )
+      siteMaskList = result['Value']
 
     queues = self.queueDict.keys()
     random.shuffle( queues )
@@ -446,6 +459,31 @@ class SiteDirector( AgentModule ):
       siteName = self.queueDict[queue]['Site']
       platform = self.queueDict[queue]['Platform']
       siteMask = siteName in siteMaskList
+
+      if self.rssFlag:
+        # Check the status of the Site
+        result = self.siteClient.getSiteStatuses({siteName})
+        if not result['OK']:
+          self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
+          continue
+        if result['Value']:
+          result = result['Value'][siteName]   #get the value of the status
+
+        if result not in ('Active', 'Degraded'):
+          self.log.verbose( "Skipping site %s: site not usable" % siteName )
+          continue
+
+        # Check the status of the ComputingElement
+        result = self.rssClient.getElementStatus(ceName, "ComputingElement")
+        if not result['OK']:
+          self.log.error( "Can not get the status of computing element %s: %s" % (siteName, result['Message']) )
+          continue
+        if result['Value']:
+          result = result['Value'][ceName]['all']   #get the value of the status
+
+        if result not in ('Active', 'Degraded'):
+          self.log.verbose( "Skipping computing element %s at %s: resource not usable" % (ceName, siteName) )
+          continue
 
       if not anySite and siteName not in jobSites:
         self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )
@@ -817,7 +855,7 @@ class SiteDirector( AgentModule ):
 
     return [ pilotOptions, pilotsToSubmit ]
 
-#####################################################################################
+####################################################################################
   def _writePilotScript( self, workingDirectory, pilotOptions, proxy = None,
                          httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
@@ -966,7 +1004,10 @@ EOF
       for pRef in pilotRefs:
         newStatus = ''
         oldStatus = pilotDict[pRef]['Status']
-        ceStatus = pilotCEDict[pRef]
+        if pRef in pilotCEDict:
+          ceStatus = pilotCEDict[pRef]
+        else:
+          ceStatus = oldStatus
         lastUpdateTime = pilotDict[pRef]['LastUpdateTime']
         sinceLastUpdate = dateTime() - lastUpdateTime
 

@@ -4,6 +4,7 @@
 import time
 import StringIO
 import json
+import copy
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
@@ -332,18 +333,25 @@ class RequestTasks( TaskBase ):
     Check if tasks changed status, and return a list of tasks per new status
     """
     updateDict = {}
+    badRequestID = 0
     for taskDict in taskDicts:
       oldStatus = taskDict['ExternalStatus']
-
-      newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
-      if not newStatus['OK']:
-        log = self._logVerbose if 'not exist' in newStatus['Message'] else self._logWarn
-        log( "getSubmittedTaskStatus: Failed to get requestID for request", newStatus['Message'],
-             transID = taskDict['TransformationID'] )
+      # ExternalID is normally a string
+      if taskDict['ExternalID'] and int( taskDict['ExternalID'] ):
+        newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
+        if not newStatus['OK']:
+          log = self._logVerbose if 'not exist' in newStatus['Message'] else self._logWarn
+          log( "getSubmittedTaskStatus: Failed to get requestID for request", newStatus['Message'],
+               transID = taskDict['TransformationID'] )
+        else:
+          newStatus = newStatus['Value']
+          # We don't care updating the tasks to Assigned while the request is being processed
+          if newStatus != oldStatus and newStatus != 'Assigned':
+            updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
       else:
-        newStatus = newStatus['Value']
-        if newStatus != oldStatus:
-          updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
+        badRequestID += 1
+    if badRequestID:
+      self._logWarn( "%d requests have identifier 0" % badRequestID )
     return S_OK( updateDict )
 
   def getSubmittedFileStatus( self, fileDicts ):
@@ -369,8 +377,8 @@ class RequestTasks( TaskBase ):
     for taskDict in res['Value']:
       taskID = taskDict['TaskID']
       externalID = taskDict['ExternalID']
-      # Only consider tasks that are submitted
-      if taskDict['ExternalStatus'] != 'Created' and externalID:
+      # Only consider tasks that are submitted, ExternalID is a string
+      if taskDict['ExternalStatus'] != 'Created' and externalID and int( externalID ):
         requestFiles[externalID] = taskFiles[taskID]
 
     updateDict = {}
@@ -437,6 +445,8 @@ class WorkflowTasks( TaskBase ):
       self.destinationPlugin = destinationPlugin
 
     self.destinationPlugin_o = None
+
+    self.outputDataModule_o = None
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '',
                                   ownerDN = '', bulkSubmissionFlag = False ):
@@ -541,8 +551,7 @@ class WorkflowTasks( TaskBase ):
 
       if self.outputDataModule:
         res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
-                                   'TaskID':taskID, 'InputData':inputData},
-                                  moduleLocation = self.outputDataModule )
+                                   'TaskID':taskID, 'InputData':inputData} )
         if not res ['OK']:
           self._logError( "Failed to generate output data", res['Message'],
                           transID = transID, method = method )
@@ -566,28 +575,37 @@ class WorkflowTasks( TaskBase ):
     """ Prepare transformation tasks with a job object per task
     """
     method = '__prepareTransformationTasks'
+    startTime = time.time()
+    oJobTemplate = self.jobClass( transBody )
+    oJobTemplate.setOwner( owner )
+    oJobTemplate.setOwnerGroup( ownerGroup )
+    oJobTemplate.setOwnerDN( ownerDN )
+    site = oJobTemplate.workflow.findParameter( 'Site' ).getValue()
+    jobType = oJobTemplate.workflow.findParameter( 'JobType' ).getValue()
+    templateOK = False
+    getOutputDataTiming = 0.
     for taskID, paramsDict in taskDict.iteritems():
       # Create a job for each task and add it to the taskDict
-      oJob = self.jobClass( transBody )
-      site = oJob.workflow.findParameter( 'Site' ).getValue()
+      if not templateOK:
+        templateOK = True
+        # Update the template with common information
+        transID = paramsDict['TransformationID']
+        self._logVerbose( 'Job owner:group to %s:%s' % ( owner, ownerGroup ),
+                          transID = transID, method = method )
+        transGroup = str( transID ).zfill( 8 )
+        self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ),
+                          transID = transID, method = method )
+        oJobTemplate.setJobGroup( transGroup )
+        oJobTemplate._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
+
       paramsDict['Site'] = site
-      jobType = oJob.workflow.findParameter( 'JobType' ).getValue()
       paramsDict['JobType'] = jobType
-      transID = paramsDict['TransformationID']
-      self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ),
-                        transID = transID, method = method )
-      oJob.setOwner( owner )
-      oJob.setOwnerGroup( ownerGroup )
-      oJob.setOwnerDN( ownerDN )
-      transGroup = str( transID ).zfill( 8 )
-      self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ),
-                        transID = transID, method = method )
-      oJob.setJobGroup( transGroup )
+      # Now create the job from the template
+      oJob = copy.deepcopy( oJobTemplate )
       constructedName = self._transTaskName( transID, taskID )
       self._logVerbose( 'Setting task name to %s' % constructedName,
                         transID = transID, method = method )
       oJob.setName( constructedName )
-      oJob._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
       oJob._setParamValue( 'JOB_ID', str( taskID ).zfill( 8 ) )
       inputData = None
 
@@ -602,7 +620,7 @@ class WorkflowTasks( TaskBase ):
         paramsDict['TaskObject'] = ''
         continue
       else:
-        self._logVerbose( 'Setting Site: ', str( sites ),
+        self._logDebug( 'Setting Site: ', str( sites ),
                           transID = transID, method = method )
         res = oJob.setDestination( sites )
         if not res['OK']:
@@ -619,9 +637,10 @@ class WorkflowTasks( TaskBase ):
 
       paramsDict['TaskObject'] = ''
       if self.outputDataModule:
+        getOutputDataTiming -= time.time()
         res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
-                                   'TaskID':taskID, 'InputData':inputData},
-                                  moduleLocation = self.outputDataModule )
+                                   'TaskID':taskID, 'InputData':inputData} )
+        getOutputDataTiming += time.time()
         if not res ['OK']:
           self._logError( "Failed to generate output data", res['Message'],
                           transID = transID, method = method )
@@ -629,6 +648,11 @@ class WorkflowTasks( TaskBase ):
         for name, output in res['Value'].iteritems():
           oJob._addJDLParameter( name, ';'.join( output ) )
       paramsDict['TaskObject'] = oJob
+    if taskDict:
+      self._logVerbose( 'Average getOutputData time: %.1f per task' % ( getOutputDataTiming / len( taskDict ) ),
+                        transID = transID, method = method )
+      self._logInfo( 'Prepared %d tasks' % len( taskDict ),
+                     transID = transID, method = method, reftime = startTime )
     return S_OK( taskDict )
 
   #############################################################################
@@ -653,6 +677,7 @@ class WorkflowTasks( TaskBase ):
         self._logFatal( "Could not generate a destination plugin object" )
         return res
       destinationPlugin_o = res['Value']
+      self.destinationPlugin_o = destinationPlugin_o
 
     destinationPlugin_o.setParameters( paramsDict )
     destSites = destinationPlugin_o.run()
@@ -670,17 +695,21 @@ class WorkflowTasks( TaskBase ):
     """ set job inputs (+ metadata)
     """
     inputData = paramsDict.get( 'InputData' )
+    transID = paramsDict['TransformationID']
     if inputData:
-      self._logVerbose( 'Setting input data to %s' % inputData )
+      self._logVerbose( 'Setting input data to %s' % inputData,
+                        transID = transID, method = 'handleInputs' )
       oJob.setInputData( inputData )
 
   def _handleRest( self, oJob, paramsDict ):
     """ add as JDL parameters all the other parameters that are not for inputs or destination
     """
+    transID = paramsDict['TransformationID']
     for paramName, paramValue in paramsDict.iteritems():
       if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
         if paramValue:
-          self._logVerbose( 'Setting %s to %s' % ( paramName, paramValue ) )
+          self._logDebug( 'Setting %s to %s' % ( paramName, paramValue ),
+                            transID = transID, method = 'handleRest' )
           oJob._addJDLParameter( paramName, paramValue )
 
   def _handleHospital( self, oJob ):
@@ -713,17 +742,24 @@ class WorkflowTasks( TaskBase ):
 
   #############################################################################
 
-  def getOutputData( self, paramDict, moduleLocation ):
-    moduleFactory = ModuleFactory()
+  def getOutputData( self, paramDict ):
+    """ Get the list of job output LFNs from the provided plugin
+    """
+    if not self.outputDataModule_o:
+      # Create the module object
+      moduleFactory = ModuleFactory()
 
-    moduleInstance = moduleFactory.getModule( moduleLocation, paramDict )
-    if not moduleInstance['OK']:
-      return moduleInstance
-    module = moduleInstance['Value']
-    return module.execute()
+      moduleInstance = moduleFactory.getModule( self.outputDataModule, None )
+      if not moduleInstance['OK']:
+        return moduleInstance
+      self.outputDataModule_o = moduleInstance['Value']
+    # This is the "argument" to the module, set it and then execute
+    self.outputDataModule_o.paramDict = paramDict
+    return self.outputDataModule_o.execute()
 
   def submitTransformationTasks( self, taskDict ):
-
+    """ Submit the tasks
+    """
     if 'BulkJobObject' in taskDict:
       return self.__submitTransformationTasksBulk( taskDict )
     else:
@@ -835,7 +871,7 @@ class WorkflowTasks( TaskBase ):
     Check the status of a list of tasks and return lists of taskIDs for each new status
     """
     if taskDicts:
-      wmsIDs = [int( taskDict['ExternalID'] ) for taskDict in taskDicts]
+      wmsIDs = [int( taskDict['ExternalID'] ) for taskDict in taskDicts if int( taskDict['ExternalID'] )]
       transID = taskDicts[0]['TransformationID']
     else:
       return S_OK( {} )

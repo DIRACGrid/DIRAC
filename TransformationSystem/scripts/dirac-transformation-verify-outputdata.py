@@ -1,8 +1,12 @@
 #!/usr/bin/env python
+""" runs checkTransformationIntegrity from ValidateOutputDataAgent on selected Tranformation
+"""
+
+import sys
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-import sys
 if len( sys.argv ) < 2:
   print 'Usage: dirac-transformation-verify-outputdata transID [transID] [transID]'
   sys.exit()
@@ -11,8 +15,6 @@ else:
 
 from DIRAC.TransformationSystem.Agent.ValidateOutputDataAgent       import ValidateOutputDataAgent
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
-from DIRAC import gLogger
-import DIRAC
 
 agent = ValidateOutputDataAgent( 'Transformation/ValidateOutputDataAgent',
                                  'Transformation/ValidateOutputDataAgent',

@@ -7,13 +7,14 @@ import Queue
 
 def getMQParamsFromCS( mqURI ):
   """ Function gets parameters of a MQ destination (queue/topic) from the CS.
+
   Args:
     mqURI(str):Pseudo URI identifing the MQ service. It has the following format:
               mqConnection::DestinationType::DestinationName
               e.g. blabla.cern.ch::Queue::MyQueue1
     mType(str): 'consumer' or 'producer'
   Returns:
-    S_OK(param_dicts)/S_ERROR:
+    S_OK(param_dicts) or S_ERROR:
   """
   # API initialization is required to get an up-to-date configuration from the CS
   csAPI = CSAPI()
@@ -73,10 +74,12 @@ def generateDefaultCallback():
       callback.get() method. The callback.get() method returns
       the first message or raise the exception Queue.Empty.
       e.g. myCallback = generateDefaultCallback()
+
           try:
              print myCallback.get()
           except Queue.Empty:
             pass
+
   Args:
     mqURI(str):Pseudo URI identifing MQ connection. It has the following format
               mqConnection::DestinationType::DestinationName
@@ -87,6 +90,7 @@ def generateDefaultCallback():
   msgQueue = Queue.Queue()
   def callback( headers, body ):
     msgQueue.put( body )
+    return S_OK()
   def get( ):
     return msgQueue.get( block = False )
   callback.get = get

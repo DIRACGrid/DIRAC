@@ -174,6 +174,7 @@ class Logger( object ):
       return self._sendMessage( self._logLevels.debug,
                                 sMsg,
                                 sVarMsg )
+    return False
 
   def warn( self, sMsg, sVarMsg = '' ):
     return self._sendMessage( self._logLevels.warn,
@@ -194,6 +195,7 @@ class Logger( object ):
       return self._sendMessage( self._logLevels.exception,
                                 sMsg,
                                 sVarMsg )
+    return False
 
   def fatal( self, sMsg, sVarMsg = '' ):
     return self._sendMessage( self._logLevels.fatal,
@@ -211,15 +213,16 @@ class Logger( object ):
                                msgText,
                                variableText,
                                self.__discoverCallingFrame() )
-      self._processMessage( messageObject )
-    return True
+      return self.processMessage( messageObject )
+    return False
 
   def processMessage( self, messageObject ):
     if self.__testLevel( messageObject.getLevel() ):
       if not messageObject.getName():
         messageObject.setName( self._systemName )
       self._processMessage( messageObject )
-    return True
+      return True
+    return False
 
   def __testLevel( self, sLevel ):
     return abs( self._logLevels.getLevelValue( sLevel ) ) >= self._minLevel

@@ -6,6 +6,7 @@
 """
   LCGPilotDirector class,
   It includes:
+
    - basic configuration for LCG
    - submit and monitor methods for LCG MiddleWare.
 """

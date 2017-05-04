@@ -291,6 +291,7 @@ class JobWrapper( object ):
       self.log.info( 'Job %s has no CPU time limit specified, '
                      'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
       jobCPUTime = self.defaultCPUTime
+    processors = int( self.jobArgs.get( 'NumberOfProcessors', 1 ) )
 
     jobMemory = 0.
     if "Memory" in self.jobArgs:
@@ -354,7 +355,12 @@ class JobWrapper( object ):
 
     self.__setJobParam( 'PayloadPID', payloadPID )
 
-    watchdogInstance = WatchdogFactory().getWatchdog( self.currentPID, exeThread, spObject, jobCPUTime, jobMemory )
+    watchdogInstance = WatchdogFactory().getWatchdog( self.currentPID,
+                                                      exeThread,
+                                                      spObject,
+                                                      jobCPUTime,
+                                                      jobMemory,
+                                                      processors )
     if not watchdogInstance['OK']:
       self.log.error( 'Could not create Watchdog instance', watchdogInstance['Message'] )
       return S_ERROR( 'Could not create Watchdog instance' )
@@ -644,7 +650,8 @@ class JobWrapper( object ):
         and check the result.
     """
     start = time.time()
-    repsResult = self.dm.getReplicas( lfns )
+    # We are in a job, therefore interested in replicas for jobs
+    repsResult = self.dm.getReplicasForJobs( lfns )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     if not repsResult['OK']:

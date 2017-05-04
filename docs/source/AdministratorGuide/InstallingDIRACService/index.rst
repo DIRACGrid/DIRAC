@@ -13,9 +13,19 @@ DIRAC server. There are two distinct cases of installations:
     existing DIRAC system, with the Master Configuration Service already up and running on another
     DIRAC server (:ref:`install_additional_server`).
 
-The primary server installation should install and start at least the Configuration Service which is the
-backbone for the entire DIRAC system. The SystemAdministrator Service, once installed, allows remote
-management of the DIRAC components on the server. In multi-server installations DIRAC components are
+The primary server installation should install and start at least the following services,
+which constitute what is considered as a minimal DIRAC installation:
+
+  - The *Configuration Service (CS)*: the CS is backbone for the entire DIRAC system.
+    Please refer to :ref:`dirac-configuration` for more information
+  - The *SystemAdministrator* service which, once installed, allows remote
+    management of the DIRAC components directly on the server.
+  - The *Component Monitoring* service is for keeping track of installed components.
+    Refer to :ref:`static_component_monitoring` for more info.
+  - The *Resource Status* service will keep track of the status of your distributed computing resources.
+    Refer to :ref:`resource_status_system` for more info.
+
+In multi-server installations DIRAC components are
 distributed among a number of servers installed using the procedure for additional host installation.
 
 For all DIRAC installations any number of client installations is possible.
@@ -287,12 +297,24 @@ be taken:
                                   Name : Runit    Uptime    PID
                   Configuration_Server : Run          41    30268
          Framework_SystemAdministrator : Run          21    30339
+         Framework_ComponentMonitoring : Run          11    30340
+         ResourceStatus_ResourceStatus : Run           9    30341
                              Web_httpd : Run           5    30828
                             Web_paster : Run           5    30829
 
-Now the basic services - Configuration and SystemAdministrator - are installed. The rest of the installation can proceed using
-the DIRAC Administrator interface, either command line (System Administrator Console) or using Web Portal (eventually,
-not available yet).
+Now the basic services - Configuration, SystemAdministrator, ComponentMonitoring and ResourceStatus - are installed,
+or at least their DBs should be installed, and their services up and running.
+
+There are anyway a couple more steps that should be done to fully activate the ComponentMonitoring and the ResourceStatus.
+These steps can be found in the respective administration sessions of this documentation:
+
+  - :ref:`static_component_monitoring` for the static component monitoring (the ComponentMonitoring service)
+  - :ref:`rss_installation` and :ref:`rss_populate` for the Resource Status System
+
+but, no hurry: you can do it later.
+
+The rest of the installation can proceed using the DIRAC Administrator interface,
+either command line (System Administrator Console) or using Web Portal (eventually, not available yet).
 
 It is also possible to include any number of additional systems, services, agents and databases to be installed by "install_site.sh".
 

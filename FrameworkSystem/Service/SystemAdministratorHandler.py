@@ -7,6 +7,7 @@ import re
 import commands
 import getpass
 import importlib
+import shutil
 from datetime import datetime, timedelta
 
 import DIRAC
@@ -39,7 +40,7 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Handler class initialization
     """
-    
+
     # Check the flag for monitoring of the state of the host
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
 
@@ -49,12 +50,17 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # Check the flag for dynamic monitoring
     dynamicMonitoring = cls.srv_getCSOption( 'DynamicMonitoring', False )
-    
+
     if dynamicMonitoring:
       global gMonitoringReporter
       gMonitoringReporter = MonitoringReporter( monitoringType = "ComponentMonitoring" )
       gThreadScheduler.addPeriodicTask( 120, cls.__storeProfiling )
-      
+    
+    keepSoftwareVersions = cls.srv_getCSOption( 'KeepSoftwareVersions', 0 )
+    if keepSoftwareVersions > 0:
+      gLogger.info( "The last %s software version will be kept and the rest will be deleted!" % keepSoftwareVersions )
+      gThreadScheduler.addPeriodicTask( 600, cls.__deleteOldSoftware, ( keepSoftwareVersions, ), executions = 2 ) #it is enough to try 2 times
+    
     return S_OK( 'Initialization went well' )
 
   types_getInfo = [ ]
@@ -62,7 +68,7 @@ class SystemAdministratorHandler( RequestHandler ):
     """  Get versions of the installed DIRAC software and extensions, setup of the
          local installation
     """
-    return gComponentInstaller.getInfo( getCSExtensions() )
+    return gComponentInstaller.getInfo()
 
   types_getSoftwareComponents = [ ]
   def export_getSoftwareComponents( self ):
@@ -97,7 +103,7 @@ class SystemAdministratorHandler( RequestHandler ):
     for compType in statusDict:
       for system in statusDict[compType]:
         for component in statusDict[compType][system]:
-          result = gComponentInstaller.getComponentModule( gConfig, system, component, compType )
+          result = gComponentInstaller.getComponentModule( system, component, compType )
           if not result['OK']:
             statusDict[compType][system][component]['Module'] = "Unknown"
           else:
@@ -273,20 +279,20 @@ class SystemAdministratorHandler( RequestHandler ):
     extensionList = getCSExtensions()
     if extensionList:
       #by default we do not install WebApp
-      if "WebApp" in extensionList: 
+      if "WebApp" in extensionList:
         extensionList.remove("WebApp")
-      
+
     webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False ) # this is the new portal
     if webPortal:
       if "WebAppDIRAC" not in extensionList:
         extensionList.append("WebAppDIRAC")
-   
+
     cmdList += ['-e', ','.join( extensionList )]
-    
+
     project = gConfig.getValue('/LocalInstallation/Project')
     if project:
       cmdList += ['-l', project ]
-      
+
     # Are grid middleware bindings required ?
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )
@@ -563,7 +569,7 @@ class SystemAdministratorHandler( RequestHandler ):
     result['OpenFiles'] = files
     result['OpenPipes'] = pipes
 
-    infoResult = gComponentInstaller.getInfo( getCSExtensions() )
+    infoResult = gComponentInstaller.getInfo()
     if infoResult['OK']:
       result.update( infoResult['Value'] )
       # the infoResult value is {"Extensions":{'a1':'v1',a2:'v2'}; we convert to a string
@@ -710,3 +716,25 @@ class SystemAdministratorHandler( RequestHandler ):
             return result
     gMonitoringReporter.commit()
     return S_OK( 'Profiling information logged correctly' )
+  
+  @staticmethod
+  def __deleteOldSoftware( keepLast ):
+    """
+    It removes all versions except the last x
+    
+    :param int keepLast: the number of the software version, what we keep
+    """
+    
+    versionsDirectory = os.path.split( DIRAC.rootPath )[0]
+    if versionsDirectory.endswith( 'versions' ):  # make sure we are not deleting from a wrong directory.
+      softwareDirs = sorted( os.listdir( versionsDirectory ) )
+      try:
+        for directoryName in softwareDirs[:-1 * int( keepLast )]:
+          fullPath = os.path.join( versionsDirectory, directoryName )
+          gLogger.info( "Removing %s directory." % fullPath )
+          shutil.rmtree( fullPath )
+      except Exception as e:
+        gLogger.error( "Can not delete old DIRAC versions from the file system", repr( e ) )
+    else:
+      gLogger.error( "The DIRAC.rootPath is not correct: %s" % versionsDirectory )
+    

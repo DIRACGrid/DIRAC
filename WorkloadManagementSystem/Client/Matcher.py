@@ -21,6 +21,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, \
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.ResourceStatusSystem.Client.SiteStatus   import SiteStatus
 
 __RCSID__ = "$Id"
 
@@ -58,6 +59,8 @@ class Matcher( object ):
 
     self.limiter = Limiter( jobDB = self.jobDB, opsHelper = self.opsHelper )
 
+    self.siteClient = SiteStatus()
+
 
   def selectJob( self, resourceDescription, credDict ):
     """ Main job selection function to find the highest priority job matching the resource capacity
@@ -71,8 +74,8 @@ class Matcher( object ):
     toPrintDict = dict( resourceDict )
     if "MaxRAM" in resourceDescription:
       toPrintDict['MaxRAM'] = resourceDescription['MaxRAM']
-    if "Processors" in resourceDescription:
-      toPrintDict['Processors'] = resourceDescription['Processors']
+    if "NumberOfProcessors" in resourceDescription:
+      toPrintDict['NumberOfProcessors'] = resourceDescription['NumberOfProcessors']
     toPrintDict['Tag'] = []
     if "Tag" in resourceDict:
       for tag in resourceDict['Tag']:
@@ -186,14 +189,14 @@ class Matcher( object ):
     if 'JobID' in resourceDescription:
       resourceDict['JobID'] = resourceDescription['JobID']
 
-    # Convert MaxRAM and Processors parameters into a list of tags
+    # Convert MaxRAM and NumberOfProcessors parameters into a list of tags
     maxRAM = resourceDescription.get( 'MaxRAM' )
     if maxRAM:
       try:
         maxRAM = int( maxRAM )/1000
       except ValueError:
         maxRAM = None
-    nProcessors = resourceDescription.get( 'Processors' )
+    nProcessors = resourceDescription.get( 'NumberOfProcessors' )
     if nProcessors:
       try:
         nProcessors = int( nProcessors )
@@ -251,7 +254,7 @@ class Matcher( object ):
       raise RuntimeError( "Missing Site Name in Resource JDL" )
 
     # Get common site mask and check the agent site
-    result = self.jobDB.getSiteMask( siteState = 'Active' )
+    result = self.siteClient.getSites( siteState = 'Active' )
     if not result['OK']:
       self.log.error( "Internal error", "getSiteMask: %s" % result['Message'] )
       raise RuntimeError( "Internal error" )

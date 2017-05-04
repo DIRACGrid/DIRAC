@@ -13,7 +13,6 @@
 __RCSID__ = "$Id$"
 
 import inspect
-import types
 import threading
 
 from DIRAC                                        import gLogger, S_OK, S_ERROR
@@ -80,7 +79,7 @@ class StorageManagementDB( DB ):
     reqSelect = "SELECT TaskID FROM Tasks WHERE TaskID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newTaskStatus )
     resSelect = self._query( reqSelect, connection )
     if not resSelect['OK']:
-      gLogger.error( "%s.%s_DB: problem retrieving record:" % ( self._caller(), '__updateTaskStatus' ), 
+      gLogger.error( "%s.%s_DB: problem retrieving record:" % ( self._caller(), '__updateTaskStatus' ),
                      "%s. %s" % ( reqSelect, resSelect['Message'] ) )
 
     req = "UPDATE Tasks SET Status='%s',LastUpdate=UTC_TIMESTAMP() WHERE TaskID IN (%s) AND Status != '%s';" % ( newTaskStatus, intListToString( toUpdate ), newTaskStatus )
@@ -151,7 +150,7 @@ class StorageManagementDB( DB ):
     reqSelect = "SELECT ReplicaID FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newReplicaStatus )
     resSelect = self._query( reqSelect, connection )
     if not resSelect['OK']:
-      gLogger.error( "%s.%s_DB: problem retrieving record:" % ( self._caller(), 'updateReplicaStatus' ), 
+      gLogger.error( "%s.%s_DB: problem retrieving record:" % ( self._caller(), 'updateReplicaStatus' ),
                      "%s. %s" % ( reqSelect, resSelect['Message'] ) )
 
     req = "UPDATE CacheReplicas SET Status='%s',LastUpdate=UTC_TIMESTAMP() WHERE ReplicaID IN (%s) AND Status != '%s';" % ( newReplicaStatus, intListToString( toUpdate ), newReplicaStatus )
@@ -212,7 +211,7 @@ class StorageManagementDB( DB ):
             tasksInStatus[state].append( taskId )
           break
 
-    for newStatus in tasksInStatus.keys():
+    for newStatus in tasksInStatus:
       if tasksInStatus[newStatus]:
         res = self.__updateTaskStatus( tasksInStatus[newStatus], newStatus, True, connection = connection )
         if not res['OK']:
@@ -371,7 +370,7 @@ class StorageManagementDB( DB ):
     req = "SELECT TaskID from Tasks WHERE SourceTaskID=%s;" % int( jobID )
     res = self._query( req )
     if not res['OK']:
-      gLogger.error( "%s.%s_DB: problem retrieving record:" % ( self._caller(), '_getTaskIDForJob' ), 
+      gLogger.error( "%s.%s_DB: problem retrieving record:" % ( self._caller(), '_getTaskIDForJob' ),
                      "%s. %s" % ( req, res['Message'] ) )
       return S_ERROR( 'The supplied JobID does not exist!' )
     taskID = [ row[0] for row in res['Value'] ]
@@ -409,9 +408,9 @@ class StorageManagementDB( DB ):
     connection = self.__getConnection( connection )
     req = "SELECT %s FROM Tasks" % ( intListToString( self.TASKPARAMS ) )
     if condDict or older or newer:
-      if condDict.has_key( 'ReplicaID' ):
+      if 'ReplicaID' in condDict:
         replicaIDs = condDict.pop( 'ReplicaID' )
-        if type( replicaIDs ) not in ( types.ListType, types.TupleType ):
+        if not isinstance( replicaIDs, ( list, tuple ) ):
           replicaIDs = [replicaIDs]
         res = self._getReplicaIDTasks( replicaIDs, connection = connection )
         if not res['OK']:
@@ -435,9 +434,9 @@ class StorageManagementDB( DB ):
     connection = self.__getConnection( connection )
     req = "SELECT %s FROM CacheReplicas" % ( intListToString( self.REPLICAPARAMS ) )
     if condDict or older or newer:
-      if condDict.has_key( 'TaskID' ):
+      if 'TaskID' in condDict:
         taskIDs = condDict.pop( 'TaskID' )
-        if type( taskIDs ) not in ( types.ListType, types.TupleType ):
+        if not isinstance( taskIDs, ( list, tuple ) ):
           taskIDs = [taskIDs]
         res = self._getTaskReplicaIDs( taskIDs, connection = connection )
         if not res['OK']:
@@ -465,9 +464,9 @@ class StorageManagementDB( DB ):
     connection = self.__getConnection( connection )
     req = "SELECT %s FROM StageRequests" % ( intListToString( self.STAGEPARAMS ) )
     if condDict or older or newer:
-      if condDict.has_key( 'TaskID' ):
+      if 'TaskID' in condDict:
         taskIDs = condDict.pop( 'TaskID' )
-        if type( taskIDs ) not in ( types.ListType, types.TupleType ):
+        if not isinstance( taskIDs, ( list, tuple ) ):
           taskIDs = [taskIDs]
         res = self._getTaskReplicaIDs( taskIDs, connection = connection )
         if not res['OK']:
@@ -533,8 +532,8 @@ class StorageManagementDB( DB ):
     # Get the Replicas which already exist in the CacheReplicas table
     allReplicaIDs = []
     taskStates = []
-    for se, lfns in lfnDict.items():
-      if type( lfns ) in types.StringTypes:
+    for se, lfns in lfnDict.iteritems():
+      if isinstance( lfns, basestring ):
         lfns = [lfns]
       res = self._getExistingReplicas( se, lfns, connection = connection )
       if not res['OK']:
@@ -542,7 +541,7 @@ class StorageManagementDB( DB ):
       existingReplicas = res['Value']
       # Insert the CacheReplicas that do not already exist
       for lfn in lfns:
-        if lfn in existingReplicas.keys():
+        if lfn in existingReplicas:
           gLogger.verbose( 'StorageManagementDB.setRequest: Replica already exists in CacheReplicas table %s @ %s' % ( lfn, se ) )
           existingFileState = existingReplicas[lfn][1]
           taskState = self.__getTaskStateFromReplicaState( existingFileState )
@@ -818,7 +817,7 @@ class StorageManagementDB( DB ):
 
   def insertStageRequest( self, requestDict, pinLifeTime ):
     req = "INSERT INTO StageRequests (ReplicaID,RequestID,StageRequestSubmitTime,PinLength) VALUES "
-    for requestID, replicaIDs in requestDict.items():
+    for requestID, replicaIDs in requestDict.iteritems():
       for replicaID in replicaIDs:
         replicaString = "(%s,'%s',UTC_TIMESTAMP(),%d)," % ( replicaID, requestID, pinLifeTime )
         req = "%s %s" % ( req, replicaString )
@@ -828,7 +827,7 @@ class StorageManagementDB( DB ):
       gLogger.error( 'StorageManagementDB.insertStageRequest: Failed to insert to StageRequests table.', res['Message'] )
       return res
 
-    for requestID, replicaIDs in requestDict.items():
+    for requestID, replicaIDs in requestDict.iteritems():
       for replicaID in replicaIDs:
         # fix, no individual queries
         reqSelect = "SELECT * FROM StageRequests WHERE ReplicaID = %s AND RequestID = '%s';" % ( replicaID, requestID )
@@ -1072,7 +1071,7 @@ class StorageManagementDB( DB ):
   def removeUnlinkedReplicas( self, connection = False ):
     """ This will remove Replicas from the CacheReplicas that are not associated to any Task.
         If the Replica has been Staged,
-          wait until StageRequest.PinExpiryTime and remove the StageRequest and CacheReplicas entries
+        wait until StageRequest.PinExpiryTime and remove the StageRequest and CacheReplicas entries
     """
     connection = self.__getConnection( connection )
     # First, check if there is a StageRequest and PinExpiryTime has arrived

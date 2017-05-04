@@ -6,10 +6,13 @@
 ########################################################################
 
 """ :mod: RequestTask
+
     =================
 
     .. module: RequestTask
+
     :synopsis: request processing task
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     request processing task to be used inside ProcessTask created in RequesteExecutingAgent
@@ -179,21 +182,24 @@ class RequestTask( object ):
     """ Create an instance of requested plugin class, loading and importing it when needed.
     This function could raise ImportError when plugin cannot be find or TypeError when
     loaded class object isn't inherited from BaseOperation class.
+
     :param str pluginName: dotted path to plugin, specified as in import statement, i.e.
-    "DIRAC.CheesShopSystem.private.Cheddar" or alternatively in 'normal' path format
-    "DIRAC/CheesShopSystem/private/Cheddar"
+        "DIRAC.CheesShopSystem.private.Cheddar" or alternatively in 'normal' path format
+        "DIRAC/CheesShopSystem/private/Cheddar"
 
     :return: object instance
+
     This function try to load and instantiate an object from given path. It is assumed that:
 
-    - :pluginPath: is pointing to module directory "importable" by python interpreter, i.e.: it's
-    package's top level directory is in $PYTHONPATH env variable,
-    - the module should consist a class definition following module name,
-    - the class itself is inherited from DIRAC.RequestManagementSystem.private.BaseOperation.BaseOperation
+      * `pluginPath` is pointing to module directory "importable" by python interpreter, i.e.: it's
+        package's top level directory is in $PYTHONPATH env variable,
+      * the module should consist a class definition following module name,
+      *  the class itself is inherited from DIRAC.RequestManagementSystem.private.BaseOperation.BaseOperation
+
     If above conditions aren't meet, function is throwing exceptions:
 
-    - ImportError when class cannot be imported
-    - TypeError when class isn't inherited from OperationHandlerBase
+    :raises ImportError: when class cannot be imported
+    :raises TypeError: when class isn't inherited from OperationHandlerBase
     """
     if "/" in pluginPath:
       pluginPath = ".".join( [ chunk for chunk in pluginPath.split( "/" ) if chunk ] )
@@ -215,7 +221,7 @@ class RequestTask( object ):
     """ return instance of a handler for a given operation type on demand
         all created handlers are kept in self.handlers dict for further use
 
-    :param Operation operation: Operation instance
+    :param ~Operation.Operation operation: Operation instance
     """
     if operation.Type not in self.handlersDict:
       return S_ERROR( "handler for operation '%s' not set" % operation.Type )
@@ -361,7 +367,7 @@ class RequestTask( object ):
       if self.request.JobID:
         attempts = 0
         while True:
-          finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestID, self.request.JobID ) #pylint: disable=no-member
+          finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestID, self.request.JobID )  # pylint: disable=no-member
           if not finalizeRequest["OK"]:
             if not attempts:
               self.log.error( "unable to finalize request %s: %s, will retry" % ( self.request.RequestName,
@@ -380,4 +386,5 @@ class RequestTask( object ):
             break
 
     # Request will be updated by the callBack method
+    self.log.verbose( "RequestTasks exiting, request %s" % self.request.Status )
     return S_OK( self.request )

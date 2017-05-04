@@ -15,6 +15,8 @@ from DIRAC.ResourceStatusSystem.Client                     import ResourceStatus
 from DIRAC.ResourceStatusSystem.Utilities                  import CSHelpers
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 from DIRAC.ResourceStatusSystem.Utilities                  import Utils
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import getFTS3Servers
+from DIRAC.ConfigurationSystem.Client.PathFinder           import getServiceURL
 ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 
 class Synchronizer( object ):
@@ -90,7 +92,7 @@ class Synchronizer( object ):
       gLogger.verbose( '%s sites found in CS for %s domain' % ( len( sitesCS ), domainName ) )
 
       sitesDB = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName,
-                                                  meta = { 'columns' : [ 'name' ] } )
+                                                  meta = { 'columns' : [ 'Name' ] } )
       if not sitesDB[ 'OK' ]:
         return sitesDB
       sitesDB = [ siteDB[0] for siteDB in sitesDB[ 'Value' ] ]
@@ -109,10 +111,11 @@ class Synchronizer( object ):
           return deleteQuery
 
       sitesTuple  = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName,
-                                                      meta = { 'columns' : [ 'name', 'statusType' ] } )
+                                                      meta = { 'columns' : [ 'Name', 'StatusType' ] } )
       if not sitesTuple[ 'OK' ]:
         return sitesTuple
       sitesTuple = sitesTuple[ 'Value' ]
+      sitesTuple = [ (x[0],x[1]) for x in sitesTuple ]
 
       statusTypes = self.rssConfig.getConfigStatusType( domainName )
 
@@ -163,6 +166,11 @@ class Synchronizer( object ):
     if not computingElements[ 'OK' ]:
       gLogger.error( computingElements[ 'Message' ] )
 
+    gLogger.verbose( '-> removing resources that no longer exist in the CS' )
+    removingResources = self.__removeNonExistingResourcesFromRM()
+    if not removingResources[ 'OK' ]:
+      gLogger.error( removingResources[ 'Message' ] )
+
     #FIXME: VOMS
 
     return S_OK()
@@ -182,6 +190,47 @@ class Synchronizer( object ):
     return S_OK()
 
   ## Private methods ###########################################################
+
+  def __removeNonExistingResourcesFromRM( self ):
+    '''
+      Remove resources from DowntimeCache table that no longer exist in the CS.
+    '''
+
+    if not getServiceURL( "ResourceStatus/ResourceManagement" ):
+      gLogger.verbose( 'ResourceManagement is not installed, skipping removal of non existing resources...' )
+      return S_OK()
+
+    sesHosts = CSHelpers.getStorageElementsHosts()
+    if not sesHosts[ 'OK' ]:
+      return sesHosts
+    sesHosts = sesHosts[ 'Value' ]
+
+    resources = sesHosts
+
+    ftsServer = getFTS3Servers()
+    if ftsServer[ 'OK' ]:
+      resources.extend( ftsServer[ 'Value' ] )
+
+    ce = CSHelpers.getComputingElements()
+    if ce[ 'OK' ]:
+      resources.extend( ce[ 'Value' ] )
+
+    downtimes = self.rManagement.selectDowntimeCache()
+
+    if not downtimes['OK']:
+      return downtimes
+
+    # Remove hosts that no longer exist in the CS
+    for host in downtimes['Value']:
+      gLogger.verbose('Checking if %s is still in the CS' % host[0] )
+      if host[0] not in resources:
+        gLogger.verbose( '%s is no longer in CS, removing entry...' % host[0] )
+        result = self.rManagement.deleteDowntimeCache( name = host[0] )
+
+        if not result['OK']:
+          return result
+
+    return S_OK()
 
   def __syncComputingElements( self ):
     '''

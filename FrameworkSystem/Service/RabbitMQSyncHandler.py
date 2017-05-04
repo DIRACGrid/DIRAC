@@ -17,7 +17,7 @@ class RabbitMQSyncHandler( RequestHandler ):
   """
 
   @classmethod
-  def initializeHandler( cls ):
+  def initializeHandler( cls, _serviceInfo ):
     """ Handler initialization
     """
     syncObject = RabbitMQSynchronizer.RabbitMQSynchronizer()
@@ -28,4 +28,3 @@ class RabbitMQSyncHandler( RequestHandler ):
     """ Response initialization
     """
     pass
-

@@ -2,8 +2,13 @@
 Workload Management System (WMS)
 ================================
 
-The DIRAC WMS is a Pilot based Workload Management System.
-It provides high user jobs efficiency, hiding the heterogeneity of the the underlying computing resources.
+The DIRAC Workload Management System (WMS) realizes the task scheduling paradigm with Generic Pilot Jobs ( or Agents ).
+This task scheduling method solves many problems of using unstable distributed computing resources which are
+available in computing grids. In particular, it helps the management of the user activities in large Virtual
+Organizations such as LHC experiments. In more details the DIRAC WMS with Pilot Jobs is described
+`here <https://twiki.cern.ch/twiki/pub/LHCb/DiracProjectPage/DIRAC_Pilots_Note.pdf>`_.
+
+The WMS provides high user jobs efficiency, hiding the heterogeneity of the the underlying computing resources.
 
 Jobs are not sent directly to the Computing Elements, or to any Computing resource.
 Instead, their description and requirements are stored in the DIRAC WMS (in a JDL, Job Description Language).

@@ -3,11 +3,13 @@
     Can be automatized.
 """
 
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
+#pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
 
 import unittest
 import multiprocessing
+
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
 
 from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
 from DIRAC.tests.Utilities.utils import find_all
@@ -22,8 +24,8 @@ class UserJobTestCase( IntegrationTest ):
     super( UserJobTestCase, self ).setUp()
 
     self.d = Dirac()
-    self.exeScriptLocation = find_all( 'exe-script.py', '.', 'Integration' )[0]
-    self.mpExe = find_all( 'testMpJob.sh', '.', 'Utilities' )[0]
+    self.exeScriptLocation = find_all( 'exe-script.py', '..', 'Integration' )[0]
+    self.mpExe = find_all( 'testMpJob.sh', '..', 'Utilities' )[0]
 
 class HelloWorldSuccess( UserJobTestCase ):
   def test_execute( self ):
@@ -43,6 +45,7 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
   def test_execute( self ):
 
     job = Job()
+    job._siteSet = {'DIRAC.someSite.ch'}
 
     job.setName( "helloWorld-test" )
     job.setExecutable( find_all( "helloWorld.py", '.', 'Integration' )[0],
@@ -89,7 +92,7 @@ class MPSuccess( UserJobTestCase ):
 
     j.setName( "MP-test" )
     j.setExecutable( self.mpExe )
-    j.setInputSandbox( find_all( 'mpTest.py', '.', 'Utilities' )[0] )
+    j.setInputSandbox( find_all( 'mpTest.py', '..', 'Utilities' )[0] )
     j.setTag( 'MultiProcessor' )
     res = j.runLocal( self.d )
     if multiprocessing.cpu_count() > 1:

@@ -10,7 +10,7 @@
 import errno
 import xml.dom.minidom as minidom
 from datetime     import datetime
-from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
 from DIRAC.Core.LCG.GOCDBClient                                 import _parseSingleElement
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
@@ -60,7 +60,7 @@ class GOCDBSyncCommand( Command ):
                       'FORMATED_START_DATE': downtimes[6].strftime('%Y-%m-%d %H:%M'),
                       'FORMATED_END_DATE': downtimes[7].strftime('%Y-%m-%d %H:%M') }
 
-      response = self.gClient.getHostnameDowntime( hostname, datetime.utcnow().strftime('%Y-%m-%d') )
+      response = self.gClient.getHostnameDowntime( hostname, ongoing = True )
 
       if not response['OK']:
         return response
@@ -80,12 +80,15 @@ class GOCDBSyncCommand( Command ):
           if localDBdict['FORMATED_START_DATE'] != GOCDBdict['FORMATED_START_DATE']:
             result = self.rmClient.addOrModifyDowntimeCache( downtimeID = localDBdict['DowntimeID'],
                                                         startDate = GOCDBdict['FORMATED_START_DATE'])
+            gLogger.verbose("The start date of %s has been changed!" % downtimes[3])
+
             if not result[ 'OK' ]:
               return result
 
           if localDBdict['FORMATED_END_DATE'] != GOCDBdict['FORMATED_END_DATE']:
             result = self.rmClient.addOrModifyDowntimeCache( downtimeID = localDBdict['DowntimeID'],
                                                         endDate = GOCDBdict['FORMATED_END_DATE'] )
+            gLogger.verbose("The end date of %s has been changed!" % downtimes[3])
 
             if not result[ 'OK' ]:
               return result
@@ -115,6 +118,7 @@ class GOCDBSyncCommand( Command ):
         continue
 
       # data[0] contains the hostname
+      gLogger.verbose("Checking if the downtime of %s has been changed" % data[0])
       result = self.doNew( data[0] )
       if not result[ 'OK' ]:
         return result

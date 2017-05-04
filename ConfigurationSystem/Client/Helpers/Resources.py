@@ -51,7 +51,9 @@ def getStorageElementSiteMapping( siteList = None ):
 def getFTS2ServersForSites( siteList = None ):
   """ get FTSServers for sites
 
-  :param list siteList: list of sites
+  :param siteList: list of sites
+  :type siteList: python:list
+
   """
   siteList = siteList if siteList else None
   if not siteList:

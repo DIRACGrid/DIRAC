@@ -31,12 +31,14 @@ import shutil
 import stat
 import re
 import errno
+import shlex
+
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.Os import getDirectorySize
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.Adler import fileAdler
 
 from DIRAC.Resources.Storage.StorageBase import StorageBase
@@ -482,7 +484,7 @@ class StorageElementHandler( RequestHandler ):
     """ Get the total size of the given directory in bytes
     """
     comm = "du -sb %s" % path
-    result = shellCall( 10, comm )
+    result = systemCall( 10, shlex.split( comm ) )
     if not result['OK'] or result['Value'][0]:
       return 0
     else:

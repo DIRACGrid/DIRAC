@@ -11,18 +11,21 @@
 """
 
 import random
+import errno
 
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
 from DIRAC.Core.Utilities.Time                                      import fromString, toEpoch
 from DIRAC.Core.Security                                            import Properties
+from DIRAC.Core.Utilities.DErrno                                    import cmpError
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources             import getSiteTier
 from DIRAC.ConfigurationSystem.Client.Helpers                       import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import StorageManagerClient, getFilesToStage
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                   import SiteStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB                        import JobDB
 
 
@@ -40,6 +43,7 @@ class JobScheduling( OptimizerExecutor ):
   def initializeOptimizer( cls ):
     """ Initialization of the optimizer.
     """
+    cls.siteClient = SiteStatus()
     cls.__jobDB = JobDB()
     return S_OK()
 
@@ -78,7 +82,7 @@ class JobScheduling( OptimizerExecutor ):
     jobType = result[ 'Value' ]
 
     # Get banned sites from DIRAC
-    result = self.__jobDB.getSiteMask( 'Banned' )
+    result = self.siteClient.getSites( 'Banned' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve banned sites from JobDB" )
     wmsBannedSites = result[ 'Value' ]
@@ -102,7 +106,7 @@ class JobScheduling( OptimizerExecutor ):
 
         if not userSites:
           return self.__holdJob( jobState, "No requested site(s) are active/valid" )
-        userSites = list(userSites)
+        userSites = list( userSites )
 
     # Check if there is input data
     result = jobState.getInputData()
@@ -117,24 +121,30 @@ class JobScheduling( OptimizerExecutor ):
     self.jobLog.verbose( "Has an input data requirement" )
     inputData = result[ 'Value' ]
 
+    # ===================================================================================
     # Production jobs are sent to TQ, but first we have to verify if staging is necessary
+    # ===================================================================================
     if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
       self.jobLog.info( "Production job: sending to TQ, but first checking if staging is requested" )
 
-      userName = jobState.getAttribute( 'Owner' )
-      if not userName[ 'OK' ]:
-        return userName
-      userName = userName['Value']
-
-      userGroup = jobState.getAttribute( 'OwnerGroup' )
-      if not userGroup[ 'OK' ]:
-        return userGroup
-      userGroup = userGroup['Value']
-
-      res = getFilesToStage( inputData, proxyUserName = userName, proxyUserGroup = userGroup ) #pylint: disable=unexpected-keyword-arg
+      res = getFilesToStage( inputData, jobState = jobState, checkOnlyTapeSEs = self.ex_getOption( 'CheckOnlyTapeSEs', True ), jobLog = self.jobLog )
 
       if not res['OK']:
         return self.__holdJob( jobState, res['Message'] )
+      if res['Value']['absentLFNs']:
+        # Some files do not exist at all... set the job Failed
+        # Reverse errors
+        reasons = {}
+        for lfn, reason in res['Value']['absentLFNs'].iteritems():
+          reasons.setdefault( reason, [] ).append( lfn )
+        for reason, lfns in reasons.iteritems():
+          # Some files are missing in the FC or in SEs, fail the job
+          self.jobLog.error( reason, ','.join( lfns ) )
+        error = ','.join( reasons )
+        return S_ERROR( error )
+
+      if res['Value']['failedLFNs']:
+        return self.__holdJob( jobState, "Couldn't get storage metadata of some files" )
       stageLFNs = res['Value']['offlineLFNs']
       if stageLFNs:
         res = self.__checkStageAllowed( jobState )
@@ -145,9 +155,18 @@ class JobScheduling( OptimizerExecutor ):
         self.__requestStaging( jobState, stageLFNs )
         return S_OK()
       else:
+        # No staging required
+        onlineSites = res['Value']['onlineSites']
+        if onlineSites:
+          # Set the online site(s) first
+          userSites = set( userSites )
+          onlineSites &= userSites
+          userSites = list( onlineSites ) + list( userSites - onlineSites )
         return self.__sendToTQ( jobState, userSites, userBannedSites )
 
+    # ===================================================
     # From now on we know it's a user job with input data
+    # ===================================================
 
     idAgent = self.ex_getOption( 'InputDataAgent', 'InputData' )
     result = self.retrieveOptimizerParam( idAgent )

@@ -45,7 +45,7 @@ class MonitoringDB( ElasticDB ):
 
   def getIndexName( self, typeName ):
     """
-    :param tyeName it is a string. doc_type and type name is equivalent
+    :param str typeName: doc_type and type name is equivalent
     """
     indexName = None
 
@@ -60,8 +60,9 @@ class MonitoringDB( ElasticDB ):
   def registerType( self, index, mapping ):
     """
     It register the type and index, if does not exists
-    :param str index name of the index
-    :param dict mapping mapping used to create the index.
+
+    :param str index: name of the index
+    :param dict mapping: mapping used to create the index.
     """
 
     all_index = "%s-*" % index
@@ -121,12 +122,13 @@ class MonitoringDB( ElasticDB ):
     """
     Get data from the DB
 
-    :param str typeName name of the monitoring type
-    :param int startTime  epoch objects.
-    :param int endtime epoch objects.
-    :param dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
+    :param str typeName: name of the monitoring type
+    :param int startTime:  epoch objects.
+    :param int endtime: epoch objects.
+    :param dict condDict: conditions for the query
+
+                   * key -> name of the field
+                   * value -> list of possible values
 
     """
 
@@ -153,7 +155,7 @@ class MonitoringDB( ElasticDB ):
           query = self._Q( 'match', **kwargs )
       q += [query]
 
-    a1 = self._A( 'terms', field = grouping, size = 0 )
+    a1 = self._A( 'terms', field = grouping, size = self.RESULT_SIZE )
     a2 = self._A( 'terms', field = 'timestamp' )
     a2.metric( 'total_jobs', 'sum', field = selectFields[0] )
     a1.bucket( 'end_data',
@@ -172,7 +174,7 @@ class MonitoringDB( ElasticDB ):
     s = self._Search( indexName )
     s = s.filter( 'bool', must = q )
     s.aggs.bucket( '2', a1 )
-    s.fields( ['timestamp'] + selectFields )
+    #s.fields( ['timestamp'] + selectFields )
     gLogger.debug( 'Query:', s.to_dict() )
     retVal = s.execute()
 
@@ -218,20 +220,21 @@ class MonitoringDB( ElasticDB ):
     Get data from the DB using simple aggregations. Note: this method is equivalent to retrieveBucketedData.
     The different is the dynamic bucketing. We do not perform dynamic bucketing on the raw data.
 
-    :param str typeName name of the monitoring type
-    :param int startTime  epoch objects.
-    :param int endtime epoch objects.
-    :param dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
+    :param str typeName: name of the monitoring type
+    :param int startTime:  epoch objects.
+    :param int endtime: epoch objects.
+    :param dict condDict: conditions for the query
+
+                   * key -> name of the field
+                   * value -> list of possible values
 
     """
-#    {'query': {'bool': {'filter': [{'bool': {'must': [{'range': {'timestamp': {'gte': 1474271462000, 'lte': 1474357862000}}}]}}]}}, 'aggs': {'end_data': {'date_histogram': {'field': 'timestamp', 'interval': '30m'}, 'aggs': {'tt': {'terms': {'field': 'component', 'size': 0}, 'aggs': {'m1': {'avg': {'
+#    {'query': {'bool': {'filter': [{'bool': {'must': [{'range': {'timestamp': {'gte': 1474271462000, 'lte': 1474357862000}}}]}}]}}, 'aggs': {'end_data': {'date_histogram': {'field': 'timestamp', 'interval': '30m'}, 'aggs': {'tt': {'terms': {'field': 'component', 'size': 10000}, 'aggs': {'m1': {'avg': {'
 #    field': 'threads'}}}}}}}}
 #
 #     query = [Q( 'range',timestamp = {'lte':1474357862000,'gte': 1474271462000} )]
 #
-#     a = A('terms', field = 'component', size = 0 )
+#     a = A('terms', field = 'component', size = 10000 )
 #     a.metric('m1', 'avg', field = 'threads' )
 #
 #     s = Search(using=cl, index = 'lhcb-certification_componentmonitoring-index-*')
@@ -260,7 +263,7 @@ class MonitoringDB( ElasticDB ):
           query = self._Q( 'match', **kwargs )
       q += [query]
 
-    a1 = self._A( 'terms', field = grouping, size = 0 )
+    a1 = self._A( 'terms', field = grouping, size = self.RESULT_SIZE )
     a1.metric( 'm1', aggregator, field = selectFields[0] )
 
     s = self._Search( indexName )
@@ -270,8 +273,8 @@ class MonitoringDB( ElasticDB ):
                    field = 'timestamp',
                    interval = interval ).metric( 'tt', a1 )
 
-    s.fields( ['timestamp'] + selectFields )
-    s = s.extra( size = 0 )  # do not get the hits!
+    #s.fields( ['timestamp'] + selectFields )
+    s = s.extra( size = self.RESULT_SIZE )  # do not get the hits!
 
     gLogger.debug( 'Query:', s.to_dict() )
     retVal = s.execute()
@@ -305,8 +308,10 @@ class MonitoringDB( ElasticDB ):
   def put( self, records, monitoringType ):
     """
     It is used to insert the data to El.
-    :param list records it is a list of documents (dictionary)
-    :param str monitoringType is the type of the monitoring
+
+    :param records: it is a list of documents (dictionary)
+    :param str monitoringType: is the type of the monitoring
+    :type records: python:list
     """
     mapping = self.__getMapping( monitoringType )
     gLogger.debug( "Mapping used to create an index:", mapping )
@@ -319,26 +324,37 @@ class MonitoringDB( ElasticDB ):
   def __getMapping( self, monitoringType ):
     """
     It returns the mapping of a certain monitoring type
-    :param str monitoringType the monitoring type for example WMSHistory
-    :return it returns an empty dixtionary if there is no mapping defenied.
+
+    :param str monitoringType: the monitoring type for example WMSHistory
+    :return: an empty dictionary if there is no mapping defenied.
     """
     mapping = {}
     if monitoringType in self.__documents:
       mapping = self.__documents[monitoringType].get( "mapping", {} )
     return mapping
 
-  def __getRawData( self, typeName, condDict, size = 0 ):
+  def __getRawData( self, typeName, condDict, size = -1 ):
     """
     It returns the last day data for a given monitoring type.
-    for example: {'sort': [{'timestamp': {'order': 'desc'}}],
-    'query': {'bool': {'must': [{'match': {'host': 'dzmathe.cern.ch'}},
-    {'match': {'component': 'Bookkeeping_BookkeepingManager'}}]}}}
-    :param str typeName name of the monitoring type
-    :param dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
-    :param int size number of rows which whill be returned. By default is all
+    :returns: for example
+
+      .. code-block:: python
+
+       {'sort': [{'timestamp': {'order': 'desc'}}],
+        'query': {'bool': {'must': [{'match': {'host': 'dzmathe.cern.ch'}},
+                                    {'match': {'component': 'Bookkeeping_BookkeepingManager'}}
+                                   ]}}}
+
+    :param str typeName: name of the monitoring type
+    :param dict condDict: conditions for the query
+
+                   * key -> name of the field
+                   * value -> list of possible values
+
+    :param int size: number of rows which whill be returned. By default is all
     """
+    if size < 0: 
+      size = self.RESULT_SIZE 
     retVal = self.getIndexName( typeName )
     if not retVal['OK']:
       return retVal
@@ -389,13 +405,20 @@ class MonitoringDB( ElasticDB ):
   def getLastDayData( self, typeName, condDict ):
     """
     It returns the last day data for a given monitoring type.
-    for example: {'sort': [{'timestamp': {'order': 'desc'}}],
-    'query': {'bool': {'must': [{'match': {'host': 'dzmathe.cern.ch'}},
-    {'match': {'component': 'Bookkeeping_BookkeepingManager'}}]}}}
-    :param str typeName name of the monitoring type
-    :param dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
+
+    :returns: for example
+
+      .. code-block:: python
+
+       {'sort': [{'timestamp': {'order': 'desc'}}],
+        'query': {'bool': {'must': [{'match': {'host': 'dzmathe.cern.ch'}},
+                                    {'match': {'component': 'Bookkeeping_BookkeepingManager'}}]}}}
+
+    :param str typeName: name of the monitoring type
+    :param dict condDict: conditions for the query
+
+                  * key -> name of the field
+                  * value -> list of possible values
     """
     return self.__getRawData( typeName, condDict )
 
@@ -403,10 +426,13 @@ class MonitoringDB( ElasticDB ):
   def getLimitedData( self, typeName, condDict, size = 10 ):
     """
     Returns a list of records for a given selection.
-    :param str typeName name of the monitoring type
-    :param dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
+
+    :param str typeName: name of the monitoring type
+    :param dict condDict: -> conditions for the query
+
+                  * key -> name of the field
+                  * value -> list of possible values
+
     :param int size: Indicates how many entries should be retrieved from the log
     :return: Up to size entries for the given component from the database
     """
@@ -416,10 +442,13 @@ class MonitoringDB( ElasticDB ):
   def getDataForAGivenPeriod( self, typeName, condDict, initialDate = '', endDate = '' ):
     """
     Retrieves the history of logging entries for the given component during a given given time period
-    :param: str typeName name of the monitoring type
-    :param: dict condDict -> conditions for the query
-                  key -> name of the field
-                  value -> list of possible values
+
+    :param str typeName: name of the monitoring type
+    :param dict condDict: conditions for the query
+
+                  * key -> name of the field
+                  * value -> list of possible values
+
     :param str initialDate: Indicates the start of the time period in the format 'DD/MM/YYYY hh:mm'
     :param str endDate: Indicate the end of the time period in the format 'DD/MM/YYYY hh:mm'
     :return: Entries from the database for the given component recorded between the initial and the end dates

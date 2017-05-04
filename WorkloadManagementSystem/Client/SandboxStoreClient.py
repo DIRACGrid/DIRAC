@@ -35,7 +35,7 @@ class SandboxStoreClient( object ):
     self.__vo = None
     if 'delegatedGroup' in kwargs:
       self.__vo = getVOForGroup( kwargs['delegatedGroup'] )
-    if SandboxStoreClient.__smdb == None:
+    if SandboxStoreClient.__smdb is None:
       try:
         from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
         SandboxStoreClient.__smdb = SandboxMetadataDB()
@@ -167,12 +167,6 @@ class SandboxStoreClient( object ):
       return S_ERROR( "Invalid sandbox URL" )
     SEName = sbSplit[0]
     SEPFN = "|".join( sbSplit[1:] )
-    # If destination dir is not specified use current working dir
-    # If its defined ensure the dir structure is there
-    if not destinationDir:
-      destinationDir = os.getcwd()
-    else:
-      mkDir(destinationDir)
 
     try:
       tmpSBDir = tempfile.mkdtemp( prefix = "TMSB." )
@@ -201,6 +195,13 @@ class SandboxStoreClient( object ):
         os.rmdir( tmpSBDir )
         return S_ERROR( 'Failed to read the sandbox archive: %s' % str( e ) )
       return S_OK( data )
+
+    # If destination dir is not specified use current working dir
+    # If its defined ensure the dir structure is there
+    if not destinationDir:
+      destinationDir = os.getcwd()
+    else:
+      mkDir(destinationDir)
 
     if not unpack:
       result[ 'Value' ] = tarFileName
@@ -252,11 +253,16 @@ class SandboxStoreClient( object ):
     sbDict = result[ 'Value' ]
     if sbType not in sbDict:
       return S_ERROR( "No %s sandbox registered for job %s" % ( sbType, jobId ) )
+
+    # If inMemory, ensure we return the newest sandbox only
+    if inMemory:
+      sbLocation = sbDict[ sbType ][ -1 ]
+      result = self.downloadSandbox( sbLocation, destinationPath, inMemory )
+      return result
+
     for sbLocation in sbDict[ sbType ]:
       result = self.downloadSandbox( sbLocation, destinationPath, inMemory )
       if not result[ 'OK' ]:
-        return result
-      if inMemory:
         return result
     return S_OK()
 

@@ -6,13 +6,13 @@ Data Management System
 
 .. toctree::
    :maxdepth: 1
-   
+
    agents
    fts
 
 .. contents:: Table of contents
    :depth: 4
-  
+
 
 The DIRAC Data Management System (DMS), together with the DIRAC Storage Management System (SMS) provides the necessary functionality to execute and control all activities related with your data. the DMS provides from the basic functionality to upload a local file in a StorageElement (SE) and register the corresponding replica in the FileCatalog (FC) to massive data replications using FTS or retrievals of data archived on Tape for it later processing.
 
@@ -41,6 +41,94 @@ DIRAC provides an abstraction of a SE interface that allows to access different 
       }
     }
 
+In order to factorize the configuration, it is possible to use BaseSE, which acts just like inheritance in object programming. You define a SE just like any other. This SE can then be refered to by another SE. This new SE will inherit all the configuration from its parents, and can override it.  For example::
+
+   CERN-EOS
+   {
+     BackendType = Eos
+     SEType = T0D1
+     AccessProtocol.1
+     {
+       Host = srm-eoslhcb.cern.ch
+       Port = 8443
+       PluginName = GFAL2_SRM2
+       Protocol = srm
+       Path = /eos/lhcb/grid/prod
+       Access = remote
+       SpaceToken = LHCb-EOS
+       WSUrl = /srm/v2/server?SFN=
+     }
+   }
+   CERN-DST-EOS
+   {
+     BaseSE = CERN-EOS
+   }
+   CERN-USER
+   {
+     BaseSE = CERN-EOS
+     PledgedSpace = 205
+     AccessProtocol.1
+     {
+      PluginName = GFAL2_SRM2
+      Path = /eos/lhcb/grid/user
+      SpaceToken = LHCb_USER
+     }
+   }
+
+
+This definition would be strictly equivalent to::
+
+   CERN-EOS
+   {
+     BackendType = Eos
+     SEType = T0D1
+     AccessProtocol.1
+     {
+       Host = srm-eoslhcb.cern.ch
+       Port = 8443
+       PluginName = GFAL2_SRM2
+       Protocol = srm
+       Path = /eos/lhcb/grid/prod
+       Access = remote
+       SpaceToken = LHCb-EOS
+       WSUrl = /srm/v2/server?SFN=
+     }
+   }
+   CERN-DST-EOS
+   {
+      BackendType = Eos
+      SEType = T0D1
+      AccessProtocol.1
+      {
+        Host = srm-eoslhcb.cern.ch
+        Port = 8443
+        PluginName = GFAL2_SRM2
+        Protocol = srm
+        Path = /eos/lhcb/grid/prod
+        Access = remote
+        SpaceToken = LHCb-EOS
+        WSUrl = /srm/v2/server?SFN=
+      }
+   }
+   CERN-USER
+   {
+      BackendType = Eos
+      SEType = T0D1
+      PledgedSpace = 205
+      AccessProtocol.1
+      {
+        Host = srm-eoslhcb.cern.ch
+        Port = 8443
+        PluginName = GFAL2_SRM2
+        Protocol = srm
+        Path = /eos/lhcb/grid/user
+        Access = remote
+        SpaceToken = LHCb_USER
+        WSUrl = /srm/v2/server?SFN=
+      }
+   }
+
+Note that in case of overwriting, the protocol sections are matched using the PluginName attribute, and not the section name, which is irrelevant at all.
 
 --------------
 Multi Protocol
@@ -48,18 +136,18 @@ Multi Protocol
 
 There are several aspects of multi protocol:
    - One SE supports several protocols
-   - SEs with different protocols need to interact 
+   - SEs with different protocols need to interact
    - We want to use different protocols for different operations
-   
+
 DIRAC supports all of them. The bottom line is that before executing an action on an SE, we check among all the plugins defined for it, which plugins are the most suitable.
 There are 4 Operation options under the `DataManagement` section used for that:
 
   - `RegistrationProtocols`: used to generate a URL that will be stored in the FileCatalog
-  - `AccessProtocols`: used to perform the read operations 
+  - `AccessProtocols`: used to perform the read operations
   - `WriteProtocols`: used to perform the write and remove operations
   - `ThirdPartyProtocols`: used in case of replications
-  
-When performing an action on an SE, the StorageElement class will evaluate, based on these lists, and following this preference order, which StoragePlugins to use. 
+
+When performing an action on an SE, the StorageElement class will evaluate, based on these lists, and following this preference order, which StoragePlugins to use.
 The behavior is straightforward for simple read or write actions. It is however a bit more tricky when it comes to third party copies.
 
 Each StoragePlugins has a list of protocols that it is able to accept as input and a list that it is able to generate. In most of the cases, for protocol X, the plugin
@@ -68,11 +156,34 @@ that can handle many more (xroot, gsiftp, etc). It may happen that the SE can be
 from storage A to storage B. Both of them have as plugins GFAL2_XROOT and GFAL2_SRM2; AccessProtocols is "root,srm", WriteProtocols is "srm" and ThirdPartyProtocols is "root,srm".
 The negociation between the storages to find common protocol for third party copy will lead to "root,srm". Since we follow the order, the sourceURL will be a root url,
 and it will be generated by GFAL2_XROOT because root is its native protocol (so we avoid asking the srm server for a root turl). The destination will only consider using
-GFAL2_SRM2 plugins because only srm is allowed as a write plugin, but since this plugins can take root URL as input, the copy will work. 
+GFAL2_SRM2 plugins because only srm is allowed as a write plugin, but since this plugins can take root URL as input, the copy will work.
 
 
 The WriteProtocols and AccessProtocols list can be locally overwritten in the SE definition.
-  
+
+
+
+--------------------------
+Available protocol plugins
+--------------------------
+
+DIRAC comes with a bunch of plugins that you can use to interact with StorageElements.
+These are the plugins that you should define in the `PluginName` option of your StorageElement definition.
+
+  - DIP: used for dips, the DIRAC custom protocol (useful for example for DIRAC SEs).
+  - File: offers an abstraction of the local access as an SE.
+  - SRM2: for the srm protocol, using the deprecated gfal libraries.
+  - RFIO: for the rfio protocol.
+  - Proxy: to be used with the StorageElementProxy.
+  - XROOT: for the xroot protocol, using the python xroot binding (http://xrootd.org/doc/python/xrootd-python-0.1.0/#).
+
+There are also a set of plugins based on the gfal2 libraries (https://dmc.web.cern.ch/projects).
+
+  - GFAL2_SRM2: for srm, replaces SRM2
+  - GFAL2_XROOT: for xroot, replaces XROOT
+  - GFAL2_HTTPS: for https
+  - GFAL2_GSIFTP: for gsiftp
+
 
 ----------------------
 FTS transfers in DIRAC
@@ -114,7 +225,7 @@ In order to configure and test support for FTS transfers in your DIRAC installat
  $ glite-transfer-channel-list -s https://fts.pic.es:8443/glite-data-transfer-fts/services/ChannelManagement STAR-PIC
  Channel: STAR-PIC
  Between: * and PIC
- State: Active 
+ State: Active
  Contact: fts-support@pic.es
  Bandwidth: 0
  Nominal throughput: 0
@@ -125,8 +236,8 @@ In order to configure and test support for FTS transfers in your DIRAC installat
  VO 'dteam' share is: 50
  VO 'lhcb' share is: 50
  VO 'ops' share is: 50
- 
-   
+
+
 - Include the URL of the FTS server in the DIRAC Configuration:
 
 ::
@@ -150,10 +261,10 @@ In order to configure and test support for FTS transfers in your DIRAC installat
 
 ::
 
-   from DIRAC.Core.Base import Script  
+   from DIRAC.Core.Base import Script
    Script.parseCommandLine()
    from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-   
+
    sourceSite = 'ShortSite-Name1'         # LCG.CERN.ch -> CERN
    destinationSite = 'ShortSite-Name2'
 
@@ -171,29 +282,29 @@ In order to configure and test support for FTS transfers in your DIRAC installat
 
 ::
 
- $ dirac-dms-fts-submit -h 
+ $ dirac-dms-fts-submit -h
    Submit an FTS request, monitor the execution until it completes
  Usage:
    dirac-dms-fts-submit [option|cfgfile] ... LFN sourceSE targetSE
  Arguments:
    LFN:      Logical File Name or file containing LFNs
    sourceSE: Valid DIRAC SE
-   targetSE: Valid DIRAC SE 
- General options: 
-   -o:  --option=         : Option=value to add 
-   -s:  --section=        : Set base section for relative parsed options 
-   -c:  --cert=           : Use server certificate to connect to Core Services 
-   -d   --debug           : Set debug mode (-dd is extra debug) 
-   -h   --help            : Shows this help 
+   targetSE: Valid DIRAC SE
+ General options:
+   -o:  --option=         : Option=value to add
+   -s:  --section=        : Set base section for relative parsed options
+   -c:  --cert=           : Use server certificate to connect to Core Services
+   -d   --debug           : Set debug mode (-dd is extra debug)
+   -h   --help            : Shows this help
 
 ::
 
-  $ dirac-dms-fts-submit /lhcb/user/r/rgracian/fts_test CNAF-USER PIC-USER 
+  $ dirac-dms-fts-submit /lhcb/user/r/rgracian/fts_test CNAF-USER PIC-USER
   Submitted b3c7c25a-1d14-11e1-abe9-dc229ac9908c @ https://fts.pic.es:8443/glite-data-transfer-fts/services/FileTransfer
-  |====================================================================================================>| 100.0% Finished           
+  |====================================================================================================>| 100.0% Finished
 
 
 Using this script, the request to the FTS server will be formulated following the information configured in DIRAC, and will be submitted form your client to the selected FTS server with your local credential. Make sure you are using a proxy that is authorized at your FTS server (usually only some specific users in the VO are allowed, contact the administrators of the site offering you this server in case of doubts).
 
 .. include:: agents.rst
-.. include:: data_logging_system.rst 
+.. include:: data_logging_system.rst

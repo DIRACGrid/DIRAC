@@ -2,14 +2,14 @@
 
   Configuration to use policies.
 
-  Follows the schema:
+  Follows the schema::
 
-  <PolicyNameInCS> : {
-             'description' : <some human readable description>,
-             'module'      : <policy module name>,
-             'command'     : ( <command module name >, < command class name > ),
-             'args'        : { arguments for the command } or None
-                     }
+    <PolicyNameInCS> : {
+               'description' : <some human readable description>,
+               'module'      : <policy module name>,
+               'command'     : ( <command module name >, < command class name > ),
+               'args'        : { arguments for the command } or None
+                       }
 
 """
 
@@ -85,6 +85,13 @@ POLICIESMETA = { # DownTime POLICIES
         'args'        : { 'onlyCache' : True, 'timespan' : 1800 }
     },
 
+    # Site status propagation POLICIES..............................................................
+    'PropagationPolicy': {
+        'description' : "Site status propagation",
+        'module'      : 'PropagationPolicy',
+        'command'     : ( 'PropagationCommand', 'PropagationCommand' ),
+        'args'        : { 'onlyCache' : True, 'timespan' : 1800 }
+    },
 
     # ALWAYS SOMETHING POLICIES...................................................
     'AlwaysActive': {

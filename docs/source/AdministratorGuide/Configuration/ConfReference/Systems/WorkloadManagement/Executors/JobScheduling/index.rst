@@ -35,3 +35,6 @@ This Executor will fail affected jobs meaningfully.
 | *AllowInvalidSites*     | If set to False, jobs will be held if   | AllowInvalidSites = False                  |
 |                         | any of the Sites specified are invalid. | (default value is True)                    |
 +-------------------------+-----------------------------------------+--------------------------------------------+
+| *CheckOnlyTapeSEs*      | If set to False, the optimizer will     | CheckOnlyTapeSEs = False                   |
+|                         | check the presence of all replicas      | (default value is True)                    |
++-------------------------+-----------------------------------------+--------------------------------------------+

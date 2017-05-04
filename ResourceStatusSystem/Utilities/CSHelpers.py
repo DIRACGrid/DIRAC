@@ -385,6 +385,21 @@ def getSiteStorageElements( siteName ):
 
   return []
 
+def getSiteElements( siteName ):
+  '''
+    Gets all the computing and storage elements for a given site
+  '''
+
+  resources = []
+
+  ses = getSiteStorageElements(siteName)
+  resources = resources + ses
+
+  ce = getSiteComputingElements(siteName)
+  resources = resources + ce
+
+  return S_OK( resources )
+
 def getQueues():
   '''
     Gets all computing elements from /Resources/Sites/<>/<>/CE/Queues

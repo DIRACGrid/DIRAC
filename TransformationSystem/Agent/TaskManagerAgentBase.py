@@ -23,6 +23,7 @@ from DIRAC.Core.Security.ProxyInfo                                  import getPr
 from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 __RCSID__ = "$Id$"
 
@@ -114,7 +115,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self.log.verbose( "Monitoring of tasks is disabled. To enable it, create the 'MonitorTasks' option" )
     else:
       # Get the transformations for which the tasks have to be updated
-      status = self.am_getOption( 'UpdateTasksStatus', ['Active', 'Completing', 'Stopped'] )
+      status = self.am_getOption( 'UpdateTasksTransformationStatus', self.am_getOption( 'UpdateTasksStatus', ['Active', 'Completing', 'Stopped'] ) )
       transformations = self._selectTransformations( transType = self.transType, status = status, agentType = [] )
       if not transformations['OK']:
         self.log.warn( "Could not select transformations:", transformations['Message'] )
@@ -130,7 +131,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self.log.verbose( "Monitoring of files is disabled. To enable it, create the 'MonitorFiles' option" )
     else:
       # Get the transformations for which the files have to be updated
-      status = self.am_getOption( 'UpdateFilesStatus', ['Active', 'Completing', 'Stopped'] )
+      status = self.am_getOption( 'UpdateFilesTransformationStatus', self.am_getOption( 'UpdateFilesStatus', ['Active', 'Completing', 'Stopped'] ) )
       transformations = self._selectTransformations( transType = self.transType, status = status, agentType = [] )
       if not transformations['OK']:
         self.log.warn( "Could not select transformations:", transformations['Message'] )
@@ -149,7 +150,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self.log.verbose( "Checking of reserved tasks is disabled. To enable it, create the 'CheckReserved' option" )
     else:
       # Get the transformations for which the check of reserved tasks have to be performed
-      status = self.am_getOption( 'CheckReservedStatus', ['Active', 'Completing', 'Stopped'] )
+      status = self.am_getOption( 'CheckReservedTransformationStatus', self.am_getOption( 'CheckReservedStatus', ['Active', 'Completing', 'Stopped'] ) )
       transformations = self._selectTransformations( transType = self.transType, status = status, agentType = [] )
       if not transformations['OK']:
         self.log.warn( "Could not select transformations:", transformations['Message'] )
@@ -178,7 +179,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self.ownerDN = proxyInfo['identity']
       self.log.info( "Tasks will be submitted with the credentials %s:%s" % ( self.owner, self.ownerGroup ) )
       # Get the transformations for which the check of reserved tasks have to be performed
-      status = self.am_getOption( 'SubmitStatus', ['Active', 'Completing'] )
+      status = self.am_getOption( 'SubmitTransformationStatus', self.am_getOption( 'SubmitStatus', ['Active', 'Completing'] ) )
       transformations = self._selectTransformations( transType = self.transType, status = status )
       if not transformations['OK']:
         self.log.warn( "Could not select transformations:", transformations['Message'] )
@@ -253,6 +254,9 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     while True:
       startTime = time.time()
       transIDOPBody = self.transQueue.get()
+      if not self.transInQueue:
+        # Queue was cleared, nothing to do
+        continue
       try:
         transID = transIDOPBody.keys()[0]
         operations = transIDOPBody[transID]['Operations']
@@ -279,9 +283,9 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
           transID = 'None'
         self._logInfo( "Processed transformation in %.1f seconds" % ( time.time() - startTime ),
                        method = method, transID = transID )
-        self._logVerbose( "%d transformations still in queue" % ( len( self.transInQueue ) - 1 ),
-                          method = method, transID = transID )
         self.transInThread.pop( transID, None )
+        self._logVerbose( "%d transformations still in queue" % ( len( self.transInThread ) ),
+                          method = method, transID = transID )
         if transID in self.transInQueue:
           self.transInQueue.remove( transID )
         self._logDebug( "transInQueue = ", self.transInQueue,
@@ -308,8 +312,6 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     transformationTasks = clients['TransformationClient'].getTransformationTasks( condDict = condDict,
                                                                                   older = timeStamp,
                                                                                   timeStamp = 'LastUpdateTime' )
-    self._logDebug( "getTransformationTasks(%s) return value:" % str( condDict ), transformationTasks,
-                    method = method, transID = transID )
     if not transformationTasks['OK']:
       self._logError( "Failed to get tasks to update:", transformationTasks['Message'],
                       method = method, transID = transID )
@@ -318,35 +320,50 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self._logVerbose( "No tasks found to update",
                         method = method, transID = transID )
       return transformationTasks
-    self._logVerbose( "Getting %d tasks status" % len( transformationTasks['Value'] ),
-                      method = method, transID = transID )
 
     # Get status for the transformation tasks
-    submittedTaskStatus = clients['TaskManager'].getSubmittedTaskStatus( transformationTasks['Value'] )
-    self._logDebug( "getSubmittedTaskStatus return value:", submittedTaskStatus,
-                    method = method, transID = transID )
-    if not submittedTaskStatus['OK']:
-      self._logError( "Failed to get updated task states:", submittedTaskStatus['Message'],
-                      method = method, transID = transID )
-      return submittedTaskStatus
-    statusDict = submittedTaskStatus['Value']
-    if not statusDict:
-      self._logInfo( "No tasks to update",
-                     method = method, transID = transID )
-      return S_OK()
-
-    # Set status for tasks that changes
-    for status, taskIDs in statusDict.iteritems():
-      self._logInfo( "Updating %d task(s) to %s" % ( len( taskIDs ), status ),
-                     method = method, transID = transID )
-      setTaskStatus = clients['TransformationClient'].setTaskStatus( transID, taskIDs, status )
-      self._logDebug( "setTaskStatus return value:", setTaskStatus,
-                      method = method, transID = transID )
-      if not setTaskStatus['OK']:
-        self._logError( "Failed to update task status for transformation:", setTaskStatus['Message'],
+    chunkSize = self.am_getOption( 'TaskUpdateChunkSize', 0 )
+    # FIXME: Stupid piece of code to make tests happy...
+    try:
+      chunkSize = int( chunkSize )
+    except:
+      chunkSize = 0
+    if chunkSize:
+      self._logVerbose( "Getting %d tasks status (chunks of %d)" %
+                        ( len( transformationTasks['Value'] ), chunkSize ),
                         method = method, transID = transID )
-        return setTaskStatus
+    else:
+      self._logVerbose( "Getting %d tasks status" %
+                        len( transformationTasks['Value'] ),
+                        method = method, transID = transID )
+    updated = {}
+    for nb, taskChunk in enumerate( breakListIntoChunks( transformationTasks['Value'], chunkSize )
+                                    if chunkSize else
+                                    [transformationTasks['Value']] ):
+      submittedTaskStatus = clients['TaskManager'].getSubmittedTaskStatus( taskChunk )
+      if not submittedTaskStatus['OK']:
+        self._logError( "Failed to get updated task states:", submittedTaskStatus['Message'],
+                        method = method, transID = transID )
+        return submittedTaskStatus
+      statusDict = submittedTaskStatus['Value']
+      if not statusDict:
+        self._logVerbose( "%4d: No tasks to update" % nb,
+                          method = method, transID = transID )
 
+      # Set status for tasks that changes
+      for status, taskIDs in statusDict.iteritems():
+        self._logVerbose( "%4d: Updating %d task(s) to %s" % ( nb, len( taskIDs ), status ),
+                       method = method, transID = transID )
+        setTaskStatus = clients['TransformationClient'].setTaskStatus( transID, taskIDs, status )
+        if not setTaskStatus['OK']:
+          self._logError( "Failed to update task status for transformation:", setTaskStatus['Message'],
+                          method = method, transID = transID )
+          return setTaskStatus
+        updated[status] = updated.setdefault( status, 0 ) + len( taskIDs )
+
+    for status, nb in updated.iteritems():
+      self._logInfo( "Updated %d tasks to status %s" % ( nb, status ),
+                     method = method, transID = transID )
     return S_OK()
 
   def updateFileStatus( self, transIDOPBody, clients ):
@@ -361,8 +378,6 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     condDict = {'TransformationID' : transID, 'Status' : ['Assigned']}
     transformationFiles = clients['TransformationClient'].getTransformationFiles( condDict = condDict,
                                                                                   older = timeStamp, timeStamp = 'LastUpdate' )
-    self._logDebug( "getTransformationFiles(%s) return value:" % str( condDict ), transformationFiles,
-                    method = method, transID = transID )
     if not transformationFiles['OK']:
       self._logError( "Failed to get transformation files to update:", transformationFiles['Message'],
                       method = method, transID = transID )
@@ -373,34 +388,51 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       return transformationFiles
 
     # Get the status of the transformation files
-    submittedFileStatus = clients['TaskManager'].getSubmittedFileStatus( transformationFiles['Value'] )
-    self._logDebug( "getSubmittedFileStatus return value:", submittedFileStatus,
-                    method = method, transID = transID )
-    if not submittedFileStatus['OK']:
-      self._logError( "Failed to get updated file states for transformation:", submittedFileStatus['Message'],
-                      method = method, transID = transID )
-      return submittedFileStatus
-    statusDict = submittedFileStatus['Value']
-    if not statusDict:
-      self._logInfo( "No file states to be updated",
-                     method = method, transID = transID )
-      return S_OK()
+    # Sort the files by taskID
+    taskFiles = {}
+    for fileDict in transformationFiles['Value']:
+      taskFiles.setdefault( fileDict['TaskID'], [] ).append( fileDict )
 
-    # Set the status of files
-    fileReport = FileReport( server = clients['TransformationClient'].getServer() )
-    for lfn, status in statusDict.iteritems():
-      setFileStatus = fileReport.setFileStatus( transID, lfn, status )
-      if not setFileStatus['OK']:
-        return  setFileStatus
-    commit = fileReport.commit()
-    if not commit['OK']:
-      self._logError( "Failed to update file states for transformation:", commit['Message'],
+    chunkSize = 100
+    self._logVerbose( "Getting file status for %d tasks (chunks of %d)" %
+                      ( len( taskFiles ), chunkSize ),
                       method = method, transID = transID )
-      return commit
-    else:
-      self._logInfo( "Updated the states of %d files" % len( commit['Value'] ),
-                     method = method, transID = transID )
+    updated = {}
+    # Process 100 tasks at a time
+    for nb, taskIDs in enumerate( breakListIntoChunks( taskFiles, chunkSize ) ):
+      fileChunk = []
+      for taskID in taskIDs:
+        fileChunk += taskFiles[taskID]
+      submittedFileStatus = clients['TaskManager'].getSubmittedFileStatus( fileChunk )
+      if not submittedFileStatus['OK']:
+        self._logError( "Failed to get updated file states for transformation:", submittedFileStatus['Message'],
+                        method = method, transID = transID )
+        return submittedFileStatus
+      statusDict = submittedFileStatus['Value']
+      if not statusDict:
+        self._logVerbose( "%4d: No file states to be updated" % nb,
+                          method = method, transID = transID )
+        continue
 
+      # Set the status of files
+      fileReport = FileReport( server = clients['TransformationClient'].getServer() )
+      for lfn, status in statusDict.iteritems():
+        updated[status] = updated.setdefault( status, 0 ) + 1
+        setFileStatus = fileReport.setFileStatus( transID, lfn, status )
+        if not setFileStatus['OK']:
+          return  setFileStatus
+      commit = fileReport.commit()
+      if not commit['OK']:
+        self._logError( "Failed to update file states for transformation:", commit['Message'],
+                        method = method, transID = transID )
+        return commit
+      else:
+        self._logVerbose( "%4d: Updated the states of %d files" % ( nb, len( commit['Value'] ) ),
+                          method = method, transID = transID )
+
+    for status, nb in updated.iteritems():
+      self._logInfo( "Updated %d files to status %s" % ( nb, status ),
+                     method = method, transID = transID )
     return S_OK()
 
   def checkReservedTasks( self, transIDOPBody, clients ):
@@ -437,16 +469,17 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     taskNameIDs = res['Value']['TaskNameIDs']
 
     # For the tasks with no associated request found re-set the status of the task in the transformationDB
-    for taskName in noTasks:
-      transID, taskID = self._parseTaskName( taskName )
-      self._logInfo( "Resetting status of %s to Created as no associated task found" % ( taskName ),
+    if noTasks:
+      self._logInfo( "Resetting status of %d tasks to Created as no associated job/request found" % len( noTasks ),
                      method = method, transID = transID )
-      res = clients['TransformationClient'].setTaskStatus( transID, taskID, 'Created' )
-      if not res['OK']:
-        self._logError( "Failed to update task status and ID after recovery:",
-                        '%s %s' % ( taskName, res['Message'] ),
-                        method = method, transID = transID )
-        return res
+      for taskName in noTasks:
+        transID, taskID = self._parseTaskName( taskName )
+        res = clients['TransformationClient'].setTaskStatus( transID, taskID, 'Created' )
+        if not res['OK']:
+          self._logError( "Failed to update task status and ID after recovery:",
+                          '%s %s' % ( taskName, res['Message'] ),
+                          method = method, transID = transID )
+          return res
 
     # For the tasks for which an associated request was found update the task details in the transformationDB
     for taskName, extTaskID in taskNameIDs.items():

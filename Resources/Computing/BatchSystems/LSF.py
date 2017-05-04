@@ -1,5 +1,4 @@
 #########################################################################################
-# $HeadURL$
 # LSF.py
 # 10.11.2014
 # Author: A.T.
@@ -7,31 +6,33 @@
 
 """ LSF.py is a DIRAC independent class representing LSF batch system.
     LSF objects are used as backend batch system representation for
-    LocalComputingElement and SSHComputingElement classes 
+    LocalComputingElement and SSHComputingElement classes
 """
 
 __RCSID__ = "$Id$"
 
-import re, commands, os
+import re
+import commands
+import os
 
 class LSF( object ):
-  
+
   def submitJob( self, **kwargs ):
     """ Submit nJobs to the condor batch system
     """
-    
+
     resultDict = {}
-    
-    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir', 
+
+    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir',
                              'WorkDir', 'SubmitOptions', 'Queue' ]
     for argument in MANDATORY_PARAMETERS:
       if not argument in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-      
-    nJobs = kwargs.get( 'NJobs', 1 )  
-    
+        return resultDict
+
+    nJobs = kwargs.get( 'NJobs', 1 )
+
     outputs = []
     outputDir = kwargs['OutputDir']
     errorDir = kwargs['ErrorDir']
@@ -51,11 +52,11 @@ class LSF( object ):
       if status == 0:
         outputs.append(output)
       else:
-        break                                                         
-  
+        break
+
     if outputs:
       resultDict['Status'] = 0
-      resultDict['Jobs'] = []      
+      resultDict['Jobs'] = []
       for output in outputs:
         match = re.search('Job <(\d*)>',output)
         if match:
@@ -63,28 +64,28 @@ class LSF( object ):
     else:
       resultDict['Status'] = status
       resultDict['Message'] = output
-      
+
     return resultDict
-  
+
   def killJob( self, **kwargs ):
     """ Kill jobs in the given list
     """
-    
+
     resultDict = {}
-    
+
     MANDATORY_PARAMETERS = [ 'JobIDList' ]
     for argument in MANDATORY_PARAMETERS:
       if not argument in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-    
+        return resultDict
+
     jobIDList = kwargs.get( 'JobIDList' )
     if not jobIDList:
       resultDict['Status'] = -1
       resultDict['Message'] = 'Empty job list'
       return resultDict
-    
+
     successful = []
     failed = []
     for job in jobIDList:
@@ -92,8 +93,8 @@ class LSF( object ):
       if status != 0:
         failed.append( job )
       else:
-        successful.append( job )  
-    
+        successful.append( job )
+
     resultDict['Status'] = 0
     if failed:
       resultDict['Status'] = 1
@@ -101,7 +102,7 @@ class LSF( object ):
     resultDict['Successful'] = successful
     resultDict['Failed'] = failed
     return resultDict
-  
+
   def getCEStatus( self, **kwargs ):
     """ Method to return information on running and pending jobs.
     """
@@ -113,11 +114,11 @@ class LSF( object ):
       if not argument in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-      
-    queue = kwargs['Queue'] 
+        return resultDict
 
-    cmd = "bjobs -q %s -a" % queue 
+    queue = kwargs['Queue']
+
+    cmd = "bjobs -q %s -a" % queue
     status, output = commands.getstatusoutput( cmd )
 
     if status != 0:
@@ -139,34 +140,34 @@ class LSF( object ):
     resultDict["Waiting"] = waitingJobs
     resultDict["Running"] = runningJobs
     return resultDict
-  
+
   def getJobStatus( self, **kwargs ):
     """ Get the status information for the given list of jobs
     """
 
     resultDict = {}
-    
+
     MANDATORY_PARAMETERS = [ 'JobIDList' ]
     for argument in MANDATORY_PARAMETERS:
       if not argument in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-      
-    jobIDList = kwargs['JobIDList']  
+        return resultDict
+
+    jobIDList = kwargs['JobIDList']
     if not jobIDList:
       resultDict['Status'] = -1
       resultDict['Message'] = 'Empty job list'
       return resultDict
-    
+
     cmd = 'bjobs ' + ' '.join( jobIDList )
     status, output = commands.getstatusoutput( cmd )
-    
+
     if status != 0:
       resultDict['Status'] = status
       resultDict['Message'] = output
       return resultDict
-    
+
     output = output.replace( '\r', '' )
     lines = output.split( '\n' )
     statusDict = {}
@@ -188,6 +189,5 @@ class LSF( object ):
     # Final output
     status = 0
     resultDict['Status'] = 0
-    resultDict['Jobs'] = statusDict 
-    return resultDict  
-  
+    resultDict['Jobs'] = statusDict
+    return resultDict
