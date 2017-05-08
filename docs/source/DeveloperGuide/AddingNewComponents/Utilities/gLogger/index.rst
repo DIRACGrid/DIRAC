@@ -401,3 +401,9 @@ options and set a certain level. Here is a table explaining the working:
 +----------------------------------+----------------+----------------+-----------+
 | -ddd                             | True           | True           | Debug     |
 +----------------------------------+----------------+----------------+-----------+
+
+Multiple processes
+------------------
+
+*DIRAC* is composed by many micro services running in multiple processes. *gLogger* object is naturally different for two distinct processes and can not save the application from process conflicts. 
+Indeed, *gLogger* is not process-safe, that means that two processes can encounter conflicts if they try to write on a same file at the same time. So, be careful to avoid the case.
