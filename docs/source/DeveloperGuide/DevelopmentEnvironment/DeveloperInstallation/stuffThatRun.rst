@@ -13,14 +13,14 @@ can even be used while being disconnected from the Internet.
 
 
 What is this for?
------------------
+=================
 
 Here we describe the suggested method for developing those part of DIRAC that "run", e.g. databases, services, and agents.
 You need this type of installation for running so-called unit tests.
 
 
 Do I need this?
------------------
+===============
 
 Maybe. It depends from you want to develop.
 
@@ -31,7 +31,7 @@ you better keep reading.
 
 
 Notes before continuing, on top of what is in section :ref:`editing_code`
----------------------------------------------------------------------------
+=========================================================================
 
 *OS*: a DIRAC server can be installed, as of today, only on SLC6/CC7 OS.
 The reason being some binaries are proved to work only there,
@@ -41,7 +41,7 @@ Or, using a Virtual Machine, or a docker instance. We'll go through this.
 
 
 Stuff you need to have installed, on top of what is in section :ref:`editing_code`
--------------------------------------------------------------------------------------
+==================================================================================
 
 *docker*: `docker <https://docs.docker.com/>`_ is as of today a "standard" for applications' containerization.
 The following examples use a DIRAC's base docker image for running DIRAC components.
@@ -50,7 +50,7 @@ If you don't want to use *docker*, you can use a virtual machine.
 
 
 Setting up your development installation
-==================================================
+----------------------------------------
 
 The following steps will try to guide
 you on setting up a development environment for DIRAC (or its extensions)
@@ -59,25 +59,25 @@ with a docker image with which you will run code that you develop.
 
 
 Install the DIRAC docker image
-------------------------------
+==============================
 
 [to expand]
 
 
 What's in this image?
-----------------------
+=====================
 
 [to expand]
 
 
 Sorting out the PATHs
----------------------
 
+=====================
 [to expand]
 
 
 Configure DIRAC
----------------
+===============
 
 We'll configure DIRAC to work in isolation. At this point, the key
 becomes understanding how the DIRAC
@@ -165,7 +165,7 @@ If you want to create an isolated installation just create a
 
 
 Certificates
--------------
+============
 
 DIRAC understands certificates in *pem* format. That means that a certificate set will consist of two files.
 Files ending in *cert.pem* can be world readable but just user writable since it contains the certificate and public key.
@@ -194,7 +194,7 @@ to register the host replace "/your/box/dn/goes/here"
 
 
 Is my installation correctly done?
---------------------------------------
+==================================
 
 We will now do few, very simple checks. The first can be done by using the python interactive shell.
 For these examples I will actually use `iPython <http://ipython.org/>`_, which is a highly recommended shell.
@@ -226,6 +226,6 @@ Do not think about you just typed right now. It will become more clear later.
 
 
 Ready!
-------
+======
 
 You're (even more) ready for DIRAC development!
