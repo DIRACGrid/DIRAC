@@ -253,8 +253,8 @@ class HostLogging( componentsBase ):
   Swap = Column( 'Swap', String( 32 ) )
   CPUClock = Column( 'CPUClock', String( 32 ) ) # float
   CPUModel = Column( 'CPUModel', String( 64 ) )
-  CertificateDN = Column( 'CertificateDN', String( 64 ) )
-  CertificateIssuer = Column( 'CertificateIssuer', String( 64 ) )
+  CertificateDN = Column( 'CertificateDN', String( 128 ) )
+  CertificateIssuer = Column( 'CertificateIssuer', String( 128 ) )
   CertificateValidity = Column( 'CertificateValidity', String( 64 ) )
   Cores = Column( 'Cores', Integer )
   PhysicalCores = Column( 'PhysicalCores', Integer )
