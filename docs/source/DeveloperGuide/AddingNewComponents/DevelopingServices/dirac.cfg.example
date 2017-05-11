@@ -1,0 +1,236 @@
+LocalSite
+{
+  Site = DIRAC.DevBox.org
+}
+DIRAC
+{
+  Setup = DeveloperSetup
+  Setups
+  {
+    DeveloperSetup
+    {
+      Accounting = Development
+      Configuration = Development
+      DataManagement = Development
+      Framework = Development
+      Monitoring = Development
+      RequestManagement = Development
+      ResourceStatus = Development
+      StorageManagement = Development
+      Transformation = Development
+      WorkloadManagement = Development
+    }
+  }
+}
+Systems
+{
+  Database
+  {
+    User = Dirac
+    Password = Dirac
+    RootPwd = Dirac
+    Host = localhost
+    RootUser = root
+  }
+  NoSQLDatabase
+  {
+    User = Dirac
+    Password = Dirac
+    Host = localhost
+    Port = 9203
+  }
+  Accounting
+  {
+    Development
+    {
+      Agents
+      {
+      }
+      URLs
+      {
+      }
+      Services
+      {
+      }
+      Databases
+      {
+      }
+    }
+  }
+  Framework
+  {
+    Development
+    {
+      URLs
+      {
+        Hello = dips://localhost:3424/Framework/Hello
+      }
+      Services
+      {
+        Hello
+        {
+          Port = 3424
+          DisableMonitoring = yes
+          Authorization
+          {
+            Default = all
+          }
+        }
+      }
+    }
+  }
+  ResourceStatus
+  {
+    Development
+    {
+      Agents
+      {
+      }
+      URLs
+      {
+      }
+      Services
+      {
+      }
+      Databases
+      {
+      }
+    }
+  }
+  WorkloadManagement
+  {
+    Development
+    {
+      Agents
+      {
+      }
+      URLs
+      {
+      }
+      Services
+      {
+      }
+      Databases
+      {
+      }
+      Executors
+      {
+      }
+    }
+  }
+  Transformation
+  {
+    Development
+    {
+      Agents
+      {
+      }
+      URLs
+      {
+      }
+      Services
+      {
+      }
+      Databases
+      {
+      }
+    }
+  }
+  RequestManagement
+  {
+    Development
+    {
+      Agents
+      {
+      }
+      URLs
+      {
+      }
+      Services
+      {
+      }
+      Databases
+      {
+      }
+    }
+  }
+  DataManagement
+  {
+    Development
+    {
+      Agents
+      {
+      }
+      URLs
+      {
+      }
+      Services
+      {
+      }
+      Databases
+      {
+      }
+    }
+  }
+}
+Registry
+{
+  DefaultGroup = lhcb_user
+  Users
+  {
+    ciuser
+    {
+      DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=ciuser@diracgrid.org
+      Email = ciuser@diracgrid.org
+    }
+  }
+  Groups
+  {
+    user
+    {
+      Users = ciuser
+      Properties = NormalUser
+    }
+    dirac_admin
+    {
+      Users = ciuser
+      Properties = AlarmsManagement
+      Properties += ServiceAdministrator
+      Properties += CSAdministrator
+      Properties += JobAdministrator
+      Properties += FullDelegation
+      Properties += ProxyManagement
+      Properties += Operator
+    }
+    prod
+    {
+      Users = ciuser
+      Properties = Operator
+      Properties += FullDelegation
+      Properties += ProxyManagement
+      Properties += ServiceAdministrator
+      Properties += JobAdministrator
+      Properties += CSAdministrator
+      Properties += AlarmsManagement
+      Properties += FileCatalogManagement
+      Properties += SiteManager
+      Properties += NormalUser
+    }
+  }
+  Hosts
+  {
+    localhost
+    {
+      DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=DIRACDockerDevBox/emailAddress=DIRACDockerDevBox@diracgrid.org
+      Properties = JobAdministrator
+      Properties += FullDelegation
+      Properties += Operator
+      Properties += CSAdministrator
+      Properties += ProductionManagement
+      Properties += AlarmsManagement
+      Properties += TrustedHost
+      Properties += SiteManager
+    }
+  }
+  DefaultGroup = user
+}
