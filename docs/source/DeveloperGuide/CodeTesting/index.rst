@@ -6,7 +6,7 @@ Testing (VO)DIRAC
 
 
 Who should read this document
-------------------------------------------
+==============================
 
 - *All (VO)DIRAC developers* should read, at least, the sections about unit tests and integration tests
 - *All software testers* should read fully this document
@@ -16,7 +16,7 @@ NB: if you are a developer coordinator, you better be most and foremost, a devel
 
 
 Why this document should be interesting for you
----------------------------------------------------------------
+===============================================
 
 - Because you want your code to work as expected
 - Because preventing disasters is better than fixing them afterwards
@@ -24,33 +24,48 @@ Why this document should be interesting for you
 
 
 What we mean by testing
-------------------------------------------
+========================
 
-Every large enough software project needs to be carefully tested, monitored and evaluated to assure that minimum standards of quality are being attained by the development process. A primary purpose of that is to detect software and configuration failures so that defects may be discovered and corrected before making official release and to check if software meets requirements and works as expected. Testing itself could also speed up the development process rapidly tracing problems introduced with the new code.
+Every large enough software project needs to be carefully tested,
+monitored and evaluated to assure that minimum standards of quality are being attained by the development process.
+A primary purpose of that is to detect software and configuration failures
+so that defects may be discovered and corrected before making official release and to check if software meets requirements and works as expected.
+Testing itself could also speed up the development process rapidly tracing problems introduced with the new code.
 
-DIRAC is not different from that scenario, with the exception that service-oriented architecture paradigm, which is one of the basic concepts of the project, making the quality assurance and testing process the real challenge. However as DIRAC becomes more and more popular and now is being used by several different communities, the main question is not: *to test or not to test?*, but rather: *how to test in an efficient way?*
+DIRAC is not different from that scenario, with the exception that service-oriented architecture paradigm,
+which is one of the basic concepts of the project, making the quality assurance and testing process the real challenge.
+However as DIRAC becomes more and more popular and now is being used by several different communities,
+the main question is not: *to test or not to test?*, but rather: *how to test in an efficient way?*
 
-The topic of software testing is very complicated by its own nature, but depending on the testing method employed, the testing process itself can be implemented at any time in the development phase and ideally should cover many different levels of the system:
+The topic of software testing is very complicated by its own nature, but depending on the testing method employed,
+the testing process itself can be implemented at any time in the development phase and ideally should cover many different levels of the system:
 
 - *unit tests*, in which the responsible person for one source file is proving that his code is written in a right way,
 - *integration tests* that should cover whole group of modules combined together to accomplish one well defined task,
-- *regression tests* that seek for errors in existing functionality after patches, functionality enhancements and or configuration   changes have been made to the software,
+- *regression tests* that seek for errors in existing functionality after patches, functionality enhancements and or configuration changes have been made to the software,
 - *certification tests* (or *system tests*), which are run against the integrated and compiled system, treating it as a black box and trying to evaluate the system's compliance with its specified requirements.
 
-If your unit tests are not passing, you should not think yet to start the integration tests. Similarly, if your unit tests show some broken software, you should not bother running any system test.
+If your unit tests are not passing, you should not think yet to start the integration tests.
+Similarly, if your integration tests show some broken software, you should not bother running any system test.
 
 
 
-Unit tests
------------------------
+Who should write (and run) the tests
+========================================
 
-In DIRAC the unit tests should be prepared for the developer herself, integration tests could be developed in groups of code responsible persons, for regression tests the responsible person should be a complete subsystem (i.e. WMS, DMS, SMS etc..) manager, while certification tests should be prepared and performed by release managers.
+In DIRAC the unit tests should be prepared for the developer herself,
+integration tests could be developed in groups of code responsible persons,
+for regression tests the responsible person should be a complete subsystem (i.e. WMS, DMS, SMS etc..) manager,
+while certification tests should be prepared and performed by release managers.
 
 
 Tools and methodology
----------------------
+----------------------
 
-In DIRAC unit tests should be prepared for the developer herself. As the main implementation language is Python, the developers should
+Unit tests
+==========
+
+In DIRAC unit tests should be prepared by the developer herself. As the main implementation language is Python, the developers should
 use its default tool for unit testing, which is already a part of any Python distributions: the unittest_ module.
 
 This module provides a rich set of tools for constructing and running tests, supporting some very important concepts, like:
@@ -111,7 +126,7 @@ performance issues, cleaning up the code from repetitions, new features, patchin
 So from this point the whole developing cycle can start again and again and again...
 
 Test doubles
-------------
+============
 
 Unit tests should run in *isolation*. Which means that they should run without having DIRAC fully installed, because, remember, they should just test the code logic. If, to run a unit test in DIRAC, you need a dirac.cfg file to be present, you are failing your goal.
 
@@ -153,7 +168,7 @@ components and the developer can freely choose only those that are used in her o
 
 
 Example
--------
+=========
 
 NOTA BENE: the example that follows suppose that the reader has already a basic familiarity with some DIRAC constructs. If this is not the case, we suggest the reader to first read :ref:`adding_new_components`.
 
@@ -354,7 +369,7 @@ The test suite code itself follows:
 
 
 Conventions
------------
+============
 
 All test modules should follow those conventions:
 
@@ -385,7 +400,7 @@ All test modules should follow those conventions:
 
 
 Integration and System tests
-----------------------------------
+------------------------------
 
 Integration and system tests should not be defined at the same level of the unit tests.
 The reason is that, in order to properly run such tests, an environment might need to be defined.
@@ -395,7 +410,7 @@ Instead, they evaluate that the connection between several modules, or the defin
 
 
 The DIRAC/tests part of DIRAC repository
------------------------------------------
+------------------------------------------
 
 The DIRAC repository contains a tests section ``https://github.com/DIRACGrid/DIRAC/tree/integration/tests`` that holds
 integration, regression, workflow, system, and permormance tests.
@@ -403,7 +418,7 @@ These tests are not only used for the certification process. Some of them, in fa
 
 
 Integration tests
------------------
+==================
 
 **Integration** is a quite vague term. Within DIRAC, we define as integration test every test that does not fall in the unit test category,
 but that does not need external systems to complete. Usually, for example, you won't be able to run an integration test if you have not added something in the CS.
@@ -457,7 +472,7 @@ Within section :ref:`adding_new_components` we will develop one of these tests a
 
 
 Validation and System tests
----------------------------
+============================
 
 Validation and System tests are black-box tests. As such, coding them should not require knowledge of the inner design of the code or logic.
 At the same time, to run them you'll require a DIRAC server installation.
@@ -470,7 +485,7 @@ a minimal set of test jobs, but since most of the test jobs that you can run are
 
 
 Continuous Integration software
--------------------------------
+================================
 
 There are several tools, on the free market, for so-called *Continuous Integration*, or simply CI_. The most used right now is probably Jenkins_, which is also our recommendation. If you have looked in the `DIRAC/tests <https://github.com/DIRACGrid/DIRAC/tree/integration/tests>`_ (and if you haven't yet, you should, now!) you will see also a Jenkins folder.
 
@@ -559,7 +574,7 @@ How do I do that?
 
 
 Footnotes
----------
+============
 
 .. [#] Or even better software requirements document, if any of such exists. Otherwise this is a great opportunity to prepare one.
 .. [#] To better understand this term, think about a movie industry: if a scene movie makers are going to film is potentially dangerous and unsafe for the leading actor, his place is taken over by a stunt double.

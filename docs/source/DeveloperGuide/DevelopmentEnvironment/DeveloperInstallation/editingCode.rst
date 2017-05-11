@@ -175,11 +175,21 @@ or use virtualenv for managing the path,
 using `add2virtualenv <http://virtualenvwrapper.readthedocs.io/en/latest/command_ref.html#add2virtualenv>`
 
 
-
 Ready!
 ======
 
-You're ready for DIRAC development! (or at least, good part of it).
+You're ready for DIRAC development! (or at least, good part of it). What can you do with what you have just done?
 
-You may now either proceed to :ref:`stuff_that_run`,
-or look into sections :ref:`check_your_installation` and the following :ref:`your_first_dirac_code`
+1. Editing code (this is the obvious!)
+2. Running unit tests: please refer to :ref:`testing_environment` for more info.
+3. Running linters: please refer to :ref:`code_quality` for more info
+
+
+
+Next?
+-----
+
+This depends from you: if you are a casual developer, you can stop here,
+and look into sections :ref:`check_your_installation` and the following :ref:`your_first_dirac_code`
+
+Alternatively, if you want to do more, you may proceed to the section :ref:`stuff_that_run`.

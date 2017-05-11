@@ -76,11 +76,11 @@ If there are services that have to run in the WMS, you should place them under "
 For what concerns our example, we should place it to the Service directory of one of the DIRAC System directories,
 for example we can use FrameworkSystem. The following file can be used as dirac.cfg file,
 
-.. literalinclude:: dirac.cfg.example
+.. literalinclude:: dirac.cfg.service.example
 
 Again, there's no need to copy/paste, because you can do
 
-  cp $DEVROOT/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/dirac.cfg.example $DEVROOT/etc/dirac.cfg
+  cp $DEVROOT/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/dirac.cfg.service.example $DEVROOT/etc/dirac.cfg
 
 The default Service Configuration parameters should be added to the corresponding System ConfigTemplate.cfg file.
 In our case the Service section in the ConfigTemplate.cfg will look like the following::

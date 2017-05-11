@@ -9,16 +9,16 @@ DIRAC
   {
     DeveloperSetup
     {
-      Accounting = Development
-      Configuration = Development
-      DataManagement = Development
-      Framework = Development
-      Monitoring = Development
-      RequestManagement = Development
-      ResourceStatus = Development
-      StorageManagement = Development
-      Transformation = Development
-      WorkloadManagement = Development
+      Accounting = DevInstance
+      Configuration = DevInstance
+      DataManagement = DevInstance
+      Framework = DevInstance
+      Monitoring = DevInstance
+      RequestManagement = DevInstance
+      ResourceStatus = DevInstance
+      StorageManagement = DevInstance
+      Transformation = DevInstance
+      WorkloadManagement = DevInstance
     }
   }
 }
@@ -41,7 +41,7 @@ Systems
   }
   Accounting
   {
-    Development
+    DevInstance
     {
       Agents
       {
@@ -59,7 +59,7 @@ Systems
   }
   Framework
   {
-    Development
+    DevInstance
     {
       URLs
       {
@@ -81,7 +81,7 @@ Systems
   }
   ResourceStatus
   {
-    Development
+    DevInstance
     {
       Agents
       {
@@ -99,7 +99,7 @@ Systems
   }
   WorkloadManagement
   {
-    Development
+    DevInstance
     {
       Agents
       {
@@ -120,7 +120,7 @@ Systems
   }
   Transformation
   {
-    Development
+    DevInstance
     {
       Agents
       {
@@ -138,7 +138,7 @@ Systems
   }
   RequestManagement
   {
-    Development
+    DevInstance
     {
       Agents
       {
@@ -156,7 +156,7 @@ Systems
   }
   DataManagement
   {
-    Development
+    DevInstance
     {
       Agents
       {
@@ -175,25 +175,25 @@ Systems
 }
 Registry
 {
-  DefaultGroup = lhcb_user
+  DefaultGroup = users
   Users
   {
-    ciuser
+    diracuser
     {
-      DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=ciuser@diracgrid.org
-      Email = ciuser@diracgrid.org
+      DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=diracuser/emailAddress=diracuser@diracgrid.org
+      Email = diracuser@diracgrid.org
     }
   }
   Groups
   {
-    user
+    users
     {
-      Users = ciuser
+      Users = diracuser
       Properties = NormalUser
     }
     dirac_admin
     {
-      Users = ciuser
+      Users = diracuser
       Properties = AlarmsManagement
       Properties += ServiceAdministrator
       Properties += CSAdministrator
@@ -204,7 +204,7 @@ Registry
     }
     prod
     {
-      Users = ciuser
+      Users = diracuser
       Properties = Operator
       Properties += FullDelegation
       Properties += ProxyManagement
@@ -219,7 +219,7 @@ Registry
   }
   Hosts
   {
-    localhost
+    DIRACDockerDevBox
     {
       DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=DIRACDockerDevBox/emailAddress=DIRACDockerDevBox@diracgrid.org
       Properties = JobAdministrator
@@ -231,6 +231,18 @@ Registry
       Properties += TrustedHost
       Properties += SiteManager
     }
+    DIRACVMDevBox
+    {
+      DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=DIRACVMDevBox/emailAddress=DIRACVMDevBox@diracgrid.org
+      Properties = JobAdministrator
+      Properties += FullDelegation
+      Properties += Operator
+      Properties += CSAdministrator
+      Properties += ProductionManagement
+      Properties += AlarmsManagement
+      Properties += TrustedHost
+      Properties += SiteManager
+    }
   }
-  DefaultGroup = user
+  DefaultGroup = users
 }
