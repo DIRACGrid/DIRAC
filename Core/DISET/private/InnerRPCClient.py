@@ -24,7 +24,7 @@ class InnerRPCClient( BaseClient ):
         if retVal['Message'] == "Unauthorized query":  # TODO: DErno will help!:
           retVal[ 'rpcStub' ] = stub
           return retVal
-	else:  # we have network problem or the service is not responding
+        else:  # we have network problem or the service is not responding
           if self.__retry < 3:
             self.__retry += 1
             return self.executeRPC( functionName, args )
