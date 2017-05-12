@@ -1,0 +1,24 @@
+# DIRAC in docker containers
+
+[WORK IN PROGRESS]
+
+This documentation is a short, technical version of the official DIRAC documentation for what concerns developing using containers.
+
+The **Dockerfile** file can be built in an image using (first place yourself in the $DEVROOT/DIRAC/container directory)::
+
+  docker build --network host -t devbox .
+
+where ``devbox`` is just a name, and ``--network host`` is not strictly necessary,
+unless you are building from a location that forbids using the google DNS.
+
+The created image can then be run using (for example)::
+
+  docker run -h localhost --expose=3424 -p 3424:3424 -it -v $DEVROOT/DIRAC:/opt/dirac/DIRAC -v $DEVROOT/etc:/opt/dirac/etc devbox bash
+
+where the ``--expose=3424 -p 3424:3424`` depends solely from which ports you wish to expose.
+
+The container as of now will create BOTH server and user credentials, including the (fake) CA,
+so to work with it you should copy on your host the user certificate and key::
+
+  docker cp <container_ID>:/opt/dirac/user/client.key ~/.globus
+  docker cp <container_ID>:/opt/dirac/user/client.pem ~/.globus
