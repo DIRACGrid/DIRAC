@@ -52,7 +52,7 @@ class ResourceStatus( object ):
 
     :param elementName: name of the element
     :type elementName: str
-    :param elementType: type of the element (StorageElement, CE, FTS, Catalog)
+    :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
     :type elementType: str
     :param statusType: type of the status (meaningful only when elementType==StorageElement)
     :type statusType: None, str, list
@@ -107,7 +107,7 @@ class ResourceStatus( object ):
 
     :param elementName: name of the element
     :type elementName: str
-    :param elementType: type of the element (StorageElement, CE, FTS, Catalog)
+    :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
     :type elementType: str
     :param statusType: type of the status (meaningful only when elementType==StorageElement)
     :type statusType: str
@@ -119,7 +119,7 @@ class ResourceStatus( object ):
     :rtype: dict
 
     :Example:
-    >>> setElementStatus('CE42', 'CE', 'all', 'Active')
+    >>> setElementStatus('CE42', 'ComputingElement', 'all', 'Active')
         S_OK(  xyz.. )
     >>> setElementStatus('SE1', 'StorageElement', 'ReadAccess', 'Banned')
         S_OK(  xyz.. )
@@ -166,7 +166,7 @@ class ResourceStatus( object ):
 
   :param elementName: name of the element
   :type elementName: str
-  :param elementType: type of the element (StorageElement, CE, FTS, Catalog)
+  :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
   :type elementType: str
   :param statusType: type of the status (meaningful only when elementType==StorageElement, otherwise it is 'all' or ['all'])
   :type statusType: str, list
@@ -184,7 +184,7 @@ class ResourceStatus( object ):
 
     :param elementName: name of the element
     :type elementName: str
-    :param elementType: type of the element (StorageElement, CE, FTS, Catalog)
+    :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
     :type elementType: str
     :param statusType: type of the status (meaningful only when elementType==StorageElement)
     :type statusType: str, list
@@ -192,7 +192,7 @@ class ResourceStatus( object ):
     :type default: None, str
     """
 
-    # DIRAC doesn't store the status of CEs nor FTS in the CS, so here we can just return 'Active'
+    # DIRAC doesn't store the status of ComputingElements nor FTS in the CS, so here we can just return 'Active'
     if elementType in ('ComputingElement', 'FTS'):
       return S_OK( { elementName: { (elementType, 'all'): 'Active'} } )
 
@@ -256,7 +256,7 @@ class ResourceStatus( object ):
     Sets on the CS the Elements status
     """
 
-    # DIRAC doesn't store the status of CEs nor FTS in the CS, so here we can just do nothing
+    # DIRAC doesn't store the status of ComputingElements nor FTS in the CS, so here we can just do nothing
     if elementType in ('ComputingElement', 'FTS'):
       return S_OK()
 
