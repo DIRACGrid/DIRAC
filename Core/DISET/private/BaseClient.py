@@ -47,6 +47,9 @@ class BaseClient(object):
     self._destinationSrv = serviceName
     self._serviceName = serviceName
     self.kwargs = kwargs
+    self.useCertificates = None
+    # The CS useServerCertificate option can be overridden by explicit argument
+    self.forceUseCertificates = self.kwargs.get( self.KW_USE_CERTIFICATES )
     self.__initStatus = S_OK()
     self.__idDict = {}
     self.__extraCredentials = ""
@@ -290,6 +293,16 @@ and this is thread %s
 
 
   def _connect( self ):
+
+    # Check if the useServerCertificate configuration changed
+    if gConfig.useServerCertificate() != self.useCertificates:
+      if self.forceUseCertificates is None:
+        self.useCertificates = gConfig.useServerCertificate()
+        self.kwargs[self.KW_USE_CERTIFICATES] = self.useCertificates
+        # The server certificate use context changed, rechecking the transport sanity
+        result = self.__checkTransportSanity()
+        if not result['OK']:
+          return result
 
     self.__discoverExtraCredentials()
     if not self.__initStatus[ 'OK' ]:

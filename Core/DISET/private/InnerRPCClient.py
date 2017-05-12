@@ -12,8 +12,8 @@ class InnerRPCClient( BaseClient ):
   __retry = 0
 
   def executeRPC( self, functionName, args ):
-    stub = ( self._getBaseStub(), functionName, args )
     retVal = self._connect()
+    stub = ( self._getBaseStub(), functionName, args )
     if not retVal[ 'OK' ]:
       retVal[ 'rpcStub' ] = stub
       return retVal
