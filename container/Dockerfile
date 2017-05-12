@@ -7,9 +7,8 @@
 #   verify about certificates
 #   correct openssl_config URL location
 #   lcgBundle now fix version
-#   start mySQL
-#   install/start ElasticSearch (?)
-#   install/start ActiveMQ (?)
+#   start mySQL + install/start ElasticSearch (?) + install/start ActiveMQ (?) or better use docker-compose
+#
 
 
 # CC7 as base (the latest tag doesn't work!)
@@ -17,15 +16,17 @@ FROM cern/cc7-base:20170113
 MAINTAINER Federico Stagni <federico.stagni@cern.ch>
 
 # Create DIRAC dirs
-RUN mkdir -p /opt/dirac/DIRAC
-RUN mkdir -p /opt/dirac/etc/grid-security/certificates
+RUN mkdir -p /opt/dirac/DIRAC && \
+    mkdir -p /opt/dirac/etc/grid-security/certificates && \
+    mkdir -p /opt/dirac/user && \
+    cd /opt/dirac
 
 # Installing DIRAC in /opt/dirac
-WORKDIR /opt/dirac
 RUN curl -L -o dirac-install https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py && \
     chmod +x dirac-install && \
-    ./dirac-install -r v6r17 -t server -i 27 -g 2017-01-27
-RUN rm -rf /opt/dirac/.installCache && rm dirac-install
+    ./dirac-install -r v6r17 -t server -i 27 -g 2017-01-27 && \
+    rm -rf /opt/dirac/.installCache && \
+    rm dirac-install
 
 # Copying in ENTRYPOINT script (for running DIRAC scripts directly, e.g. dirac-service)
 COPY dockerEntrypoint.sh /opt/dirac/dockerEntrypoint.sh
@@ -42,7 +43,6 @@ RUN curl -L -o openssl_config https://raw.githubusercontent.com/fstagni/DIRAC/de
     cp hostkey.pem certificates/
 
 # Now generating the user credentials, which would need to be used for connecting to DIRAC components running here
-RUN mkdir -p /opt/dirac/user
 WORKDIR /opt/dirac/user
 RUN cp /opt/dirac/etc/grid-security/openssl_config .
 RUN sed -i 's/DIRACDockerDevBox/ciuser/g' openssl_config

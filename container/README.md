@@ -13,9 +13,11 @@ unless you are building from a location that forbids using the google DNS.
 
 The created image can then be run using (for example)::
 
-  docker run -h localhost --expose=3424 -p 3424:3424 -it -v $DEVROOT/DIRAC:/opt/dirac/DIRAC -v $DEVROOT/etc:/opt/dirac/etc devbox bash
+  docker run -h localhost -p 3424:3424 -it -v $DEVROOT/DIRAC:/opt/dirac/DIRAC -v $DEVROOT/etc:/opt/dirac/etc devbox bash
 
-where the ``--expose=3424 -p 3424:3424`` depends solely from which ports you wish to expose.
+where the ``-p 3424:3424`` depends solely from which ports you wish to expose.
+This example refers to the "HelloHandler" DIRAC service example that you can find in the developers tutorial
+(http://dirac.readthedocs.io/en/integration/DeveloperGuide/AddingNewComponents/DevelopingServices/index.html)
 
 The container as of now will create BOTH server and user credentials, including the (fake) CA,
 so to work with it you should copy on your host the user certificate and key::
