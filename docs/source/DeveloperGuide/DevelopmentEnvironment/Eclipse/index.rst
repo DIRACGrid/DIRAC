@@ -4,14 +4,22 @@ Configuring *Eclipse*
 =======================
 
 A possible way to develop in DIRAC is using `Eclipse <http://www.eclipse.org/>`_.
+This tool has been the tool of choice for several years. Now, maybe not anymore.
+This guide is here because configuring Eclipse was always a headache.
+
 We know `Emacs <www.gnu.org/s/emacs/>`_ is a great tool,
 and someone can't just leave without it.
 And that also `vim <http://www.vim.org/>`_ is great.
 Other excellent options include `pycharm <https://www.jetbrains.com/pycharm/>`_, `sublime <https://www.sublimetext.com/>`_,
 and `atom <https://atom.io/>`_.
-Anyway, this is a quick guide for *Eclipse* in case you want to use it, but it is not mandatory to use it.
 
-As it has been true for the previous paragraph, this guide will NOT explain the basic usage of eclipse and its plugins: go on the net and search. In a nutshell, based on experience we can say that:
+For all the above you need some plugins. One of them is for sure pylint.
+You can also use pep8 and autopep8, as long as you keep tabs of 2 spaces instead of 4.
+
+Anyway, to repeat: this is a quick guide for *Eclipse* in case you want to use it, but it is not mandatory to use it.
+
+As it has been true for the previous paragraph, this guide will NOT explain the basic usage of eclipse and its plugins: go on the net and search.
+In a nutshell, based on experience we can say that:
 
 - Eclipse is a good tool. It will simplify your life.
 - There are many Eclipse versions out there: just take the *classic* one, and take the latest package.
