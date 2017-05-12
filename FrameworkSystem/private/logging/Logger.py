@@ -138,12 +138,6 @@ class Logger( object ):
     """
     return self._logLevels.getLevel( self._minLevel )
 
-  def getLevelValue( self ):
-    """
-    return the level value of the logger 
-    """
-    return self._minLevel
-
   def shown( self, levelName ):
     levelName = levelName.upper()
     if levelName in self._logLevels.getLevels():
