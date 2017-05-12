@@ -27,7 +27,7 @@ class ResourceStatus( object ):
 
   __metaclass__ = DIRACSingleton
 
-  def __init__( self ):
+  def __init__( self, rssFlag = None ):
     """
     Constructor, initializes the rssClient.
     """
@@ -35,7 +35,9 @@ class ResourceStatus( object ):
     self.rssConfig = RssConfiguration()
     self.__opHelper = Operations()
     self.rssClient = ResourceStatusClient()
-    self.rssFlag = self.__getMode()
+    self.rssFlag = rssFlag
+    if rssFlag is None:
+      self.rssFlag = self.__getMode()
 
     # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
     cacheLifeTime = int( self.rssConfig.getConfigCache() )
@@ -89,7 +91,6 @@ class ResourceStatus( object ):
       if elementType == "StorageElement":
         statusType = ['ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess']
       elif elementType == "ComputingElement":
-        elementType = "CE"
         statusType = ['all']
       elif elementType == "FTS":
         statusType = ['all']
@@ -192,7 +193,7 @@ class ResourceStatus( object ):
     """
 
     # DIRAC doesn't store the status of CEs nor FTS in the CS, so here we can just return 'Active'
-    if elementType in ('CE', 'FTS'):
+    if elementType in ('ComputingElement', 'FTS'):
       return S_OK( { elementName: { (elementType, 'all'): 'Active'} } )
 
     # If we are here it is because elementType is either 'StorageElement' or 'Catalog'
@@ -256,7 +257,7 @@ class ResourceStatus( object ):
     """
 
     # DIRAC doesn't store the status of CEs nor FTS in the CS, so here we can just do nothing
-    if elementType in ('CE', 'FTS'):
+    if elementType in ('ComputingElement', 'FTS'):
       return S_OK()
 
     # If we are here it is because elementType is either 'StorageElement' or 'Catalog'

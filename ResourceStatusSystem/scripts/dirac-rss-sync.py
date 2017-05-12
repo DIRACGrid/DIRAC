@@ -37,13 +37,9 @@ def registerSwitches():
     command line interface.
   '''
 
-  switches = (
-    ( 'init',     'Initialize the element to the status in the CS ( applicable for StorageElements )' ),
-    ( 'element=', 'Element family to be Synchronized ( Site, Resource or Node ) or `all`' ),
-             )
-
-  for switch in switches:
-    Script.registerSwitch( '', switch[ 0 ], switch[ 1 ] )
+  Script.registerSwitch( '', 'init', 'Initialize the element to the status in the CS ( applicable for StorageElements )' )
+  Script.registerSwitch( '', 'element=', 'Element family to be Synchronized ( Site, Resource or Node ) or `all`' )
+  Script.registerSwitch( '', 'defaultStatus=', 'Default element status if not given in the CS' )
 
 def registerUsageMessage():
   '''
@@ -76,6 +72,7 @@ def parseSwitches():
 
   # Default values
   switches.setdefault( 'element', None )
+  switches.setdefault( 'defaultStatus', None )
   if not switches[ 'element' ] in ( 'all', 'Site', 'Resource', 'Node', None ):
     subLogger.error( "Found %s as element switch" % switches[ 'element' ] )
     subLogger.error( "Please, check documentation below" )
@@ -101,6 +98,13 @@ from DIRAC                                             import gConfig
 from DIRAC.ResourceStatusSystem.Utilities              import Synchronizer, CSHelpers, RssConfiguration
 from DIRAC.ResourceStatusSystem.Client                 import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem           import StateMachine
+from DIRAC.Core.Security.ProxyInfo                     import getProxyInfo
+
+result = getProxyInfo()
+if result['OK']:
+  tokenOwner = result['Value']['username']
+else:
+  gLogger.error( 'No proxy found' )
 
 def synchronize():
   '''
@@ -222,6 +226,7 @@ def initSEs():
       result = rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = se,
                                                    statusType = statusType, status = status,
                                                    elementType = 'StorageElement',
+                                                   tokenOwner = tokenOwner,
                                                    reason = reason )
 
       if not result[ 'OK' ]:
@@ -235,6 +240,7 @@ def initSEs():
       result = rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = se,
                                                    statusType = statusType, status = DEFAULT_STATUS,
                                                    elementType = 'StorageElement',
+                                                   tokenOwner = tokenOwner,
                                                    reason = reason )
       if not result[ 'OK' ]:
         subLogger.error( 'Error in backtracking for %s,%s,%s' % ( se, statusType, status ) )
