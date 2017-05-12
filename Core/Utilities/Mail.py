@@ -26,8 +26,9 @@ class Mail( object ):
     self._attachments = []
     self.esmtp_features = {}
 
-
-  def _send( self ):
+  def _create(self, addresses):
+    """ create a mail object
+    """
 
     if not self._mailAddress:
       gLogger.warn( "No mail address was provided. Mail not sent." )
@@ -44,16 +45,8 @@ class Mail( object ):
     else:
       mail = MIMEText( self._message , "plain" )
 
-
     msg = MIMEMultipart()
-
-
     msg.attach( mail )
-
-
-    addresses = self._mailAddress
-    if isinstance( self._mailAddress, basestring ):
-      addresses = self._mailAddress.split( ", " )
 
     msg[ "Subject" ] = self._subject
     msg[ "From" ] = self._fromAddress
@@ -69,6 +62,22 @@ class Mail( object ):
           msg.attach( part )
       except IOError as e:
         gLogger.exception( "Could not attach %s" % attachment, lException = e )
+
+    return S_OK(msg)
+
+  def _send( self, msg = None ):
+    """ send a single email message. If msg is in input, it is expected to be of email type, otherwise it will create it.
+    """
+
+    if msg is None:
+      addresses = self._mailAddress
+      if isinstance( self._mailAddress, basestring ):
+	addresses = self._mailAddress.split( ", " )
+
+      result = self._create(addresses)
+      if not result['OK']:
+	return result
+      msg = result['Value']
 
     smtp = SMTP()
     smtp.set_debuglevel( 0 )
