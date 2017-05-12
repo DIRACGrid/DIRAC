@@ -226,7 +226,6 @@ def initSEs():
       result = rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = se,
                                                    statusType = statusType, status = status,
                                                    elementType = 'StorageElement',
-                                                   tokenOwner = tokenOwner,
                                                    reason = reason )
 
       if not result[ 'OK' ]:
@@ -240,7 +239,7 @@ def initSEs():
       result = rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = se,
                                                    statusType = statusType, status = DEFAULT_STATUS,
                                                    elementType = 'StorageElement',
-                                                   tokenOwner = tokenOwner,
+
                                                    reason = reason )
       if not result[ 'OK' ]:
         subLogger.error( 'Error in backtracking for %s,%s,%s' % ( se, statusType, status ) )
