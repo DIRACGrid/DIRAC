@@ -123,7 +123,8 @@ class JobScheduling( OptimizerExecutor ):
         return S_ERROR( "Unable to get OSCompatibility list" )
       allPlatforms = result[ 'Value' ]
       if not jobPlatform in allPlatforms:
-        return self.__holdJob( jobState, "Platform %s is not supported" % jobPlatform )
+        self.jobLog.error( "Platform %s is not supported" % jobPlatform )
+        return S_ERROR( "Platform %s is not supported" % jobPlatform )
 
     # Filter the userSites by the platform selection (if there is one)
     if checkPlatform and userSites:
@@ -135,7 +136,8 @@ class JobScheduling( OptimizerExecutor ):
         userSites = result[ 'Value' ]
         if not userSites:
           # No sites left after filtering -> Invalid platform/sites combination
-          return self.__holdJob( jobState, "No selected sites match platform '%s'" % jobPlatform )
+          self.jobLog.error( "No selected sites match platform '%s'" % jobPlatform )
+          return S_ERROR( "No selected sites match platform '%s'" % jobPlatform )
 
     # Check if there is input data
     result = jobState.getInputData()
