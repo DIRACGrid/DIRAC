@@ -17,6 +17,9 @@ class SubSystemLogger( Logger ):
     self._subName = subName
 
   def getSubName(self):
+    """
+    Return the name of the sublogger
+    """
     return self._subName
 
   def processMessage( self, messageObject ):

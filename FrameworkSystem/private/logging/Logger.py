@@ -134,13 +134,13 @@ class Logger( object ):
 
   def getLevel( self ):
     """
-    return the level name of the logger
+    Return the level name of the logger
     """
     return self._logLevels.getLevel( self._minLevel )
 
   def getAllPossibleLevels( self ):
     """
-    return a list of all the levels available
+    Return a list of all the levels available
     """
     return self._logLevels.getLevels()
 
@@ -151,6 +151,9 @@ class Logger( object ):
     return False
 
   def getName( self ):
+    """
+    Return the system/component name
+    """
     return self._systemName
 
   def always( self, sMsg, sVarMsg = '' ):
