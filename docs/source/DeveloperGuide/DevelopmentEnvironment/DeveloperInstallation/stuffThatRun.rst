@@ -206,6 +206,19 @@ Within the code we also provide a pre-filled example of dirac.cfg. You can get i
   cp $DEVROOT/docs/source/DeveloperGuide/AddingNewComponents/dirac.cfg.basic.example $DEVROOT/etc/dirac.cfg
 
 
+
+Scripts (DIRAC commands)
+=========================
+
+DIRAC scripts can be found in (almost) every DIRAC package. For example in DIRAC.WorkloadManagementSystem.scripts.
+You can invoke them directly, or you can run the command::
+
+  dirac-deploy-scripts
+
+which will inspect all these directories (including possible DIRAC extensions) and deploy the found scripts in $DEVROOT/scripts.
+Developers can then persist this directory in the $PATH.
+
+
 Certificates
 ============
 

@@ -24,3 +24,5 @@ so to work with it you should copy on your host the user certificate and key::
 
   docker cp <container_ID>:/opt/dirac/user/client.key ~/.globus
   docker cp <container_ID>:/opt/dirac/user/client.pem ~/.globus
+
+You can then use these client.{key, pem} files for generating a proxy with dirac-proxy-init explicitly using the -K and -C options.
