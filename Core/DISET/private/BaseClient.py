@@ -49,7 +49,7 @@ class BaseClient(object):
     self.kwargs = kwargs
     self.__useCertificates = None
     # The CS useServerCertificate option can be overridden by explicit argument
-    self.forceUseCertificates = self.kwargs.get( self.KW_USE_CERTIFICATES )
+    self.__forceUseCertificates = self.kwargs.get( self.KW_USE_CERTIFICATES )
     self.__initStatus = S_OK()
     self.__idDict = {}
     self.__extraCredentials = ""
@@ -296,7 +296,7 @@ and this is thread %s
 
     # Check if the useServerCertificate configuration changed
     if gConfig.useServerCertificate() != self.__useCertificates:
-      if self.forceUseCertificates is None:
+      if self.__forceUseCertificates is None:
         self.__useCertificates = gConfig.useServerCertificate()
         self.kwargs[self.KW_USE_CERTIFICATES] = self.__useCertificates
         # The server certificate use context changed, rechecking the transport sanity
