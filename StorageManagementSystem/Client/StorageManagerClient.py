@@ -6,6 +6,7 @@ import random
 import errno
 
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Base.Client                         import Client
 from DIRAC.Core.Utilities.DErrno                    import cmpError
 from DIRAC.Core.Utilities.Proxy                     import executeWithUserProxy
@@ -133,7 +134,8 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
     if not lfnsInSEList:
       continue
 
-    seObj = StorageElement( se )
+    vo = getVOForGroup( proxyUserGroup )
+    seObj = StorageElement( se, vo=vo )
     status = seObj.getStatus()
     if not status['OK']:
       logger.error( "Could not get SE status", "%s - %s" % ( se, status['Message'] ) )
