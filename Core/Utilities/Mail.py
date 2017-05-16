@@ -29,6 +29,8 @@ class Mail( object ):
   def _create(self, addresses):
     """ create a mail object
     """
+    if not isinstance(addresses, list):
+      addresses = [addresses]
 
     if not self._mailAddress:
       gLogger.warn( "No mail address was provided. Mail not sent." )
@@ -89,3 +91,17 @@ class Mail( object ):
 
     smtp.quit()
     return S_OK( "The mail was successfully sent" )
+
+  def __eq__(self, other):
+    """ Comparing an email object to another
+    """
+    if isinstance(other, Mail):
+      if self.__dict__ == other.__dict__:
+	return True
+
+    return False
+
+  def __hash__(self):
+    """ Comparing for sets
+    """
+    return hash(self._subject + self._message + self._fromAddress + self._mailAddress)

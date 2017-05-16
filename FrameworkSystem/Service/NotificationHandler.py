@@ -31,7 +31,7 @@ def purgeDelayedEMails():
   """ purges the emails accumulated in gMailSet
   """
   for eMail in gMailSet:
-    result = eMail.send(eMail)
+    result = eMail.send()
     if not result['OK']:
       gLogger.warn( 'Could not send mail with the following message:\n%s' % result['Message'] )
     else:
@@ -70,14 +70,8 @@ class NotificationHandler( RequestHandler ):
     if not fromAddress == 'None':
       eMail._fromAddress = fromAddress
     if avoidSpam:
-      addresses = eMail._mailAddress
-      if isinstance( eMail._mailAddress, basestring ):
-	addresses = eMail._mailAddress.split( ", " )
-      result = eMail._create(addresses)
-      if not result['OK']:
-	gLogger.warn( 'Could not create mail with the following message:\n%s' % result['Message'] )
-      else:
-	gMailSet.add(result['Value'])
+      gMailSet.add(eMail)
+      return S_OK("Mail added to gMailSet")
     else:
       result = eMail._send()
       if not result['OK']:
