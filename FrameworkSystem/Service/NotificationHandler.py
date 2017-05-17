@@ -30,23 +30,27 @@ gMailSet = set()
 def purgeDelayedEMails():
   """ purges the emails accumulated in gMailSet
   """
-  for eMail in gMailSet:
-    result = eMail.send()
+  while gMailSet:
+    eMail = gMailSet.pop()
+    result = eMail._send()
     if not result['OK']:
       gLogger.warn( 'Could not send mail with the following message:\n%s' % result['Message'] )
+      gMailSet.add(eMail)
     else:
       gLogger.info( 'Mail sent successfully' )
       gLogger.debug( result['Value'] )
 
-def initializeNotificationHandler( serviceInfo ):
-
-  global gNotDB
-  gNotDB = NotificationDB()
-  gThreadScheduler.addPeriodicTask( 3600, gNotDB.purgeExpiredNotifications() )
-  gThreadScheduler.addPeriodicTask( 3600, purgeDelayedEMails() )
-  return S_OK()
-
 class NotificationHandler( RequestHandler ):
+
+  @classmethod
+  def initializeNotificationHandler( cls, serviceInfo ):
+    """ Handler initialization
+    """
+    global gNotDB
+    gNotDB = NotificationDB()
+    gThreadScheduler.addPeriodicTask( 3600, gNotDB.purgeExpiredNotifications )
+    gThreadScheduler.addPeriodicTask( 3600, purgeDelayedEMails )
+    return S_OK()
 
   def initialize( self ):
     credDict = self.getRemoteCredentials()
@@ -60,7 +64,8 @@ class NotificationHandler( RequestHandler ):
   def export_sendMail( self, address, subject, body, fromAddress, avoidSpam = False ):
     """ Send an email with supplied body to the specified address using the Mail utility.
 
-	if avoidSpam is True, then emails are first added
+        if avoidSpam is True, then emails are first added to a set so that duplicates are removed,
+        and sent every hour.
     """
     gLogger.verbose( 'Received signal to send the following mail to %s:\nSubject = %s\n%s' % ( address, subject, body ) )
     eMail = Mail()
@@ -75,10 +80,10 @@ class NotificationHandler( RequestHandler ):
     else:
       result = eMail._send()
       if not result['OK']:
-	gLogger.warn( 'Could not send mail with the following message:\n%s' % result['Message'] )
+        gLogger.warn( 'Could not send mail with the following message:\n%s' % result['Message'] )
       else:
-	gLogger.info( 'Mail sent successfully to %s with subject %s' % ( address, subject ) )
-	gLogger.debug( result['Value'] )
+        gLogger.info( 'Mail sent successfully to %s with subject %s' % ( address, subject ) )
+        gLogger.debug( result['Value'] )
 
     return result
 
