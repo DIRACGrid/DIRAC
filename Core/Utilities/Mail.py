@@ -74,11 +74,11 @@ class Mail( object ):
     if msg is None:
       addresses = self._mailAddress
       if isinstance( self._mailAddress, basestring ):
-	addresses = self._mailAddress.split( ", " )
+        addresses = self._mailAddress.split( ", " )
 
       result = self._create(addresses)
       if not result['OK']:
-	return result
+        return result
       msg = result['Value']
 
     smtp = SMTP()
@@ -97,7 +97,7 @@ class Mail( object ):
     """
     if isinstance(other, Mail):
       if self.__dict__ == other.__dict__:
-	return True
+        return True
 
     return False
 
