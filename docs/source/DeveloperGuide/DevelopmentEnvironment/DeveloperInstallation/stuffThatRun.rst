@@ -301,3 +301,8 @@ Everything that was in the previous section, and on top:
 1. Developing and testing code that "run"
 2. Developing and testing code that requires integration between different components, like services and databases, but also agents
 3. Running integration tests: please refer to :ref:`testing_environment` (towards the end) for more info.
+
+And what you CAN'T do (yet)?
+
+- you can't interact with a ''production'' setup, unless you use valid certificates
+- you can't develop for web portal pages, because browsers won't accept self-signed certificates

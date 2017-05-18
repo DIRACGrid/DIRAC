@@ -184,6 +184,11 @@ You're ready for DIRAC development! (or at least, good part of it). What can you
 2. Running unit tests: please refer to :ref:`testing_environment` for more info.
 3. Running linters: please refer to :ref:`code_quality` for more info
 
+So, this is "pure code"! And what you CAN'T do (yet)?
+
+- You can't get a proxy
+- you can't interact with configuration files nor with the Configuration System
+- you can't run services, nor agents (no DIRAC components)
 
 
 Next?
