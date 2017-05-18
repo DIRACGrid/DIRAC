@@ -27,7 +27,6 @@ __RCSID__  = '$Id$'
 subLogger  = None
 switchDict = {}
 
-DEFAULT_STATUS = 'Banned'
 #Add 24 hours to the datetime (it is going to be inserted in the "TokenExpiration" Column of "SiteStatus")
 Datetime       = datetime.utcnow() + timedelta(hours=24)
 
@@ -89,12 +88,13 @@ subLogger  = gLogger.getSubLogger( __file__ )
 registerSwitches()
 registerUsageMessage()
 switchDict = parseSwitches()
+DEFAULT_STATUS = switchDict.get( 'defaultStatus', 'Banned' )
 
 #############################################################################
 # We can define the script body now
 
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import jobDB
-from DIRAC                                             import gConfig
+from DIRAC                                             import gConfig, exit as DIRACExit
 from DIRAC.ResourceStatusSystem.Utilities              import Synchronizer, CSHelpers, RssConfiguration
 from DIRAC.ResourceStatusSystem.Client                 import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem           import StateMachine
@@ -105,6 +105,7 @@ if result['OK']:
   tokenOwner = result['Value']['username']
 else:
   gLogger.error( 'No proxy found' )
+  DIRACExit( 1 )
 
 def synchronize():
   '''
