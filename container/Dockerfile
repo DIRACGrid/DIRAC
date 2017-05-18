@@ -35,7 +35,7 @@ ENTRYPOINT [ "/opt/dirac/dockerEntrypoint.sh" ]
 
 # Create self-signed host certificate from auto-generated CA
 WORKDIR /opt/dirac/etc/grid-security
-RUN source /opt/dirac/bashrc && openssl genrsa -out hostkey.pem 2048 2&>1 /dev/null
+RUN source /opt/dirac/bashrc && openssl genrsa -out hostkey.pem 2048
 RUN curl -L -o openssl_config https://raw.githubusercontent.com/fstagni/DIRAC/devDocsDocker-1/tests/openssl_config_DIRACDockerDevBox && \
     source /opt/dirac/bashrc && \
     openssl req -new -x509 -key hostkey.pem -out hostcert.pem -days 365 -config openssl_config && \
@@ -47,7 +47,7 @@ WORKDIR /opt/dirac/user
 RUN cp /opt/dirac/etc/grid-security/openssl_config .
 RUN sed -i 's/DIRACDockerDevBox/ciuser/g' openssl_config
 RUN source /opt/dirac/bashrc && \
-    openssl genrsa -out client.key 1024 2&>1 /dev/null && \
+    openssl genrsa -out client.key 1024 && \
     openssl req -key client.key -new -out client.req -config openssl_config
 # This is a little hack to make OpenSSL happy...
 RUN echo 00 > file.srl
