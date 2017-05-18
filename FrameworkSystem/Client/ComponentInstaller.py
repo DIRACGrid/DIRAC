@@ -1894,7 +1894,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     return S_OK( runitCompDir )
 
   def setupComponent( self, componentType, system, component, extensions,
-                      componentModule = '', checkModule = True, monitorFlag = True ):
+                      componentModule = '', checkModule = True ):
     """
     Install and create link in startup
     """
@@ -1929,12 +1929,6 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     resDict = {}
     resDict['ComponentType'] = componentType
     resDict['RunitStatus'] = result['Value']['%s_%s' % ( system, component )]['RunitStatus']
-
-    # Add the newly set up component to the Monitoring if requested
-    if monitorFlag:
-      result = MonitoringUtilities.monitorInstallation( componentType, system, component )
-      if not result['OK']:
-        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     return S_OK( resDict )
 
