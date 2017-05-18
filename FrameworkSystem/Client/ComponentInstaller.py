@@ -1593,7 +1593,6 @@ class ComponentInstaller( object ):
         centralCfg = self._getCentralCfg( self.localCfg )
       self._addCfgToLocalCS( centralCfg )
       self.setupComponent( 'service', 'Configuration', 'Server', [], checkModule = False )
-      MonitoringUtilities.monitorInstallation( 'service', 'Configuration', 'Server' )
       self.runsvctrlComponent( 'Configuration', 'Server', 't' )
 
       while ['Configuration', 'Server'] in setupServices:
@@ -1709,9 +1708,6 @@ class ComponentInstaller( object ):
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
-      result = MonitoringUtilities.monitorInstallation( 'service', system, service )
-      if not result['OK']:
-        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 5.- Now the agents
     for system, agent in setupAgents:
@@ -1719,9 +1715,6 @@ class ComponentInstaller( object ):
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
-      result = MonitoringUtilities.monitorInstallation( 'agent', system, agent )
-      if not result['OK']:
-        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 6.- Now the executors
     for system, executor in setupExecutors:
@@ -1729,9 +1722,6 @@ class ComponentInstaller( object ):
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
-      result = MonitoringUtilities.monitorInstallation( 'executor', system, executor )
-      if not result['OK']:
-        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 7.- And finally the Portal
     if setupWeb:
@@ -1939,6 +1929,12 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     resDict = {}
     resDict['ComponentType'] = componentType
     resDict['RunitStatus'] = result['Value']['%s_%s' % ( system, component )]['RunitStatus']
+
+    # Add the newly set up component to the Monitoring if requested
+    if monitorFlag:
+      result = MonitoringUtilities.monitorInstallation( componentType, system, component )
+      if not result['OK']:
+        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     return S_OK( resDict )
 
