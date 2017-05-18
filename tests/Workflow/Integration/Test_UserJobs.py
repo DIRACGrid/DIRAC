@@ -48,7 +48,7 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
     job._siteSet = {'DIRAC.someSite.ch'}
 
     job.setName( "helloWorld-test" )
-    job.setExecutable( find_all( "helloWorld.py", '.', 'Integration' )[0],
+    job.setExecutable( find_all( "helloWorld.py", '..', 'Integration' )[0],
                        arguments = "This is an argument",
                        logFile = "aLogFileForTest.txt" ,
                        parameters=[('executable', 'string', '', "Executable Script"),

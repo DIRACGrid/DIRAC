@@ -49,7 +49,7 @@ class ExecutorModule( object ):
     cls.log = gLogger.getSubLogger( exeName, child = False )
 
     try:
-      result = cls.initialize()
+      result = cls.initialize() # pylint: disable=no-member
     except Exception as excp:
       gLogger.exception( "Exception while initializing %s" % loadName, lException = excp )
       return S_ERROR( "Exception while initializing: %s" % str( excp ) )
