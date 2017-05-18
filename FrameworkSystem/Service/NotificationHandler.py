@@ -168,11 +168,7 @@ class NotificationHandler( RequestHandler ):
     """
     return gNotDB.deleteAlarmsByAlarmId( alarmsIdList )
 
-<<<<<<< HEAD
   types_deleteAlarmsByAlarmKey = [(basestring, list)]
-=======
-  types_deleteAlarmsByAlarmKey = [ list( basestring ) + [list] ]
->>>>>>> a6cce584c0aff3ceae60b2461d67db2db20f337b
   def export_deleteAlarmsByAlarmKey( self, alarmsKeyList ):
     """ Delete alarms by alarmId
     """
