@@ -1465,7 +1465,7 @@ class ComponentInstaller( object ):
     setupAgents = [ k.split( '/' ) for k in self.localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
     setupExecutors = [ k.split( '/' ) for k in self.localCfg.getOption( cfgInstallPath( 'Executors' ), [] ) ]
     setupWeb = self.localCfg.getOption( cfgInstallPath( 'WebPortal' ), False )
-    setupWebApp = self.localCfg.getOption( cfgInstallPath( 'WebApp' ), False )
+    setupWebApp = self.localCfg.getOption( cfgInstallPath( 'WebApp' ), True )
     setupConfigurationMaster = self.localCfg.getOption( cfgInstallPath( 'ConfigurationMaster' ), False )
     setupPrivateConfiguration = self.localCfg.getOption( cfgInstallPath( 'PrivateConfiguration' ), False )
     setupConfigurationName = self.localCfg.getOption( cfgInstallPath( 'ConfigurationName' ), self.setup )
