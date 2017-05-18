@@ -65,6 +65,24 @@ class API( object ):
 
   #############################################################################
 
+  def __getstate__( self ):
+    """ called when pickling the object. Also used in copy.deepcopy """
+    from DIRAC.FrameworkSystem.private.logging.SubSystemLogger import SubSystemLogger
+    d = dict( self.__dict__ )
+    if isinstance( d['log'], SubSystemLogger ):
+      d['log'] = d['log']._subName
+    return d
+
+  #############################################################################
+
+  def __setstate__( self, d ):
+    """ called when un-pickling the object """
+    self.__dict__.update(d)
+    if isinstance( d['log'], basestring ):
+      self.log = gLogger.getSubLogger( d['log'] )
+
+  #############################################################################
+
   def _errorReport( self, error, message = None ):
     """Internal function to return errors and exit with an S_ERROR() """
     if not message:

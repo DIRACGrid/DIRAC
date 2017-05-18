@@ -1,6 +1,8 @@
 """ Unit Tests for Executors
 """
 
+# pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
+
 import unittest
 
 from DIRAC import gLogger
@@ -96,4 +98,3 @@ if __name__ == '__main__':
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
-
