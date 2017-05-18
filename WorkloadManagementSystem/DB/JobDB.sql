@@ -59,7 +59,6 @@ CREATE TABLE `Jobs` (
   `MinorStatus` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `ApplicationStatus` VARCHAR(255) DEFAULT 'Unknown',
   `ApplicationNumStatus` INT(11) NOT NULL DEFAULT 0,
-  `CPUTime` FLOAT NOT NULL DEFAULT 0.0,
   `UserPriority` INT(11) NOT NULL DEFAULT 0,
   `SystemPriority` INT(11) NOT NULL DEFAULT 0,
   `RescheduleCounter` INT(11) NOT NULL DEFAULT 0,

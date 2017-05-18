@@ -16,6 +16,12 @@ class SubSystemLogger( Logger ):
     self.__masterLogger = masterLogger
     self._subName = subName
 
+  def getSubName(self):
+    """
+    Return the name of the sublogger
+    """
+    return self._subName
+
   def processMessage( self, messageObject ):
     if self.__child:
       messageObject.setSubSystemName( self._subName )
