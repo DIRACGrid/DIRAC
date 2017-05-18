@@ -417,7 +417,7 @@ class ComponentInstaller( object ):
     adminUserEmail = self.localCfg.getOption( cfgInstallPath( 'AdminUserEmail' ), '' )
     adminGroupName = self.localCfg.getOption( cfgInstallPath( 'AdminGroupName' ), 'dirac_admin' )
     hostDN = self.localCfg.getOption( cfgInstallPath( 'HostDN' ), '' )
-    defaultGroupName = 'user'
+    defaultGroupName = self.localCfg.getOption( cfgInstallPath( 'DefaultGroupName' ), 'dirac_user' )
     adminGroupProperties = [ ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR,
                              CS_ADMINISTRATOR, JOB_ADMINISTRATOR,
                              FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR ]
