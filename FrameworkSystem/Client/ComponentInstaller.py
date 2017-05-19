@@ -1704,21 +1704,21 @@ class ComponentInstaller( object ):
 
     # 4.- Then installed requested services
     for system, service in setupServices:
-      result = self.setupComponent( 'service', system, service, extensions, monitorFlag = False )
+      result = self.setupComponent( 'service', system, service, extensions )
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
 
     # 5.- Now the agents
     for system, agent in setupAgents:
-      result = self.setupComponent( 'agent', system, agent, extensions, monitorFlag = False )
+      result = self.setupComponent( 'agent', system, agent, extensions )
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
 
     # 6.- Now the executors
     for system, executor in setupExecutors:
-      result = self.setupComponent( 'executor', system, executor, extensions, monitorFlag = False )
+      result = self.setupComponent( 'executor', system, executor, extensions )
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
