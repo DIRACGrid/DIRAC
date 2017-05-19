@@ -450,11 +450,11 @@ function prepareForServer(){
 function generateCertificates(){
   echo '==> [generateCertificates]'
 
-  if [ -z ${1} ];
+  if [ -z ${1} ]
   then
-    nDays=1;
-  else:
-    nDays=$1;
+    nDays=1
+  else
+    nDays=$1
   fi
 
   mkdir -p $SERVERINSTALLDIR/etc/grid-security/certificates
