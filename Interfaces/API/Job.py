@@ -797,7 +797,7 @@ class Job( API ):
     """
     kwargs = {'logLevel':logLevel}
     if isinstance( logLevel, basestring ):
-      if logLevel.upper() in gLogger._logLevels.getLevels():
+      if logLevel.upper() in gLogger.getAllPossibleLevels():
         description = 'User specified logging level'
         self.logLevel = logLevel
         self._addParameter( self.workflow, 'LogLevel', 'JDL', logLevel, description )

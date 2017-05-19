@@ -39,6 +39,35 @@ NEW: JobAgent, JobWrapper - several fixes to allow the work with PoolComputingEl
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
 CHANGE: Dirac API - added runLocal as an API method
 
+[v6r17p20]
+
+*Core
+NEW: API.py - added __getstate__, __setstate__ to allow pickling objects inheriting
+     API class by special treatment of internal Logger objects, fixes #3334
+
+*Framework
+FIX: SystemAdministrator - sort software version directories by explicit versions in the
+     old software cleaning logic
+FIX: MonitoringUtilities - sets a suitable "unknown" username when installing DIRAC from scratch, 
+     and the CS isn't initialized fully when running dirac-setup-site     
+CHANGE: Logger - added getter methods to access internal protected variables, use these methods
+        in various places instead of access Logger protected variables     
+
+*WMS
+CHANGE: JobDB - removed unused CPUTime field in the Jobs table
+CHANGE: JobScheduling - make check for requested Platform among otherwise eligible sites
+        for a given job, fail jobs if no site with requested Platform are available
+
+*RSS
+FIX: Commands - improved logging messages
+
+*SMS
+FIX: StorageManagerClient - instantiate StorageElement object with an explicit vo argument,
+     fixes #3335
+
+*Interfaces
+NEW: dirac-framework-self-ping command for a server to self ping using it's own certificate
+
 [v6r17p19]
 
 *Core
