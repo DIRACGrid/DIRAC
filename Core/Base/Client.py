@@ -27,7 +27,7 @@ class Client( object ):
   def __getattr__( self, name ):
     # This allows the dir() method to work as well as tab completion in ipython
     if name == '__dir__':
-      return super( Client, self ).__getattr__()
+      return super( Client, self ).__getattr__() #pylint: disable=no-member
     self.call = name
     return self.executeRPC
 
