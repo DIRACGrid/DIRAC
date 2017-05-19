@@ -15,7 +15,7 @@ class PlainTransport( BaseTransport ):
     if 'timeout' in self.extraArgsDict:
       timeout = self.extraArgsDict[ 'timeout' ]
     try:
-      self.oSocket.create_connection( self.stServerAddress, timeout )
+      self.oSocket = socket.create_connection(self.stServerAddress, timeout)
     except socket.error , e:
       if e.args[0] != 115:
         return S_ERROR( "Can't connect: %s" % str( e ) )
