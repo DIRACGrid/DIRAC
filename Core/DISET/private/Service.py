@@ -1,9 +1,13 @@
+"""
+  Service class implements the server side part of the DISET protocol
+"""
 
 import os
 import time
 import DIRAC
 import threading
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities import Time, MemStat
 from DIRAC.Core.DISET.private.LockManager import LockManager
@@ -17,6 +21,8 @@ from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
+
+__RCSID__ = "$Id$"
 
 class Service( object ):
 
@@ -385,7 +391,7 @@ class Service( object ):
       gLogger.warn( "Unauthorized query", "to %s:%s by %s from %s" % ( self._name,
                                                                "/".join( actionTuple ),
                                                                identity, fromHost ) )
-      result = S_ERROR( "Unauthorized query" )
+      result = S_ERROR( ENOAUTH, "Unauthorized query" )
     else:
       result = S_OK()
 
