@@ -366,6 +366,25 @@ class JobScheduling( OptimizerExecutor ):
     """This method sends jobs to the task queue agent and if candidate sites
        are defined, updates job JDL accordingly.
     """
+
+    # Generate Tags from specific requirements
+    tagList = []
+    if "MaxRAM" in jobManifest:
+      maxRAM = jobManifest.getOption( "MaxRAM", 0 )
+      if maxRAM:
+        tagList.append( "%dGB" % maxRAM )
+    if "NumberOfProcessors" in jobManifest:
+      nProcessors = jobManifest.getOption( "NumberOfProcessors", 0 )
+      if nProcessors:
+        tagList.append( "%dProcessors" % nProcessors )
+    if "WholeNode" in jobManifest:
+      if jobManifest.getOption( "WholeNode", "" ).lower() in ["1", "yes", "false"]:
+        tagList.append( "WholeNode" )
+    if "Tags" in jobManifest:
+      tagList.extend( jobManifest.getOption( "Tags", [] ) )
+    if tagList:
+      jobManifest.setOption( "Tags", ", ".join( tagList ) )
+
     reqSection = "JobRequirements"
 
     if reqSection in jobManifest:
