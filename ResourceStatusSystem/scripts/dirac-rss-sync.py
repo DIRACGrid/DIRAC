@@ -112,8 +112,8 @@ def synchronize():
     Given the element switch, adds rows to the <element>Status tables with Status
     `Unknown` and Reason `Synchronized`.
   '''
-
-  synchronizer = Synchronizer.Synchronizer()
+  global DEFAULT_STATUS
+  synchronizer = Synchronizer.Synchronizer( defaultStatus = DEFAULT_STATUS )
 
   if switchDict[ 'element' ] in ( 'Site', 'all' ):
     subLogger.info( 'Synchronizing Sites' )
