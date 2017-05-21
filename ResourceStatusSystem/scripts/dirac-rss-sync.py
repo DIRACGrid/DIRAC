@@ -149,17 +149,18 @@ def initSites():
     DIRACExit( 1 )
 
   for site, elements in sites['Value'].iteritems():
+    elementType = site.split( '.' )[0]
     parameters = { 'status': elements[0],
                    'reason': 'Synchronized',
                    'name': site,
                    'dateEffective': elements[1],
                    'tokenExpiration': Datetime,
-                   'elementType': 'Site',
+                   'elementType': elementType,
                    'statusType': 'all',
                    'lastCheckTime': None,
                    'tokenOwner': elements[2] }
 
-    result = rssClient.addIfNotThereStatusElement( "Site", "Status", **parameters )
+    result = rssClient.updateStatusElement( "Site", "Status", **parameters )
 
     if not result[ 'OK' ]:
       subLogger.error( result[ 'Message' ] )
@@ -262,15 +263,17 @@ def run():
 
   if 'init' in switchDict:
 
-    result = initSites()
-    if not result[ 'OK' ]:
-      subLogger.error( result[ 'Message' ] )
-      DIRACExit( 1 )
+    if switchDict.get( 'element' ) == "Site":
+      result = initSites()
+      if not result[ 'OK' ]:
+        subLogger.error( result[ 'Message' ] )
+        DIRACExit( 1 )
 
-    result = initSEs()
-    if not result[ 'OK' ]:
-      subLogger.error( result[ 'Message' ] )
-      DIRACExit( 1 )
+    if switchDict.get( 'element' ) == "Resource":
+      result = initSEs()
+      if not result[ 'OK' ]:
+        subLogger.error( result[ 'Message' ] )
+        DIRACExit( 1 )
 
 #...............................................................................
 
