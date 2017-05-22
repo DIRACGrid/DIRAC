@@ -8,8 +8,6 @@ import select
 import cStringIO
 from hashlib import md5
 
-import socket
-
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import DEncode
@@ -38,7 +36,7 @@ class BaseTransport( object ):
     self.sentKeepAlives = 0
     self.waitingForKeepAlivePong = False
     self.__keepAliveLapse = 0
-    self.oSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    self.oSocket = None
     if 'keepAliveLapse' in kwargs:
       try:
         self.__keepAliveLapse = max( 150, int( kwargs[ 'keepAliveLapse' ] ) )
