@@ -97,23 +97,31 @@ class JobScheduling( OptimizerExecutor ):
     # If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
-        result = self.__jobDB.getUserSitesTuple( userSites )
+
+        result = self.siteClient.getUsableSites( userSites )
         if not result[ 'OK' ]:
           return S_ERROR( "Problem checking userSites for tuple of active/banned/invalid sites" )
+        usableSites = set( result['Value'] )
+        bannedSites = []
+        invalidSites = []
+        for site in userSites:
+          if site in wmsBannedSites:
+            bannedSites.append( site )
+          elif site not in usableSites:
+            invalidSites.append( site )
 
-        userSites, bannedSites, invalidSites = result['Value']
         if invalidSites:
           self.jobLog.debug( "Invalid site(s) requested: %s" % ','.join( invalidSites ) )
           if not self.ex_getOption( 'AllowInvalidSites', True ):
             return self.__holdJob( jobState, "Requested site(s) %s are invalid" % ",".join( invalidSites ) )
         if bannedSites:
           self.jobLog.debug( "Banned site(s) %s ignored" % ",".join( bannedSites ) )
-          if not userSites:
+          if not usableSites:
             return self.__holdJob( jobState, "Requested site(s) %s are inactive" % ",".join( bannedSites ) )
 
-        if not userSites:
+        if not usableSites:
           return self.__holdJob( jobState, "No requested site(s) are active/valid" )
-        userSites = list( userSites )
+        userSites = list( usableSites )
 
 
     checkPlatform = self.ex_getOption( 'CheckPlatform', False )
