@@ -114,7 +114,7 @@ class PlainTransport( BaseTransport ):
     return S_OK( sentBytes )
 
 def checkSanity( *args, **kwargs ):
-  return S_OK({})
+  return S_OK( {} )
 
 def delegate( delegationRequest, kwargs ):
   """
