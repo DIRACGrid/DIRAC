@@ -336,6 +336,7 @@ and this is thread %s
         else:
           return retVal
     except Exception as e:
+      gLogger.exception(lException = True, lExcInfo = True)
       return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, repr( e ) ) )
     trid = getGlobalTransportPool().add( transport )
     return S_OK( ( trid, transport ) )
