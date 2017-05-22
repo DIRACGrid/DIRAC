@@ -1,17 +1,17 @@
 .. _editing_code:
 
-======================================
+==================
 Editing DIRAC code
-======================================
+==================
 
 What is this for?
------------------
+=================
 
 Here we describe the suggested method for editing and unit-testing DIRAC code, and direct extensions of it.
 
 
 What is this NOT for?
----------------------
+=====================
 
 * This method is NOT specific for the WebAppDIRAC or Pilot code development, although several things that are described here can be applied.
 * This method will NOT work out of box if you need 3rd party python libraries that are not on PyPi.
@@ -19,7 +19,7 @@ What is this NOT for?
 
 
 Notes before continuing
-------------------------
+=======================
 
 *OS*: any \*nix should be fine
 (maybe even windows is fine but I would not know how).
@@ -35,7 +35,7 @@ for which you need to have an account before continuing.
 
 
 Stuff you need to have installed
----------------------------------
+================================
 
 *python*: make sure python 2.7.x is installed and set as default
 (beware: the latest versions of Ubuntu use python 3.X as default).
@@ -60,14 +60,14 @@ Examples include IDE like Eclipse or PyCharm, or whatever you prefer
 
 
 Setting up your development installation
-==================================================
+----------------------------------------
 
 The following steps will try to guide
 you on setting up a development installation for DIRAC
 
 
 Checking out the source
--------------------------
+=======================
 
 0. Go to a clean directory, e.g. $HOME/pyDevs/.
 
@@ -99,7 +99,7 @@ released changes into your working repo. We will name that repository *release*:
 
 
 Repository structure
---------------------
+====================
 
 Just looking at the root directory::
 
@@ -121,7 +121,7 @@ Unsurprisingly:
 
 
 Adding an extension
--------------------------
+===================
 
 You can add an extension of DIRAC, of course.
 The repository structure may be the same of the DIRAC one, or something slightly different.
@@ -129,7 +129,7 @@ The only important thing is what you are going to put in the $PYTHONPATH.
 
 
 Installing the dependencies
----------------------------
+===========================
 
 First first, be sure setuptools is at the latest version::
 
@@ -164,7 +164,7 @@ Some useful commands::
 
 
 Adding to the PYTHONPATH
--------------------------
+========================
 
 You may either add the PATH to the global PYTHONPATH, as following::
 
@@ -175,11 +175,26 @@ or use virtualenv for managing the path,
 using `add2virtualenv <http://virtualenvwrapper.readthedocs.io/en/latest/command_ref.html#add2virtualenv>`
 
 
-
 Ready!
-------
+======
 
-You're ready for DIRAC development! (or at least, good part of it).
+You're ready for DIRAC development! (or at least, good part of it). What can you do with what you have just done?
 
-You may now either proceed to :ref:`stuff_that_run`,
-or look into sections :ref:`check_your_installation` and the following :ref:`your_first_dirac_code`
+1. Editing code (this is the obvious!)
+2. Running unit tests: please refer to :ref:`testing_environment` for more info.
+3. Running linters: please refer to :ref:`code_quality` for more info
+
+So, this is "pure code"! And what you CAN'T do (yet)?
+
+- You can't get a proxy
+- you can't interact with configuration files nor with the Configuration System
+- you can't run services, nor agents (no DIRAC components)
+
+
+Next?
+-----
+
+This depends from you: if you are a casual developer, you can stop here,
+and look into sections :ref:`check_your_installation` and the following :ref:`your_first_dirac_code`
+
+Alternatively, if you want to do more, you may proceed to the section :ref:`stuff_that_run`.

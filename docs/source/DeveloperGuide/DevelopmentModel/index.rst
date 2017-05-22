@@ -16,10 +16,10 @@ The DIRACGrid project includes several repositories, all hosted in `Github <http
   - `COMDIRAC <https://github.com/DIRACGrid/COMDIRAC>`_ is a DIRAC extension of its CLI
   - `VMDIRAC <https://github.com/DIRACGrid/VMDIRAC>`_ is a DIRAC extension for using cloud sites
   - `RESTDIRAC <https://github.com/DIRACGrid/RESTDIRAC>`_ is a DIRAC extension that creates a REST layer for DIRAC services
-  - `Pilot <https://github.com/DIRACGrid/Pilot>`_ is not a DIRAC extension, but a new version of the DIRAC pilots
-  - `DB12 <https://github.com/DIRACGrid/DB12>`_ is not a DIRAC extension, but a self-contained quick benchmark
+  - `Pilot <https://github.com/DIRACGrid/Pilot>`_ is *not* a DIRAC extension, but a new version of the DIRAC pilots (dubbed Pilots 3.0)
+  - `DB12 <https://github.com/DIRACGrid/DB12>`_ is *not* a DIRAC extension, but a self-contained quick benchmark
 
-The content of the other repositories at https://github.com/DIRACGrid have either been included in those above, or became obsolete.
+The content of the other repositories at ''https://github.com/DIRACGrid'' have either been included in those above, or became obsolete.
 
 This work must be supported by a suitable development model which
 is described in this chapter.

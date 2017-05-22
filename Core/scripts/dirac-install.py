@@ -320,9 +320,9 @@ class ReleaseConfig( object ):
     try:
       md5path = urlcfg[:-4] + ".md5"
       if os.path.exists( md5path ):
-        md5file = open( md5path, 'r' )
+        md5File = open( md5path, 'r' )
         md5Data = md5File.read()
-        md5file.close()
+        md5File.close()
       else:
         md5Data = urlretrieveTimeout( md5path, timeout = 60 )
       md5Hex = md5Data.strip()
