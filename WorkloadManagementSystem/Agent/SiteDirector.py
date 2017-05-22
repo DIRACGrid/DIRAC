@@ -327,6 +327,8 @@ class SiteDirector( AgentModule ):
           self.queueDict[queueName]['Site'] = site
           self.queueDict[queueName]['QueueName'] = queue
           self.queueDict[queueName]['Platform'] = platform
+          self.queueDict[queueName]['QueryCEFlag'] = ceDict.get( 'QueryCEFlag', "false" )
+
           result = self.queueDict[queueName]['CE'].isValid()
           if not result['OK']:
             self.log.fatal( result['Message'] )
@@ -676,6 +678,7 @@ class SiteDirector( AgentModule ):
     ce = self.queueDict[queue]['CE']
     ceName = self.queueDict[queue]['CEName']
     queueName = self.queueDict[queue]['QueueName']
+    queryCEFlag = self.queueDict[queue]["QueryCEFlag"].lower() in ["1", "yes", "true"]
 
     self.queueSlots.setdefault( queue, {} )
     totalSlots = self.queueSlots[queue].get( 'AvailableSlots', 0 )
@@ -705,18 +708,39 @@ class SiteDirector( AgentModule ):
         if result['OK']:
           jobIDList = result['Value']
 
-        result = ce.available( jobIDList )
-        if not result['OK']:
-          self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
-          self.failedQueues[queue] += 1
+        if queryCEFlag:
+          result = ce.available( jobIDList )
+          if not result['OK']:
+            self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
+            self.failedQueues[queue] += 1
+          else:
+            ceInfoDict = result['CEInfoDict']
+            self.log.info( "CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" % \
+                           ( ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
+                             ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
+            totalSlots = result['Value']
+            self.queueSlots[queue]['AvailableSlots'] = totalSlots
+            waitingJobs = ceInfoDict['WaitingJobs']
         else:
-          ceInfoDict = result['CEInfoDict']
-          self.log.info( "CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" % \
-                         ( ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
-                           ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
-          totalSlots = result['Value']
-          self.queueSlots[queue]['AvailableSlots'] = totalSlots
-          waitingJobs = ceInfoDict['WaitingJobs']
+          maxWaitingJobs = int( self.queueDict[queue]['ParametersDict']['MaxWaitingJobs'] )
+          maxTotalJobs = int( self.queueDict[queue]['ParametersDict']['MaxTotalJobs'] )
+          result = pilotAgentsDB.getPilotInfo( jobIDList )
+          if not result['OK']:
+            self.log.warn( 'Failed to check PilotAgentsDB for queue %s: \n%s' % ( queue, result['Message'] ) )
+            self.failedQueues[queue] += 1
+          else:
+            waitingJobs = 0
+            totalJobs = 0
+            for pilotRef, pilotDict in result['Value'].iteritems():
+              if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
+                totalJobs += 1
+                if pilotDict["Status"] in WAITING_PILOT_STATUS:
+                  waitingJobs += 1
+            runningJobs = totalJobs - waitingJobs
+            self.log.info( "PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" % \
+                           ( ceName, queueName, waitingJobs, runningJobs, maxTotalJobs ) )
+            totalSlots = min( (maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs) )
+            self.queueSlots[queue]['AvailableSlots'] = totalSlots
 
     self.queueSlots[queue]['AvailableSlotsCount'] += 1
 
