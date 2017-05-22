@@ -209,6 +209,9 @@ class Matcher( object ):
         if paramTags:
           resourceDict.setdefault( "Tag", [] ).extend( paramTags )
 
+    if "WholeNode" in resourceDescription:
+      resourceDict.setdefault( "Tag", [] ).append( "WholeNode" )
+
     if 'Tag' in resourceDict:
       resourceDict['Tag'] = list( set( resourceDict['Tag'] ) )
 

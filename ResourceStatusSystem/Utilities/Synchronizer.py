@@ -29,7 +29,7 @@ class Synchronizer( object ):
 
   '''
 
-  def __init__( self, rStatus = None, rManagement = None ):
+  def __init__( self, rStatus = None, rManagement = None, defaultStatus = "Unknown" ):
 
     # Warm up local CS
     CSHelpers.warmUp()
@@ -38,6 +38,7 @@ class Synchronizer( object ):
       self.rStatus     = ResourceStatusClient.ResourceStatusClient()
     if rManagement is None:
       self.rManagement = ResourceManagementClient()
+    self.defaultStatus = defaultStatus
 
     self.rssConfig = RssConfiguration()
     self.tokenOwner = "rs_svc"
@@ -137,7 +138,7 @@ class Synchronizer( object ):
         query = self.rStatus.addIfNotThereStatusElement( 'Site', 'Status',
                                                          name = siteTuple[ 0 ],
                                                          statusType = siteTuple[ 1 ],
-                                                         status = 'Unknown',
+                                                         status = self.defaultStatus,
                                                          elementType = domainName,
                                                          tokenOwner = self.tokenOwner,
                                                          reason = 'Synchronized' )
@@ -292,7 +293,7 @@ class Synchronizer( object ):
 
       _name            = ceTuple[ 0 ]
       _statusType      = ceTuple[ 1 ]
-      _status          = 'Unknown'
+      _status          = self.defaultStatus
       _reason          = 'Synchronized'
       _elementType     = 'ComputingElement'
 
@@ -359,7 +360,7 @@ class Synchronizer( object ):
 
       _name            = catalogTuple[ 0 ]
       _statusType      = catalogTuple[ 1 ]
-      _status          = 'Unknown'
+      _status          = self.defaultStatus
       _reason          = 'Synchronized'
       _elementType     = 'Catalog'
 
@@ -426,7 +427,7 @@ class Synchronizer( object ):
 
       _name            = ftsTuple[ 0 ]
       _statusType      = ftsTuple[ 1 ]
-      _status          = 'Unknown'
+      _status          = self.defaultStatus
       _reason          = 'Synchronized'
       _elementType     = 'FTS'
 
@@ -493,7 +494,7 @@ class Synchronizer( object ):
 
       _name            = seTuple[ 0 ]
       _statusType      = seTuple[ 1 ]
-      _status          = 'Unknown'
+      _status          = self.defaultStatus
       _reason          = 'Synchronized'
       _elementType     = 'StorageElement'
 
@@ -563,7 +564,7 @@ class Synchronizer( object ):
 
       _name            = queueTuple[ 0 ]
       _statusType      = queueTuple[ 1 ]
-      _status          = 'Unknown'
+      _status          = self.defaultStatus
       _reason          = 'Synchronized'
       _elementType     = 'Queue'
 
