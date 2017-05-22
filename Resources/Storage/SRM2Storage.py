@@ -899,7 +899,12 @@ class SRM2Storage( StorageBase ):
       self.log.debug( "__getFile: Local file already exists %s. Removing..." % dest_file )
       os.remove( dest_file )
     srctype = self.defaulttype
-    src_spacetokendesc = self.spaceToken
+    # lcg-cp download from a bestman2 SE does not work when src_spacetokendesc specified
+    backendType = gConfig.getValue( '/Resources/StorageElements/%s/BackendType' % ( self.name ), '' )
+    if backendType == 'bestman2':
+      src_spacetokendesc = ''
+    else:
+      src_spacetokendesc = self.spaceToken
     dsttype = 0
     dest_spacetokendesc = ''
     dest_url = 'file:%s' % dest_file
