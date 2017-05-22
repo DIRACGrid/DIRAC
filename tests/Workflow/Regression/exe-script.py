@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 '''Script to run Executable application'''
 
-from os import system
 import sys
+from os import system
 
 # Main
 if __name__ == '__main__':
