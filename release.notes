@@ -1,4 +1,4 @@
-[v6r18-pre11]
+[v6r18-pre12]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -10,6 +10,8 @@ FIX: All Databases are granting also REFERENCES grant to Dirac user to comply wi
 FIX: dirac-install - allow to use local md5 files
 CHANGE: X509Chain - fixes to allow robot proxies with embedded DIRAC group extension
         ( allow DIRAC group extension not in the first certificate chain step )
+CHANGE: BaseClient - recheck the useServerCertificate while establishing connection
+        and take it into account even if it has changed after the client object creation        
 
 *Accounting
 NEW: new functionality to plot the data gathered by perfSONARs. It allows to 

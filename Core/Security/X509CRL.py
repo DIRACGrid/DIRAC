@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities import DErrno
 
 class X509CRL( object ):
 
-  def __init__( self, cert = False ):
+  def __init__( self, cert = None ):
 
     self.__pemData = None
 
