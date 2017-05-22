@@ -601,7 +601,10 @@ class SiteDirector( AgentModule ):
         jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )
         httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
 
-        result = self.getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
+        result = self.getExecutable( queue, pilotsToSubmit,
+                                     bundleProxy = bundleProxy,
+                                     httpProxy = httpProxy,
+                                     jobExecDir = jobExecDir )
         if not result['OK']:
           return result
 
@@ -723,14 +726,14 @@ class SiteDirector( AgentModule ):
       return totalSlots
 
 #####################################################################################
-  def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '', processors = 1 ):
+  def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '' ):
     """ Prepare the full executable for queue
     """
 
     proxy = None
     if bundleProxy:
       proxy = self.proxy
-    pilotOptions, pilotsToSubmit = self._getPilotOptions( queue, pilotsToSubmit, processors )
+    pilotOptions, pilotsToSubmit = self._getPilotOptions( queue, pilotsToSubmit )
     if pilotOptions is None:
       self.log.error( "Pilot options empty, error in compilation" )
       return S_ERROR( "Errors in compiling pilot options" )
@@ -739,7 +742,7 @@ class SiteDirector( AgentModule ):
     return S_OK( [ executable, pilotsToSubmit ] )
 
 #####################################################################################
-  def _getPilotOptions( self, queue, pilotsToSubmit, processors = 1 ):
+  def _getPilotOptions( self, queue, pilotsToSubmit ):
     """ Prepare pilot options
     """
 
@@ -841,14 +844,6 @@ class SiteDirector( AgentModule ):
     # Hack
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
-
-    if processors != 1:
-      if processors > 1:
-        pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=%sProcessors' % processors )
-        pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%sProcessors' % processors )
-      else:
-        pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=WholeNode' )
-        pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=WholeNode' )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
