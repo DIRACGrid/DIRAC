@@ -273,7 +273,7 @@ class SiteStatus( object ):
       if self.rssFlag:
         siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'Name' ] } )
       else:
-        siteStatus = self.wmsAdministrator.getSiteMask()
+        siteStatus = self.wmsAdministrator.getSiteMask( siteState )
 
     if not siteStatus['OK']:
       return siteStatus
