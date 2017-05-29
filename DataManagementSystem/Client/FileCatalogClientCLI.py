@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+import stat
 import cmd
 import commands
 import os.path
@@ -20,8 +21,6 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
-<<<<<<< HEAD
-=======
 class DirectoryListing:
   
   def __init__(self):
@@ -245,7 +244,6 @@ class DirectoryListing:
     for entry in self.entries:
       print entry
 
->>>>>>> rel-v6r12
 class FileCatalogClientCLI(cmd.Cmd):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
 
