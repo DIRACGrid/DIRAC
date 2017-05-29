@@ -388,6 +388,8 @@ if __name__ == "__main__":
   #############################################
 
   globusDir = os.path.expandvars( "$HOME/.globus" )
+  if not os.path.isdir( globusDir ):
+    os.mkdir( globusDir )
   globusFiles = os.listdir( globusDir )
 
   if "usercert.pem" not in globusFiles or "userkey.pem" not in globusFiles:

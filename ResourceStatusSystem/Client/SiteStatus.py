@@ -136,7 +136,9 @@ class SiteStatus( object ):
     """
 
     if self.rssFlag:
-      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Name', 'Status' ] } )
+      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status',
+                                                      name = siteName,
+                                                      meta = { 'columns' : [ 'Name', 'Status' ] } )
     else:
       siteStatus = self.wmsAdministrator.getSiteMaskStatus(siteName)
 
@@ -316,17 +318,17 @@ class SiteStatus( object ):
     if status not in allowedStateList:
       return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
-    res = getProxyInfo()
-    if res['OK']:
-      authorDN = res['Value']['username']
+    result = getProxyInfo()
+    if result['OK']:
+      tokenOwner = result['Value']['username']
     else:
-      return S_ERROR( "Unable to get uploaded proxy Info %s " % res['Message'] )
+      return S_ERROR( "Unable to get user proxy info %s " % result['Message'] )
 
     tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
 
     result = self.rsClient.modifyStatusElement( 'Site', 'Status', status = status, name = site,
                                                 tokenExpiration = tokenExpiration, reason = comment,
-                                                tokenOwner = authorDN )
+                                                tokenOwner = tokenOwner )
 
     if not result['OK']:
       return result

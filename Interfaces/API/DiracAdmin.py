@@ -184,12 +184,12 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
-  def addSiteInMask( self, site, comment, printOutput = False ):
+  def allowSite( self, site, comment, printOutput = False ):
     """Adds the site to the site mask.
 
        Example usage:
 
-         >>> print diracAdmin.addSiteInMask()
+         >>> print diracAdmin.allowSite()
          {'OK': True, 'Value': }
 
        :return: S_OK,S_ERROR
@@ -199,12 +199,14 @@ class DiracAdmin( API ):
     if not result['OK']:
       return result
 
-    mask = self.getSiteMask( status = 'Active' )
-    if not mask['OK']:
-      return mask
-    siteMask = mask['Value']
+    result = self.getSiteMask( status = 'Active' )
+    if not result['OK']:
+      return result
+    siteMask = result['Value']
     if site in siteMask:
-      return S_ERROR( 'Site %s already in mask of allowed sites' % site )
+      if printOutput:
+        print 'Site %s is already Active' % site
+      return S_OK( 'Site %s is already Active' % site )
 
     if self.rssFlag:
       result = self.sitestatus.setSiteStatus( site, 'Active', comment )
@@ -215,7 +217,7 @@ class DiracAdmin( API ):
       return result
 
     if printOutput:
-      print 'Allowing %s in site mask' % site
+      print 'Site %s status is set to Active' % site
 
     return result
 
@@ -260,12 +262,12 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
-  def banSiteFromMask( self, site, comment, printOutput = False ):
+  def banSite( self, site, comment, printOutput = False ):
     """Removes the site from the site mask.
 
        Example usage:
 
-         >>> print diracAdmin.banSiteFromMask()
+         >>> print diracAdmin.banSite()
          {'OK': True, 'Value': }
 
        :return: S_OK,S_ERROR
@@ -280,7 +282,9 @@ class DiracAdmin( API ):
       return mask
     siteMask = mask['Value']
     if site in siteMask:
-      return S_ERROR( 'Site %s is already banned' % site )
+      if printOutput:
+        print 'Site %s is already Banned' % site
+      return S_OK( 'Site %s is already Banned' % site )
 
     if self.rssFlag:
       result = self.sitestatus.setSiteStatus( site, 'Banned', comment )
@@ -291,7 +295,7 @@ class DiracAdmin( API ):
       return result
 
     if printOutput:
-      print 'Removing %s from site mask' % site
+      print 'Site %s status is set to Banned' % site
 
     return result
 

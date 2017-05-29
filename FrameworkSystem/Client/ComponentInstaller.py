@@ -417,7 +417,7 @@ class ComponentInstaller( object ):
     adminUserEmail = self.localCfg.getOption( cfgInstallPath( 'AdminUserEmail' ), '' )
     adminGroupName = self.localCfg.getOption( cfgInstallPath( 'AdminGroupName' ), 'dirac_admin' )
     hostDN = self.localCfg.getOption( cfgInstallPath( 'HostDN' ), '' )
-    defaultGroupName = 'user'
+    defaultGroupName = self.localCfg.getOption( cfgInstallPath( 'DefaultGroupName' ), 'dirac_user' )
     adminGroupProperties = [ ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR,
                              CS_ADMINISTRATOR, JOB_ADMINISTRATOR,
                              FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR ]
@@ -1465,7 +1465,7 @@ class ComponentInstaller( object ):
     setupAgents = [ k.split( '/' ) for k in self.localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
     setupExecutors = [ k.split( '/' ) for k in self.localCfg.getOption( cfgInstallPath( 'Executors' ), [] ) ]
     setupWeb = self.localCfg.getOption( cfgInstallPath( 'WebPortal' ), False )
-    setupWebApp = self.localCfg.getOption( cfgInstallPath( 'WebApp' ), False )
+    setupWebApp = self.localCfg.getOption( cfgInstallPath( 'WebApp' ), True )
     setupConfigurationMaster = self.localCfg.getOption( cfgInstallPath( 'ConfigurationMaster' ), False )
     setupPrivateConfiguration = self.localCfg.getOption( cfgInstallPath( 'PrivateConfiguration' ), False )
     setupConfigurationName = self.localCfg.getOption( cfgInstallPath( 'ConfigurationName' ), self.setup )
@@ -1593,7 +1593,6 @@ class ComponentInstaller( object ):
         centralCfg = self._getCentralCfg( self.localCfg )
       self._addCfgToLocalCS( centralCfg )
       self.setupComponent( 'service', 'Configuration', 'Server', [], checkModule = False )
-      MonitoringUtilities.monitorInstallation( 'service', 'Configuration', 'Server' )
       self.runsvctrlComponent( 'Configuration', 'Server', 't' )
 
       while ['Configuration', 'Server'] in setupServices:
@@ -1705,33 +1704,24 @@ class ComponentInstaller( object ):
 
     # 4.- Then installed requested services
     for system, service in setupServices:
-      result = self.setupComponent( 'service', system, service, extensions, monitorFlag = False )
+      result = self.setupComponent( 'service', system, service, extensions )
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
-      result = MonitoringUtilities.monitorInstallation( 'service', system, service )
-      if not result['OK']:
-        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 5.- Now the agents
     for system, agent in setupAgents:
-      result = self.setupComponent( 'agent', system, agent, extensions, monitorFlag = False )
+      result = self.setupComponent( 'agent', system, agent, extensions )
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
-      result = MonitoringUtilities.monitorInstallation( 'agent', system, agent )
-      if not result['OK']:
-        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 6.- Now the executors
     for system, executor in setupExecutors:
-      result = self.setupComponent( 'executor', system, executor, extensions, monitorFlag = False )
+      result = self.setupComponent( 'executor', system, executor, extensions )
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
-      result = MonitoringUtilities.monitorInstallation( 'executor', system, executor )
-      if not result['OK']:
-        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 7.- And finally the Portal
     if setupWeb:
@@ -1904,7 +1894,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     return S_OK( runitCompDir )
 
   def setupComponent( self, componentType, system, component, extensions,
-                      componentModule = '', checkModule = True, monitorFlag = True ):
+                      componentModule = '', checkModule = True ):
     """
     Install and create link in startup
     """

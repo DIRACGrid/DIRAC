@@ -47,6 +47,9 @@ class BaseClient(object):
     self._destinationSrv = serviceName
     self._serviceName = serviceName
     self.kwargs = kwargs
+    self.__useCertificates = None
+    # The CS useServerCertificate option can be overridden by explicit argument
+    self.__forceUseCertificates = self.kwargs.get( self.KW_USE_CERTIFICATES )
     self.__initStatus = S_OK()
     self.__idDict = {}
     self.__extraCredentials = ""
@@ -134,12 +137,12 @@ class BaseClient(object):
   def __discoverCredentialsToUse( self ):
     #Use certificates?
     if self.KW_USE_CERTIFICATES in self.kwargs:
-      self.useCertificates = self.kwargs[ self.KW_USE_CERTIFICATES ]
+      self.__useCertificates = self.kwargs[ self.KW_USE_CERTIFICATES ]
     else:
-      self.useCertificates = gConfig.useServerCertificate()
-      self.kwargs[ self.KW_USE_CERTIFICATES ] = self.useCertificates
+      self.__useCertificates = gConfig.useServerCertificate()
+      self.kwargs[ self.KW_USE_CERTIFICATES ] = self.__useCertificates
     if self.KW_SKIP_CA_CHECK not in self.kwargs:
-      if self.useCertificates:
+      if self.__useCertificates:
         self.kwargs[ self.KW_SKIP_CA_CHECK ] = False
       else:
         self.kwargs[ self.KW_SKIP_CA_CHECK ] = CS.skipCACheck()
@@ -153,7 +156,7 @@ class BaseClient(object):
 
   def __discoverExtraCredentials( self ):
     #Wich extra credentials to use?
-    if self.useCertificates:
+    if self.__useCertificates:
       self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
     else:
       self.__extraCredentials = ""
@@ -291,6 +294,16 @@ and this is thread %s
 
   def _connect( self ):
 
+    # Check if the useServerCertificate configuration changed
+    if gConfig.useServerCertificate() != self.__useCertificates:
+      if self.__forceUseCertificates is None:
+        self.__useCertificates = gConfig.useServerCertificate()
+        self.kwargs[self.KW_USE_CERTIFICATES] = self.__useCertificates
+        # The server certificate use context changed, rechecking the transport sanity
+        result = self.__checkTransportSanity()
+        if not result['OK']:
+          return result
+
     self.__discoverExtraCredentials()
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
@@ -316,13 +329,14 @@ and this is thread %s
           if len(self.__bannedUrls) == self.__nbOfUrls:
             self.__retryCounter += 1
             self.__retryDelay = 3. / self.__nbOfUrls  if self.__nbOfUrls > 1 else 2  # we run only one service! In that case we increase the retry delay.
-            gLogger.info( "Waiting %f  second before retry all service(s)" % self.__retryDelay )
+            gLogger.info( "Waiting %f seconds before retry all service(s)" % self.__retryDelay )
             time.sleep( self.__retryDelay )
           self.__discoverURL()
           return self._connect()
         else:
           return retVal
     except Exception as e:
+      gLogger.exception(lException = True, lExcInfo = True)
       return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, repr( e ) ) )
     trid = getGlobalTransportPool().add( transport )
     return S_OK( ( trid, transport ) )

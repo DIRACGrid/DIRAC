@@ -415,6 +415,8 @@ class CheckCECapabilities( CommandBase ):
     except ValueError:
       self.log.error( "The pilot command output is not json compatible." )
       sys.exit( 1 )
+    if resourceDict.get( 'WholeNode' ):
+      self.pp.tags.append( "WholeNode" )
     if resourceDict.get( 'Tag' ):
       self.pp.tags += resourceDict['Tag']
       self.cfg.append( '-FDMH' )
