@@ -27,14 +27,14 @@ from pilotTools import Logger, pythonPathCheck, PilotParams, getCommand
 
 if __name__ == "__main__":
 
-  pythonPathCheck()
-
   log = Logger( 'Pilot' )
 
   pilotParams = PilotParams()
   if pilotParams.debugFlag:
     log.setDebug()
-  if pilotParams.clearPythonPath:
+  if pilotParams.keepPythonPath:
+    pythonPathCheck()
+  else:
     log.info( "Clearing PYTHONPATH for child processes." )
     if "PYTHONPATH" in os.environ:
       os.environ["PYTHONPATH_SAVE"] = os.environ["PYTHONPATH"]
