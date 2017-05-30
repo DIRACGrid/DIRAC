@@ -65,23 +65,23 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
   types_getSiteMask = []
-  @classmethod
-  def export_getSiteMask(cls, siteState = 'Active'):
+  @staticmethod
+  def export_getSiteMask(siteState = 'Active'):
     """ Get the site mask
     """
     return jobDB.getSiteMask( siteState )
 
   types_getSiteMaskStatus = []
-  @classmethod
-  def export_getSiteMaskStatus(cls, sites = None):
+  @staticmethod
+  def export_getSiteMaskStatus(sites = None):
     """ Get the site mask of given site(s) with columns 'site' and 'status' only
     """
 
     return jobDB.getSiteMaskStatus( sites )
 
   types_getAllSiteMaskStatus = []
-  @classmethod
-  def export_getAllSiteMaskStatus(cls):
+  @staticmethod
+  def export_getAllSiteMaskStatus():
     """ Get all the site parameters in the site mask
     """
     return jobDB.getAllSiteMaskStatus()
@@ -120,8 +120,8 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
   types_clearMask = []
-  @classmethod
-  def export_clearMask(cls):
+  @staticmethod
+  def export_clearMask():
     """ Clear up the entire site mask
     """
 
@@ -129,8 +129,8 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
   types_getSiteMaskLogging = [ list( StringTypes ) + [ListType] ]
-  @classmethod
-  def export_getSiteMaskLogging( cls, sites ):
+  @staticmethod
+  def export_getSiteMaskLogging( sites ):
     """ Get the site mask logging history
     """
 
@@ -141,8 +141,8 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
   types_getSiteMaskSummary = [ ]
-  @classmethod
-  def export_getSiteMaskSummary(cls):
+  @staticmethod
+  def export_getSiteMaskSummary():
     """ Get the mask status for all the configured sites
     """
 
@@ -169,8 +169,8 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
   types_getCurrentPilotCounters = [ DictType ]
-  @classmethod
-  def export_getCurrentPilotCounters( cls, attrDict={}):
+  @staticmethod
+  def export_getCurrentPilotCounters( attrDict={}):
     """ Get pilot counters per Status with attrDict selection. Final statuses are given for
         the last day.
     """
@@ -199,8 +199,8 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##########################################################################################
   types_addPilotTQReference = [ ListType, [IntType, LongType], StringTypes, StringTypes ]
-  @classmethod
-  def export_addPilotTQReference( cls, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
+  @staticmethod
+  def export_addPilotTQReference( pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
                                   gridType='DIRAC', requirements='Unknown',pilotStampDict={}):
     """ Add a new pilot job reference """
     return pilotDB.addPilotTQReference(pilotRef, taskQueueID,
@@ -219,32 +219,32 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getPilotInfo = [ list(StringTypes)+[ListType] ]
-  @classmethod
-  def export_getPilotInfo(cls, pilotReference):
+  @staticmethod
+  def export_getPilotInfo(pilotReference):
     """ Get the info about a given pilot job reference
     """
     return pilotDB.getPilotInfo(pilotReference)
 
   ##############################################################################
   types_selectPilots = [ DictType ]
-  @classmethod
-  def export_selectPilots(cls, condDict):
+  @staticmethod
+  def export_selectPilots(condDict):
     """ Select pilots given the selection conditions
     """
     return pilotDB.selectPilots(condDict)
 
   ##############################################################################
   types_storePilotOutput = [ StringTypes,StringTypes,StringTypes ]
-  @classmethod
-  def export_storePilotOutput(cls, pilotReference, output, error):
+  @staticmethod
+  def export_storePilotOutput(pilotReference, output, error):
     """ Store the pilot output and error
     """
     return pilotDB.storePilotOutput(pilotReference,output,error)
 
   ##############################################################################
   types_getPilotLoggingInfo = [StringTypes]
-  @classmethod
-  def export_getPilotLoggingInfo(cls, pilotReference):
+  @staticmethod
+  def export_getPilotLoggingInfo(pilotReference):
     """ Get the pilot logging info for the Grid job reference
     """
 
@@ -290,8 +290,8 @@ class WMSAdministratorHandler(RequestHandler):
       return S_ERROR('No pilot job reference found')
 
   ##############################################################################
-  @classmethod
-  def __getGridJobOutput(cls, pilotReference):
+  @staticmethod
+  def __getGridJobOutput(pilotReference):
     """ Get the pilot job standard output and standard error files for the Grid
         job reference
     """
@@ -389,8 +389,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getPilotSummary = []
-  @classmethod
-  def export_getPilotSummary(cls, startdate='', enddate=''):
+  @staticmethod
+  def export_getPilotSummary(startdate='', enddate=''):
     """ Get summary of the status of the LCG Pilot Jobs
     """
 
@@ -399,8 +399,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getPilotMonitorWeb = [DictType, ListType, IntType, IntType]
-  @classmethod
-  def export_getPilotMonitorWeb(cls, selectDict, sortList, startItem, maxItems):
+  @staticmethod
+  def export_getPilotMonitorWeb(selectDict, sortList, startItem, maxItems):
     """ Get the summary of the pilot information for a given page in the
         pilot monitor in a generic format
     """
@@ -410,8 +410,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getPilotMonitorSelectors = []
-  @classmethod
-  def export_getPilotMonitorSelectors(cls):
+  @staticmethod
+  def export_getPilotMonitorSelectors():
     """ Get all the distinct selector values for the Pilot Monitor web portal page
     """
 
@@ -420,8 +420,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getPilotSummaryWeb = [DictType, ListType, IntType, IntType]
-  @classmethod
-  def export_getPilotSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
+  @staticmethod
+  def export_getPilotSummaryWeb(selectDict, sortList, startItem, maxItems):
     """ Get the summary of the pilot information for a given page in the
         pilot monitor in a generic format
     """
@@ -431,8 +431,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getSiteSummaryWeb = [DictType, ListType, IntType, IntType]
-  @classmethod
-  def export_getSiteSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
+  @staticmethod
+  def export_getSiteSummaryWeb(selectDict, sortList, startItem, maxItems):
     """ Get the summary of the jobs running on sites in a generic format
     """
 
@@ -441,8 +441,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getSiteSummarySelectors = []
-  @classmethod
-  def export_getSiteSummarySelectors(cls):
+  @staticmethod
+  def export_getSiteSummarySelectors():
     """ Get all the distinct selector values for the site summary web portal page
     """
 
@@ -479,8 +479,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_getPilots = [list( StringTypes ) + [ IntType, LongType]]
-  @classmethod
-  def export_getPilots(cls, jobID):
+  @staticmethod
+  def export_getPilots(jobID):
     """ Get pilot references and their states for :
       - those pilots submitted for the TQ where job is sitting
       - (or) the pilots executing/having executed the Job
@@ -512,8 +512,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_killPilot = [ list(StringTypes)+[ListType] ]
-  @classmethod
-  def export_killPilot(cls, pilotRefList ):
+  @staticmethod
+  def export_killPilot(pilotRefList ):
     """ Kill the specified pilots
     """
     # Make a list if it is not yet
@@ -577,8 +577,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   types_setJobForPilot = [ list( StringTypes ) + [ IntType, LongType], StringTypes]
-  @classmethod
-  def export_setJobForPilot(cls, jobID, pilotRef, destination=None):
+  @staticmethod
+  def export_setJobForPilot(jobID, pilotRef, destination=None):
     """ Report the DIRAC job ID which is executed by the given pilot job
     """
 
@@ -595,8 +595,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##########################################################################################
   types_setPilotBenchmark = [StringTypes, FloatType]
-  @classmethod
-  def export_setPilotBenchmark(cls, pilotRef, mark):
+  @staticmethod
+  def export_setPilotBenchmark(pilotRef, mark):
     """ Set the pilot agent benchmark
     """
     result = pilotDB.setPilotBenchmark(pilotRef,mark)
@@ -604,8 +604,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##########################################################################################
   types_setAccountingFlag = [StringTypes]
-  @classmethod
-  def export_setAccountingFlag(cls, pilotRef, mark='True'):
+  @staticmethod
+  def export_setAccountingFlag(pilotRef, mark='True'):
     """ Set the pilot AccountingSent flag
     """
     result = pilotDB.setAccountingFlag(pilotRef,mark)
@@ -623,8 +623,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##########################################################################################
   types_countPilots = [ DictType ]
-  @classmethod
-  def export_countPilots(cls, condDict, older=None, newer=None, timeStamp='SubmissionTime'):
+  @staticmethod
+  def export_countPilots(condDict, older=None, newer=None, timeStamp='SubmissionTime'):
     """ Set the pilot agent status
     """
 
@@ -633,8 +633,8 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##########################################################################################
   types_getCounters = [ StringTypes, ListType, DictType ]
-  @classmethod
-  def export_getCounters(cls, table, keys, condDict, newer=None, timeStamp='SubmissionTime'):
+  @staticmethod
+  def export_getCounters(table, keys, condDict, newer=None, timeStamp='SubmissionTime'):
     """ Set the pilot agent status
     """
 
