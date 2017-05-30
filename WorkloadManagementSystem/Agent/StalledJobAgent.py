@@ -443,10 +443,10 @@ used to fail jobs due to the optimizer chain.
       if not startTime or startTime == 'None':
         startTime = jobDict['SubmissionTime']
 
-    if type( startTime ) in types.StringTypes:
+    if isinstance(startTime, basestring):
       startTime = fromString( startTime )
       if startTime == None:
-        self.log.error( 'Wrong timestamp in DB', items[3] )
+        self.log.error( 'Wrong timestamp in DB', startTime )
         startTime = dateTime()
 
 
