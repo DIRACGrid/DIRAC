@@ -255,7 +255,7 @@ class ComputingElement(object):
     """
 
     # If there are no already registered jobs
-    if jobIDList is not None and len( jobIDList ) == 0:
+    if jobIDList is not None and not jobIDList:
       result = S_OK()
       result['RunningJobs'] = 0
       result['WaitingJobs'] = 0
