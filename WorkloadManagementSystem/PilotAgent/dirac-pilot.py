@@ -34,6 +34,12 @@ if __name__ == "__main__":
   pilotParams = PilotParams()
   if pilotParams.debugFlag:
     log.setDebug()
+  if pilotParams.clearPythonPath:
+    log.info( "Clearing PYTHONPATH for child processes." )
+    if "PYTHONPATH" in os.environ:
+      os.environ["PYTHONPATH_SAVE"] = os.environ["PYTHONPATH"]
+      os.environ["PYTHONPATH"] = ""
+
 
   pilotParams.pilotRootPath = os.getcwd()
   pilotParams.pilotScript = os.path.realpath( sys.argv[0] )

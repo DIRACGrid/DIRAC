@@ -348,6 +348,7 @@ class PilotParams( object ):
     self.workingDir = os.getcwd()
 
     self.optList = {}
+    self.clearPythonPath = False
     self.debugFlag = False
     self.local = False
     self.commandExtensions = []
@@ -395,6 +396,7 @@ class PilotParams( object ):
 
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
+                     ( 'c', 'clearpp', 'Clear PYTHONPATH on start' ),
                      ( 'd', 'debug', 'Set debug flag' ),
                      ( 'e:', 'extraPackages=', 'Extra packages to install (comma separated)' ),
                      ( 'E:', 'commandExtensions=', 'Python module with extra commands' ),
@@ -456,6 +458,8 @@ class PilotParams( object ):
         self.queueName = v
       elif o == '-R' or o == '--reference':
         self.pilotReference = v
+      elif o == '-c' or o == '--clearpp':
+        self.clearPythonPath = True
       elif o == '-d' or o == '--debug':
         self.debugFlag = True
       elif o in ( '-S', '--setup' ):
