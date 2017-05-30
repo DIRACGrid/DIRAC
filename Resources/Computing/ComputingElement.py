@@ -53,7 +53,7 @@ MAX_WAITING_JOBS = 1
 MAX_TOTAL_JOBS = 1
 
 class ComputingElement(object):
-
+  """ ComputingElement base class """
   #############################################################################
   def __init__( self, ceName ):
     """ Standard constructor
