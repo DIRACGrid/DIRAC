@@ -67,7 +67,7 @@ class ComputingElement(object):
     self.mandatoryParameters = []
     self.batch = None
     self.batchSystem = None
-
+    self.batchModuleFile = None
     self.minProxyTime = gConfig.getValue( '/Registry/MinProxyLifeTime', 10800 ) #secs
     self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 43200 ) #secs
     self.proxyCheckPeriod = gConfig.getValue( '/Registry/ProxyCheckingPeriod', 3600 ) #secs
