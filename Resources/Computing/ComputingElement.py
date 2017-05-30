@@ -110,10 +110,10 @@ class ComputingElement(object):
     totalSeconds = delta.days * 86400 + delta.seconds
     if totalSeconds > valid:
       return S_OK( totalSeconds - valid )
-    else:
-      result = S_ERROR( 'Proxy is not valid for the requested length' )
-      result['Value'] = totalSeconds - valid
-      return result
+
+    result = S_ERROR( 'Proxy is not valid for the requested length' )
+    result['Value'] = totalSeconds - valid
+    return result
 
   def initializeParameters( self ):
     """ Initialize the CE parameters after they are collected from various sources
