@@ -456,7 +456,7 @@ class ComputingElement(object):
     return S_OK( ceDict )
 
   #############################################################################
-  def sendOutput( self, stdid, line ): #pylint: disable=unused-argument
+  def sendOutput( self, stdid, line ): #pylint: disable=unused-argument, no-self-use
     """ Callback function such that the results from the CE may be returned.
     """
     print line
