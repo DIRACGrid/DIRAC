@@ -445,7 +445,7 @@ used to fail jobs due to the optimizer chain.
 
     if isinstance(startTime, basestring):
       startTime = fromString( startTime )
-      if startTime == None:
+      if startTime is None:
         self.log.error( 'Wrong timestamp in DB' )
         startTime = dateTime()
 
