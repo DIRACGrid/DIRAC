@@ -24,8 +24,7 @@ class MonitoringClient( object ):
     """It returns the access protocol to the Monitoring service"""
     if self.__rpcClient:
       return self.__rpcClient
-    else:
-      return RPCClient( 'Monitoring/Monitoring', timeout = timeout )
+    return RPCClient( 'Monitoring/Monitoring', timeout = timeout )
 
   #############################################################################
   def listUniqueKeyValues( self, typeName ):
