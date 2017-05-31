@@ -144,6 +144,7 @@ Installing the dependencies
 
 First first, be sure setuptools is at the latest version::
 
+   [sudo] pip install --upgrade pip
    [sudo] pip install --upgrade setuptools
 
 We'll use `virtualenv <https://virtualenv.readthedocs.org/en/latest/>`_.
