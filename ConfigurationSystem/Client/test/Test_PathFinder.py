@@ -1,11 +1,10 @@
 """ Unit tests for PathFinder only for functions that I added
 """
 
-import unittest
-from DIRAC.ConfigurationSystem.Client.PathFinder import getComponentSection
-from DIRAC import gConfig
 import os
+import unittest
 
+from DIRAC.ConfigurationSystem.Client.PathFinder import getComponentSection
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 
 class TestPathFinder( unittest.TestCase ):

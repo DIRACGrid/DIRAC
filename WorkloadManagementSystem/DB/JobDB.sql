@@ -8,7 +8,7 @@
 -- ------------------------------------------------------------------------------
 
 -- When installing via dirac tools, the following is not needed (still here for reference)
--- 
+--
 -- DROP DATABASE IF EXISTS JobDB;
 -- CREATE DATABASE JobDB;
 -- ------------------------------------------------------------------------------
@@ -59,7 +59,6 @@ CREATE TABLE `Jobs` (
   `MinorStatus` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `ApplicationStatus` VARCHAR(255) DEFAULT 'Unknown',
   `ApplicationNumStatus` INT(11) NOT NULL DEFAULT 0,
-  `CPUTime` FLOAT NOT NULL DEFAULT 0.0,
   `UserPriority` INT(11) NOT NULL DEFAULT 0,
   `SystemPriority` INT(11) NOT NULL DEFAULT 0,
   `RescheduleCounter` INT(11) NOT NULL DEFAULT 0,
@@ -173,4 +172,3 @@ CREATE TABLE `JobCommands` (
   PRIMARY KEY (`JobID`,`Arguments`,`ReceptionTime`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-

@@ -9,6 +9,7 @@ import getpass
 import importlib
 import shutil
 from datetime import datetime, timedelta
+from distutils.version import LooseVersion #pylint: disable=no-name-in-module,import-error
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
@@ -727,7 +728,8 @@ class SystemAdministratorHandler( RequestHandler ):
     
     versionsDirectory = os.path.split( DIRAC.rootPath )[0]
     if versionsDirectory.endswith( 'versions' ):  # make sure we are not deleting from a wrong directory.
-      softwareDirs = sorted( os.listdir( versionsDirectory ) )
+      softwareDirs = os.listdir( versionsDirectory ) 
+      softwareDirs.sort( key = LooseVersion, reverse = False )
       try:
         for directoryName in softwareDirs[:-1 * int( keepLast )]:
           fullPath = os.path.join( versionsDirectory, directoryName )
