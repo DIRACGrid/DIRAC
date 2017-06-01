@@ -82,11 +82,11 @@ class PilotsLoggingDB( object ):
     return S_OK( )
 
   ##########################################################################################
-  def addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
+  def addPilotsLogging( self, pilotUUID, timestamp, source, phase, status, messageContent ):
     """Add new pilot logging entry"""
 
     session = self.sqlalchemySession( )
-    logging = PilotsLogging( pilotRef, status, minorStatus, timeStamp, source )
+    logging = PilotsLogging( pilotUUID, timestamp, source, phase, status, messageContent )
 
     try:
       session.add( logging )
@@ -105,34 +105,35 @@ class PilotsLoggingDB( object ):
     return S_OK( )
 
   ##########################################################################################
-  def getPilotsLogging( self, pilotRef ):
+  def getPilotsLogging( self, pilotUUID ):
     """Get list of logging entries for pilot"""
 
     session = self.sqlalchemySession( )
 
     pilotLogging = []
-    for pl in session.query( PilotsLogging ).filter(PilotsLogging.pilotRef == pilotRef ).order_by(
+    for pl in session.query( PilotsLogging ).filter(PilotsLogging.pilotUUID == pilotUUID ).order_by(
         PilotsLogging.timeStamp ).all( ):
       entry = {}
-      entry['PilotRef'] = pl.pilotRef
-      entry['Status'] = pl.status
-      entry['MinorStatus'] = pl.minorStatus
-      entry['TimeStamp'] = time.mktime( pl.timeStamp.timetuple( ) )
-      entry['Source'] = pl.source
+      entry['pilotUUID'] = pl.pilotUUID
+      entry['timestamp'] = pl.timestamp
+      entry['source'] = pl.source
+      entry['phase'] = pl.phase
+      entry['status'] = pl.status
+      entry['messageContent'] = pl.messageContent
       pilotLogging.append( entry )
 
     return S_OK( pilotLogging )
 
   ##########################################################################################
-  def deletePilotsLogging( self, pilotRef ):
+  def deletePilotsLogging( self, pilotUUID ):
     """Delete all logging entries for pilot"""
 
-    if isinstance( pilotRef, basestring ):
-      pilotRef = [pilotRef, ]
+    if isinstance( pilotUUID, basestring ):
+      pilotUUID = [pilotUUID, ]
 
     session = self.sqlalchemySession( )
 
-    session.query( PilotsLogging ).filter( PilotsLogging.pilotRef._in( pilotRef ) ).delete(
+    session.query( PilotsLogging ).filter( PilotsLogging.pilotUUID._in( pilotUUID ) ).delete(
       synchronize_session = 'fetch' )
 
     try:
@@ -156,17 +157,17 @@ class PilotsLogging( Base ):
   }
 
   logID = Column( 'LogID', Integer, primary_key = True, autoincrement = True )
-  pilotRef = Column( 'PilotRef', String( 255 ), nullable = False )
-  status = Column( 'Status', String( 32 ), default = '', nullable = False )
-  minorStatus = Column( 'MinorStatus', String( 128 ), default = '', nullable = False )
-  timeStamp = Column( 'TimeStamp', DateTime, nullable = False )
-  source = Column( 'Source', String( 32 ), default = 'Unknown', nullable = False )
+  pilotUUID = Column( 'pilotUUID', String( 255 ), nullable = False )
+  timestamp = Column( 'timestamp', String( 255 ), nullable = False )
+  source = Column( 'source', String( 255 ), nullable = False )
+  phase = Column( 'phase', String( 255 ), nullable = False )
+  status = Column( 'status', String( 255 ), nullable = False )
+  messageContent = Column( 'messageContent', String( 255 ), nullable = False )
 
-  def __init__( self, pilotRef, status, minorStatus, timeStamp, source ):
-    self.pilotRef = pilotRef
-    self.status = status
-    self.minorStatus = minorStatus
-    self.timeStamp = datetime.datetime.fromtimestamp( timeStamp )
+  def __init__( self, pilotUUID, timestamp, source, phase, status, messageContent ):
+    self.pilotUUID = pilotUUID
+    self.timestamp = timestamp
     self.source = source
-
-
+    self.phase = phase
+    self.status = status
+    self.messageContent = messageContent

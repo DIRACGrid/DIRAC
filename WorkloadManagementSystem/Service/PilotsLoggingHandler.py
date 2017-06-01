@@ -31,33 +31,33 @@ class PilotsLoggingHandler( RequestHandler ):
     """
     self.pilotsLogging = PilotsLoggingDB()
 
-  types_addPilotsLogging = [ basestring, basestring, basestring, float, basestring ]
-  def export_addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
+  types_addPilotsLogging = [ basestring, basestring, basestring, basestring, basestring, basestring ]
+  def export_addPilotsLogging( self, pilotUUID, timestamp, source, phase, status, messageContent ):
     """
     Add new Pilots Logging entry
-    :param pilotRef: Pilot reference
+    :param pilotUUID: Pilot reference
     :param status: Pilot status
     :param minorStatus: Additional status information
     :param timeStamp: Date and time of status event
     :param source: Source of statu information
     """
 
-    return self.pilotsLogging.addPilotsLogging( pilotRef, status, minorStatus, timeStamp, source )
+    return self.pilotsLogging.addPilotsLogging( pilotUUID, timestamp, source, phase, status, messageContent )
 
   types_getPilotsLogging = [ basestring ]
-  def export_getPilotsLogging( self, pilotRef ):
+  def export_getPilotsLogging( self, pilotUUID ):
     """
     Get all Logging entries for Pilot
-    :param pilotRef: Pilot reference
+    :param pilotUUID: Pilot reference
     """
 
-    return self.pilotsLogging.getPilotsLogging( pilotRef )
+    return self.pilotsLogging.getPilotsLogging( pilotUUID )
 
   types_deletePilotsLogging = [ [basestring,  list] ]
-  def export_deletePilotsLogging( self, pilotRef ):
+  def export_deletePilotsLogging( self, pilotUUID ):
     """
     Delete all Logging entries for Pilot
-    :param pilotRef: Pilot reference
+    :param pilotUUID: Pilot reference
     """
 
-    return self.pilotsLogging.deletePilotsLogging( pilotRef )
+    return self.pilotsLogging.deletePilotsLogging( pilotUUID )
