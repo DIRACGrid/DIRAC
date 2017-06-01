@@ -16,7 +16,6 @@ class TestPilotsLogging( unittest.TestCase ):
     pass
 
 class PilotsLogging( TestPilotsLogging ):
-pilotUUID, timestamp, source, phase, status, messageContent
   def test_PilotsLoggingAddGetDelete( self ):
     resp = self.pilotsLoggingClient.addPilotsLogging('11111111-1111-1111-1111-111111111111', 'timestamp', 'test', 'phase', 'status', 'messageContent')
     self.assert_(resp['OK'], 'Failed to add PilotsLogging')
