@@ -112,7 +112,7 @@ class PilotsLoggingDB( object ):
 
     pilotLogging = []
     for pl in session.query( PilotsLogging ).filter(PilotsLogging.pilotUUID == pilotUUID ).order_by(
-        PilotsLogging.timeStamp ).all( ):
+        PilotsLogging.timestamp ).all( ):
       entry = {}
       entry['pilotUUID'] = pl.pilotUUID
       entry['timestamp'] = pl.timestamp
