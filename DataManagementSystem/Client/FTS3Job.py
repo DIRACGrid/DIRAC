@@ -17,7 +17,7 @@ class FTS3Job( FTS3Serializable ):
   """ Abstract class to represent a job to be executed by FTS. It belongs
       to an FTS3Operation
   """
-  
+
   # States from FTS doc
   ALL_STATES = ['Submitted',  # Initial state of a job as soon it's dropped into the database
                 'Ready', # One of the files within a job went to Ready state
@@ -27,24 +27,24 @@ class FTS3Job( FTS3Serializable ):
                 'Failed', # All files Failed
                 'Finisheddirty',  # Some files Failed
                ]
-  
+
   FINAL_STATES = ['Canceled', 'Failed', 'Finished', 'Finisheddirty']
   INIT_STATE = 'Submitted'
-  
+
   _attrToSerialize = ['jobID', 'operationID', 'status', 'error', 'submitTime',
                       'lastUpdate', 'ftsServer', 'ftsGUID', 'completeness',
                       'username', 'userGroup']
 
   def __init__(self):
-    
+
 
     self.submitTime = None
     self.lastUpdate = None
     self.lastMonitor = None
-    
+
     self.ftsGUID = None
     self.ftsServer = None
-    
+
     self.error = None
     self.status = FTS3Job.INIT_STATE
 
@@ -67,9 +67,9 @@ class FTS3Job( FTS3Serializable ):
     self.activity = None
     self.priority = None
 
-  
-    
-    
+
+
+
   def monitor( self, context = None, ftsServer = None, ucert = None ):
     """ Queries the fts server to monitor the job
 
@@ -127,7 +127,7 @@ class FTS3Job( FTS3Serializable ):
     self.completeness = 100 * completed / total
 
     return S_OK( filesStatus )
-  
+
   @staticmethod
   def __fetchSpaceToken( seName ):
     """ Fetch the space token of storage element
@@ -230,7 +230,7 @@ class FTS3Job( FTS3Serializable ):
 
       trans = fts3.new_transfer( sourceSURL,
                                 targetSURL,
-                                checksum = ftsFile.checksum,
+                                checksum = 'ADLER32:%s'%ftsFile.checksum,
                                 filesize = ftsFile.size,
                                 metadata = getattr( ftsFile, 'fileID' ),
                                 activity = self.activity )
@@ -261,13 +261,13 @@ class FTS3Job( FTS3Serializable ):
                         retry = 3,
                         metadata = self.operationID,
                         priority = self.priority )
-    
-    
+
+
     return S_OK( ( job, fileIDsInTheJob ) )
 
 
-    
-  
+
+
   def _constructRemovalJob( self, context, allTargetSURLs, failedLFNs, target_spacetoken ):
     """ Build a job for removal
 
@@ -297,7 +297,7 @@ class FTS3Job( FTS3Serializable ):
         log.debug( "Not preparing transfer for file %s" % ftsFile.lfn )
         continue
 
-      
+
       transfers.append( {'surl' : allTargetSURLs[ftsFile.lfn],
                          'metadata' : getattr(ftsFile, 'fileID')})
       fileIDsInTheJob.append( getattr( ftsFile, 'fileID' ) )
@@ -312,7 +312,7 @@ class FTS3Job( FTS3Serializable ):
     job['params']['priority'] = self.priority
 
 
-    
+
     return S_OK( ( job, fileIDsInTheJob ) )
 
 
@@ -353,7 +353,7 @@ class FTS3Job( FTS3Serializable ):
       sourceSURL = targetSURL = allTargetSURLs[ftsFile.lfn]
       trans = fts3.new_transfer( sourceSURL,
                                 targetSURL,
-                                checksum = ftsFile.checksum,
+                                checksum = 'ADLER32:%s'%ftsFile.checksum,
                                 filesize = ftsFile.size,
                                 metadata = getattr( ftsFile, 'fileID' ),
                                 activity = self.activity )
@@ -385,7 +385,7 @@ class FTS3Job( FTS3Serializable ):
 
     return S_OK( ( job, fileIDsInTheJob ) )
 
-  
+
 
   def submit( self, context = None, ftsServer = None, ucert = None, pinTime = 36000, ):
     """ submit the job to the FTS server
@@ -406,7 +406,7 @@ class FTS3Job( FTS3Serializable ):
         :param pinTime: Time the file should be pinned on disk (used for transfers and staging)
                         Used only if he source SE is a tape storage
         :param context: fts3 context. If not given, it is created (see ftsServer & ucert param)
-        :param ftsServer: the address of the fts server to submit to. Used only if context is 
+        :param ftsServer: the address of the fts server to submit to. Used only if context is
                           not given. if not given either, use the ftsServer object attribute
 
         :param ucert: path to the user certificate/proxy. Might be inferred by the fts cli (see its doc)
@@ -419,7 +419,7 @@ class FTS3Job( FTS3Serializable ):
     log = gLogger.getSubLogger( "submit/%s/%s_%s" % ( self.operationID, self.sourceSE, self.targetSE ) , True )
 
 
-    
+
     if not context:
       if not ftsServer:
         ftsServer = self.ftsServer
@@ -487,7 +487,7 @@ class FTS3Job( FTS3Serializable ):
 
 
     return S_OK( fileIDsInTheJob )
-  
+
 
 
   @staticmethod
@@ -504,5 +504,3 @@ class FTS3Job( FTS3Serializable ):
     except FTS3ClientException as e:
       gLogger.exception( "Error generating context", repr( e ) )
       return S_ERROR( repr( e ) )
-
-
