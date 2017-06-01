@@ -202,6 +202,14 @@ class PilotAgentsDB( DB ):
       return S_ERROR( 'Input argument is not a List' )
 
     failed = []
+
+    from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
+    pilotsLoggingDB = PilotsLoggingDB()
+    for pilotID in pilotIDs:
+      resp = pilotsLoggingDB.deletePilotsLogging(pilotID)
+      if not resp['OK']:
+        failed.append( 'PilotsLogging' )
+
     for table in ['PilotOutput', 'PilotRequirements', 'JobToPilotMapping', 'PilotAgents']:
       idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
@@ -638,7 +646,7 @@ class PilotAgentsDB( DB ):
 #       result[ 'Total' ][ statusName ] += int( statusCount )
 #
 #     return S_OK( result )
- 
+
 ##########################################################################################
   def getPilotSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get summary of the pilot jobs status by CE/site in a standard structure
@@ -1061,4 +1069,3 @@ class PilotAgentsDB( DB ):
     resultDict['Records'] = records
 
     return S_OK( resultDict )
-
