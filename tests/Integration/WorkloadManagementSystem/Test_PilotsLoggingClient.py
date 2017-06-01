@@ -21,9 +21,9 @@ class TestPilotsLogging( unittest.TestCase ):
 class PilotsLogging( TestPilotsLogging ):
   def test_PilotsLoggingAddGetDelete( self ):
     resp = self.pilotsLoggingClient.addPilotsLogging('11111111-1111-1111-1111-111111111111', 'timestamp', 'test', 'phase', 'status', 'messageContent')
-    self.assert_(resp['OK'], 'Failed to add PilotsLogging')
+    self.assertTrue(resp['OK'], 'Failed to add PilotsLogging')
     resp = self.pilotsLoggingClient.getPilotsLogging('11111111-1111-1111-1111-111111111111')
-    self.assert_(resp['OK'], 'Failed to get PilotsLogging')
+    self.assertTrue(resp['OK'], 'Failed to get PilotsLogging')
     test_sample = {
                    'pilotUUID': '11111111-1111-1111-1111-111111111111',
                    'timestamp': 'timestamp',
@@ -34,17 +34,17 @@ class PilotsLogging( TestPilotsLogging ):
                    }
     self.assertEqual(resp['Value'], [ test_sample ], 'Wrong data comes out of Service')
     resp = self.pilotsLoggingClient.deletePilotsLogging('11111111-1111-1111-1111-111111111111')
-    self.assert_(resp['OK'], 'Failed to delete PilotsLogging')
+    self.assertTrue(resp['OK'], 'Failed to delete PilotsLogging')
     resp = self.pilotsLoggingClient.getPilotsLogging('11111111-1111-1111-1111-111111111111')
-    self.assert_(resp['OK'], 'Failed to get PilotsLogging')
+    self.assertTrue(resp['OK'], 'Failed to get PilotsLogging')
     self.assertEqual(resp['Value'], [], 'PilotsLogging was not really deleted')
 
   def test_PilotsLoggingEmptyGetDelete( self ):
 
     resp = self.pilotsLoggingClient.getPilotsLogging( '11111111-1111-1111-1111-111111111111' )
-    self.assert_( resp['OK'], 'Failed to get PilotsLogging' )
+    self.assertTrue( resp['OK'], 'Failed to get PilotsLogging' )
     resp = self.pilotsLoggingClient.deletePilotsLogging( '11111111-1111-1111-1111-111111111111' )
-    self.assert_( resp['OK'], 'Failed to delete PilotsLogging' )
+    self.assertTrue( resp['OK'], 'Failed to delete PilotsLogging' )
 
   def test_PilotsLoggingDeleteList( self ):
 
@@ -66,21 +66,21 @@ class PilotsLogging( TestPilotsLogging ):
                    }
 
     resp = self.pilotsLoggingClient.addPilotsLogging('11111111-1111-1111-1111-111111111111', 'timestamp1', 'test', 'phase1', 'status1', 'messageContent1')
-    self.assert_(resp['OK'], 'Failed to add PilotsLogging')
+    self.assertTrue(resp['OK'], 'Failed to add PilotsLogging')
     resp = self.pilotsLoggingClient.addPilotsLogging('22222222-2222-2222-2222-222222222222', 'timestamp2', 'test', 'phase2', 'status2', 'messageContent2')
     resp = self.pilotsLoggingClient.getPilotsLogging('11111111-1111-1111-1111-111111111111')
-    self.assert_(resp['OK'], 'Failed to get PilotsLogging')
+    self.assertTrue(resp['OK'], 'Failed to get PilotsLogging')
     self.assertEqual(resp['Value'], [ test_sample1 ], 'Wrong data comes out of Service')
     resp = self.pilotsLoggingClient.getPilotsLogging('22222222-2222-2222-2222-222222222222')
-    self.assert_(resp['OK'], 'Failed to get PilotsLogging')
+    self.assertTrue(resp['OK'], 'Failed to get PilotsLogging')
     self.assertEqual(resp['Value'], [ test_sample2 ], 'Wrong data comes out of Service')
     resp = self.pilotsLoggingClient.deletePilotsLogging( ['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222'] )
-    self.assert_(resp['OK'], 'Failed to delete PilotsLogging')
+    self.assertTrue(resp['OK'], 'Failed to delete PilotsLogging')
     resp = self.pilotsLoggingClient.getPilotsLogging('11111111-1111-1111-1111-111111111111')
-    self.assert_(resp['OK'], 'Failed to get PilotsLogging')
+    self.assertTrue(resp['OK'], 'Failed to get PilotsLogging')
     self.assertEqual(resp['Value'], [], 'PilotsLogging was not really deleted')
     resp = self.pilotsLoggingClient.getPilotsLogging('22222222-2222-2222-2222-222222222222')
-    self.assert_(resp['OK'], 'Failed to get PilotsLogging')
+    self.assertTrue(resp['OK'], 'Failed to get PilotsLogging')
     self.assertEqual(resp['Value'], [], 'PilotsLogging was not really deleted')
 
 
