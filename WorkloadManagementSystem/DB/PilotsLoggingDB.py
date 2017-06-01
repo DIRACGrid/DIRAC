@@ -133,7 +133,7 @@ class PilotsLoggingDB( object ):
 
     session = self.sqlalchemySession( )
 
-    session.query( PilotsLogging ).filter( PilotsLogging.pilotUUID._in( pilotUUID ) ).delete(
+    session.query( PilotsLogging ).filter( PilotsLogging.pilotUUID.in_( pilotUUID ) ).delete(
       synchronize_session = 'fetch' )
 
     try:
