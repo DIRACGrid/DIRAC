@@ -32,7 +32,7 @@ class PilotsLoggingClient( Client ):
     :param pilotUUID: Pilot reference
     """
 
-    return self.pilotsLoggingHandler.detelePilotsLogging( pilotUUID )
+    return self.pilotsLoggingHandler.deletePilotsLogging( pilotUUID )
 
   def getPilotsLogging( self, pilotUUID ):
     """
