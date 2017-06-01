@@ -7,6 +7,9 @@
 import unittest
 from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
 
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
+
 class TestPilotsLogging( unittest.TestCase ):
 
   def setUp( self ):
