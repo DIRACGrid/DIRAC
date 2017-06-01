@@ -13,6 +13,8 @@
 __RCSID__ = "$Id: $"
 
 from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
+from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
+import json
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK
@@ -30,6 +32,16 @@ class PilotsLoggingHandler( RequestHandler ):
     """Initialization of Pilots Logging service
     """
     self.pilotsLogging = PilotsLoggingDB()
+    self.consumersSet = set()
+
+    result = createConsumer( "lbvobox50.cern.ch::Queue::test", callback = self.consumingCallback ) # TODO XXX hardcoded URI
+    if result['OK']:
+      self.consumersSet.add(result)
+
+
+  def consumingCallback(self, headers, message ):
+    msg = json.loads(message)
+    self.export_addPilotsLogging(msg['pilotUUID'], msg['timestamp'], msg['source'], msg['phase'], msg['status'], msg['messageContent'])
 
   types_addPilotsLogging = [ basestring, basestring, basestring, basestring, basestring, basestring ]
   def export_addPilotsLogging( self, pilotUUID, timestamp, source, phase, status, messageContent ):
