@@ -14,10 +14,10 @@ __RCSID__ = "$Id: $"
 
 from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
-import json
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK
+
 
 class PilotsLoggingHandler( RequestHandler ):
   """Server side functions for Pilots Logging service"""
@@ -26,22 +26,31 @@ class PilotsLoggingHandler( RequestHandler ):
   def initializeHandler( cls, serviceInfo ):
     """Initialization of Pilots Logging service
     """
+    cls.consumersSet = set()
+    cls.pilotsLoggingDB = PilotsLoggingDB()
+
+    result = createConsumer( "lbvobox50.cern.ch::Queue::test", callback = cls.consumingCallback ) # XXX hardcoded URI
+    if result['OK']:
+      cls.consumersSet.add(result)
+
     return S_OK()
 
   def initialize(self):
     """Initialization of Pilots Logging service
     """
-    self.pilotsLogging = PilotsLoggingDB()
-    self.consumersSet = set()
+    return S_OK()
 
-    result = createConsumer( "lbvobox50.cern.ch::Queue::test", callback = self.consumingCallback ) # TODO XXX hardcoded URI
-    if result['OK']:
-      self.consumersSet.add(result)
-
-
-  def consumingCallback(self, headers, message ):
-    msg = json.loads(message)
-    self.export_addPilotsLogging(msg['pilotUUID'], msg['timestamp'], msg['source'], msg['phase'], msg['status'], msg['messageContent'])
+  @classmethod
+  def consumingCallback(cls, headers, message ):
+    """
+    Callback function for the MQ Consumer, called for every new message and inserting it into database.
+    :param headers: Headers of MQ message (not used)
+    :param message: Message represented as a dictionary
+    """
+    # verify received message format
+    if set(message) == set(['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']):
+      cls.pilotsLoggingDB.addPilotsLogging(message['pilotUUID'], message['timestamp'], message['source'],
+                                           message['phase'], message['status'], message['messageContent'])
 
   types_addPilotsLogging = [ basestring, basestring, basestring, basestring, basestring, basestring ]
   def export_addPilotsLogging( self, pilotUUID, timestamp, source, phase, status, messageContent ):
@@ -54,7 +63,8 @@ class PilotsLoggingHandler( RequestHandler ):
     :param source: Source of statu information
     """
 
-    return self.pilotsLogging.addPilotsLogging( pilotUUID, timestamp, source, phase, status, messageContent )
+    return PilotsLoggingHandler.pilotsLoggingDB.addPilotsLogging(pilotUUID, timestamp, source, phase, status,
+                                                                 messageContent)
 
   types_getPilotsLogging = [ basestring ]
   def export_getPilotsLogging( self, pilotUUID ):
@@ -63,7 +73,7 @@ class PilotsLoggingHandler( RequestHandler ):
     :param pilotUUID: Pilot reference
     """
 
-    return self.pilotsLogging.getPilotsLogging( pilotUUID )
+    return PilotsLoggingHandler.pilotsLoggingDB.getPilotsLogging( pilotUUID )
 
   types_deletePilotsLogging = [ [basestring,  list] ]
   def export_deletePilotsLogging( self, pilotUUID ):
@@ -72,4 +82,4 @@ class PilotsLoggingHandler( RequestHandler ):
     :param pilotUUID: Pilot reference
     """
 
-    return self.pilotsLogging.deletePilotsLogging( pilotUUID )
+    return PilotsLoggingHandler.pilotsLoggingDB.deletePilotsLogging( pilotUUID )
