@@ -28,7 +28,7 @@ def selectUniqueSourceforTransfers( multipleSourceTransfers ):
       amount of replicas,
 
       :param multipleSourceTransfers : { sourceSE : [FTSFiles] }
-                           
+
 
       :return { source SE : [ FTSFiles] } where each LFN appears only once
   """
@@ -164,7 +164,11 @@ class FTS3Serializable( object ):
     jsonData = {}
     datetimeAttributes = []
     for attrName in self._attrToSerialize :
-      value = getattr( self, attrName, None )
+      # IDs might not be set since it is managed by SQLAlchemy
+      if not hasattr( self, attrName ):
+        continue
+
+      value = getattr( self, attrName)
       if isinstance( value, datetime.datetime ):
         # We convert date time to a string
         jsonData[attrName] = value.strftime( self._datetimeFormat )
@@ -233,6 +237,11 @@ class FTS3JSONDecoder( json.JSONDecoder ):
 
       # Set each attribute
       for attrName, attrValue in dataDict.iteritems():
+        # If the value is None, do not set it
+        # This is needed to play along well with SQLalchemy
+
+        if attrValue is None:
+          continue
         if attrName in datetimeSet:
           attrValue = datetime.datetime.strptime( attrValue, FTS3Serializable._datetimeFormat )
         setattr( obj, attrName, attrValue )
@@ -262,14 +271,14 @@ class FTS3ServerPolicy( object ):
     self._serverList = initialServerList
     self._maxAttempts = len( self._serverList )
     self._nextServerID = 0
-    
+
     methName = "_%sServerPolicy"%serverPolicy.lower()
     if not hasattr(self, methName):
       self.log.error( 'Unknown server policy %s. Using Random instead' % serverPolicy )
       methName = "_randomServerPolicy"
-      
+
     self._policyMethod = getattr( self, methName )
-    
+
 
 
   def _failoverServerPolicy( self, attempt ):
@@ -335,7 +344,7 @@ class FTS3ServerPolicy( object ):
         fts3Server = None
         attempt += 1
         continue
-      
+
       ftsServerStatus = res['Value']
 
       if not ftsServerStatus:
@@ -348,4 +357,3 @@ class FTS3ServerPolicy( object ):
       return S_OK( fts3Server )
 
     return S_ERROR ( "Could not find an FTS3 server (max attempt reached)" )
-
