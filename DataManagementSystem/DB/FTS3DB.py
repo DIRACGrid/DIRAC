@@ -175,7 +175,7 @@ class FTS3DB( object ):
     except SQLAlchemyError, e:
       return S_ERROR( e )
     return S_OK()
-  
+
 
   def persistOperation( self, operation ):
     """ update or insert request into db
@@ -183,7 +183,7 @@ class FTS3DB( object ):
 
     :param operation: FTS3Operation instance
     """
-    
+
     session = self.dbSession( expire_on_commit = False )
 
     # set the assignment to NULL
@@ -196,7 +196,7 @@ class FTS3DB( object ):
       session.add( operation )
       session.commit()
       session.expunge_all()
-  
+
       return S_OK( operation.operationID )
 
     except SQLAlchemyError, e:
@@ -227,7 +227,7 @@ class FTS3DB( object ):
                          .one()
 
       session.commit()
-      
+
       ###################################
       session.expunge_all()
       return S_OK( operation )
@@ -302,7 +302,7 @@ class FTS3DB( object ):
       return S_ERROR( "getAllActiveJobs: unexpected exception : %s" % e )
     finally:
       session.close()
-      
+
   def updateFileStatus( self, fileStatusDict ):
     """Update the file ftsStatus and error
         The update is only done if the file is not in a final state
@@ -314,11 +314,11 @@ class FTS3DB( object ):
     """
     session = self.dbSession()
     try:
-      
+
       for fileID, valueDict in fileStatusDict.iteritems():
 
         updateDict = {FTS3File.status : valueDict['status']}
-        
+
         # We only update error if it is specified
         if 'error' in valueDict:
           newError = valueDict['error']
@@ -358,9 +358,9 @@ class FTS3DB( object ):
     try:
 
       for jobID, valueDict in jobStatusDict.iteritems():
-        
+
         updateDict = {FTS3Job.status : valueDict['status']}
-        
+
         # We only update error if it is specified
         if 'error' in valueDict:
           newError = valueDict['error']
@@ -374,7 +374,7 @@ class FTS3DB( object ):
 
         updateDict[FTS3Job.assignment] = None
 
-        
+
         session.execute( update( FTS3Job )\
                          .where( and_( FTS3Job.jobID == jobID,
                                       ~ FTS3Job.status.in_( FTS3Job.FINAL_STATES )
@@ -422,7 +422,7 @@ class FTS3DB( object ):
       # Block the Operations for other requests
       if operationAssignmentTag:
         operationIDsQuery = operationIDsQuery.with_for_update()
-        
+
       operationIDs = operationIDsQuery.all()
 
       operationIDs = [oidTuple[0] for oidTuple in operationIDs]
@@ -454,6 +454,3 @@ class FTS3DB( object ):
       return S_ERROR( "getAllProcessedOperations: unexpected exception : %s" % e )
     finally:
       session.close()
-
-
-
