@@ -438,6 +438,17 @@ class FTS3TransferOperation(FTS3Operation):
     if self.rmsReqID == -1 :
       return S_OK()
 
+    # Now we check the status of the Request.
+    # If it is not scheduled, we do not perform the callback
+
+    res = self.reqClient.getRequestStatus( self.rmsReqID )
+    if not res['OK']:
+      log.error("Could not get request status", res)
+      return res
+    status = res['Value']
+    if status != 'Scheduled':
+      return S_ERROR( "Request with id %s is not Scheduled:%s" % ( self.rmsReqID, status ) )
+
     res = self._updateRmsOperationStatus()
 
     if not res['OK']:
