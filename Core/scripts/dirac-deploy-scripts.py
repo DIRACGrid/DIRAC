@@ -13,8 +13,8 @@ import os
 import shutil
 import stat
 import re
-import time
 import sys
+import platform
 
 DEBUG = False
 
@@ -23,7 +23,7 @@ gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat
 excludeMask = [ '__init__.py' ]
 simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-compile-externals.py', 'dirac-install.py', 'dirac-platform.py' ]
 
-wrapperTemplate = """#!/usr/bin/env python
+wrapperTemplate = """#!$PYTHONLOCATION$
 #
 import os,sys,imp
 #
@@ -77,9 +77,24 @@ if sys.argv[1:]:
   args = ' "%s"' % '" "'.join( sys.argv[1:] )
 else:
   args = ''
-sys.exit( os.system('python "%s"%s' % ( DiracScript, args )  ) / 256 )
 """
 
+# Python interpreter location can be specified as an argument
+pythonLocation = "/usr/bin/env python"
+if len( sys.argv ) == 2:
+  pythonLocation = os.path.join( sys.argv[1], 'bin', 'python' )
+wrapperTemplate = wrapperTemplate.replace( '$PYTHONLOCATION$', pythonLocation )
+
+# On the newest MacOS the DYLD_LIBRARY_PATH variable is not passed to the shell of
+# the os.system() due to System Integrity Protection feature
+if platform.system() == "Darwin":
+  wrapperTemplate += """
+sys.exit( os.system( 'DYLD_LIBRARY_PATH=%s python "%s"%s' % ( DiracLibraryPath, DiracScript, args )  ) / 256 )
+"""
+else:
+  wrapperTemplate += """
+sys.exit( os.system('python "%s"%s' % ( DiracScript, args )  ) / 256 )
+"""
 
 def lookForScriptsInPath( basePath, rootModule ):
   isScriptsDir = os.path.split( rootModule )[1] == "scripts"
@@ -149,6 +164,11 @@ for rootModule in listDir:
         print " Copying %s" % scriptName
       shutil.copy( os.path.join( rootPath, scriptPath ), targetScriptsPath )
       copyPath = os.path.join( targetScriptsPath, scriptName )
+      if platform.system() == 'Darwin':
+        with open( copyPath, 'r+' ) as script:
+          scriptStr = script.read()
+          script.seek( 0 )
+          script.write( scriptStr.replace( '/usr/bin/env python', pythonLocation ) )
       os.chmod( copyPath, gDefaultPerms )
       cLen = len( copyPath )
       reFound = pythonScriptRE.match( copyPath )

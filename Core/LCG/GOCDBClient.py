@@ -1,9 +1,9 @@
 """ GOCDBClient module is a client for the GOC DB, looking for Downtimes.
 """
 
-import urllib2
 import time
 import socket
+import requests
 
 from datetime import datetime, timedelta
 from xml.dom import minidom
@@ -46,41 +46,42 @@ class GOCDBClient( object ):
     """
     Return actual GOCDB status of entity in `name`
 
-    :params:
-      :attr:`granularity`: string: should be a ValidRes, e.g. "Resource"
-
-      :attr:`name`: should be the name(s) of the ValidRes.
+    :param str granularity: should be a ValidRes, e.g. "Resource"
+    :param name: should be the name(s) of the ValidRes.
       Could be a list of basestring or simply one basestring.
       If not given, fetches the complete list.
 
-      :attr:`startDate`: if not given, takes only ongoing DownTimes.
+    :param startDate: if not given, takes only ongoing DownTimes.
       if given, could be a datetime or a string ("YYYY-MM-DD"), and download
       DownTimes starting after that date.
 
-      :attr:`startingInHours`: optional integer. If given, donwload
+    :param int startingInHours: optional integer. If given, donwload
       DownTimes starting in the next given hours (startDate is then useless)
 
     :return: (example)
-      {'OK': True,
-       'Value': {'92569G0 lhcbsrm-kit.gridka.de': {'DESCRIPTION': 'Annual site downtime for various major tasks i...',
-	       'FORMATED_END_DATE': '2014-05-27 15:21',
-	       'FORMATED_START_DATE': '2014-05-26 04:00',
-	       'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14051',
-	       'HOSTED_BY': 'FZK-LCG2',
-	       'HOSTNAME': 'lhcbsrm-kit.gridka.de',
-	       'SERVICE_TYPE': 'SRM.nearline',
-	       'SEVERITY': 'OUTAGE'},
-      '99873G0 srm.pic.esSRM': {'HOSTED_BY': 'pic',
-	      'ENDPOINT': 'srm.pic.esSRM',
-	      'SEVERITY': 'OUTAGE',
-	      'HOSTNAME': 'srm.pic.es',
-	      'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=21303',
-	      'FORMATED_START_DATE': '2016-09-14 06:00',
-	      'SERVICE_TYPE': 'SRM',
-	      'FORMATED_END_DATE': '2016-09-14 15:00',
-	      'DESCRIPTION': 'Outage declared due to network and dCache upgrades'}
-                 }
-        }
+
+      .. code-block:: python
+
+        {'OK': True,
+         'Value': {'92569G0 lhcbsrm-kit.gridka.de': {'DESCRIPTION': 'Annual site downtime for various major tasks i...',
+                                                     'FORMATED_END_DATE': '2014-05-27 15:21',
+                                                     'FORMATED_START_DATE': '2014-05-26 04:00',
+                                                     'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14051',
+                                                     'HOSTED_BY': 'FZK-LCG2',
+                                                     'HOSTNAME': 'lhcbsrm-kit.gridka.de',
+                                                     'SERVICE_TYPE': 'SRM.nearline',
+                                                     'SEVERITY': 'OUTAGE'},
+                   '99873G0 srm.pic.esSRM': {'HOSTED_BY': 'pic',
+                                             'ENDPOINT': 'srm.pic.esSRM',
+                                             'SEVERITY': 'OUTAGE',
+                                             'HOSTNAME': 'srm.pic.es',
+                                             'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=21303',
+                                             'FORMATED_START_DATE': '2016-09-14 06:00',
+                                             'SERVICE_TYPE': 'SRM',
+                                             'FORMATED_END_DATE': '2016-09-14 15:00',
+                                             'DESCRIPTION': 'Outage declared due to network and dCache upgrades'}
+                   }
+          }
 
 
     """
@@ -192,6 +193,29 @@ class GOCDBClient( object ):
 
 #############################################################################
 
+  def getHostnameDowntime( self, hostname, startDate = None, ongoing = False):
+
+    params = hostname
+
+    if startDate and ongoing:
+      return S_ERROR("Invalid parameter combination - do not specify startDate with ongoing")
+
+    if startDate:
+      params += '&startdate=' + startDate
+
+    if ongoing:
+      params += '&ongoing_only=yes'
+
+    try:
+      response = requests.get('https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime&topentity=' + params)
+      response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+      return S_ERROR("Error %s" % e)
+
+    return S_OK(response.text)
+
+#############################################################################
+
 #  def getSiteInfo(self, site):
 #    """
 #    Get site info (in a dictionary)
@@ -238,10 +262,9 @@ class GOCDBClient( object ):
         gocdb_ep = gocdb_ep + "&topentity=" + entity
     gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
-    req = urllib2.Request( gocdb_ep )
-    dtPage = urllib2.urlopen( req )
+    dtPage = requests.get( gocdb_ep )
 
-    dt = dtPage.read()
+    dt = dtPage.text
 
     return dt
 
@@ -264,9 +287,9 @@ class GOCDBClient( object ):
     gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_service_endpoint&" \
         + granularity + '=' + entity
 
-    service_endpoint_page = urllib2.urlopen( gocdb_ep )
+    service_endpoint_page = requests.get( gocdb_ep )
 
-    return service_endpoint_page.read()
+    return service_endpoint_page.text
 
 #############################################################################
 
@@ -281,10 +304,9 @@ class GOCDBClient( object ):
 #    # GOCDB-PI query
 #    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_site&sitename="+site
 #
-#    req = urllib2.Request(gocdb_ep)
-#    site_page = urllib2.urlopen(req)
+#    site_page = requests.get( gocdb_ep )
 #
-#    return site_page.read()
+#    return site_page.text
 
 #############################################################################
 

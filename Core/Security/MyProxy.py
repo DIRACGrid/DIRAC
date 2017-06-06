@@ -148,7 +148,8 @@ class MyProxy( BaseSecurity ):
   def getInfo( self, proxyChain, useDNAsUserName = False ):
     """
       Get info from myproxy server
-      return S_OK( { 'username' : myproxyusername,
+
+      :return: S_OK( { 'username' : myproxyusername,
                      'owner' : owner DN,
                      'timeLeft' : secs left } ) / S_ERROR
     """

@@ -1,8 +1,10 @@
 # $HeadURL: $
 """ PilotEfficiencyPolicy
 
-  Policy that calculates the efficiency following the formula:
+  Policy that calculates the efficiency following the formula::
+
     done / ( failed + aborted + done )
+
   if the denominator is smaller than 10, it does not take any decision.
 """
 

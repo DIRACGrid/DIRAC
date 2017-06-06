@@ -1,24 +1,27 @@
 ########################################################################
-# $HeadURL $
 # File: FTSGraph.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/10 20:02:32
 ########################################################################
 """ :mod: FTSGraph
+
     ==============
 
     .. module: FTSGraph
+
     :synopsis: FTS graph
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     nodes are FTS sites sites and edges are routes between them
 """
-__RCSID__ = "$Id: $"
 # #
 # @file FTSGraph.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/05/10 20:03:00
 # @brief Definition of FTSGraph class.
+
+# pylint:disable=no-member
 
 # # imports
 # # from DIRAC
@@ -32,6 +35,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElement
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
+
+__RCSID__ = "$Id: $"
 
 class Site( Node ):
   """
@@ -120,8 +125,10 @@ class FTS2Graph( Graph ):
   def initialize( self, ftsHistoryViews = None ):
     """ initialize FTSGraph  given FTSSites and FTSHistoryViews
 
-    :param list ftsSites: list with FTSSites instances
-    :param list ftsHistoryViews: list with FTSHistoryViews instances
+    :param ftsSites: list with FTSSites instances
+    :type ftsSites: python:list
+    :param ftsHistoryViews: list with FTSHistoryViews instances
+    :type ftsHistoryViews: python:list
     """
     self.log.debug( "initializing FTS graph..." )
 
@@ -222,7 +229,8 @@ class FTS2Graph( Graph ):
   def updateRWAccess( self ):
     """ get RSS R/W for :seList:
 
-    :param list seList: SE list
+    :param seList: SE list
+    :type seList: python:list
     """
     self.log.debug( "updateRWAccess: updating RW access..." )
     for site in self.nodes():
@@ -231,13 +239,13 @@ class FTS2Graph( Graph ):
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False  }
       for se in seList:
-        rAccess = self.rssClient().getStorageElementStatus( se, "ReadAccess" )
+        rAccess = self.rssClient().getElementStatus( se, "StorageElement", "ReadAccess" )
         self.log.debug( "se read %s %s" % ( se, rAccess ) )
         if not rAccess["OK"]:
           self.log.error( rAccess["Message"] )
           continue
         rwDict[se]["read"] = True if rAccess["Value"][se]["ReadAccess"] in ( "Active", "Degraded" ) else False
-        wAccess = self.rssClient().getStorageElementStatus( se, "WriteAccess" )
+        wAccess = self.rssClient().getElementStatus( se, "StorageElement", "WriteAccess" )
         self.log.debug( "se write %s %s" % ( se, wAccess ) )
         if not wAccess["OK"]:
           self.log.error( wAccess["Message"] )
@@ -283,4 +291,3 @@ class FTS2Graph( Graph ):
       ftsSite.MaxActiveJobs = self.maxActiveJobs
       ftsSites.append( ftsSite )
     return S_OK( ftsSites )
-

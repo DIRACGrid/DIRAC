@@ -45,6 +45,7 @@ __RCSID__ = "$Id$"
 import sys
 import operator
 
+from DIRAC.Core.Utilities                                    import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
 from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERROR
 from DIRAC.Core.Utilities                                    import Time
@@ -53,6 +54,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGrou
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources      import getDIRACPlatform
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                 import SiteStatus
 
 #############################################################################
 
@@ -67,6 +69,8 @@ class JobDB( DB ):
     self.maxRescheduling = self.getCSOption( 'MaxRescheduling', 3 )
 
     self.jobAttributeNames = []
+
+    self.siteClient = SiteStatus()
 
     result = self.__getAttributeNames()
 
@@ -148,7 +152,7 @@ class JobDB( DB ):
     """ Get distinct values of the job attribute under specified conditions
     """
     return self.getDistinctAttributeValues( 'Jobs', attribute, condDict = condDict,
-                                              older = older, newer = newer, timeStamp = timeStamp )
+                                            older = older, newer = newer, timeStamp = timeStamp )
 
 
 #############################################################################
@@ -168,9 +172,9 @@ class JobDB( DB ):
     if not attributeList:
       attributeList = []
     attributeList = list( set( attributeList ) | set( ['StartExecTime', 'SubmissionTime', 'HeartBeatTime',
-                                                    'EndExecTime', 'JobName', 'OwnerDN', 'OwnerGroup'] ) )
+                                                       'EndExecTime', 'JobName', 'OwnerDN', 'OwnerGroup'] ) )
     try:
-      if type( localIDs ) == type( [] ) or type( localIDs ) == type( {} ):
+      if isinstance( localIDs, (list, dict) ):
         localIDs = [int( localID ) for localID in localIDs]
       else:
         localIDs = [int( localIDs )]
@@ -277,8 +281,7 @@ class JobDB( DB ):
         if not ret['OK']:
           return ret
         paramNameList.append( ret['Value'] )
-      paramNames = ','.join( paramNameList )
-      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % ( e_jobID, paramNames )
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % ( e_jobID, ','.join( paramNameList ) )
       result = self._query( cmd )
       if result['OK']:
         if result['Value']:
@@ -578,7 +581,7 @@ class JobDB( DB ):
     self.log.debug( 'JobDB.selectJobs: retrieving jobs.' )
 
     res = self.getFields( 'Jobs', ['JobID'], condDict = condDict, limit = limit,
-                            older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute )
+                          older = older, newer = newer, timeStamp = timeStamp, orderAttribute = orderAttribute )
 
     if not res['OK']:
       return res
@@ -922,7 +925,9 @@ class JobDB( DB ):
 
     err = 'JobDB.__insertNewJDL: Failed to retrieve a new Id.'
 
-    result = self.insertFields( 'JobJDLs' , ['OriginalJDL'], [jdl] )
+    result = self.insertFields('JobJDLs' ,
+                               ['JDL', 'JobRequirements', 'OriginalJDL'],
+                               ['', '', jdl] )
     if not result['OK']:
       self.log.error( 'Can not insert New JDL', result['Message'] )
       return result
@@ -1247,7 +1252,7 @@ class JobDB( DB ):
     #  return ret
     # e_jobID = ret['Value']
 
-    if type( jobIDs ) != type( [] ):
+    if not isinstance(jobIDs, list):
       jobIDList = [jobIDs]
     else:
       jobIDList = jobIDs
@@ -1301,7 +1306,7 @@ class JobDB( DB ):
     """
     # Check Verified Flag
     result = self.getJobAttributes( jobID, ['Status', 'MinorStatus', 'VerifiedFlag', 'RescheduleCounter',
-                                     'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup'] )
+                                            'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup'] )
     if result['OK']:
       resultDict = result['Value']
     else:
@@ -1312,9 +1317,9 @@ class JobDB( DB ):
 
     if not resultDict['VerifiedFlag']:
       return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % (
-                                                                             jobID,
-                                                                             resultDict['Status'],
-                                                                             resultDict['MinorStatus'] ) )
+          jobID,
+          resultDict['Status'],
+          resultDict['MinorStatus'] ) )
 
 
     # Check the Reschedule counter first
@@ -1483,20 +1488,38 @@ class JobDB( DB ):
     siteList = []
     if result['OK']:
       siteList = [ x[0] for x in result['Value']]
+    else:
+      return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     return S_OK( siteList )
 
 #############################################################################
-  def getSiteMaskStatus( self ):
+  def getSiteMaskStatus( self, sites = None ):
     """ Get the currently site mask status
     """
-    cmd = "SELECT Site,Status FROM SiteMask"
+    if isinstance(sites, list):
+      sitesString = ",".join( "'%s'" % site for site in sites)
+      cmd = "SELECT Site, Status FROM SiteMask WHERE Site in (%s)" % sitesString
+
+      result = self._query( cmd )
+      return S_OK( dict(result['Value']) )
+
+    elif isinstance(sites, str):
+
+      cmd = "SELECT Status FROM SiteMask WHERE Site='%s'" % sites
+      result = self._query( cmd )
+      return S_OK( result['Value'][0][0] )
+
+    else:
+      cmd = "SELECT Site,Status FROM SiteMask"
 
     result = self._query( cmd )
     siteDict = {}
     if result['OK']:
       for site, status in result['Value']:
         siteDict[site] = status
+    else:
+      return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
 
     return S_OK( siteDict )
 
@@ -1733,24 +1756,24 @@ class JobDB( DB ):
       del selectDict['LastUpdateTime']
 
     result = self.getCounters( 'Jobs', ['Site', 'Status'],
-                              {}, newer = last_update,
-                              timeStamp = 'LastUpdateTime' )
+                               {}, newer = last_update,
+                               timeStamp = 'LastUpdateTime' )
     last_day = Time.dateTime() - Time.day
     resultDay = self.getCounters( 'Jobs', ['Site', 'Status'],
-                                 {}, newer = last_day,
-                                 timeStamp = 'EndExecTime' )
+                                  {}, newer = last_day,
+                                  timeStamp = 'EndExecTime' )
 
     # Get the site mask status
     siteMask = {}
-    resultMask = self.getSiteMask( 'All' )
+    resultMask = self.siteClient.getSites( 'All' )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'NoMask'
-    resultMask = self.getSiteMask( 'Active' )
+    resultMask = self.siteClient.getSites( 'Active' )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'Active'
-    resultMask = self.getSiteMask( 'Banned' )
+    resultMask = self.siteClient.getSites( 'Banned' )
     if resultMask['OK']:
       for site in resultMask['Value']:
         siteMask[site] = 'Banned'
@@ -1829,7 +1852,7 @@ class JobDB( DB ):
       for item in selectDict:
         selectItem = paramNames.index( item )
         values = selectDict[item]
-        if type( values ) != type( [] ):
+        if not isinstance(values, list):
           values = [values]
         indices = range( len( records ) )
         indices.reverse()
@@ -2025,7 +2048,8 @@ class JobDB( DB ):
     """
     if not requestedFields:
       requestedFields = [ 'Status', 'MinorStatus',
-                  'Site', 'Owner', 'OwnerGroup', 'JobGroup', 'JobSplitType' ]
+                          'Site', 'Owner', 'OwnerGroup',
+                          'JobGroup', 'JobSplitType' ]
     defFields = [ 'DIRACSetup' ] + requestedFields
     valueFields = [ 'COUNT(JobID)', 'SUM(RescheduleCounter)' ]
     defString = ", ".join( defFields )

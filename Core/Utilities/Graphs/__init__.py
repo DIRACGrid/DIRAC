@@ -29,7 +29,9 @@ common_prefs = {
   'legend_position':'bottom',
   'legend_max_rows':99,
   'legend_max_columns':4,
-  'square_axis':False
+  'square_axis':False,
+  'scale_data': None,
+  'scale_ticks': None
 }
 
 graph_large_prefs = {
@@ -65,7 +67,8 @@ graph_normal_prefs = {
   'legend_height':120,
   'legend_padding':20,
   'limit_labels':15,
-  'graph_time_stamp':True
+  'graph_time_stamp':True,
+  'label_text_size' : 14
 }
 
 graph_small_prefs = {

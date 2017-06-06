@@ -182,12 +182,14 @@ class InputDataByProtocol( object ):
             self.log.error( failed[ lfn ], lfn )
           failedReps.add( lfn )
       for lfn, metadata in result['Value']['Successful'].iteritems():
-        if metadata['Lost']:
+        if metadata.get( 'Lost', False ):
           error = "File has been Lost by the StorageElement %s" % seName
-        elif metadata['Unavailable']:
+        elif metadata.get( 'Unavailable', False ):
           error = "File is declared Unavailable by the StorageElement %s" % seName
-        elif seName in tapeSEs and not metadata['Cached']:
-          error = "File is no longer in StorageElement %s Cache" % seName
+        elif seName in tapeSEs and not metadata.get( 'Cached', metadata['Accessible'] ):
+          error = "File is not online in StorageElement %s Cache" % seName
+        elif not metadata.get( 'Accessible', True ):
+          error = "File is not accessible"
         else:
           error = ''
         if error:

@@ -427,6 +427,27 @@ class VOMS2CSAgent( AgentModule ):
           if group not in noVOMSGroups:
             oldUsers.add( user )
 
+    # Check for obsoleted DNs
+    for user in diracUserDict:
+      dnSet = set( fromChar( diracUserDict[user]['DN'] ) )
+      for dn in dnSet:
+        if dn in obsoletedDNs and user not in oldUsers:
+          self.log.verbose( "Modified user %s: dropped DN %s" % ( user, dn ) )
+          if self.autoModifyUsers:
+            userDict = diracUserDict[user]
+            modDNSet = dnSet - set( [dn] )
+            if modDNSet:
+              userDict['DN'] = ','.join( modDNSet )
+              result = self.csapi.modifyUser( user, userDict )
+              if result['OK'] and result['Value']:
+                self.log.info( "Modified user %s: dropped DN %s" % ( user, dn ) )
+                self.__adminMsgs[ 'Info' ].append( "Modified user %s: dropped DN %s" % ( user, dn ) )
+                self.voChanged = True
+                resultDict['ModifiedUsers'].append( diracName )
+            else:
+              oldUsers.add( user )
+
+
     if oldUsers:
       self.voChanged = True
       if self.autoDeleteUsers:
@@ -462,11 +483,11 @@ class VOMS2CSAgent( AgentModule ):
       if not result['OK']:
         failed[user] = "createDirectory"
         continue
-      result = fc.changePathOwner( { dirName: user }, recursive = True )
+      result = fc.changePathOwner( { dirName: user }, recursive = False )
       if not result['OK']:
         failed[user] = "changePathOwner"
         continue
-      result = fc.changePathGroup( { dirName: defaultVOGroup }, recursive = True )
+      result = fc.changePathGroup( { dirName: defaultVOGroup }, recursive = False )
       if not result['OK']:
         failed[user] = "changePathGroup"
         continue
@@ -558,7 +579,7 @@ def getUserNameFromDN( dn, vo ):
     shortVO = '.'.join( vos )
 
   # Weird case of just a name as DN !
-  if '/' not in dn:
+  if '/' not in dn and 'CN=' not in dn:
     dn = 'CN=' + dn
   entries = dn.split( '/' )
   entries.reverse()

@@ -69,8 +69,8 @@ source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
 #
 # installSite:
 #
-#   This function will install DIRAC using the install_site.sh script
-#     following (more or less) instructions at diracgrid.org
+#   This function will install DIRAC using the dirac-install.py script
+#     following (more or less) instructions at dirac.rtfd.org
 #
 #...............................................................................
 
@@ -105,11 +105,21 @@ function installSite(){
   sed -i s/VAR_DB_Host/$DB_HOST/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/install.cfg
 
+  sed -i s/VAR_NoSQLDB_User/$NoSQLDB_USER/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Password/$NoSQLDB_PASSWORD/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Host/$NoSQLDB_HOST/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
+
   echo '==> Started installing'
-  $SERVERINSTALLDIR/install_site.sh $SERVERINSTALLDIR/install.cfg
+  $SERVERINSTALLDIR/dirac-install.py -t server $SERVERINSTALLDIR/install.cfg
+
+  echo '==> Done installing, now configuring'
+  source $SERVERINSTALLDIR/bashrc
+  dirac-configure $SERVERINSTALLDIR/install.cfg $DEBUG
+  dirac-setup-site $DEBUG
+
   echo '==> Completed installation'
 
-  source $SERVERINSTALLDIR/bashrc
 }
 
 
@@ -159,7 +169,6 @@ function fullInstallDIRAC(){
   #Now all the rest
 
   #DBs (not looking for FrameworkSystem ones, already installed)
-  #findDatabases 'exclude' 'FrameworkSystem'
   findDatabases 'exclude' 'FrameworkSystem'
   dropDBs
   diracDBs
@@ -179,7 +188,7 @@ function fullInstallDIRAC(){
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py $DEBUG
 
   #fix the SandboxStore and other stuff
-  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py JenkinsSetup $DEBUG
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py dirac-JenkinsSetup $DEBUG
 
   echo '==> Restarting WorkloadManagement SandboxStore'
   dirac-restart-component WorkloadManagement SandboxStore $DEBUG
@@ -255,7 +264,23 @@ function DIRACPilotInstall(){
     return
   fi
 
-  python dirac-pilot.py -S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ -X GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements $DEBUG
+  commandList="GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements"
+  options="-S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/"
+
+  if [ "$customCommands" ]
+  then
+    echo 'Using custom command list'
+    commandList=$customCommands
+  fi
+
+  if [ "$customOptions" ]
+  then
+    echo 'Using custom options'
+    options="$options -o $customOptions"
+  fi
+
+  echo $( eval echo Executing python dirac-pilot.py $options -X $commandList $DEBUG)
+  python dirac-pilot.py $options -X $commandList $DEBUG
   if [ $? -ne 0 ]
   then
     echo 'ERROR: pilot script failed'

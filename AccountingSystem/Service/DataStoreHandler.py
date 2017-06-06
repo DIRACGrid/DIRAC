@@ -1,17 +1,18 @@
 """ DataStore is the service for inserting accounting reports (rows) in the Accounting DB
 """
 
-__RCSID__ = "$Id$"
 
 import datetime
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler,getServiceOption
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.DISET.RPCClient import RPCClient
+
+__RCSID__ = "$Id$"
 
 class DataStoreHandler( RequestHandler ):
 
@@ -21,11 +22,14 @@ class DataStoreHandler( RequestHandler ):
   def initializeHandler( cls, svcInfoDict ):
     multiPath = PathFinder.getDatabaseSection( "Accounting/MultiDB" )
     cls.__acDB = MultiAccountingDB( multiPath )
-    cls.__acDB.autoCompactDB()
-    result = cls.__acDB.markAllPendingRecordsAsNotTaken()
-    if not result[ 'OK' ]:
-      return result
-    gThreadScheduler.addPeriodicTask( 60, cls.__acDB.loadPendingRecords )
+    #we can run multiple services in read only mode. In that case we do not bucket
+    cls.runBucketing = getServiceOption( svcInfoDict, 'RunBucketing', True )
+    if cls.runBucketing:
+      cls.__acDB.autoCompactDB() #pylint: disable=no-member
+      result = cls.__acDB.markAllPendingRecordsAsNotTaken() #pylint: disable=no-member
+      if not result[ 'OK' ]:
+        return result
+      gThreadScheduler.addPeriodicTask( 60, cls.__acDB.loadPendingRecords ) #pylint: disable=no-member
     return S_OK()
 
   types_registerType = [ basestring, list, list, list ]
@@ -39,7 +43,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      retVal = self.__acDB.registerType( setup, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength ) #pylint: disable=too-many-function-args
+      retVal = self.__acDB.registerType( setup, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength ) #pylint: disable=too-many-function-args,no-member
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -57,7 +61,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      retVal = self.__acDB.changeBucketsLength( setup, typeName, bucketsLength ) #pylint: disable=too-many-function-args
+      retVal = self.__acDB.changeBucketsLength( setup, typeName, bucketsLength ) #pylint: disable=too-many-function-args,no-member
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -75,7 +79,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      retVal = self.__acDB.regenerateBuckets( setup, typeName ) #pylint: disable=too-many-function-args
+      retVal = self.__acDB.regenerateBuckets( setup, typeName ) #pylint: disable=too-many-function-args,no-member
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -88,7 +92,7 @@ class DataStoreHandler( RequestHandler ):
       Get a list of registered types (Only for all powerful admins)
       (Bow before me for I am admin! :)
     """
-    return self.__acDB.getRegisteredTypes()
+    return self.__acDB.getRegisteredTypes() #pylint: disable=no-member
 
   types_deleteType = [ basestring ]
   def export_deleteType( self, typeName ):
@@ -101,7 +105,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      retVal = self.__acDB.deleteType( setup, typeName ) #pylint: disable=too-many-function-args
+      retVal = self.__acDB.deleteType( setup, typeName ) #pylint: disable=too-many-function-args,no-member
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -116,7 +120,7 @@ class DataStoreHandler( RequestHandler ):
     setup = self.serviceInfoDict[ 'clientSetup' ]
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
-    return self.__acDB.insertRecordThroughQueue( setup, typeName, startTime, endTime, valuesList ) #pylint: disable=too-many-function-args
+    return self.__acDB.insertRecordThroughQueue( setup, typeName, startTime, endTime, valuesList ) #pylint: disable=too-many-function-args,no-member
 
   types_commitRegisters = [ list ]
   def export_commitRegisters( self, entriesList ):
@@ -146,7 +150,13 @@ class DataStoreHandler( RequestHandler ):
     """
     Compact the db by grouping buckets
     """
-    return self.__acDB.compactBuckets()
+    #if we are running slaves (not only one service) we can redirect the request to the master
+    #For more information please read the Administrative guide Accounting part!
+    #ADVICE: If you want to trigger the bucketing, please make sure the bucketing is not running!!!!
+    if self.runBucketing:  
+      return self.__acDB.compactBuckets() #pylint: disable=no-member
+    else:
+      return RPCClient('Accounting/DataStoreMaster').compactDB()
 
   types_remove = [ basestring, datetime.datetime, datetime.datetime, list ]
   def export_remove( self, typeName, startTime, endTime, valuesList ):
@@ -156,7 +166,7 @@ class DataStoreHandler( RequestHandler ):
     setup = self.serviceInfoDict[ 'clientSetup' ]
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
-    return self.__acDB.deleteRecord( setup, typeName, startTime, endTime, valuesList ) #pylint: disable=too-many-function-args
+    return self.__acDB.deleteRecord( setup, typeName, startTime, endTime, valuesList ) #pylint: disable=too-many-function-args,no-member
 
   types_removeRegisters = [ list ]
   def export_removeRegisters( self, entriesList ):
@@ -176,7 +186,7 @@ class DataStoreHandler( RequestHandler ):
       startTime = int( Time.toEpoch( entry[1] ) )
       endTime = int( Time.toEpoch( entry[2] ) )
       record = entry[3]
-      result = self.__acDB.deleteRecord( setup, entry[0], startTime, endTime, record ) #pylint: disable=too-many-function-args
+      result = self.__acDB.deleteRecord( setup, entry[0], startTime, endTime, record ) #pylint: disable=too-many-function-args,no-member
       if not result[ 'OK' ]:
         return S_OK( ok )
       ok += 1

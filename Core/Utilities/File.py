@@ -5,7 +5,7 @@
 """
 
 import os
-import hashlib as md5
+import hashlib
 import random
 import glob
 import sys
@@ -49,7 +49,7 @@ def makeGuid( fileName = None ):
 
      :param string fileName: name of file
   """
-  myMd5 = md5.md5()
+  myMd5 = hashlib.md5()
   if fileName:
     try:
       with open( fileName, 'r' ) as fd:
@@ -84,7 +84,7 @@ def generateGuid( checksum, checksumtype ):
       return guid
 
   # Failed to use the check sum, generate a new guid
-  myMd5 = md5.md5()
+  myMd5 = hashlib.md5()
   myMd5.update( str( random.getrandbits( 128 ) ) )
   md5HexString = myMd5.hexdigest()
   guid = "%s-%s-%s-%s-%s" % ( md5HexString[0:8],
@@ -180,7 +180,8 @@ def getGlobbedFiles( files ):
 def getCommonPath( files ):
   """Get the common path for all files in the file list.
 
-  :param list files: list of strings with paths
+  :param files: list of strings with paths
+  :type files: python:list
   """
   def properSplit( dirPath ):
     """Splitting of path to drive and path parts for non-Unix file systems.
@@ -211,10 +212,11 @@ def getCommonPath( files ):
 def getMD5ForFiles( fileList ):
   """Calculate md5 for the content of all the files.
 
-  :param list fileList: list of paths
+  :param fileList: list of paths
+  :type fileList: python:list
   """
   fileList.sort()
-  hashMD5 = md5.md5()
+  hashMD5 = hashlib.md5()
   for filePath in fileList:
     if os.path.isdir( filePath ):
       continue

@@ -10,6 +10,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.PromptUser import promptUser
 
 Script.registerSwitch( "E:", "email=", "Boolean True/False (True by default)" )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -53,9 +54,14 @@ if not setup:
   exitCode = 2
   DIRACExit( exitCode )
 
+#result = promptUser( 'All the elements that are associated with this site will be active, are you sure about this action?' )
+#if not result['OK'] or result['Value'] is 'n':
+#  print 'Script stopped'
+#  DIRACExit( 0 )
+
 site = args[0]
 comment = args[1]
-result = diracAdmin.addSiteInMask( site, comment, printOutput = True )
+result = diracAdmin.allowSite( site, comment, printOutput = True )
 if not result['OK']:
   errorList.append( ( site, result['Message'] ) )
   exitCode = 2

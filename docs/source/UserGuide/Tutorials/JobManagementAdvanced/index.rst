@@ -8,7 +8,7 @@
 A parametric job allows to submit a set of jobs in one submission command by specifying parameters for each job.
 
 
-To define this parameter the attribute �Parameters� must be defined in the JDL, the values that it can take are:
+To define this parameter the attribute "Parameters" must be defined in the JDL, the values that it can take are:
   - A list (strings or numbers).
   - Or, an integer, in this case the attributes ParameterStart and ParameterStep must be defined as integers 
     to create the list of job parameters. 

@@ -4,7 +4,7 @@ Administrator Guide
 
 .. toctree::
    :maxdepth: 1
-   
+
    SetupStructure/index
    GettingStarted/index
    InstallingDIRACService/index
@@ -12,6 +12,7 @@ Administrator Guide
    SystemAdministratorInterface/index
    Configuration/index
    Systems/index
+   Resources/index
    DIRACSites/index
    MultiVO/index
    CommandReference/index

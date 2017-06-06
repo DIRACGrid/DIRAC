@@ -3,7 +3,7 @@
 
 
 import re
-from distutils.version import LooseVersion
+from distutils.version import LooseVersion #pylint: disable=no-name-in-module,import-error
 
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
@@ -51,7 +51,9 @@ def getStorageElementSiteMapping( siteList = None ):
 def getFTS2ServersForSites( siteList = None ):
   """ get FTSServers for sites
 
-  :param list siteList: list of sites
+  :param siteList: list of sites
+  :type siteList: python:list
+
   """
   siteList = siteList if siteList else None
   if not siteList:
@@ -314,11 +316,3 @@ def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
   """
   return '/Resources/FileCatalogs/%s' % catalogName
-
-def getRegistrationProtocols():
-  """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
-  return gConfig.getValue( '/Resources/FileCatalogs/RegistrationProtocols', ['srm', 'dips'] )
-
-def getThirdPartyProtocols():
-  """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
-  return gConfig.getValue( '/Resources/FileCatalogs/ThirdPartyProtocols', ['srm'] )

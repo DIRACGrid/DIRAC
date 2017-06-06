@@ -226,12 +226,15 @@ class InstallDIRAC( CommandBase ):
       pass
 
   def _installDIRAC( self ):
-    """ launch the installation script
+    """ Install DIRAC or its extension, then parse the environment file created, and use it for subsequent calls
     """
+    # Installing
     installCmd = "%s %s" % ( self.installScript, " ".join( self.installOpts ) )
     self.log.debug( "Installing with: %s" % installCmd )
 
-    retCode, output = self.executeAndGetOutput( installCmd )
+    # At this point self.pp.installEnv may coincide with os.environ
+    # If extensions want to pass in a modified environment, it's easy to set self.pp.installEnv in an extended command
+    retCode, output = self.executeAndGetOutput( installCmd, self.pp.installEnv )
     self.log.info( output, header = False )
 
     if retCode:
@@ -239,31 +242,23 @@ class InstallDIRAC( CommandBase ):
       self.exitWithError( retCode )
     self.log.info( "%s completed successfully" % self.installScriptName )
 
-    diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )
-    platformScript = os.path.join( diracScriptsPath, "dirac-platform" )
-    if not self.pp.platform:
-      retCode, output = self.executeAndGetOutput( platformScript )
-      if retCode:
-        self.log.error( "Failed to determine DIRAC platform [ERROR %d]" % retCode )
-        self.exitWithError( retCode )
-      self.pp.platform = output
-    diracBinPath = os.path.join( self.pp.rootPath, self.pp.platform, 'bin' )
-    diracLibPath = os.path.join( self.pp.rootPath, self.pp.platform, 'lib' )
 
-    for envVarName in ( 'LD_LIBRARY_PATH', 'PYTHONPATH' ):
-      if envVarName in os.environ:
-        os.environ[ '%s_SAVE' % envVarName ] = os.environ[ envVarName ]
-        del os.environ[ envVarName ]
-      else:
-        os.environ[ '%s_SAVE' % envVarName ] = ""
+    # Parsing the bashrc then adding its content to the installEnv
+    # at this point self.pp.installEnv may still coincide with os.environ
+    retCode, output = self.executeAndGetOutput( 'bash -c "source bashrc && env"', self.pp.installEnv )
+    if retCode:
+      self.log.error( "Could not parse the bashrc file [ERROR %d]" % retCode )
+      self.exitWithError( retCode )
+    for line in output.split('\n'):
+      try:
+        var, value = [vx.strip() for vx in line.split( '=', 1 )]
+        if var == '_' or 'SSH' in var or '{' in value or '}' in value: # Avoiding useless/confusing stuff
+          continue
+        self.pp.installEnv[var] = value
+      except (IndexError, ValueError):
+        continue
+    # At this point self.pp.installEnv should contain all content of bashrc, sourced "on top" of (maybe) os.environ
 
-    os.environ['LD_LIBRARY_PATH'] = "%s" % ( diracLibPath )
-    sys.path.insert( 0, self.pp.rootPath )
-    sys.path.insert( 0, diracScriptsPath )
-    if "PATH" in os.environ:
-      os.environ['PATH'] = '%s:%s:%s' % ( diracBinPath, diracScriptsPath, os.getenv( 'PATH' ) )
-    else:
-      os.environ['PATH'] = '%s:%s' % ( diracBinPath, diracScriptsPath )
     self.pp.diracInstalled = True
 
   def execute( self ):
@@ -273,29 +268,60 @@ class InstallDIRAC( CommandBase ):
     self._locateInstallationScript()
     self._installDIRAC()
 
+class ReplaceDIRACCode( CommandBase ):
+  """ This command will replace DIRAC code with the one taken from a different location.
+      This command is mostly for testing purposes, and should NOT be added in default configurations.
+      It uses generic -o option for specifying a zip location (like an archive file from github).
+  """
+
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( ReplaceDIRACCode, self ).__init__( pilotParams )
+
+  def execute(self):
+    """ Download/unzip an archive file
+    """
+    from io import BytesIO
+    from urllib2 import urlopen
+    from zipfile import ZipFile
+
+    zipresp = urlopen(self.pp.genericOption)
+    zfile = ZipFile(BytesIO(zipresp.read()))
+    os.mkdir(os.getcwd() + os.path.sep + 'AlternativeCode')
+    zfile.extractall(os.getcwd() + os.path.sep + 'AlternativeCode')
+    zfile.close()
+    zipresp.close()
+    os.rename(os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + os.listdir('./AlternativeCode')[0],
+              os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + 'DIRAC')
+    self.pp.installEnv['PYTHONPATH'] = os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + 'DIRAC' ':' \
+                                       + self.pp.installEnv['PYTHONPATH']
 
 class ConfigureBasics( CommandBase ):
   """ This command completes DIRAC installation, e.g. calls dirac-configure to:
-      - download, by default, the CAs
-      - creates a standard or custom (defined by self.pp.localConfigFile) cfg file
-        to be used where all the pilot configuration is to be set, e.g.:
-      - adds to it basic info like the version
-      - adds to it the security configuration
+        - download, by default, the CAs
+        - creates a standard or custom (defined by self.pp.localConfigFile) cfg file
+          to be used where all the pilot configuration is to be set, e.g.:
+        - adds to it basic info like the version
+        - adds to it the security configuration
 
       If there is more than one command calling dirac-configure, this one should be always the first one called.
 
-      Nota Bene: Further commands should always call dirac-configure using the options -FDMH
-      Nota Bene: If custom cfg file is created further commands should call dirac-configure with
-                 "-O %s %s" % ( self.pp.localConfigFile, self.pp.localConfigFile )
+      .. note:: Further commands should always call dirac-configure using the options -FDMH
+
+      .. note:: If custom cfg file is created further commands should call dirac-configure with
+        "-O %s %s" % ( self.pp.localConfigFile, self.pp.localConfigFile )
 
       From here on, we have to pay attention to the paths. Specifically, we need to know where to look for
-      - executables (scripts)
-      - DIRAC python code
+        - executables (scripts)
+        - DIRAC python code
+
       If the pilot has installed DIRAC (and extensions) in the traditional way, so using the dirac-install.py script,
       simply the current directory is used, and:
-      - scripts will be in $CWD/scripts.
-      - DIRAC python code will be all sitting in $CWD
-      - the local dirac.cfg file will be found in $CWD/etc
+
+        - scripts will be in $CWD/scripts.
+        - DIRAC python code will be all sitting in $CWD
+        - the local dirac.cfg file will be found in $CWD/etc
 
       For a more general case of non-traditional installations, we should use the PATH and PYTHONPATH as set by the
       installation phase. Executables and code will be searched there.
@@ -389,6 +415,8 @@ class CheckCECapabilities( CommandBase ):
     except ValueError:
       self.log.error( "The pilot command output is not json compatible." )
       sys.exit( 1 )
+    if resourceDict.get( 'WholeNode' ):
+      self.pp.tags.append( "WholeNode" )
     if resourceDict.get( 'Tag' ):
       self.pp.tags += resourceDict['Tag']
       self.cfg.append( '-FDMH' )

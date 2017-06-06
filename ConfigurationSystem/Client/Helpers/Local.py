@@ -1,7 +1,6 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
-from DIRAC                                              import S_OK, S_ERROR, gConfig
+from DIRAC                                              import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 
 gBaseLocalSiteSection = "/LocalSite"

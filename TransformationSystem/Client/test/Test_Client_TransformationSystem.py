@@ -1,14 +1,13 @@
 """ unit tests for Transformation Clients
 """
 
-#pylint: disable=protected-access
+#pylint: disable=protected-access,missing-docstring,invalid-name
 
 import unittest
-import types
 import json
+import mock
 
-from mock import MagicMock
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK
 from DIRAC.RequestManagementSystem.Client.Request             import Request
 from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
@@ -17,6 +16,13 @@ from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 
 #############################################################################
 
+def ourgetSitesForSE( ses ):
+  if ses == ['pippo'] or ses == 'pippo':
+    return S_OK( ['Site1'] )
+  elif ses == ['pluto'] or ses == 'pluto':
+    return S_OK( ['Site2'] )
+  elif ses == ['pippo', 'pluto'] or ses == 'pippo,pluto':
+    return S_OK( ['Site1', 'Site2'] )
 
 class reqValFake_C(object):
   def validate(self, opsInput):
@@ -35,19 +41,22 @@ reqValFake = reqValFake_C()
 class ClientsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
   """
-  def setUp( self ):
 
-    self.mockTransClient = MagicMock()
+  # @mock.patch( 'DIRAC.TransformationSystem.Client.TaskManagerPlugin.getSitesForSE', side_effect = ourgetSitesForSE )
+  # def setUp( self, _ ):
+
+  def setUp( self):
+    self.mockTransClient = mock.MagicMock()
     self.mockTransClient.setTaskStatusAndWmsID.return_value = {'OK':True}
 
-    self.WMSClientMock = MagicMock()
-    self.jobMonitoringClient = MagicMock()
-    self.mockReqClient = MagicMock()
+    self.WMSClientMock = mock.MagicMock()
+    self.jobMonitoringClient = mock.MagicMock()
+    self.mockReqClient = mock.MagicMock()
 
-    self.jobMock = MagicMock()
-    self.jobMock2 = MagicMock()
-    mockWF = MagicMock()
-    mockPar = MagicMock()
+    self.jobMock = mock.MagicMock()
+    self.jobMock2 = mock.MagicMock()
+    mockWF = mock.MagicMock()
+    mockPar = mock.MagicMock()
     mockWF.findParameter.return_value = mockPar
     mockPar.getValue.return_value = 'MySite'
 
@@ -56,7 +65,7 @@ class ClientsTestCase( unittest.TestCase ):
     self.jobMock.workflow.return_value = ''
     self.jobMock.return_value = self.jobMock2
 
-    self.reqValidatorMock = MagicMock()
+    self.reqValidatorMock = mock.MagicMock()
     self.reqValidatorMock.validate.return_value = {'OK':True}
 
     self.taskBase = TaskBase( transClient = self.mockTransClient )
@@ -68,8 +77,7 @@ class ClientsTestCase( unittest.TestCase ):
 
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
                                       requestClient = self.mockReqClient,
-                                      requestValidator = reqValFake
-                                      )
+                                      requestValidator = reqValFake )
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
@@ -100,7 +108,7 @@ class PluginUtilitiesSuccess( ClientsTestCase ):
                                     '/this/is/at_123': ['SE1', 'SE2', 'SE3'],
                                     '/this/is/at_23': ['SE2', 'SE3'],
                                     '/this/is/at_4': ['SE4']},
-                                  'Flush' )
+                                   'Flush' )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], [( 'SE1', ['/this/is/at_123', '/this/is/at.12', '/this/is/at.1'] ),
                                      ( 'SE2', ['/this/is/at_23', '/this/is/at.2'] ),
@@ -109,7 +117,7 @@ class PluginUtilitiesSuccess( ClientsTestCase ):
     res = self.pu.groupByReplicas( {'/this/is/at.123': ['SE1', 'SE2', 'SE3'],
                                     '/this/is/at.12': ['SE1', 'SE2'],
                                     '/this/is/at.134': ['SE1', 'SE3', 'SE4']},
-                                    'Flush' )
+                                   'Flush' )
     self.assert_( res['OK'] )
     print res['Value']
     self.assertEqual( res['Value'], [( 'SE1', ['/this/is/at.123', '/this/is/at.134', '/this/is/at.12'] ) ] )
@@ -126,14 +134,14 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
     self.assertTrue(res['OK'])
     self.assertEqual( res, {'OK': True,
-                           'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
+                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
                                           'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
-                                     2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
-                                         'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'ANY', 'JobType': 'User'},
-                                     3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
-                                         'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
+                                      2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
+                                          'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'ANY', 'JobType': 'User'},
+                                      3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
+                                          'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
                                      }
-                            }
+                           }
                     )
 
     taskDict = {1:{'TransformationID':1, 'a1':'aa1', 'b1':'bb1', 'Site':'MySite'},
@@ -151,7 +159,9 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     self.assertTrue('BulkJobObject' in res['Value'])
 
 
-  def test__handleDestination( self ):
+  @mock.patch( 'DIRAC.TransformationSystem.Client.TaskManagerPlugin.getSitesForSE', side_effect = ourgetSitesForSE )
+  def test__handleDestination( self, _ ):
+
     res = self.wfTasks._handleDestination( {'Site':'', 'TargetSE':''} )
     self.assertEqual( res, ['ANY'] )
     res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':''} )
@@ -161,17 +171,17 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':''} )
     self.assertEqual( res, ['Site2'] )
     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'} )
-    self.assertEqual( res, ['Site1','Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo, pluto'} )
-    self.assertEqual( res, ['Site1','Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo, pluto'} )
-    self.assertEqual( res, ['Site1', 'Site2', 'Site3'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'} )
-    self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'} )
-    self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'} )
     self.assertEqual( res, ['Site1'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo,pluto'} )
+    self.assertEqual( sorted(res), sorted(['Site1','Site2']) )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo,pluto'} )
+    self.assertEqual( sorted(res), sorted(['Site1', 'Site2']) )
+    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo,pluto'} )
+    self.assertEqual( sorted(res), sorted(['Site2']) )
+    res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo,pluto'} )
+    self.assertEqual( sorted(res), sorted(['Site1', 'Site2']) )
+    res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'} )
+    self.assertEqual( res, [] )
 
 #############################################################################
 
@@ -419,7 +429,7 @@ class TransformationSuccess( ClientsTestCase ):
     self.assert_( res['OK'] )
     defaultParams = res['Value'].copy()
     for parameterName, defaultValue in res['Value'].items():
-      if type( defaultValue ) in types.StringTypes:
+      if isinstance( defaultValue, basestring ):
         testValue = 'TestValue'
       else:
         testValue = 99999

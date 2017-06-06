@@ -26,7 +26,6 @@ from DIRAC.Core.Utilities.List import randomize, breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols, getThirdPartyProtocols
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -97,12 +96,12 @@ class DataManager( object ):
 
     self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
-    self.registrationProtocol = getRegistrationProtocols()
-    self.thirdPartyProtocols = getThirdPartyProtocols()
     self.resourceStatus = ResourceStatus()
     self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
     self.useCatalogPFN = Operations( self.vo ).getValue( 'DataManagement/UseCatalogPFN', True )
-    self.dmsHelper = DMSHelpers()
+    self.dmsHelper = DMSHelpers( vo = vo )
+    self.registrationProtocol = self.dmsHelper.getRegistrationProtocols()
+    self.thirdPartyProtocols = self.dmsHelper.getThirdPartyProtocols()
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -451,7 +450,15 @@ class DataManager( object ):
     if not checksum:
       log.debug( "Checksum information not provided. Calculating adler32." )
       checksum = fileAdler( fileName )
-      log.debug( "Checksum calculated to be %s." % checksum )
+      # Make another try
+      if not checksum:
+        log.debug( "Checksum calculation failed, try again" )
+        checksum = fileAdler( fileName )
+      if checksum:
+        log.debug( "Checksum calculated to be %s." % checksum )
+      else:
+        return S_ERROR( DErrno.EBADCKS, "Unable to calculate checksum" )
+
     res = self.fc.exists( {lfn:guid} )
     if not res['OK']:
       errStr = "Completely failed to determine existence of destination LFN."
@@ -699,7 +706,7 @@ class DataManager( object ):
 
     # Get the LFN replicas from the file catalog
     log.debug( "Attempting to obtain replicas for %s." % ( lfn ) )
-    res = returnSingleResult( self.getReplicas( lfn ) )
+    res = returnSingleResult( self.getReplicas( lfn, getUrl = False ) )
     if not res[ 'OK' ]:
       errStr = "Failed to get replicas for LFN."
       log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
@@ -812,54 +819,75 @@ class DataManager( object ):
         continue
 
 
-      replicationProtocol = res['Value']
+      replicationProtocols = res['Value']
 
-      if not replicationProtocol:
+      if not replicationProtocols:
         possibleIntermediateSEs.append( candidateSE )
         log.debug( "No protocol suitable for replication found" )
         continue
 
-      log.debug( 'Found common protocols', replicationProtocol )
+      log.debug( 'Found common protocols', replicationProtocols )
 
       # THIS WOULD NOT WORK IF PROTO == file !!
+      # Why did I write that comment ?!
 
-      # Compare the urls to make sure we are not overwriting
-      res = returnSingleResult( candidateSE.getURL( lfn, protocol = replicationProtocol ) )
-      if not res['OK']:
-        log.debug( "Cannot get sourceURL", res['Message'] )
-        continue
+      # We try the protocols one by one
+      # That obviously assumes that there is an overlap and not only
+      # a compatibility between the  output protocols of the source
+      # and the input protocols of the destination.
+      # But that is the only way to make sure we are not replicating
+      # over ourselves.
+      for compatibleProtocol in replicationProtocols:
 
-      sourceURL = res['Value']
+        # Compare the urls to make sure we are not overwriting
+        res = returnSingleResult( candidateSE.getURL( lfn, protocol = compatibleProtocol ) )
+        if not res['OK']:
+          log.debug( "Cannot get sourceURL", res['Message'] )
+          continue
 
-      res = returnSingleResult( destStorageElement.getURL( destPath, protocol = replicationProtocol ) )
-      if not res['OK']:
-        log.debug( "Cannot get destURL", res['Message'] )
-        continue
-      destURL = res['Value']
+        sourceURL = res['Value']
 
-      if sourceURL == destURL:
-        log.debug( "Same source and destination, give up" )
-        continue
+        destURL = ''
+        res = returnSingleResult( destStorageElement.getURL( destPath, protocol = compatibleProtocol ) )
+        if not res['OK']:
 
-      # Attempt the transfer
-      res = returnSingleResult( destStorageElement.replicateFile( {destPath:sourceURL}, sourceSize = catalogSize ) )
+          # for some protocols, in particular srm
+          # you might get an error because the file does not exist
+          # which is exactly what we want
+          # in that case, we just keep going with the comparison
+          # since destURL will be an empty string
+          if not DErrno.cmpError( res, errno.ENOENT ):
+            log.debug( "Cannot get destURL", res['Message'] )
+            continue
+        else:
+          log.debug( "File does not exist: Expected error for TargetSE !!" )
+          destURL = res['Value']
 
-      if not res['OK']:
-        log.debug( "Replication failed", "%s from %s to %s." % ( lfn, candidateSEName, destSEName ) )
-        continue
+        if sourceURL == destURL:
+          log.debug( "Same source and destination, give up" )
+          continue
+
+        # Attempt the transfer
+        res = returnSingleResult( destStorageElement.replicateFile( {destPath:sourceURL},
+                                                                     sourceSize = catalogSize,
+                                                                     inputProtocol = compatibleProtocol ) )
+
+        if not res['OK']:
+          log.debug( "Replication failed", "%s from %s to %s." % ( lfn, candidateSEName, destSEName ) )
+          continue
 
 
-      log.debug( "Replication successful.", res['Value'] )
+        log.debug( "Replication successful.", res['Value'] )
 
-      res = returnSingleResult( destStorageElement.getURL( destPath, protocol = self.registrationProtocol ) )
-      if not res['OK']:
-        log.debug( 'Error getting the registration URL', res['Message'] )
-        # it's maybe pointless to try the other candidateSEs...
-        continue
+        res = returnSingleResult( destStorageElement.getURL( destPath, protocol = self.registrationProtocol ) )
+        if not res['OK']:
+          log.debug( 'Error getting the registration URL', res['Message'] )
+          # it's maybe pointless to try the other candidateSEs...
+          continue
 
-      registrationURL = res['Value']
+        registrationURL = res['Value']
 
-      return S_OK( {'DestSE':destSEName, 'DestPfn':registrationURL} )
+        return S_OK( {'DestSE':destSEName, 'DestPfn':registrationURL} )
 
 
 
@@ -1496,6 +1524,25 @@ class DataManager( object ):
         replicaDict['Failed'][lfn] = 'No disk replicas'
     return
 
+  def __filterReplicasForJobs( self, replicaDict ):
+    """ Remove the SEs that are not to be used for jobs, and archive SEs if there are others
+    The input argument is modified
+    """
+    seList = set( se for ses in replicaDict['Successful'].itervalues() for se in ses )
+    # Get a cache of SE statuses for long list of replicas
+    seStatus = dict( ( se, ( self.dmsHelper.isSEForJobs( se ), self.dmsHelper.isSEArchive( se ) ) ) for se in seList )
+    for lfn, replicas in replicaDict['Successful'].items():  # Beware, there is a del below
+      otherThanArchive = set( se for se in replicas if not seStatus[se][1] )
+      for se in replicas.keys():
+        # Remove the SE if it should not be used for jobs or if it is an archive and there are other SEs
+        if not seStatus[se][0] or ( otherThanArchive and seStatus[se][1] ):
+          replicas.pop( se )
+      # If in the end there is no replica, set Failed
+      if not replicas:
+        del replicaDict['Successful'][lfn]
+        replicaDict['Failed'][lfn] = 'No replicas for jobs'
+    return
+
   def __filterTapeSEs( self, replicas, diskOnly = False, seStatus = None ):
     """ Remove the tape SEs as soon as there is one disk SE or diskOnly is requested
     The input argument is modified
@@ -1535,10 +1582,10 @@ class DataManager( object ):
         activeDict['Failed'][lfn] = 'Wrong replica info'
       else:
         activeDict['Successful'][lfn] = replicas.copy()
-    self.__checkActiveReplicas( activeDict )
+    self.__filterActiveReplicas( activeDict )
     return S_OK( activeDict )
 
-  def __checkActiveReplicas( self, replicaDict ):
+  def __filterActiveReplicas( self, replicaDict ):
     """
     Check a replica dictionary for active replicas
     The input dict is modified, no returned value
@@ -1557,7 +1604,9 @@ class DataManager( object ):
     return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( status, False )
 
   def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, active = False ):
-    """ get replicas from catalogue """
+    """ get replicas from catalogue and filter if requested
+    Warning: all filters are independent, hence active and preferDisk should be set if using forJobs
+    """
     catalogReplicas = {}
     failed = {}
     for lfnChunk in breakListIntoChunks( lfns, 1000 ):
@@ -1588,11 +1637,26 @@ class DataManager( object ):
 
     result = {'Successful':catalogReplicas, 'Failed':failed}
     if active:
-      self.__checkActiveReplicas( result )
+      self.__filterActiveReplicas( result )
     if diskOnly or preferDisk:
       self.__filterTapeReplicas( result, diskOnly = diskOnly )
     return S_OK( result )
 
+  def getReplicasForJobs( self, lfns, allStatus = False, getUrl = True, diskOnly = False ):
+    """ get replicas useful for jobs
+    """
+    # Call getReplicas with no filter and enforce filters in this method
+    result = self.getReplicas( lfns, allStatus = allStatus, getUrl = getUrl )
+    if not result['OK']:
+      return result
+    replicaDict = result['Value']
+    # For jobs replicas must be active
+    self.__filterActiveReplicas( replicaDict )
+    # For jobs, give preference to disk replicas but not only
+    self.__filterTapeReplicas( replicaDict, diskOnly = diskOnly )
+    # don't use SEs excluded for jobs (e.g. Failover)
+    self.__filterReplicasForJobs( replicaDict )
+    return S_OK( replicaDict )
 
   ##################################################################################################3
   # Methods from the catalogToStorage. It would all work with the direct call to the SE, but this checks

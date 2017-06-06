@@ -1,3 +1,5 @@
+.. _rss_installation:
+
 ============
 Installation
 ============
@@ -69,6 +71,8 @@ is running.::
 In case of any errors, check that you have the information about DataBase 'Host' in the configuration file.
 
 The host(s) running the RSS services or agents need the 'SiteManager' property.
+
+.. _rss_populate:
 
 ---------------
 Populate tables

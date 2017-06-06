@@ -39,3 +39,21 @@ Since v6r12 each accounting type can be stored in a different DB. By default all
     }
     
 With the previous configuration all accounting data will be stored and retrieved from the usual database except for the _WMSHistory_ type that will be stored and retrieved from the _Acc2_ database.
+
+DataStore Helpers
+======================
+From DIRAC v6r17p14 there is the possibility to to run multiple 'DataStore' services, where one need to be called 'master', while all the others may be called slaves. The master will creates the proper buckets and the helpers only insert the records to the 'in' table.
+For example:
+install service Accounting DataStoreHelper -m DataStore -p RunBucketing=True -p Port=1966
+In the CS you have to define DataStoreMaster. For example::
+     
+	URLs
+	{
+        DataStore = dips://lbvobox105.cern.ch:9133/Accounting/DataStore
+        DataStore += dips://lbvobox105.cern.ch:9166/Accounting/DataStoreHelper
+        DataStore += dips://lbvobox102.cern.ch:9166/Accounting/DataStoreHelper
+        ReportGenerator = dips://lbvobox106.cern.ch:9134/Accounting/ReportGenerator
+        DataStoreHelper = dips://lbvobox105.cern.ch:9166/Accounting/DataStoreHelper
+        DataStoreHelper += dips://lbvobox102.cern.ch:9166/Accounting/DataStoreHelper
+        DataStoreMaster = dips://lbvobox105.cern.ch:9133/Accounting/DataStore
+       }

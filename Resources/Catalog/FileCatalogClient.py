@@ -23,7 +23,7 @@ class FileCatalogClient( FileCatalogClientBase ):
                    'getLFNForPFN', 'getLFNForGUID', 'findFilesByMetadata','getMetadataFields',
                    'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
                    'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet', 'getDatasets',
-                   'getFileDescendents', 'getFileAncestors',
+                   'getFileDescendents', 'getFileAncestors', 'getDirectoryUserMetadata', 'getFileUserMetadata',
                    'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
 
   WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',

@@ -1,6 +1,8 @@
 """ This is a test of the parametric job generation tools
 """
 
+# pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
+
 import unittest
 
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, \

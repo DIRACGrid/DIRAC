@@ -12,10 +12,8 @@ import time
 import stat
 import types
 import shutil
-try:
-  import hashlib as md5
-except ImportError:
-  import md5
+import ssl
+import hashlib
 
 __RCSID__ = "$Id$"
 
@@ -320,10 +318,16 @@ class ReleaseConfig( object ):
       self.__cfgCache[ urlcfg ] = cfg
       return S_OK( cfg )
     try:
-      md5Data = urlretrieveTimeout( urlcfg[:-4] + ".md5", timeout = 60 )
+      md5path = urlcfg[:-4] + ".md5"
+      if os.path.exists( md5path ):
+        md5File = open( md5path, 'r' )
+        md5Data = md5File.read()
+        md5File.close()
+      else:
+        md5Data = urlretrieveTimeout( md5path, timeout = 60 )
       md5Hex = md5Data.strip()
       #md5File.close()
-      if md5Hex != md5.md5( cfgData ).hexdigest():
+      if md5Hex != hashlib.md5( cfgData ).hexdigest():
         return S_ERROR( "Hash check failed on %s" % urlcfg )
     except Exception, excp:
       return S_ERROR( "Hash check failed on %s: %s" % ( urlcfg, excp ) )
@@ -537,7 +541,7 @@ class ReleaseConfig( object ):
       self.__prjDepends[ project ][ release ] = [ ( project, release ) ]
       relDeps = self.__prjDepends[ project ][ release ]
 
-      if not relCFG.getChild( "Releases/%s" % ( release ) ):
+      if not relCFG.getChild( "Releases/%s" % ( release ) ): # pylint: disable=no-member
         return S_ERROR( "Release %s is not defined for project %s in the release file" % ( release, project ) )
 
       initialDeps = self.getReleaseDependencies( project, release )
@@ -573,8 +577,8 @@ class ReleaseConfig( object ):
           for pKey in relDeps:
             if pKey[0] == prj and pKey[1] != vrs:
               errMsg = "%s is required with two different versions ( %s and %s ) starting with %s:%s" % ( prj,
-                                                                                                    pKey[1], vrs,
-                                                                                                    project, release )
+                                                                                                          pKey[1], vrs,
+                                                                                                          project, release )
               return S_ERROR( errMsg )
           #Same version already required
       if project in relDeps and relDeps[ project ] != release:
@@ -623,7 +627,7 @@ class ReleaseConfig( object ):
     modules = self.getReleaseOption( project, release, "Releases/%s/Modules" % release )
     if modules:
       dMods = {}
-      for entry in [ entry.split( ":" ) for entry in modules.split( "," ) if entry.strip() ]:
+      for entry in [ entry.split( ":" ) for entry in modules.split( "," ) if entry.strip() ]: # pylint: disable=no-member
         if len( entry ) == 1:
           dMods[ entry[0].strip() ] = release
         else:
@@ -633,7 +637,7 @@ class ReleaseConfig( object ):
       #Default modules with the same version as the release version
       modules = self.getReleaseOption( project, release, "DefaultModules" )
       if modules:
-        modules = dict( ( modName.strip() , release ) for modName in modules.split( "," ) if modName.strip() )
+        modules = dict( ( modName.strip() , release ) for modName in modules.split( "," ) if modName.strip() ) # pylint: disable=no-member
       else:
         #Mod = project and same version
         modules = { project : release }
@@ -650,7 +654,7 @@ class ReleaseConfig( object ):
     modLocation = self.getReleaseOption( self.__projectName, release, "Sources/%s" % modName )
     if not modLocation:
       return S_ERROR( "Source origin for module %s is not defined" % modName )
-    modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ]
+    modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ] # pylint: disable=no-member
     if len( modTpl ) == 1:
       return S_OK( ( False, modTpl[0] ) )
     return S_OK( ( modTpl[0], modTpl[1] ) )
@@ -667,6 +671,8 @@ class ReleaseConfig( object ):
       return False
 
   def getLCGVersion( self, lcgVersion = "" ):
+    if lcgVersion:
+      return lcgVersion
     for objName in self.__projectsLoadedBy:
       try:
         return self.__prjRelCFG[ self.__projectName ][ cliParams.release ].get( "Releases/%s/LcgVer" % cliParams.release, lcgVersion )
@@ -792,7 +798,14 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     #   opener = urllib2.build_opener( proxy )
     #   #opener = urllib2.build_opener()
     #  urllib2.install_opener( opener )
-    remoteFD = urllib2.urlopen( url )
+
+    # Try to use insecure context explicitly, needed for python >= 2.7.9
+    try:
+      context = ssl._create_unverified_context()
+      remoteFD = urllib2.urlopen( url, context = context ) # pylint: disable=unexpected-keyword-arg
+       # the keyword 'context' is present from 2.7.9+
+    except AttributeError:
+      remoteFD = urllib2.urlopen( url )
     expectedBytes = 0
     # Sometimes repositories do not return Content-Length parameter
     try:
@@ -897,7 +910,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
     md5Expected = fd.read().strip()
     fd.close()
     #Calculate md5
-    md5Calculated = md5.md5()
+    md5Calculated = hashlib.md5()
     fd = open( os.path.join( cliParams.targetPath, tarName ), "r" )
     buf = fd.read( 4096 )
     while buf:
@@ -1077,8 +1090,8 @@ def usage():
 def loadConfiguration():
 
   optList, args = getopt.getopt( sys.argv[1:],
-                               "".join( [ opt[0] for opt in cmdOpts ] ),
-                               [ opt[1] for opt in cmdOpts ] )
+                                 "".join( [ opt[0] for opt in cmdOpts ] ),
+                                 [ opt[1] for opt in cmdOpts ] )
 
   # First check if the name is defined
   for o, v in optList:
@@ -1115,11 +1128,11 @@ def loadConfiguration():
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
       continue
-    
+
     if opName == 'extraModules':
       logWARN( "extraModules is deprecated please use extensions instead!" )
       opName = 'extensions'
-    
+
     if opName == 'installType':
       opName = 'externalsType'
     if isinstance( getattr( cliParams, opName ), basestring ):
@@ -1212,6 +1225,18 @@ def compileExternals( extVersion ):
     return False
   return True
 
+def getPlatform():
+  platformPath = os.path.join( cliParams.targetPath, "DIRAC", "Core", "Utilities", "Platform.py" )
+  try:
+    platFD = open( platformPath, "r" )
+  except IOError:
+    logERROR( "Cannot open Platform.py. Is DIRAC installed?" )
+    return ''
+
+  Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
+  platFD.close()
+  return Platform.getPlatformString()
+
 def installExternals( releaseConfig ):
   externalsVersion = releaseConfig.getExtenalsVersion()
   if not externalsVersion:
@@ -1219,16 +1244,9 @@ def installExternals( releaseConfig ):
     return False
 
   if not cliParams.platform:
-    platformPath = os.path.join( cliParams.targetPath, "DIRAC", "Core", "Utilities", "Platform.py" )
-    try:
-      platFD = open( platformPath, "r" )
-    except IOError:
-      logERROR( "Cannot open Platform.py. Is DIRAC installed?" )
-      return False
-
-    Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-    platFD.close()
-    cliParams.platform = Platform.getPlatformString()
+    cliParams.platform = getPlatform()
+  if not cliParams.platform:
+    return False
 
   if cliParams.installSource:
     tarsURL = cliParams.installSource
@@ -1319,10 +1337,20 @@ def createBashrc():
                 'export PYTHONOPTIMIZE=x' ]
       if 'HOME' in os.environ:
         lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
+
+      # Determining where the CAs are...
       if 'X509_CERT_DIR' in os.environ:
-        lines.append( 'export X509_CERT_DIR=%s' % os.environ['X509_CERT_DIR'] )
-      elif not os.path.isdir( "/etc/grid-security/certificates" ):
-        lines.append( "[[ -d '%s/etc/grid-security/certificates' ]] && export X509_CERT_DIR='%s/etc/grid-security/certificates'" % ( proPath, proPath ) )
+        certDir = os.environ['X509_CERT_DIR']
+      else:
+        if os.path.isdir( '/etc/grid-security/certificates' ):
+          certDir = '/etc/grid-security/certificates' # Assuming that, if present, it is not empty, and has correct CAs
+        else:
+          certDir = '%s/etc/grid-security/certificates' % proPath # But this will have to be created at some point (dirac-configure)
+      lines.extend( ['# CAs path for SSL verification',
+                     'export X509_CERT_DIR=%s' % certDir,
+                     'export SSL_CERT_DIR=%s' % certDir,
+                     'export REQUESTS_CA_BUNDLE=%s' % certDir] )
+
       lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      '[ -z "$DIRAC" ] && export DIRAC=%s' % proPath,
@@ -1343,6 +1371,11 @@ def createBashrc():
                      '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'export OPENSSL_CONF=/tmp'] )
+
+      # gfal2 requires some environment variables to be set
+      lines.extend( ['# Gfal2 configuration and plugins',
+                     'export GFAL_CONFIG_DIR=%s' % os.path.join( "$DIRAC", cliParams.platform, 'etc/gfal2.d'),
+                     'export  GFAL_PLUGIN_DIR=%s' %os.path.join( "$DIRACLIB", 'gfal2-plugins')] )
       # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend( ['# DIRAC platform',
@@ -1380,8 +1413,20 @@ def createCshrc():
       lines = [ '# DIRAC cshrc file, used by clients to set up the environment',
                 'setenv PYTHONUNBUFFERED yes',
                 'setenv PYTHONOPTIMIZE x' ]
-      if not 'X509_CERT_DIR' in os.environ and not os.path.isdir( "/etc/grid-security/certificates" ):
-        lines.append( "test -d '%s/etc/grid-security/certificates' && setenv X509_CERT_DIR %s/etc/grid-security/certificates" % ( proPath, proPath ) )
+
+      # Determining where the CAs are...
+      if 'X509_CERT_DIR' in os.environ:
+        certDir = os.environ['X509_CERT_DIR']
+      else:
+        if os.path.isdir( '/etc/grid-security/certificates' ):
+          certDir = '/etc/grid-security/certificates' # Assuming that, if present, it is not empty, and has correct CAs
+        else:
+          certDir = '%s/etc/grid-security/certificates' % proPath # But this will have to be created at some point (dirac-configure)
+      lines.extend( ['# CAs path for SSL verification',
+                     'setenv X509_CERT_DIR %s' %certDir,
+                     'setenv SSL_CERT_DIR %s' % certDir,
+                     'setenv REQUESTS_CA_BUNDLE %s' % certDir] )
+
       lines.append( 'setenv X509_VOMS_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      '( test $?DIRAC -eq 1 ) || setenv DIRAC %s' % proPath,
@@ -1408,7 +1453,11 @@ def createCshrc():
       lines.extend( ['# IPv6 support',
                      'setenv GLOBUS_IO_IPV6 TRUE',
                      'setenv GLOBUS_FTP_CLIENT_IPV6 TRUE'] )
-      # add DIRACPLAT environment variable for client installations
+      # gfal2 requires some environment variables to be set
+      lines.extend( ['# Gfal2 configuration and plugins',
+                     'setenv GFAL_CONFIG_DIR %s' % os.path.join( "$DIRAC", cliParams.platform, 'etc/gfal2.d'),
+                     'setenv  GFAL_PLUGIN_DIR %s' %os.path.join( "$DIRACLIB", 'gfal2-plugins')] )
+     # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend( ['# DIRAC platform',
                        'test $?DIRACPLAT -eq 1 || setenv DIRACPLAT `$DIRAC/scripts/dirac-platform`'] )
@@ -1486,7 +1535,16 @@ if __name__ == "__main__":
     logNOTICE( "Deploying scripts..." )
     ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" )
     if os.path.isfile( ddeLocation ):
-      os.system( ddeLocation )
+      cmd = ddeLocation
+      # In MacOS /usr/bin/env does not find python in the $PATH, passing binary path
+      # as an argument to the dirac-deploy-scripts
+      if not cliParams.platform:
+        cliParams.platform = getPlatform()
+      if "Darwin" in cliParams.platform:
+        binaryPath = os.path.join( cliParams.targetPath, cliParams.platform )
+        logNOTICE( "For MacOS (Darwin) use explicit binary path %s" % binaryPath )
+        cmd += ' %s' % binaryPath
+      os.system( cmd )
     else:
       logDEBUG( "No dirac-deploy-scripts found. This doesn't look good" )
   else:

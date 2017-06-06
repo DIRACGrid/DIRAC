@@ -4,10 +4,13 @@
 # Date: 2013/04/02 15:13:51
 ########################################################################
 """ :mod: FTSDB
+
     ===========
 
     .. module: FTSDB
+
     :synopsis: FTS DB
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     FTS DB
@@ -184,7 +187,8 @@ class FTSDB( DB ):
     """ delete FTSFiles for reschedule
 
     :param int operationID: ReqDB.Operation.OperationID
-    :param list opFileIDList: [ ReqDB.File.FileID, ... ]
+    :param opFileIDList: [ ReqDB.File.FileID, ... ]
+    :type opFileIDList: python:list
     """
     query = [ "DELETE FROM `FTSFile` WHERE OperationID = %s" % operationID ]
     if opFileIDList:
@@ -251,7 +255,8 @@ class FTSDB( DB ):
 
     :param int operationID: ReqDB.Operation.OperationID
     :param str sourceSE: waiting source SE
-    :param list opFileIDList: [ ReqDB.File.FileID, ... ]
+    :param opFileIDList: [ ReqDB.File.FileID, ... ]
+    :type opFileIDList: python:list
     """
     operationID = int( operationID )
     if opFileIDList:
@@ -270,7 +275,7 @@ class FTSDB( DB ):
   def putFTSJob( self, ftsJob ):
     """ put FTSJob to the db (INSERT or UPDATE)
 
-    :param FTSJob ftsJob: FTSJob instance
+    :param ~DIRAC.DataManagementSystem.Client.FTSJob.FTSJob ftsJob: FTSJob instance
     """
     ftsJobSQL = ftsJob.toSQL()
     if not ftsJobSQL['OK']:
@@ -371,7 +376,8 @@ class FTSDB( DB ):
   def putFTSFileList( self, ftsFileList ):
     """ bulk put of FSTFiles
 
-    :param list ftsFileList: list with FTSFile instances
+    :param ftsFileList: list with FTSFile instances
+    :type ftsFileList: python:list
     """
     queries = []
     for ftsFile in ftsFileList:
@@ -391,7 +397,8 @@ class FTSDB( DB ):
   def getFTSFileList( self, statusList = None, limit = 1000 ):
     """ get at most :limit: FTSFiles with status in :statusList:
 
-    :param list statusList: list with FTSFiles statuses
+    :param statusList: list with FTSFiles statuses
+    :type statusList: python:list
     :param int limit: select query limit
     """
     statusList = statusList if statusList else [ "Waiting" ]
@@ -427,7 +434,8 @@ class FTSDB( DB ):
     """ delete FTSFiles for given :requestID: and list of :fileIDs:
 
     :param int requestID: ReqDB.Request.RequestID
-    :param list fileIDs: [ ReqDB.File.FileID, ... ]
+    :param fileIDs: [ ReqDB.File.FileID, ... ]
+    :type fileIDs: python:list
     """
     query = "DELETE FROM `FTSFile` WHERE `RequestID`= %s and `FileID` IN (%s)" % ( requestID,
                                                                                    intListToString( fileIDs ) )

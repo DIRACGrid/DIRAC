@@ -19,13 +19,13 @@ from types import ListType, TupleType, StringTypes
 # The logic of some methods is basically a copy/paste from the FileManager class,
 # so I could have inherited from it. However, I did not want to depend on it
 class FileManagerPs( FileManagerBase ):
-  
 
-  
+
+
   def __init__(self, database = None ):
     super( FileManagerPs, self ).__init__( database )
 
-  
+
 
   ######################################################
   #
@@ -87,7 +87,7 @@ class FileManagerPs( FileManagerBase ):
       fileId = result['Value'][0]
 
       if not fileId:
-        failed[lfn] = "No such file"
+        failed[lfn] = "No such file or directory"
       else:
         successful[lfn] = fileId
 
@@ -118,19 +118,19 @@ class FileManagerPs( FileManagerBase ):
 
       # The lfns that are not in successful dont exist
       for failedLfn in ( set( lfns ) - set( successful ) ):
-        failed[failedLfn] = "No such file"
+        failed[failedLfn] = "No such file or directory"
 
     return S_OK({"Successful":successful,"Failed":failed})
 
   def _getDirectoryFiles(self,dirID,fileNames,metadata_input,allStatus=False,connection=False):
     """ For a given directory, and eventually given file, returns all the desired metadata
 
-        :param dirID : directory ID
-        :param filenames : the list of filenames, or []
+        :param int dirID: directory ID
+        :param fileNames: the list of filenames, or []
         :param metadata_input: list of desired metadata.
                    It can be anything from (FileName, DirID, FileID, Size, UID, Owner,
                    GID, OwnerGroup, Status, GUID, Checksum, ChecksumType, Type, CreationDate, ModificationDate, Mode)
-        :param allStatus : if False, only displays the files whose status is in db.visibleFileStatus
+        :param bool allStatus: if False, only displays the files whose status is in db.visibleFileStatus
 
         :returns: S_OK(files), where files is a dictionary indexed on filename, and values are dictionary of metadata
     """
@@ -306,10 +306,10 @@ class FileManagerPs( FileManagerBase ):
     chunkSize = 200
     allChunks = list( self.__chunks( lfns.keys(), chunkSize ) )
 
-    
+
     for lfnChunk in allChunks:
       result = self.__insertMultipleFiles( fileValues, lfnChunk )
-      
+
       if result['OK']:
         allIds = result['Value']
         for dirId, fileName, fileID in allIds:
@@ -902,10 +902,11 @@ class FileManagerPs( FileManagerBase ):
 
 
         Get the replicas for all the Files in the given Directory
-        :param DirID : ID of the directory
-        :param path : useless
-        :param allStatus : whether all replicas and file status are considered
-                          If False, take the visibleFileStatus and visibleReplicaStatus values from the configuration
+
+        :param int dirID: ID of the directory
+        :param unused path: useless
+        :param bool allStatus: whether all replicas and file status are considered
+                               If False, take the visibleFileStatus and visibleReplicaStatus values from the configuration
     """
 
     # We format the visible file/replica satus so we can give it as argument to the ps
@@ -932,22 +933,21 @@ class FileManagerPs( FileManagerBase ):
     """ Get the file LFNs for a given list of file IDs
         We need to override this method because the base class hard codes the column names
     """
-    # Format the filenames and status to be used in a IN clause in the sotred procedure
-    formatedFileIds = intListToString( fileIDs )
-    result = self.db.executeStoredProcedureWithCursor( 'ps_get_full_lfn_for_file_ids', ( formatedFileIds, ) )
-    if not result['OK']:
-      return result
-
-    # The result contains FileID, LFN
 
     successful = {}
-    for row in result['Value']:
-      successful[row[0]] = row[1]
+    for chunks in breakListIntoChunks(fileIDs, 1000):
+      # Format the filenames and status to be used in a IN clause in the sotred procedure
+      formatedFileIds = intListToString( chunks )
+      result = self.db.executeStoredProcedureWithCursor( 'ps_get_full_lfn_for_file_ids', ( formatedFileIds, ) )
+      if not result['OK']:
+        return result
+
+      # The result contains FileID, LFN
+      for row in result['Value']:
+        successful[row[0]] = row[1]
 
 
     missingIds = set( fileIDs ) - set( successful )
     failed = dict.fromkeys( missingIds, "File ID not found" )
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
-
-

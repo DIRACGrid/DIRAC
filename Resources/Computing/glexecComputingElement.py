@@ -2,11 +2,9 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id$"
-
 import os
 import stat
-import distutils.spawn
+import distutils.spawn #pylint: disable=no-name-in-module,import-error
 
 import DIRAC
 
@@ -16,7 +14,7 @@ from DIRAC.Resources.Computing.ComputingElement             import ComputingElem
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                        import shellCall
 
-
+__RCSID__ = "$Id$"
 
 MandatoryParameters = [ ]
 
@@ -101,7 +99,7 @@ class glexecComputingElement( ComputingElement ):
     try:
       os.chmod( os.path.abspath( executableFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except Exception as x:
-      self.log.error( 'Failed to change permissions of executable to 0755 with exception', 
+      self.log.error( 'Failed to change permissions of executable to 0755 with exception',
                       '\n%s' % ( x ) )
 
     result = self.glexecExecute( os.path.abspath( executableFile ), glexecLocation )
@@ -255,7 +253,7 @@ class glexecComputingElement( ComputingElement ):
     try:
       os.chmod( os.path.abspath( testFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except Exception as x:
-      self.log.error( 'Failed to change permissions of test script to 0755 with exception', 
+      self.log.error( 'Failed to change permissions of test script to 0755 with exception',
                       '\n%s' % ( x ) )
       return S_ERROR( 'Could not change permissions of test script' )
 
@@ -299,7 +297,7 @@ class glexecComputingElement( ComputingElement ):
     elif os.environ.has_key( 'GLITE_LOCATION' ):
       glexecPath = '%s/sbin/glexec' % ( os.environ['GLITE_LOCATION'] )
     else: #try to locate the excutable in the PATH
-      glexecPath = distutils.spawn.find_executable( "glexec" )
+      glexecPath = distutils.spawn.find_executable( "glexec" ) #pylint: disable=no-member
     if not glexecPath:
       self.log.info( 'Unable to locate glexec, site does not have GLITE_LOCATION nor OSG_GLEXEC_LOCATION defined' )
       return S_ERROR( 'glexec not found' )

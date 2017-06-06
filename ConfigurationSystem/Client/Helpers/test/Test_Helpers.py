@@ -1,4 +1,5 @@
-import unittest, importlib
+import unittest
+import importlib
 from mock import Mock
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform, getCompatiblePlatforms

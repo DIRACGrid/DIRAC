@@ -1,11 +1,12 @@
 """
   The Job Sanity Agent accepts all jobs from the Job
   receiver and screens them for the following problems:
-   - Output data already exists
-   - Problematic JDL
-   - Jobs with too much input data e.g. > 100 files
-   - Jobs with input data incorrectly specified e.g. castor:/
-   - Input sandbox not correctly uploaded.
+
+     - Output data already exists
+     - Problematic JDL
+     - Jobs with too much input data e.g. > 100 files
+     - Jobs with input data incorrectly specified e.g. castor:/
+     - Input sandbox not correctly uploaded.
 """
 
 __RCSID__ = "$Id$"
@@ -21,9 +22,9 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient   import SandboxSt
 class JobSanity( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
-      - optimizeJob() - the main method called for each job
+        - optimizeJob() - the main method called for each job
       and it can provide:
-      - initializeOptimizer() before each execution cycle
+        - initializeOptimizer() before each execution cycle
   """
 
   @classmethod
@@ -63,14 +64,6 @@ class JobSanity( OptimizerExecutor ):
         return result
       finalMsg.append( "%s LFNs" % result[ 'Value' ] )
       self.jobLog.info( "%s LFNs" % result[ 'Value' ] )
-
-    #Platform check # disabled
-    if self.ex_getOption( 'PlatformCheck', False ):
-      result = self.checkPlatformSupported( jobState )
-      if not result[ 'OK' ]:
-        return result
-      finalMsg.append( "Platform OK" )
-      self.jobLog.info( "Platform OK" )
 
     #Output data exists check # disabled
     if self.ex_getOption( 'OutputDataCheck', False ):
@@ -138,15 +131,6 @@ class JobSanity( OptimizerExecutor ):
        data manager. To be tidied for DIRAC3...
     """
     # FIXME: To implement checkOutputDataExists
-    return S_OK()
-
-  #############################################################################
-  def checkPlatformSupported( self, jobState ):
-    """This method queries the CS for available platforms
-       supported by DIRAC and will check these against what
-       the job requests.
-    """
-    # FIXME: To implement checkPlatformSupported
     return S_OK()
 
   #############################################################################

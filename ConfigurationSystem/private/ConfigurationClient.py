@@ -1,13 +1,18 @@
-from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-__RCSID__ = "$Id$"
+""" Basic functions for interacting with CS objects
+"""
 
-import types
+
 import os
+
 import DIRAC
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+
+__RCSID__ = "$Id$"
 
 class ConfigurationClient( object ):
 
@@ -40,8 +45,8 @@ class ConfigurationClient( object ):
     try:
       if not raw and cfg.isSection( 'DIRAC' ):
         diracSec = cfg[ 'DIRAC' ]
-        if diracSec.isSection( 'Configuration' ):
-          confSec = diracSec[ 'Configuration' ]
+        if diracSec.isSection( 'Configuration' ): #pylint: disable=no-member
+          confSec = diracSec[ 'Configuration' ] #pylint: disable=unsubscriptable-object
           for opt in ( 'Servers', 'MasterServer' ):
             if confSec.isOption( opt ):
               confSec.deleteKey( opt )
@@ -70,24 +75,24 @@ class ConfigurationClient( object ):
     gRefresher.refreshConfigurationIfNeeded()
     optionValue = gConfigurationData.extractOptionFromCFG( optionPath )
 
-    if optionValue == None:
+    if optionValue is None:
       return S_ERROR( "Path %s does not exist or it's not an option" % optionPath )
 
     # Value has been returned from the configuration
-    if typeValue == None:
+    if typeValue is None:
       return S_OK( optionValue )
 
     # Casting to typeValue's type
     requestedType = typeValue
-    if not type( typeValue ) == types.TypeType:
+    if not isinstance( typeValue, type ):
       requestedType = type( typeValue )
 
-    if requestedType == types.ListType:
+    if requestedType == list:
       try:
         return S_OK( List.fromChar( optionValue, ',' ) )
       except Exception:
         return S_ERROR( "Can't convert value (%s) to comma separated list" % str( optionValue ) )
-    elif requestedType == types.BooleanType:
+    elif requestedType == bool:
       try:
         return S_OK( optionValue.lower() in ( "y", "yes", "true", "1" ) )
       except Exception:
@@ -102,7 +107,7 @@ class ConfigurationClient( object ):
   def getSections( self, sectionPath, listOrdered = True ):
     gRefresher.refreshConfigurationIfNeeded()
     sectionList = gConfigurationData.getSectionsFromCFG( sectionPath, ordered = listOrdered )
-    if type( sectionList ) == types.ListType:
+    if isinstance( sectionList, list ):
       return S_OK( sectionList )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
@@ -110,7 +115,7 @@ class ConfigurationClient( object ):
   def getOptions( self, sectionPath, listOrdered = True ):
     gRefresher.refreshConfigurationIfNeeded()
     optionList = gConfigurationData.getOptionsFromCFG( sectionPath, ordered = listOrdered )
-    if type( optionList ) == types.ListType:
+    if isinstance( optionList, list ):
       return S_OK( optionList )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
@@ -119,10 +124,9 @@ class ConfigurationClient( object ):
     gRefresher.refreshConfigurationIfNeeded()
     optionsDict = {}
     optionList = gConfigurationData.getOptionsFromCFG( sectionPath )
-    if type( optionList ) == types.ListType:
+    if isinstance( optionList, list ):
       for option in optionList:
-        optionsDict[ option ] = gConfigurationData.extractOptionFromCFG( "%s/%s" %
-                                                              ( sectionPath, option ) )
+        optionsDict[ option ] = gConfigurationData.extractOptionFromCFG( "%s/%s" % ( sectionPath, option ) )
       return S_OK( optionsDict )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
@@ -132,13 +136,9 @@ class ConfigurationClient( object ):
     Create a dictionary with all sections, subsections and options
     starting from given root. Result can be filtered.
 
-    :param:`root` - string:
-            Starting point in the configuration tree.
-
-    :param:`filters` - string(s):
-            Select results that contain given substrings
-            (check full path, i.e. with option name)
-
+    :param str root: Starting point in the configuration tree.
+    :param filters: Select results that contain given substrings (check full path, i.e. with option name)
+    :type filters: str or python:list[str]
     :return: Return a dictionary where keys are paths taken from
              the configuration (e.g. /Systems/Configuration/...).
              Value is "None" when path points to a section

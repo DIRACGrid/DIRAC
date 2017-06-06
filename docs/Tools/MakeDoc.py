@@ -1,7 +1,8 @@
-#!/usr/bin/env python
+#!/bin/env python
 """ create rst files for documentation of DIRAC """
 import os
 import shutil
+import socket
 import sys
 
 def mkdir( folder ):
@@ -19,6 +20,25 @@ DIRACPATH = os.environ.get("DIRAC","") + "/DIRAC"
 ORIGDIR = os.getcwd()
 
 BASEPATH = os.path.join( DIRACPATH, BASEPATH )
+
+## files that call parseCommandLine or similar issues
+BAD_FILES = ( "lfc_dfc_copy",
+              "lfc_dfc_db_copy",
+              "JobWrapperTemplate",
+              "PlotCache", ## PlotCache creates a thread on import, which keeps sphinx from exiting
+              "PlottingHandler",
+              # "DataStoreClient", # instantiates itself
+              # "ReportsClient", ## causes gDataCache to start
+              # "ComponentInstaller", # tries to connect to a DB
+              # "ProxyDB", # tries to connect to security log server
+              # "SystemAdministratorHandler", # tries to connect to monitoring
+              # "GlobusComputingElement", # tries to connect to a DB
+              # "HTCondorCEComputingElememt", # tries to connect to a DB
+              # "TaskManager", #Tries to connect to security logging
+           )
+
+FORCE_ADD_PRIVATE = [ "FCConditionParser" ]
+
 
 def mkRest( filename, modulename, fullmodulename, subpackages=None, modules=None ):
   """make a rst file for filename"""
@@ -51,9 +71,10 @@ def mkRest( filename, modulename, fullmodulename, subpackages=None, modules=None
     for package in sorted(subpackages):
       lines.append("   %s/%s_Module.rst" % (package,package.split("/")[-1] ) )
       #lines.append("   %s " % (package, ) )
+    lines.append("")
 
-  ##remove CLI because we drop them earlier
-  modules = [ m for m in modules if not m.endswith("CLI") ]
+  ##remove CLI etc. because we drop them earlier
+  modules = [ m for m in modules if not m.endswith("CLI") and "-" not in m ]
   if modules:
     lines.append( "Modules" )
     lines.append( "......." )
@@ -64,11 +85,24 @@ def mkRest( filename, modulename, fullmodulename, subpackages=None, modules=None
     for module in sorted(modules):
       lines.append("   %s.rst" % (module.split("/")[-1],) )
       #lines.append("   %s " % (package, ) )
+    lines.append("")
 
   with open(filename, 'w') as rst:
     rst.write("\n".join(lines))
 
-    
+def mkDummyRest( classname, fullclassname):
+  """ create a dummy rst file for files that behave badly """
+  filename = classname+".rst"
+
+  lines = []
+  lines.append("%s" % classname)
+  lines.append("="*len(classname))
+  lines.append("")
+  lines.append(" This is an empty file, because we cannot parse this file correctly or it causes problems")
+  lines.append(" , please look at the source code directly")
+  with open(filename, 'w') as rst:
+    rst.write("\n".join(lines))
+
 def mkModuleRest( classname, fullclassname, buildtype="full"):
   """ create rst file for class"""
   filename = classname+".rst"
@@ -90,6 +124,9 @@ def mkModuleRest( classname, fullclassname, buildtype="full"):
     lines.append("   :inherited-members:" )
     lines.append("   :undoc-members:" )
     lines.append("   :show-inheritance:" )
+    if classname in FORCE_ADD_PRIVATE:
+      lines.append( "   :special-members:" )
+      lines.append( "   :private-members:" )
     if classname.startswith("_"):
       lines.append( "   :private-members:" )
 
@@ -101,7 +138,7 @@ def getsubpackages( abspath, direc):
   """return list of subpackages with full path"""
   packages = []
   for dire in direc:
-    if "/test" in dire.lower():
+    if dire.lower() == "test" or dire.lower() == "tests" or "/test" in dire.lower():
       print "MakeDoc: skipping this directory", dire
       continue
     if os.path.exists( os.path.join( DIRACPATH,abspath,dire, "__init__.py" ) ):
@@ -126,6 +163,7 @@ def createDoc(buildtype = "full"):
   """create the rst files for all the things we want them for"""
   print "MakeDoc: DIRACPATH",DIRACPATH
   print "MakeDoc: BASEPATH", BASEPATH
+  print "Host", socket.gethostname()
 
   ## we need to replace existing rst files so we can decide how much code-doc to create
   if os.path.exists(BASEPATH):
@@ -154,21 +192,24 @@ def createDoc(buildtype = "full"):
       os.chdir( abspath )
     if modulename == "DIRAC":
       createCodeDocIndex(subpackages=packages, modules=getmodules(abspath, direc, files), buildtype=buildtype)
+    elif buildtype == "limited":
+      os.chdir(BASEPATH)
+      return 0
     else:
       mkRest( modulename+"_Module.rst", modulename, fullmodulename, subpackages=packages, modules=getmodules(abspath, direc, files) )
 
     for filename in files:
       ## Skip things that call parseCommandLine or similar issues
-      if any( f in filename for f in ("lfc_dfc_copy", "lfc_dfc_db_copy", "JobWrapperTemplate",
-                                      "PlotCache", ## PlotCache creates a thread on import, which keeps sphinx from exiting
-                                      "PlottingHandler",
-                                      "__init__.py",
-                                     ) ) or \
-        not filename.endswith(".py") or \
-        filename.endswith("CLI.py") or \
-        filename.lower().startswith("test"):
-        continue
       fullclassname = ".".join(abspath.split("/")+[filename])
+      if any( f in filename for f in BAD_FILES ):
+        mkDummyRest( filename.split(".py")[0], fullclassname.split(".py")[0] )
+        continue
+      elif not filename.endswith(".py") or \
+           filename.endswith("CLI.py") or \
+           filename.lower().startswith("test") or \
+           filename == "__init__.py" or \
+           "-" in filename: ## not valid python identifier, e.g. dirac-pilot
+        continue
       if not fullclassname.startswith( "DIRAC." ):
         fullclassname = "DIRAC."+fullclassname
       ##Remove some FrameworkServices because things go weird
@@ -192,41 +233,41 @@ def createCodeDocIndex( subpackages, modules, buildtype="full"):
     lines.append( ".. warning::" )
     lines.append( "  This a limited build of the code documentation, for the full code documentation please look at the website" )
     lines.append( "" )
+  else:
+    if subpackages or modules:
+      lines.append(".. toctree::")
+      lines.append("   :maxdepth: 1")
+      lines.append("")
 
-  if subpackages or modules:
-    lines.append(".. toctree::")
-    lines.append("   :maxdepth: 1")
-    lines.append("")
+    if subpackages:
+      systemPackages = sorted([ pck for pck in subpackages if pck.endswith("System") ])
+      otherPackages = sorted([ pck for pck in subpackages if not pck.endswith("System") ])
 
-  if subpackages:
-    systemPackages = sorted([ pck for pck in subpackages if pck.endswith("System") ])
-    otherPackages = sorted([ pck for pck in subpackages if not pck.endswith("System") ])
+      lines.append( "=======" )
+      lines.append( "Systems" )
+      lines.append( "=======" )
+      lines.append("")
+      lines.append(".. toctree::")
+      lines.append("   :maxdepth: 1")
+      lines.append("")
+      for package in systemPackages:
+        lines.append("   %s/%s_Module.rst" % (package,package.split("/")[-1] ) )
 
-    lines.append( "=======" )
-    lines.append( "Systems" )
-    lines.append( "=======" )
-    lines.append("")
-    lines.append(".. toctree::")
-    lines.append("   :maxdepth: 1")
-    lines.append("")
-    for package in systemPackages:
-      lines.append("   %s/%s_Module.rst" % (package,package.split("/")[-1] ) )
+      lines.append("")
+      lines.append( "=====" )
+      lines.append( "Other" )
+      lines.append( "=====" )
+      lines.append("")
+      lines.append(".. toctree::")
+      lines.append("   :maxdepth: 1")
+      lines.append("")
+      for package in otherPackages:
+        lines.append("   %s/%s_Module.rst" % (package,package.split("/")[-1] ) )
 
-    lines.append("")
-    lines.append( "=====" )
-    lines.append( "Other" )
-    lines.append( "=====" )
-    lines.append("")
-    lines.append(".. toctree::")
-    lines.append("   :maxdepth: 1")
-    lines.append("")
-    for package in otherPackages:
-      lines.append("   %s/%s_Module.rst" % (package,package.split("/")[-1] ) )
-
-  if modules:
-    for module in sorted(modules):
-      lines.append("   %s.rst" % (module.split("/")[-1],) )
-      #lines.append("   %s " % (package, ) )
+    if modules:
+      for module in sorted(modules):
+        lines.append("   %s.rst" % (module.split("/")[-1],) )
+        #lines.append("   %s " % (package, ) )
 
   with open(filename, 'w') as rst:
     rst.write("\n".join(lines))

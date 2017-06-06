@@ -5,13 +5,9 @@ import types
 import copy
 import os
 import re
-try:
-  import zipfile
-  gZipEnabled = True
-except ImportError:
-  gZipEnabled = False
+import zipfile
 
-  __RCSID__ = "$Id$"
+__RCSID__ = "$Id$"
 
 try:
   from DIRAC.Core.Utilities              import List, ThreadSafe
@@ -449,7 +445,8 @@ class CFG( object ):
 
     :type path: string
     :param path: Path to retrieve as dict
-    :return : Dictionary containing the data
+    :return: Dictionary containing the data
+
     """
     resVal = {}
     if path:
@@ -731,7 +728,7 @@ class CFG( object ):
     """
     Compare two cfgs
 
-    :type newerCfg: CFG
+    :type newerCfg: ~DIRAC.Core.Utilities.CFG.CFG
     :param newerCfg: Cfg to compare with
     :type prefix: string
     :param prefix: Internal use only
@@ -878,7 +875,7 @@ class CFG( object ):
     :param fileName: File name to load the contents from
     :return: This CFG
     """
-    if gZipEnabled and fileName.find( ".zip" ) == len( fileName ) - 4:
+    if zipfile.is_zipfile( fileName ):
       #Zipped file
       zipHandler = zipfile.ZipFile( fileName )
       nameList = zipHandler.namelist()
@@ -886,9 +883,8 @@ class CFG( object ):
       fileData = zipHandler.read( fileToRead )
       zipHandler.close()
     else:
-      fd = file( fileName )
-      fileData = fd.read()
-      fd.close()
+      with open( fileName ) as fd:
+        fileData = fd.read()
     return self.loadFromBuffer( fileData )
 
   @gCFGSynchro

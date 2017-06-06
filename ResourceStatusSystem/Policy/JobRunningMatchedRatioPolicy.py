@@ -1,8 +1,10 @@
 # $HeadURL: $
 """ JobRunningMatchedRatioPolicy
 
-  Policy that calculates the efficiency following the formula:
+  Policy that calculates the efficiency following the formula::
+
     ( running ) / ( running + matched + received + checking )
+
   if the denominator is smaller than 10, it does not take any decision.
 
 """

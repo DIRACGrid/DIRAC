@@ -11,18 +11,22 @@
 """
 
 import random
+import errno
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig
 
 from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
 from DIRAC.Core.Utilities.Time                                      import fromString, toEpoch
 from DIRAC.Core.Security                                            import Properties
+from DIRAC.Core.Utilities.DErrno                                    import cmpError
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources             import getSiteTier
 from DIRAC.ConfigurationSystem.Client.Helpers                       import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Path                  import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import StorageManagerClient, getFilesToStage
 from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.ResourceStatusSystem.Client.SiteStatus                   import SiteStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB                        import JobDB
 
 
@@ -40,6 +44,7 @@ class JobScheduling( OptimizerExecutor ):
   def initializeOptimizer( cls ):
     """ Initialization of the optimizer.
     """
+    cls.siteClient = SiteStatus()
     cls.__jobDB = JobDB()
     return S_OK()
 
@@ -65,8 +70,14 @@ class JobScheduling( OptimizerExecutor ):
       if waited < delay:
         return self.__holdJob( jobState, 'On Hold: after rescheduling %s' % reschedules, delay )
 
+    # Get the job manifest for the later checks
+    result = jobState.getManifest()
+    if not result[ 'OK' ]:
+      return S_ERROR( "Could not retrieve job manifest: %s" % result[ 'Message' ] )
+    jobManifest = result[ 'Value' ]
+
     # Get site requirements
-    result = self.__getSitesRequired( jobState )
+    result = self.__getSitesRequired( jobState, jobManifest )
     if not result[ 'OK' ]:
       return result
     userSites, userBannedSites = result[ 'Value' ]
@@ -78,7 +89,7 @@ class JobScheduling( OptimizerExecutor ):
     jobType = result[ 'Value' ]
 
     # Get banned sites from DIRAC
-    result = self.__jobDB.getSiteMask( 'Banned' )
+    result = self.siteClient.getSites( 'Banned' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve banned sites from JobDB" )
     wmsBannedSites = result[ 'Value' ]
@@ -86,23 +97,57 @@ class JobScheduling( OptimizerExecutor ):
     # If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
-        result = self.__jobDB.getUserSitesTuple( userSites )
+
+        result = self.siteClient.getUsableSites( userSites )
         if not result[ 'OK' ]:
           return S_ERROR( "Problem checking userSites for tuple of active/banned/invalid sites" )
+        usableSites = set( result['Value'] )
+        bannedSites = []
+        invalidSites = []
+        for site in userSites:
+          if site in wmsBannedSites:
+            bannedSites.append( site )
+          elif site not in usableSites:
+            invalidSites.append( site )
 
-        userSites, bannedSites, invalidSites = result['Value']
         if invalidSites:
           self.jobLog.debug( "Invalid site(s) requested: %s" % ','.join( invalidSites ) )
           if not self.ex_getOption( 'AllowInvalidSites', True ):
             return self.__holdJob( jobState, "Requested site(s) %s are invalid" % ",".join( invalidSites ) )
         if bannedSites:
           self.jobLog.debug( "Banned site(s) %s ignored" % ",".join( bannedSites ) )
-          if not userSites:
+          if not usableSites:
             return self.__holdJob( jobState, "Requested site(s) %s are inactive" % ",".join( bannedSites ) )
 
-        if not userSites:
+        if not usableSites:
           return self.__holdJob( jobState, "No requested site(s) are active/valid" )
-        userSites = list(userSites)
+        userSites = list( usableSites )
+
+
+    checkPlatform = self.ex_getOption( 'CheckPlatform', False )
+    jobPlatform = jobManifest.getOption( "Platform", None )
+    # First check that the platform is valid (in OSCompatibility list)
+    if checkPlatform and jobPlatform:
+      result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
+      if not result[ 'OK' ]:
+        return S_ERROR( "Unable to get OSCompatibility list" )
+      allPlatforms = result[ 'Value' ]
+      if not jobPlatform in allPlatforms:
+        self.jobLog.error( "Platform %s is not supported" % jobPlatform )
+        return S_ERROR( "Platform %s is not supported" % jobPlatform )
+
+    # Filter the userSites by the platform selection (if there is one)
+    if checkPlatform and userSites:
+      if jobPlatform:
+        result = self.__filterByPlatform( jobPlatform, userSites )
+        if not result['OK']:
+          self.jobLog.error( "Failed to filter job sites by platform: %s" % result[ 'Message' ] )
+          return S_ERROR( "Failed to filter job sites by platform" )
+        userSites = result[ 'Value' ]
+        if not userSites:
+          # No sites left after filtering -> Invalid platform/sites combination
+          self.jobLog.error( "No selected sites match platform '%s'" % jobPlatform )
+          return S_ERROR( "No selected sites match platform '%s'" % jobPlatform )
 
     # Check if there is input data
     result = jobState.getInputData()
@@ -112,29 +157,35 @@ class JobScheduling( OptimizerExecutor ):
 
     if not result['Value']:
       # No input data? Just send to TQ
-      return self.__sendToTQ( jobState, userSites, userBannedSites )
+      return self.__sendToTQ( jobState, jobManifest, userSites, userBannedSites )
 
     self.jobLog.verbose( "Has an input data requirement" )
     inputData = result[ 'Value' ]
 
+    # ===================================================================================
     # Production jobs are sent to TQ, but first we have to verify if staging is necessary
+    # ===================================================================================
     if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
       self.jobLog.info( "Production job: sending to TQ, but first checking if staging is requested" )
 
-      userName = jobState.getAttribute( 'Owner' )
-      if not userName[ 'OK' ]:
-        return userName
-      userName = userName['Value']
-
-      userGroup = jobState.getAttribute( 'OwnerGroup' )
-      if not userGroup[ 'OK' ]:
-        return userGroup
-      userGroup = userGroup['Value']
-
-      res = getFilesToStage( inputData, proxyUserName = userName, proxyUserGroup = userGroup ) #pylint: disable=unexpected-keyword-arg
+      res = getFilesToStage( inputData, jobState = jobState, checkOnlyTapeSEs = self.ex_getOption( 'CheckOnlyTapeSEs', True ), jobLog = self.jobLog )
 
       if not res['OK']:
         return self.__holdJob( jobState, res['Message'] )
+      if res['Value']['absentLFNs']:
+        # Some files do not exist at all... set the job Failed
+        # Reverse errors
+        reasons = {}
+        for lfn, reason in res['Value']['absentLFNs'].iteritems():
+          reasons.setdefault( reason, [] ).append( lfn )
+        for reason, lfns in reasons.iteritems():
+          # Some files are missing in the FC or in SEs, fail the job
+          self.jobLog.error( reason, ','.join( lfns ) )
+        error = ','.join( reasons )
+        return S_ERROR( error )
+
+      if res['Value']['failedLFNs']:
+        return self.__holdJob( jobState, "Couldn't get storage metadata of some files" )
       stageLFNs = res['Value']['offlineLFNs']
       if stageLFNs:
         res = self.__checkStageAllowed( jobState )
@@ -145,9 +196,18 @@ class JobScheduling( OptimizerExecutor ):
         self.__requestStaging( jobState, stageLFNs )
         return S_OK()
       else:
-        return self.__sendToTQ( jobState, userSites, userBannedSites )
+        # No staging required
+        onlineSites = res['Value']['onlineSites']
+        if onlineSites:
+          # Set the online site(s) first
+          userSites = set( userSites )
+          onlineSites &= userSites
+          userSites = list( onlineSites ) + list( userSites - onlineSites )
+        return self.__sendToTQ( jobState, jobManifest, userSites, userBannedSites )
 
+    # ===================================================
     # From now on we know it's a user job with input data
+    # ===================================================
 
     idAgent = self.ex_getOption( 'InputDataAgent', 'InputData' )
     result = self.retrieveOptimizerParam( idAgent )
@@ -200,7 +260,7 @@ class JobScheduling( OptimizerExecutor ):
     if not stageRequired:
       # Use siteCandidates and not stageSites because active and banned sites
       # will be taken into account on matching time
-      return self.__sendToTQ( jobState, siteCandidates, userBannedSites )
+      return self.__sendToTQ( jobState, jobManifest, siteCandidates, userBannedSites )
 
     # Check if the user is allowed to stage
     if self.ex_getOption( "RestrictDataStage", False ):
@@ -220,7 +280,7 @@ class JobScheduling( OptimizerExecutor ):
     # Set the site info back to the original dict to save afterwards
     opData[ 'SiteCandidates' ][ stageSite ] = stageData
 
-    stageRequest = self.__preRequestStaging( jobState, stageSite, opData )
+    stageRequest = self.__preRequestStaging( jobState, jobManifest, stageSite, opData )
     if not stageRequest['OK']:
       return stageRequest
     stageLFNs = stageRequest['Value']
@@ -228,7 +288,7 @@ class JobScheduling( OptimizerExecutor ):
     if not result[ 'OK' ]:
       return result
     stageLFNs = result[ 'Value' ]
-    self.__updateSharedSESites( jobState, stageSite, stageLFNs, opData )
+    self.__updateSharedSESites( jobState, jobManifest, stageSite, stageLFNs, opData )
     # Save the optimizer data again
     self.jobLog.verbose( 'Updating %s Optimizer Info:' % ( idAgent ), opData )
     result = self.storeOptimizerParam( idAgent, opData )
@@ -256,23 +316,18 @@ class JobScheduling( OptimizerExecutor ):
     self.jobLog.info( "On hold -> %s" % holdMsg )
     return jobState.setAppStatus( holdMsg, source = self.ex_optimizerName() )
 
-  def __getSitesRequired( self, jobState ):
+  def __getSitesRequired( self, jobState, jobManifest ):
     """Returns any candidate sites specified by the job or sites that have been
        banned and could affect the scheduling decision.
     """
 
-    result = jobState.getManifest()
-    if not result[ 'OK' ]:
-      return S_ERROR( "Could not retrieve manifest: %s" % result[ 'Message' ] )
-    manifest = result[ 'Value' ]
-
-    bannedSites = manifest.getOption( "BannedSites", [] )
+    bannedSites = jobManifest.getOption( "BannedSites", [] )
     if not bannedSites:
-      bannedSites = manifest.getOption( "BannedSite", [] )
+      bannedSites = jobManifest.getOption( "BannedSite", [] )
     if bannedSites:
       self.jobLog.info( "Banned %s sites" % ", ".join( bannedSites ) )
 
-    sites = manifest.getOption( "Site", [] )
+    sites = jobManifest.getOption( "Site", [] )
     # TODO: Only accept known sites after removing crap like ANY set in the original manifest
     sites = [ site for site in sites if site.strip().lower() not in ( "any", "" ) ]
 
@@ -288,21 +343,62 @@ class JobScheduling( OptimizerExecutor ):
     return S_OK( ( sites, bannedSites ) )
 
 
-  def __sendToTQ( self, jobState, sites, bannedSites ):
+  def __filterByPlatform( self, jobPlatform, userSites ):
+    """ Filters out sites that have no CE with a matching platform.
+    """
+    basePath = "/Resources/Sites"
+    filteredSites = set()
+    for site in userSites:
+      if not "." in site:
+        # Invalid site name: Doesn't contain a dot!
+        self.jobLog.info( "Skipped invalid site name: %s" % site )
+        continue
+      grid = site.split( '.' )[0]
+      sitePath = cfgPath( basePath, grid, site, "CEs" )
+      result = gConfig.getSections( sitePath )
+      if not result[ 'OK' ]:
+        self.jobLog.info( "Failed to get CEs at site %s." % site )
+        continue
+      siteCEs = result[ 'Value' ]
+
+      for CEName in siteCEs:
+        CEPlatform = gConfig.getValue( cfgPath( sitePath, CEName, "OS" ) )
+        if jobPlatform == CEPlatform:
+          # Site has a CE with a matchin platform
+          filteredSites.add( site )
+
+    return S_OK( list( filteredSites ) )
+
+
+  def __sendToTQ( self, jobState, jobManifest, sites, bannedSites ):
     """This method sends jobs to the task queue agent and if candidate sites
        are defined, updates job JDL accordingly.
     """
-    result = jobState.getManifest()
-    if not result[ 'OK' ]:
-      return S_ERROR( "Could not retrieve manifest: %s" % result[ 'Message' ] )
-    manifest = result[ 'Value' ]
+
+    # Generate Tags from specific requirements
+    tagList = []
+    if "MaxRAM" in jobManifest:
+      maxRAM = jobManifest.getOption( "MaxRAM", 0 )
+      if maxRAM:
+        tagList.append( "%dGB" % maxRAM )
+    if "NumberOfProcessors" in jobManifest:
+      nProcessors = jobManifest.getOption( "NumberOfProcessors", 0 )
+      if nProcessors:
+        tagList.append( "%dProcessors" % nProcessors )
+    if "WholeNode" in jobManifest:
+      if jobManifest.getOption( "WholeNode", "" ).lower() in ["1", "yes", "false"]:
+        tagList.append( "WholeNode" )
+    if "Tags" in jobManifest:
+      tagList.extend( jobManifest.getOption( "Tags", [] ) )
+    if tagList:
+      jobManifest.setOption( "Tags", ", ".join( tagList ) )
 
     reqSection = "JobRequirements"
 
-    if reqSection in manifest:
-      result = manifest.getSection( reqSection )
+    if reqSection in jobManifest:
+      result = jobManifest.getSection( reqSection )
     else:
-      result = manifest.createSection( reqSection )
+      result = jobManifest.createSection( reqSection )
     if not result[ 'OK' ]:
       self.jobLog.error( "Cannot create %s: %s" % reqSection, result[ 'Value' ] )
       return S_ERROR( "Cannot create %s in the manifest" % reqSection )
@@ -326,8 +422,8 @@ class JobScheduling( OptimizerExecutor ):
         reqKey = "SubmitPools"
       elif key == "PilotTypes" or key == "PilotType":
         reqKey = "PilotTypes"
-      if key in manifest:
-        reqCfg.setOption( reqKey, ", ".join( manifest.getOption( key, [] ) ) )
+      if key in jobManifest:
+        reqCfg.setOption( reqKey, ", ".join( jobManifest.getOption( key, [] ) ) )
 
     result = self.__setJobSite( jobState, sites )
     if not result[ 'OK' ]:
@@ -366,17 +462,13 @@ class JobScheduling( OptimizerExecutor ):
       random.shuffle( bestSites )
     return ( True, bestSites )
 
-  def __preRequestStaging( self, jobState, stageSite, opData ):
+  def __preRequestStaging( self, jobState, jobManifest, stageSite, opData ):
     from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
     tapeSEs = []
     diskSEs = []
-    result = jobState.getManifest()
-    if not result['OK']:
-      return result
-    manifest = result['Value']
-    vo = manifest.getOption( 'VirtualOrganization' )
-    inputDataPolicy = manifest.getOption( 'InputDataPolicy', 'Protocol' )
+    vo = jobManifest.getOption( 'VirtualOrganization' )
+    inputDataPolicy = jobManifest.getOption( 'InputDataPolicy', 'Protocol' )
     connectionLevel = 'DOWNLOAD' if 'download' in inputDataPolicy.lower() else 'PROTOCOL'
     # Allow staging from SEs accessible by protocol
     result = DMSHelpers( vo = vo ).getSEsForSite( stageSite, connectionLevel = connectionLevel )
@@ -484,15 +576,11 @@ class JobScheduling( OptimizerExecutor ):
     return S_OK( stageLFNs )
 
 
-  def __updateSharedSESites( self, jobState, stageSite, stagedLFNs, opData ):
+  def __updateSharedSESites( self, jobState, jobManifest, stageSite, stagedLFNs, opData ):
     siteCandidates = opData[ 'SiteCandidates' ]
 
     seStatus = {}
-    result = jobState.getManifest()
-    if not result['OK']:
-      return result
-    manifest = result['Value']
-    vo = manifest.getOption( 'VirtualOrganization' )
+    vo = jobManifest.getOption( 'VirtualOrganization' )
     for siteName in siteCandidates:
       if siteName == stageSite:
         continue

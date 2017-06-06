@@ -489,6 +489,7 @@ class TaskQueueDB( DB ):
     prioSQL = "SELECT `tq_Jobs`.Priority FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     postJobSQL = " ORDER BY `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
     for _ in range( self.__maxMatchRetry ):
+      noJobsFound = False
       if 'JobID' in tqMatchDict:
         # A certain JobID is required by the resource, so all TQ are to be considered
         retVal = self.matchAndGetTaskQueue( tqMatchDict,
@@ -514,6 +515,7 @@ class TaskQueueDB( DB ):
         if not retVal[ 'OK' ]:
           return S_ERROR( "Can't retrieve winning priority for matching job: %s" % retVal[ 'Message' ] )
         if len( retVal[ 'Value' ] ) == 0:
+          noJobsFound = True
           continue
         prio = retVal[ 'Value' ][0][0]
         retVal = self._query( "%s %s" % ( preJobSQL % ( tqId, prio ), postJobSQL ), conn = connObj )
@@ -536,8 +538,11 @@ class TaskQueueDB( DB ):
             self.log.info( "Extracted job %s with prio %s from TQ %s" % ( jobId, prio, tqId ) )
             return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId, 'tqMatch' : tqMatchDict } )
         self.log.info( "No jobs could be extracted from TQ %s" % tqId )
-    self.log.info( "Could not find a match after %s match retries" % self.__maxMatchRetry )
-    return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
+    if noJobsFound:
+      return S_OK( { 'matchFound' : False, 'tqMatch' : tqMatchDict } )
+    else:
+      self.log.info( "Could not find a match after %s match retries" % self.__maxMatchRetry )
+      return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
 
   def matchAndGetTaskQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False,
                             negativeCond = {}, connObj = False ):

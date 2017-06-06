@@ -1,10 +1,15 @@
 """ Test class for plugins
 """
 
+# pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
+
 # imports
 import unittest
 import importlib
 from mock import MagicMock
+
+from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
+from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
 
 from DIRAC import gLogger
 
@@ -44,16 +49,13 @@ class PluginsTestCase( unittest.TestCase ):
   """
   def setUp( self ):
     self.mockTC = MagicMock()
-    self.mockDM = MagicMock()
-    self.mockCatalog = MagicMock()
-    self.mockCatalog.getFileSize.return_value()
     self.tPlugin = importlib.import_module( 'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.tPlugin.TransformationClient = self.mockTC
-    self.tPlugin.DataManager = self.mockDM
-    self.tPlugin.FileCatalog = self.mockCatalog
+    self.tPlugin.DataManager = dm_mock
+    self.tPlugin.FileCatalog = fc_mock
 
     self.util = importlib.import_module( 'DIRAC.TransformationSystem.Client.Utilities' )
-    self.util.FileCatalog = self.mockCatalog
+    self.util.FileCatalog = fc_mock
     self.util.StorageElement = MagicMock()
 
     self.maxDiff = None
@@ -64,8 +66,7 @@ class PluginsTestCase( unittest.TestCase ):
 #     sys.modules.pop( 'DIRAC.Core.Base.AgentModule' )
 #     sys.modules.pop( 'DIRAC.TransformationSystem.Agent.TransformationAgent' )
     pass
-  
-  
+
 class PluginsBaseSuccess( PluginsTestCase ):
 
   def test__Standard_G10( self ):

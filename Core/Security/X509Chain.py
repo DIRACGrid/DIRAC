@@ -2,7 +2,6 @@
 """
 __RCSID__ = "$Id$"
 
-import types
 import os
 import stat
 import tempfile
@@ -21,7 +20,7 @@ random.seed()
 
 class X509Chain( object ):
 
-  __validExtensionValueTypes = types.StringTypes
+  __validExtensionValueTypes = ( basestring, )
 
   def __init__( self, certList = False, keyObj = False ):
     self.__isProxy = False
@@ -156,7 +155,7 @@ class X509Chain( object ):
     extList = []
     extList.append( crypto.X509Extension( 'keyUsage',
                                           'critical, digitalSignature, keyEncipherment, dataEncipherment' ) )
-    if diracGroup and type( diracGroup ) in self.__validExtensionValueTypes:
+    if diracGroup and isinstance( diracGroup, self.__validExtensionValueTypes ):
       extList.append( crypto.X509Extension( 'diracGroup', diracGroup ) )
     if rfc or rfcLimited:
       blob = [ [ "1.3.6.1.5.5.7.21.1" ] ] if not rfcLimited else [ [ "1.3.6.1.4.1.3536.1.1.1.9" ] ]
@@ -328,7 +327,7 @@ class X509Chain( object ):
       if not groupRes[ 'OK' ]:
         return groupRes
       if not groupRes[ 'Value' ]:
-        return S_ERROR( DErrno.EDISET, "Proxy does not have an explicit group" )
+        return S_ERROR( DErrno.ENOGROUP )
     return S_OK( True )
 
   def isVOMS( self ):
@@ -448,14 +447,15 @@ class X509Chain( object ):
       return S_ERROR( DErrno.ENOCHAIN )
     if not self.__isProxy:
       return S_ERROR( DErrno.EX509, "Chain does not contain a valid proxy" )
-    # ADRI: Below will find first match of dirac group
-    # for i in range( len( self.__certList ) -1, -1, -1 ):
-    #  retVal = self.getCertInChain( i )[ 'Value' ].getDIRACGroup()
-    #  if retVal[ 'OK' ] and 'Value' in retVal and retVal[ 'Value' ]:
-    #    return retVal
     if self.isPUSP()['Value']:
       return self.getCertInChain( self.__firstProxyStep - 2 )[ 'Value' ].getDIRACGroup( ignoreDefault = ignoreDefault )
     else:
+      # The code below will find the first match of the DIRAC group
+      for i in range( len( self.__certList ) -1, -1, -1 ):
+        retVal = self.getCertInChain( i )[ 'Value' ].getDIRACGroup( ignoreDefault = True )
+        if retVal[ 'OK' ] and 'Value' in retVal and retVal[ 'Value' ]:
+          return retVal
+      # No DIRAC group found, try to get the default one
       return self.getCertInChain( self.__firstProxyStep )[ 'Value' ].getDIRACGroup( ignoreDefault = ignoreDefault )
 
   def hasExpired( self ):

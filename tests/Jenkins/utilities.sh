@@ -420,9 +420,9 @@ function diracInstallCommand(){
 function prepareForServer(){
   echo '==> [prepareForServer]'
 
-  #get the necessary scripts: install_site.sh file
-  cp $TESTCODE/DIRAC/Core/scripts/install_site.sh $SERVERINSTALLDIR/
-  chmod +x $SERVERINSTALLDIR/install_site.sh
+  #get the necessary scripts: dirac-install.py file
+  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $SERVERINSTALLDIR/
+  chmod +x $SERVERINSTALLDIR/dirac-install.py
 }
 
 
@@ -433,7 +433,7 @@ function prepareForServer(){
 
 #.............................................................................
 #
-# function generateCertificates
+# function generateCertificat
 #
 #   This function generates a random host certificate ( certificate and key ),
 #   which will be stored on etc/grid-security. As we need a CA to validate it,
@@ -450,6 +450,13 @@ function prepareForServer(){
 function generateCertificates(){
   echo '==> [generateCertificates]'
 
+  if [ -z ${1} ]
+  then
+    nDays=1
+  else
+    nDays=$1
+  fi
+
   mkdir -p $SERVERINSTALLDIR/etc/grid-security/certificates
   cd $SERVERINSTALLDIR/etc/grid-security
   if [ $? -ne 0 ]
@@ -459,7 +466,7 @@ function generateCertificates(){
   fi
 
   # Generate private RSA key
-  openssl genrsa -out hostkey.pem 2048 2&>1 /dev/null
+  openssl genrsa -out hostkey.pem 2048 2>&1 /dev/null
 
   # Prepare OpenSSL config file, it contains extensions to put into place,
   # DN configuration, etc..
@@ -468,8 +475,8 @@ function generateCertificates(){
   sed -i "s/#hostname#/$fqdn/g" openssl_config
 
   # Generate X509 Certificate based on the private key and the OpenSSL configuration
-  # file, valid for one day.
-  openssl req -new -x509 -key hostkey.pem -out hostcert.pem -days 1 -config openssl_config
+  # file, valid for nDays days (default 1).
+  openssl req -new -x509 -key hostkey.pem -out hostcert.pem -days $nDays -config openssl_config
 
   # Copy hostcert, hostkey to certificates ( CA dir )
   cp host{cert,key}.pem certificates/
@@ -507,7 +514,7 @@ function generateUserCredentials(){
 
     cp $CI_CONFIG/openssl_config openssl_config .
     sed -i 's/#hostname#/ciuser/g' openssl_config
-    openssl genrsa -out client.key 1024 2&>1 /dev/null
+    openssl genrsa -out client.key 1024 2>&1 /dev/null
     openssl req -key client.key -new -out client.req -config openssl_config
     # This is a little hack to make OpenSSL happy...
     echo 00 > file.srl
@@ -531,7 +538,7 @@ function diracCredentials(){
   echo '==> [diracCredentials]'
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
-  dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+  dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG --rfc
   sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
 
 }
@@ -573,9 +580,9 @@ function diracProxies(){
   echo '==> [diracProxies]'
 
   # User proxy, should be uploaded anyway
-  dirac-proxy-init -U -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+  dirac-proxy-init -U -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
   # group proxy, will be uploaded explicitly
-  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
 
 }
 
@@ -622,12 +629,11 @@ function diracAddSite(){
 diracServices(){
   echo '==> [diracServices]'
 
-  #TODO: revise this list
-  services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
+  services=`cat services | cut -d '.' -f 1 | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
-  #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+  #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
 
   for serv in $services
   do
@@ -650,11 +656,11 @@ diracUninstallServices(){
   findServices
 
   #TODO: revise this list
-  services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
+  services=`cat services | cut -d '.' -f 1 | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
-  #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
+  #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
 
   for serv in $services
   do
@@ -676,7 +682,7 @@ diracAgents(){
   echo '==> [diracAgents]'
 
   #TODO: revise this list
-  agents=`cat agents | cut -d '.' -f 1 | grep -v LFC | grep -v MyProxy | grep -v CAUpdate | grep -v CE2CSAgent.py | grep -v FrameworkSystem | grep -v DiracSiteAgent | grep -v StatesMonitoringAgent | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent  | grep -v GridSiteWMSMonitoringAgent  | grep -v GridSiteMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v SAMAgent | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g'`
+  agents=`cat agents | cut -d '.' -f 1 | grep -v LFC | grep -v MyProxy | grep -v CAUpdate | grep -v CE2CSAgent.py | grep -v FrameworkSystem | grep -v DiracSiteAgent | grep -v StatesMonitoringAgent | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent  | grep -v GridSiteWMSMonitoringAgent  | grep -v GridSiteMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g'`
 
   for agent in $agents
   do

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
 # File :    dirac-utils-file-adler
-# Author :  
 ########################################################################
 """
   Calculate alder32 of the supplied file
@@ -26,7 +25,7 @@ exitCode = 0
 for fa in files:
   adler = fileAdler( fa )
   if adler:
-    print fa.rjust( 100 ), adler.ljust( 10 )
+    print fa.rjust( 100 ), adler.ljust( 10 ) #pylint: disable=no-member
   else:
     print 'ERROR %s: Failed to get adler' % fa
     exitCode = 2

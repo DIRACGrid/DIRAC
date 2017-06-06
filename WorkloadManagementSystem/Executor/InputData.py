@@ -21,8 +21,8 @@ __RCSID__ = "$Id$"
 class InputData( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
-      - initializeOptimizer() before each execution cycle
-      - optimizeJob() - the main method called for each job
+        - initializeOptimizer() before each execution cycle
+        - optimizeJob() - the main method called for each job
   """
 
   @classmethod
@@ -78,9 +78,9 @@ class InputData( OptimizerExecutor ):
     """ This is the method that needs to be implemented by each and every Executor
 
         This optimizer will run if and only if it is needed:
-        - it will run only if there are input files
-        - for production jobs this can be skipped,
-          since the logic is already applied by the transformation system, via the TaskManagerPlugins
+          - it will run only if there are input files
+          - for production jobs this can be skipped,
+            since the logic is already applied by the transformation system, via the TaskManagerPlugins
     """
     # Is it a production job?
     result = jobState.getAttribute( "JobType" )
@@ -118,7 +118,7 @@ class InputData( OptimizerExecutor ):
         if not result['OK']:
           return S_ERROR( "Could not retrieve job owner group" )
         userGroup = result['Value']
-        result = self._resolveInputData( jobState, inputData, proxyUserName = userName, proxyUserGroup = userGroup ) #pylint: disable=unexpected-keyword-arg
+        result = self._resolveInputData( jobState, inputData, proxyUserName = userName, proxyUserGroup = userGroup, executionLock = True )  # pylint: disable=unexpected-keyword-arg
       else:
         result = self._resolveInputData( jobState, inputData )
       if not result['OK']:
@@ -151,7 +151,7 @@ class InputData( OptimizerExecutor ):
       return S_ERROR( 'Failed to instantiate DataManager for vo %s' % vo )
     else:
       # This will return already active replicas, excluding banned SEs, and removing tape replicas if there are disk replicas
-      result = dm.getActiveReplicas( lfns, preferDisk = True )
+      result = dm.getReplicasForJobs( lfns )
     self.jobLog.info( 'Catalog replicas lookup time: %.2f seconds ' % ( time.time() - startTime ) )
     if not result['OK']:
       self.log.warn( result['Message'] )

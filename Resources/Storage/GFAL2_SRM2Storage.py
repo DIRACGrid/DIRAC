@@ -1,9 +1,13 @@
 """ :mod: GFAL2_SRM2Storage
+
     =================
 
     .. module: python
+
     :synopsis: SRM2 module based on the GFAL2_StorageBase class.
 """
+
+# pylint: disable=invalid-name
 
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
@@ -16,6 +20,11 @@ __RCSID__ = "$Id$"
 class GFAL2_SRM2Storage( GFAL2_StorageBase ):
   """ SRM2 SE class that inherits from GFAL2StorageBase
   """
+
+  _INPUT_PROTOCOLS = ['file', 'root', 'srm']
+  _OUTPUT_PROTOCOLS = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm', 'gsiftp']
+
+
 
   def __init__( self, storageName, parameters ):
     """ """
@@ -75,7 +84,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     :param self: self reference
     :param str path: path on storage
     :param mixed protocols: protocols to use
-    :returns Failed dict {path : error message}
+    :returns: Failed dict {path : error message}
              Successful dict {path : transport url}
              S_ERROR in case of argument problems
     """
@@ -99,6 +108,13 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       listProtocols = protocols
     else:
       return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
+
+    # Compatibility because of castor returning a castor: url if you ask
+    # for a root URL, and a root: url if you ask for a xroot url...
+    if 'root' in listProtocols and 'xroot' not in listProtocols:
+      listProtocols.insert( listProtocols.index( 'root' ), 'xroot' )
+    elif 'xroot' in listProtocols and 'root' not in listProtocols:
+      listProtocols.insert( listProtocols.index( 'xroot' ) + 1, 'root' )
 
 
     # Compatibility because of castor returning a castor: url if you ask
@@ -191,6 +207,3 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       return S_ERROR( "GFAL2_SRM2Storage.__getProtocols: No local protocols defined and no defaults found." )
 
     return S_OK( protocolsList )
-
-
-

@@ -129,6 +129,7 @@ class GraphData:
           max_value - by max value of the subplot
           sum - by the sum of values of the subplot
           last_value - by the last value in the subplot
+          avg_nozeros - by an average that excludes all zero values
     """
     if self.plotdata:
       if self.key_type == "string":
@@ -166,6 +167,12 @@ class GraphData:
         if reverse_order:
           self.labels.reverse()  
         self.label_values = [ self.subplots[x].sum_value for x in self.labels ]
+      elif sort_type == 'avg_nozeros':
+        pairs = zip( self.subplots.keys(), self.subplots.values() )
+        reverse = not reverse_order
+        pairs.sort( key = lambda x: x[1].avg_nozeros, reverse = reverse )
+        self.labels = [ x[0] for x in pairs ]
+        self.label_values = [ x[1].avg_nozeros for x in pairs ] 
       else:
         self.labels = self.subplots.keys()
         if reverse_order:
@@ -425,13 +432,18 @@ class PlotData:
     elif self.key_type == "numeric":
       self.num_keys = [ float( key ) for key in self.keys ]
 
-
     self.min_value = float( min( self.real_values ) )
     self.max_value = float( max( self.real_values ) )
     self.min_key = self.keys[0]
     self.max_key = self.keys[-1]
     self.sum_value = float( sum( self.real_values ) )
     self.last_value = float( self.real_values[-1] )
+    
+    count = len( filter(lambda a: a != 0, self.real_values) )
+    if count != 0:
+      self.avg_nozeros = self.sum_value / float( count )
+    else:
+      self.avg_nozeros = 0
 
   def expandKeys( self, all_keys ):
     """ Fill zero values into the missing keys 

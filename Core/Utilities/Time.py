@@ -60,13 +60,13 @@ def timeThis( method ):
     pre = dt.utcnow().strftime( "%Y-%m-%d %H:%M:%S UTC " )
 
     try:
-      pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: ' + args[0].transString
+      pre += args[0].log.getName() + '/' + args[0].log.getSubName() + '   TIME: ' + args[0].transString
     except AttributeError:
       try:
-        pre += args[0].log._systemName + '    TIME: ' + args[0].transString
+        pre += args[0].log.getName() + '    TIME: ' + args[0].transString
       except AttributeError:
         try:
-          pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: '
+          pre += args[0].log.getName() + '/' + args[0].log.getSubName() + '   TIME: '
         except AttributeError:
           pre += 'TIME: '
     except IndexError:

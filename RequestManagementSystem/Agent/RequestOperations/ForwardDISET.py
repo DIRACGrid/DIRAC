@@ -5,10 +5,13 @@
 # Date: 2013/03/22 12:40:06
 ########################################################################
 """ :mod: ForwardDISET
+
     ==================
 
     .. module: ForwardDISET
+
     :synopsis: DISET forwarding operation handler
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     DISET forwarding operation handler

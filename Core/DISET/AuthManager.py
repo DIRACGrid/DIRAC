@@ -182,7 +182,8 @@ class AuthManager( object ):
   def getValidGroups( self, rawProperties ):
     """  Get valid groups as specified in the method authorization rules
 
-    :param list rawProperties: all method properties
+    :param rawProperties: all method properties
+    :type rawProperties: python:list
     :return: list of allowed groups or []
     """
     validGroups = []

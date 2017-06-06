@@ -35,7 +35,7 @@ class SandboxStoreClient( object ):
     self.__vo = None
     if 'delegatedGroup' in kwargs:
       self.__vo = getVOForGroup( kwargs['delegatedGroup'] )
-    if SandboxStoreClient.__smdb == None:
+    if SandboxStoreClient.__smdb is None:
       try:
         from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
         SandboxStoreClient.__smdb = SandboxMetadataDB()
@@ -119,15 +119,14 @@ class SandboxStoreClient( object ):
     except Exception as e:
       return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
-    tf = tarfile.open( name = tmpFilePath, mode = "w|bz2" )
-    for sFile in files2Upload:
-      if isinstance( sFile, basestring ):
-        tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
-      elif isinstance( sFile, StringIO.StringIO ):
-        tarInfo = tarfile.TarInfo( name = 'jobDescription.xml' )
-        tarInfo.size = len( sFile.buf )
-        tf.addfile( tarinfo = tarInfo, fileobj = sFile )
-    tf.close()
+    with tarfile.open( name = tmpFilePath, mode = "w|bz2" ) as tf:
+      for sFile in files2Upload:
+        if isinstance( sFile, basestring ):
+          tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
+        elif isinstance( sFile, StringIO.StringIO ):
+          tarInfo = tarfile.TarInfo( name = 'jobDescription.xml' )
+          tarInfo.size = len( sFile.buf )
+          tf.addfile( tarinfo = tarInfo, fileobj = sFile )
 
     if sizeLimit > 0:
       # Evaluate the compressed size of the sandbox
@@ -168,12 +167,6 @@ class SandboxStoreClient( object ):
       return S_ERROR( "Invalid sandbox URL" )
     SEName = sbSplit[0]
     SEPFN = "|".join( sbSplit[1:] )
-    # If destination dir is not specified use current working dir
-    # If its defined ensure the dir structure is there
-    if not destinationDir:
-      destinationDir = os.getcwd()
-    else:
-      mkDir(destinationDir)
 
     try:
       tmpSBDir = tempfile.mkdtemp( prefix = "TMSB." )
@@ -202,6 +195,13 @@ class SandboxStoreClient( object ):
         os.rmdir( tmpSBDir )
         return S_ERROR( 'Failed to read the sandbox archive: %s' % str( e ) )
       return S_OK( data )
+
+    # If destination dir is not specified use current working dir
+    # If its defined ensure the dir structure is there
+    if not destinationDir:
+      destinationDir = os.getcwd()
+    else:
+      mkDir(destinationDir)
 
     if not unpack:
       result[ 'Value' ] = tarFileName
@@ -253,11 +253,16 @@ class SandboxStoreClient( object ):
     sbDict = result[ 'Value' ]
     if sbType not in sbDict:
       return S_ERROR( "No %s sandbox registered for job %s" % ( sbType, jobId ) )
+
+    # If inMemory, ensure we return the newest sandbox only
+    if inMemory:
+      sbLocation = sbDict[ sbType ][ -1 ]
+      result = self.downloadSandbox( sbLocation, destinationPath, inMemory )
+      return result
+
     for sbLocation in sbDict[ sbType ]:
       result = self.downloadSandbox( sbLocation, destinationPath, inMemory )
       if not result[ 'OK' ]:
-        return result
-      if inMemory:
         return result
     return S_OK()
 

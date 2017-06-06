@@ -68,7 +68,7 @@ class Dirac( API ):
   """
 
   #############################################################################
-  def __init__( self, withRepo = False, repoLocation = '', useCertificates = False ):
+  def __init__( self, withRepo = False, repoLocation = '', useCertificates = False, vo = None ):
     """Internal initialization of the DIRAC API.
     """
     super( Dirac, self ).__init__()
@@ -86,8 +86,9 @@ class Dirac( API ):
 
     # Determine the default file catalog
     self.defaultFileCatalog = gConfig.getValue( self.section + '/FileCatalog', None )
+    self.vo = vo
 
-  def __checkFileArgument( self, fnList, prefix = None, single = False ):
+  def _checkFileArgument( self, fnList, prefix = None, single = False ):
     if prefix is None:
       prefix = 'LFN'
     if isinstance( fnList, basestring ):
@@ -105,7 +106,7 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string or list of strings for %s(s)' % prefix )
 
-  def __checkJobArgument( self, jobID, multiple = False ):
+  def _checkJobArgument( self, jobID, multiple = False ):
     try:
       if isinstance( jobID, ( str, int, long ) ):
         jobID = int( jobID )
@@ -191,7 +192,7 @@ class Dirac( API ):
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.get( 'State' ) in requestedStates:
-        ## Value of 'Retrieved' is a string, e.g. '0' when read from file
+        # # Value of 'Retrieved' is a string, e.g. '0' when read from file
         if not int( jobDict.get( 'Retrieved' ) ) :
           self.getOutputSandbox( jobID, destinationDirectory )
     return S_OK()
@@ -219,7 +220,7 @@ class Dirac( API ):
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.get( 'State' ) in requestedStates:
-        ## Value of 'OutputData' is a string, e.g. '0' when read from file
+        # # Value of 'OutputData' is a string, e.g. '0' when read from file
         if not int( jobDict.get( 'OutputData' ) ):
           destDir = jobID
           if destinationDirectory:
@@ -278,7 +279,7 @@ class Dirac( API ):
   def submit( self, job, mode = 'wms' ):
     return self.submitJob( job, mode = mode )
   def submitJob( self, job, mode = 'wms' ):
-    """Submit jobs to DIRAC WMS.
+    """Submit jobs to DIRAC (by default to the Worload Management System).
        These can be either:
 
         - Instances of the Job Class
@@ -296,9 +297,11 @@ class Dirac( API ):
        {'OK': True, 'Value': '12345'}
 
        :param job: Instance of Job class or JDL string
-       :type job: Job() or string
-       :param mode: Submit job locally with mode = 'wms' (default), 'local' to run workflow or 'agent' to run full Job Wrapper locally
-       :type mode: string
+       :type job: ~DIRAC.Interfaces.API.Job.Job or str
+       :param mode: Submit job to WMS with mode = 'wms' (default),
+                    'local' to run the workflow locally,
+                    and 'agent' to run full Job Wrapper locally
+       :type mode: str
        :returns: S_OK,S_ERROR
     """
     self.__printInfo()
@@ -340,27 +343,7 @@ class Dirac( API ):
       jdlAsString = job._toJDL( jobDescriptionObject = jobDescriptionObject )
 
     if mode.lower() == 'local':
-      self.log.info( 'Executing workflow locally without WMS submission' )
-      curDir = os.getcwd()
-
-      jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
-      os.chdir( jobDir )
-
-      stopCallback = False
-      if gConfig.getValue( '/LocalSite/DisableLocalModeCallback', '' ):
-        stopCallback = True
-
-      self.log.info( 'Executing at', os.getcwd() )
-      tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
-      self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
-      jobXMLFile = tmpdir + '/jobDescription.xml'
-      with open( jobXMLFile, 'w+' ) as fd:
-        fd.write( job._toXML() )
-      result = self.runLocal( jdlAsString, jobXMLFile, curDir,
-                              disableCallback = stopCallback )
-      self.log.verbose( 'Cleaning up %s...' % tmpdir )
-      self.__cleanTmp( tmpdir )
-      os.chdir( curDir )
+      result = self.runLocal(job)
 
     elif mode.lower() == 'agent':
       self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
@@ -634,7 +617,7 @@ class Dirac( API ):
         'se': 'CERN-disk'}}, 'Failed': [], 'OK': True, 'Value': ''}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list []
        :param siteName: DIRAC site name
        :type siteName: string
        :param fileName: Catalogue name (can include path)
@@ -642,7 +625,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -665,7 +648,7 @@ class Dirac( API ):
 
     self.log.info( 'Attempting to resolve data for %s' % siteName )
     self.log.verbose( '%s' % ( '\n'.join( lfns ) ) )
-    replicaDict = self.getReplicas( lfns )
+    replicaDict = self.getReplicasForJobs( lfns )
     if not replicaDict['OK']:
       return replicaDict
     catalogFailed = replicaDict['Value'].get( 'Failed', {} )
@@ -716,7 +699,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  #FIXME: this seems unused
+  # FIXME: this seems unused
   def _runInputDataResolution( self, inputData, site = None ):
     """ Run the VO plugin input data resolution mechanism.
     """
@@ -734,7 +717,7 @@ class Dirac( API ):
 
     self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
     self.log.verbose( '\n'.join( inputData ) )
-    replicaDict = self.getReplicas( inputData )
+    replicaDict = self.getReplicasForJobs( inputData )
     if not replicaDict['OK']:
       return replicaDict
     catalogFailed = replicaDict['Value'].get( 'Failed', {} )
@@ -774,38 +757,38 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def runLocal( self, jobJDL, jobXML, baseDir, disableCallback = False ):
-    """ Internal function.  This method is equivalent to submitJob(job,mode='Local').
+
+  def runLocal(self, job):
+    """ Internal function.  This method is called by DIRAC API function submitJob(job,mode='Local').
         All output files are written to the local directory.
+
+    :param job: a job object
+    :type job: ~DIRAC.Interfaces.API.Job.Job
     """
-    # FIXME: Better create an unique local directory for this job
-    # FIXME: This has to reviewed. Probably some of the things here are not needed at all
+    self.log.info( 'Executing workflow locally' )
 
-    shutil.copy( jobXML, '%s/%s' % ( os.getcwd(), os.path.basename( jobXML ) ) )
+    curDir = os.getcwd()
+    jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
+    os.chdir( jobDir )
 
-    # If not set differently in the CS use the root from the current DIRAC installation
-    siteRoot = gConfig.getValue( '/LocalSite/Root', DIRAC.rootPath )
+    self.log.info( 'Executing at', jobDir )
+    tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
+    self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
+    jobXMLFile = tmpdir + '/jobDescription.xml'
+    with open( jobXMLFile, 'w+' ) as fd:
+      fd.write( job._toXML() )
 
-    self.log.info( 'Preparing environment for site %s to execute job' % DIRAC.siteName() )
+    shutil.copy( jobXMLFile, '%s/%s' % ( os.getcwd(), os.path.basename( jobXMLFile ) ) )
+    self.log.verbose( 'Job XML file description is: %s' % jobXMLFile )
 
-    os.environ['DIRACROOT'] = siteRoot
-    self.log.verbose( 'DIRACROOT = %s' % ( siteRoot ) )
-    os.environ['DIRACPYTHON'] = sys.executable
-    self.log.verbose( 'DIRACPYTHON = %s' % ( sys.executable ) )
-    self.log.verbose( 'Job XML file description is: %s' % jobXML )
-
-    parameters = self.__getJDLParameters( jobJDL )
-    if not parameters['OK']:
-      self.log.warn( 'Could not extract job parameters from JDL file %s' % ( jobJDL ) )
-      return parameters
+    res = self.__getJDLParameters( job )
+    if not res['OK']:
+      self.log.error( "Could not extract job parameters from job")
+      return res
+    parameters = res['Value']
 
     self.log.verbose( parameters )
-    inputData = parameters['Value'].get( 'InputData' )
-    if inputData:
-      if isinstance( inputData, str ):
-        inputData = [inputData]
-
-    jobParamsDict = {'Job':parameters['Value']}
+    inputData = self._getLocalInputData(parameters)
 
     if inputData:
       localSEList = gConfig.getValue( '/LocalSite/LocalSE', '' )
@@ -822,7 +805,7 @@ class Dirac( API ):
 
       self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
       self.log.verbose( '\n'.join( inputData ) )
-      replicaDict = self.getReplicas( inputData )
+      replicaDict = self.getReplicasForJobs( inputData )
       if not replicaDict['OK']:
         return replicaDict
       guidDict = self.getMetadata( inputData )
@@ -841,7 +824,7 @@ class Dirac( API ):
       argumentsDict = {'FileCatalog':   resolvedData,
                        'Configuration': configDict,
                        'InputData':     inputData,
-                       'Job':           parameters['Value']}
+                       'Job':           parameters}
       self.log.verbose( argumentsDict )
       moduleFactory = ModuleFactory()
       moduleInstance = moduleFactory.getModule( inputDataPolicy, argumentsDict )
@@ -858,7 +841,7 @@ class Dirac( API ):
     softwarePolicy = self.__getVOPolicyModule( 'SoftwareDistModule' )
     if softwarePolicy:
       moduleFactory = ModuleFactory()
-      moduleInstance = moduleFactory.getModule( softwarePolicy, jobParamsDict )
+      moduleInstance = moduleFactory.getModule( softwarePolicy, {'Job':parameters} )
       if not moduleInstance['OK']:
         self.log.warn( 'Could not create SoftwareDistModule' )
         return moduleInstance
@@ -872,16 +855,16 @@ class Dirac( API ):
       self.log.verbose( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
       # return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
 
-    sandbox = parameters['Value'].get( 'InputSandbox' )
+    sandbox = parameters.get( 'InputSandbox' )
     if sandbox:
       if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for isFile in sandbox:
-        if isFile.lower().startswith("lfn:"): #isFile is an LFN
+        if isFile.lower().startswith( "lfn:" ):  # isFile is an LFN
           isFile = isFile[4:]
         elif not os.path.isabs( isFile ):
           # if a relative path, it is relative to the user working directory
-          isFile = os.path.join( baseDir, isFile )
+          isFile = os.path.join( curDir, isFile )
 
         # Attempt to copy into job working directory
         if os.path.isdir( isFile ):
@@ -895,28 +878,28 @@ class Dirac( API ):
             self.log.warn( 'Failed to download %s with error:%s' % ( isFile, getFile['Message'] ) )
             return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
         basefname = os.path.basename( isFile )
-        try:
-          if tarfile.is_tarfile( basefname ):
-            tarFile = tarfile.open( basefname, 'r' )
-            for member in tarFile.getmembers():
-              tarFile.extract( member, os.getcwd() )
-        except Exception as x:
-          return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
+        if tarfile.is_tarfile( basefname ):
+          try:
+            with tarfile.open( basefname, 'r' ) as tf:
+              for member in tf.getmembers():
+                tf.extract( member, os.getcwd() )
+          except Exception as x:
+            return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
-    if 'Executable' in parameters['Value']:
-      executable = os.path.expandvars( parameters['Value']['Executable'] )
+    if 'Executable' in parameters:
+      executable = os.path.expandvars( parameters['Executable'] )
     else:
       return self._errorReport( 'Missing job "Executable"' )
 
-    arguments = parameters['Value'].get( 'Arguments', '' )
+    arguments = parameters.get( 'Arguments', '' )
 
     command = '%s %s' % ( executable, arguments )
 
     self.log.info( 'Executing: %s' % command )
     executionEnv = dict( os.environ )
-    variableList = parameters['Value'].get( 'ExecutionEnvironment' )
+    variableList = parameters.get( 'ExecutionEnvironment' )
     if variableList:
       self.log.verbose( 'Adding variables to execution environment' )
       if isinstance( variableList, basestring ):
@@ -928,8 +911,6 @@ class Dirac( API ):
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
     cbFunction = self.__printOutput
-    if disableCallback:
-      cbFunction = None
 
     result = shellCall( 0, command, env = executionEnv, callbackFunction = cbFunction )
     if not result['OK']:
@@ -939,8 +920,8 @@ class Dirac( API ):
     self.log.verbose( 'Status after execution is %s' % ( status ) )
 
     # FIXME: if there is an callbackFunction, StdOutput and StdError will be empty soon
-    outputFileName = parameters['Value'].get( 'StdOutput' )
-    errorFileName = parameters['Value'].get( 'StdError' )
+    outputFileName = parameters.get( 'StdOutput' )
+    errorFileName = parameters.get( 'StdError' )
 
     if outputFileName:
       stdout = result['Value'][1]
@@ -962,7 +943,7 @@ class Dirac( API ):
       sandbox = None
     else:
       self.log.warn( 'Job JDL has no StdError file parameter defined' )
-      sandbox = parameters['Value'].get( 'OutputSandbox' )
+      sandbox = parameters.get( 'OutputSandbox' )
 
     if sandbox:
       if isinstance( sandbox, basestring ):
@@ -975,15 +956,30 @@ class Dirac( API ):
             isFile = os.path.basename( isFile )
           # Attempt to copy back from job working directory
           if os.path.isdir( isFile ):
-            shutil.copytree( isFile, baseDir, symlinks = True )
+            shutil.copytree( isFile, curDir, symlinks = True )
           elif os.path.exists( isFile ):
-            shutil.copy( isFile, baseDir )
+            shutil.copy( isFile, curDir )
           else:
             return S_ERROR( 'Can not copy OutputSandbox file %s' % isFile )
+
+    self.log.verbose( 'Cleaning up %s...' % tmpdir )
+    self.__cleanTmp( tmpdir )
+    os.chdir( curDir )
 
     if status:
       return S_ERROR( 'Execution completed with non-zero status %s' % ( status ) )
     return S_OK( 'Execution completed successfully' )
+
+  def _getLocalInputData(self, parameters):
+    """ Resolve input data for locally run jobs.
+        Here for reason of extensibility
+    """
+    inputData = parameters.get( 'InputData' )
+    if inputData:
+      if isinstance( inputData, basestring ):
+        inputData = [inputData]
+    return inputData
+
 
   #############################################################################
   @classmethod
@@ -1033,22 +1029,74 @@ class Dirac( API ):
        'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list []
+       :param active: restrict to only replicas at SEs that are not banned
+       :type active: boolean
+       :param preferDisk: give preference to disk replicas if True
+       :type preferDisk: boolean
+       :param diskOnly: restrict to only disk replicas if True
+       :type diskOnly: boolean
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
 
     start = time.time()
     dm = DataManager()
-    if active:
-      repsResult = dm.getActiveReplicas( lfns, diskOnly = diskOnly, preferDisk = preferDisk )
-    else:
-      repsResult = dm.getReplicas( lfns )
+    repsResult = dm.getReplicas( lfns, active = active, preferDisk = preferDisk, diskOnly = diskOnly )
+    timing = time.time() - start
+    self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
+    self.log.debug( repsResult )
+    if not repsResult['OK']:
+      self.log.warn( repsResult['Message'] )
+      return repsResult
+
+    if printOutput:
+      fields = [ 'LFN', 'StorageElement', 'URL' ]
+      records = []
+      for lfn in repsResult['Value']['Successful']:
+        lfnPrint = lfn
+        for se, url in repsResult['Value']['Successful'][lfn].iteritems():
+          records.append( ( lfnPrint, se, url ) )
+          lfnPrint = ''
+      for lfn in repsResult['Value']['Failed']:
+        records.append( ( lfn, 'Unknown', str( repsResult['Value']['Failed'][lfn] ) ) )
+
+      printTable( fields, records, numbering = False )
+
+    return repsResult
+
+  def getReplicasForJobs( self, lfns, diskOnly = False, printOutput = False ):
+    """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
+
+       Example usage:
+
+       >>> print dirac.getReplicasForJobs('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+       {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
+       {'CERN-RDST':
+       'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
+       'Failed': {}}}
+
+       :param lfns: Logical File Name(s) to query
+       :type lfns: LFN str or python:list []
+       :param diskOnly: restrict to only disk replicas if True
+       :type diskOnly: boolean
+       :param printOutput: Optional flag to print result
+       :type printOutput: boolean
+       :returns: S_OK,S_ERROR
+    """
+    ret = self._checkFileArgument( lfns, 'LFN' )
+    if not ret['OK']:
+      return ret
+    lfns = ret['Value']
+
+    start = time.time()
+    dm = DataManager()
+    repsResult = dm.getReplicasForJobs( lfns, diskOnly = diskOnly )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     self.log.debug( repsResult )
@@ -1087,12 +1135,12 @@ class Dirac( API ):
        'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list
        :param printOutput: Optional flag to print result
-       :type printOutput: boolean
+       :type printOutput: bool
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1117,6 +1165,16 @@ class Dirac( API ):
 
     return repsResult
 
+  def checkSEAccess( self, se, access = 'Write' ):
+    """ returns the value of a certain SE status flag (access or other)
+      :param se: Storage Element name
+      :type se: string
+      :param access: type of access
+      :type access: string in ('Read', 'Write', 'Remove', 'Check')
+      : returns: True or False
+    """
+    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( access, False )
+
   #############################################################################
   def splitInputData( self, lfns, maxFilesPerJob = 20, printOutput = False ):
     """Split the supplied lfn list by the replicas present at the possible
@@ -1130,7 +1188,7 @@ class Dirac( API ):
 
 
        :param lfns: Logical File Name(s) to split
-       :type lfns: list
+       :type lfns: python:list
        :param maxFilesPerJob: Number of files per bunch
        :type maxFilesPerJob: integer
        :param printOutput: Optional flag to print result
@@ -1139,7 +1197,7 @@ class Dirac( API ):
     """
     from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
     sitesForSE = {}
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1150,7 +1208,7 @@ class Dirac( API ):
       except Exception as x:
         return self._errorReport( str( x ), 'Expected integer for maxFilesPerJob' )
 
-    replicaDict = self.getReplicas( lfns, active = True, preferDisk = True )
+    replicaDict = self.getReplicasForJobs( lfns )
     if not replicaDict['OK']:
       return replicaDict
     if len( replicaDict['Value']['Successful'] ) == 0:
@@ -1186,12 +1244,12 @@ class Dirac( API ):
        'CheckSumValue': ''}}, 'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
-       :type lfns: LFN string or list []
+       :type lfns: LFN str or python:list []
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfns, 'LFN' )
+    ret = self._checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
       return ret
     lfns = ret['Value']
@@ -1235,7 +1293,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self._checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1273,7 +1331,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1319,7 +1377,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self._checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1372,7 +1430,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self._checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1392,7 +1450,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def getAccessURL( self, lfn, storageElement, printOutput = False ):
+  def getAccessURL( self, lfn, storageElement, printOutput = False, protocol = False ):
     """Allows to retrieve an access URL for an LFN replica given a valid DIRAC SE
        name.  Contacts the file catalog and contacts the site SRM endpoint behind
        the scenes.
@@ -1403,20 +1461,22 @@ class Dirac( API ):
        {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
        :param lfn: Logical File Name (LFN)
-       :type lfn: string or list
+       :type lfn: str or python:list
        :param storageElement: DIRAC SE name e.g. CERN-RAW
        :type storageElement: string
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
+       :param protocol: protocol requested
+       :type protocol: str or python:list
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
 
     dm = DataManager()
-    result = dm.getReplicaAccessUrl( lfn, storageElement )
+    result = dm.getReplicaAccessUrl( lfn, storageElement, protocol = protocol )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if printOutput:
@@ -1435,14 +1495,14 @@ class Dirac( API ):
        'Successful': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst': {'RFIO': 'castor://...'}}}}
 
        :param pfn: Physical File Name (PFN)
-       :type pfn: string or list
+       :type pfn: str or python:list
        :param storageElement: DIRAC SE name e.g. CERN-RAW
        :type storageElement: string
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( pfn, 'PFN' )
+    ret = self._checkFileArgument( pfn, 'PFN' )
     if not ret['OK']:
       return ret
     pfn = ret['Value']
@@ -1467,14 +1527,14 @@ class Dirac( API ):
        {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
        :param pfn: Physical File Name (PFN)
-       :type pfn: string or list
+       :type pfn: str or python:list
        :param storageElement: DIRAC SE name e.g. CERN-RAW
        :type storageElement: string
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( pfn, 'PFN' )
+    ret = self._checkFileArgument( pfn, 'PFN' )
     if not ret['OK']:
       return ret
     pfn = ret['Value']
@@ -1503,7 +1563,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1530,7 +1590,7 @@ class Dirac( API ):
        :type storageElement: string
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN' )
+    ret = self._checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
@@ -1561,7 +1621,7 @@ class Dirac( API ):
        :type outputDir: string
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1611,7 +1671,7 @@ class Dirac( API ):
        :type oversized: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1625,7 +1685,7 @@ class Dirac( API ):
       dirPath = '%s/%s' % ( os.getcwd(), jobID )
       if os.path.exists( dirPath ):
         return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
-    mkDir(dirPath)
+    mkDir( dirPath )
 
     # New download
     result = SandboxStoreClient( useCertificates = self.useCertificates ).downloadSandboxForJob( jobID, 'Output', dirPath )
@@ -1665,15 +1725,15 @@ class Dirac( API ):
       return getFile
 
     fileName = os.path.basename( oversizedSandbox )
-    try:
-      result = S_OK()
-      if tarfile.is_tarfile( fileName ):
-        tarFile = tarfile.open( fileName, 'r' )
-        for member in tarFile.getmembers():
-          tarFile.extract( member, dirPath )
-    except Exception as x :
-      os.chdir( start )
-      result = S_ERROR( str( x ) )
+    result = S_OK()
+    if tarfile.is_tarfile( fileName ):
+      try:
+        with tarfile.open( fileName, 'r' ) as tf:
+          for member in tf.getmembers():
+            tf.extract( member, dirPath )
+      except Exception as x :
+        os.chdir( start )
+        result = S_ERROR( str( x ) )
 
     if os.path.exists( fileName ):
       os.unlink( fileName )
@@ -1697,11 +1757,11 @@ class Dirac( API ):
        {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1728,11 +1788,11 @@ class Dirac( API ):
        {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1759,11 +1819,11 @@ class Dirac( API ):
         {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1787,10 +1847,10 @@ class Dirac( API ):
        {79241: {'status': 'Done', 'site': 'LCG.CERN.ch'}}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1839,10 +1899,10 @@ class Dirac( API ):
         ['LFN:/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst']}}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -1911,7 +1971,7 @@ class Dirac( API ):
        :param jobID: JobID
        :type jobID: int or string
        :param outputFiles: Optional files to download
-       :type outputFiles: string or list
+       :type outputFiles: str or python:list
        :returns: S_OK,S_ERROR
     """
     try:
@@ -2029,7 +2089,7 @@ class Dirac( API ):
     jobIDs = result['Value']
     self.log.verbose( '%s job(s) selected' % ( len( jobIDs ) ) )
     if not jobIDs:
-      self.log.error( "No jobs selected", "with date '%s' for conditions: %s" % (str(date), conditions))
+      self.log.error( "No jobs selected", "with date '%s' for conditions: %s" % ( str( date ), conditions ) )
       return S_ERROR( "No jobs selected" )
     else:
       return result
@@ -2056,7 +2116,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2248,7 +2308,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = True )
+    ret = self._checkJobArgument( jobID, multiple = True )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2291,12 +2351,12 @@ class Dirac( API ):
        'CPUTime': '0.0','DIRACSetup': 'LHCb-Production'}
 
        :param jobID: JobID
-       :type jobID: int, string or list
+       :type jobID: int, str or python:list
        :param printOutput: Flag to print to stdOut
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2333,7 +2393,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2370,7 +2430,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
      """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2411,7 +2471,7 @@ class Dirac( API ):
        :type jobID: int or string
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2499,7 +2559,7 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    ret = self.__checkJobArgument( jobID, multiple = False )
+    ret = self._checkJobArgument( jobID, multiple = False )
     if not ret['OK']:
       return ret
     jobID = ret['Value']
@@ -2519,14 +2579,17 @@ class Dirac( API ):
   def __getJDLParameters( self, jdl ):
     """ Internal function. Returns a dictionary of JDL parameters.
 
-        jdl can be a string, or a file containing the JDL string
+    :param jdl: a JDL
+    :type jdl: ~DIRAC.Interfaces.API.Job.Job or str or file
     """
-    if os.path.exists( jdl ):
+    if isinstance(jdl, DIRAC.Interfaces.API.Job.Job):
+      jdl = jdl._toJDL()
+    elif os.path.exists( jdl ):
       with open( jdl, 'r' ) as jdlFile:
         jdl = jdlFile.read()
-    else:
-      if not isinstance( jdl, basestring ):
-        return S_ERROR( "Can't read JDL" )
+
+    if not isinstance(jdl, basestring):
+      return S_ERROR( "Can't read JDL" )
 
     try:
       parameters = {}

@@ -6,20 +6,26 @@ import os
 import sys
 import re
 import stat
-import distutils.spawn
+import shlex
+import distutils.spawn #pylint: disable=no-name-in-module,no-member,import-error
 
-from DIRAC.Core.Utilities.Subprocess    import shellCall
+from DIRAC.Core.Utilities.Subprocess    import systemCall
 from DIRAC                              import gLogger
 
 from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase
 
 class Script( ModuleBase ):
+  """ Module for running executable
+  """
 
   #############################################################################
-  def __init__( self ):
+  def __init__( self, log = None ):
     """ c'tor
     """
-    self.log = gLogger.getSubLogger( 'Script' )
+    if log is not None:
+      self.log = log
+    else:
+      self.log = gLogger.getSubLogger( 'Script' )
     super( Script, self ).__init__( self.log )
 
     # Set defaults for all workflow parameters here
@@ -66,7 +72,7 @@ class Script( ModuleBase ):
       self.command = '%s/%s' % ( os.getcwd(), self.executable )
     elif re.search( '.py$', self.executable ):
       self.command = '%s %s' % ( sys.executable, self.executable )
-    elif distutils.spawn.find_executable( self.executable ):
+    elif distutils.spawn.find_executable( self.executable ): #pylint: disable=no-member
       self.command = self.executable
 
     if self.arguments:
@@ -75,17 +81,18 @@ class Script( ModuleBase ):
     self.log.info( 'Command is: %s' % self.command )
 
   def _executeCommand( self ):
-    """ execute the self.command (uses shellCall)
+    """ execute the self.command (uses systemCall)
     """
     failed = False
 
-    outputDict = shellCall( 0, self.command,
-                            env = self.environment,
-                            callbackFunction = self.callbackFunction,
-                            bufferLimit = self.bufferLimit )
+    outputDict = systemCall( timeout = 0,
+                             cmdSeq = shlex.split( self.command ),
+                             env = self.environment,
+                             callbackFunction = self.callbackFunction,
+                             bufferLimit = self.bufferLimit )
     if not outputDict['OK']:
       failed = True
-      self.log.error( 'Shell call execution failed:', '\n' + str( outputDict['Message'] ) )
+      self.log.error( 'System call execution failed:', '\n' + str( outputDict['Message'] ) )
     status, stdout, stderr = outputDict['Value'][0:3]
     if status:
       failed = True
@@ -106,14 +113,14 @@ class Script( ModuleBase ):
     self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:
-      raise RuntimeError( "'%s' Exited With Status %s" % ( os.path.basename( self.executable ), status ) )
+      raise RuntimeError( "'%s' Exited With Status %s" % ( os.path.basename( self.executable ).split('_')[0], status ) )
 
 
   def _finalize( self ):
     """ simply finalize
     """
-    applicationString = os.path.basename( self.executable )
-    if self.applicationName:
+    applicationString = os.path.basename( self.executable ).split('_')[0]
+    if self.applicationName and self.applicationName.lower() != 'unknown':
       applicationString += ' (%s %s)' % ( self.applicationName, self.applicationVersion )
     status = "%s successful" % applicationString
 

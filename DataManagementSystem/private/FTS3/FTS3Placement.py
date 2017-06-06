@@ -166,8 +166,8 @@ class FTS3Placement( FTSAbstractPlacement ):
 
        :returns: S_OK or S_ERROR(reason)
     """
-    
-    rAccess = self.rssClient.getStorageElementStatus( route.sourceSE, "ReadAccess" )
+
+    rAccess = self.rssClient.getElementStatus( route.sourceSE, "StorageElement", "ReadAccess" )
     self.log.debug( "se read %s %s" % ( route.sourceSE, rAccess ) )
     if not rAccess["OK"]:
       self.log.error( rAccess["Message"] )
@@ -176,7 +176,7 @@ class FTS3Placement( FTSAbstractPlacement ):
     if rAccess["Value"][route.sourceSE]["ReadAccess"] not in ( "Active", "Degraded" ):
       return S_ERROR( "Source SE is not readable" )
 
-    wAccess = self.rssClient.getStorageElementStatus( route.targetSE, "WriteAccess" )
+    wAccess = self.rssClient.getElementStatus( route.targetSE, "StorageElement", "WriteAccess" )
     self.log.debug( "se write %s %s" % ( route.targetSE, wAccess ) )
     if not wAccess["OK"]:
       self.log.error( wAccess["Message"] )

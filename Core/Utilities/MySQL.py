@@ -602,7 +602,7 @@ class MySQL( object ):
     if debug:
       self.logger.debug( '_query: %s' % self._safeCmd( cmd ) )
     else:
-      if self.logger._minLevel == self.logger._logLevels.getLevelValue( 'DEBUG' ):
+      if self.logger.getLevel() == 'DEBUG':
         self.logger.verbose( '_query: %s' % self._safeCmd( cmd ) )
       else:
         self.logger.verbose( '_query: %s' % self._safeCmd( cmd )[:min( len( cmd ) , 512 )] )
@@ -661,7 +661,7 @@ class MySQL( object ):
     if debug:
       self.logger.debug( '_update: %s' % self._safeCmd( cmd ) )
     else:
-      if self.logger._minLevel == self.logger._logLevels.getLevelValue( 'DEBUG' ):
+      if self.logger.getLevel() == 'DEBUG':
         self.logger.verbose( '_update: %s' % self._safeCmd( cmd ) )
       else:
         self.logger.verbose( '_update: %s' % self._safeCmd( cmd )[:min( len( cmd ) , 512 )] )

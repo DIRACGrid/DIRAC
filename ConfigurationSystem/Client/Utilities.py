@@ -10,12 +10,12 @@
   getSiteUpdates
   getSEUpdates
 """
-__RCSID__ = "$Id$"
 
 import re
 import types
 import socket
 from urlparse import urlparse
+
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
@@ -23,6 +23,8 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+
+__RCSID__ = "$Id$"
 
 def getGridVOs():
   """ Get all the VOMS VO names served by this DIRAC service
@@ -273,6 +275,15 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
           newMaxCPUTime = queueInfo.get( 'GlueCEPolicyMaxCPUTime', '' )
           if newMaxCPUTime == "4" * len( newMaxCPUTime ) or newMaxCPUTime == "9" * len( newMaxCPUTime ):
             newMaxCPUTime = ''
+          wallTime = queueInfo.get( 'GlueCEPolicyMaxWallClockTime', '' )
+          if wallTime == "4" * len( wallTime ) or wallTime == "9" * len( wallTime ):
+             wallTime = ''
+          if wallTime and int(wallTime)>0:
+            if not newMaxCPUTime:
+              newMaxCPUTime = str(int(0.8*int(wallTime)))
+            else:
+              if int(wallTime) <= int(newMaxCPUTime):
+                newMaxCPUTime = str(int(0.8*int(wallTime)))
           newSI00 = ''
           caps = queueInfo['GlueCECapability']
           if isinstance( caps, basestring ):
@@ -549,7 +560,7 @@ def getElasticDBParameters( fullname ):
   """
   Retrieve Database parameters from CS
   fullname should be of the form <System>/<DBname>
-  
+
   """
 
   cs_path = getDatabaseSection( fullname )
@@ -581,5 +592,23 @@ def getElasticDBParameters( fullname ):
   else:
     dbPort = int( result['Value'] )
   parameters[ 'Port' ] = dbPort
+
+  result = gConfig.getOption( cs_path + '/User' )
+  if not result['OK']:
+    # No individual user name found, try at the common place
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/User' )
+    if not result['OK']:
+      return S_ERROR( 'Failed to get the configuration parameter: User' )
+  dbUser = result['Value']
+  parameters[ 'User' ] = dbUser
+
+  result = gConfig.getOption( cs_path + '/Password' )
+  if not result['OK']:
+    # No individual password found, try at the common place
+    result = gConfig.getOption( '/Systems/NoSQLDatabases/Password' )
+    if not result['OK']:
+      return S_ERROR( 'Failed to get the configuration parameter: Password' )
+  dbPass = result['Value']
+  parameters[ 'Password' ] = dbPass
 
   return S_OK( parameters )

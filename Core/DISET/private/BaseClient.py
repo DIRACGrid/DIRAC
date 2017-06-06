@@ -1,7 +1,10 @@
+""" This module exposes the BaseClient class,
+    which serves as base for InnerRPCClient and TransferClient.
+"""
+
 __RCSID__ = "$Id$"
 
 import time
-import types
 import thread
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -14,7 +17,10 @@ from DIRAC.Core.Security import CS
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 
-class BaseClient:
+class BaseClient(object):
+  """ Glues together stubs with threading, credentials, and URLs discovery (by DIRAC vo and setup).
+      Basically what needs to be done to enable RPC calls, and transfer, to find a URL.
+  """
 
   VAL_EXTRA_CREDENTIALS_HOST = "hosts"
 
@@ -35,12 +41,15 @@ class BaseClient:
   __threadConfig = ThreadConfig()
 
   def __init__( self, serviceName, **kwargs ):
-    if type( serviceName ) not in types.StringTypes:
+    if not isinstance( serviceName, basestring ):
       raise TypeError( "Service name expected to be a string. Received %s type %s" %
                        ( str( serviceName ), type( serviceName ) ) )
     self._destinationSrv = serviceName
     self._serviceName = serviceName
     self.kwargs = kwargs
+    self.__useCertificates = None
+    # The CS useServerCertificate option can be overridden by explicit argument
+    self.__forceUseCertificates = self.kwargs.get( self.KW_USE_CERTIFICATES )
     self.__initStatus = S_OK()
     self.__idDict = {}
     self.__extraCredentials = ""
@@ -84,7 +93,7 @@ class BaseClient:
     return S_OK()
 
   def __discoverVO( self ):
-    #Which setup to use?
+    #Which vo to use?
     if self.KW_VO in self.kwargs and self.kwargs[ self.KW_VO ]:
       self.vo = str( self.kwargs[ self.KW_VO ] )
     else:
@@ -128,12 +137,12 @@ class BaseClient:
   def __discoverCredentialsToUse( self ):
     #Use certificates?
     if self.KW_USE_CERTIFICATES in self.kwargs:
-      self.useCertificates = self.kwargs[ self.KW_USE_CERTIFICATES ]
+      self.__useCertificates = self.kwargs[ self.KW_USE_CERTIFICATES ]
     else:
-      self.useCertificates = gConfig.useServerCertificate()
-      self.kwargs[ self.KW_USE_CERTIFICATES ] = self.useCertificates
+      self.__useCertificates = gConfig.useServerCertificate()
+      self.kwargs[ self.KW_USE_CERTIFICATES ] = self.__useCertificates
     if self.KW_SKIP_CA_CHECK not in self.kwargs:
-      if self.useCertificates:
+      if self.__useCertificates:
         self.kwargs[ self.KW_SKIP_CA_CHECK ] = False
       else:
         self.kwargs[ self.KW_SKIP_CA_CHECK ] = CS.skipCACheck()
@@ -147,7 +156,7 @@ class BaseClient:
 
   def __discoverExtraCredentials( self ):
     #Wich extra credentials to use?
-    if self.useCertificates:
+    if self.__useCertificates:
       self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
     else:
       self.__extraCredentials = ""
@@ -182,7 +191,7 @@ class BaseClient:
         rawGatewayURL = List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) )[0]
         gatewayURL = "/".join( rawGatewayURL.split( "/" )[:3] )
 
-    for protocol in gProtocolDict.keys():
+    for protocol in gProtocolDict:
       if self._destinationSrv.find( "%s://" % protocol ) == 0:
         gLogger.debug( "Already given a valid url", self._destinationSrv )
         if not gatewayURL:
@@ -285,6 +294,16 @@ and this is thread %s
 
   def _connect( self ):
 
+    # Check if the useServerCertificate configuration changed
+    if gConfig.useServerCertificate() != self.__useCertificates:
+      if self.__forceUseCertificates is None:
+        self.__useCertificates = gConfig.useServerCertificate()
+        self.kwargs[self.KW_USE_CERTIFICATES] = self.__useCertificates
+        # The server certificate use context changed, rechecking the transport sanity
+        result = self.__checkTransportSanity()
+        if not result['OK']:
+          return result
+
     self.__discoverExtraCredentials()
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
@@ -310,13 +329,14 @@ and this is thread %s
           if len(self.__bannedUrls) == self.__nbOfUrls:
             self.__retryCounter += 1
             self.__retryDelay = 3. / self.__nbOfUrls  if self.__nbOfUrls > 1 else 2  # we run only one service! In that case we increase the retry delay.
-            gLogger.info( "Waiting %f  second before retry all service(s)" % self.__retryDelay )
+            gLogger.info( "Waiting %f seconds before retry all service(s)" % self.__retryDelay )
             time.sleep( self.__retryDelay )
           self.__discoverURL()
           return self._connect()
         else:
           return retVal
     except Exception as e:
+      gLogger.exception(lException = True, lExcInfo = True)
       return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, repr( e ) ) )
     trid = getGlobalTransportPool().add( transport )
     return S_OK( ( trid, transport ) )
@@ -335,7 +355,7 @@ and this is thread %s
       return retVal
     serverReturn = transport.receiveData()
     #TODO: Check if delegation is required
-    if serverReturn[ 'OK' ] and 'Value' in serverReturn and type( serverReturn[ 'Value' ] ) == types.DictType:
+    if serverReturn[ 'OK' ] and 'Value' in serverReturn and isinstance( serverReturn[ 'Value' ], dict ):
       gLogger.debug( "There is a server requirement" )
       serverRequirements = serverReturn[ 'Value' ]
       if 'delegate' in serverRequirements:
@@ -400,7 +420,7 @@ and this is thread %s
             newKwargs[ self.KW_DELEGATED_GROUP ] = self.VAL_EXTRA_CREDENTIALS_HOST
 
     if 'useCertificates' in newKwargs:
-      del( newKwargs[ 'useCertificates' ] )
+      del newKwargs[ 'useCertificates' ]
     return ( self._destinationSrv, newKwargs )
 
   def __nonzero__( self ):
