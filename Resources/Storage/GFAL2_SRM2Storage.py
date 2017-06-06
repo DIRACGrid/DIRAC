@@ -46,8 +46,6 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
     self.__setSRMOptionsToDefault()
 
-    if self.checksumType:
-      self.ctx.set_opt_string( "SRM PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType )
 
 
   def __setSRMOptionsToDefault( self ):
