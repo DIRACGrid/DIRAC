@@ -97,6 +97,9 @@ class ResourceStatus( object ):
       elif elementType == "Catalog":
         statusType = ['all']
 
+    self.rssFlag = False
+    print "AT >>> rssFlag", self.rssFlag, statusType
+
     if self.rssFlag:
       return self.__getRSSElementStatus( elementName, elementType, statusType )
     else:
@@ -212,7 +215,7 @@ class ResourceStatus( object ):
       for sType in statusType:
         # Look in standard location, 'Active' by default
         res = gConfig.getValue( "%s/%s/%s" % ( cs_path, element, sType ), 'Active' )
-        result[element] = { sType: res }
+        result.setdefault( element, {} )[sType] = res
 
     if result:
       return S_OK( result )
