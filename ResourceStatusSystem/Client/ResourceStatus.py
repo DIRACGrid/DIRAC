@@ -97,9 +97,6 @@ class ResourceStatus( object ):
       elif elementType == "Catalog":
         statusType = ['all']
 
-    self.rssFlag = False
-    print "AT >>> rssFlag", self.rssFlag, statusType
-
     if self.rssFlag:
       return self.__getRSSElementStatus( elementName, elementType, statusType )
     else:
