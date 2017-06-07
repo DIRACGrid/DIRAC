@@ -30,10 +30,10 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
 
         :param checkSEs: SEs to check, by default the operation target list is used.
         :param access: The type of access to check for ('WriteAccess' or 'ReadAccess').
-        :type checkSEs: list
+        :type checkSEs: python:list
         :type access: str
         :return: A list of banned SE names
-        :rtype: list
+        :rtype: python:list
     """
     # Only do these checks if RSS is enabled, otherwise return an empty list
     # (to indicate no SEs have been banned by RSS)
