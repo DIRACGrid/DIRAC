@@ -67,7 +67,35 @@ class GlobusComputingElement( ComputingElement ):
     for _i in xrange(numberOfJobs):
       diracStamp = makeGuid()[:8]
       queueName = '%s/%s' % ( self.ceName, self.queue )
-      cmd = ['globus-job-submit', queueName, "-s", executableFile ]
+      #cmd = ['globus-job-submit', queueName, "-s", executableFile ]
+      cmd = ['globus-job-submit', queueName]
+      ## Add extra options
+      queueCount = self.ceParameters['QueueCount']
+      queueHostCount = self.ceParameters['QueueHostCount']
+      queuePar = self.ceParameters['QueueParameter']
+      queueMaxTime = self.ceParameters['maxCPUTime']
+      #queueOut = self.ceParameters['outLog']
+      #queueErr = self.ceParameters['errorLog']
+
+      #self.log.verbose(queueCount)
+      #self.log.verbose(queueHostCount)
+      #self.log.verbose(queuePar)
+
+      if queueCount:
+        cmd += ['-count',queueCount]
+      if queueHostCount:
+        cmd += ['-host-count',queueHostCount] 
+      if queuePar:
+        cmd += ['-q',queuePar]
+      if queueMaxTime:
+        cmd += ['-maxtime', queueMaxTime]
+      #if queueOut:
+      #  cmd += ['-stdout', queueOut]
+      #if queueErr:
+      #  cmd += ['-stderr', queueErr]
+      cmd += ["-s", executableFile ]
+      self.log.verbose(cmd)
+      print(cmd)
       #cmd = ['globus-job-submit', '-r %s' % queueName, '-f %s' % jdlName ]
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
       self.log.verbose(result)
