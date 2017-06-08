@@ -18,21 +18,22 @@ def convertDate( date ):
 
 
 from DIRAC.Core.Base import Script
-Script.registerSwitch( '', 'Job=', '   = JobID' )
-Script.registerSwitch( '', 'Transformation=', '   = transID' )
+Script.registerSwitch( '', 'Job=', '   JobID[,jobID2,...]' )
+Script.registerSwitch( '', 'Transformation=', '   transformation ID' )
 Script.registerSwitch( '', 'Tasks=', '      Associated to --Transformation, list of taskIDs' )
 Script.registerSwitch( '', 'Verbose', '   Print more information' )
 Script.registerSwitch( '', 'Terse', '   Only print request status' )
-Script.registerSwitch( '', 'Full', '   Print full request' )
+Script.registerSwitch( '', 'Full', '   Print full request content' )
 Script.registerSwitch( '', 'Status=', '   Select all requests in a given status' )
 Script.registerSwitch( '', 'Since=', '      Associated to --Status, start date yyyy-mm-dd or nb of days (default= -one day' )
 Script.registerSwitch( '', 'Until=', '      Associated to --Status, end date (default= now' )
-Script.registerSwitch( '', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures' )
+Script.registerSwitch( '', 'Maximum=', '      Associated to --Status, max number of requests ' )
 Script.registerSwitch( '', 'Reset', '   Reset Failed files to Waiting if any' )
+Script.registerSwitch( '', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures' )
 Script.registerSwitch( '', 'FixJob', '   Set job Done if the request is Done' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
-                                     ' %s [option|cfgfile] requestID/requestName(if unique)' % Script.scriptName,
+                                     ' %s [option|cfgfile] [requestID/requestName(if unique)]' % Script.scriptName,
                                      'Arguments:',
                                      ' requestID: a request ID' ] ) )
 
@@ -59,6 +60,7 @@ if __name__ == "__main__":
   allR = False
   reset = False
   fixJob = False
+  maxRequests = 999999999999
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
       try:
@@ -93,6 +95,11 @@ if __name__ == "__main__":
       until = convertDate( switch[1] )
     elif switch[0] == 'FixJob':
       fixJob = True
+    elif switch[0] == 'Maximum':
+      try:
+        maxRequests = int( switch[1] )
+      except:
+        pass
 
   if reset:
     status = 'Failed'
@@ -140,7 +147,7 @@ if __name__ == "__main__":
 
   if status and not requests:
     allR = allR or status != 'Failed'
-    res = reqClient.getRequestIDsList( [status], limit = 999999999, since = since, until = until )
+    res = reqClient.getRequestIDsList( [status], limit = maxRequests, since = since, until = until )
 
     if not res['OK']:
       gLogger.error( "Error getting requests:", res['Message'] )
