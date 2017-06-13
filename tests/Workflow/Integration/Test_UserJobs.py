@@ -5,6 +5,7 @@
 
 #pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
 
+import os
 import unittest
 import multiprocessing
 
@@ -24,8 +25,9 @@ class UserJobTestCase( IntegrationTest ):
     super( UserJobTestCase, self ).setUp()
 
     self.d = Dirac()
-    self.exeScriptLocation = find_all( 'exe-script.py', '.', 'Integration' )[0]
-    self.mpExe = find_all( 'testMpJob.sh', '.', 'Utilities' )[0]
+    self.exeScriptLocation = os.path.abspath(find_all( 'exe-script.py', '..', '/DIRAC/tests/Workflow' )[0])
+    self.helloWorld = os.path.abspath(find_all( "helloWorld.py", '..', '/DIRAC/tests/Workflow' )[0])
+    self.mpExe = os.path.abspath(find_all( 'testMpJob.sh', '..', '/DIRAC/tests/Utilities' )[0])
 
 class HelloWorldSuccess( UserJobTestCase ):
   def test_execute( self ):
@@ -48,7 +50,7 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
     job._siteSet = {'DIRAC.someSite.ch'}
 
     job.setName( "helloWorld-test" )
-    job.setExecutable( find_all( "helloWorld.py", '.', 'Integration' )[0],
+    job.setExecutable( self.helloWorld,
                        arguments = "This is an argument",
                        logFile = "aLogFileForTest.txt" ,
                        parameters=[('executable', 'string', '', "Executable Script"),
@@ -92,7 +94,7 @@ class MPSuccess( UserJobTestCase ):
 
     j.setName( "MP-test" )
     j.setExecutable( self.mpExe )
-    j.setInputSandbox( find_all( 'mpTest.py', '.', 'Utilities' )[0] )
+    j.setInputSandbox( os.path.abspath(find_all( 'mpTest.py', '..', 'DIRAC/tests/Utilities' )[0]) )
     j.setTag( 'MultiProcessor' )
     res = j.runLocal( self.d )
     if multiprocessing.cpu_count() > 1:
