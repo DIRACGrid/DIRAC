@@ -50,13 +50,13 @@ ERROR_TOKEN = 'Invalid proxy token request'
 ERROR_GENERIC_CREDENTIALS = "Cannot find generic pilot credentials"
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
 from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup, getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations   import Operations
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
@@ -126,6 +126,8 @@ class PilotDirector( object ):
     self.errorMailAddress = DIRAC.errorMail
     self.alarmMailAddress = DIRAC.alarmMail
     self.mailFromAddress = FROM_MAIL
+
+    self.siteClient = SiteStatus()
 
     if not  'log' in self.__dict__:
       self.log = gLogger.getSubLogger( 'PilotDirector' )
@@ -217,7 +219,7 @@ class PilotDirector( object ):
       return taskQueueDict['GridCEs']
 
     # Get the mask
-    ret = jobDB.getSiteMask()
+    ret = self.siteClient.getSites()
     if not ret['OK']:
       self.log.error( 'Can not retrieve site Mask from DB:', ret['Message'] )
       return []

@@ -279,7 +279,7 @@ class Dirac( API ):
   def submit( self, job, mode = 'wms' ):
     return self.submitJob( job, mode = mode )
   def submitJob( self, job, mode = 'wms' ):
-    """Submit jobs to DIRAC WMS.
+    """Submit jobs to DIRAC (by default to the Worload Management System).
        These can be either:
 
         - Instances of the Job Class
@@ -298,7 +298,9 @@ class Dirac( API ):
 
        :param job: Instance of Job class or JDL string
        :type job: ~DIRAC.Interfaces.API.Job.Job or str
-       :param mode: Submit job locally with mode = 'wms' (default), 'local' to run workflow or 'agent' to run full Job Wrapper locally
+       :param mode: Submit job to WMS with mode = 'wms' (default),
+                    'local' to run the workflow locally,
+                    and 'agent' to run full Job Wrapper locally
        :type mode: str
        :returns: S_OK,S_ERROR
     """
@@ -341,27 +343,7 @@ class Dirac( API ):
       jdlAsString = job._toJDL( jobDescriptionObject = jobDescriptionObject )
 
     if mode.lower() == 'local':
-      self.log.info( 'Executing workflow locally without WMS submission' )
-      curDir = os.getcwd()
-
-      jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
-      os.chdir( jobDir )
-
-      stopCallback = False
-      if gConfig.getValue( '/LocalSite/DisableLocalModeCallback', '' ):
-        stopCallback = True
-
-      self.log.info( 'Executing at', os.getcwd() )
-      tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
-      self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
-      jobXMLFile = tmpdir + '/jobDescription.xml'
-      with open( jobXMLFile, 'w+' ) as fd:
-        fd.write( job._toXML() )
-      result = self.runLocal( jdlAsString, jobXMLFile, curDir,
-                              disableCallback = stopCallback )
-      self.log.verbose( 'Cleaning up %s...' % tmpdir )
-      self.__cleanTmp( tmpdir )
-      os.chdir( curDir )
+      result = self.runLocal(job)
 
     elif mode.lower() == 'agent':
       self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
@@ -775,38 +757,38 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def runLocal( self, jobJDL, jobXML, baseDir, disableCallback = False ):
-    """ Internal function.  This method is equivalent to submitJob(job,mode='Local').
+
+  def runLocal(self, job):
+    """ Internal function.  This method is called by DIRAC API function submitJob(job,mode='Local').
         All output files are written to the local directory.
+
+    :param job: a job object
+    :type job: ~DIRAC.Interfaces.API.Job.Job
     """
-    # FIXME: Better create an unique local directory for this job
-    # FIXME: This has to reviewed. Probably some of the things here are not needed at all
+    self.log.info( 'Executing workflow locally' )
 
-    shutil.copy( jobXML, '%s/%s' % ( os.getcwd(), os.path.basename( jobXML ) ) )
+    curDir = os.getcwd()
+    jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
+    os.chdir( jobDir )
 
-    # If not set differently in the CS use the root from the current DIRAC installation
-    siteRoot = gConfig.getValue( '/LocalSite/Root', DIRAC.rootPath )
+    self.log.info( 'Executing at', jobDir )
+    tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
+    self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
+    jobXMLFile = tmpdir + '/jobDescription.xml'
+    with open( jobXMLFile, 'w+' ) as fd:
+      fd.write( job._toXML() )
 
-    self.log.info( 'Preparing environment for site %s to execute job' % DIRAC.siteName() )
+    shutil.copy( jobXMLFile, '%s/%s' % ( os.getcwd(), os.path.basename( jobXMLFile ) ) )
+    self.log.verbose( 'Job XML file description is: %s' % jobXMLFile )
 
-    os.environ['DIRACROOT'] = siteRoot
-    self.log.verbose( 'DIRACROOT = %s' % ( siteRoot ) )
-    os.environ['DIRACPYTHON'] = sys.executable
-    self.log.verbose( 'DIRACPYTHON = %s' % ( sys.executable ) )
-    self.log.verbose( 'Job XML file description is: %s' % jobXML )
-
-    parameters = self.__getJDLParameters( jobJDL )
-    if not parameters['OK']:
-      self.log.warn( 'Could not extract job parameters from JDL file %s' % ( jobJDL ) )
-      return parameters
+    res = self.__getJDLParameters( job )
+    if not res['OK']:
+      self.log.error( "Could not extract job parameters from job")
+      return res
+    parameters = res['Value']
 
     self.log.verbose( parameters )
-    inputData = parameters['Value'].get( 'InputData' )
-    if inputData:
-      if isinstance( inputData, str ):
-        inputData = [inputData]
-
-    jobParamsDict = {'Job':parameters['Value']}
+    inputData = self._getLocalInputData(parameters)
 
     if inputData:
       localSEList = gConfig.getValue( '/LocalSite/LocalSE', '' )
@@ -842,7 +824,7 @@ class Dirac( API ):
       argumentsDict = {'FileCatalog':   resolvedData,
                        'Configuration': configDict,
                        'InputData':     inputData,
-                       'Job':           parameters['Value']}
+                       'Job':           parameters}
       self.log.verbose( argumentsDict )
       moduleFactory = ModuleFactory()
       moduleInstance = moduleFactory.getModule( inputDataPolicy, argumentsDict )
@@ -859,7 +841,7 @@ class Dirac( API ):
     softwarePolicy = self.__getVOPolicyModule( 'SoftwareDistModule' )
     if softwarePolicy:
       moduleFactory = ModuleFactory()
-      moduleInstance = moduleFactory.getModule( softwarePolicy, jobParamsDict )
+      moduleInstance = moduleFactory.getModule( softwarePolicy, {'Job':parameters} )
       if not moduleInstance['OK']:
         self.log.warn( 'Could not create SoftwareDistModule' )
         return moduleInstance
@@ -873,7 +855,7 @@ class Dirac( API ):
       self.log.verbose( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
       # return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
 
-    sandbox = parameters['Value'].get( 'InputSandbox' )
+    sandbox = parameters.get( 'InputSandbox' )
     if sandbox:
       if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
@@ -882,7 +864,7 @@ class Dirac( API ):
           isFile = isFile[4:]
         elif not os.path.isabs( isFile ):
           # if a relative path, it is relative to the user working directory
-          isFile = os.path.join( baseDir, isFile )
+          isFile = os.path.join( curDir, isFile )
 
         # Attempt to copy into job working directory
         if os.path.isdir( isFile ):
@@ -906,18 +888,18 @@ class Dirac( API ):
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
-    if 'Executable' in parameters['Value']:
-      executable = os.path.expandvars( parameters['Value']['Executable'] )
+    if 'Executable' in parameters:
+      executable = os.path.expandvars( parameters['Executable'] )
     else:
       return self._errorReport( 'Missing job "Executable"' )
 
-    arguments = parameters['Value'].get( 'Arguments', '' )
+    arguments = parameters.get( 'Arguments', '' )
 
     command = '%s %s' % ( executable, arguments )
 
     self.log.info( 'Executing: %s' % command )
     executionEnv = dict( os.environ )
-    variableList = parameters['Value'].get( 'ExecutionEnvironment' )
+    variableList = parameters.get( 'ExecutionEnvironment' )
     if variableList:
       self.log.verbose( 'Adding variables to execution environment' )
       if isinstance( variableList, basestring ):
@@ -929,8 +911,6 @@ class Dirac( API ):
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
     cbFunction = self.__printOutput
-    if disableCallback:
-      cbFunction = None
 
     result = shellCall( 0, command, env = executionEnv, callbackFunction = cbFunction )
     if not result['OK']:
@@ -940,8 +920,8 @@ class Dirac( API ):
     self.log.verbose( 'Status after execution is %s' % ( status ) )
 
     # FIXME: if there is an callbackFunction, StdOutput and StdError will be empty soon
-    outputFileName = parameters['Value'].get( 'StdOutput' )
-    errorFileName = parameters['Value'].get( 'StdError' )
+    outputFileName = parameters.get( 'StdOutput' )
+    errorFileName = parameters.get( 'StdError' )
 
     if outputFileName:
       stdout = result['Value'][1]
@@ -963,7 +943,7 @@ class Dirac( API ):
       sandbox = None
     else:
       self.log.warn( 'Job JDL has no StdError file parameter defined' )
-      sandbox = parameters['Value'].get( 'OutputSandbox' )
+      sandbox = parameters.get( 'OutputSandbox' )
 
     if sandbox:
       if isinstance( sandbox, basestring ):
@@ -976,15 +956,30 @@ class Dirac( API ):
             isFile = os.path.basename( isFile )
           # Attempt to copy back from job working directory
           if os.path.isdir( isFile ):
-            shutil.copytree( isFile, baseDir, symlinks = True )
+            shutil.copytree( isFile, curDir, symlinks = True )
           elif os.path.exists( isFile ):
-            shutil.copy( isFile, baseDir )
+            shutil.copy( isFile, curDir )
           else:
             return S_ERROR( 'Can not copy OutputSandbox file %s' % isFile )
+
+    self.log.verbose( 'Cleaning up %s...' % tmpdir )
+    self.__cleanTmp( tmpdir )
+    os.chdir( curDir )
 
     if status:
       return S_ERROR( 'Execution completed with non-zero status %s' % ( status ) )
     return S_OK( 'Execution completed successfully' )
+
+  def _getLocalInputData(self, parameters):
+    """ Resolve input data for locally run jobs.
+        Here for reason of extensibility
+    """
+    inputData = parameters.get( 'InputData' )
+    if inputData:
+      if isinstance( inputData, basestring ):
+        inputData = [inputData]
+    return inputData
+
 
   #############################################################################
   @classmethod
@@ -1455,7 +1450,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def getAccessURL( self, lfn, storageElement, printOutput = False ):
+  def getAccessURL( self, lfn, storageElement, printOutput = False, protocol = False ):
     """Allows to retrieve an access URL for an LFN replica given a valid DIRAC SE
        name.  Contacts the file catalog and contacts the site SRM endpoint behind
        the scenes.
@@ -1471,6 +1466,8 @@ class Dirac( API ):
        :type storageElement: string
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
+       :param protocol: protocol requested
+       :type protocol: str or python:list
        :returns: S_OK,S_ERROR
     """
     ret = self._checkFileArgument( lfn, 'LFN' )
@@ -1479,7 +1476,7 @@ class Dirac( API ):
     lfn = ret['Value']
 
     dm = DataManager()
-    result = dm.getReplicaAccessUrl( lfn, storageElement )
+    result = dm.getReplicaAccessUrl( lfn, storageElement, protocol = protocol )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if printOutput:
@@ -2582,14 +2579,17 @@ class Dirac( API ):
   def __getJDLParameters( self, jdl ):
     """ Internal function. Returns a dictionary of JDL parameters.
 
-        jdl can be a string, or a file containing the JDL string
+    :param jdl: a JDL
+    :type jdl: ~DIRAC.Interfaces.API.Job.Job or str or file
     """
-    if os.path.exists( jdl ):
+    if isinstance(jdl, DIRAC.Interfaces.API.Job.Job):
+      jdl = jdl._toJDL()
+    elif os.path.exists( jdl ):
       with open( jdl, 'r' ) as jdlFile:
         jdl = jdlFile.read()
-    else:
-      if not isinstance( jdl, basestring ):
-        return S_ERROR( "Can't read JDL" )
+
+    if not isinstance(jdl, basestring):
+      return S_ERROR( "Can't read JDL" )
 
     try:
       parameters = {}

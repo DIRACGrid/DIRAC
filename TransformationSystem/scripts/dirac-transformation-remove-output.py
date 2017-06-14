@@ -1,8 +1,12 @@
 #!/usr/bin/env python
+""" Remove the outputs produced by a transformation
+"""
+
+import sys
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-import sys
 if len( sys.argv ) < 2:
   print 'Usage: dirac-transformation-remove-output transID [transID] [transID]'
   sys.exit()
@@ -11,8 +15,6 @@ else:
 
 from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent     import TransformationCleaningAgent
 from DIRAC.TransformationSystem.Client.TransformationClient           import TransformationClient
-from DIRAC                                                            import gLogger
-import DIRAC
 
 agent = TransformationCleaningAgent( 'Transformation/TransformationCleaningAgent',
                                      'Transformation/TransformationCleaningAgent',

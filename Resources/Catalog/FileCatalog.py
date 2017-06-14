@@ -175,7 +175,7 @@ class FileCatalog( object ):
                                 the specific condition for the catalog will be given
 
       .. warning ::
-    
+
         If the method is a write no_lfn method, then the return value are completely different.
         We only return the result of the master catalog
 

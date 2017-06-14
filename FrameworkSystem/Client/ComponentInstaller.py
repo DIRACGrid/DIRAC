@@ -1,6 +1,6 @@
 """
-Class for managing the installation of DIRAC components:
-MySQL, DB's, Services's, Agents, Executors and Consumers
+Module for managing the installation of DIRAC components:
+MySQL, DB's, NoSQL DBs, Services, Agents, Executors and Consumers
 
 It only makes use of defaults in LocalInstallation Section in dirac.cfg
 
@@ -19,15 +19,21 @@ The Following Options are used::
   /LocalInstallation/MySQLDir:        Location where mysql databases are created (default InstancePath/mysql)
   /LocalInstallation/Database/User:                 (default Dirac)
   /LocalInstallation/Database/Password:             (must be set for SystemAdministrator Service to work)
+  /LocalInstallation/Database/RootUser:             (default root)
   /LocalInstallation/Database/RootPwd:              (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/Host:                 (must be set for SystemAdministrator Service to work)
+  /LocalInstallation/Database/Port:                 (default 3306)
   /LocalInstallation/Database/MySQLSmallMem:        Configure a MySQL with small memory requirements for testing purposes innodb_buffer_pool_size=200MB
   /LocalInstallation/Database/MySQLLargeMem:        Configure a MySQL with high memory requirements for production purposes innodb_buffer_pool_size=10000MB
+  /LocalInstallation/NoSQLDatabase/User:            (default Dirac)
+  /LocalInstallation/NoSQLDatabase/Password:        (must be set for SystemAdministrator Service to work)
+  /LocalInstallation/NoSQLDatabase/Host:            (must be set for SystemAdministrator Service to work)
+  /LocalInstallation/NoSQLDatabase/Port:            (default 9200)
 
 The setupSite method (used by the dirac-setup-site command) will use the following info::
 
   /LocalInstallation/Systems:       List of Systems to be defined for this instance in the CS (default: Configuration, Framework)
-  /LocalInstallation/Databases:     List of Databases to be installed and configured
+  /LocalInstallation/Databases:     List of MySQL Databases to be installed and configured
   /LocalInstallation/Services:      List of System/ServiceName to be setup
   /LocalInstallation/Agents:        List of System/AgentName to be setup
   /LocalInstallation/WebPortal:     Boolean to setup the Web Portal (default no)
@@ -65,8 +71,7 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.Core.Utilities.File import mkDir, mkLink
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, \
-                                                     cfgInstallSection, ResourcesDefaults, CSGlobals
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, CSGlobals
 from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR, \
                                            CS_ADMINISTRATOR, JOB_ADMINISTRATOR, \
                                            FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR, \
@@ -272,7 +277,7 @@ class ComponentInstaller( object ):
     self.monitoringClient = ComponentMonitoringClient()
     gLogger.verbose( 'Client configured for Component Monitoring' )
 
-  def getInfo( self, extensions ):
+  def getInfo( self ):
     result = getVersion()
     if not result['OK']:
       return result
@@ -412,7 +417,7 @@ class ComponentInstaller( object ):
     adminUserEmail = self.localCfg.getOption( cfgInstallPath( 'AdminUserEmail' ), '' )
     adminGroupName = self.localCfg.getOption( cfgInstallPath( 'AdminGroupName' ), 'dirac_admin' )
     hostDN = self.localCfg.getOption( cfgInstallPath( 'HostDN' ), '' )
-    defaultGroupName = 'user'
+    defaultGroupName = self.localCfg.getOption( cfgInstallPath( 'DefaultGroupName' ), 'dirac_user' )
     adminGroupProperties = [ ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR,
                              CS_ADMINISTRATOR, JOB_ADMINISTRATOR,
                              FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR ]
@@ -1201,7 +1206,7 @@ class ComponentInstaller( object ):
 
     return S_OK( componentDict )
 
-  def getComponentModule( self, gConfig, system, component, compType ):
+  def getComponentModule( self, system, component, compType ):
     """
     Get the component software module
     """
@@ -1460,7 +1465,7 @@ class ComponentInstaller( object ):
     setupAgents = [ k.split( '/' ) for k in self.localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
     setupExecutors = [ k.split( '/' ) for k in self.localCfg.getOption( cfgInstallPath( 'Executors' ), [] ) ]
     setupWeb = self.localCfg.getOption( cfgInstallPath( 'WebPortal' ), False )
-    setupWebApp = self.localCfg.getOption( cfgInstallPath( 'WebApp' ), False )
+    setupWebApp = self.localCfg.getOption( cfgInstallPath( 'WebApp' ), True )
     setupConfigurationMaster = self.localCfg.getOption( cfgInstallPath( 'ConfigurationMaster' ), False )
     setupPrivateConfiguration = self.localCfg.getOption( cfgInstallPath( 'PrivateConfiguration' ), False )
     setupConfigurationName = self.localCfg.getOption( cfgInstallPath( 'ConfigurationName' ), self.setup )
@@ -1588,7 +1593,6 @@ class ComponentInstaller( object ):
         centralCfg = self._getCentralCfg( self.localCfg )
       self._addCfgToLocalCS( centralCfg )
       self.setupComponent( 'service', 'Configuration', 'Server', [], checkModule = False )
-      MonitoringUtilities.monitorInstallation( 'service', 'Configuration', 'Server' )
       self.runsvctrlComponent( 'Configuration', 'Server', 't' )
 
       while ['Configuration', 'Server'] in setupServices:
@@ -1612,7 +1616,6 @@ class ComponentInstaller( object ):
       return S_ERROR( error )
 
     # We need to make sure components are connecting to the Master CS, that is the only one being update
-    from DIRAC import gConfig
     localServers = self.localCfg.getOption( cfgPath( 'DIRAC', 'Configuration', 'Servers' ) )
     masterServer = gConfig.getValue( cfgPath( 'DIRAC', 'Configuration', 'MasterServer' ), '' )
     initialCfg = self.__getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'Servers' , localServers )
@@ -1701,33 +1704,24 @@ class ComponentInstaller( object ):
 
     # 4.- Then installed requested services
     for system, service in setupServices:
-      result = self.setupComponent( 'service', system, service, extensions, monitorFlag = False )
+      result = self.setupComponent( 'service', system, service, extensions )
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
-      result = MonitoringUtilities.monitorInstallation( 'service', system, service )
-      if not result['OK']:
-        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 5.- Now the agents
     for system, agent in setupAgents:
-      result = self.setupComponent( 'agent', system, agent, extensions, monitorFlag = False )
+      result = self.setupComponent( 'agent', system, agent, extensions )
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
-      result = MonitoringUtilities.monitorInstallation( 'agent', system, agent )
-      if not result['OK']:
-        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 6.- Now the executors
     for system, executor in setupExecutors:
-      result = self.setupComponent( 'executor', system, executor, extensions, monitorFlag = False )
+      result = self.setupComponent( 'executor', system, executor, extensions )
       if not result['OK']:
         gLogger.error( result['Message'] )
         continue
-      result = MonitoringUtilities.monitorInstallation( 'executor', system, executor )
-      if not result['OK']:
-        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 7.- And finally the Portal
     if setupWeb:
@@ -1900,7 +1894,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     return S_OK( runitCompDir )
 
   def setupComponent( self, componentType, system, component, extensions,
-                      componentModule = '', checkModule = True, monitorFlag = True ):
+                      componentModule = '', checkModule = True ):
     """
     Install and create link in startup
     """
@@ -2524,13 +2518,13 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
     # now creating the Database
     result = self.execMySQL( 'CREATE DATABASE `%s`' % dbName )
-    if not result['OK'] and not 'database exists' in result[ 'Message' ]:
+    if not result['OK'] and 'database exists' not in result[ 'Message' ]:
       gLogger.error( 'Failed to create databases', result['Message'] )
       if self.exitOnError:
         DIRAC.exit( -1 )
       return result
 
-    perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER," \
+    perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES," \
             "CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE"
     for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, self.mysqlUser,
                                                                                 self.mysqlPassword ),
@@ -2657,6 +2651,8 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     sectionPath = cfgPath( 'Systems', 'Databases' )
     cfg = self.__getCfg( sectionPath, 'User', self.mysqlUser )
     cfg.setOption( cfgPath( sectionPath, 'Password' ), self.mysqlPassword )
+    cfg.setOption( cfgPath( sectionPath, 'Host' ), self.mysqlHost )
+    cfg.setOption( cfgPath( sectionPath, 'Port' ), self.mysqlPort )
 
     return self._addCfgToDiracCfg( cfg )
 
@@ -2670,66 +2666,10 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     sectionPath = cfgPath( 'Systems', 'NoSQLDatabases' )
     cfg = self.__getCfg( sectionPath, 'User', self.noSQLUser )
     cfg.setOption( cfgPath( sectionPath, 'Password' ), self.noSQLPassword )
+    cfg.setOption( cfgPath( sectionPath, 'Host' ), self.noSQLHost )
+    cfg.setOption( cfgPath( sectionPath, 'Port' ), self.noSQLPort )
 
     return self._addCfgToDiracCfg( cfg )
-
-  def configureCE( self, ceName = '', ceType = '', cfg = None, currentSectionPath = '' ):
-    """
-    Produce new dirac.cfg including configuration for new CE
-    """
-    from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
-    cesCfg = ResourcesDefaults.getComputingElementDefaults( ceName, ceType, cfg, currentSectionPath )
-    ceNameList = cesCfg.listSections()
-    if not ceNameList:
-      error = 'No CE Name provided'
-      gLogger.error( error )
-      if self.exitOnError:
-        DIRAC.exit( -1 )
-      return S_ERROR( error )
-
-    for ceName in ceNameList:
-      if 'CEType' not in cesCfg[ceName]:
-        error = 'Missing Type for CE "%s"' % ceName
-        gLogger.error( error )
-        if self.exitOnError:
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
-
-    localsiteCfg = self.localCfg['LocalSite']
-    # Replace Configuration under LocalSite with new Configuration
-    for ceName in ceNameList:
-      if localsiteCfg.existsKey( ceName ):
-        gLogger.notice( ' Removing existing CE:', ceName )
-        localsiteCfg.deleteKey( ceName )
-      gLogger.notice( 'Configuring CE:', ceName )
-      localsiteCfg.createNewSection( ceName, contents = cesCfg[ceName] )
-
-    # Apply configuration and try to instantiate the CEs
-    gConfig.loadCFG( self.localCfg )
-
-    for ceName in ceNameList:
-      ceFactory = ComputingElementFactory()
-      try:
-        ceInstance = ceFactory.getCE( ceType, ceName )
-      except Exception:
-        error = 'Fail to instantiate CE'
-        gLogger.exception( error )
-        if self.exitOnError:
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
-      if not ceInstance['OK']:
-        error = 'Fail to instantiate CE: %s' % ceInstance['Message']
-        gLogger.error( error )
-        if self.exitOnError:
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
-
-    # Everything is OK, we can save the new cfg
-    self.localCfg.writeToFile( self.cfgFile )
-    gLogger.always( 'LocalSite section in %s has been uptdated with new configuration:' % os.path.basename( self.cfgFile ) )
-    gLogger.always( str( self.localCfg['LocalSite'] ) )
-
-    return S_OK( ceNameList )
 
   def execCommand( self, timeout, cmd ):
     """

@@ -2,9 +2,11 @@
 """
   Determine number of processors and memory for the worker node
 """
+
+import multiprocessing
+
 from DIRAC.Core.Base import Script
 from DIRAC import gLogger, gConfig
-from DIRAC.Core.Utilities import Os
 from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
 
 __RCSID__ = "$Id$"
@@ -42,7 +44,7 @@ if not numberOfProcessor:
   if not numberOfProcessor:
     numberOfProcessor = gConfig.getValue( '/Resources/Sites/%s/NumberOfProcessors' % grid )
     if not numberOfProcessor:
-      numberOfProcessor = Os.getNumberOfCores()
+      numberOfProcessor = multiprocessing.cpu_count()
   
 maxRAM = JobParameters.getMemoryFromMJF()
 if not maxRAM:

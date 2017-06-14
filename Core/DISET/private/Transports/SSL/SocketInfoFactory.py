@@ -1,26 +1,23 @@
-# $HeadURL$
+""" The guy that takes case of managing sockets
+"""
+
 __RCSID__ = "$Id$"
 
 import socket
 import select
 import os
-try:
-  import hashlib as md5
-except:
-  import md5
+import hashlib as md5
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
-from DIRAC.Core.Utilities import List, Network
+from DIRAC.Core.Utilities import Network
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
-from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
-from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSafeSSLObject
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 if GSI.__version__ < "0.5.0":
   raise Exception( "Required GSI version >= 0.5.0" )
 
-class SocketInfoFactory:
+class SocketInfoFactory(object):
 
   def __init__(self):
     self.__timeout = 1

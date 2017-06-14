@@ -17,6 +17,9 @@ from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfigurati
 from DIRAC.ResourceStatusSystem.Utilities                  import Utils
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import getFTS3Servers
 from DIRAC.ConfigurationSystem.Client.PathFinder           import getServiceURL
+from DIRAC.Core.Security.ProxyInfo                         import getProxyInfo
+from DIRAC.Core.DISET.RPCClient                            import RPCClient
+
 ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 
 class Synchronizer( object ):
@@ -26,7 +29,7 @@ class Synchronizer( object ):
 
   '''
 
-  def __init__( self, rStatus = None, rManagement = None ):
+  def __init__( self, rStatus = None, rManagement = None, defaultStatus = "Unknown" ):
 
     # Warm up local CS
     CSHelpers.warmUp()
@@ -35,8 +38,13 @@ class Synchronizer( object ):
       self.rStatus     = ResourceStatusClient.ResourceStatusClient()
     if rManagement is None:
       self.rManagement = ResourceManagementClient()
+    self.defaultStatus = defaultStatus
 
     self.rssConfig = RssConfiguration()
+    self.tokenOwner = "rs_svc"
+    result = getProxyInfo()
+    if result['OK']:
+      self.tokenOwner = result['Value']['username']
 
   def sync( self, _eventName, _params ):
     '''
@@ -91,11 +99,11 @@ class Synchronizer( object ):
 
       gLogger.verbose( '%s sites found in CS for %s domain' % ( len( sitesCS ), domainName ) )
 
-      sitesDB = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName,
-                                                  meta = { 'columns' : [ 'name' ] } )
-      if not sitesDB[ 'OK' ]:
-        return sitesDB
-      sitesDB = [ siteDB[0] for siteDB in sitesDB[ 'Value' ] ]
+      result = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName,
+                                                  meta = { 'columns' : [ 'Name' ] } )
+      if not result[ 'OK' ]:
+        return result
+      sitesDB = [ siteDB[0] for siteDB in result[ 'Value' ] ]
 
       # Sites that are in DB but not in CS
       toBeDeleted = list( set( sitesDB ).difference( set( sitesCS ) ) )
@@ -110,11 +118,12 @@ class Synchronizer( object ):
         if not deleteQuery[ 'OK' ]:
           return deleteQuery
 
-      sitesTuple  = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName,
-                                                      meta = { 'columns' : [ 'name', 'statusType' ] } )
-      if not sitesTuple[ 'OK' ]:
-        return sitesTuple
-      sitesTuple = sitesTuple[ 'Value' ]
+      result  = self.rStatus.selectStatusElement( 'Site', 'Status', elementType = domainName,
+                                                  meta = { 'columns' : [ 'Name', 'StatusType' ] } )
+      if not result[ 'OK' ]:
+        return result
+      sitesTuple = result[ 'Value' ]
+      sitesTuple = [ (x[0],x[1]) for x in sitesTuple ]
 
       statusTypes = self.rssConfig.getConfigStatusType( domainName )
 
@@ -129,8 +138,9 @@ class Synchronizer( object ):
         query = self.rStatus.addIfNotThereStatusElement( 'Site', 'Status',
                                                          name = siteTuple[ 0 ],
                                                          statusType = siteTuple[ 1 ],
-                                                         status = 'Unknown',
+                                                         status = self.defaultStatus,
                                                          elementType = domainName,
+                                                         tokenOwner = self.tokenOwner,
                                                          reason = 'Synchronized' )
         if not query[ 'OK' ]:
           return query
@@ -233,7 +243,7 @@ class Synchronizer( object ):
 
   def __syncComputingElements( self ):
     '''
-      Sync CEs: compares CS with DB and does the necessary modifications.
+      Sync ComputingElements: compares CS with DB and does the necessary modifications.
     '''
 
     cesCS = CSHelpers.getComputingElements()
@@ -244,8 +254,8 @@ class Synchronizer( object ):
     gLogger.verbose( '%s Computing elements found in CS' % len( cesCS ) )
 
     cesDB = self.rStatus.selectStatusElement( 'Resource', 'Status',
-                                                   elementType = 'CE',
-                                                   meta = { 'columns' : [ 'name' ] } )
+                                               elementType = 'ComputingElement',
+                                               meta = { 'columns' : [ 'Name' ] } )
     if not cesDB[ 'OK' ]:
       return cesDB
     cesDB = [ ceDB[0] for ceDB in cesDB[ 'Value' ] ]
@@ -264,14 +274,14 @@ class Synchronizer( object ):
         return deleteQuery
 
     #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
-    statusTypes = self.rssConfig.getConfigStatusType( 'CE' )
+    statusTypes = self.rssConfig.getConfigStatusType( 'ComputingElement' )
 
-    cesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status',
-                                                 elementType = 'CE',
-                                                 meta = { 'columns' : [ 'name', 'statusType' ] } )
-    if not cesTuple[ 'OK' ]:
-      return cesTuple
-    cesTuple = cesTuple[ 'Value' ]
+    result = self.rStatus.selectStatusElement( 'Resource', 'Status',
+                                                 elementType = 'ComputingElement',
+                                                 meta = { 'columns' : [ 'Name', 'StatusType' ] } )
+    if not result[ 'OK' ]:
+      return result
+    cesTuple = [ (x[0],x[1]) for x in result['Value'] ]
 
     # For each ( se, statusType ) tuple not present in the DB, add it.
     cesStatusTuples = [ ( se, statusType ) for se in cesCS for statusType in statusTypes ]
@@ -283,14 +293,15 @@ class Synchronizer( object ):
 
       _name            = ceTuple[ 0 ]
       _statusType      = ceTuple[ 1 ]
-      _status          = 'Unknown'
+      _status          = self.defaultStatus
       _reason          = 'Synchronized'
-      _elementType     = 'CE'
+      _elementType     = 'ComputingElement'
 
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name,
                                                        statusType = _statusType,
                                                        status = _status,
                                                        elementType = _elementType,
+                                                       tokenOwner = self.tokenOwner,
                                                        reason = _reason )
       if not query[ 'OK' ]:
         return query
@@ -311,7 +322,7 @@ class Synchronizer( object ):
 
     catalogsDB = self.rStatus.selectStatusElement( 'Resource', 'Status',
                                                    elementType = 'Catalog',
-                                                   meta = { 'columns' : [ 'name' ] } )
+                                                   meta = { 'columns' : [ 'Name' ] } )
     if not catalogsDB[ 'OK' ]:
       return catalogsDB
     catalogsDB = [ catalogDB[0] for catalogDB in catalogsDB[ 'Value' ] ]
@@ -332,12 +343,12 @@ class Synchronizer( object ):
     #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
     statusTypes = self.rssConfig.getConfigStatusType( 'Catalog' )
 
-    sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status',
+    result = self.rStatus.selectStatusElement( 'Resource', 'Status',
                                                  elementType = 'Catalog',
-                                                 meta = { 'columns' : [ 'name', 'statusType' ] } )
-    if not sesTuple[ 'OK' ]:
-      return sesTuple
-    sesTuple = sesTuple[ 'Value' ]
+                                                 meta = { 'columns' : [ 'Name', 'StatusType' ] } )
+    if not result[ 'OK' ]:
+      return result
+    sesTuple = [ (x[0],x[1]) for x in result['Value'] ]
 
     # For each ( se, statusType ) tuple not present in the DB, add it.
     catalogsStatusTuples = [ ( se, statusType ) for se in catalogsCS for statusType in statusTypes ]
@@ -349,7 +360,7 @@ class Synchronizer( object ):
 
       _name            = catalogTuple[ 0 ]
       _statusType      = catalogTuple[ 1 ]
-      _status          = 'Unknown'
+      _status          = self.defaultStatus
       _reason          = 'Synchronized'
       _elementType     = 'Catalog'
 
@@ -357,6 +368,7 @@ class Synchronizer( object ):
                                                        statusType = _statusType,
                                                        status = _status,
                                                        elementType = _elementType,
+                                                       tokenOwner = self.tokenOwner,
                                                        reason = _reason )
       if not query[ 'OK' ]:
         return query
@@ -377,7 +389,7 @@ class Synchronizer( object ):
 
     ftsDB = self.rStatus.selectStatusElement( 'Resource', 'Status',
                                               elementType = 'FTS',
-                                              meta = { 'columns' : [ 'name' ] } )
+                                              meta = { 'columns' : [ 'Name' ] } )
     if not ftsDB[ 'OK' ]:
       return ftsDB
     ftsDB = [ fts[0] for fts in ftsDB[ 'Value' ] ]
@@ -398,12 +410,12 @@ class Synchronizer( object ):
     statusTypes = self.rssConfig.getConfigStatusType( 'FTS' )
     #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
-    sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status',
+    result = self.rStatus.selectStatusElement( 'Resource', 'Status',
                                                  elementType = 'FTS',
-                                                 meta = { 'columns' : [ 'name', 'statusType' ] } )
-    if not sesTuple[ 'OK' ]:
-      return sesTuple
-    sesTuple = sesTuple[ 'Value' ]
+                                                 meta = { 'columns' : [ 'Name', 'StatusType' ] } )
+    if not result[ 'OK' ]:
+      return result
+    sesTuple = [ (x[0],x[1]) for x in result['Value'] ]
 
     # For each ( se, statusType ) tuple not present in the DB, add it.
     ftsStatusTuples = [ ( se, statusType ) for se in ftsCS for statusType in statusTypes ]
@@ -415,7 +427,7 @@ class Synchronizer( object ):
 
       _name            = ftsTuple[ 0 ]
       _statusType      = ftsTuple[ 1 ]
-      _status          = 'Unknown'
+      _status          = self.defaultStatus
       _reason          = 'Synchronized'
       _elementType     = 'FTS'
 
@@ -423,6 +435,7 @@ class Synchronizer( object ):
                                                        statusType = _statusType,
                                                        status = _status,
                                                        elementType = _elementType,
+                                                       tokenOwner = self.tokenOwner,
                                                        reason = _reason )
       if not query[ 'OK' ]:
         return query
@@ -443,7 +456,7 @@ class Synchronizer( object ):
 
     sesDB = self.rStatus.selectStatusElement( 'Resource', 'Status',
                                               elementType = 'StorageElement',
-                                              meta = { 'columns' : [ 'name' ] } )
+                                              meta = { 'columns' : [ 'Name' ] } )
     if not sesDB[ 'OK' ]:
       return sesDB
     sesDB = [ seDB[0] for seDB in sesDB[ 'Value' ] ]
@@ -464,12 +477,12 @@ class Synchronizer( object ):
     statusTypes = self.rssConfig.getConfigStatusType( 'StorageElement' )
     #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
-    sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status',
+    result = self.rStatus.selectStatusElement( 'Resource', 'Status',
                                                  elementType = 'StorageElement',
-                                                 meta = { 'columns' : [ 'name', 'statusType' ] } )
-    if not sesTuple[ 'OK' ]:
-      return sesTuple
-    sesTuple = sesTuple[ 'Value' ]
+                                                 meta = { 'columns' : [ 'Name', 'StatusType' ] } )
+    if not result[ 'OK' ]:
+      return result
+    sesTuple = [ (x[0],x[1]) for x in result['Value'] ]
 
     # For each ( se, statusType ) tuple not present in the DB, add it.
     sesStatusTuples = [ ( se, statusType ) for se in sesCS for statusType in statusTypes ]
@@ -481,14 +494,18 @@ class Synchronizer( object ):
 
       _name            = seTuple[ 0 ]
       _statusType      = seTuple[ 1 ]
-      _status          = 'Unknown'
+      _status          = self.defaultStatus
       _reason          = 'Synchronized'
       _elementType     = 'StorageElement'
+
+
+      print "AT >>> _name, _statusType, _status, _elementType, self.tokenOwner", _name, _statusType, _status, _elementType, self.tokenOwner
 
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name,
                                                        statusType = _statusType,
                                                        status = _status,
                                                        elementType = _elementType,
+                                                       tokenOwner = self.tokenOwner,
                                                        reason = _reason )
       if not query[ 'OK' ]:
         return query
@@ -509,7 +526,7 @@ class Synchronizer( object ):
 
     queuesDB = self.rStatus.selectStatusElement( 'Node', 'Status',
                                                  elementType = 'Queue',
-                                                 meta = { 'columns' : [ 'name' ] } )
+                                                 meta = { 'columns' : [ 'Name' ] } )
     if not queuesDB[ 'OK' ]:
       return queuesDB
     queuesDB = [ queueDB[0] for queueDB in queuesDB[ 'Value' ] ]
@@ -530,12 +547,12 @@ class Synchronizer( object ):
     statusTypes = self.rssConfig.getConfigStatusType( 'Queue' )
     #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
 
-    queueTuple = self.rStatus.selectStatusElement( 'Node', 'Status',
+    result = self.rStatus.selectStatusElement( 'Node', 'Status',
                                                    elementType = 'Queue',
-                                                   meta = { 'columns' : [ 'name', 'statusType' ] } )
-    if not queueTuple[ 'OK' ]:
-      return queueTuple
-    queueTuple = queueTuple[ 'Value' ]
+                                                   meta = { 'columns' : [ 'Name', 'StatusType' ] } )
+    if not result[ 'OK' ]:
+      return result
+    queueTuple = [ (x[0],x[1]) for x in result['Value'] ]
 
     # For each ( se, statusType ) tuple not present in the DB, add it.
     queueStatusTuples = [ ( se, statusType ) for se in queuesCS for statusType in statusTypes ]
@@ -547,7 +564,7 @@ class Synchronizer( object ):
 
       _name            = queueTuple[ 0 ]
       _statusType      = queueTuple[ 1 ]
-      _status          = 'Unknown'
+      _status          = self.defaultStatus
       _reason          = 'Synchronized'
       _elementType     = 'Queue'
 
@@ -555,6 +572,7 @@ class Synchronizer( object ):
                                                        statusType = _statusType,
                                                        status = _status,
                                                        elementType = _elementType,
+                                                       tokenOwner = self.tokenOwner,
                                                        reason = _reason )
       if not query[ 'OK' ]:
         return query

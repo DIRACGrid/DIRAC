@@ -17,6 +17,8 @@ from collections import defaultdict
 
 import DIRAC
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus      import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 from DIRAC.Core.Utilities.File                             import mkDir
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
@@ -91,6 +93,10 @@ class SiteDirector( AgentModule ):
     self.updateStatus = True
     self.getOutput = False
     self.sendAccounting = True
+    self.rssClient = ResourceStatus()
+    self.rssFlag = self.rssClient.rssFlag
+
+    self.siteClient = SiteStatus()
 
   def initialize( self ):
     """ Standard constructor
@@ -321,6 +327,8 @@ class SiteDirector( AgentModule ):
           self.queueDict[queueName]['Site'] = site
           self.queueDict[queueName]['QueueName'] = queue
           self.queueDict[queueName]['Platform'] = platform
+          self.queueDict[queueName]['QueryCEFlag'] = ceDict.get( 'QueryCEFlag', "false" )
+
           result = self.queueDict[queueName]['CE'].isValid()
           if not result['OK']:
             self.log.fatal( result['Message'] )
@@ -360,7 +368,6 @@ class SiteDirector( AgentModule ):
   def submitJobs( self ):
     """ Go through defined computing elements and submit jobs if necessary
     """
-
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
     tqDict = { 'Setup':setup,
@@ -370,7 +377,6 @@ class SiteDirector( AgentModule ):
       tqDict['Community'] = self.vo
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
-
     result = Resources.getCompatiblePlatforms( self.platforms )
     if not result['OK']:
       return result
@@ -420,11 +426,20 @@ class SiteDirector( AgentModule ):
     #  self.log.info( 'No more pilots to be submitted in this cycle' )
     #  return S_OK()
 
-    # Check if the site is allowed in the mask
-    result = jobDB.getSiteMask()
-    if not result['OK']:
-      return S_ERROR( 'Can not get the site mask' )
-    siteMaskList = result['Value']
+    if self.rssFlag:
+
+      result = self.siteClient.getUsableSites()
+      if not result['OK']:
+        return S_ERROR( 'Can not get the site status' )
+      siteMaskList = result['Value']
+
+    else:
+
+      # Use the old way, check if the site is allowed in the mask
+      result = jobDB.getSiteMask()
+      if not result['OK']:
+        return S_ERROR( 'Can not get the site mask' )
+      siteMaskList = result['Value']
 
     queues = self.queueDict.keys()
     random.shuffle( queues )
@@ -446,6 +461,31 @@ class SiteDirector( AgentModule ):
       siteName = self.queueDict[queue]['Site']
       platform = self.queueDict[queue]['Platform']
       siteMask = siteName in siteMaskList
+
+      if self.rssFlag:
+        # Check the status of the Site
+        result = self.siteClient.getSiteStatuses({siteName})
+        if not result['OK']:
+          self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
+          continue
+        if result['Value']:
+          result = result['Value'][siteName]   #get the value of the status
+
+        if result not in ('Active', 'Degraded'):
+          self.log.verbose( "Skipping site %s: site not usable" % siteName )
+          continue
+
+        # Check the status of the ComputingElement
+        result = self.rssClient.getElementStatus(ceName, "ComputingElement")
+        if not result['OK']:
+          self.log.error( "Can not get the status of computing element %s: %s" % (siteName, result['Message']) )
+          continue
+        if result['Value']:
+          result = result['Value'][ceName]['all']   #get the value of the status
+
+        if result not in ('Active', 'Degraded'):
+          self.log.verbose( "Skipping computing element %s at %s: resource not usable" % (ceName, siteName) )
+          continue
 
       if not anySite and siteName not in jobSites:
         self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )
@@ -563,7 +603,10 @@ class SiteDirector( AgentModule ):
         jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )
         httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
 
-        result = self.getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
+        result = self.getExecutable( queue, pilotsToSubmit,
+                                     bundleProxy = bundleProxy,
+                                     httpProxy = httpProxy,
+                                     jobExecDir = jobExecDir )
         if not result['OK']:
           return result
 
@@ -635,6 +678,7 @@ class SiteDirector( AgentModule ):
     ce = self.queueDict[queue]['CE']
     ceName = self.queueDict[queue]['CEName']
     queueName = self.queueDict[queue]['QueueName']
+    queryCEFlag = self.queueDict[queue]["QueryCEFlag"].lower() in ["1", "yes", "true"]
 
     self.queueSlots.setdefault( queue, {} )
     totalSlots = self.queueSlots[queue].get( 'AvailableSlots', 0 )
@@ -664,18 +708,39 @@ class SiteDirector( AgentModule ):
         if result['OK']:
           jobIDList = result['Value']
 
-        result = ce.available( jobIDList )
-        if not result['OK']:
-          self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
-          self.failedQueues[queue] += 1
+        if queryCEFlag:
+          result = ce.available( jobIDList )
+          if not result['OK']:
+            self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
+            self.failedQueues[queue] += 1
+          else:
+            ceInfoDict = result['CEInfoDict']
+            self.log.info( "CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" % \
+                           ( ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
+                             ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
+            totalSlots = result['Value']
+            self.queueSlots[queue]['AvailableSlots'] = totalSlots
+            waitingJobs = ceInfoDict['WaitingJobs']
         else:
-          ceInfoDict = result['CEInfoDict']
-          self.log.info( "CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" % \
-                         ( ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
-                           ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
-          totalSlots = result['Value']
-          self.queueSlots[queue]['AvailableSlots'] = totalSlots
-          waitingJobs = ceInfoDict['WaitingJobs']
+          maxWaitingJobs = int( self.queueDict[queue]['ParametersDict']['MaxWaitingJobs'] )
+          maxTotalJobs = int( self.queueDict[queue]['ParametersDict']['MaxTotalJobs'] )
+          result = pilotAgentsDB.getPilotInfo( jobIDList )
+          if not result['OK']:
+            self.log.warn( 'Failed to check PilotAgentsDB for queue %s: \n%s' % ( queue, result['Message'] ) )
+            self.failedQueues[queue] += 1
+          else:
+            waitingJobs = 0
+            totalJobs = 0
+            for pilotRef, pilotDict in result['Value'].iteritems():
+              if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
+                totalJobs += 1
+                if pilotDict["Status"] in WAITING_PILOT_STATUS:
+                  waitingJobs += 1
+            runningJobs = totalJobs - waitingJobs
+            self.log.info( "PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" % \
+                           ( ceName, queueName, waitingJobs, runningJobs, maxTotalJobs ) )
+            totalSlots = min( (maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs) )
+            self.queueSlots[queue]['AvailableSlots'] = totalSlots
 
     self.queueSlots[queue]['AvailableSlotsCount'] += 1
 
@@ -685,14 +750,14 @@ class SiteDirector( AgentModule ):
       return totalSlots
 
 #####################################################################################
-  def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '', processors = 1 ):
+  def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '' ):
     """ Prepare the full executable for queue
     """
 
     proxy = None
     if bundleProxy:
       proxy = self.proxy
-    pilotOptions, pilotsToSubmit = self._getPilotOptions( queue, pilotsToSubmit, processors )
+    pilotOptions, pilotsToSubmit = self._getPilotOptions( queue, pilotsToSubmit )
     if pilotOptions is None:
       self.log.error( "Pilot options empty, error in compilation" )
       return S_ERROR( "Errors in compiling pilot options" )
@@ -701,7 +766,7 @@ class SiteDirector( AgentModule ):
     return S_OK( [ executable, pilotsToSubmit ] )
 
 #####################################################################################
-  def _getPilotOptions( self, queue, pilotsToSubmit, processors = 1 ):
+  def _getPilotOptions( self, queue, pilotsToSubmit ):
     """ Prepare pilot options
     """
 
@@ -771,7 +836,7 @@ class SiteDirector( AgentModule ):
     else:
       extensionsList = CSGlobals.getCSExtensions()
     if extensionsList:
-      pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
+      pilotOptions.append( '-e %s' % ",".join( [ext for ext in extensionsList if 'Web' not in ext] ) )
 
     # Requested CPU time
     pilotOptions.append( '-T %s' % queueDict['CPUTime'] )
@@ -804,20 +869,12 @@ class SiteDirector( AgentModule ):
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
-    if processors != 1:
-      if processors > 1:
-        pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=%sProcessors' % processors )
-        pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%sProcessors' % processors )
-      else:
-        pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=WholeNode' )
-        pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=WholeNode' )
-
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
 
     return [ pilotOptions, pilotsToSubmit ]
 
-#####################################################################################
+####################################################################################
   def _writePilotScript( self, workingDirectory, pilotOptions, proxy = None,
                          httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admix the proxy if given

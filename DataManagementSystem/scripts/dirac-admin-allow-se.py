@@ -107,7 +107,7 @@ statusFlagDict['RemoveAccess'] = remove
 
 resourceStatus = ResourceStatus()
 
-res = resourceStatus.getStorageElementStatus( ses )
+res = resourceStatus.getElementStatus( ses, "StorageElement" )
 if not res[ 'OK' ]:
   gLogger.error( 'Storage Element %s does not exist' % ses )
   DIRAC.exit( -1 )

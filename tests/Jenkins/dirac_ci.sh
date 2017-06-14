@@ -169,7 +169,6 @@ function fullInstallDIRAC(){
   #Now all the rest
 
   #DBs (not looking for FrameworkSystem ones, already installed)
-  #findDatabases 'exclude' 'FrameworkSystem'
   findDatabases 'exclude' 'FrameworkSystem'
   dropDBs
   diracDBs
@@ -189,7 +188,7 @@ function fullInstallDIRAC(){
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py $DEBUG
 
   #fix the SandboxStore and other stuff
-  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py JenkinsSetup $DEBUG
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py dirac-JenkinsSetup $DEBUG
 
   echo '==> Restarting WorkloadManagement SandboxStore'
   dirac-restart-component WorkloadManagement SandboxStore $DEBUG
@@ -265,7 +264,23 @@ function DIRACPilotInstall(){
     return
   fi
 
-  python dirac-pilot.py -S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ -X GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements $DEBUG
+  commandList="GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements"
+  options="-S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/"
+
+  if [ "$customCommands" ]
+  then
+    echo 'Using custom command list'
+    commandList=$customCommands
+  fi
+
+  if [ "$customOptions" ]
+  then
+    echo 'Using custom options'
+    options="$options -o $customOptions"
+  fi
+
+  echo $( eval echo Executing python dirac-pilot.py $options -X $commandList $DEBUG)
+  python dirac-pilot.py $options -X $commandList $DEBUG
   if [ $? -ne 0 ]
   then
     echo 'ERROR: pilot script failed'

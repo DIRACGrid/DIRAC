@@ -1,3 +1,6 @@
+""" Hosts BaseTransport class, which is a base for PlainTransport and SSLTransport
+"""
+
 __RCSID__ = "$Id$"
 
 import time
@@ -10,6 +13,8 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import DEncode
 
 class BaseTransport( object ):
+  """ Invokes DEncode for marshaling/unmarshaling of data calls in transit
+  """
 
   bAllowReuseAddress = True
   iListenQueueSize = 5
@@ -278,7 +283,7 @@ class BaseTransport( object ):
     if address[0].find( ":" ) > -1:
       return "([%s]:%s)%s" % ( address[0], address[1], peerId )
     return "(%s:%s)%s" % ( address[0], address[1], peerId )
-  
+
   def setSocketTimeout(self, timeout):
     """
     This method has to be overwritten, if we want to increase the socket timeout.

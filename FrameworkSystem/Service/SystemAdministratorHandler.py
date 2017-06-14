@@ -41,7 +41,7 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Handler class initialization
     """
-    
+
     # Check the flag for monitoring of the state of the host
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
 
@@ -51,7 +51,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # Check the flag for dynamic monitoring
     dynamicMonitoring = cls.srv_getCSOption( 'DynamicMonitoring', False )
-    
+
     if dynamicMonitoring:
       global gMonitoringReporter
       gMonitoringReporter = MonitoringReporter( monitoringType = "ComponentMonitoring" )
@@ -69,7 +69,7 @@ class SystemAdministratorHandler( RequestHandler ):
     """  Get versions of the installed DIRAC software and extensions, setup of the
          local installation
     """
-    return gComponentInstaller.getInfo( getCSExtensions() )
+    return gComponentInstaller.getInfo()
 
   types_getSoftwareComponents = [ ]
   def export_getSoftwareComponents( self ):
@@ -104,7 +104,7 @@ class SystemAdministratorHandler( RequestHandler ):
     for compType in statusDict:
       for system in statusDict[compType]:
         for component in statusDict[compType][system]:
-          result = gComponentInstaller.getComponentModule( gConfig, system, component, compType )
+          result = gComponentInstaller.getComponentModule( system, component, compType )
           if not result['OK']:
             statusDict[compType][system][component]['Module'] = "Unknown"
           else:
@@ -280,20 +280,20 @@ class SystemAdministratorHandler( RequestHandler ):
     extensionList = getCSExtensions()
     if extensionList:
       #by default we do not install WebApp
-      if "WebApp" in extensionList: 
+      if "WebApp" in extensionList:
         extensionList.remove("WebApp")
-      
+
     webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False ) # this is the new portal
     if webPortal:
       if "WebAppDIRAC" not in extensionList:
         extensionList.append("WebAppDIRAC")
-   
+
     cmdList += ['-e', ','.join( extensionList )]
-    
+
     project = gConfig.getValue('/LocalInstallation/Project')
     if project:
       cmdList += ['-l', project ]
-      
+
     # Are grid middleware bindings required ?
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )
@@ -570,7 +570,7 @@ class SystemAdministratorHandler( RequestHandler ):
     result['OpenFiles'] = files
     result['OpenPipes'] = pipes
 
-    infoResult = gComponentInstaller.getInfo( getCSExtensions() )
+    infoResult = gComponentInstaller.getInfo()
     if infoResult['OK']:
       result.update( infoResult['Value'] )
       # the infoResult value is {"Extensions":{'a1':'v1',a2:'v2'}; we convert to a string

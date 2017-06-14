@@ -5,7 +5,7 @@
 """
 
 import os
-import hashlib as md5
+import hashlib
 import random
 import glob
 import sys
@@ -49,7 +49,7 @@ def makeGuid( fileName = None ):
 
      :param string fileName: name of file
   """
-  myMd5 = md5.md5()
+  myMd5 = hashlib.md5()
   if fileName:
     try:
       with open( fileName, 'r' ) as fd:
@@ -84,7 +84,7 @@ def generateGuid( checksum, checksumtype ):
       return guid
 
   # Failed to use the check sum, generate a new guid
-  myMd5 = md5.md5()
+  myMd5 = hashlib.md5()
   myMd5.update( str( random.getrandbits( 128 ) ) )
   md5HexString = myMd5.hexdigest()
   guid = "%s-%s-%s-%s-%s" % ( md5HexString[0:8],
@@ -216,7 +216,7 @@ def getMD5ForFiles( fileList ):
   :type fileList: python:list
   """
   fileList.sort()
-  hashMD5 = md5.md5()
+  hashMD5 = hashlib.md5()
   for filePath in fileList:
     if os.path.isdir( filePath ):
       continue

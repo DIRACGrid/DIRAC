@@ -18,6 +18,8 @@ from DIRAC.Core.DISET.RPCClient                               import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteCEMapping
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus         import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus             import SiteStatus
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSE
@@ -49,6 +51,8 @@ class DiracAdmin( API ):
 
     self.scratchDir = gConfig.getValue( self.section + '/ScratchDir', '/tmp' )
     self.currentDir = os.getcwd()
+    self.rssFlag = ResourceStatus().rssFlag
+    self.sitestatus = SiteStatus()
 
   #############################################################################
   def uploadProxy( self, group ):
@@ -108,7 +112,7 @@ class DiracAdmin( API ):
     return gProxyManager.userHasProxy( userDN, userGroup, requiredTime )
 
   #############################################################################
-  def getSiteMask( self, printOutput = False ):
+  def getSiteMask( self, printOutput = False, status = 'Active' ):
     """Retrieve current site mask from WMS Administrator service.
 
        Example usage:
@@ -119,8 +123,8 @@ class DiracAdmin( API ):
        :return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.getSiteMask()
+
+    result = self.sitestatus.getSites(siteState=status)
     if result['OK']:
       sites = result['Value']
       if printOutput:
@@ -132,7 +136,7 @@ class DiracAdmin( API ):
 
   #############################################################################
   def getBannedSites( self, gridType = [], printOutput = False ):
-    """Retrieve current list of banned sites.
+    """Retrieve current list of banned  and probing sites.
 
        Example usage:
 
@@ -142,35 +146,22 @@ class DiracAdmin( API ):
        :return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    bannedSites = []
-    totalList = []
 
-    result = wmsAdmin.getSiteMask()
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-      return result
-    sites = result['Value']
+    bannedSites = self.sitestatus.getSites( siteState = 'Banned' )
+    if not bannedSites['OK']:
+      return bannedSites
 
-    if not gridType:
-      result = gConfig.getSections( '/Resources/Sites' )
-      if not result['OK']:
-        return result
-      gridType = result['Value']
+    probingSites = self.sitestatus.getSites( siteState = 'Probing' )
+    if not probingSites['OK']:
+      return probingSites
 
-    for grid in gridType:
-      result = gConfig.getSections( '/Resources/Sites/%s' % grid )
-      if not result['OK']:
-        return result
-      totalList += result['Value']
+    mergedList = bannedSites['Value'] + probingSites['Value']
 
-    for site in totalList:
-      if not site in sites:
-        bannedSites.append( site )
-    bannedSites.sort()
+    mergedList.sort()
     if printOutput:
-      print '\n'.join( bannedSites )
-    return S_OK( bannedSites )
+      print '\n'.join( mergedList )
+
+    return S_OK( mergedList )
 
   #############################################################################
   def getSiteSection( self, site, printOutput = False ):
@@ -193,12 +184,12 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
-  def addSiteInMask( self, site, comment, printOutput = False ):
+  def allowSite( self, site, comment, printOutput = False ):
     """Adds the site to the site mask.
 
        Example usage:
 
-         >>> print diracAdmin.addSiteInMask()
+         >>> print diracAdmin.allowSite()
          {'OK': True, 'Value': }
 
        :return: S_OK,S_ERROR
@@ -208,20 +199,25 @@ class DiracAdmin( API ):
     if not result['OK']:
       return result
 
-    mask = self.getSiteMask()
-    if not mask['OK']:
-      return mask
-    siteMask = mask['Value']
+    result = self.getSiteMask( status = 'Active' )
+    if not result['OK']:
+      return result
+    siteMask = result['Value']
     if site in siteMask:
-      return S_ERROR( 'Site %s already in mask of allowed sites' % site )
+      if printOutput:
+        print 'Site %s is already Active' % site
+      return S_OK( 'Site %s is already Active' % site )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.allowSite( site, comment )
+    if self.rssFlag:
+      result = self.sitestatus.setSiteStatus( site, 'Active', comment )
+    else:
+      wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+      result = wmsAdmin.allowSite( site, comment )
     if not result['OK']:
       return result
 
     if printOutput:
-      print 'Allowing %s in site mask' % site
+      print 'Site %s status is set to Active' % site
 
     return result
 
@@ -266,12 +262,12 @@ class DiracAdmin( API ):
     return result
 
   #############################################################################
-  def banSiteFromMask( self, site, comment, printOutput = False ):
+  def banSite( self, site, comment, printOutput = False ):
     """Removes the site from the site mask.
 
        Example usage:
 
-         >>> print diracAdmin.banSiteFromMask()
+         >>> print diracAdmin.banSite()
          {'OK': True, 'Value': }
 
        :return: S_OK,S_ERROR
@@ -281,25 +277,29 @@ class DiracAdmin( API ):
     if not result['OK']:
       return result
 
-    mask = self.getSiteMask()
+    mask = self.getSiteMask( status = 'Banned' )
     if not mask['OK']:
       return mask
     siteMask = mask['Value']
-    if not site in siteMask:
-      return S_ERROR( 'Site %s is already banned' % site )
+    if site in siteMask:
+      if printOutput:
+        print 'Site %s is already Banned' % site
+      return S_OK( 'Site %s is already Banned' % site )
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.banSite( site, comment )
+    if self.rssFlag:
+      result = self.sitestatus.setSiteStatus( site, 'Banned', comment )
+    else:
+      wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+      result = wmsAdmin.banSite( site, comment )
     if not result['OK']:
       return result
 
     if printOutput:
-      print 'Removing %s from site mask' % site
+      print 'Site %s status is set to Banned' % site
 
     return result
 
   #############################################################################
-  @classmethod
   def __checkSiteIsValid( self, site ):
     """Internal function to check that a site name is valid.
     """

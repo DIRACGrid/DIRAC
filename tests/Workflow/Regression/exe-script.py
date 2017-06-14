@@ -6,5 +6,4 @@ from os import system
 
 # Main
 if __name__ == '__main__':
-
   sys.exit(system('''echo Hello World''')/256)

@@ -15,7 +15,6 @@ from DIRAC.Core.Utilities.ModuleFactory                     import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight              import ClassAd
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
 from DIRAC.Core.Utilities.CFG                               import CFG
-from DIRAC.Core.Utilities.Os                                import getNumberOfCores
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
@@ -63,7 +62,6 @@ class JobAgent( AgentModule ):
     # Timeleft
     self.timeLeftUtil = None
     self.timeLeftError = ''
-    self.scaledCPUTime = 0.0
     self.pilotInfoReportedFlag = False
 
 
@@ -155,19 +153,30 @@ class JobAgent( AgentModule ):
         return self.__finish( 'Filling Mode is Disabled' )
 
     self.log.verbose( 'Job Agent execution loop' )
-    available = self.computingElement.available()
-    if not available['OK'] or not available['Value']:
+    result = self.computingElement.available()
+    if not result['OK']:
       self.log.info( 'Resource is not available' )
-      self.log.info( available['Message'] )
+      self.log.info( result['Message'] )
       return self.__finish( 'CE Not Available' )
 
-    self.log.info( available['Message'] )
+    self.log.info( result['Message'] )
+
+    ceInfoDict = result['CEInfoDict']
+    runningJobs = ceInfoDict.get( "RunningJobs" )
+    availableSlots = result['Value']
+
+    if not availableSlots:
+      if runningJobs:
+        self.log.info( 'No available slots with %d running jobs' % runningJobs )
+        return S_OK( 'Job Agent cycle complete with %d running jobs' % runningJobs )
+      else:
+        self.log.info( 'CE is not available' )
+        return self.__finish( 'CE Not Available' )
 
     result = self.computingElement.getDescription()
     if not result['OK']:
       return result
     ceDict = result['Value']
-
     # Add pilot information
     gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
     if gridCE != 'Unknown':
@@ -183,11 +192,6 @@ class JobAgent( AgentModule ):
       requirementsDict = result['Value']
       ceDict.update( requirementsDict )
       self.log.info( 'Requirements:', requirementsDict )
-
-    processors, wholeNode = self.__getProcessors()
-    ceDict['Processors'] = processors
-    ceDict['WholeNode'] = wholeNode
-    self.log.info( 'Configured number of processors: %d, WholeNode: %s' % ( processors, wholeNode ) )
 
     self.log.verbose( ceDict )
     start = time.time()
@@ -273,6 +277,10 @@ class JobAgent( AgentModule ):
     if 'CPUTime' not in params:
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
 
+    # Job requirement for a number of processors
+    processors = int( params.get( 'NumberOfProcessors', 1 ) )
+    wholeNode = 'WholeNode' in params
+
     if self.extraOptions:
       params['Arguments'] += ' ' + self.extraOptions
       params['ExtraOptions'] = self.extraOptions
@@ -308,13 +316,13 @@ class JobAgent( AgentModule ):
         return self.__rescheduleFailedJob( jobID, errorMsg, self.stopOnApplicationFailure )
 
       self.log.debug( 'Before %sCE submitJob()' % ( self.ceName ) )
-      submission = self.__submitJob( jobID, params, ceDict, optimizerParams, proxyChain )
-      if not submission['OK']:
-        self.__report( jobID, 'Failed', submission['Message'] )
-        return self.__finish( submission['Message'] )
-      elif 'PayloadFailed' in submission:
+      result = self.__submitJob( jobID, params, ceDict, optimizerParams, proxyChain, processors, wholeNode )
+      if not result['OK']:
+        self.__report( jobID, 'Failed', result['Message'] )
+        return self.__finish( result['Message'] )
+      elif 'PayloadFailed' in result:
         # Do not keep running and do not overwrite the Payload error
-        message = 'Payload execution failed with error code %s' % submission['PayloadFailed']
+        message = 'Payload execution failed with error code %s' % result['PayloadFailed']
         if self.stopOnApplicationFailure:
           return self.__finish( message, self.stopOnApplicationFailure )
         else:
@@ -337,10 +345,6 @@ class JobAgent( AgentModule ):
       else:
         # if the batch system is not defined, use the process time and the CPU normalization defined locally
         self.timeLeft = self.__getCPUTimeLeft()
-
-    scaledCPUTime = self.timeLeftUtil.getScaledCPU( processors )
-    self.__setJobParam( jobID, 'ScaledCPUTime', str( scaledCPUTime - self.scaledCPUTime ) )
-    self.scaledCPUTime = scaledCPUTime
 
     return S_OK( 'Job Agent cycle complete' )
 
@@ -447,7 +451,8 @@ class JobAgent( AgentModule ):
     return module.execute()
 
   #############################################################################
-  def __submitJob( self, jobID, jobParams, resourceParams, optimizerParams, proxyChain ):
+  def __submitJob( self, jobID, jobParams, resourceParams, optimizerParams,
+                   proxyChain, processors, wholeNode = False ):
     """ Submit job to the Computing Element instance after creating a custom
         Job Wrapper with the available job parameters.
     """
@@ -472,10 +477,9 @@ class JobAgent( AgentModule ):
       return S_ERROR( 'Payload Proxy Not Found' )
 
     payloadProxy = proxy['Value']
-    # FIXME: how can we set the batchID before we submit, this makes no sense
-    batchID = 'dc%s' % ( jobID )
-    submission = self.computingElement.submitJob( wrapperFile, payloadProxy )
-
+    submission = self.computingElement.submitJob( wrapperFile, payloadProxy,
+                                                  numberOfProcessors = processors,
+                                                  wholeNode = wholeNode )
     ret = S_OK( 'Job submitted' )
 
     if submission['OK']:
@@ -599,29 +603,6 @@ class JobAgent( AgentModule ):
 
     self.log.info( 'Job Rescheduled %s' % ( jobID ) )
     return self.__finish( 'Job Rescheduled', stop )
-
-  #############################################################################
-  def __getProcessors( self ):
-    """
-    Return number of processors from gConfig and a boolean corresponding to WholeNode option
-    """
-    tag = gConfig.getValue( '/Resources/Computing/CEDefaults/Tag', None )
-
-    if tag is None:
-      return 1, False
-
-    self.log.verbose( "__getProcessors: /Resources/Computing/CEDefaults/Tag", repr( tag ) )
-
-    # look for a pattern like "12345Processors" in tag list
-    m = re.match( r'^(.*\D)?(?P<processors>\d+)Processors([ \t,].*)?$', tag )
-    if m:
-      return int( m.group( 'processors' ) ), False
-
-    # In WholeNode case, detect number of cores from the host
-    if re.match( r'^(.*,\s*)?WholeNode([ \t,].*)?$', tag ):
-      return getNumberOfCores(), True
-
-    return 1, False
 
   #############################################################################
   def finalize( self ):
