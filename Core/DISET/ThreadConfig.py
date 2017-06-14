@@ -4,7 +4,11 @@ import functools
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 class ThreadConfig( threading.local ):
+   # What the hell does it mean to have an object thread local but singleton ?!?!?!
+   # We do not even call the parent __init__ !
+   # This class seems useless to me, I could not see it used anywhere
   __metaclass__ = DIRACSingleton
+
 
   def __init__( self ):
     self.reset()
