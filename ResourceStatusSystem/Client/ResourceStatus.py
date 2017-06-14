@@ -194,7 +194,7 @@ class ResourceStatus( object ):
 
     # DIRAC doesn't store the status of ComputingElements nor FTS in the CS, so here we can just return 'Active'
     if elementType in ('ComputingElement', 'FTS'):
-      return S_OK( { elementName: { (elementType, 'all'): 'Active'} } )
+      return S_OK( { elementName: { 'all': 'Active'} } )
 
     # If we are here it is because elementType is either 'StorageElement' or 'Catalog'
     if elementType == 'StorageElement':
@@ -212,7 +212,7 @@ class ResourceStatus( object ):
       for sType in statusType:
         # Look in standard location, 'Active' by default
         res = gConfig.getValue( "%s/%s/%s" % ( cs_path, element, sType ), 'Active' )
-        result[element] = {(elementType, sType): res}
+        result.setdefault( element, {} )[sType] = res
 
     if result:
       return S_OK( result )
@@ -222,7 +222,7 @@ class ResourceStatus( object ):
       return S_OK( getDictFromList( defList ) )
 
     _msg = "Element '%s', with statusType '%s' is unknown for CS."
-    return S_ERROR(DErrno.ERESUNK, _msg % ( elementName, statusType ) )
+    return S_ERROR( DErrno.ERESUNK, _msg % ( elementName, statusType ) )
 
   def __setRSSElementStatus( self, elementName, elementType, statusType, status, reason, tokenOwner ):
     """
