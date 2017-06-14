@@ -71,6 +71,15 @@ CHANGE: Dirac API - added runLocal as an API method
 *Docs
 NEW: Documentation for developing with a container (includes Dockerfile)
 
+[v6r17p22]
+
+*Framework
+FIX: NotificationClient - added avoidSpam flag to sendMail() method which is propagated to
+     the corresponding service call
+     
+*Integration
+FIX: several fixes in integration testing scripts     
+
 [v6r17p21]
 
 *Core
