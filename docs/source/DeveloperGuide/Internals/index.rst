@@ -6,3 +6,4 @@ How DIRAC works underneath
    :maxdepth: 2
 
    ../../AdministratorGuide/Systems/WorkloadManagement/JobPriorities/index
+   Core/index
