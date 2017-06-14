@@ -40,7 +40,7 @@ All the storages elements available for the users are described in this subsecti
 +---------------------------------------------+--------------------------------------------------+-----------------------------+
 | *SITE-disk/AccessProtocol.<#>/Protocol*     | Protocol to be used to interact with the SE      | Protocol = srm              |
 +---------------------------------------------+--------------------------------------------------+-----------------------------+
-| *SITE-disk/AccessProtocol.<#>/PluginName* | Protocol name to be used to interact with the SE | PluginName = GFAL2_SRM2         |
+| *SITE-disk/AccessProtocol.<#>/PluginName*   | Protocol name to be used to interact with the SE | PluginName = GFAL2_SRM2     |
 +---------------------------------------------+--------------------------------------------------+-----------------------------+
 | *SITE-disk/AccessProtocol.<#>/WSUrl*        | URL from WebServices                             | WSUrl = /srm/managerv2?SFN= |
 +---------------------------------------------+--------------------------------------------------+-----------------------------+
