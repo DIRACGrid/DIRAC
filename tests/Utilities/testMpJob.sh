@@ -2,4 +2,4 @@
 PYTHON="/usr/bin/python"
 
 # call script via the interrupter
-$PYTHON $0
+$PYTHON $1
