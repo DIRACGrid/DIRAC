@@ -1,3 +1,25 @@
+[v6r18p1]
+
+*RSS
+FIX: SiteStatus - bug fixed in getSites() method - siteState argument not propagated to
+     the service call
+FIX: ResourceStatus - return the same structure for status lookup in both RSS and CS cases     
+     
+*RMS
+NEW: dirac-rms-request - command including functionality of several other commands:
+     dirac-rms-cancel|reset|show-request which are dropped. The required functionality
+     is selected by the appropriate switches      
+     
+*Monitoring
+CHANGE: DBUtils - change the bucket sizes for the monitoring plots as function of the time span     
+     
+*WMS
+FIX: dirac-pilot, pilotTools - PYTHONPATH is cleared on pilot start, pilot option keepPP
+     can override this
+FIX: WMSAdministratorHandler - make methods static appropriately
+CHANGE: JobScheduling - more precise site name while the job is Waiting, using the set of 
+        sites at which the input files are online rather than checking Tier1s in eligible sites           
+
 [v6r18]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
