@@ -13,19 +13,33 @@ from DIRAC.RequestManagementSystem.Client.Operation             import Operation
 from DIRAC.RequestManagementSystem.Client.File                  import File
 from DIRAC.Resources.Storage.StorageElement                     import StorageElement
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers            import DMSHelpers
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus           import ResourceStatus
 
 class DMSRequestOperationsBase( OperationHandlerBase ):
 
   def __init__( self, operation = None, csPath = None ):
     OperationHandlerBase.__init__( self, operation, csPath )
     self.registrationProtocols = DMSHelpers().getRegistrationProtocols()
+    self.rssFlag = ResourceStatus().rssFlag
 
 
   def checkSEsRSS( self, checkSEs = None, access = 'WriteAccess' ):
-    """ check SEs.
+    """ check SEs, returning a list of banned SEs.
         By default, we check the SEs for WriteAccess, but it is configurable
+
+        :param checkSEs: SEs to check, by default the operation target list is used.
+        :param access: The type of access to check for ('WriteAccess' or 'ReadAccess').
+        :type checkSEs: python:list
+        :type access: str
+        :return: A list of banned SE names
+        :rtype: python:list
     """
+    # Only do these checks if RSS is enabled, otherwise return an empty list
+    # (to indicate no SEs have been banned by RSS)
+    if not self.rssFlag:
+      return S_OK( [] )
+
     if not checkSEs:
       checkSEs = self.operation.targetSEList
     elif type( checkSEs ) == str:
