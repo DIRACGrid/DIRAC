@@ -18,6 +18,8 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getNumberOfParameters
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
@@ -32,15 +34,19 @@ from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageMan
 gJobDB = False
 gJobLoggingDB = False
 gtaskQueueDB = False
+gPilotAgentsDB = False
+gPilotsLoggingDB = False
 
 MAX_PARAMETRIC_JOBS = 20
 
 def initializeJobManagerHandler( serviceInfo ):
 
-  global gJobDB, gJobLoggingDB, gtaskQueueDB
+  global gJobDB, gJobLoggingDB, gtaskQueueDB, gPilotAgentsDB, gPilotsLoggingDB
   gJobDB = JobDB()
   gJobLoggingDB = JobLoggingDB()
   gtaskQueueDB = TaskQueueDB()
+  gPilotAgentsDB = PilotAgentsDB()
+  gPilotsLoggingDB = PilotsLoggingDB()
   return S_OK()
 
 class JobManagerHandler( RequestHandler ):
@@ -153,7 +159,7 @@ class JobManagerHandler( RequestHandler ):
     self.__sendJobsToOptimizationMind( jobIDList )
     return result
 
-###########################################################################
+  ###########################################################################
   def __checkIfProxyUploadIsRequired( self ):
     result = gProxyManager.userHasProxy( self.ownerDN, self.ownerGroup, validSeconds = 18000 )
     if not result[ 'OK' ]:
@@ -162,7 +168,7 @@ class JobManagerHandler( RequestHandler ):
     #Check if an upload is required
     return result[ 'Value' ] == False
 
-###########################################################################
+  ###########################################################################
   types_invalidateJob = [ IntType ]
   def invalidateJob( self, jobID ):
     """ Make job with jobID invalid, e.g. because of the sandbox submission
@@ -171,7 +177,7 @@ class JobManagerHandler( RequestHandler ):
 
     pass
 
-###########################################################################
+  ###########################################################################
   def __get_job_list( self, jobInput ):
     """ Evaluate the jobInput into a list of ints
     """
@@ -193,7 +199,7 @@ class JobManagerHandler( RequestHandler ):
 
     return []
 
-###########################################################################
+  ###########################################################################
   types_rescheduleJob = [ ]
   def export_rescheduleJob( self, jobIDs ):
     """  Reschedule a single job. If the optional proxy parameter is given
@@ -240,7 +246,27 @@ class JobManagerHandler( RequestHandler ):
     if not result['OK']:
       gLogger.warn( 'Failed to delete job from the TaskQueue' )
 
-    return S_OK()
+    # if it was the last job for the pilot, clear PilotsLogging about it
+    result = gPilotAgentsDB.getPilotsForJobID( jobID )  #pylint: disable=no-member
+    if not result['OK']:
+      return result
+    for pilot in result['Value']:
+      res = gPilotAgentsDB.getJobsForPilot( pilot['PilotID'] )  #pylint: disable=no-member
+      if not res['OK']:
+        return res
+      if not res['Value']:  # if list of jobs for pilot is empty, delete pilot and pilotslogging
+        ret = gPilotAgentsDB.deletePilot( pilot['PilotID'] )  #pylint: disable=no-member
+        if not ret['OK']:
+          return ret
+        pilotRef = gPilotAgentsDB.getPilotRef( pilot['PilotID'] )  #pylint: disable=no-member
+        if not pilotRef['OK']:
+          return pilotRef
+        pilotRef = pilotRef['Value'][0][0]
+        ret = gPilotsLoggingDB.deletePilotsLogging( pilotRef )  #pylint: disable=no-member
+        if not ret['OK']:
+          return ret
+
+    return S_OK( )
 
   def __killJob( self, jobID, sendKillCommand = True ):
     """  Kill one job
@@ -328,7 +354,7 @@ class JobManagerHandler( RequestHandler ):
 
     return result
 
-###########################################################################
+  ###########################################################################
   types_deleteJob = [  ]
   def export_deleteJob( self, jobIDs ):
     """  Delete jobs specified in the jobIDs list
@@ -336,7 +362,7 @@ class JobManagerHandler( RequestHandler ):
 
     return self.__kill_delete_jobs( jobIDs, RIGHT_DELETE )
 
-###########################################################################
+  ###########################################################################
   types_killJob = [  ]
   def export_killJob( self, jobIDs ):
     """  Kill jobs specified in the jobIDs list
@@ -344,7 +370,7 @@ class JobManagerHandler( RequestHandler ):
 
     return self.__kill_delete_jobs( jobIDs, RIGHT_KILL )
 
-###########################################################################
+  ###########################################################################
   types_resetJob = [  ]
   def export_resetJob( self, jobIDs ):
     """  Reset jobs specified in the jobIDs list
