@@ -147,7 +147,7 @@ class Logger( object ):
   def shown( self, levelName ):
     levelName = levelName.upper()
     if levelName in self._logLevels.getLevels():
-      return self._logLevels.getLevelValue( levelName ) <= levelName
+      return self._minLevel <= abs(self._logLevels.getLevelValue( levelName ))
     return False
 
   def getName( self ):
