@@ -29,5 +29,4 @@ in your pull-request and commit messages with `#[issue-id]`.
 
 ## Git workflow
 
-For an explanation of the git(hub) workflow please see
-[here](https://github.com/andresailer/tutorial#working-updating-pushing). The DIRAC Development Model is in detail describe in the [documentation](https://dirac.readthedocs.io/en/latest/DeveloperGuide/DevelopmentModel/index.html).
+ The DIRAC Development Model is described in the [documentation](https://dirac.readthedocs.io/en/latest/DeveloperGuide/DevelopmentModel/index.html) with detailed instructions on the git workflow listed [here](https://dirac.readthedocs.io/en/latest/DeveloperGuide/DevelopmentModel/ContributingCode/index.html). For additional help on the git(hub) workflow please see this [tutorial](https://github.com/andresailer/tutorial#working-updating-pushing).
