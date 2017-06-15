@@ -186,6 +186,7 @@ class LocalConfiguration( object ):
 
   def __initLogger( self, componentName, logSection ):
     gLogger.initialize( componentName, logSection )
+    
     if self.__debugMode == 1:
       gLogger.setLevel( "VERBOSE" )
     elif self.__debugMode == 2:

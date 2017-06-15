@@ -72,6 +72,7 @@ But we can increase it simply doing, for example:
    Out[8]: True
 
 In DIRAC, you should not use print. Use the gLogger instead.
+You will find more details on gLogger in the :ref:`gLogger_gLogger` documentation.
 
 
 Let's continue, and we have a look at the **return codes**:
