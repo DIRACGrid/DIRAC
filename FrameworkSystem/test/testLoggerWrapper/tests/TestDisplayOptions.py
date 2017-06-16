@@ -11,6 +11,7 @@ from DIRAC import gLogger
 from DIRAC.FrameworkSystem.private.logging.Logger import Logger
 from DIRAC.FrameworkSystem.test.testLoggerWrapper.tests.TestLoggerWrapper import TestLoggerWrapper, cleaningLog, oldgLogger
 
+
 class TestDisplayOptions(TestLoggerWrapper):
   """
   Test the creation of subloggers and their properties

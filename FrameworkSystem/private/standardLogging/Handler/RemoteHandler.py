@@ -27,6 +27,7 @@ class RemoteHandler(logging.Handler, threading.Thread):
     """
     Initialization of the RemoteBackend.
     The queue is initialized with the hostname and the start of the thread.
+
     :params sleepTime: integer, representing time in seconds where the handler can send messages.
     :params interactive: not used at the moment.
     :params site: the site where the log messages come from.
@@ -49,6 +50,7 @@ class RemoteHandler(logging.Handler, threading.Thread):
   def emit(self, record):
     """
     Add the record to the queue.
+
     :params record: log record object
     """
     self.__logQueue.put(record)
@@ -84,6 +86,7 @@ class RemoteHandler(logging.Handler, threading.Thread):
   def __sendLogToServer(self, logBundle=None):
     """
     Send log to the SystemLogging service.
+
     :params logBundle: list of logs ready to be send to the service
     """
     from DIRAC.Core.DISET.RPCClient import RPCClient

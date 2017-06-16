@@ -20,6 +20,7 @@ class BaseFormatter(logging.Formatter):
   def __init__(self, fmt, datefmt, options):
     """
     Initialize the formatter with new arguments.
+
     :params fmt: string representing the format: "%(asctime)s UTC %(name)s %(levelname)s: %(message)"
     :params datefmt: string representing the date format: "%Y-%m-%d %H:%M:%S"
     :params options: dictionary of logging DIRAC options

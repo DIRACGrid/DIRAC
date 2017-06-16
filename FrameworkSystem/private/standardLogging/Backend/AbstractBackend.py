@@ -32,11 +32,11 @@ class AbstractBackend(object):
   def __init__(self, handler, formatter):
     """
     Initialization of the backend.
-    :params _handler: handler object from 'logging'. Ex: StreamHandler(), FileHandler()... 
-    :params _formatter: the name of a formatter object from logging. Ex: BaseFormatter 
-
     _handler and _formatter can be custom objects. If it is the case, you can find them 
-    in FrameworkSystem/private/standardLogging/Formatter or Handler. 
+    in FrameworkSystem/private/standardLogging/Formatter or Handler.
+
+    :params _handler: handler object from 'logging'. Ex: StreamHandler(), FileHandler()... 
+    :params _formatter: the name of a formatter object from logging. Ex: BaseFormatter  
     """
     self._handler = handler
     self._formatter = formatter
@@ -44,6 +44,7 @@ class AbstractBackend(object):
   def createHandler(self, parameters=None):
     """
     Each backend can initialize its attributes and create its handler with them.
+
     :params parameters: dictionary of parameters. ex: {'FileName': file.log}
     """
     raise NotImplementedError("setParameter not implemented")
@@ -57,6 +58,7 @@ class AbstractBackend(object):
   def setFormat(self, fmt, datefmt, options):
     """
     Each backend give a format to their formatters and attach them to their handlers.
+
     :params fmt: string representing the log format
     :params datefmt: string representing the date format
     :params component: string represented as "system/component"
@@ -67,6 +69,7 @@ class AbstractBackend(object):
   def setLevel(self, level):
     """
     Configure the level of the handler associated to the backend.
+
     :params level: integer representing a level
     """
     self._handler.setLevel(level)
@@ -75,6 +78,7 @@ class AbstractBackend(object):
   def createFormat(options):
     """
     Create a format from the options given in parameters. 
+
     :params options: dictionary of options of the Logging which wants a new format
     :params level: integer representing the level of the Logging object which wants a new format
     :return: tuple containing two strings: a format and a date format

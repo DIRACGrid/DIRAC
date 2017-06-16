@@ -223,10 +223,6 @@ class TestLevels(TestLoggerWrapper):
     self.assertEqual(sublogger.getLevel(), "NOTICE")
 
 
-
-
-
-
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestLevels)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

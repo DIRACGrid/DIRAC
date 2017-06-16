@@ -45,7 +45,6 @@ class ColoredBaseFormatter(BaseFormatter):
     Overriding. 
     format is the main method of the Formatter object because it is the method which transforms 
     a log record into a string with colors. 
-
     According to the level, the method get colors from LEVEL_MAP to add them to the message.
 
     :params record: the log record containing all the information about the log message: name, level, threadid...
