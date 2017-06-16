@@ -37,6 +37,7 @@ class LoggingRoot(Logging):
     """
     if LoggingRoot.__instance is None:
       LoggingRoot.__instance = object.__new__(cls)
+      cls.__instance.__initialized = False
     return LoggingRoot.__instance
 
   def __init__(self):
@@ -49,36 +50,39 @@ class LoggingRoot(Logging):
     - register a default backend: stdout : all messages will be displayed here
     - update the format according to the command line argument 
     """
-    super(LoggingRoot, self).__init__()
-    # initialize the root logger
-    self._logger = logging.getLogger('')
+    if not self.__initialized:
+      self.__initialized = True
 
-    # here we redefine the custom name to the empty string to remove the "\" in the display
-    self.customName = ""
+      super(LoggingRoot, self).__init__()
+      # initialize the root logger
+      self._logger = logging.getLogger('')
 
-    # this level is not the Logging level, it is only used to send all log messages to the central logging system
-    # to do such an operation, we need to let pass all log messages to the root logger, so all logger needs to be
-    # at debug. Then, all the backends have a level associated to a Logging level, which can be changed with the
-    # setLevel method of Logging, and these backends will choose to send the log messages or not.
-    self._logger.setLevel(LogLevels.DEBUG)
+      # here we redefine the custom name to the empty string to remove the "\" in the display
+      self.customName = ""
 
-    # initialization of the UTC time
-    # Actually, time.gmtime is equal to UTC time because it has its DST flag to 0
-    # which means there is no clock advance
-    logging.Formatter.converter = time.gmtime
+      # this level is not the Logging level, it is only used to send all log messages to the central logging system
+      # to do such an operation, we need to let pass all log messages to the root logger, so all logger needs to be
+      # at debug. Then, all the backends have a level associated to a Logging level, which can be changed with the
+      # setLevel method of Logging, and these backends will choose to send the log messages or not.
+      self._logger.setLevel(LogLevels.DEBUG)
 
-    # initialization of levels
-    levels = LogLevels.getLevels()
-    for level in levels:
-      logging.addLevelName(levels[level], level)
+      # initialization of the UTC time
+      # Actually, time.gmtime is equal to UTC time because it has its DST flag to 0
+      # which means there is no clock advance
+      logging.Formatter.converter = time.gmtime
 
-    # initialization of the default backend
-    self._setLevel(LogLevels.NOTICE)
-    self.registerBackends(['stdout'])
+      # initialization of levels
+      levels = LogLevels.getLevels()
+      for level in levels:
+        logging.addLevelName(levels[level], level)
 
-    # configuration of the level and update of the format
-    self.__configureLevel()
-    self._generateBackendFormat()
+      # initialization of the default backend
+      self._setLevel(LogLevels.NOTICE)
+      self.registerBackends(['stdout'])
+
+      # configuration of the level and update of the format
+      self.__configureLevel()
+      self._generateBackendFormat()
 
   def initialize(self, systemName, cfgPath):
     """

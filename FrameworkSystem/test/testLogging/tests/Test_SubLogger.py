@@ -6,11 +6,10 @@ __RCSID__ = "$Id$"
 
 import unittest
 
-from DIRAC import gLogger
-from DIRAC.FrameworkSystem.test.testLoggerWrapper.tests.TestLoggerWrapper import TestLoggerWrapper
+from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import Test_Logging, gLogger
 
 
-class TestSubLogger(TestLoggerWrapper):
+class Test_SubLogger(Test_Logging):
   """
   Test the creation of subloggers and their properties
   """
@@ -53,5 +52,5 @@ class TestSubLogger(TestLoggerWrapper):
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestSubLogger)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_SubLogger)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

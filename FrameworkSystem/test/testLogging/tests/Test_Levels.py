@@ -7,11 +7,10 @@ __RCSID__ = "$Id$"
 
 import unittest
 
-from DIRAC import gLogger
-from DIRAC.FrameworkSystem.test.testLoggerWrapper.tests.TestLoggerWrapper import TestLoggerWrapper, oldgLogger
+from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import Test_Logging, gLogger, oldgLogger
 
 
-class TestLevels(TestLoggerWrapper):
+class Test_Levels(Test_Logging):
   """
   Test get and set levels.
   """
@@ -224,5 +223,5 @@ class TestLevels(TestLoggerWrapper):
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestLevels)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_Levels)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

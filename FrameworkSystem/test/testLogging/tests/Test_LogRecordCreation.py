@@ -7,18 +7,18 @@ __RCSID__ = "$Id$"
 
 import unittest
 
-from DIRAC import gLogger
-from DIRAC.FrameworkSystem.test.testLoggerWrapper.tests.TestLoggerWrapper import TestLoggerWrapper, cleaningLog, oldgLogger
+from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import Test_Logging, cleaningLog
+from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import gLogger, oldgLogger
 
 
-class TestLogRecordCreation(TestLoggerWrapper):
+class Test_LogRecordCreation(Test_Logging):
   """
   Test the creation of the different log records 
   via the always, notice, ..., fatal methods.
   """
 
   def setUp(self):
-    super(TestLogRecordCreation, self).setUp()
+    super(Test_LogRecordCreation, self).setUp()
     self.log.setLevel('debug')
 
   def test_00always(self):
@@ -341,5 +341,5 @@ class TestLogRecordCreation(TestLoggerWrapper):
     self.oldbuffer.truncate(0)
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestLogRecordCreation)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_LogRecordCreation)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
