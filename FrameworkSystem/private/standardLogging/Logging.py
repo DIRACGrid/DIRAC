@@ -49,6 +49,12 @@ class Logging(object):
   def __init__(self, father=None, fatherName='', name='', customName=''):
     """
     Initialization of the Logging object.
+    By default, 'fatherName' and 'name' are empty, because getChild accepts only string and the first empty
+    string corresponds to the root logger.
+    Example:
+    logging.getLogger('') == logging.getLogger('root') == root logger
+    logging.getLogger('root').getChild('log') == root.log == log child of root
+
     :params father: Logging, father of this new Logging.
     :params fatherName: string representing the name of the father logger in the chain.
     :params name: string representing the name of the logger in the chain.
@@ -56,12 +62,6 @@ class Logging(object):
 			- "root" does not appear at the beginning of the chain
 			- hierarchy "." are replaced by "\"
 			useful for the display of the Logging name
-    By default, 'fatherName' and 'name' are empty, because getChild accepts only string and the first empty
-    string corresponds to the root logger.
-
-    Example:
-    logging.getLogger('') == logging.getLogger('root') == root logger
-    logging.getLogger('root').getChild('log') == root.log == log child of root
     """
 
     # Logging chain
@@ -97,6 +97,7 @@ class Logging(object):
   def showHeaders(self, yesno=True):
     """
     Depending on the value, display or not the prefix of the message.
+
     :params yesno: boolean determining the behaviour of the display
     """
     self._setOption('headerIsShown', yesno)
@@ -104,6 +105,7 @@ class Logging(object):
   def showThreadIDs(self, yesno=True):
     """
     Depending on the value, display or not the thread ID.
+
     :params yesno: boolean determining the behaviour of the display
     """
     self._setOption('threadIDIsShown', yesno)
@@ -112,7 +114,8 @@ class Logging(object):
     """
     Depending on the value, modify the value of the option.
     Propagate the option to the children.
-    The options of the children will be updated if they were not modified before by a developer
+    The options of the children will be updated if they were not modified before by a developer.
+
     :params optionName: string representing the name of the option to modify
     :params value: boolean to give to the option
     :params directCall: boolean indicating if it is a call by the user or not
@@ -127,7 +130,7 @@ class Logging(object):
     self._options[optionName] = value
     self._optionsModified[optionName] = True
 
-    #propagate in the children
+    # propagate in the children
     for child in self._children.itervalues():
       child._setOption(optionName, value, directCall=False)
     # update the format to apply the option change
@@ -136,6 +139,7 @@ class Logging(object):
   def registerBackends(self, desiredBackends, backendOptions=None):
     """
     Attach a list of backends to the Logging object.
+
     :params desiredBackends: a list of different names attaching to differents backends.
 			     these names must be the same as in the _BACKENDSDICT
 			     list of the possible values: ['stdout', 'stderr', 'file', 'server']
@@ -163,7 +167,9 @@ class Logging(object):
   def setLevel(self, levelName):
     """
     Check if the level name exists and get the integer value before setting it.
+
     :params levelName: string representing the level to give to the logger
+
     :return: boolean representing if the setting is done or not
     """
     result = False
@@ -177,6 +183,7 @@ class Logging(object):
     Set a level to the backends attached to this Logging.
     Set the level of the Logging too.
     Propagate the level to its children.
+
     :params level: integer representing the level to give to the logger
     :params directCall: boolean indicating if it is a call by the user or not
     """
@@ -207,7 +214,9 @@ class Logging(object):
   def shown(self, levelName):
     """
     Determine if messages with a certain level will be displayed or not.
+
     :params levelName: string representing the level to analyse
+
     :return: boolean which give the answer
     """
     result = False
@@ -291,7 +300,7 @@ class Logging(object):
 
   def fatal(self, sMsg, sVarMsg=''):
     """
-    Critical level
+    Fatal level
     """
     return self._createLogRecord(LogLevels.FATAL, sMsg, sVarMsg)
 
@@ -301,6 +310,7 @@ class Logging(object):
     Backends have their own levels and can manage the display of the message or not according to the level.
     Nevertheless, backends and the logger have the same level value,
     so we can test if the message will be displayed or not.
+
     :params level: positive integer representing the level of the log record
     :params sMsg: string representing the message
     :params sVarMsg: string representing an optional message
@@ -324,6 +334,7 @@ class Logging(object):
   def showStack(self):
     """
     Display a debug message without any content.
+
     :return: boolean, True if the message is sent, else False
     """
     return self.debug('')
@@ -341,6 +352,7 @@ class Logging(object):
   def getSubLogger(self, subName, child=True):
     """
     Create a new Logging object, child of this Logging, if it does not exists.
+
     :params subName: the name of the child Logging
     """
     #  Check if the object has a child with "subName".

@@ -15,6 +15,7 @@ from DIRAC.FrameworkSystem.private.logging.Logger import Logger
 
 oldgLogger = Logger()
 
+
 def cleaningLog(log):
   """
   Remove date and space from the log string
