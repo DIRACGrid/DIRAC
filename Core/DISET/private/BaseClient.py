@@ -43,6 +43,7 @@ class BaseClient(object):
 
   def __init__( self, serviceName, **kwargs ):
     """
+      :param serviceName: URL of the service (proper uri or just System/Component)
       :param useCertificates: If set to True, use the server certificate
       :param extraCredentials:
       :param timeout: Timeout of the call (default 600 s)
@@ -375,7 +376,7 @@ class BaseClient(object):
 
   def __checkThreadID( self ):
     """
-      CAUTION: just guessing....
+      ..warning:: just guessing....
       This seems to check that we are not creating a client and then using it
       in a multithreaded environment.
       However, it is triggered only if self.__enableThreadCheck is to True, but it is
@@ -475,6 +476,7 @@ and this is thread %s
 
   def _disconnect( self, trid ):
     """ Disconnect the connection.
+
         :param trid: Transport ID in the transportPool
     """
     getGlobalTransportPool().close( trid )

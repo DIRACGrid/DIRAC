@@ -66,3 +66,69 @@ Here is a rough overview of what is happening when you are calling a method from
    #   function and forwards it to the InnerRPCClient
    # Calling <class 'DIRAC.Core.DISET.private.InnerRPCClient.InnerRPCClient'>.executeRPC('ping', ()): the RPC call is finally
    #   executed
+
+   ThreadConfig
+   ============
+
+   This special class is to be used in case you want to execute an operation on behalf of somebody else. Typically the WebApp uses it. This object is a singleton, but all its attributes are thread local. The host/identity wanting to use that requires the TrustedHost property.
+
+   Let's take an example
+
+   .. code-block:: python
+
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      rpc = RPCClient('System/Component')
+
+      rpc.ping()
+
+   In the previous code, the code will be executed as whatever is set in the environment: host certificate or proxy.
+
+   .. code-block:: python
+
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
+
+      thConfig = ThreadConfig()
+      thConfig.setDN('/Whatever/User')
+
+      rpc = RPCClient('System/Component')
+      rpc.ping()
+
+   In that case, the call will still be performed using whatever is set in the environment, however the remote service will act as if the request was done by ``/Whatever/user`` (providing that the TrustedHost property is granted).
+   And because of the ``threading.local`` inheritance, we can have separate users actions like bellow.
+
+   .. code-block:: python
+
+     import threading
+     from DIRAC.Core.DISET.RPCClient import RPCClient
+     from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
+
+     thConfig = ThreadConfig()
+
+     class myThread (threading.Thread):
+
+       def __init__(self, name):
+          super(myThread, self).__init__()
+          self.name = name
+
+       def run(self):
+          thConfig.setDN(self.name)
+          rpc = RPCClient('DataManagement/FileCatalog')
+          rpc.ping()
+
+
+     threads = []
+
+     thread1 = myThread("/Whatever/user1")
+     thread2 = myThread("/Whatever/user2")
+
+     thread1.start()
+     thread2.start()
+
+     # Add threads to thread list
+     threads.append(thread1)
+     threads.append(thread2)
+
+     # Wait for all threads to complete
+     for t in threads:
+        t.join()
