@@ -52,17 +52,16 @@ class RPCClient( object ):
       or creates a MagicMethod object otherwise. If the attribute is a function, MagicMethod will
       trigger the RPC call, using the InnerRPCClient.
 
-      The typical workflow looks like this:
+      The typical workflow looks like this::
 
+	rpc = RPCClient('DataManagement/FileCatalog')
 
-      rpc = RPCClient('DataManagement/FileCatalog')
+	# Here, func is the ping function, which we call remotely.
+	# We go through RPCClient.__getattr__ which returns us a MagicMethod object
+	func = rpc.ping
 
-      # Here, func is the ping function, which we call remotely.
-      # We go through RPCClient.__getattr__ which returns us a MagicMethod object
-      func = rpc.ping
-
-      # Here we call the method __call__ of the MagicMethod
-      func()
+	# Here we call the method __call__ of the MagicMethod
+	func()
 
   """
 
