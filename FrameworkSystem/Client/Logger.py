@@ -7,7 +7,7 @@ from DIRAC.FrameworkSystem.private.standardLogging.LoggingRoot import LoggingRoo
 gLogger = Logger()
 
 # To update the logging system, you have to uncomment this line:
-#gLogger = LoggingRoot()
+# gLogger = LoggingRoot()
 
 
 def getLogger():

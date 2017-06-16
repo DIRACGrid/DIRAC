@@ -7,18 +7,17 @@ __RCSID__ = "$Id$"
 import unittest
 import thread
 
-from DIRAC import gLogger
-from DIRAC.FrameworkSystem.private.logging.Logger import Logger
-from DIRAC.FrameworkSystem.test.testLoggerWrapper.tests.TestLoggerWrapper import TestLoggerWrapper, cleaningLog, oldgLogger
+from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import Test_Logging, cleaningLog
+from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import gLogger, oldgLogger
 
 
-class TestDisplayOptions(TestLoggerWrapper):
+class Test_DisplayOptions(Test_Logging):
   """
   Test the creation of subloggers and their properties
   """
 
   def setUp(self):
-    super(TestDisplayOptions, self).setUp()
+    super(Test_DisplayOptions, self).setUp()
     self.filename = '/tmp/logtmp.log'
     with open(self.filename, "w"):
       pass
@@ -280,5 +279,5 @@ class TestDisplayOptions(TestLoggerWrapper):
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestDisplayOptions)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_DisplayOptions)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

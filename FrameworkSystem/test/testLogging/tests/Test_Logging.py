@@ -10,10 +10,12 @@ import logging
 import sys
 from StringIO import StringIO
 
-from DIRAC import gLogger
 from DIRAC.FrameworkSystem.private.logging.Logger import Logger
+from DIRAC.FrameworkSystem.private.standardLogging.LoggingRoot import LoggingRoot
+
 
 oldgLogger = Logger()
+gLogger = LoggingRoot()
 
 
 def cleaningLog(log):
@@ -25,7 +27,7 @@ def cleaningLog(log):
   return log
 
 
-class TestLoggerWrapper(unittest.TestCase):
+class Test_Logging(unittest.TestCase):
   """
   Test get and set levels.
   """
@@ -52,19 +54,21 @@ class TestLoggerWrapper(unittest.TestCase):
     # modify the output to capture the log into a buffer
     if logging.getLogger().handlers:
       logging.getLogger().handlers[0].stream = self.buffer
+
+    # reset the levels
     logging.getLogger('root.log').setLevel(logging.NOTSET)
     self.log._levelModified = False
 
 
 if __name__ == '__main__':
-  from DIRAC.FrameworkSystem.test.testLoggerWrapper.tests.TestDisplayOptions import TestDisplayOptions
-  from DIRAC.FrameworkSystem.test.testLoggerWrapper.tests.TestLevels import TestLevels
-  from DIRAC.FrameworkSystem.test.testLoggerWrapper.tests.TestLogRecordCreation import TestLogRecordCreation
-  from DIRAC.FrameworkSystem.test.testLoggerWrapper.tests.TestSubLogger import TestSubLogger
+  from DIRAC.FrameworkSystem.test.testLogging.tests.Test_DisplayOptions import Test_DisplayOptions
+  from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Levels import Test_Levels
+  from DIRAC.FrameworkSystem.test.testLogging.tests.Test_LogRecordCreation import Test_LogRecordCreation
+  from DIRAC.FrameworkSystem.test.testLogging.tests.Test_SubLogger import Test_SubLogger
 
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestLoggerWrapper)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestDisplayOptions))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestLevels))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestLogRecordCreation))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestSubLogger))
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_Logging)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_DisplayOptions))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_Levels))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_LogRecordCreation))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_SubLogger))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
