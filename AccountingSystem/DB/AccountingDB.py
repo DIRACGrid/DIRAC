@@ -995,27 +995,30 @@ class AccountingDB( DB ):
     """
     Execute a query over a main table
     """
+    
     tableName = _getTableName( tableType, typeName )
     cmd = "SELECT"
     sqlLinkList = []
     #Check if groupFields and orderFields are in ( "%s", ( field1, ) ) form
-    if groupFields:
-      # We can have the case when we have multiple grouping and the fields in the select does not much the group by conditions
-      # for example: selectFields = ('%s, %s, %s, SUM(%s)', ['Site', 'startTime', 'bucketLength', 'entriesInBucket'])
-      #             groupFields = ('%s, %s', ['startTime', 'Site']) 
-      #             in this case the correct query must be: select Site, startTime, bucketlength, sum(entriesInBucket) from xxxx where yyy Group by Site, startTime, bucketlength
-      #
-      # When we have multiple grouping then we must have all the fields in Group by. This is from mysql 5.7.
-      if selectFields[0].count( '%s,' ) != len( groupFields[1] ): 
-        # We have fields which are not in the groupFields
-        diff = list( set( selectFields[1][:selectFields[0].count( '%s,' )] ) - set( groupFields[1] ) )
-        groupFields = list( groupFields )
-        missingfields = ", ".join( repeat( "%s", len( diff ) ) )  # this will contain all elements which are not in the group by
-        groupFields[0] = "%s, %s" % ( groupFields[0], missingfields )
-        groupFields[1].extend( diff )
-        groupFields = tuple( groupFields )
+    if groupFields:     
       try:
         groupFields[0] % tuple( groupFields[1] )
+        # We can have the case when we have multiple grouping and the fields in the select does not much the group by conditions
+        # for example: selectFields = ('%s, %s, %s, SUM(%s)', ['Site', 'startTime', 'bucketLength', 'entriesInBucket'])
+        #             groupFields = ('%s, %s', ['startTime', 'Site']) 
+        #             in this case the correct query must be: select Site, startTime, bucketlength, sum(entriesInBucket) from xxxx where yyy Group by Site, startTime, bucketlength
+        #
+        # When we have multiple grouping then we must have all the fields in Group by. This is from mysql 5.7.
+        # We have fields which are not in the groupFields
+        
+        diff = list( set( selectFields[1] ) - set( groupFields[1] ) )
+        if diff:  # add the missing fields to the group by if there is any
+          groupFields = list( groupFields )
+          missingfields = ", ".join( repeat( "%s", len( diff ) ) )  # this will contain all elements which are not in the group by
+          groupFields[0] = "%s, %s" % ( groupFields[0], missingfields )
+          groupFields[1].extend( diff )
+          groupFields = tuple( groupFields )
+        
       except Exception as e:
         return S_ERROR( "Cannot format properly group string: %s" % str( e ) )
     if orderFields:
