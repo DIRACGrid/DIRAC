@@ -1019,13 +1019,13 @@ class AccountingDB( DB ):
 	  groupFields[1].extend( diff )
 	  groupFields = tuple( groupFields )
 
-      except Exception as e:
-	return S_ERROR( "Cannot format properly group string: %s" % str( e ) )
+      except TypeError as e:
+	return S_ERROR( "Cannot format properly group string: %s" % repr( e ) )
     if orderFields:
       try:
-        orderFields[0] % tuple( orderFields[1] )
-      except Exception as e:
-        return S_ERROR( "Cannot format properly order string: %s" % str( e ) )
+	orderFields[0] % tuple( orderFields[1] )
+      except TypeError as e:
+	return S_ERROR( "Cannot format properly order string: %s" % repr( e ) )
     #Calculate fields to retrieve
     realFieldList = []
     for rawFieldName in selectFields[1]:
@@ -1039,8 +1039,8 @@ class AccountingDB( DB ):
         realFieldList.append( "`%s`.`%s`" % ( tableName, rawFieldName ) )
     try:
       cmd += " %s" % selectFields[0] % tuple( realFieldList )
-    except Exception as e:
-      return S_ERROR( "Error generating select fields string: %s" % str( e ) )
+    except TypeError as e:
+      return S_ERROR( "Error generating select fields string: %s" % repr( e ) )
     #Calculate tables needed
     sqlFromList = [ "`%s`" % tableName ]
     for key in self.dbCatalog[ typeName ][ 'keys' ]:
