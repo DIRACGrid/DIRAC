@@ -7,17 +7,17 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.FrameworkSystem.private.standardLogging.Backend.AbstractBackend import AbstractBackend
 from DIRAC.FrameworkSystem.private.standardLogging.Formatter.BaseFormatter import BaseFormatter
-from DIRAC.FrameworkSystem.private.standardLogging.Handler.RemoteHandler import RemoteHandler
+from DIRAC.FrameworkSystem.private.standardLogging.Handler.ServerHandler import ServerHandler
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 
 
-class RemoteBackend(AbstractBackend):
+class ServerBackend(AbstractBackend):
   """
-  RemoteBackend is used to create an abstraction of the handler and the formatter concepts from logging. 
-  Here, we gather a RemoteHandler object and a BaseFormatter. 
+  ServerBackend is used to create an abstraction of the handler and the formatter concepts from logging. 
+  Here, we gather a ServerHandler object and a BaseFormatter. 
 
-  - RemoteHandler is a custom handler object, created for DIRAC because it has no equivalent: 
-    it is used to write log messages in a remote DIRAC service: SystemLogging from FrameworkSystem.
+  - ServerHandler is a custom handler object, created for DIRAC because it has no equivalent: 
+    it is used to write log messages in a server DIRAC service: SystemLogging from FrameworkSystem.
     You can find it in FrameworkSystem/private/standardLogging/Handler
 
   - BaseFormatter is a custom Formatter object, created for DIRAC in order to get the appropriate display.
@@ -30,7 +30,7 @@ class RemoteBackend(AbstractBackend):
     :params __interactive: not used at the moment.
     :params __sleepTime: the time separating the log messages sending, in seconds.
     """
-    super(RemoteBackend, self).__init__(None, BaseFormatter)
+    super(ServerBackend, self).__init__(None, BaseFormatter)
     self.__site = None
     self.__interactive = True
     self.__sleepTime = 150
@@ -46,12 +46,12 @@ class RemoteBackend(AbstractBackend):
       self.__sleepTime = parameters.get('SleepTime', self.__sleepTime)
     self.__site = DIRAC.siteName()
 
-    self._handler = RemoteHandler(self.__sleepTime, self.__interactive, self.__site)
+    self._handler = ServerHandler(self.__sleepTime, self.__interactive, self.__site)
     self._handler.setLevel(LogLevels.getLevelValue('ERROR'))
 
   def setLevel(self, level):
     """
-    No possibility to set the level of the remote backend because it is hardcoded to ERROR
+    No possibility to set the level of the server backend because it is hardcoded to ERROR
     and must not be changed
     """
     pass

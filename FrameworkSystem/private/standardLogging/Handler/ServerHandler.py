@@ -11,9 +11,9 @@ import threading
 from DIRAC.Core.Utilities import Network
 
 
-class RemoteHandler(logging.Handler, threading.Thread):
+class ServerHandler(logging.Handler, threading.Thread):
   """
-  RemoteHandler is a custom handler from logging.
+  ServerHandler is a custom handler from logging.
   It has no equivalent in the standard logging library because it is highly linked to DIRAC.
 
   It is useful to send log messages to a destination, like the StreamHandler to a stream, the FileHandler to a file.
@@ -25,7 +25,7 @@ class RemoteHandler(logging.Handler, threading.Thread):
 
   def __init__(self, sleepTime, interactive, site):
     """
-    Initialization of the RemoteBackend.
+    Initialization of the ServerHandler.
     The queue is initialized with the hostname and the start of the thread.
 
     :params sleepTime: integer, representing time in seconds where the handler can send messages.

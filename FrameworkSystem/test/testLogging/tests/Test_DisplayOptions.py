@@ -156,6 +156,7 @@ class Test_DisplayOptions(Test_Logging):
     sublog.setLevel('notice')
     sublog.showHeaders(False)
     sublog.registerBackends(['file'], {'FileName': self.filename})
+    self.buffer.truncate(0)
 
     sublog.notice("message")
     with open(self.filename) as file:
@@ -172,6 +173,7 @@ class Test_DisplayOptions(Test_Logging):
     sublog = gLogger.getSubLogger('sublog2')
     sublog.setLevel('notice')
     sublog.registerBackends(['file'], {'FileName': self.filename})
+    self.buffer.truncate(0)
     gLogger.showHeaders(False)
 
     sublog.notice("message")
@@ -190,6 +192,7 @@ class Test_DisplayOptions(Test_Logging):
     sublog.setLevel('notice')
     sublog.showHeaders(False)
     sublog.registerBackends(['file'], {'FileName': self.filename})
+    self.buffer.truncate(0)
     gLogger.showHeaders(True)
 
     sublog.notice("message")
@@ -208,6 +211,7 @@ class Test_DisplayOptions(Test_Logging):
     sublog = gLogger.getSubLogger('sublog4')
     sublog.setLevel('notice')
     sublog.registerBackends(['file'], {'FileName': self.filename})
+    self.buffer.truncate(0)
     gLogger.showHeaders(True)
     sublog.showHeaders(False)
 
@@ -226,8 +230,10 @@ class Test_DisplayOptions(Test_Logging):
     sublog = gLogger.getSubLogger('sublog5')
     sublog.setLevel('notice')
     sublog.registerBackends(['file'], {'FileName': self.filename})
+    self.buffer.truncate(0)
     subsublog = sublog.getSubLogger('subsublog')
     subsublog.registerBackends(['file'], {'FileName': self.filename})
+    self.buffer.truncate(0)
     gLogger.showHeaders(False)
 
     subsublog.notice("message")
@@ -244,8 +250,10 @@ class Test_DisplayOptions(Test_Logging):
     sublog = gLogger.getSubLogger('sublog6')
     sublog.setLevel('notice')
     sublog.registerBackends(['file'], {'FileName': self.filename})
+    self.buffer.truncate(0)
     subsublog = sublog.getSubLogger('subsublog')
     subsublog.registerBackends(['file'], {'FileName': self.filename})
+    self.buffer.truncate(0)
     sublog.showHeaders(False)
 
     subsublog.notice("message")
@@ -264,8 +272,10 @@ class Test_DisplayOptions(Test_Logging):
     sublog = gLogger.getSubLogger('sublog6')
     sublog.setLevel('notice')
     sublog.registerBackends(['file'], {'FileName': self.filename})
+    self.buffer.truncate(0)
     subsublog = sublog.getSubLogger('subsublog')
     subsublog.registerBackends(['file'], {'FileName': self.filename})
+    self.buffer.truncate(0)
     sublog.showHeaders(False)
     subsublog.showHeaders(True)
 
