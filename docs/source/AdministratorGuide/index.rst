@@ -9,6 +9,7 @@ Administrator Guide
    GettingStarted/index
    InstallingDIRACService/index
    InstallingWebAppDIRAC/index
+   InstallingVMDIRAC/index
    SystemAdministratorInterface/index
    Configuration/index
    Systems/index
