@@ -56,7 +56,14 @@ objects are located in this package which currently contains:
 
 -  ’file’: FileBackend
 
--  ’server’: RemoteBackend
+-  ’server’: ServerBackend
+
+In order to create custom *Backend* objects, we just
+have to make a new class named *[Backendname]Backend* in
+this package inheriting from *AbstractBackend*.
+For instance, the class name of the *stdout Backend* is *StdoutBackend*.
+
+Then, to use it, we just have to add its name in the *cfg* file as usual.
 
 *Handler* package
 ~~~~~~~~~~~~~~~~~
@@ -65,11 +72,14 @@ The *Handler* package contains all the custom *Handler* objects created
 for a *DIRAC* use. All these *Handlers* must inherit from the standard
 *logging.Handler*. The package currently contains:
 
--  RemoteHandler: used to send log records to the *SystemLogging DIRAC*
+-  ServerHandler: used to send log records to the *SystemLogging DIRAC*
    service
 
-Formatter
-~~~~~~~~~
+In order to create custom *Handler* objects, we just have to write a new class
+in this package inheriting from one of the *Handler* of the *logging* library.
+
+*Formatter* package
+~~~~~~~~~~~~~~~~~~~
 
 The *Formatter* package contains all the custom *Formatter* objects
 create for *DIRAC* use. All these *Formatter* must inherit from the
@@ -78,6 +88,9 @@ standard *logging.Formatter*. The package currently contains:
 -  BaseFormatter: used only to add some attributes in the constructor
 
 -  ColorBaseFormatter: used to color the log records
+
+In order to create custom *Formatter* objects, we just have to create a new class
+in this package inheriting from *BaseFormatter*.
 
 *gLogger* use
 -------------
