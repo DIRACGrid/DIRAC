@@ -10,6 +10,8 @@ import sys
 
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
+from DIRAC.FrameworkSystem.private.standardLogging.Backend.StdoutBackend import StdoutBackend
+from DIRAC.Core.Utilities import DIRACSingleton
 
 
 class LoggingRoot(Logging):
@@ -24,21 +26,10 @@ class LoggingRoot(Logging):
   LoggingRoot has to be unique, because we want one and only one parent on the top of the chain: that is why
   we created a singleton to keep it unique.
   """
+  __metaclass__ = DIRACSingleton.DIRACSingleton
 
   # Boolean preventing that the LoggingRoot be configured more than one time
   __configuredLogging = False
-
-  # The unique instance of Logging Root, initialized at None at the beginning, then will take the LoggingRoot as value.
-  __instance = None
-
-  def __new__(cls):
-    """
-    Initialization of the singleton to keep LoggingRoot unique.
-    """
-    if LoggingRoot.__instance is None:
-      LoggingRoot.__instance = object.__new__(cls)
-      cls.__instance.__initialized = False
-    return LoggingRoot.__instance
 
   def __init__(self):
     """
@@ -50,39 +41,37 @@ class LoggingRoot(Logging):
     - register a default backend: stdout : all messages will be displayed here
     - update the format according to the command line argument
     """
-    if not self.__initialized:
-      self.__initialized = True
+    super(LoggingRoot, self).__init__()
+    # initialize the root logger
+    self._logger = logging.getLogger('')
 
-      super(LoggingRoot, self).__init__()
-      # initialize the root logger
-      self._logger = logging.getLogger('')
+    # here we redefine the custom name to the empty string to remove the "\" in the display
+    self.customName = ""
 
-      # here we redefine the custom name to the empty string to remove the "\" in the display
-      self.customName = ""
+    # this level is not the Logging level, it is only used to send all log messages to the central logging system
+    # to do such an operation, we need to let pass all log messages to the root logger, so all logger needs to be
+    # at debug. Then, all the backends have a level associated to a Logging level, which can be changed with the
+    # setLevel method of Logging, and these backends will choose to send the log messages or not.
+    self._logger.setLevel(LogLevels.DEBUG)
 
-      # this level is not the Logging level, it is only used to send all log messages to the central logging system
-      # to do such an operation, we need to let pass all log messages to the root logger, so all logger needs to be
-      # at debug. Then, all the backends have a level associated to a Logging level, which can be changed with the
-      # setLevel method of Logging, and these backends will choose to send the log messages or not.
-      self._logger.setLevel(LogLevels.DEBUG)
+    # initialization of the UTC time
+    # Actually, time.gmtime is equal to UTC time because it has its DST flag to 0
+    # which means there is no clock advance
+    logging.Formatter.converter = time.gmtime
 
-      # initialization of the UTC time
-      # Actually, time.gmtime is equal to UTC time because it has its DST flag to 0
-      # which means there is no clock advance
-      logging.Formatter.converter = time.gmtime
+    # initialization of levels
+    levels = LogLevels.getLevels()
+    for level in levels:
+      logging.addLevelName(levels[level], level)
 
-      # initialization of levels
-      levels = LogLevels.getLevels()
-      for level in levels:
-	logging.addLevelName(levels[level], level)
+    # initialization of the default backend
+    self._setLevel(LogLevels.NOTICE)
+    # use the StdoutBackend directly to avoid dependancy loop with ObjectLoader
+    self._addBackend(StdoutBackend())
 
-      # initialization of the default backend
-      self._setLevel(LogLevels.NOTICE)
-      self.registerBackends(['stdout'])
-
-      # configuration of the level and update of the format
-      self.__configureLevel()
-      self._generateBackendFormat()
+    # configuration of the level and update of the format
+    self.__configureLevel()
+    self._generateBackendFormat()
 
   def initialize(self, systemName, cfgPath):
     """
@@ -103,10 +92,13 @@ class LoggingRoot(Logging):
       backends = (None, None)
       Logging._componentName = systemName
 
-      # Remove all the backends from the root Logging as in the old gLogger.
+      # Prepare to remove all the backends from the root Logging as in the old gLogger.
+      # store them in a list handlersToRemove.
+      # we will remove them later, because some components as ObjectLoader need a backend.
       # this can be useful to have logs only in a file for instance.
+      handlersToRemove = []
       for backend in self._backendsList:
-	self._logger.removeHandler(backend.getHandler())
+	handlersToRemove.append(backend.getHandler())
       del self._backendsList[:]
 
       # Backend options
@@ -123,6 +115,10 @@ class LoggingRoot(Logging):
 
       desiredBackends, backendOptions = backends
       self.registerBackends(desiredBackends, backendOptions)
+
+      # Remove the old backends
+      for handler in handlersToRemove:
+	self._logger.removeHandler(handler)
 
       levelName = gConfig.getValue("%s/LogLevel" % cfgPath, None)
       if levelName is not None:
