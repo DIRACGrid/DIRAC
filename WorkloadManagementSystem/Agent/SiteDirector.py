@@ -96,14 +96,20 @@ class SiteDirector( AgentModule ):
     self.updateStatus = True
     self.getOutput = False
     self.sendAccounting = True
-    self.rssClient = ResourceStatus()
-    self.rssFlag = self.rssClient.rssFlag
 
-    self.siteClient = SiteStatus()
+    self.siteClient = None
+    self.rssClient = None
+    self.rssFlag = None
 
   def initialize( self ):
     """ Standard constructor
     """
+    # Clients
+    self.siteClient = SiteStatus()
+    self.rssClient = ResourceStatus()
+    self.rssFlag = self.rssClient.rssFlag
+
+    # set of CS options
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
     return S_OK()
