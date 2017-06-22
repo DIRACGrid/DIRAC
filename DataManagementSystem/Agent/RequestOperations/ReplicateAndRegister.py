@@ -406,7 +406,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
           opFile.Status = "Done"
         else:
           toSchedule[opFile.LFN] = [ opFile, validTargets ]
-    
+
       else:
         gMonitor.addMark( "FTSScheduleFail" )
         if noMetaReplicas:
