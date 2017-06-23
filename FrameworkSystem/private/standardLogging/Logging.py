@@ -6,6 +6,7 @@ __RCSID__ = "$Id$"
 
 import logging
 import os
+import threading
 
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.standardLogging.Backend.AbstractBackend import AbstractBackend
@@ -34,6 +35,8 @@ class Logging(object):
   # its default value is "Framework" but it can be configured in initialize() in LoggingRoot
   # it can be composed by the system name and the component name. For instance: "Monitoring/Atom"
   _componentName = "Framework"
+  # lock the configuration of the Logging
+  _lockConfig = threading.RLock()
 
   def __init__(self, father=None, fatherName='', name='', customName=''):
     """
@@ -46,8 +49,8 @@ class Logging(object):
 
     :params father: Logging, father of this new Logging.
     :params fatherName: string representing the name of the father logger in the chain.
-    :params name: string representing the name of the logger in the chain. 
-    :params customName: string representing the name of the logger in the chain: 
+    :params name: string representing the name of the logger in the chain.
+    :params customName: string representing the name of the logger in the chain:
                         - "root" does not appear at the beginning of the chain
                         - hierarchy "." are replaced by "\"
                         useful for the display of the Logging name
@@ -81,7 +84,18 @@ class Logging(object):
     self.name = name
 
     # update the custom name of the Logging adding the new Logging name in the entire path
-    self.customName = os.path.join("/", customName, name)
+    self._customName = os.path.join("/", customName, name)
+
+    # Locks to make Logging thread-safe
+    # we use RLock to prevent blocking in the Logging
+    # lockInit to protect the initialization of a sublogger
+    self._lockInit = threading.RLock()
+    # lockOptions to protect the option modifications
+    self._lockOptions = threading.RLock()
+    # lockLevel to protect the level
+    self._lockLevel = threading.RLock()
+    # lockObjectLoader to protect the ObjectLoader singleton
+    self._lockObjectLoader = threading.RLock()
 
   def showHeaders(self, yesno=True):
     """
@@ -109,21 +123,23 @@ class Logging(object):
     :params value: boolean to give to the option  
     :params directCall: boolean indicating if it is a call by the user or not
     """
-    if self._optionsModified[optionName] and not directCall:
-      return
+    # lock to prevent that two threads change the options at the same time
+    with self._lockOptions:
+      if self._optionsModified[optionName] and not directCall:
+        return
 
-    if directCall:
+      if directCall:
+        self._optionsModified[optionName] = True
+
+      # update option
+      self._options[optionName] = value
       self._optionsModified[optionName] = True
 
-    # update option
-    self._options[optionName] = value
-    self._optionsModified[optionName] = True
-
-    # propagate in the children
-    for child in self._children.itervalues():
-      child._setOption(optionName, value, directCall=False)
-    # update the format to apply the option change
-    self._generateBackendFormat()
+      # propagate in the children
+      for child in self._children.itervalues():
+        child._setOption(optionName, value, directCall=False)
+      # update the format to apply the option change
+      self._generateBackendFormat()
 
   def registerBackends(self, desiredBackends, backendOptions=None):
     """
@@ -133,7 +149,7 @@ class Logging(object):
     :params desiredBackends: a list of different names attaching to differents backends.
                              these names must be the same as in the _BACKENDSDICT
                              list of the possible values: ['stdout', 'stderr', 'file', 'server']
-    :params backendOptions: a dictionary of different backend options. 
+    :params backendOptions: a dictionary of different backend options.
                             example: {'FileName': '/tmp/log.txt'}
     """
     # import ObjectLoader here to avoid a dependancy loop
@@ -143,9 +159,11 @@ class Logging(object):
     for backendName in desiredBackends:
       backendName = backendName.strip().lower()
 
-      # load the Backend class
-      _class = objLoader.loadObject(
-          'DIRAC.FrameworkSystem.private.standardLogging.Backend.%sBackend' % backendName.capitalize())
+      # lock to avoid problem in ObjectLoader which is a singleton not thread-safe
+      with self._lockObjectLoader:
+        # load the Backend class
+        _class = objLoader.loadObject(
+            'DIRAC.FrameworkSystem.private.standardLogging.Backend.%sBackend' % backendName.capitalize())
 
       if _class['OK']:
         # add the backend instance to the Logging
@@ -159,16 +177,19 @@ class Logging(object):
     """
     Attach a Backend object to the Logging object.
 
-    :params backend: Backend object that has to be added 
-    :params backendOptions: a dictionary of different backend options. 
+    :params backend: Backend object that has to be added
+    :params backendOptions: a dictionary of different backend options.
                             example: {'FileName': '/tmp/log.txt'}
     """
     backend.createHandler(backendOptions)
 
-    # update the level of the new backend to respect the Logging level
-    backend.setLevel(self._level)
-    self._logger.addHandler(backend.getHandler())
-    self._backendsList.append(backend)
+    # lock to prevent that the level change before adding the new backend in the backendsList
+    # and to prevent a change of the backendsList during the reading of the list
+    with self._lockLevel, self._lockOptions:
+      # update the level of the new backend to respect the Logging level
+      backend.setLevel(self._level)
+      self._logger.addHandler(backend.getHandler())
+      self._backendsList.append(backend)
 
   def setLevel(self, levelName):
     """
@@ -193,29 +214,36 @@ class Logging(object):
     :params level: integer representing the level to give to the logger
     :params directCall: boolean indicating if it is a call by the user or not
     """
-    # if the level logging level was previously modified by the developer
-    # and it is not a direct call from him, then we return in order to stop the propagation
-    if self._levelModified and not directCall:
-      return
+    # lock to prevent that two threads change the level at the same time
+    with self._lockLevel:
+      # if the level logging level was previously modified by the developer
+      # and it is not a direct call from him, then we return in order to stop the propagation
+      if self._levelModified and not directCall:
+        return
 
-    if directCall:
-      self._levelModified = True
+      if directCall:
+        self._levelModified = True
 
-    # update Logging level
-    self._level = level
-    # update backend levels
-    for backend in self._backendsList:
-      backend.setLevel(self._level)
+      # update Logging level
+      self._level = level
+      # lock to prevent a modification of the backendsList
+      with self._lockOptions:
+        # update backend levels
+        for backend in self._backendsList:
+          backend.setLevel(self._level)
 
-    # propagate in the children
-    for child in self._children.itervalues():
-      child._setLevel(level, directCall=False)
+      # propagate in the children
+      for child in self._children.itervalues():
+        child._setLevel(level, directCall=False)
 
   def getLevel(self):
     """
     :return: the name of the level
     """
-    return LogLevels.getLevel(self._level)
+    # lock to save the level which can be modified
+    with self._lockLevel:
+      level = LogLevels.getLevel(self._level)
+    return level
 
   def shown(self, levelName):
     """
@@ -225,9 +253,11 @@ class Logging(object):
 
     :return: boolean which give the answer
     """
-    result = False
-    if levelName.upper() in LogLevels.getLevelNames():
-      result = self._level <= LogLevels.getLevelValue(levelName)
+    # lock to prevent a level change
+    with self._lockLevel:
+      result = False
+      if levelName.upper() in LogLevels.getLevelNames():
+        result = self._level <= LogLevels.getLevelValue(levelName)
     return result
 
   @classmethod
@@ -235,7 +265,10 @@ class Logging(object):
     """
     :return: "system name/component name"
     """
-    return cls._componentName
+    # lock to save the componentName which can be modified
+    with cls._lockConfig:
+      name = cls._componentName
+    return name
 
   def getSubName(self):
     """
@@ -247,7 +280,11 @@ class Logging(object):
     """
     :return: the dictionary of the display options and their values. Must not be redefined
     """
-    return self._options
+    # lock to save the options which can be modified
+    with self._lockOptions:
+      # copy the dictionary to avoid that every Logging has the same
+      options = self._options.copy()
+    return options
 
   @staticmethod
   def getAllPossibleLevels():
@@ -324,18 +361,22 @@ class Logging(object):
 
     :return: boolean representing the result of the log record creation
     """
-    # exc_info is only for exception to add the stack trace
-    # extra is a way to add extra attributes to the log record:
-    # - 'componentname': the system/component name
-    # - 'varmessage': the variable message
-    # - 'customname' : the name of the logger for the DIRAC usage: without 'root' and separated with '/'
-    # extras attributes are not camel case because log record attributes are not either.
-    extra = {'componentname': self._componentName,
-             'varmessage': sVarMsg,
-             'customname': self.customName}
-    self._logger.log(level, "%s", sMsg, exc_info=exc_info, extra=extra)
-    # test to know if the message is displayed or not
-    return self._level <= level
+
+    # lock to prevent a level change after that the log is sent.
+    with self._lockLevel:
+      # exc_info is only for exception to add the stack trace
+      # extra is a way to add extra attributes to the log record:
+      # - 'componentname': the system/component name
+      # - 'varmessage': the variable message
+      # - 'customname' : the name of the logger for the DIRAC usage: without 'root' and separated with '/'
+      # extras attributes are not camel case because log record attributes are not either.
+      extra = {'componentname': self._componentName,
+               'varmessage': sVarMsg,
+               'customname': self._customName}
+      self._logger.log(level, "%s", sMsg, exc_info=exc_info, extra=extra)
+      # test to know if the message is displayed or not
+      isSent = self._level <= level
+    return isSent
 
   def showStack(self):
     """
@@ -349,11 +390,14 @@ class Logging(object):
     """
     Generate the Backends format according to the options
     """
-    # give options and level to AbstractBackend to receive the new format for the backends list
-    datefmt, fmt = AbstractBackend.createFormat(self._options)
+    # lock to prevent the modification of the options during this code block
+    # and to prevent a modification of the backendsList
+    with self._lockOptions:
+      # give options and level to AbstractBackend to receive the new format for the backends list
+      datefmt, fmt = AbstractBackend.createFormat(self._options)
 
-    for backend in self._backendsList:
-      backend.setFormat(fmt, datefmt, self._options)
+      for backend in self._backendsList:
+        backend.setFormat(fmt, datefmt, self._options)
 
   def getSubLogger(self, subName, child=True):
     """
@@ -361,13 +405,16 @@ class Logging(object):
 
     :params subName: the name of the child Logging
     """
-    #  Check if the object has a child with "subName".
-    result = self._children.get(subName)
-    if result is not None:
-      return result
-    # create a new child Logging
-    childLogging = Logging(self, self._logger.name, subName, self.customName)
-    self._children[subName] = childLogging
+    # lock to prevent that the method initializes two Logging for the same 'logging' logger
+    # and to erase the existing _children[subName]
+    with self._lockInit:
+      # Check if the object has a child with "subName".
+      result = self._children.get(subName)
+      if result is not None:
+        return result
+      # create a new child Logging
+      childLogging = Logging(self, self._logger.name, subName, self._customName)
+      self._children[subName] = childLogging
     return childLogging
 
   def initialized(self):
