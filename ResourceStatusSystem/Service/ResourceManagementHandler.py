@@ -132,7 +132,7 @@ class ResourceManagementHandler( RequestHandler ):
 
     return res
 
-  types_select = [ basestring, dict ]
+  types_select = [ [basestring, dict], dict ]
   def export_select( self, table, params ):
     '''
     This method is a bridge to access :class:`ResourceManagementDB` remotely.
@@ -149,6 +149,9 @@ class ResourceManagementHandler( RequestHandler ):
 
     :return: S_OK() || S_ERROR()
     '''
+    if isinstance(table, dict):
+      #need to "swap"
+      
 
     #gLogger.info( 'select: %s %s' % ( params, meta ) )
 
