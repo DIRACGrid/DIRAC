@@ -103,7 +103,6 @@ class ResourceStatusHandler( RequestHandler ):
 
   types_insert = [ basestring, basestring, basestring, basestring, basestring, basestring,
                    basestring, datetime.datetime, datetime.datetime, basestring, datetime.datetime]
-
   def export_insert( self, element, tableType, name, statusType, status,
                      elementType, reason, dateEffective, lastCheckTime,
                      tokenOwner, tokenExpiration ):
