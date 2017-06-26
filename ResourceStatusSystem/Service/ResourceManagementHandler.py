@@ -7,9 +7,22 @@
 from DIRAC                                              import gConfig, S_OK, gLogger
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
 from DIRAC.ResourceStatusSystem.Utilities               import Synchronizer, Utils
-ResourceManagementDB = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceManagementDB' ),'ResourceManagementDB')
+ResourceManagementDB = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceManagementDB' ),
+			       'ResourceManagementDB')
 
 __RCSID__ = '$Id: $'
+
+def convert(table, params):
+  """ Conversion utility for backward compatibility
+  """
+  gLogger.debug("Calls from old client")
+  #need to swap!
+  tableFromOldCall = params['table']
+  params = table
+  table = tableFromOldCall
+
+  return params, table
+
 
 def initializeResourceManagementHandler( _serviceInfo ):
   '''
@@ -99,11 +112,7 @@ class ResourceManagementHandler( RequestHandler ):
     '''
 
     if isinstance(table, dict): #for backward compatibility: conversion is needed
-      gLogger.debug("Calls from old client")
-      #need to swap!
-      tableFromOldCall = params['table']
-      params = table
-      table = tableFromOldCall
+      params, table = convert(table, params)
 
     gLogger.info( 'insert: %s %s' % ( table, params ) )
 
@@ -136,11 +145,7 @@ class ResourceManagementHandler( RequestHandler ):
     '''
 
     if isinstance(table, dict): #for backward compatibility: conversion is needed
-      gLogger.debug("Calls from old client")
-      #need to swap!
-      tableFromOldCall = params['table']
-      params = table
-      table = tableFromOldCall
+      params, table = convert(table, params)
 
     gLogger.info( 'update: %s %s' % ( table, params ) )
 
@@ -169,11 +174,7 @@ class ResourceManagementHandler( RequestHandler ):
     :return: S_OK() || S_ERROR()
     '''
     if isinstance(table, dict): #for backward compatibility: conversion is needed
-      gLogger.debug("Calls from old client")
-      #need to swap!
-      tableFromOldCall = params['table']
-      params = table
-      table = tableFromOldCall
+      params, table = convert(table, params)
 
     gLogger.info( 'select: %s %s' % ( table, params ) )
 
@@ -203,11 +204,7 @@ class ResourceManagementHandler( RequestHandler ):
     '''
 
     if isinstance(table, dict): #for backward compatibility: conversion is needed
-      gLogger.debug("Calls from old client")
-      #need to swap!
-      tableFromOldCall = params['table']
-      params = table
-      table = tableFromOldCall
+      params, table = convert(table, params)
 
     gLogger.info( 'delete: %s %s' % ( table, params ) )
 
@@ -236,11 +233,7 @@ class ResourceManagementHandler( RequestHandler ):
     '''
 
     if isinstance(table, dict): #for backward compatibility: conversion is needed
-      gLogger.debug("Calls from old client")
-      #need to swap!
-      tableFromOldCall = params['table']
-      params = table
-      table = tableFromOldCall
+      params, table = convert(table, params)
 
     gLogger.info( 'addOrModify: %s %s' % ( table, params ) )
 
@@ -269,11 +262,7 @@ class ResourceManagementHandler( RequestHandler ):
     '''
 
     if isinstance(table, dict): #for backward compatibility: conversion is needed
-      gLogger.debug("Calls from old client")
-      #need to swap!
-      tableFromOldCall = params['table']
-      params = table
-      table = tableFromOldCall
+      params, table = convert(table, params)
 
     gLogger.info( 'addIfNotThere: %s %s' % ( table, params ) )
 
