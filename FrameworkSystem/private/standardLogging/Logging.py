@@ -90,7 +90,7 @@ class Logging(object):
     # we use RLock to prevent blocking in the Logging
     # lockInit to protect the initialization of a sublogger
     self._lockInit = threading.RLock()
-    # lockOptions to protect the option modifications
+    # lockOptions to protect the option modifications and the backendsList
     self._lockOptions = threading.RLock()
     # lockLevel to protect the level
     self._lockLevel = threading.RLock()
@@ -133,7 +133,6 @@ class Logging(object):
 
       # update option
       self._options[optionName] = value
-      self._optionsModified[optionName] = True
 
       # propagate in the children
       for child in self._children.itervalues():
@@ -240,10 +239,7 @@ class Logging(object):
     """
     :return: the name of the level
     """
-    # lock to save the level which can be modified
-    with self._lockLevel:
-      level = LogLevels.getLevel(self._level)
-    return level
+    return LogLevels.getLevel(self._level)
 
   def shown(self, levelName):
     """
@@ -265,10 +261,7 @@ class Logging(object):
     """
     :return: "system name/component name"
     """
-    # lock to save the componentName which can be modified
-    with cls._lockConfig:
-      name = cls._componentName
-    return name
+    return cls._componentName
 
   def getSubName(self):
     """

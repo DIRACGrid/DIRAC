@@ -249,7 +249,7 @@ class Test_DisplayOptions(Test_Logging):
     self.assertEqual(message, "message \nmessage \n")
     self.assertEqual(self.buffer.getvalue(), "message \n")
 
-  def test_07subLogShowHeadersChangeSetSubLogger(self):
+  def test_08subLogShowHeadersChangeSetSubLogger(self):
     """
     Create a subsublogger and show that its Header option follow the change of its parent Header option.
     """
@@ -272,12 +272,12 @@ class Test_DisplayOptions(Test_Logging):
     logstring1 = cleaningLog(self.buffer.getvalue())
     self.assertEqual(logstring1, "UTCFramework/sublog6/subsublogNOTICE:message\n")
 
-  def test_07subLogShowHeadersChangeSetSubLogger(self):
+  def test_09subLogShowHeadersChangeSetSubLogger(self):
     """
     Create a subsublogger and set its Header option and show that 
     its Header option do not follow the change of its parent Header option.
     """
-    sublog = gLogger.getSubLogger('sublog6')
+    sublog = gLogger.getSubLogger('sublog7')
     sublog.setLevel('notice')
     sublog.registerBackends(['file'], {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
@@ -293,9 +293,36 @@ class Test_DisplayOptions(Test_Logging):
     with open(self.filename) as file:
       message = file.read()
 
-    self.assertIn("UTC Framework/sublog6/subsublog NOTICE: message \nmessage \n", message)
+    self.assertIn("UTC Framework/sublog7/subsublog NOTICE: message \nmessage \n", message)
     logstring1 = cleaningLog(self.buffer.getvalue())
-    self.assertEqual(logstring1, "UTCFramework/sublog6/subsublogNOTICE:message\n")
+    self.assertEqual(logstring1, "UTCFramework/sublog7/subsublogNOTICE:message\n")
+
+  def test_10gLoggerShowHeadersChange2Times(self):
+    """
+    Create a sublogger with a file backend and change the Header option of gLogger 2 times
+    in order to verify the propagation.
+    """
+    sublog = gLogger.getSubLogger('sublog8')
+    sublog.registerBackends(['file'], {'FileName': self.filename})
+    # Empty the buffer to remove the Object Loader log message "trying to load..."
+    self.buffer.truncate(0)
+    gLogger.showHeaders(False)
+    sublog.notice("message")
+    
+    with open(self.filename) as file:
+      message = file.read()
+
+    self.assertEqual("message \n", message)
+
+    gLogger.showHeaders(True)
+    sublog.notice("message")
+    
+    with open(self.filename) as file:
+      message = file.read()
+    self.assertIn("UTC Framework/sublog8 NOTICE: message \n", message)
+
+
+  
 
 
 if __name__ == '__main__':
