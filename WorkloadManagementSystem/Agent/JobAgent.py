@@ -295,8 +295,8 @@ class JobAgent( AgentModule ):
 
       if 'BOINC_JOB_ID' in os.environ:
         # Report BOINC environment
-        for p in ( 'BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName' ):
-          jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )
+        for thisp in ( 'BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName' ):
+          jobReport.setJobParameter( thisp, gConfig.getValue( '/LocalSite/%s' % thisp, 'Unknown' ), sendFlag = False )
 
       jobReport.setJobStatus( 'Matched', 'Job Received by Agent' )
       result = self.__setupProxy( ownerDN, jobGroup )

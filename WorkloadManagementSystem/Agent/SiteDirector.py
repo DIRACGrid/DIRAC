@@ -836,7 +836,7 @@ class SiteDirector( AgentModule ):
     else:
       extensionsList = CSGlobals.getCSExtensions()
     if extensionsList:
-      pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
+      pilotOptions.append( '-e %s' % ",".join( [ext for ext in extensionsList if 'Web' not in ext] ) )
 
     # Requested CPU time
     pilotOptions.append( '-T %s' % queueDict['CPUTime'] )

@@ -348,6 +348,7 @@ class PilotParams( object ):
     self.workingDir = os.getcwd()
 
     self.optList = {}
+    self.keepPythonPath = False
     self.debugFlag = False
     self.local = False
     self.commandExtensions = []
@@ -402,6 +403,7 @@ class PilotParams( object ):
                      ( 'g:', 'grid=', 'lcg tools package version' ),
                      ( 'h', 'help', 'Show this help' ),
                      ( 'i:', 'python=', 'Use python<26|27> interpreter' ),
+                     ( 'k', 'keepPP', 'Do not clear PYTHONPATH on start' ),
                      ( 'l:', 'project=', 'Project to install' ),
                      ( 'p:', 'platform=', 'Use <platform> instead of local one' ),
                      ( 'u:', 'url=', 'Use <url> to download tarballs' ),
@@ -456,6 +458,8 @@ class PilotParams( object ):
         self.queueName = v
       elif o == '-R' or o == '--reference':
         self.pilotReference = v
+      elif o == '-k' or o == '--keepPP':
+        self.keepPythonPath = True
       elif o == '-d' or o == '--debug':
         self.debugFlag = True
       elif o in ( '-S', '--setup' ):
