@@ -71,6 +71,12 @@ CHANGE: Dirac API - added runLocal as an API method
 *Docs
 NEW: Documentation for developing with a container (includes Dockerfile)
 
+
+[v6r17p23]
+
+*WMS
+FIX: get job output for remote sheduler in the case of HTCondorCE
+
 [v6r17p22]
 
 *Framework
