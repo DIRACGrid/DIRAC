@@ -93,11 +93,7 @@ class MPSuccess( UserJobTestCase ):
 
     j.setName( "MP-test" )
     j.setExecutable( self.mpExe )
-<<<<<<< HEAD
-    j.setInputSandbox( find_all( 'mpTest.py', '..', 'Utilities' )[0] )
-=======
     j.setInputSandbox( find_all( 'mpTest.py', '..', 'DIRAC/tests/Utilities' )[0] )
->>>>>>> rel-v6r17
     j.setTag( 'MultiProcessor' )
     res = j.runLocal( self.d )
     if multiprocessing.cpu_count() > 1:
