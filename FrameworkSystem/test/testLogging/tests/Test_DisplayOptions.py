@@ -4,6 +4,8 @@ Test Display Options
 
 __RCSID__ = "$Id$"
 
+#pylint: disable=invalid-name
+
 import unittest
 import thread
 
@@ -160,8 +162,8 @@ class Test_DisplayOptions(Test_Logging):
     self.buffer.truncate(0)
 
     sublog.notice("message")
-    with open(self.filename) as file:
-      message = file.read()
+    with open(self.filename) as logfile:
+      message = logfile.read()
 
     self.assertEqual(message, "message \n")
     logstring1 = cleaningLog(self.buffer.getvalue())
@@ -179,15 +181,15 @@ class Test_DisplayOptions(Test_Logging):
     gLogger.showHeaders(False)
 
     sublog.notice("message")
-    with open(self.filename) as file:
-      message = file.read()
+    with open(self.filename) as logfile:
+      message = logfile.read()
 
     self.assertEqual(message, "message \n")
     self.assertEqual(self.buffer.getvalue(), "message \n")
 
   def test_05setSubLoggLoggerShowHeaders(self):
     """
-    Create a sublogger, set its Header option and the Header option of the gLogger. 
+    Create a sublogger, set its Header option and the Header option of the gLogger.
     Show that its Header option do not follow the change of its parent Header option.
     """
     sublog = gLogger.getSubLogger('sublog3')
@@ -199,8 +201,8 @@ class Test_DisplayOptions(Test_Logging):
     gLogger.showHeaders(True)
 
     sublog.notice("message")
-    with open(self.filename) as file:
-      message = file.read()
+    with open(self.filename) as logfile:
+      message = logfile.read()
 
     self.assertEqual(message, "message \n")
     logstring1 = cleaningLog(self.buffer.getvalue())
@@ -208,7 +210,7 @@ class Test_DisplayOptions(Test_Logging):
 
   def test_06setSubLoggLoggerShowHeadersInverse(self):
     """
-    Create a sublogger, set the Header option of the gLogger and its Header option. 
+    Create a sublogger, set the Header option of the gLogger and its Header option.
     Show that the gLogger Header option do not follow the change of its child Header option.
     """
     sublog = gLogger.getSubLogger('sublog4')
@@ -220,8 +222,8 @@ class Test_DisplayOptions(Test_Logging):
     sublog.showHeaders(False)
 
     sublog.notice("message")
-    with open(self.filename) as file:
-      message = file.read()
+    with open(self.filename) as logfile:
+      message = logfile.read()
 
     self.assertEqual(message, "message \n")
     logstring1 = cleaningLog(self.buffer.getvalue())
@@ -243,38 +245,15 @@ class Test_DisplayOptions(Test_Logging):
     gLogger.showHeaders(False)
 
     subsublog.notice("message")
-    with open(self.filename) as file:
-      message = file.read()
+    with open(self.filename) as logfile:
+      message = logfile.read()
 
     self.assertEqual(message, "message \nmessage \n")
     self.assertEqual(self.buffer.getvalue(), "message \n")
 
   def test_07subLogShowHeadersChangeSetSubLogger(self):
     """
-    Create a subsublogger and show that its Header option follow the change of its parent Header option.
-    """
-    sublog = gLogger.getSubLogger('sublog6')
-    sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
-    # Empty the buffer to remove the Object Loader log message "trying to load..."
-    self.buffer.truncate(0)
-    subsublog = sublog.getSubLogger('subsublog')
-    subsublog.registerBackends(['file'], {'FileName': self.filename})
-    # Empty the buffer to remove the Object Loader log message "trying to load..."
-    self.buffer.truncate(0)
-    sublog.showHeaders(False)
-
-    subsublog.notice("message")
-    with open(self.filename) as file:
-      message = file.read()
-
-    self.assertEqual(message, "message \nmessage \n")
-    logstring1 = cleaningLog(self.buffer.getvalue())
-    self.assertEqual(logstring1, "UTCFramework/sublog6/subsublogNOTICE:message\n")
-
-  def test_07subLogShowHeadersChangeSetSubLogger(self):
-    """
-    Create a subsublogger and set its Header option and show that 
+    Create a subsublogger and set its Header option and show that
     its Header option do not follow the change of its parent Header option.
     """
     sublog = gLogger.getSubLogger('sublog6')
@@ -290,8 +269,8 @@ class Test_DisplayOptions(Test_Logging):
     subsublog.showHeaders(True)
 
     subsublog.notice("message")
-    with open(self.filename) as file:
-      message = file.read()
+    with open(self.filename) as logfile:
+      message = logfile.read()
 
     self.assertIn("UTC Framework/sublog6/subsublog NOTICE: message \nmessage \n", message)
     logstring1 = cleaningLog(self.buffer.getvalue())

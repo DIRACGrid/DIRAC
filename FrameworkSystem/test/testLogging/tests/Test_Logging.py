@@ -4,6 +4,7 @@ Test Logger Wrapper
 
 __RCSID__ = "$Id$"
 
+#pylint: disable=invalid-name
 
 import unittest
 import logging

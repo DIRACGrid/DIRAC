@@ -4,6 +4,7 @@ Test LogRecord Creation
 
 __RCSID__ = "$Id$"
 
+#pylint: disable=invalid-name
 
 import unittest
 
@@ -13,7 +14,7 @@ from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import gLogger, o
 
 class Test_LogRecordCreation(Test_Logging):
   """
-  Test the creation of the different log records 
+  Test the creation of the different log records
   via the always, notice, ..., fatal methods.
   """
 

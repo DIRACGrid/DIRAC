@@ -4,6 +4,7 @@ Test Levels
 
 __RCSID__ = "$Id$"
 
+#pylint: disable=invalid-name
 
 import unittest
 
