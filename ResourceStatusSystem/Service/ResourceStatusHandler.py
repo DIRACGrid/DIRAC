@@ -146,7 +146,7 @@ class ResourceStatusHandler( RequestHandler ):
       #element is the old "params" in this case
       element, tableType, name, statusType, status, \
       elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, meta = convert(element, tableType)
+      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
 
 
     gLogger.info( 'insert: %s %s %s %s %s %s %s %s %s %s %s' %
@@ -207,7 +207,7 @@ class ResourceStatusHandler( RequestHandler ):
       #element is the old "params" in this case
       element, tableType, name, statusType, status, \
       elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, meta = convert(element, tableType)
+      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
 
 
     gLogger.info( 'update: %s %s %s %s %s %s %s %s %s %s %s %s' %
@@ -274,7 +274,7 @@ class ResourceStatusHandler( RequestHandler ):
       #element is the old "params" in this case
       element, tableType, name, statusType, status, \
       elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, meta = convert(element, tableType)
+      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
 
 
     gLogger.info( 'select: %s %s %s %s %s %s %s %s %s %s %s' %
@@ -399,7 +399,7 @@ class ResourceStatusHandler( RequestHandler ):
       #element is the old "params" in this case
       element, tableType, name, statusType, status, \
       elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, meta = convert(element, tableType)
+      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
 
     gLogger.info( 'addOrModify: %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
@@ -460,7 +460,7 @@ class ResourceStatusHandler( RequestHandler ):
       #element is the old "params" in this case
       element, tableType, name, statusType, status, \
       elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, meta = convert(element, tableType)
+      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
 
     gLogger.info( 'modify: %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
