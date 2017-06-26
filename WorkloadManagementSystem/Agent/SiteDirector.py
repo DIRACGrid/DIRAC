@@ -209,6 +209,9 @@ class SiteDirector( AgentModule ):
     if self.sendAccounting:
       self.log.always( 'Pilot accounting sending requested' )
 
+    self.log.always( 'VO:', self.vo )
+    if self.voGroups:
+      self.log.always( 'Group(s):', self.voGroups )
     self.log.always( 'Sites:', siteNames )
     self.log.always( 'CETypes:', ceTypes )
     self.log.always( 'CEs:', ces )
