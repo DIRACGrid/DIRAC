@@ -105,13 +105,16 @@ function findRelease(){
 
   # If I don't specify a DIRACBRANCH, it will get the latest "production" release
   # First, try to find if we are on a production tag
-  if [ ! -z "$DIRACBRANCH" ]
+  if [ ! "$projectVersion" ]
   then
-    projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
-  else
-    projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
+    if [ ! -z "$DIRACBRANCH" ]
+    then
+      projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+    else
+      projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
+    fi
+    # projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
   fi
-  # projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
 
   # The special case is when there's no 'p'... (e.g. version v6r15)
   if [ ! "$projectVersion" ]
