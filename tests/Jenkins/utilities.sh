@@ -52,11 +52,9 @@ function default(){
 #
 # findRelease:
 #
-#   If the environment variable "PRERELEASE" exists, we use a prerelease
-#   instead of a regular release ( production-like ).
-#   If any parameter is passed, we assume we are on pre-release mode, otherwise,
-#   we assume production. It reads from releases.cfg and picks the latest version
+#   It reads from releases.cfg and picks the latest version
 #   which is written to {dirac,externals}.version
+#   Unless variable $projectVersion is set: in this case, we use the specified DIRAC relese.
 #
 #.............................................................................
 
