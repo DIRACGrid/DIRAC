@@ -765,18 +765,19 @@ class Dirac( API ):
     :param job: a job object
     :type job: ~DIRAC.Interfaces.API.Job.Job
     """
-    self.log.info( 'Executing workflow locally' )
-
+    self.log.notice( 'Executing workflow locally' )
     curDir = os.getcwd()
+    self.log.info( 'Executing from %s' % curDir )
+
     jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
     os.chdir( jobDir )
+    self.log.info( 'Executing job at temp directory %s' % jobDir )
 
-    self.log.info( 'Executing at', jobDir )
     tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
     self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
     jobXMLFile = tmpdir + '/jobDescription.xml'
     with open( jobXMLFile, 'w+' ) as fd:
-      fd.write( job._toXML() )
+      fd.write( job._toXML() ) #pylint: disable=protected-access
 
     shutil.copy( jobXMLFile, '%s/%s' % ( os.getcwd(), os.path.basename( jobXMLFile ) ) )
     self.log.verbose( 'Job XML file description is: %s' % jobXMLFile )
@@ -795,11 +796,8 @@ class Dirac( API ):
       localSEList = gConfig.getValue( '/LocalSite/LocalSE', '' )
       if not localSEList:
         return self._errorReport( 'LocalSite/LocalSE should be defined in your config file' )
-      if re.search( ',', localSEList ):
-        localSEList = localSEList.replace( ' ', '' ).split( ',' )
-      else:
-        localSEList = [localSEList.replace( ' ', '' )]
-      self.log.verbose( localSEList )
+      localSEList = localSEList.replace( ' ', '' ).split( ',' )
+      self.log.debug( "List of local SEs: %s" % localSEList )
       inputDataPolicy = self.__getVOPolicyModule( 'InputDataModule' )
       if not inputDataPolicy:
         return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
@@ -857,9 +855,11 @@ class Dirac( API ):
 
     sandbox = parameters.get( 'InputSandbox' )
     if sandbox:
+      self.log.verbose("Input Sandbox is %s" % sandbox)
       if isinstance( sandbox, basestring ):
-        sandbox = [sandbox]
+        sandbox = [isFile.strip() for isFile in sandbox.split(',')]
       for isFile in sandbox:
+        self.log.debug("Resolving Input Sandbox file %s" % isFile)
         if isFile.lower().startswith( "lfn:" ):  # isFile is an LFN
           isFile = isFile[4:]
         elif not os.path.isabs( isFile ):
@@ -949,20 +949,20 @@ class Dirac( API ):
 
     if sandbox:
       if isinstance( sandbox, basestring ):
-        sandbox = [sandbox]
+        sandbox = [osFile.strip() for osFile in sandbox.split(',')]
       for i in sandbox:
         globList = glob.glob( i )
-        for isFile in globList:
-          if os.path.isabs( isFile ):
+        for osFile in globList:
+          if os.path.isabs( osFile ):
             # if a relative path, it is relative to the user working directory
-            isFile = os.path.basename( isFile )
+            osFile = os.path.basename( osFile )
           # Attempt to copy back from job working directory
-          if os.path.isdir( isFile ):
-            shutil.copytree( isFile, curDir, symlinks = True )
-          elif os.path.exists( isFile ):
-            shutil.copy( isFile, curDir )
+          if os.path.isdir( osFile ):
+            shutil.copytree( osFile, curDir, symlinks = True )
+          elif os.path.exists( osFile ):
+            shutil.copy( osFile, curDir )
           else:
-            return S_ERROR( 'Can not copy OutputSandbox file %s' % isFile )
+            return S_ERROR( 'Can not copy OutputSandbox file %s' % osFile )
 
     self.log.verbose( 'Cleaning up %s...' % tmpdir )
     self.__cleanTmp( tmpdir )
