@@ -1267,6 +1267,7 @@ def installExternals( releaseConfig ):
     #HACK: try to find a more elegant solution for the lcg bundles location
     if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False, cache = True ):
       logERROR( "Check that there is a release for your platform: DIRAC-lcg-%s" % verString )
+      return False
   return True
 
 def createPermanentDirLinks():
