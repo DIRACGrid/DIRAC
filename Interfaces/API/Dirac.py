@@ -899,6 +899,14 @@ class Dirac( API ):
 
     command = '%s %s' % ( executable, arguments )
 
+    # If not set differently in the CS use the root from the current DIRAC installation
+    siteRoot = gConfig.getValue( '/LocalSite/Root', DIRAC.rootPath )
+
+    os.environ['DIRACROOT'] = siteRoot
+    self.log.verbose( 'DIRACROOT = %s' % ( siteRoot ) )
+    os.environ['DIRACPYTHON'] = sys.executable
+    self.log.verbose( 'DIRACPYTHON = %s' % ( sys.executable ) )
+
     self.log.info( 'Executing: %s' % command )
     executionEnv = dict( os.environ )
     variableList = parameters.get( 'ExecutionEnvironment' )
