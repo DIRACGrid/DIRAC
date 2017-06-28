@@ -421,13 +421,25 @@ function installDIRAC(){
 
   cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $CLIENTINSTALLDIR/dirac-install
   chmod +x $CLIENTINSTALLDIR/dirac-install
+
   cd $CLIENTINSTALLDIR
   if [ $? -ne 0 ]
   then
     echo 'ERROR: cannot change to ' $CLIENTINSTALLDIR
     return
   fi
+
+  # actually installing
   ./dirac-install -r $DIRAC_RELEASE -t client $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: DIRAC client installation failed' $CLIENTINSTALLDIR
+    return
+  fi
+
+  sleep 10
+  echo 'Content of etc/dirac.cfg:'
+  more $CLIENTINSTALLDIR/etc/dirac.cfg
 
   source bashrc
 }
