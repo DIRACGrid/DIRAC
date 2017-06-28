@@ -9,7 +9,7 @@
     LocalComputingElement and SSHComputingElement classes
 """
 
-__RCSID__ = "$Id$"
+__RCSID__ = "057eb4c (2017-03-03 00:10:56 +0100) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
 
 import re
 import tempfile
@@ -67,7 +67,7 @@ class Condor( object ):
 
     resultDict = {}
 
-    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'SubmitOptions' ]
+    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'SubmitOptions', 'Mprocess']
 
     for argument in MANDATORY_PARAMETERS:
       if not argument in kwargs:
@@ -81,22 +81,23 @@ class Condor( object ):
     outputDir = kwargs['OutputDir']
     executable = kwargs['Executable']
     submitOptions = kwargs['SubmitOptions']
+    pn=kwargs['Mprocess']
 
     jdlFile = tempfile.NamedTemporaryFile( dir=outputDir, suffix=".jdl" )
     jdlFile.write("""
     Executable = %s
     Universe = vanilla
-    Requirements   = OpSys == "LINUX"
+    Requirements   = Target.OpSys == "LINUX"
     Initialdir = %s
     Output = $(Cluster).$(Process).out
     Error = $(Cluster).$(Process).err
     Log = test.log
     Environment = CONDOR_JOBID=$(Cluster).$(Process)
     Getenv = True
-
+    request_cpus = %s
     Queue %s
 
-    """ % ( executable, outputDir, nJobs )
+    """ % ( executable, outputDir, nJobs, pn )
     )
 
     jdlFile.flush()
