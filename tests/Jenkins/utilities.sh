@@ -410,7 +410,11 @@ function diracInstallCommand(){
   $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t server -d
 }
 
-#This installs the DIRAC client
+
+####################################################
+# This installs the DIRAC client
+# it needs a $DIRAC_RELEASE env var defined
+
 function installDIRAC(){
 
   echo '==> Installing DIRAC client'
@@ -423,7 +427,7 @@ function installDIRAC(){
     echo 'ERROR: cannot change to ' $CLIENTINSTALLDIR
     return
   fi
-  ./dirac-install -r `cat $WORKSPACE/project.version` -t client $DEBUG
+  ./dirac-install -r $DIRAC_RELEASE -t client $DEBUG
 
   source bashrc
 }
