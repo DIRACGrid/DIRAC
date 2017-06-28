@@ -439,7 +439,13 @@ function submitJob(){
 
   echo -e "==> Submitting a simple job"
 
-  #This is is executed from the $CLIENTINSTALLDIR
+  #This has to be executed from the $CLIENTINSTALLDIR
+  cd $CLIENTINSTALLDIR
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $CLIENTINSTALLDIR
+    return
+  fi
 
   export PYTHONPATH=$TESTCODE:$PYTHONPATH
   #Get a proxy and submit the job: this job will go to the certification setup, so we suppose the JobManager there is accepting jobs
@@ -448,15 +454,14 @@ function submitJob(){
   python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup=Dirac-Certification -ddd
   cp $TESTCODE/DIRAC/tests/Jenkins/dirac-test-job.py .
   python dirac-test-job.py -o /DIRAC/Setup=Dirac-Certification $DEBUG
-
-  rm $PILOTINSTALLDIR/$PILOTCFG
 }
 
 function getUserProxy(){
 
   echo '==> Started getUserProxy'
 
-  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py -S $DIRACSETUP $CLIENTINSTALLDIR/etc/dirac.cfg -F $CLIENTINSTALLDIR/etc/dirac.cfg -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  cp $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py .
+  python dirac-cfg-update.py -S $DIRACSETUP $CLIENTINSTALLDIR/etc/dirac.cfg -F $CLIENTINSTALLDIR/etc/dirac.cfg -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
   #Getting a user proxy, so that we can run jobs
   downloadProxy
 
@@ -931,8 +936,9 @@ function prepareForPilot(){
 function downloadProxy(){
   echo '==> [downloadProxy]'
 
-  echo $( eval echo Executing python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG)
-  python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG
+  cp $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py .
+  echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG)
+  python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG
 
   if [ $? -ne 0 ]
   then
