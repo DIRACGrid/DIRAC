@@ -9,7 +9,7 @@
     LocalComputingElement and SSHComputingElement classes
 """
 
-__RCSID__ = "$Id$"
+__RCSID__ = "6f16f84 (2017-02-22 10:31:19 +0100) Federico Stagni <federico.stagni@cern.ch>"
 
 import commands
 import os
@@ -20,11 +20,11 @@ class SLURM( object ):
   def submitJob( self, **kwargs ):
     """ Submit nJobs to the OAR batch system
     """
-
+    
     resultDict = {}
-
+    
     MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir',
-                             'Queue', 'SubmitOptions' ]
+                             'Queue', 'SubmitOptions','Mprocess' ]
 
     for argument in MANDATORY_PARAMETERS:
       if not argument in kwargs:
@@ -41,17 +41,20 @@ class SLURM( object ):
     queue = kwargs['Queue']
     submitOptions = kwargs['SubmitOptions']
     executable = kwargs['Executable']
+    pn=kwargs['Mprocess']
 
     outFile = os.path.join( outputDir , "%jobid%" )
     errFile = os.path.join( errorDir , "%jobid%" )
     outFile = os.path.expandvars( outFile )
     errFile = os.path.expandvars( errFile )
     executable = os.path.expandvars( executable )
-
     jobIDs = []
     for _i in range( nJobs ):
       jid = ''
-      cmd = "sbatch -o %s/%%j.out --partition=%s %s %s" % ( outputDir, queue, submitOptions, executable )
+      if pn != -1:
+	  cmd = "sbatch -o %s/%%j.out --partition=%s -n %s %s %s" % ( outputDir, queue, pn, submitOptions, executable )
+      else: 	      
+          cmd = "sbatch -o %s/%%j.out --partition=%s %s %s" % ( outputDir, queue, submitOptions, executable )
       status, output = commands.getstatusoutput( cmd )
 
       if status != 0 or not output:
