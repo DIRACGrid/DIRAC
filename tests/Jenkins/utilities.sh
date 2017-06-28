@@ -452,6 +452,17 @@ function submitJob(){
   rm $PILOTINSTALLDIR/$PILOTCFG
 }
 
+function getUserProxy(){
+
+  echo '==> Started getUserProxy'
+
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py -S $DIRACSETUP -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  #Getting a user proxy, so that we can run jobs
+  downloadProxy
+
+  echo '==> Done getUserProxy'
+}
+
 
 #.............................................................................
 #
