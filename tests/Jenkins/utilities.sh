@@ -433,11 +433,14 @@ function installDIRAC(){
   ./dirac-install -r $DIRAC_RELEASE -t client $DEBUG
   if [ $? -ne 0 ]
   then
-    echo 'ERROR: DIRAC client installation failed' $CLIENTINSTALLDIR
+    echo 'ERROR: DIRAC client installation failed'
     return
   fi
 
-  sleep 10
+  # now configuring
+  source bashrc
+  dirac-configure -S $DIRACSETUP -C $CSURL --UseServerCertificate -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+
   echo 'Content of etc/dirac.cfg:'
   more $CLIENTINSTALLDIR/etc/dirac.cfg
 
