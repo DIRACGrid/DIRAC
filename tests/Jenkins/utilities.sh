@@ -445,7 +445,7 @@ function submitJob(){
   #Get a proxy and submit the job: this job will go to the certification setup, so we suppose the JobManager there is accepting jobs
   getUserProxy #this won't really download the proxy, so that's why the next command is needed
   cp $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py .
-  python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup=Dirac-Certification -ddd
+  python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE $CLIENTINSTALLDIR/etc/dirac.cfg -F $CLIENTINSTALLDIR/etc/dirac.cfg -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup=Dirac-Certification -ddd
   cp $TESTCODE/DIRAC/tests/Jenkins/dirac-test-job.py .
   python dirac-test-job.py -o /DIRAC/Setup=Dirac-Certification $DEBUG
 
@@ -456,7 +456,7 @@ function getUserProxy(){
 
   echo '==> Started getUserProxy'
 
-  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py -S $DIRACSETUP -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py -S $CLIENTINSTALLDIR/etc/dirac.cfg -F $CLIENTINSTALLDIR/etc/dirac.cfg $DIRACSETUP -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
   #Getting a user proxy, so that we can run jobs
   downloadProxy
 
@@ -931,14 +931,8 @@ function prepareForPilot(){
 function downloadProxy(){
   echo '==> [downloadProxy]'
 
-  if [ $PILOTCFG ]
-  then
-    echo $( eval echo Executing python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
-    python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG
-  else
-    echo $( eval echo Executing python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $DEBUG)
-    python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $DEBUG
-  fi
+  echo $( eval echo Executing python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG)
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG
 
   if [ $? -ne 0 ]
   then
