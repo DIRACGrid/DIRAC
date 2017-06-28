@@ -937,8 +937,15 @@ function downloadProxy(){
   echo '==> [downloadProxy]'
 
   cp $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py .
-  echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG)
-  python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG
+
+  if [ $PILOTCFG ]
+  then
+    echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
+    python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG
+  else
+    echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG)
+    python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG
+  fi
 
   if [ $? -ne 0 ]
   then
