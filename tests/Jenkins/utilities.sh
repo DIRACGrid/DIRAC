@@ -410,6 +410,45 @@ function diracInstallCommand(){
   $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t server -d
 }
 
+#This installs the DIRAC client
+function installDIRAC(){
+
+  echo '==> Installing DIRAC client'
+
+  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $CLIENTINSTALLDIR/dirac-install
+  chmod +x $CLIENTINSTALLDIR/dirac-install
+  cd $CLIENTINSTALLDIR
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $CLIENTINSTALLDIR
+    return
+  fi
+  ./dirac-install -r `cat $WORKSPACE/project.version` -t client $DEBUG
+
+  source bashrc
+}
+
+##############################################################################
+# This function submits a job or more (it assumes a DIRAC client is installed)
+
+function submitJob(){
+
+  echo -e "==> Submitting a simple job"
+
+  #This is is executed from the $CLIENTINSTALLDIR
+
+  export PYTHONPATH=$TESTCODE:$PYTHONPATH
+  #Get a proxy and submit the job: this job will go to the certification setup, so we suppose the JobManager there is accepting jobs
+  getUserProxy #this won't really download the proxy, so that's why the next command is needed
+  cp $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py .
+  python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup=Dirac-Certification -ddd
+  cp $TESTCODE/DIRAC/tests/Jenkins/dirac-test-job.py .
+  python dirac-test-job.py -o /DIRAC/Setup=Dirac-Certification $DEBUG
+
+  rm $PILOTINSTALLDIR/$PILOTCFG
+}
+
+
 #.............................................................................
 #
 # prepareForServer:
