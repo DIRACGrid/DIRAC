@@ -48,7 +48,6 @@ class Params:
   def __init__( self ):
     self.releasesToBuild = []
     self.projectName = 'DIRAC'
-    self.debug = False
     self.externalsBuildType = [ 'client' ]
     self.ignoreExternals = False
     self.forceExternals = False
@@ -66,10 +65,6 @@ class Params:
 
   def setProject( self, optionValue ):
     self.projectName = optionValue
-    return S_OK()
-
-  def setDebug( self ):
-    self.debug = True
     return S_OK()
 
   def setExternalsBuildType( self, optionValue ):
@@ -197,8 +192,6 @@ class DistributionMaker:
       gLogger.info( "Sources will be retrieved from %s (%s)" % ( modSrcTuple[1], logMsgVCS ) )
       #Tar destination
       dctArgs.append( "-D '%s'" % self.cliParams.destination )
-      if cliParams.debug:
-        dctArgs.append( "-dd" )
       #Script location discovery
       scriptName = os.path.join( os.path.dirname( __file__ ), "dirac-create-distribution-tarball" )
       if not os.path.isfile( scriptName ):
