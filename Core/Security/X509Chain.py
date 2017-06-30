@@ -19,6 +19,9 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.X509Certificate import X509Certificate
 
+#from xext import xext
+#print xext("1.2.42.42", "diracGroup", "DIRAC group")
+
 random.seed()
 
 class X509Chain( object ):
@@ -410,6 +413,7 @@ class X509Chain( object ):
 
 
   def __checkProxyness( self ):
+    # XXX to describe
     self.__hash = False
     self.__firstProxyStep = len( self.__certList ) - 2  # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True

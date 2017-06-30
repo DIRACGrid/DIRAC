@@ -207,6 +207,7 @@ class X509Certificate( object ):
     return S_OK( False )
 
   def getVOMSData( self ):
+    #return S_ERROR( DErrno.EVOMS, "No VOMS data available" )
     """
     Get voms extensions
     """
