@@ -76,11 +76,11 @@ class Params:
     self.externalsBuildType = List.fromChar( optionValue )
     return S_OK()
 
-  def setForceExternals( self ):
+  def setForceExternals( self, _optionValue ):
     self.forceExternals = True
     return S_OK()
 
-  def setIgnoreExternals( self ):
+  def setIgnoreExternals( self, _optionValue ):
     self.ignoreExternals = True
     return S_OK()
 
@@ -92,7 +92,7 @@ class Params:
     self.externalsPython = optionValue
     return S_OK()
 
-  def setIgnorePackages( self ):
+  def setIgnorePackages( self, _optionValue ):
     self.ignorePackages = True
     return S_OK()
 
@@ -116,8 +116,8 @@ class Params:
     Script.registerSwitch( "r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
     Script.registerSwitch( "l:", "project=", "Project to build the release for (DIRAC by default)",
                            cliParams.setProject )
-    Script.registerSwitch( "D:", "destination", "Destination where to build the tar files", cliParams.setDestination )
-    Script.registerSwitch( "i:", "pythonVersion", "Python version to use (27)", cliParams.setPythonVersion )
+    Script.registerSwitch( "D:", "destination=", "Destination where to build the tar files", cliParams.setDestination )
+    Script.registerSwitch( "i:", "pythonVersion=", "Python version to use (27)", cliParams.setPythonVersion )
     Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packages", cliParams.setIgnorePackages )
     Script.registerSwitch( "C:", "relcfg=", "Use <file> as the releases.cfg", cliParams.setReleasesCFG )
     Script.registerSwitch( "b", "buildExternals", "Force externals compilation even if already compiled",
