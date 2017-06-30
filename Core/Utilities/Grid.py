@@ -192,7 +192,7 @@ It contains by the way host information for ce.
 Each cluster is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueHostBenchmarkSI00']
   """
-  filt = '(GlueSubClusterUniqueID=%s)' % ce
+  filt = '(GlueChunkKey=GlueClusterUniqueID=%s)' % ce
 
   result = ldapsearchBDII( filt, attr, host )
 

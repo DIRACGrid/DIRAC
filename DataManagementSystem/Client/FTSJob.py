@@ -35,14 +35,14 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
-import fts3.rest.client.easy as fts3
+import fts3.rest.client.easy as fts3 #pylint: disable=import-error
 
 # We can't use the default pycurl because of known bugs
 # memory leak: https://bugzilla.mozilla.org/show_bug.cgi?id=1202413
 # SIGALRM handling: https://curl.haxx.se/mail/lib-2008-09/0197.html
 # So we need to use the Request module. The correct version is available
 # from fts-rest v3.5.2 or in the lcg-bundle 2017-01-27
-from fts3.rest.client.request import Request as ftsSSLRequest
+from fts3.rest.client.request import Request as ftsSSLRequest #pylint: disable=import-error
 
 ########################################################################
 class FTSJob( object ):

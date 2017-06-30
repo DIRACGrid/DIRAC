@@ -5,7 +5,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
@@ -84,7 +84,7 @@ class CSAPI( object ):
       self.__initialized = S_ERROR( "Master server is not known. Is everything initialized?" )
       return self.__initialized
     self.__rpcClient = RPCClient( gConfig.getValue( "/DIRAC/Configuration/MasterServer", "" ) )
-    self.__csMod = Modificator( self.__rpcClient, "%s - %s" % ( self.__userGroup, self.__userDN ) )
+    self.__csMod = Modificator( self.__rpcClient, "%s - %s - %s" % ( self.__userGroup, self.__userDN, Time.dateTime().strftime( "%Y-%m-%d %H:%M:%S" ) ) )
     retVal = self.downloadCSData()
     if not retVal[ 'OK' ]:
       self.__initialized = S_ERROR( "Can not download the remote cfg. Is everything initialized?" )

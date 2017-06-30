@@ -1,4 +1,44 @@
-[v6r18-pre11]
+[v6r18-pre14]
+
+*Accounting
+FIX: compatibility of AccountingDB with MySQL 5.7
+
+*Core
+NEW: Technology preview of new logging system, based on standard python logging module
+CHANGE: Added graphviz extension to sphinx builds
+FIX: Added documentation of low level RPC/DISET classes
+
+*DMS
+CHANGE: FTSFile DB table: increased length of fields LFN(955), SourceSURL(1024), TargetSURL(1024)
+
+*RSS
+CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
+FIX: fixed incompatibility between Active/InActive RSS clients return format
+
+
+[v6r18p1]
+
+*RSS
+FIX: SiteStatus - bug fixed in getSites() method - siteState argument not propagated to
+     the service call
+FIX: ResourceStatus - return the same structure for status lookup in both RSS and CS cases     
+     
+*RMS
+NEW: dirac-rms-request - command including functionality of several other commands:
+     dirac-rms-cancel|reset|show-request which are dropped. The required functionality
+     is selected by the appropriate switches      
+     
+*Monitoring
+CHANGE: DBUtils - change the bucket sizes for the monitoring plots as function of the time span     
+     
+*WMS
+FIX: dirac-pilot, pilotTools - PYTHONPATH is cleared on pilot start, pilot option keepPP
+     can override this
+FIX: WMSAdministratorHandler - make methods static appropriately
+CHANGE: JobScheduling - more precise site name while the job is Waiting, using the set of 
+        sites at which the input files are online rather than checking Tier1s in eligible sites           
+
+[v6r18]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -10,6 +50,9 @@ FIX: All Databases are granting also REFERENCES grant to Dirac user to comply wi
 FIX: dirac-install - allow to use local md5 files
 CHANGE: X509Chain - fixes to allow robot proxies with embedded DIRAC group extension
         ( allow DIRAC group extension not in the first certificate chain step )
+CHANGE: BaseClient - recheck the useServerCertificate while establishing connection
+        and take it into account even if it has changed after the client object creation    
+FIX: PlainTransport - fixed socket creation in initAsClient()            
 
 *Accounting
 NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
@@ -33,11 +76,73 @@ NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS
 FIX: JobDB - fixes necessary to suite MySQL 5.7   
 NEW: pilotCommands - new ReplaceDIRACCode command mostly for testing purposes
 NEW: JobAgent, JobWrapper - several fixes to allow the work with PoolComputingElement
-     to support multiprocessor jobs     
+     to support multiprocessor jobs    
+NEW: JobScheduling - interpret WholeNode and NumberOfProcessors job JDL parameters and
+     convert then to corresponding tags
+NEW: SiteDirector - CEs can define QueryCEFlag in the Configuration Service which can be
+     used to disallow querying the CE status and use information from PiltAgentsDB instead           
 
 *Interfaces
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
 CHANGE: Dirac API - added runLocal as an API method
+
+*Docs
+NEW: Documentation for developing with a container (includes Dockerfile)
+
+
+[v6r17p23]
+
+*WMS
+FIX: get job output for remote sheduler in the case of HTCondorCE
+
+[v6r17p22]
+
+*Framework
+FIX: NotificationClient - added avoidSpam flag to sendMail() method which is propagated to
+     the corresponding service call
+     
+*Integration
+FIX: several fixes in integration testing scripts     
+
+[v6r17p21]
+
+*Core
+NEW: Mail.py - added mechanism to compare mail objects
+FIX: Grid.py - take into account the case sometimes happening to ARC CEs 
+     where ARC-CE BDII definitions have SubClusters where the name isn't set to 
+     the hostname of the machine
+
+*Framework
+FIX: Notification service - avoid duplicate emails mechanism 
+
+[v6r17p20]
+
+*Core
+NEW: API.py - added __getstate__, __setstate__ to allow pickling objects inheriting
+     API class by special treatment of internal Logger objects, fixes #3334
+
+*Framework
+FIX: SystemAdministrator - sort software version directories by explicit versions in the
+     old software cleaning logic
+FIX: MonitoringUtilities - sets a suitable "unknown" username when installing DIRAC from scratch, 
+     and the CS isn't initialized fully when running dirac-setup-site     
+CHANGE: Logger - added getter methods to access internal protected variables, use these methods
+        in various places instead of access Logger protected variables     
+
+*WMS
+CHANGE: JobDB - removed unused CPUTime field in the Jobs table
+CHANGE: JobScheduling - make check for requested Platform among otherwise eligible sites
+        for a given job, fail jobs if no site with requested Platform are available
+
+*RSS
+FIX: Commands - improved logging messages
+
+*SMS
+FIX: StorageManagerClient - instantiate StorageElement object with an explicit vo argument,
+     fixes #3335
+
+*Interfaces
+NEW: dirac-framework-self-ping command for a server to self ping using it's own certificate
 
 [v6r17p19]
 

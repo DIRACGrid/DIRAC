@@ -433,7 +433,7 @@ function prepareForServer(){
 
 #.............................................................................
 #
-# function generateCertificates
+# function generateCertificat
 #
 #   This function generates a random host certificate ( certificate and key ),
 #   which will be stored on etc/grid-security. As we need a CA to validate it,
@@ -450,11 +450,11 @@ function prepareForServer(){
 function generateCertificates(){
   echo '==> [generateCertificates]'
 
-  if [ -z ${1} ];
+  if [ -z ${1} ]
   then
-    nDays=1;
-  else:
-    nDays=$1;
+    nDays=1
+  else
+    nDays=$1
   fi
 
   mkdir -p $SERVERINSTALLDIR/etc/grid-security/certificates
@@ -466,7 +466,7 @@ function generateCertificates(){
   fi
 
   # Generate private RSA key
-  openssl genrsa -out hostkey.pem 2048 2&>1 /dev/null
+  openssl genrsa -out hostkey.pem 2048 2>&1 /dev/null
 
   # Prepare OpenSSL config file, it contains extensions to put into place,
   # DN configuration, etc..
@@ -514,7 +514,7 @@ function generateUserCredentials(){
 
     cp $CI_CONFIG/openssl_config openssl_config .
     sed -i 's/#hostname#/ciuser/g' openssl_config
-    openssl genrsa -out client.key 1024 2&>1 /dev/null
+    openssl genrsa -out client.key 1024 2>&1 /dev/null
     openssl req -key client.key -new -out client.req -config openssl_config
     # This is a little hack to make OpenSSL happy...
     echo 00 > file.srl
@@ -656,7 +656,7 @@ diracUninstallServices(){
   findServices
 
   #TODO: revise this list
-  services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
+  services=`cat services | cut -d '.' -f 1 | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'

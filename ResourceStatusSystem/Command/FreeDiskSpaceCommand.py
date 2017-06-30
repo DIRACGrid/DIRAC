@@ -82,7 +82,8 @@ class FreeDiskSpaceCommand( Command ):
     if total and total < 1:
       total = 1
 
-    result = self.rsClient.addOrModifySpaceTokenOccupancyCache( endpoint = elementURL, lastCheckTime = datetime.utcnow(),
+    result = self.rsClient.addOrModifySpaceTokenOccupancyCache( endpoint = elementURL,
+								lastCheckTime = datetime.utcnow(),
                                                                 free = free, total = total,
                                                                 token = elementName )
     if not result[ 'OK' ]:
@@ -117,7 +118,7 @@ class FreeDiskSpaceCommand( Command ):
     for name in elements['Value']:
       diskSpace = self.doNew( name )
       if not diskSpace[ 'OK' ]:
-        gLogger.error( "Unable to calculate free disk space" )
+        gLogger.error( "Unable to calculate free disk space", "name: %s" % name )
         continue
 
     return S_OK()

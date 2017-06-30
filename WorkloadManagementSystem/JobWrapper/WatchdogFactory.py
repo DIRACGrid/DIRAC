@@ -21,7 +21,7 @@ class WatchdogFactory( object ):
     self.watchDogsLocation = 'DIRAC.WorkloadManagementSystem.JobWrapper'
 
   #############################################################################
-  def getWatchdog( self, pid, thread, spObject, jobcputime, memoryLimit, processors ):
+  def getWatchdog( self, pid, thread, spObject, jobcputime, memoryLimit, processors = 1 ):
     """ This method returns the CE instance corresponding to the local OS. The Linux watchdog is returned by default.
     """
     if re.search( 'Darwin', self.version[0] ):

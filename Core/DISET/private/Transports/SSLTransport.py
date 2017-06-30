@@ -62,9 +62,9 @@ class SSLTransport( BaseTransport ):
     if not self.serverMode():
       raise RuntimeError( "Must be initialized as server mode" )
     retVal = gSocketInfoFactory.getListeningSocket( self.stServerAddress,
-						    self.iListenQueueSize,
-						    self.bAllowReuseAddress,
-						    **self.extraArgsDict )
+                                                    self.iListenQueueSize,
+                                                    self.bAllowReuseAddress,
+                                                    **self.extraArgsDict )
     if not retVal[ 'OK' ]:
       return retVal
     self.oSocketInfo = retVal[ 'Value' ]

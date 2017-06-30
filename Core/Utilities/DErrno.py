@@ -86,6 +86,7 @@ ENOPKEY = 1107
 ENOGROUP = 1108
 # DISET: 1X
 EDISET = 1110
+ENOAUTH = 1111
 # 3rd party security: 2X
 E3RDPARTY = 1120
 EVOMS = 1121
@@ -158,6 +159,7 @@ dErrorCode = {
                1108 : 'ENOGROUP',
                # 111X: DISET
                1110 : 'EDISET',
+               1111 : 'ENOAUTH',
                # 112X: 3rd party security
                1120 : 'E3RDPARTY',
                1121 : 'EVOMS',
@@ -226,6 +228,7 @@ dStrError = {
               ENOGROUP: "No DIRAC group",
               # 111X: DISET
               EDISET : "DISET Error",
+              ENOAUTH : "Unauthorized query",
               # 112X: 3rd party security
               E3RDPARTY: "3rd party security service error",
               EVOMS : "VOMS Error",

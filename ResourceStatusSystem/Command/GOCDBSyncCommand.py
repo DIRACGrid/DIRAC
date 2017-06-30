@@ -9,7 +9,6 @@
 
 import errno
 import xml.dom.minidom as minidom
-from datetime     import datetime
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
 from DIRAC.Core.LCG.GOCDBClient                                 import _parseSingleElement
@@ -79,7 +78,7 @@ class GOCDBSyncCommand( Command ):
 
           if localDBdict['FORMATED_START_DATE'] != GOCDBdict['FORMATED_START_DATE']:
             result = self.rmClient.addOrModifyDowntimeCache( downtimeID = localDBdict['DowntimeID'],
-                                                        startDate = GOCDBdict['FORMATED_START_DATE'])
+                                                             startDate = GOCDBdict['FORMATED_START_DATE'])
             gLogger.verbose("The start date of %s has been changed!" % downtimes[3])
 
             if not result[ 'OK' ]:
@@ -87,7 +86,7 @@ class GOCDBSyncCommand( Command ):
 
           if localDBdict['FORMATED_END_DATE'] != GOCDBdict['FORMATED_END_DATE']:
             result = self.rmClient.addOrModifyDowntimeCache( downtimeID = localDBdict['DowntimeID'],
-                                                        endDate = GOCDBdict['FORMATED_END_DATE'] )
+                                                             endDate = GOCDBdict['FORMATED_END_DATE'] )
             gLogger.verbose("The end date of %s has been changed!" % downtimes[3])
 
             if not result[ 'OK' ]:
