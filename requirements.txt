@@ -1,4 +1,5 @@
 GSI>=0.6.4
+asn1
 certifi
 coverage>=4.0.3
 elasticsearch-dsl>=2.0.0
