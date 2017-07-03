@@ -4,8 +4,6 @@ Backend wrapper
 
 __RCSID__ = "$Id$"
 
-from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
-
 
 class AbstractBackend(object):
   """

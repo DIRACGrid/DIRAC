@@ -11,8 +11,8 @@ The logging system package
 
 The source code is contained in the
 *FrameworkSystem/private/standardLogging* package. There, we can find
-the *Logging*, *LoggingRoot* and *LogLevels* classes and the *Backend*,
-*Handler* and *Formatter* packages.
+the *Logging*, *LoggingRoot* and *LogLevels* classes and the *Handler* and *Formatter* packages.
+We can also find the *Backend* package that use the *Handler* and *Formatter* package in *Resources/LogBackends*.
 
 *Logging*
 ~~~~~~~~~
@@ -42,7 +42,7 @@ Actually, it contains a class dictionary attribute named *levelDict*
 containing all the level names and their associated integer values. Its
 purpose is to make string-integer level conversion.
 
-*Backend* package
+*LogBackend* package
 ~~~~~~~~~~~~~~~~~
 
 *Backend* objects are used to create an abstraction of the *Handler* and

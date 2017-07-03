@@ -316,3 +316,8 @@ def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
   """
   return '/Resources/FileCatalogs/%s' % catalogName
+
+def getBackendConfig(backendID):
+  """ Return a backend configuration for a given backend identifier
+  """
+  return gConfig.getOptionsDict('Resources/LogBackends/%s' % backendID)
