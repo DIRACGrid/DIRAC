@@ -299,13 +299,14 @@ class JobWrapper( object ):
       jobMemory = int( self.jobArgs['Memory'] )*1024.*1024.
 
     if 'Executable' in self.jobArgs:
-      executable = self.jobArgs['Executable'].strip()
+      executable = self.jobArgs['Executable'].strip() # This is normally dirac-jobexec script, but not necessarily
     else:
       msg = 'Job %s has no specified executable' % ( self.jobID )
       self.log.warn( msg )
       return S_ERROR( msg )
 
-    jobArguments = self.jobArgs.get( 'Arguments', '' )
+    jobArguments = self.jobArgs.get( 'Arguments', '' ) # In case the excutable is dirac-jobexec,
+                                                       # the argument is the jobDescription.xml file
 
     executable = os.path.expandvars( executable )
     exeThread = None
@@ -320,7 +321,7 @@ class JobWrapper( object ):
     if not os.access( executable, os.X_OK ):
       try:
         os.chmod( executable, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH )
-      except Exception:
+      except OSError:
         self.log.warn( 'Failed to change mode to 775 for the executable', executable )
 
     exeEnv = dict( os.environ )
@@ -336,7 +337,7 @@ class JobWrapper( object ):
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
     if os.path.exists( executable ):
-      self.__report( 'Running', 'Application', sendFlag = True )
+      self.__report( 'Running', 'Application', sendFlag = True ) # it's in fact not yet running: it will be in few lines
       spObject = Subprocess( timeout = False, bufferLimit = int( self.bufferLimit ) )
       command = executable
       if jobArguments:
@@ -425,9 +426,9 @@ class JobWrapper( object ):
 
     if watchdog.currentStats:
       self.log.info( 'Statistics collected by the Watchdog:\n ',
-                        '\n  '.join( ['%s: %s' % items for items in watchdog.currentStats.iteritems() ] ) )
+                     '\n  '.join( ['%s: %s' % items for items in watchdog.currentStats.iteritems() ] ) )
     if outputs:
-      status = threadResult['Value'][0]
+      status = threadResult['Value'][0] # the status of the payload execution
       # Send final heartbeat of a configurable number of lines here
       self.log.verbose( 'Sending final application standard output heartbeat' )
       self.__sendFinalStdOut( exeThread )
@@ -438,6 +439,10 @@ class JobWrapper( object ):
         self.__report( 'Completed', 'Application Finished Successfully', sendFlag = True )
       elif not watchdog.checkError:
         self.__report( 'Completed', 'Application Finished With Errors', sendFlag = True )
+        if str(status) == '111':
+          self.log.verbose("job will be rescheduled")
+          self.__report( 'Completed', 'Going to reschedule job', sendFlag = True )
+          return S_ERROR("111")
 
     else:
       return S_ERROR( 'No outputs generated from job execution' )
@@ -1351,6 +1356,9 @@ class ExecutionThread( threading.Thread ):
 
   #############################################################################
   def run( self ):
+    """ Method representing the thread activity.
+        This one overrides the ~threading.Thread `run` method
+    """
     # FIXME: why local instances of object variables are created?
     cmd = self.cmd
     spObject = self.spObject

@@ -7,6 +7,7 @@
 import unittest
 import importlib
 import os
+import shutil
 
 from mock import MagicMock
 
@@ -46,7 +47,7 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     jw.dm = dm_mock
     jw.fc = fc_mock
     res = jw.resolveInputData()
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
 
     jw = JobWrapper()
     jw.jobArgs['InputData'] = 'pippo'
@@ -55,13 +56,25 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     jw.dm = dm_mock
     jw.fc = fc_mock
     res = jw.resolveInputData()
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
 
   def test__performChecks( self ):
     wd = WatchdogLinux( os.getpid(), MagicMock(), MagicMock(), 1000, 1024 * 1024 )
     res = wd._performChecks()
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
 
+  def test_execute(self):
+    jw = JobWrapper()
+    jw.jobArgs = {'Executable':'/bin/ls'}
+    res = jw.execute('')
+    self.assertTrue( res['OK'] )
+
+    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script.sh', 'script.sh')
+    jw = JobWrapper()
+    jw.jobArgs = {'Executable':'script.sh', 'Arguments':'111'}
+    res = jw.execute('')
+    self.assertFalse( res['OK'] )
+    os.remove('script.sh')
 
 
 #############################################################################

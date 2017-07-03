@@ -1,5 +1,15 @@
 #!/usr/bin/env python
-""" This template will become the job wrapper that's actually executed
+""" This template will become the job wrapper that's actually executed.
+
+    The JobWrapperTemplate is completed and invoked by the jobAgent and uses functionalities from JobWrapper module.
+    It has to be an executable.
+
+    The JobWrapperTemplate will reschedule the job according to certain criteria:
+    - the working directory could not be created
+    - the jobWrapper initialization phase failed
+    - the inputSandbox download failed
+    - the resolution of the inpt data failed
+    - the payload ended with status '111'
 """
 
 import sys
@@ -108,8 +118,13 @@ def execute( arguments ):
       gLogger.error( 'Failed to execute job', result['Message'] )
       raise JobWrapperError( result['Message'] )
   except Exception as x:
-    if str( x ) == '0':
+    if str(x) == '0':
       gLogger.verbose( 'JobWrapper exited with status=0 after execution' )
+    if str(x) == '111':
+      gLogger.warn("Asked to reschedule job")
+      rescheduleResult = rescheduleFailedJob( jobID, 'JobWrapper execution', gJobReport )
+      job.sendJobAccounting( rescheduleResult, 'JobWrapper execution' )
+      return 1
     else:
       gLogger.exception( 'Job failed in execution phase' )
       gJobReport.setJobParameter( 'Error Message', str( x ), sendFlag = False )
