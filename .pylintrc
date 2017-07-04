@@ -32,7 +32,8 @@ load-plugins=
 
 #R0903 = Too few public methods (%s/%s)
 #C0326 = bad-whitespace
-disable=R0903,C0326
+#I0011 = locally-disabling
+disable=R0903,C0326,I0011
 
 
 [REPORTS]
