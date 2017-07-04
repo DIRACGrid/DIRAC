@@ -94,44 +94,46 @@ class LoggingRoot(Logging):
     from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
     self._lockConfig.acquire()
-    if not LoggingRoot.__configuredLogging:
-      backends = (None, None)
-      Logging._componentName = systemName
+    try:
+      if not LoggingRoot.__configuredLogging:
+        backends = (None, None)
+        Logging._componentName = systemName
 
-      # Prepare to remove all the backends from the root Logging as in the old gLogger.
-      # store them in a list handlersToRemove.
-      # we will remove them later, because some components as ObjectLoader need a backend.
-      # this can be useful to have logs only in a file for instance.
-      handlersToRemove = []
-      for backend in self._backendsList:
-        handlersToRemove.append(backend.getHandler())
-      del self._backendsList[:]
+        # Prepare to remove all the backends from the root Logging as in the old gLogger.
+        # store them in a list handlersToRemove.
+        # we will remove them later, because some components as ObjectLoader need a backend.
+        # this can be useful to have logs only in a file for instance.
+        handlersToRemove = []
+        for backend in self._backendsList:
+          handlersToRemove.append(backend.getHandler())
+        del self._backendsList[:]
 
-      # Backend options
-      desiredBackends = gConfig.getValue("%s/LogBackends" % cfgPath, ['stdout'])
+        # Backend options
+        desiredBackends = gConfig.getValue("%s/LogBackends" % cfgPath, ['stdout'])
 
-      retDict = gConfig.getOptionsDict("%s/BackendsOptions" % cfgPath)
-      if retDict['OK']:
-        backends = (desiredBackends, retDict['Value'])
-      else:
-        backends = (desiredBackends, None)
+        retDict = gConfig.getOptionsDict("%s/BackendsOptions" % cfgPath)
+        if retDict['OK']:
+          backends = (desiredBackends, retDict['Value'])
+        else:
+          backends = (desiredBackends, None)
 
-      # Format options
-      self._options['Color'] = gConfig.getValue("%s/LogColor" % cfgPath, False)
+        # Format options
+        self._options['Color'] = gConfig.getValue("%s/LogColor" % cfgPath, False)
 
-      desiredBackends, backendOptions = backends
-      self.registerBackends(desiredBackends, backendOptions)
+        desiredBackends, backendOptions = backends
+        self.registerBackends(desiredBackends, backendOptions)
 
-      # Remove the old backends
-      for handler in handlersToRemove:
-        self._logger.removeHandler(handler)
+        # Remove the old backends
+        for handler in handlersToRemove:
+          self._logger.removeHandler(handler)
 
-      levelName = gConfig.getValue("%s/LogLevel" % cfgPath, None)
-      if levelName is not None:
-        self.setLevel(levelName)
+        levelName = gConfig.getValue("%s/LogLevel" % cfgPath, None)
+        if levelName is not None:
+          self.setLevel(levelName)
 
-      LoggingRoot.__configuredLogging = True
-    self._lockConfig.release()
+        LoggingRoot.__configuredLogging = True
+    finally:
+      self._lockConfig.release()
 
   def __configureLevel(self):
     """

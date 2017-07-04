@@ -35,8 +35,10 @@ class Logging(object):
   # its default value is "Framework" but it can be configured in initialize() in LoggingRoot
   # it can be composed by the system name and the component name. For instance: "Monitoring/Atom"
   _componentName = "Framework"
+  # use the lockRing singleton to save the Logging object
+  _lockRing = LockRing() 
   # lock the configuration of the Logging
-  _lockConfig = LockRing().getLock("config")
+  _lockConfig = _lockRing.getLock("config")
 
   def __init__(self, father=None, fatherName='', name='', customName=''):
     """
@@ -55,7 +57,6 @@ class Logging(object):
                         - hierarchy "." are replaced by "\"
                         useful for the display of the Logging name
     """
-
     # Logging chain
     self._children = {}
     self._parent = father
@@ -89,13 +90,13 @@ class Logging(object):
     # Locks to make Logging thread-safe
     # we use RLock to prevent blocking in the Logging
     # lockInit to protect the initialization of a sublogger
-    self._lockInit = LockRing().getLock("init")
+    self._lockInit = self._lockRing.getLock("init")
     # lockOptions to protect the option modifications and the backendsList
-    self._lockOptions = LockRing().getLock("options", recursive=True)
+    self._lockOptions = self._lockRing.getLock("options", recursive=True)
     # lockLevel to protect the level
-    self._lockLevel = LockRing().getLock("level", recursive=True)
+    self._lockLevel = self._lockRing.getLock("level", recursive=True)
     # lockObjectLoader to protect the ObjectLoader singleton
-    self._lockObjectLoader = LockRing().getLock("objectLoader")
+    self._lockObjectLoader = self._lockRing.getLock("objectLoader")
 
   def showHeaders(self, yesno=True):
     """
@@ -125,21 +126,23 @@ class Logging(object):
     """
     # lock to prevent that two threads change the options at the same time
     self._lockOptions.acquire()
-    if self._optionsModified[optionName] and not directCall:
-      return
+    try:
+      if self._optionsModified[optionName] and not directCall:
+        return
 
-    if directCall:
-      self._optionsModified[optionName] = True
+      if directCall:
+        self._optionsModified[optionName] = True
 
-    # update option
-    self._options[optionName] = value
+      # update option
+      self._options[optionName] = value
 
-    # propagate in the children
-    for child in self._children.itervalues():
-      child._setOption(optionName, value, directCall=False)
-    # update the format to apply the option change
-    self._generateBackendFormat()
-    self._lockOptions.release()
+      # propagate in the children
+      for child in self._children.itervalues():
+        child._setOption(optionName, value, directCall=False)
+      # update the format to apply the option change
+      self._generateBackendFormat()
+    finally:
+      self._lockOptions.release()
 
   def registerBackends(self, desiredBackends, backendOptions=None):
     """
@@ -161,10 +164,12 @@ class Logging(object):
 
       # lock to avoid problem in ObjectLoader which is a singleton not thread-safe
       self._lockObjectLoader.acquire()
-      # load the Backend class
-      _class = objLoader.loadObject(
-          'DIRAC.FrameworkSystem.private.standardLogging.Backend.%sBackend' % backendName.capitalize())
-      self._lockObjectLoader.release()
+      try:
+        # load the Backend class
+        _class = objLoader.loadObject(
+            'DIRAC.FrameworkSystem.private.standardLogging.Backend.%sBackend' % backendName.capitalize())
+      finally:
+        self._lockObjectLoader.release()
 
       if _class['OK']:
         # add the backend instance to the Logging
@@ -188,14 +193,14 @@ class Logging(object):
     # and to prevent a change of the backendsList during the reading of the list
     self._lockLevel.acquire() 
     self._lockOptions.acquire()
-
-    # update the level of the new backend to respect the Logging level
-    backend.setLevel(self._level)
-    self._logger.addHandler(backend.getHandler())
-    self._backendsList.append(backend)
-    
-    self._lockLevel.release()
-    self._lockOptions.release()
+    try:
+      # update the level of the new backend to respect the Logging level
+      backend.setLevel(self._level)
+      self._logger.addHandler(backend.getHandler())
+      self._backendsList.append(backend)
+    finally:
+      self._lockLevel.release()
+      self._lockOptions.release()
 
   def setLevel(self, levelName):
     """
@@ -222,29 +227,32 @@ class Logging(object):
     """
     # lock to prevent that two threads change the level at the same time
     self._lockLevel.acquire()
-    # if the level logging level was previously modified by the developer
-    # and it is not a direct call from him, then we return in order to stop the propagation
-    if self._levelModified and not directCall:
-      return
+    try:
+      # if the level logging level was previously modified by the developer
+      # and it is not a direct call from him, then we return in order to stop the propagation
+      if self._levelModified and not directCall:
+        return
 
-    if directCall:
-      self._levelModified = True
+      if directCall:
+        self._levelModified = True
 
-    # update Logging level
-    self._level = level
-    
-    # lock to prevent a modification of the backendsList
-    self._lockOptions.acquire()
-    # update backend levels
-    for backend in self._backendsList:
-      backend.setLevel(self._level)
-    self._lockOptions.release()
+      # update Logging level
+      self._level = level
+      
+      # lock to prevent a modification of the backendsList
+      self._lockOptions.acquire()
+      try:
+        # update backend levels
+        for backend in self._backendsList:
+          backend.setLevel(self._level)
+      finally:
+        self._lockOptions.release()
 
-    # propagate in the children
-    for child in self._children.itervalues():
-      child._setLevel(level, directCall=False)
-    
-    self._lockLevel.release()
+      # propagate in the children
+      for child in self._children.itervalues():
+        child._setLevel(level, directCall=False)
+    finally:
+      self._lockLevel.release()
 
   def getLevel(self):
     """
@@ -262,11 +270,13 @@ class Logging(object):
     """
     # lock to prevent a level change
     self._lockLevel.acquire()
-    result = False
-    if levelName.upper() in LogLevels.getLevelNames():
-      result = self._level <= LogLevels.getLevelValue(levelName)
-    self._lockLevel.release()
-    return result
+    try:
+      result = False
+      if levelName.upper() in LogLevels.getLevelNames():
+        result = self._level <= LogLevels.getLevelValue(levelName)
+      return result
+    finally:
+      self._lockLevel.release()
 
   @classmethod
   def getName(cls):
@@ -287,10 +297,12 @@ class Logging(object):
     """
     # lock to save the options which can be modified
     self._lockOptions.acquire()
-    # copy the dictionary to avoid that every Logging has the same
-    options = self._options.copy()
-    self._lockOptions.release()
-    return options
+    try:
+      # copy the dictionary to avoid that every Logging has the same
+      options = self._options.copy()
+      return options
+    finally:
+      self._lockOptions.release()
 
   @staticmethod
   def getAllPossibleLevels():
@@ -370,20 +382,22 @@ class Logging(object):
 
     # lock to prevent a level change after that the log is sent.
     self._lockLevel.acquire()
-    # exc_info is only for exception to add the stack trace
-    # extra is a way to add extra attributes to the log record:
-    # - 'componentname': the system/component name
-    # - 'varmessage': the variable message
-    # - 'customname' : the name of the logger for the DIRAC usage: without 'root' and separated with '/'
-    # extras attributes are not camel case because log record attributes are not either.
-    extra = {'componentname': self._componentName,
-             'varmessage': sVarMsg,
-             'customname': self._customName}
-    self._logger.log(level, "%s", sMsg, exc_info=exc_info, extra=extra)
-    # test to know if the message is displayed or not
-    isSent = self._level <= level
-    self._lockLevel.release()
-    return isSent
+    try:
+      # exc_info is only for exception to add the stack trace
+      # extra is a way to add extra attributes to the log record:
+      # - 'componentname': the system/component name
+      # - 'varmessage': the variable message
+      # - 'customname' : the name of the logger for the DIRAC usage: without 'root' and separated with '/'
+      # extras attributes are not camel case because log record attributes are not either.
+      extra = {'componentname': self._componentName,
+               'varmessage': sVarMsg,
+               'customname': self._customName}
+      self._logger.log(level, "%s", sMsg, exc_info=exc_info, extra=extra)
+      # test to know if the message is displayed or not
+      isSent = self._level <= level
+      return isSent
+    finally:
+      self._lockLevel.release()
 
   def showStack(self):
     """
@@ -400,12 +414,14 @@ class Logging(object):
     # lock to prevent the modification of the options during this code block
     # and to prevent a modification of the backendsList
     self._lockOptions.acquire()
-    # give options and level to AbstractBackend to receive the new format for the backends list
-    datefmt, fmt = AbstractBackend.createFormat(self._options)
+    try:
+      # give options and level to AbstractBackend to receive the new format for the backends list
+      datefmt, fmt = AbstractBackend.createFormat(self._options)
 
-    for backend in self._backendsList:
-      backend.setFormat(fmt, datefmt, self._options)
-    self._lockOptions.release()
+      for backend in self._backendsList:
+        backend.setFormat(fmt, datefmt, self._options)
+    finally:
+      self._lockOptions.release()
 
   def getSubLogger(self, subName, child=True):
     """
@@ -416,17 +432,18 @@ class Logging(object):
     # lock to prevent that the method initializes two Logging for the same 'logging' logger
     # and to erase the existing _children[subName]
     self._lockInit.acquire()
-    # Check if the object has a child with "subName".
-    result = self._children.get(subName)
-    if result is not None:
+    try:
+      # Check if the object has a child with "subName".
+      result = self._children.get(subName)
+      if result is not None:
+        return result
+      # create a new child Logging
+      childLogging = Logging(self, self._logger.name, subName, self._customName)
+      self._children[subName] = childLogging
+      return childLogging
+    finally:
       self._lockInit.release()
-      return result
-    # create a new child Logging
-    childLogging = Logging(self, self._logger.name, subName, self._customName)
-    self._children[subName] = childLogging
 
-    self._lockInit.release()
-    return childLogging
 
   def initialized(self):
     """
