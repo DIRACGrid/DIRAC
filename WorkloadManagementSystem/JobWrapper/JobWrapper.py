@@ -4,8 +4,11 @@
 ########################################################################
 """ The Job Wrapper Class is instantiated with arguments tailored for running
     a particular job. The JobWrapper starts a thread for execution of the job
-    and a Watchdog Agent that can monitor progress.
+    and a Watchdog Agent that can monitor its progress.
 """
+
+__RCSID__ = "$Id: $"
+
 import os
 import stat
 import re
@@ -47,12 +50,12 @@ from DIRAC.Core.Utilities                                           import DEnco
 from DIRAC.Core.Utilities                                           import Time
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
-
-__RCSID__ = "$Id: $"
-
 EXECUTION_RESULT = {}
+TO_RESCHEDULE = '111' # custom return code interpreted for rescheduling jobs
 
 class JobWrapper( object ):
+  """ The only user of the JobWrapper is the JobWrapperTemplate
+  """
 
   #############################################################################
   def __init__( self, jobID = None, jobReport = None ):
@@ -439,10 +442,10 @@ class JobWrapper( object ):
         self.__report( 'Completed', 'Application Finished Successfully', sendFlag = True )
       elif not watchdog.checkError:
         self.__report( 'Completed', 'Application Finished With Errors', sendFlag = True )
-        if str(status) == '111':
+        if str(status) == TO_RESCHEDULE:
           self.log.verbose("job will be rescheduled")
           self.__report( 'Completed', 'Going to reschedule job', sendFlag = True )
-          return S_ERROR("111")
+          return S_ERROR(TO_RESCHEDULE)
 
     else:
       return S_ERROR( 'No outputs generated from job execution' )
@@ -1095,7 +1098,7 @@ class JobWrapper( object ):
     return S_OK( 'InputSandbox downloaded' )
 
   #############################################################################
-  def finalize( self, arguments ):
+  def finalize( self ):
     """Perform any final actions to clean up after job execution.
     """
     self.log.info( 'Running JobWrapper finalization' )

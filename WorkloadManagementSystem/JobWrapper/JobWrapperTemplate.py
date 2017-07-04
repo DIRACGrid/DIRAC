@@ -9,37 +9,44 @@
     - the jobWrapper initialization phase failed
     - the inputSandbox download failed
     - the resolution of the inpt data failed
-    - the payload ended with status '111'
+    - the payload ended with the status defined in 'TO_RESCHEDULE' "constant"
 """
 
 import sys
 import json
 import ast
 import os
+import errno
 
 sitePython = "@SITEPYTHON@"
 if sitePython:
   sys.path.insert( 0, "@SITEPYTHON@" )
+
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import JobWrapper, rescheduleFailedJob
-from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
+from DIRAC import gLogger
 
-from DIRAC                                                  import gLogger
+from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper, rescheduleFailedJob, TO_RESCHEDULE
+from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+
+
+gJobReport = None
 
 
 os.umask( 0o22 )
 
 class JobWrapperError( Exception ):
+  """ Custom exception for handling JobWrapper "genuine" errors
+  """
   def __init__( self, value ):
     self.value = value
   def __str__( self ):
     return str( self.value )
 
-gJobReport = None
-
 def execute( arguments ):
+  """ The only real function executed here
+  """
 
   global gJobReport
 
@@ -47,43 +54,52 @@ def execute( arguments ):
   os.environ['JOBID'] = jobID
   jobID = int( jobID )
 
-  if arguments.has_key( 'WorkingDirectory' ):
+  if 'WorkingDirectory' in arguments:
     wdir = os.path.expandvars( arguments['WorkingDirectory'] )
     if os.path.isdir( wdir ):
       os.chdir( wdir )
     else:
       try:
-        os.makedirs( wdir )
+        os.makedirs( wdir ) # this will raise an exception if wdir already exists (which is ~OK)
         if os.path.isdir( wdir ):
           os.chdir( wdir )
-      except Exception:
-        gLogger.exception( 'JobWrapperTemplate could not create working directory' )
-        rescheduleResult = rescheduleFailedJob( jobID, 'Could Not Create Working Directory' )
+      except OSError as osError:
+        if osError.errno == errno.EEXIST and os.path.isdir( wdir ):
+          gLogger.exception( 'JobWrapperTemplate found that the working directory already exists' )
+          rescheduleResult = rescheduleFailedJob( jobID, 'Working Directory already exists' )
+        else:
+          gLogger.exception( 'JobWrapperTemplate could not create working directory' )
+          rescheduleResult = rescheduleFailedJob( jobID, 'Could Not Create Working Directory' )
         return 1
 
   gJobReport = JobReport( jobID, 'JobWrapper' )
 
   try:
     job = JobWrapper( jobID, gJobReport )
-    job.initialize( arguments )
-  except Exception as e:
-    gLogger.exception( 'JobWrapper failed the initialization phase', lException = e )
+    job.initialize( arguments ) # initialize doesn't return S_OK/S_ERROR
+  except Exception as exc: #pylint: disable=broad-except
+    gLogger.exception( 'JobWrapper failed the initialization phase', lException = exc )
     rescheduleResult = rescheduleFailedJob( jobID, 'Job Wrapper Initialization', gJobReport )
     try:
       job.sendJobAccounting( rescheduleResult, 'Job Wrapper Initialization' )
-    except Exception as e:
-      gLogger.exception( 'JobWrapper failed sending job accounting', lException = e )
+    except Exception as exc: #pylint: disable=broad-except
+      gLogger.exception( 'JobWrapper failed sending job accounting', lException = exc )
     return 1
 
-  if arguments['Job'].has_key( 'InputSandbox' ):
+  if 'InputSandbox' in arguments['Job']:
     gJobReport.commit()
     try:
       result = job.transferInputSandbox( arguments['Job']['InputSandbox'] )
       if not result['OK']:
         gLogger.warn( result['Message'] )
         raise JobWrapperError( result['Message'] )
-    except Exception:
+    except JobWrapperError:
       gLogger.exception( 'JobWrapper failed to download input sandbox' )
+      rescheduleResult = rescheduleFailedJob( jobID, 'Input Sandbox Download', gJobReport )
+      job.sendJobAccounting( rescheduleResult, 'Input Sandbox Download' )
+      return 1
+    except Exception as exc: #pylint: disable=broad-except
+      gLogger.exception( 'JobWrapper raised exception while downloading input sandbox', lException = exc )
       rescheduleResult = rescheduleFailedJob( jobID, 'Input Sandbox Download', gJobReport )
       job.sendJobAccounting( rescheduleResult, 'Input Sandbox Download' )
       return 1
@@ -92,15 +108,20 @@ def execute( arguments ):
 
   gJobReport.commit()
 
-  if arguments['Job'].has_key( 'InputData' ):
+  if 'InputData' in arguments['Job']:
     if arguments['Job']['InputData']:
       try:
         result = job.resolveInputData()
         if not result['OK']:
           gLogger.warn( result['Message'] )
           raise JobWrapperError( result['Message'] )
-      except Exception as x:
+      except JobWrapperError:
         gLogger.exception( 'JobWrapper failed to resolve input data' )
+        rescheduleResult = rescheduleFailedJob( jobID, 'Input Data Resolution', gJobReport )
+        job.sendJobAccounting( rescheduleResult, 'Input Data Resolution' )
+        return 1
+      except Exception as exc: #pylint: disable=broad-except
+        gLogger.exception( 'JobWrapper raised exception while resolving input data', lException = exc )
         rescheduleResult = rescheduleFailedJob( jobID, 'Input Data Resolution', gJobReport )
         job.sendJobAccounting( rescheduleResult, 'Input Data Resolution' )
         return 1
@@ -117,30 +138,42 @@ def execute( arguments ):
     if not result['OK']:
       gLogger.error( 'Failed to execute job', result['Message'] )
       raise JobWrapperError( result['Message'] )
-  except Exception as x:
-    if str(x) == '0':
+  except JobWrapperError as exc:
+    if str(exc) == '0':
       gLogger.verbose( 'JobWrapper exited with status=0 after execution' )
-    if str(x) == '111':
+    if str(exc) == TO_RESCHEDULE:
       gLogger.warn("Asked to reschedule job")
       rescheduleResult = rescheduleFailedJob( jobID, 'JobWrapper execution', gJobReport )
       job.sendJobAccounting( rescheduleResult, 'JobWrapper execution' )
       return 1
     else:
       gLogger.exception( 'Job failed in execution phase' )
-      gJobReport.setJobParameter( 'Error Message', str( x ), sendFlag = False )
+      gJobReport.setJobParameter( 'Error Message', str( exc ), sendFlag = False )
       gJobReport.setJobStatus( 'Failed', 'Exception During Execution', sendFlag = False )
       job.sendFailoverRequest( 'Failed', 'Exception During Execution' )
       return 1
+  except Exception as exc: #pylint: disable=broad-except
+    gLogger.exception( 'Job raised exception during execution phase', lException = exc )
+    gJobReport.setJobParameter( 'Error Message', str( exc ), sendFlag = False )
+    gJobReport.setJobStatus( 'Failed', 'Exception During Execution', sendFlag = False )
+    job.sendFailoverRequest( 'Failed', 'Exception During Execution' )
+    return 1
 
-  if arguments['Job'].has_key( 'OutputSandbox' ) or arguments['Job'].has_key( 'OutputData' ):
+  if 'OutputSandbox' in arguments['Job'] or 'OutputData' in arguments['Job']:
     try:
       result = job.processJobOutputs( arguments )
       if not result['OK']:
         gLogger.warn( result['Message'] )
         raise JobWrapperError( result['Message'] )
-    except Exception as x:
+    except JobWrapperError as exc:
       gLogger.exception( 'JobWrapper failed to process output files' )
-      gJobReport.setJobParameter( 'Error Message', str( x ), sendFlag = False )
+      gJobReport.setJobParameter( 'Error Message', str( exc ), sendFlag = False )
+      gJobReport.setJobStatus( 'Failed', 'Uploading Job Outputs', sendFlag = False )
+      job.sendFailoverRequest( 'Failed', 'Uploading Job Outputs' )
+      return 2
+    except Exception as exc:
+      gLogger.exception( 'JobWrapper raised exception while processing output files', lException = exc )
+      gJobReport.setJobParameter( 'Error Message', str( exc ), sendFlag = False )
       gJobReport.setJobStatus( 'Failed', 'Uploading Job Outputs', sendFlag = False )
       job.sendFailoverRequest( 'Failed', 'Uploading Job Outputs' )
       return 2
@@ -149,9 +182,9 @@ def execute( arguments ):
 
   try:
     # Failed jobs will return 1 / successful jobs will return 0
-    return job.finalize( arguments )
-  except Exception:
-    gLogger.exception( 'JobWrapper failed the finalization phase' )
+    return job.finalize()
+  except Exception as exc: #pylint: disable=broad-except
+    gLogger.exception( 'JobWrapper raised exception during the finalization phase', lException = exc )
     return 2
 
 ###################### Note ##############################
@@ -170,13 +203,13 @@ try:
     raise ValueError, "jobArgs does not contain 'Job' key: %s" %str(jobArgs)
   ret = execute( jobArgs )
   gJobReport.commit()
-except Exception as e:
+except Exception as exc: #pylint: disable=broad-except
+  gLogger.exception("JobWrapperTemplate exception", lException = exc)
   try:
-    gLogger.exception("JobWrapperTemplate exception", lException = e)
     gJobReport.commit()
     ret = -1
-  except Exception:
-    gLogger.exception()
+  except Exception as exc: #pylint: disable=broad-except
+    gLogger.exception("Could not commit the job report", lException = exc)
     ret = -2
 
 sys.exit( ret )
