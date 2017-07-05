@@ -124,14 +124,18 @@ def collateReleaseNotes( prs ):
   for baseBranch, pr in prs.iteritems():
     releaseNotes += "[%s]\n\n" % baseBranch[len("DiracGrid:"):]
     systemChangesDict = defaultdict( list )
-    for _prid, content in pr.iteritems():
+    for prid, content in pr.iteritems():
       notes = content['comment']
       system = ''
       for line in notes.splitlines():
-        if line.strip().startswith("*"):
+        line = line.strip()
+        if line.startswith("*"):
           system = getFullSystemName( line.strip("*:").strip() )
-        elif line.strip():
-          systemChangesDict[system].append( line.strip() )
+        elif line:
+          splitline = line.split(":", 1)
+          if splitline[0] == splitline[0].upper() and len(splitline) > 1:
+            line = "%s: (#%s) %s" % (splitline[0], prid, splitline[1].strip() )
+          systemChangesDict[system].append( line )
 
     pprint(systemChangesDict)
     for system, changes in systemChangesDict.iteritems():
