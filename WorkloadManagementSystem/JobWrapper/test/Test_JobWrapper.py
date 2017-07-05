@@ -80,16 +80,18 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     jw = JobWrapper()
     jw.jobArgs = {'Executable':'script.sh', 'Arguments':'111'}
     res = jw.execute('')
-    self.assertFalse( res['OK'] )
+    self.assertTrue( res['OK'] ) # In this case the application finished with errors,
+                                 # but the JobWrapper executed successfully
     os.remove('script.sh')
 
     shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh') #this will reschedule
     jw = JobWrapper()
     jw.jobArgs = {'Executable':'script-RESC.sh'}
     res = jw.execute('')
-    self.assertFalse( res['OK'] )
+    self.assertFalse( res['OK'] ) # In this case the application finished with an error code
+                                  # that the JobWrapper interpreted as "to reschedule"
+                                  # so in this case the "execute" is considered an error
     os.remove('script-RESC.sh')
-
 
 
 
