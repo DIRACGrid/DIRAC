@@ -73,6 +73,34 @@ def curl2Json( *commands, **kwargs ):
   return jsonList
 
 
+def getFullSystemName( name ):
+  name = {
+    'API': 'Interfaces',
+    'AS': 'AccountingSystem',
+    'CS': 'ConfigurationSystem',
+    'Config': 'ConfigurationSystem',
+    'Configuration': 'ConfigurationSystem',
+    'DMS': 'DataManagementSystem',
+    'DataManagement': 'DataManagementSystem',
+    'FS': 'FrameworkSystem',
+    'Framework': 'FrameworkSystem',
+    'MS': 'MonitoringSystem',
+    'Monitoring': 'MonitoringSystem',
+    'RMS': 'RequestManagementSystem',
+    'RequestManagement': 'RequestManagementSystem',
+    'RSS': 'ResourceStatusSystem',
+    'ResourceStatus': 'ResourceStatusSystem',
+    'SMS': 'StorageManagamentSystem',
+    'StorageManagement': 'StorageManagamentSystem',
+    'TS': 'TransformationSystem',
+    'TMS': 'TransformationSystem',
+    'Transformation': 'TransformationSystem',
+    'WMS': 'WorkloadManagementSystem',
+    'Workload': 'WorkloadManagementSystem',
+  }.get( name, name )
+
+  return name
+
 def parseForReleaseNotes( commentBody ):
   """ will look for "BEGINRELEASENOTES / ENDRELEASENOTES" and extend releaseNoteList if there are entries """
 
@@ -101,7 +129,7 @@ def collateReleaseNotes( prs ):
       system = ''
       for line in notes.splitlines():
         if line.strip().startswith("*"):
-          system = line.strip().strip("*:")
+          system = getFullSystemName( line.strip("*:").strip() )
         elif line.strip():
           systemChangesDict[system].append( line.strip() )
 
