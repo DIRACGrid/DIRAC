@@ -76,6 +76,14 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     self.assertFalse( res['OK'] )
     os.remove('script.sh')
 
+    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
+    jw = JobWrapper()
+    jw.jobArgs = {'Executable':'script-OK.sh'}
+    res = jw.execute('')
+    self.assertTrue( res['OK'] )
+    os.remove('script-OK.sh')
+
+
 
 #############################################################################
 # Test Suite run
