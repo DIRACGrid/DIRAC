@@ -127,16 +127,22 @@ class ModuleBase( object ):
       self._finalize()
 
     # If everything is OK
-    except GracefulTermination, status:
+    except GracefulTermination as status:
       self.setApplicationStatus( status )
       self.log.info( status )
       return S_OK( status )
 
     # This catches everything that is voluntarily thrown within the modules, so an error
-    except RuntimeError, e:
-      self.log.error( e )
-      self.setApplicationStatus( e )
-      return S_ERROR( e )
+    except RuntimeError as e:
+      if len(e.args) > 1:
+        self.log.error( e[0] )
+        self.setApplicationStatus( e[0] )
+        res = S_ERROR( e[1], e[0] )
+        return S_ERROR( e[1], e[0] )
+      else:
+        self.log.error( e )
+        self.setApplicationStatus( e )
+        return S_ERROR( e )
 
     # This catches everything that is not voluntarily thrown (here, really writing an exception)
     except Exception as e: #pylint: disable=broad-except

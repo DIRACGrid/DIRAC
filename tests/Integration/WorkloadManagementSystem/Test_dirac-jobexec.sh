@@ -40,7 +40,18 @@ else
   exit 1
 fi
 
+# FAIL with exit code > 255
+$DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL1502.xml $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+if [ $? -eq 222 ] # This is 1502 & 255 (0xDE)
+then
+  echo -e "\nSuccess\n\n"
+else
+  echo -e "\nSomething wrong!\n\n"
+  exit 1
+fi
+
 # Removals
 rm jobDescription-OK.xml
 rm jobDescription-FAIL.xml
+rm jobDescription-FAIL1502.xml
 rm Script1_CodeOutput.log

@@ -22,6 +22,20 @@ import urllib
 import json
 
 import DIRAC
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
+from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
+from DIRAC.Core.Utilities.Subprocess                                import systemCall
+from DIRAC.Core.Utilities.Subprocess                                import Subprocess
+from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
+from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
+from DIRAC.Core.Utilities.Adler                                     import fileAdler
+from DIRAC.Core.DISET.RPCClient                                     import RPCClient
+
 from DIRAC.DataManagementSystem.Client.DataManager                  import DataManager
 from DIRAC.Resources.Catalog.FileCatalog                            import FileCatalog
 from DIRAC.DataManagementSystem.Client.FailoverTransfer             import FailoverTransfer
@@ -37,21 +51,8 @@ from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry              import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
-from DIRAC.Core.DISET.RPCClient                                     import RPCClient
-from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
-from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
-from DIRAC.Core.Utilities.Subprocess                                import systemCall
-from DIRAC.Core.Utilities.Subprocess                                import Subprocess
-from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
-from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
-from DIRAC.Core.Utilities.Adler                                     import fileAdler
-from DIRAC.Core.Utilities                                           import List
-from DIRAC.Core.Utilities                                           import DEncode
-from DIRAC.Core.Utilities                                           import Time
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
 EXECUTION_RESULT = {}
-TO_RESCHEDULE = '111' # custom return code interpreted for rescheduling jobs
 
 class JobWrapper( object ):
   """ The only user of the JobWrapper is the JobWrapperTemplate
@@ -442,10 +443,10 @@ class JobWrapper( object ):
         self.__report( 'Completed', 'Application Finished Successfully', sendFlag = True )
       elif not watchdog.checkError:
         self.__report( 'Completed', 'Application Finished With Errors', sendFlag = True )
-        if str(status) == TO_RESCHEDULE:
+        if status in (DErrno.EWMSRESC, DErrno.EWMSRESC & 255): # the status will be truncated to 0xDE (222)
           self.log.verbose("job will be rescheduled")
           self.__report( 'Completed', 'Going to reschedule job', sendFlag = True )
-          return S_ERROR(TO_RESCHEDULE)
+          return S_ERROR(DErrno.EWMSRESC, 'Job will be rescheduled')
 
     else:
       return S_ERROR( 'No outputs generated from job execution' )

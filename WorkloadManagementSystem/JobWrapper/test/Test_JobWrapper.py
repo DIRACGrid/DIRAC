@@ -69,6 +69,13 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     res = jw.execute('')
     self.assertTrue( res['OK'] )
 
+    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
+    jw = JobWrapper()
+    jw.jobArgs = {'Executable':'script-OK.sh'}
+    res = jw.execute('')
+    self.assertTrue( res['OK'] )
+    os.remove('script-OK.sh')
+
     shutil.copy('WorkloadManagementSystem/JobWrapper/test/script.sh', 'script.sh')
     jw = JobWrapper()
     jw.jobArgs = {'Executable':'script.sh', 'Arguments':'111'}
@@ -76,12 +83,14 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     self.assertFalse( res['OK'] )
     os.remove('script.sh')
 
-    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
+    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh') #this will reschedule
     jw = JobWrapper()
-    jw.jobArgs = {'Executable':'script-OK.sh'}
+    jw.jobArgs = {'Executable':'script-RESC.sh'}
     res = jw.execute('')
-    self.assertTrue( res['OK'] )
-    os.remove('script-OK.sh')
+    self.assertFalse( res['OK'] )
+    os.remove('script-RESC.sh')
+
+
 
 
 

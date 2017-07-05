@@ -9,7 +9,7 @@
     - the jobWrapper initialization phase failed
     - the inputSandbox download failed
     - the resolution of the inpt data failed
-    - the payload ended with the status defined in 'TO_RESCHEDULE' "constant"
+    - the JobWrapper ended with the status DErrno.EWMSRESC
 """
 
 import sys
@@ -26,8 +26,9 @@ from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
 from DIRAC import gLogger
+from DIRAC.Core.Utilities import DErrno
 
-from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper, rescheduleFailedJob, TO_RESCHEDULE
+from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper, rescheduleFailedJob
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 
 
@@ -137,11 +138,11 @@ def execute( arguments ):
     result = job.execute( arguments )
     if not result['OK']:
       gLogger.error( 'Failed to execute job', result['Message'] )
-      raise JobWrapperError( result['Message'] )
+      raise JobWrapperError( (result['Message'], result['Errno']) )
   except JobWrapperError as exc:
-    if str(exc) == '0':
+    if exc[1] == 0 or str(exc[0]) == '0':
       gLogger.verbose( 'JobWrapper exited with status=0 after execution' )
-    if str(exc) == TO_RESCHEDULE:
+    if exc[1] == DErrno.EWMSRESC:
       gLogger.warn("Asked to reschedule job")
       rescheduleResult = rescheduleFailedJob( jobID, 'JobWrapper execution', gJobReport )
       job.sendJobAccounting( rescheduleResult, 'JobWrapper execution' )

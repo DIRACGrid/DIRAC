@@ -26,3 +26,12 @@ j.setExecutable('sh %s' %scriptSHLocation)
 jobXMLFile = 'jobDescription-FAIL.xml'
 with open( jobXMLFile, 'w+' ) as fd:
   fd.write( j._toXML() )
+
+# With a script that returns 1502
+j = Job()
+scriptSHLocation = find_all( 'script-RESC.sh', '..', '/DIRAC/WorkloadManagementSystem/JobWrapper' )[0]
+j.setExecutable('sh %s' %scriptSHLocation)
+
+jobXMLFile = 'jobDescription-FAIL1502.xml'
+with open( jobXMLFile, 'w+' ) as fd:
+  fd.write( j._toXML() )
