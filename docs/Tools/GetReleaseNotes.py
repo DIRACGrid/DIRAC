@@ -4,10 +4,10 @@
 
 import json
 import subprocess
-
-from pprint import pprint
+from datetime import datetime, timedelta
 
 from collections import defaultdict
+import argparse
 
 try:
   from GitTokens import GITHUBTOKEN
@@ -122,7 +122,7 @@ def collateReleaseNotes( prs ):
   """
   releaseNotes = ""
   for baseBranch, pr in prs.iteritems():
-    releaseNotes += "[%s]\n\n" % baseBranch[len("DiracGrid:"):]
+    releaseNotes += "[%s]\n\n" % baseBranch
     systemChangesDict = defaultdict( list )
     for prid, content in pr.iteritems():
       notes = content['comment']
@@ -137,7 +137,6 @@ def collateReleaseNotes( prs ):
             line = "%s: (#%s) %s" % (splitline[0], prid, splitline[1].strip() )
           systemChangesDict[system].append( line )
 
-    pprint(systemChangesDict)
     for system, changes in systemChangesDict.iteritems():
       if not system:
         continue
@@ -155,15 +154,35 @@ class GithubInterface( object ):
 
   """
 
-  def __init__( self, startDate, owner='DiracGrid', repo='Dirac', branches=None):
-    self.startDate = startDate
+  def __init__( self, owner='DiracGrid', repo='Dirac'):
     self.owner = owner
     self.repo = repo
-    if branches is None:
-      branches = ['Integration', 'rel-v6r17', 'rel-v6r18']
-    self.branches = branches
     self._options = dict( owner=self.owner, repo=self.repo  )
-    self._releaseNotes = None
+
+    self.branches = ['Integration', 'rel-v6r17', 'rel-v6r18']
+    self.openPRs = False
+    self.startDate = str(datetime.now() - timedelta(days=14))[:10]
+
+  def parseOptions(self):
+    """parse the command line options"""
+    parser = argparse.ArgumentParser("Dirac Release Notes",
+                                     formatter_class=argparse.RawTextHelpFormatter)
+
+    parser.add_argument("--branches", action="store", default=self.branches,
+                        dest="branches", nargs='+',
+                        help="branches to get release notes for")
+
+    parser.add_argument("--date", action="store", default=self.startDate, dest="startDate",
+                        help="date after which PRs are checked, default (two weeks ago): %s" % self.startDate)
+
+    parser.add_argument("--openPRs", action="store_true", dest="openPRs", default=self.openPRs,
+                        help="get release notes for open (unmerged) PRs, for testing purposes")
+
+    parsed = parser.parse_args()
+
+    self.branches = parsed.branches
+    self.startDate = parsed.startDate
+    self.openPRs = parsed.openPRs
 
 
   def _github( self, action ):
@@ -187,7 +206,7 @@ class GithubInterface( object ):
     """
     url = self._github( "pulls?state=%s&per_page=%s" % (state, perPage) )
     prs = curl2Json( ghHeaders(), url )
-    #pprint(prs)
+
     if not mergedOnly:
       return prs
 
@@ -206,7 +225,9 @@ class GithubInterface( object ):
     rawReleaseNotes = defaultdict( dict )
 
     for pr in prs:
-      baseBranch = pr['base']['label']
+      baseBranch = pr['base']['label'][len("DiracGrid:"):]
+      if baseBranch not in self.branches:
+        continue
       comment = parseForReleaseNotes( pr['body'] )
       prID = pr['number']
       mergeDate = pr.get('merged_at', None)
@@ -221,17 +242,22 @@ class GithubInterface( object ):
 
   def getReleaseNotes( self ):
 
-    ## FIXME: use state closed and mergedOnly=True
-    prs = self.getGithubPRs( state='open', mergedOnly=False)
+    if self.openPRs:
+      prs = self.getGithubPRs( state='open', mergedOnly=False)
+    else:
+      prs = self.getGithubPRs( state='closed', mergedOnly=True)
     prs = self.getNotesFromPRs( prs )
     releaseNotes = collateReleaseNotes( prs )
     print releaseNotes
 
 
 if __name__ == "__main__":
-  ## FIXME: get start date from command line
-
-  RUNNER = GithubInterface( startDate='2017-07-01')
+  RUNNER = GithubInterface()
+  try:
+    RUNNER.parseOptions()
+  except RuntimeError as e:
+    print ("Error during runtime: %s", e)
+    exit(1)
 
   try:
     RUNNER.getReleaseNotes()
