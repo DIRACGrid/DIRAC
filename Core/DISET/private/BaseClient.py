@@ -103,11 +103,11 @@ class BaseClient(object):
 
   def __discoverSetup( self ):
     """ Discover which setup to use and stores it in self.setup
-	The setup is looked for:
-	   * kwargs of the constructor (see KW_SETUP)
-	   * the ThreadConfig
-	   * in the CS /DIRAC/Setup
-	   * default to 'Test'
+        The setup is looked for:
+           * kwargs of the constructor (see KW_SETUP)
+           * the ThreadConfig
+           * in the CS /DIRAC/Setup
+           * default to 'Test'
     """
     if self.KW_SETUP in self.kwargs and self.kwargs[ self.KW_SETUP ]:
       self.setup = str( self.kwargs[ self.KW_SETUP ] )
@@ -119,10 +119,10 @@ class BaseClient(object):
 
   def __discoverVO( self ):
     """ Discover which VO to use and stores it in self.vo
-	The VO is looked for:
-	   * kwargs of the constructor (see KW_VO)
-	   * in the CS /DIRAC/VirtualOrganization
-	   * default to 'unknown'
+        The VO is looked for:
+           * kwargs of the constructor (see KW_VO)
+           * in the CS /DIRAC/VirtualOrganization
+           * default to 'unknown'
     """
     if self.KW_VO in self.kwargs and self.kwargs[ self.KW_VO ]:
       self.vo = str( self.kwargs[ self.KW_VO ] )
@@ -133,10 +133,10 @@ class BaseClient(object):
   def __discoverURL( self ):
     """ Calculate the final URL. It is called at initialization and in connect in case of issue
 
-	It sets:
-	  * self.serviceURL: the url (dips) selected as target using __findServiceURL
-	  * self.__URLTuple: a split of serviceURL obtained by Network.splitURL
-	  * self._serviceName: the last part of URLTuple (typically System/Component)
+        It sets:
+          * self.serviceURL: the url (dips) selected as target using __findServiceURL
+          * self.__URLTuple: a split of serviceURL obtained by Network.splitURL
+          * self._serviceName: the last part of URLTuple (typically System/Component)
     """
     #Calculate final URL
     try:
@@ -161,10 +161,10 @@ class BaseClient(object):
 
   def __discoverTimeout( self ):
     """ Discover which timeout to use and stores it in self.timeout
-	The timeout can be specified kwargs of the constructor (see KW_TIMEOUT),
-	with a minimum of 120 seconds.
-	If unspecified, the timeout will be 600 seconds.
-	The value is set in self.timeout, as well as in self.kwargs[KW_TIMEOUT]
+        The timeout can be specified kwargs of the constructor (see KW_TIMEOUT),
+        with a minimum of 120 seconds.
+        If unspecified, the timeout will be 600 seconds.
+        The value is set in self.timeout, as well as in self.kwargs[KW_TIMEOUT]
     """
     if self.KW_TIMEOUT in self.kwargs:
       self.timeout = self.kwargs[ self.KW_TIMEOUT ]
@@ -179,14 +179,14 @@ class BaseClient(object):
 
   def __discoverCredentialsToUse( self ):
     """ Discovers which credentials to use for connection.
-	* Server certificate:
-	  -> If KW_USE_CERTIFICATES in kwargs, sets it in self.__useCertificates
-	  ->If not, check gConfig.useServerCertificate(), and sets it in self.__useCertificates and kwargs[KW_USE_CERTIFICATES]
-	* Certification Authorities check:
-	   -> if KW_SKIP_CA_CHECK is not in kwargs and we are using the certificates, set KW_SKIP_CA_CHECK to false in kwargs
-	   -> if KW_SKIP_CA_CHECK is not in kwargs and we are not using the certificate, check the CS.skipCACheck
-	* Proxy Chain
-	   -> if KW_PROXY_CHAIN in kwargs, we remove it and dump its string form into kwargs[KW_PROXY_STRING]
+        * Server certificate:
+          -> If KW_USE_CERTIFICATES in kwargs, sets it in self.__useCertificates
+          ->If not, check gConfig.useServerCertificate(), and sets it in self.__useCertificates and kwargs[KW_USE_CERTIFICATES]
+        * Certification Authorities check:
+           -> if KW_SKIP_CA_CHECK is not in kwargs and we are using the certificates, set KW_SKIP_CA_CHECK to false in kwargs
+           -> if KW_SKIP_CA_CHECK is not in kwargs and we are not using the certificate, check the CS.skipCACheck
+        * Proxy Chain
+           -> if KW_PROXY_CHAIN in kwargs, we remove it and dump its string form into kwargs[KW_PROXY_STRING]
 
     """
     #Use certificates?
@@ -210,15 +210,15 @@ class BaseClient(object):
 
   def __discoverExtraCredentials( self ):
     """ Add extra credentials informations.
-	* self.__extraCredentials
-	  -> if KW_EXTRA_CREDENTIALS in kwargs, we set it
-	  -> Otherwise, if we use the server certificate, we set it to VAL_EXTRA_CREDENTIALS_HOST
-	  -> If we have a delegation (see bellow), we set it to (delegatedDN, delegatedGroup)
-	  -> otherwise it is an empty string
-	* delegation:
-	  -> if KW_DELEGATED_DN in kwargs, or delegatedDN in threadConfig, put in in self.kwargs
-	  -> if KW_DELEGATED_GROUP in kwargs or delegatedGroup in threadConfig, put it in self.kwargs
-	  -> If we have a delegated DN but not group, we find the corresponding group in the CS
+        * self.__extraCredentials
+          -> if KW_EXTRA_CREDENTIALS in kwargs, we set it
+          -> Otherwise, if we use the server certificate, we set it to VAL_EXTRA_CREDENTIALS_HOST
+          -> If we have a delegation (see bellow), we set it to (delegatedDN, delegatedGroup)
+          -> otherwise it is an empty string
+        * delegation:
+          -> if KW_DELEGATED_DN in kwargs, or delegatedDN in threadConfig, put in in self.kwargs
+          -> if KW_DELEGATED_GROUP in kwargs or delegatedGroup in threadConfig, put it in self.kwargs
+          -> If we have a delegated DN but not group, we find the corresponding group in the CS
 
     """
     #Wich extra credentials to use?
@@ -248,24 +248,24 @@ class BaseClient(object):
 
   def __findServiceURL( self ):
     """
-	Discovers the URL of a service, taking into account gateways, multiple URLs, banned URLs
+        Discovers the URL of a service, taking into account gateways, multiple URLs, banned URLs
 
 
-	If the site on which we run is configured to use gateways (/DIRAC/Gateways/<siteName>),
-	these URLs will be used. To ignore the gateway, it is possible to set KW_IGNORE_GATEWAYS
-	to False in kwargs.
+        If the site on which we run is configured to use gateways (/DIRAC/Gateways/<siteName>),
+        these URLs will be used. To ignore the gateway, it is possible to set KW_IGNORE_GATEWAYS
+        to False in kwargs.
 
-	If self._destinationSrv (given as constructor attribute) is a properly formed URL,
-	we just return this one. If we have to use a gateway, we just replace the server name in the url.
+        If self._destinationSrv (given as constructor attribute) is a properly formed URL,
+        we just return this one. If we have to use a gateway, we just replace the server name in the url.
 
-	The list of URLs defined in the CS (<System>/URLs/<Component>) is randomized
+        The list of URLs defined in the CS (<System>/URLs/<Component>) is randomized
 
-	This method also sets some attributes:
-	  * self.__nbOfUrls = number of URLs
-	  * self.__nbOfRetry = 2 if we have more than 2 urls, otherwise 3
-	  * self.__bannedUrls is reinitialized if all the URLs are banned
+        This method also sets some attributes:
+          * self.__nbOfUrls = number of URLs
+          * self.__nbOfRetry = 2 if we have more than 2 urls, otherwise 3
+          * self.__bannedUrls is reinitialized if all the URLs are banned
 
-	:return: the selected URL
+        :return: the selected URL
 
     """
     if not self.__initStatus[ 'OK' ]:
@@ -341,7 +341,7 @@ class BaseClient(object):
             bannedurl = retVal['Value']
           else:
             break
-	  # We found a banned URL on the same host as the one we are running on
+          # We found a banned URL on the same host as the one we are running on
           if nexturl[1] == bannedurl[1]:
             found = True
             break
@@ -402,10 +402,10 @@ and this is thread %s
 
   def _connect( self ):
     """ Establish the connection.
-	It uses the URL discovered in __discoverURL.
-	In case the connection cannot be established, __discoverURL
-	is called again, and _connect calls itself.
-	We stop after trying self.__nbOfRetry * self.__nbOfUrls
+        It uses the URL discovered in __discoverURL.
+        In case the connection cannot be established, __discoverURL
+        is called again, and _connect calls itself.
+        We stop after trying self.__nbOfRetry * self.__nbOfUrls
 
     """
     # Check if the useServerCertificate configuration changed
@@ -438,31 +438,31 @@ and this is thread %s
       retVal = transport.initAsClient()
       # If we have an issue connecting
       if not retVal[ 'OK' ]:
-	# We try at most __nbOfRetry each URLs
+        # We try at most __nbOfRetry each URLs
         if self.__retry < self.__nbOfRetry * self.__nbOfUrls - 1:
-	  # Recompose the URL (why not using self.serviceURL ? )
+          # Recompose the URL (why not using self.serviceURL ? )
           url = "%s://%s:%d/%s" % ( self.__URLTuple[0], self.__URLTuple[1], int( self.__URLTuple[2] ), self.__URLTuple[3] )
-	  # Add the url to the list of banned URLs if it is not already there. (Can it happen ? I don't think so)
+          # Add the url to the list of banned URLs if it is not already there. (Can it happen ? I don't think so)
           if url not in self.__bannedUrls:
             self.__bannedUrls += [url]
-	    # Why only printing in this case ?
+            # Why only printing in this case ?
             if len( self.__bannedUrls ) < self.__nbOfUrls:
               gLogger.notice( "Non-responding URL temporarily banned", "%s" % url )
-	  # Increment the retry couunter
+          # Increment the retry couunter
           self.__retry += 1
-	  # If it is our last attempt for each URL, we increase the timeout
+          # If it is our last attempt for each URL, we increase the timeout
           if self.__retryCounter == self.__nbOfRetry - 1:
             transport.setSocketTimeout( 5 ) # we increase the socket timeout in case the network is not good
           gLogger.info( "Retry connection: ", "%d" % self.__retry )
-	  # If we tried all the URL, we increase the global counter (__retryCounter), and sleep
+          # If we tried all the URL, we increase the global counter (__retryCounter), and sleep
           if len(self.__bannedUrls) == self.__nbOfUrls:
             self.__retryCounter += 1
             self.__retryDelay = 3. / self.__nbOfUrls  if self.__nbOfUrls > 1 else 2  # we run only one service! In that case we increase the retry delay.
             gLogger.info( "Waiting %f seconds before retry all service(s)" % self.__retryDelay )
             time.sleep( self.__retryDelay )
-	  # rediscover the URL
+          # rediscover the URL
           self.__discoverURL()
-	  # try to reconnect
+          # try to reconnect
           return self._connect()
         else:
           return retVal
@@ -477,7 +477,7 @@ and this is thread %s
   def _disconnect( self, trid ):
     """ Disconnect the connection.
 
-	:param trid: Transport ID in the transportPool
+        :param trid: Transport ID in the transportPool
     """
     getGlobalTransportPool().close( trid )
 
@@ -485,21 +485,21 @@ and this is thread %s
   def _proposeAction( self, transport, action ):
     """ Proposes an action by sending a tuple containing
 
-	  * System/Component
-	  * Setup
-	  * VO
-	  * action
-	  * extraCredentials
+          * System/Component
+          * Setup
+          * VO
+          * action
+          * extraCredentials
 
-	It is kind of a handshake.
+        It is kind of a handshake.
 
-	The server might ask for a delegation, in which case it is done here.
-	The result of the delegation is then returned.
+        The server might ask for a delegation, in which case it is done here.
+        The result of the delegation is then returned.
 
-	:param transport: the Transport object returned by _connect
-	:param action: tuple (<action type>, <action name>). It depends on the
-		       subclasses of BaseClient. <action type> can be for example
-		       'RPC' or 'FileTransfer'
+        :param transport: the Transport object returned by _connect
+        :param action: tuple (<action type>, <action name>). It depends on the
+                       subclasses of BaseClient. <action type> can be for example
+                       'RPC' or 'FileTransfer'
 
        :return: whatever the server sent back
 
@@ -528,8 +528,8 @@ and this is thread %s
 
   def __delegateCredentials( self, transport, delegationRequest ):
     """ Perform a credential delegation. This seems to be used only for the GatewayService.
-	It calls the delegation mechanism of the Transport class. Note that it is not used when
-	delegating credentials to the ProxyDB
+        It calls the delegation mechanism of the Transport class. Note that it is not used when
+        delegating credentials to the ProxyDB
     """
     retVal = gProtocolDict[ self.__URLTuple[0] ][ 'delegation' ]( delegationRequest, self.kwargs )
     if not retVal[ 'OK' ]:
@@ -541,9 +541,9 @@ and this is thread %s
 
   def __checkTransportSanity( self ):
     """ Calls the sanity check of the underlying Transport object
-	and stores the result in self.__idDict.
-	It is checked at the creation of the BaseClient, and when connecting
-	if the use of the certificate has changed.
+        and stores the result in self.__idDict.
+        It is checked at the creation of the BaseClient, and when connecting
+        if the use of the certificate has changed.
 
     """
     if not self.__initStatus[ 'OK' ]:
@@ -558,13 +558,13 @@ and this is thread %s
 
   def __setKeepAliveLapse( self ):
     """ Select the maximum Keep alive lapse between
-	150 seconds and what is specifind in kwargs[KW_KEEP_ALIVE_LAPSE],
-	and sets it in kwargs[KW_KEEP_ALIVE_LAPSE]
+        150 seconds and what is specifind in kwargs[KW_KEEP_ALIVE_LAPSE],
+        and sets it in kwargs[KW_KEEP_ALIVE_LAPSE]
     """
     kaa = 1
     if self.KW_KEEP_ALIVE_LAPSE in self.kwargs:
       try:
-	kaa = max( 0, int( self.kwargs[ self.KW_KEEP_ALIVE_LAPSE ] ) )
+        kaa = max( 0, int( self.kwargs[ self.KW_KEEP_ALIVE_LAPSE ] ) )
       except:
         pass
     if kaa:
@@ -574,17 +574,17 @@ and this is thread %s
 
   def _getBaseStub( self ):
     """ Returns a tuple with (self._destinationSrv, newKwargs)
-	self._destinationSrv is what was given as first parameter of the init serviceName
+        self._destinationSrv is what was given as first parameter of the init serviceName
 
-	newKwargs is an updated copy of kwargs:
-	  * kwargs has already been updated by all the initialization functions
-	  * if a delegated DN is not set, but is found in __threadConfig or in the info returned by the protocol
-	    sanitiy check, then we replace it (KW_DELEGATED_DN)
-	  * Same goes for the delegated group KW_DELEGATED_GROUP. In the case of a host,
-	    the value is the same as for VAL_EXTRA_CREDENTIALS_HOST
-	  * if set, we remove the useCertificates (KW_USE_CERTIFICATES) in newKwargs (not sure to know why)
+        newKwargs is an updated copy of kwargs:
+          * kwargs has already been updated by all the initialization functions
+          * if a delegated DN is not set, but is found in __threadConfig or in the info returned by the protocol
+            sanitiy check, then we replace it (KW_DELEGATED_DN)
+          * Same goes for the delegated group KW_DELEGATED_GROUP. In the case of a host,
+            the value is the same as for VAL_EXTRA_CREDENTIALS_HOST
+          * if set, we remove the useCertificates (KW_USE_CERTIFICATES) in newKwargs (not sure to know why)
 
-	This method is just used to return information in case of error in the InnerRPCClient
+        This method is just used to return information in case of error in the InnerRPCClient
     """
     newKwargs = dict( self.kwargs )
     #Set DN
