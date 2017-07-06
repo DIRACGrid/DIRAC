@@ -9,17 +9,29 @@ import hashlib
 import random
 import binascii
 
-from GSI import crypto
+import M2Crypto
+import re
+import time
+import GSI # XXX Still needed for some parts I haven't finished yet
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security.X509Certificate import X509Certificate
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Security.X509Certificate import X509Certificate
+
+#from xext import xext
+#print xext("1.2.42.42", "diracGroup", "DIRAC group")
 
 random.seed()
 
 
 class X509Chain(object):
+  
+  __pass = None
+  def __getPass(self):
+    return self.__pass
+
+  __validExtensionValueTypes = ( basestring, )
 
   __validExtensionValueTypes = (basestring, )
 
@@ -31,7 +43,13 @@ class X509Chain(object):
     self.__hash = False
     if certList:
       self.__loadedChain = True
-      self.__certList = certList
+      self.__certList = []
+      for cert in certList:
+        if type( cert ) != type( M2Crypto.X509.X509 ):
+          # XXX walkaround for legacy code that is not updated yet, should be removed later
+          tmpCert = X509Certificate( certString = GSI.crypto.dump_certificate( GSI.crypto.FILETYPE_PEM, cert) )
+          cert = tmpCert
+        self.__certList.append( cert )
     else:
       self.__loadedChain = False
     if keyObj:
@@ -108,6 +126,8 @@ class X509Chain(object):
     Return : S_OK / S_ERROR
     """
     self.__loadedPKey = False
+    if password:
+      self.__pass = password
     try:
       self.__keyObj = crypto.load_privatekey(crypto.FILETYPE_PEM, pemData, password)
     except Exception as e:
@@ -233,7 +253,7 @@ class X509Chain(object):
       proxyKey = crypto.PKey()
       proxyKey.generate_key(crypto.TYPE_RSA, strength)
 
-    proxyCert = crypto.X509()
+    proxyCert = M2Crypto.X509.X509()
 
     if rfc:
       proxyCert.set_serial_number(str(int(random.random() * 10 ** 10)))
@@ -587,7 +607,7 @@ class X509Chain(object):
     if self.__loadedChain:
       repStr += " %s certs " % len(self.__certList)
       for cert in self.__certList:
-        repStr += "[%s]" % cert.get_subject().one_line()
+        repStr += "[%s]" % str(cert.getSubjectNameObject())
     if self.__loadedPKey:
       repStr += " with key"
     repStr += ">"

@@ -65,8 +65,8 @@ class SocketInfo:
         identitySubject = peerChain.getIssuerCert()['Value'].getSubjectNameObject()[ 'Value' ]
     else:
       identitySubject = peerChain.getCertInChain( 0 )['Value'].getSubjectNameObject()[ 'Value' ]
-    credDict = { 'DN' : identitySubject.one_line(),
-                 'CN' : identitySubject.commonName,
+    credDict = { 'DN' : str(identitySubject),
+                 'CN' : str(identitySubject).split('CN')[1][1:],
                  'x509Chain' : peerChain,
                  'isProxy' : isProxyChain,
                  'isLimitedProxy' : isLimitedProxyChain }
@@ -114,7 +114,7 @@ class SocketInfo:
   def _clientCallback( self, conn, cert, errnum, depth, ok ):
     # This obviously has to be updated
     if depth == 0 and ok == 1:
-      hostnameCN = cert.get_subject().commonName
+      hostnameCN = str(cert.getSubjectNameObject())
       #if hostnameCN in ( self.infoDict[ 'hostname' ], "host/%s" % self.infoDict[ 'hostname' ]  ):
       if self.__isSameHost( hostnameCN, self.infoDict['hostname'] ):
         return 1
