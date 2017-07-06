@@ -18,6 +18,9 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.X509Certificate import X509Certificate
 
+#from xext import xext
+#print xext("1.2.42.42", "diracGroup", "DIRAC group")
+
 random.seed()
 
 
@@ -83,6 +86,7 @@ random.seed()
     """
     self.__loadedChain = False
     try:
+      self.__certList = self.__listFromString(data, dataFormat)
       self.__certList = self.__certListFromPemString(data, dataFormat)
       self.loadKeyFromString(data)
     except Exception as e:
@@ -94,6 +98,13 @@ random.seed()
     # Update internals
     self.__checkProxyness()
     return S_OK()
+
+  def __listFromString( self, certString, format = M2Crypto.X509.FORMAT_PEM ):
+    """
+    Create certificates list from string. String sould contain certificates, just like plain text proxy file.
+    """
+    # To get list of X509 certificates (not X509 Certificate Chain) from string it has to be parsed like that (constructors are not able to deal with big string)
+    return [ X509Certificate( certString = cert[0] ) for cert in re.findall(r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)", certString) ]
 
   def __certListFromPemString( self, certString, format = M2Crypto.X509.FORMAT_PEM ):
     """
@@ -167,7 +178,7 @@ random.seed()
     retVal = self.loadChainFromString(pemData)
     if not retVal['OK']:
       return retVal
-    return self.loadKeyFromString( pemData )
+    return self.loadKeyFromString( pemData, M2Crypto.util.no_passphrase_callback )
 
   def __getProxyExtensionList(self, diracGroup=False, rfc=False, rfcLimited=False):
     """
@@ -262,9 +273,21 @@ random.seed()
       proxyKey = M2Crypto.EVP.PKey()
       proxyKey.assign_rsa(M2Crypto.RSA.gen_key(strength, 65537, callback = M2Crypto.util.quiet_genparam_callback ))
 
+    proxyCert = M2Crypto.X509.X509()
     proxyCert = X509Certificate()
 
     if rfc:
+      proxyCert.set_serial_number( int( random.random() * 10 ** 10 ) )
+      # No easy way to deep-copy certificate subject
+      cloneSubject = M2Crypto.X509.X509_Name()
+      parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
+      for part in parts:
+        nid, val = part.split('=')
+        cloneSubject.add_entry_by_txt(field = nid, type = M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
+      cloneSubject.add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  str( int( random.random() * 10 ** 10 ) ), len=-1, loc=-1, set=0 )
+      proxyCert.set_subject( cloneSubject )
+      for extension in self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ):
+        proxyCert.add_ext( extension )
       proxyCert.setSerialNumber( int( random.random() * 10 ** 10 ) )
       # No easy way to deep-copy certificate subject
       cloneSubject = M2Crypto.X509.X509_Name()
@@ -277,6 +300,17 @@ random.seed()
       for extension in self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ):
         proxyCert.addExtension( extension )
     else:
+      serial = issuerCert.getSerialNumber()
+      if serial['OK']:
+        proxyCert.set_serial_number( serial['Value'] )
+      else:
+        return serial
+      parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
+      # No easy way to deep-copy certificate subject
+      cloneSubject = M2Crypto.X509.X509_Name()
+      for part in parts:
+        nid, val = part.split('=')
+        cloneSubject.add_entry_by_txt(field = nid, type = M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
       serial = issuerCert.getSerialNumber()
       if serial['OK']:
         proxyCert.setSerialNumber( serial['Value'] )
@@ -292,10 +326,31 @@ random.seed()
         cloneSubject.add_entry_by_txt( field = 'CN', type = M2Crypto.ASN1.MBSTRING_ASC, entry = "limited proxy", len = -1, loc = -1, set = 0 )
       else:
         cloneSubject.add_entry_by_txt( field = 'CN', type = M2Crypto.ASN1.MBSTRING_ASC, entry = "proxy", len = -1, loc = -1, set = 0 )
+      proxyCert.set_subject( cloneSubject )
+      for extension in self.__getProxyExtensionList( diracGroup ):
+        proxyCert.add_ext( extension )
+        cloneSubject.add_entry_by_txt( field = 'CN', type = M2Crypto.ASN1.MBSTRING_ASC, entry = "proxy", len = -1, loc = -1, set = 0 )
       proxyCert.setSubject( cloneSubject )
       for extension in self.__getProxyExtensionList( diracGroup ):
         proxyCert.addExtension( extension )
 
+    subject = issuerCert.getSubjectNameObject()
+    if subject['OK']:
+      proxyCert.set_issuer( subject['Value'] )
+    else:
+      return subject
+    version = issuerCert.getVersion()
+    if version['OK']:
+      proxyCert.set_version( version['Value'] )
+    else:
+      return version
+    proxyCert.set_pubkey( proxyKey )
+    proxyNotBefore = M2Crypto.ASN1.ASN1_UTCTIME()
+    proxyNotBefore.set_time( int( time.time() ) - 900 )
+    proxyCert.set_not_before( proxyNotBefore )
+    proxyNotAfter = M2Crypto.ASN1.ASN1_UTCTIME()
+    proxyNotAfter.set_time( int( time.time() ) + lifeTime )
+    proxyCert.set_not_after( proxyNotAfter )
     subject = issuerCert.getSubjectNameObject()
     if subject['OK']:
       proxyCert.setIssuer( subject['Value'] )
