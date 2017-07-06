@@ -24,7 +24,7 @@ from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 
 
-__RCSID__ = "8a83f35 (2017-02-21 10:34:46 +0100) Andre Sailer <andre.philippe.sailer@cern.ch>"
+__RCSID__ = "$Id$"
 
 class SSH( object ):
   """ SSH class encapsulates passing commands and files through an SSH tunnel
@@ -436,7 +436,7 @@ class SSHComputingElement( ComputingElement ):
     else:
       return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
 
-  def submitJob( self, executableFile, proxy, numberOfJobs = 1 ,processors=1):
+  def submitJob( self, executableFile, proxy, numberOfJobs = 1, processors = 1 ):
 
 #    self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
@@ -454,13 +454,13 @@ class SSHComputingElement( ComputingElement ):
     else: # no proxy
       submitFile = executableFile
 
-    result = self._submitJobToHost( submitFile, numberOfJobs ,processors=processors)
+    result = self._submitJobToHost( submitFile, numberOfJobs, processors = processors )
     if proxy:
       os.remove( submitFile )
 
     return result
 
-  def _submitJobToHost( self, executableFile, numberOfJobs, host = None, processors=1 ):
+  def _submitJobToHost( self, executableFile, numberOfJobs, host = None, processors = 1 ):
     """  Submit prepared executable to the given host
     """
     ssh = SSH( host = host, parameters = self.ceParameters )
@@ -479,7 +479,7 @@ class SSHComputingElement( ComputingElement ):
                        'NJobs': numberOfJobs,
                        'SubmitOptions': self.submitOptions,
                        'JobStamps': jobStamps,
-		       'Mprocess':processors }
+                       'Mprocess': processors }
 
     resultCommand = self.__executeHostCommand( 'submitJob', commandOptions, ssh = ssh, host = host )
     if not resultCommand['OK']:
