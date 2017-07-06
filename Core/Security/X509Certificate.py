@@ -11,6 +11,20 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC import gLogger
+
+VOMS_EXTENSION_OID = '1.3.6.1.4.1.8005.100.100.5'
+VOMS_FQANS_OID = '1.3.6.1.4.1.8005.100.100.4'
+VOMS_GENERIC_ATTRS_OID = '1.3.6.1.4.1.8005.100.100.11'
+DOMAIN_COMPONENT_OID = '0.9.2342.19200300.100.1.25'
+ORGANIZATIONAL_UNIT_NAME_OID = '2.5.4.11'
+COMMON_NAME_OID = '2.5.4.3'
+
+DN_MAPPING = {
+    DOMAIN_COMPONENT_OID: '/DC=',
+    ORGANIZATIONAL_UNIT_NAME_OID: '/OU=',
+    COMMON_NAME_OID: '/CN='
+}
 
 VOMS_EXTENSION_OID = '1.3.6.1.4.1.8005.100.100.5'
 VOMS_FQANS_OID = '1.3.6.1.4.1.8005.100.100.4'
@@ -79,6 +93,9 @@ class X509Certificate( object ):
       self.__valid = True
     if certString:
       self.loadFromString( certString )
+
+  def getCertObject( self ):
+    return self.__certObj
 
   def load( self, certificate ):
     """ Load a x509 certificate either from a file or from a string
