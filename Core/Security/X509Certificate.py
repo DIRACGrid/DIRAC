@@ -11,7 +11,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC import gLogger
 
 # List of OIDs used in handling VOMS extension.
 # VOMS extension is encoded in ASN.1 format and it's surprisingly hard to decode. OIDs describe content of sections
