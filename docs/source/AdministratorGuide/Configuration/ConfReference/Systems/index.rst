@@ -37,7 +37,7 @@ There might be setup in which all services are installed behind one or several d
 
 For this reason, there is the possibility to define a entry in the Operation section which contains the list of servers:
 
-.. code-block:: python
+.. code-block:: guess
 
   Operations/<Setup>/MainServers = server1, server2
 
@@ -56,14 +56,14 @@ There should be no port, no protocol. In the system configuration, one can then 
 
 This will resolve in the following 2 urls:
 
-.. code-block:: python
+.. code-block:: guess
 
   dips://server1:1234/System/Service, dips://server2:1234/System/Service
 
 
 Using together the FailoverURLs section, it can be interesting for orchestrator's setup, where there is a risk for the whole cluster to go down:
 
-.. code-block:: python
+.. code-block:: guess
 
   System
   {
