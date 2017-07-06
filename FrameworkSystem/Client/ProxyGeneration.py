@@ -175,14 +175,14 @@ def generateProxy( params ):
   timeLeft = testChain.getRemainingSecs()[ 'Value' ] / 86400
   if timeLeft < 30:
     gLogger.notice( "\nYour certificate will expire in %d days. Please renew it!\n" % timeLeft )
-  retVal = testChain.loadKeyFromFile( params.keyLoc, password = params.userPasswd )
-  if not retVal[ 'OK' ]:
-    passwdPrompt = "Enter Certificate password:"
-    if params.stdinPasswd:
-      userPasswd = sys.stdin.readline().strip( "\n" )
-    else:
-      userPasswd = getpass.getpass( passwdPrompt )
-    params.userPasswd = userPasswd
+  #retVal = testChain.loadKeyFromFile( params.keyLoc, password = params.userPasswd )  # XXX why so commented?
+  #if not retVal[ 'OK' ]:
+  passwdPrompt = "Enter Certificate password:"
+  if params.stdinPasswd:
+    userPasswd = sys.stdin.readline().strip( "\n" )
+  else:
+    userPasswd = getpass.getpass( passwdPrompt )
+  params.userPasswd = userPasswd
 
   #Find location
   proxyLoc = params.proxyLoc
@@ -219,6 +219,7 @@ def generateProxy( params ):
                         % retVal[ 'Message' ] )
       return S_ERROR( "Can't contact DIRAC CS: %s" % retVal[ 'Message' ] )
     userDN = chain.getCertInChain( -1 )['Value'].getSubjectDN()['Value']
+
     if not params.diracGroup:
       result = Registry.findDefaultGroupForDN( userDN )
       if not result[ 'OK' ]:
@@ -241,7 +242,6 @@ def generateProxy( params ):
     if params.diracGroup not in groups:
       return S_ERROR( "Requested group %s is not valid for DN %s" % ( params.diracGroup, userDN ) )
     gLogger.info( "Creating proxy for %s@%s (%s)" % ( username, params.diracGroup, userDN ) )
-
   if params.summary:
     h = int( params.proxyLifeTime / 3600 )
     m = int( params.proxyLifeTime / 60 ) - h * 60
@@ -256,14 +256,12 @@ def generateProxy( params ):
     gLogger.notice( "Proxy strength will be %s" % params.proxyStrength )
     if params.limitedProxy:
       gLogger.notice( "Proxy will be limited" )
-
   retVal = chain.generateProxyToFile( proxyLoc,
                                       params.proxyLifeTime,
                                       params.diracGroup,
                                       strength = params.proxyStrength,
                                       limited = params.limitedProxy,
                                       rfc = params.rfc )
-
   if not retVal[ 'OK' ]:
     gLogger.warn( retVal[ 'Message' ] )
     return S_ERROR( "Couldn't generate proxy: %s" % retVal[ 'Message' ] )
