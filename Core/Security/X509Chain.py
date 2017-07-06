@@ -18,9 +18,6 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.X509Certificate import X509Certificate
 
-#from xext import xext
-#print xext("1.2.42.42", "diracGroup", "DIRAC group")
-
 random.seed()
 
 
