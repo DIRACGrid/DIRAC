@@ -44,7 +44,7 @@ For this reason, there is the possibility to define a entry in the Operation sec
 
 There should be no port, no protocol. In the system configuration, one can then write:
 
-.. code-block:: python
+.. code-block:: guess
 
   System
   {
