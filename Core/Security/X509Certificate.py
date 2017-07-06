@@ -11,7 +11,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC import gLogger
 
 VOMS_EXTENSION_OID = '1.3.6.1.4.1.8005.100.100.5'
 VOMS_FQANS_OID = '1.3.6.1.4.1.8005.100.100.4'
