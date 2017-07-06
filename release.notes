@@ -1,7 +1,12 @@
+[v6r17p24]
+
+*WMS
+FIX: SiteDirector - unlink is also to be skipped for Local Condor batchsystem
+
 [v6r17p23]
 
 *WMS
-FIX: get job output for remote sheduler in the case of HTCondorCE
+FIX: get job output for remote scheduler in the case of HTCondorCE
 
 [v6r17p22]
 
