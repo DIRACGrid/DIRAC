@@ -18,6 +18,9 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.X509Certificate import X509Certificate
 
+#from xext import xext
+#print xext("1.2.42.42", "diracGroup", "DIRAC group")
+
 random.seed()
 
 
@@ -83,7 +86,7 @@ random.seed()
     """
     self.__loadedChain = False
     try:
-      self.__certList = self.__certListFromPemString(data, dataFormat)
+      self.__certList = self.__listFromString(data, dataFormat)
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(',)', ')'))
     if not self.__certList:
@@ -94,7 +97,7 @@ random.seed()
     self.__checkProxyness()
     return S_OK()
 
-  def __certListFromPemString( self, certString, format = M2Crypto.X509.FORMAT_PEM ):
+  def __listFromString( self, certString, format = M2Crypto.X509.FORMAT_PEM ):
     """
     Create certificates list from string. String sould contain certificates, just like plain text proxy file.
     """
