@@ -59,10 +59,6 @@ def curl2Json( *commands, **kwargs ):
   commands.insert( 1, '-s' )
   if kwargs.get("checkStatusOnly", False):
     commands.insert( 1, '-I' )
-  cleanedCommands = list(commands)
-  ## replace the github token with Xs
-  if '-H' in cleanedCommands:
-    cleanedCommands[commands.index('-H')+1] = cleanedCommands[commands.index('-H')+1].rsplit(" ", 1)[0] + " "+ "X"*len(cleanedCommands[commands.index('-H')+1].rsplit(" ", 1)[1])
   jsonText = subprocess.check_output( commands )
   try:
     jsonList = json.loads( jsonText )
@@ -149,9 +145,6 @@ def collateReleaseNotes( prs ):
 
 class GithubInterface( object ):
   """ object to make calls to github API
-
-  :param list branches: list of branches to get releases notes for
-
   """
 
   def __init__( self, owner='DiracGrid', repo='Dirac'):
@@ -220,7 +213,7 @@ class GithubInterface( object ):
 
 
   def getNotesFromPRs( self, prs ):
-    """ Loop over prs, get base branch, get PR comment and collate into dict of branch:dict( #PRID, comment ) """
+    """ Loop over prs, get base branch, get PR comment and collate into dict of branch:dict( #PRID, dict(comment, mergeDate) ) """
 
     rawReleaseNotes = defaultdict( dict )
 
