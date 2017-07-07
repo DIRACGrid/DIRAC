@@ -68,6 +68,10 @@ correspondingly.
 
 Release notes for the given branch should be made in this branch.
 
+The release notes for a given branch can be obtained with the
+*docs/Tools/GetReleaseNotes.py* script::
+
+  python docs/Tools/GetReleaseNotes.py --branches <branch> [<branch2>...] --date <dateTheLastTagWasMade> [--openPRs]
 
 
 Working with code and tags
