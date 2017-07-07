@@ -4,32 +4,35 @@
 __RCSID__ = "$Id$"
 
 import GSI
+import M2Crypto
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.X509Chain import X509Chain
 
 class X509Request( object ):
+  """
+  Class representing X509 Certificate Request
+  """
 
   def __init__( self, reqObj = None, pkeyObj = None ):
     self.__valid = False
     self.__reqObj = reqObj
     self.__pkeyObj = pkeyObj
-    if reqObj and pkeyObj:
+    if reqObj and pkeyObj:  # isn't it a bit too liberal?
       self.__valid = True
 
-  # It is not used
-  # def setParentCerts( self, certList ):
-  #   self.__cerList = certList
-
   def generateProxyRequest( self, bitStrength = 1024, limited = False ) :
-    self.__pkeyObj = GSI.crypto.PKey()
-    self.__pkeyObj.generate_key( GSI.crypto.TYPE_RSA, bitStrength )
-    self.__reqObj = GSI.crypto.X509Req()
+    """
+    Generate proxy request
+    """
+    self.__pkeyObj = M2Crypto.EVP.PKey()
+    self.__pkeyObj.assign_rsa(M2Crypto.RSA.gen_key(bitStrength, 65537, callback = M2Crypto.util.quiet_genparam_callback ))
+    self.__reqObj = M2Crypto.X509.Request()
     self.__reqObj.set_pubkey( self.__pkeyObj )
     if limited:
-      self.__reqObj.get_subject().insert_entry( "CN", "limited proxy" )
+      self.__reqObj.get_subject().add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  "limited proxy", len=-1, loc=-1, set=0 )
     else:
-      self.__reqObj.get_subject().insert_entry( "CN", "proxy" )
+      self.__reqObj.get_subject().add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  "proxy", len=-1, loc=-1, set=0 )
     self.__reqObj.sign( self.__pkeyObj, "SHA256" )
     self.__valid = True
 
@@ -104,8 +107,12 @@ class X509Request( object ):
     except Exception as e:
       return S_ERROR( DErrno.ENOCERT, str( e ) )
     chain = X509Chain()
-    chain.setChain( certList )
-    chain.setPKey( self.__pkeyObj )
+    ret = chain.loadChainFromString( pemData )
+    if not ret['OK']:
+      return ret
+    ret = chain.setPKey( self.__pkeyObj )
+    if not ret['OK']:
+      return ret
     return chain
 
   def getSubjectDN( self ):
@@ -115,16 +122,17 @@ class X509Request( object ):
     """
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__reqObj.get_subject().one_line() )
+    return S_OK( str( self.__reqObj.get_subject() ) )
 
-  def getIssuerDN( self ):
-    """
-    Get issuer DN
-    Return: S_OK( string )/S_ERROR
-    """
-    if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__reqObj.get_issuer().one_line() )
+  # it doesn't seem to be used anywhere...
+  #def getIssuerDN( self ):
+  #  """
+  #  Get issuer DN
+  #  Return: S_OK( string )/S_ERROR
+  #  """
+  #  if not self.__valid:
+  #    return S_ERROR( DErrno.ENOCERT )
+  #  return S_OK( '' )# self.__reqObj.get_issuer() ) # XXX no get_issuer for request in m2crypto
 
   def checkChain( self, chain ):
     """
@@ -136,12 +144,10 @@ class X509Request( object ):
     if not retVal[ 'OK' ]:
       return retVal
     lastCert = retVal[ 'Value' ]
-    chainPubKey = GSI.crypto.dump_publickey( GSI.crypto.FILETYPE_PEM, lastCert.getPublicKey()[ 'Value' ] )
-    reqPubKey = GSI.crypto.dump_publickey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj )
+    chainPubKey = lastCert.getPublicKey()[ 'Value' ].as_pem()
+    reqPubKey = self.__pkeyObj.as_pem()
     if not chainPubKey == reqPubKey:
       retVal = S_OK( False )
       retVal[ 'Message' ] = "Public keys do not match"
       return retVal
     return S_OK( True )
-
-
