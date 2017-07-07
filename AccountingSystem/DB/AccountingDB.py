@@ -1000,12 +1000,12 @@ class AccountingDB( DB ):
     cmd = "SELECT"
     sqlLinkList = []
     #Check if groupFields and orderFields are in ( "%s", ( field1, ) ) form
-    if groupFields:
+    if groupFields:     
       try:
         groupFields[0] % tuple( groupFields[1] )
         # We can have the case when we have multiple grouping and the fields in the select does not much the group by conditions
         # for example: selectFields = ('%s, %s, %s, SUM(%s)', ['Site', 'startTime', 'bucketLength', 'entriesInBucket'])
-        #             groupFields = ('%s, %s', ['startTime', 'Site'])
+        #             groupFields = ('%s, %s', ['startTime', 'Site']) 
         #             in this case the correct query must be: select Site, startTime, bucketlength, sum(entriesInBucket) from xxxx where yyy Group by Site, startTime, bucketlength
         #
         # When we have multiple grouping then we must have all the fields in Group by. This is from mysql 5.7.

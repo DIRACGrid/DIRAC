@@ -62,26 +62,27 @@ class PoolCETests( unittest.TestCase ):
 
     # Test that max 4 processors can be used at a time
     result = self.ce.submitJob( 'testPoolCEJob_0.py', None )
-    self.assert_( result['OK'] )
+    self.assertTrue( result['OK'] )
     result = self.ce.getCEStatus()
     self.assertEqual( 1, result['UsedProcessors'] )
 
     jobParams = { 'numberOfProcessors': 2 }
     result = self.ce.submitJob( 'testPoolCEJob_1.py', None, **jobParams )
-    self.assert_( result['OK'] )
+    self.assertTrue( result['OK'] )
     result = self.ce.getCEStatus()
     self.assertEqual( 3, result['UsedProcessors'] )
 
     jobParams = { 'numberOfProcessors': 2 }
     result = self.ce.submitJob( 'testPoolCEJob_2.py', None, **jobParams )
-    self.assert_( not result['OK'] )
+    self.assertTrue( not result['OK'] )
     self.assertIn( "Not enough slots", result['Message'] )
 
     self.__stopJob( 0 )
     jobParams = { 'numberOfProcessors': 2 }
-    result = self.ce.submitJob( 'testPoolCEJob_2.py', None, **jobParams )
-    self.assert_( result['OK'] )
-    result = self.ce.getCEStatus()
+    ce = PoolComputingElement( 'TestPoolCE', 4 )
+    result = ce.submitJob( 'testPoolCEJob_2.py', None, **jobParams )
+    self.assertTrue( result['OK'] )
+    result = ce.getCEStatus()
     self.assertEqual( 4, result['UsedProcessors'] )
 
     for i in range(4):
@@ -92,19 +93,19 @@ class PoolCETests( unittest.TestCase ):
 
     # Whole node jobs
     result = self.ce.submitJob( 'testPoolCEJob_0.py', None )
-    self.assert_( result['OK'] )
+    self.assertTrue( result['OK'] )
     result = self.ce.getCEStatus()
     self.assertEqual( 1, result['UsedProcessors'] )
 
     jobParams = { 'wholeNode': True }
     result = self.ce.submitJob( 'testPoolCEJob_1.py', None, **jobParams )
-    self.assert_( not result['OK'] )
+    self.assertTrue( not result['OK'] )
     self.assertIn( "Can not take WholeNode job", result['Message'] )
 
     self.__stopJob( 0 )
     jobParams = { 'wholeNode': True }
     result = self.ce.submitJob( 'testPoolCEJob_1.py', None, **jobParams )
-    self.assert_( result['OK'] )
+    self.assertTrue( result['OK'] )
 
 
 if __name__ == '__main__':

@@ -110,6 +110,7 @@ EENOPID = 1148
 # ## WMS/Workflow
 EWMSUKN = 1500
 EWMSJDL = 1501
+EWMSRESC = 1502
 
 # ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
@@ -180,6 +181,7 @@ dErrorCode = {
                # WMS/Workflow
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
+               1502 : 'EWMSRESC',
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
                1602 : 'EGFAL',
@@ -249,6 +251,7 @@ dStrError = {
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid JDL",
+              EWMSRESC : "Job to Reschedule",
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
               EGFAL : "Error with the gfal call",

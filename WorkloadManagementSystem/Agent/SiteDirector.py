@@ -630,7 +630,7 @@ class SiteDirector( AgentModule ):
         ### FIXME: The condor thing only transfers the file with some
         ### delay, so when we unlink here the script is gone
         ### FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
-        if ceType != 'HTCondorCE':
+        if not ( ceType == 'HTCondorCE' or ( ceType == 'Local' and ce.batchSystem == 'Condor' ) ):
           os.unlink( executable )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )

@@ -211,11 +211,11 @@ snippet of this example:
     logger.verbose("appears only in stdout")
     logger.notice("appears only in stdout")
     logger.error("appears in stdout and in file.log")
-    # in stdout:
+    # in stdout: 
     # > ... UTC Framework/Atom/logger VERBOSE: appears only in stdout
     # > ... UTC Framework/Atom/logger NOTICE: appears only in stdout
     # > ... UTC Framework/Atom/logger ERROR: appears in stdout, in file.log
-    # in file.log:
+    # in file.log: 
     # > ... UTC Framework/Atom/logger ERROR: appears in stdout, in file.log
 
 Modify a display for different *Logging* objects
@@ -243,7 +243,7 @@ information that we do not want for example:
 
 ::
 
-    # gLogger: stdout Backend, NOTICE level, showHeaders at True
+    # gLogger: stdout Backend, NOTICE level, showHeaders at True 
     logger = gLogger.getSubLogger("logger")
     logger.registerBackends(['file'], {'FileName': 'file.log'})
     logger.setLevel("error")
@@ -251,11 +251,11 @@ information that we do not want for example:
     logger.verbose("appears only in stdout")
     logger.notice("appears only in stdout")
     logger.error("appears in stdout and in file.log")
-    # in stdout:
+    # in stdout: 
     # > ... UTC Framework/Atom/logger VERBOSE: appears only in stdout
     # > ... UTC Framework/Atom/logger NOTICE: appears only in stdout
     # > ... UTC Framework/Atom/logger ERROR: appears in stdout, in file.log
-    # in file.log:
+    # in file.log: 
     # > appears in stdout, in file.log
 
 The *LogShowLine* and *LogColor* cases

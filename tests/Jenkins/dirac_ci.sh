@@ -335,3 +335,36 @@ function fullPilot(){
     return
   fi
 }
+
+
+####################################################################################
+# submitAndMatch
+#
+# This installs a DIRAC client, then use it to submit jobs to DIRAC.Jenkins.ch,
+# then we run a pilot that should hopefully match those jobs
+
+function submitAndMatch(){
+
+  # Here we submit the jobs (to DIRAC.Jenkins.ch)
+  installDIRAC # This installs the DIRAC client
+  submitJob # This submits the jobs
+
+  # Then we run the full pilot, including the JobAgent, which should match the jobs we just submitted
+  cd $PILOTINSTALLDIR
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $PILOTINSTALLDIR
+    return
+  fi
+  prepareForPilot
+  default
+
+  if [ ! -z "$PILOT_VERSION" ]
+  then
+    echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
+    python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+  else
+    echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
+    python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+  fi
+}

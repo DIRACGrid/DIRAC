@@ -257,15 +257,15 @@ class SiteStatus( object ):
       return S_ERROR(DErrno.ERESUNK, 'siteState parameter is empty')
 
     elif siteState.capitalize() == 'All':
-
       # if no siteState is set return everything
       if self.rssFlag:
-        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name' ] } )
+        siteStatus = self.rsClient.selectStatusElement( 'Site',
+                                                        'Status',
+                                                        meta = { 'columns' : [ 'Name' ] } )
       else:
         siteStatus = self.wmsAdministrator.getSiteMask( 'All' )
 
     else:
-
       # fix case sensitive string
       siteState = siteState.capitalize()
       allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
@@ -273,7 +273,10 @@ class SiteStatus( object ):
         return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
       if self.rssFlag:
-        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'Name' ] } )
+        siteStatus = self.rsClient.selectStatusElement( 'Site',
+                                                        'Status',
+                                                        status = siteState,
+                                                        meta = { 'columns' : [ 'Name' ] } )
       else:
         siteStatus = self.wmsAdministrator.getSiteMask( siteState )
 

@@ -12,7 +12,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceFailoverURL
 from DIRAC.Core.Security import CS
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
@@ -305,15 +305,25 @@ class BaseClient(object):
     if not urls:
       return S_ERROR( "URL for service %s not found" % self._destinationSrv )
 
+    failoverUrls = []
+    # Try if there are some failover URLs to use as last resort
+    try:
+      failoverUrlsStr = getServiceFailoverURL( self._destinationSrv, setup = self.setup )
+      if failoverUrlsStr:
+        failoverUrls = failoverUrlsStr.split(',')
+    except Exception as e:
+      pass
+
+
     # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
-    urlsList = List.fromChar( urls, "," )
+    urlsList = List.randomize(List.fromChar( urls, "," ) ) + failoverUrls
     self.__nbOfUrls = len( urlsList )
     self.__nbOfRetry = 2 if self.__nbOfUrls > 2 else 3 # we retry 2 times all services, if we run more than 2 services
     if self.__nbOfUrls == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
       gLogger.debug( "Retrying again all URLs" )
 
-    if len( self.__bannedUrls ) > 0 and len( urlsList ) > 1 :
+    if len( self.__bannedUrls ) > 0 and len(urlsList) > 1 :
       # we have host which is not accessible. We remove that host from the list.
       # We only remove if we have more than one instance
       for i in self.__bannedUrls:
@@ -321,9 +331,12 @@ class BaseClient(object):
         urlsList.remove( i )
 
     # Take the first URL from the list
-    randUrls = List.randomize( urlsList )
-    sURL = randUrls[0]
+    #randUrls = List.randomize( urlsList ) + failoverUrls
 
+    sURL = urlsList[0]
+
+    # If we have banned URLs, and several URLs at disposals, we make sure that the selected sURL
+    # is not on a host which is banned. If it is, we take the next one in the list using __selectUrl
     # If we have banned URLs, and several URLs at disposals, we make sure that the selected sURL
     # is not on a host which is banned. If it is, we take the next one in the list using __selectUrl
 
@@ -346,7 +359,7 @@ class BaseClient(object):
             found = True
             break
         if found:
-          nexturl = self.__selectUrl( nexturl, randUrls[1:] )
+          nexturl = self.__selectUrl( nexturl, urlsList[1:] )
           if nexturl:  # an url found which is in different host
             sURL = nexturl
     gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self._destinationSrv, sURL ) )

@@ -42,9 +42,9 @@ def generateCAFile():
               False ):
     if not fn:
       fn = tempfile.mkstemp( prefix = "cas.", suffix = ".pem" )[1]
-    
+
     try:
-      
+
       with open(fn, "w" ) as fd:
         for caFile in os.listdir( caDir ):
           caFile = os.path.join( caDir, caFile )
@@ -56,12 +56,12 @@ def generateCAFile():
           if not expired[ 'OK' ] or expired[ 'Value' ]:
             continue
           fd.write( chain.dumpAllToString()[ 'Value' ] )
-      
-      gLogger.info( "CAs used from: %s" % str( fn ) )    
+
+      gLogger.info( "CAs used from: %s" % str( fn ) )
       return fn
     except IOError as err:
       gLogger.warn( err )
-      
+
   return False
 
 class ElasticSearchDB( object ):
@@ -79,13 +79,13 @@ class ElasticSearchDB( object ):
   __timeout = 120
   clusterName = ''
   RESULT_SIZE = 10000
+
   ########################################################################
   def __init__( self, host, port, user = None, password=None, indexPrefix = ''):
     """ c'tor
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
     :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
-    :param bool debug: save the debug information to a file
     :param str user: user name to access the db
     :param str password: if the db is password protected we need to provide a password
     :param str indexPrefix: it is the indexPrefix used to get all indexes
@@ -96,7 +96,13 @@ class ElasticSearchDB( object ):
       self.__url = "https://%s:%s@%s:%d" % ( user, password, host, port )
     else:
       self.__url = "%s:%d" % ( host, port )
-    self.__client = Elasticsearch( self.__url, timeout = self.__timeout, use_ssl = True, verify_certs = True, ca_certs = generateCAFile() )
+
+    gLogger.verbose("ElasticSearchDB URL: %s" % self.__url)
+    self.__client = Elasticsearch( self.__url,
+                                   timeout = self.__timeout,
+                                   use_ssl = True,
+                                   verify_certs = True,
+                                   ca_certs = generateCAFile() )
     self.__tryToConnect()
 
   def getIndexPrefix( self ):

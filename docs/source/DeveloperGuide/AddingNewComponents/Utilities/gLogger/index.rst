@@ -11,5 +11,3 @@ DIRAC gLogger
    Changes/index
    OldgLogger/index
    gLoggerDevelopment/index
-
-
