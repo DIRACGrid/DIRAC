@@ -1,7 +1,7 @@
 [v6r17p24]
 
 *WMS
-FIX: SiteDirector - unlink is also to be skipped for Local Condor batchsystem
+FIX: SiteDirector - unlink is also to be skipped for Local Condor batch system
 
 [v6r17p23]
 
