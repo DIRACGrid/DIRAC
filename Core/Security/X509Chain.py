@@ -7,7 +7,6 @@ import stat
 import tempfile
 import hashlib
 import random
-import binascii
 
 import M2Crypto
 import re
