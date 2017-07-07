@@ -39,11 +39,7 @@ method. For instance :
 
     logger = gLogger.getSubLogger("logger")
     newLogger = gLogger.getSubLogger("logger")
-<<<<<<< HEAD
-    # Here, logger and newlogger are a same and unique object
-=======
     # Here, logger and newlogger are a same and unique object 
->>>>>>> rel-v6r18
 
 Get its sub name
 ~~~~~~~~~~~~~~~~
@@ -544,11 +540,7 @@ Summary of the command line argument configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here is a complete table explaining the changes provided by the command
-<<<<<<< HEAD
-line argument *-d*:
-=======
 line argument *-d*: 
->>>>>>> rel-v6r18
 
 +--------------------------------------+----------------+----------------+-----------+
 | Argument                             | ShowHeader     | showThread     | Level     |
