@@ -42,11 +42,16 @@ class LoggingRoot(Logging):
     - update the format according to the command line argument 
     """
     super(LoggingRoot, self).__init__()
+
+    # this line removes some useless information from log records and improves the performances
+    logging._srcfile = None
+
     # initialize the root logger
-    self._logger = logging.getLogger('')
+    # actually a child of the root logger to avoid conflicts with other libraries which used 'logging'
+    self._logger = logging.getLogger('dirac')
 
     # here we redefine the custom name to the empty string to remove the "\" in the display
-    self.customName = ""
+    self._customName = ""
 
     # this level is not the Logging level, it is only used to send all log messages to the central logging system
     # to do such an operation, we need to let pass all log messages to the root logger, so all logger needs to be
@@ -88,43 +93,47 @@ class LoggingRoot(Logging):
     # we have to put the import line here to avoid a dependancy loop
     from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
-    if not LoggingRoot.__configuredLogging:
-      backends = (None, None)
-      Logging._componentName = systemName
+    self._lockConfig.acquire()
+    try:
+      if not LoggingRoot.__configuredLogging:
+        backends = (None, None)
+        Logging._componentName = systemName
 
-      # Prepare to remove all the backends from the root Logging as in the old gLogger.
-      # store them in a list handlersToRemove.
-      # we will remove them later, because some components as ObjectLoader need a backend.
-      # this can be useful to have logs only in a file for instance.
-      handlersToRemove = []
-      for backend in self._backendsList:
-        handlersToRemove.append(backend.getHandler())
-      del self._backendsList[:]
+        # Prepare to remove all the backends from the root Logging as in the old gLogger.
+        # store them in a list handlersToRemove.
+        # we will remove them later, because some components as ObjectLoader need a backend.
+        # this can be useful to have logs only in a file for instance.
+        handlersToRemove = []
+        for backend in self._backendsList:
+          handlersToRemove.append(backend.getHandler())
+        del self._backendsList[:]
 
-      # Backend options
-      desiredBackends = gConfig.getValue("%s/LogBackends" % cfgPath, ['stdout'])
+        # Backend options
+        desiredBackends = gConfig.getValue("%s/LogBackends" % cfgPath, ['stdout'])
 
-      retDict = gConfig.getOptionsDict("%s/BackendsOptions" % cfgPath)
-      if retDict['OK']:
-        backends = (desiredBackends, retDict['Value'])
-      else:
-        backends = (desiredBackends, None)
+        retDict = gConfig.getOptionsDict("%s/BackendsOptions" % cfgPath)
+        if retDict['OK']:
+          backends = (desiredBackends, retDict['Value'])
+        else:
+          backends = (desiredBackends, None)
 
-      # Format options
-      self._options['Color'] = gConfig.getValue("%s/LogColor" % cfgPath, False)
+        # Format options
+        self._options['Color'] = gConfig.getValue("%s/LogColor" % cfgPath, False)
 
-      desiredBackends, backendOptions = backends
-      self.registerBackends(desiredBackends, backendOptions)
+        desiredBackends, backendOptions = backends
+        self.registerBackends(desiredBackends, backendOptions)
 
-      # Remove the old backends
-      for handler in handlersToRemove:
-        self._logger.removeHandler(handler)
+        # Remove the old backends
+        for handler in handlersToRemove:
+          self._logger.removeHandler(handler)
 
-      levelName = gConfig.getValue("%s/LogLevel" % cfgPath, None)
-      if levelName is not None:
-        self.setLevel(levelName)
+        levelName = gConfig.getValue("%s/LogLevel" % cfgPath, None)
+        if levelName is not None:
+          self.setLevel(levelName)
 
-      LoggingRoot.__configuredLogging = True
+        LoggingRoot.__configuredLogging = True
+    finally:
+      self._lockConfig.release()
 
   def __configureLevel(self):
     """

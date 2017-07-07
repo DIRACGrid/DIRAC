@@ -53,11 +53,11 @@ class Test_Logging(unittest.TestCase):
     oldgLogger.showThreadIDs(False)
 
     # modify the output to capture the log into a buffer
-    if logging.getLogger().handlers:
-      logging.getLogger().handlers[0].stream = self.buffer
+    if logging.getLogger('dirac').handlers:
+      logging.getLogger('dirac').handlers[0].stream = self.buffer
 
     # reset the levels
-    logging.getLogger('root.log').setLevel(logging.NOTSET)
+    logging.getLogger('dirac').getChild('log').setLevel(logging.NOTSET)
     self.log._levelModified = False
 
 
