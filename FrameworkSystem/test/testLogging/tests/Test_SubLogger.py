@@ -4,6 +4,8 @@ Test SubLogger
 
 __RCSID__ = "$Id$"
 
+#pylint: disable=invalid-name
+
 import unittest
 
 from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import Test_Logging, gLogger
