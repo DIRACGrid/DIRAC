@@ -16,18 +16,18 @@ class _MagicMethod( object ):
   def __init__( self, doRPCFunc, remoteFuncName ):
     """ Constructor
 
-	:param doRPCFunc: the function actually performing the RPC call
-	:param remoteFuncName: name of the remote function
+        :param doRPCFunc: the function actually performing the RPC call
+        :param remoteFuncName: name of the remote function
     """
     self.__doRPCFunc = doRPCFunc
     self.__remoteFuncName = remoteFuncName
 
   def __getattr__( self, remoteFuncName ):
     """ I really do not understand when this would be called.
-	I can only imagine it being called by dir, or things like that.
-	In any case, it recursively return a MagicMethod object
-	where the new remote function name is the old one to which
-	we append the new called attribute.
+        I can only imagine it being called by dir, or things like that.
+        In any case, it recursively return a MagicMethod object
+        where the new remote function name is the old one to which
+        we append the new called attribute.
     """
     return  _MagicMethod( self.__doRPCFunc, "%s.%s" % ( self.__remoteFuncName, remoteFuncName ) )
 
@@ -35,9 +35,9 @@ class _MagicMethod( object ):
 
   def __call__(self, *args ):
     """ Triggers the call.
-	it uses the RPC calling function given by RPCClient,
-	and gives as argument the remote function name and whatever
-	arguments given.
+        it uses the RPC calling function given by RPCClient,
+        and gives as argument the remote function name and whatever
+        arguments given.
     """
 
     return self.__doRPCFunc( self.__remoteFuncName, args )
@@ -54,14 +54,14 @@ class RPCClient( object ):
 
       The typical workflow looks like this::
 
-	rpc = RPCClient('DataManagement/FileCatalog')
+        rpc = RPCClient('DataManagement/FileCatalog')
 
-	# Here, func is the ping function, which we call remotely.
-	# We go through RPCClient.__getattr__ which returns us a MagicMethod object
-	func = rpc.ping
+        # Here, func is the ping function, which we call remotely.
+        # We go through RPCClient.__getattr__ which returns us a MagicMethod object
+        func = rpc.ping
 
-	# Here we call the method __call__ of the MagicMethod
-	func()
+        # Here we call the method __call__ of the MagicMethod
+        func()
 
   """
 
@@ -71,8 +71,8 @@ class RPCClient( object ):
       Constructor
       The arguments are just passed on to InnerRPCClient.
       In practice:
-	* args: has to be the service name or URL
-	* kwargs: all the arguments InnerRPCClient and BaseClient accept as configuration
+        * args: has to be the service name or URL
+        * kwargs: all the arguments InnerRPCClient and BaseClient accept as configuration
     """
     self.__innerRPCClient = InnerRPCClient( *args, **kwargs )
 
@@ -92,9 +92,9 @@ class RPCClient( object ):
   def __getattr__( self, attrName ):
     """ Function for emulating the existance of functions.
 
-	       In literature this is usually called a "stub function".
-	 If the attribute exists in InnerRPCClient, return it,
-	 otherwise we create a _MagicMethod instance
+               In literature this is usually called a "stub function".
+         If the attribute exists in InnerRPCClient, return it,
+         otherwise we create a _MagicMethod instance
 
     """
     if attrName in dir( self.__innerRPCClient ):

@@ -88,7 +88,7 @@ class AbstractBackend(object):
     if options['headerIsShown']:
       fmt += '%(asctime)s UTC %(componentname)s%(customname)s'
       if options['threadIDIsShown']:
-	fmt += ' [%(thread)d]'
+        fmt += ' [%(thread)d]'
       fmt += ' %(levelname)s: '
     fmt += '%(message)s %(varmessage)s'
     return (datefmt, fmt)

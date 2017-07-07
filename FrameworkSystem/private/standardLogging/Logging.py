@@ -48,9 +48,9 @@ class Logging(object):
     :params fatherName: string representing the name of the father logger in the chain.
     :params name: string representing the name of the logger in the chain.
     :params customName: string representing the name of the logger in the chain:
-			- "root" does not appear at the beginning of the chain
-			- hierarchy "." are replaced by "\"
-			useful for the display of the Logging name
+                        - "root" does not appear at the beginning of the chain
+                        - hierarchy "." are replaced by "\"
+                        useful for the display of the Logging name
     """
 
     # Logging chain
@@ -131,10 +131,10 @@ class Logging(object):
     Convert backend name to backend class name to a Backend object and add it to the Logging object
 
     :params desiredBackends: a list of different names attaching to differents backends.
-			     these names must be the same as in the _BACKENDSDICT
-			     list of the possible values: ['stdout', 'stderr', 'file', 'server']
+                             these names must be the same as in the _BACKENDSDICT
+                             list of the possible values: ['stdout', 'stderr', 'file', 'server']
     :params backendOptions: a dictionary of different backend options.
-			    example: {'FileName': '/tmp/log.txt'}
+                            example: {'FileName': '/tmp/log.txt'}
     """
     # import ObjectLoader here to avoid a dependancy loop
     from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -145,15 +145,15 @@ class Logging(object):
 
       # load the Backend class
       _class = objLoader.loadObject(
-	  'DIRAC.FrameworkSystem.private.standardLogging.Backend.%sBackend' % backendName.capitalize())
+          'DIRAC.FrameworkSystem.private.standardLogging.Backend.%sBackend' % backendName.capitalize())
 
       if _class['OK']:
-	# add the backend instance to the Logging
-	self._addBackend(_class['Value'](), backendOptions)
-	self._generateBackendFormat()
+        # add the backend instance to the Logging
+        self._addBackend(_class['Value'](), backendOptions)
+        self._generateBackendFormat()
       else:
-	self._generateBackendFormat()
-	self.warn("%s is not a valid backend name." % backendName)
+        self._generateBackendFormat()
+        self.warn("%s is not a valid backend name." % backendName)
 
   def _addBackend(self, backend, backendOptions=None):
     """
@@ -161,7 +161,7 @@ class Logging(object):
 
     :params backend: Backend object that has to be added
     :params backendOptions: a dictionary of different backend options.
-			    example: {'FileName': '/tmp/log.txt'}
+                            example: {'FileName': '/tmp/log.txt'}
     """
     backend.createHandler(backendOptions)
 
@@ -331,8 +331,8 @@ class Logging(object):
     # - 'customname' : the name of the logger for the DIRAC usage: without 'root' and separated with '/'
     # extras attributes are not camel case because log record attributes are not either.
     extra = {'componentname': self._componentName,
-	     'varmessage': sVarMsg,
-	     'customname': self.customName}
+             'varmessage': sVarMsg,
+             'customname': self.customName}
     self._logger.log(level, "%s", sMsg, exc_info=exc_info, extra=extra)
     # test to know if the message is displayed or not
     return self._level <= level

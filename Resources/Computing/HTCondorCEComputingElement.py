@@ -330,8 +330,8 @@ Queue %(nJobs)s
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
       self.log.verbose( result )
       if not result['OK']:
-	self.log.error( "Failed to get job output from htcondor", result['Message'] )
-	return result
+        self.log.error( "Failed to get job output from htcondor", result['Message'] )
+        return result
 
     output = ''
     error = ''

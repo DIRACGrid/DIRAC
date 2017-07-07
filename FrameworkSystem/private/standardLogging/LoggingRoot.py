@@ -98,7 +98,7 @@ class LoggingRoot(Logging):
       # this can be useful to have logs only in a file for instance.
       handlersToRemove = []
       for backend in self._backendsList:
-	handlersToRemove.append(backend.getHandler())
+        handlersToRemove.append(backend.getHandler())
       del self._backendsList[:]
 
       # Backend options
@@ -106,9 +106,9 @@ class LoggingRoot(Logging):
 
       retDict = gConfig.getOptionsDict("%s/BackendsOptions" % cfgPath)
       if retDict['OK']:
-	backends = (desiredBackends, retDict['Value'])
+        backends = (desiredBackends, retDict['Value'])
       else:
-	backends = (desiredBackends, None)
+        backends = (desiredBackends, None)
 
       # Format options
       self._options['Color'] = gConfig.getValue("%s/LogColor" % cfgPath, False)
@@ -118,11 +118,11 @@ class LoggingRoot(Logging):
 
       # Remove the old backends
       for handler in handlersToRemove:
-	self._logger.removeHandler(handler)
+        self._logger.removeHandler(handler)
 
       levelName = gConfig.getValue("%s/LogLevel" % cfgPath, None)
       if levelName is not None:
-	self.setLevel(levelName)
+        self.setLevel(levelName)
 
       LoggingRoot.__configuredLogging = True
 
@@ -136,7 +136,7 @@ class LoggingRoot(Logging):
     debLevs = 0
     for arg in sys.argv:
       if arg.find("-d") == 0:
-	debLevs += arg.count("d")
+        debLevs += arg.count("d")
     if debLevs == 1:
       self._setLevel(LogLevels.VERBOSE)
     elif debLevs == 2:

@@ -194,10 +194,10 @@ class Test_Levels(Test_Logging):
     Get all possible levels
     """
     self.assertEqual(gLogger.getAllPossibleLevels(), ['INFO', 'WARN',
-						      'NOTICE', 'VERBOSE', 'ERROR', 'DEBUG', 'ALWAYS', 'FATAL'])
+                                                      'NOTICE', 'VERBOSE', 'ERROR', 'DEBUG', 'ALWAYS', 'FATAL'])
 
     self.assertEqual(self.log.getAllPossibleLevels(), ['INFO', 'WARN',
-						       'NOTICE', 'VERBOSE', 'ERROR', 'DEBUG', 'ALWAYS', 'FATAL'])
+                                                       'NOTICE', 'VERBOSE', 'ERROR', 'DEBUG', 'ALWAYS', 'FATAL'])
 
   def test_08modifySubLevelAndGetSubSubLevel(self):
     """

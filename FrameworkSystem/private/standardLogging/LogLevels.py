@@ -33,13 +33,13 @@ class LogLevels(object):
   FATAL = logging.CRITICAL
 
   __levelDict = {"DEBUG": DEBUG,
-		 "VERBOSE": VERBOSE,
-		 "INFO": INFO,
-		 "WARN": WARN,
-		 "NOTICE": NOTICE,
-		 "ERROR": ERROR,
-		 "ALWAYS": ALWAYS,
-		 "FATAL": FATAL}
+                 "VERBOSE": VERBOSE,
+                 "INFO": INFO,
+                 "WARN": WARN,
+                 "NOTICE": NOTICE,
+                 "ERROR": ERROR,
+                 "ALWAYS": ALWAYS,
+                 "FATAL": FATAL}
 
   @classmethod
   def getLevelValue(cls, sName):
@@ -63,7 +63,7 @@ class LogLevels(object):
     """
     for lev in cls.__levelDict:
       if cls.__levelDict[lev] == level:
-	return lev
+        return lev
     return None
 
   @classmethod

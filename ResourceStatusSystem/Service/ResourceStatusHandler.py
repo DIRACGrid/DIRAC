@@ -23,8 +23,8 @@ def convert(params, meta):
   element, tableType, name, statusType, status, \
   elementType, reason, dateEffective, lastCheckTime, \
   tokenOwner, tokenExpiration = [params.get(k) for k in ['element', 'tableType', 'name', 'statusType', 'status', \
-							 'elementType', 'reason', 'dateEffective', 'lastCheckTime', \
-							 'tokenOwner', 'tokenExpiration']]
+                                                         'elementType', 'reason', 'dateEffective', 'lastCheckTime', \
+                                                         'tokenOwner', 'tokenExpiration']]
 
   element = 'Resource' # in v6r17 and below, element is always 'Resource'
   tableType = meta['table'].replace('Resource', '')
@@ -235,13 +235,13 @@ class ResourceStatusHandler( RequestHandler ):
 
     :Parameters:
       **element** - `string` or `dict`
-	it has to be a valid element ( ValidElement ), any of the defaults: `Site` | `Resource` | `Node`
-	if it is a dict, then it's a dictionary of parameters
-	(here for backward compatibility with versions prior to DIRAC v6r18)
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` | `Resource` | `Node`
+        if it is a dict, then it's a dictionary of parameters
+        (here for backward compatibility with versions prior to DIRAC v6r18)
       **tableType** - `string` or `dict`
         it has to be a valid tableType [ 'Status', 'Log', 'History' ]
-	if it is a dict, then it's a dictionary of meta (see last parameter of this same method)
-	(here for backward compatibility with versions prior to DIRAC v6r18)
+        if it is a dict, then it's a dictionary of meta (see last parameter of this same method)
+        (here for backward compatibility with versions prior to DIRAC v6r18)
       **name** - `string`
         name of the individual of class element
       **statusType** - `string`
@@ -293,9 +293,9 @@ class ResourceStatusHandler( RequestHandler ):
   types_delete = [ basestring, basestring ]
 
   def export_delete( self, element, tableType, name = None, statusType = None,
-		     status = None, elementType = None, reason = None,
-		     dateEffective = None, lastCheckTime = None,
-		     tokenOwner = None, tokenExpiration = None, meta = None):
+                     status = None, elementType = None, reason = None,
+                     dateEffective = None, lastCheckTime = None,
+                     tokenOwner = None, tokenExpiration = None, meta = None):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about

@@ -88,7 +88,6 @@ class VOMS( BaseSecurity ):
 
   def getVOMSProxyInfo( self, proxy, option = False ):
     """
-	
     Returns information about a proxy certificate (both grid and voms).
         Available information is:
 

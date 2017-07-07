@@ -71,14 +71,14 @@ class ServerHandler(logging.Handler, threading.Thread):
     while not self.__logQueue.empty():
       bundle = []
       while (len(bundle) < self.__maxBundledLogs) and (not self.__logQueue.empty()):
-	record = self.__logQueue.get()
-	self.format(record)
-	logTuple = (record.componentname, record.levelname, record.created, record.getMessage(), record.varmessage,
-		    record.pathname + ":" + str(record.lineno), record.name)
-	bundle.append(logTuple)
+        record = self.__logQueue.get()
+        self.format(record)
+        logTuple = (record.componentname, record.levelname, record.created, record.getMessage(), record.varmessage,
+                    record.pathname + ":" + str(record.lineno), record.name)
+        bundle.append(logTuple)
 
       if bundle:
-	self.__sendLogToServer(bundle)
+        self.__sendLogToServer(bundle)
 
     if self.__transactions:
       self.__sendLogToServer()
@@ -105,8 +105,8 @@ class ServerHandler(logging.Handler, threading.Thread):
     while transactionsLength:
       result = oSock.addMessages(self.__transactions[0], self.__site, self.__hostname)
       if result['OK']:
-	transactionsLength = transactionsLength - 1
-	self.__transactions.pop(0)
+        transactionsLength = transactionsLength - 1
+        self.__transactions.pop(0)
       else:
-	return False
+        return False
     return True

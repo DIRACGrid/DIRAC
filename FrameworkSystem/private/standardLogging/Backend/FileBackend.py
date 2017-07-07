@@ -26,7 +26,7 @@ class FileBackend(AbstractBackend):
   def __init__(self):
     """
     :params __filename: string representing the default name of the file.
-			The default name come from the old gLogger.
+                        The default name come from the old gLogger.
     """
     super(FileBackend, self).__init__(None, BaseFormatter)
     self.__fileName = 'Dirac-log_%s.log' % getpid()

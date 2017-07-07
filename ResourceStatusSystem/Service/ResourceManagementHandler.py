@@ -8,7 +8,7 @@ from DIRAC                                              import gConfig, S_OK, gL
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
 from DIRAC.ResourceStatusSystem.Utilities               import Synchronizer, Utils
 ResourceManagementDB = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceManagementDB' ),
-			       'ResourceManagementDB')
+                               'ResourceManagementDB')
 
 __RCSID__ = '$Id: $'
 
@@ -101,12 +101,12 @@ class ResourceManagementHandler( RequestHandler ):
 
     :Parameters:
       **table** - `string` or `dict`
-	should contain the table from which querying
-	if it's a `dict` the query comes from a client prior to v6r18
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
       **params** - `dict`
-	arguments for the mysql query. Currently it is being used only for column selection.
-	For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -134,12 +134,12 @@ class ResourceManagementHandler( RequestHandler ):
 
     :Parameters:
       **table** - `string` or `dict`
-	should contain the table from which querying
-	if it's a `dict` the query comes from a client prior to v6r18
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
       **params** - `dict`
-	arguments for the mysql query. Currently it is being used only for column selection.
-	For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -164,12 +164,12 @@ class ResourceManagementHandler( RequestHandler ):
 
     :Parameters:
       **table** - `string` or `dict`
-	should contain the table from which querying
-	if it's a `dict` the query comes from a client prior to v6r18
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
       **params** - `dict`
-	arguments for the mysql query. Currently it is being used only for column selection.
-	For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -192,12 +192,12 @@ class ResourceManagementHandler( RequestHandler ):
 
     :Parameters:
       **table** - `string` or `dict`
-	should contain the table from which querying
-	if it's a `dict` the query comes from a client prior to v6r18
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
       **params** - `dict`
-	arguments for the mysql query. Currently it is being used only for column selection.
-	For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
 
     :return: S_OK() || S_ERROR()
@@ -222,12 +222,12 @@ class ResourceManagementHandler( RequestHandler ):
 
     :Parameters:
       **table** - `string` or `dict`
-	should contain the table from which querying
-	if it's a `dict` the query comes from a client prior to v6r18
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
       **params** - `dict`
-	arguments for the mysql query. Currently it is being used only for column selection.
-	For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -251,12 +251,12 @@ class ResourceManagementHandler( RequestHandler ):
 
     :Parameters:
       **table** - `string` or `dict`
-	should contain the table from which querying
-	if it's a `dict` the query comes from a client prior to v6r18
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
       **params** - `dict`
-	arguments for the mysql query. Currently it is being used only for column selection.
-	For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''

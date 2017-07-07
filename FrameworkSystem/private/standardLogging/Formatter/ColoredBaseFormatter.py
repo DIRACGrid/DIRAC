@@ -55,11 +55,11 @@ class ColoredBaseFormatter(BaseFormatter):
       params = []
       bg, fg, bold = self.LEVEL_MAP[record.levelname]
       if bg in self.COLOR_MAP:
-	params.append(str(self.COLOR_MAP[bg] + 40))
+        params.append(str(self.COLOR_MAP[bg] + 40))
       if fg in self.COLOR_MAP:
-	params.append(str(self.COLOR_MAP[fg] + 30))
+        params.append(str(self.COLOR_MAP[fg] + 30))
       if bold:
-	params.append('1')
+        params.append('1')
       stringRecord = ("".join(('\x1b[', ";".join(params), 'm', stringRecord, '\x1b[0m')))
 
     return stringRecord

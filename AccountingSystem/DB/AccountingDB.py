@@ -1002,30 +1002,30 @@ class AccountingDB( DB ):
     #Check if groupFields and orderFields are in ( "%s", ( field1, ) ) form
     if groupFields:
       try:
-	groupFields[0] % tuple( groupFields[1] )
-	# We can have the case when we have multiple grouping and the fields in the select does not much the group by conditions
-	# for example: selectFields = ('%s, %s, %s, SUM(%s)', ['Site', 'startTime', 'bucketLength', 'entriesInBucket'])
-	#             groupFields = ('%s, %s', ['startTime', 'Site'])
-	#             in this case the correct query must be: select Site, startTime, bucketlength, sum(entriesInBucket) from xxxx where yyy Group by Site, startTime, bucketlength
-	#
-	# When we have multiple grouping then we must have all the fields in Group by. This is from mysql 5.7.
-	# We have fields which are not in the groupFields
+        groupFields[0] % tuple( groupFields[1] )
+        # We can have the case when we have multiple grouping and the fields in the select does not much the group by conditions
+        # for example: selectFields = ('%s, %s, %s, SUM(%s)', ['Site', 'startTime', 'bucketLength', 'entriesInBucket'])
+        #             groupFields = ('%s, %s', ['startTime', 'Site'])
+        #             in this case the correct query must be: select Site, startTime, bucketlength, sum(entriesInBucket) from xxxx where yyy Group by Site, startTime, bucketlength
+        #
+        # When we have multiple grouping then we must have all the fields in Group by. This is from mysql 5.7.
+        # We have fields which are not in the groupFields
 
-	diff = list( set( selectFields[1] ) - set( groupFields[1] ) )
-	if diff:  # add the missing fields to the group by if there is any
-	  groupFields = list( groupFields )
-	  missingfields = ", ".join( repeat( "%s", len( diff ) ) )  # this will contain all elements which are not in the group by
-	  groupFields[0] = "%s, %s" % ( groupFields[0], missingfields )
-	  groupFields[1].extend( diff )
-	  groupFields = tuple( groupFields )
+        diff = list( set( selectFields[1] ) - set( groupFields[1] ) )
+        if diff:  # add the missing fields to the group by if there is any
+          groupFields = list( groupFields )
+          missingfields = ", ".join( repeat( "%s", len( diff ) ) )  # this will contain all elements which are not in the group by
+          groupFields[0] = "%s, %s" % ( groupFields[0], missingfields )
+          groupFields[1].extend( diff )
+          groupFields = tuple( groupFields )
 
       except TypeError as e:
-	return S_ERROR( "Cannot format properly group string: %s" % repr( e ) )
+        return S_ERROR( "Cannot format properly group string: %s" % repr( e ) )
     if orderFields:
       try:
-	orderFields[0] % tuple( orderFields[1] )
+        orderFields[0] % tuple( orderFields[1] )
       except TypeError as e:
-	return S_ERROR( "Cannot format properly order string: %s" % repr( e ) )
+        return S_ERROR( "Cannot format properly order string: %s" % repr( e ) )
     #Calculate fields to retrieve
     realFieldList = []
     for rawFieldName in selectFields[1]:
@@ -1105,8 +1105,8 @@ class AccountingDB( DB ):
             else:
               # The default grouping is maintained
               preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
-	  elif field in ['bucketLength', 'entriesInBucket']: #these are not in the dbCatalog
-	    preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
+          elif field in ['bucketLength', 'entriesInBucket']: #these are not in the dbCatalog
+            preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
 
     if sqlLinkList:
       cmd += " AND %s" % " AND ".join( sqlLinkList )

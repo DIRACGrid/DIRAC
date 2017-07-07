@@ -868,16 +868,16 @@ class Dirac( API ):
 
         # Attempt to copy into job working directory
         if os.path.isdir( isFile ):
-	  shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
-	elif os.path.exists( isFile ):
-	  shutil.copy( isFile, os.getcwd() )
-	elif os.path.exists(os.path.join(tmpdir, isFile)): # if it is in the tmp dir
-	  shutil.copy(os.path.join(tmpdir, isFile), os.getcwd())
-	else:
-	  self.log.verbose("perhaps the file %s is in an LFN, so we attempt to download it." % isFile)
-	  getFile = self.getFile( isFile )
+          shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
+        elif os.path.exists( isFile ):
+          shutil.copy( isFile, os.getcwd() )
+        elif os.path.exists(os.path.join(tmpdir, isFile)): # if it is in the tmp dir
+          shutil.copy(os.path.join(tmpdir, isFile), os.getcwd())
+        else:
+          self.log.verbose("perhaps the file %s is in an LFN, so we attempt to download it." % isFile)
+          getFile = self.getFile( isFile )
           if not getFile['OK']:
-	    self.log.warn( 'Failed to download %s with error: %s' % ( isFile, getFile['Message'] ) )
+            self.log.warn( 'Failed to download %s with error: %s' % ( isFile, getFile['Message'] ) )
             return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
         basefname = os.path.basename( isFile )
         if tarfile.is_tarfile( basefname ):
@@ -886,7 +886,7 @@ class Dirac( API ):
               for member in tf.getmembers():
                 tf.extract( member, os.getcwd() )
           except Exception as x:
-	    return S_ERROR( 'Could not untar %s with exception %s' % (basefname, str(x)))
+            return S_ERROR( 'Could not untar %s with exception %s' % (basefname, str(x)))
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
