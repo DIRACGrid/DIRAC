@@ -50,7 +50,7 @@ from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Utilities                                import Time
 from DIRAC.Core.Utilities.File                           import mkDir
-from DIRAC.Core.Utilities.PrettyPrint                    import printTable
+from DIRAC.Core.Utilities.PrettyPrint                    import printTable, printDict
 
 __RCSID__ = "$Id$"
 
@@ -787,10 +787,11 @@ class Dirac( API ):
       return res
     parameters = res['Value']
 
-    self.log.verbose( parameters )
+    self.log.verbose( "Job parameters: %s" % printDict(parameters) )
     inputData = self._getLocalInputData(parameters)
 
     if inputData:
+      self.log.verbose("Job has input data: %s" % inputData)
       localSEList = gConfig.getValue( '/LocalSite/LocalSE', '' )
       if not localSEList:
         return self._errorReport( 'LocalSite/LocalSE should be defined in your config file' )
@@ -853,7 +854,6 @@ class Dirac( API ):
         return result
     else:
       self.log.verbose( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
-      # return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
 
     sandbox = parameters.get( 'InputSandbox' )
     if sandbox:
@@ -868,14 +868,16 @@ class Dirac( API ):
 
         # Attempt to copy into job working directory
         if os.path.isdir( isFile ):
-          shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
-        elif os.path.exists( isFile ):
-          shutil.copy( isFile, os.getcwd() )
-        else:
-          # perhaps the file is in an LFN attempt to download it.
-          getFile = self.getFile( isFile )
+	  shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
+	elif os.path.exists( isFile ):
+	  shutil.copy( isFile, os.getcwd() )
+	elif os.path.exists(os.path.join(tmpdir, isFile)): # if it is in the tmp dir
+	  shutil.copy(os.path.join(tmpdir, isFile), os.getcwd())
+	else:
+	  self.log.verbose("perhaps the file %s is in an LFN, so we attempt to download it." % isFile)
+	  getFile = self.getFile( isFile )
           if not getFile['OK']:
-            self.log.warn( 'Failed to download %s with error:%s' % ( isFile, getFile['Message'] ) )
+	    self.log.warn( 'Failed to download %s with error: %s' % ( isFile, getFile['Message'] ) )
             return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
         basefname = os.path.basename( isFile )
         if tarfile.is_tarfile( basefname ):
@@ -884,7 +886,7 @@ class Dirac( API ):
               for member in tf.getmembers():
                 tf.extract( member, os.getcwd() )
           except Exception as x:
-            return S_ERROR( 'Could not untar %s with exception %s' % ( basefname, str( x ) ) )
+	    return S_ERROR( 'Could not untar %s with exception %s' % (basefname, str(x)))
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 

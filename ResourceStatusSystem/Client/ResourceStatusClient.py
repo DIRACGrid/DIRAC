@@ -1,11 +1,10 @@
-# $HeadURL:  $
 ''' ResourceStatusClient
 
   Client to interact with the ResourceStatusDB.
 
 '''
 
-from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC                                                  import S_OK
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 
 from DIRAC.ResourceStatusSystem.Utilities                   import RssConfiguration
@@ -44,17 +43,13 @@ class ResourceStatusClient( object ):
   the client considerably.
   """
 
-  def __init__( self , serviceIn = None ):
+  def __init__( self ):
     '''
       The client tries to connect to :class:ResourceStatusDB by default. If it
       fails, then tries to connect to the Service :class:ResourceStatusHandler.
     '''
 
-    if not serviceIn:
-      self.rssDB = RPCClient( "ResourceStatus/ResourceStatus" )
-    else:
-      self.rssDB = serviceIn
-
+    self.rssService = RPCClient( "ResourceStatus/ResourceStatus" )
     self.validElements = RssConfiguration.getValidElements()
 
   ################################################################################
@@ -97,9 +92,9 @@ class ResourceStatusClient( object ):
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    return self.rssDB.insert(element, tableType, name, statusType, status,
-                             elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration)
+    return self.rssService.insert(element, tableType, name, statusType, status,
+				  elementType, reason, dateEffective, lastCheckTime,
+				  tokenOwner, tokenExpiration)
 
   def updateStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
@@ -139,9 +134,9 @@ class ResourceStatusClient( object ):
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    return self.rssDB.update(element, tableType, name, statusType, status,
-                             elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration, ID)
+    return self.rssService.update(element, tableType, name, statusType, status,
+				  elementType, reason, dateEffective, lastCheckTime,
+				  tokenOwner, tokenExpiration, ID)
 
   def selectStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
@@ -184,9 +179,9 @@ class ResourceStatusClient( object ):
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    return self.rssDB.select(element, tableType, name, statusType, status,
-                             elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration, meta)
+    return self.rssService.select(element, tableType, name, statusType, status,
+				  elementType, reason, dateEffective, lastCheckTime,
+				  tokenOwner, tokenExpiration, meta)
 
   def deleteStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
@@ -228,9 +223,9 @@ class ResourceStatusClient( object ):
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    return self.rssDB.delete(element, tableType, name, statusType, status,
-                             elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration, meta)
+    return self.rssService.delete(element, tableType, name, statusType, status,
+				  elementType, reason, dateEffective, lastCheckTime,
+				  tokenOwner, tokenExpiration, meta)
 
   def addOrModifyStatusElement( self, element, tableType, name = None,
                                 statusType = None, status = None,
@@ -272,9 +267,9 @@ class ResourceStatusClient( object ):
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    return self.rssDB.addOrModify(element, tableType, name, statusType, status,
-                                  elementType, reason, dateEffective, lastCheckTime,
-                                  tokenOwner, tokenExpiration)
+    return self.rssService.addOrModify(element, tableType, name, statusType, status,
+				       elementType, reason, dateEffective, lastCheckTime,
+				       tokenOwner, tokenExpiration)
 
   def modifyStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
@@ -314,9 +309,9 @@ class ResourceStatusClient( object ):
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    return self.rssDB.modify(element, tableType, name, statusType, status,
-                             elementType, reason, dateEffective, lastCheckTime,
-                             tokenOwner, tokenExpiration)
+    return self.rssService.modify(element, tableType, name, statusType, status,
+				  elementType, reason, dateEffective, lastCheckTime,
+				  tokenOwner, tokenExpiration)
 
   def addIfNotThereStatusElement( self, element, tableType, name = None,
                                   statusType = None, status = None,
@@ -358,9 +353,9 @@ class ResourceStatusClient( object ):
     '''
     # Unused argument
     # pylint: disable=unused-argument
-    return self.rssDB.addIfNotThere(element, tableType, name, statusType, status,
-                                    elementType, reason, dateEffective, lastCheckTime,
-                                    tokenOwner, tokenExpiration)
+    return self.rssService.addIfNotThere(element, tableType, name, statusType, status,
+					 elementType, reason, dateEffective, lastCheckTime,
+					 tokenOwner, tokenExpiration)
 
 
 

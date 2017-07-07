@@ -1,3 +1,21 @@
+[v6r18-pre14]
+
+*Accounting
+FIX: compatibility of AccountingDB with MySQL 5.7
+
+*Core
+NEW: Technology preview of new logging system, based on standard python logging module
+CHANGE: Added graphviz extension to sphinx builds
+FIX: Added documentation of low level RPC/DISET classes
+
+*DMS
+CHANGE: FTSFile DB table: increased length of fields LFN(955), SourceSURL(1024), TargetSURL(1024)
+
+*RSS
+CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
+FIX: fixed incompatibility between Active/InActive RSS clients return format
+
+
 [v6r18p1]
 
 *RSS
@@ -70,6 +88,12 @@ CHANGE: Dirac API - added runLocal as an API method
 
 *Docs
 NEW: Documentation for developing with a container (includes Dockerfile)
+
+
+[v6r17p23]
+
+*WMS
+FIX: get job output for remote sheduler in the case of HTCondorCE
 
 [v6r17p22]
 
