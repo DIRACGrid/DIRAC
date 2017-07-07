@@ -484,7 +484,7 @@ class CheckWNCapabilities( CommandBase ):
         self.cfg.append( '-ddd' )
 
       if numberOfProcessor:
-        self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % numberOfProcessor )
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/SiteProcessors=%d"' % numberOfProcessor )
       else:
         self.log.warn( "Could not retrieve number of processors" )
       if maxRAM:
