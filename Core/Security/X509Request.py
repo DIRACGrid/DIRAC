@@ -32,8 +32,8 @@ class X509Request( object ):
     if limited:
       self.__reqObj.get_subject().add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  "limited proxy", len=-1, loc=-1, set=0 )
     else:
-      self.__reqObj.get_subject().add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  "proxy", len=-1, loc=-1, set=0 )
-    self.__reqObj.sign( self.__pkeyObj, "sha256" )
+      self.__reqObj.get_subject().insert_entry( "CN", "proxy" )
+    self.__reqObj.sign( self.__pkeyObj, "SHA256" )
     self.__valid = True
 
   def dumpRequest( self ):
@@ -150,11 +150,8 @@ class X509Request( object ):
     if not retVal[ 'OK' ]:
       return retVal
     lastCert = retVal[ 'Value' ]
-    chainPubKey = lastCert.getPublicKey()
-    if not chainPubKey['OK']:
-      return chainPubKey
-    chainPubKey = chainPubKey[ 'Value' ].as_pem( cipher = None, callback = M2Crypto.util.no_passphrase_callback )
-    reqPubKey = self.__reqObj.get_pubkey().as_pem( cipher = None, callback = M2Crypto.util.no_passphrase_callback )
+    chainPubKey = GSI.crypto.dump_publickey( GSI.crypto.FILETYPE_PEM, lastCert.getPublicKey()[ 'Value' ] )
+    reqPubKey = GSI.crypto.dump_publickey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj )
     if not chainPubKey == reqPubKey:
       retVal = S_OK( False )
       retVal[ 'Message' ] = "Public keys do not match"
