@@ -15,54 +15,9 @@ from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundEr
 from elasticsearch.helpers import BulkIndexError, bulk
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security import Locations, X509Chain
+from DIRAC.Core.Utilities import Time, CertificateMgmt, DErrno
 
 __RCSID__ = "$Id$"
-
-def getCert():
-  """
-  get the host certificate
-  """
-  cert = Locations.getHostCertificateAndKeyLocation()
-  if cert:
-    cert = cert[0]
-  else:
-    cert = "/opt/dirac/etc/grid-security/hostcert.pem"
-  return cert
-
-def generateCAFile():
-  """
-  Generate a single CA file with all the PEMs
-  """
-  caDir = Locations.getCAsLocation()
-  for fn in ( os.path.join( os.path.dirname( caDir ), "cas.pem" ),
-              os.path.join( os.path.dirname( getCert() ), "cas.pem" ),
-              False ):
-    if not fn:
-      fn = tempfile.mkstemp( prefix = "cas.", suffix = ".pem" )[1]
-
-    try:
-
-      with open(fn, "w" ) as fd:
-        for caFile in os.listdir( caDir ):
-          caFile = os.path.join( caDir, caFile )
-          result = X509Chain.X509Chain.instanceFromFile( caFile )
-          if not result[ 'OK' ]:
-            continue
-          chain = result[ 'Value' ]
-          expired = chain.hasExpired()
-          if not expired[ 'OK' ] or expired[ 'Value' ]:
-            continue
-          fd.write( chain.dumpAllToString()[ 'Value' ] )
-
-      gLogger.info( "CAs used from: %s" % str( fn ) )
-      return fn
-    except IOError as err:
-      gLogger.warn( err )
-
-  return False
 
 class ElasticSearchDB( object ):
 
@@ -104,10 +59,13 @@ class ElasticSearchDB( object ):
                                      timeout = self.__timeout, 
                                      use_ssl = True, 
                                      verify_certs = True, 
-                                     ca_certs = generateCAFile() )
+                                     ca_certs = CertificateMgmt.generateCAFile() )
     else:
       self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
       
+
+    gLogger.verbose( "ElasticSearchDB URL: %s" % self.__url )
+    
     self.__tryToConnect()
 
   def getIndexPrefix( self ):
@@ -157,14 +115,14 @@ class ElasticSearchDB( object ):
       if self.__client.ping():
         # Returns True if the cluster is running, False otherwise
         result = self.__client.info()
-        self.clusterName = result.get( "cluster_name", " " ) #pylint: disable=no-member
+        self.clusterName = result.get( "cluster_name", " " )  # pylint: disable=no-member
         gLogger.info( "Database info", result )
         self._connected = True
       else:
         self._connected = False
         gLogger.error( "Cannot connect to the database!" )
     except ConnectionError as e:
-      gLogger.error( repr(e) )
+      gLogger.error( repr( e ) )
       self._connected = False
 
   ########################################################################
@@ -173,7 +131,7 @@ class ElasticSearchDB( object ):
     It returns the available indexes...
     """
 
-    #we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
+    # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
     return [ index for index in self.__client.indices.get_alias( "%s*" % self.__indexPrefix ) ]
 
   ########################################################################
@@ -186,7 +144,7 @@ class ElasticSearchDB( object ):
     try:
       gLogger.debug( "Getting mappings for ", indexName )
       result = self.__client.indices.get_mapping( indexName )
-    except Exception as e: # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except
       gLogger.error( e )
     doctype = ''
     for indexConfig in result:
@@ -230,7 +188,7 @@ class ElasticSearchDB( object ):
         gLogger.info( "Create index: ", fullIndex + str( mapping ) )
         self.__client.indices.create( fullIndex, body = {'mappings': mapping} )
         result = S_OK( fullIndex )
-      except Exception as e: # pylint: disable=broad-except
+      except Exception as e:  # pylint: disable=broad-except
         gLogger.error( "Can not create the index:", e )
         result = S_ERROR( e )
     return result
@@ -247,7 +205,7 @@ class ElasticSearchDB( object ):
       return S_ERROR( DErrno.EVALUE, e )
 
     if retVal.get( 'acknowledged' ):
-      #if the value exists and the value is not None
+      # if the value exists and the value is not None
       return S_OK( indexName )
     else:
       return S_ERROR( retVal )
@@ -266,7 +224,7 @@ class ElasticSearchDB( object ):
     except TransportError as e:
       return S_ERROR( e )
 
-    if res.get( 'created' ):  #pylint: disable=no-member
+    if res.get( 'created' ):  # pylint: disable=no-member
       # the created is exists but the value can be None.
       return S_OK( indexName )
     else:
@@ -303,16 +261,16 @@ class ElasticSearchDB( object ):
       if 'timestamp' not in row:
         gLogger.warn( "timestamp is not given! Note: the actual time is used!" )
 
-      timestamp = row.get( 'timestamp', int( Time.toEpoch() ) ) #if the timestamp is not provided, we use the current utc time.
+      timestamp = row.get( 'timestamp', int( Time.toEpoch() ) )  # if the timestamp is not provided, we use the current utc time.
       try:
-        if isinstance(timestamp, datetime):
-          body['_source']['timestamp'] = int( timestamp.strftime('%s') ) * 1000
-        elif isinstance(timestamp, basestring):
+        if isinstance( timestamp, datetime ):
+          body['_source']['timestamp'] = int( timestamp.strftime( '%s' ) ) * 1000
+        elif isinstance( timestamp, basestring ):
           timeobj = datetime.strptime( timestamp, '%Y-%m-%d %H:%M:%S.%f' )
-          body['_source']['timestamp'] = int( timeobj.strftime('%s') ) * 1000
-        else: #we assume  the timestamp is an unix epoch time (integer).
-          body['_source']['timestamp'] = timestamp  * 1000
-      except (TypeError, ValueError) as e:
+          body['_source']['timestamp'] = int( timeobj.strftime( '%s' ) ) * 1000
+        else:  # we assume  the timestamp is an unix epoch time (integer).
+          body['_source']['timestamp'] = timestamp * 1000
+      except ( TypeError, ValueError ) as e:
         # in case we are not able to convert the timestamp to epoch time....
         gLogger.error( "Wrong timestamp", e )
         body['_source']['timestamp'] = int( Time.toEpoch() ) * 1000
@@ -343,8 +301,8 @@ class ElasticSearchDB( object ):
     startDate = endDate - timedelta( days = 30 )
 
     timeFilter = self._Q( 'range',
-                          timestamp = {'lte':int(Time.toEpoch( endDate )) * 1000,
-                                       'gte': int(Time.toEpoch( startDate )) * 1000, } )
+                          timestamp = {'lte':int( Time.toEpoch( endDate ) ) * 1000,
+                                       'gte': int( Time.toEpoch( startDate ) ) * 1000, } )
     query = query.filter( 'bool', must = timeFilter )
     if orderBy:
       query.aggs.bucket( key,
@@ -363,7 +321,7 @@ class ElasticSearchDB( object ):
                                             field = key )
 
     try:
-      query = query.extra( size = self.RESULT_SIZE ) #do not need the raw data.
+      query = query.extra( size = self.RESULT_SIZE )  # do not need the raw data.
       gLogger.debug( "Query", query.to_dict() )
       result = query.execute()
     except TransportError as e:
