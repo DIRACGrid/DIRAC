@@ -65,6 +65,59 @@ class MakeQuery( TestCase ):
     module = self.testClass()
     self.assertEqual( 'AccountingDB', module.__class__.__name__ )
 
+  def test_calculateBuckets( self ):
+    """
+    Test the method used to calculate the bucket size
+    """
+    
+    module = self.testClass()
+    module.dbCatalog = {"LHCb-Certification_DataOperation": {
+                                                             'definition': {
+                                                                            'keys': [( 'OperationType', 'VARCHAR(32)' ),
+                                                                                     ( 'User', 'VARCHAR(32)' ),
+                                                                                     ( 'ExecutionSite', 'VARCHAR(32)' ),
+                                                                                     ( 'Source', 'VARCHAR(32)' ),
+                                                                                     ( 'Destination', 'VARCHAR(32)' ),
+                                                                                     ( 'Protocol', 'VARCHAR(32)' ),
+                                                                                     ( 'FinalStatus', 'VARCHAR(32)' )],
+                                                                            'values': [( 'TransferSize', 'BIGINT UNSIGNED' ),
+                                                                                       ( 'TransferTime', 'FLOAT' ),
+                                                                                       ( 'RegistrationTime', 'FLOAT' ),
+                                                                                       ( 'TransferOK', 'INT UNSIGNED' ),
+                                                                                       ( 'TransferTotal', 'INT UNSIGNED' ),
+                                                                                       ( 'RegistrationOK', 'INT UNSIGNED' ),
+                                                                                       ( 'RegistrationTotal', 'INT UNSIGNED' )]},
+                                                             'bucketFields': ['OperationType', 'User', 'ExecutionSite', 'Source',
+                                                                              'Destination', 'Protocol', 'FinalStatus', 'TransferSize',
+                                                                              'TransferTime', 'RegistrationTime', 'TransferOK',
+                                                                              'TransferTotal', 'RegistrationOK', 'RegistrationTotal',
+                                                                              'entriesInBucket', 'startTime', 'bucketLength'],
+                                                             'keys': ['OperationType', 'User', 'ExecutionSite', 'Source',
+                                                                      'Destination', 'Protocol', 'FinalStatus'],
+                                                             'typeFields': ['OperationType', 'User', 'ExecutionSite',
+                                                                            'Source', 'Destination', 'Protocol', 'FinalStatus',
+                                                                            'TransferSize', 'TransferTime', 'RegistrationTime',
+                                                                            'TransferOK', 'TransferTotal', 'RegistrationOK',
+                                                                            'RegistrationTotal', 'startTime', 'endTime'],
+                                                             'values': ['TransferSize', 'TransferTime', 'RegistrationTime',
+                                                                        'TransferOK', 'TransferTotal', 'RegistrationOK', 'RegistrationTotal'],
+                                                              'dataTimespan': 0}}
+
+    module.dbBucketsLength['LHCb-Certification_DataOperation'] = [( 259200, 900 ), ( 691200, 3600 ), ( 15552000, 86400 ), ( 31104000, 604800 )]
+    retVal = module.calculateBuckets( "LHCb-Certification_DataOperation", 1495328400, 1495328400 )[0][0] 
+    self.assertTrue( retVal )
+      
+    retVal = module.calculateBuckets( "LHCb-Certification_DataOperation", 1497964315, 1497964315 )[0][0] 
+    self.assertTrue( retVal )
+    self.assertTrue( retVal )
+        
+    retVal = module.calculateBuckets( "LHCb-Certification_DataOperation", 1495414800, 1495414800 )[0][0] 
+    self.assertTrue( retVal )
+        
+    retVal = module.calculateBuckets( "LHCb-Certification_DataOperation", 1498047038, 1498047038 )[0][0] 
+    self.assertTrue( retVal )
+        
+    
   def test__queryType1( self ):
     """
     Test the query creation for a given condition
@@ -102,9 +155,20 @@ class MakeQuery( TestCase ):
 
     module.dbBucketsLength['LHCb-Certification_DataOperation'] = [( 259200, 900 ), ( 691200, 3600 ), ( 15552000, 86400 ), ( 31104000, 604800 )]
     module._query = self.query
+    startTime = 1495324800
+    endTime = 1497960715
+    retVal = module.calculateBuckets( "LHCb-Certification_DataOperation", startTime + 3600, startTime + 3600 )[0][0] 
+    self.assertTrue( retVal )
+    expectedStartTime = retVal
+    
+    retVal = module.calculateBuckets( "LHCb-Certification_DataOperation", endTime + 3600, endTime + 3600 )[0][0] 
+    self.assertTrue( retVal )
+    expectedEndTime = retVal
+    
+    expectedQuery = "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, `ac_bucket_LHCb-Certification_DataOperation`.`startTime`, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) FROM `ac_bucket_LHCb-Certification_DataOperation`, `ac_key_LHCb-Certification_DataOperation_Source` WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= %s AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= %s AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, TransferTotal, TransferOK ORDER BY startTime" % ( expectedStartTime, expectedEndTime )
     retVal = module._AccountingDB__queryType( "LHCb-Certification_DataOperation",
-                                1495324800,
-                                1497960715,
+                                startTime,
+                                endTime,
                                 ( '%s, %s, %s, SUM(%s), SUM(%s)-SUM(%s)', ['Source', 'startTime', 'bucketLength', 'TransferOK', 'TransferTotal', 'TransferOK'] ),
                                 {},
                                 ( '%s, %s', ['startTime', 'Source'] ),
@@ -112,10 +176,9 @@ class MakeQuery( TestCase ):
                                 'bucket' )
 
     self.assertTrue( retVal )
-    self.assertTrue( "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, `ac_bucket_LHCb-Certification_DataOperation`.`startTime`, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) FROM `ac_bucket_LHCb-Certification_DataOperation`, `ac_key_LHCb-Certification_DataOperation_Source` WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= 1495324800 AND `ac_bucket_LHCb-Certification_DataOperation`." in retVal )
-    # self.assertEqual( retVal, "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, `ac_bucket_LHCb-Certification_DataOperation`.`startTime`, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) FROM `ac_bucket_LHCb-Certification_DataOperation`, `ac_key_LHCb-Certification_DataOperation_Source` WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= 1495324800 AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= 1497963600 AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, TransferTotal, TransferOK ORDER BY startTime" )
-
-  def test__queryType2( self ):
+    self.assertEqual( retVal, expectedQuery )
+  
+  def test_queryType2( self ):
     """Test the query creation for a given condition"""
     module = self.testClass()
     module.dbCatalog = {"LHCb-Certification_DataOperation": {'definition': {'keys': [( 'OperationType', 'VARCHAR(32)' ),
@@ -150,18 +213,29 @@ class MakeQuery( TestCase ):
 
     module.dbBucketsLength['LHCb-Certification_DataOperation'] = [( 259200, 900 ), ( 691200, 3600 ), ( 15552000, 86400 ), ( 31104000, 604800 )]
     module._query = self.query
+    startTime = 1495411200
+    endTime = 1498043438
+    retVal = module.calculateBuckets( "LHCb-Certification_DataOperation", startTime + 3600, startTime + 3600 )[0][0] 
+    self.assertTrue( retVal )
+    expectedStartTime = retVal
+    
+    retVal = module.calculateBuckets( "LHCb-Certification_DataOperation", endTime + 3600, endTime + 3600 )[0][0] 
+    self.assertTrue( retVal )
+    expectedEndTime = retVal
+    
+    expectedQuery = "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, `ac_bucket_LHCb-Certification_DataOperation`.`startTime`, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) FROM `ac_bucket_LHCb-Certification_DataOperation`, `ac_key_LHCb-Certification_DataOperation_Source` WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= %s AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= %s AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, TransferTotal, TransferOK ORDER BY startTime" % ( expectedStartTime, expectedEndTime )
+    
     retVal = module._AccountingDB__queryType( "LHCb-Certification_DataOperation",
-                                1495411200,
-                                1498043438,
-                                ('%s, %s, %s, SUM(%s), SUM(%s)-SUM(%s)', ['Source', 'startTime', 'bucketLength', 'TransferOK', 'TransferTotal', 'TransferOK']),
+                                startTime,
+                                endTime,
+                                ( '%s, %s, %s, SUM(%s), SUM(%s)-SUM(%s)', ['Source', 'startTime', 'bucketLength', 'TransferOK', 'TransferTotal', 'TransferOK'] ),
                                 {},
                                 ( '%s, %s', ['startTime', 'Source'] ),
                                 ( '%s', ['startTime'] ),
                                 'bucket' )
 
     self.assertTrue( retVal )
-    self.assertTrue( "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, `ac_bucket_LHCb-Certification_DataOperation`.`startTime`, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) FROM `ac_bucket_LHCb-Certification_DataOperation`, `ac_key_LHCb-Certification_DataOperation_Source` WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` " in retVal )
-    # self.assertEqual( retVal, "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, `ac_bucket_LHCb-Certification_DataOperation`.`startTime`, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) FROM `ac_bucket_LHCb-Certification_DataOperation`, `ac_key_LHCb-Certification_DataOperation_Source` WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= 1495411200 AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= 1498046400 AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, TransferTotal, TransferOK ORDER BY startTime" )
+    self.assertEqual( retVal, expectedQuery )
 
 #############################################################################
 # Test Suite run
