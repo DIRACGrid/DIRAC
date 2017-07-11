@@ -56,7 +56,7 @@ class SiteStatus( object ):
     }
 
     examples
-      >>> siteStatus.getSiteStatuses( [ 'test1.test1.uk', 'test2.test2.net', 'test3.test3.org' ] )
+      >>> siteStatus.getSiteStatuses( ['test1.test1.uk', 'test2.test2.net', 'test3.test3.org'] )
           S_OK( { 'test1.test1.org': 'Active', 'test2.test2.net': 'Banned', 'test3.test3.org': 'Active' }  )
       >>> siteStatus.getSiteStatuses( 'NotExists')
           S_ERROR( ... ))
@@ -78,7 +78,7 @@ class SiteStatus( object ):
 
       if self.rssFlag:
         siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status',
-                                                            meta = { 'columns' : [ 'Name', 'Status' ] } )
+                                                            meta = { 'columns' : ['Name', 'Status'] } )
       else:
         siteStatusDict = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus()
 
@@ -96,7 +96,7 @@ class SiteStatus( object ):
       if self.rssFlag:
         result = self.rsClient.selectStatusElement( 'Site', 'Status',
                                                     name = siteName,
-                                                    meta = { 'columns' : [ 'Status' ] } )
+                                                    meta = { 'columns' : ['Status'] } )
       else:
         result = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus(siteName)
 
@@ -140,7 +140,7 @@ class SiteStatus( object ):
     if self.rssFlag:
       siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status',
                                                       name = siteName,
-                                                      meta = { 'columns' : [ 'Name', 'Status' ] } )
+                                                      meta = { 'columns' : ['Name', 'Status'] } )
     else:
       siteStatus = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus(siteName)
 
@@ -168,7 +168,7 @@ class SiteStatus( object ):
     statusType is either Active or Degraded; in a list.
 
     examples
-      >>> siteStatus.getUsableSites( [ 'test1.test1.uk', 'test2.test2.net', 'test3.test3.org' ] )
+      >>> siteStatus.getUsableSites( ['test1.test1.uk', 'test2.test2.net', 'test3.test3.org'] )
           S_OK( ['test1.test1.uk', 'test3.test3.org'] )
       >>> siteStatus.getUsableSites( None )
           S_OK( ['test1.test1.uk', 'test3.test3.org', 'test4.test4.org', 'test5.test5.org', ...] )
@@ -186,7 +186,7 @@ class SiteStatus( object ):
       if self.rssFlag:
         result = self.rsClient.selectStatusElement( 'Site', 'Status',
                                                     status = 'Active',
-                                                    meta = { 'columns' : [ 'Name' ] } )
+                                                    meta = { 'columns' : ['Name'] } )
         if not result['OK']:
           return result
 
@@ -194,7 +194,7 @@ class SiteStatus( object ):
 
         result = self.rsClient.selectStatusElement( 'Site', 'Status',
                                                     status = 'Degraded',
-                                                    meta = { 'columns' : [ 'Name' ] } )
+                                                    meta = { 'columns' : ['Name'] } )
         if not result['OK']:
           return result
 
@@ -216,7 +216,7 @@ class SiteStatus( object ):
       if self.rssFlag:
         siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status',
                                                         name = siteName,
-                                                        meta = { 'columns' : [ 'Status' ] } )
+                                                        meta = { 'columns' : ['Status'] } )
       else:
         siteStatus = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus(siteName)
 
@@ -269,14 +269,14 @@ class SiteStatus( object ):
       if self.rssFlag:
         siteStatus = self.rsClient.selectStatusElement( 'Site',
                                                         'Status',
-                                                        meta = { 'columns' : [ 'Name' ] } )
+                                                        meta = { 'columns' : ['Name'] } )
       else:
         siteStatus = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMask( 'All' )
 
     else:
       # fix case sensitive string
       siteState = siteState.capitalize()
-      allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
+      allowedStateList = ['Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown']
       if siteState not in allowedStateList:
         return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
@@ -284,7 +284,7 @@ class SiteStatus( object ):
         siteStatus = self.rsClient.selectStatusElement( 'Site',
                                                         'Status',
                                                         status = siteState,
-                                                        meta = { 'columns' : [ 'Name' ] } )
+                                                        meta = { 'columns' : ['Name'] } )
       else:
         siteStatus = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMask( siteState )
 
@@ -293,10 +293,10 @@ class SiteStatus( object ):
     else:
 
       if not self.rssFlag:
-        return S_OK( siteStatus[ 'Value' ] )
+        return S_OK( siteStatus['Value'] )
 
       siteList = []
-      for site in siteStatus[ 'Value' ]:
+      for site in siteStatus['Value']:
         siteList.append(site[0])
 
       return S_OK( siteList )
@@ -325,7 +325,7 @@ class SiteStatus( object ):
 
     # fix case sensitive string
     status = status.capitalize()
-    allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
+    allowedStateList = ['Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown']
     if status not in allowedStateList:
       return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
