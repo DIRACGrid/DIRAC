@@ -3,8 +3,6 @@ This class a wrapper around elasticsearch-py. It is used to query
 Elasticsearch database.
 
 """
-import os
-import tempfile
 
 from datetime import datetime
 from datetime import timedelta
