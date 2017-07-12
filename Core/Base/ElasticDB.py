@@ -47,7 +47,6 @@ class ElasticDB( ElasticSearchDB ):
     if 'Password' in dbParameters:
       self.__dbPassword = dbParameters[ 'Password' ]
     
-    print '!!!!!', self.__dbPort, type(self.__dbPort)
     super( ElasticDB, self ).__init__( self.__dbHost, self.__dbPort, self.__user, self.__dbPassword, indexPrefix )
 
     if not self._connected:

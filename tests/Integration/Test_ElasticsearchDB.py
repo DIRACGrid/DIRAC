@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
 from DIRAC.Core.Utilities.ElasticSearchDB import generateFullIndexName
 
 elHost = 'localhost'
-elPort = '9200'
+elPort = 9200
 
 class ElasticTestCase( unittest.TestCase ):
 
