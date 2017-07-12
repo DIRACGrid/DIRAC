@@ -108,13 +108,13 @@ Here is a rough overview of what is happening when you are calling a method from
      class myThread (threading.Thread):
 
        def __init__(self, name):
-	  super(myThread, self).__init__()
-	  self.name = name
+          super(myThread, self).__init__()
+          self.name = name
 
        def run(self):
-	  thConfig.setDN(self.name)
-	  rpc = RPCClient('DataManagement/FileCatalog')
-	  rpc.ping()
+          thConfig.setDN(self.name)
+          rpc = RPCClient('DataManagement/FileCatalog')
+          rpc.ping()
 
 
      threads = []
@@ -131,4 +131,4 @@ Here is a rough overview of what is happening when you are calling a method from
 
      # Wait for all threads to complete
      for t in threads:
-	t.join()
+        t.join()

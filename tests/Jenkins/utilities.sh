@@ -52,11 +52,9 @@ function default(){
 #
 # findRelease:
 #
-#   If the environment variable "PRERELEASE" exists, we use a prerelease
-#   instead of a regular release ( production-like ).
-#   If any parameter is passed, we assume we are on pre-release mode, otherwise,
-#   we assume production. It reads from releases.cfg and picks the latest version
+#   It reads from releases.cfg and picks the latest version
 #   which is written to {dirac,externals}.version
+#   Unless variable $projectVersion is set: in this case, we use the specified DIRAC relese.
 #
 #.............................................................................
 
@@ -105,13 +103,16 @@ function findRelease(){
 
   # If I don't specify a DIRACBRANCH, it will get the latest "production" release
   # First, try to find if we are on a production tag
-  if [ ! -z "$DIRACBRANCH" ]
+  if [ ! "$projectVersion" ]
   then
-    projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
-  else
-    projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
+    if [ ! -z "$DIRACBRANCH" ]
+    then
+      projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+    else
+      projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
+    fi
+    # projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
   fi
-  # projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
 
   # The special case is when there's no 'p'... (e.g. version v6r15)
   if [ ! "$projectVersion" ]
@@ -409,6 +410,80 @@ function diracInstallCommand(){
   $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t server -d
 }
 
+
+####################################################
+# This installs the DIRAC client
+# it needs a $DIRAC_RELEASE env var defined
+
+function installDIRAC(){
+
+  echo '==> Installing DIRAC client'
+
+  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $CLIENTINSTALLDIR/dirac-install
+  chmod +x $CLIENTINSTALLDIR/dirac-install
+
+  cd $CLIENTINSTALLDIR
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $CLIENTINSTALLDIR
+    return
+  fi
+
+  # actually installing
+  ./dirac-install -r $DIRAC_RELEASE -t client $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: DIRAC client installation failed'
+    return
+  fi
+
+  # now configuring
+  source bashrc
+  dirac-configure -S $DIRACSETUP -C $CSURL --UseServerCertificate -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+
+  echo 'Content of etc/dirac.cfg:'
+  more $CLIENTINSTALLDIR/etc/dirac.cfg
+
+  source bashrc
+}
+
+##############################################################################
+# This function submits a job or more (it assumes a DIRAC client is installed)
+
+function submitJob(){
+
+  echo -e "==> Submitting a simple job"
+
+  #This has to be executed from the $CLIENTINSTALLDIR
+  cd $CLIENTINSTALLDIR
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $CLIENTINSTALLDIR
+    return
+  fi
+
+  export PYTHONPATH=$TESTCODE:$PYTHONPATH
+  #Get a proxy and submit the job: this job will go to the certification setup, so we suppose the JobManager there is accepting jobs
+  getUserProxy #this won't really download the proxy, so that's why the next command is needed
+  cp $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py .
+  python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup=Dirac-Certification -ddd
+  cp $TESTCODE/DIRAC/tests/Jenkins/dirac-test-job.py .
+  python dirac-test-job.py -o /DIRAC/Setup=Dirac-Certification $DEBUG
+}
+
+function getUserProxy(){
+
+  echo '==> Started getUserProxy'
+
+  cp $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py .
+  python dirac-cfg-update.py -S $DIRACSETUP $CLIENTINSTALLDIR/etc/dirac.cfg -F $CLIENTINSTALLDIR/etc/dirac.cfg -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  #Getting a user proxy, so that we can run jobs
+  downloadProxy
+
+  echo '==> Done getUserProxy'
+}
+
+
 #.............................................................................
 #
 # prepareForServer:
@@ -556,8 +631,8 @@ function diracCredentials(){
 function diracUserAndGroup(){
   echo '==> [diracUserAndGroup]'
 
-  dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G user $DEBUG
-  dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G user $DEBUG
+  dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user $DEBUG
+  dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user $DEBUG
 
   dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement,FileCatalogManagement,SiteManager,NormalUser $DEBUG
 
@@ -655,8 +730,7 @@ diracUninstallServices(){
 
   findServices
 
-  #TODO: revise this list
-  services=`cat services | cut -d '.' -f 1 | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
+  services=`cat services | cut -d '.' -f 1 | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -681,8 +755,7 @@ diracUninstallServices(){
 diracAgents(){
   echo '==> [diracAgents]'
 
-  #TODO: revise this list
-  agents=`cat agents | cut -d '.' -f 1 | grep -v LFC | grep -v MyProxy | grep -v CAUpdate | grep -v CE2CSAgent.py | grep -v FrameworkSystem | grep -v DiracSiteAgent | grep -v StatesMonitoringAgent | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent  | grep -v GridSiteWMSMonitoringAgent  | grep -v GridSiteMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g'`
+  agents=`cat agents | cut -d '.' -f 1 | grep -v LFC | grep -v MyProxy | grep -v CAUpdate | grep -v CE2CSAgent.py | grep -v GOCDB2CS | grep -v Bdii2CS | grep -v CacheFeeder | grep -v NetworkAgent | grep -v FrameworkSystem | grep -v DiracSiteAgent | grep -v StatesMonitoringAgent | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent  | grep -v GridSiteWMSMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g'`
 
   for agent in $agents
   do
@@ -878,13 +951,27 @@ function prepareForPilot(){
 function downloadProxy(){
   echo '==> [downloadProxy]'
 
+  cp $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py .
+
   if [ $PILOTCFG ]
   then
-    echo $( eval echo Executing python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
-    python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG
+    if [ -e $CLIENTINSTALLDIR/etc/dirac.cfg ] # called from the client directory
+    then
+      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
+      python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG
+    else # assuming it's the pilot
+      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
+      python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG
+    fi
   else
-    echo $( eval echo Executing python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $DEBUG)
-    python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $DEBUG
+    if [ -e $CLIENTINSTALLDIR/etc/dirac.cfg ] # called from the client directory
+    then
+      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG)
+      python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $DEBUG
+    else # assuming it's the pilot
+      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/etc/dirac.cfg $DEBUG)
+      python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/etc/dirac.cfg $DEBUG
+    fi
   fi
 
   if [ $? -ne 0 ]

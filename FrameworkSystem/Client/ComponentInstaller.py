@@ -622,7 +622,12 @@ class ComponentInstaller( object ):
         if not isRenamed and cType == 'service':
           result = self._removeOptionFromCS( cfgPath( 'Systems', system, compInstance, 'URLs', component ) )
           if not result[ 'OK' ]:
-            return result
+            # It is maybe in the FailoverURLs ?
+            result = self._removeOptionFromCS( cfgPath( 'Systems', system, compInstance, 'FailoverURLs', component ) )
+            if not result['OK']:
+              return result
+
+
 
       if removeMain:
         result = self._removeSectionFromCS( cfgPath( 'Systems', system,
@@ -635,7 +640,10 @@ class ComponentInstaller( object ):
         if cType == 'service':
           result = self._removeOptionFromCS( cfgPath( 'Systems', system, compInstance, 'URLs', installation[ 'Component' ][ 'Module' ] ) )
           if not result[ 'OK' ]:
-            return result
+            # it is maybe in the FailoverURLs ?
+            result = self._removeOptionFromCS( cfgPath( 'Systems', system, compInstance, 'FailoverURLs', installation[ 'Component' ][ 'Module' ] ) )
+            if not result['OK']:
+              return result
 
       return S_OK( 'Successfully removed entries from CS' )
     return S_OK( 'Instances of this component still exist. It won\'t be completely removed' )
@@ -801,6 +809,8 @@ class ComponentInstaller( object ):
       if port and self.host:
         urlsPath = cfgPath( 'Systems', system, compInstance, 'URLs' )
         cfg.createNewSection( urlsPath )
+        failoverUrlsPath = cfgPath( 'Systems', system, compInstance, 'FailoverURLs' )
+        cfg.createNewSection( failoverUrlsPath )
         cfg.setOption( cfgPath( urlsPath, component ),
                        'dips://%s:%d/%s/%s' % ( self.host, port, system, component ) )
 

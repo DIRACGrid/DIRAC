@@ -59,9 +59,9 @@ objects are located in this package which currently contains:
 -  ’server’: ServerBackend
 
 In order to create custom *Backend* objects, we just
-have to make a new class named *[Backendname]Backend* in
+have to make a new class named *[Backendname]Backend* in 
 this package inheriting from *AbstractBackend*.
-For instance, the class name of the *stdout Backend* is *StdoutBackend*.
+For instance, the class name of the *stdout Backend* is *StdoutBackend*. 
 
 Then, to use it, we just have to add its name in the *cfg* file as usual.
 

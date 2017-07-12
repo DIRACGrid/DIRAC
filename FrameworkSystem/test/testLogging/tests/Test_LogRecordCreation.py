@@ -4,6 +4,7 @@ Test LogRecord Creation
 
 __RCSID__ = "$Id$"
 
+#pylint: disable=invalid-name
 
 import unittest
 
@@ -275,9 +276,9 @@ class Test_LogRecordCreation(Test_Logging):
     Create Always log on multiple lines and test it
     Differences between the two systems :
     - gLogger: ALWAYS: this
-	       ALWAYS: is
+               ALWAYS: is
     - old gLogger: ALWAYS: this
-		   is
+                   is
     """
     self.log.always('this\nis\na\nmessage\non\nmultiple\nlines.')
     logstring1 = cleaningLog(self.buffer.getvalue())

@@ -434,7 +434,7 @@ class SiteDirector( AgentModule ):
     if result['OK']:
       totalWaitingPilots = result['Value']
     self.log.info( 'Total %d jobs in %d task queues with %d waiting pilots' \
-		  % (totalWaitingJobs, len( tqIDList ), totalWaitingPilots ) )
+                  % (totalWaitingJobs, len( tqIDList ), totalWaitingPilots ) )
     #if totalWaitingPilots >= totalWaitingJobs:
     #  self.log.info( 'No more pilots to be submitted in this cycle' )
     #  return S_OK()
@@ -554,7 +554,7 @@ class SiteDirector( AgentModule ):
         totalTQJobs += taskQueueDict[tq]['Jobs']
 
       self.log.verbose( '%d job(s) from %d task queue(s) are eligible for %s queue' \
-		       % (totalTQJobs, len( tqIDList ), queue) )
+                       % (totalTQJobs, len( tqIDList ), queue) )
 
       # Get the number of already waiting pilots for these task queues
       totalWaitingPilots = 0
@@ -577,7 +577,7 @@ class SiteDirector( AgentModule ):
           continue
 
       self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" \
-		       % (totalWaitingPilots, totalTQJobs, queue) )
+                       % (totalWaitingPilots, totalTQJobs, queue) )
 
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
@@ -630,7 +630,7 @@ class SiteDirector( AgentModule ):
         ### FIXME: The condor thing only transfers the file with some
         ### delay, so when we unlink here the script is gone
         ### FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
-        if ceType != 'HTCondorCE':
+        if not ( ceType == 'HTCondorCE' or ( ceType == 'Local' and ce.batchSystem == 'Condor' ) ):
           os.unlink( executable )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
@@ -685,7 +685,7 @@ class SiteDirector( AgentModule ):
               continue
 
     self.log.info( "%d pilots submitted in total in this cycle, %d matched queues" \
-		  % ( totalSubmittedPilots, matchedQueues ) )
+                  % ( totalSubmittedPilots, matchedQueues ) )
     return S_OK()
 
   def getQueueSlots( self, queue, manyWaitingPilotsFlag ):

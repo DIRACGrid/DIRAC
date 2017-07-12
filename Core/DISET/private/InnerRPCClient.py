@@ -10,11 +10,11 @@ from DIRAC.Core.Utilities.DErrno import cmpError, ENOAUTH
 class InnerRPCClient( BaseClient ):
   """ This class instruments the BaseClient to perform RPC calls.
       At every RPC call, this class:
-	* connects
-	* proposes the action
-	* sends the method parameters
-	* retrieve the result
-	* disconnect
+        * connects
+        * proposes the action
+        * sends the method parameters
+        * retrieve the result
+        * disconnect
   """
 
   # Number of times we retry the call.
@@ -24,11 +24,11 @@ class InnerRPCClient( BaseClient ):
   def executeRPC( self, functionName, args ):
     """ Perform the RPC call, connect before and disconnect after.
 
-	:param functionName: name of the function
-	:param args: arguments to the function
+        :param functionName: name of the function
+        :param args: arguments to the function
 
-	:return: in case of success, the return of the server call. In any case
-		we add the connection stub to it.
+        :return: in case of success, the return of the server call. In any case
+                we add the connection stub to it.
 
 
     """
