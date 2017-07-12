@@ -80,7 +80,7 @@ class ElasticSearchDB( object ):
   clusterName = ''
   RESULT_SIZE = 10000
   ########################################################################
-  def __init__( self, host, port, user = None, password=None, indexPrefix = ''):
+  def __init__( self, host, port, user = None, password = None, indexPrefix = '', useSSL = True ):
     """ c'tor
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
@@ -89,6 +89,7 @@ class ElasticSearchDB( object ):
     :param str user: user name to access the db
     :param str password: if the db is password protected we need to provide a password
     :param str indexPrefix: it is the indexPrefix used to get all indexes
+    :param bool useSSL: We can disable using secure connection. By default we use secure connection.
     """
     self.__indexPrefix = indexPrefix
     self._connected = False
@@ -96,7 +97,12 @@ class ElasticSearchDB( object ):
       self.__url = "https://%s:%s@%s:%d" % ( user, password, host, port )
     else:
       self.__url = "%s:%d" % ( host, port )
-    self.__client = Elasticsearch( self.__url, timeout = self.__timeout, use_ssl = True, verify_certs = True, ca_certs = generateCAFile() )
+    
+    if useSSL:
+      self.__client = Elasticsearch( self.__url, timeout = self.__timeout, use_ssl = True, verify_certs = True, ca_certs = generateCAFile() )
+    else:
+      self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
+      
     self.__tryToConnect()
 
   def getIndexPrefix( self ):
