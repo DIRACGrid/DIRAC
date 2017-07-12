@@ -381,9 +381,13 @@ def generateFullIndexName( indexName, period = None ):
   :param str indexName: it is the name of the index
   :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
   """
+  if period is None:
+    gLogger.info ("Period is not provided, daily indexes are used!")
+    period = 'day'
+    
   today = datetime.today().strftime( "%Y-%m-%d" )
   index = ''
-  if period is None or period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
+  if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
     gLogger.warn( "Period is not correct daily indexes are used instead:", period )
     index = "%s-%s" % ( indexName, today )
   elif period.lower() == 'day':
