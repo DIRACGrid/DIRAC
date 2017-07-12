@@ -115,16 +115,16 @@ class ResourceManagementDB( object ):
     self.metadata = MetaData()
 
     AccountingCache = Table( 'AccountingCache', self.metadata,
-			     Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
-			     Column( 'LastCheckTime', DateTime, nullable = False ),
-			     Column( 'PlotName', String( 64 ), nullable = False, primary_key = True ),
-			     Column( 'Result', Text, nullable = False ),
-			     Column( 'DateEffective', DateTime, nullable = False ),
-			     Column( 'PlotType', String( 16 ), nullable = False, primary_key = True ),
-			     mysql_engine = 'InnoDB' )
+                             Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
+                             Column( 'LastCheckTime', DateTime, nullable = False ),
+                             Column( 'PlotName', String( 64 ), nullable = False, primary_key = True ),
+                             Column( 'Result', Text, nullable = False ),
+                             Column( 'DateEffective', DateTime, nullable = False ),
+                             Column( 'PlotType', String( 16 ), nullable = False, primary_key = True ),
+                             mysql_engine = 'InnoDB' )
 
     DowntimeCache = Table( 'DowntimeCache', self.metadata,
-			   Column( 'StartDate', DateTime, nullable = False ),
+                           Column( 'StartDate', DateTime, nullable = False ),
                                Column( 'DowntimeID', String( 64 ), nullable = False, primary_key = True ),
                                Column( 'Link', String( 255 ), nullable = False ),
                                Column( 'EndDate', DateTime, nullable = False ),
@@ -221,28 +221,28 @@ class ResourceManagementDB( object ):
                                mysql_engine = 'InnoDB' )
 
     PolicyResultLog = Table( 'PolicyResultLog', self.metadata,
-			     Column( 'Status', String( 8 ), nullable = False ),
-			     Column( 'PolicyName', String( 64 ), nullable = False ),
-			     Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
-			     Column( 'Name', String( 64 ), nullable = False ),
-			     Column( 'DateEffective', DateTime, nullable = False ),
-			     Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
-			     Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-			     Column( 'LastCheckTime', DateTime, nullable = False ),
-			     Column( 'Element', String( 32 ), nullable = False ),
-			     mysql_engine = 'InnoDB' )
+                             Column( 'Status', String( 8 ), nullable = False ),
+                             Column( 'PolicyName', String( 64 ), nullable = False ),
+                             Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
+                             Column( 'Name', String( 64 ), nullable = False ),
+                             Column( 'DateEffective', DateTime, nullable = False ),
+                             Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
+                             Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
+                             Column( 'LastCheckTime', DateTime, nullable = False ),
+                             Column( 'Element', String( 32 ), nullable = False ),
+                             mysql_engine = 'InnoDB' )
 
     PolicyResultHistory = Table( 'PolicyResultHistory', self.metadata,
-				 Column( 'Status', String( 8 ), nullable = False ),
-				 Column( 'PolicyName', String( 64 ), nullable = False ),
-				 Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
-				 Column( 'Name', String( 64 ), nullable = False ),
-				 Column( 'DateEffective', DateTime, nullable = False ),
-				 Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
-				 Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-				 Column( 'LastCheckTime', DateTime, nullable = False ),
-				 Column( 'Element', String( 32 ), nullable = False ),
-				 mysql_engine = 'InnoDB' )
+                                 Column( 'Status', String( 8 ), nullable = False ),
+                                 Column( 'PolicyName', String( 64 ), nullable = False ),
+                                 Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
+                                 Column( 'Name', String( 64 ), nullable = False ),
+                                 Column( 'DateEffective', DateTime, nullable = False ),
+                                 Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
+                                 Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
+                                 Column( 'LastCheckTime', DateTime, nullable = False ),
+                                 Column( 'Element', String( 32 ), nullable = False ),
+                                 mysql_engine = 'InnoDB' )
 
     self.log = gLogger.getSubLogger( 'ResourceManagementDB' )
     # Initialize the connection info
@@ -250,7 +250,7 @@ class ResourceManagementDB( object ):
 
     runDebug = ( gLogger.getLevel() == 'DEBUG' )
     self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass,
-							      self.dbHost, self.dbPort, self.dbName ),
+                                                              self.dbHost, self.dbPort, self.dbName ),
                                  echo = runDebug )
 
     self.metadata.bind = self.engine
@@ -383,7 +383,7 @@ class ResourceManagementDB( object ):
 
       if meta:
         result = session.execute( select( columns )
-				  .where( and_(*args) ) )
+                                  .where( and_(*args) ) )
       else :
         result = session.query( table ).filter(*args)
 
@@ -440,8 +440,8 @@ class ResourceManagementDB( object ):
       params = toDict( **kwargs )
 
       session.execute( update( table )
-		       .where( and_(*args) )
-		       .values( **params ) )
+                       .where( and_(*args) )
+                       .values( **params ) )
 
       session.commit()
       session.expunge_all()
@@ -478,7 +478,7 @@ class ResourceManagementDB( object ):
       args = toList(table, **kwargs)
 
       session.execute( delete( table )
-		       .where( or_(*args) ) )
+                       .where( or_(*args) ) )
 
       session.commit()
       return S_OK()

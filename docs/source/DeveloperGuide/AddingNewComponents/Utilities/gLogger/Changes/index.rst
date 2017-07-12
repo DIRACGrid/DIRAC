@@ -211,7 +211,7 @@ these ones to its parent and so on. Thus, all log records from all
     subsublog.registerBackends(['file'])
 
     subsublog.verbose("message")
-    # file
+    # file 
     # > ...VERBOSE: message
     # stderr
     # > ...VERBOSE: message

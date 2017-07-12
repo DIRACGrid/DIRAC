@@ -76,7 +76,7 @@ class FTSFile( object ):
                "FileID": "INTEGER NOT NULL",
                "OperationID": "INTEGER NOT NULL",
                "RequestID": "INTEGER NOT NULL",
-	       "LFN": "VARCHAR(955) NOT NULL",
+               "LFN": "VARCHAR(955) NOT NULL",
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
                "Checksum": "VARCHAR(64)",
                "ChecksumType": "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'ADLER32'",
@@ -85,9 +85,9 @@ class FTSFile( object ):
                "Size": "BIGINT NOT NULL",
                "FTSGUID":  "VARCHAR(64)",
                "SourceSE": "VARCHAR(128) NOT NULL",
-	       "SourceSURL": "VARCHAR(1024) NOT NULL",
+               "SourceSURL": "VARCHAR(1024) NOT NULL",
                "TargetSE": "VARCHAR(128) NOT NULL",
-	       "TargetSURL": "VARCHAR(1024) NOT NULL",
+               "TargetSURL": "VARCHAR(1024) NOT NULL",
                "Status": "VARCHAR(128) DEFAULT 'Waiting'",
                "Error": "VARCHAR(255)"  },
              "PrimaryKey": [ "FTSFileID" ],
@@ -319,7 +319,7 @@ class FTSFile( object ):
   def toJSON( self ):
     """ dump FTSFile to JSON format """
     return S_OK( dict( zip( self.__data__.keys(),
-			    [ val if val != None else "" for val in self.__data__.values() ] ) ) )
+                            [ val if val != None else "" for val in self.__data__.values() ] ) ) )
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = []

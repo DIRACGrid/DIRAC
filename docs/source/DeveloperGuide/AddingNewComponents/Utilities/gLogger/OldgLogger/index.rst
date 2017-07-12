@@ -111,15 +111,15 @@ Message
 Naturally, it exists some functions to send a message. These methods
 take level names. In this way, we have :
 
-+ always(msg, varMsg='')
-+ notice(msg, varMsg='')
-+ info(msg, varMsg='')
++ always(msg, varMsg='') 
++ notice(msg, varMsg='')               
++ info(msg, varMsg='')       
 + verbose(msg, varMsg='')
-+ debug(msg, varMsg='')
-+ warn(msg, varMsg='')
-+ error(msg, varMsg='')
++ debug(msg, varMsg='')                 
++ warn(msg, varMsg='')              
++ error(msg, varMsg='')                  
 + exception(msg, varMsg='', lException=False, lExcInfo=False)
-+ fatal(msg, varMsg='')
++ fatal(msg, varMsg='')  
 
 There are a *Msg* and *varMsg* where you can put any string you want in.
 There is no real difference between the two parameters.
@@ -135,20 +135,20 @@ warn you that this method works only if an exception occurs.
     try:
       1/0
     except Exception:
-      gLogger.exception("Division by 0", lExcInfo=True)
-      gLogger.exception("Division by 0")
-    #will display:
-    #Division by 0
+      gLogger.exception("Division by 0", lExcInfo=True) 
+      gLogger.exception("Division by 0") 
+    #will display: 
+    #Division by 0 
     #== EXCEPTION == ZeroDivisionError
     #  File "toto.py", line 132, in test_exception
     #    1/0
-    #
+    # 
     #ZeroDivisionError: integer division or modulo by zero
     #===============
     #
-    #Division by 0
+    #Division by 0 
     #== EXCEPTION == ZeroDivisionError
-    #
+    # 
     #ZeroDivisionError: integer division or modulo by zero
     #===============
 
@@ -171,7 +171,6 @@ Basic display
 The basic display for log message is:
 
 ::
-
     [Year]-[Month]-[Day] [Hour]:[Minute]:[Second] UTC /[Component]/[Logname] [Levelname] : [Message]
 
 Example:
@@ -360,22 +359,22 @@ configuration:
 
     Agents
     {
-	SimplestAgent
-	{
-	  LogLevel = INFO
-	  LogBackends = stdout,stderr,file
-	  LogColor = True
-	  LogShowLine = True
-
-	  PollingTime = 60
-	  Message = still working...
-
-	  BackendsOptions
-	  {
-	    FileName = /tmp/logtmp.log
-	  }
-	}
-    }
+        SimplestAgent
+        {
+          LogLevel = INFO
+          LogBackends = stdout,stderr,file
+          LogColor = True
+          LogShowLine = True
+          
+          PollingTime = 60
+          Message = still working...
+          
+          BackendsOptions
+          {
+            FileName = /tmp/logtmp.log
+          }
+        }
+    }   
 
 Configuration via command line argument
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -405,7 +404,7 @@ Multiple processes and threads
 Multiple processes
 ~~~~~~~~~~~~~~~~~~
 
-*DIRAC* is composed by many micro services running in multiple processes. *gLogger* object is naturally different for two distinct processes and can not save the application from process conflicts.
+*DIRAC* is composed by many micro services running in multiple processes. *gLogger* object is naturally different for two distinct processes and can not save the application from process conflicts. 
 Indeed, *gLogger* is not process-safe, that means that two processes can encounter conflicts if they try to write on a same file at the same time. So, be careful to avoid the case.
 
 Multiple threads

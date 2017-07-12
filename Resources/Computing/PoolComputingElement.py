@@ -24,6 +24,8 @@ MandatoryParameters = [ ]
 MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
 def executeJob( executableFile, proxy, taskID, **kwargs ):
+  """ wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess)
+  """
 
   useSudo = kwargs.pop( 'UseSudo', False )
   if useSudo:
@@ -32,10 +34,9 @@ def executeJob( executableFile, proxy, taskID, **kwargs ):
     if payloadUser:
       ce.setParameters( { 'PayloadUser': payloadUser } )
   else:
-    ce = InProcessComputingElement( "Task-" + str( taskID ) )
+    ce = InProcessComputingElement( "Task-" + str( taskID ) ) # pylint: disable=redefined-variable-type
 
-  result = ce.submitJob( executableFile, proxy )
-  return result
+  return ce.submitJob( executableFile, proxy )
 
 class PoolComputingElement( ComputingElement ):
 
@@ -59,6 +60,7 @@ class PoolComputingElement( ComputingElement ):
     self.taskID = 0
     self.processorsPerTask = {}
     self.userNumberPerTask = {}
+    self.useSudo = False
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -98,11 +100,13 @@ class PoolComputingElement( ComputingElement ):
       requestedProcessors = int( kwargs['numberOfProcessors'] )
       if requestedProcessors > 0:
         if (processorsInUse + requestedProcessors) > self.processors:
-          return S_ERROR( 'Not enough slots: requested %d, available %d' % ( requestedProcessors, self.processors - processorsInUse) )
+          return S_ERROR( 'Not enough slots: requested %d, available %d' % ( requestedProcessors,
+                                                                             self.processors - processorsInUse) )
     else:
       requestedProcessors = 1
     if self.processors - processorsInUse < requestedProcessors:
-      return S_ERROR( 'Not enough slots: requested %d, available %d' % ( requestedProcessors, self.processors - processorsInUse) )
+      return S_ERROR( 'Not enough slots: requested %d, available %d' % ( requestedProcessors,
+                                                                         self.processors - processorsInUse) )
 
     ret = getProxyInfo()
     if not ret['OK']:

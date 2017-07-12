@@ -93,8 +93,8 @@ class ResourceStatusClient( object ):
     # Unused argument
     # pylint: disable=unused-argument
     return self.rssService.insert(element, tableType, name, statusType, status,
-				  elementType, reason, dateEffective, lastCheckTime,
-				  tokenOwner, tokenExpiration)
+                                  elementType, reason, dateEffective, lastCheckTime,
+                                  tokenOwner, tokenExpiration)
 
   def updateStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
@@ -135,8 +135,8 @@ class ResourceStatusClient( object ):
     # Unused argument
     # pylint: disable=unused-argument
     return self.rssService.update(element, tableType, name, statusType, status,
-				  elementType, reason, dateEffective, lastCheckTime,
-				  tokenOwner, tokenExpiration, ID)
+                                  elementType, reason, dateEffective, lastCheckTime,
+                                  tokenOwner, tokenExpiration, ID)
 
   def selectStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
@@ -180,8 +180,8 @@ class ResourceStatusClient( object ):
     # Unused argument
     # pylint: disable=unused-argument
     return self.rssService.select(element, tableType, name, statusType, status,
-				  elementType, reason, dateEffective, lastCheckTime,
-				  tokenOwner, tokenExpiration, meta)
+                                  elementType, reason, dateEffective, lastCheckTime,
+                                  tokenOwner, tokenExpiration, meta)
 
   def deleteStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
@@ -224,8 +224,8 @@ class ResourceStatusClient( object ):
     # Unused argument
     # pylint: disable=unused-argument
     return self.rssService.delete(element, tableType, name, statusType, status,
-				  elementType, reason, dateEffective, lastCheckTime,
-				  tokenOwner, tokenExpiration, meta)
+                                  elementType, reason, dateEffective, lastCheckTime,
+                                  tokenOwner, tokenExpiration, meta)
 
   def addOrModifyStatusElement( self, element, tableType, name = None,
                                 statusType = None, status = None,
@@ -268,8 +268,8 @@ class ResourceStatusClient( object ):
     # Unused argument
     # pylint: disable=unused-argument
     return self.rssService.addOrModify(element, tableType, name, statusType, status,
-				       elementType, reason, dateEffective, lastCheckTime,
-				       tokenOwner, tokenExpiration)
+                                       elementType, reason, dateEffective, lastCheckTime,
+                                       tokenOwner, tokenExpiration)
 
   def modifyStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
@@ -310,8 +310,8 @@ class ResourceStatusClient( object ):
     # Unused argument
     # pylint: disable=unused-argument
     return self.rssService.modify(element, tableType, name, statusType, status,
-				  elementType, reason, dateEffective, lastCheckTime,
-				  tokenOwner, tokenExpiration)
+                                  elementType, reason, dateEffective, lastCheckTime,
+                                  tokenOwner, tokenExpiration)
 
   def addIfNotThereStatusElement( self, element, tableType, name = None,
                                   statusType = None, status = None,
@@ -354,8 +354,8 @@ class ResourceStatusClient( object ):
     # Unused argument
     # pylint: disable=unused-argument
     return self.rssService.addIfNotThere(element, tableType, name, statusType, status,
-					 elementType, reason, dateEffective, lastCheckTime,
-					 tokenOwner, tokenExpiration)
+                                         elementType, reason, dateEffective, lastCheckTime,
+                                         tokenOwner, tokenExpiration)
 
 
 

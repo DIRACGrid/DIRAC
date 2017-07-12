@@ -39,7 +39,7 @@ method. For instance :
 
     logger = gLogger.getSubLogger("logger")
     newLogger = gLogger.getSubLogger("logger")
-    # Here, logger and newlogger are a same and unique object
+    # Here, logger and newlogger are a same and unique object 
 
 Get its sub name
 ~~~~~~~~~~~~~~~~
@@ -105,7 +105,7 @@ DIRAC and here is a table describing them and their context of use.
 +------------+----------------------------------------------------------------------------------------------------+
 | Warn       | Used when a potentially undesired behaviour can occur.                                             |
 +------------+----------------------------------------------------------------------------------------------------+
-| Info       | Used to provide information.                                                                       |
+| Info       | Used to provide information.                                                                       | 
 +------------+----------------------------------------------------------------------------------------------------+
 | Verbose    | Used to provide extra information.                                                                 |
 +------------+----------------------------------------------------------------------------------------------------+
@@ -149,10 +149,10 @@ method:
 
     logger = gLogger.getSubLogger("logger")
     try:
-	badIdea = 1/0
-	print badIdea
+        badIdea = 1/0
+        print badIdea
     except:
-	logger.exception("bad idea")
+        logger.exception("bad idea")
     # > 2017-04-25 15:51:01 UTC Framework/logger ERROR: message
     #Traceback (most recent call last):
     #File "....py", line 32, in <module>
@@ -185,7 +185,7 @@ higher than the *Logging* level. Here is an example:
 
 ::
 
-    # logger level: NOTICE
+    # logger level: NOTICE 
     logger = gLogger.getSubLogger("logger")
     logger.error("appears")
     logger.notice("appears")
@@ -235,10 +235,10 @@ work for scripts. Here is an example of an agent with the root
     {
       SimplestAgent
       {
-	LogLevel = ALWAYS
-	...
+        LogLevel = ALWAYS
+        ...
       }
-    }
+    }   
 
 Set a level via the *setLevel* method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -278,8 +278,8 @@ representing the different levels. Here is an example of use:
 
     # 'level' comes from a user
     def method(level):
-	if level in self.logger.getAllPossibleLevels():
-	 # ...
+        if level in self.logger.getAllPossibleLevels():
+         # ...
 
 Test the *Logging* level superiority
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -297,7 +297,7 @@ returns *False*. Here is an example of this use:
     # logger level: ERROR
     logger = gLogger.getSubLogger("logger")
     if logger.shown('verbose'):
-	logger.verbose("Expensive message: %s" % expensiveFunc())
+        logger.verbose("Expensive message: %s" % expensiveFunc())
     # > False
 
 Modify the log record display
@@ -430,7 +430,7 @@ have to be careful with its use. Here is an example:
 
     logger = gLogger.getSubLogger("logger")
     logger.getDisplayOptions()
-    # > {'Color': False, 'Path': False,
+    # > {'Color': False, 'Path': False, 
     #    'headerIsShown': True, 'threadIsShown': False}
 
 Send a log record in different outputs
@@ -511,18 +511,18 @@ configuration:
 
     Agents
     {
-	SimplestAgent
-	{
-	  LogLevel = INFO
-	  LogBackends = stdout,stderr,file
-	  BackendsOptions
-	  {
-	    FileName = /tmp/logtmp.log
-	  }
-	  LogColor = False
-	  LogShowLine = True
-	}
-    }
+        SimplestAgent
+        {
+          LogLevel = INFO
+          LogBackends = stdout,stderr,file
+          BackendsOptions
+          {
+            FileName = /tmp/logtmp.log
+          }
+          LogColor = False
+          LogShowLine = True
+        }
+    }   
 
 To summarize, this file configures an agent named *SimplestAgent*, sets
 the level of *gLogger* at *info*, adds 3 *Backend* objects to it, which
@@ -540,7 +540,7 @@ Summary of the command line argument configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here is a complete table explaining the changes provided by the command
-line argument *-d*:
+line argument *-d*: 
 
 +--------------------------------------+----------------+----------------+-----------+
 | Argument                             | ShowHeader     | showThread     | Level     |

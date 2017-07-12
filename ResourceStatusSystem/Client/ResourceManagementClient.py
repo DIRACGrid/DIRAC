@@ -73,7 +73,7 @@ class ResourceManagementClient( object ):
   # AccountingCache Methods ....................................................
 
   def selectAccountingCache( self, name = None, plotType = None, plotName = None,
-			     result = None, dateEffective = None, lastCheckTime = None, meta = None ):
+                             result = None, dateEffective = None, lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
 
@@ -101,7 +101,7 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifyAccountingCache( self, name = None, plotType = None, plotName = None,
-				  result = None, dateEffective = None, lastCheckTime = None ):
+                                  result = None, dateEffective = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to AccountingCache. Using `name`, `plotType`
     and `plotName` to query the database, decides whether to insert or update the
@@ -129,7 +129,7 @@ class ResourceManagementClient( object ):
 
 
   def deleteAccountingCache( self, name = None, plotType = None, plotName = None,
-			     result = None, dateEffective = None, lastCheckTime = None ):
+                             result = None, dateEffective = None, lastCheckTime = None ):
     '''
     Deletes from AccountingCache all rows that match the parameters given.
 
@@ -199,7 +199,7 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifyGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None,
-				   tickets = None, lastCheckTime = None ):
+                                   tickets = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to GGUSTicketsCache all rows that match the parameters given.
 
@@ -298,9 +298,9 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifyDowntimeCache( self, downtimeID = None, element = None, name = None,
-				startDate = None, endDate = None, severity = None,
-				description = None, link = None, dateEffective = None,
-				lastCheckTime = None, gOCDBServiceType = None ):
+                                startDate = None, endDate = None, severity = None,
+                                description = None, link = None, dateEffective = None,
+                                lastCheckTime = None, gOCDBServiceType = None ):
     '''
     Adds or updates-if-duplicated to DowntimeCache. Using `downtimeID` to query
     the database, decides whether to insert or update the table.
@@ -387,7 +387,7 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifyJobCache( self, site = None, maskStatus = None, efficiency = None,
-			   status = None, lastCheckTime = None ):
+                           status = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to JobCache. Using `site` to query
     the database, decides whether to insert or update the table.
@@ -540,7 +540,7 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifyPilotCache( self, site = None, cE = None, pilotsPerJob = None,
-			     pilotJobEff = None, status = None, lastCheckTime = None ):
+                             pilotJobEff = None, status = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to PilotCache. Using `site` and `cE`
     to query the database, decides whether to insert or update the table.
@@ -631,8 +631,8 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifyPolicyResult( self, element = None, name = None, policyName = None,
-			       statusType = None, status = None, reason = None,
-			       lastCheckTime = None ):
+                               statusType = None, status = None, reason = None,
+                               lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to PolicyResult. Using `name`, `policyName` and
     `statusType` to query the database, decides whether to insert or update the table.
@@ -666,8 +666,8 @@ class ResourceManagementClient( object ):
   # PolicyResultLog Methods ....................................................
 
   def selectPolicyResultLog( self, element = None, name = None, policyName = None,
-			     statusType = None, status = None, reason = None,
-			     lastCheckTime = None, meta = None ):
+                             statusType = None, status = None, reason = None,
+                             lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResultLog all rows that match the parameters given.
 
@@ -699,8 +699,8 @@ class ResourceManagementClient( object ):
 
 
   def deletePolicyResultLog( self, element = None, name = None, policyName = None,
-			     statusType = None, status = None, reason = None,
-			     lastCheckTime = None ):
+                             statusType = None, status = None, reason = None,
+                             lastCheckTime = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
 
@@ -729,8 +729,8 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifyPolicyResultLog( self, element = None, name = None, policyName = None,
-				  statusType = None, status = None, reason = None,
-				  lastCheckTime = None ):
+                                  statusType = None, status = None, reason = None,
+                                  lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to PolicyResultLog. Using `name`, `policyName`,
     'statusType` to query the database, decides whether to insert or update the table.
@@ -817,8 +817,8 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifySpaceTokenOccupancyCache( self, endpoint = None, token = None,
-					   total = None, guaranteed = None, free = None,
-					   lastCheckTime = None ):
+                                           total = None, guaranteed = None, free = None,
+                                           lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to SpaceTokenOccupancyCache. Using `site` and `token`
     to query the database, decides whether to insert or update the table.
@@ -891,7 +891,7 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifyUserRegistryCache( self, login = None, name = None, email = None,
-				    lastCheckTime = None ):
+                                    lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to UserRegistryCache. Using `login` to query
     the database, decides whether to insert or update the table.
