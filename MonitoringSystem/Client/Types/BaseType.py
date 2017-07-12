@@ -2,6 +2,8 @@
 Helper class for configuring the monitoring service.
 """
 
+from DIRAC import gLogger
+
 __RCSID__ = "$Id$"
 
 ########################################################################
@@ -19,6 +21,9 @@ class BaseType( object ):
   :param int dataToKeep: Data retention. We keep all data by default.
   :param dict mapping: We can specify the mapping of the documents. It is used during the creation of an index.
                        Note: If you do not want to be analysed a string, you have to set the mapping
+  :param str period: We can define, which kind of index we want to create. By default we use daily indexes. But we can use monthly indexes.
+                    Supported values: day, month
+  
   """
 
   __doc_type = None
@@ -27,7 +32,7 @@ class BaseType( object ):
   __monitoringFields = []
   __dataToKeep = None
   __mapping = {'time_type':{'properties' : {'timestamp': {'type': 'date'} } } } #we use timestamp for all monitoring types.
-
+  __period = 'day'
 
   ########################################################################
   def __init__( self ):
@@ -146,4 +151,30 @@ class BaseType( object ):
 
   ########################################################################
   def getMapping(self):
+    """
+    It returns a specific mapping, which is used by a certain monitoring type 
+    """
     return self.__mapping
+
+  ########################################################################
+  def getPeriod( self ):
+    """
+    
+    It returns the indexing period.
+    
+    """
+    return self.__period
+  
+  def setPeriod ( self, period ):
+    """    
+    We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
+    
+    :param str period: the value can be day or month
+    
+    """
+    if period.lower() not in ['day', 'month']:
+      gLogger.error( "Indexing by %s period is not supported" % period )
+    else:
+      gLogger.info( "Using: %s indexes" % period )      
+      self.__period = period
+      

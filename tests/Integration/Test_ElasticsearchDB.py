@@ -110,7 +110,14 @@ class ElasticTestChain( ElasticTestCase ):
     expected = "%s-%s" % ( indexName, today )
     result = generateFullIndexName( indexName )
     self.assertEqual( result, expected )
-
+  
+  def test_generateFullIndexName2( self ):
+    indexName = 'test'
+    month = datetime.datetime.today().strftime( "%Y-%m" )
+    expected = "%s-%s" % ( indexName, month )
+    result = generateFullIndexName( indexName, 'month' )
+    self.assertEqual( result, expected )
+  
   def test_getUniqueValue( self ):
     result = self.el.getUniqueValue( self.index_name, 'Color' )
     self.assert_( result )

@@ -35,5 +35,6 @@ class ComponentMonitoring( BaseType ):
                       'status_type':{'_all': {'enabled': 'false'}, 'properties': {'status': {'index': 'not_analyzed', 'type': 'string'}}}} )
 
     self.setDataToKeep ( 86400 * 30 )#we need to define...
-
+    
+    self.setPeriod( "month" )
     self.checkType()
