@@ -47,7 +47,7 @@ class MonitoringReporter( object ):
     self.__monitoringType = None
     
     #check the existence of a MQ
-    retVal = getMQParamsFromCS ( monitoringType )
+    retVal = getMQParamsFromCS ( "Monitoring::Queue::%s" % monitoringType )
     if retVal['OK']:
       result = createProducer( monitoringType )
       if not result['OK']:
@@ -63,7 +63,7 @@ class MonitoringReporter( object ):
     It consumes all messaged from the MQ (these are failover messages). In case of failure, the messages
     will be inserted to the MQ again.
     """
-    result = createConsumer( self.__monitoringType )
+    result = createConsumer( "Monitoring::Queue::%s" % self.__monitoringType )
     if not result['OK']:
       gLogger.error( "Fail to create Consumer: %s" % result['Message'] )
       return S_ERROR( "Fail to create Consumer: %s" % result['Message'] )

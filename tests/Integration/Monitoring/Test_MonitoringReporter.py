@@ -27,7 +27,7 @@ Resources
 {
   MQServices
   {
-    xxxx.cern.ch (hostname where we run MQ)
+    Monitoring
     {
       MQType = Stomp
       VHost = /
@@ -65,8 +65,9 @@ class MonitoringTestCase( unittest.TestCase ):
     gLogger.setLevel( 'INFO' )
 
     self.monitoringDB = MonitoringDB()
-    self.monitoringReporter = MonitoringReporter( monitoringType = "WMSHistory" )
-
+    self.wmsMonitoringReporter = MonitoringReporter( monitoringType = "WMSHistory" )
+    self.componentMonitoringReporter = MonitoringReporter( monitoringType = "ComponentMonitoring" )
+    
     self.data = [{u'Status': u'Waiting', 'Jobs': 2, u'time': 1458130176, u'JobSplitType': u'MCStripping', u'MinorStatus': u'unset', u'Site': u'LCG.GRIDKA.de', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00049848', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'time': 1458130176, u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.PIC.es', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton', u'JobGroup': u'lhcb', u'UserGroup': u'lhcb_user', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'time': 1458130176, u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.RAL.uk', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton', u'JobGroup': u'lhcb', u'UserGroup': u'lhcb_user', u'metric': u'WMSHistory'},
@@ -113,22 +114,38 @@ class MonitoringTestCase( unittest.TestCase ):
 
 class MonitoringReporterAdd( MonitoringTestCase ):
 
-  def test_addRecords( self ):
+  def test_addWMSRecords( self ):
     for record in self.data:
-      self.monitoringReporter.addRecord( record )
-    result = self.monitoringReporter.commit()
+      self.wmsMonitoringReporter.addRecord( record )
+    result = self.wmsMonitoringReporter.commit()
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'], len( self.data ) )
-
+  
+  def test_addComponentRecords( self ):
+    for record in self.data:
+      self.componentMonitoringReporter.addRecord( record )
+    result = self.componentMonitoringReporter.commit()
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'], len( self.data ) )
+    
 
 class MonitoringDeleteChain( MonitoringTestCase ):
 
 
-  def test_deleteIndex( self ):
+  def test_deleteWMSIndex( self ):
     result = self.monitoringDB.getIndexName('WMSHistory')
     self.assert_( result['OK'] )
 
     today = datetime.today().strftime( "%Y-%m-%d" )
+    indexName = "%s-%s" % ( result['Value'], today )
+    res = self.monitoringDB.deleteIndex( indexName )
+    self.assert_( res['OK'] )
+  
+  def test_deleteComponentIndex( self ):
+    result = self.monitoringDB.getIndexName('ComponentMonitoring')
+    self.assert_( result['OK'] )
+
+    today = datetime.today().strftime( "%Y-%m" )
     indexName = "%s-%s" % ( result['Value'], today )
     res = self.monitoringDB.deleteIndex( indexName )
     self.assert_( res['OK'] )
