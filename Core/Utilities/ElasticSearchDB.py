@@ -80,7 +80,7 @@ class ElasticSearchDB( object ):
   clusterName = ''
   RESULT_SIZE = 10000
   ########################################################################
-  def __init__( self, host, port, user = None, password = None, indexPrefix = '', useSSL = True ):
+  def __init__( self, host, port, user = None, password = None, indexPrefix = '', useSSL = None ):
     """ c'tor
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB

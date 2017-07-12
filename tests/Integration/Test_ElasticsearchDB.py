@@ -18,7 +18,10 @@ class ElasticTestCase( unittest.TestCase ):
 
   def setUp( self ):
     gLogger.setLevel( 'DEBUG' )
-    self.el = ElasticSearchDB( elHost, elPort, useSSL = False )
+    self.el = ElasticSearchDB( host = elHost, 
+                               port = elPort, 
+                               useSSL = False )
+    
     self.data = [{"Color": "red", "quantity": 1, "Product": "a", "time": "2015-02-09T09:00:00Z"},
                  {"Color": "red", "quantity": 1, "Product": "b", "time": "2015-02-09T16:15:00Z"},
                  {"Color": "red", "quantity": 1, "Product": "b", "time": "2015-02-09T16:30:00Z"},
