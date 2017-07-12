@@ -268,14 +268,13 @@ class PDP( object ):
     """
 
     # Dictionary to be returned
-    policyCombined = { 'Status' : 'Unknown',
+    policyCombined = { 'Status' : 'Unknown', # default, it should be overridden by the policies, if they exist
                        'Reason' : '' }
 
     # If there are no policyResults, we return Unknown
     if not singlePolicyRes:
-      policyCombined['Status'] = 'Unknown'
       policyCombined['Reason'] = 'No policy applies to %(element)s, %(name)s, %(elementType)s' % self.decisionParams
-
+      self.log.warn(policyCombined['Reason'])
       return S_OK( policyCombined )
 
     # We set the rssMachine on the current state ( ensures it is a valid one )

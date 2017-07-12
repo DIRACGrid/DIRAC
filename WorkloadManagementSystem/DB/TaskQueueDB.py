@@ -88,12 +88,12 @@ class TaskQueueDB( DB ):
                                                           'CPUTime' : 'BIGINT(20) UNSIGNED NOT NULL',
                                                           'Priority' : 'FLOAT NOT NULL',
                                                           'Enabled' : 'TINYINT(1) NOT NULL DEFAULT 0'
-                                                           },
+                                                        },
                                              'PrimaryKey' : 'TQId',
                                              'Indexes': { 'TQOwner': [ 'OwnerDN', 'OwnerGroup',
                                                                        'Setup', 'CPUTime' ]
                                                         }
-                                            }
+                                           }
 
     self.__tablesDesc[ 'tq_Jobs' ] = { 'Fields' : { 'TQId' : 'INTEGER(10) UNSIGNED NOT NULL',
                                                     'JobId' : 'INTEGER(11) UNSIGNED NOT NULL',
@@ -525,7 +525,7 @@ class TaskQueueDB( DB ):
             msgVar = " %s out from the TQ %s: %s" % ( jobId, tqId, retVal[ 'Message' ] )
             self.log.error( msgFix, msgVar )
             return S_ERROR( msgFix + msgVar )
-          if retVal[ 'Value' ] == True :
+          if retVal['Value']:
             self.log.info( "Extracted job %s with prio %s from TQ %s" % ( jobId, prio, tqId ) )
             return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId, 'tqMatch' : tqMatchDict } )
         self.log.info( "No jobs could be extracted from TQ %s" % tqId )
@@ -555,7 +555,7 @@ class TaskQueueDB( DB ):
     return S_OK( [ ( row[0], row[1], row[2] ) for row in retVal[ 'Value' ] ] )
 
   def __generateSQLSubCond( self, sqlString, value, boolOp = 'OR' ):
-    if type( value ) not in ( types.ListType, types.TupleType ):
+    if not isinstance( value, (list, tuple) ):
       return sqlString % str( value ).strip()
     sqlORList = []
     for v in value:
@@ -568,15 +568,14 @@ class TaskQueueDB( DB ):
          - list of dicts will be  OR of conditional dicts
          - dicts will be normal conditional dict ( kay1 in ( v1, v2, ... ) AND key2 in ( v3, v4, ... ) )
     """
-    condType = type( negativeCond )
-    if condType in ( types.ListType, types.TupleType ):
+    if isinstance(negativeCond, (list, tuple) ):
       sqlCond = []
       for cD in negativeCond:
         sqlCond.append( self.__generateNotDictSQL( tableDict, cD ) )
       return " ( %s )" % " OR  ".join( sqlCond )
-    elif condType == types.DictType:
+    elif isinstance(negativeCond, dict):
       return self.__generateNotDictSQL( tableDict, negativeCond )
-    raise RuntimeError( "negativeCond has to be either a list or a dict and it's %s" % condType )
+    raise RuntimeError( "negativeCond has to be either a list or a dict or a tuple, and it's %s" % type( negativeCond ) )
 
   def __generateNotDictSQL( self, tableDict, negativeCond ):
     """ Generate the negative sql condition from a standard condition dict
@@ -592,13 +591,15 @@ class TaskQueueDB( DB ):
       if field in multiValueMatchFields:
         fullTableN = '`tq_TQTo%ss`' % field
         valList = negativeCond[ field ]
-        if type( valList ) not in ( types.TupleType, types.ListType ):
+        if not isinstance( valList, (list, tuple) ):
           valList = ( valList, )
         subList = []
         for value in valList:
           value = self._escapeString( value )[ 'Value' ]
           sql = "%s NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( value,
-                                                                    fullTableN, fullTableN, fullTableN )
+                                                                                    fullTableN,
+                                                                                    fullTableN,
+                                                                                    fullTableN )
           subList.append( sql )
         condList.append( "( %s )" % " AND ".join( subList ) )
       elif field in singleValueDefFields:
@@ -627,10 +628,10 @@ class TaskQueueDB( DB ):
     #If OwnerDN and OwnerGroup are defined only use those combinations that make sense
     if 'OwnerDN' in tqMatchDict and 'OwnerGroup' in tqMatchDict:
       groups = tqMatchDict[ 'OwnerGroup' ]
-      if type( groups ) not in ( types.ListType, types.TupleType ):
+      if not isinstance(groups, (list, tuple)):
         groups = [ groups ]
       dns = tqMatchDict[ 'OwnerDN' ]
-      if type( dns ) not in ( types.ListType, types.TupleType ):
+      if not isinstance( dns, (list, tuple) ):
         dns = [ dns ]
       ownerConds = []
       for group in groups:
@@ -649,7 +650,7 @@ class TaskQueueDB( DB ):
     #Type of single value conditions
     for field in ( 'CPUTime', 'Setup' ):
       if field in tqMatchDict:
-        if field in ( 'CPUTime' ):
+        if field == 'CPUTime':
           sqlCondList.append( self.__generateSQLSubCond( "tq.%s <= %%s" % field, tqMatchDict[ field ] ) )
         else:
           sqlCondList.append( self.__generateSQLSubCond( "tq.%s = %%s" % field, tqMatchDict[ field ] ) )
@@ -973,7 +974,7 @@ class TaskQueueDB( DB ):
         tqId = record[0]
         value = record[1]
         if not tqId in tqData:
-          if tqIdList == False or tqId in tqIdList:
+          if tqIdList is False or tqId in tqIdList:
             self.log.warn( "Task Queue %s is defined in field %s but does not exist, triggering a cleaning" % ( tqId, field ) )
             tqNeedCleaning = True
         else:
