@@ -91,6 +91,9 @@ class ElasticSearchDB( object ):
     :param str indexPrefix: it is the indexPrefix used to get all indexes
     :param bool useSSL: We can disable using secure connection. By default we use secure connection.
     """
+    if useSSL is None:
+      useSSL = True  # by default we use SSL
+      
     self.__indexPrefix = indexPrefix
     self._connected = False
     if user and password:
