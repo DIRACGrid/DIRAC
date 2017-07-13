@@ -3,7 +3,6 @@
 
 __RCSID__ = "$Id"
 
-import types
 import random
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
@@ -325,7 +324,7 @@ class TaskQueueDB( DB ):
       return 10 ** 6
     return jobPriority
 
-  def insertJob( self, jobId, tqDefDict, jobPriority, skipTQDefCheck = False, numRetries = 10 ):
+  def insertJob( self, jobId, tqDefDict, jobPriority, skipTQDefCheck = False ):
     """
     Insert a job in a task queue
       Returns S_OK( tqId ) / S_ERROR
@@ -388,12 +387,16 @@ class TaskQueueDB( DB ):
       if not result[ 'OK' ] or len ( result[ 'Value' ] ) == 0:
         return S_OK( "Can't find task queue with id %s: %s" % ( tqId, result[ 'Message' ] ) )
     hackedPriority = self.__hackJobPriority( jobPriority )
-    result = self._update( "INSERT INTO tq_Jobs ( TQId, JobId, Priority, RealPriority ) VALUES ( %s, %s, %s, %f ) ON DUPLICATE KEY UPDATE TQId = %s, Priority = %s, RealPriority = %f" % ( tqId, jobId, jobPriority, hackedPriority, tqId, jobPriority, hackedPriority ), conn = connObj )
+    result = self._update( "INSERT INTO tq_Jobs ( TQId, JobId, Priority, RealPriority ) \
+                            VALUES ( %s, %s, %s, %f ) ON DUPLICATE KEY UPDATE TQId = %s, \
+                            Priority = %s, RealPriority = %f" % ( tqId, jobId, jobPriority, hackedPriority,
+                                                                  tqId, jobPriority, hackedPriority ),
+                           conn = connObj )
     if not result[ 'OK' ]:
       return result
     return S_OK()
 
-  def __generateTQFindSQL( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
+  def __generateTQFindSQL( self, tqDefDict, skipDefinitionCheck = False ):
     """
       Find a task queue that has exactly the same requirements
     """
@@ -411,12 +414,14 @@ class TaskQueueDB( DB ):
     for field in multiValueDefFields:
       tableName = '`tq_TQTo%s`' % field
       if field in tqDefDict and tqDefDict[ field ]:
-        firstQuery = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId" % ( tableName, tableName, tableName )
+        firstQuery = "SELECT COUNT(%s.Value) \
+                      FROM %s \
+                      WHERE %s.TQId = `tq_TaskQueues`.TQId" % ( tableName, tableName, tableName )
         grouping = "GROUP BY %s.TQId" % tableName
         valuesList = List.uniqueElements( [ value.strip() for value in tqDefDict[ field ] if value.strip() ] )
         numValues = len( valuesList )
         secondQuery = "%s AND %s.Value in (%s)" % ( firstQuery, tableName,
-                                                        ",".join( [ "%s" % str( value ) for value in valuesList ] ) )
+                                                    ",".join( [ "%s" % str( value ) for value in valuesList ] ) )
         sqlCondList.append( "%s = (%s %s)" % ( numValues, firstQuery, grouping ) )
         sqlCondList.append( "%s = (%s %s)" % ( numValues, secondQuery, grouping ) )
       else:
@@ -446,8 +451,7 @@ class TaskQueueDB( DB ):
     """
       Find a task queue that has exactly the same requirements
     """
-    result = self.__generateTQFindSQL( tqDefDict, skipDefinitionCheck = skipDefinitionCheck,
-                                       connObj = connObj )
+    result = self.__generateTQFindSQL( tqDefDict, skipDefinitionCheck = skipDefinitionCheck)
     if not result[ 'OK' ]:
       return result
 
@@ -666,7 +670,9 @@ class TaskQueueDB( DB ):
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
           # that the GridCE matches explicitly so the COUNT can not be 0. In this case we skip this
           # condition
-        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
+        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN,
+                                                                                                      fullTableN,
+                                                                                                      fullTableN ) )
         rsql = None
         if field in tagMatchFields:
           if tqMatchDict[field] != '"Any"':
@@ -678,7 +684,12 @@ class TaskQueueDB( DB ):
             if requiredTags:
               rsql = self.__generateRequiredTagSQLSubCond( fullTableN, requiredTags )
         else:
-          csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN, fullTableN, fullTableN ), tqMatchDict[ field ] )
+          csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value \
+                                                      FROM %s \
+                                                      WHERE %s.TQId = tq.TQId )" % ( fullTableN,
+                                                                                     fullTableN,
+                                                                                     fullTableN ),
+                                            tqMatchDict[ field ] )
         sqlMultiCondList.append( csql )
         if rsql is not None:
           sqlCondList.append( rsql )
@@ -686,15 +697,23 @@ class TaskQueueDB( DB ):
         #In case of Site, check it's not in job banned sites
         if field in bannedJobMatchFields:
           fullTableN = '`tq_TQToBanned%ss`' % field
-          csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                    fullTableN, fullTableN ), tqMatchDict[ field ], boolOp = 'OR' )
+          csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value \
+                                                          FROM %s \
+                                                          WHERE %s.TQId = tq.TQId )" % ( fullTableN,
+                                                                                         fullTableN,
+                                                                                         fullTableN ),
+                                            tqMatchDict[ field ], boolOp = 'OR' )
           sqlCondList.append( csql )
       #Resource banning
       bannedField = "Banned%s" % field
       if bannedField in tqMatchDict and tqMatchDict[ bannedField ]:
         fullTableN = '`tq_TQTo%ss`' % field
-        csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                  fullTableN, fullTableN ), tqMatchDict[ bannedField ], boolOp = 'OR' )
+        csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value \
+                                                        FROM %s \
+                                                        WHERE %s.TQId = tq.TQId )" % ( fullTableN,
+                                                                                       fullTableN,
+                                                                                       fullTableN ),
+                                          tqMatchDict[ bannedField ], boolOp = 'OR' )
         sqlCondList.append( csql )
 
     #For certain fields, the requirement is strict. If it is not in the tqMatchDict, the job cannot require it
