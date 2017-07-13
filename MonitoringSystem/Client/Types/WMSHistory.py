@@ -21,16 +21,16 @@ class WMSHistory( BaseType ):
     :param self: self reference
     """
 
-    self.__keyFields = [ 'Status', 'Site', 'User', 'UserGroup', \
+    self.keyFields = [ 'Status', 'Site', 'User', 'UserGroup', \
                         'JobGroup', 'MinorStatus', 'ApplicationStatus', \
                         'JobSplitType' ]
 
-    self.__monitoringFields = [ 'Jobs', 'Reschedules' ]
+    self.monitoringFields = [ 'Jobs', 'Reschedules' ]
 
-    self.__index = 'wmshistory_index'
-    self.__doc_type =  "WMSHistory"
+    self.index = 'wmshistory_index'
+    self.doc_type =  "WMSHistory"
 
-    self.__mapping = {'status_type': {'_all': {'enabled': 'false'}, 'properties': {'Status': {'index': 'not_analyzed', 'type': 'string'}}},
+    self.addMapping( {'status_type': {'_all': {'enabled': 'false'}, 'properties': {'Status': {'index': 'not_analyzed', 'type': 'string'}}},
                       'site_type':{'_all': {'enabled': 'false'}, 'properties': {'Site': {'index': 'not_analyzed', 'type': 'string'}}},
                       'jobsplit_type':{'_all': {'enabled': 'false'}, 'properties': {'JobSplitType': { 'index': 'not_analyzed',
                                                                                                       'type': 'string'}}},
@@ -43,8 +43,8 @@ class WMSHistory( BaseType ):
                       'jobgroup_type':{'_all': {'enabled': 'false'}, 'properties': {'JobGroup': { 'index': 'not_analyzed',
                                                                                                   'type': 'string'}}},
                       'usergroup_type':{'_all': {'enabled': 'false'}, 'properties': {'UserGroup': { 'index': 'not_analyzed',
-                                                                                                    'type': 'string'}}}}
+                                                                                                    'type': 'string'}}}} )
 
-    self.__period =  86400 * 30
+    self.period =  86400 * 30
 
     self.checkType()

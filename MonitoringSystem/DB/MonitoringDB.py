@@ -33,9 +33,9 @@ class MonitoringDB( ElasticDB ):
       typeClass = objectsLoaded[ pythonClassName ]
       indexName = "%s_%s" % ( self.getIndexPrefix(), typeClass()._getIndex() )
       doc_type = typeClass()._getDocType()
-      mapping = typeClass().getMapping()
-      monfields = typeClass().getMonitoringFields()
-      period = typeClass().getPeriod()
+      mapping = typeClass().mapping
+      monfields = typeClass().monitoringFields
+      period = typeClass().period
       self.__documents[doc_type] = {'indexName': indexName,
                                     'mapping':mapping,
                                     'monitoringFields':monfields,

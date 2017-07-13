@@ -2,7 +2,6 @@
 Helper class for configuring the monitoring service.
 """
 
-from DIRAC import gLogger
 
 __RCSID__ = "$Id$"
 
@@ -26,13 +25,13 @@ class BaseType( object ):
   
   """
 
-  __doc_type = None
-  __index = None
-  __keyFields = []
-  __monitoringFields = []
-  __dataToKeep = None
-  __mapping = {'time_type':{'properties' : {'timestamp': {'type': 'date'} } } } #we use timestamp for all monitoring types.
-  __period = 'day'
+  doc_type = None
+  index = None
+  keyFields = []
+  monitoringFields = []
+  dataToKeep = None
+  mapping = {'time_type':{'properties' : {'timestamp': {'type': 'date'} } } } #we use timestamp for all monitoring types.
+  period = 'day'
 
   ########################################################################
   def __init__( self ):
@@ -40,20 +39,20 @@ class BaseType( object ):
     :param self: self reference
     """
 
-    self.__monitoringFields = ["Value"]
-    self.__index = self._getIndex()
+    self.monitoringFields = ["Value"]
+    self.index = self._getIndex()
 
     # we only keep the last month of the data.
-    self.__dataToKeep = -1
+    self.dataToKeep = -1
 
   ########################################################################
   def checkType( self ):
     """
     The mandatory fields has to be present
     """
-    if not self.__keyFields:
+    if not self.keyFields:
       raise Exception( "keyFields has to be provided!" )
-    if not self.__monitoringFields:
+    if not self.monitoringFields:
       raise Exception( "monitoringFields has to be provided!" )
 
   ########################################################################
@@ -62,11 +61,11 @@ class BaseType( object ):
     For example: WMSMonitorType the type the index will be wmsmonitor
     """
     index = ''
-    if self.__index is None:
+    if self.index is None:
       fullName = self.__class__.__name__
       index = "%s-index" % fullName.lower()
     else:
-      index = self.__index
+      index = self.index
     return index
 
   ########################################################################
@@ -75,54 +74,17 @@ class BaseType( object ):
     It returns the corresponding category. The type of a document.
     """
     doctype = ''
-    if self.__doc_type is None:
+    if self.doc_type is None:
       fullName = self.__class__.__name__
       doctype = fullName
     else:
-      doctype = self.__doc_type
+      doctype = self.doc_type
     return doctype
 
-
-  ########################################################################
-  def getDataToKeep( self ):
-    """
-    returns the interval
-    """
-    return self.__dataToKeep
-  
-  ########################################################################
-  def getKeyFields( self ):
-    """
-    it return the list of the fields what we monitor
-    """
-    return self.__keyFields
-
-  ########################################################################
-  def getMonitoringFields( self ):
-    """
-    It returns the attributes which will be plotted
-    """
-    return self.__monitoringFields
 
   ########################################################################
   def addMapping(self, mapping):
     """
     :param dict mapping: the mapping used by elasticsearch
     """
-    self.__mapping.update(mapping)
-
-  ########################################################################
-  def getMapping(self):
-    """
-    It returns a specific mapping, which is used by a certain monitoring type 
-    """
-    return self.__mapping
-
-  ########################################################################
-  def getPeriod( self ):
-    """
-    
-    It returns the indexing period.
-    
-    """
-    return self.__period
+    self.mapping.update(mapping)
