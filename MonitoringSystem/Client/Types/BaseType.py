@@ -37,6 +37,7 @@ class BaseType( object ):
     self.period = 'day'
     self.monitoringFields = ["Value"]
     self.index = None
+    self.index = self._getIndex()
     
     # we only keep the last month of the data.
     self.dataToKeep = -1
