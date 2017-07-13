@@ -233,7 +233,8 @@ class Matcher( object ):
     attValues = ['Matched', 'Assigned', 'Unknown', resourceDict['Site']]
     result = self.jobDB.setJobAttributes( jobID, attNames, attValues )
     if not result['OK']:
-      self.log.error( "Problem reporting job status", "setJobAttributes, jobID = %s: %s" % ( jobID, result['Message'] ) )
+      self.log.error( "Problem reporting job status",
+                      "setJobAttributes, jobID = %s: %s" % ( jobID, result['Message'] ) )
     else:
       self.log.verbose( "Set job attributes for jobID %s" % jobID )
 
@@ -242,7 +243,8 @@ class Matcher( object ):
                                          minor = 'Assigned',
                                          source = 'Matcher' )
     if not result['OK']:
-      self.log.error( "Problem reporting job status", "addLoggingRecord, jobID = %s: %s" % ( jobID, result['Message'] ) )
+      self.log.error( "Problem reporting job status",
+                      "addLoggingRecord, jobID = %s: %s" % ( jobID, result['Message'] ) )
     else:
       self.log.verbose( "Added logging record for jobID %s" % jobID )
 
@@ -276,7 +278,10 @@ class Matcher( object ):
       gridCE = resourceDict.get( 'GridCE', 'Unknown' )
       site = resourceDict.get( 'Site', 'Unknown' )
       benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
-      self.log.verbose( 'Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % ( pilotReference, gridCE, site, benchmark ) )
+      self.log.verbose( 'Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % ( pilotReference,
+                                                                                            gridCE,
+                                                                                            site,
+                                                                                            benchmark ) )
 
       result = self.pilotAgentsDB.setPilotStatus( pilotReference, status = 'Running', gridSite = site,
                                                   destination = gridCE, benchmark = benchmark )
@@ -362,5 +367,6 @@ class Matcher( object ):
         if 'ReleaseProject' not in resourceDict:
           raise RuntimeError( "Version check requested but expected project %s not received" % validProject )
         if resourceDict[ 'ReleaseProject' ] != validProject:
-          raise RuntimeError( "Version check requested but expected project %s != received %s" % ( validProject,
-                                                                                                   resourceDict[ 'ReleaseProject' ] ) )
+          raise RuntimeError( "Version check requested \
+          but expected project %s != received %s" % ( validProject,
+                                                      resourceDict[ 'ReleaseProject' ] ) )

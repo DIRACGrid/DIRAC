@@ -160,10 +160,8 @@ class TaskQueueDB( DB ):
     Check a task queue definition dict is valid
     """
 
-    # Confine the LHCbPlatform legacy option here, use Platform everywhere else
-    # until the LHCbPlatform is no more used in the TaskQueueDB
-    if 'LHCbPlatforms' in tqDefDict and not "Platforms" in tqDefDict:
-      tqDefDict['Platforms'] = tqDefDict['LHCbPlatforms']
+    # Confine the SystemConfigs legacy option here, use Platform everywhere else
+    # until the SystemConfigs is no more used in the TaskQueueDB
     if 'SystemConfigs' in tqDefDict and not "Platforms" in tqDefDict:
       tqDefDict['Platforms'] = tqDefDict['SystemConfigs']
 
@@ -189,12 +187,7 @@ class TaskQueueDB( DB ):
       if not result[ 'OK' ]:
         return result
       tqDefDict[ field ] = result[ 'Value' ]
-    #FIXME: This is not used
-    if 'PrivatePilots' in tqDefDict:
-      validPilotTypes = self.getValidPilotTypes()
-      for pilotType in tqDefDict[ 'PrivatePilots' ]:
-        if pilotType not in validPilotTypes:
-          return S_ERROR( "PilotType %s is invalid" % pilotType )
+
     return S_OK( tqDefDict )
 
   def _checkMatchDefinition( self, tqMatchDict ):
@@ -216,10 +209,8 @@ class TaskQueueDB( DB ):
           return self._escapeString( value )
         return S_OK( value )
 
-    # Confine the LHCbPlatform legacy option here, use Platform everywhere else
-    # until the LHCbPlatform is no more used in the TaskQueueDB
-    if 'LHCbPlatform' in tqMatchDict and not "Platform" in tqMatchDict:
-      tqMatchDict['Platform'] = tqMatchDict['LHCbPlatform']
+    # Confine the SystemConfig legacy option here, use Platform everywhere else
+    # until the SystemConfig is no more used in the TaskQueueDB
     if 'SystemConfig' in tqMatchDict and not "Platform" in tqMatchDict:
       tqMatchDict['Platform'] = tqMatchDict['SystemConfig']
 

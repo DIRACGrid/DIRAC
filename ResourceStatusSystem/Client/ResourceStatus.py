@@ -206,6 +206,9 @@ class ResourceStatus( object ):
     if not isinstance( elementName, list ):
       elementName = [ elementName ]
 
+    if not isinstance( statusType, list ):
+      statusType = [ statusType ]
+
     result = {}
     for element in elementName:
 

@@ -84,9 +84,7 @@ class DowntimeCommand( Command ):
       for dt in uniformResult:
         #if DT expired or DT not in the list of current DTs, then we remove it from the cache
         if dt[ 'EndDate' ] < currentDate or dt[ 'Link' ] not in gDTLinkList[ 'Value' ]:
-          result = self.rmClient.deleteDowntimeCache (
-                   downtimeID = dt[ 'DowntimeID' ]
-          )
+          result = self.rmClient.deleteDowntimeCache(downtimeID = dt[ 'DowntimeID' ])
           resQuery.append(result)
 
     return S_OK( resQuery )

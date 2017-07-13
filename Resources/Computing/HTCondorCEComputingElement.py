@@ -325,6 +325,14 @@ Queue %(nJobs)s
     ## same machine
     #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
 
+    if not self.useLocalSchedd:
+      cmd =['condor_transfer_data', '-pool', '%s:9619'%self.ceName, '-name', self.ceName, condorID ]
+      result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+      self.log.verbose( result )
+      if not result['OK']:
+        self.log.error( "Failed to get job output from htcondor", result['Message'] )
+        return result
+
     output = ''
     error = ''
     resOut = findFile( self.workingDirectory, '%s.out' % condorID )

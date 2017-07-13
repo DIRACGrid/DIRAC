@@ -1,3 +1,34 @@
+[v6r19-pre2]
+
+*Accounting
+FIX: compatibility of AccountingDB with MySQL 5.7
+
+*ConfigurationSystem
+NEW: Allow to define FailoverURLs and to reference MainServers in the URLs
+
+*FrameworkSystem
+CHANGE: Make the new logging system thread-safe
+
+*Core
+NEW: Technology preview of new logging system, based on standard python logging module
+CHANGE: Added graphviz extension to sphinx builds
+FIX: Added documentation of low level RPC/DISET classes
+
+*DMS
+CHANGE: FTSFile DB table: increased length of fields LFN(955), SourceSURL(1024), TargetSURL(1024)
+
+*RSS
+CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
+FIX: fixed incompatibility between Active/InActive RSS clients return format
+
+*WMS
+NEW: The application error codes, when returned, are passed to the JobWrapper, and maybe interpreted.
+NEW: The JobWrapperTemplate can reschedule a job if the payload exits with status DErrno.EWMSRESC & 255 (222)
+FIX: SiteDirector - unlink is also to be skipped for Local Condor batch system
+
+*Docs
+NEW: Add script to collate release notes from Pull Request comments
+
 [v6r18p1]
 
 *RSS
@@ -70,6 +101,16 @@ CHANGE: Dirac API - added runLocal as an API method
 
 *Docs
 NEW: Documentation for developing with a container (includes Dockerfile)
+
+[v6r17p24]
+
+*WMS
+FIX: SiteDirector - unlink is also to be skipped for Local Condor batch system
+
+[v6r17p23]
+
+*WMS
+FIX: get job output for remote scheduler in the case of HTCondorCE
 
 [v6r17p22]
 
