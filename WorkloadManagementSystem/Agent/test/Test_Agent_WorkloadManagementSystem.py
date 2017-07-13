@@ -2,7 +2,8 @@
 """
 
 # imports
-import unittest, importlib
+import unittest
+import importlib
 from mock import MagicMock
 
 from DIRAC import gLogger

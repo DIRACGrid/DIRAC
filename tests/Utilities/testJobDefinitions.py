@@ -53,7 +53,7 @@ def endOfAllJobs( J ):
 def helloWorld():
 
   J = baseToAllJobs( 'helloWorld' )
-  J.setInputSandbox( [find_all( 'exe-script.py', '.', 'GridTestSubmission' )[0]] )
+  J.setInputSandbox( [find_all( 'exe-script.py', '..', '/DIRAC/tests/Workflow' )[0]] )
   J.setExecutable( "exe-script.py", "", "helloWorld.log" )
   return endOfAllJobs( J )
 

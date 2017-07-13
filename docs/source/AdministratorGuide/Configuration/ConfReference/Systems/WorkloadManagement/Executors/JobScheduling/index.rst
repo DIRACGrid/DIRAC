@@ -38,3 +38,7 @@ This Executor will fail affected jobs meaningfully.
 | *CheckOnlyTapeSEs*      | If set to False, the optimizer will     | CheckOnlyTapeSEs = False                   |
 |                         | check the presence of all replicas      | (default value is True)                    |
 +-------------------------+-----------------------------------------+--------------------------------------------+
+| *CheckPlatform*         | If set to True, the optimizer will      | CheckPlatform = True                       |
+|                         | verify the job JDL Platform setting.    | (default value is False)                   |
++-------------------------+-----------------------------------------+--------------------------------------------+
+

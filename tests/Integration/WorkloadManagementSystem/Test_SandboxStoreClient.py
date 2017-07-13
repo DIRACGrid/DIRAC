@@ -59,7 +59,7 @@ class SSC( TestSSCTestCase ):
     ssc = SandboxStoreClient()
     smDB = SandboxMetadataDB()
 
-    exeScriptLocation = find_all( 'exe-script.py', '.', 'WorkloadManagementSystem' )[0]
+    exeScriptLocation = find_all( 'exe-script.py', '..', '/DIRAC/tests/Integration' )[0]
     fileList = [exeScriptLocation]
     res = ssc.uploadFilesAsSandbox( fileList )
     self.assert_( res['OK'] )

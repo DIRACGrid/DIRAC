@@ -65,14 +65,6 @@ class JobSanity( OptimizerExecutor ):
       finalMsg.append( "%s LFNs" % result[ 'Value' ] )
       self.jobLog.info( "%s LFNs" % result[ 'Value' ] )
 
-    #Platform check # disabled
-    if self.ex_getOption( 'PlatformCheck', False ):
-      result = self.checkPlatformSupported( jobState )
-      if not result[ 'OK' ]:
-        return result
-      finalMsg.append( "Platform OK" )
-      self.jobLog.info( "Platform OK" )
-
     #Output data exists check # disabled
     if self.ex_getOption( 'OutputDataCheck', False ):
       if jobType != 'user':
@@ -139,15 +131,6 @@ class JobSanity( OptimizerExecutor ):
        data manager. To be tidied for DIRAC3...
     """
     # FIXME: To implement checkOutputDataExists
-    return S_OK()
-
-  #############################################################################
-  def checkPlatformSupported( self, jobState ):
-    """This method queries the CS for available platforms
-       supported by DIRAC and will check these against what
-       the job requests.
-    """
-    # FIXME: To implement checkPlatformSupported
     return S_OK()
 
   #############################################################################

@@ -5,7 +5,7 @@
 '''
 
 
-import lcg_util
+import lcg_util #pylint: disable=import-error
 
 
 from DIRAC                                                      import S_OK, S_ERROR
@@ -98,10 +98,13 @@ class SpaceTokenOccupancyCommand( Command ):
       spaceTokenEndpoint, spaceToken = params[ 'Value' ]
 
     # 10 secs of timeout. If it works, the reply is immediate.
-    occupancy = pythonCall( 10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
-    if not occupancy[ 'OK' ]:
-      return occupancy
-    occupancy = occupancy[ 'Value' ]
+    occupancyResult = pythonCall( 10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
+    if not occupancyResult[ 'OK' ]:
+      self.log.error("Could not get spaceToken occupancy", "from endPoint/spaceToken: %s/%s : %s" % \
+                     (spaceTokenEndpoint, spaceToken, occupancyResult['Message']) )
+      return occupancyResult
+    else:
+      occupancy = occupancyResult[ 'Value' ]
 
     # Timeout does not work here...
     # occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )

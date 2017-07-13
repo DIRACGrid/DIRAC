@@ -48,7 +48,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 def helloWorldJob():
   job = Job()
   job.setName( "helloWorld" )
-  exeScriptLocation = find_all( 'exe-script.py', '.', 'WorkloadManagementSystem' )[0]
+  exeScriptLocation = find_all( 'exe-script.py', '..', '/DIRAC/tests/Integration' )[0]
   job.setInputSandbox( exeScriptLocation )
   job.setExecutable( exeScriptLocation, "", "helloWorld.log" )
   return job

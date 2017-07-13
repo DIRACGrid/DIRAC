@@ -1,5 +1,6 @@
 """ Test for WMS clients
 """
+# pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
 
 import os
 import unittest
@@ -8,6 +9,7 @@ import StringIO
 
 from mock import MagicMock
 
+from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
 from DIRAC import S_OK
 from DIRAC.WorkloadManagementSystem.Client.DownloadInputData import DownloadInputData
 from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher
@@ -21,17 +23,8 @@ class ClientsTestCase( unittest.TestCase ):
     from DIRAC import gLogger
     gLogger.setLevel( 'DEBUG' )
 
-    mockObjectDM = MagicMock()
-    mockObjectDM.getActiveReplicas.return_value = S_OK( {'Successful': {'/a/lfn/1.txt':{'SE1':'/a/lfn/at/SE1.1.txt',
-                                                                                        'SE2':'/a/lfn/at/SE2.1.txt'},
-                                                                        '/a/lfn/2.txt':{'SE1':'/a/lfn/at/SE1.1.txt'}
-                                                                       },
-                                                         'Failed':{}} )
-
     self.mockDM = MagicMock()
-    self.mockDM.return_value = mockObjectDM
-
-
+    self.mockDM.return_value = dm_mock
 
     mockObjectSE = MagicMock()
     mockObjectSE.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Cached':0},
@@ -101,8 +94,10 @@ class DownloadInputDataSuccess( ClientsTestCase ):
     res = self.dli._downloadFromBestSE( '/a/lfn/1.txt', {'mySE': []}, 'aGuid' )
     # file would be already local, so no real download
     self.assert_( res['OK'] )
-    try: os.remove( '1.txt' )
-    except OSError: pass
+    try:
+      os.remove( '1.txt' )
+    except OSError:
+      pass
 
 #############################################################################
 
