@@ -21,20 +21,18 @@ class ComponentMonitoring( BaseType ):
     :param self: self reference
     """
 
-    self.setKeyFields( [ 'host', 'component', 'pid', 'status'] )
+    self.__keyFields = [ 'host', 'component', 'pid', 'status']
 
-    self.setMonitoringFields( [ 'runningTime', 'memoryUsage', 'threads', 'cpuUsage' ] )
+    self.__monitoringFields = [ 'runningTime', 'memoryUsage', 'threads', 'cpuUsage' ]
 
-    #self.setIndex( 'wmshistory_index' )  # overwrite the index name
+    self.__doc_type = "ComponentMonitoring" 
 
-    self.setDocType( "ComponentMonitoring" )
-
-    self.addMapping( {'host_type': {'_all': {'enabled': 'false'}, 'properties': {'host': {'index': 'not_analyzed', 'type': 'string'}}},
+    self.__mapping = {'host_type': {'_all': {'enabled': 'false'}, 'properties': {'host': {'index': 'not_analyzed', 'type': 'string'}}},
                       'component_type':{'_all': {'enabled': 'false'}, 'properties': {'component': { 'index': 'not_analyzed',
                                                                                                     'type': 'string'}}},
-                      'status_type':{'_all': {'enabled': 'false'}, 'properties': {'status': {'index': 'not_analyzed', 'type': 'string'}}}} )
+                      'status_type':{'_all': {'enabled': 'false'}, 'properties': {'status': {'index': 'not_analyzed', 'type': 'string'}}}}
 
-    self.setDataToKeep ( 86400 * 30 )#we need to define...
+    self.__dataToKeep = 86400 * 30 #we need to define...
     
-    self.setPeriod( "month" )
+    self.__period = "month"
     self.checkType()

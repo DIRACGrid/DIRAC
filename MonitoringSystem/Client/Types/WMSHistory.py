@@ -21,17 +21,16 @@ class WMSHistory( BaseType ):
     :param self: self reference
     """
 
-    self.setKeyFields( [ 'Status', 'Site', 'User', 'UserGroup', \
+    self.__keyFields = [ 'Status', 'Site', 'User', 'UserGroup', \
                         'JobGroup', 'MinorStatus', 'ApplicationStatus', \
-                        'JobSplitType' ] )
+                        'JobSplitType' ]
 
-    self.setMonitoringFields( [ 'Jobs', 'Reschedules' ] )
+    self.__monitoringFields = [ 'Jobs', 'Reschedules' ]
 
-    self.setIndex( 'wmshistory_index' )  # overwrite the index name
+    self.__index = 'wmshistory_index'
+    self.__doc_type =  "WMSHistory"
 
-    self.setDocType( "WMSHistory" )
-
-    self.addMapping( {'status_type': {'_all': {'enabled': 'false'}, 'properties': {'Status': {'index': 'not_analyzed', 'type': 'string'}}},
+    self.__mapping = {'status_type': {'_all': {'enabled': 'false'}, 'properties': {'Status': {'index': 'not_analyzed', 'type': 'string'}}},
                       'site_type':{'_all': {'enabled': 'false'}, 'properties': {'Site': {'index': 'not_analyzed', 'type': 'string'}}},
                       'jobsplit_type':{'_all': {'enabled': 'false'}, 'properties': {'JobSplitType': { 'index': 'not_analyzed',
                                                                                                       'type': 'string'}}},
@@ -44,8 +43,8 @@ class WMSHistory( BaseType ):
                       'jobgroup_type':{'_all': {'enabled': 'false'}, 'properties': {'JobGroup': { 'index': 'not_analyzed',
                                                                                                   'type': 'string'}}},
                       'usergroup_type':{'_all': {'enabled': 'false'}, 'properties': {'UserGroup': { 'index': 'not_analyzed',
-                                                                                                    'type': 'string'}}}} )
+                                                                                                    'type': 'string'}}}}
 
-    self.setDataToKeep ( 86400 * 30 )
+    self.__period =  86400 * 30
 
     self.checkType()

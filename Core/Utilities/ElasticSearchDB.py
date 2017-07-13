@@ -80,7 +80,7 @@ class ElasticSearchDB( object ):
   clusterName = ''
   RESULT_SIZE = 10000
   ########################################################################
-  def __init__( self, host, port, user = None, password = None, indexPrefix = '', useSSL = None ):
+  def __init__( self, host, port, user = None, password = None, indexPrefix = '', useSSL = True ):
     """ c'tor
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
@@ -91,9 +91,7 @@ class ElasticSearchDB( object ):
     :param str indexPrefix: it is the indexPrefix used to get all indexes
     :param bool useSSL: We can disable using secure connection. By default we use secure connection.
     """
-    if useSSL is None:
-      useSSL = True  # by default we use SSL
-      
+    
     self.__indexPrefix = indexPrefix
     self._connected = False
     if user and password:
@@ -375,15 +373,12 @@ class ElasticSearchDB( object ):
     return S_OK( values )
 
 
-def generateFullIndexName( indexName, period = None ):
+def generateFullIndexName( indexName, period = 'day' ):
   """
   Given an index prefix we create the actual index name. Each day an index is created.
   :param str indexName: it is the name of the index
   :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
   """
-  if period is None:
-    gLogger.info ("Period is not provided, daily indexes are used!")
-    period = 'day'
     
   today = datetime.today().strftime( "%Y-%m-%d" )
   index = ''
