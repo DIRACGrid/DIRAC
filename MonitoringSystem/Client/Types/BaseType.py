@@ -25,23 +25,19 @@ class BaseType( object ):
   
   """
 
-  doc_type = None
-  index = None
-  keyFields = []
-  monitoringFields = []
-  dataToKeep = None
-  mapping = {'time_type':{'properties' : {'timestamp': {'type': 'date'} } } } #we use timestamp for all monitoring types.
-  period = 'day'
 
   ########################################################################
   def __init__( self ):
     """ c'tor
     :param self: self reference
     """
-
+    self.doc_type = None
+    self.keyFields = []
+    self.mapping = {'time_type':{'properties' : {'timestamp': {'type': 'date'} } } } #we use timestamp for all monitoring types.
+    self.period = 'day'
     self.monitoringFields = ["Value"]
     self.index = self._getIndex()
-
+    
     # we only keep the last month of the data.
     self.dataToKeep = -1
 
