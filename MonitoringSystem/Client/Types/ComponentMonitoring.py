@@ -21,18 +21,18 @@ class ComponentMonitoring( BaseType ):
     :param self: self reference
     """
 
-    self.__keyFields = [ 'host', 'component', 'pid', 'status']
+    self.keyFields = [ 'host', 'component', 'pid', 'status']
 
-    self.__monitoringFields = [ 'runningTime', 'memoryUsage', 'threads', 'cpuUsage' ]
+    self.monitoringFields = [ 'runningTime', 'memoryUsage', 'threads', 'cpuUsage' ]
 
-    self.__doc_type = "ComponentMonitoring" 
+    self.doc_type = "ComponentMonitoring" 
 
     self.addMapping( {'host_type': {'_all': {'enabled': 'false'}, 'properties': {'host': {'index': 'not_analyzed', 'type': 'string'}}},
                       'component_type':{'_all': {'enabled': 'false'}, 'properties': {'component': { 'index': 'not_analyzed',
                                                                                                     'type': 'string'}}},
                       'status_type':{'_all': {'enabled': 'false'}, 'properties': {'status': {'index': 'not_analyzed', 'type': 'string'}}}} )
 
-    self.__dataToKeep = 86400 * 30 #we need to define...
+    self.dataToKeep = 86400 * 30 #we need to define...
     
-    self.__period = "month"
+    self.period = "month"
     self.checkType()

@@ -45,6 +45,6 @@ class WMSHistory( BaseType ):
                       'usergroup_type':{'_all': {'enabled': 'false'}, 'properties': {'UserGroup': { 'index': 'not_analyzed',
                                                                                                     'type': 'string'}}}} )
 
-    self.period =  86400 * 30
+    self.dataToKeep =  86400 * 30
 
     self.checkType()

@@ -36,7 +36,7 @@ class BaseType( object ):
     self.mapping = {'time_type':{'properties' : {'timestamp': {'type': 'date'} } } } #we use timestamp for all monitoring types.
     self.period = 'day'
     self.monitoringFields = ["Value"]
-    self.index = self._getIndex()
+    self.index = None
     
     # we only keep the last month of the data.
     self.dataToKeep = -1
