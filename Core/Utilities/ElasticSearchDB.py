@@ -373,12 +373,16 @@ class ElasticSearchDB( object ):
     return S_OK( values )
 
 
-def generateFullIndexName( indexName, period = 'day' ):
+def generateFullIndexName( indexName, period = None ):
   """
   Given an index prefix we create the actual index name. Each day an index is created.
   :param str indexName: it is the name of the index
   :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
   """
+  
+  if period is None:
+    gLogger.warn( "Daily indexes are used, because the period is not provided!" )
+    period = 'day'
     
   today = datetime.today().strftime( "%Y-%m-%d" )
   index = ''
