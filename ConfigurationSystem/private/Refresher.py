@@ -147,10 +147,10 @@ class Refresher( threading.Thread ):
     else:
       initialServerList = gConfigurationData.getServers()
       gLogger.debug( "Refreshing from list %s" % str( initialServerList ) )
-      
+
     # If no servers in the initial list, we are supposed to use the local configuration only
     if not initialServerList:
-      return S_OK()    
+      return S_OK()
 
     randomServerList = List.randomize( initialServerList )
     gLogger.debug( "Randomized server list is %s" % ", ".join( randomServerList ) )
@@ -158,8 +158,8 @@ class Refresher( threading.Thread ):
     for sServer in randomServerList:
       from DIRAC.Core.DISET.RPCClient import RPCClient
       oClient = RPCClient( sServer,
-                         useCertificates = gConfigurationData.useServerCertificate(),
-                         skipCACheck = gConfigurationData.skipCACheck() )
+                           useCertificates = gConfigurationData.useServerCertificate(),
+                           skipCACheck = gConfigurationData.skipCACheck() )
       dRetVal = _updateFromRemoteLocation( oClient )
       if dRetVal[ 'OK' ]:
         return dRetVal
