@@ -128,10 +128,7 @@ class SiteInspectorAgent( AgentModule ):
 
     # filter elements
     for site in res['Value']:
-      if not res['Value'][site]:
-        status = 'Unknown'
-      else:
-        status = res['Value'][site]
+      status = res['Value'].get(site, 'Unknown')
 
       toBeChecked.put( { 'status': status,
                          'name': site,
