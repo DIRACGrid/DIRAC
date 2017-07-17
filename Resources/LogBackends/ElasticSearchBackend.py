@@ -69,8 +69,8 @@ class ElasticSearchBackend(AbstractBackend):
 
   def setLevel(self, level):
     """ 
-    No possibility to set the level of the remote backend because it is hardcoded to ERROR 
-    and must not be changed 
+    No possibility to set the level of the ElasticSearch handler.
+    It is not set by default so it can send all Log Records of all levels to ElasticSearch. 
     """
     pass
 

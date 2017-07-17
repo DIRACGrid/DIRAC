@@ -18,7 +18,7 @@ class LoggingRoot(Logging):
   """
   LoggingRoot is a Logging object and it is particular because it is the first parent of the chain.
   In this context, it has more possibilities because it is the one that initializes the logger of the 
-  standard logging library and it configures it with the cfg file.
+  standard logging library and it configures it with the configuration.
 
   There is a difference between the parent Logging and the other because the parent defines the behaviour
   of all the Logging objects, so it needs a specific class.  
@@ -80,7 +80,7 @@ class LoggingRoot(Logging):
 
   def initialize(self, systemName, cfgPath):
     """
-    Configure the root Logging with a cfg file.
+    Configure the root Logging.
     It can be possible to :
     - attach it some backends : LogBackends = stdout,stderr,file,server 
     - attach backend options : BackendOptions { FileName = /tmp/file.log }
@@ -88,7 +88,7 @@ class LoggingRoot(Logging):
     - precise a level : LogLevel = DEBUG
 
     :params systemName: string represented as "system name/component name"
-    :params cfgPath: string of the cfg file path
+    :params cfgPath: string of the configuration path
     """
     # we have to put the import line here to avoid a dependancy loop
     from DIRAC import gConfig
@@ -130,19 +130,17 @@ class LoggingRoot(Logging):
 
   def __getBackendsFromCFG(self, cfgPath):
     """
-    Get backends from cfg file and register them in LoggingRoot. 
-    This is the new way to get the backends working with 'LogBackends' and 
-    'BackendsConfig' options.
-    We can use the entire power of the CS file to provide a general configuration
-    and many local configurations. 
+    Get backends from the configuration and register them in LoggingRoot. 
+    This is the new way to get the backends providing a general configuration. 
 
-    :params cfgPath: string of the cfg file path
+    :params cfgPath: string of the configuration path
     """
     # We have to put the import line here to avoid a dependancy loop
     from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
     from DIRAC import gConfig
 
-    # get the second last string representing the component name in the cfgPath
+    # get the second last string representing the component type in the configuration
+    # example : 'Agents', 'Services'
     component = cfgPath.split("/")[-2]
     operation = Operations()
 
@@ -162,7 +160,10 @@ class LoggingRoot(Logging):
 
   def __getBackendOptionsFromCFG(self, cfgPath, backend):
     """
-    Get backend options from cfg file. 
+    Get backend options from the configuration. 
+
+    :params cfgPath: string of the configuration path
+    :params backend: string representing a backend identifier: stdout, file, f04 
     """
     # We have to put the import lines here to avoid a dependancy loop
     from DIRAC import gConfig

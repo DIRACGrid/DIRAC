@@ -31,8 +31,8 @@ object in the existing code in order to minimize the changes.
 *LoggingRoot* inherits from *Logging*. It is specific because it is the
 first parent of the chain. In this context, it has more possibilities
 because it is the one and the only that can initialize the root logger
-of the standard *logging* library and it can configure it with the *cfg*
-file thanks to the *initialize* method.
+of the standard *logging* library and it can configure it with the configuration 
+thanks to the *initialize* method.
 
 *LogLevels*
 ~~~~~~~~~~~
@@ -63,7 +63,7 @@ have to make a new class named *[Backendname]Backend* in
 this package inheriting from *AbstractBackend*.
 For instance, the class name of the *stdout Backend* is *StdoutBackend*. 
 
-Then, to use it, we just have to add its name in the *cfg* file as usual.
+Then, to use it, we just have to add its name in the configuration as usual.
 
 *Handler* package
 ~~~~~~~~~~~~~~~~~

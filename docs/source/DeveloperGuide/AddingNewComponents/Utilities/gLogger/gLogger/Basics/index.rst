@@ -221,10 +221,10 @@ arguments:
 We can find a complete table containing all the effects of the command
 line arguments in the `Summary of the command line argument configuration`_ part.
 
-Set a level via the *cfg* file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Set a level via the configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We can also set the *gLogger* level in the *cfg* file via the *LogLevel*
+We can also set the *gLogger* level in the configuration via the *LogLevel*
 line. We can define a specific level with this method, but it does not
 work for scripts. Here is an example of an agent with the root
 *Logging*\ level set to *always*:
@@ -314,7 +314,7 @@ Default display
     2017-04-25 15:51:01 UTC Framework/Atom/log ALWAYS: message
 
 The date is UTC formatted and the system and the component names come
-from the *cfg* file. By default, the system name is *Framework* while
+from the configuration. By default, the system name is *Framework* while
 the component name does not exist. This display can vary according to
 different option parameters.
 
@@ -406,17 +406,17 @@ line arguments in the `Summary of the command line argument configuration`_ part
 Remove colors on the log records
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*LogColor* option is only available from the *cfg* file, and only
+*LogColor* option is only available from the configuration, and only
 for the *stdout* and the *stderr* with agents, services and executors.
 By default, the *LogColor* option is set a *True* and adds colors on the
 log records according to their levels. You can remove colors setting the
-option at *False* in the *cfg* file:
+option at *False* in the configuration:
 
 ::
 
     LogColor = False
 
-We can find a *cfg* file example containing different options in the `cfg file example`_ part.
+We can find a configuration example containing different options in the `cfg file example`_ part.
 
 Get the option values
 ~~~~~~~~~~~~~~~~~~~~~
@@ -446,7 +446,7 @@ right output. We can find an exhaustive list of the existing *Backend* types in 
 Backend resources
 ~~~~~~~~~~~~~~~~~
 
-A *Backend resource* is the representation of a *Backend* object in the configuration file. It is represented by one or two elements depending on its nature. The first is an identifier, which can be a default identifier or a custom: 
+A *Backend resource* is the representation of a *Backend* object in the configuration. It is represented by one or two elements depending on its nature. The first is an identifier, which can be a default identifier or a custom: 
 
 + Default identifiers take the name of a *Backend* class name, *<backendID>* will refer to the *<BackendID>Backend* class, *stdout* and *StdoutBackend* for instance. 
 + Custom identifiers can take any name like *f015* or *Jwr8*, there is no construction rule.
@@ -470,9 +470,9 @@ The second element is a set of parameters according to the *Backend* represented
 Declare the *Backend* resources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Before using them, *Backend resources* have to be declared in the configuration file. 
+Before using them, *Backend resources* have to be declared in the configuration. 
 They can be configured in a global way or in a local way.
-To declare them in the global way, we must put them in the */Resources/LogBackends* section of the configuration file, like this: 
+To declare them in the global way, we must put them in the */Resources/LogBackends* section of the configuration, like this: 
 
 ::
     
@@ -525,7 +525,7 @@ Here is an example of a concrete configuration:
 
 In this case, we have 3 *Backend* identifiers, namely *f01* and *es2* which are custom identifiers respectively related on *FileBackend* and *ElasticSearchBackend*, and *file* which is a default identifier based on *FileBackend*.
 
-This configuration allows a *Backend resource* use in any component of the configuration file, but we can also create some specific *Backend resources* inside a local component. To create local resources, you have to follow the same process in a *BackendsConfig* section like this: 
+This configuration allows a *Backend resource* use in any component of the configuration, but we can also create some specific *Backend resources* inside a local component. To create local resources, you have to follow the same process in a *BackendsConfig* section like this: 
 
 ::
     
@@ -633,10 +633,10 @@ If none of these options is specified, the *stdout Backend* will be used.
 Some examples and summaries
 ---------------------------
 
-*cfg* file example
+Configuration example
 ~~~~~~~~~~~~~~~~~~
 
-Here is a configuration file which contains *Logging* and *Backend*
+Here is a configuration which contains *Logging* and *Backend*
 configuration:
 
 ::

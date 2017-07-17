@@ -283,10 +283,8 @@ will stay the same:
 *Backend* configuration
 ----------------------
 
-This is an important change which requires some modifications of your code if you want
-enjoy the power of this new feature. Now, the *Backend* configuration in the *cfg* file becomes more readable
-and can be centralized. In this way, you have to change your *BackendsOptions* section by *BackendsConfig*. 
-Indeed, the *Backends* options are now sorted by identifiers, so this is an example of the minimialist modification required: 
+Now, the *Backend* configuration in the configuration becomes more readable
+and can be centralized. 
 
 ::
 

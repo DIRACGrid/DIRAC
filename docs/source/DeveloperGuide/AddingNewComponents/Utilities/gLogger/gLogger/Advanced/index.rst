@@ -260,7 +260,7 @@ The *LogColor* case
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This option can not be modified in the children of *gLogger*, even by
-*gLogger* itself after the *cfg* configuration, so the children receive
+*gLogger* itself after the configuration, so the children receive
 the *gLogger* configuration.
 
 Some examples and summaries
