@@ -322,7 +322,7 @@ class TransferRelay( TransferClient ):
       self.errMsg( "Could not send header", result[ 'Message' ] )
       return result
     self.infoMsg( "Starting to send data to service" )
-    srvTransport = result[ 'Value' ]
+    trid, srvTransport = result[ 'Value' ]
     srvFileHelper = FileHelper( srvTransport )
     srvFileHelper.setDirection( "send" )
     result = srvFileHelper.BufferToNetwork( data )
@@ -414,7 +414,7 @@ class TransferRelay( TransferClient ):
     if not result[ 'OK' ]:
       self.errMsg( "Could not send header", result[ 'Message' ] )
       return result
-    srvTransport = result[ 'Value' ]
+    trid, srvTransport = result[ 'Value' ]
     response = srvTransport.receiveData( 1048576 )
     srvTransport.close()
     self.infoMsg( "Sending data back to client" )
