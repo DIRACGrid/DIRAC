@@ -37,6 +37,10 @@ class Test_Logging(unittest.TestCase):
     """
     Initialize at debug level with a sublogger and a special handler
     """
+    # Reinitialize the system/component name after other tests
+    # because LoggingRoot is a singleton and cannont be reinstancied
+    gLogger._componentName = 'Framework'
+    
     gLogger.setLevel('debug')
     self.log = gLogger.getSubLogger('log')
     self.buffer = StringIO()
