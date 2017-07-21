@@ -27,6 +27,7 @@ FIX: PlainTransport - fixed socket creation in initAsClient()
 NEW: Technology preview of new logging system, based on standard python logging module
 CHANGE: Added graphviz extension to sphinx builds
 FIX: Added documentation of low level RPC/DISET classes
+FIX: Gateway service - multiple fixes to resurrect the service and to correctly instantiate it
 
 *DMS
 CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
