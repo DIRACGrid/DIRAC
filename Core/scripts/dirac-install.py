@@ -1047,6 +1047,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'P:', 'installationPath=', 'Path where to install (default current working dir)' ),
             ( 'b', 'build', 'Force local compilation' ),
             ( 'g:', 'grid=', 'lcg tools package version' ),
+            ( '  ', 'no-lcg-bundle', 'lcg tools not to be installed' ),
             ( 'B', 'noAutoBuild', 'Do not build if not available' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'u:', 'baseURL=', "Use URL as the source for installation tarballs" ),
@@ -1156,6 +1157,8 @@ def loadConfiguration():
       cliParams.debug = True
     elif o in ( '-g', '--grid' ):
       cliParams.lcgVer = v
+    elif o in ( '--no-lcg-bundle' ):
+      cliParams.noLcg = True
     elif o in ( '-u', '--baseURL' ):
       cliParams.installSource = v
     elif o in ( '-P', '--installationPath' ):
@@ -1259,6 +1262,20 @@ def installExternals( releaseConfig ):
     fixBuildPaths()
   logNOTICE( "Running externals post install..." )
   checkPlatformAliasLink()
+  return True
+
+def installLCGutils( releaseConfig ):
+
+  if not cliParams.platform:
+    cliParams.platform = getPlatform()
+  if not cliParams.platform:
+    return False
+
+  if cliParams.installSource:
+    tarsURL = cliParams.installSource
+  else:
+    tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
+
   #lcg utils?
   #LCG utils if required
   lcgVer = releaseConfig.getLCGVersion( cliParams.lcgVer )
@@ -1267,6 +1284,7 @@ def installExternals( releaseConfig ):
     #HACK: try to find a more elegant solution for the lcg bundles location
     if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False, cache = True ):
       logERROR( "Check that there is a release for your platform: DIRAC-lcg-%s" % verString )
+      logERROR( "If you do not need LCG utils, use the option --no-lcg-bundle to skip LCG Bundle installation." )
       return False
   return True
 
@@ -1547,6 +1565,9 @@ if __name__ == "__main__":
   logNOTICE( "Installing %s externals..." % cliParams.externalsType )
   if not installExternals( releaseConfig ):
     sys.exit( 1 )
+  if not cliParams.noLcg:
+    if not installLCGutils( releaseConfig ):
+      sys.exit( 1 )
   if not createOldProLinks():
     sys.exit( 1 )
   if not createBashrc():
