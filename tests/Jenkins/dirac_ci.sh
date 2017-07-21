@@ -264,8 +264,13 @@ function DIRACPilotInstall(){
     return
   fi
 
+  if [ $GATEWAY ]
+  then
+    GATEWAY="-W "$GATEWAY
+  fi
+
   commandList="GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements"
-  options="-S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/"
+  options="-S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ $GATEWAY"
 
   if [ "$customCommands" ]
   then

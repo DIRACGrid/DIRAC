@@ -34,7 +34,7 @@ def executeJob( executableFile, proxy, taskID, **kwargs ):
     if payloadUser:
       ce.setParameters( { 'PayloadUser': payloadUser } )
   else:
-    ce = InProcessComputingElement( "Task-" + str( taskID ) ) # pylint: disable=redefined-variable-type
+    ce = InProcessComputingElement( "Task-" + str( taskID ) )
 
   return ce.submitJob( executableFile, proxy )
 
