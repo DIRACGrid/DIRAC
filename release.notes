@@ -16,6 +16,8 @@ NEW: Allow to define FailoverURLs and to reference MainServers in the URLs
 
 *FrameworkSystem
 CHANGE: Make the new logging system thread-safe
+NEW: Added ElasticSearch backend for the logging
+NEW: Central Backends configuration to customize their use by multiple components 
 
 *Core
 FIX: dirac-install - allow to use local md5 files
