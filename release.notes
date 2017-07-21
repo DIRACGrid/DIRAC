@@ -87,6 +87,17 @@ CHANGE: Dirac API - added runLocal as an API method
 NEW: Documentation for developing with a container (includes Dockerfile)
 NEW: Add script to collate release notes from Pull Request comments  
 
+[v6r17p25]
+
+*Monitoring
+NEW: Implemented the support of monthly indexes and the unit tests are fixed
+
+*RMS
+FIX: RequestExecutingAgent - fix infinite loop for duplicate requests
+
+*WMS 
+NEW: ARCComputingElement - add support for multiprocessor jobs
+
 [v6r17p24]
 
 *WMS
