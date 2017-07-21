@@ -4,11 +4,12 @@
 
 """
 
-import datetime
+__RCSID__  = '$Id$'
+
 import math
 import Queue
 
-from DIRAC                                                      import S_ERROR, S_OK
+from DIRAC                                                      import S_OK
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                            import ThreadPool
 from DIRAC.ResourceStatusSystem.Client.SiteStatus               import SiteStatus
@@ -16,7 +17,6 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PEP                import PEP
 from DIRAC.ResourceStatusSystem.Utilities                       import Utils
 ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ), 'ResourceManagementClient')
 
-__RCSID__  = '$Id$'
 AGENT_NAME = 'ResourceStatus/SiteInspectorAgent'
 
 class SiteInspectorAgent( AgentModule ):
@@ -46,7 +46,6 @@ class SiteInspectorAgent( AgentModule ):
     AgentModule.__init__( self, *args, **kwargs )
 
     # ElementType, to be defined among Site, Resource or Node
-    self.elementType         = ''
     self.sitesToBeChecked    = None
     self.threadPool          = None
     self.siteClient          = None
@@ -60,11 +59,10 @@ class SiteInspectorAgent( AgentModule ):
     maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', self.__maxNumberOfThreads )
     self.threadPool    = ThreadPool( maxNumberOfThreads, maxNumberOfThreads )
 
-    self.elementType = 'Site'
     self.siteClient  = SiteStatus()
 
-    self.clients[ 'SiteStatus' ]               = self.siteClient
-    self.clients[ 'ResourceManagementClient' ] = ResourceManagementClient()
+    self.clients['SiteStatus']               = self.siteClient
+    self.clients['ResourceManagementClient'] = ResourceManagementClient()
 
     return S_OK()
 
@@ -80,12 +78,12 @@ class SiteInspectorAgent( AgentModule ):
 
     # Gets sites to be checked ( returns a Queue )
     sitesToBeChecked = self.getSitesToBeChecked()
-    if not sitesToBeChecked[ 'OK' ]:
-      self.log.error( sitesToBeChecked[ 'Message' ] )
+    if not sitesToBeChecked['OK']:
+      self.log.error( sitesToBeChecked['Message'] )
       return sitesToBeChecked
-    self.sitesToBeChecked = sitesToBeChecked[ 'Value' ]
+    self.sitesToBeChecked = sitesToBeChecked['Value']
 
-    queueSize   = self.sitesToBeChecked.qsize()
+    queueSize = self.sitesToBeChecked.qsize()
     pollingTime = self.am_getPollingTime()
 
     # Assigns number of threads on the fly such that we exhaust the PollingTime
@@ -98,8 +96,8 @@ class SiteInspectorAgent( AgentModule ):
 
     for _x in xrange( numberOfThreads ):
       jobUp = self.threadPool.generateJobAndQueueIt( self._execute )
-      if not jobUp[ 'OK' ]:
-        self.log.error( jobUp[ 'Message' ] )
+      if not jobUp['OK']:
+        self.log.error( jobUp['Message'] )
 
     self.log.info( 'blocking until all sites have been processed' )
     # block until all tasks are done
@@ -119,24 +117,25 @@ class SiteInspectorAgent( AgentModule ):
 
     toBeChecked = Queue.Queue()
 
-    sites = self.siteClient.getSites('All')
-    if not sites[ 'OK' ]:
-      return sites
+    res = self.siteClient.getSites('All')
+    if not res['OK']:
+      return res
 
-    # filter elements by Type
-    for site in sites[ 'Value' ]:
+    # get the current status
+    res = self.siteClient.getSiteStatuses( res['Value'] )
+    if not res['OK']:
+      return res
 
-      # get the current status
-      status = self.siteClient.getSiteStatuses( [site] )
-      if not status['OK']:
-        return status
+    # filter elements
+    for site in res['Value']:
+      status = res['Value'].get(site, 'Unknown')
 
-      if not status['Value'][site]:
-        status = 'Unknown'
-      else:
-        status = status['Value'][site]
-
-      toBeChecked.put( { 'status': status, 'name': site, 'site' : site, 'element' : 'Site', 'statusType': 'all', 'elementType': 'Site' } )
+      toBeChecked.put( { 'status': status,
+                         'name': site,
+                         'site' : site,
+                         'element' : 'Site',
+                         'statusType': 'all',
+                         'elementType': 'Site' } )
 
     return S_OK( toBeChecked )
 
@@ -145,8 +144,10 @@ class SiteInspectorAgent( AgentModule ):
 
   def _execute( self ):
     """
-      Method run by the thread pool. It enters a loop until there are no sites
-      on the queue. On each iteration, it evaluates the policies for such site
+      Method run by each of the thread that is in the ThreadPool.
+      It enters a loop until there are no sites on the queue.
+
+      On each iteration, it evaluates the policies for such site
       and enforces the necessary actions. If there are no more sites in the
       queue, the loop is finished.
     """
@@ -161,8 +162,8 @@ class SiteInspectorAgent( AgentModule ):
         return S_OK()
 
       resEnforce = pep.enforce( site )
-      if not resEnforce[ 'OK' ]:
-        self.log.error( 'Failed policy enforcement', resEnforce[ 'Message' ] )
+      if not resEnforce['OK']:
+        self.log.error( 'Failed policy enforcement', resEnforce['Message'] )
         self.sitesToBeChecked.task_done()
         continue
 
