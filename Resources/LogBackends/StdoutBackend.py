@@ -1,5 +1,5 @@
 """
-StderrBackend wrapper
+StdoutBackend wrapper
 """
 
 __RCSID__ = "$Id$"
@@ -7,17 +7,17 @@ __RCSID__ = "$Id$"
 import logging
 import sys
 
-from DIRAC.FrameworkSystem.private.standardLogging.Backend.AbstractBackend import AbstractBackend
+from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 from DIRAC.FrameworkSystem.private.standardLogging.Formatter.ColoredBaseFormatter import ColoredBaseFormatter
 
 
-class StderrBackend(AbstractBackend):
+class StdoutBackend(AbstractBackend):
   """
-  StderrBackend is used to create an abstraction of the handler and the formatter concepts from logging. 
+  StdoutBackend is used to create an abstraction of the handler and the formatter concepts from logging. 
   Here, we gather a StreamHandler object and a BaseFormatter. 
 
   - StreamHandler is from the standard logging library: it is used to write log messages in a desired stream
-    so it needs a name: here it is stderr. 
+    so it needs a name: here it is stdout. 
 
   - ColorBaseFormatter is a custom Formatter object, created for DIRAC in order to get the appropriate display
     with color.
@@ -25,7 +25,7 @@ class StderrBackend(AbstractBackend):
   """
 
   def __init__(self):
-    super(StderrBackend, self).__init__(None, ColoredBaseFormatter)
+    super(StdoutBackend, self).__init__(None, ColoredBaseFormatter)
 
   def createHandler(self, parameters=None):
     """
@@ -33,4 +33,4 @@ class StderrBackend(AbstractBackend):
 
     :params parameters: dictionary of parameters. ex: {'FileName': file.log}
     """
-    self._handler = logging.StreamHandler(sys.stderr)
+    self._handler = logging.StreamHandler(sys.stdout)
