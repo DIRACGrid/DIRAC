@@ -28,6 +28,8 @@ NEW: Technology preview of new logging system, based on standard python logging 
 CHANGE: Added graphviz extension to sphinx builds
 FIX: Added documentation of low level RPC/DISET classes
 FIX: Gateway service - multiple fixes to resurrect the service and to correctly instantiate it
+NEW: dirac-install will change the shebang of the python scripts to use the environment 
+     python instead of the system one
 
 *DMS
 CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
