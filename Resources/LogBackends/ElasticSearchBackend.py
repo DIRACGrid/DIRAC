@@ -1,5 +1,5 @@
-""" 
-ElasticSearch wrapper 
+"""
+ElasticSearch wrapper
 """
 
 __RCSID__ = "$Id$"
@@ -10,17 +10,17 @@ from cmreslogging.handlers import CMRESHandler
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 
 class ElasticSearchBackend(AbstractBackend):
-  """  
-  ElasticsearchBackend is used to create an abstraction of the handler and the formatter concepts from logging.  
-  Here, we have a CMRESHandler which is part of an external library named 'cmreslogging' based on 'logging'.  
-  CMRESHandler is a specific handler created to send log records to an ElasticSearch DB. It does not need a Formatter 
-  object. 
+  """
+  ElasticsearchBackend is used to create an abstraction of the handler and the formatter concepts from logging.
+  Here, we have a CMRESHandler which is part of an external library named 'cmreslogging' based on 'logging'.
+  CMRESHandler is a specific handler created to send log records to an ElasticSearch DB. It does not need a Formatter
+  object.
   """
 
   def __init__(self):
-    """ 
-    CMRESHandler needs, at least, a hostname, a username, a password, a port and a specific index 
-    from the ElasticSearch DB to send log records. 
+    """
+    CMRESHandler needs, at least, a hostname, a username, a password, a port and a specific index
+    from the ElasticSearch DB to send log records.
     """
     super(ElasticSearchBackend, self).__init__(None, None)
     self.__host = ''
@@ -32,10 +32,10 @@ class ElasticSearchBackend(AbstractBackend):
     self.__flushTime = 1
 
   def createHandler(self, parameters=None):
-    """ 
-    Each backend can initialize its attributes and create its handler with them. 
+    """
+    Each backend can initialize its attributes and create its handler with them.
 
-    :params parameters: dictionary of parameters. ex: {'FileName': file.log} 
+    :params parameters: dictionary of parameters. ex: {'FileName': file.log}
     """
     if parameters is not None:
       self.__host = parameters.get('Host', self.__host)
@@ -55,7 +55,7 @@ class ElasticSearchBackend(AbstractBackend):
                                    verify_ssl=True,
                                    buffer_size=self.__bufferSize,
                                    flush_frequency_in_sec=self.__flushTime)
-    else: 
+    else:
       self._handler = CMRESHandler(hosts=[{'host': self.__host, 'port': self.__port}],
                                    auth_type=CMRESHandler.AuthType.NO_AUTH,
                                    es_index_name=self.__index,
@@ -68,9 +68,9 @@ class ElasticSearchBackend(AbstractBackend):
     self._handler.setFormatter(logging.Formatter('%(asctime)s'))
 
   def setLevel(self, level):
-    """ 
+    """
     No possibility to set the level of the ElasticSearch handler.
-    It is not set by default so it can send all Log Records of all levels to ElasticSearch. 
+    It is not set by default so it can send all Log Records of all levels to ElasticSearch.
     """
     pass
 
