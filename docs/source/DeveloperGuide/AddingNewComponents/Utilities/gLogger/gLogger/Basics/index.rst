@@ -221,10 +221,10 @@ arguments:
 We can find a complete table containing all the effects of the command
 line arguments in the `Summary of the command line argument configuration`_ part.
 
-Set a level via the *cfg* file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Set a level via the configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We can also set the *gLogger* level in the *cfg* file via the *LogLevel*
+We can also set the *gLogger* level in the configuration via the *LogLevel*
 line. We can define a specific level with this method, but it does not
 work for scripts. Here is an example of an agent with the root
 *Logging*\ level set to *always*:
@@ -314,7 +314,7 @@ Default display
     2017-04-25 15:51:01 UTC Framework/Atom/log ALWAYS: message
 
 The date is UTC formatted and the system and the component names come
-from the *cfg* file. By default, the system name is *Framework* while
+from the configuration. By default, the system name is *Framework* while
 the component name does not exist. This display can vary according to
 different option parameters.
 
@@ -406,17 +406,17 @@ line arguments in the `Summary of the command line argument configuration`_ part
 Remove colors on the log records
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*LogColor* option is only available from the *cfg* file, and only
+*LogColor* option is only available from the configuration, and only
 for the *stdout* and the *stderr* with agents, services and executors.
 By default, the *LogColor* option is set a *True* and adds colors on the
 log records according to their levels. You can remove colors setting the
-option at *False* in the *cfg* file:
+option at *False* in the configuration:
 
 ::
 
     LogColor = False
 
-We can find a *cfg* file example containing different options in the `cfg file example`_ part.
+We can find a configuration example containing different options in the `cfg file example`_ part.
 
 Get the option values
 ~~~~~~~~~~~~~~~~~~~~~
@@ -441,100 +441,275 @@ Backend presentation
 
 *Backend* objects are used to receive the log record created before,
 format it according to the choice of the client, and send it in the
-right output. Currently, there are four different *Backend* object
-inherited from a base. Here is a table presenting them:
+right output. We can find an exhaustive list of the existing *Backend* types in the :ref:`gLogger_backends` part. 
 
-+-----------------+-------------------------+
-| Backend name    | Output                  |
-+=================+=========================+
-| stdout          | standard output         |
-+-----------------+-------------------------+
-| Stderr          | error output            |
-+-----------------+-------------------------+
-| RemoteBackend   | SystemLogging service   |
-+-----------------+-------------------------+
-| FileBackend     | file                    |
-+-----------------+-------------------------+
+Backend resources
+~~~~~~~~~~~~~~~~~
 
-As we may notice, *gLogger* has already a *stdout Backend* by default.
+A *Backend resource* is the representation of a *Backend* object in the configuration. It is represented by one or two elements depending on its nature. The first is an identifier, which can be a default identifier or a custom: 
 
-Add a *Backend* to your *Logging*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++ Default identifiers take the name of a *Backend* class name, *<backendID>* will refer to the *<BackendID>Backend* class, *stdout* and *StdoutBackend* for instance. 
++ Custom identifiers can take any name like *f015* or *Jwr8*, there is no construction rule.
 
-To send a created log record to an output, our root *Logging* has to add
-some *Backend* objects in a list. To do such an operation, we have to
-write the desired *Backend* objects in the *cfg* file using the
-*LogBackends* option, like this:
+The second element is a set of parameters according to the *Backend* represented. Custom identifiers absolutely need to complete the *Plugin* option to indicate which *Backend* type they represent using a default identifier. This section can also be empty if the *Backend* do not need parameter and if the identifier is a default identifier. Here is a generic example of a *Backend resource*: 
 
 ::
 
-    LogBackends = stdout,stderr,file,server
+    <backendDefaultID1>
+    {
+        <param1> = <value1>
+        <param2> = <value2>
+    }
+    
+    <backendCustomID>
+    {
+        Plugin = <backendDefaultID2>
+        <param1> = <value1>
+    }
 
-Here, we add all of the *Backend* object types in the root *Logging*.
-Thus, a log record created will be sent to 4 different outputs. We can
-find a *cfg* file example containing different options in the `cfg file example`_ part.
-
-We can also notice that *Backend* objects are plugins, so anyone can define custom *Backend* objects.
-We can retrieve all information about this feature in the :ref:`gLogger_gLoggerDevelopment` part.
-
-Configure the *Backend* objects
+Declare the *Backend* resources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Some *Backend* objects need some parameters according to their nature.
-By default, each type of *Backend* has default parameters but it is
-possible to change them via the *BackendsOptions*\ section of the *cfg*.
-Here is a table presenting the different parameters that we can
-configure for each *Backend* and their default values:
+Before using them, *Backend resources* have to be declared in the configuration. 
+They can be configured in a global way or in a local way.
+To declare them in the global way, we must put them in the */Resources/LogBackends* section of the configuration, like this: 
 
-+--------+-----------+------------------------------------------------------+----------------------+
-| Type   | Option    | Description                                          | Default value        |
-+========+===========+======================================================+======================+
-| file   | FileName  | name of the file where the log records must be sent  | Dirac-log\_[pid].log |
-+--------+-----------+------------------------------------------------------+----------------------+
-| server | SleepTime | sleep time in seconds                                | 150                  |
-+--------+-----------+------------------------------------------------------+----------------------+
+::
+    
+    Resources
+    {
+        LogBackends
+        {
+            <backendID1>
+            {
+                Plugin = <backendClass1>
+                <param1> = <value1>
+            }
+            <backendID2>
+            {
+                Plugin = <bakendClass2>
+                <param2> = <value2>
+            }
+            <backendID3>
+            {
+                <param3> = <value3>
+            }
+        }
+    }
 
-We can also notice that the *server Backend* requires that the
-*Framework/SystemLogging* service is running in order to send log
-records to a log server.
+Here is an example of a concrete configuration: 
+
+::
+    
+    Resources
+    {
+        LogBackends
+        {
+            f01
+            {
+                Plugin = file
+                FileName = /path/to/file.log
+            }
+            es2
+            {
+                Plugin = elasticSearch
+                Host = lhcb
+                Port = 9540
+            }
+            file
+            {
+                FileName = /path/to/anotherfile.log
+            }
+        }
+    }
+
+In this case, we have 3 *Backend* identifiers, namely *f01* and *es2* which are custom identifiers respectively related on *FileBackend* and *ElasticSearchBackend*, and *file* which is a default identifier based on *FileBackend*.
+
+This configuration allows a *Backend resource* use in any component of the configuration, but we can also create some specific *Backend resources* inside a local component. To create local resources, you have to follow the same process in a *BackendsConfig* section like this: 
+
+::
+    
+    <Agent>
+    {
+        ...
+        BackendsConfig
+        {
+            <backendID4>
+            {
+                Plugin = <backendClass4>
+                <param4> = <value4>
+            }
+            <backendID5>
+            {
+                Plugin = <bakendClass5>
+                <param5> = <value5>
+            }
+            <backendID6>
+            {
+                <param6> = <value6>
+            }
+        }
+    }
+
+Moreover, a same *Backend* identifier can be declared in the both sections in order to update it. Indeed, such a declaration triggers a parameters merger. In case of parameters conflicts, the local parameters are always choosen. Here is an example:   
+
+::
+    
+    <Systems>
+    {
+        Agents
+        {
+            <Agent1>
+            {
+                ...
+                BackendsConfig
+                {
+                    <backendID1>
+                    {                   
+                        <param1> = <value1>
+                        <param2> = <value2>
+                    }
+                }
+            }
+        }
+    }
+    Resources
+    {
+        LogBackends
+        {
+            <backendID1>
+            {
+                Plugin = <backendClass1>
+                <param1> = <value4>
+                <param3> = <value3>
+            }
+        }
+    }
+    
+In this case, *gLogger* in *<Agent1>* will have one *Backend* instance of the *<backendClass1>Backend* class which will have 3 parameters: 
+
++ <param1> = <value1>
++ <param2> = <value2>
++ <param3> = <value3>
+
+Use the *Backend* resources
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once our *Backend* resources are declared, we have to specify where we want to use them and we have many possibilities. First of all, we can add them for the totality of the components. This can be made in the */Operations/defaults/* section. Here is the way to proceed: 
+
+::
+    
+    Operations
+    {
+        Defaults
+        {
+            defaultBackends = <backendID1>, <backendID2>, <backendID3>
+        }
+    }
+
+We can also add them for a specific component type, the agents or the services for instance. Such a declaration will overwrite the previous one for the component type choosen: 
+
+::
+    
+    Operations
+    {
+        Defaults
+        {
+            default<componentType>sBackends = <backendID1>, <backendID2>, <backendID3>
+        }
+    }
+
+Do not forget the *s* between *<componentType>* and *Backends*. In this case, all the *<componentType>* components will have the same resources if we do not overwritten locally. This can be made by the use of the *LogBackends* option used inside any component like this: 
+
+::
+
+    <Agent1>
+    {
+        LogBackends = <backend1>, <backend2>, <backend3>
+    }
+
+If none of these options is specified, the *stdout Backend* will be used. 
 
 Some examples and summaries
 ---------------------------
 
-*cfg* file example
+Configuration example
 ~~~~~~~~~~~~~~~~~~
 
-Here is a component section which contains *Logging* and *Backend*
+Here is a configuration which contains *Logging* and *Backend*
 configuration:
 
 ::
-
-    Agents
+    
+    Systems
     {
-        SimplestAgent
+        FrameworkSystem
         {
-          LogLevel = INFO
-          LogBackends = stdout,stderr,file
-          BackendsOptions
-          {
-            FileName = /tmp/logtmp.log
-          }
-          LogColor = False
-          LogShowLine = True
+            Agents
+            {
+                SimplestAgent
+                {
+                  LogLevel = INFO
+                  LogBackends = stdout,stderr,file, file2, es2
+                  BackendsConfig
+                  {
+                    file
+                    {
+                        FileName = /tmp/logtmp.log
+                    }
+                    file2
+                    {
+                        Plugin = file
+                        FileName = /tmp/logtmp2.log
+                    }
+                  }
+                  LogColor = False
+                }
+                AnotherAgent
+                {
+                    LogLevel = NOTICE
+                    LogBackends = stdout, es2
+                    BackendsConfig
+                    {
+                        es2
+                        {
+                            UserName = lchb34
+                            Password = passw0rd
+                        }
+                    }
+                }
+            }
         }
-    }   
+    }
+    Operations
+    {
+        Defaults
+        {
+            defaultBackends = stdout
+            defaultAgentsBackends = stderr
+        }
+    }
+    Resources
+    {
+        LogBackends
+        {
+            es2
+            {
+                Plugin = elasticSearch
+                Host = lhcb
+                Port = 9540
+                UserName = lhcb
+                Password = 123456
+            }
+        }
+    }
 
-To summarize, this file configures an agent named *SimplestAgent*, sets
-the level of *gLogger* at *info*, adds 3 *Backend* objects to it, which
-are *stdout*, *stderr* and *file*. Thus, each log record superior to
-*info* level, created by a *Logging* object in the agent, will be send
-to 3 different outputs. We learn also from the *BackendOptions* that the
-*file Backend* will send these log records to the */tmp/logtmp.log*
-file.
-
-In addition, the log records will be not displayed with color, and the
-caller path name will not appear if we do not change the level to
-*debug*.
+To summarize, this file configures two agents respectively named *SimplestAgent* and *AnotherAgent*. 
+In *SimplestAgent*, it sets the level of *gLogger* at *info*, adds 5 *Backend* objects to it, which
+are *stdout*, *stderr*, two *file Backend* objects and an *ElastiSearch* access. Thus, each log record superior to
+*info* level, created by a *Logging* object in the agent, will be sent
+to 5 different outputs: *stdout*, *stderr*, */tmp/logtmp.log*, */tmp/logtmp2.log* and ElasticSearch. In *AnotherAgent*, the same process is performed, and each log record superior to *notice* level is sent to *stdout* and another ElasticSearch database because of the redifinition. None of the default *Backend* objects of the *Operations* section are used because of the overwriting.
+In addition, the log records will be not displayed with color.
 
 Summary of the command line argument configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -571,8 +746,8 @@ time. So, be careful to avoid the case.
 Multiple threads
 ~~~~~~~~~~~~~~~~
 
-*gLogger* is based on the Python *logging* library which is completely
-thread-safe. Nevertheless, we can not guarantee that *gLogger* is thread-safe too.
+*gLogger* is completely thread-safe, there is no conflict possible especially in the case when two threads 
+try to write on a same file at the same time. 
 
 Advanced part
 ------------------------------------

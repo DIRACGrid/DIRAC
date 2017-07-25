@@ -81,7 +81,7 @@ class ElasticSearchDB( object ):
   RESULT_SIZE = 10000
 
   ########################################################################
-  def __init__( self, host, port, user = None, password=None, indexPrefix = ''):
+  def __init__( self, host, port, user = None, password = None, indexPrefix = '', useSSL = True ):
     """ c'tor
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
@@ -89,20 +89,25 @@ class ElasticSearchDB( object ):
     :param str user: user name to access the db
     :param str password: if the db is password protected we need to provide a password
     :param str indexPrefix: it is the indexPrefix used to get all indexes
+    :param bool useSSL: We can disable using secure connection. By default we use secure connection.
     """
+    
     self.__indexPrefix = indexPrefix
     self._connected = False
     if user and password:
       self.__url = "https://%s:%s@%s:%d" % ( user, password, host, port )
     else:
       self.__url = "%s:%d" % ( host, port )
-
-    gLogger.verbose("ElasticSearchDB URL: %s" % self.__url)
-    self.__client = Elasticsearch( self.__url,
-                                   timeout = self.__timeout,
-                                   use_ssl = True,
-                                   verify_certs = True,
-                                   ca_certs = generateCAFile() )
+    
+    if useSSL:
+      self.__client = Elasticsearch( self.__url, 
+                                     timeout = self.__timeout, 
+                                     use_ssl = True, 
+                                     verify_certs = True, 
+                                     ca_certs = generateCAFile() )
+    else:
+      self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
+      
     self.__tryToConnect()
 
   def getIndexPrefix( self ):
@@ -209,14 +214,15 @@ class ElasticSearchDB( object ):
 
   ########################################################################
 
-  def createIndex( self, indexPrefix, mapping ):
+  def createIndex( self, indexPrefix, mapping, period = None ):
     """
     :param str indexPrefix: it is the index name.
     :param dict mapping: the configuration of the index.
+    :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
 
     """
     result = None
-    fullIndex = generateFullIndexName( indexPrefix )  # we have to create an index each day...
+    fullIndex = generateFullIndexName( indexPrefix, period )  # we have to create an index each day...
     if self.exists( fullIndex ):
       result = S_OK( fullIndex )
     else:
@@ -267,21 +273,22 @@ class ElasticSearchDB( object ):
       return S_ERROR( res )
 
 
-  def bulk_index( self, indexprefix, doc_type, data, mapping = None ):
+  def bulk_index( self, indexprefix, doc_type, data, mapping = None, period = None ):
     """
     :param str indexPrefix: it is the index name.
     :param str doc_type: the type of the document
-    :param data: contains a list of dictionary
-    :type data: python:list
+    :param dict data: contains a list of dictionary
+    :paran dict mapping: the mapping used by elasticsearch
+    :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
     """
     gLogger.info( "%d records will be insert to %s" % ( len( data ), doc_type ) )
     if mapping is None:
       mapping = {}
 
-    indexName = generateFullIndexName( indexprefix )
+    indexName = generateFullIndexName( indexprefix, period )
     gLogger.debug("inserting datat to %s index" % indexName)
     if not self.exists( indexName ):
-      retVal = self.createIndex( indexprefix, mapping )
+      retVal = self.createIndex( indexprefix, mapping, period )
       if not retVal['OK']:
         return retVal
     docs = []
@@ -370,10 +377,26 @@ class ElasticSearchDB( object ):
     return S_OK( values )
 
 
-def generateFullIndexName( indexName ):
+def generateFullIndexName( indexName, period = None ):
   """
   Given an index prefix we create the actual index name. Each day an index is created.
   :param str indexName: it is the name of the index
+  :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
   """
+  
+  if period is None:
+    gLogger.warn( "Daily indexes are used, because the period is not provided!" )
+    period = 'day'
+    
   today = datetime.today().strftime( "%Y-%m-%d" )
-  return "%s-%s" % ( indexName, today )
+  index = ''
+  if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
+    gLogger.warn( "Period is not correct daily indexes are used instead:", period )
+    index = "%s-%s" % ( indexName, today )
+  elif period.lower() == 'day':
+    index = "%s-%s" % ( indexName, today )
+  elif period.lower() == 'month':
+    month = datetime.today().strftime( "%Y-%m" )
+    index = "%s-%s" % ( indexName, month )
+    
+  return index
