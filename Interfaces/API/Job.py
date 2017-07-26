@@ -1223,27 +1223,4 @@ class Job( API ):
 
     return dirac.submitJob( self, mode = 'local' )
 
-  #############################################################################
-
-  def __getstate__(self):
-    """ Return a copied dictionary containing all the attributes of the Job 
-
-    :return: dictionary of attributes
-    """
-    state = self.__dict__.copy()
-    # Replace the Logging instance by its name because it is not copyable
-    # because of the thread locks
-    state['log'] = self.log.getSubName()
-    return state
-
-  def __setstate__(self, state):
-    """ Parameter the Job with an attributes dictionary
-
-    :params state: attributes dictionary
-    """
-    self.__dict__ = state
-    # Build the Logging instance again because it can not be in the dictionary 
-    # due to the thread locks
-    self.log = gLogger.getSubLogger(state['log'])
-
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
