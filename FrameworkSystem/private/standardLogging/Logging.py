@@ -79,13 +79,11 @@ class Logging(object):
 
     self._backendsList = []
 
-    self._logger = logging.getLogger(fatherName).getChild(name)
-
     # name of the Logging
-    self.name = name
-
+    self.name = str(name)
+    self._logger = logging.getLogger(fatherName).getChild(self.name)
     # update the custom name of the Logging adding the new Logging name in the entire path
-    self._customName = os.path.join("/", customName, name)
+    self._customName = os.path.join("/", customName, self.name)
 
     # Locks to make Logging thread-safe
     # we use RLock to prevent blocking in the Logging

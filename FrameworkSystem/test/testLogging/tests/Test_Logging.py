@@ -13,6 +13,7 @@ from StringIO import StringIO
 
 from DIRAC.FrameworkSystem.private.logging.Logger import Logger
 from DIRAC.FrameworkSystem.private.standardLogging.LoggingRoot import LoggingRoot
+from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
 
 
 oldgLogger = Logger()
@@ -37,6 +38,10 @@ class Test_Logging(unittest.TestCase):
     """
     Initialize at debug level with a sublogger and a special handler
     """
+    # Reinitialize the system/component name after other tests
+    # because LoggingRoot is a singleton and can not be reinstancied
+    Logging._componentName = 'Framework'
+
     gLogger.setLevel('debug')
     self.log = gLogger.getSubLogger('log')
     self.buffer = StringIO()
