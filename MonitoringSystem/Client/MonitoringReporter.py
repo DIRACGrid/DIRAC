@@ -35,7 +35,6 @@ class MonitoringReporter( object ):
   :type __documents: python:list
   :param bool __mq: we can use MQ if it is available... By default it is not allowed.
   :param str __monitoringType: type of the records which will be inserted to the db. For example: WMSHistory.
-  :param object __mqProducer: publisher used to publish the records to the MQ.
   """
 
   def __init__( self, monitoringType = '' ):
@@ -49,11 +48,10 @@ class MonitoringReporter( object ):
     #check the existence of a MQ
     retVal = getMQParamsFromCS ( "Monitoring::Queue::%s" % monitoringType )
     if retVal['OK']:
-      result = createProducer( monitoringType )
+      result = createProducer( "Monitoring::Queue::%s" % monitoringType )
       if not result['OK']:
         gLogger.warn( "Fail to create Producer:", result['Message'] )
       else:
-        self.__mqProducer = result['Value']
         self.__mq = True
 
     self.__monitoringType = monitoringType
@@ -63,6 +61,13 @@ class MonitoringReporter( object ):
     It consumes all messaged from the MQ (these are failover messages). In case of failure, the messages
     will be inserted to the MQ again.
     """
+    retVal = monitoringDB.ping()  # if the db is not accessible, the records will be not processed
+    if retVal['OK']:
+      if not retVal['Value']:  # false if we can not connect to the db
+        return retVal
+    else:
+      return retVal
+    
     result = createConsumer( "Monitoring::Queue::%s" % self.__monitoringType )
     if not result['OK']:
       gLogger.error( "Fail to create Consumer: %s" % result['Message'] )
@@ -71,19 +76,22 @@ class MonitoringReporter( object ):
       mqConsumer = result['Value']
 
     result = S_OK()
+    failedToProcess = []
     while result['OK']:
       # we consume all messages from the consumer internal queue.
       result = mqConsumer.get()
-      mqConsumer.close()  # make sure that we will not proccess any more messages.
       if result['OK']:
         records = json.loads( result['Value'] )
         retVal = monitoringDB.put( list( records ), self.__monitoringType )
         if not retVal['OK']:
-          # the db is not available and we publish again the data to MQ
-          res = self.publishRecords( records )
-          if not res['OK']:
-            return res
-
+          failedToProcess.append( records )
+    
+    mqConsumer.close()  # make sure that we will not proccess any more messages.
+    # the db is not available and we publish again the data to MQ
+    for records in failedToProcess:
+      res = self.publishRecords( records )
+      if not res['OK']:
+        return res
     return S_OK()
 
   def addRecord( self, rec ):
@@ -98,13 +106,26 @@ class MonitoringReporter( object ):
     send data to the MQ
     :param: list records contains a list of key/value pairs (dictionaries)
     """
-    return self.__mqProducer.put( json.dumps( records ) )
+    if self.__mq:
+      result = createProducer( "Monitoring::Queue::%s" % self.__monitoringType )
+      if not result['OK']:
+        return result
+      else:
+        return result['Value'].put( json.dumps( records ) )
+    
 
   def commit( self ):
     """
     It inserts the accumulated data to the db. In case of failure
     it keeps in memory/MQ
     """
+    #before we try to insert the data to the db, we process all the data 
+    #which are already in the queue
+    if self.__mq:
+      result = self.processRecords()
+      if not result['OK']:
+        gLogger.error( "Unable to insert data from the MQ", result['Message'] )
+        
     self.__documentLock.acquire()
     documents = self.__documents
     self.__documents = []
@@ -128,16 +149,11 @@ class MonitoringReporter( object ):
             else:
               return res  # in case of MQ problem
           else:
-            gLogger.warn( "Failed to insert the records: %s", retVal['Message'] )
+            gLogger.warn( "Failed to insert the records:", retVal['Message'] )
     except Exception as e:  # pylint: disable=broad-except
       gLogger.exception( "Error committing", lException = e )
       return S_ERROR( "Error committing %s" % repr( e ).replace( ',)', ')' ) )
     finally:
       self.__documents.extend( documents )
-
-    if self.__mq:
-      result = self.processRecords()
-      if not result['OK']:
-        gLogger.error( "Unable to insert data from the MQ", result['Message'] )
 
     return S_OK( recordSent )
