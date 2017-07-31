@@ -372,7 +372,7 @@ class ElasticSearchDB( object ):
     gLogger.debug( "Nb of unique rows retrieved", len( values ) )
     return S_OK( values )
   
-  def ping ( self ):
+  def pingDB ( self ):
     """
     Try to connect to the database
     :return: S_OK(TRUE/FALSE)

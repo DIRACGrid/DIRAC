@@ -50,7 +50,7 @@ class MonitoringReporter( object ):
     It consumes all messaged from the MQ (these are failover messages). In case of failure, the messages
     will be inserted to the MQ again.
     """
-    retVal = monitoringDB.ping()  # if the db is not accessible, the records will be not processed from MQ
+    retVal = monitoringDB.pingDB()  # if the db is not accessible, the records will be not processed from MQ
     if retVal['OK']:
       if not retVal['Value']:  # false if we can not connect to the db
         return retVal
