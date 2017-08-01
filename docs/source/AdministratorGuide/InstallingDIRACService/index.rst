@@ -243,6 +243,17 @@ be taken:
         HostDN = /DC=ch/DC=country/OU=computers/CN=computer.dn
         # Define the Configuration Server as Master for your installations
         ConfigurationMaster = yes
+        # List of Systems to be installed - by default all services are added
+        Systems = Accounting
+        Systems += Configuration
+        Systems += DataManagement
+        Systems += Framework
+        Systems += Monitoring
+        Systems += RequestManagement
+        Systems += ResourceStatus
+        Systems += StorageManagement
+        Systems += Transformation
+        Systems += WorkloadManagement
         #
         # List of DataBases to be installed
         Databases = InstalledComponentsDB
@@ -404,8 +415,8 @@ operation is the registration of the new host in the already functional Configur
         # Host = dirac.cern.ch
         Host =
         #  List of Services to be installed
-        Services  = Configuration/Server
-        Services += Framework/SystemAdministrator
+        # Services  = Configuration/Server
+        Services = Framework/SystemAdministrator
 
   - Now run install_site.sh giving the edited CFG file as the argument:::
 
