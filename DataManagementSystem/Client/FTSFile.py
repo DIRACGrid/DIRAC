@@ -76,7 +76,7 @@ class FTSFile( object ):
                "FileID": "INTEGER NOT NULL",
                "OperationID": "INTEGER NOT NULL",
                "RequestID": "INTEGER NOT NULL",
-               "LFN": "VARCHAR(955) NOT NULL",
+               "LFN": "VARCHAR(255) NOT NULL",
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
                "Checksum": "VARCHAR(64)",
                "ChecksumType": "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'ADLER32'",
