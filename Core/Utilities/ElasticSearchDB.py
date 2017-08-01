@@ -375,8 +375,19 @@ class ElasticSearchDB( object ):
     del query
     gLogger.debug( "Nb of unique rows retrieved", len( values ) )
     return S_OK( values )
-
-
+  
+  def pingDB ( self ):
+    """
+    Try to connect to the database
+    :return: S_OK(TRUE/FALSE)
+    """
+    connected = False
+    try:
+      connected = self.__client.ping()
+    except ConnectionError as e:
+      gLogger.error( "Cannot connect to the db", repr( e ) )
+    return S_OK( connected )
+  
 def generateFullIndexName( indexName, period = None ):
   """
   Given an index prefix we create the actual index name. Each day an index is created.

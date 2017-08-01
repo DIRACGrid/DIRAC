@@ -90,6 +90,22 @@ NEW: Documentation for developing with a container (includes Dockerfile)
 NEW: Add script to collate release notes from Pull Request comments  
 NEW: Chapter on scaling and limitations
 
+[v6r17p26]
+
+*Core
+FIX: dirac-install.py to fail when installation of lcgBundle has failed
+FIX: ClassAdLight - getAttributeInt() and getAttributeFloat() return None 
+     if the corresponding JDL attribute is not defined
+
+*MonitoringSystem
+CHANGE: The Consumer and Producer use separate connections to the MQ; 
+        If the db is not accessible, the messaged will not be consumed.
+
+*WMS
+FIX: JobDB - fix the case where parametric job placeholder %j is used in the JobName attribute
+FIX: JobDB - take into account that ClassAdLight methods return None if numerical attribute is not defined
+FIX: ParametricJob utility - fixed bug in evaluation of the ParameterStart|Step|Factor.X job numerical attribute
+
 [v6r17p25]
 
 *Monitoring

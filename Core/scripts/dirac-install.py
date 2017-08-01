@@ -47,6 +47,7 @@ class Params( object ):
     self.debug = False
     self.externalsOnly = False
     self.lcgVer = ''
+    self.noLcg = False
     self.useVersionsDir = False
     self.installSource = ""
     self.globalDefaults = False
@@ -1068,6 +1069,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'P:', 'installationPath=', 'Path where to install (default current working dir)' ),
             ( 'b', 'build', 'Force local compilation' ),
             ( 'g:', 'grid=', 'lcg tools package version' ),
+            ( '  ', 'no-lcg-bundle', 'lcg tools not to be installed' ),
             ( 'B', 'noAutoBuild', 'Do not build if not available' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'u:', 'baseURL=', "Use URL as the source for installation tarballs" ),
@@ -1177,6 +1179,8 @@ def loadConfiguration():
       cliParams.debug = True
     elif o in ( '-g', '--grid' ):
       cliParams.lcgVer = v
+    elif o in ( '--no-lcg-bundle' ):
+      cliParams.noLcg = True
     elif o in ( '-u', '--baseURL' ):
       cliParams.installSource = v
     elif o in ( '-P', '--installationPath' ):
@@ -1280,6 +1284,20 @@ def installExternals( releaseConfig ):
     fixBuildPaths()
   logNOTICE( "Running externals post install..." )
   checkPlatformAliasLink()
+  return True
+
+def installLCGutils( releaseConfig ):
+
+  if not cliParams.platform:
+    cliParams.platform = getPlatform()
+  if not cliParams.platform:
+    return False
+
+  if cliParams.installSource:
+    tarsURL = cliParams.installSource
+  else:
+    tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
+
   #lcg utils?
   #LCG utils if required
   lcgVer = releaseConfig.getLCGVersion( cliParams.lcgVer )
@@ -1287,7 +1305,11 @@ def installExternals( releaseConfig ):
     verString = "%s-%s-python%s" % ( lcgVer, cliParams.platform, cliParams.pythonVersion )
     #HACK: try to find a more elegant solution for the lcg bundles location
     if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False, cache = True ):
-      logERROR( "Check that there is a release for your platform: DIRAC-lcg-%s" % verString )
+      logERROR( "\nThe requested LCG software version %s for the local operating system could not be downloaded." % verString )
+      logERROR( "Please, check the availability of the LCG software bindings for you platform 'DIRAC-lcg-%s' \n in the repository %s/lcgBundles/." % ( verString, os.path.dirname( tarsURL ) ) )
+      logERROR( "\nIf you would like to skip the installation of the LCG software, redo the installation with adding the option --no-lcg-bundle to the command line." )
+      return False
+    
   logNOTICE( "Fixing Python Shebang..." )
   fixPythonShebang()
   return True
@@ -1570,6 +1592,12 @@ if __name__ == "__main__":
   logNOTICE( "Installing %s externals..." % cliParams.externalsType )
   if not installExternals( releaseConfig ):
     sys.exit( 1 )
+  if cliParams.noLcg:
+    logNOTICE( "Skipping installation of LCG software..." )
+  else:
+    logNOTICE( "Installing LCG software..." )
+    if not installLCGutils( releaseConfig ):
+      sys.exit( 1 )
   if not createOldProLinks():
     sys.exit( 1 )
   if not createBashrc():
