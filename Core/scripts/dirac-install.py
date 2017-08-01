@@ -981,6 +981,21 @@ def fixBuildPaths():
   except:
     pass
 
+def fixPythonShebang():
+  """
+  Some scripts (like the gfal2 scripts) come with a shebang pointing to the system python.
+  We replace it with the environment one
+ """
+
+  binaryPath = os.path.join( cliParams.targetPath, cliParams.platform )
+  try:
+    replaceCmd = "grep -rIl '#!/usr/bin/python' %s/bin | xargs sed -i'.org' 's:#!/usr/bin/python:#!/usr/bin/env python:g'" %  binaryPath
+    os.system( replaceCmd )
+  except:
+    pass
+
+
+
 
 def runExternalsPostInstall():
   """
@@ -1273,6 +1288,8 @@ def installExternals( releaseConfig ):
     #HACK: try to find a more elegant solution for the lcg bundles location
     if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False, cache = True ):
       logERROR( "Check that there is a release for your platform: DIRAC-lcg-%s" % verString )
+  logNOTICE( "Fixing Python Shebang..." )
+  fixPythonShebang()
   return True
 
 def createPermanentDirLinks():

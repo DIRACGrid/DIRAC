@@ -307,8 +307,8 @@ class RequestExecutingAgent( AgentModule ):
             res = self.cacheRequest( request )
             if not res['OK']:
               if cmpError( res, errno.EALREADY ):
-                # The request is already in the cache, skip it
-                continue
+                # The request is already in the cache, skip it. break out of the while loop to get next request
+                break
               # There are too many requests in the cache, commit suicide
               self.log.error( res['Message'], '(%d requests): put back all requests and exit cycle' % len( self.__requestCache ) )
               self.putAllRequests()

@@ -80,10 +80,13 @@ class PoolCETests( unittest.TestCase ):
     self.__stopJob( 0 )
     jobParams = { 'numberOfProcessors': 2 }
     ce = PoolComputingElement( 'TestPoolCE', 4 )
+    ceParameters = { 'WholeNode': False,
+                     'NumberOfProcessors': 4 }
+    ce.setParameters( ceParameters )
     result = ce.submitJob( 'testPoolCEJob_2.py', None, **jobParams )
     self.assertTrue( result['OK'] )
     result = ce.getCEStatus()
-    self.assertEqual( 4, result['UsedProcessors'] )
+    self.assertEqual( 2, result['UsedProcessors'] )
 
     for i in range(4):
       self.__stopJob( i )

@@ -11,6 +11,8 @@ import shutil
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
+from DIRAC import gLogger
+
 from DIRAC.tests.Utilities.utils import find_all
 
 from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
@@ -24,6 +26,7 @@ class RegressionTestCase( IntegrationTest ):
   def setUp( self ):
     super( RegressionTestCase, self ).setUp()
 
+    gLogger.setLevel('DEBUG')
     self.dirac = Dirac()
 
     exeScriptLoc = find_all( 'exe-script.py', '..', '/DIRAC/tests/Workflow/Regression' )[0]

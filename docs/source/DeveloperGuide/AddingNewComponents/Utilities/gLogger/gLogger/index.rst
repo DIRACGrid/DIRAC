@@ -1,7 +1,7 @@
 .. _gLogger_gLogger:
 
 gLogger
-======= 
+=======
 
 *gLogger* is the logging solution within DIRAC. Based on the python
 *logging* library, it represents an interface to create and send

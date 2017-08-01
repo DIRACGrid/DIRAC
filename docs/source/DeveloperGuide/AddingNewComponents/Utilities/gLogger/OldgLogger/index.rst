@@ -171,7 +171,6 @@ Basic display
 The basic display for log message is:
 
 ::
- 
     [Year]-[Month]-[Day] [Hour]:[Minute]:[Second] UTC /[Component]/[Logname] [Levelname] : [Message]
 
 Example:

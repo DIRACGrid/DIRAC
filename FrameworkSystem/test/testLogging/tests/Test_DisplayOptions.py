@@ -155,7 +155,7 @@ class Test_DisplayOptions(Test_Logging):
     sublog = gLogger.getSubLogger('sublog')
     sublog.setLevel('notice')
     sublog.showHeaders(False)
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
 
@@ -173,7 +173,7 @@ class Test_DisplayOptions(Test_Logging):
     """
     sublog = gLogger.getSubLogger('sublog2')
     sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     gLogger.showHeaders(False)
@@ -193,7 +193,7 @@ class Test_DisplayOptions(Test_Logging):
     sublog = gLogger.getSubLogger('sublog3')
     sublog.setLevel('notice')
     sublog.showHeaders(False)
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     gLogger.showHeaders(True)
@@ -213,7 +213,7 @@ class Test_DisplayOptions(Test_Logging):
     """
     sublog = gLogger.getSubLogger('sublog4')
     sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     gLogger.showHeaders(True)
@@ -233,11 +233,11 @@ class Test_DisplayOptions(Test_Logging):
     """
     sublog = gLogger.getSubLogger('sublog5')
     sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     subsublog = sublog.getSubLogger('subsublog')
-    subsublog.registerBackends(['file'], {'FileName': self.filename})
+    subsublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     gLogger.showHeaders(False)
@@ -249,17 +249,17 @@ class Test_DisplayOptions(Test_Logging):
     self.assertEqual(message, "message \nmessage \n")
     self.assertEqual(self.buffer.getvalue(), "message \n")
 
-  def test_08subLogShowHeadersChangeSetSubLogger(self):
+  def test_07subLogShowHeadersChangeSetSubLogger(self):
     """
     Create a subsublogger and show that its Header option follow the change of its parent Header option.
     """
     sublog = gLogger.getSubLogger('sublog6')
     sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     subsublog = sublog.getSubLogger('subsublog')
-    subsublog.registerBackends(['file'], {'FileName': self.filename})
+    subsublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     sublog.showHeaders(False)
@@ -279,7 +279,7 @@ class Test_DisplayOptions(Test_Logging):
     """
     sublog = gLogger.getSubLogger('sublog7')
     sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     subsublog = sublog.getSubLogger('subsublog')
@@ -320,9 +320,6 @@ class Test_DisplayOptions(Test_Logging):
     with open(self.filename) as file:
       message = file.read()
     self.assertIn("UTC Framework/sublog8 NOTICE: message \n", message)
-
-
-  
 
 
 if __name__ == '__main__':

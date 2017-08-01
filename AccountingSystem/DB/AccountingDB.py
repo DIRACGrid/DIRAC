@@ -995,7 +995,7 @@ class AccountingDB( DB ):
     """
     Execute a query over a main table
     """
-    
+
     tableName = _getTableName( tableType, typeName )
     cmd = "SELECT"
     sqlLinkList = []
@@ -1010,7 +1010,7 @@ class AccountingDB( DB ):
         #
         # When we have multiple grouping then we must have all the fields in Group by. This is from mysql 5.7.
         # We have fields which are not in the groupFields
-        
+
         diff = list( set( selectFields[1] ) - set( groupFields[1] ) )
         if diff:  # add the missing fields to the group by if there is any
           groupFields = list( groupFields )
@@ -1018,7 +1018,7 @@ class AccountingDB( DB ):
           groupFields[0] = "%s, %s" % ( groupFields[0], missingfields )
           groupFields[1].extend( diff )
           groupFields = tuple( groupFields )
-        
+
       except TypeError as e:
         return S_ERROR( "Cannot format properly group string: %s" % repr( e ) )
     if orderFields:
@@ -1107,7 +1107,7 @@ class AccountingDB( DB ):
               preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
           elif field in ['bucketLength', 'entriesInBucket']: #these are not in the dbCatalog
             preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
-          
+
     if sqlLinkList:
       cmd += " AND %s" % " AND ".join( sqlLinkList )
     if groupFields:

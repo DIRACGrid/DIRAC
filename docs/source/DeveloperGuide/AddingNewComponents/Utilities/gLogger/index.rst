@@ -8,8 +8,7 @@ DIRAC gLogger
    :maxdepth: 2
 
    gLogger/index
+   Backends/index
    Changes/index
-   OldgLogger/index
    gLoggerDevelopment/index
-   
-
+   OldgLogger/index

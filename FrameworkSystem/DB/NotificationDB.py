@@ -39,22 +39,22 @@ class NotificationDB( DB ):
     tablesInDB = [ t[0] for t in retVal[ 'Value' ] ]
     tablesToCreate = {}
     if 'ntf_Alarms' not in tablesInDB:
-      tablesToCreate[ 'ntf_Alarms' ] = { 'Fields' : { 'AlarmId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
-                                                      'AlarmKey' : 'VARCHAR(32) NOT NULL',
-                                                         'Author' : 'VARCHAR(64) NOT NULL',
-                                                         'CreationTime' : 'DATETIME NOT NULL',
-                                                         'ModTime' : 'DATETIME NOT NULL',
-                                                         'Subject' : 'VARCHAR(255) NOT NULL',
-                                                         'Status' : 'VARCHAR(64) NOT NULL',
-                                                         'Priority' : 'VARCHAR(32) NOT NULL',
-                                                         'Body' : 'BLOB',
-                                                         'Assignee' : 'VARCHAR(64) NOT NULL',
-                                                         'Notifications' : 'VARCHAR(128) NOT NULL'
-                                                        },
-                                            'PrimaryKey' : 'AlarmId',
-                                            'Indexes' : { 'Status' : [ 'Status' ],
-                                                          'Assignee' : [ 'Assignee' ] }
-                                          }
+      tablesToCreate[ 'ntf_Alarms' ] = { 'Fields' : {'AlarmId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
+                                                     'AlarmKey' : 'VARCHAR(32) NOT NULL',
+                                                     'Author' : 'VARCHAR(64) NOT NULL',
+                                                     'CreationTime' : 'DATETIME NOT NULL',
+                                                     'ModTime' : 'DATETIME NOT NULL',
+                                                     'Subject' : 'VARCHAR(255) NOT NULL',
+                                                     'Status' : 'VARCHAR(64) NOT NULL',
+                                                     'Priority' : 'VARCHAR(32) NOT NULL',
+                                                     'Body' : 'BLOB',
+                                                     'Assignee' : 'VARCHAR(64) NOT NULL',
+                                                     'Notifications' : 'VARCHAR(128) NOT NULL'
+                                                    },
+                                         'PrimaryKey' : 'AlarmId',
+                                         'Indexes' : { 'Status' : [ 'Status' ],
+                                                       'Assignee' : [ 'Assignee' ] }
+                                       }
     if 'ntf_AssigneeGroups' not in tablesInDB:
       tablesToCreate[ 'ntf_AssigneeGroups' ] = { 'Fields' : { 'AssigneeGroup' : 'VARCHAR(64) NOT NULL',
                                                          'User' : 'VARCHAR(64) NOT NULL',
@@ -446,7 +446,7 @@ class NotificationDB( DB ):
     return result
 
 
-  def getAlarms( self, condDict = {}, sortList = False, start = 0, limit = 0, modifiedAfter = False ):
+  def getAlarms( self, condDict = {}, sortList = False, start = 0, limit = 0, modifiedAfter = None ):
 
     condSQL = []
     for field in self.__alarmQueryFields:
@@ -527,7 +527,7 @@ class NotificationDB( DB ):
 
 ###
 # Followers management
-###    
+###
 
   def modifyFollowerForAlarm( self, alarmId, user, notificationsDict, overwrite = True ):
     rawUser = user
@@ -830,4 +830,3 @@ class NotificationDB( DB ):
       ids.append( str( msg[0] ) )
     self.log.info( "Deferred %s notifications" % len( ids ) )
     return self._update( "DELETE FROM `ntf_Notifications` WHERE Id in (%s)" % ",".join( ids ) )
-
