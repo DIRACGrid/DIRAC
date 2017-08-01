@@ -1057,6 +1057,8 @@ class JobDB( DB ):
       return result
 
     priority = classAdJob.getAttributeInt( 'Priority' )
+    if priority is None:
+      priority = 0
     jobAttrNames.append( 'UserPriority' )
     jobAttrValues.append( priority )
 
@@ -1194,15 +1196,17 @@ class JobDB( DB ):
           classAdJob.insertAttributeString( param, val )
 
     priority = classAdJob.getAttributeInt( 'Priority' )
+    if priority is None:
+      priority = 0
     platform = classAdJob.getAttributeString( 'Platform' )
     # Legacy check to suite the LHCb logic
     if not platform:
       platform = classAdJob.getAttributeString( 'SystemConfig' )
     cpuTime = classAdJob.getAttributeInt( 'CPUTime' )
-    if cpuTime == 0:
+    if cpuTime is None:
       # Just in case check for MaxCPUTime for backward compatibility
       cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
-      if cpuTime > 0:
+      if cpuTime is not None:
         classAdJob.insertAttributeInt( 'CPUTime', cpuTime )
     classAdReq.insertAttributeInt( 'UserPriority', priority )
     classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
@@ -1384,6 +1388,8 @@ class JobDB( DB ):
       return result
 
     priority = classAdJob.getAttributeInt( 'Priority' )
+    if priority is None:
+      priority = 0
     jobAttrNames.append( 'UserPriority' )
     jobAttrValues.append( priority )
 
