@@ -740,23 +740,24 @@ class SiteDirector( AgentModule ):
         else:
           maxWaitingJobs = int( self.queueDict[queue]['ParametersDict']['MaxWaitingJobs'] )
           maxTotalJobs = int( self.queueDict[queue]['ParametersDict']['MaxTotalJobs'] )
-          result = pilotAgentsDB.getPilotInfo( jobIDList )
-          if not result['OK']:
-            self.log.warn( 'Failed to check PilotAgentsDB for queue %s: \n%s' % ( queue, result['Message'] ) )
-            self.failedQueues[queue] += 1
-          else:
-            waitingJobs = 0
-            totalJobs = 0
-            for pilotRef, pilotDict in result['Value'].iteritems():
-              if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
-                totalJobs += 1
-                if pilotDict["Status"] in WAITING_PILOT_STATUS:
-                  waitingJobs += 1
-            runningJobs = totalJobs - waitingJobs
-            self.log.info( "PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" % \
-                           ( ceName, queueName, waitingJobs, runningJobs, maxTotalJobs ) )
-            totalSlots = min( (maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs) )
-            self.queueSlots[queue]['AvailableSlots'] = totalSlots
+          waitingJobs = 0
+          totalJobs = 0
+          if jobIDList:
+            result = pilotAgentsDB.getPilotInfo( jobIDList )
+            if not result['OK']:
+              self.log.warn( 'Failed to check PilotAgentsDB for queue %s: \n%s' % ( queue, result['Message'] ) )
+              self.failedQueues[queue] += 1
+            else:
+              for pilotRef, pilotDict in result['Value'].iteritems():
+                if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
+                  totalJobs += 1
+                  if pilotDict["Status"] in WAITING_PILOT_STATUS:
+                    waitingJobs += 1
+              runningJobs = totalJobs - waitingJobs
+              self.log.info( "PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" % \
+                             ( ceName, queueName, waitingJobs, runningJobs, maxTotalJobs ) )
+          totalSlots = min( (maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs) )
+          self.queueSlots[queue]['AvailableSlots'] = totalSlots
 
     self.queueSlots[queue]['AvailableSlotsCount'] += 1
 
