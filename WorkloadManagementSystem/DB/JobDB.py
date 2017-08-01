@@ -1023,7 +1023,13 @@ class JobDB( DB ):
     jobAttrValues.append( diracSetup )
 
     # 2.- Check JDL and Prepare DIRAC JDL
-    classAdJob = ClassAd( jobManifest.dumpAsJDL() )
+    jobJDL = jobManifest.dumpAsJDL()
+
+    # Replace the JobID placeholder if any
+    if jobJDL.find( '%j' ) != -1:
+      jobJDL = jobJDL.replace( '%j', str( jobID ) )
+
+    classAdJob = ClassAd( jobJDL )
     classAdReq = ClassAd( '[]' )
     retVal = S_OK( jobID )
     retVal['JobID'] = jobID
@@ -1082,10 +1088,6 @@ class JobDB( DB ):
     classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
 
     jobJDL = classAdJob.asJDL()
-
-    # Replace the JobID placeholder if any
-    if jobJDL.find( '%j' ) != -1:
-      jobJDL = jobJDL.replace( '%j', str( jobID ) )
 
     result = self.setJobJDL( jobID, jobJDL )
     if not result['OK']:
