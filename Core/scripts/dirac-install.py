@@ -2,6 +2,7 @@
 """
 The main DIRAC installer script
 """
+
 import sys
 import os
 import getopt
@@ -10,7 +11,6 @@ import imp
 import signal
 import time
 import stat
-import types
 import shutil
 import ssl
 import hashlib
@@ -78,7 +78,7 @@ class ReleaseConfig( object ):
 
     def getChild( self, path ):
       child = self
-      if type( path ) in ( types.ListType, types.TupleType ):
+      if isinstance( path, (list, tuple) ):
         pathList = path
       else:
         pathList = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ]
@@ -138,7 +138,7 @@ class ReleaseConfig( object ):
       return cIndex
 
     def createSection( self, name, cfg = False ):
-      if type( name ) in ( types.ListType, types.TupleType ):
+      if isinstance( name, ( list, tuple ) ):
         pathList = name
       else:
         pathList = [ sec.strip() for sec in name.split( "/" ) if sec.strip() ]
@@ -188,7 +188,7 @@ class ReleaseConfig( object ):
       if defaultValue == None:
         return value
       defType = type( defaultValue )
-      if defType == types.BooleanType:
+      if isinstance(defType, bool):
         return value.lower() in ( "1", "true", "yes" )
       try:
         return defType( value )
@@ -517,7 +517,7 @@ class ReleaseConfig( object ):
     if not project:
       project = self.__projectName
 
-    if type( releases ) not in ( types.ListType, types.TupleType ):
+    if not isinstance( releases, (list, tuple) ):
       releases = [ releases ]
 
     #Load defaults
@@ -810,7 +810,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     # Sometimes repositories do not return Content-Length parameter
     try:
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    except Exception, x:
+    except Exception as x:
       logWARN( 'Content-Length parameter not returned, skipping expectedBytes check' )
 
     if fileName:
@@ -1152,9 +1152,9 @@ def loadConfiguration():
       opName = 'externalsType'
     if isinstance( getattr( cliParams, opName ), basestring ):
       setattr( cliParams, opName, opVal )
-    elif type( getattr( cliParams, opName ) ) == types.BooleanType:
+    elif isinstance( getattr( cliParams, opName ), bool ):
       setattr( cliParams, opName, opVal.lower() in ( "y", "yes", "true", "1" ) )
-    elif type( getattr( cliParams, opName ) ) == types.ListType:
+    elif isinstance( getattr( cliParams, opName ), list ):
       setattr( cliParams, opName, [ opV.strip() for opV in opVal.split( "," ) if opV ] )
 
   #Now parse the ops
@@ -1375,7 +1375,8 @@ def createBashrc():
                      'export DIRACSCRIPTS=%s' % os.path.join( "$DIRAC", 'scripts' ),
                      'export DIRACLIB=%s' % os.path.join( "$DIRAC", cliParams.platform, 'lib' ),
                      'export TERMINFO=%s' % __getTerminfoLocations( os.path.join( "$DIRAC", cliParams.platform, 'share', 'terminfo' ) ),
-                     'export RRD_DEFAULT_FONT=%s' % os.path.join( "$DIRAC", cliParams.platform, 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
+                     'export RRD_DEFAULT_FONT=%s' % os.path.join( "$DIRAC", cliParams.platform, 'share',
+                                                                  'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
       lines.extend( ['# Prepend the PYTHONPATH, the LD_LIBRARY_PATH, and the DYLD_LIBRARY_PATH'] )
 

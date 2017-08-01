@@ -14,8 +14,8 @@ This administration documentation refers to the "Core" DIRAC project.
    :maxdepth: 1
 
    SetupStructure/index
-   GettingStarted/index
    InstallingDIRACService/index
+   #GettingStarted/index
    InstallingWebAppDIRAC/index
    InstallingVMDIRAC/index
    SystemAdministratorInterface/index

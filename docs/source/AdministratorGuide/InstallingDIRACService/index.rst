@@ -178,12 +178,12 @@ be taken:
         #  production release)
         Release = v6r17p1
         #  Python version of the installation
-        PythonVersion = 26
+        PythonVersion = 27
         #  To install the Server version of DIRAC (the default is client)
         InstallType = server
         #  LCG python bindings for SEs and LFC. Specify this option only if your installation
         #  uses those services
-        # LcgVer = 2012-02-20
+        # LcgVer = 2017-05-23
         #  If this flag is set to yes, each DIRAC update will be installed
         #  in a separate directory, not overriding the previous ones
         UseVersionsDir = yes
@@ -243,6 +243,17 @@ be taken:
         HostDN = /DC=ch/DC=country/OU=computers/CN=computer.dn
         # Define the Configuration Server as Master for your installations
         ConfigurationMaster = yes
+        # List of Systems to be installed - by default all services are added
+        Systems = Accounting
+        Systems += Configuration
+        Systems += DataManagement
+        Systems += Framework
+        Systems += Monitoring
+        Systems += RequestManagement
+        Systems += ResourceStatus
+        Systems += StorageManagement
+        Systems += Transformation
+        Systems += WorkloadManagement
         #
         # List of DataBases to be installed
         Databases = InstalledComponentsDB
@@ -358,7 +369,7 @@ operation is the registration of the new host in the already functional Configur
         InstallType = server
         #  LCG python bindings for SEs and LFC. Specify this option only if your installation
         #  uses those services
-        # LcgVer = 2012-02-20
+        # LcgVer = 2017-05-23
         #  If this flag is set to yes, each DIRAC update will be installed
         #  in a separate directory, not overriding the previous ones
         UseVersionsDir = yes
@@ -404,8 +415,8 @@ operation is the registration of the new host in the already functional Configur
         # Host = dirac.cern.ch
         Host =
         #  List of Services to be installed
-        Services  = Configuration/Server
-        Services += Framework/SystemAdministrator
+        # Services  = Configuration/Server
+        Services = Framework/SystemAdministrator
 
   - Now run install_site.sh giving the edited CFG file as the argument:::
 
