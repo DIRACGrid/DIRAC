@@ -83,7 +83,7 @@ class ConfigurationClient( object ):
     if requestedType in  ( list, tuple, set ):
       try:
         return S_OK( requestedType( List.fromChar( optionValue, ',' ) ) )
-      except Exception:
+      except Exception as e:
         return S_ERROR( "Can't convert value (%s) to comma separated list \n%s" % ( str( optionValue ),
                                                                                    repr( e ) ) )
     elif requestedType == bool:
