@@ -13,9 +13,6 @@ from DIRAC.Core.Security import Locations
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.DErrno import EMQUKN, EMQCONN
 
-# needed by stomp.py (without import there is an exception when it tries to log something)
-import logging
-logging.basicConfig()
 
 class StompMQConnector( MQConnector ):
   """
