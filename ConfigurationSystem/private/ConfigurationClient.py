@@ -84,17 +84,33 @@ class ConfigurationClient( object ):
       try:
         return S_OK( requestedType( List.fromChar( optionValue, ',' ) ) )
       except Exception:
-        return S_ERROR( "Can't convert value (%s) to comma separated list" % str( optionValue ) )
+        return S_ERROR( "Can't convert value (%s) to comma separated list \n%s" % ( str( optionValue ),
+                                                                                   repr( e ) ) )
     elif requestedType == bool:
       try:
         return S_OK( optionValue.lower() in ( "y", "yes", "true", "1" ) )
-      except Exception:
-        return S_ERROR( "Can't convert value (%s) to Boolean" % str( optionValue ) )
+      except Exception as e:
+        return S_ERROR( "Can't convert value (%s) to Boolean \n%s" % ( str( optionValue ),
+                                                                      repr( e ) ) )
+    elif requestedType == dict:
+      try:
+        splitOption = List.fromChar( optionValue, ',' )
+        value = {}
+        for opt in splitOption:
+          keyVal = [x.strip() for x in opt.split( ':' )]
+          if len( keyVal ) == 1:
+            keyVal.append( True )
+          value[keyVal[0]] = keyVal[1]
+        return S_OK( value )
+      except Exception as e:
+        return S_ERROR( "Can't convert value (%s) to Dict \n%s" % ( str( optionValue ),
+                                                                   repr( e ) ) )
     else:
       try:
         return S_OK( requestedType( optionValue ) )
-      except:
-        return S_ERROR( "Type mismatch between default (%s) and configured value (%s) " % ( str( typeValue ), optionValue ) )
+      except Exception as e:
+        return S_ERROR( "Type mismatch between default (%s) and configured value (%s) \n%s" % ( str( typeValue ), optionValue,
+                                                                                                repr( e ) ) )
 
 
   def getSections( self, sectionPath, listOrdered = True ):
