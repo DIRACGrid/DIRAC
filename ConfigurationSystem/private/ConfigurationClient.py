@@ -66,11 +66,11 @@ class ConfigurationClient( object ):
     gRefresher.refreshConfigurationIfNeeded()
     optionValue = gConfigurationData.extractOptionFromCFG( optionPath )
 
-    if optionValue == None:
+    if optionValue is None:
       return S_ERROR( "Path %s does not exist or it's not an option" % optionPath )
 
     # Value has been returned from the configuration
-    if typeValue == None:
+    if typeValue is None:
       return S_OK( optionValue )
 
     # Casting to typeValue's type
