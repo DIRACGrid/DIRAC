@@ -1,3 +1,49 @@
+[v6r17p26]
+
+*Core
+FIX: dirac-install.py to fail when installation of lcgBundle has failed
+FIX: ClassAdLight - getAttributeInt() and getAttributeFloat() return None 
+     if the corresponding JDL attribute is not defined
+
+*MonitoringSystem
+CHANGE: The Consumer and Producer use separate connections to the MQ; 
+        If the db is not accessible, the messaged will not be consumed.
+
+*WMS
+FIX: JobDB - fix the case where parametric job placeholder %j is used in the JobName attribute
+FIX: JobDB - take into account that ClassAdLight methods return None if numerical attribute is not defined
+FIX: ParametricJob utility - fixed bug in evaluation of the ParameterStart|Step|Factor.X job numerical attribute
+
+[v6r17p25]
+
+*Monitoring
+NEW: Implemented the support of monthly indexes and the unit tests are fixed
+
+*RMS
+FIX: RequestExecutingAgent - fix infinite loop for duplicate requests
+
+*WMS 
+NEW: ARCComputingElement - add support for multiprocessor jobs
+
+[v6r17p24]
+
+*WMS
+FIX: SiteDirector - unlink is also to be skipped for Local Condor batch system
+
+[v6r17p23]
+
+*WMS
+FIX: get job output for remote scheduler in the case of HTCondorCE
+
+[v6r17p22]
+
+*Framework
+FIX: NotificationClient - added avoidSpam flag to sendMail() method which is propagated to
+     the corresponding service call
+     
+*Integration
+FIX: several fixes in integration testing scripts     
+
 [v6r17p21]
 
 *Core

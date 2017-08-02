@@ -343,3 +343,10 @@ class MonitoringHandler( RequestHandler ):
     """
     
     return self.__db.put( recordsToInsert, monitoringType )
+  
+  types_pingDB = []
+  def export_pingDB( self ):
+    """
+    We can check, if the db is available.
+    """
+    return self.__db.pingDB()
