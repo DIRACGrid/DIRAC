@@ -92,7 +92,7 @@ def generateCAFile( location = None ):
     except IOError as err:
       gLogger.warn( err )
 
-  return False
+  return False, caDir
 
 def generateRevokedCertsFile( location = None ):
   """

@@ -9,7 +9,7 @@ import tarfile
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities import File, List
+from DIRAC.Core.Utilities import File, List, CertificateMgmtass
 from DIRAC.Core.Security import Locations
 
 class BundleManager:
@@ -100,7 +100,16 @@ class BundleDeliveryHandler( RequestHandler ):
     global gBundleManager
     version = ""
     if isinstance( fileId, basestring ):
-      bId = fileId
+      if fileId == 'CAs':
+        sucess, _ = CertificateMgmt.generateCAFile()
+        if not sucess:
+          return S_ERROR( "Can not generate the CA bundle!" )
+        else:
+          retVal = fileHelper.FDToNetwork ( sucess )
+          if not retVal['OK']:
+            return retVal
+      else:
+        bId = fileId
     elif isinstance( fileId, ( list, tuple ) ):
       if len( fileId ) == 0:
         fileHelper.markAsTransferred()

@@ -5,7 +5,7 @@ import cStringIO
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
-from DIRAC.Core.Utilities import File
+from DIRAC.Core.Utilities import File, CertificateMgmt
 from DIRAC.Core.Security import Locations, CS
 
 class BundleDeliveryClient:
@@ -99,3 +99,19 @@ class BundleDeliveryClient:
     if X509_CERT_DIR:
       os.environ['X509_CERT_DIR'] = X509_CERT_DIR
     return result
+  
+  def getCAs( self ):
+    """
+    This method can be used to create the CAs. If the file can not be created, it will be downloaded from
+    the server. 
+    """
+    sucess, caDir = CertificateMgmt.generateCAFile()
+    if not sucess:
+      transferClient = self.__getTransferClient()
+      casFile = os.path.join( os.path.dirname( caDir ), "cas.pem" )
+      with open( casFile, "w" ) as fd:
+        result = transferClient.receiveFile( fd, 'CAs' )
+        if not result[ 'OK' ]:
+          return False
+    else:
+      return sucess
