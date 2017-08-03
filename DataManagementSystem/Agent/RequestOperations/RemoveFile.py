@@ -128,7 +128,7 @@ class RemoveFile( DMSRequestOperationsBase ):
           gMonitor.addMark( "RemoveFileOK", 1 )
 
       # # set
-      failedFiles = [ ( lfn, opFile ) for ( lfn, opFile ) in toRemoveDict.items()
+      failedFiles = [ ( lfn, opFile ) for ( lfn, opFile ) in toRemoveDict.iteritems()
                       if opFile.Status in ( "Failed", "Waiting" ) ]
       if failedFiles:
         self.operation.Error = "failed to remove %d files" % len( failedFiles )
@@ -153,14 +153,14 @@ class RemoveFile( DMSRequestOperationsBase ):
       return bulkRemoval
     bulkRemoval = bulkRemoval["Value"]
     # # filter results
-    for lfn, opFile in toRemoveDict.items():
+    for lfn, opFile in toRemoveDict.iteritems():
       if lfn in bulkRemoval["Successful"]:
         opFile.Status = "Done"
       elif lfn in bulkRemoval["Failed"]:
 
         error = bulkRemoval["Failed"][lfn]
         if type( error ) == dict:
-          error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.items() ] )
+          error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.iteritems() ] )
         opFile.Error = error
         if self.reNotExisting.search( opFile.Error ):
           opFile.Status = "Done"
@@ -200,7 +200,7 @@ class RemoveFile( DMSRequestOperationsBase ):
               if opFile.LFN in removeFile["Failed"]:
                 error = removeFile["Failed"][opFile.LFN]
                 if type( error ) == dict:
-                  error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.items() ] )
+                  error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.iteritems() ] )
                 if self.reNotExisting.search( error ):
                   # This should never happen due to the "force" flag
                   opFile.Status = "Done"
