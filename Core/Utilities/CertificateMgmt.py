@@ -110,16 +110,16 @@ def generateRevokedCertsFile( location = None ):
     if not fn:
       fn = tempfile.mkstemp( prefix = "allRevokedCerts", suffix = ".pem" )[1]
     try:
-      fd = open( fn, "w" )
+      with open( fn, "w" ) as fd:
+        for caFile in os.listdir( caDir ):
+          caFile = os.path.join( caDir, caFile )
+          result = X509CRL.X509CRL.instanceFromFile( caFile )
+          if not result[ 'OK' ]:
+            continue
+          chain = result[ 'Value' ]    
+          fd.write( chain.dumpAllToString()[ 'Value' ] )
+        return S_OK( fn )
     except IOError:
       continue
-    for caFile in os.listdir( caDir ):
-      caFile = os.path.join( caDir, caFile )
-      result = X509CRL.X509CRL.instanceFromFile( caFile )
-      if not result[ 'OK' ]:
-        continue
-      chain = result[ 'Value' ]    
-      fd.write( chain.dumpAllToString()[ 'Value' ] )
-    fd.close()
-    return fn
-  return False
+    
+  return S_ERROR( caDir )
