@@ -27,7 +27,7 @@ import os
 import tempfile
 
 from DIRAC.Core.Security import Locations, X509Chain, X509CRL
-from DIRAC import gLogger, gConfig
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 
 def getCert( specificLocation = None ):
@@ -88,11 +88,11 @@ def generateCAFile( location = None ):
           fd.write( chain.dumpAllToString()[ 'Value' ] )
 
       gLogger.info( "CAs used from: %s" % str( fn ) )
-      return fn
+      return S_OK( fn )
     except IOError as err:
       gLogger.warn( err )
 
-  return False, caDir
+  return S_ERROR( caDir )
 
 def generateRevokedCertsFile( location = None ):
   """

@@ -6,10 +6,11 @@ __RCSID__ = "$Id$"
 
 import cStringIO
 import tarfile
+import os
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities import File, List, CertificateMgmtass
+from DIRAC.Core.Utilities import File, List, CertificateMgmt
 from DIRAC.Core.Security import Locations
 
 class BundleManager:
@@ -101,13 +102,22 @@ class BundleDeliveryHandler( RequestHandler ):
     version = ""
     if isinstance( fileId, basestring ):
       if fileId == 'CAs':
-        sucess, _ = CertificateMgmt.generateCAFile()
-        if not sucess:
-          return S_ERROR( "Can not generate the CA bundle!" )
+        retVal = CertificateMgmt.generateCAFile()
+        if not retVal['OK']:
+          return retVal
         else:
-          retVal = fileHelper.FDToNetwork ( sucess )
-          if not retVal['OK']:
-            return retVal
+          result = fileHelper.getFileDescriptor( retVal['Value'], 'r' )
+          if not result['OK']:
+            result = fileHelper.sendEOF()
+            # better to check again the existence of the file
+            if not os.path.exists( retVal['Value'] ):
+              return S_ERROR( 'File %s does not exist' % os.path.basename( retVal['Value'] ) )
+            else:
+              return S_ERROR( 'Failed to get file descriptor' )
+          fileDescriptor = result['Value']
+          result = fileHelper.FDToNetwork( fileDescriptor )
+          fileHelper.oFile.close()  # close the file and return
+          return result
       else:
         bId = fileId
     elif isinstance( fileId, ( list, tuple ) ):

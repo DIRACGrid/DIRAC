@@ -105,13 +105,16 @@ class BundleDeliveryClient:
     This method can be used to create the CAs. If the file can not be created, it will be downloaded from
     the server. 
     """
-    sucess, caDir = CertificateMgmt.generateCAFile()
-    if not sucess:
+    retVal = CertificateMgmt.generateCAFile()
+    if not retVal['OK']:
+      #if we can not found the file, we return the directory, where the file should be
       transferClient = self.__getTransferClient()
-      casFile = os.path.join( os.path.dirname( caDir ), "cas.pem" )
+      casFile = os.path.join( os.path.dirname( retVal['Message'] ), "cas.pem" )
       with open( casFile, "w" ) as fd:
         result = transferClient.receiveFile( fd, 'CAs' )
         if not result[ 'OK' ]:
           return False
+        else:
+          return S_OK( casFile )
     else:
-      return sucess
+      return retVal

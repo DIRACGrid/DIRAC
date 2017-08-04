@@ -13,8 +13,9 @@ from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundEr
 from elasticsearch.helpers import BulkIndexError, bulk
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time, CertificateMgmt, DErrno
-
+from DIRAC.Core.Utilities import Time, DErrno
+from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
+    
 __RCSID__ = "$Id$"
 
 class ElasticSearchDB( object ):
@@ -53,11 +54,15 @@ class ElasticSearchDB( object ):
       self.__url = "%s:%d" % ( host, port )
     
     if useSSL:
-      self.__client = Elasticsearch( self.__url, 
-                                     timeout = self.__timeout, 
-                                     use_ssl = True, 
-                                     verify_certs = True, 
-                                     ca_certs = CertificateMgmt.generateCAFile() )
+      bd = BundleDeliveryClient()
+      retVal = bd.getCAs()
+      if not retVal['OK']:
+        gLogger.error( "CAs file does not exists:", retVal['Message'] )
+      self.__client = Elasticsearch( self.__url,
+                                     timeout = self.__timeout,
+                                     use_ssl = True,
+                                     verify_certs = True,
+                                     ca_certs = retVal['Value'] )
     else:
       self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
       
