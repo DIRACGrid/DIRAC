@@ -64,15 +64,15 @@ do
   random=$[ $RANDOM % $x ]
   randomSE=${arrSE[$random]}
   echo "$line $randomSE"
-done < LFNlist.txt >> ./LFNlistNew.txt
+done < TransformationSystemTest/LFNlist.txt >> ./LFNlistNew.txt
 
 dirac-dms-add-file LFNlistNew.txt
 
-LFNlist=$(cat LFNlist.txt | awk -vORS=, '{print $1}')
+cat TransformationSystemTest/LFNlist.txt | awk '{print $1}' > ./LFNtoTS.txt
 
 echo ""
 echo "Adding the files to the test production"
-dirac-transformation-add-files $transID --LFNs=$LFNlist
+dirac-transformation-add-files $transID LFNtoTS.txt
 
 if [ $? -ne 0 ]
 then
