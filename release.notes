@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-[v6r19-pre4]
+[v6r19-pre5]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -90,7 +89,7 @@ CHANGE: Dirac API - added runLocal as an API method
 NEW: Documentation for developing with a container (includes Dockerfile)
 NEW: Add script to collate release notes from Pull Request comments  
 NEW: Chapter on scaling and limitations
-=======
+
 [v6r17p27]
 
 *Configuration
@@ -115,7 +114,6 @@ FIX: LocalComputingElement - pilot jobIDs start with ssh to be compatible with p
 *WMS
 CHANGE: JobScheduling - assign a job to Group.<site>.<country>, if input files are at <site>.<country>.
         If several input replicas, assign Waiting to "MultipleInput"
->>>>>>> rel-v6r17
 
 [v6r17p26]
 
