@@ -11,8 +11,12 @@ import itertools
 from DIRAC import S_OK
 from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 from DIRAC.Resources.Storage.StorageBase import StorageBase
-from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 
+
+
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.Core.Utilities.CFG import CFG
+from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 
 class fake_SRM2Plugin( StorageBase ):
   """ Fake SRM2 plugin.
@@ -94,19 +98,14 @@ class TestBase( unittest.TestCase ):
   def setUp( self,
              _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation ):
 
+
+
     #Creating test configuration file
     self.testCfgFileName = os.path.join(tempfile.gettempdir(), 'test_StorageElement.cfg')
     cfgContent='''
     DIRAC
     {
       Setup=TestSetup
-      Setups
-      {
-        TestSetup
-        {
-          WorkloadManagement=MyWM
-        }
-      }
     }
     Resources{
       StorageElements{
@@ -273,13 +272,18 @@ class TestBase( unittest.TestCase ):
       }
     }
     '''
+
     with open(self.testCfgFileName, 'w') as f:
       f.write(cfgContent)
+
+    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
+    # not to conflict with other tests that might be using a local dirac.cfg
+    gConfigurationData.localCFG=CFG()
+    gConfigurationData.remoteCFG=CFG()
+    gConfigurationData.mergedCFG=CFG()
+    gConfigurationData.generateNewVersion()
+
     gConfig = ConfigurationClient(fileToLoadList = [self.testCfgFileName])  #we replace the configuration by our own one.
-    self.setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    self.wm = gConfig.getValue('DIRAC/Setups/' + self.setup +'/WorkloadManagement', '')
-
-
 
     self.seA = StorageElementItem( 'StorageA' )
     self.seA.vo = 'lhcb'
