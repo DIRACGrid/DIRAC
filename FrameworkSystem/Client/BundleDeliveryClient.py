@@ -113,7 +113,7 @@ class BundleDeliveryClient:
       with open( casFile, "w" ) as fd:
         result = transferClient.receiveFile( fd, 'CAs' )
         if not result[ 'OK' ]:
-          return False
+          return result
         else:
           return S_OK( casFile )
     else:
