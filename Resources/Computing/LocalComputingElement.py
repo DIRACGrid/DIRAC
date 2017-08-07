@@ -212,7 +212,11 @@ class LocalComputingElement( ComputingElement ):
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
-    batchDict = { 'JobIDList': jobIDList,
+    stampList = []
+    for job in jobIDList:
+      stamp = os.path.basename( urlparse( job ).path )
+      stampList.append(stamp)
+    batchDict = { 'JobIDList': stampList,
                   'User': self.userName }
     resultGet = self.batch.getJobStatus( **batchDict )
     if resultGet['Status'] == 0:
