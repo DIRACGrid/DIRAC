@@ -33,7 +33,7 @@ if not res['OK']:
   DIRAC.exit( -1 )
 
 for transfile in res['Value']:
-  print transfile['LFN']
+  DIRAC.gLogger.notice( transfile['LFN'] )
 
 
 
