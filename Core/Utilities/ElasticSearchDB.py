@@ -3,6 +3,7 @@ This class a wrapper around elasticsearch-py. It is used to query
 Elasticsearch database.
 
 """
+import certifi
 
 from datetime import datetime
 from datetime import timedelta
@@ -56,13 +57,18 @@ class ElasticSearchDB( object ):
     if useSSL:
       bd = BundleDeliveryClient()
       retVal = bd.getCAs()
+      casFile = None
       if not retVal['OK']:
         gLogger.error( "CAs file does not exists:", retVal['Message'] )
+        casFile = certifi.certifi.where()
+      else:
+        casFile = retVal['Value']
+        
       self.__client = Elasticsearch( self.__url,
                                      timeout = self.__timeout,
                                      use_ssl = True,
                                      verify_certs = True,
-                                     ca_certs = retVal['Value'] )
+                                     ca_certs = casFile )
     else:
       self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
       

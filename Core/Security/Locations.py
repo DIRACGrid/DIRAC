@@ -66,7 +66,7 @@ def getCAsDefaultLocation():
 
 #TODO: Static depending on files specified on CS
 #Retrieve certificate
-def getHostCertificateAndKeyLocation( specificLocation ):
+def getHostCertificateAndKeyLocation( specificLocation = None ):
   """ Retrieve the host certificate files location
   """
 
