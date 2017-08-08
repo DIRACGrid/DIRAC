@@ -65,6 +65,7 @@ ElasticSearchBackend
 Description
 ~~~~~~~~~~~
 Used to emit log records in the an ElasticSearch database.
+The *Backend* acccepts logs from *Debug* to *Always* level.
 
 Parameters
 ~~~~~~~~~~
@@ -85,3 +86,27 @@ Parameters
 +-----------+----------------------------------------------------------+----------------------+
 | FlushTime | maximum waiting time in seconds before sending           | 1                    |
 +-----------+----------------------------------------------------------+----------------------+
+
+MessageQueueBackend
+-------------------
+
+Description
+~~~~~~~~~~~
+Used to emit log records in a MessageQueue server using Stomp protocol.
+The *Backend* acccepts logs from *Debug* to *Always* level.
+
+Parameters
+~~~~~~~~~~
++-----------+----------------------------------------------------------+----------------------+
+| Option    | Description                                              | Default value        |
++===========+==========================================================+======================+
+| MsgQueue  | MessageQueueRessources from DIRAC                        | ''                   |
++-----------+----------------------------------------------------------+----------------------+
+
+MsgQueue represents a MessageQueue resources from DIRAC under this form: 
+
+::
+  
+  mardirac3.in2p3.fr::Queue::TestQueue
+  
+You will find more details about these resources in the :ref:`configuration_message_queues` section.
