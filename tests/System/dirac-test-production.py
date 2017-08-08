@@ -93,7 +93,6 @@ if UseFilter:
 
     ## Set meta data fields in the DFC
     MDFieldDict = {'particle':'VARCHAR(128)', 'timestamp':'VARCHAR(128)'}
-    #MDFieldDict = {'particle':'VARCHAR(128)', 'zenith':'int'}
     for MDField in MDFieldDict.keys():
       MDFieldType = MDFieldDict[MDField]
       res = fc.addMetadataField( MDField, MDFieldType )
@@ -104,14 +103,12 @@ if UseFilter:
     ## Set directory meta data
     timestamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
     MDdict1 = {'particle':'gamma', 'timestamp':timestamp}
-#    MDdict1 = {'particle':'gamma_diffuse', 'zenith':20}
     res = fc.setMetadata( directory, MDdict1 )
     if not res['OK']:
       gLogger.error( "Failed to set metadata", res['Message'] )
       exit( -1 )
 
     ## Set the transformation meta data filter
-#    MDdict1b = {'particle':'gamma_diffuse', 'zenith':{"<=": 20}}
     MDdict1b = {'particle':'gamma', 'timestamp':timestamp}
     mqJson1b = json.dumps( MDdict1b )
     res = transformation.setFileMask( mqJson1b )
