@@ -42,7 +42,7 @@ if [ -d "TransformationSystemTest" ]; then
 fi
 echo "Creating TransformationSystemTest"
 mkdir -p TransformationSystemTest
-directory=/vo.cta.in2p3.fr/certification/Test/INIT/$version/$tdate/$stime
+directory=/dirac/certification/Test/INIT/$version/$tdate/$stime
 #selecting a random USER Storage Element
 #SEs=$(dirac-dms-show-se-status |grep USER |grep -v 'Banned\|Degraded\|-2' | awk '{print $1}')
 SEs=$(dirac-dms-show-se-status |grep BUFFER |grep -v 'Banned\|Degraded\|-new' | awk '{print $1}')
