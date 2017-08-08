@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-  Add files to an existing Transformation
+  Add files to an existing transformation
 """
 
 __RCSID__ = "$Id$"
