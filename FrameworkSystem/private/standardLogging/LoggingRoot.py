@@ -214,7 +214,20 @@ class LoggingRoot(Logging):
       self.showHeaders(True)
       self.showThreadIDs(True)
 
-  def enableLogsFromExternalLibs(self, isEnabled=True):
+  def enableLogsFromExternalLibs(self):
+    """
+    Enable the display of the logs coming from external libraries
+    """
+    self.__enableLogsFromExternalLibs()
+
+  def disableLogsFromExternalLibs(self):
+    """
+    Disable the display of the logs coming from external libraries
+    """
+    self.__enableLogsFromExternalLibs(False)
+
+  @staticmethod
+  def __enableLogsFromExternalLibs(isEnabled=True):
     """
     Configure the root logger from 'logging' for an external library use. 
     By default the root logger is configured with:

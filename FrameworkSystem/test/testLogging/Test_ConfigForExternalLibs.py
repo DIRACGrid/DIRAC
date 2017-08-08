@@ -30,7 +30,7 @@ class Test_ConfigForExternalLibs(Test_Logging):
     self.assertEqual(1, len(handlers))
     self.assertIsInstance(handlers[0], logging.StreamHandler)
 
-    gLogger.enableLogsFromExternalLibs(False)
+    gLogger.disableLogsFromExternalLibs()
     handlers = logging.getLogger().handlers
 
     self.assertEqual(logging.getLogger().getEffectiveLevel(), logging.DEBUG)
@@ -63,7 +63,7 @@ class Test_ConfigForExternalLibs(Test_Logging):
     bufferRoot.truncate(0)
 
     # Disabled
-    gLogger.enableLogsFromExternalLibs(False)
+    gLogger.disableLogsFromExternalLibs()
 
     logging.getLogger().info("message")
     # this is a direct child of root, as the logger in DIRAC
@@ -99,27 +99,27 @@ class Test_ConfigForExternalLibs(Test_Logging):
     self.assertEqual(1, len(handlers))
     self.assertIsInstance(handlers[0], logging.StreamHandler)
 
-    gLogger.enableLogsFromExternalLibs(False)
-    gLogger.enableLogsFromExternalLibs(False)
-    gLogger.enableLogsFromExternalLibs(False)
-    gLogger.enableLogsFromExternalLibs(False)
+    gLogger.disableLogsFromExternalLibs()
+    gLogger.disableLogsFromExternalLibs()
+    gLogger.disableLogsFromExternalLibs()
+    gLogger.disableLogsFromExternalLibs()
     handlers = logging.getLogger().handlers
 
     self.assertEqual(1, len(handlers))
     self.assertIsInstance(handlers[0], logging.NullHandler)
 
     gLogger.enableLogsFromExternalLibs()
-    gLogger.enableLogsFromExternalLibs(False)
+    gLogger.disableLogsFromExternalLibs()
     gLogger.enableLogsFromExternalLibs()
-    gLogger.enableLogsFromExternalLibs(False)
+    gLogger.disableLogsFromExternalLibs()
     handlers = logging.getLogger().handlers
 
     self.assertEqual(1, len(handlers))
     self.assertIsInstance(handlers[0], logging.NullHandler)
 
-    gLogger.enableLogsFromExternalLibs(False)
+    gLogger.disableLogsFromExternalLibs()
     gLogger.enableLogsFromExternalLibs()
-    gLogger.enableLogsFromExternalLibs(False)
+    gLogger.disableLogsFromExternalLibs()
     gLogger.enableLogsFromExternalLibs()
     handlers = logging.getLogger().handlers
 
