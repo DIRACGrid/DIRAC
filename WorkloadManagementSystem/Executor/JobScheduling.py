@@ -647,7 +647,7 @@ class JobScheduling( OptimizerExecutor ):
 
     # If the job has input data, the online sites are hosting the data
     if len( onlineSites ) == 1:
-      siteName = "Group.%s" % ".".join( onlineSites[0].split( "." )[1:] )
+      siteName = "Group.%s" % ".".join( list( onlineSites )[0].split( "." )[1:] )
       self.jobLog.info( "Group %s is candidate" % siteName )
     elif len( onlineSites ):
       # More than one site with input
