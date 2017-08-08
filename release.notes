@@ -1,3 +1,11 @@
+[v6r17p28]
+
+*WMS
+BUGFIX: JobScheduling - fix a bug introduced in 6r17p27 changes
+
+*Monitoring
+BUGFIX: MonitoringReporter - do not try to close the MQ connection if MD is not used
+
 [v6r17p27]
 
 *Configuration
