@@ -6,11 +6,12 @@ __RCSID__ = "$Id$"
 
 import cStringIO
 import tarfile
+import os
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import File, List
-from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security import Locations, Utilities
 
 class BundleManager:
 
@@ -100,7 +101,10 @@ class BundleDeliveryHandler( RequestHandler ):
     global gBundleManager
     version = ""
     if isinstance( fileId, basestring ):
-      bId = fileId
+      if fileId in ['CAs', 'CRLs']:
+        return self.__transferFile(fileId, fileHelper)
+      else:
+        bId = fileId
     elif isinstance( fileId, ( list, tuple ) ):
       if len( fileId ) == 0:
         fileHelper.markAsTransferred()
@@ -129,3 +133,33 @@ class BundleDeliveryHandler( RequestHandler ):
     if not result[ 'OK' ]:
       return result
     return S_OK( bundleVersion )
+  
+  def __transferFile(self, filetype, fileHelper):
+    """
+    This file is creates and transfers the CAs or CRLs file to the client.
+    :param str filetype: we can define which file will be transfered to the client
+    :param object fileHelper:
+    :return: S_OK or S_ERROR 
+    """
+    if filetype == 'CAs':
+      retVal = Utilities.generateCAFile()
+    elif filetype == 'CRLs':
+      retVal = Utilities.generateRevokedCertsFile()
+    else:
+      return S_ERROR( "Not supported file type %s" % filetype )
+    
+    if not retVal['OK']:
+      return retVal
+    else:
+      result = fileHelper.getFileDescriptor( retVal['Value'], 'r' )
+      if not result['OK']:
+        result = fileHelper.sendEOF()
+        # better to check again the existence of the file
+        if not os.path.exists( retVal['Value'] ):
+          return S_ERROR( 'File %s does not exist' % os.path.basename( retVal['Value'] ) )
+        else:
+          return S_ERROR( 'Failed to get file descriptor' )
+      fileDescriptor = result['Value']
+      result = fileHelper.FDToNetwork( fileDescriptor )
+      fileHelper.oFile.close()  # close the file and return
+      return result
