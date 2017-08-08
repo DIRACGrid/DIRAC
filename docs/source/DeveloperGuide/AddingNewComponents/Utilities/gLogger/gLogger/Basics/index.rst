@@ -603,7 +603,10 @@ Once our *Backend* resources are declared, we have to specify where we want to u
     {
         Defaults
         {
-            defaultBackends = <backendID1>, <backendID2>, <backendID3>
+            Logging
+            {
+                DefaultBackends = <backendID1>, <backendID2>, <backendID3>
+            }
         }
     }
 
@@ -615,7 +618,10 @@ We can also add them for a specific component type, the agents or the services f
     {
         Defaults
         {
-            default<componentType>sBackends = <backendID1>, <backendID2>, <backendID3>
+            Logging
+            {
+                Default<componentType>sBackends = <backendID1>, <backendID2>, <backendID3>
+            }
         }
     }
 
@@ -685,8 +691,11 @@ configuration:
     {
         Defaults
         {
-            defaultBackends = stdout
-            defaultAgentsBackends = stderr
+            Logging
+            {
+                DefaultBackends = stdout
+                DefaultAgentsBackends = stderr
+            }
         }
     }
     Resources
