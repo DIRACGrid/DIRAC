@@ -1,4 +1,4 @@
-[v6r19-pre5]
+[v6r19-pre6]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -19,6 +19,7 @@ NEW: gLogger is replaced by the new logging system based on the python logging m
 CHANGE: Make the new logging system thread-safe
 NEW: Added ElasticSearch backend for the logging
 NEW: Central Backends configuration to customize their use by multiple components 
+NEW: BundleDelivery - serves also CA's and CRL's all-in-one files
 
 *Core
 FIX: dirac-install - allow to use local md5 files
@@ -33,6 +34,10 @@ FIX: Added documentation of low level RPC/DISET classes
 FIX: Gateway service - multiple fixes to resurrect the service and to correctly instantiate it
 NEW: dirac-install will change the shebang of the python scripts to use the environment 
      python instead of the system one
+NEW: Security.Utilities - methods to generate all-in-one CA certificates and CRLs files     
+NEW: ElasticSearchDB - gets CA's all-in-one file from the BundleDelivery service if needed
+NEW: genAllCAs.sh, genRevokedCerts.sh - DIRAC-free commands to generate all-in-one CA 
+     certificates and CRLs files     
 
 *DMS
 CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
