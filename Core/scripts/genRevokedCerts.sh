@@ -2,7 +2,7 @@
 
   gsCerts=/etc/grid-security/certificates
 
-  allF="/opt/dirac/etc/grid-security/allRevokedCerts.pem"
+  allF="/opt/dirac/etc/grid-security/crls.pem"
   copiedCAs=0
   invalidCAs=0
   echo "Copying revoked certificates into $allF"

@@ -27,35 +27,8 @@ import os
 import tempfile
 
 from DIRAC.Core.Security import Locations, X509Chain, X509CRL
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 
-
-def getCert( specificLocation = None ):
-  """
-  get the host certificate
-  
-  :param str specificLocation: we can specify the location where the host certificate located. For example: /WebApp/HTTPS/Cert
-  
-  """
-  cert = Locations.getHostCertificateAndKeyLocation()
-  if cert:
-    cert = cert[0]
-  else:
-    cert = "/opt/dirac/etc/grid-security/hostcert.pem"
-  if specificLocation:
-    cert = gConfig.getValue( specificLocation, cert )
-  return cert
-
-def getKey( specificLocation = None ):
-  key = Locations.getHostCertificateAndKeyLocation()
-  if key:
-    key = key[1]
-  else:
-    key = "/opt/dirac/etc/grid-security/hostkey.pem"
-  if specificLocation:
-    key = gConfig.getValue( specificLocation, key )
-  
-  return key
 
 def generateCAFile( location = None ):
   """
@@ -68,7 +41,7 @@ def generateCAFile( location = None ):
   """
   caDir = Locations.getCAsLocation()
   for fn in ( os.path.join( os.path.dirname( caDir ), "cas.pem" ),
-              os.path.join( os.path.dirname( getCert( location ) ), "cas.pem" ),
+              os.path.join( os.path.dirname( Locations.getHostCertificateAndKeyLocation( location )[0] ), "cas.pem" ),
               False ):
     if not fn:
       fn = tempfile.mkstemp( prefix = "cas.", suffix = ".pem" )[1]
@@ -100,15 +73,15 @@ def generateRevokedCertsFile( location = None ):
   Generate a single CA file with all the PEMs
   
   :param str location: we can specify a specific location in CS
-  :return file allRevokedCerts.pem which contains all revoked certificates
+  :return file crls.pem which contains all revoked certificates
   
   """
   caDir = Locations.getCAsLocation()
-  for fn in ( os.path.join( os.path.dirname( caDir ), "allRevokedCerts.pem" ),
-              os.path.join( os.path.dirname( getCert( location ) ), "allRevokedCerts.pem" ),
+  for fn in ( os.path.join( os.path.dirname( caDir ), "crls.pem" ),
+              os.path.join( os.path.dirname( Locations.getHostCertificateAndKeyLocation( location )[0] ), "crls.pem" ),
               False ):
     if not fn:
-      fn = tempfile.mkstemp( prefix = "allRevokedCerts", suffix = ".pem" )[1]
+      fn = tempfile.mkstemp( prefix = "crls", suffix = ".pem" )[1]
     try:
       with open( fn, "w" ) as fd:
         for caFile in os.listdir( caDir ):
