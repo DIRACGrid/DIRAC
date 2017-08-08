@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 
 import unittest
 
-from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import Test_Logging, gLogger, oldgLogger
+from DIRAC.FrameworkSystem.test.testLogging.Test_Logging import Test_Logging, gLogger, oldgLogger
 
 
 class Test_Levels(Test_Logging):

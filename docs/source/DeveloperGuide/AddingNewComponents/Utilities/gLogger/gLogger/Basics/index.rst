@@ -749,6 +749,18 @@ Multiple threads
 *gLogger* is completely thread-safe, there is no conflict possible especially in the case when two threads 
 try to write on a same file at the same time. 
 
+About the use of external libraries
+-----------------------------------
+
+*DIRAC* uses some external libraries which have their own loggers, mainly based on the standard logging Python library like *gLogger*. Logs providing by these libraries can be useful in debugging, but not in production. The *enableLogsFromExternalLib* and *disableLogsFromExternalLib* methods allow us to enable or disable the display of these logs.
+The first method initializes a specific logger for external libraries like this: 
+
++ a level at Debug
++ a display on the standard error output
++ a log format close to the one used in *DIRAC*
+
+We can call these methods each time that we use an external library and we want to see the logs inside or not. 
+
 Advanced part
 ------------------------------------
 

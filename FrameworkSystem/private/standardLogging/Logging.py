@@ -11,6 +11,7 @@ from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 
+
 class Logging(object):
   """
   Logging is a wrapper of the logger object from the standard "logging" library which integrate
@@ -35,7 +36,7 @@ class Logging(object):
   # it can be composed by the system name and the component name. For instance: "Monitoring/Atom"
   _componentName = "Framework"
   # use the lockRing singleton to save the Logging object
-  _lockRing = LockRing() 
+  _lockRing = LockRing()
   # lock the configuration of the Logging
   _lockConfig = _lockRing.getLock("config")
 
@@ -154,7 +155,6 @@ class Logging(object):
     """
     for backendName in desiredBackends:
       self.registerBackend(backendName, backendOptions)
-      
 
   def registerBackend(self, desiredBackend, backendOptions=None):
     """
@@ -202,7 +202,7 @@ class Logging(object):
 
     # lock to prevent that the level change before adding the new backend in the backendsList
     # and to prevent a change of the backendsList during the reading of the list
-    self._lockLevel.acquire() 
+    self._lockLevel.acquire()
     self._lockOptions.acquire()
     try:
       # update the level of the new backend to respect the Logging level
@@ -249,7 +249,7 @@ class Logging(object):
 
       # update Logging level
       self._level = level
-      
+
       # lock to prevent a modification of the backendsList
       self._lockOptions.acquire()
       try:
@@ -454,7 +454,6 @@ class Logging(object):
       return childLogging
     finally:
       self._lockInit.release()
-
 
   def initialized(self):
     """

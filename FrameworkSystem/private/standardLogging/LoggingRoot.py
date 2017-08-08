@@ -49,6 +49,9 @@ class LoggingRoot(Logging):
     # initialize the root logger
     # actually a child of the root logger to avoid conflicts with other libraries which used 'logging'
     self._logger = logging.getLogger('dirac')
+    # prevent propagation to the root logger to avoid conflicts with external libraries
+    # which want to use the root logger
+    self._logger.propagate = False
 
     # here we redefine the custom name to the empty string to remove the "\" in the display
     self._customName = ""
@@ -174,7 +177,7 @@ class LoggingRoot(Logging):
     retDictRessources = getBackendConfig(backend)
     if retDictRessources['OK']:
       backendOptions = retDictRessources['Value']
-    
+
     # Search backends config in the component to update some options
     retDictConfig = gConfig.getOptionsDict("%s/%s/%s" % (cfgPath, 'BackendsConfig', backend))
     if retDictConfig['OK']:
@@ -210,3 +213,36 @@ class LoggingRoot(Logging):
       self._setLevel(LogLevels.DEBUG)
       self.showHeaders(True)
       self.showThreadIDs(True)
+
+  def enableLogsFromExternalLibs(self):
+    """
+    Enable the display of the logs coming from external libraries
+    """
+    self.__enableLogsFromExternalLibs()
+
+  def disableLogsFromExternalLibs(self):
+    """
+    Disable the display of the logs coming from external libraries
+    """
+    self.__enableLogsFromExternalLibs(False)
+
+  @staticmethod
+  def __enableLogsFromExternalLibs(isEnabled=True):
+    """
+    Configure the root logger from 'logging' for an external library use. 
+    By default the root logger is configured with:
+    - debug level,
+    - stderr output
+    - custom format close to the DIRAC format 
+
+    :params isEnabled: boolean value. True allows the logs in the external lib,
+                       False do not.
+    """
+    rootLogger = logging.getLogger()
+    rootLogger.handlers = []
+    if isEnabled:
+      logging.basicConfig(level=logging.DEBUG,
+                          format='%(asctime)s UTC ExternalLibrary/%(name)s %(levelname)s: %(message)s',
+                          datefmt='%Y-%m-%d %H:%M:%S')
+    else: 
+      rootLogger.addHandler(logging.NullHandler())

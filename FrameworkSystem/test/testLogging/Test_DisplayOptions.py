@@ -7,8 +7,8 @@ __RCSID__ = "$Id$"
 import unittest
 import thread
 
-from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import Test_Logging, cleaningLog
-from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import gLogger, oldgLogger
+from DIRAC.FrameworkSystem.test.testLogging.Test_Logging import Test_Logging, cleaningLog
+from DIRAC.FrameworkSystem.test.testLogging.Test_Logging import gLogger, oldgLogger
 
 
 class Test_DisplayOptions(Test_Logging):

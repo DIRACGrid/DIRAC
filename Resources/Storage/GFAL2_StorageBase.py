@@ -14,7 +14,6 @@ import os
 import sys
 import datetime
 import errno
-import logging
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
 
@@ -66,7 +65,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     dlevel = self.log.getLevel()
     if dlevel == 'DEBUG':
-      logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+      gLogger.enableLogsFromExternalLibs()
       gfal2.set_verbose( gfal2.verbose_level.trace )
 
     self.isok = True
