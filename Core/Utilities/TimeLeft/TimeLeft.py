@@ -37,7 +37,11 @@ class TimeLeft( object ):
     if not self.normFactor:
       self.log.warn( '/LocalSite/CPUNormalizationFactor not defined for site %s' % DIRAC.siteName() )
 
-    self.cpuMargin = gConfig.getValue( '/LocalSite/CPUMargin', 10 )  # percent
+    # CPU and wall clock margins, which don't seem to be set anywhere
+    self.cpuMargin = gConfig.getValue('/LocalSite/CPUMargin', 2)  # percent
+    self.wallClockMargin = gConfig.getValue('/LocalSite/wallClockMargin', 8)  # percent
+
+
     result = self.__getBatchSystemPlugin()
     if result['OK']:
       self.batchPlugin = result['Value']
@@ -107,28 +111,11 @@ class TimeLeft( object ):
     timeLeft = 0.
     cpu = float( resources['CPU'] )
     cpuLimit = float( resources['CPULimit'] )
-    cpuUsedFraction = cpu / cpuLimit
-    cpuRemainingFraction = 1. - cpuUsedFraction
-    wc = float( resources['WallClock'] )
-    wcLimit = float( resources['WallClockLimit'] )
-    wcUsedFraction = wc / wcLimit
-    wcRemainingFraction = 1. - wcUsedFraction
-    marginFraction = self.cpuMargin / 100.
-    fractionTuple = ( 100. * cpuRemainingFraction, 100. * wcRemainingFraction, self.cpuMargin )
-    self.log.verbose( 'Used CPU is %.1f s out of %.1f, Used WallClock is %.1f s out of %.1f.' % ( cpu, cpuLimit, wc, wcLimit ) )
-    self.log.verbose( 'Remaining CPU %.02f%%, Remaining WallClock %.02f%%, margin %s%%' % fractionTuple )
+    wallClock = float( resources['WallClock'] )
+    wallClockLimit = float( resources['WallClockLimit'] )
 
-    validTimeLeft = False
-    if wcRemainingFraction > cpuRemainingFraction and ( wcRemainingFraction - cpuRemainingFraction ) > marginFraction:
-      # FIXME: I have no idea why this test is done (PhC)
-      self.log.verbose( 'Remaining CPU %.02f%% < Remaining WallClock  %.02f%% and difference > margin %s%%' % fractionTuple )
-      validTimeLeft = True
-    else:
-      if cpuRemainingFraction > marginFraction and wcRemainingFraction > marginFraction:
-        self.log.verbose( 'Remaining CPU %.02f%% and Remaining WallClock %.02f%% both > margin %s%%' % fractionTuple )
-        validTimeLeft = True
-      else:
-        self.log.verbose( 'Remaining CPU %.02f%% or WallClock %.02f%% < margin %s%% so no time left' % fractionTuple )
+    validTimeLeft = enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, self.cpuMargin, self.wallClockMargin)
+
     if validTimeLeft:
       if cpu and cpuConsumed > 3600. and self.normFactor:
         # If there has been more than 1 hour of consumed CPU and
@@ -213,6 +200,40 @@ def runCommand( cmd, timeout = 120 ):
     return S_ERROR( 'Status %s while executing %s' % ( status, cmd ) )
   else:
     return S_OK( str( stdout ) )
+
+
+def enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wallClockMargin):
+  """ Is there enough time?
+
+      :returns: True/False
+  """
+
+  cpuRemainingFraction = 1. - cpu / cpuLimit
+  wallClockUsedFraction = wallClock / wallClockLimit
+  wallClockRemainingFraction = 1. - wallClockUsedFraction
+  cpuMarginFraction = cpuMargin / 100.
+  wallClockMarginFraction = wallClockMargin / 100.
+  fractionTuple = ( 100. * cpuRemainingFraction, 100. * wallClockRemainingFraction, cpuMargin, wallClockMargin )
+  gLogger.verbose( 'Used CPU is %.1f s out of %.1f, Used WallClock is %.1f s out of %.1f.' % ( cpu,
+                                                                                               cpuLimit,
+                                                                                               wallClock,
+                                                                                               wallClockLimit ) )
+  gLogger.verbose( 'Remaining CPU %.02f%%, Remaining WallClock %.02f%%, margin CPU %s%%, margin WC %s%%' % fractionTuple )
+
+  # TBH I don't understand why wallClockRemainingFraction > cpuRemainingFraction is checked at all
+  if wallClockRemainingFraction > cpuRemainingFraction \
+  and cpuRemainingFraction > cpuMarginFraction \
+  and wallClockRemainingFraction > wallClockMarginFraction:
+    gLogger.verbose( 'Remaining CPU %.02f%% < Remaining WallClock %.02f%% and margins respected (%s%% and %s%%)' % fractionTuple )
+    return True
+  else:
+    if cpuRemainingFraction > cpuMarginFraction and wallClockRemainingFraction > wallClockMarginFraction:
+      gLogger.verbose( 'Remaining CPU %.02f%% and Remaining WallClock %.02f%% fractions both > margin (%s%% and %s%%)' % fractionTuple )
+      return True
+    else:
+      gLogger.verbose( 'Remaining CPU %.02f%% or WallClock %.02f%% fractions < margin (%s%% and %s%%) so no time left' % fractionTuple )
+
+  return False
 
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
