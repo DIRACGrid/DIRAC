@@ -38,8 +38,7 @@ class JobWrapperTestCase( unittest.TestCase ):
 
 class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
 
-  def git d
-  ( self ):
+  def test_InputData( self ):
     myJW = importlib.import_module( 'DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper' )
     myJW.getSystemSection = MagicMock()
     myJW.ModuleFactory = MagicMock()
