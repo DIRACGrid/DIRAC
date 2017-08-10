@@ -428,7 +428,9 @@ server. You can now set up the required components as described in :ref:`setting
 Post-Installation step
 ----------------------
 
-In order to make the DIRAC components running we use the *runit* mechanism (http://smarden.org/runit/). For each component that
+In order to make the DIRAC components running we use the *runit* mechanism (http://smarden.org/runit/). You 
+could also use the RPM provided by LHCb at http://cern.ch/lhcbproject/dist/rpm/lhcbdirac/[ 
+slc6/runit-2.1.2-1.el6.x86_64.rpm, centos7/runit-2.1.2-1.el7.cern.x86_64.rpm]. For each component that
 must run permanently (services and agents) there is a directory created under */opt/dirac/startup* that is
 monitored by a *runsvdir* daemon. The installation procedures above will properly start this daemon. In order
 to ensure starting the DIRAC components at boot you need to add a hook in your boot sequence. A possible solution
@@ -443,6 +445,12 @@ or if using ``upstart`` (in RHEL6 for example), add a file ``/etc/init/dirac.con
 
       respawn
       exec /opt/dirac/sbin/runsvdir-start
+
+or if using ``systemd`` (in CENTOS7 for example), add a file ``/etc/systemd/system/multi-user.target.wants/dirac.service`` containing::
+
+      [Service]
+      ExecStart=/opt/dirac/sbin/runsvdir-start
+      Restart=on-failure
 
 On specific machines, or if network is needed, it's necessary to make sure the ``runsvdir_start`` script is executed
 after a certain service is started. For example, on Amazon EC2, I recommend changing the first line by::
