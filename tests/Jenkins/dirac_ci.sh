@@ -111,7 +111,7 @@ function installSite(){
   sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
 
   echo '==> Started installing'
-  $SERVERINSTALLDIR/dirac-install.py -t server $SERVERINSTALLDIR/install.cfg
+  $SERVERINSTALLDIR/dirac-install.py -t server $SERVERINSTALLDIR/install.cfg $DEBUG
 
   echo '==> Done installing, now configuring'
   source $SERVERINSTALLDIR/bashrc
@@ -264,8 +264,13 @@ function DIRACPilotInstall(){
     return
   fi
 
+  if [ $GATEWAY ]
+  then
+    GATEWAY="-W "$GATEWAY
+  fi
+
   commandList="GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements"
-  options="-S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/"
+  options="-S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ $GATEWAY"
 
   if [ "$customCommands" ]
   then
@@ -333,5 +338,38 @@ function fullPilot(){
   then
     echo 'ERROR: cannot run dirac-configure'
     return
+  fi
+}
+
+
+####################################################################################
+# submitAndMatch
+#
+# This installs a DIRAC client, then use it to submit jobs to DIRAC.Jenkins.ch,
+# then we run a pilot that should hopefully match those jobs
+
+function submitAndMatch(){
+
+  # Here we submit the jobs (to DIRAC.Jenkins.ch)
+  installDIRAC # This installs the DIRAC client
+  submitJob # This submits the jobs
+
+  # Then we run the full pilot, including the JobAgent, which should match the jobs we just submitted
+  cd $PILOTINSTALLDIR
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $PILOTINSTALLDIR
+    return
+  fi
+  prepareForPilot
+  default
+
+  if [ ! -z "$PILOT_VERSION" ]
+  then
+    echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
+    DIRAC='' python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+  else
+    echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
+    DIRAC='' python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
   fi
 }

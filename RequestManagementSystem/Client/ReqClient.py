@@ -274,7 +274,7 @@ class ReqClient( Client ):
                       "request: '%s' %s" % ( requestID, fileStatus["Message"] ) )
     return fileStatus
 
-  def finalizeRequest( self, requestID, jobID ):
+  def finalizeRequest( self, requestID, jobID, useCertificates = True ):
     """ check request status and perform finalization if necessary
         update the request status and the corresponding job parameter
 
@@ -282,7 +282,7 @@ class ReqClient( Client ):
     :param str requestID: request id
     :param int jobID: job id
     """
-    stateServer = RPCClient( "WorkloadManagement/JobStateUpdate", useCertificates = True )
+    stateServer = RPCClient( "WorkloadManagement/JobStateUpdate", useCertificates = useCertificates )
 
     # Checking if to update the job status - we should fail here, so it will be re-tried later
     # Checking the state, first
@@ -295,7 +295,7 @@ class ReqClient( Client ):
       return S_ERROR( "The request %s isn't 'Done' but '%s', this should never happen, why are we here?" % ( requestID, res['Value'] ) )
 
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
-    monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
+    monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = useCertificates )
     res = monitorServer.getJobPrimarySummary( int( jobID ) )
     if not res["OK"]:
       self.log.error( "finalizeRequest: Failed to get job status", "JobID: %d" % jobID )
@@ -305,6 +305,7 @@ class ReqClient( Client ):
       return S_OK()
     else:
       jobStatus = res["Value"]["Status"]
+      newJobStatus = jobStatus
       jobMinorStatus = res["Value"]["MinorStatus"]
 
       # update the job pending request digest in any case since it is modified
@@ -325,14 +326,15 @@ class ReqClient( Client ):
       if jobStatus == 'Completed':
         # What to do? Depends on what we have in the minorStatus
         if jobMinorStatus == "Pending Requests":
-          self.log.info( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
-          stateUpdate = stateServer.setJobStatus( jobID, "Done", "Requests done", "" )
+          newJobStatus = 'Done'
 
         elif jobMinorStatus == "Application Finished With Errors":
-          self.log.info( "finalizeRequest: Updating job status for %d to Failed/Requests done" % jobID )
-          stateUpdate = stateServer.setJobStatus( jobID, "Failed", "Requests done", "" )
+          newJobStatus = 'Failed'
 
-      if not stateUpdate:
+      if newJobStatus != jobStatus:
+        self.log.info( "finalizeRequest: Updating job status for %d to %s/Requests done" % ( jobID, newJobStatus ) )
+        stateUpdate = stateServer.setJobStatus( jobID, newJobStatus, "Requests done", "" )
+      else:
         self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done (status is %s)" % ( jobID, jobStatus ) )
         stateUpdate = stateServer.setJobStatus( jobID, jobStatus, "Requests done", "" )
 
@@ -341,7 +343,7 @@ class ReqClient( Client ):
                         "JobID: %d status: %s" % ( jobID, stateUpdate['Message'] ) )
         return stateUpdate
 
-    return S_OK()
+    return S_OK( newJobStatus )
 
   def getRequestIDsForJobs( self, jobIDs ):
     """ get the request ids for the supplied jobIDs.

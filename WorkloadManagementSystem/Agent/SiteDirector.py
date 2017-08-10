@@ -48,6 +48,9 @@ MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
 def getSubmitPools( group = None, vo = None ):
+  """
+    This method gets submit pools
+  """
   if group:
     return Registry.getGroupOption( group, 'SubmitPools', '' )
   if vo:
@@ -93,14 +96,20 @@ class SiteDirector( AgentModule ):
     self.updateStatus = True
     self.getOutput = False
     self.sendAccounting = True
-    self.rssClient = ResourceStatus()
-    self.rssFlag = self.rssClient.rssFlag
 
-    self.siteClient = SiteStatus()
+    self.siteClient = None
+    self.rssClient = None
+    self.rssFlag = None
 
   def initialize( self ):
     """ Standard constructor
     """
+    # Clients
+    self.siteClient = SiteStatus()
+    self.rssClient = ResourceStatus()
+    self.rssFlag = self.rssClient.rssFlag
+
+    # set of CS options
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
     return S_OK()
@@ -200,6 +209,9 @@ class SiteDirector( AgentModule ):
     if self.sendAccounting:
       self.log.always( 'Pilot accounting sending requested' )
 
+    self.log.always( 'VO:', self.vo )
+    if self.voGroups:
+      self.log.always( 'Group(s):', self.voGroups )
     self.log.always( 'Sites:', siteNames )
     self.log.always( 'CETypes:', ceTypes )
     self.log.always( 'CEs:', ces )
@@ -421,7 +433,8 @@ class SiteDirector( AgentModule ):
     totalWaitingPilots = 0
     if result['OK']:
       totalWaitingPilots = result['Value']
-    self.log.info( 'Total %d jobs in %d task queues with %d waiting pilots' % (totalWaitingJobs, len( tqIDList ), totalWaitingPilots ) )
+    self.log.info( 'Total %d jobs in %d task queues with %d waiting pilots' \
+                  % (totalWaitingJobs, len( tqIDList ), totalWaitingPilots ) )
     #if totalWaitingPilots >= totalWaitingJobs:
     #  self.log.info( 'No more pilots to be submitted in this cycle' )
     #  return S_OK()
@@ -540,7 +553,8 @@ class SiteDirector( AgentModule ):
       for tq in taskQueueDict:
         totalTQJobs += taskQueueDict[tq]['Jobs']
 
-      self.log.verbose( '%d job(s) from %d task queue(s) are eligible for %s queue' % (totalTQJobs, len( tqIDList ), queue) )
+      self.log.verbose( '%d job(s) from %d task queue(s) are eligible for %s queue' \
+                       % (totalTQJobs, len( tqIDList ), queue) )
 
       # Get the number of already waiting pilots for these task queues
       totalWaitingPilots = 0
@@ -562,7 +576,8 @@ class SiteDirector( AgentModule ):
         if not self.addPilotsToEmptySites:
           continue
 
-      self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" % (totalWaitingPilots, totalTQJobs, queue) )
+      self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" \
+                       % (totalWaitingPilots, totalTQJobs, queue) )
 
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
@@ -615,7 +630,7 @@ class SiteDirector( AgentModule ):
         ### FIXME: The condor thing only transfers the file with some
         ### delay, so when we unlink here the script is gone
         ### FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
-        if ceType != 'HTCondorCE':
+        if not ( ceType == 'HTCondorCE' or ( ceType == 'Local' and ce.batchSystem == 'Condor' ) ):
           os.unlink( executable )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
@@ -669,7 +684,8 @@ class SiteDirector( AgentModule ):
               self.log.error( 'Failed to set pilot status: ', result['Message'] )
               continue
 
-    self.log.info( "%d pilots submitted in total in this cycle, %d matched queues" % ( totalSubmittedPilots, matchedQueues ) )
+    self.log.info( "%d pilots submitted in total in this cycle, %d matched queues" \
+                  % ( totalSubmittedPilots, matchedQueues ) )
     return S_OK()
 
   def getQueueSlots( self, queue, manyWaitingPilotsFlag ):
@@ -724,23 +740,24 @@ class SiteDirector( AgentModule ):
         else:
           maxWaitingJobs = int( self.queueDict[queue]['ParametersDict']['MaxWaitingJobs'] )
           maxTotalJobs = int( self.queueDict[queue]['ParametersDict']['MaxTotalJobs'] )
-          result = pilotAgentsDB.getPilotInfo( jobIDList )
-          if not result['OK']:
-            self.log.warn( 'Failed to check PilotAgentsDB for queue %s: \n%s' % ( queue, result['Message'] ) )
-            self.failedQueues[queue] += 1
-          else:
-            waitingJobs = 0
-            totalJobs = 0
-            for pilotRef, pilotDict in result['Value'].iteritems():
-              if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
-                totalJobs += 1
-                if pilotDict["Status"] in WAITING_PILOT_STATUS:
-                  waitingJobs += 1
-            runningJobs = totalJobs - waitingJobs
-            self.log.info( "PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" % \
-                           ( ceName, queueName, waitingJobs, runningJobs, maxTotalJobs ) )
-            totalSlots = min( (maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs) )
-            self.queueSlots[queue]['AvailableSlots'] = totalSlots
+          waitingJobs = 0
+          totalJobs = 0
+          if jobIDList:
+            result = pilotAgentsDB.getPilotInfo( jobIDList )
+            if not result['OK']:
+              self.log.warn( 'Failed to check PilotAgentsDB for queue %s: \n%s' % ( queue, result['Message'] ) )
+              self.failedQueues[queue] += 1
+            else:
+              for pilotRef, pilotDict in result['Value'].iteritems():
+                if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
+                  totalJobs += 1
+                  if pilotDict["Status"] in WAITING_PILOT_STATUS:
+                    waitingJobs += 1
+              runningJobs = totalJobs - waitingJobs
+              self.log.info( "PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" % \
+                             ( ceName, queueName, waitingJobs, runningJobs, maxTotalJobs ) )
+          totalSlots = min( (maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs) )
+          self.queueSlots[queue]['AvailableSlots'] = totalSlots
 
     self.queueSlots[queue]['AvailableSlotsCount'] += 1
 

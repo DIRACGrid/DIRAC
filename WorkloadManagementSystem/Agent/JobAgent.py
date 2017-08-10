@@ -71,7 +71,6 @@ class JobAgent( AgentModule ):
     """
     # Disable monitoring, logLevel INFO, limited cycles
     self.am_setOption( 'MonitoringEnabled', False )
-    self.log.setLevel('INFO')
     self.am_setOption( 'MaxCycles', loops )
 
     ceType = self.am_getOption( 'CEType', 'InProcess' )
@@ -295,8 +294,8 @@ class JobAgent( AgentModule ):
 
       if 'BOINC_JOB_ID' in os.environ:
         # Report BOINC environment
-        for p in ( 'BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName' ):
-          jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )
+        for thisp in ( 'BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName' ):
+          jobReport.setJobParameter( thisp, gConfig.getValue( '/LocalSite/%s' % thisp, 'Unknown' ), sendFlag = False )
 
       jobReport.setJobStatus( 'Matched', 'Job Received by Agent' )
       result = self.__setupProxy( ownerDN, jobGroup )

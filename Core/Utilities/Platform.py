@@ -1,6 +1,7 @@
 """
 Compile the externals
 """
+
 __RCSID__ = "$Id$"
 
 import platform
@@ -13,13 +14,13 @@ import re
 # the fix converts the version to a tuple and attempts a numeric comparison
 
 _libc_search = re.compile( r'(__libc_init)'
-                          '|'
-                          '(GLIBC_([0-9.]+))'
-                          '|'
-                          '(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)' )
+                           '|'
+                           '(GLIBC_([0-9.]+))'
+                           '|'
+                           r'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)' )
 
 def libc_ver( executable = sys.executable, lib = '', version = '',
-             chunksize = 2048 ):
+              chunksize = 2048 ):
 
   """ Tries to determine the libc version that the file executable
       (which defaults to the Python interpreter) is linked against.
@@ -38,7 +39,7 @@ def libc_ver( executable = sys.executable, lib = '', version = '',
     binary = f.read( chunksize )
     pos = 0
     version = [0, 0, 0]
-    while 1:
+    while True:
       m = _libc_search.search( binary, pos )
       if not m:
         binary = f.read( chunksize )
@@ -51,7 +52,7 @@ def libc_ver( executable = sys.executable, lib = '', version = '',
         lib = 'libc'
       elif glibc:
         glibcversion_parts = glibcversion.split( '.' )
-        for i in range( len( glibcversion_parts ) ):
+        for i in xrange( len( glibcversion_parts ) ):
           try:
             glibcversion_parts[i] = int( glibcversion_parts[i] )
           except ValueError:
@@ -67,8 +68,7 @@ def libc_ver( executable = sys.executable, lib = '', version = '',
       elif so:
         if lib != 'glibc':
           lib = 'libc'
-          if soversion > version:
-            version = soversion
+          version = max( version, soversion )
           if threads and version[-len( threads ):] != threads:
             version = version + threads
       pos = m.end()
@@ -88,7 +88,7 @@ def getPlatformString():
     except:
       sp = None
       spStdout = os.popen( '/sbin/ldconfig --print-cache', 'r' )
-    ldre = re.compile( ".*=> (.*/libc\.so\..*$)" )
+    ldre = re.compile( r".*=> (.*/libc\.so\..*$)" )
     libs = []
     for line in spStdout.readlines():
       reM = ldre.match( line )
@@ -111,7 +111,7 @@ def getPlatformString():
     newest_lib = [0, 0, 0]
     for lib in libs:
       lib_parts = libc_ver( lib )[1].split( '.' )
-      for i in range( len( lib_parts ) ):
+      for i in xrange( len( lib_parts ) ):
         try:
           lib_parts[i] = int( lib_parts[i] )
         except ValueError:

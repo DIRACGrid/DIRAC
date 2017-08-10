@@ -4,6 +4,7 @@
 ########################################################################
 
 """ The simplest Computing Element instance that submits jobs locally.
+    This is also the standard "CE" invoked from the JobAgent
 """
 
 __RCSID__ = "$Id$"
@@ -29,7 +30,7 @@ class InProcessComputingElement( ComputingElement ):
 
   #############################################################################
   def _addCEConfigDefaults( self ):
-    """Method to make sure all necessary Configuration Parameters are defined
+    """ Method to make sure all necessary Configuration Parameters are defined
     """
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
@@ -37,7 +38,12 @@ class InProcessComputingElement( ComputingElement ):
 
   #############################################################################
   def submitJob( self, executableFile, proxy, **kwargs ):
-    """ Method to submit job, should be overridden in sub-class.
+    """ Method to submit job (overriding base method).
+
+    :param executableFile: file to execute via systemCall. Normally the JobWrapperTemplate when invoked by the JobAgent.
+    :type executableFile: string
+    :param proxy: the proxy used for running the job (the payload). It will be dumped to a file.
+    :type proxy: string
     """
     ret = getProxyInfo()
     if not ret['OK']:
@@ -56,7 +62,7 @@ class InProcessComputingElement( ComputingElement ):
       if not result['OK']:
         return result
 
-      payloadProxy = result['Value']
+      payloadProxy = result['Value'] # proxy file location
       # pilotProxy = os.environ['X509_USER_PROXY']
       payloadEnv[ 'X509_USER_PROXY' ] = payloadProxy
 

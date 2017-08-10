@@ -1,5 +1,10 @@
-GSI>=0.6.4
+# From repo
+git+https://:@gitlab.cern.ch:8443/fts/fts-rest.git#egg=fts3
+git+https://github.com/DIRACGrid/pyGSI.git#egg=GSI
+
+# From pypi
 certifi
+CMRESHandler>=1.0.0b4
 coverage>=4.0.3
 elasticsearch-dsl>=2.0.0
 funcsigs

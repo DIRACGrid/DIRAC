@@ -1,4 +1,4 @@
-[v6r18]
+[v6r19-pre6]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -6,22 +6,50 @@ FIX: In multiple places - use systemCall() rather than shellCall() to avoid
 FIX: All Databases are granting also REFERENCES grant to Dirac user to comply with
      more strict policies of MySQL version >= 5.7
 
+*Accounting
+NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
+     present jitter, one-way delay, packet-loss rate and some derived functions.
+FIX: compatibility of AccountingDB with MySQL 5.7
+
+*ConfigurationSystem
+NEW: Allow to define FailoverURLs and to reference MainServers in the URLs
+
+*FrameworkSystem
+NEW: gLogger is replaced by the new logging system based on the python logging module
+CHANGE: Make the new logging system thread-safe
+NEW: Added ElasticSearch backend for the logging
+NEW: Central Backends configuration to customize their use by multiple components 
+NEW: BundleDelivery - serves also CA's and CRL's all-in-one files
+
 *Core
 FIX: dirac-install - allow to use local md5 files
 CHANGE: X509Chain - fixes to allow robot proxies with embedded DIRAC group extension
         ( allow DIRAC group extension not in the first certificate chain step )
 CHANGE: BaseClient - recheck the useServerCertificate while establishing connection
         and take it into account even if it has changed after the client object creation    
-FIX: PlainTransport - fixed socket creation in initAsClient()            
-
-*Accounting
-NEW: new functionality to plot the data gathered by perfSONARs. It allows to 
-     present jitter, one-way delay, packet-loss rate and some derived functions.
+FIX: PlainTransport - fixed socket creation in initAsClient()         
+NEW: Technology preview of new logging system, based on standard python logging module
+CHANGE: Added graphviz extension to sphinx builds
+FIX: Added documentation of low level RPC/DISET classes
+FIX: Gateway service - multiple fixes to resurrect the service and to correctly instantiate it
+NEW: dirac-install will change the shebang of the python scripts to use the environment 
+     python instead of the system one
+NEW: Security.Utilities - methods to generate all-in-one CA certificates and CRLs files     
+NEW: ElasticSearchDB - gets CA's all-in-one file from the BundleDelivery service if needed
+NEW: genAllCAs.sh, genRevokedCerts.sh - DIRAC-free commands to generate all-in-one CA 
+     certificates and CRLs files     
 
 *DMS
 CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
         client
-CHANGE: FTSHistoryView - drop FTSServer field from the view description        
+CHANGE: FTSHistoryView - drop FTSServer field from the view description   
+CHANGE: FTSFile DB table: increased length of fields LFN(955), SourceSURL(1024), TargetSURL(1024)
+CHANGE: Uniform length of LFN to 255 across DIRAC dbs
+
+*RMS
+NEW: dirac-rms-request - command including functionality of several other commands:
+     dirac-rms-cancel|reset|show-request which are dropped. The required functionality
+     is selected by the appropriate switches   
 
 *RSS
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
@@ -30,6 +58,14 @@ NEW: SiteStatus client to interrogate site status with respect to RSS
 BUGFIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
 FIX: ResourceStatus, RSSCacheNoThread - fixed RSS cache generation 
 FIX: ResourceStatus - fixes for getting status from the CS information
+CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
+FIX: fixed incompatibility between Active/InActive RSS clients return format
+FIX: SiteStatus - bug fixed in getSites() method - siteState argument not propagated to
+     the service call
+FIX: ResourceStatus - return the same structure for status lookup in both RSS and CS cases     
+
+*Monitoring
+CHANGE: DBUtils - change the bucket sizes for the monitoring plots as function of the time span
 
 *WMS
 NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS  
@@ -40,7 +76,15 @@ NEW: JobAgent, JobWrapper - several fixes to allow the work with PoolComputingEl
 NEW: JobScheduling - interpret WholeNode and NumberOfProcessors job JDL parameters and
      convert then to corresponding tags
 NEW: SiteDirector - CEs can define QueryCEFlag in the Configuration Service which can be
-     used to disallow querying the CE status and use information from PiltAgentsDB instead           
+     used to disallow querying the CE status and use information from PiltAgentsDB instead     
+NEW: The application error codes, when returned, are passed to the JobWrapper, and maybe interpreted.
+NEW: The JobWrapperTemplate can reschedule a job if the payload exits with status DErrno.EWMSRESC & 255 (222)
+FIX: SiteDirector - unlink is also to be skipped for Local Condor batch system
+FIX: dirac-pilot, pilotTools - PYTHONPATH is cleared on pilot start, pilot option keepPP
+     can override this
+FIX: WMSAdministratorHandler - make methods static appropriately
+CHANGE: JobScheduling - more precise site name while the job is Waiting, using the set of 
+        sites at which the input files are online rather than checking Tier1s in eligible sites       
 
 *Interfaces
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
@@ -48,6 +92,87 @@ CHANGE: Dirac API - added runLocal as an API method
 
 *Docs
 NEW: Documentation for developing with a container (includes Dockerfile)
+NEW: Add script to collate release notes from Pull Request comments  
+NEW: Chapter on scaling and limitations
+
+[v6r17p28]
+
+*WMS
+BUGFIX: JobScheduling - fix a bug introduced in 6r17p27 changes
+
+*Monitoring
+BUGFIX: MonitoringReporter - do not try to close the MQ connection if MD is not used
+
+[v6r17p27]
+
+*Configuration
+FIX: ConfigurationClient - allow default value to be a tuple, a dict or a set
+
+*Monitoring
+CHANGE: DBUtils - change bucket sizes and simplify settings
+
+*DMS
+FIX: DMSRequestOperationsBase, RemoveFile - allow request to not fail if an SE is temporarily banned
+FIX: dirac-admin-allow-se - first call of gLogger after its import
+
+*RMS
+CHANGE: remove scripts dirac-rms-show-request, dirac-rms-cancel-request and dirac-rms-reset-request 
+        and replace with a single script dirac-rms-request with option (default is "show")
+CHANGE: allow script to finalize a request if needed and set the job status appropriately
+
+*Resources
+FIX: LocalComputingElement - pilot jobIDs start with ssh to be compatible with pilotCommands. 
+     Still original jobIDs are passed to getJobStatus. To be reviewed
+
+*WMS
+CHANGE: JobScheduling - assign a job to Group.<site>.<country>, if input files are at <site>.<country>.
+        If several input replicas, assign Waiting to "MultipleInput"
+
+[v6r17p26]
+
+*Core
+FIX: dirac-install.py to fail when installation of lcgBundle has failed
+FIX: ClassAdLight - getAttributeInt() and getAttributeFloat() return None 
+     if the corresponding JDL attribute is not defined
+
+*MonitoringSystem
+CHANGE: The Consumer and Producer use separate connections to the MQ; 
+        If the db is not accessible, the messaged will not be consumed.
+
+*WMS
+FIX: JobDB - fix the case where parametric job placeholder %j is used in the JobName attribute
+FIX: JobDB - take into account that ClassAdLight methods return None if numerical attribute is not defined
+FIX: ParametricJob utility - fixed bug in evaluation of the ParameterStart|Step|Factor.X job numerical attribute
+
+[v6r17p25]
+
+*Monitoring
+NEW: Implemented the support of monthly indexes and the unit tests are fixed
+
+*RMS
+FIX: RequestExecutingAgent - fix infinite loop for duplicate requests
+
+*WMS 
+NEW: ARCComputingElement - add support for multiprocessor jobs
+
+[v6r17p24]
+
+*WMS
+FIX: SiteDirector - unlink is also to be skipped for Local Condor batch system
+
+[v6r17p23]
+
+*WMS
+FIX: get job output for remote scheduler in the case of HTCondorCE
+
+[v6r17p22]
+
+*Framework
+FIX: NotificationClient - added avoidSpam flag to sendMail() method which is propagated to
+     the corresponding service call
+     
+*Integration
+FIX: several fixes in integration testing scripts     
 
 [v6r17p21]
 

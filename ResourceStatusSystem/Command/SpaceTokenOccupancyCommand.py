@@ -100,8 +100,8 @@ class SpaceTokenOccupancyCommand( Command ):
     # 10 secs of timeout. If it works, the reply is immediate.
     occupancyResult = pythonCall( 10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
     if not occupancyResult[ 'OK' ]:
-      self.log.error("Could not get spaceToken occupancy", "Endpoint/spaceToken: %s/%s" %(spaceTokenEndpoint, spaceToken),
-                     occupancyResult['Message'])
+      self.log.error( "Could not get spaceToken occupancy", "from endPoint/spaceToken %s/%s : %s" % \
+                      ( spaceTokenEndpoint, spaceToken, occupancyResult['Message'] ) )
       return occupancyResult
     else:
       occupancy = occupancyResult[ 'Value' ]

@@ -11,6 +11,8 @@ import shutil
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
+from DIRAC import gLogger
+
 from DIRAC.tests.Utilities.utils import find_all
 
 from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
@@ -24,18 +26,19 @@ class RegressionTestCase( IntegrationTest ):
   def setUp( self ):
     super( RegressionTestCase, self ).setUp()
 
+    gLogger.setLevel('DEBUG')
     self.dirac = Dirac()
 
-    exeScriptLoc = find_all( 'exe-script.py', '.', 'Regression' )[0]
-    helloWorldLoc = find_all( 'helloWorld.py', '.', 'Regression' )[0]
+    exeScriptLoc = find_all( 'exe-script.py', '..', '/DIRAC/tests/Workflow/Regression' )[0]
+    helloWorldLoc = find_all( 'helloWorld.py', '..', '/DIRAC/tests/Workflow/Regression' )[0]
 
     shutil.copyfile( exeScriptLoc, './exe-script.py' )
     shutil.copyfile( helloWorldLoc, './helloWorld.py' )
 
-    helloWorldXMLLocation = find_all( 'helloWorld.xml', '.', 'Regression' )[0]
+    helloWorldXMLLocation = find_all( 'helloWorld.xml', '..', '/DIRAC/tests/Workflow/Regression' )[0]
     self.j_u_hello = Job( helloWorldXMLLocation )
 
-    helloWorldXMLFewMoreLocation = find_all( 'helloWorld.xml', '.', 'Regression' )[0]
+    helloWorldXMLFewMoreLocation = find_all( 'helloWorld.xml', '..', '/DIRAC/tests/Workflow/Regression' )[0]
     self.j_u_helloPlus = Job( helloWorldXMLFewMoreLocation )
 
   def tearDown( self ):
