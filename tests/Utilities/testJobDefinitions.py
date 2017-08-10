@@ -8,7 +8,6 @@ from DIRAC.Interfaces.API.Dirac import Dirac
 
 # parameters
 
-
 # Common functions
 
 def getJob( jobClass = None ):
@@ -18,11 +17,9 @@ def getJob( jobClass = None ):
   return oJob
 
 def getDIRAC( diracClass = None ):
-  print "in getDIRAC"
   if not diracClass:
     diracClass = Dirac
   oDirac = diracClass()
-  print oDirac
   return oDirac
 
 
@@ -32,7 +29,6 @@ def baseToAllJobs( jName, jobClass = None ):
   print "\n Submitting job ", jName
 
   J = getJob( jobClass )
-  print J
   J.setName( jName )
   J.setCPUTime( 17800 )
   return J
@@ -47,9 +43,6 @@ def endOfAllJobs( J ):
 
   return result
 
-  print "**********************************************************************************************************"
-
-
 
 
 # List of jobs
@@ -57,9 +50,7 @@ def endOfAllJobs( J ):
 def helloWorld():
 
   J = baseToAllJobs( 'helloWorld' )
-  print "J in helloWorld", J
   J.setInputSandbox( [find_all( 'exe-script.py', os.environ['DIRAC'], 'tests/Workflow' )[0]] )
-  print "after setInputSandbox"
   J.setExecutable( "exe-script.py", "", "helloWorld.log" )
   return endOfAllJobs( J )
 
