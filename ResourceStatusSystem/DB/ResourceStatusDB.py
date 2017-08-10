@@ -84,32 +84,31 @@ class ResourceStatusDB( object ):
     self.__getDBConnectionInfo( 'ResourceStatus/ResourceStatusDB' )
 
     runDebug = ( gLogger.getLevel() == 'DEBUG' )
-    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
+    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser,
+                                                              self.dbPass,
+                                                              self.dbHost,
+                                                              self.dbPort,
+                                                              self.dbName ),
                                  echo = runDebug )
 
     metadata.bind = self.engine
 
     self.metadataTables = set()
+    self.elementWithIDTables = [ 'SiteLog', 'SiteHistory', 'ResourceLog', 'ResourceHistory',
+                                 'NodeLog', 'NodeHistory', 'ComponentLog', 'ComponentHistory' ]
 
     self.DBSession = sessionmaker( bind = self.engine )
 
   def createTables( self ):
     """ create tables """
 
-    self.ElementStatusTables = [ 'SiteStatus', 'ResourceStatus',
-                                 'NodeStatus', 'ComponentStatus' ]
-
-    self.ElementWithIDTables = [ 'SiteLog', 'SiteHistory', 'ResourceLog', 'ResourceHistory',
-                                 'NodeLog', 'NodeHistory', 'ComponentLog', 'ComponentHistory' ]
-
     try:
-
-      for names in self.ElementStatusTables:
+      for names in [ 'SiteStatus', 'ResourceStatus', 'NodeStatus', 'ComponentStatus' ]:
         if names not in self.metadataTables:
           generateElementStatus(names)
           self.metadataTables.add(names)
 
-      for names in self.ElementWithIDTables:
+      for names in self.elementWithIDTables:
         if names not in self.metadataTables:
           generateElementWithID(names)
           self.metadataTables.add(names)
@@ -145,7 +144,7 @@ class ResourceStatusDB( object ):
       for u in result:
         rel = []
         for j in u:
-         rel.append(j)
+          rel.append(j)
 
         arr.append(rel)
 
@@ -197,7 +196,7 @@ class ResourceStatusDB( object ):
       for u in result:
         rel = []
         for j in u:
-         rel.append(j)
+          rel.append(j)
 
         arr.append(rel)
 
@@ -262,20 +261,20 @@ class ResourceStatusDB( object ):
       table = metadata.tables.get( element + tableType )
 
       # fields to be selected (primary keys)
-      if table in self.ElementWithIDTables:
+      if table in self.elementWithIDTables:
         args = toList(table, ID = ID)
       else:
         args = toList(table, Name = name, StatusType = statusType)
 
       # fields to be updated
       params = toDict( Name = name, StatusType = statusType, Status = status, ElementType = elementType,
-                            Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
-                            TokenOwner = tokenOwner, TokenExpiration = tokenExpiration )
+                       Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
+                       TokenOwner = tokenOwner, TokenExpiration = tokenExpiration )
 
       session.execute( update( table )
-                        .where( and_(*args) )
-                        .values( **params )
-                      )
+                       .where( and_(*args) )
+                       .values( **params )
+                     )
 
       session.commit()
       session.expunge_all()

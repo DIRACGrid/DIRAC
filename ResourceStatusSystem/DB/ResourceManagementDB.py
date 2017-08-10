@@ -43,13 +43,13 @@ def toList(table, **kwargs):
   Helper function that gets keyword arguments and adds them to a list
   that is going to be used to complete the sqlalchemy query.
 
-  :param table: <string>
-  :param kwargs:
-  :return: <list>
+  :param table: object of type <class 'sqlalchemy.sql.schema.Table'>
+  :param kwargs: keyword arguments (DB columns)
+  :return: <list> of sqlalchemy sqlalchemy.sql.elements.BinaryExpression objects
   '''
 
   filters = []
-  for name, argument in kwargs.items():
+  for name, argument in kwargs.iteritems():
     if name == "Meta":
 
       if argument and 'older' in argument:
