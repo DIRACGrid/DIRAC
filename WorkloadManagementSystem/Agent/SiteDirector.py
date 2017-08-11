@@ -48,8 +48,7 @@ MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
 def getSubmitPools( group = None, vo = None ):
-  """
-    This method gets submit pools
+  """ This method gets submit pools
   """
   if group:
     return Registry.getGroupOption( group, 'SubmitPools', '' )
@@ -59,20 +58,15 @@ def getSubmitPools( group = None, vo = None ):
 
 
 class SiteDirector( AgentModule ):
-  """
-      The specific agents must provide the following methods:
-        - initialize() for initial settings
-        - beginExecution()
-        - execute() - the main method called in the agent cycle
-        - endExecution()
-        - finalize() - the graceful exit of the method, this one is usually used
-                   for the agent restart
+  """ SiteDirector class provides an implementation of a DIRAC agent.
+
+      Used for submitting pilots to Computing Elements.
   """
 
   def __init__( self, *args, **kwargs ):
     """ c'tor
     """
-    AgentModule.__init__( self, *args, **kwargs )
+    super(SiteDirector, self).__init__( self, *args, **kwargs )
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
@@ -102,7 +96,7 @@ class SiteDirector( AgentModule ):
     self.rssFlag = None
 
   def initialize( self ):
-    """ Standard constructor
+    """ Initial settings
     """
     # Clients
     self.siteClient = SiteStatus()
@@ -148,7 +142,6 @@ class SiteDirector( AgentModule ):
     self.pilotGroup = self.am_getOption( "PilotGroup", self.pilotGroup )
 
     self.defaultSubmitPools = getSubmitPools( self.group, self.vo )
-
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
     self.extraModules = self.am_getOption( 'ExtraPilotModules', [] ) + DIRAC_MODULES
@@ -304,8 +297,7 @@ class SiteDirector( AgentModule ):
             platform = ceDict['Platform']
           elif "OS" in ceDict:
             architecture = ceDict.get( 'architecture', 'x86_64' )
-            OS = ceDict['OS']
-            platform = '_'.join( [architecture, OS] )
+            platform = '_'.join( [architecture, ceDict['OS']] )
           if platform and not platform in self.platforms:
             self.platforms.append( platform )
 
@@ -358,7 +350,9 @@ class SiteDirector( AgentModule ):
     return S_OK()
 
   def execute( self ):
-    """ Main execution method
+    """ Main execution method (what is called at each agent cycle).
+
+        It basically just calls self.submitJobs() method
     """
 
     if not self.queueDict:
@@ -748,7 +742,7 @@ class SiteDirector( AgentModule ):
               self.log.warn( 'Failed to check PilotAgentsDB for queue %s: \n%s' % ( queue, result['Message'] ) )
               self.failedQueues[queue] += 1
             else:
-              for pilotRef, pilotDict in result['Value'].iteritems():
+              for _pilotRef, pilotDict in result['Value'].iteritems():
                 if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
                   totalJobs += 1
                   if pilotDict["Status"] in WAITING_PILOT_STATUS:
@@ -763,8 +757,7 @@ class SiteDirector( AgentModule ):
 
     if manyWaitingPilotsFlag and waitingJobs:
       return 0
-    else:
-      return totalSlots
+    return totalSlots
 
 #####################################################################################
   def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '' ):
@@ -851,9 +844,9 @@ class SiteDirector( AgentModule ):
       if pilotExtensionsList[0] != 'None':
         extensionsList = pilotExtensionsList
     else:
-      extensionsList = CSGlobals.getCSExtensions()
+      extensionsList = [ext for ext in CSGlobals.getCSExtensions() if 'Web' not in ext]
     if extensionsList:
-      pilotOptions.append( '-e %s' % ",".join( [ext for ext in extensionsList if 'Web' not in ext] ) )
+      pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
 
     # Requested CPU time
     pilotOptions.append( '-T %s' % queueDict['CPUTime'] )
