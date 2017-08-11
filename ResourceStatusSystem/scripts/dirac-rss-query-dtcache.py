@@ -79,7 +79,7 @@ def parseSwitches():
 
   Script.parseCommandLine( ignoreErrors = True )
   args = Script.getPositionalArgs()
-  if len( args ) == 0:
+  if not args:
     error( "Missing mandatory 'query' argument" )
   elif not args[0].lower() in ( 'select', 'add', 'delete' ):
     error( "Missing mandatory argument" )
@@ -223,7 +223,7 @@ def tabularPrint( table ):
   for row in table:
     record = []
     for k,v in row.items():
-      if type( v ) == datetime.datetime:
+      if isinstance( v, datetime.datetime ):
         record.append( Time.toString( v ) )
       elif v is None:
         record.append( '' )
@@ -247,10 +247,10 @@ def select( switchDict ):
 
   rmsClient = ResourceManagementClient()
 
-  meta = { 'columns' : [ 'downtimeID', 'element', 'name', 'startDate', 'endDate',
-                         'severity', 'description', 'link', 'dateEffective' ] }
+  meta = { 'columns' : [ 'DowntimeID', 'Element', 'Name', 'StartDate', 'EndDate',
+                         'Severity', 'Description', 'Link', 'DateEffective' ] }
 
-  result = { 'output': None, 'successful': None, 'message': None, 'match': None }
+  result = { 'output': None, 'OK': None, 'Message': None, 'match': None }
   output = rmsClient.selectDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],
                                           element = switchDict[ 'element' ],
                                           name = switchDict[ 'name' ],
@@ -262,6 +262,8 @@ def select( switchDict ):
                                           #dateEffective = switchDict[ 'dateEffective' ],
                                           meta = meta )
 
+  if not output['OK']:
+    return output
   result['output'] = [ dict( zip( output[ 'Columns' ], dt ) ) for dt in output[ 'Value' ] ]
   if 'ongoing' in switchDict:
     result['output'] = filterOngoing( result['output'] )
@@ -269,7 +271,7 @@ def select( switchDict ):
     result['output'] = filterDate( result['output'], switchDict[ 'startDate' ], switchDict[ 'endDate' ] )
   result['output'] = filterDescription( result['output'], switchDict[ 'description' ] )
   result['match'] = len( result['output'] )
-  result['successful'] = output['OK']
+  result['OK'] = True
   result['message'] = output['Message'] if 'Message' in output else None
 
   return result
@@ -283,7 +285,7 @@ def add( switchDict ):
 
   rmsClient = ResourceManagementClient()
 
-  result = { 'output': None, 'successful': None, 'message': None, 'match': None }
+  result = { 'output': None, 'OK': None, 'Message': None, 'match': None }
   output = rmsClient.addOrModifyDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],
                                                element = switchDict[ 'element' ],
                                                name = switchDict[ 'name' ],
@@ -293,10 +295,13 @@ def add( switchDict ):
                                                description = switchDict[ 'description' ],
                                                link = switchDict[ 'link' ]
                                                #dateEffective = switchDict[ 'dateEffective' ]
-                                              )
+                                             )
+
+  if not output['OK']:
+    return output
 
   result['match'] = int( output['Value'] )
-  result['successful'] = output['OK']
+  result['OK'] = True
   result['message'] = output['Message'] if 'Message' in output else None
 
   return result
@@ -310,7 +315,7 @@ def delete( switchDict ):
 
   rmsClient = ResourceManagementClient()
 
-  result = { 'output': None, 'successful': None, 'message': None, 'match': None }
+  result = { 'output': None, 'OK': None, 'Message': None, 'match': None }
   output = rmsClient.deleteDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],
                                           element = switchDict[ 'element' ],
                                           name = switchDict[ 'name' ],
@@ -321,9 +326,12 @@ def delete( switchDict ):
                                           link = switchDict[ 'link' ]
                                           #dateEffective = switchDict[ 'dateEffective' ]
                                         )
+  if not output['OK']:
+    return output
+
   result['match'] = int( output['Value'] )
-  result['successful'] = output['OK']
-  result['message'] = output['Message'] if 'Message' in output else None
+  result['OK'] = True
+  result['Message'] = output['Message'] if 'Message' in output else None
 
   return result
 
@@ -341,12 +349,13 @@ def run( args, switchDict ):
   # the same if it is add, delete
   result = eval( query + '( switchDict )' )
 
-  if result[ 'successful' ]:
+
+  if result[ 'OK' ]:
     if query == 'select' and result['match'] > 0:
       tabularPrint( result[ 'output' ] )
     confirm( query, result['match'] )
   else:
-    error( result[ 'message' ] )
+    error( result[ 'Message' ] )
 
 
 

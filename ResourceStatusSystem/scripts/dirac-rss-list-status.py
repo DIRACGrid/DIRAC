@@ -9,7 +9,7 @@
       dirac-rss-list-status
         --element=            Element family to be Synchronized ( Site, Resource or Node )
         --elementType=        ElementType narrows the search; None if default
-        --elementName=        ElementName; None if default
+        --name=        ElementName; None if default
         --tokenOwner=         Owner of the token; None if default
         --statusType=         StatusType; None if default
         --status=             Status; None if default
@@ -115,13 +115,14 @@ def getElements():
     if switchDict[ key[0].lower() + key[1:] ] is None:
       meta[ 'columns' ].append( key )
 
-  elements = rssClient.selectStatusElement( switchDict[ 'element' ], 'Status',
-                                            name        = switchDict[ 'name' ],
-                                            statusType  = switchDict[ 'statusType' ],
-                                            status      = switchDict[ 'status' ],
-                                            elementType = switchDict[ 'elementType' ],
-                                            tokenOwner  = switchDict[ 'tokenOwner' ],
-                                            meta = meta )
+  elements = rssClient.selectStatusElement(
+      switchDict[ 'element' ], 'Status',
+      name        = switchDict[ 'name' ].split(',') if switchDict['name'] else None,
+      statusType  = switchDict[ 'statusType' ].split(',') if switchDict['statusType'] else None,
+      status      = switchDict[ 'status' ].split(',') if switchDict['status'] else None,
+      elementType = switchDict[ 'elementType' ].split(',') if switchDict['elementType'] else None,
+      tokenOwner  = switchDict[ 'tokenOwner' ].split(',') if switchDict['tokenOwner'] else None,
+      meta = meta )
 
   return elements
 
@@ -129,8 +130,6 @@ def tabularPrint( elementsList ):
   '''
     Prints the list of elements on a tabular
   '''
-
-  LJUST = 25
 
   subLogger.notice( '' )
   subLogger.notice( 'Selection parameters:' )

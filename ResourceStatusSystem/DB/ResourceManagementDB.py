@@ -4,14 +4,15 @@
 
 '''
 
-from DIRAC                                         import S_OK, S_ERROR, gLogger
-from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
 from sqlalchemy.orm                                import sessionmaker
 from sqlalchemy.sql                                import update, delete, select, and_, or_
 from sqlalchemy.inspection                         import inspect
 from sqlalchemy.dialects.mysql.base                import DOUBLE
 from sqlalchemy                                    import create_engine, Table, Column, MetaData, String, \
                                                           DateTime, exc, Integer, Text
+
+from DIRAC                                         import S_OK, S_ERROR, gLogger
+from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
 
 # Helper functions
 
@@ -125,70 +126,70 @@ class ResourceManagementDB( object ):
 
     DowntimeCache = Table( 'DowntimeCache', self.metadata,
                            Column( 'StartDate', DateTime, nullable = False ),
-                               Column( 'DowntimeID', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'Link', String( 255 ), nullable = False ),
-                               Column( 'EndDate', DateTime, nullable = False ),
-                               Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
-                               Column( 'Description', String( 512 ), nullable = False ),
-                               Column( 'Severity', String( 32 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               Column( 'Element', String( 32 ), nullable = False ),
-                               Column( 'GOCDBServiceType', String( 32 ), nullable = False ),
-                               mysql_engine = 'InnoDB' )
+                           Column( 'DowntimeID', String( 64 ), nullable = False, primary_key = True ),
+                           Column( 'Link', String( 255 ), nullable = False ),
+                           Column( 'EndDate', DateTime, nullable = False ),
+                           Column( 'Name', String( 64 ), nullable = False ),
+                           Column( 'DateEffective', DateTime, nullable = False ),
+                           Column( 'Description', String( 512 ), nullable = False ),
+                           Column( 'Severity', String( 32 ), nullable = False ),
+                           Column( 'LastCheckTime', DateTime, nullable = False ),
+                           Column( 'Element', String( 32 ), nullable = False ),
+                           Column( 'GOCDBServiceType', String( 32 ), nullable = False ),
+                           mysql_engine = 'InnoDB' )
 
     GGUSTicketsCache = Table( 'GGUSTicketsCache', self.metadata,
-                               Column( 'Tickets', String( 1024 ), nullable = False ),
-                               Column( 'OpenTickets', Integer, nullable = False, server_default = '0'),
-                               Column( 'GocSite', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'Link', String( 1024 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               mysql_engine = 'InnoDB' )
+                              Column( 'Tickets', String( 1024 ), nullable = False ),
+                              Column( 'OpenTickets', Integer, nullable = False, server_default = '0'),
+                              Column( 'GocSite', String( 64 ), nullable = False, primary_key = True ),
+                              Column( 'Link', String( 1024 ), nullable = False ),
+                              Column( 'LastCheckTime', DateTime, nullable = False ),
+                              mysql_engine = 'InnoDB' )
 
     JobCache = Table( 'JobCache', self.metadata,
-                               Column( 'Status', String( 16 ), nullable = False ),
-                               Column( 'Efficiency', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
-                               Column( 'MaskStatus', String( 32 ), nullable = False ),
-                               Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               mysql_engine = 'InnoDB' )
+                      Column( 'Status', String( 16 ), nullable = False ),
+                      Column( 'Efficiency', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
+                      Column( 'MaskStatus', String( 32 ), nullable = False ),
+                      Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
+                      Column( 'LastCheckTime', DateTime, nullable = False ),
+                      mysql_engine = 'InnoDB' )
 
-    PilotCache = Table( 'PilotCache', self.metadata,
-                               Column( 'Status', String( 16 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'CE', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'PilotsPerJob', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
-                               Column( 'PilotJobEff', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-                               mysql_engine = 'InnoDB' )
+    PilotCache = Table('PilotCache', self.metadata,
+                       Column( 'Status', String( 16 ), nullable = False ),
+                       Column( 'LastCheckTime', DateTime, nullable = False ),
+                       Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
+                       Column( 'CE', String( 64 ), nullable = False, primary_key = True ),
+                       Column( 'PilotsPerJob', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
+                       Column( 'PilotJobEff', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+                       mysql_engine = 'InnoDB')
 
     PolicyResult = Table( 'PolicyResult', self.metadata,
-                               Column( 'Status', String( 16 ), nullable = False ),
-                               Column( 'PolicyName', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' ),
-                               Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
-                               Column( 'StatusType', String( 16 ), nullable = False, server_default = '', primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               Column( 'Element', String( 32 ), nullable = False, primary_key = True ),
-                               mysql_engine = 'InnoDB' )
+                          Column( 'Status', String( 16 ), nullable = False ),
+                          Column( 'PolicyName', String( 64 ), nullable = False, primary_key = True ),
+                          Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' ),
+                          Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
+                          Column( 'DateEffective', DateTime, nullable = False ),
+                          Column( 'StatusType', String( 16 ), nullable = False, server_default = '', primary_key = True ),
+                          Column( 'LastCheckTime', DateTime, nullable = False ),
+                          Column( 'Element', String( 32 ), nullable = False, primary_key = True ),
+                          mysql_engine = 'InnoDB' )
 
     SpaceTokenOccupancyCache = Table( 'SpaceTokenOccupancyCache', self.metadata,
-                               Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               Column( 'Guaranteed', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-                               Column( 'Free', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-                               Column( 'Token', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'Total', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
-                               mysql_engine = 'InnoDB' )
+                                      Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True ),
+                                      Column( 'LastCheckTime', DateTime, nullable = False ),
+                                      Column( 'Guaranteed', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+                                      Column( 'Free', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+                                      Column( 'Token', String( 64 ), nullable = False, primary_key = True ),
+                                      Column( 'Total', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
+                                      mysql_engine = 'InnoDB' )
 
     TransferCache = Table( 'TransferCache', self.metadata,
-                               Column( 'SourceName', String( 64 ), nullable = False, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               Column( 'Metric', String( 16 ), nullable = False, primary_key = True ),
-                               Column( 'Value', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-                               Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True ),
-                               mysql_engine = 'InnoDB' )
+                           Column( 'SourceName', String( 64 ), nullable = False, primary_key = True ),
+                           Column( 'LastCheckTime', DateTime, nullable = False ),
+                           Column( 'Metric', String( 16 ), nullable = False, primary_key = True ),
+                           Column( 'Value', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+                           Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True ),
+                           mysql_engine = 'InnoDB' )
 
     UserRegistryCache = Table( 'UserRegistryCache', self.metadata,
                                Column( 'Login', String( 14 ), primary_key = True ),
@@ -395,7 +396,7 @@ class ResourceManagementDB( object ):
       for u in result:
         rel = []
         for j in u:
-         rel.append(j)
+          rel.append(j)
 
         arr.append(rel)
 
