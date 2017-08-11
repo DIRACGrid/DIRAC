@@ -19,7 +19,7 @@
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
-from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
+from DIRAC                                     import gLogger, exit as DIRACExit, version
 from DIRAC.Core.Base                           import Script
 from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
 from DIRAC.Core.Utilities.PrettyPrint          import printTable
@@ -36,13 +36,13 @@ def registerSwitches():
   '''
 
   switches = (
-    ( 'element=',     'Element family to be Synchronized ( Site, Resource or Node )' ),
-    ( 'elementType=', 'ElementType narrows the search; None if default' ),
-    ( 'name=',        'ElementName; None if default' ),
-    ( 'tokenOwner=',  'Owner of the token; None if default' ),
-    ( 'statusType=',  'StatusType; None if default' ),
-    ( 'status=',      'Status; None if default' ),
-             )
+      ( 'element=',     'Element family to be Synchronized ( Site, Resource or Node )' ),
+      ( 'elementType=', 'ElementType narrows the search; None if default' ),
+      ( 'name=',        'ElementName; None if default' ),
+      ( 'tokenOwner=',  'Owner of the token; None if default' ),
+      ( 'statusType=',  'StatusType; None if default' ),
+      ( 'status=',      'Status; None if default' ),
+  )
 
   for switch in switches:
     Script.registerSwitch( '', switch[ 0 ], switch[ 1 ] )
@@ -82,7 +82,7 @@ def parseSwitches():
   switches.setdefault( 'statusType',   None )
   switches.setdefault( 'status',       None )
 
-  if not 'element' in switches:
+  if 'element' not in switches:
     subLogger.error( "element Switch missing" )
     subLogger.error( "Please, check documentation below" )
     Script.showHelp()

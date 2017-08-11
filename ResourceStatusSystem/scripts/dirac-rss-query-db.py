@@ -32,14 +32,14 @@
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
-from DIRAC                                                  import gConfig, gLogger, exit as DIRACExit, S_OK, version
+import datetime
+from DIRAC                                                  import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                                        import Script
 from DIRAC.ResourceStatusSystem.Client                      import ResourceStatusClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
 from DIRAC.Core.Utilities                                   import Time
-from DIRAC.Core.Utilities.PrettyPrint                       import printTable 
-import datetime
+from DIRAC.Core.Utilities.PrettyPrint                       import printTable
 
 
 __RCSID__ = '$Id:$'
@@ -53,17 +53,17 @@ def registerSwitches():
     command line interface.
   '''
 
-  switches = ( 
-    ( 'element=', 'Element family to be Synchronized ( Site, Resource, Node )' ),
-    ( 'tableType=', 'A valid table type (Status, Log, History)' ),
-    ( 'name=', 'ElementName; None if default' ),
-    ( 'statusType=', 'A valid StatusType argument (it admits a comma-separated list of statusTypes); None if default' ),
-    ( 'status=', 'A valid Status argument ( Active, Probing, Degraded, Banned, Unknown, Error ); None if default' ),
-    ( 'elementType=', 'ElementType narrows the search; None if default' ),
-    ( 'reason=', 'Decision that triggered the assigned status' ),
-    ( 'lastCheckTime=', 'Time-stamp setting last time the status & status were checked' ),
-    ( 'tokenOwner=', 'Owner of the token ( to specify only with select/delete queries )' ),
-             )
+  switches = (
+      ( 'element=', 'Element family to be Synchronized ( Site, Resource, Node )' ),
+      ( 'tableType=', 'A valid table type (Status, Log, History)' ),
+      ( 'name=', 'ElementName; None if default' ),
+      ( 'statusType=', 'A valid StatusType argument (it admits a comma-separated list of statusTypes); None if default' ),
+      ( 'status=', 'A valid Status argument ( Active, Probing, Degraded, Banned, Unknown, Error ); None if default' ),
+      ( 'elementType=', 'ElementType narrows the search; None if default' ),
+      ( 'reason=', 'Decision that triggered the assigned status' ),
+      ( 'lastCheckTime=', 'Time-stamp setting last time the status & status were checked' ),
+      ( 'tokenOwner=', 'Owner of the token ( to specify only with select/delete queries' ),
+  )
 
   for switch in switches:
     Script.registerSwitch( '', switch[ 0 ], switch[ 1 ] )
@@ -114,7 +114,7 @@ def parseSwitches():
     if not switches[ 'status' ] in ( 'Active', 'Probing', 'Degraded', 'Banned', 'Unknown', 'Error' ):
       error( "'%s' is an invalid argument for switch 'status'" % switches[ 'status' ] )
 
-  # when it's a add/modify query and status/reason/statusType are not specified 
+  # when it's a add/modify query and status/reason/statusType are not specified
   #then some specific defaults are set up
   if query == 'add' or query == 'modify':
     if not 'status' in switches or switches[ 'status' ] is None:
@@ -127,7 +127,7 @@ def parseSwitches():
 
   subLogger.debug( "The switches used are:" )
   map( subLogger.debug, switches.iteritems() )
-  
+
   return args, switches
 
 
@@ -144,7 +144,7 @@ def getToken( key ):
     error( str( proxyInfo ) )
 
   if key.lower() == 'owner':
-    userName = proxyInfo[ 'Value' ][ 'username' ]  
+    userName = proxyInfo[ 'Value' ][ 'username' ]
     tokenOwner = S_OK( userName )
     if not tokenOwner[ 'OK' ]:
       error( tokenOwner[ 'Message' ] )
@@ -152,16 +152,16 @@ def getToken( key ):
 
   elif key.lower() == 'expiration':
     expiration = proxyInfo[ 'Value' ][ 'secondsLeft' ]
-    tokenExpiration = S_OK( expiration )  
+    tokenExpiration = S_OK( expiration )
     if not tokenExpiration[ 'OK' ]:
       error( tokenExpiration[ 'Message' ] )
 
-    now = Time.dateTime()   
+    now = Time.dateTime()
     #datetime.datetime.utcnow()
     expirationDate = now + datetime.timedelta( seconds=tokenExpiration['Value'] )
     expirationDate = Time.toString( expirationDate )
     expirationDate = expirationDate.split('.')[0]
-    return expirationDate 
+    return expirationDate
 
 
 def checkStatusTypes( statusTypes ):
@@ -181,8 +181,7 @@ def checkStatusTypes( statusTypes ):
 
   if 'all' in statusType:
     return acceptableStatusTypes
-  else:
-    return statusTypes
+  return statusTypes
 
 
 def unpack( switchDict ):
@@ -202,7 +201,7 @@ def unpack( switchDict ):
     statusTypes = checkStatusTypes( statusTypes )
 
 
-  if len( names ) > 0 and len( statusTypes ) > 0:
+  if names and statusTypes:
     combinations = [ ( a, b ) for a in names for b in statusTypes ]
     for combination in combinations:
       n, s = combination
@@ -210,17 +209,17 @@ def unpack( switchDict ):
       switchDictClone[ 'name' ] = n
       switchDictClone[ 'statusType' ] = s
       switchDictSet.append( switchDictClone )
-  elif len( names ) > 0 and len( statusTypes ) == 0:
+  elif names and not statusTypes:
     for name in names:
       switchDictClone = switchDict.copy()
       switchDictClone[ 'name' ] = name
       switchDictSet.append( switchDictClone )
-  elif len( names ) == 0 and len( statusTypes ) > 0:
+  elif not names and statusTypes:
     for statusType in statusTypes:
       switchDictClone = switchDict.copy()
       switchDictClone[ 'statusType' ] = statusType
       switchDictSet.append( switchDictClone )
-  elif len( names ) == 0 and len( statusTypes ) == 0:
+  elif not names and not statusTypes:
     switchDictClone = switchDict.copy()
     switchDictClone[ 'name' ] = None
     switchDictClone[ 'statusType' ] = None
@@ -273,23 +272,23 @@ def confirm( query, matches ):
   subLogger.notice( "\nNOTICE: '%s' request successfully executed ( matches' number: %s )! \n" % ( query, matches ) )
 
 def tabularPrint( table ):
-  
+
   columns_names = table[0].keys()
   records = []
   for row in table:
     record = []
     for k,v in row.items():
-      if type( v ) == datetime.datetime:
+      if isinstance( v, datetime.datetime ):
         record.append( Time.toString( v ) )
       elif v is None:
         record.append( '' )
       else:
-        record.append( v )  
-    records.append( record )    
+        record.append( v )
+    records.append( record )
 
-  output = printTable( columns_names, records, numbering = False, 
+  output = printTable( columns_names, records, numbering = False,
                        columnSeparator = " | ", printOut = False )
-  
+
   subLogger.notice( output )
 
 #...............................................................................
@@ -304,7 +303,7 @@ def select( args, switchDict ):
 
   meta = { 'columns' : [ 'name', 'statusType', 'status', 'elementType', 'reason',
                          'dateEffective', 'lastCheckTime', 'tokenOwner', 'tokenExpiration' ] }
-   
+
   result = { 'output': None, 'successful': None, 'message': None, 'match': None }
   output = rssClient.selectStatusElement( element = args[1].title(),
                                           tableType = args[2].title(),
@@ -348,7 +347,7 @@ def add( args, switchDict ):
                                                #lastCheckTime = switchDict[ 'lastCheckTime' ],
                                                tokenOwner = getToken( 'owner' ),
                                                tokenExpiration = getToken( 'expiration' )
-                                              )
+                                             )
 
   if 'Value' in output:
     result['match'] = int( output['Value'] )
@@ -378,7 +377,7 @@ def modify( args, switchDict ):
                                           #lastCheckTime = switchDict[ 'lastCheckTime' ],
                                           tokenOwner = getToken( 'owner' ),
                                           tokenExpiration = getToken( 'expiration' )
-                                         )
+                                        )
 
   if 'Value' in output:
     result['match'] = int( output['Value'] )
@@ -430,7 +429,7 @@ def run( args, switchDictSet ):
 
   matches = 0
   table = []
-  
+
   for switchDict in switchDictSet:
     # exectue the query request: e.g. if it's a 'select' it executes 'select()'
     # the same if it is insert, update, add, modify, delete

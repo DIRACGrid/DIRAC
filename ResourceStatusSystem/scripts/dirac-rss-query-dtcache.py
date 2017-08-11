@@ -25,12 +25,13 @@
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
-from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
+import datetime
+
+from DIRAC                                     import gLogger, exit as DIRACExit, version
 from DIRAC.Core.Base                           import Script
 from DIRAC.Core.Utilities                      import Time
 from DIRAC.Core.Utilities.PrettyPrint          import printTable
 from DIRAC.ResourceStatusSystem.Utilities      import Utils
-import datetime
 
 
 __RCSID__ = '$Id:$'
@@ -45,16 +46,16 @@ def registerSwitches():
   '''
 
   switches = (
-    ( 'downtimeID=', 'ID of the downtime' ),
-    ( 'element=', 'Element (Site, Service) affected by the downtime' ),
-    ( 'name=', 'Name of the element' ),
-    ( 'startDate=', 'Starting date of the downtime' ),
-    ( 'endDate=', 'Ending date of the downtime' ),
-    ( 'severity=', 'Severity of the downtime (Warning, Outage)' ),
-    ( 'description=', 'Description of the downtime' ),
-    ( 'link=', 'URL of the downtime announcement' ),
-    ( 'ongoing', 'To force "select" to return the ongoing downtimes' )
-             )
+      ( 'downtimeID=', 'ID of the downtime' ),
+      ( 'element=', 'Element (Site, Service) affected by the downtime' ),
+      ( 'name=', 'Name of the element' ),
+      ( 'startDate=', 'Starting date of the downtime' ),
+      ( 'endDate=', 'Ending date of the downtime' ),
+      ( 'severity=', 'Severity of the downtime (Warning, Outage)' ),
+      ( 'description=', 'Description of the downtime' ),
+      ( 'link=', 'URL of the downtime announcement' ),
+      ( 'ongoing', 'To force "select" to return the ongoing downtimes' )
+  )
 
   for switch in switches:
     Script.registerSwitch( '', switch[ 0 ], switch[ 1 ] )
