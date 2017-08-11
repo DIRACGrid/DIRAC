@@ -96,10 +96,11 @@ def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog =
         # If there is at least one online site, select one
         for se in ses:
           site = dmsHelper.getLocalSiteForSE( se )
-          if site in onlineSites:
-            offlineLFNsDict.setdefault( se, list() ).append( lfn )
-            found = True
-            break
+	  if site['OK']:
+	    if site['Value'] in onlineSites:
+	      offlineLFNsDict.setdefault( se, list() ).append( lfn )
+	      found = True
+	      break
       # No online site found in common, select randomly
       if not found:
         offlineLFNsDict.setdefault( random.choice( ses ), list() ).append( lfn )
