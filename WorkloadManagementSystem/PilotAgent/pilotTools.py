@@ -364,6 +364,7 @@ class PilotParams( object ):
     self.ceName = ""
     self.ceType = ''
     self.queueName = ""
+    self.queueParameters = {}
     self.platform = ""
     self.minDiskSpace = 2560 #MB
     self.jobCPUReq = 900
