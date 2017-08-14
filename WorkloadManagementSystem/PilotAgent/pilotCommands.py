@@ -414,7 +414,7 @@ class CheckCECapabilities( CommandBase ):
 
     # Pick up all the relevant resource parameters that will be used in the job matching
     for ceParam in [ "WholeNode", "NumberOfProcessors", "RequiredTag" ]:
-      if resourceDict.get( ceParam ):
+      if ceParam in resourceDict:
         self.cfg.append( '-o  /Resources/Computing/CEDefaults/%s=%s' % ( ceParam, resourceDict[ ceParam ] ) )
 
     # Tags must be added to already defined tags if any
