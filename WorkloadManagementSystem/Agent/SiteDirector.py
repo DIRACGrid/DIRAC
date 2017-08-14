@@ -66,7 +66,7 @@ class SiteDirector( AgentModule ):
   def __init__( self, *args, **kwargs ):
     """ c'tor
     """
-    super(SiteDirector, self).__init__( self, *args, **kwargs )
+    super(SiteDirector, self).__init__( *args, **kwargs )
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
@@ -779,7 +779,6 @@ class SiteDirector( AgentModule ):
   def _getPilotOptions( self, queue, pilotsToSubmit ):
     """ Prepare pilot options
     """
-
     queueDict = self.queueDict[queue]['ParametersDict']
     pilotOptions = []
 
