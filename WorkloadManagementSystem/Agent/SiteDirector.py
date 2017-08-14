@@ -101,6 +101,10 @@ class SiteDirector( AgentModule ):
     self.rssClient = None
     self.rssFlag = None
 
+    self.globalParameters = { "WholeNode": False,
+                              "NumberOfProcessors": 1,
+                              "MaxRAM": 2048 }
+
   def initialize( self ):
     """ Standard constructor
     """
@@ -277,6 +281,7 @@ class SiteDirector( AgentModule ):
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
 
+          # Tags defined on the Queue level and on the CE level are concatenated
           queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
           if queueTags and isinstance( queueTags, basestring ):
             queueTags = fromChar( queueTags )
@@ -288,10 +293,14 @@ class SiteDirector( AgentModule ):
             else:
               self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
-          maxRAM = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM' )
-          maxRAM = ceMaxRAM if not maxRAM else maxRAM
-          if maxRAM:
-            self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
+          # Some parameters can be defined on the CE level and are inherited by all Queues
+          for parameter in [ 'MaxRAM', 'NumberOfProcessors', 'WholeNode' ]:
+            queueParameter = self.queueDict[queueName]['ParametersDict'].get( parameter )
+            ceParameter = ceDict.get( parameter )
+            if ceParameter or queueParameter:
+              self.queueDict[queueName]['ParametersDict'][parameter] = ceParameter if not queueParameter \
+                                                                                   else queueParameter
+
           if pilotRunDirectory:
             self.queueDict[queueName]['ParametersDict']['JobExecDir'] = pilotRunDirectory
           qwDir = os.path.join( self.workingDirectory, queue )
@@ -355,6 +364,14 @@ class SiteDirector( AgentModule ):
           if site not in self.sites:
             self.sites.append( site )
 
+          if "WholeNode" in self.queueDict[queueName]['ParametersDict']:
+            self.globalParameters['WholeNode'] = 'True'
+          for parameter in [ 'MaxRAM', 'NumberOfProcessors' ]:
+            if parameter in self.queueDict[queueName]['ParametersDict']:
+              self.globalParameters[parameter] = max( self.globalParameters[parameter],
+                                                      int( self.queueDict[queueName]['ParametersDict'][parameter] ))
+
+
     return S_OK()
 
   def execute( self ):
@@ -394,7 +411,16 @@ class SiteDirector( AgentModule ):
       return result
     tqDict['Platform'] = result['Value']
     tqDict['Site'] = self.sites
-    tqDict['Tag'] = []
+
+    # Get a union of all tags
+    tags = []
+    for queue in self.queueDict:
+      tags += self.queueDict[queue]['ParametersDict'].get( 'Tags', [] )
+    tqDict['Tag'] = list( set( tags ) )
+
+    # Add overall max values for all queues
+    tqDict.update( self.globalParameters )
+
     self.log.verbose( 'Checking overall TQ availability with requirements' )
     self.log.verbose( tqDict )
 
