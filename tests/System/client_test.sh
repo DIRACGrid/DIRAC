@@ -4,7 +4,6 @@
 #
 # Submitter should follow through the logs
 
-
 echo " "
 echo " "
 echo " ########################## REAL BASICS #############################"
@@ -80,22 +79,22 @@ if [ $? -ne 0 ]
 then
    exit $?
 fi
-echo " "
-echo "======  dirac-rss-list-status --element=Resource --name=CERN-RAW,CERN-DST"
-dirac-rss-list-status --element=Resource --name=CERN-RAW,CERN-DST
-if [ $? -ne 0 ]
-then
-   exit $?
-fi
-echo " "
+# echo " "
+# echo "======  dirac-rss-list-status --element=Resource --name=CERN-RAW,CERN-DST"
+# dirac-rss-list-status --element=Resource --name=CERN-RAW,CERN-DST
+# if [ $? -ne 0 ]
+# then
+#    exit $?
+# fi
+# echo " "
 
-echo " "
-echo "======  dirac-rss-query-dt-cache select --element=Site"
-dirac-rss-query-dt-cache select --element=Site
-if [ $? -ne 0 ]
-then
-   exit $?
-fi
+# echo " "
+# echo "======  dirac-rss-query-dt-cache select --element=Site"
+# dirac-rss-query-dt-cache select --element=Site
+# if [ $? -ne 0 ]
+# then
+#    exit $?
+# fi
 echo " "
 
 echo " "
@@ -104,22 +103,23 @@ echo " ########################## Data Management #############################"
 echo " "
 echo " "
 
-echo "======  dirac-dms-lfn-replicas /lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81789/081789_0000000071.raw"
-dirac-dms-lfn-replicas /lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81789/081789_0000000071.raw
+echo "======  dirac-dms-lfn-replicas /lhcb/user/m/msoares/Dirac_Scripts_Test_Directory/Test_Files_20170810_121717_002.init"
+#dirac-dms-lfn-replicas /lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81789/081789_0000000071.raw
+dirac-dms-lfn-replicas /lhcb/user/m/msoares/Dirac_Scripts_Test_Directory/Test_Files_20170810_121717_002.init
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 echo " "
-echo "====== dirac-dms-lfn-metadata /lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81789/081789_0000000044.raw"
-dirac-dms-lfn-metadata /lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81789/081789_0000000044.raw
+echo "====== dirac-dms-lfn-metadata /lhcb/user/m/msoares/Dirac_Scripts_Test_Directory/Test_Files_20170810_121717_002.init"
+dirac-dms-lfn-metadata /lhcb/user/m/msoares/Dirac_Scripts_Test_Directory/Test_Files_20170810_121717_002.init
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 echo " "
-echo "====== dirac-dms-lfn-accessURL /lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81789/081789_0000000044.raw"
-dirac-dms-lfn-accessURL /lhcb/data/2010/RAW/FULL/LHCb/COLLISION10/81789/081789_0000000044.raw
+echo "====== dirac-dms-lfn-accessURL /lhcb/user/m/msoares/Dirac_Scripts_Test_Directory/Test_Files_20170810_121717_002.init"
+dirac-dms-lfn-accessURL /lhcb/user/m/msoares/Dirac_Scripts_Test_Directory/Test_Files_20170810_121717_002.init CNAF-USER
 if [ $? -ne 0 ]
 then
    exit $?
@@ -131,6 +131,9 @@ echo " "
 echo " ########################## BEGIN OF USER FILES TEST #############################"
 echo " "
 echo " "
+
+echo "====== dirac-proxy-init -g lhcb_user" #this is necesary to 
+dirac-proxy-init -g lhcb_user
 
 dir=$( echo "$USER" |cut -c 1)/$USER
 echo "this is a test file" >> DMS_Scripts_Test_File.txt
@@ -188,6 +191,7 @@ then
    exit $?
 fi
 
+rm DMS_Scripts_Test_File.*
 echo " "
 echo " "
 echo " ########################## END OF USER FILES TEST #############################"
