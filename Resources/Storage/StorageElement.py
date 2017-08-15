@@ -313,7 +313,7 @@ class StorageElementItem( object ):
       retDict['TapeSE'] = False
       retDict['TotalCapacityTB'] = -1
       retDict['DiskCacheTB'] = -1
-      return S_OK( retDict )
+      return retDict
 
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
@@ -342,7 +342,7 @@ class StorageElementItem( object ):
     except Exception:
       retDict['DiskCacheTB'] = -1
 
-    return S_OK( retDict )
+    return retDict
 
   def isValid( self, operation = '' ):
     """ check CS/RSS statuses for :operation:
@@ -365,14 +365,11 @@ class StorageElementItem( object ):
       return S_OK()
 
     # Determine whether the StorageElement is valid for checking, reading, writing
-    res = self.getStatus()
-    if not res[ 'OK' ]:
-      log.debug( "Could not call getStatus", res['Message'] )
-      return S_ERROR( "SE.isValid could not call the getStatus method" )
-    checking = res[ 'Value' ][ 'Check' ]
-    reading = res[ 'Value' ][ 'Read' ]
-    writing = res[ 'Value' ][ 'Write' ]
-    removing = res[ 'Value' ][ 'Remove' ]
+    status = self.getStatus()
+    checking = status[ 'Check' ]
+    reading = status[ 'Read' ]
+    writing = status[ 'Write' ]
+    removing = status[ 'Remove' ]
 
     # Determine whether the requested operation can be fulfilled
     if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):

@@ -348,11 +348,7 @@ class InputData( OptimizerExecutor ):
             continue
           siteList = result[ 'Value' ]
           seObj = StorageElement( seName, vo = vo )
-          result = seObj.getStatus()
-          if not result[ 'OK' ]:
-            self.jobLog.error( "Could not retrieve status for SE %s: %s" % ( seName, result[ 'Message' ] ) )
-            continue
-          seStatus = result[ 'Value' ]
+          seStatus = seObj.getStatus()
           seDict[ seName ] = { 'Sites': siteList, 'Status': seStatus }
         # Get SE info from the dict
         seData = seDict[ seName ]

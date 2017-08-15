@@ -1178,7 +1178,7 @@ class Dirac( API ):
       :type access: string in ('Read', 'Write', 'Remove', 'Check')
       : returns: True or False
     """
-    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( access, False )
+    return StorageElement( se, vo = self.vo ).getStatus().get( access, False )
 
   #############################################################################
   def splitInputData( self, lfns, maxFilesPerJob = 20, printOutput = False ):

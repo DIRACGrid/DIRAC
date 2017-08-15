@@ -106,7 +106,7 @@ class InputDataByProtocol( object ):
       return S_OK( {'Successful': {}, 'Failed': []} )
 
     for localSE in seList:
-      seStatus = StorageElement( localSE ).getStatus()['Value']
+      seStatus = StorageElement( localSE ).getStatus()
       if seStatus['Read'] and seStatus['DiskSE']:
         diskSEs.add( localSE )
       elif seStatus['Read'] and seStatus['TapeSE']:

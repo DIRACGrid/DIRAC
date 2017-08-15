@@ -449,11 +449,7 @@ class JobScheduling( OptimizerExecutor ):
 
     for seName in siteSEs:
       se = StorageElement( seName, vo = vo )
-      result = se.getStatus()
-      if not result[ 'OK' ]:
-        self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
-        return S_ERROR( "Cannot retrieve SE status" )
-      seStatus = result[ 'Value' ]
+      seStatus = se.getStatus()
       if seStatus[ 'Read' ] and seStatus[ 'TapeSE' ]:
         tapeSEs.append( seName )
       if seStatus[ 'Read' ] and seStatus[ 'DiskSE' ]:
@@ -566,11 +562,8 @@ class JobScheduling( OptimizerExecutor ):
         # If we don't have the SE status get it and store it
         if seName not in seStatus:
           seObj = StorageElement( seName, vo = vo )
-          result = seObj.getStatus()
-          if not result['OK' ]:
-            self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
-            continue
-          seStatus[ seName ] = result[ 'Value' ]
+          status = seObj.getStatus()
+          seStatus[ seName ] = status
         # get the SE status from mem and add it if its disk
         status = seStatus[ seName ]
         if status['Read'] and status['DiskSE']:
