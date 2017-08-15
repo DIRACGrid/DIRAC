@@ -491,6 +491,110 @@ class StorageElementItem( object ):
     return self.__getAllProtocols( 'OutputProtocols' )
 
 
+  def generateTransferURLsBetweenSEs(self, lfns, sourceSE, protocols = None):
+    """ This negociate the URLs to be used for third party copy.
+        This is mostly useful for FTS. If protocols is given,
+        it restricts the list of plugins to use
+
+        :param lfns: list/dict of lfns to generate the URLs
+        :param sourceSE: storageElement instance of the sourceSE
+        :param protocols: ordered protocol restriction list
+
+        :return:dictionnary Successful/Failed with pair (src, dest) urls
+    """
+    log = self.log.getSubLogger( 'generateTransferURLsBetweenSEs' )
+
+    result = checkArgumentFormat( lfns )
+    if result['OK']:
+      lfns = result['Value']
+    else:
+      errStr = "Supplied urls must be string, list of strings or a dictionary."
+      log.debug( errStr )
+      return S_ERROR( errno.EINVAL, errStr )
+
+    # First, find common protocols to use
+    res = self.negociateProtocolWithOtherSE(sourceSE, protocols = protocols)
+
+    if not res['OK']:
+      return res
+
+    commonProtocols = res['Value']
+
+    # Taking each protocol at the time, we try to generate src and dest URLs
+    for proto in commonProtocols:
+      srcPlugin = None
+      destPlugin = None
+
+      log.debug("Trying to find plugins for protocol %s"%proto)
+
+      # Finding the source storage plugin
+      for storagePlugin in sourceSE.storages:
+        log.debug("Testing %s as source plugin" % storagePlugin.pluginName)
+        storageParameters = storagePlugin.getParameters()
+        nativeProtocol = storageParameters['Protocol']
+        # If the native protocol of the plugin is allowed for read
+        if  nativeProtocol in sourceSE.localAccessProtocolList:
+          # If the plugin can generate the protocol we are interested in
+          if proto in storageParameters['OutputProtocols']:
+            log.debug("Selecting it")
+            srcPlugin = storagePlugin
+            break
+      # If we did not find a source plugin, continue
+      if srcPlugin is None :
+        log.debug("Could not find a source plugin for protocol %s"%proto)
+        continue
+
+      # Finding the destination storage plugin
+      for storagePlugin in self.storages:
+        log.debug("Testing %s as destination plugin" % storagePlugin.pluginName)
+
+        storageParameters = storagePlugin.getParameters()
+        nativeProtocol = storageParameters['Protocol']
+        # If the native protocol of the plugin is allowed for write
+        if  nativeProtocol in self.localWriteProtocolList:
+          # If the plugin can accept the protocol we are interested in
+          if proto in storageParameters['InputProtocols']:
+            log.debug("Selecting it")
+            destPlugin = storagePlugin
+            break
+
+      # If we found both a source and destination plugin, we are happy,
+      # otherwise we continue with the next protocol
+      if destPlugin is None:
+        log.debug("Could not find a destination plugin for protocol %s"%proto)
+        srcPlugin = None
+        continue
+
+
+      failed = {}
+      successful = {}
+      # Generate the URLs
+      for lfn in lfns:
+
+        # Source URL first
+        res = srcPlugin.constructURLFromLFN( lfn, withWSUrl = True )
+        if not res['OK']:
+          errMsg = "Error generating source url: %s"%res['Message']
+          gLogger.debug("Error generating source url",errMsg)
+          failed[lfn] = errMsg
+          continue
+        srcURL = res['Value']
+
+        # Destination URL
+        res = destPlugin.constructURLFromLFN( lfn, withWSUrl = True )
+        if not res['OK']:
+          errMsg = "Error generating destination url: %s"%res['Message']
+          gLogger.debug("Error generating destination url",errMsg)
+          failed[lfn] = errMsg
+          continue
+        destURL = res['Value']
+
+        successful[lfn] = (srcURL, destURL)
+
+      return S_OK({'Successful':successful, 'Failed':failed})
+
+    return S_ERROR(errno.ENOPROTOOPT, "Could not find a protocol ")
+
 
   def negociateProtocolWithOtherSE( self, sourceSE, protocols = None ):
     """ Negotiate what protocol could be used for a third party transfer
