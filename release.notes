@@ -46,6 +46,10 @@ CHANGE: FTSHistoryView - drop FTSServer field from the view description
 CHANGE: FTSFile DB table: increased length of fields LFN(955), SourceSURL(1024), TargetSURL(1024)
 CHANGE: Uniform length of LFN to 255 across DIRAC dbs
 
+*Resources
+NEW: New method in the StorageElement to generate pair of URLs for third party copy.
+     Implement the logic to generate pair of URLs to do third party copy. This will be used mostly by FTS, but is not enabled as of now
+
 *RMS
 NEW: dirac-rms-request - command including functionality of several other commands:
      dirac-rms-cancel|reset|show-request which are dropped. The required functionality
@@ -55,21 +59,23 @@ NEW: dirac-rms-request - command including functionality of several other comman
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
      RSS system 
 NEW: SiteStatus client to interrogate site status with respect to RSS
-BUGFIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
+CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
+CHANGE: moved some integration tests from pytest to unittest
 FIX: ResourceStatus, RSSCacheNoThread - fixed RSS cache generation 
 FIX: ResourceStatus - fixes for getting status from the CS information
-CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
+FIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
 FIX: fixed incompatibility between Active/InActive RSS clients return format
 FIX: SiteStatus - bug fixed in getSites() method - siteState argument not propagated to
      the service call
 FIX: ResourceStatus - return the same structure for status lookup in both RSS and CS cases     
+FIX: Bug fixes in scripts getting data out of DB
+
 
 *Monitoring
 CHANGE: DBUtils - change the bucket sizes for the monitoring plots as function of the time span
 
 *WMS
 NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS  
-FIX: JobDB - fixes necessary to suite MySQL 5.7   
 NEW: pilotCommands - new ReplaceDIRACCode command mostly for testing purposes
 NEW: JobAgent, JobWrapper - several fixes to allow the work with PoolComputingElement
      to support multiprocessor jobs    
@@ -80,9 +86,11 @@ NEW: SiteDirector - CEs can define QueryCEFlag in the Configuration Service whic
 NEW: The application error codes, when returned, are passed to the JobWrapper, and maybe interpreted.
 NEW: The JobWrapperTemplate can reschedule a job if the payload exits with status DErrno.EWMSRESC & 255 (222)
 FIX: SiteDirector - unlink is also to be skipped for Local Condor batch system
+FIX: JobDB - fixes necessary to suite MySQL 5.7
 FIX: dirac-pilot, pilotTools - PYTHONPATH is cleared on pilot start, pilot option keepPP
      can override this
 FIX: WMSAdministratorHandler - make methods static appropriately
+FIX: Bug fix for correctly excluding WebApp extensions
 CHANGE: JobScheduling - more precise site name while the job is Waiting, using the set of 
         sites at which the input files are online rather than checking Tier1s in eligible sites       
 
@@ -94,6 +102,15 @@ CHANGE: Dirac API - added runLocal as an API method
 NEW: Documentation for developing with a container (includes Dockerfile)
 NEW: Add script to collate release notes from Pull Request comments  
 NEW: Chapter on scaling and limitations
+CHANGE: Added documentation about runsv installation outside of DIRAC
+
+*tests
+NEW: Added client (scripts) system test
+CHANGE: Add to the TS system test, the test for transformations with meta-filters
+FIX: Minor fixes in the TS system test
+FIX: correctly update the DFC DB configuration in jenkins' tests
+
+
 
 [v6r17p29]
 
