@@ -308,6 +308,12 @@ class TestBase( unittest.TestCase ):
       os.remove(self.testCfgFileName)
     except OSError:
       pass
+    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
+    # not to conflict with other tests that might be using a local dirac.cfg
+    gConfigurationData.localCFG=CFG()
+    gConfigurationData.remoteCFG=CFG()
+    gConfigurationData.mergedCFG=CFG()
+    gConfigurationData.generateNewVersion()
 
 
 

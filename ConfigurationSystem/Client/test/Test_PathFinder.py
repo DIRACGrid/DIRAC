@@ -5,6 +5,8 @@ import os
 import unittest
 from DIRAC.ConfigurationSystem.Client.PathFinder import getComponentSection, getServiceFailoverURL, getServiceURL
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.Core.Utilities.CFG import CFG
 
 class TestPathFinder( unittest.TestCase ):
   def setUp( self ):
@@ -57,6 +59,12 @@ class TestPathFinder( unittest.TestCase ):
       os.remove(self.testCfgFileName)
     except OSError:
       pass
+    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
+    # not to conflict with other tests that might be using a local dirac.cfg
+    gConfigurationData.localCFG=CFG()
+    gConfigurationData.remoteCFG=CFG()
+    gConfigurationData.mergedCFG=CFG()
+    gConfigurationData.generateNewVersion()
 
 class TestGetComponentSection( TestPathFinder ):
 
