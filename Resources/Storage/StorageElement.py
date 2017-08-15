@@ -313,6 +313,8 @@ class StorageElementItem( object ):
       retDict['TapeSE'] = False
       retDict['TotalCapacityTB'] = -1
       retDict['DiskCacheTB'] = -1
+      # FIXME: once the interface change is known, remove this line
+      retDict.update( S_OK( retDict.copy() ) )
       return retDict
 
     # If nothing is defined in the CS Access is allowed
@@ -342,6 +344,8 @@ class StorageElementItem( object ):
     except Exception:
       retDict['DiskCacheTB'] = -1
 
+    # FIXME: once the interface change is known, remove this line
+    retDict.update( S_OK( retDict.copy() ) )
     return retDict
 
   def isValid( self, operation = '' ):
