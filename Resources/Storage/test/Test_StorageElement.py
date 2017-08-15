@@ -81,6 +81,79 @@ def mock_StorageFactory_generateStorageObject( storageName, pluginName, paramete
 
   return S_OK( storageObj )
 
+def mock_StorageFactory_getConfigStorageName( storageName, referenceType ):
+  return S_OK( storageName )
+
+def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName = None ):
+  """ Get the options associated to the StorageElement as defined in the CS
+  """
+
+  options = {'BackendType': 'local',
+                            'ReadAccess': 'Active',
+                            'WriteAccess': 'Active',
+            }
+
+  if storageName in ( 'StorageE', ):
+    options['WriteProtocols'] = ['root', 'srm']
+
+
+
+
+  return S_OK( options )
+
+def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName = None ):
+  """ Protocol specific information is present as sections in the Storage configuration
+  """
+  protocolDetails = { 'StorageA' : {'protoA':{'PluginName': 'File',
+                                              'Protocol': 'file',
+                                              'Path' : '',
+                                             },
+                                   },
+                     'StorageB' : {'protoB':{'PluginName': 'SRM2',
+                                             'Protocol': 'srm',
+                                             'Path' : '',
+                                            },
+                                  },
+                     'StorageC' : {'protoC':{'PluginName': 'XROOT',
+                                             'Protocol': 'root',
+                                             'Path' : '',
+                                            },
+                                  },
+                     'StorageD' : {'protoD':{'PluginName': 'SRM2',
+                                             'Protocol': 'srm',
+                                             'Path' : '',
+                                            },
+                                   'protoD2':{'PluginName': 'XROOT',
+                                              'Protocol': 'root',
+                                              'Path' : '',
+                                             },
+                                  },  
+                     'StorageE' : {'protoE':{'PluginName': 'SRM2',
+                                             'Protocol': 'srm',
+                                             'Path' : '',
+                                            },
+                                   'protoE2':{'PluginName': 'XROOT',
+                                              'Protocol': 'root',
+                                              'Path' : '',
+                                             },
+                                  },
+                    }
+
+  return S_OK( protocolDetails[storageName] )
+
+
+class fake_DMSHelpers( object ):
+  """ Fake DMS helpers. Used to get the protocol lists
+      inside the StorageElement
+  """
+  def __init__( self, vo = None ):
+    pass
+
+  def getAccessProtocols( self ):
+    return ['fakeProto', 'root']
+
+  def getWriteProtocols( self ):
+    return ['srm']
 
 
 

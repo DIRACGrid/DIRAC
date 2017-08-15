@@ -30,13 +30,13 @@ def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName
 def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName = None ):
   """ Protocol specific information is present as sections in the Storage configuration
   """
-  protocolDetails = [{'Host': '',
-                      'Path': '/tmp/se',
-                      'PluginName': 'File',
-                      'Port': '',
-                      'Protocol': 'file',
-                      'SpaceToken': '',
-                      'WSUrl': ''}]
+  protocolDetails = {'Section': {'Host': '',
+                                 'Path': '/tmp/se',
+                                 'PluginName': 'File',
+                                 'Port': '',
+                                 'Protocol': 'file',
+                                 'SpaceToken': '',
+                                 'WSUrl': ''}}
 
   return S_OK( protocolDetails )
 

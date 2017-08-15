@@ -72,7 +72,7 @@ dict_cs = {
             "CERN-NO-PLUGIN-NAME": {
                 "BaseSE": "CERN-BASE",
                 "AccessProtocol.1": {
-                    "Path": "/eos/lhcb/grid/prod",
+                    "Path": "/eos/lhcb/grid/user",
                 }
             },
             # Buggy because defines a different PluginName
@@ -90,6 +90,60 @@ dict_cs = {
                 "AccessProtocol.OtherName": {
                     "PluginName": "GFAL2_SRM2",
                     "Path": "/eos/lhcb/grid/other",
+                    "Access": "remote"
+                }
+            },
+            # Buggy because not ready for this use
+            "CERN-USE-PLUGIN-AS-PROTOCOL-NAME": {
+                "BaseSE": "CERN-BASE",
+                "GFAL2_SRM2": {
+                    "Host": "srm-eoslhcb.cern.ch",
+                    "Port": 8443,
+                    "Protocol": "srm",
+                    "Path": "/eos/lhcb/grid/user",
+                    "Access": "remote",
+                    "SpaceToken": "LHCb-EOS",
+                    "WSUrl": "/srm/v2/server?SFN:",
+                }
+            },
+            # Buggy because not ready for this use
+            "CERN-USE-PLUGIN-AS-PROTOCOL-NAME-WITH-PLUGIN-NAME": {
+                "BaseSE": "CERN-BASE",
+                "GFAL2_SRM2": {
+                    "Host": "srm-eoslhcb.cern.ch",
+                    "Port": 8443,
+                    "Protocol": "srm",
+                    "Path": "/eos/lhcb/grid/user",
+                    "Access": "remote",
+                    "SpaceToken": "LHCb-EOS",
+                    "PluginName": "GFAL2_XROOT",
+                    "WSUrl": "/srm/v2/server?SFN:",
+                }
+            },
+            "CERN-BASE-WITH-TWO-SAME-PLUGINS": {
+                "BackendType": "Eos",
+                "SEType": "T0D1",
+                "AccessProtocol.1": {
+                    "Host": "srm-eoslhcb.cern.ch",
+                    "Port": 8443,
+                    "PluginName": "GFAL2_SRM2",
+                    "Protocol": "srm",
+                    "Access": "remote",
+                    "WSUrl": "/srm/v2/server?SFN:",
+                },
+                "AccessProtocol.2": {
+                    "Host": "eoslhcb.cern.ch",
+                    "Port": 8443,
+                    "PluginName": "GFAL2_SRM2",
+                    "Protocol": "root",
+                    "Access": "remote",
+                    "WSUrl": "/srm/v2/server?SFN:",
+                }
+            },
+            "CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS": {
+                "BaseSE": "CERN-BASE-WITH-TWO-SAME-PLUGINS",
+                "AccessProtocol.1": {
+                    "Path": "/eos/lhcb/grid/user",
                 }
             },
             # More because add an extra protocol compared to the parent
@@ -379,24 +433,38 @@ class StorageFactorySimpleInheritance(unittest.TestCase):
     'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getElementStatus',
     side_effect = mock_resourceStatus_getElementStatus)
 class StorageFactoryWeirdDefinition(unittest.TestCase):
-  """ In this class, we test error cases
+  """ In this class, we test very specific cases to highlight inheritance of the StorageElement
   """
 
   def test_no_plugin_name(self, _sf_generateStorageObject, _rss_getSEStatus):
     """ In this test, we load a storage element CERN-NO-PLUGIN-NAME that inherits from CERN-BASE,
-        and redifine the same protocol but with no PluginName
+        and redefine the same protocol but with no PluginName
     """
 
     sf = StorageFactory(vo = 'lhcb')
     storages = sf.getStorages('CERN-NO-PLUGIN-NAME')
 
-    self.assertFalse(storages['OK'], storages)
+    self.assertTrue(storages['OK'], storages)
+    storages = storages['Value']
+
+    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2'])
+
+    expectedProtocols = [{
+        'Access': 'remote',
+        'Host': 'srm-eoslhcb.cern.ch',
+        'Path': '/eos/lhcb/grid/user',
+        'PluginName': 'GFAL2_SRM2',
+        'Port': 8443,
+        'Protocol': 'srm',
+        'SpaceToken': 'LHCb-EOS',
+        'WSUrl': '/srm/v2/server?SFN:'
+    }]
+
+    self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
 
   def test_bad_plugin_name(self, _sf_generateStorageObject, _rss_getSEStatus):
     """ In this test, we load a storage element CERN-BAD-PLUGIN-NAME that inherits from CERN-BASE,
-        and redifine the same protocol but with a different PluginName.
-
-        Currently this results in two different protocols, but this should change
+        and redefine the same protocol but with a different PluginName.
     """
 
     sf = StorageFactory(vo = 'lhcb')
@@ -404,8 +472,33 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
 
-    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2'])
+    self.assertListEqual(storages['RemotePlugins'], [])
     self.assertListEqual(storages['LocalPlugins'], ['AnotherPluginName'])
+
+    expectedProtocols = [{
+        'Access': 'local',
+        'Host': 'srm-eoslhcb.cern.ch',
+        'Path': '/eos/lhcb/grid/prod',
+        'PluginName' : 'AnotherPluginName',
+        'Port': 8443,
+        'Protocol': 'srm',
+        'SpaceToken': 'LHCb-EOS',
+        'WSUrl': '/srm/v2/server?SFN:'
+    }]
+
+    self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
+
+  def test_redefine_plugin_name(self, _sf_generateStorageObject, _rss_getSEStatus):
+    """ In this test, we load a storage element CERN-REDEFINE-PLUGIN-NAME that inherits from CERN-BASE,
+        and uses the same Plugin with a different section.
+    """
+
+    sf = StorageFactory(vo = 'lhcb')
+    storages = sf.getStorages('CERN-REDEFINE-PLUGIN-NAME')
+    self.assertTrue(storages['OK'], storages)
+    storages = storages['Value']
+
+    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2','GFAL2_SRM2'])
 
     expectedProtocols = [{
         'Access': 'remote',
@@ -417,10 +510,10 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
         'SpaceToken': 'LHCb-EOS',
         'WSUrl': '/srm/v2/server?SFN:'
     }, {
-        'Access': 'local',
+        'Access': 'remote',
         'Host': '',
-        'Path': '/eos/lhcb/grid/prod',
-        'PluginName': 'AnotherPluginName',
+        'Path': '/eos/lhcb/grid/other',
+        'PluginName': 'GFAL2_SRM2',
         'Port': '',
         'Protocol': '',
         'SpaceToken': '',
@@ -429,25 +522,63 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
 
     self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
 
-  def test_redefine_plugin_name(self, _sf_generateStorageObject, _rss_getSEStatus):
-    """ In this test, we load a storage element CERN-REDEFINE-PLUGIN-NAME that inherits from CERN-BASE,
-        and uses the same Plugin with a different section.
-
-        Currently this results in a single protocol, but this should change
+  def test_use_plugin_as_protocol_name(self, _sf_generateStorageObject, _rss_getSEStatus):
+    """ In this test, we load a storage element CERN-USE-PLUGIN-AS-PROTOCOL-NAME that inherits from CERN-BASE,
+        and uses a protocol named as a plugin name, the plugin name is not present.
     """
-
     sf = StorageFactory(vo = 'lhcb')
-    storages = sf.getStorages('CERN-REDEFINE-PLUGIN-NAME')
+    storages = sf.getStorages('CERN-USE-PLUGIN-AS-PROTOCOL-NAME')
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
 
-    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2'])
+    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2', 'GFAL2_SRM2'])
 
     expectedProtocols = [{
         'Access': 'remote',
         'Host': 'srm-eoslhcb.cern.ch',
-        'Path': '/eos/lhcb/grid/other',
+        'Path': '/eos/lhcb/grid/prod',
         'PluginName': 'GFAL2_SRM2',
+        'Port': 8443,
+        'Protocol': 'srm',
+        'SpaceToken': 'LHCb-EOS',
+        'WSUrl': '/srm/v2/server?SFN:'
+    }, {
+        'Access': 'remote',
+        'Host': 'srm-eoslhcb.cern.ch',
+        'Path': '/eos/lhcb/grid/user',
+        'Port': 8443,
+        'Protocol': 'srm',
+        'SpaceToken': 'LHCb-EOS',
+        'WSUrl': '/srm/v2/server?SFN:'
+    }]
+
+    self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
+
+  def test_use_plugin_as_protocol_name_with_plugin_name(self, _sf_generateStorageObject, _rss_getSEStatus):
+    """ In this test, we load a storage element CERN-USE-PLUGIN-AS-PROTOCOL-NAME that inherits from CERN-BASE,
+        and uses a protocol named as a plugin name, the plugin name is also present.
+    """
+    sf = StorageFactory(vo = 'lhcb')
+    storages = sf.getStorages('CERN-USE-PLUGIN-AS-PROTOCOL-NAME-WITH-PLUGIN-NAME')
+    self.assertTrue(storages['OK'], storages)
+    storages = storages['Value']
+
+    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2', 'GFAL2_XROOT'])
+
+    expectedProtocols = [{
+        'Access': 'remote',
+        'Host': 'srm-eoslhcb.cern.ch',
+        'Path': '/eos/lhcb/grid/prod',
+        'PluginName': 'GFAL2_SRM2',
+        'Port': 8443,
+        'Protocol': 'srm',
+        'SpaceToken': 'LHCb-EOS',
+        'WSUrl': '/srm/v2/server?SFN:'
+    }, {
+        'Access': 'remote',
+        'Host': 'srm-eoslhcb.cern.ch',
+        'Path': '/eos/lhcb/grid/user',
+        'PluginName': 'GFAL2_XROOT',
         'Port': 8443,
         'Protocol': 'srm',
         'SpaceToken': 'LHCb-EOS',
@@ -466,18 +597,9 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
 
-    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2', 'Extra'])
+    self.assertListEqual(storages['RemotePlugins'], ['Extra', 'GFAL2_SRM2'])
 
     expectedProtocols = [{
-        'Access': 'remote',
-        'Host': 'srm-eoslhcb.cern.ch',
-        'Path': '/eos/lhcb/grid/user',
-        'PluginName': 'GFAL2_SRM2',
-        'Port': 8443,
-        'Protocol': 'srm',
-        'SpaceToken': 'LHCb-EOS',
-        'WSUrl': '/srm/v2/server?SFN:'
-    }, {
         'Access': 'remote',
         'Host': 'srm-eoslhcb.cern.ch',
         'Path': '/eos/lhcb/grid/prod',
@@ -486,10 +608,51 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
         'Protocol': 'srm',
         'SpaceToken': 'LHCb-EOS',
         'WSUrl': ''
-    }]
+    }, {
+        'Access': 'remote',
+        'Host': 'srm-eoslhcb.cern.ch',
+        'Path': '/eos/lhcb/grid/user',
+        'PluginName': 'GFAL2_SRM2',
+        'Port': 8443,
+        'Protocol': 'srm',
+        'SpaceToken': 'LHCb-EOS',
+        'WSUrl': '/srm/v2/server?SFN:'
+    }, ]
 
     self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
 
+  def test_child_inherit_from_base_with_two_same_plugins(self, _sf_generateStorageObject, _rss_getSEStatus):
+    """ In this test, we load a storage element CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS that inherits 
+        from CERN-BASE-WITH-TWO-SAME-PLUGINS, using two identical plugin names in two sections.
+    """
+    sf = StorageFactory(vo = 'lhcb')
+    storages = sf.getStorages('CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS')
+    self.assertTrue(storages['OK'], storages)
+    storages = storages['Value']
+
+    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2', 'GFAL2_SRM2'])
+
+    expectedProtocols = [{
+        'Access': 'remote',
+        'Host': 'srm-eoslhcb.cern.ch',
+        'Path': '/eos/lhcb/grid/user',
+        'PluginName': 'GFAL2_SRM2',
+        'Port': 8443,
+        'Protocol': 'srm',
+        'SpaceToken': '',
+        'WSUrl': '/srm/v2/server?SFN:'
+    }, {
+        'Access': 'remote',
+        'Host': 'eoslhcb.cern.ch',
+        'Path': '',
+        'PluginName': 'GFAL2_SRM2',
+        'Port': 8443,
+        'Protocol': 'root',
+        'SpaceToken': '',
+        'WSUrl': '/srm/v2/server?SFN:'
+    }]
+
+    self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
 
 @mock.patch('DIRAC.Resources.Storage.StorageFactory.gConfig', new = sf_gConfig)
 @mock.patch(
