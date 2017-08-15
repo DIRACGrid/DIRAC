@@ -1,4 +1,4 @@
-[v6r19-pre6]
+[v6r19-pre7]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -94,6 +94,12 @@ CHANGE: Dirac API - added runLocal as an API method
 NEW: Documentation for developing with a container (includes Dockerfile)
 NEW: Add script to collate release notes from Pull Request comments  
 NEW: Chapter on scaling and limitations
+
+[v6r17p29]
+
+*WMS
+CHANGE: split time left margins in cpuMargin and wallClockMargin. Also simplified check.
+
 
 [v6r17p28]
 
