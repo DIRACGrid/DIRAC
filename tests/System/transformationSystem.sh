@@ -5,7 +5,7 @@ Example:
 $(basename "$0") -test_filter [true,false]"
 
 if [ $# -ne 2 ]
-then 
+then
   echo "$usage"
 exit 1
 fi
@@ -15,17 +15,17 @@ if [ "$1" = "-test_filter" ]; then
    if [ "$2" == "True" ]||[ "$2" == "False" ]; then
      TestFilter=$2
    else
-     echo "$usage"                                                                                                                                                 
+     echo "$usage"
      exit 1
-   fi 
+   fi
 fi
 
 echo "dirac-proxy-init -g dirac_prod"
 dirac-proxy-init -g dirac_prod
-if [ $? -ne 0 ]                                                                                                                                                    
-then                                                                                                                                                                
+if [ $? -ne 0 ]
+then
    exit $?
-fi                                                                                                                                                                  
+fi
 echo " "
 
 #Values to be used
@@ -37,12 +37,12 @@ ttime=$(date +"%R")
 version=$(dirac-version)
 
 if [ -d "TransformationSystemTest" ]; then
-  echo "Removing TransformationSystemTest" 
+  echo "Removing TransformationSystemTest"
   rm -R TransformationSystemTest
 fi
 echo "Creating TransformationSystemTest"
 mkdir -p TransformationSystemTest
-directory=/dirac/certification/Test/INIT/$version/$tdate/$stime
+directory=/lhcb/certification/Test/INIT/$version/$tdate/$stime
 #selecting a random USER Storage Element
 #SEs=$(dirac-dms-show-se-status |grep USER |grep -v 'Banned\|Degraded\|-2' | awk '{print $1}')
 SEs=$(dirac-dms-show-se-status |grep BUFFER |grep -v 'Banned\|Degraded\|-new' | awk '{print $1}')
@@ -59,7 +59,7 @@ done
 # Create unique files and adding entry to the bkk"
 echo ""
 echo "Creating unique test files"
-./random_files_creator.sh --Files=5 --Name="Test_Transformation_System_" --Path=$PWD/TransformationSystemTest/
+$DIRAC/DIRAC/tests/System/random_files_creator.sh --Files=5 --Name="Test_Transformation_System_" --Path=$PWD/TransformationSystemTest/
 
 # Add the random files to the transformation
 echo ""
@@ -83,13 +83,13 @@ do
   echo "$line $randomSE"
 done < TransformationSystemTest/LFNlist.txt >> ./LFNlistNew.txt
 
-dirac-dms-add-file LFNlistNew.txt
+dirac-dms-add-file LFNlistNew.txt -ddd
 
 cat TransformationSystemTest/LFNlist.txt | awk '{print $1}' | sort > ./LFNstoTS.txt
 
 echo ""
 echo "Submitting test production"
-python dirac-test-production.py -ddd $directory  --UseFilter=$TestFilter
+python $DIRAC/DIRAC/tests/System/dirac-test-production.py -ddd $directory  --UseFilter=$TestFilter
 if [ $? -ne 0 ]
 then
    exit $?
@@ -112,7 +112,7 @@ fi
 echo ""
 echo "Checking if the files have been added to the transformation"
 dirac-transformation-get-files $transID | sort > ./transLFNs.txt
-diff LFNstoTS.txt transLFNs.txt
+diff --ignore-space-change LFNstoTS.txt transLFNs.txt
 if [ $? -ne 0 ]
 then
   echo 'Error: files have not been  added to the transformation'

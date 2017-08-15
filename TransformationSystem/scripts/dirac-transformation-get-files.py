@@ -12,21 +12,18 @@ from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s TransID' % Script.scriptName
-                                     ] ) )
+                                   ] ) )
 
 Script.parseCommandLine()
 
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 args = Script.getPositionalArgs()
-if ( len( args ) != 1 ):
+if len( args ) != 1:
   Script.showHelp()
 
-# get arguments
-TransID = args[0]
-
 tc = TransformationClient()
-res = tc.getTransformationFiles( {'TransformationID': TransID} )
+res = tc.getTransformationFiles( {'TransformationID': args[0]} )
 
 if not res['OK']:
   DIRAC.gLogger.error ( res['Message'] )
@@ -34,9 +31,3 @@ if not res['OK']:
 
 for transfile in res['Value']:
   DIRAC.gLogger.notice( transfile['LFN'] )
-
-
-
-
-
-
