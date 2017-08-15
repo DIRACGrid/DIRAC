@@ -220,20 +220,13 @@ def enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wallCloc
 											       wallClockLimit ) )
   gLogger.verbose( 'Remaining CPU %.02f%%, Remaining WallClock %.02f%%, margin CPU %s%%, margin WC %s%%' % fractionTuple )
 
-  # TBH I don't understand why wallClockRemainingFraction > cpuRemainingFraction is checked at all
-  if wallClockRemainingFraction > cpuRemainingFraction \
-  and cpuRemainingFraction > cpuMarginFraction \
+  if cpuRemainingFraction > cpuMarginFraction \
   and wallClockRemainingFraction > wallClockMarginFraction:
     gLogger.verbose( 'Remaining CPU %.02f%% < Remaining WallClock %.02f%% and margins respected (%s%% and %s%%)' % fractionTuple )
     return True
   else:
-    if cpuRemainingFraction > cpuMarginFraction and wallClockRemainingFraction > wallClockMarginFraction:
-      gLogger.verbose( 'Remaining CPU %.02f%% and Remaining WallClock %.02f%% fractions both > margin (%s%% and %s%%)' % fractionTuple )
-      return True
-    else:
-      gLogger.verbose( 'Remaining CPU %.02f%% or WallClock %.02f%% fractions < margin (%s%% and %s%%) so no time left' % fractionTuple )
-
-  return False
+    gLogger.verbose( 'Remaining CPU %.02f%% or WallClock %.02f%% fractions < margin (%s%% and %s%%) so no time left' % fractionTuple )
+    return False
 
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
