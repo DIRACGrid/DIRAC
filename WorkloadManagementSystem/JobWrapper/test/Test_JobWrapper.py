@@ -71,7 +71,8 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     self.assertTrue( res['OK'] )
 
   @patch( "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect = getSystemSectionMock )
-  def test_execute(self, _patch):
+  @patch( "DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", side_effect = getSystemSectionMock )
+  def test_execute(self, _patch1, _patch2):
     jw = JobWrapper()
     jw.jobArgs = {'Executable':'/bin/ls'}
     res = jw.execute('')
