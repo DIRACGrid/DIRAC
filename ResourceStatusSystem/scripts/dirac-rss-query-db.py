@@ -349,8 +349,8 @@ def add( args, switchDict ):
                                                tokenExpiration = getToken( 'expiration' )
                                              )
 
-  if 'Value' in output:
-    result['match'] = int( output['Value'] )
+  if 'Value' in output and output['Value']:
+    result['match'] = int(  output['Value'] )
   result['successful'] = output['OK']
   result['message'] = output['Message'] if 'Message' in output else None
 
@@ -379,7 +379,7 @@ def modify( args, switchDict ):
                                           tokenExpiration = getToken( 'expiration' )
                                         )
 
-  if 'Value' in output:
+  if 'Value' in output and output['Value']:
     result['match'] = int( output['Value'] )
   result['successful'] = output['OK']
   result['message'] = output['Message'] if 'Message' in output else None

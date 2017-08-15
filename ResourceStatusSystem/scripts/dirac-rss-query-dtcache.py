@@ -300,7 +300,8 @@ def add( switchDict ):
   if not output['OK']:
     return output
 
-  result['match'] = int( output['Value'] )
+  if output['Value']:
+    result['match'] = int( output['Value'] )
   result['OK'] = True
   result['message'] = output['Message'] if 'Message' in output else None
 
@@ -329,7 +330,8 @@ def delete( switchDict ):
   if not output['OK']:
     return output
 
-  result['match'] = int( output['Value'] )
+  if output['Value']:
+    result['match'] = int( output['Value'] )
   result['OK'] = True
   result['Message'] = output['Message'] if 'Message' in output else None
 
