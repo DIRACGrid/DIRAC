@@ -14,28 +14,28 @@ import errno
 mockObjectSE1 = MagicMock()
 mockObjectSE1.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Accessible':False}},
                                                     'Failed':{}} )
-mockObjectSE1.getStatus.return_value = {'DiskSE': False, 'TapeSE':True}
+mockObjectSE1.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 mockObjectSE2 = MagicMock()
 mockObjectSE2.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/2.txt':{'Cached':1, 'Accessible':True}},
                                                     'Failed':{}} )
-mockObjectSE2.getStatus.return_value = {'DiskSE': False, 'TapeSE':True}
+mockObjectSE2.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 mockObjectSE3 = MagicMock()
 mockObjectSE3.getFileMetadata.return_value = S_OK( {'Successful':{},
                                                     'Failed':{'/a/lfn/2.txt': 'error'}} )
-mockObjectSE3.getStatus.return_value = {'DiskSE': False, 'TapeSE':True}
+mockObjectSE3.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 mockObjectSE4 = MagicMock()
 mockObjectSE4.getFileMetadata.return_value = S_OK( {'Successful':{},
                                                     'Failed':{'/a/lfn/2.txt':
                                                               S_ERROR( errno.ENOENT, '' )['Message']}} )
-mockObjectSE4.getStatus.return_value = {'DiskSE': False, 'TapeSE':True}
+mockObjectSE4.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 mockObjectSE5 = MagicMock()
 mockObjectSE5.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Accessible':False}},
                                                     'Failed':{}} )
-mockObjectSE5.getStatus.return_value = {'DiskSE': True, 'TapeSE':False}
+mockObjectSE5.getStatus.return_value = S_OK( {'DiskSE': True, 'TapeSE':False} )
 
 mockObjectDMSHelper = MagicMock()
 mockObjectDMSHelper.getLocalSiteForSE.return_value = S_OK( 'mySite' )
