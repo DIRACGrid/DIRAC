@@ -89,11 +89,11 @@ def parseSwitches():
   args = Script.getPositionalArgs()
   if len( args ) < 3:
     error( "Missing all mandatory 'query', 'element', 'tableType' arguments" )
-  elif not args[0].lower() in ( 'select', 'add', 'modify', 'delete' ):
+  elif args[0].lower() not in ( 'select', 'add', 'modify', 'delete' ):
     error( "Incorrect 'query' argument" )
-  elif not args[1].lower() in ( 'site', 'resource', 'component', 'node' ):
+  elif args[1].lower() not in ( 'site', 'resource', 'component', 'node' ):
     error( "Incorrect 'element' argument" )
-  elif not args[2].lower() in ( 'status', 'log', 'history' ):
+  elif args[2].lower() not in ( 'status', 'log', 'history' ):
     error( "Incorrect 'tableType' argument" )
   else:
     query = args[0].lower()
@@ -111,17 +111,17 @@ def parseSwitches():
 
   if 'status' in switches and switches[ 'status' ] is not None:
     switches[ 'status' ] = switches[ 'status' ].title()
-    if not switches[ 'status' ] in ( 'Active', 'Probing', 'Degraded', 'Banned', 'Unknown', 'Error' ):
+    if switches[ 'status' ] not in ( 'Active', 'Probing', 'Degraded', 'Banned', 'Unknown', 'Error' ):
       error( "'%s' is an invalid argument for switch 'status'" % switches[ 'status' ] )
 
   # when it's a add/modify query and status/reason/statusType are not specified
   #then some specific defaults are set up
   if query == 'add' or query == 'modify':
-    if not 'status' in switches or switches[ 'status' ] is None:
+    if 'status' not in switches or switches[ 'status' ] is None:
       switches[ 'status' ] = 'Unknown'
-    if not 'reason' in switches or switches[ 'reason' ] is None:
+    if 'reason' not in switches or switches[ 'reason' ] is None:
       switches[ 'reason' ] = 'Unknown reason'
-    if not 'statusType' in switches or switches[ 'statusType' ] is None:
+    if 'statusType' not in switches or switches[ 'statusType' ] is None:
       switches[ 'statusType' ] = 'all'
 
 
@@ -173,7 +173,7 @@ def checkStatusTypes( statusTypes ):
   acceptableStatusTypes = opsH.replace( ',', '' ).split()
 
   for statusType in statusTypes:
-    if not statusType in acceptableStatusTypes and statusType != 'all':
+    if statusType not in acceptableStatusTypes and statusType != 'all':
       acceptableStatusTypes.append('all')
       error( "'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
              % ( statusType, str( acceptableStatusTypes ) ) )
@@ -277,7 +277,7 @@ def tabularPrint( table ):
   records = []
   for row in table:
     record = []
-    for k,v in row.items():
+    for _k,v in row.items():
       if isinstance( v, datetime.datetime ):
         record.append( Time.toString( v ) )
       elif v is None:
@@ -349,8 +349,8 @@ def add( args, switchDict ):
                                                tokenExpiration = getToken( 'expiration' )
                                              )
 
-  if 'Value' in output and output['Value']:
-    result['match'] = int(  output['Value'] )
+  if output.get('Value'):
+    result['match'] = int( output['Value'] )
   result['successful'] = output['OK']
   result['message'] = output['Message'] if 'Message' in output else None
 
@@ -379,7 +379,7 @@ def modify( args, switchDict ):
                                           tokenExpiration = getToken( 'expiration' )
                                         )
 
-  if 'Value' in output and output['Value']:
+  if output.get('Value'):
     result['match'] = int( output['Value'] )
   result['successful'] = output['OK']
   result['message'] = output['Message'] if 'Message' in output else None

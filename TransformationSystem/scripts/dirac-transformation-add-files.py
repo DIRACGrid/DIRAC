@@ -22,6 +22,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 args = Script.getPositionalArgs()
 if len( args ) != 2:
   Script.showHelp()
+  DIRAC.exit( 1 )
 
 # get arguments
 inputFileName = args[1]
@@ -40,7 +41,7 @@ res = tc.addFilesToTransformation( args[0] , lfns )  # Files added here
 
 if not res['OK']:
   DIRAC.gLogger.error ( res['Message'] )
-  DIRAC.exit( -1 )
+  DIRAC.exit( 2 )
 
 successfullyAdded = 0
 alreadyPresent = 0

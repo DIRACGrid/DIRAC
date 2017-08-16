@@ -21,13 +21,14 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 args = Script.getPositionalArgs()
 if len( args ) != 1:
   Script.showHelp()
+  DIRAC.exit( 1 )
 
 tc = TransformationClient()
 res = tc.getTransformationFiles( {'TransformationID': args[0]} )
 
 if not res['OK']:
   DIRAC.gLogger.error ( res['Message'] )
-  DIRAC.exit( -1 )
+  DIRAC.exit( 2 )
 
 for transfile in res['Value']:
   DIRAC.gLogger.notice( transfile['LFN'] )
