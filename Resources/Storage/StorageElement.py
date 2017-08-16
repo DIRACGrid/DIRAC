@@ -286,6 +286,16 @@ class StorageElementItem( object ):
 
   def getStatus( self ):
     """
+    Return Status of the SE only if the SE is valid
+    It returns an S_OK/S_ERROR structure
+    """
+    valid = self.isValid()
+    if not valid['OK']:
+      return valid
+    return S_OK( self.status() )
+
+  def status( self ):
+    """
      Return Status of the SE, a dictionary with:
 
       * Read: True (is allowed), False (it is not allowed)
@@ -299,6 +309,7 @@ class StorageElementItem( object ):
       * TapeSE: True if TXDY with X > 0 (defaults to False)
       * TotalCapacityTB: float (-1 if not defined)
       * DiskCacheTB: float (-1 if not defined)
+    It returns directly the dictionary
     """
 
     self.log.getSubLogger( 'getStatus' ).verbose( "determining status of %s." % self.name )
@@ -313,8 +324,6 @@ class StorageElementItem( object ):
       retDict['TapeSE'] = False
       retDict['TotalCapacityTB'] = -1
       retDict['DiskCacheTB'] = -1
-      # FIXME: once the interface change is known, remove this line
-      retDict.update( S_OK( retDict.copy() ) )
       return retDict
 
     # If nothing is defined in the CS Access is allowed
@@ -344,11 +353,9 @@ class StorageElementItem( object ):
     except Exception:
       retDict['DiskCacheTB'] = -1
 
-    # FIXME: once the interface change is known, remove this line
-    retDict.update( S_OK( retDict.copy() ) )
     return retDict
 
-  def isValid( self, operation = '' ):
+  def isValid( self, operation = None ):
     """ check CS/RSS statuses for :operation:
 
     :param str operation: operation name
@@ -364,12 +371,12 @@ class StorageElementItem( object ):
     if 'VO' in self.options and not self.vo in self.options['VO']:
       log.debug( "StorageElement is not allowed for VO", self.vo )
       return S_ERROR( errno.EACCES, "StorageElement.isValid: StorageElement is not allowed for VO" )
-    log.verbose( "Determining if the StorageElement %s is valid for %s" % ( self.name, operation ) )
+    log.verbose( "Determining if the StorageElement %s is valid for operation '%s'" % ( self.name, operation ) )
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
 
     # Determine whether the StorageElement is valid for checking, reading, writing
-    status = self.getStatus()
+    status = self.status()
     checking = status[ 'Check' ]
     reading = status[ 'Read' ]
     writing = status[ 'Write' ]

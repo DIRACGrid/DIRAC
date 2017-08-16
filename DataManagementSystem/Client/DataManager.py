@@ -698,7 +698,7 @@ class DataManager( object ):
     # Check whether the destination storage element is banned
     log.verbose( "Determining whether %s ( destination ) is Write-banned." % destSEName )
 
-    if not destStorageElement.getStatus()['Write']:
+    if not destStorageElement.status()['Write']:
       infoStr = "Supplied destination Storage Element is not currently allowed for Write."
       log.debug( infoStr, destSEName )
       return S_ERROR( infoStr )
@@ -1601,7 +1601,7 @@ class DataManager( object ):
 
   def __checkSEStatus( self, se, status = 'Read' ):
     """ returns the value of a certain SE status flag (access or other) """
-    return StorageElement( se, vo = self.vo ).getStatus().get( status, False )
+    return StorageElement( se, vo = self.vo ).status().get( status, False )
 
   def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, active = False ):
     """ get replicas from catalogue and filter if requested

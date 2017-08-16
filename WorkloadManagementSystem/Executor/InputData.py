@@ -349,6 +349,8 @@ class InputData( OptimizerExecutor ):
           siteList = result[ 'Value' ]
           seObj = StorageElement( seName, vo = vo )
           seStatus = seObj.getStatus()
+          if not seStatus['OK']:
+            return seStatus
           seDict[ seName ] = { 'Sites': siteList, 'Status': seStatus }
         # Get SE info from the dict
         seData = seDict[ seName ]

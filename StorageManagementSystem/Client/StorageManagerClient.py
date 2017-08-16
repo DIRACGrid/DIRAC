@@ -138,7 +138,9 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
     vo = getVOForGroup( proxyUserGroup )
     seObj = StorageElement( se, vo = vo )
     status = seObj.getStatus()
-    tapeSE = status['TapeSE']
+    if not status['OK']:
+      return status
+    tapeSE = status['Value']['TapeSE']
     # If requested to check only Tape SEs and  the file is at a diskSE, we guess it is Online...
     if checkOnlyTapeSEs and not tapeSE:
       for lfn in lfnsInSEList:
