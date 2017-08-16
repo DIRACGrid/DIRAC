@@ -520,7 +520,7 @@ class DataManager( object ):
 
     ###########################################################
     # Perform the registration here
-    destinationSE = storageElement.getStorageElementName()['Value']
+    destinationSE = storageElement.storageElementName()
     res = returnSingleResult( storageElement.getURL( lfn, protocol = self.registrationProtocol ) )
     if not res['OK']:
       errStr = "Failed to generate destination PFN."
@@ -692,7 +692,7 @@ class DataManager( object ):
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
 
     # Get the real name of the SE
-    destSEName = destStorageElement.getStorageElementName()['Value']
+    destSEName = destStorageElement.storageElementName()
 
     ###########################################################
     # Check whether the destination storage element is banned
@@ -1034,7 +1034,7 @@ class DataManager( object ):
         for lfn, url in replicaTuple:
           failed[lfn] = errStr
       else:
-        storageElementName = destStorageElement.getStorageElementName()['Value']
+        storageElementName = destStorageElement.storageElementName()
         for lfn, url in replicaTuple:
           res = returnSingleResult( destStorageElement.getURL( lfn, protocol = self.registrationProtocol ) )
           if not res['OK']:

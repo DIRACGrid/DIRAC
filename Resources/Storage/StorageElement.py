@@ -239,7 +239,7 @@ class StorageElementItem( object ):
     self.okMethods = [ 'getLocalProtocols',
                        'getProtocols',
                        'getRemoteProtocols',
-                       'getStorageElementName',
+                       'storageElementName',
                        'getStorageParameters',
                        'getTransportURL',
                        'isLocalSE' ]
@@ -271,18 +271,18 @@ class StorageElementItem( object ):
   # These are the basic get functions for storage configuration
   #
 
-  def getStorageElementName( self ):
+  def storageElementName( self ):
     """ SE name getter """
-    self.log.getSubLogger( 'getStorageElementName' ).verbose( "The Storage Element name is %s." % self.name )
-    return S_OK( self.name )
+    self.log.getSubLogger( 'storageElementName' ).verbose( "The Storage Element name is %s." % self.name )
+    return self.name
 
-  def getChecksumType( self ):
+  def checksumType( self ):
     """ get local /Resources/StorageElements/SEName/ChecksumType option if defined, otherwise
         global /Resources/StorageElements/ChecksumType
     """
-    self.log.getSubLogger( 'getChecksumType' ).verbose( "get checksum type for %s." % self.name )
-    return S_OK( str( gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" ) ).upper()
-                 if "ChecksumType" not in self.options else str( self.options["ChecksumType"] ).upper() )
+    self.log.getSubLogger( 'checksumType' ).verbose( "get checksum type for %s." % self.name )
+    return gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" ).upper() \
+      if "ChecksumType" not in self.options else str( self.options["ChecksumType"] ).upper()
 
   def getStatus( self ):
     """
