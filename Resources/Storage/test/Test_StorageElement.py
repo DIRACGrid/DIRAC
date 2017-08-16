@@ -81,10 +81,10 @@ def mock_StorageFactory_generateStorageObject( storageName, pluginName, paramete
 
   return S_OK( storageObj )
 
-def mock_StorageFactory_getConfigStorageName( storageName, referenceType ):
+def mock_StorageFactory_getConfigStorageName( storageName, referenceType, rootConfigPath ):
   return S_OK( storageName )
 
-def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName = None ):
+def mock_StorageFactory_getConfigStorageOptions( storageName, rootConfigPath, derivedStorageName = None ):
   """ Get the options associated to the StorageElement as defined in the CS
   """
 
@@ -101,7 +101,7 @@ def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName
 
   return S_OK( options )
 
-def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName = None ):
+def mock_StorageFactory_getConfigStorageProtocols( storageName, rootConfigPath, derivedStorageName = None ):
   """ Protocol specific information is present as sections in the Storage configuration
   """
   protocolDetails = { 'StorageA' : {'protoA':{'PluginName': 'File',

@@ -10,7 +10,64 @@ import copy
 gLogger.setLevel('DEBUG')
 dict_cs = {
     "Resources": {
+        "StorageElementBases": {
+            "CERN-BASE-WITH-TWO-SAME-PLUGINS": {
+                "BackendType": "Eos",
+                "SEType": "T0D1",
+                "AccessProtocol.1": {
+                    "Host": "srm-eoslhcb.cern.ch",
+                    "Port": 8443,
+                    "PluginName": "GFAL2_SRM2",
+                    "Protocol": "srm",
+                    "Access": "remote",
+                    "WSUrl": "/srm/v2/server?SFN:",
+                },
+                "AccessProtocol.2": {
+                    "Host": "eoslhcb.cern.ch",
+                    "Port": 8443,
+                    "PluginName": "GFAL2_SRM2",
+                    "Protocol": "root",
+                    "Access": "remote",
+                    "WSUrl": "/srm/v2/server?SFN:",
+                }
+            },
+            # Pure abstract because no path or SpaceToken
+            "CERN-ABSTRACT": {
+                "BackendType": "Eos",
+                "SEType": "T0D1",
+                "AccessProtocol.1": {
+                    "Host": "srm-eoslhcb.cern.ch",
+                    "Port": 8443,
+                    "PluginName": "GFAL2_SRM2",
+                    "Protocol": "srm",
+                    "Access": "remote",
+                    "WSUrl": "/srm/v2/server?SFN:",
+                },
+                "AccessProtocol.2": {
+                    "Host": "eoslhcb.cern.ch",
+                    "PluginName": "GFAL2_XROOT",
+                    "Protocol": "root",
+                    "Access": "remote",
+                }
+            },
+        },
         "StorageElements": {
+            # This SE must be in the section above but we put it here to test
+            # backward compatibility
+            "CERN-BASE": {
+                "BackendType": "Eos",
+                "SEType": "T0D1",
+                "AccessProtocol.1": {
+                    "Host": "srm-eoslhcb.cern.ch",
+                    "Port": 8443,
+                    "PluginName": "GFAL2_SRM2",
+                    "Protocol": "srm",
+                    "Path": "/eos/lhcb/grid/prod",
+                    "Access": "remote",
+                    "SpaceToken": "LHCb-EOS",
+                    "WSUrl": "/srm/v2/server?SFN:",
+                }
+            },
             "CERN-SIMPLE": {
                 "BackendType": "Eos",
                 "SEType": "T0D1",
@@ -32,20 +89,6 @@ dict_cs = {
                     "Access": "local",
                     "SpaceToken": "LHCb-EOS",
                 },
-            },
-            "CERN-BASE": {
-                "BackendType": "Eos",
-                "SEType": "T0D1",
-                "AccessProtocol.1": {
-                    "Host": "srm-eoslhcb.cern.ch",
-                    "Port": 8443,
-                    "PluginName": "GFAL2_SRM2",
-                    "Protocol": "srm",
-                    "Path": "/eos/lhcb/grid/prod",
-                    "Access": "remote",
-                    "SpaceToken": "LHCb-EOS",
-                    "WSUrl": "/srm/v2/server?SFN:",
-                }
             },
             # Just inherit, overwrite a SpaceToken and Path and add an option
             "CERN-USER": {
@@ -120,26 +163,6 @@ dict_cs = {
                     "WSUrl": "/srm/v2/server?SFN:",
                 }
             },
-            "CERN-BASE-WITH-TWO-SAME-PLUGINS": {
-                "BackendType": "Eos",
-                "SEType": "T0D1",
-                "AccessProtocol.1": {
-                    "Host": "srm-eoslhcb.cern.ch",
-                    "Port": 8443,
-                    "PluginName": "GFAL2_SRM2",
-                    "Protocol": "srm",
-                    "Access": "remote",
-                    "WSUrl": "/srm/v2/server?SFN:",
-                },
-                "AccessProtocol.2": {
-                    "Host": "eoslhcb.cern.ch",
-                    "Port": 8443,
-                    "PluginName": "GFAL2_SRM2",
-                    "Protocol": "root",
-                    "Access": "remote",
-                    "WSUrl": "/srm/v2/server?SFN:",
-                }
-            },
             "CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS": {
                 "BaseSE": "CERN-BASE-WITH-TWO-SAME-PLUGINS",
                 "AccessProtocol.1": {
@@ -161,25 +184,6 @@ dict_cs = {
                     "Path": "/eos/lhcb/grid/prod",
                     "Access": "remote",
                     "SpaceToken": "LHCb-EOS",
-                }
-            },
-            # Pure abstract because no path or SpaceToken
-            "CERN-ABSTRACT": {
-                "BackendType": "Eos",
-                "SEType": "T0D1",
-                "AccessProtocol.1": {
-                    "Host": "srm-eoslhcb.cern.ch",
-                    "Port": 8443,
-                    "PluginName": "GFAL2_SRM2",
-                    "Protocol": "srm",
-                    "Access": "remote",
-                    "WSUrl": "/srm/v2/server?SFN:",
-                },
-                "AccessProtocol.2": {
-                    "Host": "eoslhcb.cern.ch",
-                    "PluginName": "GFAL2_XROOT",
-                    "Protocol": "root",
-                    "Access": "remote",
                 }
             },
             # Inherits from ABSTRACT
@@ -208,7 +212,7 @@ class fake_gConfig(object):
     return reduce(lambda d, e: d.get(e, {}), path.strip('/').split('/'), dict_cs)
 
   def getValue(self, path, defaultValue = ''):
-    if 'StorageElements' not in path:
+    if 'StorageElements' not in path and 'StorageElementBases' not in path:
       return gConfig.getValue(path, defaultValue)
     csValue = self.crawlCS(path)
     if not csValue:
@@ -219,7 +223,7 @@ class fake_gConfig(object):
     """ Mock the getOptionsDict call of gConfig
       It reads from dict_cs
     """
-    if 'StorageElements' not in path:
+    if 'StorageElements' not in path and 'StorageElementBases' not in path:
       return gConfig.getOptionsDict(path)
     csSection = self.crawlCS(path)
     options = dict((opt, val) for opt, val in csSection.iteritems() if not isinstance(val, dict))
@@ -229,7 +233,7 @@ class fake_gConfig(object):
     """ Mock the getOptions call of gConfig
       It reads from dict_cs
     """
-    if 'StorageElements' not in path:
+    if 'StorageElements' not in path and 'StorageElementBases' not in path:
       return gConfig.getOptions(path)
     csSection = self.crawlCS(path)
     options = [opt for opt, val in csSection.iteritems() if not isinstance(val, dict)]
@@ -239,7 +243,7 @@ class fake_gConfig(object):
     """ Mock the getOptions call of gConfig
       It reads from dict_cs
     """
-    if 'StorageElements' not in path:
+    if 'StorageElements' not in path and 'StorageElementBases' not in path:
       return gConfig.getSections(path)
     csSection = self.crawlCS(path)
     sections = [opt for opt, val in csSection.iteritems() if isinstance(val, dict)]
