@@ -271,18 +271,26 @@ class StorageElementItem( object ):
   # These are the basic get functions for storage configuration
   #
 
+  def getStorageElementName( self ):
+    """ SE name getter for backward compatibility """
+    return S_OK( self.storageElementName() )
+
   def storageElementName( self ):
     """ SE name getter """
     self.log.getSubLogger( 'storageElementName' ).verbose( "The Storage Element name is %s." % self.name )
     return self.name
 
+  def getChecksumType( self ):
+    """ Checksum type getter for backward compatibility """
+    return S_OK( self.checksumType() )
+
   def checksumType( self ):
-    """ get local /Resources/StorageElements/SEName/ChecksumType option if defined, otherwise
+    """ get specific /Resources/StorageElements/<SEName>/ChecksumType option if defined, otherwise
         global /Resources/StorageElements/ChecksumType
     """
     self.log.getSubLogger( 'checksumType' ).verbose( "get checksum type for %s." % self.name )
-    return gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" ).upper() \
-      if "ChecksumType" not in self.options else str( self.options["ChecksumType"] ).upper()
+    return self.options["ChecksumType"].upper() \
+      if "ChecksumType" in self.options else gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" ).upper()
 
   def getStatus( self ):
     """
