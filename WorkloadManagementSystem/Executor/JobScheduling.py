@@ -564,7 +564,7 @@ class JobScheduling( OptimizerExecutor ):
       for seName in closeSEs:
         # If we don't have the SE status get it and store it
         if seName not in seStatus:
-          seStatus[ seName ] = StorageElement( seName, vo = vo )status()
+          seStatus[ seName ] = StorageElement( seName, vo = vo ).status()
         # get the SE status from mem and add it if its disk
         status = seStatus[ seName ]
         if status['Read'] and status['DiskSE']:
