@@ -338,17 +338,19 @@ def getDictFromList( fromList ):
 
 def getCacheDictFromRawData( rawList ):
   """
-  Formats the raw data list, which we know it must have tuples of three elements.
-  ( element1, element2, element3 ) into a list of tuples with the format
-  ( ( element1, element2 ), element3 ). Then, it is converted to a dictionary,
-  which will be the new Cache.
+  Formats the raw data list, which we know it must have tuples of four elements.
+  ( element1, element2, element3, elementt4 ) into a dictionary of tuples with the format
+  { ( element1, element2, element3 ): element4 )}.
+  The resulting dictionary will be the new Cache.
 
-  It happens that element1 is elementName, element2 is statusType and element3
-  is status.
+  It happens that element1 is elementName,
+                  element2 is elementType,
+                  element3 is statusType,
+                  element4 is status.
 
   :Parameters:
     **rawList** - `list`
-      list of three element tuples [( element1, element2, element3 ),... ]
+      list of three element tuples [( element1, element2, element3, element4 ),... ]
 
   :return: dict of the form { ( elementName, elementType, statusType ) : status, ... }
   """

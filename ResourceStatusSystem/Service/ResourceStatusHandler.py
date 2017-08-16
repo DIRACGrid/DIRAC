@@ -274,7 +274,7 @@ class ResourceStatusHandler( RequestHandler ):
       #element is the old "params" in this case
       element, tableType, name, statusType, status, \
       elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
+      tokenOwner, tokenExpiration, meta = convert(element, tableType)
 
 
     gLogger.info( 'select: %s %s %s %s %s %s %s %s %s %s %s' %
@@ -291,7 +291,6 @@ class ResourceStatusHandler( RequestHandler ):
     return res
 
   types_delete = [ basestring, basestring ]
-
   def export_delete( self, element, tableType, name = None, statusType = None,
                      status = None, elementType = None, reason = None,
                      dateEffective = None, lastCheckTime = None,
@@ -354,7 +353,6 @@ class ResourceStatusHandler( RequestHandler ):
     return res
 
   types_addOrModify = [ basestring, basestring ]
-
   def export_addOrModify( self, element, tableType, name = None, statusType = None,
                           status = None, elementType = None, reason = None,
                           dateEffective = None, lastCheckTime = None,
@@ -415,7 +413,6 @@ class ResourceStatusHandler( RequestHandler ):
     return res
 
   types_modify = [ basestring, basestring ]
-
   def export_modify( self, element, tableType, name = None, statusType = None,
                      status = None, elementType = None, reason = None,
                      dateEffective = None, lastCheckTime = None,
@@ -476,7 +473,6 @@ class ResourceStatusHandler( RequestHandler ):
     return res
 
   types_addIfNotThere = [ basestring, basestring ]
-
   def export_addIfNotThere( self, element, tableType, name = None, statusType = None,
                             status = None, elementType = None, reason = None,
                             dateEffective = None, lastCheckTime = None,
@@ -521,7 +517,7 @@ class ResourceStatusHandler( RequestHandler ):
       #element is the old "params" in this case
       element, tableType, name, statusType, status, \
       elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, meta = convert(element, tableType)
+      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
 
     gLogger.info( 'addIfNotThere: %s %s %s %s %s %s %s %s %s %s %s' %
                   ( element, tableType, name, statusType, status,
