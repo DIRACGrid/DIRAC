@@ -351,7 +351,7 @@ class InputData( OptimizerExecutor ):
           seStatus = seObj.getStatus()
           if not seStatus['OK']:
             return seStatus
-          seDict[ seName ] = { 'Sites': siteList, 'Status': seStatus }
+          seDict[ seName ] = { 'Sites': siteList, 'Status': seStatus['Value'] }
         # Get SE info from the dict
         seData = seDict[ seName ]
         siteList = seData[ 'Sites' ]
