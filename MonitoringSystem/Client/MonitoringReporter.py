@@ -17,7 +17,6 @@ import json
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
-from DIRAC.Resources.MessageQueue.Utilities import getMQParamsFromCS
 from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
 
 __RCSID__ = "$Id$"
@@ -34,7 +33,7 @@ class MonitoringReporter( object ):
   :param __documents: contains the recods which will be inserted to the db\
   :type __documents: python:list
   :param str __monitoringType: type of the records which will be inserted to the db. For example: WMSHistory.
-    """
+  """
 
   def __init__( self, monitoringType = '' ):
 
@@ -42,7 +41,7 @@ class MonitoringReporter( object ):
     self.__documentLock = threading.RLock()
     self.__documents = []
     self.__monitoringType = None
-   
+
     self.__monitoringType = monitoringType
 
   def processRecords( self ):
@@ -56,7 +55,7 @@ class MonitoringReporter( object ):
         return retVal
     else:
       return retVal
-    
+
     result = createConsumer( "Monitoring::Queue::%s" % self.__monitoringType )
     if not result['OK']:
       gLogger.error( "Fail to create Consumer: %s" % result['Message'] )
@@ -74,7 +73,7 @@ class MonitoringReporter( object ):
         retVal = monitoringDB.put( list( records ), self.__monitoringType )
         if not retVal['OK']:
           failedToProcess.append( records )
-             
+
     mqConsumer.close()  # make sure that we will not process any more messages.
     # the db is not available and we publish again the data to MQ
     for records in failedToProcess:
@@ -96,29 +95,28 @@ class MonitoringReporter( object ):
     :param list records: contains a list of key/value pairs (dictionaries)
     :param object mqProducer: We can provide the instance of a producer, which will be used to publish the data
     """
-    
+
     if not mqProducer:
       mqProducer = self.__createProducer()
       result = mqProducer.put( json.dumps( records ) )
       mqProducer.close()
       return result
-    else:
-      return mqProducer.put( json.dumps( records ) )
-    
+    return mqProducer.put( json.dumps( records ) )
+
 
   def commit( self ):
     """
     It inserts the accumulated data to the db. In case of failure
     it keeps in memory/MQ
     """
-    # before we try to insert the data to the db, we process all the data 
+    # before we try to insert the data to the db, we process all the data
     # which are already in the queue
     mqProducer = self.__createProducer()  # we are sure that we can connect to MQ
     if mqProducer:
       result = self.processRecords()
       if not result['OK']:
         gLogger.error( "Unable to insert data to the db:", result['Message'] )
-        
+
     self.__documentLock.acquire()
     documents = self.__documents
     self.__documents = []
@@ -152,7 +150,7 @@ class MonitoringReporter( object ):
       self.__documents.extend( documents )
 
     return S_OK( recordSent )
-  
+
   def __createProducer( self ):
     """
     This method is used to create a producer
@@ -163,5 +161,5 @@ class MonitoringReporter( object ):
       gLogger.warn( "Fail to create Producer:", result['Message'] )
     else:
       mqProducer = result['Value']
-    
+
     return mqProducer
