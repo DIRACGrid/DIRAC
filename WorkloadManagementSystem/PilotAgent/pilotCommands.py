@@ -394,14 +394,14 @@ class CheckCECapabilities( CommandBase ):
   def execute( self ):
     """ Main execution method
     """
-    if self.pp.debugFlag:
-      self.cfg.append( '-ddd' )
+    debugCfg = '-ddd' if self.pp.debugFlag else ''
 
     # Get the resource description as defined in its configuration
     checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
                                                                         self.pp.ceName,
                                                                         self.pp.queueName,
-                                                                        " ".join( self.cfg ) )
+                                                                        debugCfg )
+
     retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
@@ -422,6 +422,7 @@ class CheckCECapabilities( CommandBase ):
     # Tags must be added to already defined tags if any
     if resourceDict.get( 'Tag' ):
       self.pp.tags += resourceDict['Tag']
+    if self.tags:
       self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( ( str( x ) for x in self.pp.tags ) ) )
 
     # If there is anything to be added to the local configuration, let's do it
@@ -453,12 +454,13 @@ class CheckWNCapabilities( CommandBase ):
     """ Discover NumberOfProcessors and RAM
     """
 
-    if self.pp.debugFlag:
-      self.cfg.append( '-ddd' )
+    debugCfg = '-ddd' if self.pp.debugFlag else ''
 
     # Get the worker node parameters
-    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
-                                                                      " ".join( self.cfg ) )
+    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
+                                                                      self.pp.ceName,
+                                                                      self.pp.queueName,
+                                                                      debugCfg )
     retCode, result = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
