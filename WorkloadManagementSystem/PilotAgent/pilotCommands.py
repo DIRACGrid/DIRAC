@@ -422,12 +422,6 @@ class CheckCECapabilities( CommandBase ):
       self.pp.tags += resourceDict['Tag']
       self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( ( str( x ) for x in self.pp.tags ) ) )
 
-    # Add some operational parameters if they are defined
-    if self.pp.useServerCertificate:
-      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
-    if self.debugFlag:
-        self.cfg.append( '-ddd' )
-
     # If there is anything to be added to the local configuration, let's do it
     if self.cfg:
       self.cfg.append( '-FDMH' )
