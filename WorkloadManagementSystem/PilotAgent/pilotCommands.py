@@ -392,8 +392,10 @@ class CheckCECapabilities( CommandBase ):
     self.cfg = []
 
   def execute( self ):
-    """ Setup CE/Queue Tags
+    """ Main execution method
     """
+    if self.pp.debugFlag:
+      self.cfg.append( '-ddd' )
 
     # Get the resource description as defined in its configuration
     checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
@@ -450,6 +452,9 @@ class CheckWNCapabilities( CommandBase ):
   def execute( self ):
     """ Discover NumberOfProcessors and RAM
     """
+
+    if self.pp.debugFlag:
+      self.cfg.append( '-ddd' )
 
     # Get the worker node parameters
     checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
