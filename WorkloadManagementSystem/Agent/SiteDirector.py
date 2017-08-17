@@ -810,7 +810,7 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-r %s' % ','.join( str( it ) for it in diracVersion ) )
 
     #lcgBundle defined?
-    lcgBundleVersion = opsHelper.getValue( "Pilot/lcgBundleVersion", "" )
+    lcgBundleVersion = opsHelper.getValue( "Pilot/LCGBundleVersion", "" )
     if lcgBundleVersion:
       self.log.warn( "lcgBundle version %s defined in CS: will overwrite possible per-release lcg bundle versions" %lcgBundleVersion )
       pilotOptions.append( '-g %s' % lcgBundleVersion )

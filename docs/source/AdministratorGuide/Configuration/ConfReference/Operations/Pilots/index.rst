@@ -9,7 +9,7 @@ Parameter           Description                                               De
 ==================  ========================================================  ===============================================================================================
 Version             What project version will be used                         Version with which the component that submits pilot jobs is installed
 ------------------  --------------------------------------------------------  -----------------------------------------------------------------------------------------------
-lcgBundleVersion    which lcgBundle version to install with the pilot.        None
+LCGBundleVersion    which lcgBundle version to install with the pilot.        None
                     Be careful: if defined, this version will overwrite
                     any possible version defined in the releases.cfg file
 ------------------  --------------------------------------------------------  -----------------------------------------------------------------------------------------------
