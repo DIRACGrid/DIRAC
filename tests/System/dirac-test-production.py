@@ -41,6 +41,8 @@ transName = 'testProduction_'  + str(int(time.time()))
 desc = 'just test'
 
 prodJob = Job()
+prodJob._addParameter( prodJob.workflow, 'PRODUCTION_ID', 'string', '00012345', 'ProductionID' )
+prodJob._addParameter( prodJob.workflow, 'JOB_ID', 'string', '00006789', 'ProductionJobID' )
 prodJob._addParameter( prodJob.workflow, 'eventType', 'string', 'TestEventType', 'Event Type of the prodJobuction' )
 prodJob._addParameter( prodJob.workflow, 'numberOfEvents', 'string', '-1', 'Number of events requested' )
 prodJob._addParameter( prodJob.workflow, 'ProcessingType', 'JDL', str( 'Test' ), 'ProductionGroupOrType' )
