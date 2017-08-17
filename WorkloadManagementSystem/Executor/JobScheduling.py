@@ -386,7 +386,7 @@ class JobScheduling( OptimizerExecutor ):
       if nProcessors:
         tagList.append( "%dProcessors" % nProcessors )
     if "WholeNode" in jobManifest:
-      if jobManifest.getOption( "WholeNode", "" ).lower() in ["1", "yes", "false"]:
+      if jobManifest.getOption( "WholeNode", "" ).lower() in ["1", "yes", "true"]:
         tagList.append( "WholeNode" )
     if "Tags" in jobManifest:
       tagList.extend( jobManifest.getOption( "Tags", [] ) )
