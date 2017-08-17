@@ -1,4 +1,4 @@
-[v6r19-pre7]
+[v6r19-pre8]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -38,6 +38,8 @@ NEW: Security.Utilities - methods to generate all-in-one CA certificates and CRL
 NEW: ElasticSearchDB - gets CA's all-in-one file from the BundleDelivery service if needed
 NEW: genAllCAs.sh, genRevokedCerts.sh - DIRAC-free commands to generate all-in-one CA 
      certificates and CRLs files     
+CHANGE: dirac-create-distribution-tarball - removing docs and tests directories when 
+        creating release tarballs     
 
 *DMS
 CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
@@ -45,6 +47,7 @@ CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycu
 CHANGE: FTSHistoryView - drop FTSServer field from the view description   
 CHANGE: FTSFile DB table: increased length of fields LFN(955), SourceSURL(1024), TargetSURL(1024)
 CHANGE: Uniform length of LFN to 255 across DIRAC dbs
+FIX: FTSJob - fix the serialization of 0 values
 
 *Resources
 NEW: New method in the StorageElement to generate pair of URLs for third party copy.
@@ -92,7 +95,12 @@ FIX: dirac-pilot, pilotTools - PYTHONPATH is cleared on pilot start, pilot optio
 FIX: WMSAdministratorHandler - make methods static appropriately
 FIX: Bug fix for correctly excluding WebApp extensions
 CHANGE: JobScheduling - more precise site name while the job is Waiting, using the set of 
-        sites at which the input files are online rather than checking Tier1s in eligible sites       
+        sites at which the input files are online rather than checking Tier1s in eligible sites      
+FIX: SiteDirector - aggregate tags for the general job availability test         
+FIX: JobScheduling - bug fix in __sendToTQ()
+FIX: pilotTools,pilotCommands - pick up all the necessary settings from the site/queue configuration
+     related to Tags and multi-processor
+NEW: SiteDirector - added option to force lcgBundle version in the pilot
 
 *Interfaces
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
