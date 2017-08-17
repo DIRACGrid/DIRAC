@@ -12,6 +12,7 @@ import tempfile
 import random
 import socket
 import hashlib
+import re
 from collections import defaultdict
 
 
@@ -224,6 +225,12 @@ class SiteDirector( AgentModule ):
                                                              self.queueDict[queue]['CEName'],
                                                              queue ) )
     self.firstPass = False
+
+    ##multi-core flags
+    self.requiredTag = ''
+    self.pilotProcessors = 1
+    self.wholeNode = 'false'
+
     return S_OK()
 
   def __generateQueueHash( self, queueDict ):
@@ -245,6 +252,8 @@ class SiteDirector( AgentModule ):
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
         ceTags = ceDict.get( 'Tag', [] )
+        numberOfProcessors = ceDict.get( 'NumberOfProcessors',1 )
+        requireTag = ceDict.get( 'RequiredTag','' )
         pilotRunDirectory = ceDict.get( 'PilotRunDirectory', '' )
         if isinstance( ceTags, basestring ):
           ceTags = fromChar( ceTags )
@@ -332,6 +341,9 @@ class SiteDirector( AgentModule ):
           self.queueDict[queueName]['QueueName'] = queue
           self.queueDict[queueName]['Platform'] = platform
           self.queueDict[queueName]['QueryCEFlag'] = ceDict.get( 'QueryCEFlag', "false" )
+          ##Multi-core flags
+          self.queueDict[queueName]['NumberOfProcessors'] = self.queueDict[queueName]['ParametersDict'].get( 'NumberOfProcessors', numberOfProcessors )
+          self.queueDict[queueName]['RequiredTag'] = self.queueDict[queueName]['ParametersDict'].get( 'RequiredTag', requireTag )
 
           result = self.queueDict[queueName]['CE'].isValid()
           if not result['OK']:
@@ -346,6 +358,28 @@ class SiteDirector( AgentModule ):
 
           if site not in self.sites:
             self.sites.append( site )
+    """ Get the list of relevant CEs and their descriptions
+    """
+    for queueName in self.queueDict.keys():
+      ce = self.queueDict[queueName]['CEName']
+      site = self.queueDict[queueName]['Site']
+      ceDef = resourceDict[site][ce]
+
+      ##Multi-core flags
+      ceMaxProcessors = ceDef.get( 'NumberOfProcessors',1 )
+      maxProcessors = self.queueDict[queueName]['ParametersDict'].get( 'NumberOfProcessors', ceMaxProcessors )
+      if maxProcessors:
+        maxProcessorsList = range( 1, int( maxProcessors ) + 1 )
+        processorsTags = ['%dProcessors' % processors for processors in maxProcessorsList]
+        if processorsTags:
+          self.queueDict[queueName]['ParametersDict'].setdefault( 'Tags', [] )
+          self.queueDict[queueName]['ParametersDict']['Tags'] += processorsTags
+
+      ceWholeNode = ceDef.get( 'WholeNode', 'false' )
+      wholeNode = self.queueDict[queueName]['ParametersDict'].get( 'WholeNode', ceWholeNode )
+      if wholeNode.lower() in ( 'yes', 'true' ):
+        self.queueDict[queueName]['ParametersDict'].setdefault( 'Tags', [] )
+        self.queueDict[queueName]['ParametersDict']['Tags'].append( 'WholeNode' )
 
     return S_OK()
 
@@ -375,6 +409,8 @@ class SiteDirector( AgentModule ):
     """ Go through defined computing elements and submit jobs if necessary
     """
     # Check that there is some work at all
+    queues = self.queueDict.keys()    
+
     setup = CSGlobals.getSetup()
     tqDict = { 'Setup':setup,
                'CPUTime': 9999999,
@@ -388,7 +424,13 @@ class SiteDirector( AgentModule ):
       return result
     tqDict['Platform'] = result['Value']
     tqDict['Site'] = self.sites
-    tqDict['Tag'] = []
+   
+    
+    ## multi-core tags
+    tags = []
+    for queue in queues:
+      tags += self.queueDict[queue]['ParametersDict']['Tags']
+    tqDict['Tag'] = list( set( tags ) )
     self.log.verbose( 'Checking overall TQ availability with requirements' )
     self.log.verbose( tqDict )
 
@@ -466,8 +508,23 @@ class SiteDirector( AgentModule ):
       ceType = self.queueDict[queue]['CEType']
       queueName = self.queueDict[queue]['QueueName']
       siteName = self.queueDict[queue]['Site']
+      ##multi-core flags
+      self.requiredTag = self.queueDict[queue]['RequiredTag']
+      self.pilotProcessors = self.queueDict[queue]['NumberOfProcessors']
       platform = self.queueDict[queue]['Platform']
       siteMask = siteName in siteMaskList
+      queueTags = self.queueDict[queue]['ParametersDict']['Tags']
+      processorTags = []
+
+      for tag in queueTags:
+        if re.match( r'^[0-9]+Processors$', tag ):
+          processorTags.append( tag )
+      if 'WholeNode' in queueTags:
+        processorTags.append( 'WholeNode' )
+        self.wholeNode = 'true'
+      else:
+        self.wholeNode = 'false'
+      #################### 
 
       if self.rssFlag:
         # Check the status of the Site
@@ -530,6 +587,8 @@ class SiteDirector( AgentModule ):
       if not result['OK']:
         continue
       ceDict['Platform'] = result['Value']
+      #tag in ceDict
+      ceDict['Tag'] = processorTags
 
       # Get the number of eligible jobs for the target site/queue
       result = rpcMatcher.getMatchingTaskQueues( ceDict )
@@ -620,7 +679,16 @@ class SiteDirector( AgentModule ):
           return result
 
         executable, pilotSubmissionChunk = result['Value']
-        result = ce.submitJob( executable, '', pilotSubmissionChunk )
+       
+        #check the parameter
+        processors = self.pilotProcessors
+        if self.wholeNode == 'true':
+          processors = -1
+        if processors != 1:
+          result = ce.submitJob( executable, '', pilotSubmissionChunk, processors = processors )
+        else:
+          result = ce.submitJob( executable, '', pilotSubmissionChunk )
+       
         ### FIXME: The condor thing only transfers the file with some
         ### delay, so when we unlink here the script is gone
         ### FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
@@ -877,6 +945,22 @@ class SiteDirector( AgentModule ):
     # Hack
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
+
+    ##multi core configs for local site 
+    if self.wholeNode == 'true':
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/WholeNode=True' )
+      if self.requiredTag !='':
+        if self.requiredTag == 'WholeNode':
+          pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=WholeNode' )
+          pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=WholeNode' )
+        else:
+          pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=%s' % self.requiredTag )
+          pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % self.requiredTag )
+    else:
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/NumberOfProcessors=%s' % self.pilotProcessors )
+      if self.requiredTag != '' and self.requiredTag != 'WholeNode':
+        pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=%s' % self.requiredTag )
+        pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % self.requiredTag )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )

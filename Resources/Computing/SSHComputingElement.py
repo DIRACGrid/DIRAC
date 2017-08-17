@@ -436,7 +436,7 @@ class SSHComputingElement( ComputingElement ):
     else:
       return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
 
-  def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
+  def submitJob( self, executableFile, proxy, numberOfJobs = 1, processors = 1 ):
 
 #    self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
@@ -454,13 +454,13 @@ class SSHComputingElement( ComputingElement ):
     else: # no proxy
       submitFile = executableFile
 
-    result = self._submitJobToHost( submitFile, numberOfJobs )
+    result = self._submitJobToHost( submitFile, numberOfJobs, processors = processors )
     if proxy:
       os.remove( submitFile )
 
     return result
 
-  def _submitJobToHost( self, executableFile, numberOfJobs, host = None ):
+  def _submitJobToHost( self, executableFile, numberOfJobs, host = None, processors = 1 ):
     """  Submit prepared executable to the given host
     """
     ssh = SSH( host = host, parameters = self.ceParameters )
@@ -478,7 +478,8 @@ class SSHComputingElement( ComputingElement ):
     commandOptions = { 'Executable': submitFile,
                        'NJobs': numberOfJobs,
                        'SubmitOptions': self.submitOptions,
-                       'JobStamps': jobStamps }
+                       'JobStamps': jobStamps,
+                       'Mprocess': processors }
 
     resultCommand = self.__executeHostCommand( 'submitJob', commandOptions, ssh = ssh, host = host )
     if not resultCommand['OK']:
