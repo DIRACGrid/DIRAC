@@ -394,14 +394,10 @@ class CheckCECapabilities( CommandBase ):
   def execute( self ):
     """ Main execution method
     """
-    debugCfg = '-ddd' if self.pp.debugFlag else ''
-
     # Get the resource description as defined in its configuration
-    checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
+    checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s' % ( self.pp.site,
                                                                         self.pp.ceName,
-                                                                        self.pp.queueName,
-                                                                        debugCfg )
-
+                                                                        self.pp.queueName )
     retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
@@ -422,13 +418,15 @@ class CheckCECapabilities( CommandBase ):
     # Tags must be added to already defined tags if any
     if resourceDict.get( 'Tag' ):
       self.pp.tags += resourceDict['Tag']
-    if self.tags:
+    if self.pp.tags:
       self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( ( str( x ) for x in self.pp.tags ) ) )
 
     # If there is anything to be added to the local configuration, let's do it
     if self.cfg:
       self.cfg.append( '-FDMH' )
 
+      if self.debugFlag:
+        self.cfg.append( '-ddd' )
       if self.pp.localConfigFile:
         self.cfg.append( '-O %s' % self.pp.localConfigFile )  # this file is as output
         self.cfg.append( self.pp.localConfigFile )  # this file is as input
@@ -456,13 +454,10 @@ class CheckWNCapabilities( CommandBase ):
     """ Discover NumberOfProcessors and RAM
     """
 
-    debugCfg = '-ddd' if self.pp.debugFlag else ''
-
     # Get the worker node parameters
-    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
+    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s' % ( self.pp.site,
                                                                       self.pp.ceName,
-                                                                      self.pp.queueName,
-                                                                      debugCfg )
+                                                                      self.pp.queueName )
     retCode, result = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
@@ -489,6 +484,8 @@ class CheckWNCapabilities( CommandBase ):
     if self.cfg:
       self.cfg.append( '-FDMH' )
 
+      if self.debugFlag:
+        self.cfg.append( '-ddd' )
       if self.pp.localConfigFile:
         self.cfg.append( '-O %s' % self.pp.localConfigFile )  # this file is as output
         self.cfg.append( self.pp.localConfigFile )  # this file is as input
