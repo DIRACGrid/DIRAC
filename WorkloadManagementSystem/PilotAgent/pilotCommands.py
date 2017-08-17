@@ -474,11 +474,11 @@ class CheckWNCapabilities( CommandBase ):
 
     # If NumberOfProcessors or MaxRAM are defined in the resource configuration, these
     # values are preferred
-    if numberOfProcessors and "NumberOfProcessors" not in self.queueParameters:
+    if numberOfProcessors and "NumberOfProcessors" not in self.pp.queueParameters:
       self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % numberOfProcessors )
     else:
       self.log.warn( "Could not retrieve number of processors" )
-    if maxRAM and "MaxRAM" not in self.queueParameters:
+    if maxRAM and "MaxRAM" not in self.pp.queueParameters:
       self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%d"' % maxRAM )
     else:
       self.log.warn( "Could not retrieve MaxRAM" )
