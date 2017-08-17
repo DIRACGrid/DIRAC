@@ -415,7 +415,7 @@ class SiteDirector( AgentModule ):
     # Get a union of all tags
     tags = []
     for queue in self.queueDict:
-      tags += self.queueDict[queue]['ParametersDict'].get( 'Tags', [] )
+      tags += self.queueDict[queue]['ParametersDict'].get( 'Tag', [] )
     tqDict['Tag'] = list( set( tags ) )
 
     # Add overall max values for all queues
