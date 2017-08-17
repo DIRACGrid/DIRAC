@@ -394,10 +394,15 @@ class CheckCECapabilities( CommandBase ):
   def execute( self ):
     """ Main execution method
     """
+    if self.pp.useServerCertificate:
+      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+    if self.pp.localConfigFile:
+      self.cfg.append( self.pp.localConfigFile ) # this file is as input
     # Get the resource description as defined in its configuration
-    checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s' % ( self.pp.site,
-                                                                        self.pp.ceName,
-                                                                        self.pp.queueName )
+    checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
+                                                                     self.pp.ceName,
+                                                                     self.pp.queueName,
+                                                                     " ".join( self.cfg ) )
     retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
@@ -410,6 +415,7 @@ class CheckCECapabilities( CommandBase ):
       sys.exit( 1 )
     self.pp.queueParameters = resourceDict
 
+    self.cfg = []
     # Pick up all the relevant resource parameters that will be used in the job matching
     for ceParam in [ "WholeNode", "NumberOfProcessors", "RequiredTag" ]:
       if ceParam in resourceDict:
@@ -453,11 +459,15 @@ class CheckWNCapabilities( CommandBase ):
   def execute( self ):
     """ Discover NumberOfProcessors and RAM
     """
-
+    if self.pp.useServerCertificate:
+      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+    if self.pp.localConfigFile:
+      self.cfg.append( self.pp.localConfigFile ) # this file is as input
     # Get the worker node parameters
-    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s' % ( self.pp.site,
-                                                                      self.pp.ceName,
-                                                                      self.pp.queueName )
+    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
+                                                                   self.pp.ceName,
+                                                                   self.pp.queueName,
+                                                                   " ".join( self.cfg ) )
     retCode, result = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
@@ -470,6 +480,7 @@ class CheckWNCapabilities( CommandBase ):
       self.log.error( "Wrong Command output %s" % result )
       sys.exit( 1 )
 
+    self.cfg = []
     # If NumberOfProcessors or MaxRAM are defined in the resource configuration, these
     # values are preferred
     if numberOfProcessors and "NumberOfProcessors" not in self.pp.queueParameters:
