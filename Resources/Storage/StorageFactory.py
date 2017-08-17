@@ -371,7 +371,7 @@ class StorageFactory( object ):
 
     elif protocolDict['Access'].lower() == 'local':
       self.localPlugins.append(plugin)
-    elif protocolSection not in self.protocols.keys():
+    elif protocolSection not in self.protocols:
       errStr = "StorageFactory.__getProtocolDetails: The 'Access' option \
       for %s:%s is neither 'local' or 'remote'." % ( storageName, protocolSection )
       gLogger.warn( errStr )
