@@ -438,6 +438,8 @@ class CheckCECapabilities( CommandBase ):
       if retCode:
         self.log.error( "Could not configure DIRAC [ERROR %d]" % retCode )
         self.exitWithError( retCode )
+    else:
+      self.log.debug( 'No Tags defined for this Queue' )
 
 class CheckWNCapabilities( CommandBase ):
   """ Used to get capabilities specific to the Worker Node. This command must be called
