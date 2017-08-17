@@ -10,7 +10,7 @@ import copy
 gLogger.setLevel('DEBUG')
 dict_cs = {
     "Resources": {
-        "StorageElements": {
+        "StorageElementBases": {
             "CERN-BASE-WITH-TWO-SAME-PLUGINS": {
                 "BackendType": "Eos",
                 "SEType": "T0D1",
@@ -50,6 +50,8 @@ dict_cs = {
                     "Access": "remote",
                 }
             },
+        },
+        "StorageElements": {
             # This SE must be in the section above but we put it here to test
             # backward compatibility
             "CERN-BASE": {
@@ -211,7 +213,7 @@ class fake_gConfig(object):
     return reduce(lambda d, e: d.get(e, {}), path.strip('/').split('/'), dict_cs)
 
   def getValue(self, path, defaultValue = ''):
-    if 'StorageElements' not in path:
+    if 'StorageElements' not in path and 'StorageElementBases' not in path:
       return gConfig.getValue(path, defaultValue)
     csValue = self.crawlCS(path)
     if not csValue:
@@ -222,9 +224,11 @@ class fake_gConfig(object):
     """ Mock the getOptionsDict call of gConfig
       It reads from dict_cs
     """
-    if 'StorageElements' not in path:
+    if 'StorageElements' not in path and 'StorageElementBases' not in path:
       return gConfig.getOptionsDict(path)
     csSection = self.crawlCS(path)
+    if not csSection:
+      return S_ERROR("Not a valid section")
     options = dict((opt, val) for opt, val in csSection.iteritems() if not isinstance(val, dict))
     return S_OK(options)
 
@@ -232,9 +236,11 @@ class fake_gConfig(object):
     """ Mock the getOptions call of gConfig
       It reads from dict_cs
     """
-    if 'StorageElements' not in path:
+    if 'StorageElements' not in path and 'StorageElementBases' not in path:
       return gConfig.getOptions(path)
     csSection = self.crawlCS(path)
+    if not csSection:
+      return S_ERROR("Not a valid section")
     options = [opt for opt, val in csSection.iteritems() if not isinstance(val, dict)]
     return S_OK(options)
 
@@ -242,9 +248,11 @@ class fake_gConfig(object):
     """ Mock the getOptions call of gConfig
       It reads from dict_cs
     """
-    if 'StorageElements' not in path:
+    if 'StorageElements' not in path and 'StorageElementBases' not in path:
       return gConfig.getSections(path)
     csSection = self.crawlCS(path)
+    if not csSection:
+      return S_ERROR("Not a valid section")
     sections = [opt for opt, val in csSection.iteritems() if isinstance(val, dict)]
     return S_OK(sections)
 
@@ -620,6 +628,39 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
         'Port': 8443,
         'Protocol': 'srm',
         'SpaceToken': 'LHCb-EOS',
+        'WSUrl': '/srm/v2/server?SFN:'
+    }]
+
+    self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
+
+  def test_child_inherit_from_base_with_two_same_plugins(self, _sf_generateStorageObject, _rss_getSEStatus):
+    """ In this test, we load a storage element CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS that inherits 
+        from CERN-BASE-WITH-TWO-SAME-PLUGINS, using two identical plugin names in two sections.
+    """
+    sf = StorageFactory(vo = 'lhcb')
+    storages = sf.getStorages('CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS')
+    self.assertTrue(storages['OK'], storages)
+    storages = storages['Value']
+
+    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2', 'GFAL2_SRM2'])
+
+    expectedProtocols = [{
+        'Access': 'remote',
+        'Host': 'srm-eoslhcb.cern.ch',
+        'Path': '/eos/lhcb/grid/user',
+        'PluginName': 'GFAL2_SRM2',
+        'Port': 8443,
+        'Protocol': 'srm',
+        'SpaceToken': '',
+        'WSUrl': '/srm/v2/server?SFN:'
+    }, {
+        'Access': 'remote',
+        'Host': 'eoslhcb.cern.ch',
+        'Path': '',
+        'PluginName': 'GFAL2_SRM2',
+        'Port': 8443,
+        'Protocol': 'root',
+        'SpaceToken': '',
         'WSUrl': '/srm/v2/server?SFN:'
     }]
 
