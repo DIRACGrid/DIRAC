@@ -431,7 +431,8 @@ class CheckCECapabilities( CommandBase ):
       if self.debugFlag:
         self.cfg.append( '-ddd' )
 
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( ( str( x ) for x in self.pp.tags ) ) )
+      tags = ','.join( ( str( x ) for x in self.pp.tags ) ) 
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s" -o "/AgentJobRequirements/RequiredTag=%s"' % ( tags, tags ) )
 
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
