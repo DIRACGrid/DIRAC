@@ -4,15 +4,188 @@
 
 '''
 
-from sqlalchemy.orm                                import sessionmaker
+__RCSID__ = "$Id$"
+
+from sqlalchemy.orm                                import sessionmaker, \
+                                                          scoped_session
 from sqlalchemy.sql                                import update, delete, select, and_, or_
+from sqlalchemy.sql.expression import null
 from sqlalchemy.inspection                         import inspect
+from sqlalchemy.engine.reflection import Inspector
+from sqlalchemy.ext.declarative                    import declarative_base
 from sqlalchemy.dialects.mysql.base                import DOUBLE
 from sqlalchemy                                    import create_engine, Table, Column, MetaData, String, \
                                                           DateTime, exc, Integer, Text
 
 from DIRAC                                         import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
+
+# Defining the tables
+
+metadata = MetaData()
+rmsBase = declarative_base()
+
+class AccountingCache(rmsBase):
+  """ AccountingCache table
+  """
+
+  __tablename__ = 'AccountingCache'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
+
+  name = Column( 'Name', String( 64 ), nullable = False, primary_key = True )
+  plotName = Column( 'PlotName', String( 64 ), nullable = False, primary_key = True )
+  plotType = Column( 'PlotType', String( 16 ), nullable = False, primary_key = True )
+  lastCheckTime = Column( 'LastCheckTime', DateTime, nullable = False ) #FIXME: Need to add CURRENT_TIMESTAMP as default value
+  result = Column( 'Result', Text, nullable = False )
+  dateEffective = Column( 'DateEffective', DateTime, nullable = False )
+
+  def __init__( self, result = null(), plotName = null(), plotType = null() ):
+    self.result = result
+    self.plotName = plotName
+    self.plotType = plotType
+
+
+  def fromDict( self, dictionary ):
+    """
+    Fill the fields of the Host object from a dictionary
+    The dictionary may contain the keys: HostID, HostName, CPU
+    """
+
+    self.name = dictionary.get( 'Name', self.name )
+    self.lastCheckTime = dictionary.get( 'LastCheckTime', self.lastCheckTime )
+    self.plotName = dictionary.get( 'PlotName', self.plotName )
+    self.result = dictionary.get( 'Result', self.result )
+    self.dateEffective = dictionary.get( 'DateEffective', self.dateEffective )
+    self.plotType = dictionary.get( 'PlotType', self.plotType )
+
+
+    # # Metadata instance that is used to bind the engine, Object and tables
+    # self.metadata = MetaData()
+    #
+    # DowntimeCache = Table( 'DowntimeCache', self.metadata,
+    #                        Column( 'StartDate', DateTime, nullable = False ),
+    #                        Column( 'DowntimeID', String( 64 ), nullable = False, primary_key = True ),
+    #                        Column( 'Link', String( 255 ), nullable = False ),
+    #                        Column( 'EndDate', DateTime, nullable = False ),
+    #                        Column( 'Name', String( 64 ), nullable = False ),
+    #                        Column( 'DateEffective', DateTime, nullable = False ),
+    #                        Column( 'Description', String( 512 ), nullable = False ),
+    #                        Column( 'Severity', String( 32 ), nullable = False ),
+    #                        Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                        Column( 'Element', String( 32 ), nullable = False ),
+    #                        Column( 'GOCDBServiceType', String( 32 ), nullable = False ),
+    #                        mysql_engine = 'InnoDB' )
+    #
+    # GGUSTicketsCache = Table( 'GGUSTicketsCache', self.metadata,
+    #                           Column( 'Tickets', String( 1024 ), nullable = False ),
+    #                           Column( 'OpenTickets', Integer, nullable = False, server_default = '0'),
+    #                           Column( 'GocSite', String( 64 ), nullable = False, primary_key = True ),
+    #                           Column( 'Link', String( 1024 ), nullable = False ),
+    #                           Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                           mysql_engine = 'InnoDB' )
+    #
+    # JobCache = Table( 'JobCache', self.metadata,
+    #                   Column( 'Status', String( 16 ), nullable = False ),
+    #                   Column( 'Efficiency', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
+    #                   Column( 'MaskStatus', String( 32 ), nullable = False ),
+    #                   Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
+    #                   Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                   mysql_engine = 'InnoDB' )
+    #
+    # PilotCache = Table('PilotCache', self.metadata,
+    #                    Column( 'Status', String( 16 ), nullable = False ),
+    #                    Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                    Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
+    #                    Column( 'CE', String( 64 ), nullable = False, primary_key = True ),
+    #                    Column( 'PilotsPerJob', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
+    #                    Column( 'PilotJobEff', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+    #                    mysql_engine = 'InnoDB')
+    #
+    # PolicyResult = Table( 'PolicyResult', self.metadata,
+    #                       Column( 'Status', String( 16 ), nullable = False ),
+    #                       Column( 'PolicyName', String( 64 ), nullable = False, primary_key = True ),
+    #                       Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' ),
+    #                       Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
+    #                       Column( 'DateEffective', DateTime, nullable = False ),
+    #                       Column( 'StatusType', String( 16 ), nullable = False, server_default = '', primary_key = True ),
+    #                       Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                       Column( 'Element', String( 32 ), nullable = False, primary_key = True ),
+    #                       mysql_engine = 'InnoDB' )
+    #
+    # SpaceTokenOccupancyCache = Table( 'SpaceTokenOccupancyCache', self.metadata,
+    #                                   Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True ),
+    #                                   Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                                   Column( 'Guaranteed', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+    #                                   Column( 'Free', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+    #                                   Column( 'Token', String( 64 ), nullable = False, primary_key = True ),
+    #                                   Column( 'Total', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
+    #                                   mysql_engine = 'InnoDB' )
+    #
+    # TransferCache = Table( 'TransferCache', self.metadata,
+    #                        Column( 'SourceName', String( 64 ), nullable = False, primary_key = True ),
+    #                        Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                        Column( 'Metric', String( 16 ), nullable = False, primary_key = True ),
+    #                        Column( 'Value', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+    #                        Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True ),
+    #                        mysql_engine = 'InnoDB' )
+    #
+    # UserRegistryCache = Table( 'UserRegistryCache', self.metadata,
+    #                            Column( 'Login', String( 14 ), primary_key = True ),
+    #                            Column( 'Name', String( 64 ), nullable = False ),
+    #                            Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                            Column( 'Email', String( 64 ), nullable = False ),
+    #                            mysql_engine = 'InnoDB' )
+    #
+    # ErrorReportBuffer = Table( 'ErrorReportBuffer', self.metadata,
+    #                            Column( 'ErrorMessage', String( 512 ), nullable = False ),
+    #                            Column( 'Name', String( 64 ), nullable = False ),
+    #                            Column( 'DateEffective', DateTime, nullable = False ),
+    #                            Column( 'Reporter', String( 64 ), nullable = False ),
+    #                            Column( 'Operation', String( 64 ), nullable = False ),
+    #                            Column( 'ElementType', String( 32 ), nullable = False ),
+    #                            Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
+    #                            Column( 'Arguments', String( 512 ), nullable = False, server_default = "" ),
+    #                            mysql_engine = 'InnoDB' )
+    #
+    # PolicyResultWithID = Table('PolicyResultWithID', self.metadata,
+    #                            Column( 'Status', String( 8 ), nullable = False ),
+    #                            Column( 'PolicyName', String( 64 ), nullable = False ),
+    #                            Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
+    #                            Column( 'Name', String( 64 ), nullable = False ),
+    #                            Column( 'DateEffective', DateTime, nullable = False ),
+    #                            Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
+    #                            Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
+    #                            Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                            Column( 'Element', String( 32 ), nullable = False ),
+    #                            mysql_engine = 'InnoDB' )
+    #
+    # PolicyResultLog = Table( 'PolicyResultLog', self.metadata,
+    #                          Column( 'Status', String( 8 ), nullable = False ),
+    #                          Column( 'PolicyName', String( 64 ), nullable = False ),
+    #                          Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
+    #                          Column( 'Name', String( 64 ), nullable = False ),
+    #                          Column( 'DateEffective', DateTime, nullable = False ),
+    #                          Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
+    #                          Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
+    #                          Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                          Column( 'Element', String( 32 ), nullable = False ),
+    #                          mysql_engine = 'InnoDB' )
+    #
+    # PolicyResultHistory = Table( 'PolicyResultHistory', self.metadata,
+    #                              Column( 'Status', String( 8 ), nullable = False ),
+    #                              Column( 'PolicyName', String( 64 ), nullable = False ),
+    #                              Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
+    #                              Column( 'Name', String( 64 ), nullable = False ),
+    #                              Column( 'DateEffective', DateTime, nullable = False ),
+    #                              Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
+    #                              Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
+    #                              Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                              Column( 'Element', String( 32 ), nullable = False ),
+    #                              mysql_engine = 'InnoDB' )
+
+
+
 
 # Helper functions
 
@@ -90,193 +263,64 @@ class ResourceManagementDB( object ):
     Class that defines the tables for the ResourceManagementDB on a python dictionary.
   '''
 
-  def __getDBConnectionInfo( self, fullname ):
-    """ Collect from the CS all the info needed to connect to the DB.
-        This should be in a base class eventually
-    """
-
-    result = getDBParameters( fullname )
-    if not result[ 'OK' ]:
-      raise Exception( 'Cannot get database parameters: %s' % result[ 'Message' ] )
-
-    dbParameters = result[ 'Value' ]
-    self.dbHost = dbParameters[ 'Host' ]
-    self.dbPort = dbParameters[ 'Port' ]
-    self.dbUser = dbParameters[ 'User' ]
-    self.dbPass = dbParameters[ 'Password' ]
-    self.dbName = dbParameters[ 'DBName' ]
-
   def __init__( self ):
     """c'tor
 
     :param self: self reference
     """
 
-    # Metadata instance that is used to bind the engine, Object and tables
-    self.metadata = MetaData()
-
-    AccountingCache = Table( 'AccountingCache', self.metadata,
-                             Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
-                             Column( 'LastCheckTime', DateTime, nullable = False ),
-                             Column( 'PlotName', String( 64 ), nullable = False, primary_key = True ),
-                             Column( 'Result', Text, nullable = False ),
-                             Column( 'DateEffective', DateTime, nullable = False ),
-                             Column( 'PlotType', String( 16 ), nullable = False, primary_key = True ),
-                             mysql_engine = 'InnoDB' )
-
-    DowntimeCache = Table( 'DowntimeCache', self.metadata,
-                           Column( 'StartDate', DateTime, nullable = False ),
-                           Column( 'DowntimeID', String( 64 ), nullable = False, primary_key = True ),
-                           Column( 'Link', String( 255 ), nullable = False ),
-                           Column( 'EndDate', DateTime, nullable = False ),
-                           Column( 'Name', String( 64 ), nullable = False ),
-                           Column( 'DateEffective', DateTime, nullable = False ),
-                           Column( 'Description', String( 512 ), nullable = False ),
-                           Column( 'Severity', String( 32 ), nullable = False ),
-                           Column( 'LastCheckTime', DateTime, nullable = False ),
-                           Column( 'Element', String( 32 ), nullable = False ),
-                           Column( 'GOCDBServiceType', String( 32 ), nullable = False ),
-                           mysql_engine = 'InnoDB' )
-
-    GGUSTicketsCache = Table( 'GGUSTicketsCache', self.metadata,
-                              Column( 'Tickets', String( 1024 ), nullable = False ),
-                              Column( 'OpenTickets', Integer, nullable = False, server_default = '0'),
-                              Column( 'GocSite', String( 64 ), nullable = False, primary_key = True ),
-                              Column( 'Link', String( 1024 ), nullable = False ),
-                              Column( 'LastCheckTime', DateTime, nullable = False ),
-                              mysql_engine = 'InnoDB' )
-
-    JobCache = Table( 'JobCache', self.metadata,
-                      Column( 'Status', String( 16 ), nullable = False ),
-                      Column( 'Efficiency', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
-                      Column( 'MaskStatus', String( 32 ), nullable = False ),
-                      Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
-                      Column( 'LastCheckTime', DateTime, nullable = False ),
-                      mysql_engine = 'InnoDB' )
-
-    PilotCache = Table('PilotCache', self.metadata,
-                       Column( 'Status', String( 16 ), nullable = False ),
-                       Column( 'LastCheckTime', DateTime, nullable = False ),
-                       Column( 'Site', String( 64 ), nullable = False, primary_key = True ),
-                       Column( 'CE', String( 64 ), nullable = False, primary_key = True ),
-                       Column( 'PilotsPerJob', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
-                       Column( 'PilotJobEff', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-                       mysql_engine = 'InnoDB')
-
-    PolicyResult = Table( 'PolicyResult', self.metadata,
-                          Column( 'Status', String( 16 ), nullable = False ),
-                          Column( 'PolicyName', String( 64 ), nullable = False, primary_key = True ),
-                          Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' ),
-                          Column( 'Name', String( 64 ), nullable = False, primary_key = True ),
-                          Column( 'DateEffective', DateTime, nullable = False ),
-                          Column( 'StatusType', String( 16 ), nullable = False, server_default = '', primary_key = True ),
-                          Column( 'LastCheckTime', DateTime, nullable = False ),
-                          Column( 'Element', String( 32 ), nullable = False, primary_key = True ),
-                          mysql_engine = 'InnoDB' )
-
-    SpaceTokenOccupancyCache = Table( 'SpaceTokenOccupancyCache', self.metadata,
-                                      Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True ),
-                                      Column( 'LastCheckTime', DateTime, nullable = False ),
-                                      Column( 'Guaranteed', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-                                      Column( 'Free', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-                                      Column( 'Token', String( 64 ), nullable = False, primary_key = True ),
-                                      Column( 'Total', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
-                                      mysql_engine = 'InnoDB' )
-
-    TransferCache = Table( 'TransferCache', self.metadata,
-                           Column( 'SourceName', String( 64 ), nullable = False, primary_key = True ),
-                           Column( 'LastCheckTime', DateTime, nullable = False ),
-                           Column( 'Metric', String( 16 ), nullable = False, primary_key = True ),
-                           Column( 'Value', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-                           Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True ),
-                           mysql_engine = 'InnoDB' )
-
-    UserRegistryCache = Table( 'UserRegistryCache', self.metadata,
-                               Column( 'Login', String( 14 ), primary_key = True ),
-                               Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               Column( 'Email', String( 64 ), nullable = False ),
-                               mysql_engine = 'InnoDB' )
-
-    ErrorReportBuffer = Table( 'ErrorReportBuffer', self.metadata,
-                               Column( 'ErrorMessage', String( 512 ), nullable = False ),
-                               Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
-                               Column( 'Reporter', String( 64 ), nullable = False ),
-                               Column( 'Operation', String( 64 ), nullable = False ),
-                               Column( 'ElementType', String( 32 ), nullable = False ),
-                               Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-                               Column( 'Arguments', String( 512 ), nullable = False, server_default = "" ),
-                               mysql_engine = 'InnoDB' )
-
-    PolicyResultWithID = Table('PolicyResultWithID', self.metadata,
-                               Column( 'Status', String( 8 ), nullable = False ),
-                               Column( 'PolicyName', String( 64 ), nullable = False ),
-                               Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
-                               Column( 'Name', String( 64 ), nullable = False ),
-                               Column( 'DateEffective', DateTime, nullable = False ),
-                               Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
-                               Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-                               Column( 'LastCheckTime', DateTime, nullable = False ),
-                               Column( 'Element', String( 32 ), nullable = False ),
-                               mysql_engine = 'InnoDB' )
-
-    PolicyResultLog = Table( 'PolicyResultLog', self.metadata,
-                             Column( 'Status', String( 8 ), nullable = False ),
-                             Column( 'PolicyName', String( 64 ), nullable = False ),
-                             Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
-                             Column( 'Name', String( 64 ), nullable = False ),
-                             Column( 'DateEffective', DateTime, nullable = False ),
-                             Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
-                             Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-                             Column( 'LastCheckTime', DateTime, nullable = False ),
-                             Column( 'Element', String( 32 ), nullable = False ),
-                             mysql_engine = 'InnoDB' )
-
-    PolicyResultHistory = Table( 'PolicyResultHistory', self.metadata,
-                                 Column( 'Status', String( 8 ), nullable = False ),
-                                 Column( 'PolicyName', String( 64 ), nullable = False ),
-                                 Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
-                                 Column( 'Name', String( 64 ), nullable = False ),
-                                 Column( 'DateEffective', DateTime, nullable = False ),
-                                 Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
-                                 Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-                                 Column( 'LastCheckTime', DateTime, nullable = False ),
-                                 Column( 'Element', String( 32 ), nullable = False ),
-                                 mysql_engine = 'InnoDB' )
-
     self.log = gLogger.getSubLogger( 'ResourceManagementDB' )
-    # Initialize the connection info
-    self.__getDBConnectionInfo( 'ResourceStatus/ResourceManagementDB' )
 
-    runDebug = ( gLogger.getLevel() == 'DEBUG' )
-    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass,
-                                                              self.dbHost, self.dbPort, self.dbName ),
-                                 echo = runDebug )
+    self.__initializeConnection( 'ResourceStatus/ResourceManagementDB' )
+    self.__initializeDB()
 
-    self.metadata.bind = self.engine
+  def __initializeConnection( self, dbPath ):
+    """ Collect from the CS all the info needed to connect to the DB.
+        This should be in a base class eventually
+    """
 
-    self.metadataTables = set()
+    result = getDBParameters( dbPath )
+    if not result[ 'OK' ]:
+      raise Exception( 'Cannot get database parameters: %s' % result['Message'] )
 
-    self.DBSession = sessionmaker( bind = self.engine )
+    dbParameters = result[ 'Value' ]
+    self.log.debug("db parameters: %s" % dbParameters)
+    self.host = dbParameters[ 'Host' ]
+    self.port = dbParameters[ 'Port' ]
+    self.user = dbParameters[ 'User' ]
+    self.password = dbParameters[ 'Password' ]
+    self.dbName = dbParameters[ 'DBName' ]
 
-  def _checkTable( self ):
-    """ backward compatibility """
-    self.createTables()
+    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.user,
+                                                              self.password,
+                                                              self.host,
+                                                              self.port,
+                                                              self.dbName ),
+                                 pool_recycle = 3600, echo_pool = True)
+    self.session = scoped_session( sessionmaker( bind = self.engine ) )
+    self.inspector = Inspector.from_engine( self.engine )
 
-  def createTables( self ):
-    """ create tables """
 
-    try:
-      self.metadata.create_all( self.engine )
-    except exc.SQLAlchemyError as e:
-      self.log.exception( "createTables: unexpected exception", lException = e )
-      return S_ERROR( "createTables: unexpected exception %s" % e )
-    return S_OK()
+  def __initializeDB( self ):
+    """
+    Create the tables
+    """
+
+    tablesInDB = self.inspector.get_table_names()
+
+    # Components
+    if 'AccountingCache' not in tablesInDB:
+      try:
+        AccountingCache.__table__.create( self.engine ) #pylint: disable=no-member
+      except Exception as e:
+        return S_ERROR( e )
+    else:
+      gLogger.debug( 'Table \'AccountingCache\' already exists' )
+
 
  # SQL Methods ###############################################################
 
-  def insert( self, table, **kwargs ):
+  def insert( self, table, params ):
     '''
     Inserts args in the DB making use of kwargs where parameters such as
     the 'table' are specified ( filled automatically by the Client). Typically you
@@ -289,18 +333,14 @@ class ResourceManagementDB( object ):
     '''
 
     # expire_on_commit is set to False so that we can still use the object after we close the session
-    session = self.DBSession( expire_on_commit = False )
+    session = self.session( expire_on_commit = False )
+    table = AccountingCache() #FIXME: I need to take it from __getattr__
+    table.fromDict(params)
 
     try:
-
-      table = self.metadata.tables.get( table ).insert()
-      self.engine.execute( table, **kwargs )
-
+      session.add(table)
       session.commit()
-      session.expunge_all()
-
       return S_OK()
-
     except exc.SQLAlchemyError as e:
       session.rollback()
       self.log.exception( "insert: unexpected exception", lException = e )
@@ -319,7 +359,7 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    session = self.DBSession()
+    session = self.session()
 
     try:
 
@@ -361,7 +401,7 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    session = self.DBSession()
+    session = self.session()
 
     try:
 
@@ -429,7 +469,7 @@ class ResourceManagementDB( object ):
     '''
 
     # expire_on_commit is set to False so that we can still use the object after we close the session
-    session = self.DBSession( expire_on_commit = False )
+    session = self.session( expire_on_commit = False )
 
     try:
 
@@ -470,7 +510,7 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     """
 
-    session = self.DBSession()
+    session = self.session()
 
     try:
 
