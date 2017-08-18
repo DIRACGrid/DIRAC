@@ -76,7 +76,7 @@ def stringListToString( aList ):
     :param aList: list to be serialized to string for making queries
     :type aList: python:list
   """
-  return ",".join( "'%s'" for x in aList )
+  return ",".join( "'%s'" % x for x in aList )
 
 def intListToString( aList ):
   """This method is used for making MySQL queries with a list of int elements.
