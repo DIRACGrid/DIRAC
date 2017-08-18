@@ -327,7 +327,7 @@ class TransformationClientSuccess( ClientsTestCase ):
     tsFiles = {'foo':['Processed', 2L, 1234], 'bar':['Unused', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
     res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'Processed', 'bar':'Processed'} )
+    self.assertEqual( res, {'bar':'Processed'} )
 
     tsFiles = {'foo':['Processed', 2L, 1234], 'bar':['Unused', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
@@ -337,7 +337,7 @@ class TransformationClientSuccess( ClientsTestCase ):
     tsFiles = {'foo':['MaxReset', 12L, 1234], 'bar':['Processed', 22L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
+    self.assertEqual( res, {} )
 
     tsFiles = {'foo':['MaxReset', 12L, 1234], 'bar':['Processed', 22L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
@@ -347,7 +347,7 @@ class TransformationClientSuccess( ClientsTestCase ):
     tsFiles = {'foo':['Assigned', 20L, 1234], 'bar':['Processed', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
+    self.assertEqual( res, {'foo':'MaxReset'} )
 
     tsFiles = {'foo':['Assigned', 20L, 1234], 'bar':['Processed', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
