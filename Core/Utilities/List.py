@@ -20,8 +20,8 @@ def uniqueElements( aList ):
   try:
     for i in aList:
       if i not in seen:
-        result.append( i )
-        seen.add( i )
+        result.append(i)
+        seen.add(i)
     return result
   except:
     return None
@@ -76,7 +76,7 @@ def stringListToString( aList ):
     :param aList: list to be serialized to string for making queries
     :type aList: python:list
   """
-  return ",".join( "'%s'" for x in aList )
+  return ",".join( ["'" + str( x ) + "'" for x in aList ] )
 
 def intListToString( aList ):
   """This method is used for making MySQL queries with a list of int elements.
@@ -84,7 +84,7 @@ def intListToString( aList ):
   :param aList: list to be serialized to string for making queries
   :type aList: python:list
   """
-  return ",".join( str( x ) for x in aList )
+  return ",".join( [str( x ) for x in aList ] )
 
 def getChunk( aList, chunkSize ):
   """Generator yielding chunk from a list of a size chunkSize.
@@ -114,6 +114,6 @@ def breakListIntoChunks( aList, chunkSize ):
   """
   if chunkSize < 1:
     raise RuntimeError( "chunkSize cannot be less than 1" )
-  if isinstance( aList, ( set, dict, tuple ) ):
+  if isinstance( aList, (set, dict, tuple ) ):
     aList = list( aList )
   return [ chunk for chunk in getChunk( aList, chunkSize ) ]
