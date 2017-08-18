@@ -1,3 +1,9 @@
+[v6r17p29]
+
+*WMS
+CHANGE: split time left margins in cpuMargin and wallClockMargin. Also simplified check.
+
+
 [v6r17p28]
 
 *WMS
