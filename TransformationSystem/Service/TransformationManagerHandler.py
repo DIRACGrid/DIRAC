@@ -136,32 +136,34 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [transTypes, [basestring, dict]]
-  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus, lfns = [], force = False ):
+  def _wasFileInError( self, newStatus, currentStatus ):
+    """ Tells whether the file was Assigned and failed, i.e. was not Processed """
+    return currentStatus.lower() == 'assigned' and newStatus.lower() != 'processed'
+
+  types_setFileStatusForTransformation = [transTypes, dict]
+  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus, lfns = None, force = False ):
     """ Sets the file status for the transformation.
 
         The dictOfNewFilesStatus is a dictionary with the form:
-        {12345: 'StatusA', 6789: 'StatusB',  ... }
+        {12345: 'StatusA', 6789: 'StatusB',  ... } where the keys are fileIDs
     """
 
-    # create dictionary in case newLFNsStatus is a string - for backward compatibility
-    if isinstance( dictOfNewFilesStatus, basestring ):
-      dictOfNewFilesStatus = dict( [( lfn, dictOfNewFilesStatus ) for lfn in lfns ] )
-      res = database.getTransformationFiles( {'TransformationID':transName, 'LFN': dictOfNewFilesStatus.keys()} )
+    if not dictOfNewFilesStatus:
+      return S_OK( {} )
+
+    if isinstance( dictOfNewFilesStatus.values()[0], basestring ):
+      # FIXME: kept for backward compatibility with old clients... Remove when no longer needed
+      # This comes from an old client, set the error flag but we must get the current status first
+      newStatusForFileIDs = {}
+      res = database.getFilesForTransformation( {'TransformationID': transName, 'FileID': dictOfNewFilesStatus.keys()} )
       if not res['OK']:
         return res
-      if res['Value']:
-        tsFiles = res['Value']
-      # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
-      tsFilesAsDict = {}
-      for tsFile in tsFiles:
-        tsFilesAsDict[tsFile['LFN']] = tsFile['FileID']
-
-      newStatusForFileIDs = dict( [( tsFilesAsDict[lfn], dictOfNewFilesStatus[lfn] ) for lfn in dictOfNewFilesStatus.keys()] )
-
+      currentStatus = dict( ( fileDict['FileID'], fileDict['Status'] ) for fileDict in res['Value'] )
+      for fileID, status in dictOfNewFilesStatus.iteritems():
+        newStatus = dictOfNewFilesStatus[fileID]
+        newStatusForFileIDs[fileID] = ( newStatus, self._wasFileInError( newStatus, currentStatus[fileID] ) )
     else:
       newStatusForFileIDs = dictOfNewFilesStatus
-
 
     res = database._getConnectionTransID( False, transName )
     if not res['OK']:
@@ -332,7 +334,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.addFile( fileDicts, force = force )
     return self._parseRes( res )
 
-  types_removeFile = [[list,dict]]
+  types_removeFile = [[list, dict]]
   def export_removeFile( self, lfns ):
     """ Interface provides [ LFN1, LFN2, ... ]
     """
