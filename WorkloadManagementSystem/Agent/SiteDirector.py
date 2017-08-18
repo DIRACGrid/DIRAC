@@ -95,8 +95,7 @@ class SiteDirector( AgentModule ):
     self.rssClient = None
     self.rssFlag = None
 
-    self.globalParameters = { "WholeNode": False,
-                              "NumberOfProcessors": 1,
+    self.globalParameters = { "NumberOfProcessors": 1,
                               "MaxRAM": 2048 }
 
   def initialize( self ):
