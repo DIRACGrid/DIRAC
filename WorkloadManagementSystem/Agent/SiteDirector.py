@@ -758,8 +758,8 @@ class SiteDirector( AgentModule ):
             self.queueSlots[queue]['AvailableSlots'] = totalSlots
             waitingJobs = ceInfoDict['WaitingJobs']
         else:
-          maxWaitingJobs = int( self.queueDict[queue]['ParametersDict']['MaxWaitingJobs'] )
-          maxTotalJobs = int( self.queueDict[queue]['ParametersDict']['MaxTotalJobs'] )
+          maxWaitingJobs = int( self.queueDict[queue]['ParametersDict'].get( 'MaxWaitingJobs', 10 ) )
+          maxTotalJobs = int( self.queueDict[queue]['ParametersDict'].get( 'MaxTotalJobs', 10 ) )
           waitingJobs = 0
           totalJobs = 0
           if jobIDList:
