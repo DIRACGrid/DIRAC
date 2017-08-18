@@ -1,7 +1,8 @@
 """  TopErrorMessagesReporter produces a list with the most common errors
-   injected in the SystemLoggingDB and sends a notification to a mailing
-   list and specific users.
+     injected in the SystemLoggingDB and sends a notification to a mailing
+     list and specific users.
 """
+
 __RCSID__ = "$Id$"
 
 from DIRAC                                               import S_OK, S_ERROR
@@ -13,6 +14,8 @@ from DIRAC.FrameworkSystem.Client.NotificationClient     import NotificationClie
 from DIRAC.Core.Utilities                                import date, toString, fromString, day
 
 class TopErrorMessagesReporter( AgentModule ):
+  """ initialization - you need to specify a user or an email
+  """
 
   def initialize( self ):
 
@@ -39,7 +42,8 @@ class TopErrorMessagesReporter( AgentModule ):
       mailList = Operations().getValue( 'EMail/Logging', [] )
 
     if not len( mailList ):
-      errString = "There are no valid users in the list"
+      errString = "There are no valid users in the list of email where to send the report"
+      errString += "\nPlease specify some in Operations/<default>/EMail/Logging"
       varString = "[" + ','.join( userList ) + "]"
       self.log.error( errString, varString )
       return S_ERROR( errString + varString )
