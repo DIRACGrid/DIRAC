@@ -141,17 +141,19 @@ class TransformationManagerHandlerBase( RequestHandler ):
     return currentStatus.lower() == 'assigned' and newStatus.lower() != 'processed'
 
   types_setFileStatusForTransformation = [transTypes, dict]
-  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus, lfns = None, force = False ):
+  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus ):
     """ Sets the file status for the transformation.
 
         The dictOfNewFilesStatus is a dictionary with the form:
-        {12345: 'StatusA', 6789: 'StatusB',  ... } where the keys are fileIDs
+        {12345: ('StatusA', errorA), 6789: ('StatusB',errorB),  ... } where the keys are fileIDs
+        The tuple may be a string with only the status if the client was from an older version
     """
 
     if not dictOfNewFilesStatus:
       return S_OK( {} )
 
-    if isinstance( dictOfNewFilesStatus.values()[0], basestring ):
+    statusSample = dictOfNewFilesStatus.values()[0]
+    if isinstance( statusSample, basestring ):
       # FIXME: kept for backward compatibility with old clients... Remove when no longer needed
       # This comes from an old client, set the error flag but we must get the current status first
       newStatusForFileIDs = {}
@@ -162,8 +164,10 @@ class TransformationManagerHandlerBase( RequestHandler ):
       for fileID, status in dictOfNewFilesStatus.iteritems():
         newStatus = dictOfNewFilesStatus[fileID]
         newStatusForFileIDs[fileID] = ( newStatus, self._wasFileInError( newStatus, currentStatus[fileID] ) )
-    else:
+    elif isinstance( statusSample, ( list, tuple ) ) and len( statusSample ) == 2:
       newStatusForFileIDs = dictOfNewFilesStatus
+    else:
+      return S_ERROR( "Status field should be a string or two values" )
 
     res = database._getConnectionTransID( False, transName )
     if not res['OK']:
