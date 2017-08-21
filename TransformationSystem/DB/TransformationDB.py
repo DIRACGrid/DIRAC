@@ -497,7 +497,7 @@ class TransformationDB( DB ):
 
   def addFilesToTransformation( self, transName, lfns, connection = False ):
     """ Add a list of LFNs to the transformation directly """
-    gLogger.info( "TransformationDB.addFilesToTransformation: Attempting to add %s files to transformations: %s" % ( len(lfns), transName ) )
+    gLogger.info( "TransformationDB.addFilesToTransformation: Attempting to add %s files to transformations: %s" % ( len( lfns ), transName ) )
     if not lfns:
       return S_ERROR( 'Zero length LFN list' )
     res = self._getConnectionTransID( connection, transName )
@@ -896,10 +896,11 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    res = self.__setTaskParameterValue( transID, taskID, 'ExternalStatus', status, connection = connection )
+    # Set ID first such that we can't end up with status OK and no ID
+    res = self.__setTaskParameterValue( transID, taskID, 'ExternalID', taskWmsID, connection = connection )
     if not res['OK']:
       return res
-    return self.__setTaskParameterValue( transID, taskID, 'ExternalID', taskWmsID, connection = connection )
+    return self.__setTaskParameterValue( transID, taskID, 'ExternalStatus', status, connection = connection )
 
   def setTaskStatus( self, transName, taskID, status, connection = False ):
     """ Set status for job with taskID in production with transformationID """
@@ -1438,7 +1439,7 @@ class TransformationDB( DB ):
         metadatadict = res['Value']
       gLogger.info( 'Filter file with metadata', metadatadict )
       transIDs = self._filterFileByMetadata( metadatadict )
-      gLogger.info('Transformations passing the filter: %s' % transIDs)
+      gLogger.info( 'Transformations passing the filter: %s' % transIDs )
       if not ( transIDs or force ):  # not clear how force should be used for
         successful[lfn] = False  # True -> False bug fix: otherwise it is set to True even if transIDs is empty.
       else:
@@ -1529,7 +1530,7 @@ class TransformationDB( DB ):
     """ It can be applied to a file or to a directory (path). For a file, add the file to Transformations if the updated metadata dictionary passes the filter.
         For a directory, add the files contained in the directory to the Transformations if the the updated metadata dictionary passes the filter.
     """
-    gLogger.info( "setMetadata: Attempting to set metadata %s to: %s" % (usermetadatadict, path) )
+    gLogger.info( "setMetadata: Attempting to set metadata %s to: %s" % ( usermetadatadict, path ) )
     transFiles = {}
     filesToAdd = []
 
@@ -1560,7 +1561,7 @@ class TransformationDB( DB ):
     metadatadict.update( usermetadatadict )
     gLogger.info( 'Filter file with metadata:', metadatadict )
     transIDs = self._filterFileByMetadata( metadatadict )
-    gLogger.info('Transformations passing the filter: %s' % transIDs)
+    gLogger.info( 'Transformations passing the filter: %s' % transIDs )
     if not transIDs:
       return S_OK()
     elif isFile:
@@ -1605,7 +1606,7 @@ class TransformationDB( DB ):
     for transID, query in queries:
       mq = MetaQuery( query, typeDict )
       gLogger.info( "Apply query %s to metadata %s" % ( mq.getMetaQuery(), metadatadict ) )
-      res = mq.applyQuery(metadatadict)
+      res = mq.applyQuery( metadatadict )
       if not res['OK']:
         gLogger.error( "Error in applying query: %s" % res['Message'] )
         return res
