@@ -896,11 +896,10 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    # Set ID first such that we can't end up with status OK and no ID
-    res = self.__setTaskParameterValue( transID, taskID, 'ExternalID', taskWmsID, connection = connection )
+    res = self.__setTaskParameterValue( transID, taskID, 'ExternalStatus', status, connection = connection )
     if not res['OK']:
       return res
-    return self.__setTaskParameterValue( transID, taskID, 'ExternalStatus', status, connection = connection )
+    return self.__setTaskParameterValue( transID, taskID, 'ExternalID', taskWmsID, connection = connection )
 
   def setTaskStatus( self, transName, taskID, status, connection = False ):
     """ Set status for job with taskID in production with transformationID """
