@@ -31,8 +31,6 @@ def initializeResourceManagementHandler( _serviceInfo ):
 
   global db
   db = ResourceManagementDB()
-  # Regenerates DB tables if needed
-  db.createTables()
 
   syncObject = Synchronizer.Synchronizer()
   gConfig.addListenerToNewVersionEvent( syncObject.sync )
@@ -49,9 +47,9 @@ class ResourceManagementHandler( RequestHandler ):
 
   According to the ResourceManagementDB philosophy, only functions of the type:
   - insert
-  - update
   - select
   - delete
+  - addOrModify
 
   are exposed. If you need anything more complicated, either look for it on the
   :class:`ResourceManagementClient`, or code it yourself. This way the DB and the
@@ -125,36 +123,6 @@ class ResourceManagementHandler( RequestHandler ):
 
     return res
 
-  types_update = [ [basestring, dict], dict ]
-  def export_update( self, table, params ):
-    '''
-    This method is a bridge to access :class:`ResourceManagementDB` remotely. It
-    does not add neither processing nor validation. If you need to know more
-    about this method, you must keep reading on the database documentation.
-
-    :Parameters:
-      **table** - `string` or `dict`
-        should contain the table from which querying
-        if it's a `dict` the query comes from a client prior to v6r18
-
-      **params** - `dict`
-        arguments for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    if isinstance(table, dict): #for backward compatibility: conversion is needed
-      params, table = convert(table, params)
-
-    gLogger.info( 'update: %s %s' % ( table, params ) )
-
-
-    res = db.update( table, **params )
-    self.__logResult( 'update', res )
-
-    return res
-
   types_select = [ [basestring, dict], dict ]
   def export_select( self, table, params ):
     '''
@@ -178,7 +146,7 @@ class ResourceManagementHandler( RequestHandler ):
 
     gLogger.info( 'select: %s %s' % ( table, params ) )
 
-    res = db.select( table, **params )
+    res = db.select( table, params )
     self.__logResult( 'select', res )
 
     return res
