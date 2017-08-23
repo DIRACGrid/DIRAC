@@ -7,22 +7,19 @@
 __RCSID__ = "$Id$"
 
 import datetime
-from sqlalchemy.orm                                import sessionmaker, \
-							  scoped_session, \
-							  query
+from sqlalchemy.orm                                import sessionmaker, class_mapper
 from sqlalchemy.sql.expression import null
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative                    import declarative_base
-from sqlalchemy                                    import create_engine, Column, MetaData, String, \
-							  DateTime, exc, Text, and_, or_, inspect
+from sqlalchemy                                    import create_engine, Column, String, DateTime, exc, Text
 
 from DIRAC                                         import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
 
 # Defining the tables
-#FIXME: need to add all the tables
+#TODO: need to add all the tables
+#TODO: add debug logs
 
-metadata = MetaData()
 rmsBase = declarative_base()
 
 class AccountingCache(rmsBase):
@@ -266,7 +263,7 @@ class ResourceManagementDB( object ):
 	elif isinstance(columnValue, basestring):
 	  deleteQuery = deleteQuery.filter(column_a == columnValue)
 	elif isinstance(columnValue, datetime.datetime):
-	  select = deleteQuery.filter(column_a == columnValue)
+	  deleteQuery = deleteQuery.filter(column_a == columnValue)
 	else:
 	  self.log.error("type(columnValue) == %s" %type(columnValue))
 
@@ -296,11 +293,12 @@ class ResourceManagementDB( object ):
 
     session = self.sessionMaker_o()
     table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+    primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
     try:
-      select = session.query(table_c) #FIXME: Should be done only for primary keys
+      select = session.query(table_c)
       for columnName, columnValue in params.iteritems():
-	if not columnValue:
+	if not columnValue or columnName not in primaryKeys:
 	  continue
 	column_a = getattr(table_c, columnName.lower())
 	if isinstance(columnValue, (list, tuple)):
@@ -310,13 +308,13 @@ class ResourceManagementDB( object ):
 	else:
 	  self.log.error("type(columnValue) == %s" %type(columnValue))
 
-      res = select.first()
-      if not res:
+      res = select.first() # the selection is done via primaryKeys only
+      if not res: # if not there, let's insert it
 	return self.insert(table, params)
 
+      # now we assume we need to modify
       for columnName, columnValue in params.iteritems():
-	column_a = getattr(table_c, columnName.lower())
-	column_a = columnValue
+	setattr(res, columnName.lower(), columnValue)
 
       session.commit()
       return S_OK()
@@ -325,28 +323,6 @@ class ResourceManagementDB( object ):
       session.rollback()
       self.log.exception( "addOrModify: unexpected exception", lException = e )
       return S_ERROR( "addOrModify: unexpected exception %s" % e )
-    finally:
-      session.close()
-
-  def addIfNotThere( self, table, params ):
-    '''
-    Using the PrimaryKeys of the table, it looks for the record in the database.
-    If it is not there, it is inserted as a new entry.
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
-    :return: S_OK() || S_ERROR()
-    '''
-    session = self.sessionMaker_o()
-    table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
-
-    try:
-      session.commit()
-      return S_OK()
-    except exc.SQLAlchemyError as e:
-      session.rollback()
-      self.log.exception( "addIfNotThere: unexpected exception", lException = e )
-      return S_ERROR( "addIfNotThere: unexpected exception %s" % e )
     finally:
       session.close()
 
