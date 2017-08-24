@@ -117,7 +117,12 @@ class MatcherHandler( RequestHandler ):
       negativeCond = self.limiter.getNegativeCondForSite( resourceDict[ 'Site' ] )
     else:
       negativeCond = self.limiter.getNegativeCond()
-    return gTaskQueueDB.retrieveTaskQueuesThatMatch( resourceDict, negativeCond = negativeCond )
+    matcher = Matcher( pilotAgentsDB = pilotAgentsDB,
+                       jobDB = gJobDB,
+                       tqDB = gTaskQueueDB,
+                       jlDB = jlDB )
+    resourceDescriptionDict = matcher._processResourceDescription( resourceDict )
+    return gTaskQueueDB.retrieveTaskQueuesThatMatch( resourceDescriptionDict, negativeCond = negativeCond )
 
 ##############################################################################
   types_matchAndGetTaskQueue = [ dict ]
