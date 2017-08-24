@@ -457,7 +457,7 @@ def sortSEs( ses ):
     if len( se.split( ',' ) ) != 1:
       return sorted( ses )
     if se not in seSvcClass:
-      seSvcClass[se] = StorageElement( se ).getStatus()['Value']['DiskSE']
+      seSvcClass[se] = StorageElement( se ).status()['DiskSE']
   diskSEs = [se for se in ses if seSvcClass[se]]
   tapeSEs = [se for se in ses if se not in diskSEs]
   return sorted( diskSEs ) + sorted( tapeSEs )
@@ -491,4 +491,4 @@ def isFailover( se ):
 def getActiveSEs( seList, access = 'Write' ):
   """ Utility function - uses the StorageElement cached status
   """
-  return [ se for se in seList if StorageElement( se ).getStatus().get( 'Value', {} ).get( access, False )]
+  return [ se for se in seList if StorageElement( se ).status().get( access, False )]

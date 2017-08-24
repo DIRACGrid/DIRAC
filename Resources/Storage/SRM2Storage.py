@@ -330,7 +330,7 @@ class SRM2Storage( StorageBase ):
           failed[url] = 'getTransportURL: Failed to obtain turls.'
       return S_OK( {'Successful' : successful, 'Failed' : failed} )
 
-    if not self.se.getStatus().get( 'Value', {} ).get( 'Read' ):
+    if not self.se.status()['Read']:
       return S_ERROR( "SRM2Storage.getTransportURL: Read access not currently permitted." )
 
     # Here we must go out to the SRM service

@@ -449,11 +449,10 @@ class JobScheduling( OptimizerExecutor ):
 
     for seName in siteSEs:
       se = StorageElement( seName, vo = vo )
-      result = se.getStatus()
-      if not result[ 'OK' ]:
-        self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
-        return S_ERROR( "Cannot retrieve SE status" )
-      seStatus = result[ 'Value' ]
+      seStatus = se.getStatus()
+      if not seStatus['OK']:
+        return seStatus
+      seStatus = seStatus['Value']
       if seStatus[ 'Read' ] and seStatus[ 'TapeSE' ]:
         tapeSEs.append( seName )
       if seStatus[ 'Read' ] and seStatus[ 'DiskSE' ]:
@@ -565,12 +564,7 @@ class JobScheduling( OptimizerExecutor ):
       for seName in closeSEs:
         # If we don't have the SE status get it and store it
         if seName not in seStatus:
-          seObj = StorageElement( seName, vo = vo )
-          result = seObj.getStatus()
-          if not result['OK' ]:
-            self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
-            continue
-          seStatus[ seName ] = result[ 'Value' ]
+          seStatus[ seName ] = StorageElement( seName, vo = vo ).status()
         # get the SE status from mem and add it if its disk
         status = seStatus[ seName ]
         if status['Read'] and status['DiskSE']:
@@ -599,9 +593,6 @@ class JobScheduling( OptimizerExecutor ):
             self.jobLog.verbose( "Setting LFN to disk for %s" % ( seName ) )
             siteData[ 'disk' ] += 1
             siteData[ 'tape' ] -= 1
-
-    return S_OK()
-
 
   def __setJobSite( self, jobState, siteList, onlineSites = None ):
     """ Set the site attribute

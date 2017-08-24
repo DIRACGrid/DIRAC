@@ -82,7 +82,10 @@ class DownloadInputData:
     diskSEs = set()
     tapeSEs = set()
     for localSE in [se for se in localSEList if se]:
-      seStatus = StorageElement( localSE ).getStatus()['Value']
+      seStatus = StorageElement( localSE ).getStatus()
+      if not seStatus['OK']:
+        return seStatus
+      seStatus = seStatus['Value']
       if seStatus['Read'] and seStatus['DiskSE']:
         diskSEs.add( localSE )
       elif seStatus['Read'] and seStatus['TapeSE']:
@@ -269,7 +272,7 @@ class DownloadInputData:
     diskSEs = set()
     tapeSEs = set()
     for seName in reps:
-      seStatus = StorageElement( seName ).getStatus()['Value']
+      seStatus = StorageElement( seName ).status()
       # FIXME: This is simply terrible - this notion of "DiskSE" vs "TapeSE" should NOT be used here!
       if seStatus['Read'] and seStatus['DiskSE']:
         diskSEs.add( seName )

@@ -520,7 +520,7 @@ class DataManager( object ):
 
     ###########################################################
     # Perform the registration here
-    destinationSE = storageElement.getStorageElementName()['Value']
+    destinationSE = storageElement.storageElementName()
     res = returnSingleResult( storageElement.getURL( lfn, protocol = self.registrationProtocol ) )
     if not res['OK']:
       errStr = "Failed to generate destination PFN."
@@ -692,13 +692,13 @@ class DataManager( object ):
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
 
     # Get the real name of the SE
-    destSEName = destStorageElement.getStorageElementName()['Value']
+    destSEName = destStorageElement.storageElementName()
 
     ###########################################################
     # Check whether the destination storage element is banned
     log.verbose( "Determining whether %s ( destination ) is Write-banned." % destSEName )
 
-    if not destStorageElement.getStatus().get( 'Value', {} ).get( 'Write', False ):
+    if not destStorageElement.status()['Write']:
       infoStr = "Supplied destination Storage Element is not currently allowed for Write."
       log.debug( infoStr, destSEName )
       return S_ERROR( infoStr )
@@ -1034,7 +1034,7 @@ class DataManager( object ):
         for lfn, url in replicaTuple:
           failed[lfn] = errStr
       else:
-        storageElementName = destStorageElement.getStorageElementName()['Value']
+        storageElementName = destStorageElement.storageElementName()
         for lfn, url in replicaTuple:
           res = returnSingleResult( destStorageElement.getURL( lfn, protocol = self.registrationProtocol ) )
           if not res['OK']:
@@ -1601,7 +1601,7 @@ class DataManager( object ):
 
   def __checkSEStatus( self, se, status = 'Read' ):
     """ returns the value of a certain SE status flag (access or other) """
-    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( status, False )
+    return StorageElement( se, vo = self.vo ).status().get( status, False )
 
   def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, active = False ):
     """ get replicas from catalogue and filter if requested
