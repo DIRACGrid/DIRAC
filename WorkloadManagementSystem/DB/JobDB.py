@@ -1214,6 +1214,8 @@ class JobDB( DB ):
       cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
       if cpuTime is not None:
         classAdJob.insertAttributeInt( 'CPUTime', cpuTime )
+      else:
+        cpuTime = 0
     classAdReq.insertAttributeInt( 'UserPriority', priority )
     classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
 
