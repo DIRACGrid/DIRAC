@@ -133,7 +133,23 @@ CHANGE: Add to the TS system test, the test for transformations with meta-filter
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
 
+[v6r17p30]
 
+*DMS
+CHANGE: StorageElement - added status(), storageElementName(), checksumType() methods returning
+        values directly without the S_OK structure. Remove the checks of OK everywhere
+NEW: dirac-dms-add-file, DataManager - added option (-f) to force an overwrite of an existing file
+
+*TS:
+FIX: TransformationDB.py - set the ExternalID before the ExternalStatus in order to avoid inconsistent 
+     tasks if setting the ExternalID fails
+
+*StorageManagementSystem
+FIX: StorageManagementClient.py - return the full list of onlineSites while it was previously happy 
+     with only one
+
+*Resources
+FIX: HTCondorCEComputingElement.py - transfer output files(only log and err) for remote scheduler
 
 [v6r17p29]
 
