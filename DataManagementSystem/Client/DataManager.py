@@ -420,7 +420,7 @@ class DataManager( object ):
         'diracSE' is the Storage Element to which to put the file
         'guid' is the guid with which the file is to be registered (if not provided will be generated)
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
-        'overwrite' removes entry from the file catalogue before attempting upload
+        'overwrite' removes file from the file catalogue and SE before attempting upload
     """
 
     res = self.__hasAccess( 'addFile', lfn )
