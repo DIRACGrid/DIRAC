@@ -8,10 +8,9 @@ __RCSID__ = "$Id$"
 
 import datetime
 from sqlalchemy.orm                                import sessionmaker, class_mapper
-from sqlalchemy.sql.expression import null
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative                    import declarative_base
-from sqlalchemy                                    import create_engine, Column, String, DateTime, exc, Text
+from sqlalchemy                                    import create_engine, Column, String, DateTime, exc, Text, Integer, Float
 
 from DIRAC                                         import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
@@ -75,9 +74,6 @@ class DowntimeCache(rmsBase):
   dateeffective = Column( 'DateEffective', DateTime, nullable = False )
   lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False )
 
-  def __init__( self, name = null() ):
-    self.name = name
-
   def fromDict( self, dictionary ):
     """
     Fill the fields of the DowntimeCache object from a dictionary
@@ -101,6 +97,101 @@ class DowntimeCache(rmsBase):
     return [self.downtimeid, self.name, self.element, self.gocdbservicetype,
             self.severity, self.description, self.link,
             self.startdate, self.enddate, self.dateeffective, self.lastchecktime]
+
+
+class GGUSTicketsCache(rmsBase):
+  """ GGUSTicketsCache table
+  """
+
+  __tablename__ = 'GGUSTicketsCache'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
+
+  gocsite = Column( 'GocSite', String( 64 ), nullable = False, primary_key = True )
+  tickets = Column( 'Tickets', String( 1024 ), nullable = False )
+  opentickets = Column( 'OpenTickets', Integer, nullable = False, server_default = '0')
+  link = Column( 'Link', String( 1024 ), nullable = False )
+  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False )
+
+  def fromDict( self, dictionary ):
+    """
+    Fill the fields of the GGUSTicketsCache object from a dictionary
+    """
+
+    self.tickets = dictionary.get( 'Tickets', self.tickets )
+    self.opentickets = dictionary.get( 'OpenTickets', self.opentickets )
+    self.gocsite = dictionary.get( 'GocSite', self.gocsite )
+    self.link = dictionary.get( 'Link', self.link )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+
+  def toList(self):
+    """ Simply returns a list of column values
+    """
+    return [self.gocsite, self.tickets, self.opentickets, self.link, self.lastchecktime]
+
+
+class JobCache(rmsBase):
+  """ JobCache table
+  """
+
+  __tablename__ = 'JobCache'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
+
+  site = Column( 'Site', String( 64 ), nullable = False, primary_key = True )
+  status = Column( 'Status', String( 16 ), nullable = False )
+  efficiency = Column( 'Efficiency', Float(asdecimal=False), nullable = False, server_default = '0')
+  maskstatus = Column( 'MaskStatus', String( 32 ), nullable = False )
+  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False )
+
+  def fromDict( self, dictionary ):
+    """
+    Fill the fields of the JobCache object from a dictionary
+    """
+
+    self.site = dictionary.get( 'Site', self.site )
+    self.status = dictionary.get( 'Status', self.status )
+    self.efficiency = dictionary.get( 'Efficiency', self.efficiency )
+    self.maskstatus = dictionary.get( 'MaskStatus', self.maskstatus )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+
+  def toList(self):
+    """ Simply returns a list of column values
+    """
+    return [self.site, self.status, self.efficiency, self.maskstatus, self.lastchecktime]
+
+
+class PilotCache(rmsBase):
+  """ PilotCache table
+  """
+
+  __tablename__ = 'PilotCache'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
+
+  site = Column( 'Site', String( 64 ), nullable = False, primary_key = True )
+  ce = Column( 'CE', String( 64 ), nullable = False, primary_key = True )
+  status = Column( 'Status', String( 16 ), nullable = False )
+  pilotjobeff = Column( 'PilotJobEff', Float(asdecimal=False), nullable = False, server_default = '0' )
+  pilotsperjob = Column( 'PilotsPerJob', Float(asdecimal=False), nullable = False, server_default = '0')
+  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False )
+
+  def fromDict( self, dictionary ):
+    """
+    Fill the fields of the PilotCache object from a dictionary
+    """
+
+    self.site = dictionary.get( 'Site', self.site )
+    self.ce = dictionary.get( 'CE', self.ce )
+    self.status = dictionary.get( 'Status', self.status )
+    self.pilotjobeff = dictionary.get( 'PilotJobEff', self.pilotjobeff )
+    self.pilotsperjob = dictionary.get( 'PilotsPerJob', self.pilotsperjob )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+
+  def toList(self):
+    """ Simply returns a list of column values
+    """
+    return [self.site, self.ce, self.status, self.pilotjobeff, self.pilotsperjob, self.lastchecktime]
 
 
 class ResourceManagementDB( object ):
@@ -141,7 +232,7 @@ class ResourceManagementDB( object ):
                                                               self.host,
                                                               self.port,
                                                               self.dbName ),
-                                 pool_recycle = 3600, echo_pool = True, echo = True)
+                                 pool_recycle = 3600, echo_pool = True, echo = True) #FIXME: remove echo = True (one can play with logging level I believe)
     self.sessionMaker_o = sessionmaker( bind = self.engine )
     self.inspector = Inspector.from_engine( self.engine )
 
@@ -153,7 +244,7 @@ class ResourceManagementDB( object ):
 
     tablesInDB = self.inspector.get_table_names()
 
-    for table in ['AccountingCache', 'DowntimeCache']:
+    for table in ['AccountingCache', 'DowntimeCache', 'GGUSTicketsCache', 'JobCache', 'PilotCache']: #FIXME: add tables here
       if table not in tablesInDB:
         getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:
@@ -175,7 +266,7 @@ class ResourceManagementDB( object ):
     '''
 
     # expire_on_commit is set to False so that we can still use the object after we close the session
-    session = self.sessionMaker_o( expire_on_commit = False )
+    session = self.sessionMaker_o( expire_on_commit = False ) #FIXME: should we use this flag elsewhere?
     tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
     tableRow_o.fromDict(params)
 
@@ -314,7 +405,8 @@ class ResourceManagementDB( object ):
 
       # now we assume we need to modify
       for columnName, columnValue in params.iteritems():
-        setattr(res, columnName.lower(), columnValue)
+        if columnValue:
+          setattr(res, columnName.lower(), columnValue)
 
       session.commit()
       return S_OK()
