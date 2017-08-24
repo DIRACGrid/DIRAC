@@ -411,7 +411,8 @@ class DataManager( object ):
 
     return sortedSEs
 
-  def putAndRegister( self, lfn, fileName, diracSE, guid = None, path = None, checksum = None ):
+  def putAndRegister( self, lfn, fileName, diracSE, guid = None, path = None, 
+                      checksum = None, overwrite = False  ):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
         'lfn' is the file LFN
@@ -419,6 +420,7 @@ class DataManager( object ):
         'diracSE' is the Storage Element to which to put the file
         'guid' is the guid with which the file is to be registered (if not provided will be generated)
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
+        'overwrite' removes entry from the file catalogue before attempting upload
     """
 
     res = self.__hasAccess( 'addFile', lfn )
@@ -470,14 +472,27 @@ class DataManager( object ):
       return S_ERROR( errStr )
     if res['Value']['Successful'][lfn]:
       if res['Value']['Successful'][lfn] == lfn:
-        errStr = "The supplied LFN already exists in the File Catalog."
-        log.debug( errStr, lfn )
+        if overwrite:
+          resRm = self.removeFile( lfn, force = True )
+          if not resRm['OK']:
+            errStr = "Failed to prepare file for overwrite"
+            log.debug( errStr, lfn )
+            return resRm
+          if lfn not in resRm['Value']['Successful']:
+            errStr = "Failed to either delete file or LFN"
+            log.debug( errStr, lfn )
+            return S_ERROR( "%s %s" % ( errStr, lfn ) )
+        else:  
+          errStr = "The supplied LFN already exists in the File Catalog."
+          log.debug( errStr, lfn )
+          return S_ERROR( "%s %s" % ( errStr, res['Value']['Successful'][lfn] ) )
       else:
         # If the returned LFN is different, this is the name of a file
         # with the same GUID
         errStr = "This file GUID already exists for another file"
         log.debug( errStr, res['Value']['Successful'][lfn] )
-      return S_ERROR( "%s %s" % ( errStr, res['Value']['Successful'][lfn] ) )
+        return S_ERROR( "%s %s" % ( errStr, res['Value']['Successful'][lfn] ) )
+
 
     ##########################################################
     #  Instantiate the destination storage element here.
