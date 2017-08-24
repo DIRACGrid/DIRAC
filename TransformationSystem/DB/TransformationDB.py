@@ -497,7 +497,7 @@ class TransformationDB( DB ):
 
   def addFilesToTransformation( self, transName, lfns, connection = False ):
     """ Add a list of LFNs to the transformation directly """
-    gLogger.info( "TransformationDB.addFilesToTransformation: Attempting to add %s files to transformations: %s" % ( len(lfns), transName ) )
+    gLogger.info( "TransformationDB.addFilesToTransformation: Attempting to add %s files to transformations: %s" % ( len( lfns ), transName ) )
     if not lfns:
       return S_ERROR( 'Zero length LFN list' )
     res = self._getConnectionTransID( connection, transName )
@@ -508,7 +508,7 @@ class TransformationDB( DB ):
     res = self.__getFileIDsForLfns( lfns, connection = connection )
     if not res['OK']:
       return res
-    fileIDs, _lfnFilesIDs = res['Value']
+    fileIDs = res['Value'][0]
     failed = {}
     successful = {}
     missing = []
@@ -549,7 +549,7 @@ class TransformationDB( DB ):
         res = self.__getFileIDsForLfns( lfns, connection = connection )
         if not res['OK']:
           return res
-        originalFileIDs, _ignore = res['Value']
+        originalFileIDs = res['Value'][0]
         condDict['FileID'] = originalFileIDs.keys()
 
       for val in condDict.itervalues():
@@ -603,21 +603,34 @@ class TransformationDB( DB ):
 
   def setFileStatusForTransformation( self, transID, fileStatusDict = None, connection = False ):
     """ Set file status for the given transformation, based on
-        fileStatusDict {fileID_A: 'statusA', fileID_B: 'statusB', ...}
+        fileStatusDict {fileID_A: ('statusA',errorA), fileID_B: ('statusB',errorB), ...}
 
-        The ErrorCount is incremented automatically here
+        The ErrorCount is incremented if errorA flag is True
     """
     if not fileStatusDict:
       return S_OK()
 
     # Building the request with "ON DUPLICATE KEY UPDATE"
-    req = "INSERT INTO TransformationFiles (TransformationID, FileID, Status, ErrorCount, LastUpdate) VALUES "
+    reqBase = "INSERT INTO TransformationFiles (TransformationID, FileID, Status, ErrorCount, LastUpdate) VALUES "
 
-    updatesList = ["(%d, %d, '%s', 0, UTC_TIMESTAMP())" % ( transID, fileID, status ) for fileID, status in fileStatusDict.items()]
-    req += ','.join( updatesList )
-    req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),ErrorCount=ErrorCount+1,LastUpdate=VALUES(LastUpdate)"
+    # Get fileID and status for each case: error and no error
+    statusFileDict = {}
+    for fileID, ( status, error ) in fileStatusDict.iteritems():
+      statusFileDict.setdefault( error, [] ).append( ( fileID, status ) )
 
-    return self._update( req, connection )
+    for error, fileIDStatusList in statusFileDict.iteritems():
+      req = reqBase + ','.join( "(%d, %d, '%s', 0, UTC_TIMESTAMP())" % \
+                                ( transID, fileID, status ) for fileID, status in fileIDStatusList )
+      if error:
+        # Increment the error counter when we requested
+        req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),ErrorCount=ErrorCount+1,LastUpdate=VALUES(LastUpdate)"
+      else:
+        req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),LastUpdate=VALUES(LastUpdate)"
+
+      result = self._update( req, connection )
+      if not result['OK']:
+        return result
+    return S_OK()
 
 
   def getTransformationStats( self, transName, connection = False ):
@@ -896,10 +909,11 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    res = self.__setTaskParameterValue( transID, taskID, 'ExternalStatus', status, connection = connection )
+    # Set ID first in order to be sure there is no status set without the ID being set
+    res = self.__setTaskParameterValue( transID, taskID, 'ExternalID', taskWmsID, connection = connection )
     if not res['OK']:
       return res
-    return self.__setTaskParameterValue( transID, taskID, 'ExternalID', taskWmsID, connection = connection )
+    return self.__setTaskParameterValue( transID, taskID, 'ExternalStatus', status, connection = connection )
 
   def setTaskStatus( self, transName, taskID, status, connection = False ):
     """ Set status for job with taskID in production with transformationID """
@@ -1198,7 +1212,7 @@ class TransformationDB( DB ):
     res = self.__getFileIDsForLfns( lfns, connection = connection )
     if not res['OK']:
       return res
-    _fileIDs, lfnFileIDs = res['Value']
+    lfnFileIDs = res['Value'][1]
     for lfn in lfns:
       if lfn not in lfnFileIDs:
         req = "INSERT INTO DataFiles (LFN,Status) VALUES ('%s','New');" % lfn
@@ -1407,7 +1421,7 @@ class TransformationDB( DB ):
     res = self.__getFileIDsForLfns( lfns, connection = connection )
     if not res['OK']:
       return res
-    fileIDs, _lfnFilesIDs = res['Value']
+    fileIDs = res['Value'][0]
     failed = {}
     successful = {}
     fileIDsValues = set( fileIDs.values() )
@@ -1438,7 +1452,7 @@ class TransformationDB( DB ):
         metadatadict = res['Value']
       gLogger.info( 'Filter file with metadata', metadatadict )
       transIDs = self._filterFileByMetadata( metadatadict )
-      gLogger.info('Transformations passing the filter: %s' % transIDs)
+      gLogger.info( 'Transformations passing the filter: %s' % transIDs )
       if not ( transIDs or force ):  # not clear how force should be used for
         successful[lfn] = False  # True -> False bug fix: otherwise it is set to True even if transIDs is empty.
       else:
@@ -1529,7 +1543,7 @@ class TransformationDB( DB ):
     """ It can be applied to a file or to a directory (path). For a file, add the file to Transformations if the updated metadata dictionary passes the filter.
         For a directory, add the files contained in the directory to the Transformations if the the updated metadata dictionary passes the filter.
     """
-    gLogger.info( "setMetadata: Attempting to set metadata %s to: %s" % (usermetadatadict, path) )
+    gLogger.info( "setMetadata: Attempting to set metadata %s to: %s" % ( usermetadatadict, path ) )
     transFiles = {}
     filesToAdd = []
 
@@ -1560,7 +1574,7 @@ class TransformationDB( DB ):
     metadatadict.update( usermetadatadict )
     gLogger.info( 'Filter file with metadata:', metadatadict )
     transIDs = self._filterFileByMetadata( metadatadict )
-    gLogger.info('Transformations passing the filter: %s' % transIDs)
+    gLogger.info( 'Transformations passing the filter: %s' % transIDs )
     if not transIDs:
       return S_OK()
     elif isFile:
@@ -1605,7 +1619,7 @@ class TransformationDB( DB ):
     for transID, query in queries:
       mq = MetaQuery( query, typeDict )
       gLogger.info( "Apply query %s to metadata %s" % ( mq.getMetaQuery(), metadatadict ) )
-      res = mq.applyQuery(metadatadict)
+      res = mq.applyQuery( metadatadict )
       if not res['OK']:
         gLogger.error( "Error in applying query: %s" % res['Message'] )
         return res

@@ -52,12 +52,12 @@ class InputDataAgent( AgentModule ):
       dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
       dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
       self.transformationTypes = sorted( dataProc + dataManip )
-    extendables = Operations().getValue( 'Transformations/ExtendableTransfTypes', [])
+    extendables = Operations().getValue( 'Transformations/ExtendableTransfTypes', [] )
     if extendables:
       for extendable in extendables:
         if extendable in self.transformationTypes:
-          self.transformationTypes.remove(extendable)
-          #This is because the Extendables do not use this Agent (have no Input data query)
+          self.transformationTypes.remove( extendable )
+          # This is because the Extendables do not use this Agent (have no Input data query)
 
     return S_OK()
 
@@ -88,8 +88,8 @@ class InputDataAgent( AgentModule ):
 
       if self.refreshonly:
         # Determine the correct time stamp to use for this transformation
-        if self.timeLog.has_key( transID ):
-          if self.fullTimeLog.has_key( transID ):
+        if transID in self.timeLog:
+          if transID in self.fullTimeLog:
             # If it is more than a day since the last reduced query, make a full query just in case
             if ( datetime.datetime.utcnow() - self.fullTimeLog[transID] ) < datetime.timedelta( seconds = self.fullUpdatePeriod ):
               timeStamp = self.timeLog[transID]
@@ -100,7 +100,7 @@ class InputDataAgent( AgentModule ):
             else:
               self.fullTimeLog[transID] = datetime.datetime.utcnow()
         self.timeLog[transID] = datetime.datetime.utcnow()
-        if not self.fullTimeLog.has_key( transID ):
+        if transID not in self.fullTimeLog:
           self.fullTimeLog[transID] = datetime.datetime.utcnow()
 
       # Perform the query to the metadata catalog
@@ -117,9 +117,8 @@ class InputDataAgent( AgentModule ):
       # Check if the number of files has changed since the last cycle
       nlfns = len( lfnList )
       gLogger.info( "%d files returned for transformation %d from the metadata catalog" % ( nlfns, int( transID ) ) )
-      if self.fileLog.has_key( transID ):
-        if nlfns == self.fileLog[transID]:
-          gLogger.verbose( 'No new files in metadata catalog since last check' )
+      if nlfns == self.fileLog.get( transID ):
+        gLogger.verbose( 'No new files in metadata catalog since last check' )
       self.fileLog[transID] = nlfns
 
       # Add any new files to the transformation
