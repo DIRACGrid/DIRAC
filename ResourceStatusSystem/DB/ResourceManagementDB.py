@@ -16,7 +16,6 @@ from DIRAC                                         import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
 
 # Defining the tables
-#TODO: need to add all the tables
 #TODO: add debug logs
 
 rmsBase = declarative_base()
@@ -27,7 +26,7 @@ class AccountingCache(rmsBase):
 
   __tablename__ = 'AccountingCache'
   __table_args__ = {'mysql_engine': 'InnoDB',
-		    'mysql_charset': 'utf8'}
+                    'mysql_charset': 'utf8'}
 
   name = Column( 'Name', String( 64 ), nullable = False, primary_key = True )
   plotname = Column( 'PlotName', String( 64 ), nullable = False, primary_key = True )
@@ -60,7 +59,7 @@ class DowntimeCache(rmsBase):
 
   __tablename__ = 'DowntimeCache'
   __table_args__ = {'mysql_engine': 'InnoDB',
-		    'mysql_charset': 'utf8'}
+                    'mysql_charset': 'utf8'}
 
   downtimeid = Column( 'DowntimeID', String( 64 ), nullable = False, primary_key = True )
   name = Column( 'Name', String( 64 ), nullable = False )
@@ -95,8 +94,8 @@ class DowntimeCache(rmsBase):
     """ Simply returns a list of column values
     """
     return [self.downtimeid, self.name, self.element, self.gocdbservicetype,
-	    self.severity, self.description, self.link,
-	    self.startdate, self.enddate, self.dateeffective, self.lastchecktime]
+            self.severity, self.description, self.link,
+            self.startdate, self.enddate, self.dateeffective, self.lastchecktime]
 
 
 class GGUSTicketsCache(rmsBase):
@@ -105,7 +104,7 @@ class GGUSTicketsCache(rmsBase):
 
   __tablename__ = 'GGUSTicketsCache'
   __table_args__ = {'mysql_engine': 'InnoDB',
-		    'mysql_charset': 'utf8'}
+                    'mysql_charset': 'utf8'}
 
   gocsite = Column( 'GocSite', String( 64 ), nullable = False, primary_key = True )
   tickets = Column( 'Tickets', String( 1024 ), nullable = False )
@@ -136,7 +135,7 @@ class JobCache(rmsBase):
 
   __tablename__ = 'JobCache'
   __table_args__ = {'mysql_engine': 'InnoDB',
-		    'mysql_charset': 'utf8'}
+                    'mysql_charset': 'utf8'}
 
   site = Column( 'Site', String( 64 ), nullable = False, primary_key = True )
   status = Column( 'Status', String( 16 ), nullable = False )
@@ -167,7 +166,7 @@ class PilotCache(rmsBase):
 
   __tablename__ = 'PilotCache'
   __table_args__ = {'mysql_engine': 'InnoDB',
-		    'mysql_charset': 'utf8'}
+                    'mysql_charset': 'utf8'}
 
   site = Column( 'Site', String( 64 ), nullable = False, primary_key = True )
   ce = Column( 'CE', String( 64 ), nullable = False, primary_key = True )
@@ -194,6 +193,117 @@ class PilotCache(rmsBase):
     return [self.site, self.ce, self.status, self.pilotjobeff, self.pilotsperjob, self.lastchecktime]
 
 
+class PolicyResult(rmsBase):
+  """ PolicyResult table
+  """
+
+  __tablename__ = 'PolicyResult'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
+
+  policyname = Column( 'PolicyName', String( 64 ), nullable = False, primary_key = True )
+  statustype = Column( 'StatusType', String( 16 ), nullable = False, server_default = '', primary_key = True )
+  element = Column( 'Element', String( 32 ), nullable = False, primary_key = True )
+  name = Column( 'Name', String( 64 ), nullable = False, primary_key = True )
+  status = Column( 'Status', String( 16 ), nullable = False )
+  reason = Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' )
+  dateeffective = Column( 'DateEffective', DateTime, nullable = False )
+  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False )
+
+  def fromDict( self, dictionary ):
+    """
+    Fill the fields of the PolicyResult object from a dictionary
+    """
+
+    self.policyname = dictionary.get( 'PolicyName', self.policyname )
+    self.statustype = dictionary.get( 'StatusType', self.statustype )
+    self.element = dictionary.get( 'Element', self.element )
+    self.name = dictionary.get( 'Name', self.name )
+    self.status = dictionary.get( 'Status', self.status )
+    self.reason = dictionary.get( 'Reason', self.reason )
+    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+
+  def toList(self):
+    """ Simply returns a list of column values
+    """
+    return [self.policyname, self.statustype, self.element, self.name,
+            self.status, self.reason, self.dateeffective, self.lastchecktime]
+
+  #TODO: need to add all the tables below
+
+    #
+    # SpaceTokenOccupancyCache = Table( 'SpaceTokenOccupancyCache', self.metadata,
+    #                                   Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True ),
+    #                                   Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                                   Column( 'Guaranteed', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+    #                                   Column( 'Free', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+    #                                   Column( 'Token', String( 64 ), nullable = False, primary_key = True ),
+    #                                   Column( 'Total', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
+    #                                   mysql_engine = 'InnoDB' )
+    #
+    # TransferCache = Table( 'TransferCache', self.metadata,
+    #                        Column( 'SourceName', String( 64 ), nullable = False, primary_key = True ),
+    #                        Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                        Column( 'Metric', String( 16 ), nullable = False, primary_key = True ),
+    #                        Column( 'Value', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
+    #                        Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True ),
+    #                        mysql_engine = 'InnoDB' )
+    #
+    # UserRegistryCache = Table( 'UserRegistryCache', self.metadata,
+    #                            Column( 'Login', String( 14 ), primary_key = True ),
+    #                            Column( 'Name', String( 64 ), nullable = False ),
+    #                            Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                            Column( 'Email', String( 64 ), nullable = False ),
+    #                            mysql_engine = 'InnoDB' )
+    #
+    # ErrorReportBuffer = Table( 'ErrorReportBuffer', self.metadata,
+    #                            Column( 'ErrorMessage', String( 512 ), nullable = False ),
+    #                            Column( 'Name', String( 64 ), nullable = False ),
+    #                            Column( 'DateEffective', DateTime, nullable = False ),
+    #                            Column( 'Reporter', String( 64 ), nullable = False ),
+    #                            Column( 'Operation', String( 64 ), nullable = False ),
+    #                            Column( 'ElementType', String( 32 ), nullable = False ),
+    #                            Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
+    #                            Column( 'Arguments', String( 512 ), nullable = False, server_default = "" ),
+    #                            mysql_engine = 'InnoDB' )
+    #
+    # PolicyResultWithID = Table('PolicyResultWithID', self.metadata,
+    #                            Column( 'Status', String( 8 ), nullable = False ),
+    #                            Column( 'PolicyName', String( 64 ), nullable = False ),
+    #                            Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
+    #                            Column( 'Name', String( 64 ), nullable = False ),
+    #                            Column( 'DateEffective', DateTime, nullable = False ),
+    #                            Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
+    #                            Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
+    #                            Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                            Column( 'Element', String( 32 ), nullable = False ),
+    #                            mysql_engine = 'InnoDB' )
+    #
+    # PolicyResultLog = Table( 'PolicyResultLog', self.metadata,
+    #                          Column( 'Status', String( 8 ), nullable = False ),
+    #                          Column( 'PolicyName', String( 64 ), nullable = False ),
+    #                          Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
+    #                          Column( 'Name', String( 64 ), nullable = False ),
+    #                          Column( 'DateEffective', DateTime, nullable = False ),
+    #                          Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
+    #                          Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
+    #                          Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                          Column( 'Element', String( 32 ), nullable = False ),
+    #                          mysql_engine = 'InnoDB' )
+    #
+    # PolicyResultHistory = Table( 'PolicyResultHistory', self.metadata,
+    #                              Column( 'Status', String( 8 ), nullable = False ),
+    #                              Column( 'PolicyName', String( 64 ), nullable = False ),
+    #                              Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
+    #                              Column( 'Name', String( 64 ), nullable = False ),
+    #                              Column( 'DateEffective', DateTime, nullable = False ),
+    #                              Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
+    #                              Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
+    #                              Column( 'LastCheckTime', DateTime, nullable = False ),
+    #                              Column( 'Element', String( 32 ), nullable = False ),
+    #                              mysql_engine = 'InnoDB' )
+
 class ResourceManagementDB( object ):
   '''
     Class that defines the tables for the ResourceManagementDB on a python dictionary.
@@ -212,7 +322,7 @@ class ResourceManagementDB( object ):
 
   def __initializeConnection( self, dbPath ):
     """ Collect from the CS all the info needed to connect to the DB.
-	This should be in a base class eventually
+    This should be in a base class eventually
     """
 
     result = getDBParameters( dbPath )
@@ -228,11 +338,13 @@ class ResourceManagementDB( object ):
     self.dbName = dbParameters[ 'DBName' ]
 
     self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.user,
-							      self.password,
-							      self.host,
-							      self.port,
-							      self.dbName ),
-				 pool_recycle = 3600, echo_pool = True, echo = True) #FIXME: remove echo = True (one can play with logging level I believe)
+                                                              self.password,
+                                                              self.host,
+                                                              self.port,
+                                                              self.dbName ),
+                                 pool_recycle = 3600,
+                                 echo_pool = True,
+                                 echo = True) #FIXME: remove echo = True (one can play with logging level I believe)
     self.sessionMaker_o = sessionmaker( bind = self.engine )
     self.inspector = Inspector.from_engine( self.engine )
 
@@ -244,11 +356,16 @@ class ResourceManagementDB( object ):
 
     tablesInDB = self.inspector.get_table_names()
 
-    for table in ['AccountingCache', 'DowntimeCache', 'GGUSTicketsCache', 'JobCache', 'PilotCache']: #FIXME: add tables here
+    for table in ['AccountingCache',
+                  'DowntimeCache',
+                  'GGUSTicketsCache',
+                  'JobCache',
+                  'PilotCache',
+                  'PolicyResult']: #FIXME: add tables here
       if table not in tablesInDB:
-	getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
+        getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:
-	gLogger.debug( 'Table \'%s\' already exists' %table )
+        gLogger.debug( 'Table \'%s\' already exists' %table )
 
 
  # SQL Methods ###############################################################
@@ -302,27 +419,23 @@ class ResourceManagementDB( object ):
     try:
       select = session.query(table_c)
       for columnName, columnValue in params.iteritems():
-	if not columnValue:
-	  continue
-	column_a = getattr(table_c, columnName.lower())
-	if isinstance(columnValue, (list, tuple)):
-	  select = select.filter(column_a.in_(list(columnValue)))
-	elif isinstance(columnValue, basestring):
-	  select = select.filter(column_a == columnValue)
-	elif isinstance(columnValue, datetime.datetime): #FIXME: iis it correct/enough? (should check also below)
-	  select = select.filter(column_a == columnValue)
-	else:
-	  self.log.error("type(columnValue) == %s" %type(columnValue))
+        if not columnValue:
+          continue
+        column_a = getattr(table_c, columnName.lower())
+        if isinstance(columnValue, (list, tuple)):
+          select = select.filter(column_a.in_(list(columnValue)))
+        elif isinstance(columnValue, basestring):
+          select = select.filter(column_a == columnValue)
+        elif isinstance(columnValue, datetime.datetime): #FIXME: iis it correct/enough? (should check also below)
+          select = select.filter(column_a == columnValue)
+        else:
+          self.log.error("type(columnValue) == %s" %type(columnValue))
 
       listOfRows = [res.toList() for res in select.all()]
-
       finalResult = S_OK( listOfRows )
-
       # add column names
       finalResult['Columns'] = ['columnNames'] #FIXME: put real stuff
-
       return finalResult
-
 
     except exc.SQLAlchemyError as e:
       session.rollback()
@@ -346,17 +459,17 @@ class ResourceManagementDB( object ):
     try:
       deleteQuery = session.query(table_c)
       for columnName, columnValue in params.iteritems():
-	if not columnValue:
-	  continue
-	column_a = getattr(table_c, columnName.lower())
-	if isinstance(columnValue, (list, tuple)):
-	  deleteQuery = deleteQuery.filter(column_a.in_(list(columnValue)))
-	elif isinstance(columnValue, basestring):
-	  deleteQuery = deleteQuery.filter(column_a == columnValue)
-	elif isinstance(columnValue, datetime.datetime):
-	  deleteQuery = deleteQuery.filter(column_a == columnValue)
-	else:
-	  self.log.error("type(columnValue) == %s" %type(columnValue))
+        if not columnValue:
+          continue
+        column_a = getattr(table_c, columnName.lower())
+        if isinstance(columnValue, (list, tuple)):
+          deleteQuery = deleteQuery.filter(column_a.in_(list(columnValue)))
+        elif isinstance(columnValue, basestring):
+          deleteQuery = deleteQuery.filter(column_a == columnValue)
+        elif isinstance(columnValue, datetime.datetime):
+          deleteQuery = deleteQuery.filter(column_a == columnValue)
+        else:
+          self.log.error("type(columnValue) == %s" %type(columnValue))
 
       res = deleteQuery.delete(synchronize_session=False) #FIXME: unsure about it
       session.commit()
@@ -389,24 +502,25 @@ class ResourceManagementDB( object ):
     try:
       select = session.query(table_c)
       for columnName, columnValue in params.iteritems():
-	if not columnValue or columnName not in primaryKeys:
-	  continue
-	column_a = getattr(table_c, columnName.lower())
-	if isinstance(columnValue, (list, tuple)):
-	  select = select.filter(column_a.in_(list(columnValue)))
-	elif isinstance(columnValue, basestring):
-	  select = select.filter(column_a == columnValue)
-	else:
-	  self.log.error("type(columnValue) == %s" %type(columnValue))
+        if not columnValue or columnName not in primaryKeys:
+          continue
+        column_a = getattr(table_c, columnName.lower())
+        if isinstance(columnValue, (list, tuple)):
+          select = select.filter(column_a.in_(list(columnValue)))
+        elif isinstance(columnValue, basestring):
+          select = select.filter(column_a == columnValue)
+        else:
+          self.log.error("type(columnValue) == %s" %type(columnValue))
 
       res = select.first() # the selection is done via primaryKeys only
       if not res: # if not there, let's insert it
-	return self.insert(table, params)
+        return self.insert(table, params)
 
       # now we assume we need to modify
       for columnName, columnValue in params.iteritems():
-	if columnValue:
-	  setattr(res, columnName.lower(), columnValue)
+        print columnName, columnValue
+        if columnValue:
+          setattr(res, columnName.lower(), columnValue)
 
       session.commit()
       return S_OK()

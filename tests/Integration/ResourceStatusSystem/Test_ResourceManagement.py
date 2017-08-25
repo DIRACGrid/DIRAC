@@ -44,7 +44,7 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
 
     # TEST addOrModifyAccountingCache
     res = self.rmClient.addOrModifyAccountingCache('TestName12345', 'plotType', 'plotName', 'result',
-						   datetime.datetime.now(), datetime.datetime.now())
+                                                   datetime.datetime.now(), datetime.datetime.now())
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectAccountingCache('TestName12345')
@@ -82,10 +82,10 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
 
     # TEST addOrModifyDowntimeCache
     res = self.rmClient.addOrModifyDowntimeCache( 'TestName12345', 'element', 'name',
-						  datetime.datetime.now(), datetime.datetime.now(),
-						  'severity', 'description', 'link',
-						  datetime.datetime.now(), datetime.datetime.now(),
-						  'gOCDBServiceType')
+                                                  datetime.datetime.now(), datetime.datetime.now(),
+                                                  'severity', 'description', 'link',
+                                                  datetime.datetime.now(), datetime.datetime.now(),
+                                                  'gOCDBServiceType')
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectDowntimeCache('TestName12345')
@@ -216,6 +216,42 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     res = self.rmClient.selectPilotCache('TestName12345')
     self.assertTrue(res['OK'])
     self.assertFalse(res['Value'])
+
+  def test_PolicyResult(self):
+    """
+    PolicyResult table
+    """
+
+    res = self.rmClient.deletePolicyResult('element', 'TestName12345', 'policyName', 'statusType')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+
+    # TEST addOrModifyPolicyResult
+    res = self.rmClient.addOrModifyPolicyResult( 'element', 'TestName12345', 'policyName', 'statusType', 'status', 'reason', datetime.datetime.now(), datetime.datetime.now() )
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectPolicyResult('element', 'TestName12345', 'policyName', 'statusType')
+    self.assertTrue(res['OK'])
+    #check if the name that we got is equal to the previously added 'TestName12345'
+    self.assertEqual(res['Value'][0][1], 'statusType')
+
+    res = self.rmClient.addOrModifyPolicyResult('element', 'TestName12345', 'policyName', 'statusType', status = 'newStatus')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectPolicyResult('element', 'TestName12345', 'policyName', 'statusType')
+    #check if the result has changed
+    self.assertEqual(res['Value'][0][4], 'newStatus')
+
+
+    # TEST deletePolicyResult
+    # ...............................................................................
+    res = self.rmClient.deletePolicyResult('element', 'TestName12345', 'policyName', 'statusType')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectPolicyResult('element', 'TestName12345', 'policyName', 'statusType')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
+
 
 # FIXME: add other tables
 

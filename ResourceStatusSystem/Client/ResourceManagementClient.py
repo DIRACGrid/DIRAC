@@ -600,7 +600,7 @@ class ResourceManagementClient( object ):
 
   def deletePolicyResult( self, element = None, name = None, policyName = None,
                           statusType = None, status = None, reason = None,
-                          lastCheckTime = None ):
+                          dateEffective = True, lastCheckTime = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
 
@@ -619,6 +619,8 @@ class ResourceManagementClient( object ):
         `Probing` | `Banned`
       **reason** - `[, string, list]`
         decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the policy result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the policy result was checked
 
@@ -630,7 +632,7 @@ class ResourceManagementClient( object ):
 
   def addOrModifyPolicyResult( self, element = None, name = None, policyName = None,
                                statusType = None, status = None, reason = None,
-                               lastCheckTime = None ):
+                               dateEffective = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to PolicyResult. Using `name`, `policyName` and
     `statusType` to query the database, decides whether to insert or update the table.
