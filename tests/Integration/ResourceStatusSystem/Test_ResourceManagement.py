@@ -104,7 +104,6 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     # TEST deleteDowntimeCache
     # ...............................................................................
     res = self.rmClient.deleteDowntimeCache('TestName12345')
-<<<<<<< HEAD
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectDowntimeCache('TestName12345')
@@ -144,54 +143,10 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectGGUSTicketsCache('TestName12345')
-=======
-    self.assertTrue(res['OK'])
-
-    res = self.rmClient.selectDowntimeCache('TestName12345')
->>>>>>> 776b0edda39ffd2dccb8b58a8bc0105e353f4f77
     self.assertTrue(res['OK'])
     self.assertFalse(res['Value'])
 
 
-<<<<<<< HEAD
-=======
-  def test_GGUSTicketsCache(self):
-    """
-    GGUSTicketsCache table
-    """
-
-    res = self.rmClient.deleteGGUSTicketsCache('TestName12345')  # just making sure it's not there (yet)
-    self.assertTrue(res['OK'])
-
-
-    # TEST addOrModifyGGUSTicketsCache
-    res = self.rmClient.addOrModifyGGUSTicketsCache( 'TestName12345', 'link', 0, 'tickets', datetime.datetime.now() )
-    self.assertTrue(res['OK'])
-
-    res = self.rmClient.selectGGUSTicketsCache('TestName12345')
-    self.assertTrue(res['OK'])
-    #check if the name that we got is equal to the previously added 'TestName12345'
-    self.assertEqual(res['Value'][0][0], 'TestName12345')
-
-    res = self.rmClient.addOrModifyGGUSTicketsCache('TestName12345', 'newLink')
-    self.assertTrue(res['OK'])
-
-    res = self.rmClient.selectGGUSTicketsCache('TestName12345')
-    #check if the result has changed
-    self.assertEqual(res['Value'][0][3], 'newLink')
-
-
-    # TEST deleteGGUSTicketsCache
-    # ...............................................................................
-    res = self.rmClient.deleteGGUSTicketsCache('TestName12345')
-    self.assertTrue(res['OK'])
-
-    res = self.rmClient.selectGGUSTicketsCache('TestName12345')
-    self.assertTrue(res['OK'])
-    self.assertFalse(res['Value'])
-
-
->>>>>>> 776b0edda39ffd2dccb8b58a8bc0105e353f4f77
   def test_JobCache(self):
     """
     JobCache table
@@ -267,12 +222,15 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     PolicyResult table
     """
 
-    res = self.rmClient.deletePolicyResult('element', 'TestName12345', 'policyName', 'statusType')  # just making sure it's not there (yet)
+    res = self.rmClient.deletePolicyResult('element', 'TestName12345',
+                                           'policyName', 'statusType')  # just making sure it's not there (yet)
     self.assertTrue(res['OK'])
 
 
     # TEST addOrModifyPolicyResult
-    res = self.rmClient.addOrModifyPolicyResult( 'element', 'TestName12345', 'policyName', 'statusType', 'status', 'reason', datetime.datetime.now(), datetime.datetime.now() )
+    res = self.rmClient.addOrModifyPolicyResult( 'element', 'TestName12345', 'policyName',
+                                                 'statusType', 'status', 'reason',
+                                                 datetime.datetime.now(), datetime.datetime.now() )
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectPolicyResult('element', 'TestName12345', 'policyName', 'statusType')
@@ -280,7 +238,8 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     #check if the name that we got is equal to the previously added 'TestName12345'
     self.assertEqual(res['Value'][0][1], 'statusType')
 
-    res = self.rmClient.addOrModifyPolicyResult('element', 'TestName12345', 'policyName', 'statusType', status = 'newStatus')
+    res = self.rmClient.addOrModifyPolicyResult('element', 'TestName12345', 'policyName', 'statusType',
+                                                status = 'newStatus')
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectPolicyResult('element', 'TestName12345', 'policyName', 'statusType')
@@ -307,7 +266,8 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
 
 
     # TEST addOrModifySpaceTokenOccupancy
-    res = self.rmClient.addOrModifySpaceTokenOccupancyCache( 'endpoint', 'token', 500.0, 1000.0, 200.0, datetime.datetime.now() )
+    res = self.rmClient.addOrModifySpaceTokenOccupancyCache( 'endpoint', 'token', 500.0, 1000.0, 200.0,
+                                                             datetime.datetime.now() )
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectSpaceTokenOccupancyCache('endpoint', 'token')
@@ -333,7 +293,7 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     self.assertFalse(res['Value'])
 
 
-# FIXME: add other tables
+# FIXME: add last table
 
 
 if __name__ == '__main__':
