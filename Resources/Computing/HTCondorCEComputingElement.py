@@ -140,6 +140,7 @@ log = $(Cluster).$(Process).log
 environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
+transfer_output_files = "" 
 
 %(localScheddOptions)s
 

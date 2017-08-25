@@ -212,9 +212,9 @@ def enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wallCloc
   wallClockRemainingFraction = 100 * (1. - wallClock / wallClockLimit)
   fractionTuple = ( cpuRemainingFraction, wallClockRemainingFraction, cpuMargin, wallClockMargin )
   gLogger.verbose( 'Used CPU is %.1f s out of %.1f, Used WallClock is %.1f s out of %.1f.' % ( cpu,
-											       cpuLimit,
-											       wallClock,
-											       wallClockLimit ) )
+                                                                                               cpuLimit,
+                                                                                               wallClock,
+                                                                                               wallClockLimit ) )
   gLogger.verbose( 'Remaining CPU %.02f%%, Remaining WallClock %.02f%%, margin CPU %s%%, margin WC %s%%' % fractionTuple )
 
   if cpuRemainingFraction > cpuMargin \

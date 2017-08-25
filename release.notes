@@ -1,4 +1,4 @@
-[v6r19-pre8]
+[v6r19-pre9]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -48,10 +48,16 @@ CHANGE: FTSHistoryView - drop FTSServer field from the view description
 CHANGE: FTSFile DB table: increased length of fields LFN(955), SourceSURL(1024), TargetSURL(1024)
 CHANGE: Uniform length of LFN to 255 across DIRAC dbs
 FIX: FTSJob - fix the serialization of 0 values
+FIX: FTSFile, FTSJob - fix SQL statement generation for stricter versions of MySQL
 
 *Resources
 NEW: New method in the StorageElement to generate pair of URLs for third party copy.
-     Implement the logic to generate pair of URLs to do third party copy. This will be used mostly by FTS, but is not enabled as of now
+     Implement the logic to generate pair of URLs to do third party copy. 
+     This will be used mostly by FTS, but is not enabled as of now
+FIX: StorageElement - fix different weird behaviors in Storage Element, in particular, 
+     the inheritance of the protocol sections     
+NEW: Introduced Resources/StorageElementBases configuration section for definitions
+     of abstract SEs to be used in real SEs definition by inheritance     
 
 *RMS
 NEW: dirac-rms-request - command including functionality of several other commands:
@@ -101,6 +107,15 @@ FIX: JobScheduling - bug fix in __sendToTQ()
 FIX: pilotTools,pilotCommands - pick up all the necessary settings from the site/queue configuration
      related to Tags and multi-processor
 NEW: SiteDirector - added option to force lcgBundle version in the pilot
+FIX: SiteDirector - if MaxWaitingJobs or MaxTotalJobs not defined for a queue, assume a default value of 10
+FIX: MatcherHandler - preprocess resource description in getMatchingTaskQueues()
+FIX: JobDB - set CPUTime to a default value if not defined when rescheduling jobs
+
+*TS
+FIX: TransformationClient - fix issue #3446 for wrong file error counting in TS
+FIX: TransformationDB - set ExternalID before ExternalStatus in tasks
+BUGFIX: TransformationClient - fix a bug in the TS files state machine (comparing old status.lower() 
+        with new status)
 
 *Interfaces
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
@@ -118,7 +133,23 @@ CHANGE: Add to the TS system test, the test for transformations with meta-filter
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
 
+[v6r17p30]
 
+*DMS
+CHANGE: StorageElement - added status(), storageElementName(), checksumType() methods returning
+        values directly without the S_OK structure. Remove the checks of OK everywhere
+NEW: dirac-dms-add-file, DataManager - added option (-f) to force an overwrite of an existing file
+
+*TS:
+FIX: TransformationDB.py - set the ExternalID before the ExternalStatus in order to avoid inconsistent 
+     tasks if setting the ExternalID fails
+
+*StorageManagementSystem
+FIX: StorageManagementClient.py - return the full list of onlineSites while it was previously happy 
+     with only one
+
+*Resources
+FIX: HTCondorCEComputingElement.py - transfer output files(only log and err) for remote scheduler
 
 [v6r17p29]
 
