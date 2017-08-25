@@ -230,17 +230,43 @@ class PolicyResult(rmsBase):
     return [self.policyname, self.statustype, self.element, self.name,
             self.status, self.reason, self.dateeffective, self.lastchecktime]
 
+
+class SpaceTokenOccupancyCache(rmsBase):
+  """ SpaceTokenOccupancyCache table
+  """
+
+  __tablename__ = 'SpaceTokenOccupancyCache'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
+
+  endpoint = Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True )
+  token = Column( 'Token', String( 64 ), nullable = False, primary_key = True )
+  guaranteed = Column( 'Guaranteed', Float(asdecimal=False), nullable = False, server_default = '0' )
+  free = Column( 'Free', Float(asdecimal=False), nullable = False, server_default = '0' )
+  total = Column( 'Total', Float(asdecimal=False), nullable = False, server_default = '0')
+  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False )
+
+  def fromDict( self, dictionary ):
+    """
+    Fill the fields of the SpaceTokenOccupancyCache object from a dictionary
+    """
+
+    self.endpoint = dictionary.get( 'Endpoint', self.endpoint )
+    self.token = dictionary.get( 'Token', self.token )
+    self.guaranteed = dictionary.get( 'Guaranteed', self.guaranteed )
+    self.free = dictionary.get( 'Free', self.free )
+    self.total = dictionary.get( 'Total', self.total )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+
+  def toList(self):
+    """ Simply returns a list of column values
+    """
+    return [self.endpoint, self.token, self.guaranteed, self.free, self.total, self.lastchecktime]
+
+
+
   #TODO: need to add all the tables below
 
-    #
-    # SpaceTokenOccupancyCache = Table( 'SpaceTokenOccupancyCache', self.metadata,
-    #                                   Column( 'Endpoint', String( 128 ), nullable = False, primary_key = True ),
-    #                                   Column( 'LastCheckTime', DateTime, nullable = False ),
-    #                                   Column( 'Guaranteed', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-    #                                   Column( 'Free', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-    #                                   Column( 'Token', String( 64 ), nullable = False, primary_key = True ),
-    #                                   Column( 'Total', DOUBLE(asdecimal=False), nullable = False, server_default = '0'),
-    #                                   mysql_engine = 'InnoDB' )
     #
     # TransferCache = Table( 'TransferCache', self.metadata,
     #                        Column( 'SourceName', String( 64 ), nullable = False, primary_key = True ),
@@ -361,7 +387,8 @@ class ResourceManagementDB( object ):
                   'GGUSTicketsCache',
                   'JobCache',
                   'PilotCache',
-                  'PolicyResult']: #FIXME: add tables here
+                  'PolicyResult',
+                  'SpaceTokenOccupancyCache']: #FIXME: add tables here
       if table not in tablesInDB:
         getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:

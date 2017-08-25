@@ -252,6 +252,41 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     self.assertTrue(res['OK'])
     self.assertFalse(res['Value'])
 
+  def test_SpaceTokenOccupancy(self):
+    """
+    SpaceTokenOccupancy table
+    """
+
+    res = self.rmClient.deleteSpaceTokenOccupancyCache('endpoint', 'token')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+
+    # TEST addOrModifySpaceTokenOccupancy
+    res = self.rmClient.addOrModifySpaceTokenOccupancyCache( 'endpoint', 'token', 500.0, 1000.0, 200.0, datetime.datetime.now() )
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectSpaceTokenOccupancyCache('endpoint', 'token')
+    self.assertTrue(res['OK'])
+    #check if the name that we got is equal to the previously added 'token'
+    self.assertEqual(res['Value'][0][1], 200.0)
+
+    res = self.rmClient.addOrModifySpaceTokenOccupancyCache('endpoint', 'token', free = 100.0)
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectSpaceTokenOccupancyCache('endpoint', 'token')
+    #check if the result has changed
+    self.assertEqual(res['Value'][0][3], 100.0)
+
+
+    # TEST deleteSpaceTokenOccupancy
+    # ...............................................................................
+    res = self.rmClient.deleteSpaceTokenOccupancyCache('endpoint', 'token')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectSpaceTokenOccupancyCache('endpoint', 'token')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
+
 
 # FIXME: add other tables
 
