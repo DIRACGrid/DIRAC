@@ -268,7 +268,7 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     res = self.rmClient.selectSpaceTokenOccupancyCache('endpoint', 'token')
     self.assertTrue(res['OK'])
     #check if the name that we got is equal to the previously added 'token'
-    self.assertEqual(res['Value'][0][1], 200.0)
+    self.assertEqual(res['Value'][0][1], 'token')
 
     res = self.rmClient.addOrModifySpaceTokenOccupancyCache('endpoint', 'token', free = 100.0)
     self.assertTrue(res['OK'])

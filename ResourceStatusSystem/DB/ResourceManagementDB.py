@@ -265,7 +265,7 @@ class SpaceTokenOccupancyCache(rmsBase):
 
 
 
-  #TODO: need to add all the tables below
+  #TODO: need to add the last table below
 
     #
     # TransferCache = Table( 'TransferCache', self.metadata,
@@ -275,60 +275,8 @@ class SpaceTokenOccupancyCache(rmsBase):
     #                        Column( 'Value', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
     #                        Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True ),
     #                        mysql_engine = 'InnoDB' )
-    #
-    # UserRegistryCache = Table( 'UserRegistryCache', self.metadata,
-    #                            Column( 'Login', String( 14 ), primary_key = True ),
-    #                            Column( 'Name', String( 64 ), nullable = False ),
-    #                            Column( 'LastCheckTime', DateTime, nullable = False ),
-    #                            Column( 'Email', String( 64 ), nullable = False ),
-    #                            mysql_engine = 'InnoDB' )
-    #
-    # ErrorReportBuffer = Table( 'ErrorReportBuffer', self.metadata,
-    #                            Column( 'ErrorMessage', String( 512 ), nullable = False ),
-    #                            Column( 'Name', String( 64 ), nullable = False ),
-    #                            Column( 'DateEffective', DateTime, nullable = False ),
-    #                            Column( 'Reporter', String( 64 ), nullable = False ),
-    #                            Column( 'Operation', String( 64 ), nullable = False ),
-    #                            Column( 'ElementType', String( 32 ), nullable = False ),
-    #                            Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-    #                            Column( 'Arguments', String( 512 ), nullable = False, server_default = "" ),
-    #                            mysql_engine = 'InnoDB' )
-    #
-    # PolicyResultWithID = Table('PolicyResultWithID', self.metadata,
-    #                            Column( 'Status', String( 8 ), nullable = False ),
-    #                            Column( 'PolicyName', String( 64 ), nullable = False ),
-    #                            Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
-    #                            Column( 'Name', String( 64 ), nullable = False ),
-    #                            Column( 'DateEffective', DateTime, nullable = False ),
-    #                            Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
-    #                            Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-    #                            Column( 'LastCheckTime', DateTime, nullable = False ),
-    #                            Column( 'Element', String( 32 ), nullable = False ),
-    #                            mysql_engine = 'InnoDB' )
-    #
-    # PolicyResultLog = Table( 'PolicyResultLog', self.metadata,
-    #                          Column( 'Status', String( 8 ), nullable = False ),
-    #                          Column( 'PolicyName', String( 64 ), nullable = False ),
-    #                          Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
-    #                          Column( 'Name', String( 64 ), nullable = False ),
-    #                          Column( 'DateEffective', DateTime, nullable = False ),
-    #                          Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
-    #                          Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-    #                          Column( 'LastCheckTime', DateTime, nullable = False ),
-    #                          Column( 'Element', String( 32 ), nullable = False ),
-    #                          mysql_engine = 'InnoDB' )
-    #
-    # PolicyResultHistory = Table( 'PolicyResultHistory', self.metadata,
-    #                              Column( 'Status', String( 8 ), nullable = False ),
-    #                              Column( 'PolicyName', String( 64 ), nullable = False ),
-    #                              Column( 'Reason', String( 512 ), nullable = False, server_default = "Unspecified" ),
-    #                              Column( 'Name', String( 64 ), nullable = False ),
-    #                              Column( 'DateEffective', DateTime, nullable = False ),
-    #                              Column( 'StatusType', String( 16 ), nullable = False, server_default = "" ),
-    #                              Column( 'ID', Integer, nullable = False, autoincrement= True, primary_key = True ),
-    #                              Column( 'LastCheckTime', DateTime, nullable = False ),
-    #                              Column( 'Element', String( 32 ), nullable = False ),
-    #                              mysql_engine = 'InnoDB' )
+
+
 
 class ResourceManagementDB( object ):
   '''

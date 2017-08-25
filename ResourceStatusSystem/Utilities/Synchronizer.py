@@ -18,7 +18,6 @@ from DIRAC.ResourceStatusSystem.Utilities                  import Utils
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import getFTS3Servers
 from DIRAC.ConfigurationSystem.Client.PathFinder           import getServiceURL
 from DIRAC.Core.Security.ProxyInfo                         import getProxyInfo
-from DIRAC.Core.DISET.RPCClient                            import RPCClient
 
 ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 
@@ -76,8 +75,6 @@ class Synchronizer( object ):
     syncNodes = self._syncNodes()
     if not syncNodes[ 'OK' ]:
       gLogger.error( syncNodes[ 'Message' ] )
-
-    #FIXME: also sync users
 
     return S_OK()
 
@@ -548,8 +545,8 @@ class Synchronizer( object ):
     #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
 
     result = self.rStatus.selectStatusElement( 'Node', 'Status',
-                                                   elementType = 'Queue',
-                                                   meta = { 'columns' : [ 'Name', 'StatusType' ] } )
+                                               elementType = 'Queue',
+                                               meta = { 'columns' : [ 'Name', 'StatusType' ] } )
     if not result[ 'OK' ]:
       return result
     queueTuple = [ (x[0],x[1]) for x in result['Value'] ]
@@ -574,52 +571,6 @@ class Synchronizer( object ):
                                                        elementType = _elementType,
                                                        tokenOwner = self.tokenOwner,
                                                        reason = _reason )
-      if not query[ 'OK' ]:
-        return query
-
-    return S_OK()
-
-  def _syncUsers( self ):
-    '''
-      Sync Users: compares CS with DB and does the necessary modifications.
-    '''
-
-    gLogger.verbose( '-- Synchronizing users --')
-
-    usersCS = CSHelpers.getRegistryUsers()
-    if not usersCS[ 'OK' ]:
-      return usersCS
-    usersCS = usersCS[ 'Value' ]
-
-    gLogger.verbose( '%s users found in CS' % len( usersCS ) )
-
-    usersDB = self.rManagement.selectUserRegistryCache( meta = { 'columns' : [ 'login' ] } )
-    if not usersDB[ 'OK' ]:
-      return usersDB
-    usersDB = [ userDB[0] for userDB in usersDB[ 'Value' ] ]
-
-    # Users that are in DB but not in CS
-    toBeDeleted = list( set( usersDB ).difference( set( usersCS.keys() ) ) )
-    gLogger.verbose( '%s users to be deleted' % len( toBeDeleted ) )
-
-    # Delete users
-    # FIXME: probably it is not needed since there is a DatabaseCleanerAgent
-    for userLogin in toBeDeleted:
-
-      deleteQuery = self.rManagement.deleteUserRegistryCache( login = userLogin )
-
-      gLogger.verbose( '... %s' % userLogin )
-      if not deleteQuery[ 'OK' ]:
-        return deleteQuery
-
-    # AddOrModify Users
-    for userLogin, userDict in usersCS.items():
-
-      _name  = userDict[ 'DN' ].split( '=' )[ -1 ]
-      _email = userDict[ 'Email' ]
-
-      query = self.rManagement.addOrModifyUserRegistryCache( userLogin, _name, _email )
-      gLogger.verbose( '-> %s' % userLogin )
       if not query[ 'OK' ]:
         return query
 
