@@ -104,6 +104,7 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     # TEST deleteDowntimeCache
     # ...............................................................................
     res = self.rmClient.deleteDowntimeCache('TestName12345')
+<<<<<<< HEAD
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectDowntimeCache('TestName12345')
@@ -143,10 +144,54 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectGGUSTicketsCache('TestName12345')
+=======
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectDowntimeCache('TestName12345')
+>>>>>>> 776b0edda39ffd2dccb8b58a8bc0105e353f4f77
     self.assertTrue(res['OK'])
     self.assertFalse(res['Value'])
 
 
+<<<<<<< HEAD
+=======
+  def test_GGUSTicketsCache(self):
+    """
+    GGUSTicketsCache table
+    """
+
+    res = self.rmClient.deleteGGUSTicketsCache('TestName12345')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+
+    # TEST addOrModifyGGUSTicketsCache
+    res = self.rmClient.addOrModifyGGUSTicketsCache( 'TestName12345', 'link', 0, 'tickets', datetime.datetime.now() )
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectGGUSTicketsCache('TestName12345')
+    self.assertTrue(res['OK'])
+    #check if the name that we got is equal to the previously added 'TestName12345'
+    self.assertEqual(res['Value'][0][0], 'TestName12345')
+
+    res = self.rmClient.addOrModifyGGUSTicketsCache('TestName12345', 'newLink')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectGGUSTicketsCache('TestName12345')
+    #check if the result has changed
+    self.assertEqual(res['Value'][0][3], 'newLink')
+
+
+    # TEST deleteGGUSTicketsCache
+    # ...............................................................................
+    res = self.rmClient.deleteGGUSTicketsCache('TestName12345')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectGGUSTicketsCache('TestName12345')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
+
+
+>>>>>>> 776b0edda39ffd2dccb8b58a8bc0105e353f4f77
   def test_JobCache(self):
     """
     JobCache table

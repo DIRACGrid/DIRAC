@@ -493,7 +493,6 @@ class ResourceManagementDB( object ):
 
       # now we assume we need to modify
       for columnName, columnValue in params.iteritems():
-        print columnName, columnValue
         if columnValue:
           setattr(res, columnName.lower(), columnValue)
 
