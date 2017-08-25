@@ -59,7 +59,7 @@ class ResourceManagementClient( object ):
     # make each key name uppercase to match database column names (case sensitive)
     for key, value in sendDict.items():
       del sendDict[key]
-      
+
       # apply default values
       if key == 'tokenExpiration' and value is None:
         sendDict.update({uppercase_first_letter(key): datetime.utcnow() + timedelta(hours=24)})
@@ -460,7 +460,7 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifyTransferCache( self, sourceName = None, destinationName = None, metric = None,
-                           value = None, lastCheckTime = None ):
+                                value = None, lastCheckTime = None ):
     '''
      Adds or updates-if-duplicated to TransferCache. Using `elementName`, `direction`
      and `metric` to query the database, decides whether to insert or update the table.

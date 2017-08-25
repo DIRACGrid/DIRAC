@@ -264,17 +264,35 @@ class SpaceTokenOccupancyCache(rmsBase):
     return [self.endpoint, self.token, self.guaranteed, self.free, self.total, self.lastchecktime]
 
 
+class TransferCache(rmsBase):
+  """ TransferCache table
+  """
 
-  #TODO: need to add the last table below
+  __tablename__ = 'TransferCache'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
 
-    #
-    # TransferCache = Table( 'TransferCache', self.metadata,
-    #                        Column( 'SourceName', String( 64 ), nullable = False, primary_key = True ),
-    #                        Column( 'LastCheckTime', DateTime, nullable = False ),
-    #                        Column( 'Metric', String( 16 ), nullable = False, primary_key = True ),
-    #                        Column( 'Value', DOUBLE(asdecimal=False), nullable = False, server_default = '0' ),
-    #                        Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True ),
-    #                        mysql_engine = 'InnoDB' )
+  sourcename = Column( 'SourceName', String( 64 ), nullable = False, primary_key = True )
+  destinationname = Column( 'DestinationName', String( 64 ), nullable = False, primary_key = True )
+  metric = Column( 'Metric', String( 16 ), nullable = False, primary_key = True )
+  value = Column( 'Value', Float(asdecimal=False), nullable = False, server_default = '0' )
+  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False )
+
+  def fromDict( self, dictionary ):
+    """
+    Fill the fields of the TransferCache object from a dictionary
+    """
+
+    self.sourcename = dictionary.get( 'SourceName', self.sourcename )
+    self.destinationname = dictionary.get( 'DestinationName', self.destinationname )
+    self.metric = dictionary.get( 'Metric', self.metric )
+    self.value = dictionary.get( 'Value', self.value )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+
+  def toList(self):
+    """ Simply returns a list of column values
+    """
+    return [self.sourcename, self.destinationname, self.metric, self.value, self.lastchecktime]
 
 
 
@@ -336,7 +354,8 @@ class ResourceManagementDB( object ):
                   'JobCache',
                   'PilotCache',
                   'PolicyResult',
-                  'SpaceTokenOccupancyCache']: #FIXME: add tables here
+                  'SpaceTokenOccupancyCache',
+                  'TransferCache']:
       if table not in tablesInDB:
         getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:

@@ -292,8 +292,41 @@ class ResourceManagementClientChain( TestClientResourceManagementTestCase ):
     self.assertTrue(res['OK'])
     self.assertFalse(res['Value'])
 
+  def test_Transfer(self):
+    """
+    TransferOccupancy table
+    """
 
-# FIXME: add last table
+    res = self.rmClient.deleteTransferCache('sourcename', 'destinationname')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+
+    # TEST addOrModifyTransferOccupancy
+    res = self.rmClient.addOrModifyTransferCache( 'sourcename', 'destinationname', 'metric', 1000.0,
+                                                             datetime.datetime.now() )
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectTransferCache('sourcename', 'destinationname')
+    self.assertTrue(res['OK'])
+    #check if the name that we got is equal to the previously added 'destinationname'
+    self.assertEqual(res['Value'][0][2], 'metric')
+
+    res = self.rmClient.addOrModifyTransferCache('sourcename', 'destinationname', value = 200.0)
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectTransferCache('sourcename', 'destinationname')
+    #check if the result has changed
+    self.assertEqual(res['Value'][0][3], 200.0)
+
+
+    # TEST deleteTransferOccupancy
+    # ...............................................................................
+    res = self.rmClient.deleteTransferCache('sourcename', 'destinationname')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectTransferCache('sourcename', 'destinationname')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
 
 
 if __name__ == '__main__':
