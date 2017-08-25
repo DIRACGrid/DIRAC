@@ -143,7 +143,10 @@ class StorageFactory( object ):
     turlProtocols = []
     # Generate the protocol specific plug-ins
     for protocolSection, protocolDetails in self.protocols.iteritems():
-      pluginName = protocolDetails.get('PluginName', protocolSection) 
+      pluginName = protocolDetails.get( 'PluginName' )
+      if pluginName is None:
+        # Try ProtocolName/protocolSection for backward compatibility
+        pluginName = protocolDetails.get( 'ProtocolName', protocolSection )
       if pluginList and pluginName not in pluginList:
         continue
       protocol = protocolDetails['Protocol']
