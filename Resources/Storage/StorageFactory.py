@@ -145,6 +145,7 @@ class StorageFactory( object ):
     for protocolSection, protocolDetails in self.protocols.iteritems():
       pluginName = protocolDetails.get( 'PluginName' )
       if pluginName is None:
+        gLogger.warn( "No MANDATORY PluginName option is found in the SE protocol section" )
         # Try ProtocolName/protocolSection for backward compatibility
         pluginName = protocolDetails.get( 'ProtocolName', protocolSection )
       if pluginList and pluginName not in pluginList:
