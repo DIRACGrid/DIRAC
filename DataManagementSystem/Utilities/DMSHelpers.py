@@ -12,26 +12,33 @@ LOCAL = 1
 PROTOCOL = LOCAL + 1
 DOWNLOAD = PROTOCOL + 1
 
-def resolveSEGroup( seGroupList ):
+def resolveSEGroup( seGroupList, allSEs = None ):
   seList = []
   if isinstance( seGroupList, basestring ):
-    seGroupList = [seGroupList]
+    seGroupList = [se.strip() for se in seGroupList.split( ',' )]
   for se in seGroupList:
     seConfig = gConfig.getValue( '/Resources/StorageElementGroups/%s' % se, se )
     if seConfig != se:
-      seList += [se.strip() for se in seConfig.split( ',' )]
+      newSEs = [se.strip() for se in seConfig.split( ',' )]
       # print seList
     else:
-      seList.append( se )
-    res = gConfig.getSections( '/Resources/StorageElements' )
-    if not res['OK']:
-      gLogger.fatal( 'Error getting list of SEs from CS', res['Message'] )
-      return []
-    for se in seList:
-      if se not in res['Value']:
-        gLogger.fatal( '%s is not a valid SE' % se )
-        seList = []
-        break
+      newSEs = [se]
+    if allSEs is None:
+      res = gConfig.getSections( '/Resources/StorageElements' )
+      if not res['OK']:
+        gLogger.fatal( 'Error getting list of SEs from CS', res['Message'] )
+        return []
+      allSEs = res['Value']
+    for se1 in list( newSEs ):
+      if se1 not in allSEs:
+        if se1 == se:
+          gLogger.fatal( '%s is not a valid SE' % se1 )
+          return []
+        recursive = resolveSEGroup( se1, allSEs = allSEs )
+        if not recursive:
+          return []
+        newSEs += recursive
+    seList += newSEs
 
   return seList
 
