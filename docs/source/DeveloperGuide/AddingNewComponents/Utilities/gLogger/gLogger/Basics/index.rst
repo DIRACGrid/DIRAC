@@ -525,14 +525,14 @@ Here is an example of a concrete configuration:
 
 In this case, we have 3 *Backend* identifiers, namely *f01* and *es2* which are custom identifiers respectively related on *FileBackend* and *ElasticSearchBackend*, and *file* which is a default identifier based on *FileBackend*.
 
-This configuration allows a *Backend resource* use in any component of the configuration, but we can also create some specific *Backend resources* inside a local component. To create local resources, you have to follow the same process in a *BackendsConfig* section like this: 
+This configuration allows a *Backend resource* use in any component of the configuration, but we can also create some specific *Backend resources* inside a local component. To create local resources, you have to follow the same process in a *LogBackendsConfig* section like this: 
 
 ::
     
     <Agent>
     {
         ...
-        BackendsConfig
+        LogBackendsConfig
         {
             <backendID4>
             {
@@ -562,7 +562,7 @@ Moreover, a same *Backend* identifier can be declared in the both sections in or
             <Agent1>
             {
                 ...
-                BackendsConfig
+                LogBackendsConfig
                 {
                     <backendID1>
                     {                   
@@ -657,7 +657,7 @@ configuration:
                 {
                   LogLevel = INFO
                   LogBackends = stdout,stderr,file, file2, es2
-                  BackendsConfig
+                  LogBackendsConfig
                   {
                     file
                     {
@@ -675,7 +675,7 @@ configuration:
                 {
                     LogLevel = NOTICE
                     LogBackends = stdout, es2
-                    BackendsConfig
+                    LogBackendsConfig
                     {
                         es2
                         {
