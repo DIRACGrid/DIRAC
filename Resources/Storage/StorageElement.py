@@ -239,7 +239,7 @@ class StorageElementItem( object ):
     self.okMethods = [ 'getLocalProtocols',
                        'getProtocols',
                        'getRemoteProtocols',
-                       'storageElementName',
+                       'getStorageElementName',
                        'getStorageParameters',
                        'getTransportURL',
                        'isLocalSE' ]
@@ -272,37 +272,19 @@ class StorageElementItem( object ):
   #
 
   def getStorageElementName( self ):
-    """ SE name getter for backward compatibility """
-    return S_OK( self.storageElementName() )
-
-  def storageElementName( self ):
     """ SE name getter """
-    self.log.getSubLogger( 'storageElementName' ).verbose( "The Storage Element name is %s." % self.name )
-    return self.name
+    self.log.getSubLogger( 'getStorageElementName' ).verbose( "The Storage Element name is %s." % self.name )
+    return S_OK( self.name )
 
   def getChecksumType( self ):
-    """ Checksum type getter for backward compatibility """
-    return S_OK( self.checksumType() )
-
-  def checksumType( self ):
-    """ get specific /Resources/StorageElements/<SEName>/ChecksumType option if defined, otherwise
+    """ get local /Resources/StorageElements/SEName/ChecksumType option if defined, otherwise
         global /Resources/StorageElements/ChecksumType
     """
-    self.log.getSubLogger( 'checksumType' ).verbose( "get checksum type for %s." % self.name )
-    return self.options["ChecksumType"].upper() \
-      if "ChecksumType" in self.options else gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" ).upper()
+    self.log.getSubLogger( 'getChecksumType' ).verbose( "get checksum type for %s." % self.name )
+    return S_OK( str( gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" ) ).upper()
+                 if "ChecksumType" not in self.options else str( self.options["ChecksumType"] ).upper() )
 
   def getStatus( self ):
-    """
-    Return Status of the SE only if the SE is valid
-    It returns an S_OK/S_ERROR structure
-    """
-    valid = self.isValid()
-    if not valid['OK']:
-      return valid
-    return S_OK( self.status() )
-
-  def status( self ):
     """
      Return Status of the SE, a dictionary with:
 
@@ -317,7 +299,6 @@ class StorageElementItem( object ):
       * TapeSE: True if TXDY with X > 0 (defaults to False)
       * TotalCapacityTB: float (-1 if not defined)
       * DiskCacheTB: float (-1 if not defined)
-    It returns directly the dictionary
     """
 
     self.log.getSubLogger( 'getStatus' ).verbose( "determining status of %s." % self.name )
@@ -332,7 +313,7 @@ class StorageElementItem( object ):
       retDict['TapeSE'] = False
       retDict['TotalCapacityTB'] = -1
       retDict['DiskCacheTB'] = -1
-      return retDict
+      return S_OK( retDict )
 
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
@@ -361,9 +342,9 @@ class StorageElementItem( object ):
     except Exception:
       retDict['DiskCacheTB'] = -1
 
-    return retDict
+    return S_OK( retDict )
 
-  def isValid( self, operation = None ):
+  def isValid( self, operation = '' ):
     """ check CS/RSS statuses for :operation:
 
     :param str operation: operation name
@@ -379,16 +360,19 @@ class StorageElementItem( object ):
     if 'VO' in self.options and not self.vo in self.options['VO']:
       log.debug( "StorageElement is not allowed for VO", self.vo )
       return S_ERROR( errno.EACCES, "StorageElement.isValid: StorageElement is not allowed for VO" )
-    log.verbose( "Determining if the StorageElement %s is valid for operation '%s'" % ( self.name, operation ) )
+    log.verbose( "Determining if the StorageElement %s is valid for %s" % ( self.name, operation ) )
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
 
     # Determine whether the StorageElement is valid for checking, reading, writing
-    status = self.status()
-    checking = status[ 'Check' ]
-    reading = status[ 'Read' ]
-    writing = status[ 'Write' ]
-    removing = status[ 'Remove' ]
+    res = self.getStatus()
+    if not res[ 'OK' ]:
+      log.debug( "Could not call getStatus", res['Message'] )
+      return S_ERROR( "SE.isValid could not call the getStatus method" )
+    checking = res[ 'Value' ][ 'Check' ]
+    reading = res[ 'Value' ][ 'Read' ]
+    writing = res[ 'Value' ][ 'Write' ]
+    removing = res[ 'Value' ][ 'Remove' ]
 
     # Determine whether the requested operation can be fulfilled
     if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):
@@ -506,110 +490,6 @@ class StorageElementItem( object ):
     """
     return self.__getAllProtocols( 'OutputProtocols' )
 
-
-  def generateTransferURLsBetweenSEs(self, lfns, sourceSE, protocols = None):
-    """ This negociate the URLs to be used for third party copy.
-        This is mostly useful for FTS. If protocols is given,
-        it restricts the list of plugins to use
-
-        :param lfns: list/dict of lfns to generate the URLs
-        :param sourceSE: storageElement instance of the sourceSE
-        :param protocols: ordered protocol restriction list
-
-        :return:dictionnary Successful/Failed with pair (src, dest) urls
-    """
-    log = self.log.getSubLogger( 'generateTransferURLsBetweenSEs' )
-
-    result = checkArgumentFormat( lfns )
-    if result['OK']:
-      lfns = result['Value']
-    else:
-      errStr = "Supplied urls must be string, list of strings or a dictionary."
-      log.debug( errStr )
-      return S_ERROR( errno.EINVAL, errStr )
-
-    # First, find common protocols to use
-    res = self.negociateProtocolWithOtherSE(sourceSE, protocols = protocols)
-
-    if not res['OK']:
-      return res
-
-    commonProtocols = res['Value']
-
-    # Taking each protocol at the time, we try to generate src and dest URLs
-    for proto in commonProtocols:
-      srcPlugin = None
-      destPlugin = None
-
-      log.debug("Trying to find plugins for protocol %s"%proto)
-
-      # Finding the source storage plugin
-      for storagePlugin in sourceSE.storages:
-        log.debug("Testing %s as source plugin" % storagePlugin.pluginName)
-        storageParameters = storagePlugin.getParameters()
-        nativeProtocol = storageParameters['Protocol']
-        # If the native protocol of the plugin is allowed for read
-        if  nativeProtocol in sourceSE.localAccessProtocolList:
-          # If the plugin can generate the protocol we are interested in
-          if proto in storageParameters['OutputProtocols']:
-            log.debug("Selecting it")
-            srcPlugin = storagePlugin
-            break
-      # If we did not find a source plugin, continue
-      if srcPlugin is None :
-        log.debug("Could not find a source plugin for protocol %s"%proto)
-        continue
-
-      # Finding the destination storage plugin
-      for storagePlugin in self.storages:
-        log.debug("Testing %s as destination plugin" % storagePlugin.pluginName)
-
-        storageParameters = storagePlugin.getParameters()
-        nativeProtocol = storageParameters['Protocol']
-        # If the native protocol of the plugin is allowed for write
-        if  nativeProtocol in self.localWriteProtocolList:
-          # If the plugin can accept the protocol we are interested in
-          if proto in storageParameters['InputProtocols']:
-            log.debug("Selecting it")
-            destPlugin = storagePlugin
-            break
-
-      # If we found both a source and destination plugin, we are happy,
-      # otherwise we continue with the next protocol
-      if destPlugin is None:
-        log.debug("Could not find a destination plugin for protocol %s"%proto)
-        srcPlugin = None
-        continue
-
-
-      failed = {}
-      successful = {}
-      # Generate the URLs
-      for lfn in lfns:
-
-        # Source URL first
-        res = srcPlugin.constructURLFromLFN( lfn, withWSUrl = True )
-        if not res['OK']:
-          errMsg = "Error generating source url: %s"%res['Message']
-          gLogger.debug("Error generating source url",errMsg)
-          failed[lfn] = errMsg
-          continue
-        srcURL = res['Value']
-
-        # Destination URL
-        res = destPlugin.constructURLFromLFN( lfn, withWSUrl = True )
-        if not res['OK']:
-          errMsg = "Error generating destination url: %s"%res['Message']
-          gLogger.debug("Error generating destination url",errMsg)
-          failed[lfn] = errMsg
-          continue
-        destURL = res['Value']
-
-        successful[lfn] = (srcURL, destURL)
-
-      return S_OK({'Successful':successful, 'Failed':failed})
-
-    return S_ERROR(errno.ENOPROTOOPT, "Could not find a protocol ")
 
 
   def negociateProtocolWithOtherSE( self, sourceSE, protocols = None ):

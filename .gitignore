@@ -48,9 +48,6 @@ Session.vim
 .idea/
 DIRAC.iml
 
-# MaxOSX files
-.DS_Store
-
 # test stuff
 .cache
 __pycache__

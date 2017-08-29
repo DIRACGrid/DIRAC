@@ -25,13 +25,12 @@
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
-import datetime
-
-from DIRAC                                     import gLogger, exit as DIRACExit, version
+from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
 from DIRAC.Core.Utilities                      import Time
 from DIRAC.Core.Utilities.PrettyPrint          import printTable
 from DIRAC.ResourceStatusSystem.Utilities      import Utils
+import datetime
 
 
 __RCSID__ = '$Id:$'
@@ -46,16 +45,16 @@ def registerSwitches():
   '''
 
   switches = (
-      ( 'downtimeID=', 'ID of the downtime' ),
-      ( 'element=', 'Element (Site, Service) affected by the downtime' ),
-      ( 'name=', 'Name of the element' ),
-      ( 'startDate=', 'Starting date of the downtime' ),
-      ( 'endDate=', 'Ending date of the downtime' ),
-      ( 'severity=', 'Severity of the downtime (Warning, Outage)' ),
-      ( 'description=', 'Description of the downtime' ),
-      ( 'link=', 'URL of the downtime announcement' ),
-      ( 'ongoing', 'To force "select" to return the ongoing downtimes' )
-  )
+    ( 'downtimeID=', 'ID of the downtime' ),
+    ( 'element=', 'Element (Site, Service) affected by the downtime' ),
+    ( 'name=', 'Name of the element' ),
+    ( 'startDate=', 'Starting date of the downtime' ),
+    ( 'endDate=', 'Ending date of the downtime' ),
+    ( 'severity=', 'Severity of the downtime (Warning, Outage)' ),
+    ( 'description=', 'Description of the downtime' ),
+    ( 'link=', 'URL of the downtime announcement' ),
+    ( 'ongoing', 'To force "select" to return the ongoing downtimes' )
+             )
 
   for switch in switches:
     Script.registerSwitch( '', switch[ 0 ], switch[ 1 ] )
@@ -79,7 +78,7 @@ def parseSwitches():
 
   Script.parseCommandLine( ignoreErrors = True )
   args = Script.getPositionalArgs()
-  if not args:
+  if len( args ) == 0:
     error( "Missing mandatory 'query' argument" )
   elif not args[0].lower() in ( 'select', 'add', 'delete' ):
     error( "Missing mandatory argument" )
@@ -223,7 +222,7 @@ def tabularPrint( table ):
   for row in table:
     record = []
     for k,v in row.items():
-      if isinstance( v, datetime.datetime ):
+      if type( v ) == datetime.datetime:
         record.append( Time.toString( v ) )
       elif v is None:
         record.append( '' )
@@ -247,10 +246,10 @@ def select( switchDict ):
 
   rmsClient = ResourceManagementClient()
 
-  meta = { 'columns' : [ 'DowntimeID', 'Element', 'Name', 'StartDate', 'EndDate',
-                         'Severity', 'Description', 'Link', 'DateEffective' ] }
+  meta = { 'columns' : [ 'downtimeID', 'element', 'name', 'startDate', 'endDate',
+                         'severity', 'description', 'link', 'dateEffective' ] }
 
-  result = { 'output': None, 'OK': None, 'Message': None, 'match': None }
+  result = { 'output': None, 'successful': None, 'message': None, 'match': None }
   output = rmsClient.selectDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],
                                           element = switchDict[ 'element' ],
                                           name = switchDict[ 'name' ],
@@ -262,8 +261,6 @@ def select( switchDict ):
                                           #dateEffective = switchDict[ 'dateEffective' ],
                                           meta = meta )
 
-  if not output['OK']:
-    return output
   result['output'] = [ dict( zip( output[ 'Columns' ], dt ) ) for dt in output[ 'Value' ] ]
   if 'ongoing' in switchDict:
     result['output'] = filterOngoing( result['output'] )
@@ -271,7 +268,7 @@ def select( switchDict ):
     result['output'] = filterDate( result['output'], switchDict[ 'startDate' ], switchDict[ 'endDate' ] )
   result['output'] = filterDescription( result['output'], switchDict[ 'description' ] )
   result['match'] = len( result['output'] )
-  result['OK'] = True
+  result['successful'] = output['OK']
   result['message'] = output['Message'] if 'Message' in output else None
 
   return result
@@ -285,7 +282,7 @@ def add( switchDict ):
 
   rmsClient = ResourceManagementClient()
 
-  result = { 'output': None, 'OK': None, 'Message': None, 'match': None }
+  result = { 'output': None, 'successful': None, 'message': None, 'match': None }
   output = rmsClient.addOrModifyDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],
                                                element = switchDict[ 'element' ],
                                                name = switchDict[ 'name' ],
@@ -295,14 +292,10 @@ def add( switchDict ):
                                                description = switchDict[ 'description' ],
                                                link = switchDict[ 'link' ]
                                                #dateEffective = switchDict[ 'dateEffective' ]
-                                             )
+                                              )
 
-  if not output['OK']:
-    return output
-
-  if output['Value']:
-    result['match'] = int( output['Value'] )
-  result['OK'] = True
+  result['match'] = int( output['Value'] )
+  result['successful'] = output['OK']
   result['message'] = output['Message'] if 'Message' in output else None
 
   return result
@@ -316,7 +309,7 @@ def delete( switchDict ):
 
   rmsClient = ResourceManagementClient()
 
-  result = { 'output': None, 'OK': None, 'Message': None, 'match': None }
+  result = { 'output': None, 'successful': None, 'message': None, 'match': None }
   output = rmsClient.deleteDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],
                                           element = switchDict[ 'element' ],
                                           name = switchDict[ 'name' ],
@@ -327,13 +320,9 @@ def delete( switchDict ):
                                           link = switchDict[ 'link' ]
                                           #dateEffective = switchDict[ 'dateEffective' ]
                                         )
-  if not output['OK']:
-    return output
-
-  if output['Value']:
-    result['match'] = int( output['Value'] )
-  result['OK'] = True
-  result['Message'] = output['Message'] if 'Message' in output else None
+  result['match'] = int( output['Value'] )
+  result['successful'] = output['OK']
+  result['message'] = output['Message'] if 'Message' in output else None
 
   return result
 
@@ -351,13 +340,12 @@ def run( args, switchDict ):
   # the same if it is add, delete
   result = eval( query + '( switchDict )' )
 
-
-  if result[ 'OK' ]:
+  if result[ 'successful' ]:
     if query == 'select' and result['match'] > 0:
       tabularPrint( result[ 'output' ] )
     confirm( query, result['match'] )
   else:
-    error( result[ 'Message' ] )
+    error( result[ 'message' ] )
 
 
 

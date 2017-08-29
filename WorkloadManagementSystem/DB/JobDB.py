@@ -51,7 +51,6 @@ from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERRO
 from DIRAC.Core.Utilities                                    import Time
 from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations     import Operations
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources      import getDIRACPlatform
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
@@ -1030,13 +1029,7 @@ class JobDB( DB ):
     jobAttrValues.append( diracSetup )
 
     # 2.- Check JDL and Prepare DIRAC JDL
-    jobJDL = jobManifest.dumpAsJDL()
-
-    # Replace the JobID placeholder if any
-    if jobJDL.find( '%j' ) != -1:
-      jobJDL = jobJDL.replace( '%j', str( jobID ) )
-
-    classAdJob = ClassAd( jobJDL )
+    classAdJob = ClassAd( jobManifest.dumpAsJDL() )
     classAdReq = ClassAd( '[]' )
     retVal = S_OK( jobID )
     retVal['JobID'] = jobID
@@ -1064,8 +1057,6 @@ class JobDB( DB ):
       return result
 
     priority = classAdJob.getAttributeInt( 'Priority' )
-    if priority is None:
-      priority = 0
     jobAttrNames.append( 'UserPriority' )
     jobAttrValues.append( priority )
 
@@ -1097,6 +1088,10 @@ class JobDB( DB ):
     classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
 
     jobJDL = classAdJob.asJDL()
+
+    # Replace the JobID placeholder if any
+    if jobJDL.find( '%j' ) != -1:
+      jobJDL = jobJDL.replace( '%j', str( jobID ) )
 
     result = self.setJobJDL( jobID, jobJDL )
     if not result['OK']:
@@ -1203,22 +1198,16 @@ class JobDB( DB ):
           classAdJob.insertAttributeString( param, val )
 
     priority = classAdJob.getAttributeInt( 'Priority' )
-    if priority is None:
-      priority = 0
     platform = classAdJob.getAttributeString( 'Platform' )
     # Legacy check to suite the LHCb logic
     if not platform:
       platform = classAdJob.getAttributeString( 'SystemConfig' )
     cpuTime = classAdJob.getAttributeInt( 'CPUTime' )
-    if cpuTime is None:
+    if cpuTime == 0:
       # Just in case check for MaxCPUTime for backward compatibility
       cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
-      if cpuTime is not None:
+      if cpuTime > 0:
         classAdJob.insertAttributeInt( 'CPUTime', cpuTime )
-      else:
-        opsHelper = Operations( group = ownerGroup,
-                                setup = diracSetup )
-        cpuTime = opsHelper.getValue( 'JobDescription/DefaultCPUTime', 86400 )
     classAdReq.insertAttributeInt( 'UserPriority', priority )
     classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
 
@@ -1374,6 +1363,8 @@ class JobDB( DB ):
     if not self._update( cmd )['OK']:
       return S_ERROR( 'JobDB.removeJobOptParameter: operation failed.' )
 
+    # the Jobreceiver needs to know if there is InputData ??? to decide which optimizer to call
+    # proposal: - use the getInputData method
     res = self.getJobJDL( jobID, original = True )
     if not res['OK']:
       return res
@@ -1397,8 +1388,6 @@ class JobDB( DB ):
       return result
 
     priority = classAdJob.getAttributeInt( 'Priority' )
-    if priority is None:
-      priority = 0
     jobAttrNames.append( 'UserPriority' )
     jobAttrValues.append( priority )
 

@@ -230,7 +230,6 @@ class StepInstance( AttributeCollection ):
     step_def = definitions[self.getType()]
     step_exec_modules = {}
     error_message = ''
-    error_code = 0
     for mod_inst in step_def.module_instances:
       mod_inst_name = mod_inst.getName()
       mod_inst_type = mod_inst.getType()
@@ -272,7 +271,6 @@ class StepInstance( AttributeCollection ):
         if not result['OK']:
           if self.stepStatus['OK']:
             error_message = result['Message']
-            error_code = result['Errno']
             if 'JobReport' in self.workflow_commons:
               if self.parent.workflowStatus['OK']:
                 self.workflow_commons['JobReport'].setApplicationStatus( error_message )
@@ -329,12 +327,11 @@ class StepInstance( AttributeCollection ):
           # This is the error that caused the workflow disruption
           # report it to the WMS
           error_message = 'Exception while %s module execution: %s' % ( mod_inst_name, str( x ) )
-          error_code = 0
           if 'JobReport' in self.workflow_commons:
             if self.parent.workflowStatus['OK']:
               self.workflow_commons['JobReport'].setApplicationStatus( 'Exception in %s module' % mod_inst_name )
 
-        self.stepStatus = S_ERROR( error_code, error_message )
+        self.stepStatus = S_ERROR( error_message )
 
     # now we need to copy output values to the STEP!!! parameters
     for st_parameter in self.parameters:
@@ -365,6 +362,6 @@ class StepInstance( AttributeCollection ):
 
     # Return the result of the first failed module or S_OK
     if not self.stepStatus['OK']:
-      return S_ERROR( error_code, error_message )
+      return S_ERROR( error_message )
     else:
       return S_OK( result['Value'] )

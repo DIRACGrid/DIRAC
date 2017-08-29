@@ -65,32 +65,21 @@ class API( object ):
 
   #############################################################################
 
-  def __getstate__(self):
-    """ Return a copied dictionary containing all the attributes of the API.
-        Called when pickling the object. Also used in copy.deepcopy.
-
-    :return: dictionary of attributes
-    """
-    from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
+  def __getstate__( self ):
+    """ called when pickling the object. Also used in copy.deepcopy """
     from DIRAC.FrameworkSystem.private.logging.SubSystemLogger import SubSystemLogger
-    state = dict(self.__dict__)
-    # Replace the Logging instance by its name because it is not copyable
-    # because of the thread locks
-    if isinstance(state['log'], (Logging, SubSystemLogger)):
-      state['log'] = state['log'].getSubName()
-    return state
+    d = dict( self.__dict__ )
+    if isinstance( d['log'], SubSystemLogger ):
+      d['log'] = d['log']._subName
+    return d
 
-  def __setstate__(self, state):
-    """ Parameter the Job with an attributes dictionary.
-        Called when un-pickling the object.
+  #############################################################################
 
-    :params state: attributes dictionary
-    """
-    self.__dict__.update(state)
-    # Build the Logging instance again because it can not be in the dictionary 
-    # due to the thread locks
-    if isinstance(state['log'], basestring):
-      self.log = gLogger.getSubLogger(state['log'])
+  def __setstate__( self, d ):
+    """ called when un-pickling the object """
+    self.__dict__.update(d)
+    if isinstance( d['log'], basestring ):
+      self.log = gLogger.getSubLogger( d['log'] )
 
   #############################################################################
 

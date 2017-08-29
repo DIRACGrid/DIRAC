@@ -1,19 +1,18 @@
-""" CAUpdateAgent is meant to be used in a multi-server installations
-    where one server has some machinery of keeping up to date the CA's data
-    and other servers are just synchronized with the master one without "official" CA installations locally.
+########################################################################
+# $HeadURL$
+########################################################################
 
-    It's like installing CAs in the pilot in dirac-install but for the servers.
+"""  Proxy Renewal agent is the key element of the Proxy Repository
+     which maintains the user proxies alive
 """
 
 __RCSID__ = "$Id$"
 
-from DIRAC  import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC  import S_OK
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 class CAUpdateAgent(AgentModule):
-  """ just routinely calls BundleDeliveryClient.syncCAs()/syncCRLs()
-  """
 
   def initialize(self):
     self.am_setOption( "PollingTime", 3600*6 )

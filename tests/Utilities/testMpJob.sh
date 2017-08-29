@@ -1,5 +1,6 @@
  #!/bin/bash
+SCRIPT_PATH="mpTest.py"
 PYTHON="/usr/bin/python"
 
 # call script via the interrupter
-$PYTHON $1
+$PYTHON $SCRIPT_PATH

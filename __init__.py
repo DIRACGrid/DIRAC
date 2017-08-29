@@ -77,9 +77,9 @@ __RCSID__ = "$Id$"
 # Define Version
 
 majorVersion = 6
-minorVersion = 19
+minorVersion = 18
 patchLevel = 0
-preVersion = 7
+preVersion = 0
 
 version = "v%sr%s" % ( majorVersion, minorVersion )
 buildVersion = "v%dr%d" % ( majorVersion, minorVersion )
@@ -93,7 +93,7 @@ if preVersion:
 # Check of python version
 
 __pythonMajorVersion = ( "2", )
-__pythonMinorVersion = ( "7" )
+__pythonMinorVersion = ( "6", "7" )
 
 pythonVersion = pyPlatform.python_version_tuple()
 if str( pythonVersion[0] ) not in __pythonMajorVersion or str( pythonVersion[1] ) not in __pythonMinorVersion:

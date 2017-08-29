@@ -17,7 +17,7 @@
 #from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 #from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
 #from DIRAC.ResourceStatusSystem.Utilities               import Utils
-#from DIRAC.ResourceStatusSystem.Utilities.CS            import getElementStatus
+#from DIRAC.ResourceStatusSystem.Utilities.CS            import getStorageElementStatus
 #from DIRAC.ResourceStatusSystem.Utilities.InfoGetter    import InfoGetter
 #
 __RCSID__ = '$Id: $'
@@ -233,8 +233,8 @@ __RCSID__ = '$Id: $'
 #          return None
 #
 #      elif panel == 'SE_Panel':
-#        ra = getElementStatus(name, 'StorageElement', 'ReadAccess')['Value']
-#        wa = getElementStatus(name, 'StorageElement', 'WriteAccess')['Value']
+#        ra = getStorageElementStatus(name, 'ReadAccess')['Value']
+#        wa = getStorageElementStatus(name, 'WriteAccess')['Value']
 #        DIRACStatus = {'ReadAccess': ra, 'WriteAccess': wa}
 #
 #      status = { name : { 'RSSStatus': RSSStatus, 'DIRACStatus': DIRACStatus } }

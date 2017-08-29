@@ -37,10 +37,7 @@ DIRAC provides code for:
   - pilots installations
 
 A more detailed description of the DIRAC system can be found at this
-`location <https://twiki.cern.ch/twiki/pub/LHCb/DiracProjectPage/DIRAC_CHEP07_mod5.pdf>`_
-or in this `presentation <https://indico.cern.ch/event/505613/contributions/2227928/>`_
-
-
+`location <https://twiki.cern.ch/twiki/pub/LHCb/DiracProjectPage/DIRAC_CHEP07_mod5.pdf>`_.
 
 .. toctree::
    :hidden:

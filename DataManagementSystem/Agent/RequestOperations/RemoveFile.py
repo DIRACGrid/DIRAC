@@ -79,31 +79,20 @@ class RemoveFile( DMSRequestOperationsBase ):
     replicas = res['Value']['Successful']
     targetSEs = set( [se for lfn in replicas for se in replicas[lfn] ] )
 
+    bannedTargets = set()
     if targetSEs:
-      # Check if SEs are allowed for remove but don't fail yet the operation if SEs are always banned
-      bannedTargets = self.checkSEsRSS( targetSEs, access = 'RemoveAccess', failIfBanned = False )
+      bannedTargets = self.checkSEsRSS( targetSEs, access = 'RemoveAccess' )
       if not bannedTargets['OK']:
         gMonitor.addMark( "RemoveFileAtt" )
         gMonitor.addMark( "RemoveFileFail" )
         return bannedTargets
       bannedTargets = set( bannedTargets['Value'] )
-    else:
-      bannedTargets = set()
+      if bannedTargets and 'always banned' in self.operation.Error:
+        return S_OK( "%s targets are always banned for removal" % ",".join( sorted( bannedTargets ) ) )
 
     # # prepare waiting file dict
     # # We take only files that have no replica at the banned SEs... If no replica, don't
-    toRemoveDict = dict( ( opFile.LFN, opFile ) for opFile in waitingFiles \
-                         if not bannedTargets or not bannedTargets.intersection( replicas.get( opFile.LFN, [] ) ) )
-    # If some SEs are always banned, set Failed the files that cannot be removed
-    if bannedTargets and 'always banned' in self.operation.Error:
-      for opFile in waitingFiles:
-        if opFile.LFN not in toRemoveDict:
-          # Set the files that cannot be removed Failed
-          opFile.Error = self.operation.Error
-          opFile.Status = "Failed"
-      if not toRemoveDict:
-        # If there are no files that can be removed, exit, else try once to remove them anyway
-        return S_OK( "%s targets are always banned for removal" % ",".join( sorted( bannedTargets ) ) )
+    toRemoveDict = dict( ( opFile.LFN, opFile ) for opFile in waitingFiles if not bannedTargets.intersection( replicas.get( opFile.LFN, [] ) ) )
 
     if toRemoveDict:
       gMonitor.addMark( "RemoveFileAtt", len( toRemoveDict ) )
@@ -117,7 +106,7 @@ class RemoveFile( DMSRequestOperationsBase ):
         toRemoveDict = bulkRemoval["Value"]
 
       # # 2nd step - single file removal
-      for lfn, opFile in toRemoveDict.iteritems():
+      for lfn, opFile in toRemoveDict.items():
         self.log.info( "removing single file %s" % lfn )
         singleRemoval = self.singleRemoval( opFile )
         if not singleRemoval["OK"]:
@@ -128,7 +117,7 @@ class RemoveFile( DMSRequestOperationsBase ):
           gMonitor.addMark( "RemoveFileOK", 1 )
 
       # # set
-      failedFiles = [ ( lfn, opFile ) for ( lfn, opFile ) in toRemoveDict.iteritems()
+      failedFiles = [ ( lfn, opFile ) for ( lfn, opFile ) in toRemoveDict.items()
                       if opFile.Status in ( "Failed", "Waiting" ) ]
       if failedFiles:
         self.operation.Error = "failed to remove %d files" % len( failedFiles )
@@ -153,14 +142,14 @@ class RemoveFile( DMSRequestOperationsBase ):
       return bulkRemoval
     bulkRemoval = bulkRemoval["Value"]
     # # filter results
-    for lfn, opFile in toRemoveDict.iteritems():
+    for lfn, opFile in toRemoveDict.items():
       if lfn in bulkRemoval["Successful"]:
         opFile.Status = "Done"
       elif lfn in bulkRemoval["Failed"]:
 
         error = bulkRemoval["Failed"][lfn]
         if type( error ) == dict:
-          error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.iteritems() ] )
+          error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.items() ] )
         opFile.Error = error
         if self.reNotExisting.search( opFile.Error ):
           opFile.Status = "Done"
@@ -200,7 +189,7 @@ class RemoveFile( DMSRequestOperationsBase ):
               if opFile.LFN in removeFile["Failed"]:
                 error = removeFile["Failed"][opFile.LFN]
                 if type( error ) == dict:
-                  error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.iteritems() ] )
+                  error = ";".join( [ "%s-%s" % ( k, v ) for k, v in error.items() ] )
                 if self.reNotExisting.search( error ):
                   # This should never happen due to the "force" flag
                   opFile.Status = "Done"

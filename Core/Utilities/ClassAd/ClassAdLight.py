@@ -288,12 +288,12 @@ class ClassAd:
   def getAttributeInt( self, name ):
     """ Get Integer type attribute value
     """
-    value = None
+    value = 0
     if self.lookupAttribute( name ):
       try:
         value = int( self.get_expression( name ).replace( '"', '' ) )
       except Exception:
-        value = None
+        value = 0
     return value
 
   def getAttributeBool( self, name ):
@@ -313,12 +313,12 @@ class ClassAd:
   def getAttributeFloat( self, name ):
     """ Get Float type attribute value
     """
-    value = None
+    value = 0.0
     if self.lookupAttribute( name ):
       try:
         value = float( self.get_expression( name ).replace( '"', '' ) )
       except Exception:
-        value = None
+        value = 0.0
     return value
 
   def getAttributes( self ):

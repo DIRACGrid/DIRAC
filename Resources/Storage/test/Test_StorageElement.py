@@ -1,22 +1,14 @@
-""" test StoragElement
+""" test File Plugin
 """
 
-import os
-import tempfile
 import mock
 import unittest
 import itertools
-
 
 from DIRAC import S_OK
 from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 
-
-
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Utilities.CFG import CFG
-from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 
 class fake_SRM2Plugin( StorageBase ):
   """ Fake SRM2 plugin.
@@ -44,19 +36,6 @@ class fake_XROOTPlugin( StorageBase ):
     return S_OK( {'Successful' : dict.fromkeys( path, "root:getTransportURL" ), 'Failed' : {}} )
 
 
-class fake_GSIFTPPlugin( StorageBase ):
-  """ Fake GSIFTP plugin.
-      Only implements the two methods needed
-      for transfer, so we can test that it is really this plugin
-      that returned
-  """
-
-  def putFile( self, lfns, sourceSize = 0 ):
-    return S_OK( {'Successful' : dict.fromkeys( lfns, "gsiftp:putFile" ), 'Failed' : {}} )
-
-  def getTransportURL( self, path, protocols = False ):
-    return S_OK( {'Successful' : dict.fromkeys( path, "gsiftp:getTransportURL" ), 'Failed' : {}} )
-
 def mock_StorageFactory_generateStorageObject( storageName, pluginName, parameters, hideExceptions = False ):
   """ Generate fake storage object"""
   storageObj = StorageBase( storageName, parameters )
@@ -72,14 +51,86 @@ def mock_StorageFactory_generateStorageObject( storageName, pluginName, paramete
     storageObj = fake_XROOTPlugin( storageName, parameters )
     storageObj.protocolParameters['InputProtocols'] = ['file', 'root']
     storageObj.protocolParameters['OutputProtocols'] = ['root']
-  elif pluginName == 'GSIFTP':
-    storageObj = fake_GSIFTPPlugin( storageName, parameters )
-    storageObj.protocolParameters['InputProtocols'] = ['file', 'gsiftp']
-    storageObj.protocolParameters['OutputProtocols'] = ['gsiftp']
 
   storageObj.pluginName = pluginName
 
   return S_OK( storageObj )
+
+def mock_StorageFactory_getConfigStorageName( storageName, referenceType ):
+  return S_OK( storageName )
+
+def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName = None ):
+  """ Get the options associated to the StorageElement as defined in the CS
+  """
+
+  options = {'BackendType': 'local',
+                            'ReadAccess': 'Active',
+                            'WriteAccess': 'Active',
+            }
+
+  if storageName in ( 'StorageE', ):
+    options['WriteProtocols'] = ['root', 'srm']
+
+
+
+
+  return S_OK( options )
+
+def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName = None ):
+  """ Protocol specific information is present as sections in the Storage configuration
+  """
+  protocolDetails = { 'StorageA' : [{'PluginName': 'File',
+                                     'Protocol': 'file',
+                                     'Path' : '',
+                                     },
+                                   ],
+                     'StorageB' : [{'PluginName': 'SRM2',
+                                     'Protocol': 'srm',
+                                     'Path' : '',
+                                     },
+                                   ],
+                     'StorageC' : [{'PluginName': 'XROOT',
+                                     'Protocol': 'root',
+                                     'Path' : '',
+                                     },
+                                   ],
+                     'StorageD' : [
+                                   {'PluginName': 'SRM2',
+                                     'Protocol': 'srm',
+                                     'Path' : '',
+                                   },
+                                   {'PluginName': 'XROOT',
+                                     'Protocol': 'root',
+                                     'Path' : '',
+                                   },
+                                   ],
+                     'StorageE' : [
+                                   {'PluginName': 'SRM2',
+                                     'Protocol': 'srm',
+                                     'Path' : '',
+                                   },
+                                   {'PluginName': 'XROOT',
+                                     'Protocol': 'root',
+                                     'Path' : '',
+                                   },
+                                   ],
+                    }
+
+  return S_OK( protocolDetails[storageName] )
+
+
+class fake_DMSHelpers( object ):
+  """ Fake DMS helpers. Used to get the protocol lists
+      inside the StorageElement
+  """
+  def __init__( self, vo = None ):
+    pass
+
+  def getAccessProtocols( self ):
+    return ['fakeProto', 'root']
+
+  def getWriteProtocols( self ):
+    return ['srm']
 
 
 
@@ -89,202 +140,21 @@ class TestBase( unittest.TestCase ):
   """
 
 
+  @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageName',
+                side_effect = mock_StorageFactory_getConfigStorageName )
+  @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageOptions',
+                side_effect = mock_StorageFactory_getConfigStorageOptions )
+  @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageProtocols',
+                side_effect = mock_StorageFactory_getConfigStorageProtocols )
   @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
                 side_effect = mock_StorageFactory_generateStorageObject )
   @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
                 return_value = S_OK( True ) )  # Pretend it's local
   @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
                 return_value = None )  # Don't send accounting
-  def setUp( self,
-             _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation ):
-
-
-
-    #Creating test configuration file
-    self.testCfgFileName = os.path.join(tempfile.gettempdir(), 'test_StorageElement.cfg')
-    cfgContent='''
-    DIRAC
-    {
-      Setup=TestSetup
-    }
-    Resources{
-      StorageElements{
-        StorageA
-        {
-          BackendType = local
-          ReadAccess = Active
-          WriteAccess = Active
-          AccessProtocol.0
-          {
-            Host =
-            PluginName = File
-            Protocol = file
-            Path =
-          }
-        }
-        StorageB
-        {
-          BackendType = local
-          ReadAccess = Active
-          WriteAccess = Active
-          AccessProtocol.0
-          {
-            Host =
-            PluginName = SRM2
-            Protocol = srm
-            Path =
-          }
-        }
-        StorageC
-        {
-          BackendType = local
-          ReadAccess = Active
-          WriteAccess = Active
-          AccessProtocol.0
-          {
-            Host =
-            PluginName = XROOT
-            Protocol = root
-            Path =
-          }
-        }
-        StorageD
-        {
-          BackendType = local
-          ReadAccess = Active
-          WriteAccess = Active
-          AccessProtocol.0
-          {
-            Host =
-            PluginName = SRM2
-            Protocol = srm
-            Path =
-          }
-          AccessProtocol.1
-          {
-            Host =
-            PluginName = XROOT
-            Protocol = root
-            Path =
-          }
-        }
-        StorageE
-        {
-          BackendType = local
-          ReadAccess = Active
-          WriteAccess = Active
-          WriteProtocols = root
-          WriteProtocols += srm
-          AccessProtocol.0
-          {
-            Host =
-            PluginName = SRM2
-            Protocol = srm
-            Path =
-          }
-          AccessProtocol.1
-          {
-            Host =
-            PluginName = XROOT
-            Protocol = root
-            Path =
-          }
-        }
-        StorageX
-        {
-          BackendType = local
-          ReadAccess = Active
-          WriteAccess = Active
-          WriteProtocols = gsiftp
-          AccessProtocols = root
-          AccessProtocol.0
-          {
-            Host =
-            PluginName = GSIFTP
-            Protocol = gsiftp
-            Path =
-          }
-          AccessProtocol.1
-          {
-            Host =
-            PluginName = XROOT
-            Protocol = root
-            Path =
-          }
-        }
-        StorageY
-        {
-          BackendType = local
-          ReadAccess = Active
-          WriteAccess = Active
-          AccessProtocols = gsiftp
-          AccessProtocols += srm
-          AccessProtocol.0
-          {
-            Host =
-            PluginName = GSIFTP
-            Protocol = gsiftp
-            Path =
-          }
-          AccessProtocol.1
-          {
-            Host =
-            PluginName = SRM2
-            Protocol = srm
-            Path =
-          }
-        }
-        StorageZ
-        {
-          BackendType = local
-          ReadAccess = Active
-          WriteAccess = Active
-          AccessProtocols = root
-          AccessProtocols += srm
-          WriteProtocols = root
-          WriteProtocols += srm
-          AccessProtocol.0
-          {
-            Host =
-            PluginName = ROOT
-            Protocol = root
-            Path =
-          }
-          AccessProtocol.1
-          {
-            Host =
-            PluginName = SRM2
-            Protocol = srm
-            Path =
-          }
-        }
-      }
-
-    }
-    Operations{
-      Defaults
-      {
-        DataManagement{
-          AccessProtocols = fakeProto
-          AccessProtocols += root
-          WriteProtocols = srm
-        }
-      }
-    }
-    '''
-
-    with open(self.testCfgFileName, 'w') as f:
-      f.write(cfgContent)
-
-    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
-    # not to conflict with other tests that might be using a local dirac.cfg
-    gConfigurationData.localCFG=CFG()
-    gConfigurationData.remoteCFG=CFG()
-    gConfigurationData.mergedCFG=CFG()
-    gConfigurationData.generateNewVersion()
-
-    gConfig = ConfigurationClient(fileToLoadList = [self.testCfgFileName])  #we replace the configuration by our own one.
-
+  @mock.patch( 'DIRAC.Resources.Storage.StorageElement.DMSHelpers', side_effect = fake_DMSHelpers )
+  def setUp( self, _mk_getConfigStorageName, _mk_getConfigStorageOptions, _mk_getConfigStorageProtocols,
+             _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation, _mk_dmsHelpers ):
     self.seA = StorageElementItem( 'StorageA' )
     self.seA.vo = 'lhcb'
     self.seB = StorageElementItem( 'StorageB' )
@@ -296,25 +166,10 @@ class TestBase( unittest.TestCase ):
     self.seE = StorageElementItem( 'StorageE' )
     self.seE.vo = 'lhcb'
 
-    self.seX = StorageElementItem( 'StorageX' )
-    self.seX.vo = 'lhcb'
-    self.seY = StorageElementItem( 'StorageY' )
-    self.seY.vo = 'lhcb'
-    self.seZ = StorageElementItem( 'StorageZ' )
-    self.seZ.vo = 'lhcb'
+
 
   def tearDown( self ):
-    try:
-      os.remove(self.testCfgFileName)
-    except OSError:
-      pass
-    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
-    # not to conflict with other tests that might be using a local dirac.cfg
-    gConfigurationData.localCFG=CFG()
-    gConfigurationData.remoteCFG=CFG()
-    gConfigurationData.mergedCFG=CFG()
-    gConfigurationData.generateNewVersion()
-
+    pass
 
 
 
@@ -594,80 +449,6 @@ class TestBase( unittest.TestCase ):
     self.assertTrue( res['OK'], res )
     self.assertTrue( lfn in res['Value']['Successful'], res )
     self.assertEqual( res['Value']['Successful'][lfn], "srm:putFile" )
-
-
-  @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-                return_value = S_OK( True ) )  # Pretend it's local
-  @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-                return_value = None )  # Don't send accounting
-  def test_08_multiProtocolFTS( self, _mk_isLocalSE, _mk_addAccounting ):
-    """
-      Test case FTS replication between storages with several protocols
-
-      Here comes the fun :-)
-      Suppose we have endpoints that we can read in root, but cannot write
-      If we have root in the accessProtocols and thirdPartyProtocols lists
-      but not in the writeProtocols, we should get a root url to read,
-      and write with SRM.
-      And We should get the proper url for source and destination
-
-      Storage X, Y and Z represents the situation we could now have in LHCb:
-        * X is RAL Echo: you read with root, write with gsiftp
-        * Y is Gridka: you have gsiftp available for read only
-        * Z is CERN EOS: you can do everything with EOS
-
-      This makes it necessary to add gsiftp as third party option to write to ECHO
-
-    """
-
-
-    thirdPartyProtocols = ['root', 'gsiftp', 'srm']
-
-    lfn = '/lhcb/fake/lfn'
-
-    # RAL -> GRIDKA
-    # We should read using root and write through srm
-    res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seX)
-    self.assertTrue( res['OK'], res )
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('root:%s'%lfn, 'srm:%s'%lfn))
-
-    # RAL -> CERN
-    # We should read using root and write directly with it
-    res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seX)
-    self.assertTrue( res['OK'], res )
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('root:%s'%lfn, 'root:%s'%lfn))
-
-    # GRIDKA -> RAL
-    # We should read using gsiftp and write directly with it
-    res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seY)
-    self.assertTrue( res['OK'], res )
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('gsiftp:%s'%lfn, 'gsiftp:%s'%lfn))
-
-    # GRIDKA -> CERN
-    # We should read using srm and write with root
-    res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seY)
-    self.assertTrue( res['OK'], res )
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('srm:%s'%lfn, 'root:%s'%lfn))
-
-    # CERN -> RAL
-    # We should read using srm and write with gsiftp
-    res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seZ)
-    self.assertTrue( res['OK'], res )
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('srm:%s'%lfn, 'gsiftp:%s'%lfn))
-
-    # CERN -> GRIDKA
-    # We should read using root and write directly with srm
-    res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seZ)
-    self.assertTrue( res['OK'], res )
-    urlPair = res['Value']['Successful'].get(lfn)
-
-    self.assertTupleEqual(urlPair, ('root:%s'%lfn, 'srm:%s'%lfn))
-
 
 
 if __name__ == '__main__':

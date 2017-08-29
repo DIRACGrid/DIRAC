@@ -5,7 +5,8 @@ import cStringIO
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
-from DIRAC.Core.Security import Locations, CS, Utilities
+from DIRAC.Core.Utilities import File
+from DIRAC.Core.Security import Locations, CS
 
 class BundleDeliveryClient:
 
@@ -98,41 +99,3 @@ class BundleDeliveryClient:
     if X509_CERT_DIR:
       os.environ['X509_CERT_DIR'] = X509_CERT_DIR
     return result
-  
-  def getCAs( self ):
-    """
-    This method can be used to create the CAs. If the file can not be created, it will be downloaded from
-    the server. 
-    """
-    retVal = Utilities.generateCAFile()
-    if not retVal['OK']:
-      #if we can not found the file, we return the directory, where the file should be
-      transferClient = self.__getTransferClient()
-      casFile = os.path.join( os.path.dirname( retVal['Message'] ), "cas.pem" )
-      with open( casFile, "w" ) as fd:
-        result = transferClient.receiveFile( fd, 'CAs' )
-        if not result[ 'OK' ]:
-          return result
-        else:
-          return S_OK( casFile )
-    else:
-      return retVal
-  
-  def getCLRs( self ):
-    """
-    This method can be used to create the CAs. If the file can not be created, it will be downloaded from
-    the server. 
-    """
-    retVal = Utilities.generateRevokedCertsFile()
-    if not retVal['OK']:
-      #if we can not found the file, we return the directory, where the file should be
-      transferClient = self.__getTransferClient()
-      casFile = os.path.join( os.path.dirname( retVal['Message'] ), "crls.pem" )
-      with open( casFile, "w" ) as fd:
-        result = transferClient.receiveFile( fd, 'CRLs' )
-        if not result[ 'OK' ]:
-          return result
-        else:
-          return S_OK( casFile )
-    else:
-      return retVal

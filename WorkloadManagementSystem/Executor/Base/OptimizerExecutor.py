@@ -144,8 +144,8 @@ class OptimizerExecutor( ExecutorModule ):
     valenc = result[ 'Value' ]
     try:
       value = DEncode.decode( valenc )
-      if encLength == len( valenc ):
-        return S_OK( value )
+      #if encLength == len( valenc ):
+      return S_OK( value )
     except Exception:
       self.jobLog.warn( "Opt param %s doesn't seem to be dencoded %s" % ( name, valenc ) )
     return S_OK( eval( valenc ) )

@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id"
 
+import types
 import random
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
@@ -87,12 +88,12 @@ class TaskQueueDB( DB ):
                                                           'CPUTime' : 'BIGINT(20) UNSIGNED NOT NULL',
                                                           'Priority' : 'FLOAT NOT NULL',
                                                           'Enabled' : 'TINYINT(1) NOT NULL DEFAULT 0'
-                                                        },
+                                                           },
                                              'PrimaryKey' : 'TQId',
                                              'Indexes': { 'TQOwner': [ 'OwnerDN', 'OwnerGroup',
                                                                        'Setup', 'CPUTime' ]
                                                         }
-                                           }
+                                            }
 
     self.__tablesDesc[ 'tq_Jobs' ] = { 'Fields' : { 'TQId' : 'INTEGER(10) UNSIGNED NOT NULL',
                                                     'JobId' : 'INTEGER(11) UNSIGNED NOT NULL',
@@ -159,8 +160,10 @@ class TaskQueueDB( DB ):
     Check a task queue definition dict is valid
     """
 
-    # Confine the SystemConfigs legacy option here, use Platform everywhere else
-    # until the SystemConfigs is no more used in the TaskQueueDB
+    # Confine the LHCbPlatform legacy option here, use Platform everywhere else
+    # until the LHCbPlatform is no more used in the TaskQueueDB
+    if 'LHCbPlatforms' in tqDefDict and not "Platforms" in tqDefDict:
+      tqDefDict['Platforms'] = tqDefDict['LHCbPlatforms']
     if 'SystemConfigs' in tqDefDict and not "Platforms" in tqDefDict:
       tqDefDict['Platforms'] = tqDefDict['SystemConfigs']
 
@@ -186,7 +189,12 @@ class TaskQueueDB( DB ):
       if not result[ 'OK' ]:
         return result
       tqDefDict[ field ] = result[ 'Value' ]
-
+    #FIXME: This is not used
+    if 'PrivatePilots' in tqDefDict:
+      validPilotTypes = self.getValidPilotTypes()
+      for pilotType in tqDefDict[ 'PrivatePilots' ]:
+        if pilotType not in validPilotTypes:
+          return S_ERROR( "PilotType %s is invalid" % pilotType )
     return S_OK( tqDefDict )
 
   def _checkMatchDefinition( self, tqMatchDict ):
@@ -208,8 +216,10 @@ class TaskQueueDB( DB ):
           return self._escapeString( value )
         return S_OK( value )
 
-    # Confine the SystemConfig legacy option here, use Platform everywhere else
-    # until the SystemConfig is no more used in the TaskQueueDB
+    # Confine the LHCbPlatform legacy option here, use Platform everywhere else
+    # until the LHCbPlatform is no more used in the TaskQueueDB
+    if 'LHCbPlatform' in tqMatchDict and not "Platform" in tqMatchDict:
+      tqMatchDict['Platform'] = tqMatchDict['LHCbPlatform']
     if 'SystemConfig' in tqMatchDict and not "Platform" in tqMatchDict:
       tqMatchDict['Platform'] = tqMatchDict['SystemConfig']
 
@@ -324,7 +334,7 @@ class TaskQueueDB( DB ):
       return 10 ** 6
     return jobPriority
 
-  def insertJob( self, jobId, tqDefDict, jobPriority, skipTQDefCheck = False ):
+  def insertJob( self, jobId, tqDefDict, jobPriority, skipTQDefCheck = False, numRetries = 10 ):
     """
     Insert a job in a task queue
       Returns S_OK( tqId ) / S_ERROR
@@ -387,16 +397,12 @@ class TaskQueueDB( DB ):
       if not result[ 'OK' ] or len ( result[ 'Value' ] ) == 0:
         return S_OK( "Can't find task queue with id %s: %s" % ( tqId, result[ 'Message' ] ) )
     hackedPriority = self.__hackJobPriority( jobPriority )
-    result = self._update( "INSERT INTO tq_Jobs ( TQId, JobId, Priority, RealPriority ) \
-                            VALUES ( %s, %s, %s, %f ) ON DUPLICATE KEY UPDATE TQId = %s, \
-                            Priority = %s, RealPriority = %f" % ( tqId, jobId, jobPriority, hackedPriority,
-                                                                  tqId, jobPriority, hackedPriority ),
-                           conn = connObj )
+    result = self._update( "INSERT INTO tq_Jobs ( TQId, JobId, Priority, RealPriority ) VALUES ( %s, %s, %s, %f ) ON DUPLICATE KEY UPDATE TQId = %s, Priority = %s, RealPriority = %f" % ( tqId, jobId, jobPriority, hackedPriority, tqId, jobPriority, hackedPriority ), conn = connObj )
     if not result[ 'OK' ]:
       return result
     return S_OK()
 
-  def __generateTQFindSQL( self, tqDefDict, skipDefinitionCheck = False ):
+  def __generateTQFindSQL( self, tqDefDict, skipDefinitionCheck = False, connObj = False ):
     """
       Find a task queue that has exactly the same requirements
     """
@@ -414,14 +420,12 @@ class TaskQueueDB( DB ):
     for field in multiValueDefFields:
       tableName = '`tq_TQTo%s`' % field
       if field in tqDefDict and tqDefDict[ field ]:
-        firstQuery = "SELECT COUNT(%s.Value) \
-                      FROM %s \
-                      WHERE %s.TQId = `tq_TaskQueues`.TQId" % ( tableName, tableName, tableName )
+        firstQuery = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId" % ( tableName, tableName, tableName )
         grouping = "GROUP BY %s.TQId" % tableName
         valuesList = List.uniqueElements( [ value.strip() for value in tqDefDict[ field ] if value.strip() ] )
         numValues = len( valuesList )
         secondQuery = "%s AND %s.Value in (%s)" % ( firstQuery, tableName,
-                                                    ",".join( [ "%s" % str( value ) for value in valuesList ] ) )
+                                                        ",".join( [ "%s" % str( value ) for value in valuesList ] ) )
         sqlCondList.append( "%s = (%s %s)" % ( numValues, firstQuery, grouping ) )
         sqlCondList.append( "%s = (%s %s)" % ( numValues, secondQuery, grouping ) )
       else:
@@ -451,7 +455,8 @@ class TaskQueueDB( DB ):
     """
       Find a task queue that has exactly the same requirements
     """
-    result = self.__generateTQFindSQL( tqDefDict, skipDefinitionCheck = skipDefinitionCheck)
+    result = self.__generateTQFindSQL( tqDefDict, skipDefinitionCheck = skipDefinitionCheck,
+                                       connObj = connObj )
     if not result[ 'OK' ]:
       return result
 
@@ -529,7 +534,7 @@ class TaskQueueDB( DB ):
             msgVar = " %s out from the TQ %s: %s" % ( jobId, tqId, retVal[ 'Message' ] )
             self.log.error( msgFix, msgVar )
             return S_ERROR( msgFix + msgVar )
-          if retVal['Value']:
+          if retVal[ 'Value' ] == True :
             self.log.info( "Extracted job %s with prio %s from TQ %s" % ( jobId, prio, tqId ) )
             return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId, 'tqMatch' : tqMatchDict } )
         self.log.info( "No jobs could be extracted from TQ %s" % tqId )
@@ -559,7 +564,7 @@ class TaskQueueDB( DB ):
     return S_OK( [ ( row[0], row[1], row[2] ) for row in retVal[ 'Value' ] ] )
 
   def __generateSQLSubCond( self, sqlString, value, boolOp = 'OR' ):
-    if not isinstance( value, (list, tuple) ):
+    if type( value ) not in ( types.ListType, types.TupleType ):
       return sqlString % str( value ).strip()
     sqlORList = []
     for v in value:
@@ -572,14 +577,15 @@ class TaskQueueDB( DB ):
          - list of dicts will be  OR of conditional dicts
          - dicts will be normal conditional dict ( kay1 in ( v1, v2, ... ) AND key2 in ( v3, v4, ... ) )
     """
-    if isinstance(negativeCond, (list, tuple) ):
+    condType = type( negativeCond )
+    if condType in ( types.ListType, types.TupleType ):
       sqlCond = []
       for cD in negativeCond:
         sqlCond.append( self.__generateNotDictSQL( tableDict, cD ) )
       return " ( %s )" % " OR  ".join( sqlCond )
-    elif isinstance(negativeCond, dict):
+    elif condType == types.DictType:
       return self.__generateNotDictSQL( tableDict, negativeCond )
-    raise RuntimeError( "negativeCond has to be either a list or a dict or a tuple, and it's %s" % type( negativeCond ) )
+    raise RuntimeError( "negativeCond has to be either a list or a dict and it's %s" % condType )
 
   def __generateNotDictSQL( self, tableDict, negativeCond ):
     """ Generate the negative sql condition from a standard condition dict
@@ -595,15 +601,13 @@ class TaskQueueDB( DB ):
       if field in multiValueMatchFields:
         fullTableN = '`tq_TQTo%ss`' % field
         valList = negativeCond[ field ]
-        if not isinstance( valList, (list, tuple) ):
+        if type( valList ) not in ( types.TupleType, types.ListType ):
           valList = ( valList, )
         subList = []
         for value in valList:
           value = self._escapeString( value )[ 'Value' ]
           sql = "%s NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( value,
-                                                                                    fullTableN,
-                                                                                    fullTableN,
-                                                                                    fullTableN )
+                                                                    fullTableN, fullTableN, fullTableN )
           subList.append( sql )
         condList.append( "( %s )" % " AND ".join( subList ) )
       elif field in singleValueDefFields:
@@ -632,10 +636,10 @@ class TaskQueueDB( DB ):
     #If OwnerDN and OwnerGroup are defined only use those combinations that make sense
     if 'OwnerDN' in tqMatchDict and 'OwnerGroup' in tqMatchDict:
       groups = tqMatchDict[ 'OwnerGroup' ]
-      if not isinstance(groups, (list, tuple)):
+      if type( groups ) not in ( types.ListType, types.TupleType ):
         groups = [ groups ]
       dns = tqMatchDict[ 'OwnerDN' ]
-      if not isinstance( dns, (list, tuple) ):
+      if type( dns ) not in ( types.ListType, types.TupleType ):
         dns = [ dns ]
       ownerConds = []
       for group in groups:
@@ -654,7 +658,7 @@ class TaskQueueDB( DB ):
     #Type of single value conditions
     for field in ( 'CPUTime', 'Setup' ):
       if field in tqMatchDict:
-        if field == 'CPUTime':
+        if field in ( 'CPUTime' ):
           sqlCondList.append( self.__generateSQLSubCond( "tq.%s <= %%s" % field, tqMatchDict[ field ] ) )
         else:
           sqlCondList.append( self.__generateSQLSubCond( "tq.%s = %%s" % field, tqMatchDict[ field ] ) )
@@ -670,9 +674,7 @@ class TaskQueueDB( DB ):
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
           # that the GridCE matches explicitly so the COUNT can not be 0. In this case we skip this
           # condition
-        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN,
-                                                                                                      fullTableN,
-                                                                                                      fullTableN ) )
+        sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
         rsql = None
         if field in tagMatchFields:
           if tqMatchDict[field] != '"Any"':
@@ -684,12 +686,7 @@ class TaskQueueDB( DB ):
             if requiredTags:
               rsql = self.__generateRequiredTagSQLSubCond( fullTableN, requiredTags )
         else:
-          csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value \
-                                                      FROM %s \
-                                                      WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                                     fullTableN,
-                                                                                     fullTableN ),
-                                            tqMatchDict[ field ] )
+          csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN, fullTableN, fullTableN ), tqMatchDict[ field ] )
         sqlMultiCondList.append( csql )
         if rsql is not None:
           sqlCondList.append( rsql )
@@ -697,23 +694,15 @@ class TaskQueueDB( DB ):
         #In case of Site, check it's not in job banned sites
         if field in bannedJobMatchFields:
           fullTableN = '`tq_TQToBanned%ss`' % field
-          csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value \
-                                                          FROM %s \
-                                                          WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                                         fullTableN,
-                                                                                         fullTableN ),
-                                            tqMatchDict[ field ], boolOp = 'OR' )
+          csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
+                                                                    fullTableN, fullTableN ), tqMatchDict[ field ], boolOp = 'OR' )
           sqlCondList.append( csql )
       #Resource banning
       bannedField = "Banned%s" % field
       if bannedField in tqMatchDict and tqMatchDict[ bannedField ]:
         fullTableN = '`tq_TQTo%ss`' % field
-        csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value \
-                                                        FROM %s \
-                                                        WHERE %s.TQId = tq.TQId )" % ( fullTableN,
-                                                                                       fullTableN,
-                                                                                       fullTableN ),
-                                          tqMatchDict[ bannedField ], boolOp = 'OR' )
+        csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
+                                                                  fullTableN, fullTableN ), tqMatchDict[ bannedField ], boolOp = 'OR' )
         sqlCondList.append( csql )
 
     #For certain fields, the requirement is strict. If it is not in the tqMatchDict, the job cannot require it
@@ -993,7 +982,7 @@ class TaskQueueDB( DB ):
         tqId = record[0]
         value = record[1]
         if not tqId in tqData:
-          if tqIdList is False or tqId in tqIdList:
+          if tqIdList == False or tqId in tqIdList:
             self.log.warn( "Task Queue %s is defined in field %s but does not exist, triggering a cleaning" % ( tqId, field ) )
             tqNeedCleaning = True
         else:

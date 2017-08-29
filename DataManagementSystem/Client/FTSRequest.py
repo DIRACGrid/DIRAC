@@ -162,14 +162,18 @@ class FTSRequest( object ):
       return S_ERROR( "SourceSE does not support FTS transfers" )
 
     if self.__cksmTest:
-      cksmType = self.oSourceSE.checksumType()
-      if cksmType in ( "NONE", "NULL" ):
-        self.log.warn( "Checksum type set to %s at SourceSE %s, disabling checksum test" % ( cksmType,
-                                                                                            self.sourceSE ) )
-        self.__cksmTest = False
-      elif cksmType != self.__cksmType:
-        self.log.warn( "Checksum type mismatch, disabling checksum test" )
-        self.__cksmTest = False
+      res = self.oSourceSE.getChecksumType()
+      if not res["OK"]:
+        self.log.error( "Unable to get checksum type for SourceSE",
+                        "%s: %s" % ( self.sourceSE, res["Message"] ) )
+        cksmType = res["Value"]
+        if cksmType in ( "NONE", "NULL" ):
+          self.log.warn( "Checksum type set to %s at SourceSE %s, disabling checksum test" % ( cksmType,
+                                                                                              self.sourceSE ) )
+          self.__cksmTest = False
+        elif cksmType != self.__cksmType:
+          self.log.warn( "Checksum type mismatch, disabling checksum test" )
+          self.__cksmTest = False
 
     self.sourceToken = res['Value']
     self.sourceValid = True
@@ -213,14 +217,18 @@ class FTSRequest( object ):
 
     # # check checksum types
     if self.__cksmTest:
-      cksmType = self.oTargetSE.checksumType()
-      if cksmType in ( "NONE", "NULL" ):
-        self.log.warn( "Checksum type set to %s at TargetSE %s, disabling checksum test" % ( cksmType,
-                                                                                            self.targetSE ) )
-        self.__cksmTest = False
-      elif cksmType != self.__cksmType:
-        self.log.warn( "Checksum type mismatch, disabling checksum test" )
-        self.__cksmTest = False
+      res = self.oTargetSE.getChecksumType()
+      if not res["OK"]:
+        self.log.error( "Unable to get checksum type for TargetSE",
+                        "%s: %s" % ( self.targetSE, res["Message"] ) )
+        cksmType = res["Value"]
+        if cksmType in ( "NONE", "NULL" ):
+          self.log.warn( "Checksum type set to %s at TargetSE %s, disabling checksum test" % ( cksmType,
+                                                                                              self.targetSE ) )
+          self.__cksmTest = False
+        elif cksmType != self.__cksmType:
+          self.log.warn( "Checksum type mismatch, disabling checksum test" )
+          self.__cksmTest = False
 
     self.targetToken = res['Value']
     self.targetValid = True

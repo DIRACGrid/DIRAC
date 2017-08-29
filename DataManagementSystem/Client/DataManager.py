@@ -411,8 +411,7 @@ class DataManager( object ):
 
     return sortedSEs
 
-  def putAndRegister( self, lfn, fileName, diracSE, guid = None, path = None, 
-                      checksum = None, overwrite = False  ):
+  def putAndRegister( self, lfn, fileName, diracSE, guid = None, path = None, checksum = None ):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
         'lfn' is the file LFN
@@ -420,7 +419,6 @@ class DataManager( object ):
         'diracSE' is the Storage Element to which to put the file
         'guid' is the guid with which the file is to be registered (if not provided will be generated)
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
-        'overwrite' removes file from the file catalogue and SE before attempting upload
     """
 
     res = self.__hasAccess( 'addFile', lfn )
@@ -472,27 +470,14 @@ class DataManager( object ):
       return S_ERROR( errStr )
     if res['Value']['Successful'][lfn]:
       if res['Value']['Successful'][lfn] == lfn:
-        if overwrite:
-          resRm = self.removeFile( lfn, force = True )
-          if not resRm['OK']:
-            errStr = "Failed to prepare file for overwrite"
-            log.debug( errStr, lfn )
-            return resRm
-          if lfn not in resRm['Value']['Successful']:
-            errStr = "Failed to either delete file or LFN"
-            log.debug( errStr, lfn )
-            return S_ERROR( "%s %s" % ( errStr, lfn ) )
-        else:  
-          errStr = "The supplied LFN already exists in the File Catalog."
-          log.debug( errStr, lfn )
-          return S_ERROR( "%s %s" % ( errStr, res['Value']['Successful'][lfn] ) )
+        errStr = "The supplied LFN already exists in the File Catalog."
+        log.debug( errStr, lfn )
       else:
         # If the returned LFN is different, this is the name of a file
         # with the same GUID
         errStr = "This file GUID already exists for another file"
         log.debug( errStr, res['Value']['Successful'][lfn] )
-        return S_ERROR( "%s %s" % ( errStr, res['Value']['Successful'][lfn] ) )
-
+      return S_ERROR( "%s %s" % ( errStr, res['Value']['Successful'][lfn] ) )
 
     ##########################################################
     #  Instantiate the destination storage element here.
@@ -535,7 +520,7 @@ class DataManager( object ):
 
     ###########################################################
     # Perform the registration here
-    destinationSE = storageElement.storageElementName()
+    destinationSE = storageElement.getStorageElementName()['Value']
     res = returnSingleResult( storageElement.getURL( lfn, protocol = self.registrationProtocol ) )
     if not res['OK']:
       errStr = "Failed to generate destination PFN."
@@ -707,13 +692,13 @@ class DataManager( object ):
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
 
     # Get the real name of the SE
-    destSEName = destStorageElement.storageElementName()
+    destSEName = destStorageElement.getStorageElementName()['Value']
 
     ###########################################################
     # Check whether the destination storage element is banned
     log.verbose( "Determining whether %s ( destination ) is Write-banned." % destSEName )
 
-    if not destStorageElement.status()['Write']:
+    if not destStorageElement.getStatus().get( 'Value', {} ).get( 'Write', False ):
       infoStr = "Supplied destination Storage Element is not currently allowed for Write."
       log.debug( infoStr, destSEName )
       return S_ERROR( infoStr )
@@ -1049,7 +1034,7 @@ class DataManager( object ):
         for lfn, url in replicaTuple:
           failed[lfn] = errStr
       else:
-        storageElementName = destStorageElement.storageElementName()
+        storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, url in replicaTuple:
           res = returnSingleResult( destStorageElement.getURL( lfn, protocol = self.registrationProtocol ) )
           if not res['OK']:
@@ -1616,7 +1601,7 @@ class DataManager( object ):
 
   def __checkSEStatus( self, se, status = 'Read' ):
     """ returns the value of a certain SE status flag (access or other) """
-    return StorageElement( se, vo = self.vo ).status().get( status, False )
+    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( status, False )
 
   def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False, active = False ):
     """ get replicas from catalogue and filter if requested

@@ -53,7 +53,7 @@ class ForwardDISET( OperationHandlerBase ):
     # # decode arguments
     try:
       decode = DEncode.decode( self.operation.Arguments )
-      self.log.debug( "decoded len=%s val=%s" % ( length, decode ) )
+      self.log.debug( "decoded val=%s" %  decode )
     except ValueError, error:
       self.log.exception( error )
       self.operation.Error = str( error )

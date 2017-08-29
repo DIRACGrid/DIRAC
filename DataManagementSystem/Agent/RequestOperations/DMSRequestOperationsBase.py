@@ -22,7 +22,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
     self.registrationProtocols = DMSHelpers().getRegistrationProtocols()
 
 
-  def checkSEsRSS( self, checkSEs = None, access = 'WriteAccess', failIfBanned = True ):
+  def checkSEsRSS( self, checkSEs = None, access = 'WriteAccess' ):
     """ check SEs.
         By default, we check the SEs for WriteAccess, but it is configurable
     """
@@ -67,12 +67,11 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
 
       # If Some SE are always banned, we fail the request
       if alwaysBannedSEs:
+        self.log.info( "Some storages are always banned, failing the request", alwaysBannedSEs )
+        for opFile in self.operation:
+          opFile.Error = "%s always banned" % alwaysBannedSEs
+          opFile.Status = "Failed"
         self.operation.Error = "%s always banned" % alwaysBannedSEs
-        if failIfBanned:
-          self.log.info( "Some storages are always banned, failing the request", alwaysBannedSEs )
-          for opFile in self.operation:
-            opFile.Error = "%s always banned" % alwaysBannedSEs
-            opFile.Status = "Failed"
 
       # If it is temporary, we wait an hour
       else:

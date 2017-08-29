@@ -6,6 +6,8 @@
 
 __RCSID__ = "$Id$"
 
+from types import StringTypes, DictType, StringTypes
+
 from DIRAC                                               import gLogger, S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.ThreadScheduler                import gThreadScheduler
@@ -70,7 +72,7 @@ class MatcherHandler( RequestHandler ):
     self.limiter = Limiter( jobDB = gJobDB )
 
 ##############################################################################
-  types_requestJob = [ [basestring, dict] ]
+  types_requestJob = [ list( StringTypes ) + [DictType] ]
   def export_requestJob( self, resourceDescription ):
     """ Serve a job to the request of an agent which is the highest priority
         one matching the agent's site capacity
@@ -102,32 +104,25 @@ class MatcherHandler( RequestHandler ):
 
 ##############################################################################
   types_getActiveTaskQueues = []
-  @staticmethod
-  def export_getActiveTaskQueues():
+  def export_getActiveTaskQueues( self ):
     """ Return all task queues
     """
     return gTaskQueueDB.retrieveTaskQueues()
 
 ##############################################################################
-  types_getMatchingTaskQueues = [ dict ]
+  types_getMatchingTaskQueues = [ DictType ]
   def export_getMatchingTaskQueues( self, resourceDict ):
     """ Return all task queues
     """
-    if 'Site' in resourceDict and isinstance( resourceDict[ 'Site' ], basestring ):
+    if 'Site' in resourceDict and type( resourceDict[ 'Site' ] ) in StringTypes:
       negativeCond = self.limiter.getNegativeCondForSite( resourceDict[ 'Site' ] )
     else:
       negativeCond = self.limiter.getNegativeCond()
-    matcher = Matcher( pilotAgentsDB = pilotAgentsDB,
-                       jobDB = gJobDB,
-                       tqDB = gTaskQueueDB,
-                       jlDB = jlDB )
-    resourceDescriptionDict = matcher._processResourceDescription( resourceDict )
-    return gTaskQueueDB.retrieveTaskQueuesThatMatch( resourceDescriptionDict, negativeCond = negativeCond )
+    return gTaskQueueDB.retrieveTaskQueuesThatMatch( resourceDict, negativeCond = negativeCond )
 
 ##############################################################################
-  types_matchAndGetTaskQueue = [ dict ]
-  @staticmethod
-  def export_matchAndGetTaskQueue( resourceDict ):
+  types_matchAndGetTaskQueue = [ DictType ]
+  def export_matchAndGetTaskQueue( self, resourceDict ):
     """ Return matching task queues
     """
     return gTaskQueueDB.matchAndGetTaskQueue( resourceDict )

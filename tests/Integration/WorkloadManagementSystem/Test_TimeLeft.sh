@@ -5,8 +5,6 @@
 # and a $DIRAC variable pointing to an installed DIRAC
 # It also assumes that pilot.cfg contains all the necessary for running
 
-echo "\n======> Test_TimeLeft <======\n"
-
 if [ ! -z "$DEBUG" ]
 then
 	echo '==> Running in DEBUG mode'

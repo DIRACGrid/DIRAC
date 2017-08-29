@@ -295,7 +295,7 @@ class TransformationAgentSuccess( AgentsTestCase ):
                            'TargetSE': 'Unknown',
                            'TaskID': '222',
                            'TransformationID': 17042L,
-                           'UsedSE': 'CERN-DST,IN2P3-DST,PIC-DST,RAL-DST'},
+                           'UsedSE': 'CERN-DST,IN2P3_M-DST,PIC-DST,RAL-DST'},
                           {'ErrorCount': 1L,
                            'FileID': 17022945L,
                            'InsertedTime': datetime.datetime( 2012, 3, 15, 17, 5, 50 ),
@@ -306,7 +306,7 @@ class TransformationAgentSuccess( AgentsTestCase ):
                            'TargetSE': 'Unknown',
                            'TaskID': '82',
                            'TransformationID': 17042L,
-                           'UsedSE': 'CERN-DST,CNAF-DST,RAL-DST,SARA-DST'}]
+                           'UsedSE': 'CERN-DST,CNAF-DST,RAL_M-DST,SARA-DST'}]
                 }
     noFiles = {'OK':True, 'Value':[]}
 

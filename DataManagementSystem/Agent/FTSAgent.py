@@ -522,7 +522,7 @@ class FTSAgent( AgentModule ):
       now = datetime.datetime.utcnow()
       jobsToMonitor = [job for job in ftsJobs if
                        ( now - job.LastUpdate ).seconds >
-                       ( self.MONITORING_INTERVAL * ( 3. if StorageElement( job.SourceSE ).status()['TapeSE'] else 1. ) )
+                       ( self.MONITORING_INTERVAL * ( 3. if StorageElement( job.SourceSE ).getStatus().get( 'Value', {} ).get( 'TapeSE' ) else 1. ) )
                        ]
       if jobsToMonitor:
         log.info( "==> found %s FTSJobs to monitor" % len( jobsToMonitor ) )
@@ -874,7 +874,7 @@ class FTSAgent( AgentModule ):
         if not sourceToken["OK"]:
           log.error( "unable to get sourceSE parameters:", "(%s) %s" % ( source, sourceToken["Message"] ) )
           continue
-        seStatus = sourceSE.status()
+        seStatus = sourceSE.getStatus()['Value']
 
         targetSE = StorageElement( target )
         targetToken = targetSE.getStorageParameters( protocol = 'srm' )

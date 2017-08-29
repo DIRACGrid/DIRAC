@@ -36,11 +36,11 @@ class MailEQ(MailTestCase):
     res = m._create('address@dirac.org')
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'].__dict__['_headers'],
-                     [('Content-Type', 'multipart/mixed'),
-                      ('MIME-Version', '1.0'),
-                      ('Subject', 'subject'),
-                      ('From', 'from@dirac.org'),
-                      ('To', 'address@dirac.org')])
+		     [('Content-Type', 'multipart/mixed'),
+		      ('MIME-Version', '1.0'),
+		      ('Subject', 'subject'),
+		      ('From', 'from@dirac.org'),
+		      ('To', 'address@dirac.org')])
 
   def test_compareEmails(self):
     """ test comparing of Email objects (also for insertion in sets)

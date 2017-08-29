@@ -29,7 +29,7 @@ def printDict( dictionary ):
 class TransformationCLI( CLI, API ):
 
   def __init__( self ):
-    self.transClient = TransformationClient()
+    self.server = TransformationClient()
     self.indentSpace = 4
     CLI.__init__( self )
     API.__init__( self )
@@ -95,7 +95,7 @@ class TransformationCLI( CLI, API ):
   def check_id_or_name( self, id_or_name ):
     """resolve name or Id by converting type of argument """
     if id_or_name.isdigit():
-      return long( id_or_name )  # its look like id
+      return long( id_or_name ) # its look like id
     return id_or_name
 
   ####################################################################
@@ -140,12 +140,12 @@ that the username provided to the function.
       print "AuthorDN need to be quoted (just quote that argument)"
       return
 
-    if argss[0][0] in ["'", '"']:  # authorDN given
+    if argss[0][0] in ["'", '"']: # authorDN given
       author = argss[0]
       status_idx = 1
       for arg in argss[1:]:
         author += ' ' + arg
-        status_idx += 1
+        status_idx +=1
         if arg[-1] in ["'", '"']:
           break
       # At this point we should have something like 'author'
@@ -153,10 +153,10 @@ that the username provided to the function.
         print "AuthorDN need to be quoted (just quote that argument)"
         return
       else:
-        author = author[1:-1]  # throw away the quotes
+        author = author[1:-1] # throw away the quotes
       # the rest are the requested status
       status = argss[ status_idx: ]
-    else:  # username given
+    else: # username given
       username = argss[0]
       status = argss[ 1: ]
 
@@ -189,7 +189,7 @@ that the username provided to the function.
       print "no transformation supplied"
       return
     for transName in argss:
-      res = self.transClient.getTransformation( transName )
+      res = self.server.getTransformation( transName )
       if not res['OK']:
         print "Getting status of %s failed: %s" % ( transName, res['Message'] )
       else:
@@ -208,7 +208,7 @@ that the username provided to the function.
     status = argss[0]
     transNames = argss[1:]
     for transName in transNames:
-      res = self.transClient.setTransformationParameter( transName, 'Status', status )
+      res = self.server.setTransformationParameter( transName, 'Status', status )
       if not res['OK']:
         print "Setting status of %s failed: %s" % ( transName, res['Message'] )
       else:
@@ -224,11 +224,11 @@ that the username provided to the function.
       print "no transformation supplied"
       return
     for transName in argss:
-      res = self.transClient.setTransformationParameter( transName, 'Status', 'Active' )
+      res = self.server.setTransformationParameter( transName, 'Status', 'Active' )
       if not res['OK']:
         print "Setting Status of %s failed: %s" % ( transName, res['Message'] )
       else:
-        res = self.transClient.setTransformationParameter( transName, 'AgentType', 'Automatic' )
+        res = self.server.setTransformationParameter( transName, 'AgentType', 'Automatic' )
         if not res['OK']:
           print "Setting AgentType of %s failed: %s" % ( transName, res['Message'] )
         else:
@@ -247,7 +247,7 @@ that the username provided to the function.
       print "no transformation supplied"
       return
     for transName in argss:
-      res = self.transClient.setTransformationParameter( transName, 'AgentType', 'Manual' )
+      res = self.server.setTransformationParameter( transName, 'AgentType', 'Manual' )
       if not res['OK']:
         print "Stopping of %s failed: %s" % ( transName, res['Message'] )
       else:
@@ -263,7 +263,7 @@ that the username provided to the function.
       print "no transformation supplied"
       return
     for transName in argss:
-      res = self.transClient.setTransformationParameter( transName, 'Status', 'Flush' )
+      res = self.server.setTransformationParameter( transName, 'Status', 'Flush' )
       if not res['OK']:
         print "Flushing of %s failed: %s" % ( transName, res['Message'] )
       else:
@@ -279,7 +279,7 @@ that the username provided to the function.
       print "no transformation supplied"
       return
     transName = argss[0]
-    res = self.transClient.getTransformation( transName )
+    res = self.server.getTransformation( transName )
     if not res['OK']:
       print "Failed to get %s: %s" % ( transName, res['Message'] )
     else:
@@ -296,7 +296,7 @@ that the username provided to the function.
       print "no transformation supplied"
       return
     transName = argss[0]
-    res = self.transClient.getTransformation( transName )
+    res = self.server.getTransformation( transName )
     if not res['OK']:
       print "Failed to get %s: %s" % ( transName, res['Message'] )
     else:
@@ -312,7 +312,7 @@ that the username provided to the function.
       print "no transformation supplied"
       return
     transName = argss[0]
-    res = self.transClient.getTransformationStats( transName )
+    res = self.server.getTransformationStats( transName )
     if not res['OK']:
       print "Failed to get statistics for %s: %s" % ( transName, res['Message'] )
     else:
@@ -331,7 +331,7 @@ that the username provided to the function.
     mask = argss[0]
     transNames = argss[1:]
     for transName in transNames:
-      res = self.transClient.setTransformationParameter( transName, "FileMask", mask )
+      res = self.server.setTransformationParameter( transName, "FileMask", mask )
       if not res['OK']:
         print "Failed to modify input file mask for %s: %s" % ( transName, res['Message'] )
       else:
@@ -348,14 +348,14 @@ that the username provided to the function.
       return
     transName = argss[0]
     status = argss[1:]
-    res = self.transClient.getTransformation( transName )
+    res = self.server.getTransformation( transName )
     if not res['OK']:
       print "Failed to get transformation information: %s" % res['Message']
     else:
       selectDict = {'TransformationID':res['Value']['TransformationID']}
       if status:
         selectDict['Status'] = status
-      res = self.transClient.getTransformationFiles( condDict = selectDict )
+      res = self.server.getTransformationFiles( condDict = selectDict )
       if not res['OK']:
         print "Failed to get transformation files: %s" % res['Message']
       elif res['Value']:
@@ -376,12 +376,12 @@ that the username provided to the function.
     transName = argss[0]
     lfns = argss[1:]
 
-    res = self.transClient.getTransformation( transName )
+    res = self.server.getTransformation( transName )
     if not res['OK']:
       print "Failed to get transformation information: %s" % res['Message']
     else:
       selectDict = {'TransformationID':res['Value']['TransformationID']}
-      res = self.transClient.getTransformationFiles( condDict = selectDict )
+      res = self.server.getTransformationFiles( condDict = selectDict )
       if not res['OK']:
         print "Failed to get transformation files: %s" % res['Message']
       elif res['Value']:
@@ -407,7 +407,7 @@ that the username provided to the function.
       print "no transformation supplied"
       return
     transName = argss[0]
-    res = self.transClient.getTransformation( transName )
+    res = self.server.getTransformation( transName )
     if not res['OK']:
       print "Failed to get transformation information: %s" % res['Message']
     else:
@@ -419,7 +419,7 @@ that the username provided to the function.
         print res['Message']
         return
       if not len( res['Value'] ) > 0:
-        print 'No output files yet for transformation %d' % int( transName )
+        print 'No output files yet for transformation %d' %int(transName)
         return
       else:
         for lfn in res['Value']:
@@ -435,7 +435,7 @@ that the username provided to the function.
       print "no transformation supplied"
       return
     transName = argss[0]
-    res = self.transClient.getTransformationInputDataQuery( transName )
+    res = self.server.getTransformationInputDataQuery( transName )
     if not res['OK']:
       print "Failed to get transformation input data query: %s" % res['Message']
     else:
@@ -453,7 +453,7 @@ that the username provided to the function.
     transName = argss[0]
     lfn = argss[1]
     status = argss[2]
-    res = self.transClient.setFileStatusForTransformation( transName, status, [lfn] )
+    res = self.server.setFileStatusForTransformation( transName, status, [lfn] )
     if not res['OK']:
       print "Failed to update file status: %s" % res['Message']
     else:
@@ -470,7 +470,7 @@ that the username provided to the function.
       return
     transName = argss[0]
     lfns = argss[1:]
-    res = self.transClient.setFileStatusForTransformation( transName, 'Unused', lfns )
+    res = self.server.setFileStatusForTransformation( transName, 'Unused', lfns )
     if not res['OK']:
       print "Failed to reset file status: %s" % res['Message']
     else:
@@ -492,7 +492,7 @@ that the username provided to the function.
       return
     transName = argss[0]
     lfns = argss[1:]
-    res = self.transClient.setFileStatusForTransformation( transName, 'Unused', lfns, force = True )
+    res = self.server.setFileStatusForTransformation( transName, 'Unused', lfns, force = True )
     if not res['OK']:
       print "Failed to reset file status: %s" % res['Message']
     else:
@@ -518,7 +518,7 @@ that the username provided to the function.
       print "no directory supplied"
       return
     for directory in argss:
-      res = self.transClient.addDirectory( directory, force = True )
+      res = self.server.addDirectory( directory, force = True )
       if not res['OK']:
         print 'failed to add directory %s: %s' % ( directory, res['Message'] )
       else:
@@ -533,7 +533,7 @@ that the username provided to the function.
     if not len( argss ) > 0:
       print "no files supplied"
       return
-    res = self.transClient.getReplicas( argss )
+    res = self.server.getReplicas( argss )
     if not res['OK']:
       print "failed to get any replica information: %s" % res['Message']
       return
@@ -560,7 +560,7 @@ that the username provided to the function.
     for lfn in argss:
       lfnDict[lfn] = {'PFN':'IGNORED-PFN', 'SE':'IGNORED-SE', 'Size':0, 'GUID':'IGNORED-GUID',
                       'Checksum':'IGNORED-CHECKSUM'}
-    res = self.transClient.addFile( lfnDict, force = True )
+    res = self.server.addFile( lfnDict, force = True )
     if not res['OK']:
       print "failed to add any files: %s" % res['Message']
       return
@@ -579,7 +579,7 @@ that the username provided to the function.
     if not len( argss ) > 0:
       print "no files supplied"
       return
-    res = self.transClient.removeFile( argss )
+    res = self.server.removeFile( argss )
     if not res['OK']:
       print "failed to remove any files: %s" % res['Message']
       return
@@ -602,7 +602,7 @@ that the username provided to the function.
     se = argss[1]
     lfnDict = {}
     lfnDict[lfn] = {'PFN':'IGNORED-PFN', 'SE':se, 'Size':0, 'GUID':'IGNORED-GUID', 'Checksum':'IGNORED-CHECKSUM'}
-    res = self.transClient.addReplica( lfnDict, force = True )
+    res = self.server.addReplica( lfnDict, force = True )
     if not res['OK']:
       print "failed to add replica: %s" % res['Message']
       return
@@ -625,7 +625,7 @@ that the username provided to the function.
     se = argss[1]
     lfnDict = {}
     lfnDict[lfn] = {'PFN':'IGNORED-PFN', 'SE':se, 'Size':0, 'GUID':'IGNORED-GUID', 'Checksum':'IGNORED-CHECKSUM'}
-    res = self.transClient.removeReplica( lfnDict )
+    res = self.server.removeReplica( lfnDict )
     if not res['OK']:
       print "failed to remove replica: %s" % res['Message']
       return
@@ -649,7 +649,7 @@ that the username provided to the function.
     se = argss[2]
     lfnDict = {}
     lfnDict[lfn] = {'Status':status, 'PFN':'IGNORED-PFN', 'SE':se, 'Size':0, 'GUID':'IGNORED-GUID', 'Checksum':'IGNORED-CHECKSUM'}
-    res = self.transClient.setReplicaStatus( lfnDict )
+    res = self.server.setReplicaStatus( lfnDict )
     if not res['OK']:
       print "failed to set replica status: %s" % res['Message']
       return

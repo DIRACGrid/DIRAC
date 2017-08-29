@@ -12,11 +12,10 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceFailoverURL
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 from DIRAC.Core.Security import CS
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
-
 
 class BaseClient(object):
   """ Glues together stubs with threading, credentials, and URLs discovery (by DIRAC vo and setup).
@@ -42,24 +41,6 @@ class BaseClient(object):
   __threadConfig = ThreadConfig()
 
   def __init__( self, serviceName, **kwargs ):
-    """
-      :param serviceName: URL of the service (proper uri or just System/Component)
-      :param useCertificates: If set to True, use the server certificate
-      :param extraCredentials:
-      :param timeout: Timeout of the call (default 600 s)
-      :param setup: Specify the Setup
-      :param VO: Specify the VO
-      :param delegatedDN: Not clear what it can be used for.
-      :param delegatedGroup: Not clear what it can be used for.
-      :param ignoreGateways: Ignore the DIRAC Gatways settings
-      :param proxyLocation: Specify the location of the proxy
-      :param proxyString: Specify the proxy string
-      :param proxyChain: Specify the proxy chain
-      :param skipCACheck: Do not check the CA
-      :param keepAliveLapse: Duration for keepAliveLapse (heartbeat like)
-    """
-
-
     if not isinstance( serviceName, basestring ):
       raise TypeError( "Service name expected to be a string. Received %s type %s" %
                        ( str( serviceName ), type( serviceName ) ) )
@@ -102,13 +83,7 @@ class BaseClient(object):
     return self._serviceName
 
   def __discoverSetup( self ):
-    """ Discover which setup to use and stores it in self.setup
-        The setup is looked for:
-           * kwargs of the constructor (see KW_SETUP)
-           * the ThreadConfig
-           * in the CS /DIRAC/Setup
-           * default to 'Test'
-    """
+    #Which setup to use?
     if self.KW_SETUP in self.kwargs and self.kwargs[ self.KW_SETUP ]:
       self.setup = str( self.kwargs[ self.KW_SETUP ] )
     else:
@@ -118,12 +93,7 @@ class BaseClient(object):
     return S_OK()
 
   def __discoverVO( self ):
-    """ Discover which VO to use and stores it in self.vo
-        The VO is looked for:
-           * kwargs of the constructor (see KW_VO)
-           * in the CS /DIRAC/VirtualOrganization
-           * default to 'unknown'
-    """
+    #Which vo to use?
     if self.KW_VO in self.kwargs and self.kwargs[ self.KW_VO ]:
       self.vo = str( self.kwargs[ self.KW_VO ] )
     else:
@@ -131,13 +101,6 @@ class BaseClient(object):
     return S_OK()
 
   def __discoverURL( self ):
-    """ Calculate the final URL. It is called at initialization and in connect in case of issue
-
-        It sets:
-          * self.serviceURL: the url (dips) selected as target using __findServiceURL
-          * self.__URLTuple: a split of serviceURL obtained by Network.splitURL
-          * self._serviceName: the last part of URLTuple (typically System/Component)
-    """
     #Calculate final URL
     try:
       result = self.__findServiceURL()
@@ -160,12 +123,6 @@ class BaseClient(object):
     return S_OK()
 
   def __discoverTimeout( self ):
-    """ Discover which timeout to use and stores it in self.timeout
-        The timeout can be specified kwargs of the constructor (see KW_TIMEOUT),
-        with a minimum of 120 seconds.
-        If unspecified, the timeout will be 600 seconds.
-        The value is set in self.timeout, as well as in self.kwargs[KW_TIMEOUT]
-    """
     if self.KW_TIMEOUT in self.kwargs:
       self.timeout = self.kwargs[ self.KW_TIMEOUT ]
     else:
@@ -178,17 +135,6 @@ class BaseClient(object):
     return S_OK()
 
   def __discoverCredentialsToUse( self ):
-    """ Discovers which credentials to use for connection.
-        * Server certificate:
-          -> If KW_USE_CERTIFICATES in kwargs, sets it in self.__useCertificates
-          ->If not, check gConfig.useServerCertificate(), and sets it in self.__useCertificates and kwargs[KW_USE_CERTIFICATES]
-        * Certification Authorities check:
-           -> if KW_SKIP_CA_CHECK is not in kwargs and we are using the certificates, set KW_SKIP_CA_CHECK to false in kwargs
-           -> if KW_SKIP_CA_CHECK is not in kwargs and we are not using the certificate, check the CS.skipCACheck
-        * Proxy Chain
-           -> if KW_PROXY_CHAIN in kwargs, we remove it and dump its string form into kwargs[KW_PROXY_STRING]
-
-    """
     #Use certificates?
     if self.KW_USE_CERTIFICATES in self.kwargs:
       self.__useCertificates = self.kwargs[ self.KW_USE_CERTIFICATES ]
@@ -209,18 +155,6 @@ class BaseClient(object):
     return S_OK()
 
   def __discoverExtraCredentials( self ):
-    """ Add extra credentials informations.
-        * self.__extraCredentials
-          -> if KW_EXTRA_CREDENTIALS in kwargs, we set it
-          -> Otherwise, if we use the server certificate, we set it to VAL_EXTRA_CREDENTIALS_HOST
-          -> If we have a delegation (see bellow), we set it to (delegatedDN, delegatedGroup)
-          -> otherwise it is an empty string
-        * delegation:
-          -> if KW_DELEGATED_DN in kwargs, or delegatedDN in threadConfig, put in in self.kwargs
-          -> if KW_DELEGATED_GROUP in kwargs or delegatedGroup in threadConfig, put it in self.kwargs
-          -> If we have a delegated DN but not group, we find the corresponding group in the CS
-
-    """
     #Wich extra credentials to use?
     if self.__useCertificates:
       self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
@@ -244,34 +178,12 @@ class BaseClient(object):
         if not result['OK']:
           return result
       self.__extraCredentials = ( delegatedDN, delegatedGroup )
+
     return S_OK()
 
   def __findServiceURL( self ):
-    """
-        Discovers the URL of a service, taking into account gateways, multiple URLs, banned URLs
-
-
-        If the site on which we run is configured to use gateways (/DIRAC/Gateways/<siteName>),
-        these URLs will be used. To ignore the gateway, it is possible to set KW_IGNORE_GATEWAYS
-        to False in kwargs.
-
-        If self._destinationSrv (given as constructor attribute) is a properly formed URL,
-        we just return this one. If we have to use a gateway, we just replace the server name in the url.
-
-        The list of URLs defined in the CS (<System>/URLs/<Component>) is randomized
-
-        This method also sets some attributes:
-          * self.__nbOfUrls = number of URLs
-          * self.__nbOfRetry = 2 if we have more than 2 urls, otherwise 3
-          * self.__bannedUrls is reinitialized if all the URLs are banned
-
-        :return: the selected URL
-
-    """
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
-
-    # Load the Gateways URLs for the current site Name
     gatewayURL = False
     if self.KW_IGNORE_GATEWAYS not in self.kwargs or not self.kwargs[ self.KW_IGNORE_GATEWAYS ]:
       dRetVal = gConfig.getOption( "/DIRAC/Gateways/%s" % DIRAC.siteName() )
@@ -279,9 +191,6 @@ class BaseClient(object):
         rawGatewayURL = List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) )[0]
         gatewayURL = "/".join( rawGatewayURL.split( "/" )[:3] )
 
-    # If what was given as constructor attribute is a properly formed URL,
-    # we just return this one.
-    # If we have to use a gateway, we just replace the server name in it
     for protocol in gProtocolDict:
       if self._destinationSrv.find( "%s://" % protocol ) == 0:
         gLogger.debug( "Already given a valid url", self._destinationSrv )
@@ -297,7 +206,6 @@ class BaseClient(object):
       gLogger.debug( "Using gateway", gatewayURL )
       return S_OK( "%s/%s" % ( gatewayURL, self._destinationSrv ) )
 
-    # We extract the list of URLs from the CS (System/URLs/Component)
     try:
       urls = getServiceURL( self._destinationSrv, setup = self.setup )
     except Exception as e:
@@ -305,43 +213,26 @@ class BaseClient(object):
     if not urls:
       return S_ERROR( "URL for service %s not found" % self._destinationSrv )
 
-    failoverUrls = []
-    # Try if there are some failover URLs to use as last resort
-    try:
-      failoverUrlsStr = getServiceFailoverURL( self._destinationSrv, setup = self.setup )
-      if failoverUrlsStr:
-        failoverUrls = failoverUrlsStr.split(',')
-    except Exception as e:
-      pass
-
-
-    # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
-    urlsList = List.randomize(List.fromChar( urls, "," ) ) + failoverUrls
+    urlsList = List.fromChar( urls, "," )
     self.__nbOfUrls = len( urlsList )
     self.__nbOfRetry = 2 if self.__nbOfUrls > 2 else 3 # we retry 2 times all services, if we run more than 2 services
-    if self.__nbOfUrls == len( self.__bannedUrls ):
+    if len( urlsList ) == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
       gLogger.debug( "Retrying again all URLs" )
 
-    if len( self.__bannedUrls ) > 0 and len(urlsList) > 1 :
+    if len( self.__bannedUrls ) > 0 and len( urlsList ) > 1 :
       # we have host which is not accessible. We remove that host from the list.
       # We only remove if we have more than one instance
       for i in self.__bannedUrls:
         gLogger.debug( "Removing banned URL", "%s" % i )
         urlsList.remove( i )
 
-    # Take the first URL from the list
-    #randUrls = List.randomize( urlsList ) + failoverUrls
-
-    sURL = urlsList[0]
-
-    # If we have banned URLs, and several URLs at disposals, we make sure that the selected sURL
-    # is not on a host which is banned. If it is, we take the next one in the list using __selectUrl
-    # If we have banned URLs, and several URLs at disposals, we make sure that the selected sURL
-    # is not on a host which is banned. If it is, we take the next one in the list using __selectUrl
+    randUrls = List.randomize( urlsList )
+    sURL = randUrls[0]
 
     if len( self.__bannedUrls ) > 0 and self.__nbOfUrls > 2:  # when we have multiple services then we can have a situation
       # when two service are running on the same machine with different port...
+
       retVal = Network.splitURL( sURL )
       nexturl = None
       if retVal['OK']:
@@ -354,27 +245,22 @@ class BaseClient(object):
             bannedurl = retVal['Value']
           else:
             break
-          # We found a banned URL on the same host as the one we are running on
+
           if nexturl[1] == bannedurl[1]:
             found = True
             break
         if found:
-          nexturl = self.__selectUrl( nexturl, urlsList[1:] )
+          nexturl = self.__selectUrl( nexturl, randUrls[1:] )
           if nexturl:  # an url found which is in different host
             sURL = nexturl
     gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self._destinationSrv, sURL ) )
     return S_OK( sURL )
 
-
   def __selectUrl( self, notselect, urls ):
     """In case when multiple services are running in the same host, a new url has to be in a different host
     Note: If we do not have different host we will use the selected url...
-
-    :param notselect: URL that should NOT be selected
-    :param urls: list of potential URLs
-
-    :return: selected URL
     """
+
     url = None
     for i in urls:
       retVal = Network.splitURL( i )
@@ -388,13 +274,6 @@ class BaseClient(object):
 
 
   def __checkThreadID( self ):
-    """
-      ..warning:: just guessing....
-      This seems to check that we are not creating a client and then using it
-      in a multithreaded environment.
-      However, it is triggered only if self.__enableThreadCheck is to True, but it is
-      hardcoded to False, and does not seem to be modified anywhere in the code.
-    """
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     cThID = thread.get_ident()
@@ -414,17 +293,8 @@ and this is thread %s
 
 
   def _connect( self ):
-    """ Establish the connection.
-        It uses the URL discovered in __discoverURL.
-        In case the connection cannot be established, __discoverURL
-        is called again, and _connect calls itself.
-        We stop after trying self.__nbOfRetry * self.__nbOfUrls
 
-    """
     # Check if the useServerCertificate configuration changed
-    # Note: I am not really sure that  all this block makes
-    # any sense at all since all these variables are
-    # evaluated in __discoverCredentialsToUse
     if gConfig.useServerCertificate() != self.__useCertificates:
       if self.__forceUseCertificates is None:
         self.__useCertificates = gConfig.useServerCertificate()
@@ -434,102 +304,57 @@ and this is thread %s
         if not result['OK']:
           return result
 
-    # Take all the extra credentials
     self.__discoverExtraCredentials()
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     if self.__enableThreadCheck:
       self.__checkThreadID()
-
     gLogger.debug( "Connecting to: %s" % self.serviceURL )
     try:
-      # Calls the transport method of the apropriate protocol.
-      # self.__URLTuple[1:3] = [server name, port, System/Component]
       transport = gProtocolDict[ self.__URLTuple[0] ][ 'transport' ]( self.__URLTuple[1:3], **self.kwargs )
       #the socket timeout is the default value which is 1.
       #later we increase to 5
       retVal = transport.initAsClient()
-      # If we have an issue connecting
       if not retVal[ 'OK' ]:
-        # We try at most __nbOfRetry each URLs
         if self.__retry < self.__nbOfRetry * self.__nbOfUrls - 1:
-          # Recompose the URL (why not using self.serviceURL ? )
           url = "%s://%s:%d/%s" % ( self.__URLTuple[0], self.__URLTuple[1], int( self.__URLTuple[2] ), self.__URLTuple[3] )
-          # Add the url to the list of banned URLs if it is not already there. (Can it happen ? I don't think so)
           if url not in self.__bannedUrls:
             self.__bannedUrls += [url]
-            # Why only printing in this case ?
             if len( self.__bannedUrls ) < self.__nbOfUrls:
               gLogger.notice( "Non-responding URL temporarily banned", "%s" % url )
-          # Increment the retry couunter
           self.__retry += 1
-          # If it is our last attempt for each URL, we increase the timeout
           if self.__retryCounter == self.__nbOfRetry - 1:
             transport.setSocketTimeout( 5 ) # we increase the socket timeout in case the network is not good
           gLogger.info( "Retry connection: ", "%d" % self.__retry )
-          # If we tried all the URL, we increase the global counter (__retryCounter), and sleep
           if len(self.__bannedUrls) == self.__nbOfUrls:
             self.__retryCounter += 1
             self.__retryDelay = 3. / self.__nbOfUrls  if self.__nbOfUrls > 1 else 2  # we run only one service! In that case we increase the retry delay.
             gLogger.info( "Waiting %f seconds before retry all service(s)" % self.__retryDelay )
             time.sleep( self.__retryDelay )
-          # rediscover the URL
           self.__discoverURL()
-          # try to reconnect
           return self._connect()
         else:
           return retVal
     except Exception as e:
       gLogger.exception(lException = True, lExcInfo = True)
       return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, repr( e ) ) )
-    # We add the connection to the transport pool
     trid = getGlobalTransportPool().add( transport )
-
     return S_OK( ( trid, transport ) )
 
   def _disconnect( self, trid ):
-    """ Disconnect the connection.
-
-        :param trid: Transport ID in the transportPool
-    """
     getGlobalTransportPool().close( trid )
 
-
   def _proposeAction( self, transport, action ):
-    """ Proposes an action by sending a tuple containing
-
-          * System/Component
-          * Setup
-          * VO
-          * action
-          * extraCredentials
-
-        It is kind of a handshake.
-
-        The server might ask for a delegation, in which case it is done here.
-        The result of the delegation is then returned.
-
-        :param transport: the Transport object returned by _connect
-        :param action: tuple (<action type>, <action name>). It depends on the
-                       subclasses of BaseClient. <action type> can be for example
-                       'RPC' or 'FileTransfer'
-
-       :return: whatever the server sent back
-
-    """
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     stConnectionInfo = ( ( self.__URLTuple[3], self.setup, self.vo ),
                          action,
                          self.__extraCredentials )
-
-    # Send the connection info and get the answer back
     retVal = transport.sendData( S_OK( stConnectionInfo ) )
     if not retVal[ 'OK' ]:
       return retVal
     serverReturn = transport.receiveData()
-
-    #TODO: Check if delegation is required. This seems to be used only for the GatewayService
+    #TODO: Check if delegation is required
     if serverReturn[ 'OK' ] and 'Value' in serverReturn and isinstance( serverReturn[ 'Value' ], dict ):
       gLogger.debug( "There is a server requirement" )
       serverRequirements = serverReturn[ 'Value' ]
@@ -538,12 +363,7 @@ and this is thread %s
         serverReturn = self.__delegateCredentials( transport, serverRequirements[ 'delegate' ] )
     return serverReturn
 
-
   def __delegateCredentials( self, transport, delegationRequest ):
-    """ Perform a credential delegation. This seems to be used only for the GatewayService.
-        It calls the delegation mechanism of the Transport class. Note that it is not used when
-        delegating credentials to the ProxyDB
-    """
     retVal = gProtocolDict[ self.__URLTuple[0] ][ 'delegation' ]( delegationRequest, self.kwargs )
     if not retVal[ 'OK' ]:
       return retVal
@@ -553,12 +373,6 @@ and this is thread %s
     return transport.receiveData()
 
   def __checkTransportSanity( self ):
-    """ Calls the sanity check of the underlying Transport object
-        and stores the result in self.__idDict.
-        It is checked at the creation of the BaseClient, and when connecting
-        if the use of the certificate has changed.
-
-    """
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     retVal = gProtocolDict[ self.__URLTuple[0] ][ 'sanity' ]( self.__URLTuple[1:3], self.kwargs )
@@ -570,14 +384,10 @@ and this is thread %s
     return S_OK()
 
   def __setKeepAliveLapse( self ):
-    """ Select the maximum Keep alive lapse between
-        150 seconds and what is specifind in kwargs[KW_KEEP_ALIVE_LAPSE],
-        and sets it in kwargs[KW_KEEP_ALIVE_LAPSE]
-    """
     kaa = 1
     if self.KW_KEEP_ALIVE_LAPSE in self.kwargs:
       try:
-        kaa = max( 0, int( self.kwargs[ self.KW_KEEP_ALIVE_LAPSE ] ) )
+        kaa = max( 0, int( self.kwargs ) )
       except:
         pass
     if kaa:
@@ -586,19 +396,6 @@ and this is thread %s
     return S_OK()
 
   def _getBaseStub( self ):
-    """ Returns a tuple with (self._destinationSrv, newKwargs)
-        self._destinationSrv is what was given as first parameter of the init serviceName
-
-        newKwargs is an updated copy of kwargs:
-          * kwargs has already been updated by all the initialization functions
-          * if a delegated DN is not set, but is found in __threadConfig or in the info returned by the protocol
-            sanitiy check, then we replace it (KW_DELEGATED_DN)
-          * Same goes for the delegated group KW_DELEGATED_GROUP. In the case of a host,
-            the value is the same as for VAL_EXTRA_CREDENTIALS_HOST
-          * if set, we remove the useCertificates (KW_USE_CERTIFICATES) in newKwargs (not sure to know why)
-
-        This method is just used to return information in case of error in the InnerRPCClient
-    """
     newKwargs = dict( self.kwargs )
     #Set DN
     tDN, tGroup = self.__threadConfig.getID()
@@ -622,7 +419,6 @@ and this is thread %s
           if CS.getHostnameForDN( newKwargs[ self.KW_DELEGATED_DN ] )[ 'OK' ]:
             newKwargs[ self.KW_DELEGATED_GROUP ] = self.VAL_EXTRA_CREDENTIALS_HOST
 
-    # Not sure why one would want to remove that...
     if 'useCertificates' in newKwargs:
       del newKwargs[ 'useCertificates' ]
     return ( self._destinationSrv, newKwargs )

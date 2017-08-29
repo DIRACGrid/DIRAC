@@ -31,17 +31,11 @@ Each option value is representing its default value::
           Port = 9165
           # Virtual host
           VHost = /
-          # User name to access the MQ server (not needed if you are using SSL authentication)
+          # User name to access the MQ server
           User = guest
-          # Password to access the MQ server. (not needed if you are using SSL authentication)
-          # This option should never be defined
+          # Password to access the MQ server. This option should never be defined
           # in the Global Configuration, only in the local one
           Password = guest
-          # if SSLVersion is set, then you are connecting using a certificate host/key pair
-          # You can also provide a location for the host/key certificates with the options
-          # "HostCertificate" and "HostKey" (which take a path as value)
-          # and when these options are not set, the standard DIRAC locations will be used
-          SSLVersion = TLSv1
           # General section containing subsections per Message Queue. Multiple Message
           # Queues can be defined by MQ server
           Queues

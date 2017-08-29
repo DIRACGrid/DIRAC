@@ -7,7 +7,7 @@
 import errno
 from datetime import datetime, timedelta
 
-from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
@@ -43,6 +43,7 @@ class SiteStatus( object ):
     self.__opHelper = Operations()
     self.rssFlag = ResourceStatus().rssFlag
     self.rsClient = ResourceStatusClient()
+    self.wmsAdministrator = RPCClient( 'WorkloadManagement/WMSAdministrator' )
 
   def getSiteStatuses( self, siteNamesList = None ):
     """
@@ -56,7 +57,7 @@ class SiteStatus( object ):
     }
 
     examples
-      >>> siteStatus.getSiteStatuses( ['test1.test1.uk', 'test2.test2.net', 'test3.test3.org'] )
+      >>> siteStatus.getSiteStatuses( [ 'test1.test1.uk', 'test2.test2.net', 'test3.test3.org' ] )
           S_OK( { 'test1.test1.org': 'Active', 'test2.test2.net': 'Banned', 'test3.test3.org': 'Active' }  )
       >>> siteStatus.getSiteStatuses( 'NotExists')
           S_ERROR( ... ))
@@ -77,15 +78,14 @@ class SiteStatus( object ):
     if not siteNamesList:
 
       if self.rssFlag:
-        siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status',
-                                                            meta = { 'columns' : ['Name', 'Status'] } )
+        siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )
       else:
-        siteStatusDict = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus()
+        siteStatusDict = self.wmsAdministrator.getSiteMaskStatus()
 
       if not siteStatusDict['OK']:
-        return siteStatusDict
+       return siteStatusDict
       else:
-        siteStatusDict = siteStatusDict['Value']
+       siteStatusDict = siteStatusDict['Value']
 
       return S_OK( dict(siteStatusDict) )
 
@@ -94,11 +94,9 @@ class SiteStatus( object ):
     for siteName in siteNamesList:
 
       if self.rssFlag:
-        result = self.rsClient.selectStatusElement( 'Site', 'Status',
-                                                    name = siteName,
-                                                    meta = { 'columns' : ['Status'] } )
+        result = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
       else:
-        result = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus(siteName)
+        result = self.wmsAdministrator.getSiteMaskStatus(siteName)
 
       if not result['OK']:
         return result
@@ -140,9 +138,9 @@ class SiteStatus( object ):
     if self.rssFlag:
       siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status',
                                                       name = siteName,
-                                                      meta = { 'columns' : ['Name', 'Status'] } )
+                                                      meta = { 'columns' : [ 'Name', 'Status' ] } )
     else:
-      siteStatus = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus(siteName)
+      siteStatus = self.wmsAdministrator.getSiteMaskStatus(siteName)
 
     if not siteStatus['OK']:
       return siteStatus
@@ -168,7 +166,7 @@ class SiteStatus( object ):
     statusType is either Active or Degraded; in a list.
 
     examples
-      >>> siteStatus.getUsableSites( ['test1.test1.uk', 'test2.test2.net', 'test3.test3.org'] )
+      >>> siteStatus.getUsableSites( [ 'test1.test1.uk', 'test2.test2.net', 'test3.test3.org' ] )
           S_OK( ['test1.test1.uk', 'test3.test3.org'] )
       >>> siteStatus.getUsableSites( None )
           S_OK( ['test1.test1.uk', 'test3.test3.org', 'test4.test4.org', 'test5.test5.org', ...] )
@@ -184,17 +182,13 @@ class SiteStatus( object ):
 
     if not siteNamesList:
       if self.rssFlag:
-        result = self.rsClient.selectStatusElement( 'Site', 'Status',
-                                                    status = 'Active',
-                                                    meta = { 'columns' : ['Name'] } )
+        result = self.rsClient.selectStatusElement( 'Site', 'Status', status = 'Active', meta = { 'columns' : [ 'Name' ] } )
         if not result['OK']:
           return result
 
         activeSites = [ x[0] for x in result['Value'] ]
 
-        result = self.rsClient.selectStatusElement( 'Site', 'Status',
-                                                    status = 'Degraded',
-                                                    meta = { 'columns' : ['Name'] } )
+        result = self.rsClient.selectStatusElement( 'Site', 'Status', status = 'Degraded', meta = { 'columns' : [ 'Name' ] } )
         if not result['OK']:
           return result
 
@@ -203,7 +197,7 @@ class SiteStatus( object ):
         return S_OK( activeSites + degradedSites )
 
       else:
-        activeSites = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMask()
+        activeSites = self.wmsAdministrator.getSiteMask()
         if not activeSites['OK']:
           return activeSites
 
@@ -214,11 +208,9 @@ class SiteStatus( object ):
     for siteName in siteNamesList:
 
       if self.rssFlag:
-        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status',
-                                                        name = siteName,
-                                                        meta = { 'columns' : ['Status'] } )
+        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
       else:
-        siteStatus = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus(siteName)
+        siteStatus = self.wmsAdministrator.getSiteMaskStatus(siteName)
 
       if not siteStatus['OK']:
         return siteStatus
@@ -265,38 +257,35 @@ class SiteStatus( object ):
       return S_ERROR(DErrno.ERESUNK, 'siteState parameter is empty')
 
     elif siteState.capitalize() == 'All':
+
       # if no siteState is set return everything
       if self.rssFlag:
-        siteStatus = self.rsClient.selectStatusElement( 'Site',
-                                                        'Status',
-                                                        meta = { 'columns' : ['Name'] } )
+        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name' ] } )
       else:
-        siteStatus = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMask( 'All' )
+        siteStatus = self.wmsAdministrator.getSiteMask( 'All' )
 
     else:
+
       # fix case sensitive string
       siteState = siteState.capitalize()
-      allowedStateList = ['Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown']
+      allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
       if siteState not in allowedStateList:
         return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
       if self.rssFlag:
-        siteStatus = self.rsClient.selectStatusElement( 'Site',
-                                                        'Status',
-                                                        status = siteState,
-                                                        meta = { 'columns' : ['Name'] } )
+        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', status = siteState, meta = { 'columns' : [ 'Name' ] } )
       else:
-        siteStatus = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMask( siteState )
+        siteStatus = self.wmsAdministrator.getSiteMask()
 
     if not siteStatus['OK']:
       return siteStatus
     else:
 
       if not self.rssFlag:
-        return S_OK( siteStatus['Value'] )
+        return S_OK( siteStatus[ 'Value' ] )
 
       siteList = []
-      for site in siteStatus['Value']:
+      for site in siteStatus[ 'Value' ]:
         siteList.append(site[0])
 
       return S_OK( siteList )
@@ -325,7 +314,7 @@ class SiteStatus( object ):
 
     # fix case sensitive string
     status = status.capitalize()
-    allowedStateList = ['Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown']
+    allowedStateList = [ 'Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown' ]
     if status not in allowedStateList:
       return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 

@@ -50,36 +50,37 @@ class TestDbUtilsChain( Test_DB ):
     client = self.testClass( "MonitoringDB", 'Test' )
     result = client._determineBucketSize( 1458130176, 1458226213 )
     self.assertTrue( result['OK'] )
-    self.assertEqual( result['Value'], ( '30m', 1800 ) )
+    self.assertEqual( result['Value'], ( '3h', 10800 ) )
 
     result = client._determineBucketSize( 1458055269, 1458660069 )
     self.assertTrue( result['OK'] )
-    self.assertEqual( result['Value'], ( '2h', 7200 ) )
+    self.assertEqual( result['Value'], ( '3h', 10800 ) )
 
     result = client._determineBucketSize( 1458617047, 1458660247 )
     self.assertTrue( result['OK'] )
-    self.assertEqual( result['Value'], ( '10m', 600 ) )
+    self.assertEqual( result['Value'], ( '30m', 1800 ) )
 
     result = client._determineBucketSize( 1456068334, 1458660334 )
     self.assertTrue( result['OK'] )
-    self.assertEqual( result['Value'], ( '8h', 28800 ) )
+    self.assertEqual( result['Value'], ( '12h', 43200 ) )
 
     result = client._determineBucketSize( 1453476373, 1458660373 )
     self.assertTrue( result['OK'] )
-    self.assertEqual( result['Value'], ( '12h', 43200 ) )
+    self.assertEqual( result['Value'], ( '2d', 172800 ) )
 
     result = client._determineBucketSize( 1450884571, 1458660571 )
     self.assertTrue( result['OK'] )
-    self.assertEqual( result['Value'], ( '1d', 86400 ) )
+    self.assertEqual( result['Value'], ( '3d', 259200 ) )
 
     result = client._determineBucketSize( 1427038370, 1458660770 )
     self.assertTrue( result['OK'] )
-    self.assertEqual( result['Value'], ( '4d', 345600 ) )
+    self.assertEqual( result['Value'], ( '7w', 86400 * 7 * 7 ) )
+
 
     result = client._determineBucketSize( 1300807841, 1458660641 )
     self.assertTrue( result['OK'] )
-    self.assertEqual( result['Value'], ( '1w', 604800 ) )
-
+    self.assertEqual( result['Value'], ( '7w', 86400 * 7 * 7 ) )
+    
 
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase( Test_DB )

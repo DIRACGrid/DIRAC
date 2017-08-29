@@ -1,11 +1,9 @@
 """ Utilities for the MessageQueue package
 """
 
-__RCSID__ = "$Id$"
-
-import Queue
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI       import CSAPI
+import Queue
 
 def getMQParamsFromCS( mqURI ):
   """ Function gets parameters of a MQ destination (queue/topic) from the CS.
@@ -28,7 +26,7 @@ def getMQParamsFromCS( mqURI ):
     return S_ERROR( 'Bad format of mqURI address:%s' % ( mqURI ) )
 
   result = gConfig.getConfigurationTree( '/Resources/MQServices', mqService, mqType, mqName )
-  if not result['OK'] or not result['Value']:
+  if not result['OK'] or len( result['Value'] ) == 0:
     return S_ERROR( 'Requested destination not found in the CS: %s::%s::%s' % ( mqService, mqType, mqName ) )
   mqDestinationPath = None
   for path, value in result['Value'].iteritems():

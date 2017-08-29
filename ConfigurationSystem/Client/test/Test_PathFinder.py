@@ -3,10 +3,9 @@
 
 import os
 import unittest
-from DIRAC.ConfigurationSystem.Client.PathFinder import getComponentSection, getServiceFailoverURL, getServiceURL
+
+from DIRAC.ConfigurationSystem.Client.PathFinder import getComponentSection
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Utilities.CFG import CFG
 
 class TestPathFinder( unittest.TestCase ):
   def setUp( self ):
@@ -30,22 +29,7 @@ class TestPathFinder( unittest.TestCase ):
       {
         MyWM
         {
-          URLs
-          {
-            Service1 = dips://server1:1234/WorkloadManagement/Service1
-            Service2 = dips://$MAINSERVERS$:5678/WorkloadManagement/Service2
-          }
-          FailoverURLs
-          {
-            Service2 = dips://failover1:5678/WorkloadManagement/Service2
-          }
         }
-      }
-    }
-    Operations{
-      Defaults
-      {
-        MainServers = gw1, gw2
       }
     }
     '''
@@ -59,12 +43,6 @@ class TestPathFinder( unittest.TestCase ):
       os.remove(self.testCfgFileName)
     except OSError:
       pass
-    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
-    # not to conflict with other tests that might be using a local dirac.cfg
-    gConfigurationData.localCFG=CFG()
-    gConfigurationData.remoteCFG=CFG()
-    gConfigurationData.mergedCFG=CFG()
-    gConfigurationData.generateNewVersion()
 
 class TestGetComponentSection( TestPathFinder ):
 
@@ -81,37 +59,7 @@ class TestGetComponentSection( TestPathFinder ):
     correctResult = '/Systems/WorkloadManagement/' + self.wm + '/NonRonsumersNon/SimpleLogConsumer'
     self.assertEqual(result, correctResult)
 
-class TestURLs( TestPathFinder ):
-
-  def test_getServiceURLSimple( self ):
-    """Fetching a URL defined normally"""
-    result = getServiceURL('WorkloadManagement/Service1')
-    correctResult = 'dips://server1:1234/WorkloadManagement/Service1'
-
-    self.assertEqual(result, correctResult)
-
-  def test_getServiceMainURL( self ):
-    """Fetching a URL referencing the MainServers"""
-    result = getServiceURL('WorkloadManagement/Service2')
-    correctResult = 'dips://gw1:5678/WorkloadManagement/Service2,dips://gw2:5678/WorkloadManagement/Service2'
-    self.assertEqual(result, correctResult)
-
-  def test_getServiceFailoverURLNonExisting( self ):
-    """Fetching a FailoverURL not defined"""
-    result = getServiceFailoverURL('WorkloadManagement/Service1')
-    correctResult = ''
-
-    self.assertEqual(result, correctResult)
-
-  def test_getServiceFailoverURL( self ):
-    """Fetching a FailoverURL"""
-    result = getServiceFailoverURL('WorkloadManagement/Service2')
-    correctResult = 'dips://failover1:5678/WorkloadManagement/Service2'
-    self.assertEqual(result, correctResult)
-
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestPathFinder )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestGetComponentSection ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestURLs ) )
-
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )

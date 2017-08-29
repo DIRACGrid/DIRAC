@@ -13,11 +13,11 @@ from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 
 
 
-def mock_StorageFactory_getConfigStorageName( storageName, referenceType, seConfigPath = None ):
+def mock_StorageFactory_getConfigStorageName( storageName, referenceType ):
   resolvedName = storageName
   return S_OK( resolvedName )
 
-def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName = None, seConfigPath = None ):
+def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName = None ):
   """ Get the options associated to the StorageElement as defined in the CS
   """
   optionsDict = {'BackendType': 'local',
@@ -27,16 +27,16 @@ def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName
                  'WriteProtocols' : ['file'], }
   return S_OK( optionsDict )
 
-def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName = None, seConfigPath = None ):
+def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName = None ):
   """ Protocol specific information is present as sections in the Storage configuration
   """
-  protocolDetails = {'Section': {'Host': '',
-                                 'Path': '/tmp/se',
-                                 'PluginName': 'File',
-                                 'Port': '',
-                                 'Protocol': 'file',
-                                 'SpaceToken': '',
-                                 'WSUrl': ''}}
+  protocolDetails = [{'Host': '',
+                      'Path': '/tmp/se',
+                      'PluginName': 'File',
+                      'Port': '',
+                      'Protocol': 'file',
+                      'SpaceToken': '',
+                      'WSUrl': ''}]
 
   return S_OK( protocolDetails )
 
