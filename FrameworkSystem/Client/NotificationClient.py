@@ -26,7 +26,7 @@ class NotificationClient:
     return self.__rpcFunctor( "Framework/Notification", **kwargs )
 
   #############################################################################
-  def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True, html = False, avoidSpam = False ):
+  def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True, html = False ):
     """ Send an e-mail with subject and body to the specified address. Try to send
         from local area before central service by default.
     """
@@ -53,7 +53,7 @@ class NotificationClient:
       self.log.warn( 'Could not send mail with the following message:\n%s\n will attempt to send via NotificationService' % result['Message'] )
 
     notify = self.__getRPCClient( timeout = 120 )
-    result = notify.sendMail( address, subject, body, str( fromAddress ), avoidSpam )
+    result = notify.sendMail( address, subject, body, str( fromAddress ) )
     if not result['OK']:
       self.log.error( 'Could not send mail via central Notification service', result['Message'] )
     else:

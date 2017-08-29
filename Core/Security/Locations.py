@@ -66,7 +66,7 @@ def getCAsDefaultLocation():
 
 #TODO: Static depending on files specified on CS
 #Retrieve certificate
-def getHostCertificateAndKeyLocation( specificLocation = None ):
+def getHostCertificateAndKeyLocation():
   """ Retrieve the host certificate files location
   """
 
@@ -96,11 +96,6 @@ def getHostCertificateAndKeyLocation( specificLocation = None ):
         break
   if "cert" not in fileDict.keys() or "key" not in fileDict.keys():
     return False
-  #we can specify a location outside /opt/dirac/etc/grid-security directory
-  if specificLocation:
-    fileDict[ "cert" ] = gConfig.getValue( specificLocation, fileDict[ "cert" ] )
-    fileDict[ "key" ] = gConfig.getValue( specificLocation, fileDict[ "key" ] )
-  
   return ( fileDict[ "cert" ], fileDict[ "key" ] )
 
 def getCertificateAndKeyLocation():

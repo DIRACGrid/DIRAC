@@ -14,6 +14,7 @@ import os
 import sys
 import datetime
 import errno
+import logging
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
 
@@ -65,7 +66,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     dlevel = self.log.getLevel()
     if dlevel == 'DEBUG':
-      gLogger.enableLogsFromExternalLibs()
+      logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
       gfal2.set_verbose( gfal2.verbose_level.trace )
 
     self.isok = True
@@ -305,7 +306,12 @@ class GFAL2_StorageBase( StorageBase ):
       return S_ERROR( errStr )
 
     # check whether the source is local or on another storage
-    if any( src_file.startswith( protocol + ':' ) for protocol in self.protocolParameters['InputProtocols'] ):
+
+    # TODO: as soon as self.protocolParameters contains all known protocols to the SE
+    # we wont need this hard coded list below anymore but can implement a function in StorageBase
+    # similar to isNativeURL which returns true if the src_file contains a known protocol.
+    protocols = ['srm', 'root']
+    if any( src_file.startswith( protocol + ':' ) for protocol in protocols ):
       src_url = src_file
       if not sourceSize:
         errStr = "For file replication the source file size in bytes must be provided."
@@ -1734,7 +1740,7 @@ class GFAL2_StorageBase( StorageBase ):
       :returns: list of successful and failed dictionaries, both indexed by the path
 
                   * In the failed, the value is the error message
-                  * In the successful the values are dictionaries:
+                  * In the successful the values are dictionaries: 
 
                       * Files : amount of files in the dir
                       * Size : summed up size of all files

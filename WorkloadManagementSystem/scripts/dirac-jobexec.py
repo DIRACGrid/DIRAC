@@ -3,12 +3,12 @@
 # File :    dirac-jobexec
 # Author :  Stuart Paterson
 ########################################################################
+__RCSID__ = "$Id$"
+
 """ The dirac-jobexec script is equipped to execute workflows that
     are specified via their XML description.  The main client of
     this script is the Job Wrapper.
 """
-
-__RCSID__ = "$Id$"
 
 import os
 import os.path
@@ -54,7 +54,8 @@ def jobexec( jobxml, wfParameters ):
   for pName, pValue in wfParameters.items():
     workflow.setValue( pName, pValue )
 
-  return workflow.execute()
+  result = workflow.execute()
+  return result
 
 positionalArgs = Script.getPositionalArgs()
 if len( positionalArgs ) != 1:
@@ -83,10 +84,8 @@ gLogger.debug( 'PYTHONPATH:\n%s' % ( '\n'.join( sys.path ) ) )
 jobExec = jobexec( jobXMLfile, parDict )
 if not jobExec['OK']:
   gLogger.debug( 'Workflow execution finished with errors, exiting' )
-  if jobExec['Errno']:
-    sys.exit( jobExec['Errno'] )
-  else:
-    sys.exit(1)
+  sys.exit( 1 )
 else:
   gLogger.debug( 'Workflow execution successful, exiting' )
   sys.exit( 0 )
+

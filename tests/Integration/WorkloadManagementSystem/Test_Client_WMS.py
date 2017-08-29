@@ -23,9 +23,6 @@
     and this also means that this test is not easy to set up.
 """
 
-
-#pylint: disable=protected-access,missing-docstring,wrong-import-position,invalid-name
-
 import unittest
 import datetime
 import tempfile
@@ -45,11 +42,13 @@ from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAge
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
+#pylint: disable=protected-access
+#pylint: disable=missing-docstring
 
 def helloWorldJob():
   job = Job()
   job.setName( "helloWorld" )
-  exeScriptLocation = find_all( 'exe-script.py', '..', '/DIRAC/tests/Integration' )[0]
+  exeScriptLocation = find_all( 'exe-script.py', '.', 'WorkloadManagementSystem' )[0]
   job.setInputSandbox( exeScriptLocation )
   job.setExecutable( exeScriptLocation, "", "helloWorld.log" )
   return job
@@ -320,11 +319,10 @@ class JobMonitoringMore( TestWMSTestCase ):
     res = jobMonitor.getJobPageSummaryWeb( {}, [], 0, 100 )
     self.assert_( res['OK'] )
 
-    res = jobStateUpdate.setJobStatusBulk( jobID,
-                                           {str( datetime.datetime.utcnow() ):{'Status': 'Running',
-                                                                               'MinorStatus': 'MinorStatus',
-                                                                               'ApplicationStatus': 'ApplicationStatus',
-                                                                               'Source': 'Unknown'}} )
+    res = jobStateUpdate.setJobStatusBulk( jobID, {str( datetime.datetime.utcnow() ):{'Status': 'Running',
+                                                                                      'MinorStatus': 'MinorStatus',
+                                                                                      'ApplicationStatus': 'ApplicationStatus',
+                                                                                      'Source': 'Unknown'}} )
     self.assert_( res['OK'] )
     res = jobStateUpdate.setJobsParameter( {jobID:['Status', 'Running']} )
     self.assert_( res['OK'] )

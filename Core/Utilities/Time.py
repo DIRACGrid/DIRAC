@@ -50,6 +50,7 @@ def timeThis( method ):
   def timed( *args, **kw ):
     """ What actually times
     """
+
     ts = nativetime.time()
     result = method( *args, **kw )
     if sys.stdout.isatty():

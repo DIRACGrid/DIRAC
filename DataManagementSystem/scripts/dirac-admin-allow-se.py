@@ -46,14 +46,6 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
-# from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
-from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC                                               import gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
-
 if not ( read or write or check or remove ):
   # No switch was specified, means we need all of them
   gLogger.notice( "No option given, all accesses will be allowed if they were not" )
@@ -61,6 +53,14 @@ if not ( read or write or check or remove ):
   write = True
   check = True
   remove = True
+
+# from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
+from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC                                               import gConfig, gLogger
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
+from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
 
 ses = resolveSEGroup( ses )
 diracAdmin = DiracAdmin()

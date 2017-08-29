@@ -105,20 +105,20 @@ class PEP( object ):
 
     # Run policies, get decision, get actions to apply
     resDecisions = self.pdp.takeDecision()
-    if not resDecisions['OK']:
+    if not resDecisions[ 'OK' ]:
       self.log.error( "Something went wrong, not enforcing policies", '%s' % decisionParams )
       return resDecisions
-    resDecisions = resDecisions['Value']
+    resDecisions = resDecisions[ 'Value' ]
 
     # We take from PDP the decision parameters used to find the policies
-    decisionParams = resDecisions['decisionParams']
-    policyCombinedResult = resDecisions['policyCombinedResult']
-    singlePolicyResults  = resDecisions['singlePolicyResults']
+    decisionParams = resDecisions[ 'decisionParams' ]
+    policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
+    singlePolicyResults  = resDecisions[ 'singlePolicyResults' ]
 
     # We have run the actions and at this point, we are about to execute the actions.
     # One more final check before proceeding
     isNotUpdated = self.__isNotUpdated( decisionParams )
-    if not isNotUpdated['OK']:
+    if not isNotUpdated[ 'OK' ]:
       return isNotUpdated
 
     for policyActionName, policyActionType in policyCombinedResult['PolicyAction']:
@@ -141,8 +141,8 @@ class PEP( object ):
       self.log.debug( ( policyActionName, policyActionType ) )
 
       actionResult = actionObj.run()
-      if not actionResult['OK']:
-        self.log.error( actionResult['Message'] )
+      if not actionResult[ 'OK' ]:
+        self.log.error( actionResult[ 'Message' ] )
 
     return S_OK( resDecisions )
 
@@ -166,20 +166,20 @@ class PEP( object ):
 
     # Copy original dictionary and get rid of one key we cannot pass as kwarg
     selectParams = dict( decisionParams )
-    del selectParams['element']
-    del selectParams['active']
+    del selectParams[ 'element' ]
+    del selectParams[ 'active' ]
 
     # We expect to have an exact match. If not, then something has changed and
     # we cannot proceed with the actions.
-    if decisionParams['element'] == 'Site':
+    if decisionParams[ 'element' ] == 'Site':
       unchangedRow = self.clients['SiteStatus'].getSiteStatuses([ decisionParams['name'] ])
     else:
-      unchangedRow = self.clients['ResourceStatusClient'].selectStatusElement( decisionParams['element'],
+      unchangedRow = self.clients['ResourceStatusClient'].selectStatusElement( decisionParams[ 'element' ],
                                                                              'Status', **selectParams )
-    if not unchangedRow['OK']:
+    if not unchangedRow[ 'OK' ]:
       return unchangedRow
 
-    if not unchangedRow['Value']:
+    if not unchangedRow[ 'Value' ]:
       msg = '%(name)s  ( %(status)s / %(statusType)s ) has been updated after PEP started running' % selectParams
       self.log.error( msg )
       return S_ERROR( msg )

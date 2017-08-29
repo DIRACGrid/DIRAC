@@ -54,7 +54,7 @@ class UserProfileClient:
 
   def __decodeVar( self, data, dataTypeRE ):
     try:
-      dataObj, lenData = DEncode.decode( data )
+      dataObj = DEncode.decode( data )
     except Exception as e:
       return S_ERROR( "Cannot decode data: %s" % str( e ) )
     if dataTypeRE:
@@ -86,7 +86,7 @@ class UserProfileClient:
       encodedData = result[ 'Value' ]
       dataObj = {}
       for k in encodedData:
-        v, lenData = DEncode.decode( encodedData[k] )
+        v = DEncode.decode( encodedData[k] )
         dataObj[ k ] = v
     except Exception as e:
       return S_ERROR( "Cannot decode data: %s" % str( e ) )

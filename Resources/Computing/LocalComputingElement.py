@@ -167,11 +167,7 @@ class LocalComputingElement( ComputingElement ):
 
     if resultSubmit['Status'] == 0:
       self.submittedJobs += len( resultSubmit['Jobs'] )
-      # jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+_id for _id in resultSubmit['Jobs'] ]  
-      # FIXME: It would be more proper to fix pilotCommands.__setFlavour where 'ssh' is hardcoded than
-      # making this illogical fix, but there is no good way for pilotCommands to know its origin ceType.
-      # So, the jobIDs here need to start with 'ssh', not ceType, to accomodate them to those hardcoded in pilotCommands.__setFlavour
-      jobIDs = [ 'ssh'+self.batchSystem.lower()+'://'+self.ceName+'/'+_id for _id in resultSubmit['Jobs'] ] 
+      jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+_id for _id in resultSubmit['Jobs'] ]
       result = S_OK( jobIDs )
     else:
       result = S_ERROR( resultSubmit['Message'] )
@@ -213,11 +209,7 @@ class LocalComputingElement( ComputingElement ):
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
-    stampList = []
-    for job in jobIDList:
-      stamp = os.path.basename( urlparse( job ).path )
-      stampList.append(stamp)
-    batchDict = { 'JobIDList': stampList,
+    batchDict = { 'JobIDList': jobIDList,
                   'User': self.userName }
     resultGet = self.batch.getJobStatus( **batchDict )
     if resultGet['Status'] == 0:

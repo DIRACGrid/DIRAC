@@ -22,7 +22,6 @@ def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = 
   if gIsAlreadyInitialized:
     return False
   gLogger.showHeaders( False )
-
   return initialize( script, ignoreErrors, initializeMonitor, True )
 
 def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = False ):

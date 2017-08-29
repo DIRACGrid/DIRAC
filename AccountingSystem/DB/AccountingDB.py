@@ -7,7 +7,6 @@ import datetime
 import time
 import threading
 import random
-from itertools import repeat
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -156,7 +155,7 @@ class AccountingDB( DB ):
       typeName = typesEntry[0]
       keyFields = List.fromChar( typesEntry[1], "," )
       valueFields = List.fromChar( typesEntry[2], "," )
-      bucketsLength = DEncode.decode( typesEntry[3] )[0]
+      bucketsLength = DEncode.decode( typesEntry[3] )
       self.__addToCatalog( typeName, keyFields, valueFields, bucketsLength )
 
   def getWaitingRecordsLifeTime( self ):
@@ -995,37 +994,20 @@ class AccountingDB( DB ):
     """
     Execute a query over a main table
     """
-
     tableName = _getTableName( tableType, typeName )
     cmd = "SELECT"
     sqlLinkList = []
     #Check if groupFields and orderFields are in ( "%s", ( field1, ) ) form
-    if groupFields:     
+    if groupFields:
       try:
         groupFields[0] % tuple( groupFields[1] )
-        # We can have the case when we have multiple grouping and the fields in the select does not much the group by conditions
-        # for example: selectFields = ('%s, %s, %s, SUM(%s)', ['Site', 'startTime', 'bucketLength', 'entriesInBucket'])
-        #             groupFields = ('%s, %s', ['startTime', 'Site']) 
-        #             in this case the correct query must be: select Site, startTime, bucketlength, sum(entriesInBucket) from xxxx where yyy Group by Site, startTime, bucketlength
-        #
-        # When we have multiple grouping then we must have all the fields in Group by. This is from mysql 5.7.
-        # We have fields which are not in the groupFields
-
-        diff = list( set( selectFields[1] ) - set( groupFields[1] ) )
-        if diff:  # add the missing fields to the group by if there is any
-          groupFields = list( groupFields )
-          missingfields = ", ".join( repeat( "%s", len( diff ) ) )  # this will contain all elements which are not in the group by
-          groupFields[0] = "%s, %s" % ( groupFields[0], missingfields )
-          groupFields[1].extend( diff )
-          groupFields = tuple( groupFields )
-
-      except TypeError as e:
-        return S_ERROR( "Cannot format properly group string: %s" % repr( e ) )
+      except Exception as e:
+        return S_ERROR( "Cannot format properly group string: %s" % str( e ) )
     if orderFields:
       try:
         orderFields[0] % tuple( orderFields[1] )
-      except TypeError as e:
-        return S_ERROR( "Cannot format properly order string: %s" % repr( e ) )
+      except Exception as e:
+        return S_ERROR( "Cannot format properly order string: %s" % str( e ) )
     #Calculate fields to retrieve
     realFieldList = []
     for rawFieldName in selectFields[1]:
@@ -1039,8 +1021,8 @@ class AccountingDB( DB ):
         realFieldList.append( "`%s`.`%s`" % ( tableName, rawFieldName ) )
     try:
       cmd += " %s" % selectFields[0] % tuple( realFieldList )
-    except TypeError as e:
-      return S_ERROR( "Error generating select fields string: %s" % repr( e ) )
+    except Exception as e:
+      return S_ERROR( "Error generating select fields string: %s" % str( e ) )
     #Calculate tables needed
     sqlFromList = [ "`%s`" % tableName ]
     for key in self.dbCatalog[ typeName ][ 'keys' ]:
@@ -1105,9 +1087,6 @@ class AccountingDB( DB ):
             else:
               # The default grouping is maintained
               preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
-          elif field in ['bucketLength', 'entriesInBucket']: #these are not in the dbCatalog
-            preGenFields[1][i] = "`%s`.`%s`" % ( tableName, field )
-
     if sqlLinkList:
       cmd += " AND %s" % " AND ".join( sqlLinkList )
     if groupFields:

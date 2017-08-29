@@ -283,8 +283,6 @@ class TarModuleCreator( object ):
     self.replaceKeywordsWithGit( fDirName )
 
     shutil.rmtree( "%s/.git" % fDirName, ignore_errors=True )
-    shutil.rmtree( "%s/tests" % fDirName, ignore_errors=True )
-    shutil.rmtree( "%s/docs" % fDirName, ignore_errors=True )
     shutil.rmtree( "%s/tests" % self.params.destination, ignore_errors=True )
     shutil.rmtree( "%s/docs" % self.params.destination, ignore_errors=True )
 

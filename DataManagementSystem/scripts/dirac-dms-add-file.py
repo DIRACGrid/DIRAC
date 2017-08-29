@@ -10,7 +10,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
-from DIRAC import S_OK
 import os
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -30,13 +29,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  lfn1 localfile1 SE [GUID1]',
                                      '  lfn2 localfile2 SE [GUID2]'] )
                         )
-overwrite = False
-def setOverwrite( arg ):
-  global overwrite
-  overwrite = True
-  return S_OK()
 
-Script.registerSwitch( "f", "force", "Force overwrite of existing file", setOverwrite )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 if len( args ) < 1 or len( args ) > 4:
@@ -87,7 +80,7 @@ for lfn in lfns:
     continue
 
   gLogger.notice( "\nUploading %s" % lfn['lfn'] )
-  res = dm.putAndRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite = overwrite )
+  res = dm.putAndRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'] )
   if not res['OK']:
     exitCode = 3
     gLogger.error( 'Error: failed to upload %s to %s' % ( lfn['lfn'], lfn['SE'] ) )

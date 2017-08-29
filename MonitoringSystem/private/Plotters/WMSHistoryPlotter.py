@@ -21,7 +21,7 @@ class WMSHistoryPlotter( BasePlotter ):
   """
   
   _typeName = "WMSHistory"
-  _typeKeyFields =  WMSHistory().keyFields 
+  _typeKeyFields =  WMSHistory().getKeyFields() 
 
   def _reportNumberOfJobs( self, reportRequest ):
     """

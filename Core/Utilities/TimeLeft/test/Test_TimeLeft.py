@@ -12,7 +12,7 @@ from mock import MagicMock, patch
 from DIRAC import gLogger, S_OK
 
 # sut
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft, enoughTimeLeft
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
 
 SGE_ReturnValue = """==============================================================
 job_number:                 12345
@@ -65,25 +65,6 @@ class TimeLeftTestCase( unittest.TestCase ):
 
 
 class TimeLeftSuccess( TimeLeftTestCase ):
-
-  def test_enoughTimeLeft(self):
-    res = enoughTimeLeft(cpu=100., cpuLimit=1000., wallClock=50., wallClockLimit=80., cpuMargin=3, wallClockMargin=10)
-    self.assertTrue(res)
-    print '\n'
-    res = enoughTimeLeft(cpu=900., cpuLimit=1000., wallClock=0., wallClockLimit=80., cpuMargin=3, wallClockMargin=10)
-    self.assertTrue(res)
-    print '\n'
-    res = enoughTimeLeft(cpu=990., cpuLimit=1000., wallClock=0., wallClockLimit=80., cpuMargin=3, wallClockMargin=10)
-    self.assertFalse(res)
-    print '\n'
-    res = enoughTimeLeft(cpu=100., cpuLimit=1000., wallClock=90., wallClockLimit=80., cpuMargin=3, wallClockMargin=10)
-    self.assertFalse(res)
-    print '\n'
-    res = enoughTimeLeft(cpu=100., cpuLimit=1000., wallClock=50., wallClockLimit=80., cpuMargin=0, wallClockMargin=10)
-    self.assertTrue(res)
-    print '\n'
-    res = enoughTimeLeft(cpu=100., cpuLimit=1000., wallClock=50., wallClockLimit=80., cpuMargin=0, wallClockMargin=10)
-    self.assertTrue(res)
 
   def test_getScaledCPU( self ):
     tl = TimeLeft()

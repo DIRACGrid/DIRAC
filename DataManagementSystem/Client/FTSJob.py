@@ -35,14 +35,14 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
-import fts3.rest.client.easy as fts3
+import fts3.rest.client.easy as fts3 #pylint: disable=import-error
 
 # We can't use the default pycurl because of known bugs
 # memory leak: https://bugzilla.mozilla.org/show_bug.cgi?id=1202413
 # SIGALRM handling: https://curl.haxx.se/mail/lib-2008-09/0197.html
 # So we need to use the Request module. The correct version is available
 # from fts-rest v3.5.2 or in the lcg-bundle 2017-01-27
-from fts3.rest.client.request import Request as ftsSSLRequest
+from fts3.rest.client.request import Request as ftsSSLRequest #pylint: disable=import-error
 
 ########################################################################
 class FTSJob( object ):
@@ -771,7 +771,7 @@ class FTSJob( object ):
     """
     colVals = []
     for column, value in self.__data__.items():
-      if value is not None and column not in ( "FTSJobID", "LastUpdate" ):
+      if value and column not in ( "FTSJobID", "LastUpdate" ):
         colStr = "`%s`" % column
         if isinstance( value, datetime.datetime ) or isinstance( value, basestring ):
           valStr = "'%s'" % value
@@ -796,7 +796,7 @@ class FTSJob( object ):
   def toJSON( self ):
     """ dump to JSON format """
     digest = dict( zip( self.__data__.keys(),
-                        [ str( val ) if val is not None else "" for val in self.__data__.values() ] ) )
+                        [ str( val ) if val else "" for val in self.__data__.values() ] ) )
     digest["FTSFiles"] = []
     for ftsFile in self:
       fileJSON = ftsFile.toJSON()

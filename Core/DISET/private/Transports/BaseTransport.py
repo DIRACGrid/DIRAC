@@ -209,7 +209,7 @@ class BaseTransport( object ):
           data = pkgMem.read( pkgSize )
           self.byteStream = pkgMem.read()
       try:
-        data = DEncode.decode( data )[0]
+        data = DEncode.decode( data )
       except Exception as e:
         return S_ERROR( "Could not decode received data: %s" % str( e ) )
       if idleReceive:

@@ -56,9 +56,9 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
   with io.open( jobWrapperJsonFile, 'w', encoding = 'utf8' ) as jsonFile:
     json.dump( unicode(arguments), jsonFile, ensure_ascii=False )
 
-  with open( jobWrapperFile, "w" ) as wrapper:
-    wrapper.write( wrapperTemplate )
-
+  wrapper = open( jobWrapperFile, "w" )
+  wrapper.write( wrapperTemplate )
+  wrapper.close ()
   jobExeFile = '%s/job/Wrapper/Job%s' % ( workingDir, jobID )
   jobFileContents = \
 """#!/bin/sh

@@ -3,7 +3,8 @@ This class a wrapper around elasticsearch-py. It is used to query
 Elasticsearch database.
 
 """
-import certifi
+import os
+import tempfile
 
 from datetime import datetime
 from datetime import timedelta
@@ -14,10 +15,54 @@ from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundEr
 from elasticsearch.helpers import BulkIndexError, bulk
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time, DErrno
-from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
-    
+from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Security import Locations, X509Chain
+
 __RCSID__ = "$Id$"
+
+def getCert():
+  """
+  get the host certificate
+  """
+  cert = Locations.getHostCertificateAndKeyLocation()
+  if cert:
+    cert = cert[0]
+  else:
+    cert = "/opt/dirac/etc/grid-security/hostcert.pem"
+  return cert
+
+def generateCAFile():
+  """
+  Generate a single CA file with all the PEMs
+  """
+  caDir = Locations.getCAsLocation()
+  for fn in ( os.path.join( os.path.dirname( caDir ), "cas.pem" ),
+              os.path.join( os.path.dirname( getCert() ), "cas.pem" ),
+              False ):
+    if not fn:
+      fn = tempfile.mkstemp( prefix = "cas.", suffix = ".pem" )[1]
+    
+    try:
+      
+      with open(fn, "w" ) as fd:
+        for caFile in os.listdir( caDir ):
+          caFile = os.path.join( caDir, caFile )
+          result = X509Chain.X509Chain.instanceFromFile( caFile )
+          if not result[ 'OK' ]:
+            continue
+          chain = result[ 'Value' ]
+          expired = chain.hasExpired()
+          if not expired[ 'OK' ] or expired[ 'Value' ]:
+            continue
+          fd.write( chain.dumpAllToString()[ 'Value' ] )
+      
+      gLogger.info( "CAs used from: %s" % str( fn ) )    
+      return fn
+    except IOError as err:
+      gLogger.warn( err )
+      
+  return False
 
 class ElasticSearchDB( object ):
 
@@ -34,47 +79,24 @@ class ElasticSearchDB( object ):
   __timeout = 120
   clusterName = ''
   RESULT_SIZE = 10000
-
   ########################################################################
-  def __init__( self, host, port, user = None, password = None, indexPrefix = '', useSSL = True ):
+  def __init__( self, host, port, user = None, password=None, indexPrefix = ''):
     """ c'tor
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
     :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
+    :param bool debug: save the debug information to a file
     :param str user: user name to access the db
     :param str password: if the db is password protected we need to provide a password
     :param str indexPrefix: it is the indexPrefix used to get all indexes
-    :param bool useSSL: We can disable using secure connection. By default we use secure connection.
     """
-    
     self.__indexPrefix = indexPrefix
     self._connected = False
     if user and password:
       self.__url = "https://%s:%s@%s:%d" % ( user, password, host, port )
     else:
       self.__url = "%s:%d" % ( host, port )
-    
-    if useSSL:
-      bd = BundleDeliveryClient()
-      retVal = bd.getCAs()
-      casFile = None
-      if not retVal['OK']:
-        gLogger.error( "CAs file does not exists:", retVal['Message'] )
-        casFile = certifi.certifi.where()
-      else:
-        casFile = retVal['Value']
-        
-      self.__client = Elasticsearch( self.__url,
-                                     timeout = self.__timeout,
-                                     use_ssl = True,
-                                     verify_certs = True,
-                                     ca_certs = casFile )
-    else:
-      self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
-      
-
-    gLogger.verbose( "ElasticSearchDB URL: %s" % self.__url )
-    
+    self.__client = Elasticsearch( self.__url, timeout = self.__timeout, use_ssl = True, verify_certs = True, ca_certs = generateCAFile() )
     self.__tryToConnect()
 
   def getIndexPrefix( self ):
@@ -124,14 +146,14 @@ class ElasticSearchDB( object ):
       if self.__client.ping():
         # Returns True if the cluster is running, False otherwise
         result = self.__client.info()
-        self.clusterName = result.get( "cluster_name", " " )  # pylint: disable=no-member
+        self.clusterName = result.get( "cluster_name", " " ) #pylint: disable=no-member
         gLogger.info( "Database info", result )
         self._connected = True
       else:
         self._connected = False
         gLogger.error( "Cannot connect to the database!" )
     except ConnectionError as e:
-      gLogger.error( repr( e ) )
+      gLogger.error( repr(e) )
       self._connected = False
 
   ########################################################################
@@ -140,7 +162,7 @@ class ElasticSearchDB( object ):
     It returns the available indexes...
     """
 
-    # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
+    #we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
     return [ index for index in self.__client.indices.get_alias( "%s*" % self.__indexPrefix ) ]
 
   ########################################################################
@@ -153,7 +175,7 @@ class ElasticSearchDB( object ):
     try:
       gLogger.debug( "Getting mappings for ", indexName )
       result = self.__client.indices.get_mapping( indexName )
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e: # pylint: disable=broad-except
       gLogger.error( e )
     doctype = ''
     for indexConfig in result:
@@ -181,15 +203,14 @@ class ElasticSearchDB( object ):
 
   ########################################################################
 
-  def createIndex( self, indexPrefix, mapping, period = None ):
+  def createIndex( self, indexPrefix, mapping ):
     """
     :param str indexPrefix: it is the index name.
     :param dict mapping: the configuration of the index.
-    :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
 
     """
     result = None
-    fullIndex = generateFullIndexName( indexPrefix, period )  # we have to create an index each day...
+    fullIndex = generateFullIndexName( indexPrefix )  # we have to create an index each day...
     if self.exists( fullIndex ):
       result = S_OK( fullIndex )
     else:
@@ -197,7 +218,7 @@ class ElasticSearchDB( object ):
         gLogger.info( "Create index: ", fullIndex + str( mapping ) )
         self.__client.indices.create( fullIndex, body = {'mappings': mapping} )
         result = S_OK( fullIndex )
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e: # pylint: disable=broad-except
         gLogger.error( "Can not create the index:", e )
         result = S_ERROR( e )
     return result
@@ -214,7 +235,7 @@ class ElasticSearchDB( object ):
       return S_ERROR( DErrno.EVALUE, e )
 
     if retVal.get( 'acknowledged' ):
-      # if the value exists and the value is not None
+      #if the value exists and the value is not None
       return S_OK( indexName )
     else:
       return S_ERROR( retVal )
@@ -233,29 +254,28 @@ class ElasticSearchDB( object ):
     except TransportError as e:
       return S_ERROR( e )
 
-    if res.get( 'created' ):  # pylint: disable=no-member
+    if res.get( 'created' ):  #pylint: disable=no-member
       # the created is exists but the value can be None.
       return S_OK( indexName )
     else:
       return S_ERROR( res )
 
 
-  def bulk_index( self, indexprefix, doc_type, data, mapping = None, period = None ):
+  def bulk_index( self, indexprefix, doc_type, data, mapping = None ):
     """
     :param str indexPrefix: it is the index name.
     :param str doc_type: the type of the document
-    :param dict data: contains a list of dictionary
-    :paran dict mapping: the mapping used by elasticsearch
-    :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
+    :param data: contains a list of dictionary
+    :type data: python:list
     """
     gLogger.info( "%d records will be insert to %s" % ( len( data ), doc_type ) )
     if mapping is None:
       mapping = {}
 
-    indexName = generateFullIndexName( indexprefix, period )
+    indexName = generateFullIndexName( indexprefix )
     gLogger.debug("inserting datat to %s index" % indexName)
     if not self.exists( indexName ):
-      retVal = self.createIndex( indexprefix, mapping, period )
+      retVal = self.createIndex( indexprefix, mapping )
       if not retVal['OK']:
         return retVal
     docs = []
@@ -270,16 +290,16 @@ class ElasticSearchDB( object ):
       if 'timestamp' not in row:
         gLogger.warn( "timestamp is not given! Note: the actual time is used!" )
 
-      timestamp = row.get( 'timestamp', int( Time.toEpoch() ) )  # if the timestamp is not provided, we use the current utc time.
+      timestamp = row.get( 'timestamp', int( Time.toEpoch() ) ) #if the timestamp is not provided, we use the current utc time.
       try:
-        if isinstance( timestamp, datetime ):
-          body['_source']['timestamp'] = int( timestamp.strftime( '%s' ) ) * 1000
-        elif isinstance( timestamp, basestring ):
+        if isinstance(timestamp, datetime):
+          body['_source']['timestamp'] = int( timestamp.strftime('%s') ) * 1000
+        elif isinstance(timestamp, basestring):
           timeobj = datetime.strptime( timestamp, '%Y-%m-%d %H:%M:%S.%f' )
-          body['_source']['timestamp'] = int( timeobj.strftime( '%s' ) ) * 1000
-        else:  # we assume  the timestamp is an unix epoch time (integer).
-          body['_source']['timestamp'] = timestamp * 1000
-      except ( TypeError, ValueError ) as e:
+          body['_source']['timestamp'] = int( timeobj.strftime('%s') ) * 1000
+        else: #we assume  the timestamp is an unix epoch time (integer).
+          body['_source']['timestamp'] = timestamp  * 1000
+      except (TypeError, ValueError) as e:
         # in case we are not able to convert the timestamp to epoch time....
         gLogger.error( "Wrong timestamp", e )
         body['_source']['timestamp'] = int( Time.toEpoch() ) * 1000
@@ -310,8 +330,8 @@ class ElasticSearchDB( object ):
     startDate = endDate - timedelta( days = 30 )
 
     timeFilter = self._Q( 'range',
-                          timestamp = {'lte':int( Time.toEpoch( endDate ) ) * 1000,
-                                       'gte': int( Time.toEpoch( startDate ) ) * 1000, } )
+                          timestamp = {'lte':int(Time.toEpoch( endDate )) * 1000,
+                                       'gte': int(Time.toEpoch( startDate )) * 1000, } )
     query = query.filter( 'bool', must = timeFilter )
     if orderBy:
       query.aggs.bucket( key,
@@ -330,7 +350,7 @@ class ElasticSearchDB( object ):
                                             field = key )
 
     try:
-      query = query.extra( size = self.RESULT_SIZE )  # do not need the raw data.
+      query = query.extra( size = self.RESULT_SIZE ) #do not need the raw data.
       gLogger.debug( "Query", query.to_dict() )
       result = query.execute()
     except TransportError as e:
@@ -342,39 +362,12 @@ class ElasticSearchDB( object ):
     del query
     gLogger.debug( "Nb of unique rows retrieved", len( values ) )
     return S_OK( values )
-  
-  def pingDB ( self ):
-    """
-    Try to connect to the database
-    :return: S_OK(TRUE/FALSE)
-    """
-    connected = False
-    try:
-      connected = self.__client.ping()
-    except ConnectionError as e:
-      gLogger.error( "Cannot connect to the db", repr( e ) )
-    return S_OK( connected )
-  
-def generateFullIndexName( indexName, period = None ):
+
+
+def generateFullIndexName( indexName ):
   """
   Given an index prefix we create the actual index name. Each day an index is created.
   :param str indexName: it is the name of the index
-  :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
   """
-  
-  if period is None:
-    gLogger.warn( "Daily indexes are used, because the period is not provided!" )
-    period = 'day'
-    
   today = datetime.today().strftime( "%Y-%m-%d" )
-  index = ''
-  if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
-    gLogger.warn( "Period is not correct daily indexes are used instead:", period )
-    index = "%s-%s" % ( indexName, today )
-  elif period.lower() == 'day':
-    index = "%s-%s" % ( indexName, today )
-  elif period.lower() == 'month':
-    month = datetime.today().strftime( "%Y-%m" )
-    index = "%s-%s" % ( indexName, month )
-    
-  return index
+  return "%s-%s" % ( indexName, today )

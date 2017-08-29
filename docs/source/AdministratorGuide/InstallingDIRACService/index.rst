@@ -178,12 +178,12 @@ be taken:
         #  production release)
         Release = v6r17p1
         #  Python version of the installation
-        PythonVersion = 27
+        PythonVersion = 26
         #  To install the Server version of DIRAC (the default is client)
         InstallType = server
         #  LCG python bindings for SEs and LFC. Specify this option only if your installation
         #  uses those services
-        # LcgVer = 2017-05-23
+        # LcgVer = 2012-02-20
         #  If this flag is set to yes, each DIRAC update will be installed
         #  in a separate directory, not overriding the previous ones
         UseVersionsDir = yes
@@ -243,17 +243,6 @@ be taken:
         HostDN = /DC=ch/DC=country/OU=computers/CN=computer.dn
         # Define the Configuration Server as Master for your installations
         ConfigurationMaster = yes
-        # List of Systems to be installed - by default all services are added
-        Systems = Accounting
-        Systems += Configuration
-        Systems += DataManagement
-        Systems += Framework
-        Systems += Monitoring
-        Systems += RequestManagement
-        Systems += ResourceStatus
-        Systems += StorageManagement
-        Systems += Transformation
-        Systems += WorkloadManagement
         #
         # List of DataBases to be installed
         Databases = InstalledComponentsDB
@@ -369,7 +358,7 @@ operation is the registration of the new host in the already functional Configur
         InstallType = server
         #  LCG python bindings for SEs and LFC. Specify this option only if your installation
         #  uses those services
-        # LcgVer = 2017-05-23
+        # LcgVer = 2012-02-20
         #  If this flag is set to yes, each DIRAC update will be installed
         #  in a separate directory, not overriding the previous ones
         UseVersionsDir = yes
@@ -415,8 +404,8 @@ operation is the registration of the new host in the already functional Configur
         # Host = dirac.cern.ch
         Host =
         #  List of Services to be installed
-        # Services  = Configuration/Server
-        Services = Framework/SystemAdministrator
+        Services  = Configuration/Server
+        Services += Framework/SystemAdministrator
 
   - Now run install_site.sh giving the edited CFG file as the argument:::
 
@@ -428,9 +417,7 @@ server. You can now set up the required components as described in :ref:`setting
 Post-Installation step
 ----------------------
 
-In order to make the DIRAC components running we use the *runit* mechanism (http://smarden.org/runit/). You 
-could also use the RPM provided by LHCb at http://cern.ch/lhcbproject/dist/rpm/lhcbdirac/[ 
-slc6/runit-2.1.2-1.el6.x86_64.rpm, centos7/runit-2.1.2-1.el7.cern.x86_64.rpm]. For each component that
+In order to make the DIRAC components running we use the *runit* mechanism (http://smarden.org/runit/). For each component that
 must run permanently (services and agents) there is a directory created under */opt/dirac/startup* that is
 monitored by a *runsvdir* daemon. The installation procedures above will properly start this daemon. In order
 to ensure starting the DIRAC components at boot you need to add a hook in your boot sequence. A possible solution
@@ -445,12 +432,6 @@ or if using ``upstart`` (in RHEL6 for example), add a file ``/etc/init/dirac.con
 
       respawn
       exec /opt/dirac/sbin/runsvdir-start
-
-or if using ``systemd`` (in CENTOS7 for example), add a file ``/etc/systemd/system/multi-user.target.wants/dirac.service`` containing::
-
-      [Service]
-      ExecStart=/opt/dirac/sbin/runsvdir-start
-      Restart=on-failure
 
 On specific machines, or if network is needed, it's necessary to make sure the ``runsvdir_start`` script is executed
 after a certain service is started. For example, on Amazon EC2, I recommend changing the first line by::

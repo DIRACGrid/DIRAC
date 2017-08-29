@@ -3,8 +3,6 @@
 
 __RCSID__ = "$Id$"
 
-import urlparse
-
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
@@ -80,43 +78,6 @@ def getServiceURL( serviceName, serviceTuple = False, setup = False ):
     serviceTuple = divideFullName( serviceName )
   systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
   url = gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
-  if not url:
-    return ""
-
-
-  # Trying if we are refering to the list of main servers
-  # which would be like dips://$MAINSERVERS$:1234/System/Component
-  # This can only happen if there is only one server defined
-  if ',' not in url:
-
-    urlParse = urlparse.urlparse(url)
-    server, port = urlParse.netloc.split(':')
-    mainUrlsList = []
-
-    if server == '$MAINSERVERS$':
-
-      # Operations cannot be imported at the beginning because of a bootstrap problem
-      from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-      mainServers = Operations().getValue('MainServers',[])
-      if not mainServers:
-        raise Exception("No Main servers defined")
-
-
-      for srv in mainServers:
-        mainUrlsList.append(urlparse.ParseResult( scheme = urlParse.scheme, netloc = ':'.join([srv, port]),
-                              path = urlParse.path, params = '', query = '', fragment = '').geturl())
-      return ','.join(mainUrlsList)
-
-
-  if len( url.split( "/" ) ) < 5:
-    url = "%s/%s" % ( url, serviceName )
-  return url
-
-def getServiceFailoverURL( serviceName, serviceTuple = False, setup = False ):
-  if not serviceTuple:
-    serviceTuple = divideFullName( serviceName )
-  systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
-  url = gConfigurationData.extractOptionFromCFG( "%s/FailoverURLs/%s" % ( systemSection, serviceTuple[1] ) )
   if not url:
     return ""
   if len( url.split( "/" ) ) < 5:

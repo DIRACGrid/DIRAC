@@ -94,7 +94,7 @@ DEFAULT_STATUS = switchDict.get( 'defaultStatus', 'Banned' )
 # We can define the script body now
 
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import jobDB
-from DIRAC                                             import gConfig
+from DIRAC                                             import gConfig, exit as DIRACExit
 from DIRAC.ResourceStatusSystem.Utilities              import Synchronizer, CSHelpers, RssConfiguration
 from DIRAC.ResourceStatusSystem.Client                 import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem           import StateMachine
@@ -217,7 +217,7 @@ def initSEs():
       if status in ( 'NotAllowed', 'InActive' ):
         status = 'Banned'
 
-      if status not in statuses:
+      if not status in statuses:
         subLogger.error( '%s not a valid status for %s - %s' % ( status, se, statusType ) )
         continue
 

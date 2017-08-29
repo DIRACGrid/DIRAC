@@ -11,7 +11,6 @@ import multiprocessing
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-from DIRAC import gLogger
 from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
 from DIRAC.tests.Utilities.utils import find_all
 
@@ -25,10 +24,8 @@ class UserJobTestCase( IntegrationTest ):
     super( UserJobTestCase, self ).setUp()
 
     self.d = Dirac()
-    self.exeScriptLocation = find_all( 'exe-script.py', '..', '/DIRAC/tests/Workflow' )[0]
-    self.helloWorld = find_all( "helloWorld.py", '..', '/DIRAC/tests/Workflow' )[0]
-    self.mpExe = find_all( 'testMpJob.sh', '..', '/DIRAC/tests/Utilities' )[0]
-    gLogger.setLevel('DEBUG')
+    self.exeScriptLocation = find_all( 'exe-script.py', '..', 'Integration' )[0]
+    self.mpExe = find_all( 'testMpJob.sh', '..', 'Utilities' )[0]
 
 class HelloWorldSuccess( UserJobTestCase ):
   def test_execute( self ):
@@ -37,7 +34,6 @@ class HelloWorldSuccess( UserJobTestCase ):
 
     j.setName( "helloWorld-test" )
     j.setExecutable( self.exeScriptLocation )
-    j.setLogLevel( 'DEBUG' )
     res = j.runLocal( self.d )
     self.assertTrue( res['OK'] )
 
@@ -52,7 +48,7 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
     job._siteSet = {'DIRAC.someSite.ch'}
 
     job.setName( "helloWorld-test" )
-    job.setExecutable( self.helloWorld,
+    job.setExecutable( find_all( "helloWorld.py", '..', 'Integration' )[0],
                        arguments = "This is an argument",
                        logFile = "aLogFileForTest.txt" ,
                        parameters=[('executable', 'string', '', "Executable Script"),
@@ -83,7 +79,6 @@ class LSSuccess( UserJobTestCase ):
 
     job.setName( "ls-test" )
     job.setExecutable( "/bin/ls", '-l' )
-    job.setLogLevel( 'DEBUG' )
     res = job.runLocal( self.d )
     self.assertTrue( res['OK'] )
 
@@ -97,9 +92,8 @@ class MPSuccess( UserJobTestCase ):
 
     j.setName( "MP-test" )
     j.setExecutable( self.mpExe )
-    j.setInputSandbox( find_all( 'mpTest.py', '..', 'DIRAC/tests/Utilities' )[0] )
+    j.setInputSandbox( find_all( 'mpTest.py', '..', 'Utilities' )[0] )
     j.setTag( 'MultiProcessor' )
-    j.setLogLevel( 'DEBUG' )
     res = j.runLocal( self.d )
     if multiprocessing.cpu_count() > 1:
       self.assertTrue( res['OK'] )
@@ -113,5 +107,5 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldPlusSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( LSSuccess ) )
-  #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MPSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MPSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )

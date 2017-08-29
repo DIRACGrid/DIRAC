@@ -114,7 +114,7 @@ class CachedJobState( object ):
 
   @staticmethod
   def deserialize( stub ):
-    dataTuple, _slen = DEncode.decode( stub )
+    dataTuple = DEncode.decode( stub )
     if len( dataTuple ) != 7:
       return S_ERROR( "Invalid stub" )
     #jid

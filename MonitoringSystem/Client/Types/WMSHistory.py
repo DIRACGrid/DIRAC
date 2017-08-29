@@ -21,14 +21,15 @@ class WMSHistory( BaseType ):
     :param self: self reference
     """
 
-    self.keyFields = [ 'Status', 'Site', 'User', 'UserGroup', \
+    self.setKeyFields( [ 'Status', 'Site', 'User', 'UserGroup', \
                         'JobGroup', 'MinorStatus', 'ApplicationStatus', \
-                        'JobSplitType' ]
+                        'JobSplitType' ] )
 
-    self.monitoringFields = [ 'Jobs', 'Reschedules' ]
+    self.setMonitoringFields( [ 'Jobs', 'Reschedules' ] )
 
-    self.index = 'wmshistory_index'
-    self.doc_type =  "WMSHistory"
+    self.setIndex( 'wmshistory_index' )  # overwrite the index name
+
+    self.setDocType( "WMSHistory" )
 
     self.addMapping( {'status_type': {'_all': {'enabled': 'false'}, 'properties': {'Status': {'index': 'not_analyzed', 'type': 'string'}}},
                       'site_type':{'_all': {'enabled': 'false'}, 'properties': {'Site': {'index': 'not_analyzed', 'type': 'string'}}},
@@ -45,6 +46,6 @@ class WMSHistory( BaseType ):
                       'usergroup_type':{'_all': {'enabled': 'false'}, 'properties': {'UserGroup': { 'index': 'not_analyzed',
                                                                                                     'type': 'string'}}}} )
 
-    self.dataToKeep =  86400 * 30
+    self.setDataToKeep ( 86400 * 30 )
 
     self.checkType()

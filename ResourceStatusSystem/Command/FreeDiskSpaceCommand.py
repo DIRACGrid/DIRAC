@@ -82,8 +82,7 @@ class FreeDiskSpaceCommand( Command ):
     if total and total < 1:
       total = 1
 
-    result = self.rsClient.addOrModifySpaceTokenOccupancyCache( endpoint = elementURL,
-                                                                lastCheckTime = datetime.utcnow(),
+    result = self.rsClient.addOrModifySpaceTokenOccupancyCache( endpoint = elementURL, lastCheckTime = datetime.utcnow(),
                                                                 free = free, total = total,
                                                                 token = elementName )
     if not result[ 'OK' ]:

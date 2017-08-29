@@ -41,7 +41,7 @@ def getNumberOfParameters( jobClassAd ):
     else:
       return jobClassAd.getAttributeInt( 'Parameters' )
   else:
-    return None
+    return 0
 
 def __updateAttribute( classAd, attribute, parName, parValue ):
 
@@ -79,10 +79,8 @@ def generateParametricJobs( jobClassAd ):
     return S_OK( [ jobClassAd.asJDL() ] )
 
   nParameters = getNumberOfParameters( jobClassAd )
-  if nParameters is None:
+  if nParameters == 0:
     return S_ERROR( EWMSJDL, 'Can not determine number of job parameters' )
-  if nParameters <= 0:
-    return S_ERROR( EWMSJDL, 'Illegal number of job parameters %d' % ( nParameters ) )
 
   parameterDict = {}
   attributes = jobClassAd.getAttributes()
@@ -101,15 +99,12 @@ def generateParametricJobs( jobClassAd ):
             if attribute != "Parameters":
               return S_ERROR( EWMSJDL, 'Inconsistent parametric job description' )
             nPar = jobClassAd.getAttributeInt( attribute )
-            if nPar is None:
-              value = jobClassAd.get_expression( attribute )
-              return S_ERROR( EWMSJDL, 'Inconsistent parametric job description: %s=%s' % ( attribute, value ) )
             parameterDict[seqID]['Parameters'] = nPar
         else:
           value = jobClassAd.getAttributeInt( attribute )
-          if value is None:
+          if not value:
             value = jobClassAd.getAttributeFloat( attribute )
-            if value is None:
+            if not value:
               value = jobClassAd.get_expression( attribute )
               return S_ERROR( 'Illegal value for %s JDL field: %s' % ( attribute, value ) )
           parameterDict[seqID][key] = value

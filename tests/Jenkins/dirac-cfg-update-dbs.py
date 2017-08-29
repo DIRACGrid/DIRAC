@@ -2,8 +2,6 @@
 """ update local cfg
 """
 
-import os
-
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -42,7 +40,6 @@ csAPI = CSAPI()
 #   }
 # }
 
-
 for sct in ['Systems/DataManagement',
             'Systems/DataManagement/Production',
             'Systems/DataManagement/Production/Databases',
@@ -52,12 +49,9 @@ for sct in ['Systems/DataManagement',
     print res['Message']
     exit( 1 )
 
-dbHost = os.environ['DB_HOST']
-dbPort = os.environ['DB_PORT']
-
 csAPI.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/DBName', 'FileCatalogDB' )
-csAPI.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Host', dbHost )
-csAPI.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Port', dbPort )
+csAPI.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Host', 'db-50098.cern.ch' )
+csAPI.setOption( 'Systems/DataManagement/Production/Databases/FileCatalogDB/Port', '5501' )
 
 # Setup other DBs (this is for LHCb - innocuous!)
 #

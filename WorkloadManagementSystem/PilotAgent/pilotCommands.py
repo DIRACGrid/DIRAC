@@ -381,7 +381,7 @@ class ConfigureBasics( CommandBase ):
       self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
 
 class CheckCECapabilities( CommandBase ):
-  """ Used to get CE tags and other relevant parameters
+  """ Used to get  CE tags.
   """
   def __init__( self, pilotParams ):
     """ c'tor
@@ -392,17 +392,19 @@ class CheckCECapabilities( CommandBase ):
     self.cfg = []
 
   def execute( self ):
-    """ Main execution method
+    """ Setup CE/Queue Tags
     """
+
     if self.pp.useServerCertificate:
       self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
     if self.pp.localConfigFile:
-      self.cfg.append( self.pp.localConfigFile ) # this file is as input
-    # Get the resource description as defined in its configuration
+      self.cfg.append( self.pp.localConfigFile )  # this file is as input
+
+
     checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
-                                                                     self.pp.ceName,
-                                                                     self.pp.queueName,
-                                                                     " ".join( self.cfg ) )
+                                                                        self.pp.ceName,
+                                                                        self.pp.queueName,
+                                                                        " ".join( self.cfg ) )
     retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
@@ -413,41 +415,32 @@ class CheckCECapabilities( CommandBase ):
     except ValueError:
       self.log.error( "The pilot command output is not json compatible." )
       sys.exit( 1 )
-    self.pp.queueParameters = resourceDict
-
-    self.cfg = []
-    # Pick up all the relevant resource parameters that will be used in the job matching
-    for ceParam in [ "WholeNode", "NumberOfProcessors", "RequiredTag" ]:
-      if ceParam in resourceDict:
-        self.cfg.append( '-o  /Resources/Computing/CEDefaults/%s=%s' % ( ceParam, resourceDict[ ceParam ] ) )
-
-    # Tags must be added to already defined tags if any
+    if resourceDict.get( 'WholeNode' ):
+      self.pp.tags.append( "WholeNode" )
     if resourceDict.get( 'Tag' ):
       self.pp.tags += resourceDict['Tag']
-    if self.pp.tags:
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( ( str( x ) for x in self.pp.tags ) ) )
-
-    # If there is anything to be added to the local configuration, let's do it
-    if self.cfg:
       self.cfg.append( '-FDMH' )
 
-      if self.debugFlag:
-        self.cfg.append( '-ddd' )
+      if self.pp.useServerCertificate:
+        self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+
       if self.pp.localConfigFile:
         self.cfg.append( '-O %s' % self.pp.localConfigFile )  # this file is as output
         self.cfg.append( self.pp.localConfigFile )  # this file is as input
+
+      if self.debugFlag:
+        self.cfg.append( '-ddd' )
+
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( ( str( x ) for x in self.pp.tags ) ) )
 
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
       if retCode:
         self.log.error( "Could not configure DIRAC [ERROR %d]" % retCode )
         self.exitWithError( retCode )
-    else:
-      self.log.debug( 'No Tags defined for this Queue' )
 
 class CheckWNCapabilities( CommandBase ):
-  """ Used to get capabilities specific to the Worker Node. This command must be called
-      after the CheckCECapabilities command
+  """ Used to get capabilities specific to the Worker Node.
   """
 
   def __init__( self, pilotParams ):
@@ -457,50 +450,47 @@ class CheckWNCapabilities( CommandBase ):
     self.cfg = []
 
   def execute( self ):
-    """ Discover NumberOfProcessors and RAM
+    """ Discover #Processors and memory
     """
+
     if self.pp.useServerCertificate:
-      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+      self.cfg.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
     if self.pp.localConfigFile:
-      self.cfg.append( self.pp.localConfigFile ) # this file is as input
-    # Get the worker node parameters
-    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
-                                                                   self.pp.ceName,
-                                                                   self.pp.queueName,
-                                                                   " ".join( self.cfg ) )
+      self.cfg.append( self.pp.localConfigFile )  # this file is as input
+
+    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
+                                                                      " ".join( self.cfg ) )
     retCode, result = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
       self.exitWithError( retCode )
     try:
       result = result.split( ' ' )
-      numberOfProcessors = int( result[0] )
+      numberOfProcessor = int( result[0] )
       maxRAM = int( result[1] )
     except ValueError:
       self.log.error( "Wrong Command output %s" % result )
       sys.exit( 1 )
-
-    self.cfg = []
-    # If NumberOfProcessors or MaxRAM are defined in the resource configuration, these
-    # values are preferred
-    if numberOfProcessors and "NumberOfProcessors" not in self.pp.queueParameters:
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % numberOfProcessors )
-    else:
-      self.log.warn( "Could not retrieve number of processors" )
-    if maxRAM and "MaxRAM" not in self.pp.queueParameters:
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%d"' % maxRAM )
-    else:
-      self.log.warn( "Could not retrieve MaxRAM" )
-
-    if self.cfg:
+    if numberOfProcessor or maxRAM:
       self.cfg.append( '-FDMH' )
 
-      if self.debugFlag:
-        self.cfg.append( '-ddd' )
+      if self.pp.useServerCertificate:
+        self.cfg.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
       if self.pp.localConfigFile:
         self.cfg.append( '-O %s' % self.pp.localConfigFile )  # this file is as output
         self.cfg.append( self.pp.localConfigFile )  # this file is as input
 
+      if self.debugFlag:
+        self.cfg.append( '-ddd' )
+
+      if numberOfProcessor:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % numberOfProcessor )
+      else:
+        self.log.warn( "Could not retrieve number of processors" )
+      if maxRAM:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%d"' % maxRAM )
+      else:
+        self.log.warn( "Could not retrieve MaxRAM" )
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
       if retCode:

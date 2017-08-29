@@ -33,6 +33,7 @@ from DIRAC.Core.Workflow.Parameter                            import Parameter
 from DIRAC.Core.Workflow.Workflow                             import Workflow
 from DIRAC.Core.Base.API                                      import API
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight                import ClassAd
+from DIRAC.ConfigurationSystem.Client.Config                  import gConfig
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess                          import systemCall
@@ -60,6 +61,11 @@ class Job( API ):
 
     super( Job, self ).__init__()
 
+    self.dbg = False
+    if gConfig.getValue( self.section + '/LogLevel', 'DEBUG' ) == 'DEBUG':
+      self.dbg = True
+
+    # gConfig.getValue('Tier0SE-tape','SEName')
     self.stepCount = 0
     self.owner = 'NotSpecified'
     self.name = 'Name'
@@ -77,7 +83,6 @@ class Job( API ):
     self.stderr = stderr
     self.logLevel = 'info'
     self.executable = '$DIRACROOT/scripts/dirac-jobexec'  # to be clarified
-    # $DIRACROOT is set by the JobWrapper at execution time
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
     self.addToInputData = []
