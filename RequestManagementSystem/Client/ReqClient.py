@@ -488,7 +488,7 @@ def printOperation( indexOperation, verbose = True, onlyFailed = False ):
   prStr += 'Created %s, Updated %s' % ( op.CreationTime, op.LastUpdate )
   if op.Type == 'ForwardDISET' and op.Arguments:
     from DIRAC.Core.Utilities import DEncode
-    decode, _length = DEncode.decode( op.Arguments )
+    decode = DEncode.decode( op.Arguments )
     if verbose:
       output = ''
       prettyPrint( decode, offset = 10 )

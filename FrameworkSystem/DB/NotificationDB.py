@@ -337,7 +337,7 @@ class NotificationDB( DB ):
     if not result[ 'OK' ] or not result[ 'Value' ]:
       self.log.error( "Could not retrieve default notifications for alarm", "%s" % alarmId )
       return S_OK( alarmId )
-    notificationsDict = DEncode.decode( result[ 'Value' ][0][0] )[0]
+    notificationsDict = DEncode.decode( result[ 'Value' ][0][0] )
     for v in self.__validAlarmNotifications:
       if v not in notificationsDict:
         notificationsDict[ v ] = 0

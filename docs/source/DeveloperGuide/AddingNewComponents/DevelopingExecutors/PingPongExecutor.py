@@ -25,7 +25,7 @@ class PingPongExecutor( ExecutorModule ):
     """
     Tasks are received as a stream of bytes. They have to be converted from that into a usable object.
     """
-    return S_OK( DEncode.decode( taskStub )[0] )
+    return S_OK( DEncode.decode( taskStub ) )
 
   def serializeTask( self, taskData ):
     """

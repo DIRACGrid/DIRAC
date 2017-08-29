@@ -28,7 +28,7 @@ class SetFileStatus( OperationHandlerBase ):
     """ It expects to find the arguments for tc.setFileStatusForTransformation in operation.Arguments
     """
     try:
-      setFileStatusDict = DEncode.decode( self.operation.Arguments )[0]
+      setFileStatusDict = DEncode.decode( self.operation.Arguments )
       self.log.debug( "decoded filStatusDict=%s" % str( setFileStatusDict ) )
     except ValueError, error:
       self.log.exception( error )

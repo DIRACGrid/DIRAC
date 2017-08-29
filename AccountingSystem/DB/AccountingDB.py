@@ -156,7 +156,7 @@ class AccountingDB( DB ):
       typeName = typesEntry[0]
       keyFields = List.fromChar( typesEntry[1], "," )
       valueFields = List.fromChar( typesEntry[2], "," )
-      bucketsLength = DEncode.decode( typesEntry[3] )[0]
+      bucketsLength = DEncode.decode( typesEntry[3] )
       self.__addToCatalog( typeName, keyFields, valueFields, bucketsLength )
 
   def getWaitingRecordsLifeTime( self ):
