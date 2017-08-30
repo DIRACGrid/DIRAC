@@ -1,3 +1,5 @@
+.. _framework_notification:
+
 
 The Framework/Notification service
 ==================================
