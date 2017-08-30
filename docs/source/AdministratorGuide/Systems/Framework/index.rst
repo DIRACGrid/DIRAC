@@ -15,3 +15,4 @@ The following sections add some details for some of the Framework systems.
 
    ComponentMonitoring/index
    Monitoring/index
+   Notification/index
