@@ -69,11 +69,20 @@ class NotificationHandler( RequestHandler ):
     """
     gLogger.verbose( 'Received signal to send the following mail to %s:\nSubject = %s\n%s' % ( address, subject, body ) )
     eMail = Mail()
+    notificationSection = PathFinder.getServiceSection( "Framework/Notification" )
+    csSection = notificationSection + '/SMTPServer'
+    eMail._smtpHost = gConfig.getValue( '%s/Host' % csSection )
+    eMail._smtpPort = gConfig.getValue( '%s/Port' % csSection )
+    eMail._smtpLogin = gConfig.getValue( '%s/Login' % csSection )
+    eMail._smtpPasswd = gConfig.getValue( '%s/Password' % csSection )
+    eMail._smtpPtcl = gConfig.getValue( '%s/Protocol' % csSection )
     eMail._subject = subject
     eMail._message = body
     eMail._mailAddress = address
     if not fromAddress == 'None':
       eMail._fromAddress = fromAddress
+    if gConfig.getValue( '%s/FromAddress' % csSection ):
+      eMail._fromAddress = gConfig.getValue( '%s/FromAddress' % csSection )
     if avoidSpam:
       gMailSet.add(eMail)
       return S_OK("Mail added to gMailSet")
