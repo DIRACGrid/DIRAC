@@ -5,7 +5,7 @@
 import os
 import socket
 
-from smtplib import SMTP
+from smtplib import SMTP, SMTP_SSL
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -25,6 +25,11 @@ class Mail( object ):
     self._fromAddress = getuser() + '@' + socket.getfqdn()
     self._attachments = []
     self.esmtp_features = {}
+    self._smtpHost = 'localhost'
+    self._smtpPort = '25'
+    self._smtpLogin = ''
+    self._smtpPasswd = ''
+    self._smtpPtcl = None
 
   def _create(self, addresses):
     """ create a mail object
@@ -81,10 +86,18 @@ class Mail( object ):
         return result
       msg = result['Value']
 
-    smtp = SMTP()
+    if self._smtpPtcl == 'SSL':
+      smtp = SMTP_SSL()
+    else:
+      smtp = SMTP()
     smtp.set_debuglevel( 0 )
     try:
-      smtp.connect()
+      smtp.connect(self._smtpHost, self._smtpPort)
+      smtp.ehlo()
+      if self._smtpPtcl == 'TLS':
+        smtp.starttls()
+        smtp.ehlo()
+      smtp.login(self._smtpLogin, self._smtpPasswd)
       smtp.sendmail( self._fromAddress, addresses, msg.as_string() )
     except Exception as x:
       return S_ERROR( "Sending mail failed %s" % str( x ) )
