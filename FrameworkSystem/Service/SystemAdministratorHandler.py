@@ -27,6 +27,8 @@ from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMoni
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import Profiler
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getHostOption
+from DIRAC.FrameworkSystem.Utilities.Probes import submitProbeCA, submitProbeVO
 
 gMonitoringReporter = None
 
@@ -41,6 +43,12 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Handler class initialization
     """
+
+    # Submit probes on host
+    if 'CA' in getHostOption( socket.getfqdn(), 'Probes'):
+      gThreadScheduler.addPeriodicTask( 30, submitProbeCA() )
+    if 'VO' in getHostOption( socket.getfqdn(), 'Probes'):
+      gThreadScheduler.addPeriodicTask( 60, submitProbeVO() )
 
     # Check the flag for monitoring of the state of the host
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )

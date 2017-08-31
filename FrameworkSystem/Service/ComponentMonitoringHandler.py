@@ -5,7 +5,7 @@ InstalledComponentsDB database
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
-from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import InstalledComponentsDB, Component, Host, InstalledComponent, HostLogging
+from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import InstalledComponentsDB, Component, Host, InstalledComponent, HostLogging, HostStatus
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
 __RCSID__ = "$Id$"
@@ -352,3 +352,63 @@ class ComponentMonitoringHandler( RequestHandler ):
       return S_ERROR( 'Host does not exist' )
 
     return ComponentMonitoringHandler.db.removeLogs( fields )
+
+  types_updateStatus = [ dict ]
+  def export_updateStatus( self, fields ):
+    """
+    Updates the status entry for a given host in the database with the given fields
+    host is the name of the machine to which the state information belongs
+    fields is a dictionary where the fields contain the state information to be stored in the database
+    """
+    result = ComponentMonitoringHandler.db.exists( HostStatus, { 'HostName': fields['HostName'], 'Probe': fields['Probe'] } )
+    if not result[ 'OK' ]:
+      return result
+    
+    if result[ 'Value' ]:
+      result = ComponentMonitoringHandler.db.updateStats( { 'HostName': fields['HostName'], 'Probe': fields['Probe'] }, fields  )
+    else:
+      result = ComponentMonitoringHandler.db.addStatus( fields )
+    
+    if not result[ 'OK' ]:
+      return result
+    
+    return S_OK( 'Stats updated correctly' )
+    
+  types_getStatus = [ basestring, basestring ]
+  def export_getStatus( self, host, probe ):
+    """
+    Retrieves the status information currently stored for the given host
+    """
+    reqDict = dict()
+    if probe:
+      reqDict['Probe'] = probe
+    if host:
+      reqDict['HostName'] = host
+    
+    result = ComponentMonitoringHandler.db.exists( HostStatus, reqDict )
+    if not result[ 'OK' ]:
+      return result
+    
+    if not result[ 'Value' ]:
+      return S_ERROR( '%s does not exist' % str(reqDict) )
+  
+    result = ComponentMonitoringHandler.db.getStats( reqDict )
+    if not result[ 'OK' ]:
+      return result
+      
+    return S_OK( result[ 'Value' ] )
+    
+  types_removeStats = [ dict ]
+  def export_removeStats( self, fields ):
+    """
+    Deletes all the matching status information
+    fields is a dictionary containing the values for the fields such that any matching entries in the database should be deleted
+    """
+    result = ComponentMonitoringHandler.db.exists( HostStatus, fields )
+    if not result[ 'OK' ]:
+      return result
+    
+    if not result[ 'Value' ]:
+      return S_ERROR( 'Host does not exist' )
+    
+    return ComponentMonitoringHandler.db.removeStats( fields )
