@@ -321,6 +321,64 @@ class HostLogging( componentsBase ):
 
     return S_OK( dictionary )
 
+class HostStatus( componentsBase ):
+  """
+  This class defines the schema of the HostStatus table in the
+  InstalledComponentsDB database
+  """
+
+  __tablename__ = 'HostStatus'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
+                    #(PrimaryKeyConstraint('HostName', 'Probe', name='ID'),
+  #idProbe = Column( 'ID', String( 64 ), nullable = False, primary_key = True )
+  HostName = Column( 'HostName', String( 32 ), primary_key = True )
+  Probe = Column( 'Probe', String( 32 ), primary_key = True )
+  Status = Column( 'Status', String( 32 ) )
+  Errors = Column( 'Errors', Integer )
+  Warnings = Column( 'Warnings', Integer )
+  Infos = Column( 'Infos', Integer )
+  Messages = Column( 'Messages', String( 1024 ) )
+  Timestamp = Column( 'Timestamp', DateTime )
+  
+  def __init__( self, **kwargs ):
+    fields = dir( self )
+
+    for key, value in kwargs.iteritems():
+      if key in fields and not re.match( '_.*', key ):
+        setattr( self, key, value )
+
+  def fromDict( self, dictionary ):
+    """
+    Fill the fields of the HostStatus object from a dictionary
+    """
+    fields = dir( self )
+
+    try:
+      for key, value in dictionary.iteritems():
+        if key in fields and not re.match( '_.*', key ):
+          setattr( self, key, value )
+    except Exception as e:
+      return S_ERROR( e )
+
+    return S_OK( 'Successfully read from dictionary' )
+
+  def toDict( self ):
+    """
+    Return the object as a dictionary
+    """
+
+    dictionary = {'HostName': self.HostName,
+                  'Probe': self.Probe,
+                  'Status': self.Status,
+                  'Errors': self.Errors,
+                  'Warnings': self.Warnings,
+                  'Infos': self.Infos,
+                  'Messages': self.Messages,
+                  'Timestamp': self.Timestamp}
+
+    return S_OK( dictionary )
+
 class InstalledComponentsDB( object ):
   """
   Class used to work with the InstalledComponentsDB database.
@@ -394,6 +452,15 @@ class InstalledComponentsDB( object ):
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'HostLogging\' already exists' )
+
+    # HostStatus
+    if 'HostStatus' not in tablesInDB:
+      try:
+        HostStatus.__table__.create( self.engine ) #pylint: disable=no-member
+      except Exception as e:
+        return S_ERROR( e )
+    else:
+      gLogger.debug( 'Table \'HostStatus\' already exists' )
 
     return S_OK( 'Tables created' )
 
@@ -1247,3 +1314,128 @@ class InstalledComponentsDB( object ):
 
     session.close()
     return S_OK( 'Log(s) updated' )
+  def addStatus( self, newStatus ):
+    """
+    Add a new status to the database
+    newStatus argument should be a dictionary with the status fields and
+    its values.
+    Valid keys for newStatus include fields that are present in a HostStatus object:
+    HostName, CAsStatus, ... of which only HostName is mandatory
+    """
+    session = self.session()
+
+    status = HostStatus()
+    status.fromDict( newStatus )
+
+    try:
+      session.add( status )
+    except Exception as e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not add status: %s' % ( e ) )
+
+    try:
+      session.commit()
+    except Exception as e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
+    return S_OK( 'Status successfully added' )
+
+  def removeStats( self, matchFields = {} ):
+    """
+    Removes stats with matches in the given fields
+    matchFields argument should be a dictionary with the fields and values
+    to match
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
+    matchFields argument can be empty to remove all the stats
+    """
+
+    session = self.session()
+
+    result = self.__filterFields( session, HostStatus, matchFields )
+    if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
+      return result
+
+    for status in result[ 'Value' ]:
+      session.delete( status )
+
+    try:
+      session.commit()
+    except Exception as e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
+    return S_OK( 'Stats successfully removed' )
+
+  def getStats( self, matchFields = {} ):
+    """
+    Returns a list with all the stats with matches in the given fields
+    matchFields argument should be a dictionary with the fields to match or
+    empty to get all the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
+    """
+
+    session = self.session()
+
+    result = self.__filterFields( session, HostStatus, matchFields )
+    if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
+      return result
+
+    stats = result[ 'Value' ]
+    if not stats:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'No matching stats were found' )
+
+    dictStats = []
+    for status in stats:
+      dictStats.append( status.toDict()[ 'Value' ] )
+
+    session.commit()
+    session.close()
+    return S_OK( dictStats )
+
+  def updateStats( self, matchFields = {}, updates = {} ):
+    """
+    Updates stats matching the given criteria
+    matchFields argument should be a dictionary with the fields to match or
+    empty to get all the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
+    updates argument should be a dictionary with the stats fields and
+    their new updated values
+    """
+
+    session = self.session()
+
+    result = self.__filterFields( session, HostStatus, matchFields )
+    if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
+      return result
+
+    stats = result[ 'Value' ]
+
+    for status in stats:
+      status.fromDict( updates )
+
+    try:
+      session.commit()
+    except Exception as e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
+    return S_OK( 'Status updated' )
