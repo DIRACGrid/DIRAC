@@ -64,6 +64,68 @@ def getCAsDefaultLocation():
   casPath = "%s/etc/grid-security/certificates" % DIRAC.rootPath
   return casPath
 
+#Retrieve VOMSES location
+def getVOMSESLocation():
+  """ Retrieve the VOMSES location
+  """
+  #Grid-Security
+  retVal = gConfig.getOption( '%s/Grid-Security' % g_SecurityConfPath )
+  if retVal[ 'OK' ]:
+    vomsesPath = "%s/vomses" % retVal[ 'Value' ]
+    if os.path.isdir( vomsesPath ):
+      return vomsesPath
+  #VOMSESPath
+  retVal = gConfig.getOption( '%s/VOMSESLocation' % g_SecurityConfPath )
+  if retVal[ 'OK' ]:
+    vomsesPath = retVal[ 'Value' ]
+    if os.path.isdir( vomsesPath ):
+      return vomsesPath
+  # Look up the X509_VOMSES environment variable
+  if os.environ.has_key( 'X509_VOMSES' ):
+    vomsesPath = os.environ[ 'X509_VOMSES' ]
+    return vomsesPath
+  #rootPath./etc/grid-security/vomses
+  vomsesPath = "%s/etc/grid-security/vomses" % DIRAC.rootPath
+  if os.path.isdir( vomsesPath ):
+    return vomsesPath
+  #/etc/grid-security/vomses
+  vomsesPath = "/etc/grid-security/vomses"
+  if os.path.isdir( vomsesPath ):
+    return vomsesPath
+  #No VOMSES location found
+  return False
+
+#Retrieve VOMSDIR location
+def getVOMSDIRLocation():
+  """ Retrieve the VOMSDIR location
+  """
+  #Grid-Security
+  retVal = gConfig.getOption( '%s/Grid-Security' % g_SecurityConfPath )
+  if retVal[ 'OK' ]:
+    vomsdirPath = "%s/vomsdir" % retVal[ 'Value' ]
+    if os.path.isdir( vomsdirPath ):
+      return vomsdirPath
+  #VOMSDIRPath
+  retVal = gConfig.getOption( '%s/VOMSDIRLocation' % g_SecurityConfPath )
+  if retVal[ 'OK' ]:
+    vomsdirPath = retVal[ 'Value' ]
+    if os.path.isdir( vomsdirPath ):
+      return vomsdirPath
+  # Look up the X509_VOMS_DIR environment variable
+  if os.environ.has_key( 'X509_VOMS_DIR' ):
+    vomsdirPath = os.environ[ 'X509_VOMS_DIR' ]
+    return vomsdirPath
+  #rootPath./etc/grid-security/vomsdir
+  vomsdirPath = "%s/etc/grid-security/vomsdir" % DIRAC.rootPath
+  if os.path.isdir( vomsdirPath ):
+    return vomsdirPath
+  #/etc/grid-security/vomses
+  vomsdirPath = "/etc/grid-security/vomsdir"
+  if os.path.isdir( vomsdirPath ):
+    return vomsdirPath
+  #No VOMSDIR location found
+  return False
+
 #TODO: Static depending on files specified on CS
 #Retrieve certificate
 def getHostCertificateAndKeyLocation( specificLocation = None ):
