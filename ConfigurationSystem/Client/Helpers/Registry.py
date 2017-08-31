@@ -246,10 +246,17 @@ def getGroupsWithVOMSAttribute( vomsAttr ):
 def getVOs():
   """ Get all the configured VOs
   """
-  voName = getVO()
-  if voName:
-    return S_OK([ voName] )
-  return gConfig.getSections( '%s/VO' % gBaseRegistrySection )
+  #voName = getVO()
+  #if voName:
+  #  return S_OK([ voName] )
+  #return gConfig.getSections( '%s/VO' % gBaseRegistrySection )
+  vos = list()
+  if not gConfig.getSections( '/Registry/VO' )['OK']:
+    return False
+  for dirVO in gConfig.getSections( '/Registry/VO' )['Value']:
+    if gConfig.getOption( '/Registry/VO/%s/VOMSName' % dirVO )['OK']:
+      vos.append(gConfig.getOption( '/Registry/VO/%s/VOMSName' % dirVO )['Value'])
+  return vos
 
 def getVOMSServerInfo( requestedVO = '' ):
   """ Get information on VOMS servers for the given VO or for all of them
