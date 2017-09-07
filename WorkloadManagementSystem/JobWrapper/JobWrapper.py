@@ -46,6 +46,7 @@ from DIRAC.Core.Utilities                                           import List
 from DIRAC.Core.Utilities                                           import DEncode
 from DIRAC.Core.Utilities                                           import Time
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers                import resolveSEGroup
 
 
 __RCSID__ = "$Id: $"
@@ -106,7 +107,7 @@ class JobWrapper( object ):
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
-    self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
+    self.defaultOutputSE = resolveSEGroup( gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] ) )
     self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', [] )
     self.masterCatalogOnlyFlag = gConfig.getValue( self.section + '/MasterCatalogOnlyFlag', True )
     self.defaultFailoverSE = gConfig.getValue( '/Resources/StorageElementGroups/Tier1-Failover', [] )

@@ -67,7 +67,7 @@ class PluginUtilities( object ):
     else:
       self.transInThread = transInThread
 
-    self.log = gLogger.getSubLogger( "%s/PluginUtilities" % plugin )
+    self.log = gLogger.getSubLogger( plugin )
 
   def logVerbose( self, message, param = '' ):
     if self.debug:
@@ -93,7 +93,7 @@ class PluginUtilities( object ):
   def setParameters( self, params ):
     self.params = params
     self.transID = params['TransformationID']
-    self.transString = self.transInThread.get( self.transID, ' [NoThread] [%d] ' % self.transID ) + '%s: ' % self.plugin
+    self.transString = self.transInThread.get( self.transID, ' [NoThread] [%d] ' % self.transID )
 
 
 
