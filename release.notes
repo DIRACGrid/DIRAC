@@ -133,6 +133,15 @@ CHANGE: Add to the TS system test, the test for transformations with meta-filter
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
 
+[v6r17p31]
+
+*RMS
+FIX: ReqClient - avoid INFO message in client
+*WMS
+CHANGE: JobWrapper - allow SE-USER to be defined as another SE group (e.g. Tier1-USER)
+*DMS
+CHANGE: DMSHelpers - make resolveSEGroup recursive in order to be able to define SE groups in terms of SE groups
+
 [v6r17p30]
 
 *DMS
