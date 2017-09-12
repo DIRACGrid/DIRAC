@@ -130,7 +130,9 @@ class JobInfo(object):
       raise RuntimeError("Failed to check Requests: %s " % result['Message'])
     if self.jobID in result['Value']['Successful']:
       request = result['Value']['Successful'][self.jobID]
-      self.pendingRequest = request.Status not in ("Done", "Canceled")
+      requestID = request.RequestID
+      dbStatus = reqClient.getRequestStatus(requestID).get('Value', 'Unknown')
+      self.pendingRequest = dbStatus not in ("Done", "Canceled")
 
   def __getJDL(self, dILC):
     """return jdlParameterDictionary for this job"""

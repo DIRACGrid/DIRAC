@@ -494,6 +494,7 @@ class TestJI(unittest.TestCase):
     reqMock.Status = "Done"
     reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
     reqClient.readRequestsForJobs.return_value = S_OK({"Successful": {1234: reqMock}})
+    reqClient.getRequestStatus.return_value = S_OK('Done')
     self.jbi.jobID = 1234
     self.jbi.checkRequests(reqClient)
     self.assertFalse(self.jbi.pendingRequest)
