@@ -350,7 +350,7 @@ def add( args, switchDict ):
                                              )
 
   if output.get('Value'):
-    result['match'] = int( output['Value'] if output['Vale'] else 0 )
+    result['match'] = int( output['Value'] if output['Value'] else 0 )
   result['successful'] = output['OK']
   result['message'] = output['Message'] if 'Message' in output else None
 
