@@ -1,4 +1,4 @@
-[v6r19-pre9]
+[v6r19-pre10]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -20,6 +20,8 @@ CHANGE: Make the new logging system thread-safe
 NEW: Added ElasticSearch backend for the logging
 NEW: Central Backends configuration to customize their use by multiple components 
 NEW: BundleDelivery - serves also CA's and CRL's all-in-one files
+NEW: added shell scripts for generating CAs and CRLs with the possibility to specify the Input and/or output directories
+FIX: TopErrorMessagesReporter - more precise selection to please stricter versions of MySQL
 
 *Core
 FIX: dirac-install - allow to use local md5 files
@@ -56,6 +58,7 @@ NEW: New method in the StorageElement to generate pair of URLs for third party c
      This will be used mostly by FTS, but is not enabled as of now
 FIX: StorageElement - fix different weird behaviors in Storage Element, in particular, 
      the inheritance of the protocol sections     
+FIX: GFAL2 storage element: update for compatibility with GFAL2 2.13.3 APIs
 NEW: Introduced Resources/StorageElementBases configuration section for definitions
      of abstract SEs to be used in real SEs definition by inheritance     
 
@@ -67,6 +70,7 @@ NEW: dirac-rms-request - command including functionality of several other comman
 *RSS
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
      RSS system 
+NEW: Rewrote RsourceStatus/ResourceManagementDB tables with sqlAlchemy (RM DB with declarative base style)
 NEW: SiteStatus client to interrogate site status with respect to RSS
 CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
 CHANGE: moved some integration tests from pytest to unittest
