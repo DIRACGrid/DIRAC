@@ -1,7 +1,7 @@
 """ unit tests for Transformation Clients
 """
 
-#pylint: disable=protected-access,missing-docstring,invalid-name
+# pylint: disable=protected-access,missing-docstring,invalid-name
 
 import unittest
 import json
@@ -24,10 +24,10 @@ def ourgetSitesForSE( ses ):
   elif ses == ['pippo', 'pluto'] or ses == 'pippo,pluto':
     return S_OK( ['Site1', 'Site2'] )
 
-class reqValFake_C(object):
-  def validate(self, opsInput):
+class reqValFake_C( object ):
+  def validate( self, opsInput ):
     for ops in opsInput:
-      if not len(ops):
+      if not len( ops ):
         return {'OK': False}
       for f in ops:
         try:
@@ -45,7 +45,7 @@ class ClientsTestCase( unittest.TestCase ):
   # @mock.patch( 'DIRAC.TransformationSystem.Client.TaskManagerPlugin.getSitesForSE', side_effect = ourgetSitesForSE )
   # def setUp( self, _ ):
 
-  def setUp( self):
+  def setUp( self ):
     self.mockTransClient = mock.MagicMock()
     self.mockTransClient.setTaskStatusAndWmsID.return_value = {'OK':True}
 
@@ -132,7 +132,7 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
-    self.assertTrue(res['OK'])
+    self.assertTrue( res['OK'] )
     self.assertEqual( res, {'OK': True,
                             'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
                                           'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
@@ -148,15 +148,15 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 2:{'TransformationID':1, 'a2':'aa2', 'b2':'bb2', 'InputData':['a1', 'a2']},
                 3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
 
-    res = self.wfTasks.prepareTransformationTasks( '', dict(taskDict), 'test_user', 'test_group', 'test_DN', bulkSubmissionFlag = True )
-    self.assertTrue(res['OK'])
+    res = self.wfTasks.prepareTransformationTasks( '', dict( taskDict ), 'test_user', 'test_group', 'test_DN', bulkSubmissionFlag = True )
+    self.assertTrue( res['OK'] )
     self.assertEqual( res['Value'][1],
-                      {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'})
+                      {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'} )
     self.assertEqual( res['Value'][2],
-                      {'a2': 'aa2', 'TransformationID': 1, 'b2':'bb2', 'InputData':['a1', 'a2']})
+                      {'a2': 'aa2', 'TransformationID': 1, 'b2':'bb2', 'InputData':['a1', 'a2']} )
     self.assertEqual( res['Value'][3],
-                      {'TransformationID':2, 'a3':'aa3', 'b3':'bb3'})
-    self.assertTrue('BulkJobObject' in res['Value'])
+                      {'TransformationID':2, 'a3':'aa3', 'b3':'bb3'} )
+    self.assertTrue( 'BulkJobObject' in res['Value'] )
 
 
   @mock.patch( 'DIRAC.TransformationSystem.Client.TaskManagerPlugin.getSitesForSE', side_effect = ourgetSitesForSE )
@@ -173,13 +173,13 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'} )
     self.assertEqual( res, ['Site1'] )
     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo,pluto'} )
-    self.assertEqual( sorted(res), sorted(['Site1','Site2']) )
+    self.assertEqual( sorted( res ), sorted( ['Site1', 'Site2'] ) )
     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo,pluto'} )
-    self.assertEqual( sorted(res), sorted(['Site1', 'Site2']) )
+    self.assertEqual( sorted( res ), sorted( ['Site1', 'Site2'] ) )
     res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo,pluto'} )
-    self.assertEqual( sorted(res), sorted(['Site2']) )
+    self.assertEqual( sorted( res ), sorted( ['Site2'] ) )
     res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo,pluto'} )
-    self.assertEqual( sorted(res), sorted(['Site1', 'Site2']) )
+    self.assertEqual( sorted( res ), sorted( ['Site1', 'Site2'] ) )
     res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'} )
     self.assertEqual( res, [] )
 
@@ -189,13 +189,13 @@ class RequestTasksSuccess( ClientsTestCase ):
 
   def test_prepareTranformationTasks( self ):
 
-    #No tasks in input
+    # No tasks in input
     taskDict = {}
     res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
     self.assert_( res['OK'] )
     self.assertEqual( len( taskDict ), 0 )
 
-    #3 tasks, 1 task not OK (in second transformation)
+    # 3 tasks, 1 task not OK (in second transformation)
     taskDict = {123:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}}
     res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
     self.assert_( res['OK'] )
@@ -223,7 +223,7 @@ class RequestTasksSuccess( ClientsTestCase ):
       except IndexError:
         self.assertEqual( task['TaskObject'][0].Status, 'Waiting' )
 
-    ## test another (single) OperationType
+    # # test another (single) OperationType
     res = self.requestTasks.prepareTransformationTasks( 'someType;LogUpload', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
     self.assert_( res['OK'] )
     # We should "lose" one of the task in the preparation
@@ -232,11 +232,11 @@ class RequestTasksSuccess( ClientsTestCase ):
       self.assert_( isinstance( task['TaskObject'], Request ) )
       self.assertEqual( task['TaskObject'][0].Type, 'LogUpload' )
 
-    ### Multiple operations
-    transBody = [ ("ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
-                  ("RemoveReplica", { "TargetSE":"FOO-SRM" } ),
+    # ## Multiple operations
+    transBody = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" } ),
+                  ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
                 ]
-    jsonBody = json.dumps(transBody)
+    jsonBody = json.dumps( transBody )
 
     taskDict = {1:{'TransformationID':1, 'TargetSE':'SE1', 'b1':'bb1', 'Site':'MySite',
                    'InputData':['/this/is/a1.lfn', '/this/is/a2.lfn']},
@@ -322,12 +322,12 @@ class TransformationClientSuccess( ClientsTestCase ):
     tsFiles = {'foo':['Assigned', 2L, 1234], 'bar':['Assigned', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
     res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'Assigned', 'bar':'Processed'} )
+    self.assertEqual( res, {'bar':'Processed'} )
 
     tsFiles = {'foo':['Processed', 2L, 1234], 'bar':['Unused', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
     res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'Processed', 'bar':'Processed'} )
+    self.assertEqual( res, {'bar':'Processed'} )
 
     tsFiles = {'foo':['Processed', 2L, 1234], 'bar':['Unused', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Assigned', 'bar':'Processed'}
@@ -337,7 +337,7 @@ class TransformationClientSuccess( ClientsTestCase ):
     tsFiles = {'foo':['MaxReset', 12L, 1234], 'bar':['Processed', 22L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
+    self.assertEqual( res, {} )
 
     tsFiles = {'foo':['MaxReset', 12L, 1234], 'bar':['Processed', 22L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
@@ -347,7 +347,7 @@ class TransformationClientSuccess( ClientsTestCase ):
     tsFiles = {'foo':['Assigned', 20L, 1234], 'bar':['Processed', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
     res = self.tc._applyTransformationFilesStateMachine( tsFiles, dictOfNewLFNsStatus, False )
-    self.assertEqual( res, {'foo':'MaxReset', 'bar':'Processed'} )
+    self.assertEqual( res, {'foo':'MaxReset'} )
 
     tsFiles = {'foo':['Assigned', 20L, 1234], 'bar':['Processed', 2L, 5678]}
     dictOfNewLFNsStatus = {'foo':'Unused', 'bar':'Unused'}
@@ -373,7 +373,7 @@ class TransformationSuccess( ClientsTestCase ):
     res = self.transformation.setPlugin( 'aPlugin' )
     self.assertTrue( res['OK'] )
 
-    ## Test DataOperation Body
+    # # Test DataOperation Body
 
     res = self.transformation.setBody( "" )
     self.assertTrue( res['OK'] )
@@ -383,7 +383,7 @@ class TransformationSuccess( ClientsTestCase ):
     self.assertTrue( res['OK'] )
     self.assertEqual( self.transformation.paramValues[ "Body" ], "_requestType;RemoveReplica" )
 
-    ##Json will turn tuples to lists and strings to unicode
+    # #Json will turn tuples to lists and strings to unicode
     transBody = [ [ u"ReplicateAndRegister", { u"SourceSE":u"FOO-SRM", u"TargetSE":u"BAR-SRM" }],
                   [ u"RemoveReplica", { u"TargetSE":u"FOO-SRM" } ],
                 ]
@@ -392,7 +392,7 @@ class TransformationSuccess( ClientsTestCase ):
 
     self.assertEqual( self.transformation.paramValues[ "Body" ], json.dumps( transBody ) )
 
-    ## This is not true if any of the keys or values are not strings, e.g., integers
+    # # This is not true if any of the keys or values are not strings, e.g., integers
     self.assertEqual( json.loads( self.transformation.paramValues[ "Body" ] ), transBody )
 
     with self.assertRaisesRegexp( TypeError, "Expected list" ):
@@ -404,13 +404,13 @@ class TransformationSuccess( ClientsTestCase ):
     with self.assertRaisesRegexp( TypeError, "Expected string" ):
       self.transformation.setBody( [ ( 123, "Parameter:Value" ) ] )
     with self.assertRaisesRegexp( TypeError, "Expected dictionary" ):
-      self.transformation.setBody( [ ("ReplicateAndRegister", "parameter=foo") ] )
+      self.transformation.setBody( [ ( "ReplicateAndRegister", "parameter=foo" ) ] )
     with self.assertRaisesRegexp( TypeError, "Expected string" ):
-      self.transformation.setBody( [ ("ReplicateAndRegister", { 123: "foo" } ) ] )
+      self.transformation.setBody( [ ( "ReplicateAndRegister", { 123: "foo" } ) ] )
     with self.assertRaisesRegexp( ValueError, "Unknown attribute" ):
-      self.transformation.setBody( [ ("ReplicateAndRegister", { "Request": Request() } ) ] )
+      self.transformation.setBody( [ ( "ReplicateAndRegister", { "Request": Request() } ) ] )
     with self.assertRaisesRegexp( TypeError, "Cannot encode" ):
-      self.transformation.setBody( [ ("ReplicateAndRegister", { "Arguments": Request() } ) ] )
+      self.transformation.setBody( [ ( "ReplicateAndRegister", { "Arguments": Request() } ) ] )
 
   def test_SetGetReset( self ):
     """ Testing of the set, get and reset methods.

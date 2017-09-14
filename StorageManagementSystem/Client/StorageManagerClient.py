@@ -96,11 +96,11 @@ def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog =
         # If there is at least one online site, select one
         for se in ses:
           site = dmsHelper.getLocalSiteForSE( se )
-	  if site['OK']:
-	    if site['Value'] in onlineSites:
-	      offlineLFNsDict.setdefault( se, list() ).append( lfn )
-	      found = True
-	      break
+          if site['OK']:
+            if site['Value'] in onlineSites:
+              offlineLFNsDict.setdefault( se, list() ).append( lfn )
+              found = True
+              break
       # No online site found in common, select randomly
       if not found:
         offlineLFNsDict.setdefault( random.choice( ses ), list() ).append( lfn )
@@ -130,33 +130,36 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
 
   failed = {}
   for se, lfnsInSEList in seToLFNs.iteritems():
-    # No need to check files that are already known to be Online
-    lfnsInSEList = list( set( lfnsInSEList ) - set( onlineLFNs ) )
-    if not lfnsInSEList:
-      continue
-
+    # If we have found already all files online at another SE, no need to check the others
+    # but still we want to set the SE as Online if not a TapeSE
     vo = getVOForGroup( proxyUserGroup )
-    seObj = StorageElement( se, vo=vo )
+    seObj = StorageElement( se, vo = vo )
     status = seObj.getStatus()
     if not status['OK']:
-      logger.error( "Could not get SE status", "%s - %s" % ( se, status['Message'] ) )
       return status
     tapeSE = status['Value']['TapeSE']
-    # If requested to check only Tape SEs and  the file is at a diskSE, we guess it is Online...
-    if checkOnlyTapeSEs and not tapeSE:
-      for lfn in lfnsInSEList:
+    diskSE = status['Value']['DiskSE']
+    # If requested to check only Tape SEs and the file is at a diskSE, we guess it is Online...
+    filesToCheck = []
+    for lfn in lfnsInSEList:
+      # If the file had already been found accessible at an SE, only check that this one is on disk
+      diskIsOK = checkOnlyTapeSEs or ( lfn in onlineLFNs )
+      if diskIsOK and diskSE:
         onlineLFNs.setdefault( lfn, [] ).append( se )
+      elif not diskIsOK:
+        filesToCheck.append( lfn )
+    if not filesToCheck:
       continue
 
     # Wrap the SE method with executeWithUserProxy
     fileMetadata = ( executeWithUserProxy( seObj.getFileMetadata )
-                    ( lfnsInSEList,
+                    ( filesToCheck,
                       proxyUserName = proxyUserName,
                       proxyUserGroup = proxyUserGroup,
                       executionLock = executionLock ) )
 
     if not fileMetadata['OK']:
-      failed[se] = dict.fromkeys( lfnsInSEList, fileMetadata['Message'] )
+      failed[se] = dict.fromkeys( filesToCheck, fileMetadata['Message'] )
     else:
       if fileMetadata['Value']['Failed']:
         failed[se] = fileMetadata['Value']['Failed']
