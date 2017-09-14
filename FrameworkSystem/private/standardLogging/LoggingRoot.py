@@ -179,7 +179,7 @@ class LoggingRoot(Logging):
       backendOptions = retDictRessources['Value']
 
     # Search backends config in the component to update some options
-    retDictConfig = gConfig.getOptionsDict("%s/%s/%s" % (cfgPath, 'BackendsConfig', backend))
+    retDictConfig = gConfig.getOptionsDict("%s/%s/%s" % (cfgPath, 'LogBackendsConfig', backend))
     if retDictConfig['OK']:
       backendOptions.update(retDictConfig['Value'])
     else:
