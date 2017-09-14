@@ -67,7 +67,8 @@ class TopErrorMessagesReporter( AgentModule ):
     cmd = "SELECT " + ', '.join( columnsList ) + " FROM " \
           + " NATURAL JOIN ".join( tableList ) \
           + " WHERE MessageTime > '%s'" % limitDate \
-          + " GROUP BY FixedTextString HAVING entries > %s" % self._threshold \
+          + " AND LogLevel in ('ERROR','FATAL','EXCEPT')" \
+          + " GROUP BY FixedTextID,SystemName,SubSystemName HAVING entries > %s" % self._threshold \
           + " ORDER BY entries DESC LIMIT %i;" % self._limit
 
     result = self.systemLoggingDB._query( cmd )
