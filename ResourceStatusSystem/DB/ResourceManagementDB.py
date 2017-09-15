@@ -7,16 +7,15 @@
 __RCSID__ = "$Id$"
 
 import datetime
-from sqlalchemy.orm                                import sessionmaker, class_mapper
+from sqlalchemy.orm import sessionmaker, class_mapper
 from sqlalchemy.engine.reflection import Inspector
-from sqlalchemy.ext.declarative                    import declarative_base
-from sqlalchemy                                    import create_engine, Column, String, DateTime, exc, Text, Integer, Float
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine, Column, String, DateTime, exc, Text, Integer, Float
 
-from DIRAC                                         import S_OK, S_ERROR, gLogger
-from DIRAC.ConfigurationSystem.Client.Utilities    import getDBParameters
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 # Defining the tables
-#TODO: add debug logs
 
 rmsBase = declarative_base()
 
@@ -38,7 +37,9 @@ class AccountingCache(rmsBase):
   def fromDict( self, dictionary ):
     """
     Fill the fields of the AccountingCache object from a dictionary
-    The dictionary may contain the keys: Name, LastCheckTime, PlotName, Result, DateEffective, PlotType
+
+    :param dictionary: Dictionary to fill a single line
+    :type arguments: dict
     """
 
     self.name = dictionary.get( 'Name', self.name )
@@ -115,6 +116,9 @@ class GGUSTicketsCache(rmsBase):
   def fromDict( self, dictionary ):
     """
     Fill the fields of the GGUSTicketsCache object from a dictionary
+
+    :param dictionary: Dictionary to fill a single line
+    :type arguments: dict
     """
 
     self.tickets = dictionary.get( 'Tickets', self.tickets )
@@ -178,6 +182,9 @@ class PilotCache(rmsBase):
   def fromDict( self, dictionary ):
     """
     Fill the fields of the PilotCache object from a dictionary
+
+    :param dictionary: Dictionary to fill a single line
+    :type arguments: dict
     """
 
     self.site = dictionary.get( 'Site', self.site )
@@ -213,6 +220,9 @@ class PolicyResult(rmsBase):
   def fromDict( self, dictionary ):
     """
     Fill the fields of the PolicyResult object from a dictionary
+
+    :param dictionary: Dictionary to fill a single line
+    :type arguments: dict
     """
 
     self.policyname = dictionary.get( 'PolicyName', self.policyname )
@@ -249,6 +259,9 @@ class SpaceTokenOccupancyCache(rmsBase):
   def fromDict( self, dictionary ):
     """
     Fill the fields of the SpaceTokenOccupancyCache object from a dictionary
+
+    :param dictionary: Dictionary to fill a single line
+    :type arguments: dict
     """
 
     self.endpoint = dictionary.get( 'Endpoint', self.endpoint )
@@ -281,6 +294,9 @@ class TransferCache(rmsBase):
   def fromDict( self, dictionary ):
     """
     Fill the fields of the TransferCache object from a dictionary
+
+    :param dictionary: Dictionary to fill a single line
+    :type arguments: dict
     """
 
     self.sourcename = dictionary.get( 'SourceName', self.sourcename )
@@ -336,7 +352,7 @@ class ResourceManagementDB( object ):
                                                               self.dbName ),
                                  pool_recycle = 3600,
                                  echo_pool = True,
-                                 echo = True) #FIXME: remove echo = True (one can play with logging level I believe)
+                                 echo = self.log.getLevel() == 'DEBUG')
     self.sessionMaker_o = sessionmaker( bind = self.engine )
     self.inspector = Inspector.from_engine( self.engine )
 
@@ -428,7 +444,7 @@ class ResourceManagementDB( object ):
       listOfRows = [res.toList() for res in select.all()]
       finalResult = S_OK( listOfRows )
       # add column names
-      finalResult['Columns'] = ['columnNames'] #FIXME: put real stuff
+      finalResult['Columns'] = table_c.columns
       return finalResult
 
     except exc.SQLAlchemyError as e:
