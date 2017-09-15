@@ -382,13 +382,13 @@ class ResourceManagementDB( object ):
 
   def insert( self, table, params ):
     '''
-    Inserts args in the DB making use of kwargs where parameters such as
-    the 'table' are specified ( filled automatically by the Client). Typically you
-    will not pass kwargs to this function, unless you know what are you doing
-    and you have a very special use case.
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
+    Inserts params in the DB.
+
+    :param table: table where to insert
+    :type table: str
+    :param params: Dictionary to fill a single line
+    :type params: dict
+
     :return: S_OK() || S_ERROR()
     '''
 
@@ -421,30 +421,39 @@ class ResourceManagementDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    #FIXME: this stuff about META and columns ... probably for the web?
 
     session = self.sessionMaker_o()
     table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
+    columnNames = []
+
     try:
       select = session.query(table_c)
       for columnName, columnValue in params.iteritems():
-        if not columnValue:
-          continue
-        column_a = getattr(table_c, columnName.lower())
-        if isinstance(columnValue, (list, tuple)):
-          select = select.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, basestring):
-          select = select.filter(column_a == columnValue)
-        elif isinstance(columnValue, datetime.datetime): #FIXME: iis it correct/enough? (should check also below)
-          select = select.filter(column_a == columnValue)
-        else:
-          self.log.error("type(columnValue) == %s" %type(columnValue))
+        if columnName.lower() == 'meta': # special case
+          columnNames = columnValue['columns']
+        else: # these are real columns
+          if not columnValue:
+            continue
+          column_a = getattr(table_c, columnName.lower())
+          if isinstance(columnValue, (list, tuple)):
+            select = select.filter(column_a.in_(list(columnValue)))
+          elif isinstance(columnValue, basestring):
+            select = select.filter(column_a == columnValue)
+          elif isinstance(columnValue, datetime.datetime): #FIXME: is it correct/enough? (should check also below)
+            select = select.filter(column_a == columnValue)
+          else:
+            self.log.error("type(columnValue) == %s" %type(columnValue))
 
       listOfRows = [res.toList() for res in select.all()]
       finalResult = S_OK( listOfRows )
-      # add column names
-      finalResult['Columns'] = table_c.columns
+
+      if not columnNames:
+        # retrieve the column names
+        columns = table_c.__table__.columns
+        columnNames = [str(column) for column in columns]
+
+      finalResult['Columns'] = columnNames
       return finalResult
 
     except exc.SQLAlchemyError as e:
@@ -456,11 +465,11 @@ class ResourceManagementDB( object ):
 
   def delete( self, table, params ):
     """
-    Uses arguments to build conditional SQL statement ( WHERE ... ).
+    :param table: table from where to delete
+    :type table: str
+    :param params: dictionary of which line(s) to delete
+    :type params: dict
 
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
     :return: S_OK() || S_ERROR()
     """
     session = self.sessionMaker_o()
@@ -499,9 +508,12 @@ class ResourceManagementDB( object ):
     '''
     Using the PrimaryKeys of the table, it looks for the record in the database.
     If it is there, it is updated, if not, it is inserted as a new entry.
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
+
+    :param table: table where to add or modify
+    :type table: str
+    :param params: dictionary of what to add or modify
+    :type params: dict
+
     :return: S_OK() || S_ERROR()
     '''
 
