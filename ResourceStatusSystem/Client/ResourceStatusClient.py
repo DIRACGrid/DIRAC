@@ -96,47 +96,6 @@ class ResourceStatusClient( object ):
                                   elementType, reason, dateEffective, lastCheckTime,
                                   tokenOwner, tokenExpiration)
 
-  def updateStatusElement( self, element, tableType, name = None, statusType = None,
-                           status = None, elementType = None, reason = None,
-                           dateEffective = None, lastCheckTime = None,
-                           tokenOwner = None, tokenExpiration = None, ID = None ):
-    '''
-    Updates <element><tableType> with the parameters given.
-
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
-      **name** - `string`
-        name of the individual of class element
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **elementType** - `string`
-        column to distinguish between the different elements in the same element
-        table.
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership
-
-    :return: S_OK() || S_ERROR()
-    '''
-    # Unused argument
-    # pylint: disable=unused-argument
-    return self.rssService.update(element, tableType, name, statusType, status,
-                                  elementType, reason, dateEffective, lastCheckTime,
-                                  tokenOwner, tokenExpiration, ID)
 
   def selectStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,

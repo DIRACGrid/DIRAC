@@ -34,6 +34,7 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
   def test_addAndRemove(self):
 
     rssClient.deleteStatusElement('Resource', 'Status', 'TestName1234')
+    exit(0)
     rssClient.deleteStatusElement('Resource', 'Status', 'TestName123456789')
 
     # TEST insertStatusElement
@@ -88,25 +89,6 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     #check if the select query was executed properly
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'][0][0], 'Active')
-
-
-    # TEST updateStatusElement
-    # ...............................................................................
-
-    #update the previously entered element
-    res = rssClient.updateStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
-                                        'Banned', 'elementType', 'reason', Datetime,
-                                        Datetime, 'tokenOwner', Datetime)
-    #check if the updateStatusElement query was executed properly
-    self.assertTrue(res['OK'])
-
-
-    #select the previously modified element
-    res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
-    #check if the select query was executed properly
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'][0][0], 'Banned')
-
 
     # TEST deleteStatusElement
     # ...............................................................................

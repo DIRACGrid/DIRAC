@@ -72,8 +72,6 @@ class ResourceStatusHandler( RequestHandler ):
 
   def __init__( self, *args, **kwargs ):
 
-    # create tables for empty db
-    db.createTables()
 
     super( ResourceStatusHandler, self ).__init__( *args, **kwargs )
 
@@ -162,66 +160,6 @@ class ResourceStatusHandler( RequestHandler ):
 
     return res
 
-  types_update = [ basestring, basestring ]
-  def export_update( self, element, tableType, name = None, statusType = None,
-                     status = None, elementType = None, reason = None,
-                     dateEffective = None, lastCheckTime = None,
-                     tokenOwner = None, tokenExpiration = None, ID = None ):
-    '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
-
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
-      **name** - `string`
-        name of the individual of class element
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **elementType** - `string`
-        column to distinguish between the different elements in the same element
-        table.
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    if isinstance(element, dict): #for backward compatibility - converting to str variables
-      gLogger.debug("Calls from old client")
-      #element is the old "params" in this case
-      element, tableType, name, statusType, status, \
-      elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
-
-
-    gLogger.info( 'update: %s %s %s %s %s %s %s %s %s %s %s %s' %
-                  ( element, tableType, name, statusType, status,
-                    elementType, reason, dateEffective, lastCheckTime,
-                    tokenOwner, tokenExpiration, ID ) )
-
-    res = db.update( element, tableType, name, statusType, status,
-                     elementType, reason, dateEffective, lastCheckTime,
-                     tokenOwner, tokenExpiration, ID )
-
-    self.__logResult( 'update', res )
-
-    return res
 
   types_select = [ [basestring, dict], [basestring, dict, None] ]
   def export_select( self, element, tableType, name = None, statusType = None,
@@ -412,65 +350,6 @@ class ResourceStatusHandler( RequestHandler ):
 
     return res
 
-  types_modify = [ basestring, basestring ]
-  def export_modify( self, element, tableType, name = None, statusType = None,
-                     status = None, elementType = None, reason = None,
-                     dateEffective = None, lastCheckTime = None,
-                     tokenOwner = None, tokenExpiration = None ):
-    '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
-
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
-      **name** - `string`
-        name of the individual of class element
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **elementType** - `string`
-        column to distinguish between the different elements in the same element
-        table.
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    if isinstance(element, dict): #for backward compatibility - converting to str variables
-      gLogger.debug("Calls from old client")
-      #element is the old "params" in this case
-      element, tableType, name, statusType, status, \
-      elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
-
-    gLogger.info( 'modify: %s %s %s %s %s %s %s %s %s %s %s' %
-                  ( element, tableType, name, statusType, status,
-                    elementType, reason, dateEffective, lastCheckTime,
-                    tokenOwner, tokenExpiration ) )
-
-    res = db.modify( element, tableType, name, statusType, status,
-                     elementType, reason, dateEffective, lastCheckTime,
-                     tokenOwner, tokenExpiration )
-
-    self.__logResult( 'modify', res )
-
-    return res
 
   types_addIfNotThere = [ basestring, basestring ]
   def export_addIfNotThere( self, element, tableType, name = None, statusType = None,
