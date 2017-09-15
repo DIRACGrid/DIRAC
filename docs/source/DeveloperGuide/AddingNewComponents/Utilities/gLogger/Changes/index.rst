@@ -300,7 +300,7 @@ This configuration becomes:
 ::
 
     LogBackends = <backend1>, <backend2>, <backend3>
-    BackendsConfig
+    LogBackendsConfig
     {
         <backend2>
         {
@@ -317,7 +317,7 @@ The first main advantage of this new feature is that you can define many *Backen
 ::
 
     LogBackends = file, f01, log
-    BackendsConfig
+    LogBackendsConfig
     {
         f01
         {
