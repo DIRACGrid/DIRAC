@@ -350,7 +350,7 @@ def add( args, switchDict ):
                                              )
 
   if output.get('Value'):
-    result['match'] = int( output['Value'] )
+    result['match'] = int( output['Value'] if output['Value'] else 0 )
   result['successful'] = output['OK']
   result['message'] = output['Message'] if 'Message' in output else None
 
@@ -380,7 +380,7 @@ def modify( args, switchDict ):
                                         )
 
   if output.get('Value'):
-    result['match'] = int( output['Value'] )
+    result['match'] = int( output['Value'] if output['Value'] else 0 )
   result['successful'] = output['OK']
   result['message'] = output['Message'] if 'Message' in output else None
 
@@ -411,7 +411,7 @@ def delete( args, switchDict ):
                                         )
 
   if 'Value' in output:
-    result['match'] = int( output['Value'] )
+    result['match'] = int( output['Value'] if output['Value'] else 0 )
   result['successful'] = output['OK']
   result['message'] = output['Message'] if 'Message' in output else None
 
@@ -438,7 +438,7 @@ def run( args, switchDictSet ):
     if result[ 'successful' ]:
       if query == 'select' and result['match'] > 0:
         table.extend( result[ 'output' ] )
-      matches = matches + result[ 'match' ]
+      matches = matches + result['match'] if result['match'] else 0
     else:
       error( result[ 'message' ] )
 

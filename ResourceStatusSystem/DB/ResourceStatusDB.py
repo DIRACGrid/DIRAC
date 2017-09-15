@@ -8,11 +8,80 @@ from datetime import datetime, timedelta
 
 from DIRAC                                                 import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities            import getDBParameters
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB    import primaryKeystoList, toList, toDict
 
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.inspection                         import inspect
 from sqlalchemy import create_engine, Table, Column, MetaData, String, DateTime, BigInteger, exc
 from sqlalchemy.sql import update, select, delete, and_, or_
+
+
+# Helper functions
+
+def primaryKeystoList(table, **kwargs):
+  '''
+  Helper function that gets keyword arguments and adds to a
+  list only the primary keys of a given table.
+  :param table: <string>
+  :param kwargs:
+  :return: <list>
+  '''
+
+  primarykeys = []
+  for primarykey in inspect(table).primary_key:
+    primarykeys.append(primarykey.name)
+
+  filters = []
+  for name, argument in kwargs.items():
+    if argument:
+      if name in primarykeys:
+        filters.append( getattr(table.c, name) == argument )
+
+  return filters
+
+def toList(table, **kwargs):
+  '''
+  Helper function that gets keyword arguments and adds them to a list
+  that is going to be used to complete the sqlalchemy query.
+  :param table: <string>
+  :param kwargs:
+  :return: <list>
+  '''
+
+  filters = []
+  for name, argument in kwargs.items():
+    if name == "Meta":
+
+      if argument and 'older' in argument:
+        # match everything that is older than the specified column name
+        filters.append( getattr(table.c, argument['older'][0]) > argument['older'][1] )
+        # argument['older'][0] must match a column name, otherwise this is going to fail
+      elif argument and 'newer' in argument:
+        # match everything that is newer than the specified column name
+        filters.append( getattr(table.c, argument['newer'][0]) < argument['newer'][1] )
+      else:
+        continue
+
+    else:
+      if argument:
+        filters.append( getattr(table.c, name) == argument )
+
+  return filters
+
+def toDict(**kwargs):
+  '''
+  Helper function that gets keyword arguments and adds them to a dictionary.
+  :param table: <string>
+  :param kwargs:
+  :return: <list>
+  '''
+
+  params = {}
+  for name, argument in kwargs.items():
+    if argument:
+      params.update( {name : argument} )
+
+  return params
+
 
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
@@ -300,12 +369,10 @@ class ResourceStatusDB( object ):
       table = metadata.tables.get( element + tableType )
 
       args = toList(table, Name = name, StatusType = statusType, Status = status, ElementType = elementType,
-                                Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
-                                TokenOwner = tokenOwner, TokenExpiration = tokenExpiration, Meta = meta)
+                    Reason = reason, DateEffective = dateEffective, LastCheckTime = lastCheckTime,
+                    TokenOwner = tokenOwner, TokenExpiration = tokenExpiration, Meta = meta)
 
-      session.execute( delete( table )
-                            .where( or_(*args) )
-                          )
+      session.execute( delete( table ).where( or_(*args) ) )
 
       session.commit()
 

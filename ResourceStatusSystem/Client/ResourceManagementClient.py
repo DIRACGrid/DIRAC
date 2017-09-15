@@ -61,9 +61,7 @@ class ResourceManagementClient( object ):
       del sendDict[key]
 
       # apply default values
-      if key in ['dateEffective', 'lastCheckTime'] and value is None:
-        sendDict.update({uppercase_first_letter(key): datetime.utcnow() })
-      elif key == 'tokenExpiration' and value is None:
+      if key == 'tokenExpiration' and value is None:
         sendDict.update({uppercase_first_letter(key): datetime.utcnow() + timedelta(hours=24)})
       else:
         sendDict.update({uppercase_first_letter(key): value})
@@ -462,7 +460,7 @@ class ResourceManagementClient( object ):
 
 
   def addOrModifyTransferCache( self, sourceName = None, destinationName = None, metric = None,
-                           value = None, lastCheckTime = None ):
+                                value = None, lastCheckTime = None ):
     '''
      Adds or updates-if-duplicated to TransferCache. Using `elementName`, `direction`
      and `metric` to query the database, decides whether to insert or update the table.
@@ -602,7 +600,7 @@ class ResourceManagementClient( object ):
 
   def deletePolicyResult( self, element = None, name = None, policyName = None,
                           statusType = None, status = None, reason = None,
-                          lastCheckTime = None ):
+                          dateEffective = True, lastCheckTime = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
 
@@ -621,6 +619,8 @@ class ResourceManagementClient( object ):
         `Probing` | `Banned`
       **reason** - `[, string, list]`
         decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the policy result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the policy result was checked
 
@@ -632,7 +632,7 @@ class ResourceManagementClient( object ):
 
   def addOrModifyPolicyResult( self, element = None, name = None, policyName = None,
                                statusType = None, status = None, reason = None,
-                               lastCheckTime = None ):
+                               dateEffective = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to PolicyResult. Using `name`, `policyName` and
     `statusType` to query the database, decides whether to insert or update the table.
@@ -841,155 +841,6 @@ class ResourceManagementClient( object ):
     '''
 
     return self.rmService.addOrModify( 'SpaceTokenOccupancyCache', self._prepare(locals()) )
-
-
-  # UserRegistryCache Methods ..................................................
-
-  def selectUserRegistryCache( self, login = None, name = None, email = None,
-                               lastCheckTime = None, meta = None ):
-    '''
-    Gets from UserRegistryCache all rows that match the parameters given.
-
-    :Parameters:
-      **login** - `[, string, list]`
-        user's login ID
-      **name** - `[, string, list]`
-        user's name
-      **email** - `[, string, list]`
-        user's email
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp from which the result is effective
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmService.select( 'UserRegistryCache', self._prepare(locals()) )
-
-
-  def deleteUserRegistryCache( self, login = None, name = None, email = None,
-                               lastCheckTime = None ):
-    '''
-    Deletes from UserRegistryCache all rows that match the parameters given.
-
-    :Parameters:
-      **login** - `[, string, list]`
-        user's login ID
-      **name** - `[, string, list]`
-        user's name
-      **email** - `[, string, list]`
-        user's email
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp from which the result is effective
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmService.delete( 'UserRegistryCache', self._prepare(locals()) )
-
-
-  def addOrModifyUserRegistryCache( self, login = None, name = None, email = None,
-                                    lastCheckTime = None ):
-    '''
-    Adds or updates-if-duplicated to UserRegistryCache. Using `login` to query
-    the database, decides whether to insert or update the table.
-
-    :Parameters:
-      **login** - `string`
-        user's login ID
-      **name** - `string`
-        user's name
-      **email** - `string`
-        user's email
-      **lastCheckTime** - `datetime`
-        time-stamp from which the result is effective
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmService.addOrModify( 'UserRegistryCache', self._prepare(locals()) )
-
-
-  # ErrorReportBuffer Methods ..................................................
-
-  def insertErrorReportBuffer( self, name = None, elementType = None, reporter = None,
-                               errorMessage = None, operation = None, arguments = None,
-                               dateEffective = None ):
-    '''
-    Inserts to ErrorReportBuffer all rows that match the parameters given.
-
-    :Parameters:
-      **name** - `string`
-        user's name
-      **elementType** - `string`
-        the type of the element
-      **reporter** - `string`
-        the user that reported this
-      **errorMessage** - `string`
-      **operation** - `string`
-      **arguments** - `string`
-      **dateEffective** - `datetime`
-        time-stamp from which the policy result is effective
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmService.insert( 'ErrorReportBuffer', self._prepare(locals()) )
-
-
-  def selectErrorReportBuffer( self, name = None, elementType = None, reporter = None,
-                               errorMessage = None, operation = None, arguments = None,
-                               dateEffective = None, meta = None ):
-    '''
-    Gets from ErrorReportBuffer all rows that match the parameters given.
-
-    :Parameters:
-      **name** - `string`
-        user's name
-      **elementType** - `string`
-        the type of the element
-      **reporter** - `string`
-        the user that reported this
-      **errorMessage** - `string`
-      **operation** - `string`
-      **arguments** - `string`
-      **dateEffective** - `datetime`
-        time-stamp from which the policy result is effective
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmService.select( 'ErrorReportBuffer', self._prepare(locals()) )
-
-
-  def deleteErrorReportBuffer( self, name = None, elementType = None, reporter = None,
-                               errorMessage = None, operation = None, arguments = None,
-                               dateEffective = None ):
-    '''
-    Deletes from ErrorReportBuffer all rows that match the parameters given.
-
-    :Parameters:
-      **name** - `string`
-        user's name
-      **elementType** - `string`
-        the type of the element
-      **reporter** - `string`
-        the user that reported this
-      **errorMessage** - `string`
-      **operation** - `string`
-      **arguments** - `string`
-      **dateEffective** - `datetime`
-        time-stamp from which the policy result is effective
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmService.delete( 'ErrorReportBuffer', self._prepare(locals()) )
 
 #...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
