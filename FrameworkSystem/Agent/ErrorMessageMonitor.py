@@ -82,8 +82,8 @@ class ErrorMessageMonitor( AgentModule ):
 
     if self._mailAddress:
       result = self.notification.sendMail( self._mailAddress, self._subject, mailBody )
-      if not result[ 'OK' ]:
-        self.log.warn( "The mail could not be sent" )
+      if not result['OK']:
+        self.log.warn( "The mail could not be sent", result['Message'] )
         return S_OK()
 
     messageIDs = [ message[0] for message in messageList ]
