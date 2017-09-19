@@ -30,7 +30,7 @@ class AccountingCache(rmsBase):
   name = Column( 'Name', String( 64 ), nullable = False, primary_key = True )
   plotname = Column( 'PlotName', String( 64 ), nullable = False, primary_key = True )
   plottype = Column( 'PlotType', String( 16 ), nullable = False, primary_key = True )
-  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False ) #FIXME: Need to add CURRENT_TIMESTAMP as default value
+  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False )
   result = Column( 'Result', Text, nullable = False )
   dateeffective = Column( 'DateEffective', DateTime, nullable = False )
 
@@ -42,10 +42,12 @@ class AccountingCache(rmsBase):
     :type arguments: dict
     """
 
+    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
+
     self.name = dictionary.get( 'Name', self.name )
     self.plotname = dictionary.get( 'PlotName', self.plotname )
     self.plottype = dictionary.get( 'PlotType', self.plottype )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
     self.result = dictionary.get( 'Result', self.result )
     self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective )
 
@@ -121,11 +123,13 @@ class GGUSTicketsCache(rmsBase):
     :type arguments: dict
     """
 
+    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
+
     self.tickets = dictionary.get( 'Tickets', self.tickets )
     self.opentickets = dictionary.get( 'OpenTickets', self.opentickets )
     self.gocsite = dictionary.get( 'GocSite', self.gocsite )
     self.link = dictionary.get( 'Link', self.link )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -152,11 +156,13 @@ class JobCache(rmsBase):
     Fill the fields of the JobCache object from a dictionary
     """
 
+    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
+
     self.site = dictionary.get( 'Site', self.site )
     self.status = dictionary.get( 'Status', self.status )
     self.efficiency = dictionary.get( 'Efficiency', self.efficiency )
     self.maskstatus = dictionary.get( 'MaskStatus', self.maskstatus )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -187,12 +193,14 @@ class PilotCache(rmsBase):
     :type arguments: dict
     """
 
+    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
+
     self.site = dictionary.get( 'Site', self.site )
     self.ce = dictionary.get( 'CE', self.ce )
     self.status = dictionary.get( 'Status', self.status )
     self.pilotjobeff = dictionary.get( 'PilotJobEff', self.pilotjobeff )
     self.pilotsperjob = dictionary.get( 'PilotsPerJob', self.pilotsperjob )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -225,6 +233,8 @@ class PolicyResult(rmsBase):
     :type arguments: dict
     """
 
+    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
+
     self.policyname = dictionary.get( 'PolicyName', self.policyname )
     self.statustype = dictionary.get( 'StatusType', self.statustype )
     self.element = dictionary.get( 'Element', self.element )
@@ -232,7 +242,7 @@ class PolicyResult(rmsBase):
     self.status = dictionary.get( 'Status', self.status )
     self.reason = dictionary.get( 'Reason', self.reason )
     self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -264,12 +274,14 @@ class SpaceTokenOccupancyCache(rmsBase):
     :type arguments: dict
     """
 
+    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
+
     self.endpoint = dictionary.get( 'Endpoint', self.endpoint )
     self.token = dictionary.get( 'Token', self.token )
     self.guaranteed = dictionary.get( 'Guaranteed', self.guaranteed )
     self.free = dictionary.get( 'Free', self.free )
     self.total = dictionary.get( 'Total', self.total )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -299,11 +311,13 @@ class TransferCache(rmsBase):
     :type arguments: dict
     """
 
+    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
+
     self.sourcename = dictionary.get( 'SourceName', self.sourcename )
     self.destinationname = dictionary.get( 'DestinationName', self.destinationname )
     self.metric = dictionary.get( 'Metric', self.metric )
     self.value = dictionary.get( 'Value', self.value )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -540,6 +554,10 @@ class ResourceManagementDB( object ):
 
       # now we assume we need to modify
       for columnName, columnValue in params.iteritems():
+        if columnName == 'LastCheckTime' and not columnValue: # we always update lastCheckTime
+          columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
+        if columnName == 'DateEffective' and not columnValue: # we always update DateEffective, if there
+          columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
         if columnValue:
           setattr(res, columnName.lower(), columnValue)
 

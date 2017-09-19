@@ -47,7 +47,7 @@ class ElementStatusBase(object):
     :type arguments: dict
     """
 
-    utcnow = self.dateeffective if self.dateeffective else datetime.datetime.utcnow().replace(microsecond = 0)
+    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
 
     self.name = dictionary.get( 'Name', self.name )
     self.statustype = dictionary.get( 'StatusType', self.statustype )
@@ -252,7 +252,7 @@ class ResourceStatusDB( object ):
     # expire_on_commit is set to False so that we can still use the object after we close the session
     session = self.sessionMaker_o( expire_on_commit = False ) #FIXME: should we use this flag elsewhere?
     tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
-    
+
     if table.endswith('Status') and not params.get('DateEffective'):
       params['DateEffective'] = datetime.datetime.utcnow().replace(microsecond = 0)
 
@@ -399,13 +399,18 @@ class ResourceStatusDB( object ):
       if not res: # if not there, let's insert it (and exit)
         return self.insert(table, params)
 
+
       # now we assume we need to modify
+      changeDE = False
+      if params.get('Status'):
+        if params.get('Status') != res.status: # we update dateEffective iff we change the status
+          changeDE = True
+
       for columnName, columnValue in params.iteritems():
         if columnName == 'LastCheckTime' and not columnValue: # we always update lastCheckTime
           columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
-        if columnName == 'Status' and columnValue != res.status: # we update dateEffective iff we change the status
-          if columnName == 'DateEffective' and not columnValue:
-            columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
+        if changeDE and columnName == 'DateEffective' and not columnValue:
+          columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
         if columnValue:
           setattr(res, columnName.lower(), columnValue)
       session.commit()
