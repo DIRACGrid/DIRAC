@@ -33,8 +33,9 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
 
   def test_addAndRemove(self):
 
+    rssClient.deleteStatusElement('Site', 'Status', 'TestSite1234')
+    rssClient.deleteStatusElement('Site', 'History', 'TestSite1234')
     rssClient.deleteStatusElement('Resource', 'Status', 'TestName1234')
-    exit(0)
     rssClient.deleteStatusElement('Resource', 'Status', 'TestName123456789')
 
     # TEST insertStatusElement
@@ -52,7 +53,29 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
     #check if the select query was executed properly
     self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'][0][0], 'Active')
+    self.assertEqual(res['Value'][0][0], 'TestName1234')
+    self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][0][2], 'Active')
+
+
+    # TEST insertStatusElement
+    # ...............................................................................
+
+    #add an element
+    res = rssClient.insertStatusElement('Site', 'Status', 'TestSite1234', 'statusType',
+                                        'Active', 'elementType', 'reason', Datetime,
+                                        Datetime, 'tokenOwner', Datetime)
+    #check if the insert query was executed properly
+    self.assertTrue(res['OK'])
+
+
+    #select the previously entered element
+    res = rssClient.selectStatusElement('Site', 'Status', 'TestSite1234')
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'][0][0], 'TestSite1234')
+    self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][0][2], 'Active')
 
 
     # TEST addOrModifyStatusElement
@@ -70,7 +93,9 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
     #check if the select query was executed properly
     self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'][0][0], 'Banned')
+    self.assertEqual(res['Value'][0][0], 'TestName1234')
+    self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][0][2], 'Banned')
 
 
     # TEST modifyStatusElement
@@ -88,7 +113,9 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
     #check if the select query was executed properly
     self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'][0][0], 'Active')
+    self.assertEqual(res['Value'][0][0], 'TestName1234')
+    self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][0][2], 'Active')
 
     # TEST deleteStatusElement
     # ...............................................................................
@@ -97,6 +124,15 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     res = rssClient.deleteStatusElement('Resource', 'Status', 'TestName1234')
     #check if the delete query was executed properly
     self.assertTrue(res['OK'])
+
+    res = rssClient.deleteStatusElement('Site', 'Status', 'TestSite1234')
+    #check if the delete query was executed properly
+    self.assertTrue(res['OK'])
+
+    res = rssClient.deleteStatusElement('Site', 'History', 'TestSite1234')
+    #check if the delete query was executed properly
+    self.assertTrue(res['OK'])
+
 
 
     #try to select the previously deleted element
@@ -110,7 +146,7 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     # TEST addIfNotThereStatusElement
     # ...............................................................................
 
-    #delete the element
+    #add the element
     res = rssClient.addIfNotThereStatusElement( 'Resource', 'Status', 'TestName123456789', 'statusType',
                                                 'Active', 'elementType', 'reason', Datetime,
                                                 Datetime, 'tokenOwner', Datetime)
@@ -120,8 +156,26 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     res = rssClient.selectStatusElement('Resource', 'Status', 'TestName123456789')
     #check if the select query was executed properly
     self.assertTrue(res['OK'])
-    #check if the name that we got is equal to the previously added 'TestName1234_Test'
-    self.assertEqual(res['Value'][0][0], 'Active')
+    #check if the name that we got is equal to the previously added 'TestName123456789'
+    self.assertEqual(res['Value'][0][0], 'TestName123456789')
+    self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][0][2], 'Active')
+
+    #try to re-add the same element but with different value
+    res = rssClient.addIfNotThereStatusElement( 'Resource', 'Status', 'TestName123456789', 'statusType',
+                                                'Banned', 'elementType', 'another reason', Datetime,
+                                                Datetime, 'tokenOwner', Datetime)
+    #check if the addIfNotThereStatus query was executed properly
+    self.assertTrue(res['OK'])
+    res = rssClient.selectStatusElement('Resource', 'Status', 'TestName123456789')
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    #check if the name that we got is equal to the previously added 'TestName123456789'
+    self.assertEqual(res['Value'][0][0], 'TestName123456789')
+    self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][0][2], 'Active') # NOT Banned
+
+
 
     #delete it
     res = rssClient.deleteStatusElement('Resource', 'Status', 'TestName123456789')

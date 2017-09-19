@@ -17,21 +17,17 @@ from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
 
 db = None
 
-def convert(params, meta):
+def convert(table, params):
   """ Conversion utility for backward compatibility
   """
-  element, tableType, name, statusType, status, \
-  elementType, reason, dateEffective, lastCheckTime, \
-  tokenOwner, tokenExpiration = [params.get(k) for k in ['element', 'tableType', 'name', 'statusType', 'status', \
-                                                         'elementType', 'reason', 'dateEffective', 'lastCheckTime', \
-                                                         'tokenOwner', 'tokenExpiration']]
+  gLogger.debug("Calls from old client")
+  #need to swap!
+  tableFromOldCall = params['table']
+  params = table
+  table = tableFromOldCall
 
-  element = 'Resource' # in v6r17 and below, element is always 'Resource'
-  tableType = meta['table'].replace('Resource', '')
+  return params, table
 
-  return element, tableType, name, statusType, status, \
-  elementType, reason, dateEffective, lastCheckTime, \
-  tokenOwner, tokenExpiration, meta
 
 def initializeResourceStatusHandler( _serviceInfo ):
   '''
@@ -99,317 +95,155 @@ class ResourceStatusHandler( RequestHandler ):
     global db
     db = database
 
-  types_insert = [ basestring, basestring, basestring, basestring, basestring, basestring,
-                   basestring, datetime.datetime, datetime.datetime, basestring, datetime.datetime]
-  def export_insert( self, element, tableType, name, statusType, status,
-                     elementType, reason, dateEffective, lastCheckTime,
-                     tokenOwner, tokenExpiration ):
+
+  types_insert = [ basestring, dict ]
+  def export_insert( self, table, params ):
     '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
+    This method is a bridge to access :class:`ResourceStatusDB` remotely. It
+    does not add neither processing nor validation. If you need to know more
+    about this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
-      **name** - `string`
-        name of the individual of class element
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **elementType** - `string`
-        column to distinguish between the different elements in the same element
-        table.
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership
+      **table** - `string` or `dict`
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
-    :return: S_OK() || S_ERROR()
-    '''
-
-    if isinstance(element, dict): #for backward compatibility - converting to str variables
-      gLogger.debug("Calls from old client")
-      #element is the old "params" in this case
-      element, tableType, name, statusType, status, \
-      elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
-
-
-    gLogger.info( 'insert: %s %s %s %s %s %s %s %s %s %s %s' %
-                  ( element, tableType, name, statusType, status,
-                    elementType, reason, dateEffective, lastCheckTime,
-                    tokenOwner, tokenExpiration ) )
-
-    res = db.insert( element, tableType, name, statusType, status,
-                     elementType, reason, dateEffective, lastCheckTime,
-                     tokenOwner, tokenExpiration )
-
-    self.__logResult( 'insert', res )
-
-    return res
-
-
-  types_select = [ [basestring, dict], [basestring, dict, None] ]
-  def export_select( self, element, tableType, name = None, statusType = None,
-                     status = None, elementType = None, reason = None,
-                     dateEffective = None, lastCheckTime = None,
-                     tokenOwner = None, tokenExpiration = None, meta = None ):
-    '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
-
-    :Parameters:
-      **element** - `string` or `dict`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` | `Resource` | `Node`
-        if it is a dict, then it's a dictionary of parameters
-        (here for backward compatibility with versions prior to DIRAC v6r18)
-      **tableType** - `string` or `dict`
-        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
-        if it is a dict, then it's a dictionary of meta (see last parameter of this same method)
-        (here for backward compatibility with versions prior to DIRAC v6r18)
-      **name** - `string`
-        name of the individual of class element
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **elementType** - `string`
-        column to distinguish between the different elements in the same element
-        table.
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
+      **params** - `dict`
+        arguments for the mysql query. Currently it is being used only for column selection.
         For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(element, dict): #for backward compatibility - converting to str variables
-      gLogger.debug("Calls from old client")
-      #element is the old "params" in this case
-      element, tableType, name, statusType, status, \
-      elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, meta = convert(element, tableType)
+    if isinstance(table, dict): #for backward compatibility: conversion is needed
+      params, table = convert(table, params)
+
+    gLogger.info( 'insert: %s %s' % ( table, params ) )
+    res = db.insert( table, params )
+    self.__logResult( 'insert', res )
+
+    return res
 
 
-    gLogger.info( 'select: %s %s %s %s %s %s %s %s %s %s %s' %
-                  ( element, tableType, name, statusType, status,
-                    elementType, reason, dateEffective, lastCheckTime,
-                    tokenOwner, tokenExpiration ) )
 
-    res = db.select( element, tableType, name, statusType, status,
-                     elementType, reason, dateEffective, lastCheckTime,
-                     tokenOwner, tokenExpiration, meta )
+  types_select = [ basestring, dict ]
+  def export_select( self, table, params ):
+    '''
+    This method is a bridge to access :class:`ResourceStatusDB` remotely. It
+    does not add neither processing nor validation. If you need to know more
+    about this method, you must keep reading on the database documentation.
 
+    :Parameters:
+      **table** - `string` or `dict`
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
+
+      **params** - `dict`
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+
+    :return: S_OK() || S_ERROR()
+    '''
+
+    if isinstance(table, dict): #for backward compatibility: conversion is needed
+      params, table = convert(table, params)
+
+    gLogger.info( 'select: %s %s' % ( table, params ) )
+    res = db.select( table, params )
     self.__logResult( 'select', res )
 
     return res
 
-  types_delete = [ basestring, basestring ]
-  def export_delete( self, element, tableType, name = None, statusType = None,
-                     status = None, elementType = None, reason = None,
-                     dateEffective = None, lastCheckTime = None,
-                     tokenOwner = None, tokenExpiration = None, meta = None):
+
+  types_delete = [ [basestring, dict], dict ]
+  def export_delete( self, table, params ):
     '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
+    This method is a bridge to access :class:`ResourceStatusDB` remotely.\
+    It does not add neither processing nor validation. If you need to know more \
+    about this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
-      **name** - `string`
-        name of the individual of class element
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **elementType** - `string`
-        column to distinguish between the different elements in the same element
-        table.
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership
-      **meta** - `dict`
-        metadata for the mysql query
+      **table** - `string` or `dict`
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
+
+      **params** - `dict`
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+
 
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(element, dict): #for backward compatibility - converting to str variables
-      gLogger.debug("Calls from old client")
-      #element is the old "params" in this case
-      element, tableType, name, statusType, status, \
-      elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, meta = convert(element, tableType)
+    if isinstance(table, dict): #for backward compatibility: conversion is needed
+      params, table = convert(table, params)
 
-    gLogger.info( 'delete: %s %s %s %s %s %s %s %s %s %s %s' %
-                  ( element, tableType, name, statusType, status,
-                    elementType, reason, dateEffective, lastCheckTime,
-                    tokenOwner, tokenExpiration ) )
-
-    res = db.delete( element, tableType, name, statusType, status,
-                     elementType, reason, dateEffective, lastCheckTime,
-                     tokenOwner, tokenExpiration, meta )
-
+    gLogger.info( 'delete: %s %s' % ( table, params ) )
+    res = db.delete( table, params )
     self.__logResult( 'delete', res )
 
     return res
 
-  types_addOrModify = [ basestring, basestring ]
-  def export_addOrModify( self, element, tableType, name = None, statusType = None,
-                          status = None, elementType = None, reason = None,
-                          dateEffective = None, lastCheckTime = None,
-                          tokenOwner = None, tokenExpiration = None ):
+
+  types_addOrModify = [ [basestring, dict], dict ]
+  def export_addOrModify( self, table, params ):
     '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
+    This method is a bridge to access :class:`ResourceStatusDB` remotely.\
+    It does not add neither processing nor validation. If you need to know more \
+    about this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
-      **name** - `string`
-        name of the individual of class element
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **elementType** - `string`
-        column to distinguish between the different elements in the same element
-        table.
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership
+      **table** - `string` or `dict`
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
+
+      **params** - `dict`
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+
 
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(element, dict): #for backward compatibility - converting to str variables
-      gLogger.debug("Calls from old client")
-      #element is the old "params" in this case
-      element, tableType, name, statusType, status, \
-      elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
+    if isinstance(table, dict): #for backward compatibility: conversion is needed
+      params, table = convert(table, params)
 
-    gLogger.info( 'addOrModify: %s %s %s %s %s %s %s %s %s %s %s' %
-                  ( element, tableType, name, statusType, status,
-                    elementType, reason, dateEffective, lastCheckTime,
-                    tokenOwner, tokenExpiration ) )
-
-    res = db.addOrModify( element, tableType, name, statusType, status,
-                          elementType, reason, dateEffective, lastCheckTime,
-                          tokenOwner, tokenExpiration )
-
+    gLogger.info( 'addOrModify: %s %s' % ( table, params ) )
+    res = db.addOrModify( table, params )
     self.__logResult( 'addOrModify', res )
 
     return res
 
 
-  types_addIfNotThere = [ basestring, basestring ]
-  def export_addIfNotThere( self, element, tableType, name = None, statusType = None,
-                            status = None, elementType = None, reason = None,
-                            dateEffective = None, lastCheckTime = None,
-                            tokenOwner = None, tokenExpiration = None ):
+  types_addIfNotThere = [ [basestring, dict], dict ]
+  def export_addIfNotThere( self, table, params ):
     '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
+    This method is a bridge to access :class:`ResourceStatusDB` remotely.\
+    It does not add neither processing nor validation. If you need to know more \
+    about this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **tableType** - `string`
-        it has to be a valid tableType [ 'Status', 'Log', 'History' ]
-      **name** - `string`
-        name of the individual of class element
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **elementType** - `string`
-        column to distinguish between the different elements in the same element
-        table.
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership
+      **table** - `string` or `dict`
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
+
+      **params** - `dict`
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+
 
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(element, dict): #for backward compatibility - converting to str variables
-      gLogger.debug("Calls from old client")
-      #element is the old "params" in this case
-      element, tableType, name, statusType, status, \
-      elementType, reason, dateEffective, lastCheckTime, \
-      tokenOwner, tokenExpiration, _meta = convert(element, tableType)
+    if isinstance(table, dict): #for backward compatibility: conversion is needed
+      params, table = convert(table, params)
 
-    gLogger.info( 'addIfNotThere: %s %s %s %s %s %s %s %s %s %s %s' %
-                  ( element, tableType, name, statusType, status,
-                    elementType, reason, dateEffective, lastCheckTime,
-                    tokenOwner, tokenExpiration ) )
-
-    res = db.addIfNotThere( element, tableType, name, statusType, status,
-                            elementType, reason, dateEffective, lastCheckTime,
-                            tokenOwner, tokenExpiration )
-
+    gLogger.info( 'addIfNotThere: %s %s' % ( table, params ) )
+    res = db.addIfNotThere( table, params )
     self.__logResult( 'addIfNotThere', res )
 
     return res
+
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

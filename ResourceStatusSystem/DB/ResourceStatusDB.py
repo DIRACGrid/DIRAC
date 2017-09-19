@@ -32,7 +32,7 @@ class ElementStatusBase(object):
   statustype = Column( 'StatusType', String( 128 ), nullable = False, server_default = 'all', primary_key = True )
   status = Column( 'Status', String( 8 ), nullable = False, server_default = '' )
   reason = Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' )
-  dateeffective = Column( 'DateEffective', DateTime, nullable = False )
+  dateeffective = Column( 'DateEffective', DateTime )
   tokenexpiration = Column( 'TokenExpiration', String( 255 ), nullable = False ,
                             server_default = '9999-12-31 23:59:59' )
   elementtype = Column( 'ElementType', String( 32 ), nullable = False, server_default = '' )
@@ -103,11 +103,11 @@ class SiteStatus(ElementStatusBase, rssBase):
 
   __tablename__ = 'SiteStatus'
 
-class ElementStatus(ElementStatusBase, rssBase):
-  """ ElementStatus table
+class ResourceStatus(ElementStatusBase, rssBase):
+  """ ResourceStatusDB table
   """
 
-  __tablename__ = 'ElementStatus'
+  __tablename__ = 'ResourceStatus'
 
 class NodeStatus(ElementStatusBase, rssBase):
   """ NodeStatus table
@@ -131,16 +131,16 @@ class SiteHistory(ElementStatusBaseWithID, rssBase):
   __tablename__ = 'SiteHistory'
 
 
-class ElementLog(ElementStatusBaseWithID, rssBase):
-  """ ElementLog table
+class ResourceLog(ElementStatusBaseWithID, rssBase):
+  """ ResourceLog table
   """
 
-  __tablename__ = 'ElementLog'
+  __tablename__ = 'ResourceLog'
 
-class ElementHistory(ElementStatusBaseWithID, rssBase):
-  """ ElementHistory table
+class ResourceHistory(ElementStatusBaseWithID, rssBase):
+  """ ResourceHistory table
   """
-  __tablename__ = 'ElementHistory'
+  __tablename__ = 'ResourceHistory'
 
 
 class NodeLog(ElementStatusBaseWithID, rssBase):
@@ -212,7 +212,7 @@ class ResourceStatusDB( object ):
     tablesInDB = self.inspector.get_table_names()
 
     for table in ['SiteStatus',
-                  'ElementStatus',
+                  'ResourceStatus',
                   'NodeStatus']:
       if table not in tablesInDB:
         getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
@@ -221,8 +221,8 @@ class ResourceStatusDB( object ):
 
     for table in ['SiteLog',
                   'SiteHistory',
-                  'ElementLog',
-                  'ElementHistory',
+                  'ResourceLog',
+                  'ResourceHistory',
                   'NodeLog',
                   'NodeHistory']:
       if table not in tablesInDB:
@@ -284,7 +284,7 @@ class ResourceStatusDB( object ):
     try:
       select = session.query(table_c)
       for columnName, columnValue in params.iteritems():
-        if columnName.lower() == 'meta': # special case
+        if columnName.lower() == 'meta' and columnValue: # special case
           columnNames = columnValue['columns']
         else: # these are real columns
           if not columnValue:
@@ -404,6 +404,51 @@ class ResourceStatusDB( object ):
       session.rollback()
       self.log.exception( "addOrModify: unexpected exception", lException = e )
       return S_ERROR( "addOrModify: unexpected exception %s" % e )
+    finally:
+      session.close()
+
+
+  def addIfNotThere( self, table, params ):
+    '''
+    Using the PrimaryKeys of the table, it looks for the record in the database.
+    If it is not there, it is inserted as a new entry.
+
+    :param table: table where to add or modify
+    :type table: str
+    :param params: dictionary of what to add or modify
+    :type params: dict
+
+    :return: S_OK() || S_ERROR()
+    '''
+
+    session = self.sessionMaker_o()
+    table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+    primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
+
+    try:
+      select = session.query(table_c)
+      for columnName, columnValue in params.iteritems():
+        if not columnValue or columnName not in primaryKeys:
+          continue
+        column_a = getattr(table_c, columnName.lower())
+        if isinstance(columnValue, (list, tuple)):
+          select = select.filter(column_a.in_(list(columnValue)))
+        elif isinstance(columnValue, basestring):
+          select = select.filter(column_a == columnValue)
+        else:
+          self.log.error("type(columnValue) == %s" %type(columnValue))
+
+      res = select.first() # the selection is done via primaryKeys only
+      if not res: # if not there, let's insert it
+        return self.insert(table, params)
+
+      session.commit()
+      return S_OK()
+
+    except exc.SQLAlchemyError as e:
+      session.rollback()
+      self.log.exception( "addIfNotThere: unexpected exception", lException = e )
+      return S_ERROR( "addIfNotThere: unexpected exception %s" % e )
     finally:
       session.close()
 
