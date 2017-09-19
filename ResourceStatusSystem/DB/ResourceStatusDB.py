@@ -67,9 +67,15 @@ class ElementStatusBase(object):
 
 class ElementStatusBaseWithID(ElementStatusBase):
   """ Prototype for tables
+
+      This is almost the same as ElementStatusBase, with the following differences:
+      - there's an autoincrement ID column which is also the primary key
+      - the name and statusType components are not part of the primary key
   """
 
   id = Column( 'ID', BigInteger, nullable = False, autoincrement= True, primary_key = True )
+  name = Column( 'Name', String( 64 ), nullable = False )
+  statustype = Column( 'StatusType', String( 128 ), nullable = False, server_default = 'all' )
 
   def fromDict( self, dictionary ):
     """
@@ -108,13 +114,6 @@ class NodeStatus(ElementStatusBase, rssBase):
   """
 
   __tablename__ = 'NodeStatus'
-
-class ComponentStatus(ElementStatusBase, rssBase):
-  """ ComponentStatus table
-  """
-
-  __tablename__ = 'ComponentStatus'
-
 
 
 
@@ -155,17 +154,6 @@ class NodeHistory(ElementStatusBaseWithID, rssBase):
   """
   __tablename__ = 'NodeHistory'
 
-
-class ComponentLog(ElementStatusBaseWithID, rssBase):
-  """ ComponentLog table
-  """
-
-  __tablename__ = 'ComponentLog'
-
-class ComponentHistory(ElementStatusBaseWithID, rssBase):
-  """ ComponentHistory table
-  """
-  __tablename__ = 'ComponentHistory'
 
 
 
@@ -225,8 +213,7 @@ class ResourceStatusDB( object ):
 
     for table in ['SiteStatus',
                   'ElementStatus',
-                  'NodeStatus',
-                  'ComponentStatus']:
+                  'NodeStatus']:
       if table not in tablesInDB:
         getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:
@@ -237,9 +224,7 @@ class ResourceStatusDB( object ):
                   'ElementLog',
                   'ElementHistory',
                   'NodeLog',
-                  'NodeHistory',
-                  'ComponentLog',
-                  'ComponentHistory']:
+                  'NodeHistory']:
       if table not in tablesInDB:
         getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:
