@@ -47,6 +47,8 @@ class ElementStatusBase(object):
     :type arguments: dict
     """
 
+    utcnow = self.dateeffective if self.dateeffective else datetime.datetime.utcnow().replace(microsecond = 0)
+
     self.name = dictionary.get( 'Name', self.name )
     self.statustype = dictionary.get( 'StatusType', self.statustype )
     self.status = dictionary.get( 'Status', self.status )
@@ -54,7 +56,7 @@ class ElementStatusBase(object):
     self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective )
     self.tokenexpiration = dictionary.get( 'TokenExpiration', self.tokenexpiration )
     self.elementtype = dictionary.get( 'ElementType', self.elementtype )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
     self.tokenowner = dictionary.get( 'TokenOwner', self.tokenowner )
 
   def toList(self):
@@ -86,6 +88,7 @@ class ElementStatusBaseWithID(ElementStatusBase):
     """
 
     self.id = dictionary.get( 'ID', self.id )
+    super(ElementStatusBaseWithID, self).fromDict(dictionary)
 
   def toList(self):
     """ Simply returns a list of column values
@@ -161,7 +164,7 @@ class NodeHistory(ElementStatusBaseWithID, rssBase):
 
 class ResourceStatusDB( object ):
   '''
-    Class that defines the tables for the ResourceStatusDB on a python dictionary.
+    Class that defines the interactions with the tables of the ResourceStatusDB.
   '''
 
   def __init__( self ):
@@ -206,7 +209,7 @@ class ResourceStatusDB( object ):
 
   def __initializeDB( self ):
     """
-    Create the tables
+    Create the tables, if they are not there yet
     """
 
     tablesInDB = self.inspector.get_table_names()
@@ -249,6 +252,10 @@ class ResourceStatusDB( object ):
     # expire_on_commit is set to False so that we can still use the object after we close the session
     session = self.sessionMaker_o( expire_on_commit = False ) #FIXME: should we use this flag elsewhere?
     tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
+    
+    if table.endswith('Status') and not params.get('DateEffective'):
+      params['DateEffective'] = datetime.datetime.utcnow().replace(microsecond = 0)
+
     tableRow_o.fromDict(params)
 
     try:
@@ -389,16 +396,23 @@ class ResourceStatusDB( object ):
           self.log.error("type(columnValue) == %s" %type(columnValue))
 
       res = select.first() # the selection is done via primaryKeys only
-      if not res: # if not there, let's insert it
+      if not res: # if not there, let's insert it (and exit)
         return self.insert(table, params)
 
       # now we assume we need to modify
       for columnName, columnValue in params.iteritems():
+        if columnName == 'LastCheckTime' and not columnValue: # we always update lastCheckTime
+          columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
+        if columnName == 'Status' and columnValue != res.status: # we update dateEffective iff we change the status
+          if columnName == 'DateEffective' and not columnValue:
+            columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
         if columnValue:
           setattr(res, columnName.lower(), columnValue)
-
       session.commit()
-      return S_OK()
+
+      # and since we modified, we now insert a new line in the log table
+      return self.insert(table.strip('Status') + 'Log', params)
+      # The line inserted will maybe become a History line thanks to the SummarizeLogsAgent
 
     except exc.SQLAlchemyError as e:
       session.rollback()
