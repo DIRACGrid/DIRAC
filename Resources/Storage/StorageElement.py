@@ -239,7 +239,7 @@ class StorageElementItem( object ):
     self.okMethods = [ 'getLocalProtocols',
                        'getProtocols',
                        'getRemoteProtocols',
-                       'getStorageElementName',
+                       'storageElementName',
                        'getStorageParameters',
                        'getTransportURL',
                        'isLocalSE' ]
@@ -272,19 +272,37 @@ class StorageElementItem( object ):
   #
 
   def getStorageElementName( self ):
+    """ SE name getter for backward compatibility """
+    return S_OK( self.storageElementName() )
+
+  def storageElementName( self ):
     """ SE name getter """
-    self.log.getSubLogger( 'getStorageElementName' ).verbose( "The Storage Element name is %s." % self.name )
-    return S_OK( self.name )
+    self.log.getSubLogger( 'storageElementName' ).verbose( "The Storage Element name is %s." % self.name )
+    return self.name
 
   def getChecksumType( self ):
-    """ get local /Resources/StorageElements/SEName/ChecksumType option if defined, otherwise
+    """ Checksum type getter for backward compatibility """
+    return S_OK( self.checksumType() )
+
+  def checksumType( self ):
+    """ get specific /Resources/StorageElements/<SEName>/ChecksumType option if defined, otherwise
         global /Resources/StorageElements/ChecksumType
     """
-    self.log.getSubLogger( 'getChecksumType' ).verbose( "get checksum type for %s." % self.name )
-    return S_OK( str( gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" ) ).upper()
-                 if "ChecksumType" not in self.options else str( self.options["ChecksumType"] ).upper() )
+    self.log.getSubLogger( 'checksumType' ).verbose( "get checksum type for %s." % self.name )
+    return self.options["ChecksumType"].upper() \
+      if "ChecksumType" in self.options else gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" ).upper()
 
   def getStatus( self ):
+    """
+    Return Status of the SE only if the SE is valid
+    It returns an S_OK/S_ERROR structure
+    """
+    valid = self.isValid()
+    if not valid['OK']:
+      return valid
+    return S_OK( self.status() )
+
+  def status( self ):
     """
      Return Status of the SE, a dictionary with:
 
@@ -299,6 +317,7 @@ class StorageElementItem( object ):
       * TapeSE: True if TXDY with X > 0 (defaults to False)
       * TotalCapacityTB: float (-1 if not defined)
       * DiskCacheTB: float (-1 if not defined)
+    It returns directly the dictionary
     """
 
     self.log.getSubLogger( 'getStatus' ).verbose( "determining status of %s." % self.name )
@@ -313,7 +332,7 @@ class StorageElementItem( object ):
       retDict['TapeSE'] = False
       retDict['TotalCapacityTB'] = -1
       retDict['DiskCacheTB'] = -1
-      return S_OK( retDict )
+      return retDict
 
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
@@ -342,9 +361,9 @@ class StorageElementItem( object ):
     except Exception:
       retDict['DiskCacheTB'] = -1
 
-    return S_OK( retDict )
+    return retDict
 
-  def isValid( self, operation = '' ):
+  def isValid( self, operation = None ):
     """ check CS/RSS statuses for :operation:
 
     :param str operation: operation name
@@ -360,19 +379,16 @@ class StorageElementItem( object ):
     if 'VO' in self.options and not self.vo in self.options['VO']:
       log.debug( "StorageElement is not allowed for VO", self.vo )
       return S_ERROR( errno.EACCES, "StorageElement.isValid: StorageElement is not allowed for VO" )
-    log.verbose( "Determining if the StorageElement %s is valid for %s" % ( self.name, operation ) )
+    log.verbose( "Determining if the StorageElement %s is valid for operation '%s'" % ( self.name, operation ) )
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
 
     # Determine whether the StorageElement is valid for checking, reading, writing
-    res = self.getStatus()
-    if not res[ 'OK' ]:
-      log.debug( "Could not call getStatus", res['Message'] )
-      return S_ERROR( "SE.isValid could not call the getStatus method" )
-    checking = res[ 'Value' ][ 'Check' ]
-    reading = res[ 'Value' ][ 'Read' ]
-    writing = res[ 'Value' ][ 'Write' ]
-    removing = res[ 'Value' ][ 'Remove' ]
+    status = self.status()
+    checking = status[ 'Check' ]
+    reading = status[ 'Read' ]
+    writing = status[ 'Write' ]
+    removing = status[ 'Remove' ]
 
     # Determine whether the requested operation can be fulfilled
     if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):

@@ -193,7 +193,7 @@ class JobScheduling( OptimizerExecutor ):
           userSites = set( userSites )
           onlineSites &= userSites
           userSites = list( onlineSites ) + list( userSites - onlineSites )
-        return self.__sendToTQ( jobState, jobManifest, userSites, userBannedSites )
+        return self.__sendToTQ( jobState, jobManifest, userSites, userBannedSites, onlineSites = onlineSites )
 
     # ===================================================
     # From now on we know it's a user job with input data
@@ -360,7 +360,7 @@ class JobScheduling( OptimizerExecutor ):
     return S_OK( list( filteredSites ) )
 
 
-  def __sendToTQ( self, jobState, jobManifest, sites, bannedSites ):
+  def __sendToTQ( self, jobState, jobManifest, sites, bannedSites, onlineSites = None ):
     """This method sends jobs to the task queue agent and if candidate sites
        are defined, updates job JDL accordingly.
     """
@@ -396,7 +396,7 @@ class JobScheduling( OptimizerExecutor ):
       if key in jobManifest:
         reqCfg.setOption( reqKey, ", ".join( jobManifest.getOption( key, [] ) ) )
 
-    result = self.__setJobSite( jobState, sites )
+    result = self.__setJobSite( jobState, sites, onlineSites = onlineSites )
     if not result[ 'OK' ]:
       return result
 
@@ -449,11 +449,10 @@ class JobScheduling( OptimizerExecutor ):
 
     for seName in siteSEs:
       se = StorageElement( seName, vo = vo )
-      result = se.getStatus()
-      if not result[ 'OK' ]:
-        self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
-        return S_ERROR( "Cannot retrieve SE status" )
-      seStatus = result[ 'Value' ]
+      seStatus = se.getStatus()
+      if not seStatus['OK']:
+        return seStatus
+      seStatus = seStatus['Value']
       if seStatus[ 'Read' ] and seStatus[ 'TapeSE' ]:
         tapeSEs.append( seName )
       if seStatus[ 'Read' ] and seStatus[ 'DiskSE' ]:
@@ -565,12 +564,7 @@ class JobScheduling( OptimizerExecutor ):
       for seName in closeSEs:
         # If we don't have the SE status get it and store it
         if seName not in seStatus:
-          seObj = StorageElement( seName, vo = vo )
-          result = seObj.getStatus()
-          if not result['OK' ]:
-            self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
-            continue
-          seStatus[ seName ] = result[ 'Value' ]
+          seStatus[ seName ] = StorageElement( seName, vo = vo ).status()
         # get the SE status from mem and add it if its disk
         status = seStatus[ seName ]
         if status['Read'] and status['DiskSE']:
@@ -600,12 +594,11 @@ class JobScheduling( OptimizerExecutor ):
             siteData[ 'disk' ] += 1
             siteData[ 'tape' ] -= 1
 
-    return S_OK()
-
-
-  def __setJobSite( self, jobState, siteList ):
+  def __setJobSite( self, jobState, siteList, onlineSites = None ):
     """ Set the site attribute
     """
+    if onlineSites is None:
+      onlineSites = []
     numSites = len( siteList )
     if numSites == 0:
       self.jobLog.info( "Any site is candidate" )
@@ -614,29 +607,16 @@ class JobScheduling( OptimizerExecutor ):
       self.jobLog.info( "Only site %s is candidate" % siteList[0] )
       return jobState.setAttribute( "Site", siteList[0] )
 
-    tierSite = []
-    tierLevel = -1
-    for siteName in siteList:
-      result = getSiteTier( siteName )
-      if not result[ 'OK' ]:
-        self.jobLog.error( "Cannot get tier for site %s" % ( siteName ) )
-        continue
-      siteTier = result[ 'Value' ]
-
-      # FIXME: hack for cases where you get a T0 together with T1(s) in the list of sites and you want to see "multiple"
-      if siteTier == 0:
-        siteTier = 1
-
-      if tierLevel == -1 or tierLevel > siteTier:
-        tierLevel = siteTier
-        tierSite = []
-      if tierLevel == siteTier:
-        tierSite.append( siteName )
-
-    if len( tierSite ) == 1:
-      siteName = "Group.%s" % ".".join( tierSite[0].split( "." )[1:] )
+    # If the job has input data, the online sites are hosting the data
+    if len( onlineSites ) == 1:
+      siteName = "Group.%s" % ".".join( list( onlineSites )[0].split( "." )[1:] )
       self.jobLog.info( "Group %s is candidate" % siteName )
+    elif len( onlineSites ):
+      # More than one site with input
+      siteName = "MultipleInput"
+      self.jobLog.info( "Several input sites are candidate: %s" % ','.join( onlineSites ) )
     else:
+      # No input site reported (could be a user job)
       siteName = "Multiple"
       self.jobLog.info( "Multiple sites are candidate" )
 

@@ -234,53 +234,6 @@ class InputData( OptimizerExecutor ):
     return self.__getSiteCandidates( okReplicas, vo )
 
   #############################################################################
-  def __checkActiveSEs( self, jobState, replicaDict ):
-    """
-    Check active SE and replicas and identify possible Site candidates for
-    the execution of the job
-    """
-    # Now let's check if some replicas might not be available due to banned SE's
-    self.jobLog.info( "Checking active replicas" )
-    startTime = time.time()
-    result = jobState.getManifest()
-    if not result['OK']:
-      return result
-    manifest = result['Value']
-    vo = manifest.getOption( 'VirtualOrganization' )
-    dm = self.__getDataManager( vo )
-    if dm is None:
-      return S_ERROR( 'Failed to instantiate DataManager for vo %s' % vo )
-    else:
-      result = dm.checkActiveReplicas( replicaDict )
-    self.jobLog.info( "Active replica check took %.2f secs" % ( time.time() - startTime ) )
-    if not result['OK']:
-      # due to banned SE's input data might no be available
-      msg = "On Hold: Input data not Available for SE"
-      self.jobLog.warn( result['Message'] )
-      return S_ERROR( result['Message'] )
-
-    activeReplicaDict = result['Value']
-
-    result = self.__checkReplicas( jobState, activeReplicaDict, vo )
-
-    if not result['OK']:
-      # due to a banned SE's input data is not available at a single site
-      msg = "On Hold: Input data not Available due to banned SE"
-      self.jobLog.warn( result['Message'] )
-      return S_ERROR( msg )
-
-    resolvedData = {}
-    # THIS IS ONE OF THE MOST HORRIBLE HACKS. I hate the creator of the Value of Value of Successful of crap...
-    resolvedData['Value'] = S_OK( activeReplicaDict )
-    resolvedData['SiteCandidates'] = result['Value']
-    result = self.storeOptimizerParam( self.ex_getProperty( 'optimizerName' ), resolvedData )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-      return result
-    return S_OK( resolvedData )
-
-
-  #############################################################################
   def __getSitesForSE( self, seName ):
     """ Returns a list of sites having the given SE as a local one.
         Uses the local cache of the site-se information
@@ -348,12 +301,10 @@ class InputData( OptimizerExecutor ):
             continue
           siteList = result[ 'Value' ]
           seObj = StorageElement( seName, vo = vo )
-          result = seObj.getStatus()
-          if not result[ 'OK' ]:
-            self.jobLog.error( "Could not retrieve status for SE %s: %s" % ( seName, result[ 'Message' ] ) )
-            continue
-          seStatus = result[ 'Value' ]
-          seDict[ seName ] = { 'Sites': siteList, 'Status': seStatus }
+          seStatus = seObj.getStatus()
+          if not seStatus['OK']:
+            return seStatus
+          seDict[ seName ] = { 'Sites': siteList, 'Status': seStatus['Value'] }
         # Get SE info from the dict
         seData = seDict[ seName ]
         siteList = seData[ 'Sites' ]

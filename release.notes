@@ -1,3 +1,69 @@
+[v6r17p31]
+
+*RMS
+FIX: ReqClient - avoid INFO message in client
+*WMS
+CHANGE: JobWrapper - allow SE-USER to be defined as another SE group (e.g. Tier1-USER)
+*DMS
+CHANGE: DMSHelpers - make resolveSEGroup recursive in order to be able to define SE groups in terms of SE groups
+
+[v6r17p30]
+
+*DMS
+CHANGE: StorageElement - added status(), storageElementName(), checksumType() methods returning
+        values directly without the S_OK structure. Remove the checks of OK everywhere
+NEW: dirac-dms-add-file, DataManager - added option (-f) to force an overwrite of an existing file
+
+*TS:
+FIX: TransformationDB.py - set the ExternalID before the ExternalStatus in order to avoid inconsistent 
+     tasks if setting the ExternalID fails
+
+*StorageManagementSystem
+FIX: StorageManagementClient.py - return the full list of onlineSites while it was previously happy 
+     with only one
+
+*Resources
+FIX: HTCondorCEComputingElement.py - transfer output files(only log and err) for remote scheduler
+
+[v6r17p29]
+
+*WMS
+CHANGE: split time left margins in cpuMargin and wallClockMargin. Also simplified check.
+
+
+[v6r17p28]
+
+*WMS
+BUGFIX: JobScheduling - fix a bug introduced in 6r17p27 changes
+
+*Monitoring
+BUGFIX: MonitoringReporter - do not try to close the MQ connection if MD is not used
+
+[v6r17p27]
+
+*Configuration
+FIX: ConfigurationClient - allow default value to be a tuple, a dict or a set
+
+*Monitoring
+CHANGE: DBUtils - change bucket sizes and simplify settings
+
+*DMS
+FIX: DMSRequestOperationsBase, RemoveFile - allow request to not fail if an SE is temporarily banned
+FIX: dirac-admin-allow-se - first call of gLogger after its import
+
+*RMS
+CHANGE: remove scripts dirac-rms-show-request, dirac-rms-cancel-request and dirac-rms-reset-request 
+        and replace with a single script dirac-rms-request with option (default is "show")
+CHANGE: allow script to finalize a request if needed and set the job status appropriately
+
+*Resources
+FIX: LocalComputingElement - pilot jobIDs start with ssh to be compatible with pilotCommands. 
+     Still original jobIDs are passed to getJobStatus. To be reviewed
+
+*WMS
+CHANGE: JobScheduling - assign a job to Group.<site>.<country>, if input files are at <site>.<country>.
+        If several input replicas, assign Waiting to "MultipleInput"
+
 [v6r17p26]
 
 *Core

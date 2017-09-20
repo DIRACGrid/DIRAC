@@ -147,7 +147,8 @@ class MonitoringReporter( object ):
       gLogger.exception( "Error committing", lException = e )
       return S_ERROR( "Error committing %s" % repr( e ).replace( ',)', ')' ) )
     finally:
-      mqProducer.close()
+      if mqProducer:
+        mqProducer.close()
       self.__documents.extend( documents )
 
     return S_OK( recordSent )
