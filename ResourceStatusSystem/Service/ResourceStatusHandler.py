@@ -8,8 +8,6 @@
 
 __RCSID__ = '$Id: $'
 
-import datetime
-
 from DIRAC                                             import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB

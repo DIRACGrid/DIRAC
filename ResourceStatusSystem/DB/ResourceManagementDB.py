@@ -1,6 +1,18 @@
-''' ResourceManagementDB
+''' ResourceManagementDB:
+    This module provides definition of the DB tables, and methods to access them. 
 
-  Module that provides basic methods to access the ResourceManagementDB.
+    Written using sqlalchemy declarative_base
+
+
+
+    For extending the ResourceStatusDB tables:
+
+    1) In the extended module, call:
+
+    from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import rmsBase, TABLESLIST
+    TABLESLIST = TABLESLIST + [list of new table names]
+
+    2) provide a declarative_base definition of the tables (new or extended) in the extension module
 
 '''
 
@@ -12,10 +24,21 @@ from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine, Column, String, DateTime, exc, Text, Integer, Float
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
+from DIRAC.ResourceStatusSystem.Utilities import Utils
+
 
 # Defining the tables
+
+TABLESLIST = ['AccountingCache',
+              'DowntimeCache',
+              'GGUSTicketsCache',
+              'JobCache',
+              'PilotCache',
+              'PolicyResult',
+              'SpaceTokenOccupancyCache',
+              'TransferCache']
 
 rmsBase = declarative_base()
 
@@ -331,6 +354,7 @@ class ResourceManagementDB( object ):
     Class that defines the tables for the ResourceManagementDB on a python dictionary.
   '''
 
+
   def __init__( self ):
     """c'tor
 
@@ -338,6 +362,12 @@ class ResourceManagementDB( object ):
     """
 
     self.log = gLogger.getSubLogger( 'ResourceManagementDB' )
+
+    #This is the list of tables that will be created.
+    #It can be extended in an extension module
+    self.tablesList = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceManagementDB' ),
+                              'TABLESLIST')
+
 
     self.__initializeConnection( 'ResourceStatus/ResourceManagementDB' )
     self.__initializeDB()
@@ -378,16 +408,20 @@ class ResourceManagementDB( object ):
 
     tablesInDB = self.inspector.get_table_names()
 
-    for table in ['AccountingCache',
-                  'DowntimeCache',
-                  'GGUSTicketsCache',
-                  'JobCache',
-                  'PilotCache',
-                  'PolicyResult',
-                  'SpaceTokenOccupancyCache',
-                  'TransferCache']:
+    for table in self.tablesList:
       if table not in tablesInDB:
-        getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
+        found = False
+        #is it in the extension? (fully or extended)
+        for ext in gConfig.getValue( 'DIRAC/Extensions', [] ):
+          try:
+            getattr(__import__(ext + __name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
+            found = True
+            break
+          except (ImportError, AttributeError):
+            continue
+        # If not found in extensions, import it from DIRAC base.
+        if not found:
+          getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:
         gLogger.debug( 'Table \'%s\' already exists' %table )
 
