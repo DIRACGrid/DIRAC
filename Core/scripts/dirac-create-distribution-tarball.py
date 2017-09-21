@@ -497,7 +497,36 @@ class TarModuleCreator( object ):
     shutil.rmtree( dirToTar )
     gLogger.info( "Tar file %s created" % tarName )
     return S_OK( tarfilePath )
+  
+  def __compileWebApp( self ):
 
+    """
+
+    This method is compile the DIRAC web framework
+
+    """
+    dctArgs = []
+    destDir = self.params.destination
+    dctArgs.append( "-D '%s'" % destDir )
+
+    scriptName = os.path.join( "%s/WebAppDIRAC/scripts/" % destDir, "dirac-webapp-compile.py" )
+
+    if not os.path.isfile( scriptName ):
+
+      return S_ERROR ( "%s file does not exists!" % scriptName )
+
+    dctArgs.append( "-e '%s'" % self.params.name )
+
+    cmd = "'%s' %s" % ( scriptName, " ".join( dctArgs ) )
+
+    gLogger.verbose( "Executing %s" % cmd )
+
+    if os.system( cmd ) != 0:
+
+       return S_ERROR( "Failed to execute the command" )
+
+    return S_OK()
+  
   def create( self ):
     if not isinstance( self.params, TarModuleCreator.Params ):
       return S_ERROR( "Argument is not a TarModuleCreator.Params object " )
@@ -515,6 +544,15 @@ class TarModuleCreator( object ):
     result = self.__generateReleaseNotes()
     if not result[ 'OK' ]:
       gLogger.error( "Won't generate release notes: %s" % result[ 'Message' ] )
+    
+    if 'WebAppDIRAC' in self.params.name:
+
+      retVal = self.__compileWebApp()
+
+      if not retVal['OK']:
+
+        gLogger.error( 'Web is not compiled: %s' % retVal['Message'] )
+    
     return self.__generateTarball()
 
 if __name__ == "__main__":
