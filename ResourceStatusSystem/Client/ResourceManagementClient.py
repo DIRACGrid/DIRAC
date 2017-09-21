@@ -594,7 +594,7 @@ class ResourceManagementClient( object ):
 
   def deletePolicyResult( self, element = None, name = None, policyName = None,
                           statusType = None, status = None, reason = None,
-                          dateEffective = True, lastCheckTime = None ):
+                          dateEffective = None, lastCheckTime = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
 

@@ -490,6 +490,8 @@ class ResourceManagementDB( object ):
             select = select.filter(column_a == columnValue)
           elif isinstance(columnValue, datetime.datetime): #FIXME: is it correct/enough? (should check also below)
             select = select.filter(column_a == columnValue)
+          elif isinstance(columnValue, bool):
+            select = select.filter(column_a == columnValue)
           else:
             self.log.error("type(columnValue) == %s" %type(columnValue))
 
@@ -534,6 +536,8 @@ class ResourceManagementDB( object ):
         elif isinstance(columnValue, basestring):
           deleteQuery = deleteQuery.filter(column_a == columnValue)
         elif isinstance(columnValue, datetime.datetime):
+          deleteQuery = deleteQuery.filter(column_a == columnValue)
+        elif isinstance(columnValue, bool):
           deleteQuery = deleteQuery.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" %type(columnValue))
