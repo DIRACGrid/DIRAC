@@ -499,11 +499,8 @@ class TarModuleCreator( object ):
     return S_OK( tarfilePath )
   
   def __compileWebApp( self ):
-
     """
-
     This method is compile the DIRAC web framework
-
     """
     dctArgs = []
     destDir = self.params.destination
