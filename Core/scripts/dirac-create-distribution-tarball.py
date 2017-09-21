@@ -508,23 +508,14 @@ class TarModuleCreator( object ):
     dctArgs = []
     destDir = self.params.destination
     dctArgs.append( "-D '%s'" % destDir )
-
     scriptName = os.path.join( "%s/WebAppDIRAC/scripts/" % destDir, "dirac-webapp-compile.py" )
-
     if not os.path.isfile( scriptName ):
-
       return S_ERROR ( "%s file does not exists!" % scriptName )
-
     dctArgs.append( "-e '%s'" % self.params.name )
-
     cmd = "'%s' %s" % ( scriptName, " ".join( dctArgs ) )
-
     gLogger.verbose( "Executing %s" % cmd )
-
     if os.system( cmd ) != 0:
-
-       return S_ERROR( "Failed to execute the command" )
-
+      return S_ERROR( "Failed to execute the command" )
     return S_OK()
   
   def create( self ):
@@ -544,13 +535,9 @@ class TarModuleCreator( object ):
     result = self.__generateReleaseNotes()
     if not result[ 'OK' ]:
       gLogger.error( "Won't generate release notes: %s" % result[ 'Message' ] )
-    
     if 'WebAppDIRAC' in self.params.name:
-
       retVal = self.__compileWebApp()
-
       if not retVal['OK']:
-
         gLogger.error( 'Web is not compiled: %s' % retVal['Message'] )
     
     return self.__generateTarball()
