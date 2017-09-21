@@ -209,6 +209,7 @@ class ResourceStatusDB( object ):
     self.tablesListWithID = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceStatusDB' ),
                                    'TABLESLISTWITHID')
 
+    self.extensions = gConfig.getValue( 'DIRAC/Extensions', [] )
     self.__initializeConnection( 'ResourceStatus/ResourceStatusDB' )
     self.__initializeDB()
 
@@ -301,7 +302,18 @@ class ResourceStatusDB( object ):
 
     # expire_on_commit is set to False so that we can still use the object after we close the session
     session = self.sessionMaker_o( expire_on_commit = False ) #FIXME: should we use this flag elsewhere?
-    tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
+
+    found = False
+    for ext in self.extensions:
+      try:
+        tableRow_o = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)()
+        found = True
+        break
+      except (ImportError, AttributeError):
+        continue
+    # If not found in extensions, import it from DIRAC base (this same module).
+    if not found:
+      tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
 
     if table.endswith('Status') and not params.get('DateEffective'):
       params['DateEffective'] = datetime.datetime.utcnow().replace(microsecond = 0)
@@ -334,7 +346,17 @@ class ResourceStatusDB( object ):
     '''
 
     session = self.sessionMaker_o()
-    table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+    found = False
+    for ext in self.extensions:
+      try:
+        table_c = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)
+        found = True
+        break
+      except (ImportError, AttributeError):
+        continue
+    # If not found in extensions, import it from DIRAC base (this same module).
+    if not found:
+      table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
     columnNames = []
 
@@ -386,7 +408,17 @@ class ResourceStatusDB( object ):
     :return: S_OK() || S_ERROR()
     """
     session = self.sessionMaker_o()
-    table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+    found = False
+    for ext in self.extensions:
+      try:
+        table_c = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)
+        found = True
+        break
+      except (ImportError, AttributeError):
+        continue
+    # If not found in extensions, import it from DIRAC base (this same module).
+    if not found:
+      table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
     try:
       deleteQuery = session.query(table_c)
@@ -401,7 +433,7 @@ class ResourceStatusDB( object ):
         elif isinstance(columnValue, datetime.datetime):
           deleteQuery = deleteQuery.filter(column_a == columnValue)
         elif isinstance(columnValue, bool):
-          select = select.filter(column_a == columnValue)
+          deleteQuery = deleteQuery.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" %type(columnValue))
 
@@ -433,7 +465,17 @@ class ResourceStatusDB( object ):
     '''
 
     session = self.sessionMaker_o()
-    table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+    found = False
+    for ext in self.extensions:
+      try:
+        table_c = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)
+        found = True
+        break
+      except (ImportError, AttributeError):
+        continue
+    # If not found in extensions, import it from DIRAC base (this same module).
+    if not found:
+      table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
     primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
     try:

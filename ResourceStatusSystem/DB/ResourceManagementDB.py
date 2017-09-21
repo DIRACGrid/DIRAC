@@ -368,7 +368,7 @@ class ResourceManagementDB( object ):
     self.tablesList = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceManagementDB' ),
                               'TABLESLIST')
 
-
+    self.extensions = gConfig.getValue( 'DIRAC/Extensions', [] )
     self.__initializeConnection( 'ResourceStatus/ResourceManagementDB' )
     self.__initializeDB()
 
@@ -412,7 +412,7 @@ class ResourceManagementDB( object ):
       if table not in tablesInDB:
         found = False
         #is it in the extension? (fully or extended)
-        for ext in gConfig.getValue( 'DIRAC/Extensions', [] ):
+        for ext in self.extensions:
           try:
             getattr(__import__(ext + __name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
             found = True
@@ -442,7 +442,20 @@ class ResourceManagementDB( object ):
 
     # expire_on_commit is set to False so that we can still use the object after we close the session
     session = self.sessionMaker_o( expire_on_commit = False ) #FIXME: should we use this flag elsewhere?
-    tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
+
+    found = False
+    for ext in self.extensions:
+      try:
+        tableRow_o = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)()
+        found = True
+        break
+      except (ImportError, AttributeError):
+        continue
+    # If not found in extensions, import it from DIRAC base (this same module).
+    if not found:
+      tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
+
+
     tableRow_o.fromDict(params)
 
     try:
@@ -471,7 +484,18 @@ class ResourceManagementDB( object ):
     '''
 
     session = self.sessionMaker_o()
-    table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+
+    found = False
+    for ext in self.extensions:
+      try:
+        table_c = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)
+        found = True
+        break
+      except (ImportError, AttributeError):
+        continue
+    # If not found in extensions, import it from DIRAC base (this same module).
+    if not found:
+      table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
     columnNames = []
 
@@ -523,7 +547,19 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     """
     session = self.sessionMaker_o()
-    table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+
+    found = False
+    for ext in self.extensions:
+      try:
+        table_c = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)
+        found = True
+        break
+      except (ImportError, AttributeError):
+        continue
+    # If not found in extensions, import it from DIRAC base (this same module).
+    if not found:
+      table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+
 
     try:
       deleteQuery = session.query(table_c)
@@ -570,7 +606,19 @@ class ResourceManagementDB( object ):
     '''
 
     session = self.sessionMaker_o()
-    table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+
+    found = False
+    for ext in self.extensions:
+      try:
+        table_c = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)
+        found = True
+        break
+      except (ImportError, AttributeError):
+        continue
+    # If not found in extensions, import it from DIRAC base (this same module).
+    if not found:
+      table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+
     primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
     try:
