@@ -1,5 +1,5 @@
-''' ResourceStatusDB: 
-    This module provides definition of the DB tables, and methods to access them. 
+''' ResourceStatusDB:
+    This module provides definition of the DB tables, and methods to access them.
 
     Written using sqlalchemy declarative_base
 
@@ -207,7 +207,7 @@ class ResourceStatusDB( object ):
     self.tablesList = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceStatusDB' ),
                               'TABLESLIST')
     self.tablesListWithID = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceStatusDB' ),
-                                   'TABLESLISTWITHID')
+                                    'TABLESLISTWITHID')
 
     self.extensions = gConfig.getValue( 'DIRAC/Extensions', [] )
     self.__initializeConnection( 'ResourceStatus/ResourceStatusDB' )
@@ -496,7 +496,15 @@ class ResourceStatusDB( object ):
         return self.insert(table, params)
 
 
-      # now we assume we need to modify
+      # From now on, we assume we need to modify
+
+      # Treating case of time value updates
+      if not params.get('LastCheckTime'):
+        params['LastCheckTime'] = None
+      if not params.get('DateEffective'):
+        params['DateEffective'] = None
+
+      # Should we change DateEffective?
       changeDE = False
       if params.get('Status'):
         if params.get('Status') != res.status: # we update dateEffective iff we change the status

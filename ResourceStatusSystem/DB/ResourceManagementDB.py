@@ -1,5 +1,5 @@
-''' ResourceManagementDB:
-    This module provides definition of the DB tables, and methods to access them. 
+""" ResourceManagementDB:
+    This module provides definition of the DB tables, and methods to access them.
 
     Written using sqlalchemy declarative_base
 
@@ -14,7 +14,7 @@
 
     2) provide a declarative_base definition of the tables (new or extended) in the extension module
 
-'''
+"""
 
 __RCSID__ = "$Id$"
 
@@ -350,9 +350,9 @@ class TransferCache(rmsBase):
 
 
 class ResourceManagementDB( object ):
-  '''
-    Class that defines the tables for the ResourceManagementDB on a python dictionary.
-  '''
+  """
+    Class that defines the methods to interact to the ResourceManagementDB tables
+  """
 
 
   def __init__( self ):
@@ -373,7 +373,8 @@ class ResourceManagementDB( object ):
     self.__initializeDB()
 
   def __initializeConnection( self, dbPath ):
-    """ Collect from the CS all the info needed to connect to the DB.
+    """
+    Collects from the CS all the info needed to connect to the DB.
     This should be in a base class eventually
     """
 
@@ -403,7 +404,7 @@ class ResourceManagementDB( object ):
 
   def __initializeDB( self ):
     """
-    Create the tables
+    Creates the tables
     """
 
     tablesInDB = self.inspector.get_table_names()
@@ -429,7 +430,7 @@ class ResourceManagementDB( object ):
  # SQL Methods ###############################################################
 
   def insert( self, table, params ):
-    '''
+    """
     Inserts params in the DB.
 
     :param table: table where to insert
@@ -438,7 +439,7 @@ class ResourceManagementDB( object ):
     :type params: dict
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
 
     # expire_on_commit is set to False so that we can still use the object after we close the session
     session = self.sessionMaker_o( expire_on_commit = False ) #FIXME: should we use this flag elsewhere?
@@ -454,7 +455,6 @@ class ResourceManagementDB( object ):
     # If not found in extensions, import it from DIRAC base (this same module).
     if not found:
       tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
-
 
     tableRow_o.fromDict(params)
 
@@ -473,7 +473,7 @@ class ResourceManagementDB( object ):
       session.close()
 
   def select( self, table, params ):
-    '''
+    """
     Uses params to build conditional SQL statement ( WHERE ... ).
 
     :Parameters:
@@ -481,7 +481,7 @@ class ResourceManagementDB( object ):
         arguments for the mysql query ( must match table columns ! ).
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
 
     session = self.sessionMaker_o()
 
@@ -593,7 +593,7 @@ class ResourceManagementDB( object ):
   ## Extended SQL methods ######################################################
 
   def addOrModify( self, table, params ):
-    '''
+    """
     Using the PrimaryKeys of the table, it looks for the record in the database.
     If it is there, it is updated, if not, it is inserted as a new entry.
 
@@ -603,7 +603,7 @@ class ResourceManagementDB( object ):
     :type params: dict
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
 
     session = self.sessionMaker_o()
 
@@ -619,6 +619,7 @@ class ResourceManagementDB( object ):
     if not found:
       table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
+    columns = [key.name for key in class_mapper(table_c).columns]
     primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
     try:
@@ -637,6 +638,12 @@ class ResourceManagementDB( object ):
       res = select.first() # the selection is done via primaryKeys only
       if not res: # if not there, let's insert it
         return self.insert(table, params)
+
+      # Treating case of time value updates
+      if 'LastCheckTime' in columns and not params.get('LastCheckTime'):
+        params['LastCheckTime'] = None
+      if 'DateEffective' in columns and not params.get('DateEffective'):
+        params['DateEffective'] = None
 
       # now we assume we need to modify
       for columnName, columnValue in params.iteritems():

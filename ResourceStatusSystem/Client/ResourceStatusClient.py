@@ -68,8 +68,9 @@ class ResourceStatusClient( object ):
     # make each key name uppercase to match database column names (case sensitive)
     for key, value in sendDict.items():
       del sendDict[key]
-      sendDict.update({uppercase_first_letter(key): value})
-  
+      if value:
+        sendDict.update({uppercase_first_letter(key): value})
+
     return sendDict
 
 
