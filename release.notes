@@ -16,11 +16,13 @@ NEW: Allow to define FailoverURLs and to reference MainServers in the URLs
 
 *FrameworkSystem
 NEW: gLogger is replaced by the new logging system based on the python logging module
-CHANGE: Make the new logging system thread-safe
 NEW: Added ElasticSearch backend for the logging
 NEW: Central Backends configuration to customize their use by multiple components 
 NEW: BundleDelivery - serves also CA's and CRL's all-in-one files
 NEW: added shell scripts for generating CAs and CRLs with the possibility to specify the Input and/or output directories
+CHANGE: can now send mails to multiple recipients using the NotificationClient
+CHANGE: Make the new logging system thread-safe
+FIX: Adapting query to MySLQ 5.7 "GROUP BY" clause
 FIX: TopErrorMessagesReporter - more precise selection to please stricter versions of MySQL
 
 *Core
@@ -74,6 +76,10 @@ NEW: Rewrote RsourceStatus/ResourceManagementDB tables with sqlAlchemy (RM DB wi
 NEW: SiteStatus client to interrogate site status with respect to RSS
 CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
 CHANGE: moved some integration tests from pytest to unittest
+CHANGE: Moved ResourceStatusDB to sqlAlchemy declarative_base
+FIX: Automated setting of lastCheckTime and Dateffective in ResourceStatusDB and ResourceManagementDB
+FIX: fixes for tables inheritance and extensions
+FIX: fixes for Web return structure ("meta" column)
 FIX: ResourceStatus, RSSCacheNoThread - fixed RSS cache generation 
 FIX: ResourceStatus - fixes for getting status from the CS information
 FIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
