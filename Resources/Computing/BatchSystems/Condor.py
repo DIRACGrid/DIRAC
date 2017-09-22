@@ -90,7 +90,7 @@ class Condor( object ):
     Error = $(Cluster).$(Process).err
     Log = test.log
     Environment = CONDOR_JOBID=$(Cluster).$(Process)
-    Getenv = True
+    Getenv = False
     
     Queue %s
     
@@ -272,4 +272,3 @@ class Condor( object ):
     resultDict["Waiting"] = waitingJobs
     resultDict["Running"] = runningJobs
     return resultDict
-  
