@@ -503,7 +503,7 @@ class ResourceManagementDB( object ):
       select = session.query(table_c)
       for columnName, columnValue in params.iteritems():
         if columnName.lower() == 'meta' and columnValue: # special case
-          columnNames = columnValue['columns']
+          columnNames = columnValue.get('columns')
         else: # these are real columns
           if not columnValue:
             continue
