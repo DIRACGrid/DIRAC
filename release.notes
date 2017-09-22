@@ -1,3 +1,11 @@
+[v6r17p32]
+
+Resources:
+CHANGE: /Computing/BatchSystems/Condor.py: do not copy SiteDirector's shell environment variables into the job environment
+
+*WMS
+CHANGE: Add option to clear PYTHONPATH on pilot start
+
 [v6r17p31]
 
 *RMS
