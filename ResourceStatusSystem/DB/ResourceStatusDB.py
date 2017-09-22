@@ -371,11 +371,7 @@ class ResourceStatusDB( object ):
           column_a = getattr(table_c, columnName.lower())
           if isinstance(columnValue, (list, tuple)):
             select = select.filter(column_a.in_(list(columnValue)))
-          elif isinstance(columnValue, basestring):
-            select = select.filter(column_a == columnValue)
-          elif isinstance(columnValue, datetime.datetime): #FIXME: is it correct/enough? (should check also below)
-            select = select.filter(column_a == columnValue)
-          elif isinstance(columnValue, bool):
+          elif isinstance(columnValue, (basestring, datetime.datetime, bool)):
             select = select.filter(column_a == columnValue)
           else:
             self.log.error("type(columnValue) == %s" %type(columnValue))
@@ -428,11 +424,7 @@ class ResourceStatusDB( object ):
         column_a = getattr(table_c, columnName.lower())
         if isinstance(columnValue, (list, tuple)):
           deleteQuery = deleteQuery.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, basestring):
-          deleteQuery = deleteQuery.filter(column_a == columnValue)
-        elif isinstance(columnValue, datetime.datetime):
-          deleteQuery = deleteQuery.filter(column_a == columnValue)
-        elif isinstance(columnValue, bool):
+        elif isinstance(columnValue, (basestring, datetime.datetime, bool) ):
           deleteQuery = deleteQuery.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" %type(columnValue))
