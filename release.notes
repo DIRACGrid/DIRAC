@@ -137,6 +137,15 @@ CHANGE: Add to the TS system test, the test for transformations with meta-filter
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
 
+
+[v6r17p32]
+
+Resources:
+CHANGE: /Computing/BatchSystems/Condor.py: do not copy SiteDirector's shell environment variables into the job environment
+
+*WMS
+CHANGE: Add option to clear PYTHONPATH on pilot start
+
 [v6r17p31]
 
 *RMS
