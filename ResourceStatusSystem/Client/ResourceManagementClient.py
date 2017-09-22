@@ -6,7 +6,6 @@
 
 __RCSID__ = '$Id:  $'
 
-from datetime import datetime, timedelta
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 # a method that makes the first letter uppercase only (and leaves the rest letters unaffected)
@@ -59,11 +58,7 @@ class ResourceManagementClient( object ):
     # make each key name uppercase to match database column names (case sensitive)
     for key, value in sendDict.items():
       del sendDict[key]
-
-      # apply default values
-      if key == 'tokenExpiration' and value is None:
-        sendDict.update({uppercase_first_letter(key): datetime.utcnow() + timedelta(hours=24)})
-      else:
+      if value:
         sendDict.update({uppercase_first_letter(key): value})
 
     return sendDict
@@ -600,7 +595,7 @@ class ResourceManagementClient( object ):
 
   def deletePolicyResult( self, element = None, name = None, policyName = None,
                           statusType = None, status = None, reason = None,
-                          dateEffective = True, lastCheckTime = None ):
+                          dateEffective = None, lastCheckTime = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
 

@@ -48,7 +48,7 @@ class ClientChain( TestClientSiteStatusTestCase ):
     result = self.stClient.getSites()
     self.assertTrue(result['OK'])
 
-    assert testSite in result['Value']
+    self.assertTrue( testSite in result['Value'] )
 
     # TEST getSiteStatuses
     # ...............................................................................
@@ -56,7 +56,7 @@ class ClientChain( TestClientSiteStatusTestCase ):
     result = self.stClient.getSiteStatuses( [ testSite ] )
     self.assertTrue(result['OK'])
 
-    assert result['Value'][testSite] == "Active"
+    self.assertEqual( result['Value'][testSite], "Active")
 
     # TEST getUsableSites
     # ...............................................................................
@@ -64,14 +64,14 @@ class ClientChain( TestClientSiteStatusTestCase ):
     result = self.stClient.getUsableSites( [testSite] )
     self.assertTrue(result['OK'])
 
-    assert result['Value'][0] == testSite
+    self.assertEqual(result['Value'][0], testSite)
 
     # TEST isUsableSite
     # ...............................................................................
 
     result = self.stClient.isUsableSite(testSite)
     self.assertTrue(result['OK'])
-    assert result['Value'] is True
+    self.assertTrue(result['Value'])
 
     # finally delete the test site
     res = self.rsClient.deleteStatusElement('Site', 'Status', testSite)

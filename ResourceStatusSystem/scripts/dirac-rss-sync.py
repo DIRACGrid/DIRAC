@@ -160,7 +160,7 @@ def initSites():
                    'lastCheckTime': None,
                    'tokenOwner': elements[2] }
 
-    result = rssClient.updateStatusElement( "Site", "Status", **parameters )
+    result = rssClient.addOrModifyStatusElement( "Site", "Status", **parameters )
 
     if not result[ 'OK' ]:
       subLogger.error( result[ 'Message' ] )

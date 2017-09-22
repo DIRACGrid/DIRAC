@@ -107,7 +107,7 @@ class SiteStatus( object ):
         continue
       else:
         if self.rssFlag:
-          siteStatusDict[siteName] = result['Value'][0][0]
+          siteStatusDict[siteName] = result['Value'][0][2]
         else:
           siteStatusDict[siteName] = result['Value']
 
@@ -152,7 +152,7 @@ class SiteStatus( object ):
       return S_OK(False)
 
     if self.rssFlag:
-      status = siteStatus['Value'][0][1]
+      status = siteStatus['Value'][0][2]
     else:
       status = siteStatus['Value'][0][0]
 
@@ -228,7 +228,7 @@ class SiteStatus( object ):
       else:
 
         if self.rssFlag:
-          siteStatus = siteStatus['Value'][0][0]
+          siteStatus = siteStatus['Value'][0][2]
         else:
           siteStatus = siteStatus['Value']
 
