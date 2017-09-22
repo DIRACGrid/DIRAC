@@ -1,9 +1,9 @@
-# $HeadURL$
 """  ErrorMessageMonitor gets new errors that have been injected into the
      SystemLoggingDB and reports them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. Reviewer option
      contains the list of users to be notified.
 """
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule                         import AgentModule
@@ -61,14 +61,13 @@ class ErrorMessageMonitor( AgentModule ):
     if not result['Value']:
       self.log.info( 'No messages need review' )
       return S_OK( 'No messages need review' )
-    returnFields = [ 'FixedTextID', 'FixedTextString', 'SystemName',
-                     'SubSystemName' ]
+    returnFields = [ 'FixedTextID', 'FixedTextString', 'SystemName', 'SubSystemName' ]
     result = self.systemLoggingDB._queryDB( showFieldList = returnFields,
-                                            groupColumn = 'FixedTextString',
+                                            groupColumn = 'FixedTextString,FixedTextID,SystemName',
                                             condDict = condDict )
     if not result['OK']:
       self.log.error( 'Failed to obtain the non reviewed Strings',
-                     result['Message'] )
+                      result['Message'] )
       return S_OK()
     messageList = result['Value']
 
@@ -83,8 +82,8 @@ class ErrorMessageMonitor( AgentModule ):
 
     if self._mailAddress:
       result = self.notification.sendMail( self._mailAddress, self._subject, mailBody )
-      if not result[ 'OK' ]:
-        self.log.warn( "The mail could not be sent" )
+      if not result['OK']:
+        self.log.warn( "The mail could not be sent", result['Message'] )
         return S_OK()
 
     messageIDs = [ message[0] for message in messageList ]
@@ -96,5 +95,5 @@ class ErrorMessageMonitor( AgentModule ):
     self.log.verbose( 'Updated message Status for:', str( messageList ) )
 
     self.log.info( "The messages have been sent for review",
-                    "There are %s new descriptions" % len( messageList ) )
+                   "There are %s new descriptions" % len( messageList ) )
     return S_OK( "%s Messages have been sent for review" % len( messageList ) )
