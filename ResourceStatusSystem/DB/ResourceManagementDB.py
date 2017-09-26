@@ -19,6 +19,7 @@
 __RCSID__ = "$Id$"
 
 import datetime
+from sqlalchemy import desc
 from sqlalchemy.orm import sessionmaker, class_mapper
 from sqlalchemy.orm.query import Query
 from sqlalchemy.engine.reflection import Inspector
@@ -485,11 +486,13 @@ class ResourceManagementDB( object ):
     if not found:
       table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
-    # are there specified columns?
-    columnNames = []
-    if params.get('Meta'):
-      columnNames = [column.lower() for column in params.get('Meta').get('columns', [])]
-      params.pop('Meta')
+    # handling query conditions found in 'Meta'
+    columnNames = [column.lower() for column in params.get('Meta', {}).get('columns', [])]
+    older = params.get('Meta', {}).get('older', None)
+    newer = params.get('Meta', {}).get('newer', None)
+    order = params.get('Meta', {}).get('order', None)
+    limit = params.get('Meta', {}).get('limit', None)
+    params.pop('Meta', None)
 
     try:
       # setting up the select query
@@ -514,6 +517,21 @@ class ResourceManagementDB( object ):
           select = select.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" %type(columnValue))
+      if older:
+        column_a = getattr(table_c, older[0].lower())
+        select = select.filter(column_a < older[1])
+      if newer:
+        column_a = getattr(table_c, newer[0].lower())
+        select = select.filter(column_a > newer[1])
+      if order:
+        order = [order] if isinstance(order, basestring) else list(order)
+        column_a = getattr(table_c, order[0].lower())
+        if len(order) == 2 and order[1].lower() == 'desc':
+          select = select.order_by(desc(column_a))
+        else:
+          select = select.order_by(column_a)
+      if limit:
+        select = select.limit(int(limit))
 
       # querying
       selectionRes = select.all()
@@ -559,6 +577,12 @@ class ResourceManagementDB( object ):
     if not found:
       table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
+    # handling query conditions found in 'Meta'
+    older = params.get('Meta', {}).get('older', None)
+    newer = params.get('Meta', {}).get('newer', None)
+    order = params.get('Meta', {}).get('order', None)
+    limit = params.get('Meta', {}).get('limit', None)
+    params.pop('Meta', None)
 
     try:
       deleteQuery = Query(table_c, session = session)
@@ -572,6 +596,21 @@ class ResourceManagementDB( object ):
           deleteQuery = deleteQuery.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" %type(columnValue))
+      if older:
+        column_a = getattr(table_c, older[0].lower())
+        deleteQuery = deleteQuery.filter(column_a < older[1])
+      if newer:
+        column_a = getattr(table_c, newer[0].lower())
+        deleteQuery = deleteQuery.filter(column_a > newer[1])
+      if order:
+        order = [order] if isinstance(order, basestring) else list(order)
+        column_a = getattr(table_c, order[0].lower())
+        if len(order) == 2 and order[1].lower() == 'desc':
+          deleteQuery = deleteQuery.order_by(desc(column_a))
+        else:
+          deleteQuery = deleteQuery.order_by(column_a)
+      if limit:
+        deleteQuery = deleteQuery.limit(int(limit))
 
       res = deleteQuery.delete(synchronize_session=False) #FIXME: unsure about it
       session.commit()
