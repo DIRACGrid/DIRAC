@@ -126,9 +126,10 @@ class DowntimeCommand( Command ):
     if element == 'Site':
 
       gocSite = getGOCSiteName( elementName )
-      if not gocSite[ 'OK' ]:
-        return gocSite
-      elementName = gocSite[ 'Value' ]
+      if not gocSite[ 'OK' ]: # The site is most probably not a grid site - not an issue, of course
+        pass # so, elementName remains unchanged
+      else:
+        elementName = gocSite[ 'Value' ]
 
     # The DIRAC se names mean nothing on the grid, but their hosts do mean.
     elif elementType == 'StorageElement':
@@ -200,7 +201,7 @@ class DowntimeCommand( Command ):
       return results
     results = results[ 'Value' ]
 
-    if results is None:
+    if results is None: # no downtimes found
       return S_OK( None )
 
 

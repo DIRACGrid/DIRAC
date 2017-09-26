@@ -1,4 +1,3 @@
-# $HeadURL$
 """  The SitesDIRACGOCDBmapping module performs the necessary CS gymnastics to
      resolve sites DIRAC-GOCDB names.
 
