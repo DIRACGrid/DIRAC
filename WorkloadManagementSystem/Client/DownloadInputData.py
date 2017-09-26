@@ -221,16 +221,20 @@ class DownloadInputData:
 
     # Report datasets that could not be downloaded
     report = ''
-    if failedReplicas:
-      self.log.warn( 'The following LFN(s) could not be downloaded to the WN:\n%s' % 'n'.join( sorted( failedReplicas ) ) )
-
     if resolvedData:
-      report = 'Successfully downloaded LFN(s):\n'
-      report += '\n'.join( sorted( resolvedData ) )
-      report += '\nDownloaded %d / %d files from local Storage Elements on first attempt.' % ( localSECount, len( resolvedData ) )
+      report += 'Successfully downloaded %d LFN(s)' % len( resolvedData )
+      if localSECount != len( resolvedData ):
+        report += ' (%d from local SEs)' % localSECount
+      report += ':\n' + '\n'.join( sorted( resolvedData ) )
+    failedReplicas = sorted( failedReplicas.difference( resolvedData ) )
+    if failedReplicas:
+      self.log.warn( 'The following LFN(s) could not be downloaded to the WN:\n%s' % 'n'.join( failedReplicas ) )
+      report += '\nFailed to download %d LFN(s):\n' % len( failedReplicas )
+      report += '\n'.join( failedReplicas )
+
+    if report:
       self.__setJobParam( COMPONENT_NAME, report )
 
-    failedReplicas = [lfn for lfn in sorted( failedReplicas ) if lfn not in resolvedData]
     return S_OK( {'Successful': resolvedData, 'Failed':failedReplicas} )
 
   #############################################################################
