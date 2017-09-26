@@ -68,7 +68,7 @@ class DownloadInputData:
       self.log.verbose( 'Data to resolve passed directly to DownloadInputData module' )
       self.inputData = dataToResolve  # e.g. list supplied by another module
 
-    self.inputData = sorted( [x.replace( 'LFN:', '' ) for x in self.inputData] )
+    self.inputData = sorted( lfn.replace( 'LFN:', '' ) for lfn in self.inputData )
     self.log.info( 'InputData to be downloaded is:\n%s' % '\n'.join( self.inputData ) )
 
     replicas = self.fileCatalogResult['Value']['Successful']
