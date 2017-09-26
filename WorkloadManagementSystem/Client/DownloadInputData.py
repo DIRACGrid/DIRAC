@@ -224,8 +224,10 @@ class DownloadInputData:
     if resolvedData:
       report += 'Successfully downloaded %d LFN(s)' % len( resolvedData )
       if localSECount != len( resolvedData ):
-        report += ' (%d from local SEs)' % localSECount
-      report += ':\n' + '\n'.join( sorted( resolvedData ) )
+        report += ' (%d from local SEs):\n' % localSECount
+      else:
+        report += ' from local SEs:\n'
+      report += '\n'.join( sorted( resolvedData ) )
     failedReplicas = sorted( failedReplicas.difference( resolvedData ) )
     if failedReplicas:
       self.log.warn( 'The following LFN(s) could not be downloaded to the WN:\n%s' % 'n'.join( failedReplicas ) )
