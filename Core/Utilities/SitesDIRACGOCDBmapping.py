@@ -18,7 +18,7 @@ def getGOCSiteName( diracSiteName ):
     :attr:`diracSiteName` - string: DIRAC site name (e.g. 'LCG.CERN.ch')
   """
   gocDBName = gConfig.getValue( '/Resources/Sites/%s/%s/Name' % ( diracSiteName.split( '.' )[0],
-                                                          diracSiteName ) )
+                                                                  diracSiteName ) )
   if not gocDBName:
     return S_ERROR( "No GOC site name for %s in CS (Not a grid site ?)" % diracSiteName )
   else:
@@ -98,7 +98,7 @@ def getDIRACGOCDictionary():
 
   :return:  A dictionary of DIRAC site names (key) and GOCDB site names (value).
   """
-  
+
   log = gLogger.getSubLogger( 'getDIRACGOCDictionary' )
   log.debug( 'Begin function ...' )
 
@@ -120,7 +120,7 @@ def getDIRACGOCDictionary():
 
     diracSiteName = elements[PATHELEMENTS - 2]
     dictionary[diracSiteName] = gocdbSiteName
-    
+
   log.debug( 'End function.' )
   return S_OK( dictionary )
 

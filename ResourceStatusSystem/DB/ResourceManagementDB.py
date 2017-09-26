@@ -70,9 +70,11 @@ class AccountingCache(rmsBase):
     self.name = dictionary.get( 'Name', self.name )
     self.plotname = dictionary.get( 'PlotName', self.plotname )
     self.plottype = dictionary.get( 'PlotType', self.plottype )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
     self.result = dictionary.get( 'Result', self.result )
-    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective if self.dateeffective else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective if self.dateeffective \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -113,8 +115,10 @@ class DowntimeCache(rmsBase):
     self.link = dictionary.get( 'Link', self.link )
     self.startdate = dictionary.get( 'StartDate', self.startdate )
     self.enddate = dictionary.get( 'EndDate', self.enddate )
-    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective if self.dateeffective else datetime.datetime.utcnow().replace(microsecond = 0) )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective if self.dateeffective \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -150,7 +154,8 @@ class GGUSTicketsCache(rmsBase):
     self.opentickets = dictionary.get( 'OpenTickets', self.opentickets )
     self.gocsite = dictionary.get( 'GocSite', self.gocsite )
     self.link = dictionary.get( 'Link', self.link )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -181,7 +186,8 @@ class JobCache(rmsBase):
     self.status = dictionary.get( 'Status', self.status )
     self.efficiency = dictionary.get( 'Efficiency', self.efficiency )
     self.maskstatus = dictionary.get( 'MaskStatus', self.maskstatus )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -217,7 +223,8 @@ class PilotCache(rmsBase):
     self.status = dictionary.get( 'Status', self.status )
     self.pilotjobeff = dictionary.get( 'PilotJobEff', self.pilotjobeff )
     self.pilotsperjob = dictionary.get( 'PilotsPerJob', self.pilotsperjob )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -256,8 +263,10 @@ class PolicyResult(rmsBase):
     self.name = dictionary.get( 'Name', self.name )
     self.status = dictionary.get( 'Status', self.status )
     self.reason = dictionary.get( 'Reason', self.reason )
-    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective if self.dateeffective else datetime.datetime.utcnow().replace(microsecond = 0) )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective if self.dateeffective \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -294,7 +303,8 @@ class SpaceTokenOccupancyCache(rmsBase):
     self.guaranteed = dictionary.get( 'Guaranteed', self.guaranteed )
     self.free = dictionary.get( 'Free', self.free )
     self.total = dictionary.get( 'Total', self.total )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -328,7 +338,8 @@ class TransferCache(rmsBase):
     self.destinationname = dictionary.get( 'DestinationName', self.destinationname )
     self.metric = dictionary.get( 'Metric', self.metric )
     self.value = dictionary.get( 'Value', self.value )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values

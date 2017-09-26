@@ -4,6 +4,8 @@
 
 '''
 
+#pylint: disable=unused-argument
+
 from DIRAC                                                  import S_OK
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 

@@ -232,7 +232,9 @@ class DowntimeCommand( Command ):
           gocdbST = gOCDBServiceType.lower()
           csST = downDic[ 'SERVICE_TYPE' ].lower()
           if gocdbST != csST:
-            return S_ERROR( "SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST, csST, dt[ 'Name' ]) )
+            return S_ERROR( "SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST,
+                                                                                             csST,
+                                                                                             dt[ 'Name' ]) )
       else:
         #WARNING: do we want None as default value?
         dt[ 'gOCDBServiceType' ] = None
