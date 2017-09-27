@@ -168,7 +168,8 @@ class ResourceStatus( object ):
   :type elementName: str
   :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
   :type elementType: str
-  :param statusType: type of the status (meaningful only when elementType==StorageElement, otherwise it is 'all' or ['all'])
+  :param statusType: type of the status (meaningful only when elementType==StorageElement,
+                     otherwise it is 'all' or ['all'])
   :type statusType: str, list
   """
 

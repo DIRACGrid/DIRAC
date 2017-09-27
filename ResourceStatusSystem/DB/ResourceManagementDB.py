@@ -19,7 +19,9 @@
 __RCSID__ = "$Id$"
 
 import datetime
+from sqlalchemy import desc
 from sqlalchemy.orm import sessionmaker, class_mapper
+from sqlalchemy.orm.query import Query
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine, Column, String, DateTime, exc, Text, Integer, Float
@@ -65,14 +67,14 @@ class AccountingCache(rmsBase):
     :type arguments: dict
     """
 
-    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
-
     self.name = dictionary.get( 'Name', self.name )
     self.plotname = dictionary.get( 'PlotName', self.plotname )
     self.plottype = dictionary.get( 'PlotType', self.plottype )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
     self.result = dictionary.get( 'Result', self.result )
-    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective )
+    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective if self.dateeffective \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -113,8 +115,10 @@ class DowntimeCache(rmsBase):
     self.link = dictionary.get( 'Link', self.link )
     self.startdate = dictionary.get( 'StartDate', self.startdate )
     self.enddate = dictionary.get( 'EndDate', self.enddate )
-    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime )
+    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective if self.dateeffective \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -146,13 +150,12 @@ class GGUSTicketsCache(rmsBase):
     :type arguments: dict
     """
 
-    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
-
     self.tickets = dictionary.get( 'Tickets', self.tickets )
     self.opentickets = dictionary.get( 'OpenTickets', self.opentickets )
     self.gocsite = dictionary.get( 'GocSite', self.gocsite )
     self.link = dictionary.get( 'Link', self.link )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -179,13 +182,12 @@ class JobCache(rmsBase):
     Fill the fields of the JobCache object from a dictionary
     """
 
-    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
-
     self.site = dictionary.get( 'Site', self.site )
     self.status = dictionary.get( 'Status', self.status )
     self.efficiency = dictionary.get( 'Efficiency', self.efficiency )
     self.maskstatus = dictionary.get( 'MaskStatus', self.maskstatus )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -216,14 +218,13 @@ class PilotCache(rmsBase):
     :type arguments: dict
     """
 
-    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
-
     self.site = dictionary.get( 'Site', self.site )
     self.ce = dictionary.get( 'CE', self.ce )
     self.status = dictionary.get( 'Status', self.status )
     self.pilotjobeff = dictionary.get( 'PilotJobEff', self.pilotjobeff )
     self.pilotsperjob = dictionary.get( 'PilotsPerJob', self.pilotsperjob )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -256,16 +257,16 @@ class PolicyResult(rmsBase):
     :type arguments: dict
     """
 
-    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
-
     self.policyname = dictionary.get( 'PolicyName', self.policyname )
     self.statustype = dictionary.get( 'StatusType', self.statustype )
     self.element = dictionary.get( 'Element', self.element )
     self.name = dictionary.get( 'Name', self.name )
     self.status = dictionary.get( 'Status', self.status )
     self.reason = dictionary.get( 'Reason', self.reason )
-    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
+    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective if self.dateeffective \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -297,14 +298,13 @@ class SpaceTokenOccupancyCache(rmsBase):
     :type arguments: dict
     """
 
-    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
-
     self.endpoint = dictionary.get( 'Endpoint', self.endpoint )
     self.token = dictionary.get( 'Token', self.token )
     self.guaranteed = dictionary.get( 'Guaranteed', self.guaranteed )
     self.free = dictionary.get( 'Free', self.free )
     self.total = dictionary.get( 'Total', self.total )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -334,13 +334,12 @@ class TransferCache(rmsBase):
     :type arguments: dict
     """
 
-    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
-
     self.sourcename = dictionary.get( 'SourceName', self.sourcename )
     self.destinationname = dictionary.get( 'DestinationName', self.destinationname )
     self.metric = dictionary.get( 'Metric', self.metric )
     self.value = dictionary.get( 'Value', self.value )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
+    self.lastchecktime = dictionary.get( 'LastCheckTime', self.lastchecktime if self.lastchecktime \
+                                                          else datetime.datetime.utcnow().replace(microsecond = 0) )
 
   def toList(self):
     """ Simply returns a list of column values
@@ -485,6 +484,7 @@ class ResourceManagementDB( object ):
 
     session = self.sessionMaker_o()
 
+    # finding the table
     found = False
     for ext in self.extensions:
       try:
@@ -497,31 +497,63 @@ class ResourceManagementDB( object ):
     if not found:
       table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
-    columnNames = []
+    # handling query conditions found in 'Meta'
+    columnNames = [column.lower() for column in params.get('Meta', {}).get('columns', [])]
+    older = params.get('Meta', {}).get('older', None)
+    newer = params.get('Meta', {}).get('newer', None)
+    order = params.get('Meta', {}).get('order', None)
+    limit = params.get('Meta', {}).get('limit', None)
+    params.pop('Meta', None)
 
     try:
-      select = session.query(table_c)
+      # setting up the select query
+      if not columnNames: # query on the whole table
+        wholeTable = True
+        columns = table_c.__table__.columns # retrieve the column names
+        columnNames = [str(column).split('.')[1] for column in columns]
+        select = Query(table_c, session = session)
+      else: # query only the selected columns
+        wholeTable = False
+        columns = [getattr(table_c, column) for column in columnNames]
+        select = Query(columns, session = session)
+
+      # query conditions
       for columnName, columnValue in params.iteritems():
-        if columnName.lower() == 'meta' and columnValue: # special case
-          columnNames = columnValue['columns']
-        else: # these are real columns
-          if not columnValue:
-            continue
-          column_a = getattr(table_c, columnName.lower())
-          if isinstance(columnValue, (list, tuple)):
-            select = select.filter(column_a.in_(list(columnValue)))
-          elif isinstance(columnValue, (basestring, datetime.datetime, bool) ):
-            select = select.filter(column_a == columnValue)
-          else:
-            self.log.error("type(columnValue) == %s" %type(columnValue))
+        if not columnValue:
+          continue
+        column_a = getattr(table_c, columnName.lower())
+        if isinstance(columnValue, (list, tuple)):
+          select = select.filter(column_a.in_(list(columnValue)))
+        elif isinstance(columnValue, (basestring, datetime.datetime, bool) ):
+          select = select.filter(column_a == columnValue)
+        else:
+          self.log.error("type(columnValue) == %s" %type(columnValue))
+      if older:
+        column_a = getattr(table_c, older[0].lower())
+        select = select.filter(column_a < older[1])
+      if newer:
+        column_a = getattr(table_c, newer[0].lower())
+        select = select.filter(column_a > newer[1])
+      if order:
+        order = [order] if isinstance(order, basestring) else list(order)
+        column_a = getattr(table_c, order[0].lower())
+        if len(order) == 2 and order[1].lower() == 'desc':
+          select = select.order_by(desc(column_a))
+        else:
+          select = select.order_by(column_a)
+      if limit:
+        select = select.limit(int(limit))
 
-      listOfRows = [res.toList() for res in select.all()]
-      finalResult = S_OK( listOfRows )
+      # querying
+      selectionRes = select.all()
 
-      if not columnNames:
-        # retrieve the column names
-        columns = table_c.__table__.columns
-        columnNames = [str(column) for column in columns]
+      # handling the results
+      if wholeTable:
+        selectionResToList = [res.toList() for res in selectionRes]
+      else:
+        selectionResToList = [[getattr(res, col) for col in columnNames] for res in selectionRes]
+
+      finalResult = S_OK(selectionResToList)
 
       finalResult['Columns'] = columnNames
       return finalResult
@@ -556,9 +588,15 @@ class ResourceManagementDB( object ):
     if not found:
       table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
+    # handling query conditions found in 'Meta'
+    older = params.get('Meta', {}).get('older', None)
+    newer = params.get('Meta', {}).get('newer', None)
+    order = params.get('Meta', {}).get('order', None)
+    limit = params.get('Meta', {}).get('limit', None)
+    params.pop('Meta', None)
 
     try:
-      deleteQuery = session.query(table_c)
+      deleteQuery = Query(table_c, session = session)
       for columnName, columnValue in params.iteritems():
         if not columnValue:
           continue
@@ -569,6 +607,21 @@ class ResourceManagementDB( object ):
           deleteQuery = deleteQuery.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" %type(columnValue))
+      if older:
+        column_a = getattr(table_c, older[0].lower())
+        deleteQuery = deleteQuery.filter(column_a < older[1])
+      if newer:
+        column_a = getattr(table_c, newer[0].lower())
+        deleteQuery = deleteQuery.filter(column_a > newer[1])
+      if order:
+        order = [order] if isinstance(order, basestring) else list(order)
+        column_a = getattr(table_c, order[0].lower())
+        if len(order) == 2 and order[1].lower() == 'desc':
+          deleteQuery = deleteQuery.order_by(desc(column_a))
+        else:
+          deleteQuery = deleteQuery.order_by(column_a)
+      if limit:
+        deleteQuery = deleteQuery.limit(int(limit))
 
       res = deleteQuery.delete(synchronize_session=False) #FIXME: unsure about it
       session.commit()
@@ -615,7 +668,7 @@ class ResourceManagementDB( object ):
     primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
     try:
-      select = session.query(table_c)
+      select = Query(table_c, session = session)
       for columnName, columnValue in params.iteritems():
         if not columnValue or columnName not in primaryKeys:
           continue

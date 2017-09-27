@@ -34,7 +34,8 @@ class NotificationClient(object):
                                                                                                 body ) )
     result = S_ERROR()
 
-    for address in list(addresses):
+    addresses = [addresses] if isinstance(addresses, basestring) else list(addresses)
+    for address in addresses:
 
       if localAttempt:
         try:

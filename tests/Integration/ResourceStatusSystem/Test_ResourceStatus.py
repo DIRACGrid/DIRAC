@@ -49,7 +49,7 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     # TEST insertStatusElement
     # ...............................................................................
 
-    #add an element
+    # add an element
     res = rssClient.insertStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
                                         'Active', 'elementType', 'reason', Datetime,
                                         Datetime, 'tokenOwner', Datetime)
@@ -57,7 +57,7 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     self.assertTrue(res['OK'])
 
 
-    #select the previously entered element
+    # select the previously entered element
     res = rssClient.selectStatusElement('Resource', 'Status', 'TestName1234')
     #check if the select query was executed properly
     self.assertTrue(res['OK'])
@@ -65,8 +65,16 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     self.assertEqual(res['Value'][0][1], 'statusType')
     self.assertEqual(res['Value'][0][2], 'Active')
 
-    #try to select the previously entered element from the Log table (it should NOT be there)
+    # try to select the previously entered element from the Log table (it should NOT be there)
     res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234')
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'], [])
+
+    # try to select the previously entered element from the Log table,
+    # with a reduced list of columns
+    # (it should NOT be there)
+    res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234', meta = {'columns': ['name']})
     #check if the select query was executed properly
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], [])
@@ -93,6 +101,15 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
 
     #try to select the previously entered element from the Log table (it should NOT be there)
     res = rssClient.selectStatusElement('Site', 'Log', 'TestSite1234')
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'], [])
+
+    # try to select the previously entered element from the Log table,
+    # with a reduced list of columns
+    # (it should NOT be there)
+    res = rssClient.selectStatusElement('Site', 'Log', 'TestName1234',
+                                        meta = {'columns': ['name']})
     #check if the select query was executed properly
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], [])
@@ -126,6 +143,24 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     self.assertEqual(res['Value'][0][2], 'statusType')
     self.assertEqual(res['Value'][0][3], 'Banned')
 
+    #try to select the previously entered element from the Log table
+    # with a reduced list of columns
+    # (now it should be there)
+    res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
+                                        meta = {'columns':['name']})
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'][0][0], 'TestName1234')
+
+    #try to select the previously entered element from the Log table
+    # with a reduced list of columns
+    # (now it should be there)
+    res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
+                                        meta = {'columns':['statustype', 'status']})
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'][0][0], 'statusType')
+    self.assertEqual(res['Value'][0][1], 'Banned')
 
 
     # TEST modifyStatusElement
@@ -184,6 +219,16 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     self.assertEqual(res['Value'][1][3], 'Active')
     self.assertEqual(res['Value'][2][3], 'Probing') # this is the last one
 
+    #try to select the previously entered element from the Log table (now it should be there)
+    # with a reduced list of columns
+    res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
+                                        meta = {'columns': ['status', 'StatusType']})
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'][0][0], 'Banned')
+    self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][1][0], 'Active')
+    self.assertEqual(res['Value'][2][0], 'Probing') # this is the last one
 
     time.sleep(3) # just for seeing a difference between lastCheckTime and DateEffective
     print "modifing once more the previously entered element, but this time we only modify the reason"
@@ -215,6 +260,63 @@ class ResourceStatusClientChain( TestClientResourceStatusTestCase ):
     self.assertEqual(res['Value'][2][3], 'Probing')
     self.assertEqual(res['Value'][3][3], 'Probing') # this is the last one
 
+
+    #try to select the previously entered element from the Log table (now it should be there)
+    # Using also Meta
+    res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
+                                        meta = {'columns':['Status', 'StatusType'],
+                                                'newer':('DateEffective', Datetime)})
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'][0][0], 'Banned')
+    self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][1][0], 'Active')
+    self.assertEqual(res['Value'][1][1], 'statusType')
+    self.assertEqual(res['Value'][2][0], 'Probing')
+    self.assertEqual(res['Value'][2][1], 'statusType')
+    self.assertEqual(res['Value'][3][0], 'Probing') # this is the last one
+    self.assertEqual(res['Value'][3][1], 'statusType')
+
+
+    #try to select the previously entered element from the Log table (now it should be there)
+    # Using also Meta
+    res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
+                                        meta = {'columns':['Status', 'StatusType'],
+                                                'older':('DateEffective', Datetime)})
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'], [])
+
+    #try to select the previously entered element from the Log table (now it should be there)
+    # Using Meta with order
+    res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
+                                        meta = {'columns':['Status', 'StatusType'],
+                                                'newer':('DateEffective', Datetime),
+                                                'order':('status', 'DESC')})
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'][0][0], 'Probing')
+    self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][1][0], 'Probing')
+    self.assertEqual(res['Value'][1][1], 'statusType')
+    self.assertEqual(res['Value'][2][0], 'Banned')
+    self.assertEqual(res['Value'][2][1], 'statusType')
+    self.assertEqual(res['Value'][3][0], 'Active') # this is the last one (in this order)
+    self.assertEqual(res['Value'][3][1], 'statusType')
+
+
+    #try to select the previously entered element from the Log table (now it should be there)
+    # Using Meta with limit
+    res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
+                                        meta = {'columns':['Status', 'StatusType'],
+                                                'newer':('DateEffective', Datetime),
+                                                'order':'status',
+                                                'limit': 1})
+    #check if the select query was executed properly
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'][0][0], 'Active')
+    self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(len(res['Value']), 1)
 
 
     # TEST deleteStatusElement

@@ -21,7 +21,9 @@ __RCSID__ = "$Id$"
 
 import datetime
 
+from sqlalchemy import desc
 from sqlalchemy.orm import sessionmaker, class_mapper
+from sqlalchemy.orm.query import Query
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine, Column, String, DateTime, exc, BigInteger
@@ -59,7 +61,7 @@ class ElementStatusBase(object):
   statustype = Column( 'StatusType', String( 128 ), nullable = False, server_default = 'all', primary_key = True )
   status = Column( 'Status', String( 8 ), nullable = False, server_default = '' )
   reason = Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' )
-  dateeffective = Column( 'DateEffective', DateTime )
+  dateeffective = Column( 'DateEffective', DateTime, nullable = False )
   tokenexpiration = Column( 'TokenExpiration', String( 255 ), nullable = False ,
                             server_default = '9999-12-31 23:59:59' )
   elementtype = Column( 'ElementType', String( 32 ), nullable = False, server_default = '' )
@@ -315,7 +317,7 @@ class ResourceStatusDB( object ):
     if not found:
       tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
 
-    if table.endswith('Status') and not params.get('DateEffective'):
+    if not params.get('DateEffective'):
       params['DateEffective'] = datetime.datetime.utcnow().replace(microsecond = 0)
 
     tableRow_o.fromDict(params)
@@ -346,6 +348,8 @@ class ResourceStatusDB( object ):
     '''
 
     session = self.sessionMaker_o()
+
+    # finding the table
     found = False
     for ext in self.extensions:
       try:
@@ -358,31 +362,63 @@ class ResourceStatusDB( object ):
     if not found:
       table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
-    columnNames = []
+    # handling query conditions found in 'Meta'
+    columnNames = [column.lower() for column in params.get('Meta', {}).get('columns', [])]
+    older = params.get('Meta', {}).get('older', None)
+    newer = params.get('Meta', {}).get('newer', None)
+    order = params.get('Meta', {}).get('order', None)
+    limit = params.get('Meta', {}).get('limit', None)
+    params.pop('Meta', None)
 
     try:
-      select = session.query(table_c)
+      # setting up the select query
+      if not columnNames: # query on the whole table
+        wholeTable = True
+        columns = table_c.__table__.columns # retrieve the column names
+        columnNames = [str(column).split('.')[1] for column in columns]
+        select = Query(table_c, session = session)
+      else: # query only the selected columns
+        wholeTable = False
+        columns = [getattr(table_c, column) for column in columnNames]
+        select = Query(columns, session = session)
+
+      # query conditions
       for columnName, columnValue in params.iteritems():
-        if columnName.lower() == 'meta' and columnValue: # special case
-          columnNames = columnValue['columns']
-        else: # these are real columns
-          if not columnValue:
-            continue
-          column_a = getattr(table_c, columnName.lower())
-          if isinstance(columnValue, (list, tuple)):
-            select = select.filter(column_a.in_(list(columnValue)))
-          elif isinstance(columnValue, (basestring, datetime.datetime, bool)):
-            select = select.filter(column_a == columnValue)
-          else:
-            self.log.error("type(columnValue) == %s" %type(columnValue))
+        if not columnValue:
+          continue
+        column_a = getattr(table_c, columnName.lower())
+        if isinstance(columnValue, (list, tuple)):
+          select = select.filter(column_a.in_(list(columnValue)))
+        elif isinstance(columnValue, (basestring, datetime.datetime, bool)):
+          select = select.filter(column_a == columnValue)
+        else:
+          self.log.error("type(columnValue) == %s" %type(columnValue))
+      if older:
+        column_a = getattr(table_c, older[0].lower())
+        select = select.filter(column_a < older[1])
+      if newer:
+        column_a = getattr(table_c, newer[0].lower())
+        select = select.filter(column_a > newer[1])
+      if order:
+        order = [order] if isinstance(order, basestring) else list(order)
+        column_a = getattr(table_c, order[0].lower())
+        if len(order) == 2 and order[1].lower() == 'desc':
+          select = select.order_by(desc(column_a))
+        else:
+          select = select.order_by(column_a)
+      if limit:
+        select = select.limit(int(limit))
 
-      listOfRows = [res.toList() for res in select.all()]
-      finalResult = S_OK( listOfRows )
+      # querying
+      selectionRes = select.all()
 
-      if not columnNames:
-        # retrieve the column names
-        columns = table_c.__table__.columns
-        columnNames = [str(column) for column in columns]
+      # handling the results
+      if wholeTable:
+        selectionResToList = [res.toList() for res in selectionRes]
+      else:
+        selectionResToList = [[getattr(res, col) for col in columnNames] for res in selectionRes]
+
+      finalResult = S_OK(selectionResToList)
 
       finalResult['Columns'] = columnNames
       return finalResult
@@ -416,8 +452,15 @@ class ResourceStatusDB( object ):
     if not found:
       table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
 
+    # handling query conditions found in 'Meta'
+    older = params.get('Meta', {}).get('older', None)
+    newer = params.get('Meta', {}).get('newer', None)
+    order = params.get('Meta', {}).get('order', None)
+    limit = params.get('Meta', {}).get('limit', None)
+    params.pop('Meta', None)
+
     try:
-      deleteQuery = session.query(table_c)
+      deleteQuery = Query(table_c, session = session)
       for columnName, columnValue in params.iteritems():
         if not columnValue:
           continue
@@ -428,6 +471,21 @@ class ResourceStatusDB( object ):
           deleteQuery = deleteQuery.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" %type(columnValue))
+      if older:
+        column_a = getattr(table_c, older[0].lower())
+        deleteQuery = deleteQuery.filter(column_a < older[1])
+      if newer:
+        column_a = getattr(table_c, newer[0].lower())
+        deleteQuery = deleteQuery.filter(column_a > newer[1])
+      if order:
+        order = [order] if isinstance(order, basestring) else list(order)
+        column_a = getattr(table_c, order[0].lower())
+        if len(order) == 2 and order[1].lower() == 'desc':
+          deleteQuery = deleteQuery.order_by(desc(column_a))
+        else:
+          deleteQuery = deleteQuery.order_by(column_a)
+      if limit:
+        deleteQuery = deleteQuery.limit(int(limit))
 
       res = deleteQuery.delete(synchronize_session=False) #FIXME: unsure about it
       session.commit()
@@ -471,7 +529,7 @@ class ResourceStatusDB( object ):
     primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
     try:
-      select = session.query(table_c)
+      select = Query(table_c, session = session)
       for columnName, columnValue in params.iteritems():
         if not columnValue or columnName not in primaryKeys:
           continue
@@ -541,7 +599,7 @@ class ResourceStatusDB( object ):
     primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
     try:
-      select = session.query(table_c)
+      select = Query(table_c, session = session)
       for columnName, columnValue in params.iteritems():
         if not columnValue or columnName not in primaryKeys:
           continue
