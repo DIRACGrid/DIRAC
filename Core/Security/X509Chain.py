@@ -91,6 +91,7 @@ class X509Chain(object):
     if not self.__certList:
       return S_ERROR(DErrno.EX509)
     self.__loadedChain = True
+    self.__loadedPKey = True
     # Update internals
     self.__checkProxyness()
     return S_OK()
@@ -249,7 +250,7 @@ class X509Chain(object):
       proxyKey = crypto.PKey()
       proxyKey.generate_key(crypto.TYPE_RSA, strength)
 
-    proxyCert = M2Crypto.X509.X509()
+    proxyCert = X509Certificate()
 
     if rfc:
       proxyCert.set_serial_number(str(int(random.random() * 10 ** 10)))
