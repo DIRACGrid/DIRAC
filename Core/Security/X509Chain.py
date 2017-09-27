@@ -84,11 +84,13 @@ random.seed()
     self.__loadedChain = False
     try:
       self.__certList = self.__certListFromPemString(data, dataFormat)
+      self.loadKeyFromString(data)
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(',)', ')'))
     if not self.__certList:
       return S_ERROR(DErrno.EX509)
     self.__loadedChain = True
+    self.__loadedPKey = True
     # Update internals
     self.__checkProxyness()
     return S_OK()
@@ -165,7 +167,7 @@ random.seed()
     retVal = self.loadChainFromString(pemData)
     if not retVal['OK']:
       return retVal
-    return self.loadKeyFromString( pemData, M2Crypto.util.no_passphrase_callback )
+    return self.loadKeyFromString( pemData )
 
   def __getProxyExtensionList(self, diracGroup=False, rfc=False, rfcLimited=False):
     """
@@ -260,59 +262,59 @@ random.seed()
       proxyKey = M2Crypto.EVP.PKey()
       proxyKey.assign_rsa(M2Crypto.RSA.gen_key(strength, 65537, callback = M2Crypto.util.quiet_genparam_callback ))
 
-    proxyCert = M2Crypto.X509.X509()
+    proxyCert = X509Certificate()
 
     if rfc:
-      proxyCert.set_serial_number( int( random.random() * 10 ** 10 ) )
+      proxyCert.setSerialNumber( int( random.random() * 10 ** 10 ) )
       # No easy way to deep-copy certificate subject
       cloneSubject = M2Crypto.X509.X509_Name()
       parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
       for part in parts:
-        nid, val = part.split('=')
+        nid, val = part.split('=', 1)
         cloneSubject.add_entry_by_txt(field = nid, type = M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
       cloneSubject.add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  str( int( random.random() * 10 ** 10 ) ), len=-1, loc=-1, set=0 )
-      proxyCert.set_subject( cloneSubject )
+      proxyCert.setSubject( cloneSubject )
       for extension in self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ):
-        proxyCert.add_ext( extension )
+        proxyCert.addExtension( extension )
     else:
       serial = issuerCert.getSerialNumber()
       if serial['OK']:
-        proxyCert.set_serial_number( serial['Value'] )
+        proxyCert.setSerialNumber( serial['Value'] )
       else:
         return serial
       parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
       # No easy way to deep-copy certificate subject
       cloneSubject = M2Crypto.X509.X509_Name()
       for part in parts:
-        nid, val = part.split('=')
+        nid, val = part.split('=', 1)
         cloneSubject.add_entry_by_txt(field = nid, type = M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
       if limited:
         cloneSubject.add_entry_by_txt( field = 'CN', type = M2Crypto.ASN1.MBSTRING_ASC, entry = "limited proxy", len = -1, loc = -1, set = 0 )
       else:
         cloneSubject.add_entry_by_txt( field = 'CN', type = M2Crypto.ASN1.MBSTRING_ASC, entry = "proxy", len = -1, loc = -1, set = 0 )
-      proxyCert.set_subject( cloneSubject )
+      proxyCert.setSubject( cloneSubject )
       for extension in self.__getProxyExtensionList( diracGroup ):
-        proxyCert.add_ext( extension )
+        proxyCert.addExtension( extension )
 
     subject = issuerCert.getSubjectNameObject()
     if subject['OK']:
-      proxyCert.set_issuer( subject['Value'] )
+      proxyCert.setIssuer( subject['Value'] )
     else:
       return subject
     version = issuerCert.getVersion()
     if version['OK']:
-      proxyCert.set_version( version['Value'] )
+      proxyCert.setVersion( version['Value'] )
     else:
       return version
-    proxyCert.set_pubkey( proxyKey )
+    proxyCert.setPublicKey( proxyKey )
     proxyNotBefore = M2Crypto.ASN1.ASN1_UTCTIME()
     proxyNotBefore.set_time( int( time.time() ) - 900 )
-    proxyCert.set_not_before( proxyNotBefore )
+    proxyCert.setNotBefore( proxyNotBefore )
     proxyNotAfter = M2Crypto.ASN1.ASN1_UTCTIME()
     proxyNotAfter.set_time( int( time.time() ) + lifeTime )
-    proxyCert.set_not_after( proxyNotAfter )
+    proxyCert.setNotAfter( proxyNotAfter )
     proxyCert.sign( self.__keyObj, 'sha256' )
-    proxyString = "%s%s" % ( proxyCert.as_pem(), proxyKey.as_pem( cipher = None ) )
+    proxyString = "%s%s" % ( proxyCert.asPem(), proxyKey.as_pem( cipher = None, callback = M2Crypto.util.no_passphrase_callback ) )
     for i in range( len( self.__certList ) ):
       crt = self.__certList[i]
       proxyString += crt.asPem()
@@ -539,12 +541,20 @@ random.seed()
     Get the smallest not after date
     """
     if not self.__loadedChain:
-      return S_ERROR(DErrno.ENOCHAIN)
-    notAfter = self.__certList[0].get_not_after()
-    for iC in range(len(self.__certList) - 1, -1, -1):
-      stepNotAfter = self.__certList[iC].get_not_after()
-      if self.__certList[iC].has_expired():
-        return S_OK(stepNotAfter)
+      return S_ERROR( DErrno.ENOCHAIN )
+    notAfter = self.__certList[0].getNotAfterDate()
+    if not notAfter['OK']:
+      return notAfter
+    notAfter = notAfter['Value']
+    for iC in range( len( self.__certList ) - 1, -1, -1 ):
+      stepNotAfter = self.__certList[iC].getNotAfterDate()
+      if not stepNotAfter['OK']:
+        return stepNotAfter
+      expired = self.__certList[iC].hasExpired()
+      if not expired['OK']:
+        return expired
+      if expired['Value']:
+        return S_OK( stepNotAfter )
       if notAfter > stepNotAfter:
         notAfter = stepNotAfter
     return S_OK(notAfter)
@@ -572,7 +582,7 @@ random.seed()
     if not self.__loadedPKey:
       return S_ERROR(DErrno.ENOPKEY)
     try:
-      req = M2Crypto.X509.load_request_string( pemData )
+      req = M2Crypto.X509.load_request_string( pemData, format=M2Crypto.X509.FORMAT_PEM )
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "Can't load request data: %s" % repr(e).replace(',)', ')'))
     limited = requireLimited and self.isLimitedProxy().get('Value', False)
@@ -598,7 +608,7 @@ random.seed()
       return S_ERROR( DErrno.ENOCHAIN )
     data = self.__certList[0].asPem()
     if self.__loadedPKey:
-      data += self.__keyObj.as_pem( cipher = None )
+      data += self.__keyObj.as_pem( cipher = None, callback = M2Crypto.util.no_passphrase_callback )
     for i in range( 1, len( self.__certList ) ):
       data += self.__certList[i].asPem()
     return S_OK( data )
@@ -651,7 +661,7 @@ random.seed()
     """
     if not self.__loadedPKey:
       return S_ERROR( DErrno.ENOCHAIN )
-    return S_OK( self.__keyObj.as_pem( cipher = None ) )
+    return S_OK( self.__keyObj.as_pem( cipher = None, callback = M2Crypto.util.no_passphrase_callback ) )
 
   def __str__(self):
     repStr = "<X509Chain"
