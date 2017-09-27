@@ -53,11 +53,11 @@ class X509Certificate( object ):
     if x509Obj:
       self.__certObj = x509Obj
       self.__valid = True
+    else:
+      self.__certObj = M2Crypto.X509.X509()
+      self.__valid = True
     if certString:
       self.loadFromString( certString )
-
-  def getCertObject( self ):
-    return self.__certObj
 
   def load( self, certificate ):
     """ Load a x509 certificate either from a file or from a string
@@ -76,6 +76,7 @@ class X509Certificate( object ):
     try:
       with file( certLocation ) as fd:
         pemData = fd.read()
+        return self.loadFromString( pemData )
     except IOError:
       return S_ERROR( DErrno.EOF, "Can't open %s file" % certLocation )
 
