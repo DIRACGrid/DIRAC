@@ -74,11 +74,11 @@ class X509Certificate( object ):
     if x509Obj:
       self.__certObj = x509Obj
       self.__valid = True
+    else:
+      self.__certObj = M2Crypto.X509.X509()
+      self.__valid = True
     if certString:
       self.loadFromString( certString )
-
-  def getCertObject( self ):
-    return self.__certObj
 
   def load( self, certificate ):
     """ Load a x509 certificate either from a file or from a string
@@ -97,9 +97,9 @@ class X509Certificate( object ):
     try:
       with file( certLocation ) as fd:
         pemData = fd.read()
+        return self.loadFromString( pemData )
     except IOError:
       return S_ERROR( DErrno.EOF, "Can't open %s file" % certLocation )
-    return self.loadFromString( pemData )
 
   def loadFromString( self, pemData ):
     """
@@ -114,6 +114,10 @@ class X509Certificate( object ):
     return S_OK()
 
   def setCertificate( self, x509Obj ):
+    """
+    Set certificate object
+    Return: S_OK/S_ERROR
+    """
     if not isinstance( x509Obj, M2Crypto.X509.X509 ):
       return S_ERROR( DErrno.ETYPE, "Object %s has to be of type M2Crypto.X509.X509" % str( x509Obj ) )
     self.__certObj = x509Obj
@@ -140,6 +144,16 @@ class X509Certificate( object ):
       return S_ERROR( DErrno.ENOCERT )
     return S_OK( self.__certObj.get_not_after() )
 
+  def setNotAfter( self, notafter ):
+    """
+    Set not after date of a certificate
+    Return: S_OK/S_ERROR
+    """
+    if not self.__valid:
+      return S_ERROR( DErrno.ENOCERT )
+    self.__certObj.set_not_after( notafter )
+    return S_OK()
+
   def getNotBeforeDate( self ):
     """
     Get not before date of a certificate
@@ -148,6 +162,16 @@ class X509Certificate( object ):
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
     return S_OK( self.__certObj.get_not_before() )
+
+  def setNotBefore( self, notbefore ):
+    """
+    Set not before date of a certificate
+    Return: S_OK/S_ERROR
+    """
+    if not self.__valid:
+      return S_ERROR( DErrno.ENOCERT )
+    self.__certObj.set_not_before( notbefore )
+    return S_OK()
 
   def getSubjectDN( self ):
     """
@@ -185,6 +209,16 @@ class X509Certificate( object ):
       return S_ERROR( DErrno.ENOCERT )
     return S_OK( self.__certObj.get_issuer() )
 
+  def setIssuer( self, nameObject ):
+    """
+    Set issuer name object
+    Return: S_OK/S_ERROR
+    """
+    if not self.__valid:
+      return S_ERROR( DErrno.ENOCERT )
+    self.__certObj.set_issuer( nameObject )
+    return S_OK()
+
   def getPublicKey( self ):
     """
     Get the public key of the certificate
@@ -193,10 +227,31 @@ class X509Certificate( object ):
       return S_ERROR( DErrno.ENOCERT )
     return S_OK( self.__certObj.get_pubkey() )
 
+  def setPublicKey( self, pubkey ):
+    """
+    Set the public key of the certificate
+    """
+    if not self.__valid:
+      return S_ERROR( DErrno.ENOCERT )
+    self.__certObj.set_pubkey( pubkey )
+    return S_OK()
+
   def getVersion( self ):
+    """
+    Get the version of the certificate
+    """
     if not self.__valid:
       return S_ERROR(DErrno.ENOCERT)
     return S_OK(self.__certObj.get_version())
+
+  def setVersion( self, version ):
+    """
+    Set the version of the certificate
+    """
+    if not self.__valid:
+      return S_ERROR( DErrno.ENOCERT )
+    self.__certObj.set_version( version )
+    return S_OK()
 
   def getSerialNumber( self ):
     """
@@ -206,6 +261,25 @@ class X509Certificate( object ):
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
     return S_OK( self.__certObj.get_serial_number() )
+
+  def setSerialNumber( self, serial ):
+    """
+    Set certificate serial number
+    Return: S_OK/S_ERROR
+    """
+    if self.__valid:
+      self.__certObj.set_serial_number( serial )
+      return S_OK()
+    return S_ERROR( DErrno.ENOCERT )
+
+  def sign( self, key, algo):
+    """
+    Sign the cerificate using provided key and algorithm.
+    """
+    if not self.__valid:
+      return S_ERROR( DErrno.ENOCERT )
+    self.__certObj.sign( key, algo )
+    return S_OK()
 
   def getDIRACGroup( self, ignoreDefault = False ):
     """
@@ -263,8 +337,8 @@ class X509Certificate( object ):
 
     if not limited:
       subj = self.__certObj.get_subject()
-      lastEntry = subj.get_entry( subj.num_entries() - 1 )
-      if lastEntry[0] == 'CN' and lastEntry[1] == "limited proxy":
+      lastEntry = subj[len(subj) - 1 ]
+      if lastEntry.get_data() == "limited proxy":
         limited = True
 
     from DIRAC.Core.Security.X509Request import X509Request
@@ -301,10 +375,25 @@ class X509Certificate( object ):
     return S_OK( sorted( extList ) )
 
   def verify( self, pkey ):
+    """
+    Verify certificate using provided key
+    """
     ret = self.__certObj.verify( pkey )
     return S_OK( ret )
 
+  def setSubject( self, subject ):
+    """
+    Set subject using provided X509Name object
+    """
+    if not self.__valid:
+      return S_ERROR( DErrno.ENOCERT )
+    self.__certObj.set_subject( subject )
+    return S_OK()
+
   def get_subject( self ):
+    """
+    Deprecated way of getting subject DN. Only for backward compatibility reasons.
+    """
     # XXX This function should be deleted when all code depending on it is updated.
     return self.getSubjectDN()['Value'] # XXX FIXME awful awful hack
 
@@ -323,6 +412,15 @@ class X509Certificate( object ):
     except LookupError as LE:
       return S_ERROR( LE )
     return S_OK( ext )
+
+  def addExtension( self, extension ):
+    """
+    Add extension to the certificate
+    """
+    if not self.__valid:
+      return S_ERROR( DErrno.ENOCERT )
+    self.__certObj.add_ext( extension )
+    return S_OK()
 
 # utility functions for handling VOMS Extension
 def extract_DN(inp):

@@ -33,7 +33,7 @@ class X509Request( object ):
       self.__reqObj.get_subject().add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  "limited proxy", len=-1, loc=-1, set=0 )
     else:
       self.__reqObj.get_subject().add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  "proxy", len=-1, loc=-1, set=0 )
-    self.__reqObj.sign( self.__pkeyObj, "SHA256" )
+    self.__reqObj.sign( self.__pkeyObj, "sha256" )
     self.__valid = True
 
   def dumpRequest( self ):
@@ -47,6 +47,12 @@ class X509Request( object ):
     except Exception as e:
       return S_ERROR( DErrno.EX509, "Can't serialize request: %s" % e )
     return S_OK( reqStr )
+
+  def getRequestObject( self ):
+    """
+    Get internal X509Request object
+    """
+    return S_OK( self.__reqObj )
 
   def getPKey( self ):
     """
@@ -144,8 +150,11 @@ class X509Request( object ):
     if not retVal[ 'OK' ]:
       return retVal
     lastCert = retVal[ 'Value' ]
-    chainPubKey = lastCert.getPublicKey()[ 'Value' ].as_pem()
-    reqPubKey = self.__pkeyObj.as_pem()
+    chainPubKey = lastCert.getPublicKey()
+    if not chainPubKey['OK']:
+      return chainPubKey
+    chainPubKey = chainPubKey[ 'Value' ].as_pem( cipher = None, callback = M2Crypto.util.no_passphrase_callback )
+    reqPubKey = self.__reqObj.get_pubkey().as_pem( cipher = None, callback = M2Crypto.util.no_passphrase_callback )
     if not chainPubKey == reqPubKey:
       retVal = S_OK( False )
       retVal[ 'Message' ] = "Public keys do not match"
