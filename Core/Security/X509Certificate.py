@@ -106,9 +106,6 @@ class X509Certificate( object ):
     if certString:
       self.loadFromString( certString )
 
-  def getCertObject( self ):
-    return self.__certObj
-
   def load( self, certificate ):
     """ Load a x509 certificate either from a file or from a string
     """

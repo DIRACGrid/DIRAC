@@ -85,6 +85,7 @@ class X509Chain(object):
     self.__loadedChain = False
     try:
       self.__certList = self.__certListFromPemString(data, dataFormat)
+      self.loadKeyFromString(data)
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(',)', ')'))
     if not self.__certList:
@@ -174,7 +175,7 @@ class X509Chain(object):
     retVal = self.loadChainFromString(pemData)
     if not retVal['OK']:
       return retVal
-    return self.loadKeyFromString( pemData, M2Crypto.util.no_passphrase_callback )
+    return self.loadKeyFromString( pemData )
 
   def __getProxyExtensionList(self, diracGroup=False, limited=False):
     """
@@ -261,7 +262,6 @@ class X509Chain(object):
       proxyKey.assign_rsa(M2Crypto.RSA.gen_key(strength, 65537, callback = M2Crypto.util.quiet_genparam_callback ))
 
     proxyCert = M2Crypto.X509.X509()
-    proxyCert = X509Certificate()
 
     proxyCert.set_serial_number(str(int(random.random() * 10 ** 10)))
     cloneSubject = issuerCert.get_subject().clone()
@@ -271,18 +271,18 @@ class X509Chain(object):
 
     subject = issuerCert.getSubjectNameObject()
     if subject['OK']:
-      proxyCert.set_issuer( subject['Value'] )
+      proxyCert.setIssuer( subject['Value'] )
     else:
       return subject
     version = issuerCert.getVersion()
     if version['OK']:
-      proxyCert.set_version( version['Value'] )
+      proxyCert.setVersion( version['Value'] )
     else:
       return version
-    proxyCert.set_pubkey( proxyKey )
+    proxyCert.setPublicKey( proxyKey )
     proxyNotBefore = M2Crypto.ASN1.ASN1_UTCTIME()
     proxyNotBefore.set_time( int( time.time() ) - 900 )
-    proxyCert.set_not_before( proxyNotBefore )
+    proxyCert.setNotBefore( proxyNotBefore )
     proxyNotAfter = M2Crypto.ASN1.ASN1_UTCTIME()
     proxyNotAfter.set_time( int( time.time() ) + lifeTime )
     proxyCert.set_not_after( proxyNotAfter )
