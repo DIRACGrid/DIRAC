@@ -23,14 +23,14 @@ class WebAppCompiler( object ):
     self.__classPaths = [ os.path.join( self.__webAppPath, *p ) for p in ( ( "static", "core", "js", "utils" ),
                                                                            ( "static", "core", "js", "core" ) )]
     
-    self.__classPaths.append( os.path.join( self.__sdkDir, "examples", "ux", "form" ) )
-    
-    
+
+    self.__classPaths.append( os.path.join( os.path.dirname( self.__sdkDir ), "examples", "ux", "form" ) )
+        
     self.__sdkPath = os.path.join( self.__sdkDir, "src" )
         
 
     self.__debugFlag = str( gLogger.getLevel() in ( 'DEBUG', 'VERBOSE', 'INFO' ) ).lower()
-    self.__compileTemplate = os.path.join( os.path.dirname( self.__params.destination ), 'WebAppDIRAC', "Lib", "CompileTemplates" )
+    self.__compileTemplate = os.path.join( self.__params.destination, 'WebAppDIRAC', "Lib", "CompileTemplates" )
     
     self.__senchacmddir = os.path.join( rootPath, "sbin", "Sencha", "Cmd" )  # this place will be used, if sencha cmd is not available
     self.__senchaVersion = "v6.5.0.180"
@@ -39,13 +39,20 @@ class WebAppCompiler( object ):
     
   
   def __writeINFile( self, tplName, extra = False ):
+    """
+    It creates a temporary file using different templates. For example: /tmp/zmathe/tmp4sibR5.compilejs.app.tpl 
+    This is required to compile the web framework.
+    :params str tplName: it is the name of the template
+    :params dict extra: it contains the application location, which will be added to the temporary file
+    :return the location of the file
+    """
     inTpl = os.path.join( self.__compileTemplate, tplName )
     try:
       with open( inTpl ) as infd:
         data = infd.read()
     except IOError:
       return S_ERROR( "%s does not exist" % inTpl )
-    data = data.replace( "%EXT_VERSION%", self.__extVersion )
+    #data = data.replace( "%EXT_VERSION%", self.__extVersion )
     if extra:
       for k in extra:
         data = data.replace( "%%%s%%" % k.upper(), extra[k] )
@@ -55,6 +62,11 @@ class WebAppCompiler( object ):
     return S_OK( filepath )
   
   def __cmd( self, cmd ):
+    """
+    This is used to execure a command
+    :params list cmd: sencha command which will be executed
+    """
+    
     env = {}
     for k in ( 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH' ):
       if k in os.environ:
@@ -67,6 +79,14 @@ class WebAppCompiler( object ):
     return result
 
   def __compileApp( self, extPath, extName, appName, extClassPath = "" ):
+    """
+    It compiles an application
+    :param str extPath: directory full path, which contains the applications for example: /tmp/zmathe/tmpFxr5LzDiracDist/WebAppDIRAC/WebApp/static/DIRA
+    :param str extName: the name of the application for example: DIRAC or LHCbDIRAC, etc
+    :param str appName: the name of the application for example: Accounting
+    :param str extClassPath: if we compile an extension, we can provide the class path of the base class
+    """
+    
     result = self.__writeINFile( "app.tpl", { 'APP_LOCATION' : '%s.%s.classes.%s' % ( extName, appName, appName ) } )
     if not result[ 'OK' ]:
       return result
@@ -93,7 +113,7 @@ class WebAppCompiler( object ):
     classPath.append( os.path.join( extPath, appName, "classes" ) )
     
     cmd = [ 'sencha', '-sdk', self.__sdkPath, 'compile', '-classpath=%s' % ",".join( classPath ),
-           '-debug=%s' % self.__debugFlag, 'page', '-name=page','-in',inFile, '-out', outFile,'and',
+           '-debug=%s' % self.__debugFlag, 'page', '-name=page','-input-file',inFile, '-out', outFile,'and',
             'restore','page','and','exclude','-not','-namespace','Ext.dirac.*%s' % excludePackage,'and',
             'concat','-yui',compressedJsFile]
 
@@ -103,6 +123,9 @@ class WebAppCompiler( object ):
     return S_OK()
   
   def __zip( self, staticPath, stack = "" ):
+    """
+    It compress the compiled applications
+    """
     c = 0
     l = "|/-\\"
     for entry in os.listdir( staticPath ):
@@ -117,7 +140,7 @@ class WebAppCompiler( object ):
       if os.path.isfile( zipPath ):
         if os.stat( zipPath ).st_mtime > os.stat( ePath ).st_mtime:
           continue
-      print "%s%s\r" % (n, " " * ( 20 - len( n ) ) ),
+      gLogger.notice( "%s%s\r" % ( n, " " * ( 20 - len( n ) ) ) )
       c += 1
       inf = gzip.open( zipPath, "wb", 9 )
       with open( ePath, "rb" ) as outf:
@@ -129,12 +152,14 @@ class WebAppCompiler( object ):
 
 
   def run( self ):
-    
+    """
+    This compiles the web framework
+    """
     #if the sencha does not installed, it will exit
     self.__checkSenchacmd()
     
     staticPath = os.path.join( self.__webAppPath, "static" )
-    gLogger.notice( "Compiling core" )
+    gLogger.notice( "Compiling core: %s" % staticPath )
     
     result = self.__writeINFile( "core.tpl" )
     if not result[ 'OK' ]:
@@ -149,7 +174,7 @@ class WebAppCompiler( object ):
     gLogger.verbose( " IN file written to %s" % inFile )
 
     cmd = [ 'sencha', '-sdk', self.__sdkPath, 'compile', '-classpath=%s' % ",".join( self.__classPaths ),
-            '-debug=%s' % self.__debugFlag, 'page', '-yui', '-in', inFile, '-out', outFile ]
+            '-debug=%s' % self.__debugFlag, 'page', '-yui', '-input-file', inFile, '-out', outFile ]
 
     if self.__cmd( cmd ):
       gLogger.error( "Error compiling JS" )
@@ -197,13 +222,16 @@ class WebAppCompiler( object ):
       depPath = dependency.split(".")
       for staticPath in self.__staticPaths:
         expectedJS = os.path.join(staticPath, depPath[0], depPath[1], "classes" )
-        print expectedJS
+        gLogger.notice( expectedJS )
         if not os.path.isdir( expectedJS ):
           continue
         classPath = expectedJS
     return classPath
   
   def __checkSenchacmd( self ):
+    """
+    Before we start the distribution the sencha cmd must be checked
+    """
     
     try:
       self.__cmd( ["sencha"] )
