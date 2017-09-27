@@ -167,7 +167,7 @@ class X509Chain( object ):
     retVal = self.loadChainFromString( pemData )
     if not retVal[ 'OK' ]:
       return retVal
-    return self.loadKeyFromString( pemData )
+    return self.loadKeyFromString( pemData, M2Crypto.util.no_passphrase_callback )
 
   def __getProxyExtensionList( self, diracGroup = False, rfc = False, rfcLimited = False ):
     """
