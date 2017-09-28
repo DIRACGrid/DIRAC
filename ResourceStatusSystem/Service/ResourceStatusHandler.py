@@ -94,7 +94,7 @@ class ResourceStatusHandler( RequestHandler ):
     db = database
 
 
-  types_insert = [ basestring, dict ]
+  types_insert = [ [basestring, dict], dict ]
   def export_insert( self, table, params ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It
@@ -124,7 +124,7 @@ class ResourceStatusHandler( RequestHandler ):
 
 
 
-  types_select = [ basestring, dict ]
+  types_select = [ [basestring, dict], dict ]
   def export_select( self, table, params ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It
