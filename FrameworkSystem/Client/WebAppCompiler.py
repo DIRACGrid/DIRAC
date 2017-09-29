@@ -23,9 +23,10 @@ class WebAppCompiler( object ):
     self.__classPaths = [ os.path.join( self.__webAppPath, *p ) for p in ( ( "static", "core", "js", "utils" ),
                                                                            ( "static", "core", "js", "core" ) )]
     
-
+    
+    self.__classPaths.append( os.path.join( os.path.dirname( self.__sdkDir ), "examples", "ux" ) )
     self.__classPaths.append( os.path.join( os.path.dirname( self.__sdkDir ), "examples", "ux", "form" ) )
-        
+    
     self.__sdkPath = os.path.join( self.__sdkDir, "src" )
         
 
@@ -52,13 +53,18 @@ class WebAppCompiler( object ):
         data = infd.read()
     except IOError:
       return S_ERROR( "%s does not exist" % inTpl )
-    #data = data.replace( "%EXT_VERSION%", self.__extVersion )
+    data = data.replace( "%EXT_VERSION%", self.__extVersion )
     if extra:
       for k in extra:
         data = data.replace( "%%%s%%" % k.upper(), extra[k] )
-    outfd, filepath = tempfile.mkstemp( ".compilejs.%s" % tplName )
-    os.write( outfd, data )
-    os.close( outfd )
+    #outfd, filepath = tempfile.mkstemp( ".compilejs.%s" % tplName )
+    filepath = "/tmp/zmathe/tmp.compilejs.%s" % tplName
+    outfd = open( filepath,"w" )
+    outfd.write(data)
+    outfd.close()
+    #os.write( outfd, data )
+    #os.close( outfd )
+    print filepath, type(filepath)
     return S_OK( filepath )
   
   def __cmd( self, cmd ):
@@ -140,7 +146,7 @@ class WebAppCompiler( object ):
       if os.path.isfile( zipPath ):
         if os.stat( zipPath ).st_mtime > os.stat( ePath ).st_mtime:
           continue
-      gLogger.notice( "%s%s\r" % ( n, " " * ( 20 - len( n ) ) ) )
+      print "%s%s\r" % (n, " " * ( 20 - len( n ) ) ),
       c += 1
       inf = gzip.open( zipPath, "wb", 9 )
       with open( ePath, "rb" ) as outf:
