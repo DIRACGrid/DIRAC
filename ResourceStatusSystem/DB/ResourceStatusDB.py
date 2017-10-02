@@ -62,8 +62,7 @@ class ElementStatusBase(object):
   status = Column( 'Status', String( 8 ), nullable = False, server_default = '' )
   reason = Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' )
   dateeffective = Column( 'DateEffective', DateTime, nullable = False )
-  tokenexpiration = Column( 'TokenExpiration', String( 255 ), nullable = False ,
-                            server_default = '9999-12-31 23:59:59' )
+  tokenexpiration = Column( 'TokenExpiration', DateTime, nullable = False , server_default = '9999-12-31 23:59:59' )
   elementtype = Column( 'ElementType', String( 32 ), nullable = False, server_default = '' )
   lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False , server_default = '1000-01-01 00:00:00' )
   tokenowner = Column( 'TokenOwner', String( 16 ), nullable = False , server_default = 'rs_svc')
