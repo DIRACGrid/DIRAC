@@ -1,3 +1,15 @@
+[v6r17p33]
+
+*WMS
+FIX: StalledJobAgent - if no PilotReference found in jobs parameters, do as if there would be 
+     no pilot information, i.e. set Stalled job Failed immediately
+CHANGE: DownloadInputData - job parameters report not only successful downloads but also failed ones
+FIX: JobDB - back port - set CPUTime to 0 if not defined at all for the given job 
+FIX: JobDB - back port - use default CPUTime in the job description when rescheduling jobs
+
+*Resources
+FIX: ARCComputingElement - fix job submission issue due to timeout for newer lcg-bundles
+
 [v6r17p32]
 
 Resources:
