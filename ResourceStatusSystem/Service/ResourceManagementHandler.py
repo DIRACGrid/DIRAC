@@ -3,24 +3,14 @@
   Module that allows users to access the ResourceManagementDB remotely.
 '''
 
-from DIRAC                                              import gConfig, S_OK, gLogger
-from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
-from DIRAC.ResourceStatusSystem.Utilities               import Synchronizer
+from DIRAC import gConfig, S_OK, gLogger
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ResourceStatusSystem.Utilities import Synchronizer
+from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import convert
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
 
 __RCSID__ = '$Id: $'
-
-def convert(table, params):
-  """ Conversion utility for backward compatibility
-  """
-  gLogger.debug("Calls from old client")
-  #need to swap!
-  tableFromOldCall = params['table']
-  params = table
-  table = tableFromOldCall
-
-  return params, table
 
 
 def initializeResourceManagementHandler( _serviceInfo ):

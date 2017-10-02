@@ -228,7 +228,7 @@ class SiteStatus( object ):
       else:
 
         if self.rssFlag:
-          siteStatus = siteStatus['Value'][0][2]
+          siteStatus = siteStatus['Value'][0][0]
         else:
           siteStatus = siteStatus['Value']
 
