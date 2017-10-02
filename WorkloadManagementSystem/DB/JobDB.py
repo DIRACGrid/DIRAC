@@ -1374,6 +1374,8 @@ class JobDB( DB ):
     if not self._update( cmd )['OK']:
       return S_ERROR( 'JobDB.removeJobOptParameter: operation failed.' )
 
+    # the JobManager needs to know if there is InputData ??? to decide which optimizer to call
+    # proposal: - use the getInputData method
     res = self.getJobJDL( jobID, original = True )
     if not res['OK']:
       return res

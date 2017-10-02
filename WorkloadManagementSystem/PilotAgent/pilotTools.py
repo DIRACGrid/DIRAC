@@ -460,7 +460,7 @@ class PilotParams( object ):
       elif o == '-R' or o == '--reference':
         self.pilotReference = v
       elif o == '-k' or o == '--keepPP':
-	self.keepPythonPath = True
+        self.keepPythonPath = True
       elif o == '-d' or o == '--debug':
         self.debugFlag = True
       elif o in ( '-S', '--setup' ):
