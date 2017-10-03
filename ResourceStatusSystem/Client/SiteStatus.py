@@ -140,7 +140,7 @@ class SiteStatus( object ):
     if self.rssFlag:
       siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status',
                                                       name = siteName,
-                                                      meta = { 'columns' : ['Name', 'Status'] } )
+                                                      meta = { 'columns' : ['Status'] } )
     else:
       siteStatus = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus(siteName)
 
@@ -148,13 +148,13 @@ class SiteStatus( object ):
       return siteStatus
 
     if not siteStatus['Value']:
-      #Site does not exist, so it is not usable
+      # Site does not exist, so it is not usable
       return S_OK(False)
 
     if self.rssFlag:
       status = siteStatus['Value'][0][0]
     else:
-      status = siteStatus['Value'][0][0]
+      status = siteStatus['Value']
 
     if status in ('Active', 'Degraded'):
       return S_OK(True)
@@ -303,7 +303,7 @@ class SiteStatus( object ):
 
   def setSiteStatus( self, site, status, comment = 'No comment' ):
     """
-    Set the status of a site from the 'SiteStatus' table
+    Set the status of a site in the 'SiteStatus' table of RSS
 
     examples
       >>> siteStatus.banSite( 'site1.test.test' )
