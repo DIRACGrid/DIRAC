@@ -130,7 +130,7 @@ class CLIParams(object):
     Script.registerSwitch( "p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd )
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
     Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck )
-    Script.registerSwitch( "r", "rfc", "Create an RFC proxy", self.setRFC )
+    Script.registerSwitch( "r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC )
     Script.registerSwitch( "L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC )
 
 from DIRAC.Core.Security.X509Chain import X509Chain
