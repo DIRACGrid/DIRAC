@@ -15,6 +15,8 @@ class WebAppCompiler( object ):
     self.__params = params
     
     self.__extVersion = '4.2.1.883'
+    self.__extDir = 'extjs' #this directory will contain all the resources required by ExtJS
+    
     self.__sdkDir = params.extjspath if self.__params.extjspath is not None else '/opt/dirac/extjs/ext-4.2.1.883'
     
      
@@ -28,8 +30,10 @@ class WebAppCompiler( object ):
     self.__classPaths.append( os.path.join( os.path.dirname( self.__sdkDir ), "examples", "ux", "form" ) )
     
     self.__sdkPath = os.path.join( self.__sdkDir, "src" )
-        
-
+    
+    self.__extjsDirsToCopy = [os.path.join( self.__sdkDir, "resources" )]    
+    self.__extjsFilesToCopy = [os.path.join( self.__sdkDir, "ext-all-dev.js" )]   
+    
     self.__debugFlag = str( gLogger.getLevel() in ( 'DEBUG', 'VERBOSE', 'INFO' ) ).lower()
     self.__compileTemplate = os.path.join( self.__params.destination, 'WebAppDIRAC', "Lib", "CompileTemplates" )
     
@@ -38,6 +42,23 @@ class WebAppCompiler( object ):
     
     self.__appDependency = {}
     
+  def __deployResources( self ):
+    """
+    """
+    extjsDirPath = os.path.join( self.__webAppPath, 'static', self.__extDir )
+    if not os.path.exists( extjsDirPath ): 
+      try:
+        os.mkdir( extjsDirPath )
+      except OSError as e:
+        gLogger.error( "Can not create release extjs", repr( e ) )
+        return S_ERROR( "Can not create release extjs" + repr( e ) )
+    for dirSrc in self.__extjsDirsToCopy:
+      try:
+        shutil.copytree( dirSrc, extjsDirPath )
+      except OSError as e:
+        errorMsg = "Can not copy the directory to %s: %s" % ( extjsDirPath, repr( e ) )
+        gLogger.error( errorMsg )
+        return S_ERROR( errorMsg )
   
   def __writeINFile( self, tplName, extra = False ):
     """
