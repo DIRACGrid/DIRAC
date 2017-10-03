@@ -960,7 +960,7 @@ function downloadProxy(){
       echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
       python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG
     else # assuming it's the pilot
-      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
+      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
       python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG
     fi
   else
