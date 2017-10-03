@@ -75,7 +75,8 @@ class ElementStatusBase(object):
     :type arguments: dict
     """
 
-    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
+    utcnow = self.lastchecktime.replace(microsecond = 0) if self.lastchecktime\
+             else datetime.datetime.utcnow().replace(microsecond = 0)
 
     self.name = dictionary.get( 'Name', self.name )
     self.statustype = dictionary.get( 'StatusType', self.statustype )
@@ -86,6 +87,11 @@ class ElementStatusBase(object):
     self.elementtype = dictionary.get( 'ElementType', self.elementtype )
     self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
     self.tokenowner = dictionary.get( 'TokenOwner', self.tokenowner )
+
+    if self.dateeffective:
+      self.dateeffective = self.dateeffective.replace(microsecond = 0)
+    if self.tokenexpiration:
+      self.tokenexpiration = self.tokenexpiration.replace(microsecond = 0)
 
   def toList(self):
     """ Simply returns a list of column values
