@@ -28,7 +28,7 @@ class CLIParams(object):
   userPasswd = ""
   checkClock = True
   embedDefaultGroup = True
-  rfc = False
+  rfc = True
 
   def setProxyLifeTime( self, arg ):
     try:
@@ -41,6 +41,10 @@ class CLIParams(object):
 
   def setRFC( self, _arg ):
     self.rfc = True
+    return S_OK()
+
+  def setNoRFC( self, _arg ):
+    self.rfc = False
     return S_OK()
 
   def setProxyRemainingSecs( self, arg ):
@@ -127,6 +131,7 @@ class CLIParams(object):
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
     Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck )
     Script.registerSwitch( "r", "rfc", "Create an RFC proxy", self.setRFC )
+    Script.registerSwitch( "L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC )
 
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
