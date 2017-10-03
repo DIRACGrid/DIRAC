@@ -576,7 +576,7 @@ class ResourceStatusDB( object ):
       session.commit()
 
       # and since we modified, we now insert a new line in the log table
-      return self.insert(table.strip('Status') + 'Log', params)
+      return self.insert(table.replace('Status', '') + 'Log', params)
       # The line inserted will maybe become a History line thanks to the SummarizeLogsAgent
 
     except exc.SQLAlchemyError as e:
