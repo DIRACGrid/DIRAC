@@ -1,4 +1,4 @@
-[v6r19-pre13]
+[v6r19-pre14]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -24,6 +24,8 @@ CHANGE: can now send mails to multiple recipients using the NotificationClient
 CHANGE: Make the new logging system thread-safe
 FIX: Adapting query to MySLQ 5.7 "GROUP BY" clause
 FIX: TopErrorMessagesReporter - more precise selection to please stricter versions of MySQL
+CHANGE: ProxyGeneration - make RFC proxies by default, added -L/--legacy flag to dirac-proxy-init
+        to force generation of no-RFC proxies
 
 *Core
 FIX: dirac-install - allow to use local md5 files
