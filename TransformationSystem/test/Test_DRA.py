@@ -5,7 +5,7 @@ import sys
 from StringIO import StringIO
 from collections import defaultdict
 
-from mock import MagicMock as Mock, patch
+from mock import MagicMock as Mock, patch, ANY
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -784,15 +784,12 @@ class TestDRA(unittest.TestCase):
     mockJobs[1].tType = "MCSimulation"
     tInfoMock.reset_mock()
     self.dra.checkAllJobs(mockJobs, tInfoMock, taskDict, lfnTaskDict=True)
-    print "mock calls", self.dra.log.mock_calls
     self.dra.log.notice.assert_any_call(MatchStringWith("Failing job hard"))
 
   def test_execute(self):
     """test for DataRecoveryAgent execute .........................................................."""
     self.dra.treatProduction = Mock()
 
-    out = StringIO()
-    sys.stdout = out
     self.dra.productionsToIgnore = [123, 456, 789]
     self.dra.jobCache = defaultdict(lambda: (0, 0))
     self.dra.jobCache[123] = (10, 10)
@@ -804,7 +801,7 @@ class TestDRA(unittest.TestCase):
     self.dra.getEligibleTransformations = Mock(return_value=S_ERROR("outcast"))
     res = self.dra.execute()
     self.assertFalse(res["OK"])
-    self.assertIn("outcast", out.getvalue())
+    self.dra.log.error.assert_any_call(ANY, MatchStringWith("outcast"))
     self.assertEqual("Failure to get transformations", res['Message'])
 
     d123 = dict(TransformationID=123, TransformationName='TestProd123', Type='MCGeneration',
@@ -816,16 +813,23 @@ class TestDRA(unittest.TestCase):
 
     # Eligible succeeds
     self.dra.log.reset_mock()
-    self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: d123, 124: d124, 125: d125}))
+    self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: ("MCGeneration", "Trafo123"),
+                                                                  124: ("MCGeneration", "Trafo124"),
+                                                                  125: ("MCGeneration", "Trafo125")}
+                                                                 ))
     res = self.dra.execute()
     self.assertTrue(res["OK"])
-    self.assertIn("Will ignore the following productions: [123, 456, 789]", out.getvalue())
-    self.assertIn("Ignoring Production: 123", out.getvalue())
-    self.assertIn("Running over Production: 124", out.getvalue())
+    self.dra.log.notice.assert_any_call(MatchStringWith("Will ignore the following productions: [123, 456, 789]"))
+    self.dra.log.notice.assert_any_call(MatchStringWith("Ignoring Production: 123"))
+    self.dra.log.notice.assert_any_call(MatchStringWith("Running over Production: 124"))
+
 
     # Notes To Send
     self.dra.log.reset_mock()
-    self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: d123, 124: d124, 125: d125}))
+    self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: ("MCGeneration", "Trafo123"),
+                                                                  124: ("MCGeneration", "Trafo124"),
+                                                                  125: ("MCGeneration", "Trafo125")}
+                                                                 ))
     self.dra.notesToSend = "Da hast du deine Karte"
     sendmailMock = Mock()
     sendmailMock.sendMail.return_value = S_OK("Nice Card")
@@ -833,9 +837,9 @@ class TestDRA(unittest.TestCase):
     with patch("%s.NotificationClient" % MODULE_NAME, new=notificationMock):
       res = self.dra.execute()
     self.assertTrue(res["OK"])
-    self.assertIn("Will ignore the following productions: [123, 456, 789]", out.getvalue())
-    self.assertIn("Ignoring Production: 123", out.getvalue())
-    self.assertIn("Running over Production: 124", out.getvalue())
+    self.dra.log.notice.assert_any_call(MatchStringWith("Will ignore the following productions: [123, 456, 789]"))
+    self.dra.log.notice.assert_any_call(MatchStringWith("Ignoring Production: 123"))
+    self.dra.log.notice.assert_any_call(MatchStringWith("Running over Production: 124"))
     self.assertNotIn(124, self.dra.jobCache)  # was popped
     self.assertIn(125, self.dra.jobCache)  # was not popped
     gLogger.notice("JobCache: %s" % self.dra.jobCache)
@@ -851,7 +855,7 @@ class TestDRA(unittest.TestCase):
     self.assertTrue(res["OK"])
     self.assertNotIn(124, self.dra.jobCache)  # was popped
     self.assertIn(125, self.dra.jobCache)  # was not popped
-    self.assertIn("Cannot send notification mail", out.getvalue())
+    self.dra.log.error.assert_any_call(MatchStringWith("Cannot send notification mail"), ANY)
 
     self.assertEqual("", self.dra.notesToSend)
 
