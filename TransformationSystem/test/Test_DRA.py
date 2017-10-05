@@ -1,8 +1,6 @@
 """Test the DataRecoveryAgent"""
 
 import unittest
-import sys
-from StringIO import StringIO
 from collections import defaultdict
 
 from mock import MagicMock as Mock, patch, ANY
@@ -861,9 +859,6 @@ class TestDRA(unittest.TestCase):
 
   def test_printSummary(self):
     """test DataRecoveryAgent printSummary.........................................................."""
-    out = StringIO()
-    sys.stdout = out
-
     self.dra.notesToSend = ""
     self.dra.printSummary()
     self.assertNotIn(" Other Tasks --> Keep                                    :     0", self.dra.notesToSend)
