@@ -1,17 +1,17 @@
 """Test the Transformationinfo"""
 
 import unittest
-import sys
-from StringIO import StringIO
 from collections import OrderedDict
 
 from mock import MagicMock as Mock, patch
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 import DIRAC
 
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
+
+from ILCDIRAC.Tests.Utilities.GeneralUtils import MatchStringWith
 
 __RCSID__ = "$Id$"
 
@@ -50,7 +50,7 @@ class TestTI(unittest.TestCase):
                            ErrorCount=8,
                            ),
                       ]
-
+    self.tri.log = Mock(name="LogMock")
 
   def tearDown( self ):
     pass
@@ -281,20 +281,18 @@ class TestTI(unittest.TestCase):
 
     self.tri.enabled = False
     self.tri._TransformationInfo__findAllDescendants = Mock(return_value=descList)
-    out = StringIO()
-    sys.stdout = out
+
     self.tri.cleanOutputs(jobInfo)
-    self.assertIn("Would have removed these files", out.getvalue())
-    self.assertIn("lfn1", out.getvalue())
-    self.assertNotIn("lfn2", out.getvalue())
+    self.tri.log.notice.assert_any_call(MatchStringWith("Would have removed these files"))
+    self.tri.log.notice.assert_any_call(MatchStringWith("lfn1"))
+    for _name, args, _kwargs in self.tri.log.notice.mock_calls:
+      self.assertNotIn("lfn2", str(args))
 
     remMock = Mock(name="remmock")
     remMock.removeFile.return_value = S_ERROR("arg")
 
     self.tri.enabled = True
     self.tri._TransformationInfo__findAllDescendants = Mock(return_value=descList)
-    out = StringIO()
-    sys.stdout = out
     with patch("DIRAC.TransformationSystem.Utilities.TransformationInfo.DataManager",
                return_value=remMock,
                autospec=True):
@@ -312,7 +310,7 @@ class TestTI(unittest.TestCase):
                autospec=True,
                return_value=remMock):
       self.tri.cleanOutputs(jobInfo)
-    self.assertIn("Successfully removed 2 files", out.getvalue())
+      self.tri.log.notice.assert_any_call(MatchStringWith("Successfully removed 2 files"))
 
     ### nothing to remove
     jobInfo = Mock(spec=JobInfo)
