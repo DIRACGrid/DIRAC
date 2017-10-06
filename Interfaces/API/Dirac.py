@@ -776,11 +776,11 @@ class Dirac( API ):
     tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
     self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
     jobXMLFile = tmpdir + '/jobDescription.xml'
+    self.log.verbose( 'Job XML file description is: %s' % jobXMLFile )
     with open( jobXMLFile, 'w+' ) as fd:
       fd.write( job._toXML() ) #pylint: disable=protected-access
 
     shutil.copy( jobXMLFile, '%s/%s' % ( os.getcwd(), os.path.basename( jobXMLFile ) ) )
-    self.log.verbose( 'Job XML file description is: %s' % jobXMLFile )
 
     res = self.__getJDLParameters( job )
     if not res['OK']:
@@ -859,32 +859,33 @@ class Dirac( API ):
       if isinstance( sandbox, basestring ):
         sandbox = [isFile.strip() for isFile in sandbox.split(',')]
       for isFile in sandbox:
-        self.log.debug("Resolving Input Sandbox file %s" % isFile)
+        self.log.debug("Resolving Input Sandbox %s" % isFile)
         if isFile.lower().startswith( "lfn:" ):  # isFile is an LFN
           isFile = isFile[4:]
-        elif not os.path.isabs( isFile ):
-          # if a relative path, it is relative to the user working directory
-          isFile = os.path.join( curDir, isFile )
-
-        # Attempt to copy into job working directory
-        if os.path.isdir( isFile ):
-          self.log.debug("Input Sandbox %s is a directory, found in the user working directory, copying it" % isFile)
-          shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
-        elif os.path.exists( isFile ):
-          self.log.debug("Input Sandbox %s is a file, found in the user working directory, copying it" % isFile)
+        if os.path.isabs( isFile ):
+          self.log.debug("Input Sandbox %s is a file with absolute path, copying it" % isFile)
           shutil.copy( isFile, os.getcwd() )
-        elif os.path.exists(os.path.join(tmpdir, isFile)): # if it is in the tmp dir
-          self.log.debug("Input Sandbox %s is a file, found in the tmp directory, copying it" % isFile)
-          shutil.copy(os.path.join(tmpdir, isFile), os.getcwd())
-        elif os.path.exists(os.path.join(jobDir, isFile)): # if it is in the tmp dir
-          self.log.debug("Input Sandbox %s is a file, found in the job directory, no need to copy it" % isFile)
-        else:
-          self.log.verbose("perhaps the file %s is in an LFN, so we attempt to download it." % isFile)
-          getFile = self.getFile( isFile )
-          if not getFile['OK']:
-            self.log.warn( 'Failed to download %s with error: %s' % ( isFile, getFile['Message'] ) )
-            return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
-        basefname = os.path.basename( isFile )
+        else: # Attempt to find it and copy into job working directory
+          if os.path.isdir( isFile ):
+            self.log.debug("Input Sandbox %s is a directory, found in the user working directory, copying it" % isFile)
+            shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
+          elif os.path.exists( isFile ):
+            self.log.debug("Input Sandbox %s is a file, found in the current working directory, copying it" % isFile)
+          elif os.path.exists(os.path.join(tmpdir, isFile)): # if it is in the tmp dir
+            self.log.debug("Input Sandbox %s is a file, found in the tmp directory, copying it" % isFile)
+            shutil.copy(os.path.join(tmpdir, isFile), os.getcwd())
+          elif os.path.exists(os.path.join(os.getcwd(), isFile)): # if it is in the current dir
+            self.log.debug("Input Sandbox %s is a file, found in the job directory, no need to copy it" % isFile)
+          else:
+            self.log.verbose("perhaps the file %s is in an LFN, so we attempt to download it." % isFile)
+            getFile = self.getFile( isFile )
+            if not getFile['OK']:
+              self.log.warn( 'Failed to download %s with error: %s' % ( isFile, getFile['Message'] ) )
+              return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
+
+        isFileInCWD = os.getcwd() + os.path.sep + isFile
+
+        basefname = os.path.basename( isFileInCWD )
         if tarfile.is_tarfile( basefname ):
           try:
             with tarfile.open( basefname, 'r' ) as tf:
