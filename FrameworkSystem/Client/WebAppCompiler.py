@@ -15,7 +15,7 @@ class WebAppCompiler( object ):
     self.__params = params
     
     self.__extVersion = '4.2.1.883'
-    self.__extDir = 'extjs' #this directory will contain all the resources required by ExtJS
+    self.__extDir = 'extjs'  # this directory will contain all the resources required by ExtJS
     
     self.__sdkDir = params.extjspath if self.__params.extjspath is not None else '/opt/dirac/extjs/ext-4.2.1.883'
     
@@ -31,8 +31,8 @@ class WebAppCompiler( object ):
     
     self.__sdkPath = os.path.join( self.__sdkDir, "src" )
     
-    self.__extjsDirsToCopy = [os.path.join( self.__sdkDir, "resources" )]    
-    self.__extjsFilesToCopy = [os.path.join( self.__sdkDir, "ext-all-dev.js" )]   
+    self.__extjsDirsToCopy = [os.path.join( os.path.dirname( self.__sdkDir ), "resources" )]    
+    self.__extjsFilesToCopy = [os.path.join( os.path.dirname( self.__sdkDir ), "ext-all-dev.js" )]   
     
     self.__debugFlag = str( gLogger.getLevel() in ( 'DEBUG', 'VERBOSE', 'INFO' ) ).lower()
     self.__compileTemplate = os.path.join( self.__params.destination, 'WebAppDIRAC', "Lib", "CompileTemplates" )
@@ -54,11 +54,25 @@ class WebAppCompiler( object ):
         return S_ERROR( "Can not create release extjs" + repr( e ) )
     for dirSrc in self.__extjsDirsToCopy:
       try:
-        shutil.copytree( dirSrc, extjsDirPath )
+        shutil.copytree( dirSrc, os.path.join( extjsDirPath, os.path.split( dirSrc )[1] ) )
       except OSError as e:
-        errorMsg = "Can not copy the directory to %s: %s" % ( extjsDirPath, repr( e ) )
+        print e, dir( e )
+        if e.errno != 17:
+          errorMsg = "Can not copy %s directory to %s: %s" % ( dirSrc, os.path.join( extjsDirPath, os.path.split( dirSrc )[1] ), repr( e ) )
+          gLogger.error( errorMsg )
+          return S_ERROR( errorMsg )
+        else:
+          gLogger.warn( "%s directory is already exists. It will be not overwritten!" % os.path.join( extjsDirPath, os.path.split( dirSrc )[1] ) )
+      
+    for filePath in self.__extjsFilesToCopy:
+      try:
+        shutil.copy( filePath, extjsDirPath )
+      except OSError as e:
+        errorMsg = "Can not copy %s file to %s: %s" % ( filePath, extjsDirPath, repr( e ) )
         gLogger.error( errorMsg )
         return S_ERROR( errorMsg )
+    
+    return S_OK()
   
   def __writeINFile( self, tplName, extra = False ):
     """
@@ -78,14 +92,14 @@ class WebAppCompiler( object ):
     if extra:
       for k in extra:
         data = data.replace( "%%%s%%" % k.upper(), extra[k] )
-    #outfd, filepath = tempfile.mkstemp( ".compilejs.%s" % tplName )
+    # outfd, filepath = tempfile.mkstemp( ".compilejs.%s" % tplName )
     filepath = "/tmp/zmathe/tmp.compilejs.%s" % tplName
-    outfd = open( filepath,"w" )
-    outfd.write(data)
+    outfd = open( filepath, "w" )
+    outfd.write( data )
     outfd.close()
-    #os.write( outfd, data )
-    #os.close( outfd )
-    print filepath, type(filepath)
+    # os.write( outfd, data )
+    # os.close( outfd )
+    print filepath, type( filepath )
     return S_OK( filepath )
   
   def __cmd( self, cmd ):
@@ -98,7 +112,7 @@ class WebAppCompiler( object ):
     for k in ( 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH' ):
       if k in os.environ:
         env[ k ] = os.environ[ k ]
-        os.environ.pop(k)
+        os.environ.pop( k )
     gLogger.verbose( "Command is: %s" % " ".join( cmd ) )
     result = subprocess.call( cmd )
     for k in env:
@@ -129,20 +143,20 @@ class WebAppCompiler( object ):
       except IOError, excp:
         return S_ERROR( "Can't create build dir %s" % excp )
     outFile = os.path.join( buildDir, "index.html" )
-    compressedJsFile = os.path.join( buildDir, appName+'.js' )
+    compressedJsFile = os.path.join( buildDir, appName + '.js' )
     
     classPath = list( self.__classPaths )
     excludePackage = ",%s.*" % extName
     if extClassPath != "":
-      classPath.append(extClassPath)
+      classPath.append( extClassPath )
       excludePackage = ",DIRAC.*,%s.*" % extName
     
     classPath.append( os.path.join( extPath, appName, "classes" ) )
     
     cmd = [ 'sencha', '-sdk', self.__sdkPath, 'compile', '-classpath=%s' % ",".join( classPath ),
-           '-debug=%s' % self.__debugFlag, 'page', '-name=page','-input-file',inFile, '-out', outFile,'and',
-            'restore','page','and','exclude','-not','-namespace','Ext.dirac.*%s' % excludePackage,'and',
-            'concat','-yui',compressedJsFile]
+           '-debug=%s' % self.__debugFlag, 'page', '-name=page', '-input-file', inFile, '-out', outFile, 'and',
+            'restore', 'page', 'and', 'exclude', '-not', '-namespace', 'Ext.dirac.*%s' % excludePackage, 'and',
+            'concat', '-yui', compressedJsFile]
 
     if self.__cmd( cmd ):
       return S_ERROR( "Error compiling %s.%s" % ( extName, appName ) )
@@ -156,7 +170,7 @@ class WebAppCompiler( object ):
     c = 0
     l = "|/-\\"
     for entry in os.listdir( staticPath ):
-      n = stack + l[c%len(l)]
+      n = stack + l[c % len( l )]
       if entry[-3:] == ".gz":
         continue
       ePath = os.path.join( staticPath, entry )
@@ -167,7 +181,7 @@ class WebAppCompiler( object ):
       if os.path.isfile( zipPath ):
         if os.stat( zipPath ).st_mtime > os.stat( ePath ).st_mtime:
           continue
-      print "%s%s\r" % (n, " " * ( 20 - len( n ) ) ),
+      print "%s%s\r" % ( n, " " * ( 20 - len( n ) ) ),
       c += 1
       inf = gzip.open( zipPath, "wb", 9 )
       with open( ePath, "rb" ) as outf:
@@ -182,9 +196,13 @@ class WebAppCompiler( object ):
     """
     This compiles the web framework
     """
-    #if the sencha does not installed, it will exit
+    # if the sencha does not installed, it will exit
     self.__checkSenchacmd()
     
+    retVal = self.__deployResources()
+    if not retVal['OK']:
+      return retVal
+      
     staticPath = os.path.join( self.__webAppPath, "static" )
     gLogger.notice( "Compiling core: %s" % staticPath )
     
@@ -215,11 +233,11 @@ class WebAppCompiler( object ):
     for staticPath in self.__staticPaths:
       gLogger.notice( "Looing into %s" % staticPath )
       extDirectoryContent = os.listdir( staticPath )
-      if len(extDirectoryContent) == 0:
-        return S_ERROR("The extension directory is empty:"+str(staticPath))
+      if len( extDirectoryContent ) == 0:
+        return S_ERROR( "The extension directory is empty:" + str( staticPath ) )
       else:
         extName = extDirectoryContent[-1]
-        gLogger.notice("Detected extension:%s" % extName)
+        gLogger.notice( "Detected extension:%s" % extName )
         
       extPath = os.path.join( staticPath, extName )
       if not os.path.isdir( extPath ):
@@ -229,7 +247,7 @@ class WebAppCompiler( object ):
         expectedJS = os.path.join( extPath, appName, "classes", "%s.js" % appName )
         if not os.path.isfile( expectedJS ):
           continue
-        classPath = self.__getClasspath(extName,appName)
+        classPath = self.__getClasspath( extName, appName )
         gLogger.notice( "Trying to compile %s.%s.classes.%s CLASSPATH=%s" % ( extName, appName, appName, classPath ) )
         result = self.__compileApp( extPath, extName, appName, classPath )
         if not result[ 'OK' ]:
@@ -240,15 +258,15 @@ class WebAppCompiler( object ):
     gLogger.notice( "Done" )
     return S_OK()
   
-  def __getClasspath(self, extName,appName):
+  def __getClasspath( self, extName, appName ):
     
     classPath = ''
-    dependency = self.__appDependency.get("%s.%s" % (extName,appName),"")
+    dependency = self.__appDependency.get( "%s.%s" % ( extName, appName ), "" )
     
     if dependency != "":
-      depPath = dependency.split(".")
+      depPath = dependency.split( "." )
       for staticPath in self.__staticPaths:
-        expectedJS = os.path.join(staticPath, depPath[0], depPath[1], "classes" )
+        expectedJS = os.path.join( staticPath, depPath[0], depPath[1], "classes" )
         gLogger.notice( expectedJS )
         if not os.path.isdir( expectedJS ):
           continue
