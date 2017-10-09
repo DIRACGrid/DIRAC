@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 import logging
 from os import getpid
 
-from DIRAC.FrameworkSystem.private.standardLogging.Backend.AbstractBackend import AbstractBackend
+from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 from DIRAC.FrameworkSystem.private.standardLogging.Formatter.BaseFormatter import BaseFormatter
 
 

@@ -7,9 +7,9 @@
 
 import os
 import sqlite3
-from DIRAC                                                      import gConfig, S_ERROR, S_OK
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
-from DIRAC.Core.Utilities.SiteSEMapping                         import getSitesForSE
+from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 
 __RCSID__ = '$Id:  $'
 

@@ -8,8 +8,8 @@ import logging
 import os
 
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
-from DIRAC.FrameworkSystem.private.standardLogging.Backend.AbstractBackend import AbstractBackend
 from DIRAC.Core.Utilities.LockRing import LockRing
+from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 
 
 class Logging(object):
@@ -36,7 +36,7 @@ class Logging(object):
   # it can be composed by the system name and the component name. For instance: "Monitoring/Atom"
   _componentName = "Framework"
   # use the lockRing singleton to save the Logging object
-  _lockRing = LockRing() 
+  _lockRing = LockRing()
   # lock the configuration of the Logging
   _lockConfig = _lockRing.getLock("config")
 
@@ -80,13 +80,11 @@ class Logging(object):
 
     self._backendsList = []
 
-    self._logger = logging.getLogger(fatherName).getChild(name)
-
     # name of the Logging
-    self.name = name
-
+    self.name = str(name)
+    self._logger = logging.getLogger(fatherName).getChild(self.name)
     # update the custom name of the Logging adding the new Logging name in the entire path
-    self._customName = os.path.join("/", customName, name)
+    self._customName = os.path.join("/", customName, self.name)
 
     # Locks to make Logging thread-safe
     # we use RLock to prevent blocking in the Logging
@@ -151,34 +149,46 @@ class Logging(object):
     Convert backend name to backend class name to a Backend object and add it to the Logging object
 
     :params desiredBackends: a list of different names attaching to differents backends.
-                             these names must be the same as in the _BACKENDSDICT
                              list of the possible values: ['stdout', 'stderr', 'file', 'server']
-    :params backendOptions: a dictionary of different backend options.
-                            example: {'FileName': '/tmp/log.txt'}
+    :params backendOptions: dictionary of different backend options.
+                            example: FileName='/tmp/log.txt'
+    """
+    for backendName in desiredBackends:
+      self.registerBackend(backendName, backendOptions)
+
+  def registerBackend(self, desiredBackend, backendOptions=None):
+    """
+    Attach a backend to the Logging object.
+    Convert backend name to backend class name to a Backend object and add it to the Logging object
+
+    :params desiredBackend: a name attaching to a backend type.
+                            list of the possible values: ['stdout', 'stderr', 'file', 'server']
+    :params backendOptions: dictionary of different backend options.
+                            example: FileName='/tmp/log.txt'
     """
     # import ObjectLoader here to avoid a dependancy loop
     from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
     objLoader = ObjectLoader()
 
-    for backendName in desiredBackends:
-      backendName = backendName.strip().lower()
+    # Remove white space and capitalize the first letter
+    desiredBackend = desiredBackend.strip()
+    desiredBackend = desiredBackend[0].upper() + desiredBackend[1:]
 
-      # lock to avoid problem in ObjectLoader which is a singleton not thread-safe
-      self._lockObjectLoader.acquire()
-      try:
-        # load the Backend class
-        _class = objLoader.loadObject(
-            'DIRAC.FrameworkSystem.private.standardLogging.Backend.%sBackend' % backendName.capitalize())
-      finally:
-        self._lockObjectLoader.release()
+    # lock to avoid problem in ObjectLoader which is a singleton not thread-safe
+    self._lockObjectLoader.acquire()
+    try:
+      # load the Backend class
+      _class = objLoader.loadObject('DIRAC.Resources.LogBackends.%sBackend' % desiredBackend)
+    finally:
+      self._lockObjectLoader.release()
 
-      if _class['OK']:
-        # add the backend instance to the Logging
-        self._addBackend(_class['Value'](), backendOptions)
-        self._generateBackendFormat()
-      else:
-        self._generateBackendFormat()
-        self.warn("%s is not a valid backend name." % backendName)
+    if _class['OK']:
+      # add the backend instance to the Logging
+      self._addBackend(_class['Value'](), backendOptions)
+      self._generateBackendFormat()
+    else:
+      self._generateBackendFormat()
+      self.warn("%s is not a valid backend name." % desiredBackend)
 
   def _addBackend(self, backend, backendOptions=None):
     """
@@ -192,7 +202,7 @@ class Logging(object):
 
     # lock to prevent that the level change before adding the new backend in the backendsList
     # and to prevent a change of the backendsList during the reading of the list
-    self._lockLevel.acquire() 
+    self._lockLevel.acquire()
     self._lockOptions.acquire()
     try:
       # update the level of the new backend to respect the Logging level
@@ -239,7 +249,7 @@ class Logging(object):
 
       # update Logging level
       self._level = level
-      
+
       # lock to prevent a modification of the backendsList
       self._lockOptions.acquire()
       try:
@@ -444,7 +454,6 @@ class Logging(object):
       return childLogging
     finally:
       self._lockInit.release()
-
 
   def initialized(self):
     """

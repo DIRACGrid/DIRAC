@@ -47,6 +47,8 @@ class ARCComputingElement( ComputingElement ):
     self.gridEnv = ''
     self.ceHost = self.ceName
     self.usercfg = arc.common.UserConfig()
+    ## set the timeout to the default 20 seconds in case the UserConfig constructor did not
+    self.usercfg.Timeout(20) #pylint: disable=pointless-statement
     if 'Host' in self.ceParameters:
       self.ceHost = self.ceParameters['Host']
     if 'GridEnv' in self.ceParameters:
@@ -65,7 +67,9 @@ class ARCComputingElement( ComputingElement ):
                        'Hold'    : 'Failed',
                        'Finished': 'Done',
                        'Other'   : 'Done'}
-    self.__getXRSLExtraString() # Do this after all other initialisations, in case something barks
+    # Do these after all other initialisations, in case something barks
+    self.xrslExtraString = self.__getXRSLExtraString()
+    self.xrslMPExtraString = self.__getXRSLExtraString( multiprocessor=True )
 
   #############################################################################
 
@@ -86,11 +90,11 @@ class ARCComputingElement( ComputingElement ):
     j.PrepareHandler( self.usercfg )
     return j
 
-  def __getXRSLExtraString( self ):
+  def __getXRSLExtraString( self, multiprocessor = False ):
     # For the XRSL additional string from configuration - only done at initialisation time
     # If this string changes, the corresponding (ARC) site directors have to be restarted
     #
-    # Variable = XRSLExtraString
+    # Variable = XRSLExtraString (or XRSLMPExtraString for multi processor mode)
     # Default value = ''
     #   If you give a value, I think it should be of the form
     #          (aaa = "xxx")
@@ -100,7 +104,7 @@ class ARCComputingElement( ComputingElement ):
     # Second priority : Resources/Sites/<Grid>/<Site>/XRSLExtraString
     # Default         : Resources/Computing/CEDefaults/XRSLExtraString
     #
-    self.xrslExtraString = '' # Start with the default value
+    xrslExtraString = '' # Start with the default value
     result = getSiteForCE(self.ceHost)
     self.site = ''
     if result['OK']:
@@ -111,33 +115,37 @@ class ARCComputingElement( ComputingElement ):
     # Now we know the site. Get the grid
     grid = self.site.split(".")[0]
     # The different possibilities that we have agreed upon
-    xtraVariable = "XRSLExtraString"
+    if multiprocessor:
+      xtraVariable = "XRSLMPExtraString"
+    else:
+      xtraVariable = "XRSLExtraString"
     firstOption = "Resources/Sites/%s/%s/CEs/%s/%s" % (grid, self.site, self.ceHost, xtraVariable)
     secondOption = "Resources/Sites/%s/%s/%s" % (grid, self.site, xtraVariable)
     defaultOption = "Resources/Computing/CEDefaults/%s" % xtraVariable
     # Now go about getting the string in the agreed order
-    gLogger.debug("Trying to get xrslExtra string : first option %s" % firstOption)
+    gLogger.debug("Trying to get %s : first option %s" % (xtraVariable, firstOption))
     result = gConfig.getValue(firstOption, defaultValue='')
     if result != '':
-      self.xrslExtraString = result
-      gLogger.debug("Found xrslExtra string : %s" % self.xrslExtraString)
+      xrslExtraString = result
+      gLogger.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
     else:
-      gLogger.debug("Trying to get xrslExtra string : second option %s" % secondOption)
+      gLogger.debug("Trying to get %s : second option %s" % (xtraVariable, secondOption))
       result = gConfig.getValue(secondOption, defaultValue='')
       if result != '':
-        self.xrslExtraString = result
-        gLogger.debug("Found xrslExtra string : %s" % self.xrslExtraString)
+        xrslExtraString = result
+        gLogger.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
       else:
-        gLogger.debug("Trying to get xrslExtra string : default option %s" % defaultOption)
+        gLogger.debug("Trying to get %s : default option %s" % (xtraVariable, defaultOption))
         result = gConfig.getValue(defaultOption, defaultValue='')
         if result != '':
-          self.xrslExtraString = result
-          gLogger.debug("Found xrslExtra string : %s" % self.xrslExtraString)
-    if self.xrslExtraString == '':
-      gLogger.always("No XRSLExtra string found in configuration for %s" % self.ceHost)
+          xrslExtraString = result
+          gLogger.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
+    if xrslExtraString == '':
+      gLogger.always("No %s found in configuration for %s" % (xtraVariable, self.ceHost))
     else :
-      gLogger.always("XRSLExtra string : %s" % self.xrslExtraString)
+      gLogger.always("%s : %s" % (xtraVariable, xrslExtraString))
       gLogger.always(" --- to be added to pilots going to CE : %s" % self.ceHost)
+    return xrslExtraString
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -147,10 +155,20 @@ class ARCComputingElement( ComputingElement ):
     ComputingElement._addCEConfigDefaults( self )
 
   #############################################################################
-  def __writeXRSL( self, executableFile ):
+  def __writeXRSL( self, executableFile, processors=1 ):
     """ Create the JDL for submission
     """
     diracStamp = makeGuid()[:8]
+
+    xrslMPAdditions = ''
+    if processors > 1:
+      xrslMPAdditions = """
+(count = %(processors)u)
+%(xrslMPExtraString)s
+      """ % {
+              'processors':processors,
+              'xrslMPExtraString':self.xrslMPExtraString
+            }
 
     xrsl = """
 &(executable="%(executable)s")
@@ -159,12 +177,14 @@ class ARCComputingElement( ComputingElement ):
 (stderr="%(diracStamp)s.err")
 (outputFiles=("%(diracStamp)s.out" "") ("%(diracStamp)s.err" ""))
 (queue=%(queue)s)
+%(xrslMPAdditions)s
 %(xrslExtraString)s
     """ % {
             'executableFile':executableFile,
             'executable':os.path.basename( executableFile ),
             'diracStamp':diracStamp,
             'queue':self.arcQueue,
+            'xrslMPAdditions':xrslMPAdditions,
             'xrslExtraString':self.xrslExtraString
            }
 
@@ -177,7 +197,7 @@ class ARCComputingElement( ComputingElement ):
       self.gridEnv = self.ceParameters['GridEnv']
 
   #############################################################################
-  def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
+  def submitJob( self, executableFile, proxy, numberOfJobs=1, processors=1 ):
     """ Method to submit job
     """
 
@@ -205,7 +225,7 @@ class ARCComputingElement( ComputingElement ):
       # The basic job description
       jobdescs = arc.JobDescriptionList()
       # Get the job into the ARC way
-      xrslString, diracStamp = self.__writeXRSL( executableFile )
+      xrslString, diracStamp = self.__writeXRSL( executableFile, processors )
       gLogger.debug("XRSL string submitted : %s" %xrslString)
       gLogger.debug("DIRAC stamp for job : %s" %diracStamp)
       if not arc.JobDescription_Parse(xrslString, jobdescs):

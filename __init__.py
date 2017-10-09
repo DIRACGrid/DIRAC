@@ -77,9 +77,9 @@ __RCSID__ = "$Id$"
 # Define Version
 
 majorVersion = 6
-minorVersion = 18
+minorVersion = 19
 patchLevel = 0
-preVersion = 14
+preVersion = 13
 
 version = "v%sr%s" % ( majorVersion, minorVersion )
 buildVersion = "v%dr%d" % ( majorVersion, minorVersion )

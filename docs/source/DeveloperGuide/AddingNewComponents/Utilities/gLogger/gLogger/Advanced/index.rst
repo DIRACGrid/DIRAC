@@ -137,27 +137,25 @@ Furthermore, the *setLevel* method is useful only if we add it some
 Add a *Backend* object on a child *Logging*
 -------------------------------------------
 
-*registerBackends* presentation
+*registerBackend(s)* presentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now, it is possible to add some *Backend* objects to any *Logging* via
-the *registerBackends* method. This method takes two parameters, a list
-of names of different *Backend* objects, and a dictionary of attribute
+the *registerBackend* method. This method takes two parameters, a name of a
+*Backend* objects, and a dictionary of attribute
 names and their values associated. Here is an example of use:
 
 ::
 
     logger = gLogger.getSubLogger("logger")
-    logger.registerBackends(['stdout', 'file'], {'FileName': 'file.log'})
+    logger.registerBackend('stdout')
+    logger.registerBackend('file', {'FileName': 'file.log'})
+    # An alternative:
+    # logger.registerBackends(['stdout', 'file'], {'FileName': 'file.log'})
 
-This, will create *stdout* and *file Backend* objects in *logger*. We
-can add two *Backend* objects of the same type in a same
-*registerBackends* call but it is not recommended. Indeed, we can not
-add two same attributes in the dictionary of attributes. For instance,
-two *file Backend* objects will have the same file name and log records
-will appear two times inside. To have two different files in a same list
-of *Backend* objects, we have to add them with two *registerBackends*
-calls.
+This, will create *stdout* and *file Backend* objects in *logger*. The alternative method 
+named *registerBackends* takes a *Backend* objects list as first argument. This method can be really efficient
+to add some *Backend* objects in one time but also restrictive due to the unicity of the dictionary keys.
 
 Log records propagation
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -176,7 +174,7 @@ will appears multiple times in this case. Here is an example:
 
     # gLogger has a stdout Backend
     logger = gLogger.getSubLogger("logger")
-    logger.registerBackends(['stdout'])
+    logger.registerBackend('stdout')
     logger.verbose("message")
     # > 2017-04-25 15:51:01 UTC Framework/Atom/logger VERBOSE: message
     # > 2017-04-25 15:51:01 UTC Framework/Atom/logger VERBOSE: message
@@ -193,7 +191,7 @@ if the log record will appear or not in the *Backend* objects of the
 current *Logging*. Thus, the boolean can be at *False* and the log
 record can appear in one of its parent anyway.
 
-The *registerBackends* utility
+The *registerBackend(s)* utility
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This functionality gives the possibility to isolate some log records
@@ -206,7 +204,7 @@ snippet of this example:
 
     # gLogger: stdout Backend, NOTICE level
     logger = gLogger.getSubLogger("logger")
-    logger.registerBackends(['file'], {'FileName': 'file.log'})
+    logger.registerBackend('file', {'FileName': 'file.log'})
     logger.setLevel("error")
     logger.verbose("appears only in stdout")
     logger.notice("appears only in stdout")
@@ -245,7 +243,7 @@ information that we do not want for example:
 
     # gLogger: stdout Backend, NOTICE level, showHeaders at True 
     logger = gLogger.getSubLogger("logger")
-    logger.registerBackends(['file'], {'FileName': 'file.log'})
+    logger.registerBackend('file', {'FileName': 'file.log'})
     logger.setLevel("error")
     logger.showHeaders(False)
     logger.verbose("appears only in stdout")
@@ -258,11 +256,11 @@ information that we do not want for example:
     # in file.log: 
     # > appears in stdout, in file.log
 
-The *LogShowLine* and *LogColor* cases
+The *LogColor* case
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-These options can not be modified in the children of *gLogger*, even by
-*gLogger* itself after the *cfg* configuration, so the children receive
+This option can not be modified in the children of *gLogger*, even by
+*gLogger* itself after the configuration, so the children receive
 the *gLogger* configuration.
 
 Some examples and summaries

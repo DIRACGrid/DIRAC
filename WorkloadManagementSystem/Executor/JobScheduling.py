@@ -386,7 +386,7 @@ class JobScheduling( OptimizerExecutor ):
       if nProcessors:
         tagList.append( "%dProcessors" % nProcessors )
     if "WholeNode" in jobManifest:
-      if jobManifest.getOption( "WholeNode", "" ).lower() in ["1", "yes", "false"]:
+      if jobManifest.getOption( "WholeNode", "" ).lower() in ["1", "yes", "true"]:
         tagList.append( "WholeNode" )
     if "Tags" in jobManifest:
       tagList.extend( jobManifest.getOption( "Tags", [] ) )
@@ -478,11 +478,10 @@ class JobScheduling( OptimizerExecutor ):
 
     for seName in siteSEs:
       se = StorageElement( seName, vo = vo )
-      result = se.getStatus()
-      if not result[ 'OK' ]:
-        self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
-        return S_ERROR( "Cannot retrieve SE status" )
-      seStatus = result[ 'Value' ]
+      seStatus = se.getStatus()
+      if not seStatus['OK']:
+        return seStatus
+      seStatus = seStatus['Value']
       if seStatus[ 'Read' ] and seStatus[ 'TapeSE' ]:
         tapeSEs.append( seName )
       if seStatus[ 'Read' ] and seStatus[ 'DiskSE' ]:
@@ -594,12 +593,7 @@ class JobScheduling( OptimizerExecutor ):
       for seName in closeSEs:
         # If we don't have the SE status get it and store it
         if seName not in seStatus:
-          seObj = StorageElement( seName, vo = vo )
-          result = seObj.getStatus()
-          if not result['OK' ]:
-            self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
-            continue
-          seStatus[ seName ] = result[ 'Value' ]
+          seStatus[ seName ] = StorageElement( seName, vo = vo ).status()
         # get the SE status from mem and add it if its disk
         status = seStatus[ seName ]
         if status['Read'] and status['DiskSE']:
@@ -629,9 +623,6 @@ class JobScheduling( OptimizerExecutor ):
             siteData[ 'disk' ] += 1
             siteData[ 'tape' ] -= 1
 
-    return S_OK()
-
-
   def __setJobSite( self, jobState, siteList, onlineSites = None ):
     """ Set the site attribute
     """
@@ -647,7 +638,7 @@ class JobScheduling( OptimizerExecutor ):
 
     # If the job has input data, the online sites are hosting the data
     if len( onlineSites ) == 1:
-      siteName = "Group.%s" % ".".join( onlineSites[0].split( "." )[1:] )
+      siteName = "Group.%s" % ".".join( list( onlineSites )[0].split( "." )[1:] )
       self.jobLog.info( "Group %s is candidate" % siteName )
     elif len( onlineSites ):
       # More than one site with input

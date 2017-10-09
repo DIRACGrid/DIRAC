@@ -48,8 +48,7 @@ MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
 def getSubmitPools( group = None, vo = None ):
-  """
-    This method gets submit pools
+  """ This method gets submit pools
   """
   if group:
     return Registry.getGroupOption( group, 'SubmitPools', '' )
@@ -59,20 +58,15 @@ def getSubmitPools( group = None, vo = None ):
 
 
 class SiteDirector( AgentModule ):
-  """
-      The specific agents must provide the following methods:
-        - initialize() for initial settings
-        - beginExecution()
-        - execute() - the main method called in the agent cycle
-        - endExecution()
-        - finalize() - the graceful exit of the method, this one is usually used
-                   for the agent restart
+  """ SiteDirector class provides an implementation of a DIRAC agent.
+
+      Used for submitting pilots to Computing Elements.
   """
 
   def __init__( self, *args, **kwargs ):
     """ c'tor
     """
-    AgentModule.__init__( self, *args, **kwargs )
+    super(SiteDirector, self).__init__( *args, **kwargs )
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
@@ -101,8 +95,11 @@ class SiteDirector( AgentModule ):
     self.rssClient = None
     self.rssFlag = None
 
+    self.globalParameters = { "NumberOfProcessors": 1,
+                              "MaxRAM": 2048 }
+
   def initialize( self ):
-    """ Standard constructor
+    """ Initial settings
     """
     # Clients
     self.siteClient = SiteStatus()
@@ -148,7 +145,6 @@ class SiteDirector( AgentModule ):
     self.pilotGroup = self.am_getOption( "PilotGroup", self.pilotGroup )
 
     self.defaultSubmitPools = getSubmitPools( self.group, self.vo )
-
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
     self.extraModules = self.am_getOption( 'ExtraPilotModules', [] ) + DIRAC_MODULES
@@ -277,6 +273,7 @@ class SiteDirector( AgentModule ):
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
 
+          # Tags defined on the Queue level and on the CE level are concatenated
           queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
           if queueTags and isinstance( queueTags, basestring ):
             queueTags = fromChar( queueTags )
@@ -288,10 +285,14 @@ class SiteDirector( AgentModule ):
             else:
               self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
-          maxRAM = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM' )
-          maxRAM = ceMaxRAM if not maxRAM else maxRAM
-          if maxRAM:
-            self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
+          # Some parameters can be defined on the CE level and are inherited by all Queues
+          for parameter in [ 'MaxRAM', 'NumberOfProcessors', 'WholeNode' ]:
+            queueParameter = self.queueDict[queueName]['ParametersDict'].get( parameter )
+            ceParameter = ceDict.get( parameter )
+            if ceParameter or queueParameter:
+              self.queueDict[queueName]['ParametersDict'][parameter] = ceParameter if not queueParameter \
+                                                                                   else queueParameter
+
           if pilotRunDirectory:
             self.queueDict[queueName]['ParametersDict']['JobExecDir'] = pilotRunDirectory
           qwDir = os.path.join( self.workingDirectory, queue )
@@ -304,8 +305,7 @@ class SiteDirector( AgentModule ):
             platform = ceDict['Platform']
           elif "OS" in ceDict:
             architecture = ceDict.get( 'architecture', 'x86_64' )
-            OS = ceDict['OS']
-            platform = '_'.join( [architecture, OS] )
+            platform = '_'.join( [architecture, ceDict['OS']] )
           if platform and not platform in self.platforms:
             self.platforms.append( platform )
 
@@ -355,10 +355,20 @@ class SiteDirector( AgentModule ):
           if site not in self.sites:
             self.sites.append( site )
 
+          if "WholeNode" in self.queueDict[queueName]['ParametersDict']:
+            self.globalParameters['WholeNode'] = 'True'
+          for parameter in [ 'MaxRAM', 'NumberOfProcessors' ]:
+            if parameter in self.queueDict[queueName]['ParametersDict']:
+              self.globalParameters[parameter] = max( self.globalParameters[parameter],
+                                                      int( self.queueDict[queueName]['ParametersDict'][parameter] ))
+
+
     return S_OK()
 
   def execute( self ):
-    """ Main execution method
+    """ Main execution method (what is called at each agent cycle).
+
+        It basically just calls self.submitJobs() method
     """
 
     if not self.queueDict:
@@ -394,7 +404,16 @@ class SiteDirector( AgentModule ):
       return result
     tqDict['Platform'] = result['Value']
     tqDict['Site'] = self.sites
-    tqDict['Tag'] = []
+
+    # Get a union of all tags
+    tags = []
+    for queue in self.queueDict:
+      tags += self.queueDict[queue]['ParametersDict'].get( 'Tag', [] )
+    tqDict['Tag'] = list( set( tags ) )
+
+    # Add overall max values for all queues
+    tqDict.update( self.globalParameters )
+
     self.log.verbose( 'Checking overall TQ availability with requirements' )
     self.log.verbose( tqDict )
 
@@ -738,32 +757,32 @@ class SiteDirector( AgentModule ):
             self.queueSlots[queue]['AvailableSlots'] = totalSlots
             waitingJobs = ceInfoDict['WaitingJobs']
         else:
-          maxWaitingJobs = int( self.queueDict[queue]['ParametersDict']['MaxWaitingJobs'] )
-          maxTotalJobs = int( self.queueDict[queue]['ParametersDict']['MaxTotalJobs'] )
-          result = pilotAgentsDB.getPilotInfo( jobIDList )
-          if not result['OK']:
-            self.log.warn( 'Failed to check PilotAgentsDB for queue %s: \n%s' % ( queue, result['Message'] ) )
-            self.failedQueues[queue] += 1
-          else:
-            waitingJobs = 0
-            totalJobs = 0
-            for pilotRef, pilotDict in result['Value'].iteritems():
-              if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
-                totalJobs += 1
-                if pilotDict["Status"] in WAITING_PILOT_STATUS:
-                  waitingJobs += 1
-            runningJobs = totalJobs - waitingJobs
-            self.log.info( "PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" % \
-                           ( ceName, queueName, waitingJobs, runningJobs, maxTotalJobs ) )
-            totalSlots = min( (maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs) )
-            self.queueSlots[queue]['AvailableSlots'] = totalSlots
+          maxWaitingJobs = int( self.queueDict[queue]['ParametersDict'].get( 'MaxWaitingJobs', 10 ) )
+          maxTotalJobs = int( self.queueDict[queue]['ParametersDict'].get( 'MaxTotalJobs', 10 ) )
+          waitingJobs = 0
+          totalJobs = 0
+          if jobIDList:
+            result = pilotAgentsDB.getPilotInfo( jobIDList )
+            if not result['OK']:
+              self.log.warn( 'Failed to check PilotAgentsDB for queue %s: \n%s' % ( queue, result['Message'] ) )
+              self.failedQueues[queue] += 1
+            else:
+              for _pilotRef, pilotDict in result['Value'].iteritems():
+                if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
+                  totalJobs += 1
+                  if pilotDict["Status"] in WAITING_PILOT_STATUS:
+                    waitingJobs += 1
+              runningJobs = totalJobs - waitingJobs
+              self.log.info( "PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" % \
+                             ( ceName, queueName, waitingJobs, runningJobs, maxTotalJobs ) )
+          totalSlots = min( (maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs) )
+          self.queueSlots[queue]['AvailableSlots'] = totalSlots
 
     self.queueSlots[queue]['AvailableSlotsCount'] += 1
 
     if manyWaitingPilotsFlag and waitingJobs:
       return 0
-    else:
-      return totalSlots
+    return totalSlots
 
 #####################################################################################
   def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '' ):
@@ -785,7 +804,6 @@ class SiteDirector( AgentModule ):
   def _getPilotOptions( self, queue, pilotsToSubmit ):
     """ Prepare pilot options
     """
-
     queueDict = self.queueDict[queue]['ParametersDict']
     pilotOptions = []
 
@@ -815,6 +833,12 @@ class SiteDirector( AgentModule ):
       return [ None, None ]
     # diracVersion is a list of accepted releases
     pilotOptions.append( '-r %s' % ','.join( str( it ) for it in diracVersion ) )
+
+    #lcgBundle defined?
+    lcgBundleVersion = opsHelper.getValue( "Pilot/LCGBundleVersion", "" )
+    if lcgBundleVersion:
+      self.log.warn( "lcgBundle version %s defined in CS: will overwrite possible per-release lcg bundle versions" %lcgBundleVersion )
+      pilotOptions.append( '-g %s' % lcgBundleVersion )
 
     ownerDN = self.pilotDN
     ownerGroup = self.pilotGroup
@@ -850,9 +874,9 @@ class SiteDirector( AgentModule ):
       if pilotExtensionsList[0] != 'None':
         extensionsList = pilotExtensionsList
     else:
-      extensionsList = CSGlobals.getCSExtensions()
+      extensionsList = [ext for ext in CSGlobals.getCSExtensions() if 'Web' not in ext]
     if extensionsList:
-      pilotOptions.append( '-e %s' % ",".join( [ext for ext in extensionsList if 'Web' not in ext] ) )
+      pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
 
     # Requested CPU time
     pilotOptions.append( '-T %s' % queueDict['CPUTime'] )

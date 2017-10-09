@@ -20,7 +20,7 @@ class GridSubmissionTestCase( unittest.TestCase ):
   """
   def setUp( self ):
     result = getProxyInfo()
-    if result['Value']['group'] not in ['dirac_user']:
+    if result['Value']['group'] not in ['lhcb_user', 'dirac_user']:
       print "GET A USER GROUP"
       exit( 1 )
 

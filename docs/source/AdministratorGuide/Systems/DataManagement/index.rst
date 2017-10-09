@@ -43,92 +43,125 @@ DIRAC provides an abstraction of a SE interface that allows to access different 
 
 In order to factorize the configuration, it is possible to use BaseSE, which acts just like inheritance in object programming. You define a SE just like any other. This SE can then be refered to by another SE. This new SE will inherit all the configuration from its parents, and can override it.  For example::
 
-   CERN-EOS
-   {
-     BackendType = Eos
-     SEType = T0D1
-     AccessProtocol.1
-     {
-       Host = srm-eoslhcb.cern.ch
-       Port = 8443
-       PluginName = GFAL2_SRM2
-       Protocol = srm
-       Path = /eos/lhcb/grid/prod
-       Access = remote
-       SpaceToken = LHCb-EOS
-       WSUrl = /srm/v2/server?SFN=
-     }
-   }
-   CERN-DST-EOS
-   {
-     BaseSE = CERN-EOS
-   }
-   CERN-USER
-   {
-     BaseSE = CERN-EOS
-     PledgedSpace = 205
-     AccessProtocol.1
-     {
-      PluginName = GFAL2_SRM2
-      Path = /eos/lhcb/grid/user
-      SpaceToken = LHCb_USER
-     }
-   }
-
-
-This definition would be strictly equivalent to::
-
-   CERN-EOS
-   {
-     BackendType = Eos
-     SEType = T0D1
-     AccessProtocol.1
-     {
-       Host = srm-eoslhcb.cern.ch
-       Port = 8443
-       PluginName = GFAL2_SRM2
-       Protocol = srm
-       Path = /eos/lhcb/grid/prod
-       Access = remote
-       SpaceToken = LHCb-EOS
-       WSUrl = /srm/v2/server?SFN=
-     }
-   }
-   CERN-DST-EOS
-   {
-      BackendType = Eos
-      SEType = T0D1
-      AccessProtocol.1
+    StorageElementBases
+    {
+      CERN-EOS
       {
-        Host = srm-eoslhcb.cern.ch
+        BackendType = Eos
+        SEType = T0D1
+        AccessProtocol.1
+        {
+          Host = srm-eoslhcb.cern.ch
+          Port = 8443
+          PluginName = GFAL2_SRM2
+          Protocol = srm
+          Path = /eos/lhcb/grid/prod
+          Access = remote
+          SpaceToken = LHCb-EOS
+          WSUrl = /srm/v2/server?SFN=
+        }
+      }
+    }
+    StorageElements
+    {
+      CERN-DST-EOS
+      {
+        BaseSE = CERN-EOS
+      }
+      CERN-USER
+      {
+        BaseSE = CERN-EOS
+        PledgedSpace = 205
+        AccessProtocol.1
+        {
+          PluginName = GFAL2_SRM2
+          Path = /eos/lhcb/grid/user
+          SpaceToken = LHCb_USER
+        }
+      }
+      GFAL2_XROOT
+      {
+        Host = eoslhcb.cern.ch
         Port = 8443
-        PluginName = GFAL2_SRM2
-        Protocol = srm
-        Path = /eos/lhcb/grid/prod
+        Protocol = root
+        Path = /eos/lhcb/grid/user
         Access = remote
         SpaceToken = LHCb-EOS
         WSUrl = /srm/v2/server?SFN=
       }
-   }
-   CERN-USER
-   {
-      BackendType = Eos
-      SEType = T0D1
-      PledgedSpace = 205
-      AccessProtocol.1
+    }
+
+
+This definition would be strictly equivalent to::
+
+    StorageElementBases
+    {
+      CERN-EOS
       {
-        Host = srm-eoslhcb.cern.ch
+        BackendType = Eos
+        SEType = T0D1
+        AccessProtocol.1
+        {
+          Host = srm-eoslhcb.cern.ch
+          Port = 8443
+          PluginName = GFAL2_SRM2
+          Protocol = srm
+          Path = /eos/lhcb/grid/prod
+          Access = remote
+          SpaceToken = LHCb-EOS
+          WSUrl = /srm/v2/server?SFN=
+        }
+      }
+    }
+    StorageElements
+    {
+      CERN-DST-EOS
+      {
+        BackendType = Eos
+        SEType = T0D1
+        AccessProtocol.1
+        {
+          Host = srm-eoslhcb.cern.ch
+          Port = 8443
+          PluginName = GFAL2_SRM2
+          Protocol = srm
+          Path = /eos/lhcb/grid/prod
+          Access = remote
+          SpaceToken = LHCb-EOS
+          WSUrl = /srm/v2/server?SFN=
+        }
+      }
+      CERN-USER
+      {
+        BackendType = Eos
+        SEType = T0D1
+        PledgedSpace = 205
+        AccessProtocol.1
+        {
+          Host = srm-eoslhcb.cern.ch
+          Port = 8443
+          PluginName = GFAL2_SRM2
+          Protocol = srm
+          Path = /eos/lhcb/grid/user
+          Access = remote
+          SpaceToken = LHCb_USER
+          WSUrl = /srm/v2/server?SFN=
+        }
+      }
+      GFAL2_XROOT
+      {
+        Host = eoslhcb.cern.ch
         Port = 8443
-        PluginName = GFAL2_SRM2
-        Protocol = srm
+        PluginName =  GFAL2_XROOT
+        Protocol = root
         Path = /eos/lhcb/grid/user
         Access = remote
-        SpaceToken = LHCb_USER
+        SpaceToken = LHCb-EOS
         WSUrl = /srm/v2/server?SFN=
       }
-   }
+    }
 
-Note that in case of overwriting, the protocol sections are matched using the PluginName attribute, and not the section name, which is irrelevant at all.
+Note that base SE must be separated from the inherited SE in two different sections. You can also notice that the name of the protocol section can be a plugin name. In this way, you do not need to specify a plugin name inside.
 
 --------------
 Multi Protocol
@@ -161,6 +194,14 @@ GFAL2_SRM2 plugins because only srm is allowed as a write plugin, but since this
 
 The WriteProtocols and AccessProtocols list can be locally overwritten in the SE definition.
 
+-----------------------
+Multi Protocol with FTS
+-----------------------
+
+CAUTION: not yet active
+
+External services like FTS requires pair of URLs to perform third party copy.
+This is implemented using the same logic as described above. There is however an extra step: once the common protocols between 2 SEs have been filtered, an extra loop filter is done to make sure that the selected protocol can be used as read from the source and as write to the destination. Finally, the URLs which are returned are not necessarily the url of the common protocol, but are the native urls of the plugin that can accept/generate the common protocol. For example, if the common protocol is gsiftp but one of the SE has only an SRM plugin, then you will get an srm URL (which is compatible with gsiftp).
 
 
 --------------------------

@@ -21,7 +21,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
   """ SRM2 SE class that inherits from GFAL2StorageBase
   """
 
-  _INPUT_PROTOCOLS = ['file', 'root', 'srm']
+  _INPUT_PROTOCOLS = ['file', 'root', 'srm', 'gsiftp']
   _OUTPUT_PROTOCOLS = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm', 'gsiftp']
 
 
@@ -46,8 +46,6 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
     self.__setSRMOptionsToDefault()
 
-    if self.checksumType:
-      self.ctx.set_opt_string( "SRM PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType )
 
 
   def __setSRMOptionsToDefault( self ):

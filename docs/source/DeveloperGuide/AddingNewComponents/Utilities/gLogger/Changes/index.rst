@@ -185,10 +185,10 @@ there is the old exception display, at the bottom the new:
     a = 1/0
     ZeroDivisionError: integer division or modulo by zero
 
-*registerBackends()* for all loggers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*registerBackends() and registerBackend()* for all loggers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now, each *Logging* can use the *registerBackends* method for their own
+Now, each *Logging* can use the *registerBackend(s)* method for their own
 needs. In this way, you can easily isolate log records from a specific
 *Logging* object.
 
@@ -200,7 +200,7 @@ these ones to its parent and so on. Thus, all log records from all
 ::
 
     # gLogger has no Backend, DEBUG level
-    gLogger.registerBackends(['stdout'])
+    gLogger.registerBackend('stdout')
 
     log = gLogger.getSubLogger('log')
     log.registerBackends(['stderr', 'stdout'])
@@ -208,7 +208,7 @@ these ones to its parent and so on. Thus, all log records from all
     sublog = log.getSubLogger('sublog')
 
     subsublog = sublog.getSubLogger('sublog')
-    subsublog.registerBackends(['file'])
+    subsublog.registerBackend('file')
 
     subsublog.verbose("message")
     # file 
@@ -279,6 +279,91 @@ will stay the same:
     # > message
     # stderr
     # > VERBOSE: message
+    
+*Backend* configuration
+----------------------
+
+Now, the *Backend* configuration in the configuration becomes more readable
+and can be centralized. 
+
+::
+
+    LogBackends = <backend1>, <backend2>, <backend3>  
+    BackendOptions                
+    {                         
+        <param backend2> = <value1>
+        <param backend3> = <value2>
+    }
+
+This configuration becomes: 
+
+::
+
+    LogBackends = <backend1>, <backend2>, <backend3>
+    LogBackendsConfig
+    {
+        <backend2>
+        {
+            <param backend2> = <value1>
+        }
+        <backend3>
+        {
+            <param backend3> = <value2>
+        }
+    }
+ 
+The first main advantage of this new feature is that you can define many *Backend* objects of a same type and provide them different specifications like this: 
+
+::
+
+    LogBackends = file, f01, log
+    LogBackendsConfig
+    {
+        f01
+        {
+            Type = file
+            FileName = log1.txt
+        }
+        log
+        {
+            Type = file
+            FileName = log2.txt
+        }
+    }
+
+Here you have 3 *file Backend* objects which will send log records in 3 differents files. The only rule to this functionality is to precise the type of the *Backend* if it is non conventional. 
+
+The second main advantage is that you can centralize a configuration to have it either for some different components, or for all the components of a same type, or for all the components. Here is an example of a centralized configuration:
+
+:: 
+
+    Operations
+    {
+        Defaults
+        {
+            Logging
+            {
+                DefaultAgentsBackends = stdout, file
+            }
+        }
+    }
+    Systems
+    {
+        ...
+        Agents
+        {
+            SimplestAgent
+            {
+                ...
+            }
+            AnotherAgent
+            {
+                ...
+            }
+        }
+    }
+    
+In this example, *SimplestAgent* and *AnotherAgent* which have no *Backend* configuration will inherit the *DefaultAgentsBackends* configuration: *stdout* and *file*.
 
 Multiple processes and threads
 ------------------------------

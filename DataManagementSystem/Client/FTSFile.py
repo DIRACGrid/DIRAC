@@ -76,7 +76,7 @@ class FTSFile( object ):
                "FileID": "INTEGER NOT NULL",
                "OperationID": "INTEGER NOT NULL",
                "RequestID": "INTEGER NOT NULL",
-               "LFN": "VARCHAR(955) NOT NULL",
+               "LFN": "VARCHAR(255) NOT NULL",
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
                "Checksum": "VARCHAR(64)",
                "ChecksumType": "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'ADLER32'",
@@ -324,7 +324,7 @@ class FTSFile( object ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = []
     for column, value in self.__data__.items():
-      if value and column not in ( "FTSFileID", "LastUpdate" ):
+      if value is not None and column not in ( "FTSFileID", "LastUpdate" ):
         colStr = "`%s`" % column
         if isinstance( value, datetime.datetime ) or isinstance( value, basestring ):
           valStr = "'%s'" % value

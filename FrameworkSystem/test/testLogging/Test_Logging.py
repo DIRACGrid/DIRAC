@@ -13,6 +13,7 @@ from StringIO import StringIO
 
 from DIRAC.FrameworkSystem.private.logging.Logger import Logger
 from DIRAC.FrameworkSystem.private.standardLogging.LoggingRoot import LoggingRoot
+from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
 
 
 oldgLogger = Logger()
@@ -37,6 +38,10 @@ class Test_Logging(unittest.TestCase):
     """
     Initialize at debug level with a sublogger and a special handler
     """
+    # Reinitialize the system/component name after other tests
+    # because LoggingRoot is a singleton and can not be reinstancied
+    Logging._componentName = 'Framework'
+
     gLogger.setLevel('debug')
     self.log = gLogger.getSubLogger('log')
     self.buffer = StringIO()
@@ -62,14 +67,16 @@ class Test_Logging(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  from DIRAC.FrameworkSystem.test.testLogging.tests.Test_DisplayOptions import Test_DisplayOptions
-  from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Levels import Test_Levels
-  from DIRAC.FrameworkSystem.test.testLogging.tests.Test_LogRecordCreation import Test_LogRecordCreation
-  from DIRAC.FrameworkSystem.test.testLogging.tests.Test_SubLogger import Test_SubLogger
+  from DIRAC.FrameworkSystem.test.testLogging.Test_DisplayOptions import Test_DisplayOptions
+  from DIRAC.FrameworkSystem.test.testLogging.Test_Levels import Test_Levels
+  from DIRAC.FrameworkSystem.test.testLogging.Test_LogRecordCreation import Test_LogRecordCreation
+  from DIRAC.FrameworkSystem.test.testLogging.Test_SubLogger import Test_SubLogger
+  from DIRAC.FrameworkSystem.test.testLogging.Test_ConfigForExternalLibs import Test_ConfigForExternalLibs
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test_Logging)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_DisplayOptions))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_Levels))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_LogRecordCreation))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_SubLogger))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_ConfigForExternalLibs))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

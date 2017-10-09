@@ -339,8 +339,8 @@ class Dirac( API ):
         self.log.error( msg )
         return S_ERROR( msg )
 
-      jobDescriptionObject = StringIO.StringIO( job._toXML() )
-      jdlAsString = job._toJDL( jobDescriptionObject = jobDescriptionObject )
+      jobDescriptionObject = StringIO.StringIO( job._toXML() ) # pylint: disable=protected-access
+      jdlAsString = job._toJDL( jobDescriptionObject = jobDescriptionObject ) # pylint: disable=protected-access
 
     if mode.lower() == 'local':
       result = self.runLocal(job)
@@ -868,11 +868,16 @@ class Dirac( API ):
 
         # Attempt to copy into job working directory
         if os.path.isdir( isFile ):
+          self.log.debug("Input Sandbox %s is a directory, found in the user working directory, copying it" % isFile)
           shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
         elif os.path.exists( isFile ):
+          self.log.debug("Input Sandbox %s is a file, found in the user working directory, copying it" % isFile)
           shutil.copy( isFile, os.getcwd() )
         elif os.path.exists(os.path.join(tmpdir, isFile)): # if it is in the tmp dir
+          self.log.debug("Input Sandbox %s is a file, found in the tmp directory, copying it" % isFile)
           shutil.copy(os.path.join(tmpdir, isFile), os.getcwd())
+        elif os.path.exists(os.path.join(jobDir, isFile)): # if it is in the tmp dir
+          self.log.debug("Input Sandbox %s is a file, found in the job directory, no need to copy it" % isFile)
         else:
           self.log.verbose("perhaps the file %s is in an LFN, so we attempt to download it." % isFile)
           getFile = self.getFile( isFile )
@@ -885,8 +890,8 @@ class Dirac( API ):
             with tarfile.open( basefname, 'r' ) as tf:
               for member in tf.getmembers():
                 tf.extract( member, os.getcwd() )
-          except Exception as x:
-            return S_ERROR( 'Could not untar %s with exception %s' % (basefname, str(x)))
+          except (tarfile.ReadError, tarfile.CompressionError, tarfile.ExtractError) as x:
+            return S_ERROR( 'Could not untar or extract %s with exception %s' % (basefname, repr(x)))
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
@@ -1183,7 +1188,7 @@ class Dirac( API ):
       :type access: string in ('Read', 'Write', 'Remove', 'Check')
       : returns: True or False
     """
-    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( access, False )
+    return StorageElement( se, vo = self.vo ).status().get( access, False )
 
   #############################################################################
   def splitInputData( self, lfns, maxFilesPerJob = 20, printOutput = False ):

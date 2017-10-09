@@ -212,7 +212,8 @@ for the agent restart
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_ERROR( 'Failed to get the pilot reference' )
+      # There is no pilot reference, hence its status is unknown
+      return S_OK( 'NoPilot' )
 
     pilotReference = result['Value']
     wmsAdminClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -221,7 +222,8 @@ for the agent restart
       if "No pilots found" in result['Message']:
         self.log.warn( result['Message'] )
         return S_OK( 'NoPilot' )
-      self.log.error( 'Failed to get pilot information', result['Message'] )
+      self.log.error( 'Failed to get pilot information',
+                      'for job %d: ' % jobID + result['Message'] )
       return S_ERROR( 'Failed to get the pilot status' )
     pilotStatus = result['Value'][pilotReference]['Status']
 

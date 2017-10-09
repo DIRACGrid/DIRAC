@@ -5,7 +5,7 @@ ServerBackend wrapper
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.FrameworkSystem.private.standardLogging.Backend.AbstractBackend import AbstractBackend
+from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 from DIRAC.FrameworkSystem.private.standardLogging.Formatter.BaseFormatter import BaseFormatter
 from DIRAC.FrameworkSystem.private.standardLogging.Handler.ServerHandler import ServerHandler
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
@@ -44,10 +44,10 @@ class ServerBackend(AbstractBackend):
     if parameters is not None:
       self.__interactive = parameters.get('Interactive', self.__interactive)
       self.__sleepTime = parameters.get('SleepTime', self.__sleepTime)
-    self.__site = DIRAC.siteName()
+      self.__site = DIRAC.siteName()
 
     self._handler = ServerHandler(self.__sleepTime, self.__interactive, self.__site)
-    self._handler.setLevel(LogLevels.getLevelValue('ERROR'))
+    self._handler.setLevel(LogLevels.ERROR)
 
   def setLevel(self, level):
     """

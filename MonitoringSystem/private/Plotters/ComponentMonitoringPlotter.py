@@ -21,7 +21,7 @@ class ComponentMonitoringPlotter( BasePlotter ):
   """
 
   _typeName = "ComponentMonitoring"
-  _typeKeyFields = ComponentMonitoring().getKeyFields()
+  _typeKeyFields = ComponentMonitoring().keyFields
 
 
   def __reportAllResources( self, reportRequest, metric, unit ):

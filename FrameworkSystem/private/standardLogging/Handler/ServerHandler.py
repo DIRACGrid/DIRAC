@@ -32,7 +32,7 @@ class ServerHandler(logging.Handler, threading.Thread):
     :params interactive: not used at the moment.
     :params site: the site where the log messages come from.
     """
-    logging.Handler.__init__(self)
+    super(ServerHandler, self).__init__()
     threading.Thread.__init__(self)
     self.__logQueue = Queue.Queue()
 

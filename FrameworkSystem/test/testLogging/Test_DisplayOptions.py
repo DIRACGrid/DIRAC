@@ -7,8 +7,8 @@ __RCSID__ = "$Id$"
 import unittest
 import thread
 
-from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import Test_Logging, cleaningLog
-from DIRAC.FrameworkSystem.test.testLogging.tests.Test_Logging import gLogger, oldgLogger
+from DIRAC.FrameworkSystem.test.testLogging.Test_Logging import Test_Logging, cleaningLog
+from DIRAC.FrameworkSystem.test.testLogging.Test_Logging import gLogger, oldgLogger
 
 
 class Test_DisplayOptions(Test_Logging):
@@ -155,7 +155,7 @@ class Test_DisplayOptions(Test_Logging):
     sublog = gLogger.getSubLogger('sublog')
     sublog.setLevel('notice')
     sublog.showHeaders(False)
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
 
@@ -173,7 +173,7 @@ class Test_DisplayOptions(Test_Logging):
     """
     sublog = gLogger.getSubLogger('sublog2')
     sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     gLogger.showHeaders(False)
@@ -193,7 +193,7 @@ class Test_DisplayOptions(Test_Logging):
     sublog = gLogger.getSubLogger('sublog3')
     sublog.setLevel('notice')
     sublog.showHeaders(False)
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     gLogger.showHeaders(True)
@@ -213,7 +213,7 @@ class Test_DisplayOptions(Test_Logging):
     """
     sublog = gLogger.getSubLogger('sublog4')
     sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     gLogger.showHeaders(True)
@@ -233,11 +233,11 @@ class Test_DisplayOptions(Test_Logging):
     """
     sublog = gLogger.getSubLogger('sublog5')
     sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     subsublog = sublog.getSubLogger('subsublog')
-    subsublog.registerBackends(['file'], {'FileName': self.filename})
+    subsublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     gLogger.showHeaders(False)
@@ -255,11 +255,11 @@ class Test_DisplayOptions(Test_Logging):
     """
     sublog = gLogger.getSubLogger('sublog6')
     sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     subsublog = sublog.getSubLogger('subsublog')
-    subsublog.registerBackends(['file'], {'FileName': self.filename})
+    subsublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     sublog.showHeaders(False)
@@ -279,7 +279,7 @@ class Test_DisplayOptions(Test_Logging):
     """
     sublog = gLogger.getSubLogger('sublog7')
     sublog.setLevel('notice')
-    sublog.registerBackends(['file'], {'FileName': self.filename})
+    sublog.registerBackend('file', {'FileName': self.filename})
     # Empty the buffer to remove the Object Loader log message "trying to load..."
     self.buffer.truncate(0)
     subsublog = sublog.getSubLogger('subsublog')

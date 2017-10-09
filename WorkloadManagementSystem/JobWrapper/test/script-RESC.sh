@@ -1,1 +1,1 @@
-return 1502
+exit 1502

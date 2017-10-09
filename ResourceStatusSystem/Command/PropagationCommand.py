@@ -20,7 +20,7 @@ class PropagationCommand( Command ):
     super( PropagationCommand, self ).__init__( args, clients )
 
   def doNew( self, masterParams = None ):
-     return S_OK()
+    return S_OK()
 
   def doCache( self ):
 
@@ -39,7 +39,10 @@ class PropagationCommand( Command ):
         if not status[ 'OK' ]:
           return status
 
-        statusList.append( status['Value'][0][0] )
+        if status['Value']:
+          statusList.append( status['Value'][0][0] )
+        else: # forcing in the case the resource has no status (yet)
+          statusList.append( 'Active' )
 
       if 'Active' in statusList:
         return S_OK({ 'Status': 'Active', 'Reason': 'An element that belongs to the site is Active' })

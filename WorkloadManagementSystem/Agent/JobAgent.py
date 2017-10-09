@@ -71,7 +71,6 @@ class JobAgent( AgentModule ):
     """
     # Disable monitoring, logLevel INFO, limited cycles
     self.am_setOption( 'MonitoringEnabled', False )
-    self.log.setLevel('INFO')
     self.am_setOption( 'MaxCycles', loops )
 
     ceType = self.am_getOption( 'CEType', 'InProcess' )
