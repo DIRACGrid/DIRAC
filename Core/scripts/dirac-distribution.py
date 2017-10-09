@@ -178,6 +178,19 @@ class DistributionMaker:
       dctArgs.append( "-n '%s'" % modName )
       dctArgs.append( "-v '%s'" % modVersion )
       gLogger.notice( "Creating tar for %s version %s" % ( modName, modVersion ) )
+      if 'Web' in modName: #we have to compile WebApp and also its extension.
+        if modName != 'WebAppDIRAC' and modName != "Web": #it means we have an extension!
+          #Note: the old portal called Web
+          modules = self.relConf.getDiracModules()
+          webAppVersion = modules.get( "WebAppDIRAC", None )
+          if webAppVersion:
+            dctArgs.append( "-w '%s'" % webAppVersion )
+            result = self.relConf.getModSource( releaseVersion, "WebAppDIRAC" )
+            if not result[ 'OK' ]:
+              return result
+            modSrcTuple = result[ 'Value' ]
+            dctArgs.append( "-W '%s'" % modSrcTuple[1] )
+            
       #Source
       result = self.relConf.getModSource( releaseVersion, modName )
       if not result[ 'OK' ]:

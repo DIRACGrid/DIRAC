@@ -267,6 +267,7 @@ class ReleaseConfig( object ):
     self.__globalDefaults = ReleaseConfig.CFG()
     self.__loadedCfgs = []
     self.__prjDepends = {}
+    self.__diracBaseModules = {}
     self.__prjRelCFG = {}
     self.__projectsLoadedBy = {}
     self.__cfgCache = {}
@@ -293,7 +294,13 @@ class ReleaseConfig( object ):
   def __dbgMsg( self, msg ):
     if self.__debugCB:
       self.__debugCB( msg )
-
+  
+  def getDiracModules( self ):
+    """
+    It return all DIRAC modules
+    """
+    return self.__diracBaseModules
+  
   def __loadCFGFromURL( self, urlcfg, checkHash = False ):
 
     # This can be a local file
@@ -536,8 +543,18 @@ class ReleaseConfig( object ):
       if not result[ 'OK' ]:
         return result
       relCFG = result[ 'Value' ]
-
-
+      #let's try to discover webapp
+      resoucesSection = relCFG.getChild( "Releases/%s" % ( release ) )
+      data =  resoucesSection.get('Modules')
+      data = [ field for field in data.split( "," ) if field.strip() ]
+      for field in data:
+        field = field.strip()
+        if not field:
+          continue
+        pv = field.split( ":" )
+        if len( pv ) > 1:
+          self.__diracBaseModules[ pv[0].strip() ] = ":".join( pv[1:] ).strip()
+      print ';;;;', self.__diracBaseModules
       #Calculate dependencies and avoid circular deps
       self.__prjDepends[ project ][ release ] = [ ( project, release ) ]
       relDeps = self.__prjDepends[ project ][ release ]

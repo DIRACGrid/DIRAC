@@ -39,6 +39,7 @@ class TarModuleCreator( object ):
       self.vcsPath = False
       self.relNotes = False
       self.outRelNotes = False
+      self.webappversion = False
 
     def isOK( self ):
       if not self.version:
@@ -90,7 +91,11 @@ class TarModuleCreator( object ):
     def setOutReleaseNotes( self, opVal ):
       self.outRelNotes = True
       return S_OK()
-
+    
+    def setWebappversion( self, opVal ):
+      self.webappversion = opVal
+      return S_OK()
+    
   def __init__( self, params ):
     self.params = params
 
@@ -532,13 +537,19 @@ class TarModuleCreator( object ):
     result = self.__generateReleaseNotes()
     if not result[ 'OK' ]:
       gLogger.error( "Won't generate release notes: %s" % result[ 'Message' ] )
-    if 'WebAppDIRAC' in self.params.name:
-      retVal = self.__compileWebApp()
+    if 'Web' in self.params.name and self.params.name != 'Web': 
+      if self.params.webappversion:
+        print 'cool'
+        retVal = self.__downloadWebApp( self.params.webappversion )
+      retVal = self.__compileWebApp( webappversion )
       if not retVal['OK']:
         gLogger.error( 'Web is not compiled: %s' % retVal['Message'] )
     
     return self.__generateTarball()
-
+  
+  def __downloadWebApp(self, version):
+    pass
+  
 if __name__ == "__main__":
   cliParams = TarModuleCreator.Params()
 
@@ -553,7 +564,8 @@ if __name__ == "__main__":
   Script.registerSwitch( "p:", "path=", "VCS path (if needed)", cliParams.setVCSPath )
   Script.registerSwitch( "K:", "releasenotes=", "Path to the release notes", cliParams.setReleaseNotes )
   Script.registerSwitch( "A", "notesoutside", "Leave a copy of the compiled release notes outside the tarball", cliParams.setOutReleaseNotes )
-
+  Script.registerSwitch( "w:", "webappversion=", "if we have an extension we have to provide the core webapp version", cliParams.setWebappversion )
+  
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                        '\nUsage:',
                                        '  %s <option> ...\n' % Script.scriptName,
