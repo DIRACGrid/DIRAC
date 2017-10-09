@@ -74,7 +74,7 @@ class X509Certificate( object ):
     Return : S_OK / S_ERROR
     """
     try:
-      with file( certLocation ) as fd:
+      with open( certLocation, 'r' ) as fd:
         pemData = fd.read()
         return self.loadFromString( pemData )
     except IOError:
