@@ -866,8 +866,10 @@ class Dirac( API ):
           # if a relative path, it is relative to the user working directory
           isFile = os.path.join( curDir, isFile )
 
-        # Attempt to copy into job working directory
-        if os.path.isdir( isFile ):
+        # Attempt to copy into job working directory, unless it is already there
+        if os.path.exists( os.path.join( os.getcwd(), os.path.basename( isFile ) ) ):
+          pass
+        elif os.path.isdir( isFile ):
           self.log.debug("Input Sandbox %s is a directory, found in the user working directory, copying it" % isFile)
           shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
         elif os.path.exists( isFile ):
