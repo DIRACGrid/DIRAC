@@ -39,7 +39,7 @@ random.seed()
       self.__loadedChain = True
       self.__certList = []
       for cert in certList:
-        if isinstance( cert, M2Crypto.X509.X509 ):
+        if not isinstance( cert, M2Crypto.X509.X509 ):
           # XXX walkaround for legacy code that is not updated yet, should be removed later
           tmpCert = X509Certificate( certString = GSI.crypto.dump_certificate( GSI.crypto.FILETYPE_PEM, cert) )
           cert = tmpCert
