@@ -40,7 +40,7 @@ class X509Chain(object):
       self.__loadedChain = True
       self.__certList = []
       for cert in certList:
-        if type( cert ) != type( M2Crypto.X509.X509 ):
+        if isinstance( cert, M2Crypto.X509.X509 ):
           # XXX walkaround for legacy code that is not updated yet, should be removed later
           tmpCert = X509Certificate( certString = GSI.crypto.dump_certificate( GSI.crypto.FILETYPE_PEM, cert) )
           cert = tmpCert
@@ -73,9 +73,9 @@ class X509Chain(object):
     try:
       with open(chainLocation) as fd:
         pemData = fd.read()
-    except Exception as e:
-      return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
-    return self.loadChainFromString(pemData)
+    except IOError as e:
+      return S_ERROR( DErrno.EOF, "%s: %s" % ( chainLocation, repr( e ).replace( ',)', ')' ) ) )
+    return self.loadChainFromString( pemData )
 
   def loadChainFromString( self, data, dataFormat = M2Crypto.X509.FORMAT_PEM ):
     """
