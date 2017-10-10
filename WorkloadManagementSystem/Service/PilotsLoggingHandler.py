@@ -29,7 +29,7 @@ class PilotsLoggingHandler( RequestHandler ):
     cls.consumersSet = set()
     cls.pilotsLoggingDB = PilotsLoggingDB()
 
-    result = createConsumer( "lbvobox50.cern.ch::Queue::test", callback = cls.consumingCallback ) # XXX hardcoded URI
+    result = createConsumer( cls.srv_getCSOption("PilotsLoggingQueue"), callback = cls.consumingCallback )
     if result['OK']:
       cls.consumersSet.add(result)
 
