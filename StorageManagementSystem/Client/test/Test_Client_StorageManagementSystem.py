@@ -136,18 +136,20 @@ class StorageManagerSuccess( ClientsTestCase ):
     self.assertEqual( res['Value']['absentLFNs'], {} )
     self.assertEqual( res['Value']['failedLFNs'], [] )
 
+
   @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.DataManager", return_value = dm_mock )
   @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.StorageElement", return_value = mockObjectSE6 )
   def test_getFilesToStage_tapeSEOnly_2( self, _patch, _patched ):
     """ Test where the StorageElement will return file is at offline at tape
     """
-    res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = True )
+
+    with patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.random.choice", new=MagicMock( return_value='SERandom' )):
+      res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = True )
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
-    self.assertEqual( res['Value']['offlineLFNs'], {'SE1': ['/a/lfn/2.txt']} )
+    self.assertEqual( res['Value']['offlineLFNs'], {'SERandom': ['/a/lfn/2.txt']} )
     self.assertEqual( res['Value']['absentLFNs'], {} )
     self.assertEqual( res['Value']['failedLFNs'], [] )
-
 
 
 if __name__ == '__main__':
