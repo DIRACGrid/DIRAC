@@ -32,7 +32,8 @@ class PilotsLoggingHandler( RequestHandler ):
     result = createConsumer( cls.srv_getCSOption("PilotsLoggingQueue"), callback = cls.consumingCallback )
     if result['OK']:
       cls.consumersSet.add(result)
-
+    else:
+      return result
     return S_OK()
 
   def initialize(self):
