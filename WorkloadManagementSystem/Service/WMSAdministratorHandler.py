@@ -174,7 +174,6 @@ class WMSAdministratorHandler(RequestHandler):
 
     return S_OK(siteDict)
 
-  def export_getCurrentPilotCounters( cls, attrDict={} ):
   ##############################################################################
   types_getCurrentPilotCounters = [ dict ]
   @classmethod
