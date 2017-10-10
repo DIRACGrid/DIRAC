@@ -22,7 +22,7 @@ class PilotsLoggingClient( Client ):
     :param status: Pilot status
     :param minorStatus: Additional status information
     :param timestamp: Date and time of status event
-    :param source: Source of statu information
+    :param source: Source of status information
     """
 
     return self.pilotsLoggingHandler.addPilotsLogging(pilotUUID, timestamp, source, phase, status, messageContent)
