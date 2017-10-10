@@ -17,6 +17,7 @@ class PilotsLoggingClient( Client ):
   def addPilotsLogging( self, pilotUUID, timestamp, source, phase, status, messageContent ):
     """
     Add new Pilots Logging entry
+
     :param pilotUUID: Pilot reference
     :param status: Pilot status
     :param minorStatus: Additional status information
@@ -29,6 +30,7 @@ class PilotsLoggingClient( Client ):
   def deletePilotsLogging( self, pilotUUID ):
     """
     Delete all Logging entries for Pilot
+
     :param pilotUUID: Pilot reference
     """
 
@@ -37,6 +39,7 @@ class PilotsLoggingClient( Client ):
   def getPilotsLogging( self, pilotUUID ):
     """
     Get all Logging entries for Pilot
+    
     :param pilotUUID: Pilot reference
     """
 
