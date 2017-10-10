@@ -1,5 +1,4 @@
-""" ElasticDB is a base class used to connect an Elasticsearch database and manages 
-queries.
+""" ElasticDB is a base class used to connect an Elasticsearch database and manages queries.
 """
 
 from DIRAC import gLogger
@@ -46,7 +45,7 @@ class ElasticDB( ElasticSearchDB ):
     self.__dbPassword = ''
     if 'Password' in dbParameters:
       self.__dbPassword = dbParameters[ 'Password' ]
-    
+
     super( ElasticDB, self ).__init__( self.__dbHost, self.__dbPort, self.__user, self.__dbPassword, indexPrefix )
 
     if not self._connected:
