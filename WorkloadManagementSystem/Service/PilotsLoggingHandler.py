@@ -44,6 +44,7 @@ class PilotsLoggingHandler( RequestHandler ):
   def consumingCallback(cls, headers, message ):
     """
     Callback function for the MQ Consumer, called for every new message and inserting it into database.
+
     :param headers: Headers of MQ message (not used)
     :param message: Message represented as a dictionary
     """
@@ -56,6 +57,7 @@ class PilotsLoggingHandler( RequestHandler ):
   def export_addPilotsLogging( self, pilotUUID, timestamp, source, phase, status, messageContent ):
     """
     Add new Pilots Logging entry
+
     :param pilotUUID: Pilot reference
     :param status: Pilot status
     :param minorStatus: Additional status information
@@ -70,6 +72,7 @@ class PilotsLoggingHandler( RequestHandler ):
   def export_getPilotsLogging( self, pilotUUID ):
     """
     Get all Logging entries for Pilot
+
     :param pilotUUID: Pilot reference
     """
 
@@ -79,6 +82,7 @@ class PilotsLoggingHandler( RequestHandler ):
   def export_deletePilotsLogging( self, pilotUUID ):
     """
     Delete all Logging entries for Pilot
+
     :param pilotUUID: Pilot reference
     """
 
