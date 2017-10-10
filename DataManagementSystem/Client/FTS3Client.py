@@ -15,11 +15,11 @@ class FTS3Client(Client):
     self.setServer( 'DataManagement/FTS3Manager' )
     if url:
       self.setServer( url )
-    
-      
+
+
   def persistOperation( self, opObj, **kwargs ):
     """ Persist (insert/update) an FTS3Operation object into the db
-    
+
         :param opObj: instance of FTS3Operation
     """
 
@@ -30,7 +30,7 @@ class FTS3Client(Client):
     opJSON = opObj.toJSON()
     return self._getRPC( **kwargs ).persistOperation( opJSON )
 
-        
+
   def getOperation( self, operationID, **kwargs ):
     """ Get the FTS3Operation from the database
         :param operationID: id of the operation
@@ -103,4 +103,4 @@ class FTS3Client(Client):
       operations = json.loads( operationsJSON, cls = FTS3JSONDecoder )
       return S_OK( operations )
     except Exception as e:
-      return S_ERROR( "Exception when decoding the non finished operations json %s" % e )
+      return S_ERROR( 0, "Exception when decoding the non finished operations json %s" % e )

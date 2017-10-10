@@ -1,3 +1,6 @@
+__RCSID__ = "$Id $"
+
+
 import datetime
 
 # Requires at least version 3.3.3

@@ -331,8 +331,8 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
 
       for lfn in filesToSchedule:
         filesToScheduleList.append( ( filesToSchedule[lfn][0].toJSON()['Value'],
-                              toSchedule[lfn][1],
-                              toSchedule[lfn][2] ) )
+                                      toSchedule[lfn][1],
+                                      toSchedule[lfn][2] ) )
 
 
     if filesToScheduleList:

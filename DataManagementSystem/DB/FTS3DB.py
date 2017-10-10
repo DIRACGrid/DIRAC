@@ -1,8 +1,12 @@
 __RCSID__ = "$Id $"
 
+# We disable the no-member error because
+# they are constructed by SQLAlchemy for all
+# the objects mapped to a table.
 # pylint: disable=no-member
 
 import datetime
+import errno
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation, FTS3StagingOperation
@@ -172,7 +176,7 @@ class FTS3DB( object ):
     """ create tables """
     try:
       metadata.create_all( self.engine )
-    except SQLAlchemyError, e:
+    except SQLAlchemyError as e:
       return S_ERROR( e )
     return S_OK()
 
@@ -199,7 +203,7 @@ class FTS3DB( object ):
 
       return S_OK( operation.operationID )
 
-    except SQLAlchemyError, e:
+    except SQLAlchemyError as e:
       session.rollback()
       self.log.exception( "persistOperation: unexpected exception", lException = e )
       return S_ERROR( "persistOperation: unexpected exception %s" % e )
@@ -232,9 +236,10 @@ class FTS3DB( object ):
       session.expunge_all()
       return S_OK( operation )
 
-    except NoResultFound, e:
-      return S_ERROR( "No FTS3Operation with id %s" % operationID )
-    except SQLAlchemyError, e:
+    except NoResultFound as e:
+      # We use the ENOENT error, even if not really a file error :)
+      return S_ERROR( errno.ENOENT, "No FTS3Operation with id %s" % operationID )
+    except SQLAlchemyError as e:
       return S_ERROR( "getOperation: unexpected exception : %s" % e )
     finally:
       session.close()
@@ -297,7 +302,7 @@ class FTS3DB( object ):
 
       return S_OK( ftsJobs )
 
-    except SQLAlchemyError, e:
+    except SQLAlchemyError as e:
       session.rollback()
       return S_ERROR( "getAllActiveJobs: unexpected exception : %s" % e )
     finally:
@@ -339,7 +344,7 @@ class FTS3DB( object ):
 
       return S_OK()
 
-    except SQLAlchemyError, e:
+    except SQLAlchemyError as e:
       session.rollback()
       self.log.exception( "updateFileFtsStatus: unexpected exception", lException = e )
       return S_ERROR( "updateFileFtsStatus: unexpected exception %s" % e )
@@ -386,7 +391,7 @@ class FTS3DB( object ):
 
       return S_OK()
 
-    except SQLAlchemyError, e:
+    except SQLAlchemyError as e:
       session.rollback()
       self.log.exception( "updateJobStatus: unexpected exception", lException = e )
       return S_ERROR( "updateJobStatus: unexpected exception %s" % e )
@@ -449,7 +454,7 @@ class FTS3DB( object ):
 
       return S_OK( ftsOperations )
 
-    except SQLAlchemyError, e:
+    except SQLAlchemyError as e:
       session.rollback()
       return S_ERROR( "getAllProcessedOperations: unexpected exception : %s" % e )
     finally:

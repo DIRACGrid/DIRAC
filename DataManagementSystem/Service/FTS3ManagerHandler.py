@@ -10,7 +10,6 @@ Service handler for FT3SDB using DISET
 __RCSID__ = "$Id$"
 
 import json
-from types import DictType, IntType, LongType, ListType, StringTypes, NoneType
 
 # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -46,7 +45,7 @@ class FTS3ManagerHandler( RequestHandler ):
 
 
 
-  types_persistOperation = [ StringTypes ]
+  types_persistOperation = [ basestring ]
   @classmethod
   def export_persistOperation( cls, opJSON ):
     """ update or insert request into db
@@ -59,7 +58,7 @@ class FTS3ManagerHandler( RequestHandler ):
     return cls.fts3db.persistOperation( opObj )
 
 
-  types_getOperation = [ ( LongType, IntType ) ]
+  types_getOperation = [ ( long, int ) ]
   @classmethod
   def export_getOperation( cls, operationID ):
     """ Get the FTS3Operation from the database
@@ -78,7 +77,7 @@ class FTS3ManagerHandler( RequestHandler ):
     return S_OK( opJSON )
 
 
-  types_getActiveJobs = [ ( LongType, IntType ), [NoneType ] + list( StringTypes ), StringTypes ]
+  types_getActiveJobs = [ ( long, int ), [None ] + list( basestring ), basestring ]
   @classmethod
   def export_getActiveJobs( cls, limit, lastMonitor, jobAssignmentTag ):
     """ Get all the FTSJobs that are not in a final state
@@ -98,7 +97,7 @@ class FTS3ManagerHandler( RequestHandler ):
     return S_OK( activeJobsJSON )
 
 
-  types_updateFileStatus = [ DictType ]
+  types_updateFileStatus = [ dict ]
   @classmethod
   def export_updateFileStatus( cls, fileStatusDict ):
     """ Update the file ftsStatus and error
@@ -107,7 +106,7 @@ class FTS3ManagerHandler( RequestHandler ):
 
     return cls.fts3db.updateFileStatus( fileStatusDict )
 
-  types_updateJobStatus = [ DictType ]
+  types_updateJobStatus = [ dict ]
   @classmethod
   def export_updateJobStatus( cls, jobStatusDict ):
     """ Update the job Status and error
@@ -116,25 +115,8 @@ class FTS3ManagerHandler( RequestHandler ):
 
     return cls.fts3db.updateJobStatus( jobStatusDict )
 
-#   types_getProcessedOperations = [( LongType, IntType )]
-#   @classmethod
-#   def export_getProcessedOperations( cls, limit ):
-#     """ Get all the FTS3Operations that are missing a callback, i.e.
-#         in 'Processed' state
-#         :param limit: max number of operations to retrieve
-#         :return: json list of FTS3Operation
-#     """
-#
-#     res = cls.fts3db.getProcessedOperations( limit = limit )
-#     if not res['OK']:
-#       return res
-#
-#     processedOperations = res['Value']
-#     processedOperationsJSON = json.dumps( processedOperations, cls = FTS3JSONEncoder )
-#
-#     return S_OK( processedOperationsJSON )
 
-  types_getNonFinishedOperations = [( LongType, IntType ), StringTypes]
+  types_getNonFinishedOperations = [( long, int ), basestring]
   @classmethod
   def export_getNonFinishedOperations( cls, limit, operationAssignmentTag ):
     """ Get all the FTS3Operations that are missing a callback, i.e.
@@ -151,23 +133,3 @@ class FTS3ManagerHandler( RequestHandler ):
     nonFinishedOperationsJSON = json.dumps( nonFinishedOperations, cls = FTS3JSONEncoder )
 
     return S_OK( nonFinishedOperationsJSON )
-
-
-#   types_getOperationsWithFilesToSubmit = [( LongType, IntType )]
-#   @classmethod
-#   def export_getOperationsWithFilesToSubmit( cls, limit ):
-#     """ Get all the FTS3Operations that have files in New or Failed state
-#         (reminder: Failed is NOT terminal for files. Failed is when fts failed, but we
-#          can retry)
-#         :param limit: max number of operation to retrieve
-#         :return: json list of FTS3Operation
-#     """
-#
-#     res = cls.fts3db.getOperationsWithFilesToSubmit( limit = limit )
-#     if not res['OK']:
-#       return res
-#
-#     operations = res['Value']
-#     operationsJSON = json.dumps( operations, cls = FTS3JSONEncoder )
-#
-#     return S_OK( operationsJSON )
