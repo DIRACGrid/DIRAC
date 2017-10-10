@@ -872,8 +872,9 @@ class Dirac( API ):
           elif os.path.isdir( isFile ):
             self.log.debug("Input Sandbox %s is a directory, found in the user working directory, copying it" % isFile)
             shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
-          elif os.path.exists( isFile ):
-            self.log.debug("Input Sandbox %s is a file, found in the current working directory, copying it" % isFile)
+          elif os.path.exists(os.path.join(curDir, os.path.basename(isFile))):
+            self.log.debug("Input Sandbox %s found in the submission directory, copying it" % isFile)
+            shutil.copy( os.path.join(curDir, os.path.basename(isFile)), os.getcwd() )
           elif os.path.exists(os.path.join(tmpdir, isFile)): # if it is in the tmp dir
             self.log.debug("Input Sandbox %s is a file, found in the tmp directory, copying it" % isFile)
             shutil.copy(os.path.join(tmpdir, isFile), os.getcwd())
