@@ -1,3 +1,8 @@
+[v6r20-pre1]
+
+*DMS
+NEW: FTS3Agent working only with the FTS3 service to replace the existing one
+
 [v6r19]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
