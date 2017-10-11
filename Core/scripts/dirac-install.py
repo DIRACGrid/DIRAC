@@ -522,6 +522,7 @@ class ReleaseConfig( object ):
 
 
   def loadProjectRelease( self, releases, project = False, sourceURL = False, releaseMode = False, relLocation = False ):
+    
     if not project:
       project = self.__projectName
 
@@ -543,18 +544,6 @@ class ReleaseConfig( object ):
       if not result[ 'OK' ]:
         return result
       relCFG = result[ 'Value' ]
-      #let's try to discover webapp
-      resoucesSection = relCFG.getChild( "Releases/%s" % ( release ) )
-      data =  resoucesSection.get('Modules')
-      data = [ field for field in data.split( "," ) if field.strip() ]
-      for field in data:
-        field = field.strip()
-        if not field:
-          continue
-        pv = field.split( ":" )
-        if len( pv ) > 1:
-          self.__diracBaseModules[ pv[0].strip() ] = ":".join( pv[1:] ).strip()
-      print ';;;;', self.__diracBaseModules
       #Calculate dependencies and avoid circular deps
       self.__prjDepends[ project ][ release ] = [ ( project, release ) ]
       relDeps = self.__prjDepends[ project ][ release ]
@@ -568,7 +557,6 @@ class ReleaseConfig( object ):
       relDeps.extend( [ ( p, initialDeps[p] ) for p in initialDeps ] )
       for depProject in initialDeps:
         depVersion = initialDeps[ depProject ]
-
         #Check if already processed
         dKey = ( depProject, depVersion )
         if dKey not in self.__projectsLoadedBy:
@@ -598,12 +586,27 @@ class ReleaseConfig( object ):
                                                                                                           pKey[1], vrs,
                                                                                                           project, release )
               return S_ERROR( errMsg )
-          #Same version already required
+      
+      #Same version already required
       if project in relDeps and relDeps[ project ] != release:
         errMsg = "%s:%s requires itself with a different version through dependencies ( %s )" % ( project, release,
                                                                                                   relDeps[ project ] )
         return S_ERROR( errMsg )
-
+      
+      #we have now all dependencies, let's retrieve the resources
+      for project, version in relDeps:
+        if project in self.__diracBaseModules:
+          continue
+        modules = self.getModulesForRelease(version, project)
+        if modules['OK']:
+          for dependency in modules['Value']:
+            self.__diracBaseModules.setdefault( dependency, {} )
+            self.__diracBaseModules[ dependency ]['Version'] = modules['Value'][dependency]
+            res = self.getModSource( version, dependency, project )
+            if not res['OK']:
+              self.__dbgMsg( "Unable to found the source URL for %s : %s" % ( dependency, res['Message'] ) )
+            else:
+              self.__diracBaseModules[ dependency ]['sourceUrl'] = res['Value'][1]
     return S_OK()
 
   def getReleaseOption( self, project, release, option ):
@@ -666,10 +669,12 @@ class ReleaseConfig( object ):
           return S_ERROR( "Module %s does not start with the name %s" % ( modName, project ) )
     return S_OK( modules )
 
-  def getModSource( self, release, modName ):
+  def getModSource( self, release, modName, project = None ):
     if not self.__projectName in self.__prjRelCFG:
       return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % self.__projectName )
-    modLocation = self.getReleaseOption( self.__projectName, release, "Sources/%s" % modName )
+    if not project:
+      project = self.__projectName
+    modLocation = self.getReleaseOption( project, release, "Sources/%s" % modName )
     if not modLocation:
       return S_ERROR( "Source origin for module %s is not defined" % modName )
     modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ] # pylint: disable=no-member
