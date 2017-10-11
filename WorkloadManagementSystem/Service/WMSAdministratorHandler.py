@@ -89,8 +89,8 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.getAllSiteMaskStatus()
 
 ##############################################################################
-  def export_banSite(self, site,comment='No comment'):
-  types_banSite = [ str ]
+  types_banSite = [ basestring ]
+  def export_banSite( self, site, comment = 'No comment' ):
     """ Ban the given site in the site mask
     """
 
@@ -106,7 +106,7 @@ class WMSAdministratorHandler(RequestHandler):
 
 ##############################################################################
   def export_allowSite(self,site,comment='No comment'):
-  types_allowSite = [ str ]
+  types_allowSite = [ basestring ]
     """ Allow the given site in the site mask
     """
 
@@ -130,13 +130,13 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.removeSiteFromMask( None )
 
 ##############################################################################
-  types_getSiteMaskLogging = [ list( StringTypes ) + [ListType] ]
+  def export_getSiteMaskLogging( self, sites ):
   @staticmethod
-  def export_getSiteMaskLogging( sites ):
+  def export_getSiteMaskLogging( cls, sites ):
     """ Get the site mask logging history
     """
 
-    if isinstance( sites, str ):
+    if isinstance( sites, basestring ):
       sites = [sites]
 
     return jobDB.getSiteMaskLogging( sites )
@@ -213,7 +213,7 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   def export_getPilotOutput(self,pilotReference):
-  types_getPilotOutput = [ str ]
+  types_getPilotOutput = [ basestring ]
     """ Get the pilot job standard output and standard error files for the Grid
         job reference
     """
@@ -221,9 +221,9 @@ class WMSAdministratorHandler(RequestHandler):
     return self.__getGridJobOutput(pilotReference)
 
   ##############################################################################
-  types_getPilotInfo = [ list(StringTypes)+[ListType] ]
+  types_getPilotInfo = [ [list, basestring] ]
   @staticmethod
-  def export_getPilotInfo(pilotReference):
+  def export_getPilotInfo( cls, pilotReference ):
     """ Get the info about a given pilot job reference
     """
     return pilotDB.getPilotInfo(pilotReference)
@@ -245,9 +245,7 @@ class WMSAdministratorHandler(RequestHandler):
     return pilotDB.storePilotOutput(pilotReference,output,error)
 
   ##############################################################################
-  types_getPilotLoggingInfo = [ str ]
   @staticmethod
-  def export_getPilotLoggingInfo( cls, pilotReference ):
     """ Get the pilot logging info for the Grid job reference
     """
 
@@ -481,9 +479,9 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##############################################################################
-  types_getPilots = [list( StringTypes ) + [ IntType, LongType]]
+  types_getPilots = [ [basestring, int, long] ]
   @staticmethod
-  def export_getPilots(jobID):
+  def export_getPilots( cls, jobID ):
     """ Get pilot references and their states for :
       - those pilots submitted for the TQ where job is sitting
       - (or) the pilots executing/having executed the Job
@@ -514,14 +512,14 @@ class WMSAdministratorHandler(RequestHandler):
     return pilotDB.getPilotInfo(pilotID=pilots)
 
   ##############################################################################
-  types_killPilot = [ list(StringTypes)+[ListType] ]
+  types_killPilot = [ [ basestring, list ] ]
   @staticmethod
-  def export_killPilot(pilotRefList ):
+  def export_killPilot( cls, pilotRefList ):
     """ Kill the specified pilots
     """
     # Make a list if it is not yet
     pilotRefs = list( pilotRefList )
-    if isinstance( pilotRefList, str ):
+    if isinstance( pilotRefList, basestring ):
       pilotRefs = [pilotRefList]
 
     # Regroup pilots per site and per owner
@@ -579,9 +577,9 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK()
 
   ##############################################################################
-  types_setJobForPilot = [ list( StringTypes ) + [ IntType, LongType], StringTypes]
+  types_setJobForPilot = [ [basestring, int, long], basestring ]
   @staticmethod
-  def export_setJobForPilot(jobID, pilotRef, destination=None):
+  def export_setJobForPilot( cls, jobID, pilotRef, destination=None ):
     """ Report the DIRAC job ID which is executed by the given pilot job
     """
 
@@ -616,7 +614,7 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##########################################################################################
   def export_setPilotStatus(self,pilotRef,status,destination=None,reason=None,gridSite=None,queue=None):
-  types_setPilotStatus = [ str, str ]
+  types_setPilotStatus = [ basestring, basestring ]
     """ Set the pilot agent status
     """
 
@@ -645,7 +643,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilotStatistics = [ str, dict ]
+  types_getPilotStatistics = [ basestring, dict ]
   @staticmethod
   def export_getPilotStatistics ( attribute, selectDict ):
     """ Get pilot statistics distribution per attribute value with a given selection
@@ -698,7 +696,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK()
 
   ##############################################################################
-  types_clearPilots = [ (int, long), (int, long) ]
+  types_clearPilots = [ [int, long], [int, long] ]
   def export_clearPilots( self, interval = 30, aborted_interval = 7 ):
 
     result = pilotDB.clearPilots( interval, aborted_interval )
