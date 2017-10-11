@@ -15,7 +15,7 @@ __RCSID__ = "$Id: $"
 from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 
 class PilotsLoggingHandler( RequestHandler ):
 

@@ -213,15 +213,15 @@ class WMSAdministratorHandler(RequestHandler):
 
 
   ##############################################################################
-  def export_getPilotOutput(self,pilotReference):
   types_getPilotOutput = [ basestring ]
+  def export_getPilotOutput(self,pilotReference):
     """ Get the pilot job standard output and standard error files for the Grid
         job reference
     """
 
     return self.__getGridJobOutput(pilotReference)
 
-  ##############################################################################
+##############################################################################
   types_getPilotInfo = [ [list, basestring] ]
   @staticmethod
   def export_getPilotInfo( cls, pilotReference ):
@@ -246,7 +246,9 @@ class WMSAdministratorHandler(RequestHandler):
     return pilotDB.storePilotOutput(pilotReference,output,error)
 
   ##############################################################################
+  types_getPilotLoggingInfo = [ basestring ]
   @staticmethod
+  def export_getPilotLoggingInfo( cls, pilotReference ):
     """ Get the pilot logging info for the Grid job reference
     """
 
@@ -263,8 +265,8 @@ class WMSAdministratorHandler(RequestHandler):
                                 proxyUserDN = owner, proxyUserGroup = group )
 
   ##############################################################################
-  types_getJobPilotOutput = [list( StringTypes ) + [ IntType, LongType]]
-  def export_getJobPilotOutput(self,jobID):
+  types_getJobPilotOutput = [ [basestring, int, long] ]
+  def export_getJobPilotOutput( self, jobID ):
     """ Get the pilot job standard output and standard error files for the DIRAC
         job reference
     """
@@ -293,7 +295,7 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##############################################################################
   @staticmethod
-  def __getGridJobOutput(pilotReference):
+  def __getGridJobOutput( cls, pilotReference ):
     """ Get the pilot job standard output and standard error files for the Grid
         job reference
     """
@@ -389,7 +391,7 @@ class WMSAdministratorHandler(RequestHandler):
       shutil.rmtree( queueDict['WorkingDirectory'] )
       return S_OK( resultDict )
 
-  ##############################################################################
+##############################################################################
   types_getPilotSummary = []
   @staticmethod
   def export_getPilotSummary(startdate='', enddate=''):
@@ -410,7 +412,7 @@ class WMSAdministratorHandler(RequestHandler):
     result = pilotDB.getPilotMonitorWeb(selectDict, sortList, startItem, maxItems)
     return result
 
-  ##############################################################################
+##############################################################################
   types_getPilotMonitorSelectors = []
   @staticmethod
   def export_getPilotMonitorSelectors():
@@ -441,7 +443,7 @@ class WMSAdministratorHandler(RequestHandler):
     result = jobDB.getSiteSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
 
-  ##############################################################################
+##############################################################################
   types_getSiteSummarySelectors = []
   @staticmethod
   def export_getSiteSummarySelectors():
@@ -479,7 +481,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     return S_OK(resultDict)
 
-  ##############################################################################
+##############################################################################
   types_getPilots = [ [basestring, int, long] ]
   @staticmethod
   def export_getPilots( cls, jobID ):
@@ -512,7 +514,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     return pilotDB.getPilotInfo(pilotID=pilots)
 
-  ##############################################################################
+##############################################################################
   types_killPilot = [ [ basestring, list ] ]
   @staticmethod
   def export_killPilot( cls, pilotRefList ):
@@ -577,7 +579,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     return S_OK()
 
-  ##############################################################################
+##############################################################################
   types_setJobForPilot = [ [basestring, int, long], basestring ]
   @staticmethod
   def export_setJobForPilot( cls, jobID, pilotRef, destination=None ):
@@ -614,7 +616,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##########################################################################################
-  def export_setPilotStatus(self,pilotRef,status,destination=None,reason=None,gridSite=None,queue=None):
+  def export_setPilotStatus( self, pilotRef, status, destination=None, reason=None, gridSite=None, queue=None ):
   types_setPilotStatus = [ basestring, basestring ]
     """ Set the pilot agent status
     """
@@ -623,7 +625,7 @@ class WMSAdministratorHandler(RequestHandler):
                                     statusReason=reason,gridSite=gridSite,queue=queue)
     return result
 
-  ##########################################################################################
+##########################################################################################
   types_countPilots = [ dict ]
   @staticmethod
   def export_countPilots( cls, condDict, older=None, newer=None, timeStamp='SubmissionTime' ):
@@ -643,7 +645,7 @@ class WMSAdministratorHandler(RequestHandler):
     result = pilotDB.getCounters( table, keys, condDict, newer=newer, timeStamp=timeStamp )
     return result
 
-  ##############################################################################
+##############################################################################
   types_getPilotStatistics = [ basestring, dict ]
   @staticmethod
   def export_getPilotStatistics ( attribute, selectDict ):
@@ -696,7 +698,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     return S_OK()
 
-  ##############################################################################
+##############################################################################
   types_clearPilots = [ [int, long], [int, long] ]
   def export_clearPilots( self, interval = 30, aborted_interval = 7 ):
 
