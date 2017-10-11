@@ -398,13 +398,13 @@ class TransformationManagerHandlerBase( RequestHandler ):
   types_getTabbedSummaryWeb = [basestring, dict, dict, list, int, int]
   def export_getTabbedSummaryWeb( self, table, requestedTables, selectDict, sortList, startItem, maxItems ):
     tableDestinations = {  'Transformations'      : { 'TransformationFiles' : ['TransformationID'],
-                                                      'TransformationTasks' : ['TransformationID']           },
+						      'TransformationTasks' : ['TransformationID'] },
 
                            'TransformationFiles'  : { 'Transformations'     : ['TransformationID'],
-                                                      'TransformationTasks' : ['TransformationID', 'TaskID']  },
+						      'TransformationTasks' : ['TransformationID', 'TaskID'] },
 
                            'TransformationTasks'  : { 'Transformations'     : ['TransformationID'],
-                                                      'TransformationFiles' : ['TransformationID', 'TaskID']  } }
+						      'TransformationFiles' : ['TransformationID', 'TaskID'] } }
 
     tableSelections = {    'Transformations'      : ['TransformationID', 'AgentType', 'Type', 'TransformationGroup',
                                                      'Plugin'],
@@ -573,7 +573,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
     # As this list is a reference to the list in the DB, we cannot extend it, therefore copy it
     resultDict['ParameterNames'] = list( res['ParameterNames'] )
     # Add the job states to the ParameterNames entry
-    taskStateNames = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled',
+    taskStateNames = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed',
+		      'Waiting', 'Done', 'Completed', 'Stalled',
                       'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
     resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
     # Add the file states to the ParameterNames entry
