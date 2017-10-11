@@ -61,13 +61,3 @@ class PilotsLoggingHandler( RequestHandler ):
     """
 
     return self.pilotsLogging.deletePilotsLogging( pilotRef )
-
-  types_addPilotsUUID = [ basestring ]
-  def export_addPilotsUUID(self, pilotUUID ):
-
-    return self.pilotsLogging.addPilotsUUID( pilotUUID )
-
-  types_deletePilotsLogging = [ [int, long,  list] ]
-  def export_deletePilotsLogging( self, pilotID ):
-
-    return self.pilotsLogging.deletePilotsLogging( pilotID )
