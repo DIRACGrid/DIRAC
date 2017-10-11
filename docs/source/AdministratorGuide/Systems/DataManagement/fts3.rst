@@ -99,6 +99,20 @@ The status of the FTS3Jobs and FTSFiles are updated every time we monitor the ma
 
 The FTS3Operation goes to Processed when all the files are in a final state, and to Finished when the callback has been called successfully
 
+FTS3 Installation
+-----------------
+
+One needs to install an FTS3DB, the FTS3Manager, and the FTS3Agent. Install the
+FTS3DB with `dirac-install-db` or directly on your mysql server and add the
+Databse in the Configuration System.
+
+  dirac-admin-sysadmin-cli -H diracserver034.institute.tld
+  > install service DataManagement FTS3Manager
+  > install agent DataManagement FTS3Agent
+
+Then enable the *UseNewFTS3* flag for the ReplicateAndRegister operation as
+described in `FTS3TransferOperation`_.
+
 FTS3 System Configuration
 -------------------------
 
