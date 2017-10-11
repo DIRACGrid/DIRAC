@@ -108,8 +108,8 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
 ##############################################################################
-  def export_allowSite(self,site,comment='No comment'):
   types_allowSite = [ basestring ]
+  def export_allowSite(self,site,comment='No comment'):
     """ Allow the given site in the site mask
     """
 
@@ -617,8 +617,8 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##########################################################################################
-  def export_setPilotStatus( self, pilotRef, status, destination=None, reason=None, gridSite=None, queue=None ):
   types_setPilotStatus = [ basestring, basestring ]
+  def export_setPilotStatus( self, pilotRef, status, destination=None, reason=None, gridSite=None, queue=None ):
     """ Set the pilot agent status
     """
 
