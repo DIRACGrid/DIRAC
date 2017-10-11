@@ -164,14 +164,14 @@ class ResourceStatus( object ):
         to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
         minutes.
 
-  :param elementName: name of the element
-  :type elementName: str
-  :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
-  :type elementType: str
-  :param statusType: type of the status (meaningful only when elementType==StorageElement,
-                     otherwise it is 'all' or ['all'])
-  :type statusType: str, list
-  """
+    :param elementName: name of the element
+    :type elementName: str
+    :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
+    :type elementType: str
+    :param statusType: type of the status (meaningful only when elementType==StorageElement,
+                       otherwise it is 'all' or ['all'])
+    :type statusType: str, list
+    """
 
     cacheMatch = self.rssCache.match( elementName, elementType, statusType )
 
