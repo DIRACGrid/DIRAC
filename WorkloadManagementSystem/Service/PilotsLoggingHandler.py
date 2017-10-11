@@ -27,19 +27,19 @@ class PilotsLoggingHandler( RequestHandler ):
     self.pilotsLogging = PilotsLoggingDB()
 
   types_addPilotsLogging = [ basestring, basestring, basestring, float, basestring ]
-  def export_addPilotsLogging( self, pilotUUID, status, minorStatus, timeStamp, source ):
+  def export_addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
 
-    return self.pilotsLogging.addPilotsLogging( pilotUUID, status, minorStatus, timeStamp, source )
+    return self.pilotsLogging.addPilotsLogging( pilotRef, status, minorStatus, timeStamp, source )
 
-  types_getPilotsLogging = [ [int, long] ]
-  def export_getPilotsLogging( self, pilotID ):
+  types_getPilotsLogging = [ basestring ]
+  def export_getPilotsLogging( self, pilotRef ):
 
-    return self.pilotsLogging.getPilotsLogging( pilotID )
+    return self.pilotsLogging.getPilotsLogging( pilotRef )
 
-  types_setPilotsUUIDtoIDMapping = [ basestring, [int, long] ]
-  def export_setPilotsUUIDtoIDMapping( self, pilotUUID, pilotID ):
+  types_deletePilotsLogging = [ [basestring,  list] ]
+  def export_deletePilotsLogging( self, pilotRef ):
 
-    return self.pilotsLogging.setPilotsUUIDtoIDMapping( pilotUUID, pilotID )
+    return self.pilotsLogging.deletePilotsLogging( pilotRef )
 
   types_addPilotsUUID = [ basestring ]
   def export_addPilotsUUID(self, pilotUUID ):
