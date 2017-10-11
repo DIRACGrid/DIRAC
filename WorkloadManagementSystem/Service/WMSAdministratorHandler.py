@@ -83,6 +83,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     return jobDB.getSiteMaskStatus( sites )
 
+  ##############################################################################
   types_getAllSiteMaskStatus = []
   @staticmethod
   def export_getAllSiteMaskStatus():
