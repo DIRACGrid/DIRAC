@@ -1,4 +1,4 @@
-.._data-management-system
+.. _data-management-system :
 
 ======================
 Data Management System
@@ -9,6 +9,7 @@ Data Management System
 
    agents
    fts
+   fts3
 
 .. contents:: Table of contents
    :depth: 4
