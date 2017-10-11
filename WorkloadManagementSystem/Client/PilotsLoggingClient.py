@@ -14,30 +14,30 @@ class PilotsLoggingClient( Client ):
     self.setServer( 'WorkloadManagement/PilotsLogging' )
     self.pilotsLoggingHandler = self._getRPC()
 
-  def addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
+  def addPilotsLogging( self, pilotUUID, timestamp, source, phase, status, messageContent ):
     """
     Add new Pilots Logging entry
-    :param pilotRef: Pilot reference
+    :param pilotUUID: Pilot reference
     :param status: Pilot status
     :param minorStatus: Additional status information
-    :param timeStamp: Date and time of status event
+    :param timestamp: Date and time of status event
     :param source: Source of statu information
     """
 
-    return self.pilotsLoggingHandler.addPilotsLogging(pilotRef, status, minorStatus, timeStamp, source)
+    return self.pilotsLoggingHandler.addPilotsLogging(pilotUUID, timestamp, source, phase, status, messageContent)
 
-  def deletePilotsLogging( self, pilotRef ):
+  def deletePilotsLogging( self, pilotUUID ):
     """
     Delete all Logging entries for Pilot
-    :param pilotRef: Pilot reference
+    :param pilotUUID: Pilot reference
     """
 
-    return self.pilotsLoggingHandler.detelePilotsLogging( pilotRef )
+    return self.pilotsLoggingHandler.detelePilotsLogging( pilotUUID )
 
-  def getPilotsLogging( self, pilotRef ):
+  def getPilotsLogging( self, pilotUUID ):
     """
     Get all Logging entries for Pilot
-    :param pilotRef: Pilot reference
+    :param pilotUUID: Pilot reference
     """
 
-    return self.pilotsLoggingHandler.getPilotsLogging( pilotRef )
+    return self.pilotsLoggingHandler.getPilotsLogging( pilotUUID )

@@ -95,11 +95,11 @@ class PilotsLoggingDB( ):
     return S_OK( )
 
   ##########################################################################################
-  def addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
+  def addPilotsLogging( self, pilotUUID, timestamp, source, phase, status, messageContent ):
     """Add new pilot logging entry"""
 
     session = self.sqlalchemySession( )
-    logging = PilotsLogging( pilotUUID, status, minorStatus, timeStamp, source )
+    logging = PilotsLogging( pilotUUID, timestamp, source, phase, status, messageContent )
 
     try:
       session.add( logging )
@@ -118,36 +118,35 @@ class PilotsLoggingDB( ):
     return S_OK( )
 
   ##########################################################################################
-  def getPilotsLogging( self, pilotRef ):
+  def getPilotsLogging( self, pilotUUID ):
     """Get list of logging entries for pilot"""
 
     session = self.sqlalchemySession( )
 
     pilotLogging = []
-    for pl in session.query( PilotsLogging ).join( PilotsUUIDtoID ).filter(
-            PilotsUUIDtoID.pilotID == pilotID ).order_by(
+    for pl in session.query( PilotsLogging ).filter(PilotsLogging.pilotUUID == pilotUUID ).order_by(
         PilotsLogging.timeStamp ).all( ):
       entry = {}
-      entry['PilotUUID'] = pl.pilotUUID
-      entry['PilotID'] = pilotID
-      entry['Status'] = pl.status
-      entry['MinorStatus'] = pl.minorStatus
-      entry['TimeStamp'] = time.mktime( pl.timeStamp.timetuple( ) )
-      entry['Source'] = pl.source
+      entry['pilotUUID'] = pl.pilotUUID
+      entry['timestamp'] = pl.timestamp
+      entry['source'] = pl.source
+      entry['phase'] = pl.phase
+      entry['status'] = pl.status
+      entry['messageContent'] = pl.messageContent
       pilotLogging.append( entry )
 
     return S_OK( pilotLogging )
 
   ##########################################################################################
-  def deletePilotsLogging( self, pilotRef ):
+  def deletePilotsLogging( self, pilotUUID ):
     """Delete all logging entries for pilot"""
 
-    if isinstance( pilotID, ( int, long ) ):
-      pilotID = [pilotID, ]
+    if isinstance( pilotUUID, basestring ):
+      pilotUUID = [pilotUUID, ]
 
     session = self.sqlalchemySession( )
 
-    session.query( PilotsLogging ).filter( PilotsLogging.pilotRef._in( pilotRef ) ).delete(
+    session.query( PilotsLogging ).filter( PilotsLogging.pilotUUID._in( pilotUUID ) ).delete(
       synchronize_session = 'fetch' )
 
     try:
@@ -237,32 +236,17 @@ class PilotsLogging( Base ):
   }
 
   logID = Column( 'LogID', Integer, primary_key = True, autoincrement = True )
-  pilotUUID = Column( 'PilotUUID', String( 255 ), ForeignKey( 'PilotsUUIDtoID.PilotUUID', ondelete = 'CASCADE' ),
-                      nullable = False )
-  status = Column( 'Status', String( 32 ), default = '', nullable = False )
-  minorStatus = Column( 'MinorStatus', String( 128 ), default = '', nullable = False )
-  timeStamp = Column( 'TimeStamp', DateTime, nullable = False )
-  source = Column( 'Source', String( 32 ), default = 'Unknown', nullable = False )
+  pilotUUID = Column( 'pilotUUID', String( 255 ), nullable = False )
+  timestamp = Column( 'timestamp', String( 255 ), nullable = False )
+  source = Column( 'source', String( 255 ), nullable = False )
+  phase = Column( 'phase', String( 255 ), nullable = False )
+  status = Column( 'status', String( 255 ), nullable = False )
+  messageContent = Column( 'messageContent', String( 255 ), nullable = False )
 
-  def __init__( self, pilotUUID, status, minorStatus, timeStamp, source ):
+  def __init__( self, pilotUUID, timestamp, source, phase, status, messageContent ):
     self.pilotUUID = pilotUUID
-    self.status = status
-    self.minorStatus = minorStatus
-    self.timeStamp = datetime.datetime.fromtimestamp( timeStamp )
+    self.timestamp = timestamp
     self.source = source
-
-
-class PilotsUUIDtoID( Base ):
-  __tablename__ = 'PilotsUUIDtoID'
-  __table_args__ = {
-    'mysql_engine': 'InnoDB',
-    'mysql_charset': 'utf8'
-  }
-
-  pilotUUID = Column( 'PilotUUID', String( 255 ), primary_key = True )
-  pilotID = Column( 'PilotID', Integer, nullable = True )
-  pilotLogs = relationship( "PilotsLogging", backref = "UUIDtoID" )
-
-  def __init__( self, pilotUUID, pilotID = None ):
-    self.pilotUUID = pilotUUID
-    self.pilotID = pilotID
+    self.phase = phase
+    self.status = status
+    self.messageContent = messageContent
