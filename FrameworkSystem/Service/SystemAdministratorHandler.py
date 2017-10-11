@@ -61,9 +61,9 @@ class SystemAdministratorHandler( RequestHandler ):
     if keepSoftwareVersions > 0:
       gLogger.info( "The last %s software version will be kept and the rest will be deleted!" % keepSoftwareVersions )
       gThreadScheduler.addPeriodicTask( 600,
-					cls.__deleteOldSoftware,
-					( keepSoftwareVersions, ),
-					executions = 2 ) #it is enough to try 2 times
+                                        cls.__deleteOldSoftware,
+                                        ( keepSoftwareVersions, ),
+                                        executions = 2 ) #it is enough to try 2 times
 
     return S_OK( 'Initialization went well' )
 
@@ -648,8 +648,8 @@ class SystemAdministratorHandler( RequestHandler ):
     # Look for the component in extensions
     for extension in extensions:
       try:
-	importedModule = importlib.import_module( '%s.%sSystem.%s.%s' % ( extension, system,
-									  cType.capitalize(), module ) )
+        importedModule = importlib.import_module( '%s.%sSystem.%s.%s' % ( extension, system,
+                                                                          cType.capitalize(), module ) )
         return S_OK( importedModule.__doc__ )
       except Exception as _e:
         pass

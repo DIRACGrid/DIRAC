@@ -23,7 +23,7 @@ class Extensions( object ):
       return
     for extName in self.getCSExtensions() + [ '' ]:
       try:
-	if not extName.endswith( "DIRAC" ):
+        if not extName.endswith( "DIRAC" ):
           extension = '%sDIRAC' % extName
         res = imp.find_module( extension )
         if res[0]:
