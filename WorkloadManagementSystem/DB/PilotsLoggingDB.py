@@ -8,18 +8,18 @@
     addPilotsLogging()
     getPilotsLogging()
     deletePilotsLoggin()
-    
+
 """
 
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
-from types import IntType, LongType, ListType
 import threading
 
 from sqlalchemy.sql.schema import ForeignKey, PrimaryKeyConstraint
@@ -74,15 +74,6 @@ class PilotsLoggingDB( ):
   def __initializeDB( self ):
 
     tablesInDB = self.inspector.get_table_names( )
-
-    if not 'PilotsUUIDtoID' in tablesInDB:
-      try:
-        PilotsUUIDtoID.__table__.create( self.engine )
-      except SQLAlchemyError as e:
-        return S_ERROR(e)
-    else:
-      gLogger.debug("Table PilotsUUIDtoID exists")
-      return S_OK()
 
     if not 'PilotsLogging' in tablesInDB:
       try:
@@ -159,74 +150,6 @@ class PilotsLoggingDB( ):
     return S_OK( )
 
   ##########################################################################################
-  def addPilotsUUID( self, pilotUUID ):
-    """Add new pilot UUID to UUID ID mapping, not knowing ID yet"""
-
-    session = self.sqlalchemySession( )
-
-    resp = session.query( PilotsUUIDtoID ).filter( PilotsUUIDtoID.pilotUUID == pilotUUID ).count( )
-    if resp > 0:
-      return S_OK( )
-
-    uuid2id = PilotsUUIDtoID( pilotUUID )
-    try:
-      session.add( uuid2id )
-    except SQLAlchemyError as e:
-      return S_ERROR("Failed to add PilotsUUIDtoID: " + e.message)
-      session.rollback( )
-      session.close( )
-
-    try:
-      session.commit( )
-    except SQLAlchemyError as e:
-      return S_ERROR("Failed to commit PilotsUUIDtoID: " + e.message)
-      session.rollback( )
-      session.close( )
-
-    return S_OK( )
-
-  ##########################################################################################
-  def setPilotsUUIDtoIDMapping( self, pilotUUID, pilotID ):
-    """Assign pilot ID to UUID"""
-
-    session = self.sqlalchemySession( )
-
-    mapping = session.query( PilotsUUIDtoID ).get( pilotUUID )
-    mapping.pilotID = pilotID
-    try:
-      session.commit( )
-    except SQLAlchemyError as e:
-      return S_ERROR("Failed to commit PilotsUUIDtoID mapping: " + e.message)
-      session.rollback( )
-      session.close( )
-
-    return S_OK( )
-
-  ##########################################################################################
-  def addPilotsUUIDtoIDmapping( self, pilotUUID, pilotID ):
-    """Add new pilot UUID to ID mapping"""
-
-    session = self.sqlalchemySession( )
-
-    uuid2id = PilotsUUIDtoID( pilotUUID, pilotID )
-    try:
-      session.add( uuid2id )
-    except SQLAlchemyError as e:
-      return S_ERROR("Failed to add PilotsUUIDtoID: " + e.message)
-      session.rollback( )
-      session.close( )
-
-    try:
-      session.commit( )
-    except SQLAlchemyError as e:
-      return S_ERROR("Failed to commit PilotsUUIDtoID: " + e.message)
-      session.rollback( )
-      session.close( )
-
-    return S_OK( )
-
-
-##########################################################################################
 
 class PilotsLogging( Base ):
   __tablename__ = 'PilotsLogging'
