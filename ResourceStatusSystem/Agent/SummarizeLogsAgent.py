@@ -166,7 +166,7 @@ class SummarizeLogsAgent( AgentModule ):
                                                      statusType,
                                                      meta = { 'columns' : [ 'Status', 'LastCheckTime', 'TokenOwner' ],
                                                               'limit'   : 1,
-                                                              'order'   : 'LastCheckTime DESC' } )
+                                                              'order'   : ('LastCheckTime', 'DESC') } )
 
     if not selectedRes[ 'OK' ]:
       return selectedRes

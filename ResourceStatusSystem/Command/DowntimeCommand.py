@@ -126,9 +126,10 @@ class DowntimeCommand( Command ):
     if element == 'Site':
 
       gocSite = getGOCSiteName( elementName )
-      if not gocSite[ 'OK' ]:
-        return gocSite
-      elementName = gocSite[ 'Value' ]
+      if not gocSite[ 'OK' ]: # The site is most probably not a grid site - not an issue, of course
+        pass # so, elementName remains unchanged
+      else:
+        elementName = gocSite[ 'Value' ]
 
     # The DIRAC se names mean nothing on the grid, but their hosts do mean.
     elif elementType == 'StorageElement':
@@ -200,7 +201,7 @@ class DowntimeCommand( Command ):
       return results
     results = results[ 'Value' ]
 
-    if results is None:
+    if results is None: # no downtimes found
       return S_OK( None )
 
 
@@ -231,7 +232,9 @@ class DowntimeCommand( Command ):
           gocdbST = gOCDBServiceType.lower()
           csST = downDic[ 'SERVICE_TYPE' ].lower()
           if gocdbST != csST:
-            return S_ERROR( "SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST, csST, dt[ 'Name' ]) )
+            return S_ERROR( "SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST,
+                                                                                             csST,
+                                                                                             dt[ 'Name' ]) )
       else:
         #WARNING: do we want None as default value?
         dt[ 'gOCDBServiceType' ] = None

@@ -324,7 +324,7 @@ class FTSFile( object ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = []
     for column, value in self.__data__.items():
-      if value and column not in ( "FTSFileID", "LastUpdate" ):
+      if value is not None and column not in ( "FTSFileID", "LastUpdate" ):
         colStr = "`%s`" % column
         if isinstance( value, datetime.datetime ) or isinstance( value, basestring ):
           valStr = "'%s'" % value

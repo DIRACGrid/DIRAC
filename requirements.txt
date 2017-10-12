@@ -10,7 +10,7 @@ elasticsearch-dsl>=2.0.0
 funcsigs
 futures
 GitPython>=2.1.0
-matplotlib>=1.5.0
+matplotlib>=2.1.0
 mock>=1.0.1
 MySQL-python>=1.2.5
 jinja2
@@ -29,7 +29,7 @@ readline>=6.2.4
 requests>=2.9.1
 rst2pdf>=0.93
 simplejson>=3.8.1
-six
+six>=1.10
 sqlalchemy>=1.0.9
 stomp.py>=3.1.5
 suds-jurko>=0.6

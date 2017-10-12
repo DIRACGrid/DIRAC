@@ -771,7 +771,7 @@ class FTSJob( object ):
     """
     colVals = []
     for column, value in self.__data__.items():
-      if value and column not in ( "FTSJobID", "LastUpdate" ):
+      if value is not None and column not in ( "FTSJobID", "LastUpdate" ):
         colStr = "`%s`" % column
         if isinstance( value, datetime.datetime ) or isinstance( value, basestring ):
           valStr = "'%s'" % value
@@ -796,7 +796,7 @@ class FTSJob( object ):
   def toJSON( self ):
     """ dump to JSON format """
     digest = dict( zip( self.__data__.keys(),
-                        [ str( val ) if val else "" for val in self.__data__.values() ] ) )
+                        [ str( val ) if val is not None else "" for val in self.__data__.values() ] ) )
     digest["FTSFiles"] = []
     for ftsFile in self:
       fileJSON = ftsFile.toJSON()

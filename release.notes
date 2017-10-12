@@ -1,4 +1,9 @@
-[v6r19-pre6]
+[v6r20-pre1]
+
+*DMS
+NEW: FTS3Agent working only with the FTS3 service to replace the existing one
+
+[v6r19]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -16,10 +21,16 @@ NEW: Allow to define FailoverURLs and to reference MainServers in the URLs
 
 *FrameworkSystem
 NEW: gLogger is replaced by the new logging system based on the python logging module
-CHANGE: Make the new logging system thread-safe
 NEW: Added ElasticSearch backend for the logging
 NEW: Central Backends configuration to customize their use by multiple components 
 NEW: BundleDelivery - serves also CA's and CRL's all-in-one files
+NEW: added shell scripts for generating CAs and CRLs with the possibility to specify the Input and/or output directories
+CHANGE: can now send mails to multiple recipients using the NotificationClient
+CHANGE: Make the new logging system thread-safe
+FIX: Adapting query to MySLQ 5.7 "GROUP BY" clause
+FIX: TopErrorMessagesReporter - more precise selection to please stricter versions of MySQL
+CHANGE: ProxyGeneration - make RFC proxies by default, added -L/--legacy flag to dirac-proxy-init
+        to force generation of no-RFC proxies
 
 *Core
 FIX: dirac-install - allow to use local md5 files
@@ -38,6 +49,8 @@ NEW: Security.Utilities - methods to generate all-in-one CA certificates and CRL
 NEW: ElasticSearchDB - gets CA's all-in-one file from the BundleDelivery service if needed
 NEW: genAllCAs.sh, genRevokedCerts.sh - DIRAC-free commands to generate all-in-one CA 
      certificates and CRLs files     
+CHANGE: dirac-create-distribution-tarball - removing docs and tests directories when 
+        creating release tarballs     
 
 *DMS
 CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycurl based
@@ -45,6 +58,18 @@ CHANGE: FTSJob - use Request wrapper for the fts3 REST interface instead of pycu
 CHANGE: FTSHistoryView - drop FTSServer field from the view description   
 CHANGE: FTSFile DB table: increased length of fields LFN(955), SourceSURL(1024), TargetSURL(1024)
 CHANGE: Uniform length of LFN to 255 across DIRAC dbs
+FIX: FTSJob - fix the serialization of 0 values
+FIX: FTSFile, FTSJob - fix SQL statement generation for stricter versions of MySQL
+
+*Resources
+NEW: New method in the StorageElement to generate pair of URLs for third party copy.
+     Implement the logic to generate pair of URLs to do third party copy. 
+     This will be used mostly by FTS, but is not enabled as of now
+FIX: StorageElement - fix different weird behaviors in Storage Element, in particular, 
+     the inheritance of the protocol sections     
+FIX: GFAL2 storage element: update for compatibility with GFAL2 2.13.3 APIs
+NEW: Introduced Resources/StorageElementBases configuration section for definitions
+     of abstract SEs to be used in real SEs definition by inheritance     
 
 *RMS
 NEW: dirac-rms-request - command including functionality of several other commands:
@@ -54,22 +79,29 @@ NEW: dirac-rms-request - command including functionality of several other comman
 *RSS
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
      RSS system 
+NEW: Rewrote RsourceStatus/ResourceManagementDB tables with sqlAlchemy (RM DB with declarative base style)
 NEW: SiteStatus client to interrogate site status with respect to RSS
-BUGFIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
+CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
+CHANGE: moved some integration tests from pytest to unittest
+CHANGE: Moved ResourceStatusDB to sqlAlchemy declarative_base
+FIX: Automated setting of lastCheckTime and Dateffective in ResourceStatusDB and ResourceManagementDB
+FIX: fixes for tables inheritance and extensions
+FIX: fixes for Web return structure ("meta" column)
 FIX: ResourceStatus, RSSCacheNoThread - fixed RSS cache generation 
 FIX: ResourceStatus - fixes for getting status from the CS information
-CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
+FIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
 FIX: fixed incompatibility between Active/InActive RSS clients return format
 FIX: SiteStatus - bug fixed in getSites() method - siteState argument not propagated to
      the service call
 FIX: ResourceStatus - return the same structure for status lookup in both RSS and CS cases     
+FIX: Bug fixes in scripts getting data out of DB
+
 
 *Monitoring
 CHANGE: DBUtils - change the bucket sizes for the monitoring plots as function of the time span
 
 *WMS
 NEW: SiteDirector - checks the status of CEs and Sites with respect to RSS  
-FIX: JobDB - fixes necessary to suite MySQL 5.7   
 NEW: pilotCommands - new ReplaceDIRACCode command mostly for testing purposes
 NEW: JobAgent, JobWrapper - several fixes to allow the work with PoolComputingElement
      to support multiprocessor jobs    
@@ -80,11 +112,27 @@ NEW: SiteDirector - CEs can define QueryCEFlag in the Configuration Service whic
 NEW: The application error codes, when returned, are passed to the JobWrapper, and maybe interpreted.
 NEW: The JobWrapperTemplate can reschedule a job if the payload exits with status DErrno.EWMSRESC & 255 (222)
 FIX: SiteDirector - unlink is also to be skipped for Local Condor batch system
+FIX: JobDB - fixes necessary to suite MySQL 5.7
 FIX: dirac-pilot, pilotTools - PYTHONPATH is cleared on pilot start, pilot option keepPP
      can override this
 FIX: WMSAdministratorHandler - make methods static appropriately
+FIX: Bug fix for correctly excluding WebApp extensions
 CHANGE: JobScheduling - more precise site name while the job is Waiting, using the set of 
-        sites at which the input files are online rather than checking Tier1s in eligible sites       
+        sites at which the input files are online rather than checking Tier1s in eligible sites      
+FIX: SiteDirector - aggregate tags for the general job availability test         
+FIX: JobScheduling - bug fix in __sendToTQ()
+FIX: pilotTools,pilotCommands - pick up all the necessary settings from the site/queue configuration
+     related to Tags and multi-processor
+NEW: SiteDirector - added option to force lcgBundle version in the pilot
+FIX: SiteDirector - if MaxWaitingJobs or MaxTotalJobs not defined for a queue, assume a default value of 10
+FIX: MatcherHandler - preprocess resource description in getMatchingTaskQueues()
+FIX: JobDB - set CPUTime to a default value if not defined when rescheduling jobs
+
+*TS
+FIX: TransformationClient - fix issue #3446 for wrong file error counting in TS
+FIX: TransformationDB - set ExternalID before ExternalStatus in tasks
+BUGFIX: TransformationClient - fix a bug in the TS files state machine (comparing old status.lower() 
+        with new status)
 
 *Interfaces
 CHANGE: Dirac API - expose the protocol parameter of getAccessURL()
@@ -94,6 +142,66 @@ CHANGE: Dirac API - added runLocal as an API method
 NEW: Documentation for developing with a container (includes Dockerfile)
 NEW: Add script to collate release notes from Pull Request comments  
 NEW: Chapter on scaling and limitations
+CHANGE: Added documentation about runsv installation outside of DIRAC
+
+*tests
+NEW: Added client (scripts) system test
+CHANGE: Add to the TS system test, the test for transformations with meta-filters
+FIX: Minor fixes in the TS system test
+FIX: correctly update the DFC DB configuration in jenkins' tests
+
+[v6r17p33]
+
+*WMS
+FIX: StalledJobAgent - if no PilotReference found in jobs parameters, do as if there would be 
+     no pilot information, i.e. set Stalled job Failed immediately
+CHANGE: DownloadInputData - job parameters report not only successful downloads but also failed ones
+FIX: JobDB - back port - set CPUTime to 0 if not defined at all for the given job 
+FIX: JobDB - back port - use default CPUTime in the job description when rescheduling jobs
+
+*Resources
+FIX: ARCComputingElement - fix job submission issue due to timeout for newer lcg-bundles
+
+[v6r17p32]
+
+Resources:
+CHANGE: /Computing/BatchSystems/Condor.py: do not copy SiteDirector's shell environment variables into the job environment
+
+*WMS
+CHANGE: Add option to clear PYTHONPATH on pilot start
+
+[v6r17p31]
+
+*RMS
+FIX: ReqClient - avoid INFO message in client
+*WMS
+CHANGE: JobWrapper - allow SE-USER to be defined as another SE group (e.g. Tier1-USER)
+*DMS
+CHANGE: DMSHelpers - make resolveSEGroup recursive in order to be able to define SE groups in terms of SE groups
+
+[v6r17p30]
+
+*DMS
+CHANGE: StorageElement - added status(), storageElementName(), checksumType() methods returning
+        values directly without the S_OK structure. Remove the checks of OK everywhere
+NEW: dirac-dms-add-file, DataManager - added option (-f) to force an overwrite of an existing file
+
+*TS:
+FIX: TransformationDB.py - set the ExternalID before the ExternalStatus in order to avoid inconsistent 
+     tasks if setting the ExternalID fails
+
+*StorageManagementSystem
+FIX: StorageManagementClient.py - return the full list of onlineSites while it was previously happy 
+     with only one
+
+*Resources
+FIX: HTCondorCEComputingElement.py - transfer output files(only log and err) for remote scheduler
+
+[v6r17p29]
+
+*WMS
+CHANGE: split time left margins in cpuMargin and wallClockMargin. Also simplified check.
+
 
 [v6r17p28]
 

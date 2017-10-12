@@ -186,11 +186,12 @@ class ReplicateAndRegisterSuccess( ReqOpsTestCase ):
     res = self.rr._addMetadataToFiles( toSchedule )
     self.assert_( res['OK'] )
 
-    self.assertEqual( json.loads( res['Value'][0][0] )['LFN'], resMeta['Value']['Successful'].keys()[0] )
-    self.assertEqual( json.loads( res['Value'][0][0] )['Size'], resMeta['Value']['Successful'].values()[0]['Size'] )
-
-    self.assertEqual( json.loads( res['Value'][1][0] )['LFN'], resMeta['Value']['Successful'].keys()[1] )
-    self.assertEqual( json.loads( res['Value'][1][0] )['Size'], resMeta['Value']['Successful'].values()[1]['Size'] )
+    for lfn in toSchedule:
+      self.assertEqual( res['Value'][lfn].LFN, lfn )
+      for attr in ('GUID', 'Size', 'Checksum'):
+        self.assertEqual( getattr(res['Value'][lfn],attr), resMeta['Value']['Successful'][lfn][attr] )
+      # AD should be transformed into Adler32
+      self.assertEqual( res['Value'][lfn].ChecksumType, "ADLER32" )
 
 
 if __name__ == '__main__':

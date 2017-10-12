@@ -58,7 +58,7 @@ class TransformationPlugin( PluginBase ):
     """ Need to pass parameters also to self.util
     """
     self.params = params
-    self.util.setParameters(params)
+    self.util.setParameters( params )
 
   def setInputData( self, data ):
     self.data = data
@@ -136,9 +136,7 @@ class TransformationPlugin( PluginBase ):
             sources.append( site )
           targets.append( targetSE )  # after all, if someone wants to copy to the source, it's his choice
         strTargetSEs = str.join( ',', sorted( targets ) )
-        if not targetSELfns.has_key( strTargetSEs ):
-          targetSELfns[strTargetSEs] = []
-        targetSELfns[strTargetSEs].append( lfn )
+        targetSELfns.setdefault( strTargetSEs, [] ).append( lfn )
     tasks = []
     for ses, lfns in targetSELfns.items():
       tasksLfns = breakListIntoChunks( lfns, groupSize )
@@ -196,9 +194,7 @@ class TransformationPlugin( PluginBase ):
       for chosenSE in ses:
         if chosenSE in possibleSEs:
           tasks.append( ( chosenSE, lfns ) )
-          if not existingCount.has_key( targetSite ):
-            existingCount[targetSite] = 0
-          existingCount[targetSite] += len( lfns )
+          existingCount[targetSite] = existingCount.setdefault( targetSite, 0 ) + len( lfns )
     return S_OK( tasks )
 
   def _getShares( self, shareType, normalise = False ):

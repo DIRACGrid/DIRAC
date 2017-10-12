@@ -51,6 +51,7 @@ from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERRO
 from DIRAC.Core.Utilities                                    import Time
 from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations     import Operations
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources      import getDIRACPlatform
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
@@ -1214,6 +1215,10 @@ class JobDB( DB ):
       cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
       if cpuTime is not None:
         classAdJob.insertAttributeInt( 'CPUTime', cpuTime )
+      else:
+        opsHelper = Operations( group = ownerGroup,
+                                setup = diracSetup )
+        cpuTime = opsHelper.getValue( 'JobDescription/DefaultCPUTime', 86400 )
     classAdReq.insertAttributeInt( 'UserPriority', priority )
     classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
 
@@ -1369,7 +1374,7 @@ class JobDB( DB ):
     if not self._update( cmd )['OK']:
       return S_ERROR( 'JobDB.removeJobOptParameter: operation failed.' )
 
-    # the Jobreceiver needs to know if there is InputData ??? to decide which optimizer to call
+    # the JobManager needs to know if there is InputData ??? to decide which optimizer to call
     # proposal: - use the getInputData method
     res = self.getJobJDL( jobID, original = True )
     if not res['OK']:

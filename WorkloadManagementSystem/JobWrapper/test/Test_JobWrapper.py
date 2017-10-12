@@ -9,7 +9,7 @@ import importlib
 import os
 import shutil
 
-from mock import MagicMock
+from mock import MagicMock, patch
 
 from DIRAC import gLogger
 
@@ -19,6 +19,9 @@ from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogLinux import WatchdogLinux
 
+getSystemSectionMock = MagicMock()
+getSystemSectionMock.return_value = 'aValue'
+
 class JobWrapperTestCase( unittest.TestCase ):
   """ Base class for the JobWrapper test cases
   """
@@ -26,7 +29,11 @@ class JobWrapperTestCase( unittest.TestCase ):
     gLogger.setLevel( 'DEBUG' )
 
   def tearDown( self ):
-    pass
+    for f in ['std.out']:
+      try:
+        os.remove(f)
+      except OSError:
+        pass
 
 
 class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
@@ -63,7 +70,9 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     res = wd._performChecks()
     self.assertTrue( res['OK'] )
 
-  def test_execute(self):
+  @patch( "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect = getSystemSectionMock )
+  @patch( "DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", side_effect = getSystemSectionMock )
+  def test_execute(self, _patch1, _patch2):
     jw = JobWrapper()
     jw.jobArgs = {'Executable':'/bin/ls'}
     res = jw.execute('')

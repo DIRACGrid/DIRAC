@@ -339,8 +339,8 @@ class Dirac( API ):
         self.log.error( msg )
         return S_ERROR( msg )
 
-      jobDescriptionObject = StringIO.StringIO( job._toXML() )
-      jdlAsString = job._toJDL( jobDescriptionObject = jobDescriptionObject )
+      jobDescriptionObject = StringIO.StringIO( job._toXML() ) # pylint: disable=protected-access
+      jdlAsString = job._toJDL( jobDescriptionObject = jobDescriptionObject ) # pylint: disable=protected-access
 
     if mode.lower() == 'local':
       result = self.runLocal(job)
@@ -776,11 +776,11 @@ class Dirac( API ):
     tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
     self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
     jobXMLFile = tmpdir + '/jobDescription.xml'
+    self.log.verbose( 'Job XML file description is: %s' % jobXMLFile )
     with open( jobXMLFile, 'w+' ) as fd:
       fd.write( job._toXML() ) #pylint: disable=protected-access
 
     shutil.copy( jobXMLFile, '%s/%s' % ( os.getcwd(), os.path.basename( jobXMLFile ) ) )
-    self.log.verbose( 'Job XML file description is: %s' % jobXMLFile )
 
     res = self.__getJDLParameters( job )
     if not res['OK']:
@@ -859,34 +859,41 @@ class Dirac( API ):
       if isinstance( sandbox, basestring ):
         sandbox = [isFile.strip() for isFile in sandbox.split(',')]
       for isFile in sandbox:
-        self.log.debug("Resolving Input Sandbox file %s" % isFile)
+        self.log.debug("Resolving Input Sandbox %s" % isFile)
         if isFile.lower().startswith( "lfn:" ):  # isFile is an LFN
           isFile = isFile[4:]
-        elif not os.path.isabs( isFile ):
-          # if a relative path, it is relative to the user working directory
-          isFile = os.path.join( curDir, isFile )
-
-        # Attempt to copy into job working directory
-        if os.path.isdir( isFile ):
-          shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
-        elif os.path.exists( isFile ):
-          shutil.copy( isFile, os.getcwd() )
-        elif os.path.exists(os.path.join(tmpdir, isFile)): # if it is in the tmp dir
-          shutil.copy(os.path.join(tmpdir, isFile), os.getcwd())
+        # Attempt to copy into job working directory, unless it is already there
+        if os.path.exists(os.path.join(os.getcwd(), os.path.basename(isFile))):
+          self.log.debug("Input Sandbox %s found in the job directory, no need to copy it" % isFile)
         else:
-          self.log.verbose("perhaps the file %s is in an LFN, so we attempt to download it." % isFile)
-          getFile = self.getFile( isFile )
-          if not getFile['OK']:
-            self.log.warn( 'Failed to download %s with error: %s' % ( isFile, getFile['Message'] ) )
-            return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
-        basefname = os.path.basename( isFile )
+          if os.path.isabs( isFile ):
+            self.log.debug("Input Sandbox %s is a file with absolute path, copying it" % isFile)
+            shutil.copy( isFile, os.getcwd() )
+          elif os.path.isdir( isFile ):
+            self.log.debug("Input Sandbox %s is a directory, found in the user working directory, copying it" % isFile)
+            shutil.copytree( isFile, os.path.basename( isFile ), symlinks = True )
+          elif os.path.exists( isFile ):
+            self.log.debug("Input Sandbox %s is a file, found in the current working directory, copying it" % isFile)
+          elif os.path.exists(os.path.join(tmpdir, isFile)): # if it is in the tmp dir
+            self.log.debug("Input Sandbox %s is a file, found in the tmp directory, copying it" % isFile)
+            shutil.copy(os.path.join(tmpdir, isFile), os.getcwd())
+          else:
+            self.log.verbose("perhaps the file %s is in an LFN, so we attempt to download it." % isFile)
+            getFile = self.getFile( isFile )
+            if not getFile['OK']:
+              self.log.warn( 'Failed to download %s with error: %s' % ( isFile, getFile['Message'] ) )
+              return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
+
+        isFileInCWD = os.getcwd() + os.path.sep + isFile
+
+        basefname = os.path.basename( isFileInCWD )
         if tarfile.is_tarfile( basefname ):
           try:
             with tarfile.open( basefname, 'r' ) as tf:
               for member in tf.getmembers():
                 tf.extract( member, os.getcwd() )
-          except Exception as x:
-            return S_ERROR( 'Could not untar %s with exception %s' % (basefname, str(x)))
+          except (tarfile.ReadError, tarfile.CompressionError, tarfile.ExtractError) as x:
+            return S_ERROR( 'Could not untar or extract %s with exception %s' % (basefname, repr(x)))
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
@@ -1183,7 +1190,7 @@ class Dirac( API ):
       :type access: string in ('Read', 'Write', 'Remove', 'Check')
       : returns: True or False
     """
-    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( access, False )
+    return StorageElement( se, vo = self.vo ).status().get( access, False )
 
   #############################################################################
   def splitInputData( self, lfns, maxFilesPerJob = 20, printOutput = False ):

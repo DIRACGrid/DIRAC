@@ -63,7 +63,6 @@ class TokenAgent( AgentModule ):
     # Initialized here, as it is needed empty at the beginning of the execution
     self.tokenDict = {}
 
-    # FIXME: probably this can be obtained from RssConfiguration instead
     elements = ( 'Site', 'Resource', 'Node' )
 
     for element in elements:
@@ -133,7 +132,7 @@ class TokenAgent( AgentModule ):
         status = tokenElement[ 'Status' ]
         tokenOwner = tokenElement[ 'TokenOwner' ]
         tokenExpiration = tokenElement[ 'TokenExpiration' ]
-      except KeyError, e:
+      except KeyError as e:
         return S_ERROR( e )
 
       # If token has already expired
