@@ -522,6 +522,16 @@ class ReleaseConfig( object ):
 
 
   def loadProjectRelease( self, releases, project = False, sourceURL = False, releaseMode = False, relLocation = False ):
+    """
+    This method loads all project configurations (*.cfg). If a project is an extension of DIRAC, it will load the extension and 
+    after will load the base DIRAC module. 
+    
+    :param list releases: list of releases, which will be loaded: for example: v6r19
+    :param str project: the name of the project, if it is given. For example: DIRAC
+    :param str sourceURL: the code repository
+    :param str releaseMode:
+    :param str relLocation: local configuration file, which contains the releases. for example: file:///`pwd`/releases.cfg
+    """
     
     if not project:
       project = self.__projectName
@@ -593,7 +603,7 @@ class ReleaseConfig( object ):
                                                                                                   relDeps[ project ] )
         return S_ERROR( errMsg )
       
-      #we have now all dependencies, let's retrieve the resources
+      #we have now all dependencies, let's retrieve the resources (code repository)
       for project, version in relDeps:
         if project in self.__diracBaseModules:
           continue
@@ -607,6 +617,7 @@ class ReleaseConfig( object ):
               self.__dbgMsg( "Unable to found the source URL for %s : %s" % ( dependency, res['Message'] ) )
             else:
               self.__diracBaseModules[ dependency ]['sourceUrl'] = res['Value'][1]
+              
     return S_OK()
 
   def getReleaseOption( self, project, release, option ):
@@ -670,10 +681,32 @@ class ReleaseConfig( object ):
     return S_OK( modules )
 
   def getModSource( self, release, modName, project = None ):
+    """
+    It reads the Sources section from the .cfg file for example:
+    Sources
+    {
+      Web = git://github.com/DIRACGrid/DIRACWeb.git
+      VMDIRAC = git://github.com/DIRACGrid/VMDIRAC.git
+      DIRAC = git://github.com/DIRACGrid/DIRAC.git
+      MPIDIRAC = git://github.com/DIRACGrid/MPIDIRAC.git
+      BoincDIRAC = git://github.com/DIRACGrid/BoincDIRAC.git
+      RESTDIRAC = git://github.com/DIRACGrid/RESTDIRAC.git
+      COMDIRAC = git://github.com/DIRACGrid/COMDIRAC.git
+      FSDIRAC = git://github.com/DIRACGrid/FSDIRAC.git
+      WebAppDIRAC = git://github.com/DIRACGrid/WebAppDIRAC.git
+    }
+    
+    :param str release: the release which is already loaded for example: v6r19
+    :param str modName: the name of the DIRAC module for example: WebAppDIRAC
+    :param str project: the name of the project for example: DIRAC
+    """
+    
     if not self.__projectName in self.__prjRelCFG:
       return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % self.__projectName )
+    
     if not project:
       project = self.__projectName
+    
     modLocation = self.getReleaseOption( project, release, "Sources/%s" % modName )
     if not modLocation:
       return S_ERROR( "Source origin for module %s is not defined" % modName )

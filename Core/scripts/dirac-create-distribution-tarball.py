@@ -39,7 +39,8 @@ class TarModuleCreator( object ):
       self.vcsPath = False
       self.relNotes = False
       self.outRelNotes = False
-      self.webappversion = False
+      self.extensionVersion = None
+      self.extensionSource = None
 
     def isOK( self ):
       if not self.version:
@@ -92,8 +93,12 @@ class TarModuleCreator( object ):
       self.outRelNotes = True
       return S_OK()
     
-    def setWebappversion( self, opVal ):
-      self.webappversion = opVal
+    def setExtensionVersion( self, opVal ):
+      self.extensionVersion = opVal
+      return S_OK()
+    
+    def setExtensionSource(self, opVal):
+      self.extensionSource = opVal
       return S_OK()
     
   def __init__( self, params ):
@@ -125,7 +130,14 @@ class TarModuleCreator( object ):
         return True
     return False
 
-  def __checkoutSource( self ):
+  def __checkoutSource( self, moduleName = None, sourceURL = None, tagVersion = None ):
+    """
+    This method will checkout a given module from a given repository: cvsm svn, hg, git
+    
+    :param str moduleName: The name of the Module: for example: LHCbWebDIRAC
+    :param str sourceURL: The code repository: ssh://git@gitlab.cern.ch:7999/lhcb-dirac/LHCbWebDIRAC.git
+    :param str tagVersion: the tag for example: v4r3p6
+    """
     if not self.params.vcs:
       if not self.__discoverVCS():
         return S_ERROR( "Could not autodiscover VCS" )
@@ -140,7 +152,7 @@ class TarModuleCreator( object ):
     elif self.params.vcs == "hg":
       return self.__checkoutFromHg()
     elif self.params.vcs == "git":
-      return self.__checkoutFromGit()
+      return self.__checkoutFromGit( moduleName, sourceURL, tagVersion )
 
     return S_ERROR( "OOPS. Unknown VCS %s!" % self.params.vcs )
 
@@ -256,27 +268,47 @@ class TarModuleCreator( object ):
             fd.write( fileContents )
 
 
-  def __checkoutFromGit( self ):
+  def __checkoutFromGit( self, moduleName = None, sourceURL = None, tagVersion = None ):
+    """
+    This method checkout a given tag from a git repository. 
+    Note: we can checkout any project form a git repository 
+    
+    :param str moduleName: The name of the Module: for example: LHCbWebDIRAC
+    :param str sourceURL: The code repository: ssh://git@gitlab.cern.ch:7999/lhcb-dirac/LHCbWebDIRAC.git
+    :param str tagVersion: the tag for example: v4r3p6
+    
+    """
+    
+    if not moduleName:
+      moduleName = self.params.name
+    
+    if not sourceURL:
+      sourceURL = self.params.sourceURL   
+      
+    if not tagVersion:
+      tagVersion = self.params.version
+      
     if self.params.vcsBranch:
       brCmr = "-b %s" % self.params.vcsBranch
     else:
       brCmr = ""
-    fDirName = os.path.join( self.params.destination, self.params.name )
+    fDirName = os.path.join( self.params.destination, moduleName )
     cmd = "git clone %s '%s' '%s'" % ( brCmr,
-                                       self.params.sourceURL,
+                                       sourceURL,
                                        fDirName )
+    print 'DSDSDSDS', cmd
     gLogger.verbose( "Executing: %s" % cmd )
     if os.system( cmd ):
       return S_ERROR( "Error while retrieving sources from git" )
 
     branchName = "DIRACDistribution-%s" % os.getpid()
 
-    isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % ( fDirName, self.params.version )
+    isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % ( fDirName, tagVersion )
     if os.system( isTagCmd ):
       #No tag found, assume branch
-      branchSource = 'origin/%s' % self.params.version
+      branchSource = 'origin/%s' % tagVersion
     else:
-      branchSource = self.params.version
+      branchSource = tagVersion
 
     cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % ( fDirName, branchName, branchSource )
 
@@ -537,18 +569,21 @@ class TarModuleCreator( object ):
     result = self.__generateReleaseNotes()
     if not result[ 'OK' ]:
       gLogger.error( "Won't generate release notes: %s" % result[ 'Message' ] )
+    
     if 'Web' in self.params.name and self.params.name != 'Web': 
-      if self.params.webappversion:
-        print 'cool'
-        retVal = self.__downloadWebApp( self.params.webappversion )
-      retVal = self.__compileWebApp( webappversion )
+      #if we have an extension, we have to download, because it will be
+      #required to compile the code
+      if self.params.extensionVersion and self.params.extensionSource:
+        #if extensionSource is not provided, the default one is used. self.params.soureURL....
+        result = self.__checkoutSource("WebAppDIRAC", self.params.extensionSource, self.params.extensionVersion)
+        if not result['OK']:
+          return result 
+      retVal = self.__compileWebApp( extensionVersion )
       if not retVal['OK']:
         gLogger.error( 'Web is not compiled: %s' % retVal['Message'] )
     
     return self.__generateTarball()
-  
-  def __downloadWebApp(self, version):
-    pass
+    
   
 if __name__ == "__main__":
   cliParams = TarModuleCreator.Params()
@@ -564,7 +599,11 @@ if __name__ == "__main__":
   Script.registerSwitch( "p:", "path=", "VCS path (if needed)", cliParams.setVCSPath )
   Script.registerSwitch( "K:", "releasenotes=", "Path to the release notes", cliParams.setReleaseNotes )
   Script.registerSwitch( "A", "notesoutside", "Leave a copy of the compiled release notes outside the tarball", cliParams.setOutReleaseNotes )
-  Script.registerSwitch( "w:", "webappversion=", "if we have an extension we have to provide the core webapp version", cliParams.setWebappversion )
+  Script.registerSwitch( "e:", "extensionVersion=", "if we have an extension,\
+                                we can provide the base module version (if it is needed): for example: v3r0", cliParams.setExtensionVersion )
+  Script.registerSwitch( "E:", "extensionSource=", "if we have an extension,\
+                                we must provide code repository url", cliParams.setExtensionSource )
+  
   
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                        '\nUsage:',

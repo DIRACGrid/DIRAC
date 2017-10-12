@@ -184,8 +184,8 @@ class DistributionMaker:
           modules = self.relConf.getDiracModules()
           webData = modules.get( "WebAppDIRAC", None )
           if webData:
-            dctArgs.append( "-w '%s'" % webData.get("Version") )
-            dctArgs.append( "-W '%s'" % webData.get("sourceUrl") )
+            dctArgs.append( "-e '%s'" % webData.get("Version") )
+            dctArgs.append( "-E '%s'" % webData.get("sourceUrl") )
             
       #Source
       result = self.relConf.getModSource( releaseVersion, modName )
