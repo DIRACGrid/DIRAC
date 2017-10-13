@@ -25,7 +25,6 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
-from types import IntType, LongType, ListType
 import threading
 
 DEBUG = 1
@@ -198,7 +197,7 @@ class PilotAgentsDB( DB ):
   def deletePilots( self, pilotIDs, conn = False ):
     """ Delete Pilots with IDs in the given list from the PilotAgentsDB """
 
-    if type( pilotIDs ) != type( [] ):
+    if not isinstance( pilotIDs, list):
       return S_ERROR( 'Input argument is not a List' )
     
     for pilotID in pilotIDs:
@@ -269,17 +268,17 @@ class PilotAgentsDB( DB ):
     cmd = "SELECT %s FROM PilotAgents" % ", ".join( parameters )
     condSQL = []
     if pilotRef:
-      if type( pilotRef ) == ListType:
+      if isinstance( pilotRef, list ):
         condSQL.append( "PilotJobReference IN (%s)" % ",".join( [ '"%s"' % x for x in pilotRef ] ) )
       else:
         condSQL.append( "PilotJobReference = '%s'" % pilotRef )
     if pilotID:
-      if type( pilotID ) == ListType:
+      if isinstance( pilotID, list ):
         condSQL.append( "PilotID IN (%s)" % ",".join( [ '%s' % x for x in pilotID ] ) )
       else:
         condSQL.append( "PilotID = '%s'" % pilotID )
     if parentId:
-      if type( parentId ) == ListType:
+      if isinstance( parentId, list ):
         condSQL.append( "ParentID IN (%s)" % ",".join( [ '%s' % x for x in parentId ] ) )
       else:
         condSQL.append( "ParentID = %s" % parentId )
@@ -476,7 +475,7 @@ class PilotAgentsDB( DB ):
     """ Get IDs of Jobs that were executed by a pilot
     """
     cmd = "SELECT pilotID,JobID FROM JobToPilotMapping "
-    if type( pilotID ) == ListType:
+    if isinstance( pilotID, list ):
       cmd = cmd + " WHERE pilotID IN (%s)" % ",".join( [ '%s' % x for x in pilotID ] )
     else:
       cmd = cmd + " WHERE pilotID = %s" % pilotID
@@ -1048,7 +1047,7 @@ class PilotAgentsDB( DB ):
     for pilot in pilotList:
       parList = []
       for parameter in paramNames:
-        if type( pilotDict[pilot][parameter] ) not in [IntType, LongType]:
+        if not isinstance( pilotDict[pilot][parameter], (int, long) ):
           parList.append( str( pilotDict[pilot][parameter] ) )
         else:
           parList.append( pilotDict[pilot][parameter] )

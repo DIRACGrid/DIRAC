@@ -4,8 +4,6 @@
 
     addPilotsLogging()
     getPilotsLogging
-    setPilotsUUIDtoIDMapping()
-    addPilotsUUID()
     deletePilotsLogging()
 
 """
@@ -79,7 +77,7 @@ class PilotsLoggingHandler( RequestHandler ):
 
     return PilotsLoggingHandler.pilotsLoggingDB.getPilotsLogging( pilotUUID )
 
-  types_deletePilotsLogging = [ [basestring,  list] ]
+  types_deletePilotsLogging = [ (basestring,  list) ]
   def export_deletePilotsLogging( self, pilotUUID ):
     """
     Delete all Logging entries for Pilot

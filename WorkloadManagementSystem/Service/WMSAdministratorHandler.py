@@ -26,16 +26,14 @@ from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFa
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-from DIRAC.Core.Utilities import DErrno
-from datetime import datetime
 
 __RCSID__ = "$Id$"
 
 # This is a global instance of the database classes
-jobDB = False
-pilotDB = False
-taskQueueDB = False
-pilotsLoggingDB = False
+jobDB = None
+pilotDB = None
+taskQueueDB = None
+pilotsLoggingDB = None
 
 FINAL_STATES = ['Done','Aborted','Cleared','Deleted','Stalled']
 
@@ -133,7 +131,7 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.removeSiteFromMask( None )
 
   ##############################################################################
-  types_getSiteMaskLogging = [ [ basestring, list ] ]
+  types_getSiteMaskLogging = [ ( basestring, list ) ]
   @classmethod
   def export_getSiteMaskLogging( cls, sites ):
     """ Get the site mask logging history
@@ -203,7 +201,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##########################################################################################
-  types_addPilotTQReference = [ list, [int, long], basestring, basestring ]
+  types_addPilotTQReference = [ list, (int, long), basestring, basestring ]
   @classmethod
   def export_addPilotTQReference( cls, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
                                   gridType='DIRAC', requirements='Unknown', pilotStampDict={} ):
@@ -223,7 +221,7 @@ class WMSAdministratorHandler(RequestHandler):
     return self.__getGridJobOutput(pilotReference)
 
   ##############################################################################
-  types_getPilotInfo = [ [list, basestring] ]
+  types_getPilotInfo = [ (list, basestring) ]
   @classmethod
   def export_getPilotInfo( cls, pilotReference ):
     """ Get the info about a given pilot job reference
@@ -266,7 +264,7 @@ class WMSAdministratorHandler(RequestHandler):
                                 proxyUserDN = owner, proxyUserGroup = group )
 
   ##############################################################################
-  types_getJobPilotOutput = [ [basestring, int, long] ]
+  types_getJobPilotOutput = [ (basestring, int, long) ]
   def export_getJobPilotOutput( self, jobID ):
     """ Get the pilot job standard output and standard error files for the DIRAC
         job reference
@@ -403,7 +401,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilotMonitorWeb = [ dict, list, [int, long], [int, long] ]
+  types_getPilotMonitorWeb = [ dict, list, (int, long), [int, long] ]
   @classmethod
   def export_getPilotMonitorWeb( cls, selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the pilot information for a given page in the
@@ -424,7 +422,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilotSummaryWeb = [ dict, list, [int, long], [int, long] ]
+  types_getPilotSummaryWeb = [ dict, list, (int, long), [int, long] ]
   @classmethod
   def export_getPilotSummaryWeb( cls, selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the pilot information for a given page in the
@@ -435,7 +433,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getSiteSummaryWeb = [ dict, list, [int, long], [int, long] ]
+  types_getSiteSummaryWeb = [ dict, list, (int, long), (int, long) ]
   @classmethod
   def export_getSiteSummaryWeb( cls, selectDict, sortList, startItem, maxItems ):
     """ Get the summary of the jobs running on sites in a generic format
@@ -483,7 +481,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##############################################################################
-  types_getPilots = [ [basestring, int, long] ]
+  types_getPilots = [ (basestring, int, long) ]
   @classmethod
   def export_getPilots( cls, jobID ):
     """ Get pilot references and their states for :
@@ -516,7 +514,7 @@ class WMSAdministratorHandler(RequestHandler):
     return pilotDB.getPilotInfo(pilotID=pilots)
 
   ##############################################################################
-  types_killPilot = [ [ basestring, list ] ]
+  types_killPilot = [ ( basestring, list ) ]
   @classmethod
   def export_killPilot( cls, pilotRefList ):
     """ Kill the specified pilots
@@ -581,7 +579,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK()
 
   ##############################################################################
-  types_setJobForPilot = [ [basestring, int, long], basestring ]
+  types_setJobForPilot = [ (basestring, int, long), basestring ]
   @classmethod
   def export_setJobForPilot( cls, jobID, pilotRef, destination=None ):
     """ Report the DIRAC job ID which is executed by the given pilot job
@@ -700,7 +698,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK()
 
 ##############################################################################
-  types_clearPilots = [ [int, long], [int, long] ]
+  types_clearPilots = [ (int, long), (int, long) ]
   def export_clearPilots( self, interval = 30, aborted_interval = 7 ):
 
     result = pilotDB.clearPilots( interval, aborted_interval )
