@@ -199,11 +199,6 @@ class PilotAgentsDB( DB ):
 
     if not isinstance( pilotIDs, list):
       return S_ERROR( 'Input argument is not a List' )
-    
-    for pilotID in pilotIDs:
-      resp = self.deletePilotsLogging(pilotID)
-      if not resp['OK']:
-        pass
 
     failed = []
 

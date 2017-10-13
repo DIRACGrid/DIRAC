@@ -34,6 +34,7 @@ jobDB = None
 pilotDB = None
 taskQueueDB = None
 pilotsLoggingDB = None
+enablePilotsLogging = False
 
 FINAL_STATES = ['Done','Aborted','Cleared','Deleted','Stalled']
 
@@ -44,11 +45,19 @@ def initializeWMSAdministratorHandler( serviceInfo ):
   global jobDB
   global pilotDB
   global taskQueueDB
+  global enablePilotsLogging
+
+  result = gConfig.getValue('/Services/PilotsLogging/Enable')
+  if not result['OK']:
+    return result
+  if result['Value'] == 'Yes':
+    enablePilotsLogging = True
 
   jobDB = JobDB()
   pilotDB = PilotAgentsDB()
   taskQueueDB = TaskQueueDB()
-  pilotsLoggingDB = PilotsLoggingDB()
+  if enablePilotsLogging:
+    pilotsLoggingDB = PilotsLoggingDB()
   return S_OK()
 
 class WMSAdministratorHandler(RequestHandler):
@@ -691,7 +700,8 @@ class WMSAdministratorHandler(RequestHandler):
     result = pilotDB.deletePilots( pilotIDs )
     if not result['OK']:
       return result
-    result = pilotsLoggingDB.deletePilotsLogging( pilotIDs )
+    if enablePilotsLogging:
+      result = pilotsLoggingDB.deletePilotsLogging( pilotIDs )
     if not result['OK']:
       return result
 
@@ -704,8 +714,10 @@ class WMSAdministratorHandler(RequestHandler):
     result = pilotDB.clearPilots( interval, aborted_interval )
     if not result[ 'OK' ]:
       return result
-
-    pilotIDs = result[ 'Value' ]
-    result = pilotsLoggingDB.deletePilotsLogging( pilotIDs )
+    if enablePilotsLogging:
+      pilotIDs = result[ 'Value' ]
+      result = pilotsLoggingDB.deletePilotsLogging( pilotIDs )
+      if not result['OK']:
+        return result
 
     return S_OK()
