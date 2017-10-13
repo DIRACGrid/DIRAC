@@ -79,7 +79,7 @@ class PilotsLoggingDB( ):
       try:
         PilotsLogging.__table__.create( self.engine )
       except SQLAlchemyError as e:
-        return S_ERROR(e)
+        return S_ERROR( DErrno.ESQLA, e )
     else:
       gLogger.debug( "Table PilotsLogging exists" )
 
@@ -102,9 +102,9 @@ class PilotsLoggingDB( ):
     try:
       session.commit( )
     except SQLAlchemyError as e:
-      return S_ERROR("Failed to commit PilotsLogging: " + e.message)
       session.rollback( )
       session.close( )
+      return S_ERROR( DErrno.ESQLA, "Failed to commit PilotsLogging: " + e.message )
 
     return S_OK( )
 
@@ -143,9 +143,9 @@ class PilotsLoggingDB( ):
     try:
       session.commit( )
     except SQLAlchemyError as e:
-      return S_ERROR("Failed to commit: " + e.message)
       session.rollback( )
       session.close( )
+      return S_ERROR( DErrno.ESQLA, "Failed to commit: " + e.message )
 
     return S_OK( )
 
