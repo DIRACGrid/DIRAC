@@ -690,7 +690,7 @@ function diracRefreshCS(){
 function diracAddSite(){
   echo '==> [diracAddSite]'
 
-  dirac-admin-add-site DIRAC.Jenkins.org aNameWhatSoEver some.CE.org
+  dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch
 
 }
 
