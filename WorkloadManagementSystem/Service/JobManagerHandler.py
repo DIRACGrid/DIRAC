@@ -47,11 +47,7 @@ def initializeJobManagerHandler( serviceInfo ):
   gJobLoggingDB = JobLoggingDB()
   gtaskQueueDB = TaskQueueDB()
 
-  result = gConfig.getValue('/Services/PilotsLogging/Enable')
-  if not result['OK']:
-    return result
-  if result['Value'] == 'Yes':
-    enablePilotsLogging = True
+  enablePilotsLogging = gConfig.getValue('/Services/PilotsLogging/Enable', 'False').lower() in ('yes', 'true')
 
   if enablePilotsLogging:
     gPilotAgentsDB = PilotAgentsDB()

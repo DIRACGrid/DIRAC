@@ -48,11 +48,7 @@ def initializeWMSAdministratorHandler( serviceInfo ):
   global taskQueueDB
   global enablePilotsLogging
 
-  result = gConfig.getValue('/Services/PilotsLogging/Enable')
-  if not result['OK']:
-    return result
-  if result['Value'] == 'Yes':
-    enablePilotsLogging = True
+  enablePilotsLogging = gConfig.getValue('/Services/PilotsLogging/Enable', 'False').lower() in ('yes', 'true')
 
   jobDB = JobDB()
   pilotDB = PilotAgentsDB()
