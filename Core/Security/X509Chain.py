@@ -16,7 +16,7 @@ import GSI # XXX Still needed for some parts I haven't finished yet
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security.X509Certificate import X509Certificate
+from DIRAC.Core.Security.X509Certificate import X509Certificate, LIMITED_PROXY_OID
 
 random.seed()
 
