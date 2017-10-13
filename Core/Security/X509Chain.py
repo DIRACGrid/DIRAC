@@ -16,7 +16,7 @@ import GSI # XXX Still needed for some parts I haven't finished yet
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security.X509Certificate import X509Certificate
+from DIRAC.Core.Security.X509Certificate import X509Certificate, LIMITED_PROXY_OID
 
 random.seed()
 
@@ -195,7 +195,7 @@ random.seed()
         extStack.push(ext)
       elif rfcLimited:
         # this OID defines proxy as RFC Limited proxy
-        ext = M2Crypto.X509.new_extension( 'proxyCertInfo', 'critical, language:1.3.6.1.4.1.3536.1.1.1.9', critical = 1 )
+        ext = M2Crypto.X509.new_extension( 'proxyCertInfo', 'critical, language:%s' % (LIMITED_PROXY_OID), critical = 1 )
         extStack.push(ext)
     return extStack
 
@@ -530,7 +530,7 @@ random.seed()
         return 0
       if self.__isRFC == None:
         self.__isRFC = True
-      if contraint[0] == "1.3.6.1.4.1.3536.1.1.1.9":
+      if contraint[0] == LIMITED_PROXY_OID:
         limited = True
     else:
       if self.__isRFC is None:
