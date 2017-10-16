@@ -1,3 +1,9 @@
+[v6r17p34]
+
+*SMS
+FIX: StorageManagerClient - fix logic for JobScheduling executor when CheckOnlyTapeSEs is 
+     its default true and the lfn is only on a tapeSE
+
 [v6r17p33]
 
 *WMS
