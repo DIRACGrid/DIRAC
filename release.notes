@@ -1,7 +1,17 @@
-[v6r20-pre1]
+[v6r20-pre2]
+
+*Framework
+CHANGE: ComponentInstaller - remove the old web portal configuration data 
+        used during the installation
+
+*WMS
+NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
 
 *DMS
 NEW: FTS3Agent working only with the FTS3 service to replace the existing one
+
+*Docs
+FIX: Drop some old stuff, add link for FTS3 page
 
 [v6r19]
 
