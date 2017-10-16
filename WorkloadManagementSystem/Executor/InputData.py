@@ -133,12 +133,7 @@ class InputData( OptimizerExecutor ):
   def _resolveInputData( self, jobState, inputData ):
     """ This method checks the file catalog for replica information.
     """
-    lfns = []
-    for lfn in inputData:
-      if lfn[:4].lower() == "lfn:":
-        lfns.append( lfn[4:] )
-      else:
-        lfns.append( lfn )
+    lfns = inputData
 
     result = jobState.getManifest()
     if not result['OK']:

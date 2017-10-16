@@ -13,6 +13,23 @@ NEW: FTS3Agent working only with the FTS3 service to replace the existing one
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
 
+[v6r19p1]
+
+*Core
+FIX: ElasticSearchDB - certifi package was miscalled
+FIX: ElasticSearchDB - added debug messages for DB connection
+
+*Framework
+FIX: ComponentInstalle - handling correctly extensions of DBs found in sql files
+
+*WMS
+FIX: SudoComputingElement - prevent message overwriting application errors
+FIX: JobDB.getInputData now returns list of cleaned LFNs strings, possible "LFN:" 
+     prefix is removed
+
+*Interfaces
+FIX: Dirac.py - bring back treatment of files in working local submission directory
+
 [v6r19]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
@@ -159,6 +176,12 @@ NEW: Added client (scripts) system test
 CHANGE: Add to the TS system test, the test for transformations with meta-filters
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
+
+[v6r17p34]
+
+*SMS
+FIX: StorageManagerClient - fix logic for JobScheduling executor when CheckOnlyTapeSEs is 
+     its default true and the lfn is only on a tapeSE
 
 [v6r17p33]
 

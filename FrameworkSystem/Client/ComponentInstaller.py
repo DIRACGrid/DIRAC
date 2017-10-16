@@ -2482,7 +2482,17 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
     gLogger.notice( 'Installing', dbName )
 
-    dbFile = glob.glob( os.path.join( rootPath, '*', '*', 'DB', '%s.sql' % dbName ) )
+    dbFile = glob.glob(os.path.join( rootPath, 'DIRAC', '*', 'DB', '%s.sql' % dbName ))
+    # is there by chance an extension of it?
+    for extension in CSGlobals.getCSExtensions():
+      dbFileInExtension = glob.glob( os.path.join( rootPath,
+                                                   '%sDIRAC' % extension,
+                                                   '*',
+                                                   'DB',
+                                                   '%s.sql' % dbName ) )
+      if dbFileInExtension:
+        dbFile = dbFileInExtension
+        break
 
     if not dbFile:
       error = 'Database %s not found' % dbName
@@ -2492,6 +2502,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       return S_ERROR( error )
 
     dbFile = dbFile[0]
+    gLogger.debug("Installing %s" %dbFile)
 
     # just check
     result = self.execMySQL( 'SHOW STATUS' )

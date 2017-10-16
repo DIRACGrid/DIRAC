@@ -146,7 +146,7 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
       diskIsOK = checkOnlyTapeSEs or ( lfn in onlineLFNs )
       if diskIsOK and diskSE:
         onlineLFNs.setdefault( lfn, [] ).append( se )
-      elif not diskIsOK:
+      elif not diskIsOK or ( tapeSE and ( lfn not in onlineLFNs ) ):
         filesToCheck.append( lfn )
     if not filesToCheck:
       continue
