@@ -162,6 +162,12 @@ CHANGE: Add to the TS system test, the test for transformations with meta-filter
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
 
+[v6r17p34]
+
+*SMS
+FIX: StorageManagerClient - fix logic for JobScheduling executor when CheckOnlyTapeSEs is 
+     its default true and the lfn is only on a tapeSE
+
 [v6r17p33]
 
 *WMS
