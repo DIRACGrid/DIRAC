@@ -20,19 +20,29 @@ class TestPilotsLogging( unittest.TestCase ):
 
 class PilotsLogging( TestPilotsLogging ):
   def test_PilotsLoggingAddGetDelete( self ):
-    resp = self.pilotsLoggingClient.addPilotsLogging('11111111-1111-1111-1111-111111111111', 'timestamp', 'test', 'phase', 'status', 'messageContent')
+    resp = self.pilotsLoggingClient.addPilotsLogging('11111111-1111-1111-1111-111111111111', 'timestamp1', 'test', 'phase', 'status', 'messageContent')
+    self.assertTrue(resp['OK'], 'Failed to add PilotsLogging')
+    resp = self.pilotsLoggingClient.addPilotsLogging('11111111-1111-1111-1111-111111111111', 'timestamp2', 'test2', 'phase2', 'status2', 'messageContent2')
     self.assertTrue(resp['OK'], 'Failed to add PilotsLogging')
     resp = self.pilotsLoggingClient.getPilotsLogging('11111111-1111-1111-1111-111111111111')
     self.assertTrue(resp['OK'], 'Failed to get PilotsLogging')
     test_sample = {
                    'pilotUUID': '11111111-1111-1111-1111-111111111111',
-                   'timestamp': 'timestamp',
+                   'timestamp': 'timestamp1',
                    'source': 'test',
                    'phase': 'phase',
                    'status': 'status',
                    'messageContent': 'messageContent',
                    }
-    self.assertEqual(resp['Value'], [ test_sample ], 'Wrong data comes out of Service')
+    test_sample2 = {
+                   'pilotUUID': '11111111-1111-1111-1111-111111111111',
+                   'timestamp': 'timestamp2',
+                   'source': 'test2',
+                   'phase': 'phase2',
+                   'status': 'status2',
+                   'messageContent': 'messageContent2',
+                   }
+    self.assertEqual(resp['Value'], [ test_sample, test_sample2 ], 'Wrong data comes out of Service')
     resp = self.pilotsLoggingClient.deletePilotsLogging('11111111-1111-1111-1111-111111111111')
     self.assertTrue(resp['OK'], 'Failed to delete PilotsLogging')
     resp = self.pilotsLoggingClient.getPilotsLogging('11111111-1111-1111-1111-111111111111')
