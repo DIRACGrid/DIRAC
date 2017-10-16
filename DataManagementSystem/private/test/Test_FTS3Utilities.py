@@ -12,8 +12,11 @@ from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3JSONDecoder, \
                                                              FTS3Serializable, \
                                                              groupFilesByTarget, \
                                                              generatePossibleTransfersBySources, \
-                                                             selectUniqueSourceforTransfers
+                                                             selectUniqueSourceforTransfers, \
+                                                             FTS3ServerPolicy
 
+
+from DIRAC import S_OK
 
 import json
 
@@ -172,9 +175,50 @@ class TestFileGrouping( unittest.TestCase ):
     self.assert_( self.f3 in uniqueSources['Src4'] )
 
 
+fakeFTS3Server = "https://fts-fake.cern.ch:8446"
 
+def mock__failoverServerPolicy(_attempt):
+  return fakeFTS3Server
+
+def mock__randomServerPolicy(_attempt):
+  return fakeFTS3Server
+
+def mock__sequenceServerPolicy(_attempt):
+  return fakeFTS3Server
+
+def mock__getFTSServerStatus(ftsServer):
+  return S_OK( ftsServer )
+
+class TestFTS3ServerPolicy ( unittest.TestCase ):
+  """ Testing FTS3 ServerPolicy selection """
+
+  def setUp(self):
+    self.fakeServerList = ["server 1", "server 2", "server 3"]
+
+  @mock.patch( 'DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._getFTSServerStatus', side_effect = mock__getFTSServerStatus )
+  @mock.patch( 'DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._sequenceServerPolicy', side_effect = mock__sequenceServerPolicy )
+  @mock.patch( 'DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._randomServerPolicy', side_effect = mock__randomServerPolicy )
+  @mock.patch( 'DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._failoverServerPolicy', side_effect = mock__failoverServerPolicy )
+  def testCorrectServerPolicyIsUsed( self, mockFailoverFunc, mockRandomFunc, mockSequenceFunc, mockFTSServerStatus ):
+    obj = FTS3ServerPolicy(self.fakeServerList, "Sequence")
+    obj.chooseFTS3Server()
+    self.assertTrue(mockSequenceFunc.called)
+
+    obj = FTS3ServerPolicy(self.fakeServerList, "Random")
+    obj.chooseFTS3Server()
+    self.assertTrue(mockRandomFunc.called)
+
+    obj = FTS3ServerPolicy(self.fakeServerList, "Failover")
+    obj.chooseFTS3Server()
+    self.assertTrue(mockFailoverFunc.called)
+
+    # random policy should be selected for an invalid policy
+    obj = FTS3ServerPolicy(self.fakeServerList, "InvalidPolicy")
+    obj.chooseFTS3Server()
+    self.assertTrue(mockRandomFunc.called)
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestFTS3Serialization )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestFileGrouping ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestFTS3ServerPolicy ) )
   unittest.TextTestRunner( verbosity = 2 ).run( suite )

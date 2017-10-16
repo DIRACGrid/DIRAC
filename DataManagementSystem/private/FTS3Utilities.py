@@ -281,15 +281,15 @@ class FTS3ServerPolicy( object ):
 
 
 
-  def _failoverServerPolicy( self, attempt ):
+  def _failoverServerPolicy( self, _attempt ):
     """
        Returns always the server at a given position (normally the first one)
 
        :param attempt: position of the server in the list
     """
-    if attempt >= len( self._serverList ):
+    if _attempt >= len( self._serverList ):
       raise Exception( "FTS3ServerPolicy.__failoverServerPolicy: attempt to reach non existing server index" )
-    return self._serverList[attempt]
+    return self._serverList[_attempt]
 
   def _sequenceServerPolicy( self, _attempt ):
     """
@@ -336,7 +336,7 @@ class FTS3ServerPolicy( object ):
     attempt = 0
 
     while not fts3Server and attempt < self._maxAttempts:
-      fts3Server = self._failoverServerPolicy( attempt = attempt )
+      fts3Server = self._policyMethod( _attempt = attempt )
 
       res = self._getFTSServerStatus( fts3Server )
       if not res['OK']:
