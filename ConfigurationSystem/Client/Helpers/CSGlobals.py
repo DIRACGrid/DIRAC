@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    CSGlobals.py
 # Author :  Ricardo Graciani
 ########################################################################
@@ -17,14 +16,14 @@ class Extensions( object ):
   def __init__( self ):
     self.__modules = {}
     self.__orderedExtNames = []
-    self.__csExt = False
+    self.__csExt = []
 
   def __load( self ):
     if self.__orderedExtNames:
       return
     for extName in self.getCSExtensions() + [ '' ]:
       try:
-        if not extName.endswith( "DIRAC" ): 
+        if not extName.endswith( "DIRAC" ):
           extension = '%sDIRAC' % extName
         res = imp.find_module( extension )
         if res[0]:
@@ -90,6 +89,3 @@ def skipCACheck():
 def useServerCertificate():
   from DIRAC import gConfig
   return gConfig.getValue( "/DIRAC/Security/UseServerCertificate", "false" ).lower() in ( "y", "yes", "true" )
-
-
-

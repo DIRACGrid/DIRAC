@@ -105,11 +105,10 @@ class Script( ModuleBase ):
     if os.path.exists( self.applicationLog ):
       self.log.verbose( 'Removing existing %s' % self.applicationLog )
       os.remove( self.applicationLog )
-    fopen = open( '%s/%s' % ( os.getcwd(), self.applicationLog ), 'w' )
-    fopen.write( "<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % ( self.executable, stdout ) )
-    if stderr:
-      fopen.write( "<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % ( self.executable, stderr ) )
-    fopen.close()
+    with open( '%s/%s' % ( os.getcwd(), self.applicationLog ), 'w' ) as fopen:
+      fopen.write( "<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % ( self.executable, stdout ) )
+      if stderr:
+        fopen.write( "<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % ( self.executable, stderr ) )
     self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:
