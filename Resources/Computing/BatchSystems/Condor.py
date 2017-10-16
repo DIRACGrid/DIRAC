@@ -78,25 +78,33 @@ class Condor( object ):
     nJobs = kwargs.get( 'NJobs' )
     if not nJobs:
       nJobs = 1
+    numberOfProcessors = kwargs.get( 'NumberOfProcessors' )
+    wholeNode = kwargs.get( 'WholeNode' )
     outputDir = kwargs['OutputDir']
     executable = kwargs['Executable']
     submitOptions = kwargs['SubmitOptions']
+
+    if wholeNode:
+      requirements = '+RequiresWholeMachine=True\n Requirements = ( CAN_RUN_WHOLE_MACHINE ) && ( TARGET.OpSys == "LINUX" )'
+    else:
+      requirements = 'Requirements = TARGET.OpSys == "LINUX"'
 
     jdlFile = tempfile.NamedTemporaryFile( dir=outputDir, suffix=".jdl" )
     jdlFile.write("""
     Executable = %s
     Universe = vanilla
-    Requirements   = OpSys == "LINUX"
+    %s
     Initialdir = %s
     Output = $(Cluster).$(Process).out
     Error = $(Cluster).$(Process).err
     Log = test.log
     Environment = CONDOR_JOBID=$(Cluster).$(Process)
     Getenv = False
-    
+    request_cpus = %s
+
     Queue %s
 
-    """ % ( executable, outputDir, nJobs )
+    """ % ( executable, requirements, outputDir, numberOfProcessors, nJobs )
     )
 
     jdlFile.flush()

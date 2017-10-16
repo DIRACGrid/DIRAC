@@ -41,6 +41,8 @@ class SLURM( object ):
     queue = kwargs['Queue']
     submitOptions = kwargs['SubmitOptions']
     executable = kwargs['Executable']
+    numberOfProcessors = kwargs['NumberOfProcessors']
+    
 
     outFile = os.path.join( outputDir , "%jobid%" )
     errFile = os.path.join( errorDir , "%jobid%" )
@@ -51,7 +53,7 @@ class SLURM( object ):
     jobIDs = []
     for _i in range( nJobs ):
       jid = ''
-      cmd = "sbatch -o %s/%%j.out --partition=%s %s %s" % ( outputDir, queue, submitOptions, executable )
+      cmd = "sbatch -o %s/%%j.out --partition=%s -n %s %s %s " % ( outputDir, queue, numberOfProcessors, submitOptions, executable )
       status, output = commands.getstatusoutput( cmd )
 
       if status != 0 or not output:

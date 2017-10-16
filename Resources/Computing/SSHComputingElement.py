@@ -474,11 +474,16 @@ class SSHComputingElement( ComputingElement ):
     for _i in range( numberOfJobs ):
       jobStamps.append( makeGuid()[:8] )
 
+    numberOfProcessors = self.ceParameters['NumberOfProcessors']
+    wholeNode = self.ceParameters['WholeNode']
+
     # Collect command options
     commandOptions = { 'Executable': submitFile,
                        'NJobs': numberOfJobs,
                        'SubmitOptions': self.submitOptions,
-                       'JobStamps': jobStamps }
+                       'JobStamps': jobStamps,
+                       'WholeNode': wholeNode,
+                       'NumberOfProcessors': numberOfProcessors }
 
     resultCommand = self.__executeHostCommand( 'submitJob', commandOptions, ssh = ssh, host = host )
     if not resultCommand['OK']:
