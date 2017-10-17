@@ -62,8 +62,7 @@ class ElementStatusBase(object):
   status = Column( 'Status', String( 8 ), nullable = False, server_default = '' )
   reason = Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' )
   dateeffective = Column( 'DateEffective', DateTime, nullable = False )
-  tokenexpiration = Column( 'TokenExpiration', String( 255 ), nullable = False ,
-                            server_default = '9999-12-31 23:59:59' )
+  tokenexpiration = Column( 'TokenExpiration', DateTime, nullable = False , server_default = '9999-12-31 23:59:59' )
   elementtype = Column( 'ElementType', String( 32 ), nullable = False, server_default = '' )
   lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False , server_default = '1000-01-01 00:00:00' )
   tokenowner = Column( 'TokenOwner', String( 16 ), nullable = False , server_default = 'rs_svc')
@@ -76,7 +75,8 @@ class ElementStatusBase(object):
     :type arguments: dict
     """
 
-    utcnow = self.lastchecktime if self.lastchecktime else datetime.datetime.utcnow().replace(microsecond = 0)
+    utcnow = self.lastchecktime.replace(microsecond = 0) if self.lastchecktime\
+             else datetime.datetime.utcnow().replace(microsecond = 0)
 
     self.name = dictionary.get( 'Name', self.name )
     self.statustype = dictionary.get( 'StatusType', self.statustype )
@@ -87,6 +87,11 @@ class ElementStatusBase(object):
     self.elementtype = dictionary.get( 'ElementType', self.elementtype )
     self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
     self.tokenowner = dictionary.get( 'TokenOwner', self.tokenowner )
+
+    if self.dateeffective:
+      self.dateeffective = self.dateeffective.replace(microsecond = 0)
+    if self.tokenexpiration:
+      self.tokenexpiration = self.tokenexpiration.replace(microsecond = 0)
 
   def toList(self):
     """ Simply returns a list of column values
@@ -107,6 +112,13 @@ class ElementStatusBaseWithID(ElementStatusBase):
   id = Column( 'ID', BigInteger, nullable = False, autoincrement= True, primary_key = True )
   name = Column( 'Name', String( 64 ), nullable = False )
   statustype = Column( 'StatusType', String( 128 ), nullable = False, server_default = 'all' )
+  status = Column( 'Status', String( 8 ), nullable = False, server_default = '' )
+  reason = Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' )
+  dateeffective = Column( 'DateEffective', DateTime, nullable = False )
+  tokenexpiration = Column( 'TokenExpiration', DateTime, nullable = False , server_default = '9999-12-31 23:59:59' )
+  elementtype = Column( 'ElementType', String( 32 ), nullable = False, server_default = '' )
+  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False , server_default = '1000-01-01 00:00:00' )
+  tokenowner = Column( 'TokenOwner', String( 16 ), nullable = False , server_default = 'rs_svc')
 
   def fromDict( self, dictionary ):
     """
@@ -570,7 +582,7 @@ class ResourceStatusDB( object ):
       session.commit()
 
       # and since we modified, we now insert a new line in the log table
-      return self.insert(table.strip('Status') + 'Log', params)
+      return self.insert(table.replace('Status', '') + 'Log', params)
       # The line inserted will maybe become a History line thanks to the SummarizeLogsAgent
 
     except exc.SQLAlchemyError as e:

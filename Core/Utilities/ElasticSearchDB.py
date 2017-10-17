@@ -3,10 +3,13 @@ This class a wrapper around elasticsearch-py. It is used to query
 Elasticsearch database.
 
 """
-import certifi
+
+__RCSID__ = "$Id$"
 
 from datetime import datetime
 from datetime import timedelta
+
+import certifi
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q, A
@@ -16,8 +19,7 @@ from elasticsearch.helpers import BulkIndexError, bulk
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time, DErrno
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
-    
-__RCSID__ = "$Id$"
+
 
 class ElasticSearchDB( object ):
 
@@ -46,24 +48,28 @@ class ElasticSearchDB( object ):
     :param str indexPrefix: it is the indexPrefix used to get all indexes
     :param bool useSSL: We can disable using secure connection. By default we use secure connection.
     """
-    
+
     self.__indexPrefix = indexPrefix
     self._connected = False
     if user and password:
+      gLogger.debug("Specified username and password")
       self.__url = "https://%s:%s@%s:%d" % ( user, password, host, port )
     else:
+      gLogger.debug("Username and password not specified")
       self.__url = "%s:%d" % ( host, port )
-    
+
+    gLogger.verbose("Connecting to %s:%s, useSSL = %s" %(host, port, useSSL))
+
     if useSSL:
       bd = BundleDeliveryClient()
       retVal = bd.getCAs()
       casFile = None
       if not retVal['OK']:
         gLogger.error( "CAs file does not exists:", retVal['Message'] )
-        casFile = certifi.certifi.where()
+        casFile = certifi.where()
       else:
         casFile = retVal['Value']
-        
+
       self.__client = Elasticsearch( self.__url,
                                      timeout = self.__timeout,
                                      use_ssl = True,
@@ -71,10 +77,10 @@ class ElasticSearchDB( object ):
                                      ca_certs = casFile )
     else:
       self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
-      
+
 
     gLogger.verbose( "ElasticSearchDB URL: %s" % self.__url )
-    
+
     self.__tryToConnect()
 
   def getIndexPrefix( self ):
@@ -185,7 +191,8 @@ class ElasticSearchDB( object ):
     """
     :param str indexPrefix: it is the index name.
     :param dict mapping: the configuration of the index.
-    :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
+    :param str period: We can specify, which kind of indexes will be created.
+                       Currently only daily and monthly indexes are supported.
 
     """
     result = None
@@ -246,7 +253,8 @@ class ElasticSearchDB( object ):
     :param str doc_type: the type of the document
     :param dict data: contains a list of dictionary
     :paran dict mapping: the mapping used by elasticsearch
-    :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
+    :param str period: We can specify, which kind of indexes will be created.
+                       Currently only daily and monthly indexes are supported.
     """
     gLogger.info( "%d records will be insert to %s" % ( len( data ), doc_type ) )
     if mapping is None:
@@ -270,7 +278,8 @@ class ElasticSearchDB( object ):
       if 'timestamp' not in row:
         gLogger.warn( "timestamp is not given! Note: the actual time is used!" )
 
-      timestamp = row.get( 'timestamp', int( Time.toEpoch() ) )  # if the timestamp is not provided, we use the current utc time.
+      # if the timestamp is not provided, we use the current utc time.
+      timestamp = row.get( 'timestamp', int( Time.toEpoch() ) )
       try:
         if isinstance( timestamp, datetime ):
           body['_source']['timestamp'] = int( timestamp.strftime( '%s' ) ) * 1000
@@ -326,8 +335,8 @@ class ElasticSearchDB( object ):
                          'terms',
                          field = key,
                          size = self.RESULT_SIZE ).metric( key,
-                                            'cardinality',
-                                            field = key )
+                                                           'cardinality',
+                                                           field = key )
 
     try:
       query = query.extra( size = self.RESULT_SIZE )  # do not need the raw data.
@@ -342,7 +351,7 @@ class ElasticSearchDB( object ):
     del query
     gLogger.debug( "Nb of unique rows retrieved", len( values ) )
     return S_OK( values )
-  
+
   def pingDB ( self ):
     """
     Try to connect to the database
@@ -354,18 +363,19 @@ class ElasticSearchDB( object ):
     except ConnectionError as e:
       gLogger.error( "Cannot connect to the db", repr( e ) )
     return S_OK( connected )
-  
+
 def generateFullIndexName( indexName, period = None ):
   """
   Given an index prefix we create the actual index name. Each day an index is created.
   :param str indexName: it is the name of the index
-  :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
+  :param str period: We can specify, which kind of indexes will be created.
+                     Currently only daily and monthly indexes are supported.
   """
-  
+
   if period is None:
     gLogger.warn( "Daily indexes are used, because the period is not provided!" )
     period = 'day'
-    
+
   today = datetime.today().strftime( "%Y-%m-%d" )
   index = ''
   if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
@@ -376,5 +386,5 @@ def generateFullIndexName( indexName, period = None ):
   elif period.lower() == 'month':
     month = datetime.today().strftime( "%Y-%m" )
     index = "%s-%s" % ( indexName, month )
-    
+
   return index

@@ -56,12 +56,15 @@ class SystemAdministratorHandler( RequestHandler ):
       global gMonitoringReporter
       gMonitoringReporter = MonitoringReporter( monitoringType = "ComponentMonitoring" )
       gThreadScheduler.addPeriodicTask( 120, cls.__storeProfiling )
-    
+
     keepSoftwareVersions = cls.srv_getCSOption( 'KeepSoftwareVersions', 0 )
     if keepSoftwareVersions > 0:
       gLogger.info( "The last %s software version will be kept and the rest will be deleted!" % keepSoftwareVersions )
-      gThreadScheduler.addPeriodicTask( 600, cls.__deleteOldSoftware, ( keepSoftwareVersions, ), executions = 2 ) #it is enough to try 2 times
-    
+      gThreadScheduler.addPeriodicTask( 600,
+                                        cls.__deleteOldSoftware,
+                                        ( keepSoftwareVersions, ),
+                                        executions = 2 ) #it is enough to try 2 times
+
     return S_OK( 'Initialization went well' )
 
   types_getInfo = [ ]
@@ -645,7 +648,8 @@ class SystemAdministratorHandler( RequestHandler ):
     # Look for the component in extensions
     for extension in extensions:
       try:
-        importedModule = importlib.import_module( '%s.%sSystem.%s.%s' % ( extension, system, cType.capitalize(), module ) )
+        importedModule = importlib.import_module( '%s.%sSystem.%s.%s' % ( extension, system,
+                                                                          cType.capitalize(), module ) )
         return S_OK( importedModule.__doc__ )
       except Exception as _e:
         pass
@@ -683,7 +687,8 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Retrieves and stores into ElasticSearch profiling information about the components on the host
     """
-    result = gComponentInstaller.getStartupComponentStatus( [] ) #TODO: if we have a component which are not running, we will not ptofile the running processes
+    #TODO: if we have a component which are not running, we will not ptofile the running processes
+    result = gComponentInstaller.getStartupComponentStatus( [] )
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
       return S_ERROR( result[ 'Message' ] )
@@ -717,7 +722,7 @@ class SystemAdministratorHandler( RequestHandler ):
             return result
     gMonitoringReporter.commit()
     return S_OK( 'Profiling information logged correctly' )
-  
+
   @staticmethod
   def __deleteOldSoftware( keepLast ):
     """
@@ -725,10 +730,10 @@ class SystemAdministratorHandler( RequestHandler ):
     
     :param int keepLast: the number of the software version, what we keep
     """
-    
+
     versionsDirectory = os.path.split( DIRAC.rootPath )[0]
     if versionsDirectory.endswith( 'versions' ):  # make sure we are not deleting from a wrong directory.
-      softwareDirs = os.listdir( versionsDirectory ) 
+      softwareDirs = os.listdir( versionsDirectory )
       softwareDirs.sort( key = LooseVersion, reverse = False )
       try:
         for directoryName in softwareDirs[:-1 * int( keepLast )]:
@@ -739,4 +744,3 @@ class SystemAdministratorHandler( RequestHandler ):
         gLogger.error( "Can not delete old DIRAC versions from the file system", repr( e ) )
     else:
       gLogger.error( "The DIRAC.rootPath is not correct: %s" % versionsDirectory )
-    

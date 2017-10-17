@@ -153,21 +153,10 @@ class TransformationManagerHandlerBase( RequestHandler ):
       return S_OK( {} )
 
     statusSample = dictOfNewFilesStatus.values()[0]
-    if isinstance( statusSample, basestring ):
-      # FIXME: kept for backward compatibility with old clients... Remove when no longer needed
-      # This comes from an old client, set the error flag but we must get the current status first
-      newStatusForFileIDs = {}
-      res = database.getFilesForTransformation( {'TransformationID': transName, 'FileID': dictOfNewFilesStatus.keys()} )
-      if not res['OK']:
-        return res
-      currentStatus = dict( ( fileDict['FileID'], fileDict['Status'] ) for fileDict in res['Value'] )
-      for fileID, status in dictOfNewFilesStatus.iteritems():
-        newStatus = dictOfNewFilesStatus[fileID]
-        newStatusForFileIDs[fileID] = ( newStatus, self._wasFileInError( newStatus, currentStatus[fileID] ) )
-    elif isinstance( statusSample, ( list, tuple ) ) and len( statusSample ) == 2:
+    if isinstance( statusSample, ( list, tuple ) ) and len( statusSample ) == 2:
       newStatusForFileIDs = dictOfNewFilesStatus
     else:
-      return S_ERROR( "Status field should be a string or two values" )
+      return S_ERROR( "Status field should be a list or tuple with two values" )
 
     res = database._getConnectionTransID( False, transName )
     if not res['OK']:
@@ -409,13 +398,13 @@ class TransformationManagerHandlerBase( RequestHandler ):
   types_getTabbedSummaryWeb = [basestring, dict, dict, list, int, int]
   def export_getTabbedSummaryWeb( self, table, requestedTables, selectDict, sortList, startItem, maxItems ):
     tableDestinations = {  'Transformations'      : { 'TransformationFiles' : ['TransformationID'],
-                                                      'TransformationTasks' : ['TransformationID']           },
+                           'TransformationTasks' : ['TransformationID'] },
 
                            'TransformationFiles'  : { 'Transformations'     : ['TransformationID'],
-                                                      'TransformationTasks' : ['TransformationID', 'TaskID']  },
+                           'TransformationTasks' : ['TransformationID', 'TaskID'] },
 
                            'TransformationTasks'  : { 'Transformations'     : ['TransformationID'],
-                                                      'TransformationFiles' : ['TransformationID', 'TaskID']  } }
+                           'TransformationFiles' : ['TransformationID', 'TaskID'] } }
 
     tableSelections = {    'Transformations'      : ['TransformationID', 'AgentType', 'Type', 'TransformationGroup',
                                                      'Plugin'],
@@ -584,7 +573,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
     # As this list is a reference to the list in the DB, we cannot extend it, therefore copy it
     resultDict['ParameterNames'] = list( res['ParameterNames'] )
     # Add the job states to the ParameterNames entry
-    taskStateNames = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled',
+    taskStateNames = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed',
+                      'Waiting', 'Done', 'Completed', 'Stalled',
                       'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
     resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
     # Add the file states to the ParameterNames entry

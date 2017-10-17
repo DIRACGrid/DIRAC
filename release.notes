@@ -1,4 +1,36 @@
-[v6r19-pre12]
+[v6r20-pre2]
+
+*Framework
+CHANGE: ComponentInstaller - remove the old web portal configuration data 
+        used during the installation
+
+*WMS
+NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
+
+*DMS
+NEW: FTS3Agent working only with the FTS3 service to replace the existing one
+
+*Docs
+FIX: Drop some old stuff, add link for FTS3 page
+
+[v6r19p1]
+
+*Core
+FIX: ElasticSearchDB - certifi package was miscalled
+FIX: ElasticSearchDB - added debug messages for DB connection
+
+*Framework
+FIX: ComponentInstalle - handling correctly extensions of DBs found in sql files
+
+*WMS
+FIX: SudoComputingElement - prevent message overwriting application errors
+FIX: JobDB.getInputData now returns list of cleaned LFNs strings, possible "LFN:" 
+     prefix is removed
+
+*Interfaces
+FIX: Dirac.py - bring back treatment of files in working local submission directory
+
+[v6r19]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -24,6 +56,8 @@ CHANGE: can now send mails to multiple recipients using the NotificationClient
 CHANGE: Make the new logging system thread-safe
 FIX: Adapting query to MySLQ 5.7 "GROUP BY" clause
 FIX: TopErrorMessagesReporter - more precise selection to please stricter versions of MySQL
+CHANGE: ProxyGeneration - make RFC proxies by default, added -L/--legacy flag to dirac-proxy-init
+        to force generation of no-RFC proxies
 
 *Core
 FIX: dirac-install - allow to use local md5 files
@@ -143,6 +177,23 @@ CHANGE: Add to the TS system test, the test for transformations with meta-filter
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
 
+[v6r17p34]
+
+*SMS
+FIX: StorageManagerClient - fix logic for JobScheduling executor when CheckOnlyTapeSEs is 
+     its default true and the lfn is only on a tapeSE
+
+[v6r17p33]
+
+*WMS
+FIX: StalledJobAgent - if no PilotReference found in jobs parameters, do as if there would be 
+     no pilot information, i.e. set Stalled job Failed immediately
+CHANGE: DownloadInputData - job parameters report not only successful downloads but also failed ones
+FIX: JobDB - back port - set CPUTime to 0 if not defined at all for the given job 
+FIX: JobDB - back port - use default CPUTime in the job description when rescheduling jobs
+
+*Resources
+FIX: ARCComputingElement - fix job submission issue due to timeout for newer lcg-bundles
 
 [v6r17p32]
 

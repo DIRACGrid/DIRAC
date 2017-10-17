@@ -127,9 +127,9 @@ class MonitoringClient( object ):
       self.cfgSection = PathFinder.getAgentSection( self.sourceDict[ 'componentName' ] )
       self.setComponentLocation( Network.getFQDN() )
     elif self.sourceDict[ 'componentType' ] == self.COMPONENT_WEB:
-      self.cfgSection = "/Website"
+      self.cfgSection = "/WebApp"
       self.setComponentLocation( 'http://%s' % Network.getFQDN() )
-      self.setComponentName( 'Web' )
+      self.setComponentName( 'WebApp' )
     elif self.sourceDict[ 'componentType' ] == self.COMPONENT_SCRIPT:
       self.cfgSection = "/Script"
     else:
