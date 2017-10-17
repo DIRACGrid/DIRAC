@@ -58,6 +58,7 @@ class Params:
     self.externalsLocation = ""
     self.makeJobs = 1
     self.globalDefaults = ""
+    self.extjspath = None
 
   def setReleases( self, optionValue ):
     self.releasesToBuild = List.fromChar( optionValue )
@@ -106,6 +107,10 @@ class Params:
   def setGlobalDefaults( self, value ):
     self.globalDefaults = value
     return S_OK()
+  
+  def setExtJsPath( self, opVal ):
+    self.extjspath = opVal
+    return S_OK()
 
   def registerSwitches( self ):
     Script.registerSwitch( "r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
@@ -125,6 +130,7 @@ class Params:
     Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
     Script.registerSwitch( 'M:', 'defaultsURL=', 'Where to retrieve the global defaults from',
                            cliParams.setGlobalDefaults )
+    Script.registerSwitch( "P:", "extjspath=", "directory of the extjs library", cliParams.setExtJsPath )
 
     Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                          '\nUsage:',
@@ -186,6 +192,9 @@ class DistributionMaker:
           if webData:
             dctArgs.append( "-e '%s'" % webData.get("Version") )
             dctArgs.append( "-E '%s'" % webData.get("sourceUrl") )
+          
+          if self.cliParams.extjspath:
+            dctArgs.append( "-P '%s'" % self.cliParams.extjspath )
             
       #Source
       result = self.relConf.getModSource( releaseVersion, modName )

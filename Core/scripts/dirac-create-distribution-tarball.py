@@ -41,6 +41,7 @@ class TarModuleCreator( object ):
       self.outRelNotes = False
       self.extensionVersion = None
       self.extensionSource = None
+      self.extjspath = None
 
     def isOK( self ):
       if not self.version:
@@ -101,6 +102,10 @@ class TarModuleCreator( object ):
       self.extensionSource = opVal
       return S_OK()
     
+    def setExtJsPath( self, opVal ):
+      self.extjspath = opVal
+      return S_OK()
+  
   def __init__( self, params ):
     self.params = params
 
@@ -144,20 +149,33 @@ class TarModuleCreator( object ):
     gLogger.info( "Checking out using %s method" % self.params.vcs )
 
     if self.params.vcs == "file":
-      return self.__checkoutFromFile()
+      return self.__checkoutFromFile( moduleName, sourceURL )
     elif self.params.vcs == "cvs":
-      return self.__checkoutFromCVS()
+      return self.__checkoutFromCVS( moduleName, sourceURL )
     elif self.params.vcs == "svn":
-      return self.__checkoutFromSVN()
+      return self.__checkoutFromSVN( moduleName, sourceURL, tagVersion )
     elif self.params.vcs == "hg":
-      return self.__checkoutFromHg()
+      return self.__checkoutFromHg( moduleName, sourceURL )
     elif self.params.vcs == "git":
       return self.__checkoutFromGit( moduleName, sourceURL, tagVersion )
 
     return S_ERROR( "OOPS. Unknown VCS %s!" % self.params.vcs )
 
-  def __checkoutFromFile( self ):
-    sourceURL = self.params.sourceURL
+  def __checkoutFromFile( self, moduleName = None, sourceURL = None ):
+    """
+    This method checkout a given tag from a file 
+    Note: we can checkout any project form a file 
+    
+    :param str moduleName: The name of the Module
+    :param str sourceURL: The code repository
+        
+    """
+    if not moduleName:
+      moduleName = self.params.name
+    
+    if not sourceURL:
+      sourceURL = self.params.sourceURL   
+      
     if sourceURL.find( "file://" ) == 0:
       sourceURL = sourceURL[ 7: ]
     sourceURL = os.path.realpath( sourceURL )
@@ -165,19 +183,34 @@ class TarModuleCreator( object ):
       pyVer = sys.version_info
       if pyVer[0] == 2 and pyVer[1] < 6:
         shutil.copytree( sourceURL,
-                         os.path.join( self.params.destination, self.params.name ),
+                         os.path.join( self.params.destination, moduleName ),
                          symlinks = True )
       else:
         shutil.copytree( sourceURL,
-                         os.path.join( self.params.destination, self.params.name ),
+                         os.path.join( self.params.destination, moduleName ),
                          symlinks = True,
                          ignore = shutil.ignore_patterns( '.svn', '.git', '.hg', '*.pyc', '*.pyo', 'CVS' ) )
     except Exception as e:
       return S_ERROR( "Could not copy data from source URL: %s" % str( e ) )
     return S_OK()
 
-  def __checkoutFromCVS( self ):
-    cmd = "cvs export -d '%s' '%s'" % ( self.params.sourceURL, os.path.join( self.params.destination, self.params.name ) )
+  def __checkoutFromCVS( self, moduleName = None, sourceURL = None ):
+    """
+    This method checkout a given tag from a SVN repository. 
+    Note: we can checkout any project form a SVN repository 
+    
+    :param str moduleName: The name of the Module
+    :param str sourceURL: The code repository
+    :param str tagVersion: the tag for example: v4r3p6
+    
+    """
+    if not moduleName:
+      moduleName = self.params.name
+    
+    if not sourceURL:
+      sourceURL = self.params.sourceURL   
+      
+    cmd = "cvs export -d '%s' '%s'" % ( sourceURL, os.path.join( self.params.destination, moduleName ) )
     gLogger.verbose( "Executing: %s" % cmd )
     result = Subprocess.systemCall( 900, shlex.split(cmd) )
     if not result[ 'OK' ]:
@@ -187,9 +220,28 @@ class TarModuleCreator( object ):
       return S_ERROR( "Error while retrieving sources from CVS: %s" % "\n".join( [ stdData, errData ] ) )
     return S_OK()
 
-  def __checkoutFromSVN( self ):
-    cmd = "svn export --trust-server-cert --non-interactive '%s/%s' '%s'" % ( self.params.sourceURL, self.params.version,
-                                                                              os.path.join( self.params.destination, self.params.name ) )
+  def __checkoutFromSVN( self, moduleName = None, sourceURL = None, tagVersion = None ):
+    """
+    This method checkout a given tag from a SVN repository. 
+    Note: we can checkout any project form a SVN repository 
+    
+    :param str moduleName: The name of the Module
+    :param str sourceURL: The code repository
+    :param str tagVersion: the tag for example: v4r3p6
+    
+    """
+    
+    if not moduleName:
+      moduleName = self.params.name
+    
+    if not sourceURL:
+      sourceURL = self.params.sourceURL   
+      
+    if not tagVersion:
+      tagVersion = self.params.version
+      
+    cmd = "svn export --trust-server-cert --non-interactive '%s/%s' '%s'" % ( sourceURL, tagVersion,
+                                                                              os.path.join( self.params.destination, moduleName ) )
     gLogger.verbose( "Executing: %s" % cmd )
     result = Subprocess.systemCall( 900, shlex.split(cmd) )
     if not result[ 'OK' ]:
@@ -199,14 +251,28 @@ class TarModuleCreator( object ):
       return S_ERROR( "Error while retrieving sources from SVN: %s" % "\n".join( [ stdData, errData ] ) )
     return S_OK()
 
-  def __checkoutFromHg( self ):
+  def __checkoutFromHg( self, moduleName = None, sourceURL = None  ):
+    """
+    This method checkout a given tag from a hg repository. 
+    Note: we can checkout any project form a hg repository 
+    
+    :param str moduleName: The name of the Module
+    :param str sourceURL: The code repository
+    
+    """
+    if not moduleName:
+      moduleName = self.params.name
+    
+    if not sourceURL:
+      sourceURL = self.params.sourceURL   
+      
     if self.params.vcsBranch:
       brCmr = "-b %s" % self.params.vcsBranch
     else:
       brCmr = ""
-    fDirName = os.path.join( self.params.destination, self.params.name )
+    fDirName = os.path.join( self.params.destination, moduleName )
     cmd = "hg clone %s '%s' '%s.tmp1'" % ( brCmr,
-                                           self.params.sourceURL,
+                                           sourceURL,
                                            fDirName )
     gLogger.verbose( "Executing: %s" % cmd )
     if os.system( cmd ):
@@ -296,7 +362,7 @@ class TarModuleCreator( object ):
     cmd = "git clone %s '%s' '%s'" % ( brCmr,
                                        sourceURL,
                                        fDirName )
-    print 'DSDSDSDS', cmd
+    
     gLogger.verbose( "Executing: %s" % cmd )
     if os.system( cmd ):
       return S_ERROR( "Error while retrieving sources from git" )
@@ -535,17 +601,20 @@ class TarModuleCreator( object ):
     gLogger.info( "Tar file %s created" % tarName )
     return S_OK( tarfilePath )
   
-  def __compileWebApp( self ):
+  def __compileWebApp( self, isExtension = False ):
     """
     This method is compile the DIRAC web framework
     """
     dctArgs = []
+    if self.params.extjspath:
+      dctArgs.append( "-P '%s'" % self.params.extjspath )
+      
     destDir = self.params.destination
     dctArgs.append( "-D '%s'" % destDir )
     scriptName = os.path.join( "%s/WebAppDIRAC/scripts/" % destDir, "dirac-webapp-compile.py" )
     if not os.path.isfile( scriptName ):
       return S_ERROR ( "%s file does not exists!" % scriptName )
-    dctArgs.append( "-e '%s'" % self.params.name )
+    dctArgs.append( "-n '%s'" % self.params.name )
     cmd = "'%s' %s" % ( scriptName, " ".join( dctArgs ) )
     gLogger.verbose( "Executing %s" % cmd )
     if os.system( cmd ) != 0:
@@ -570,17 +639,19 @@ class TarModuleCreator( object ):
     if not result[ 'OK' ]:
       gLogger.error( "Won't generate release notes: %s" % result[ 'Message' ] )
     
+    extension = False
     if 'Web' in self.params.name and self.params.name != 'Web': 
-      #if we have an extension, we have to download, because it will be
-      #required to compile the code
+      # if we have an extension, we have to download, because it will be
+      # required to compile the code
       if self.params.extensionVersion and self.params.extensionSource:
-        #if extensionSource is not provided, the default one is used. self.params.soureURL....
-        result = self.__checkoutSource("WebAppDIRAC", self.params.extensionSource, self.params.extensionVersion)
+        # if extensionSource is not provided, the default one is used. self.params.soureURL....
+        result = self.__checkoutSource( "WebAppDIRAC", self.params.extensionSource, self.params.extensionVersion )
         if not result['OK']:
           return result 
-      retVal = self.__compileWebApp( extensionVersion )
-      if not retVal['OK']:
-        gLogger.error( 'Web is not compiled: %s' % retVal['Message'] )
+        extension = True
+      retVal = self.__compileWebApp( extension )
+      if not retVal['OK']: #it can fail, if we do not have sencha cmd and extjs farmework installed
+        gLogger.warn( 'Web is not compiled: %s' % retVal['Message'] )
     
     return self.__generateTarball()
     
@@ -603,6 +674,7 @@ if __name__ == "__main__":
                                 we can provide the base module version (if it is needed): for example: v3r0", cliParams.setExtensionVersion )
   Script.registerSwitch( "E:", "extensionSource=", "if we have an extension,\
                                 we must provide code repository url", cliParams.setExtensionSource )
+  Script.registerSwitch( "P:", "extjspath=", "directory of the extjs library", cliParams.setExtJsPath )
   
   
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],

@@ -5,13 +5,15 @@ It is used to compile the web framework
 
 __RCSID__ = "$Id$"
 
-import os, tempfile, shutil, subprocess, gzip, sys
+import os, tempfile, shutil, subprocess, gzip, sys, imp
 
-from DIRAC import gLogger, rootPath, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
+from DIRAC.Core.Utilities.CFG import CFG
 
 class WebAppCompiler( object ):
   
   def __init__( self, params ):
+    
     self.__params = params
     
     self.__extVersion = '4.2.1.883'
@@ -22,6 +24,9 @@ class WebAppCompiler( object ):
      
     self.__webAppPath = os.path.join( self.__params.destination, 'WebAppDIRAC', 'WebApp' )
     self.__staticPaths = [os.path.join( self.__webAppPath, 'static' )]
+    if self.__params.name != 'WebAppDIRAC':
+      self.__staticPaths.append( os.path.join( self.__params.destination, self.__params.name, 'WebApp', 'static' ) )
+                           
     self.__classPaths = [ os.path.join( self.__webAppPath, *p ) for p in ( ( "static", "core", "js", "utils" ),
                                                                            ( "static", "core", "js", "core" ) )]
     
@@ -41,9 +46,11 @@ class WebAppCompiler( object ):
     self.__senchaVersion = "v6.5.0.180"
     
     self.__appDependency = {}
+    self.__dependencySection = "Dependencies"
     
   def __deployResources( self ):
     """
+    This method copy the required files and directories to the appropriate place
     """
     extjsDirPath = os.path.join( self.__webAppPath, 'static', self.__extDir )
     if not os.path.exists( extjsDirPath ): 
@@ -56,7 +63,6 @@ class WebAppCompiler( object ):
       try:
         shutil.copytree( dirSrc, os.path.join( extjsDirPath, os.path.split( dirSrc )[1] ) )
       except OSError as e:
-        print e, dir( e )
         if e.errno != 17:
           errorMsg = "Can not copy %s directory to %s: %s" % ( dirSrc, os.path.join( extjsDirPath, os.path.split( dirSrc )[1] ), repr( e ) )
           gLogger.error( errorMsg )
@@ -92,14 +98,9 @@ class WebAppCompiler( object ):
     if extra:
       for k in extra:
         data = data.replace( "%%%s%%" % k.upper(), extra[k] )
-    # outfd, filepath = tempfile.mkstemp( ".compilejs.%s" % tplName )
-    filepath = "/tmp/zmathe/tmp.compilejs.%s" % tplName
-    outfd = open( filepath, "w" )
-    outfd.write( data )
-    outfd.close()
-    # os.write( outfd, data )
-    # os.close( outfd )
-    print filepath, type( filepath )
+    outfd, filepath = tempfile.mkstemp( ".compilejs.%s" % tplName )
+    os.write( outfd, data )
+    os.close( outfd )
     return S_OK( filepath )
   
   def __cmd( self, cmd ):
@@ -202,7 +203,10 @@ class WebAppCompiler( object ):
     retVal = self.__deployResources()
     if not retVal['OK']:
       return retVal
-      
+    
+    # we are compiling an extension of WebAppDIRAC
+    if self.__params.name != 'WebAppDIRAC':
+      self.__appDependency.update( self.getAppDependencies() )
     staticPath = os.path.join( self.__webAppPath, "static" )
     gLogger.notice( "Compiling core: %s" % staticPath )
     
@@ -289,3 +293,61 @@ class WebAppCompiler( object ):
           os.environ['PATH'] = path + os.pathsep + syspath
       except OSError, _:
         raise OSError( "sencha cmd is not installed!" )
+      
+  def getAppDependencies( self ):
+    """
+    Generate the dependency dictionary
+    :return: Dict
+    """
+    if self.__params.name != 'WebAppDIRAC':
+      self._loadWebAppCFGFiles( self.__params.name )
+    dependency = {}
+    fullName = "%s/%s" % ( "/WebApp", self.__dependencySection )
+    result = gConfig.getOptions( fullName )
+    if not result[ 'OK' ]:
+      gLogger.error( result['Message'] )
+      return dependency
+    optionsList = result[ 'Value' ]
+    for opName in optionsList:
+      opVal = gConfig.getValue( "%s/%s" % ( fullName, opName ) )
+      dependency[opName] = opVal 
+      
+    return dependency
+  
+  def _loadWebAppCFGFiles( self, extension ):
+    """
+    Load WebApp/web.cfg definitions
+    
+    :param str extension: the module name of the extension of WebAppDirac for example: LHCbWebDIRAC
+    """
+    exts = [ extension, "WebAppDIRAC" ]
+    webCFG = CFG()
+    for modName in reversed( exts ):
+      cfgPath = os.path.join( self.__params.destination, "%s/WebApp" % modName, "web.cfg" )
+      if not os.path.isfile( cfgPath ):
+        gLogger.verbose( "Web configuration file %s does not exists!" % cfgPath )
+        continue
+      try:
+        modCFG = CFG().loadFromFile( cfgPath )
+      except Exception, excp:
+        gLogger.error( "Could not load %s: %s" % ( cfgPath, excp ) )
+        continue
+      gLogger.verbose( "Loaded %s" % cfgPath )
+      expl = [ "/WebApp" ]
+      while len( expl ):
+        current = expl.pop( 0 )
+        if not modCFG.isSection( current ):
+          continue
+        if modCFG.getOption( "%s/AbsoluteDefinition" % current, False ):
+          gLogger.verbose( "%s:%s is an absolute definition" % ( modName, current ) )
+          try:
+            webCFG.deleteKey( current )
+          except:
+            pass
+          modCFG.deleteKey( "%s/AbsoluteDefinition" % current )
+        else:
+          for sec in modCFG[ current ].listSections():
+            expl.append( "%s/%s" % ( current, sec ) )
+      # Add the modCFG
+      webCFG = webCFG.mergeWith( modCFG )
+    gConfig.loadCFG( webCFG )
