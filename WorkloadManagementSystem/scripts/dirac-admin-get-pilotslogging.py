@@ -28,6 +28,6 @@ Script.registerSwitch( 'u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', 
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
-                                     '  %s [option|cfgfile] ' % Script.scriptName ] ) )
+                                     '  %s option value ' % Script.scriptName ] ) )
 
 Script.parseCommandLine()
