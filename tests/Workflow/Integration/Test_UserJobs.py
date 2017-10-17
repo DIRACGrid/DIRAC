@@ -46,7 +46,7 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
   """ Adding quite a lot of calls from the API, for pure test purpose
   """
 
-  def test_execute( self ):
+  def test_execute_fail( self ):
 
     job = Job()
     job._siteSet = {'DIRAC.someSite.ch'}
@@ -54,6 +54,33 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
     job.setName( "helloWorld-test" )
     job.setExecutable( self.helloWorld,
                        arguments = "This is an argument",
+                       logFile = "aLogFileForTest.txt" ,
+                       parameters=[('executable', 'string', '', "Executable Script"),
+                                   ('arguments', 'string', '', 'Arguments for executable Script'),
+                                   ( 'applicationLog', 'string', '', "Log file name" ),
+                                   ( 'someCustomOne', 'string', '', "boh" )],
+                       paramValues = [( 'someCustomOne', 'aCustomValue' )] )
+    job.setBannedSites( ['LCG.SiteA.com', 'DIRAC.SiteB.org'] )
+    job.setOwner( 'ownerName' )
+    job.setOwnerGroup( 'ownerGroup' )
+    job.setName( 'jobName' )
+    job.setJobGroup( 'jobGroup' )
+    job.setType( 'jobType' )
+    job.setDestination( 'DIRAC.someSite.ch' )
+    job.setCPUTime( 12345 )
+    job.setLogLevel( 'DEBUG' )
+
+    res = job.runLocal( self.d )
+    self.assertFalse( res['OK'] )
+
+
+  def test_execute_success( self ):
+
+    job = Job()
+    job._siteSet = {'DIRAC.someSite.ch'}
+
+    job.setName( "helloWorld-test" )
+    job.setExecutable( self.helloWorld,
                        logFile = "aLogFileForTest.txt" ,
                        parameters=[('executable', 'string', '', "Executable Script"),
                                    ('arguments', 'string', '', 'Arguments for executable Script'),
