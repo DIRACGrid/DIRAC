@@ -129,4 +129,4 @@ positionalArgs = Script.getPositionalArgs()
 if len( positionalArgs ) != 3:
   DIRAC.abort( 1, "Must specify which is the role you want" )
 
-fixLDPath( *positionalArgs )
+fixLDPath( positionalArgs[0], positionalArgs[1], positionalArgs[2] )
