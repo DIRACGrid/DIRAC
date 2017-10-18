@@ -55,7 +55,8 @@ class TaskManagerPlugin( PluginBase ):
 
 
   def _ByJobType( self ):
-    """ By default, all sites are allowed to do every job. The actual rules are freely specified in the Operation JobTypeMapping section.
+    """ By default, all sites are allowed to do every job.
+        The actual rules are freely specified in the Operation JobTypeMapping section.
         The content of the section may look like this:
 
         User
@@ -119,7 +120,7 @@ class TaskManagerPlugin( PluginBase ):
     if 'WithStorage' in autoAddedSites:
       # Add all sites with storage, such that jobs can run wherever data is
       autoAddedSites.remove( 'WithStorage' )
-      autoAddedSites += DMSHelpers().getTiers( withStorage = True, tier = ( 0, 1, 2 ) )
+      autoAddedSites += DMSHelpers().getTiers( withStorage=True, tier=( 0, 1, 2 ) )
 
     # 3. removing sites in Exclude
     if not excludedSites:

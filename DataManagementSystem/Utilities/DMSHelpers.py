@@ -12,7 +12,7 @@ LOCAL = 1
 PROTOCOL = LOCAL + 1
 DOWNLOAD = PROTOCOL + 1
 
-def resolveSEGroup( seGroupList, allSEs = None ):
+def resolveSEGroup( seGroupList, allSEs=None ):
   """
   Resolves recursively a (list of) SEs that can be groupSEs
 
@@ -46,7 +46,7 @@ def resolveSEGroup( seGroupList, allSEs = None ):
           gLogger.fatal( '%s is not a valid SE' % se1 )
           return []
         # If not an SE, it may be a group
-        recursive = resolveSEGroup( se1, allSEs = allSEs )
+        recursive = resolveSEGroup( se1, allSEs=allSEs )
         if not recursive:
           return []
         newSEs += recursive
@@ -72,7 +72,9 @@ def siteCountryName( site ):
     return None
   return site.split( '.' )[-1].lower()
 
-def _getConnectionIndex( connectionLevel, default = None ):
+def _getConnectionIndex( connectionLevel, default=None ):
+  """ Converts a litteral connectivity to an integer value
+  """
   if connectionLevel is None:
     connectionLevel = default
   if isinstance( connectionLevel, ( int, long ) ):
@@ -83,12 +85,15 @@ def _getConnectionIndex( connectionLevel, default = None ):
 
 
 class DMSHelpers( object ):
+  """
+  This class is used to get information about sites, SEs and their interrelations
+  """
 
-  def __init__( self, vo = False ):
+  def __init__( self, vo=False ):
     self.siteSEMapping = {}
     self.storageElementSet = set()
     self.siteSet = set()
-    self.__opsHelper = Operations( vo = vo )
+    self.__opsHelper = Operations( vo=vo )
     self.failoverSEs = None
     self.archiveSEs = None
     self.notForJobSEs = None
@@ -186,25 +191,32 @@ class DMSHelpers( object ):
     return S_OK( siteSEMapping )
 
   def getSites( self ):
+    """ Get the list of known sites """
     self.getSiteSEMapping()
     return sorted( self.siteSet )
 
-  def getTiers( self, withStorage = False, tier = None ):
-    sites = sorted( self.getShortSiteNames( withStorage = withStorage, tier = tier ).values() )
+  def getTiers( self, withStorage=False, tier=None ):
+    """ Get the list of sites for a given (list of) Tier level """
+    sites = sorted( self.getShortSiteNames( withStorage=withStorage, tier=tier ).values() )
     if sites and isinstance( sites[0], list ):
       # List of lists, flatten it
       sites = [s for sl in sites for s in sl]
     return sites
 
-  def getShortSiteNames( self, withStorage = True, tier = None ):
+  def getShortSiteNames( self, withStorage=True, tier=None ):
+    """ Create a directory of short site names pointing to full site names """
     siteDict = {}
     result = self.getSiteSEMapping()
     if result['OK']:
       for site in self.siteSEMapping[LOCAL] if withStorage else self.siteSet:
         grid, shortSite, _country = site.split( '.' )
-        if isinstance( tier, ( int, long ) ) and ( grid != 'LCG' or gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, site ), 999 ) != tier ):
+        if isinstance( tier, ( int, long ) ) and \
+        ( grid != 'LCG' or
+          gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, site ), 999 ) != tier ):
           continue
-        if isinstance( tier, ( list, tuple, dict, set ) ) and ( grid != 'LCG' or gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, site ), 999 ) not in tier ):
+        if isinstance( tier, ( list, tuple, dict, set ) ) and \
+        ( grid != 'LCG' or
+          gConfig.getValue( '/Resources/Sites/%s/%s/MoUTierLevel' % ( grid, site ), 999 ) not in tier ):
           continue
         if withStorage or tier is not None:
           siteDict[shortSite] = site
@@ -213,17 +225,21 @@ class DMSHelpers( object ):
     return siteDict
 
   def getStorageElements( self ):
+    """ Get the list of known SEs """
     self.getSiteSEMapping()
     return sorted( self.storageElementSet )
 
   def isSEFailover( self, storageElement ):
+    """ Is this SE a failover SE """
     if self.failoverSEs is None:
       seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForFailover', [] ) )
       self.failoverSEs = resolveSEGroup( seList )
     # FIXME: remove string test at some point
-    return storageElement in self.failoverSEs or ( not self.failoverSEs and isinstance( storageElement, basestring ) and 'FAILOVER' in storageElement.upper() )
+    return storageElement in self.failoverSEs or ( not self.failoverSEs and isinstance( storageElement, basestring ) and
+                                                   'FAILOVER' in storageElement.upper() )
 
-  def isSEForJobs( self, storageElement, checkSE = True ):
+  def isSEForJobs( self, storageElement, checkSE=True ):
+    """ Is this SE suitable for making jobs """
     if checkSE:
       self.getSiteSEMapping()
       if storageElement not in self.storageElementSet:
@@ -234,14 +250,17 @@ class DMSHelpers( object ):
     return storageElement not in self.notForJobSEs
 
   def isSEArchive( self, storageElement ):
+    """ Is this SE an archive SE """
     if self.archiveSEs is None:
       seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForArchive', [] ) )
       self.archiveSEs = resolveSEGroup( seList )
     # FIXME: remove string test at some point
-    return storageElement in self.archiveSEs or ( not self.archiveSEs and isinstance( storageElement, basestring ) and 'ARCHIVE' in storageElement.upper() )
+    return storageElement in self.archiveSEs or ( not self.archiveSEs and isinstance( storageElement, basestring ) and
+                                                  'ARCHIVE' in storageElement.upper() )
 
-  def getSitesForSE( self, storageElement, connectionLevel = None ):
-    connectionIndex = _getConnectionIndex( connectionLevel, default = DOWNLOAD )
+  def getSitesForSE( self, storageElement, connectionLevel=None ):
+    """ Get the (list of) sites for a given SE and a given connctivity """
+    connectionIndex = _getConnectionIndex( connectionLevel, default=DOWNLOAD )
     if connectionIndex == LOCAL:
       return self._getLocalSitesForSE( storageElement )
     if connectionIndex == PROTOCOL:
@@ -251,12 +270,14 @@ class DMSHelpers( object ):
     return S_ERROR( "Unknown connection level" )
 
   def getLocalSiteForSE( self, se ):
+    """ Get the site at which the SE is """
     sites = self._getLocalSitesForSE( se )
     if not sites['OK']:
       return sites
     return S_OK( sites['Value'][0] )
 
   def _getLocalSitesForSE( self, se ):
+    """ Extract the list of sites that declare this SE """
     mapping = self.getSiteSEMapping()
     if not mapping['OK']:
       return mapping
@@ -270,6 +291,7 @@ class DMSHelpers( object ):
     return S_OK( sites )
 
   def getProtocolSitesForSE( self, se ):
+    """ Get sites that can access the SE by protocol """
     mapping = self.getSiteSEMapping()
     if not mapping['OK']:
       return mapping
@@ -284,6 +306,7 @@ class DMSHelpers( object ):
     return S_OK( sorted( sites ) )
 
   def getDownloadSitesForSE( self, se ):
+    """ Get the list of sites that are allowed to download files """
     mapping = self.getSiteSEMapping()
     if not mapping['OK']:
       return mapping
@@ -297,8 +320,9 @@ class DMSHelpers( object ):
     sites.update( [site for site in mapping if se in mapping[site]] )
     return S_OK( sorted( sites ) )
 
-  def getSEsForSite( self, site, connectionLevel = None ):
-    connectionIndex = _getConnectionIndex( connectionLevel, default = DOWNLOAD )
+  def getSEsForSite( self, site, connectionLevel=None ):
+    """ Get all SEs accessible from a site, given a connectivity """
+    connectionIndex = _getConnectionIndex( connectionLevel, default=DOWNLOAD )
     if connectionIndex is None:
       return S_ERROR( "Unknown connection level" )
     if not self.siteSet:
@@ -309,9 +333,10 @@ class DMSHelpers( object ):
       siteList = [site]
     if not siteList:
       return S_ERROR( "Unknown site" )
-    return self._getSEsForSItes( siteList, connectionIndex = connectionIndex )
+    return self._getSEsForSItes( siteList, connectionIndex=connectionIndex )
 
   def _getSEsForSItes( self, siteList, connectionIndex ):
+    """ Extract list of SEs for a connectivity """
     mapping = self.getSiteSEMapping()
     if not mapping['OK']:
       return mapping
@@ -324,9 +349,11 @@ class DMSHelpers( object ):
     return S_OK( sorted( ses ) )
 
   def getSEsAtSite( self, site ):
-    return self.getSEsForSite( site, connectionLevel = LOCAL )
+    """ Get local SEs """
+    return self.getSEsForSite( site, connectionLevel=LOCAL )
 
   def isSameSiteSE( self, se1, se2 ):
+    """ Are these 2 SEs at the same site """
     res = self.getLocalSiteForSE( se1 )
     if not res['OK']:
       return res
@@ -337,8 +364,9 @@ class DMSHelpers( object ):
     site2 = res['Value']
     return S_OK( site1 == site2 )
 
-  def getSEsAtCountry( self, country, connectionLevel = None ):
-    connectionIndex = _getConnectionIndex( connectionLevel, default = DOWNLOAD )
+  def getSEsAtCountry( self, country, connectionLevel=None ):
+    """ Get all SEs at a given country """
+    connectionIndex = _getConnectionIndex( connectionLevel, default=DOWNLOAD )
     if connectionIndex is None:
       return S_ERROR( "Unknown connection level" )
     if not self.siteSet:
@@ -349,6 +377,7 @@ class DMSHelpers( object ):
     return self._getSEsForSItes( siteList, connectionIndex )
 
   def getSEInGroupAtSite( self, seGroup, site ):
+    """ Get the SE in a group or list of SEs that is present at a site """
     if isinstance( seGroup, basestring ):
       seList = gConfig.getValue( '/Resources/StorageElementGroups/%s' % seGroup, [] )
     else:
@@ -381,4 +410,3 @@ class DMSHelpers( object ):
   def getWriteProtocols( self ):
     """ Returns the Favorite Write protocol defined in the CS, or 'srm' as default """
     return self.__opsHelper.getValue( 'DataManagement/WriteProtocols', ['srm', 'dips'] )
-

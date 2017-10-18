@@ -21,6 +21,7 @@ class RequestTaskAgent( TaskManagerAgentBase ):
     TaskManagerAgentBase.__init__( self, *args, **kwargs )
 
     self.transType = []
+    self.taskManager = None
 
   def initialize( self ):
     """ Standard initialize method
@@ -32,7 +33,7 @@ class RequestTaskAgent( TaskManagerAgentBase ):
     self.am_setOption( 'shifterProxy', 'DataManager' )
 
     # clients
-    self.taskManager = RequestTasks( transClient = self.transClient )
+    self.taskManager = RequestTasks( transClient=self.transClient )
 
     agentTSTypes = self.am_getOption( 'TransType', [] )
     if agentTSTypes:
@@ -41,7 +42,7 @@ class RequestTaskAgent( TaskManagerAgentBase ):
       self.transType = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
 
     return S_OK()
-    
+
   def _getClients( self ):
     """ Here the taskManager becomes a RequestTasks object
     """

@@ -10,8 +10,8 @@ import time
 import sys
 import re
 import errno
-import DIRAC
 
+import DIRAC
 from DIRAC                                                  import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
 from DIRAC.Resources.Storage.StorageElement                 import StorageElement
@@ -25,7 +25,7 @@ from DIRAC.Core.Utilities.Adler                             import compareAdler
 class ConsistencyInspector( object ):
   """ A class for handling some consistency checks
   """
-  def __init__( self, interactive = True, transClient = None, dm = None, fc = None, dic = None ):
+  def __init__( self, interactive=True, transClient=None, dm=None, fc=None, dic=None ):
     """ c'tor
         interactive: Data Manager (True) or DIRAC Agente (False)
         transClient: TransformationClient() if None, else transClient params
@@ -77,7 +77,8 @@ class ConsistencyInspector( object ):
 
     self._verbose = False
 
-  def __logVerbose( self, msg, msg1 = '' ):
+  def __logVerbose( self, msg, msg1='' ):
+    """ logger helper for verbose information """
     if self._verbose:
       newMsg = '[ConsistencyChecks] ' + ( '[%s] ' % str( self.prod ) ) if self.prod else ''
       # Add that prefix to all lines of the message
@@ -90,6 +91,7 @@ class ConsistencyInspector( object ):
   ################################################################################
 
   def checkFC2SE( self ):
+    """ check files vs SE information """
     repDict = self.compareChecksum( self.lfns )
     self.existLFNsNoSE = repDict['MissingReplica']
     self.existLFNsNotExisting = repDict['MissingAllReplicas']
@@ -265,23 +267,23 @@ class ConsistencyInspector( object ):
             return S_ERROR( errno.ENOENT, res['Message'] )  # DError(errno.ENOENT, res['Message'] )
           else:
             matchDir = directory.split( '...' )[0]
-            directories += [d for d in res['Value']['Successful'].get( topDir, {} ).get( 'SubDirs', [] ) if d.startswith( matchDir )]
+            directories += [d for d in res['Value']['Successful'].get( topDir, {} ).get( 'SubDirs', [] )
+                            if d.startswith( matchDir )]
       if printout:
         gLogger.always( 'Expanded list of %d directories:\n%s' % ( len( directories ), '\n'.join( directories ) ) )
       return directories
     else:
-      return S_ERROR( errno.ENOENT, 'Need to specify the directories' )  # DError(errno.ENOENT, 'Need to specify the directories')
+      return S_ERROR( errno.ENOENT, 'Need to specify the directories' )
   ################################################################################
 
   def __write( self, text ):
     if self.interactive:
       sys.stdout.write( text )
       sys.stdout.flush()
-      print text
 
   ################################################################################
 
-  def _selectByFileType( self, lfnDict, fileTypes = None, fileTypesExcluded = None ):
+  def _selectByFileType( self, lfnDict, fileTypes=None, fileTypesExcluded=None ):
     """ Select only those files from the values of lfnDict that have a certain type
     """
     if not lfnDict:
@@ -321,6 +323,7 @@ class ConsistencyInspector( object ):
     return ft_dict
 
   def __getLFNsFromFC( self ):
+    """ Check if a list of LFNs is in the FC or not """
     if not self.lfns:
       directories = []
       for dirName in self.__getDirectories():
@@ -338,7 +341,11 @@ class ConsistencyInspector( object ):
        files with all replicas corrupted, and one with files with some replicas corrupted and at least
        one good replica
     """
-    retDict = {'AllReplicasCorrupted' : {}, 'SomeReplicasCorrupted': {}, 'MissingReplica':{}, 'MissingAllReplicas':{}, 'NoReplicas':{}}
+    retDict = {'AllReplicasCorrupted' : {},
+               'SomeReplicasCorrupted': {},
+               'MissingReplica':{},
+               'MissingAllReplicas':{},
+               'NoReplicas':{}}
 
     chunkSize = 100
     replicas = {}
@@ -362,7 +369,7 @@ class ConsistencyInspector( object ):
 
     self.__write( "Get FC metadata for %d files to be checked: " % len( lfns ) )
     metadata = {}
-    for lfnChunk in breakListIntoChunks( replicas.keys(), chunkSize ):
+    for lfnChunk in breakListIntoChunks( replicas, chunkSize ):
       self.__write( '.' )
       res = self.fc.getFileMetadata( lfnChunk )
       if not res['OK']:
@@ -460,7 +467,7 @@ class ConsistencyInspector( object ):
     """ Setter """
     if value:
       value = int( value )
-      res = self.transClient.getTransformation( value, extraParams = False )
+      res = self.transClient.getTransformation( value, extraParams=False )
       if not res['OK']:
         S_ERROR( errno.ENOENT, "Couldn't find transformation %d: %s" % ( value, res['Message'] ) )
       else:
@@ -554,8 +561,8 @@ class ConsistencyInspector( object ):
     resDict = {'CatalogMetadata':catalogMetadata, 'CatalogReplicas':replicas}
     return S_OK( resDict )
 
-  def checkPhysicalFiles( self, replicas, catalogMetadata, ses = None ):
-    """ This obtains takes the supplied replica and metadata information obtained from the catalog and checks against the storage elements.
+  def checkPhysicalFiles( self, replicas, catalogMetadata, ses=None ):
+    """ This method takes the supplied replica and metadata information obtained from the catalog and checks against the storage elements.
     """
 
     # FIXME: we better use the compareChecksum function instead of this one! or maybe directly checkFC2SE
@@ -693,7 +700,7 @@ class ConsistencyInspector( object ):
     return S_OK( resDict )
 
   def getStorageDirectoryContents( self, lfnDir, storageElement ):
-    """ This obtains takes the supplied lfn directories and recursively obtains the files in the supplied storage element
+    """ This takes the supplied lfn directories and recursively obtains the files in the supplied storage element
     """
     gLogger.info( 'Obtaining the contents for %s directories at %s' % ( len( lfnDir ), storageElement ) )
 
@@ -722,7 +729,8 @@ class ConsistencyInspector( object ):
         gLogger.error( 'Failed to get directory contents', res['Message'] )
         return res
       elif currentDir in res['Value']['Failed']:
-        gLogger.error( 'Failed to get directory contents', '%s %s' % ( currentDir, res['Value']['Failed'][currentDir] ) )
+        gLogger.error( 'Failed to get directory contents', '%s %s' %
+                       ( currentDir, res['Value']['Failed'][currentDir] ) )
         return S_ERROR( errno.ENOENT, res['Value']['Failed'][currentDir] )
       else:
         dirContents = res['Value']['Successful'][currentDir]
@@ -825,7 +833,7 @@ class ConsistencyInspector( object ):
     gLogger.info( 'Obtaining the replicas for %s files' % len( lfns ) )
 
     zeroReplicaFiles = []
-    res = self.fc.getReplicas( lfns, allStatus = True )
+    res = self.fc.getReplicas( lfns, allStatus=True )
     if not res['OK']:
       gLogger.error( 'Failed to get catalog replicas', res['Message'] )
       return res

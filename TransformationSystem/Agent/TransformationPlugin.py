@@ -21,7 +21,7 @@ class TransformationPlugin( PluginBase ):
   """ A TransformationPlugin object should be instantiated by every transformation.
   """
 
-  def __init__( self, plugin, transClient = None, dataManager = None, fc = None ):
+  def __init__( self, plugin, transClient=None, dataManager=None, fc=None ):
     """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
         plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
     """
@@ -30,6 +30,7 @@ class TransformationPlugin( PluginBase ):
     self.data = {}
     self.files = False
     self.startTime = time.time()
+    self.valid = False
 
     if transClient is None:
       transClient = TransformationClient()
@@ -41,14 +42,16 @@ class TransformationPlugin( PluginBase ):
       fc = FileCatalog()
 
     self.util = PluginUtilities( plugin,
-                                 transClient = transClient,
-                                 dataManager = dataManager,
-                                 fc = fc )
+                                 transClient=transClient,
+                                 dataManager=dataManager,
+                                 fc=fc )
 
   def __del__( self ):
+    """ Destructor: print the elapsed time """
     self.util.logInfo( "Execution finished, timing: %.3f seconds" % ( time.time() - self.startTime ) )
 
   def isOK( self ):
+    """ Check if all information is present """
     self.valid = True
     if ( not self.data ) or ( not self.params ):
       self.valid = False
@@ -61,10 +64,11 @@ class TransformationPlugin( PluginBase ):
     self.util.setParameters( params )
 
   def setInputData( self, data ):
+    """ Set the replica information as data member """
     self.data = data
-    self.util.logDebug( "Set data: %s" % self.data )
 
   def setTransformationFiles( self, files ):  # TODO ADDED
+    """ Set the TS files as data member """
     self.files = files
 
   def _Standard( self ):
@@ -77,7 +81,7 @@ class TransformationPlugin( PluginBase ):
     """
     return self._groupBySize()
 
-  def _groupBySize( self, files = None ):
+  def _groupBySize( self, files=None ):
     """
     Generate a task for a given amount of data at a (set of) SE
     """
@@ -96,9 +100,9 @@ class TransformationPlugin( PluginBase ):
 
     targetseParam = self.params['TargetSE']
     targetSEs = []
-    sourceSEs = eval( self.params['SourceSE'] )
+    sourceSEs = eval( self.params['SourceSE'] )  # pylint: disable=eval-used
     if targetseParam.count( '[' ):
-      targetSEs = eval( targetseParam )
+      targetSEs = eval( targetseParam )  # pylint: disable=eval-used
     elif isinstance( targetseParam, list ):
       targetSEs = targetseParam
     else:
@@ -146,10 +150,10 @@ class TransformationPlugin( PluginBase ):
           tasks.append( ( ses, taskLfns ) )
     return S_OK( tasks )
 
-  def _ByShare( self, shareType = 'CPU' ):
+  def _ByShare( self, shareType='CPU' ):
     """ first get the shares from the CS, and then makes the grouping looking at the history
     """
-    res = self._getShares( shareType, normalise = True )
+    res = self._getShares( shareType, normalise=True )
     if not res['OK']:
       return res
     cpuShares = res['Value']
@@ -158,7 +162,7 @@ class TransformationPlugin( PluginBase ):
       self.util.logInfo( "%s: %.1f" % ( site.ljust( 15 ), cpuShares[site] ) )
 
     # Get the existing destinations from the transformationDB
-    res = self.util.getExistingCounters( requestedSites = cpuShares.keys() )
+    res = self.util.getExistingCounters( requestedSites=cpuShares.keys() )
     if not res['OK']:
       self.util.logError( "Failed to get existing file share", res['Message'] )
       return res
@@ -180,7 +184,7 @@ class TransformationPlugin( PluginBase ):
     for replicaSE, lfns in replicaGroups:
       possibleSEs = replicaSE.split( ',' )
       # Determine the next site based on requested shares, existing usage and candidate sites
-      res = self._getNextSite( existingCount, cpuShares, candidates = self._getSitesForSEs( possibleSEs ) )
+      res = self._getNextSite( existingCount, cpuShares, candidates=self._getSitesForSEs( possibleSEs ) )
       if not res['OK']:
         self.util.logError( "Failed to get next destination SE", res['Message'] )
         continue
@@ -197,7 +201,7 @@ class TransformationPlugin( PluginBase ):
           existingCount[targetSite] = existingCount.setdefault( targetSite, 0 ) + len( lfns )
     return S_OK( tasks )
 
-  def _getShares( self, shareType, normalise = False ):
+  def _getShares( self, shareType, normalise=False ):
     """ Takes share from the CS, eventually normalize them
     """
     res = gConfig.getOptionsDict( '/Resources/Shares/%s' % shareType )
@@ -214,7 +218,7 @@ class TransformationPlugin( PluginBase ):
       return S_ERROR( "No non-zero shares defined" )
     return S_OK( shares )
 
-  def _getNextSite( self, existingCount, targetShares, candidates = None ):
+  def _getNextSite( self, existingCount, targetShares, candidates=None ):
     if candidates is None:
       candidates = targetShares
     # normalise the existing counts
