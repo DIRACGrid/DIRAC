@@ -281,7 +281,7 @@ class JobMonitoringMore( TestWMSTestCase ):
 
     res = jobMonitor.getSites()
     self.assert_( res['OK'] )
-    self.assert_( set( res['Value'] ) <= set( dests + ['ANY', 'DIRAC.Jenkins.org'] ) )
+    self.assert_( set( res['Value'] ) <= set( dests + ['ANY', 'DIRAC.Jenkins.ch'] ) )
     res = jobMonitor.getJobTypes()
     self.assert_( res['OK'] )
     self.assertEqual( sorted( res['Value'] ), sorted( types ) )
@@ -488,13 +488,13 @@ class Matcher ( TestWMSTestCase ):
     resourceDescription = {'OwnerGroup': 'prod', 'OwnerDN':'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
                            'DIRACVersion': 'pippo', 'ReleaseVersion':'blabla', 'VirtualOrganization':'LHCB',
                            'PilotInfoReportedFlag':'True', 'PilotBenchmark':'anotherPilot', 'LHCbPlatform':'CERTO',
-                           'Site':'DIRAC.Jenkins.org', 'CPUTime' : 86400 }
+                           'Site':'DIRAC.Jenkins.ch', 'CPUTime' : 86400 }
     matcher = RPCClient( 'WorkloadManagement/Matcher' )
     JobStateUpdate = RPCClient( 'WorkloadManagement/JobStateUpdate' )
     wmsClient = WMSClient()
 
     job = helloWorldJob()
-    job.setDestination( 'DIRAC.Jenkins.org' )
+    job.setDestination( 'DIRAC.Jenkins.ch' )
     job.setInputData( '/a/bbb' )
     job.setType( 'User' )
     jobDescription = createFile( job )

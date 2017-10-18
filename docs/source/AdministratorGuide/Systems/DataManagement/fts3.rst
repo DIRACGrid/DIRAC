@@ -1,6 +1,11 @@
---------------------
+---------------------
 FTS3 support in DIRAC
---------------------
+---------------------
+
+.. versionadded:: v6r20
+
+.. contents:: Table of contents
+   :depth: 2
 
 DIRAC comes with a system optimized to interact with the FTS3 servers.
 
@@ -10,7 +15,7 @@ To go from the old one, you must wait until there are no more Scheduled requests
 
 
 FTS3 system overview
--------------------
+--------------------
 
 There are two possible tasks that can be done with the FTS3 system: transferring and staging.
 
@@ -37,7 +42,9 @@ Note that since the multiple targets are grouped in a single RMS operation, fail
 FTS3StagingOperation
 ====================
 
-**CAUTION: still in development, not meant to be used **
+.. warning ::
+
+   Still in development, not meant to be used
 
 This operation is meant to perform BringOnline. The idea behind that is to replace, if deemed working, the whole StorageSystem of DIRAC.
 
@@ -92,6 +99,20 @@ The status of the FTS3Jobs and FTSFiles are updated every time we monitor the ma
 
 The FTS3Operation goes to Processed when all the files are in a final state, and to Finished when the callback has been called successfully
 
+FTS3 Installation
+-----------------
+
+One needs to install an FTS3DB, the FTS3Manager, and the FTS3Agent. Install the
+FTS3DB with `dirac-install-db` or directly on your mysql server and add the
+Databse in the Configuration System.
+
+  dirac-admin-sysadmin-cli -H diracserver034.institute.tld
+  > install service DataManagement FTS3Manager
+  > install agent DataManagement FTS3Agent
+
+Then enable the *UseNewFTS3* flag for the ReplicateAndRegister operation as
+described in `FTS3TransferOperation`_.
+
 FTS3 System Configuration
 -------------------------
 
@@ -112,4 +133,4 @@ There are various configuration options for this system::
     maxAttemptsPerFile = 256
   }
 
-  DataManagement/FTSPlacement/FTS3/ServerPolicy # see :ref:`dirac-operations-dms`.
+DataManagement/FTSPlacement/FTS3/ServerPolicy see :ref:`dirac-operations-dms`.

@@ -159,7 +159,7 @@ class Cache( object ):
     # no apparent reason to suspect from that piece of code.
     return S_OK( newCache )
 
-'#...............................................................................'
+  #...............................................................................
 
 class RSSCache( Cache ):
   """
@@ -371,9 +371,9 @@ class RSSCache( Cache ):
     result = {}
 
     for cacheKey, cacheValue in cacheMatches.iteritems():
-      elementName, elementType, statusType = cacheKey
+      elementName, _elementType, statusType = cacheKey
 
-      if not result.has_key( elementName ):
+      if elementName not in result:
         result[ elementName ] = {}
       result[ elementName ][ statusType ] = cacheValue
 

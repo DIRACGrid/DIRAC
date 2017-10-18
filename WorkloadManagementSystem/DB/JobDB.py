@@ -495,7 +495,12 @@ class JobDB( DB ):
     if not res['OK']:
       return res
 
-    return S_OK( [ i[0] for i in res['Value'] if i[0].strip() ] )
+    inputData = [ i[0] for i in res['Value'] if i[0].strip() ]
+    for index, lfn in enumerate( inputData ):
+      if lfn.lower().startswith( 'lfn:' ):
+        inputData[index] = lfn[4:]
+
+    return S_OK( inputData )
 
 #############################################################################
   def setInputData( self, jobID, inputData ):

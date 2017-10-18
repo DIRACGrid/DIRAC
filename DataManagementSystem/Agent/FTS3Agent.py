@@ -56,7 +56,7 @@ class FTS3Agent(AgentModule):
       return res
 
     srvList = res['Value']
-    serverPolicyType = opHelper().getValue('DataManagement/FTSPlacement/FTS3/ServerPolicy')
+    serverPolicyType = opHelper().getValue('DataManagement/FTSPlacement/FTS3/ServerPolicy', 'Random')
 
     self._serverPolicy = FTS3Utilities.FTS3ServerPolicy(srvList, serverPolicy = serverPolicyType)
 

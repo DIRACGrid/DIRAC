@@ -1,11 +1,15 @@
+""" Some utilities for FTS3...
+"""
+
+import json
+import datetime
+import random
+
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
-import json
-import datetime
-import random
 
 def _checkSourceReplicas( ftsFiles ):
   """ Check the active replicas
@@ -34,7 +38,9 @@ def selectUniqueSourceforTransfers( multipleSourceTransfers ):
   """
   # the more an SE has files, the more likely it is that it is a big good old T1 site.
   # So we start packing with these SEs
-  orderedSources = sorted( multipleSourceTransfers, key = lambda srcSE: len( multipleSourceTransfers[srcSE] ), reverse = True )
+  orderedSources = sorted( multipleSourceTransfers,
+                           key = lambda srcSE: len( multipleSourceTransfers[srcSE] ),
+                           reverse = True )
 
   transfersBySource = {}
   usedLFNs = set()
@@ -62,7 +68,6 @@ def generatePossibleTransfersBySources( ftsFiles, allowedSources = None ):
       :param allowedSources : list of allowed sources
       :param ftsFiles : list of FTS3File object
       :return  S_OK({ sourceSE: [ FTS3Files] })
-
 
   """
 
@@ -107,7 +112,6 @@ def groupFilesByTarget(ftsFiles):
 
         :param ftsFiles : list of FTS3File object
         :return {targetSE : [ ftsFiles] } }
-
 
     """
 
@@ -197,7 +201,7 @@ class FTS3JSONEncoder( json.JSONEncoder ):
 
     super( FTS3JSONEncoder, self ).__init__( *args, **kwargs )
 
-  def default( self, obj ):
+  def default( self, obj ): #pylint: disable=method-hidden
 
     if hasattr( obj, '_getJSONData' ):
       return obj._getJSONData( forPrint = self._forPrint )

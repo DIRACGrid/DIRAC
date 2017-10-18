@@ -77,7 +77,7 @@ class FTS3ManagerHandler( RequestHandler ):
     return S_OK( opJSON )
 
 
-  types_getActiveJobs = [ ( long, int ), [None ] + list( basestring ), basestring ]
+  types_getActiveJobs = [ ( long, int ), [None ] + [ basestring ], basestring ]
   @classmethod
   def export_getActiveJobs( cls, limit, lastMonitor, jobAssignmentTag ):
     """ Get all the FTSJobs that are not in a final state

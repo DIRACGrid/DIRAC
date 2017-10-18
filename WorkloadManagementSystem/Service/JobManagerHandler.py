@@ -14,10 +14,12 @@ __RCSID__ = "$Id$"
 
 from types import StringTypes, IntType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getNumberOfParameters
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
@@ -29,18 +31,27 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 
 # This is a global instance of the JobDB class
-gJobDB = False
-gJobLoggingDB = False
-gtaskQueueDB = False
+gJobDB = None
+gJobLoggingDB = None
+gtaskQueueDB = None
+gPilotAgentsDB = None
+gPilotsLoggingDB = None
+enablePilotsLogging = None
 
 MAX_PARAMETRIC_JOBS = 20
 
 def initializeJobManagerHandler( serviceInfo ):
 
-  global gJobDB, gJobLoggingDB, gtaskQueueDB
+  global gJobDB, gJobLoggingDB, gtaskQueueDB, enablePilotsLogging
   gJobDB = JobDB()
   gJobLoggingDB = JobLoggingDB()
   gtaskQueueDB = TaskQueueDB()
+
+  enablePilotsLogging = gConfig.getValue('/Services/PilotsLogging/Enable', 'False').lower() in ('yes', 'true')
+
+  if enablePilotsLogging:
+    gPilotAgentsDB = PilotAgentsDB()
+    gPilotsLoggingDB = PilotsLoggingDB()
   return S_OK()
 
 class JobManagerHandler( RequestHandler ):
@@ -240,7 +251,24 @@ class JobManagerHandler( RequestHandler ):
     if not result['OK']:
       gLogger.warn( 'Failed to delete job from the TaskQueue' )
 
-    return S_OK()
+    if enablePilotsLogging:
+      # if it was the last job for the pilot, clear PilotsLogging about it
+      result = gPilotAgentsDB.getPilotsForJobID( jobID )
+      if not result['OK']:
+        return result
+      for pilot in result['Value']:
+        res = gPilotAgentsDB.getJobsForPilot( pilot['PilotID'] )
+        if not res['OK']:
+          return res
+        if not res['Value']:  # if list of jobs for pilot is empty, delete pilot and pilotslogging
+          ret = gPilotAgentsDB.deletePilot( pilot['PilotID'] )
+          if not ret['OK']:
+            return ret
+          ret = gPilotsLoggingDB.deletePilotsLogging( pilot['PilotID'] )
+          if not ret['OK']:
+            return ret
+
+    return S_OK( )
 
   def __killJob( self, jobID, sendKillCommand = True ):
     """  Kill one job
