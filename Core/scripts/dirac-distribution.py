@@ -130,7 +130,7 @@ class Params:
     Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
     Script.registerSwitch( 'M:', 'defaultsURL=', 'Where to retrieve the global defaults from',
                            cliParams.setGlobalDefaults )
-    Script.registerSwitch( "P:", "extjspath=", "directory of the extjs library", cliParams.setExtJsPath )
+    Script.registerSwitch( "E:", "extjspath=", "directory of the extjs library", cliParams.setExtJsPath )
 
     Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                          '\nUsage:',
