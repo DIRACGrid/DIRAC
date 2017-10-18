@@ -271,11 +271,13 @@ class FTS3ServerPolicy( object ):
     self._serverList = initialServerList
     self._maxAttempts = len( self._serverList )
     self._nextServerID = 0
+    self._serverPolicy = serverPolicy
 
     methName = "_%sServerPolicy"%serverPolicy.lower()
     if not hasattr(self, methName):
       self.log.error( 'Unknown server policy %s. Using Random instead' % serverPolicy )
       methName = "_randomServerPolicy"
+      self._serverPolicy = 'Random'
 
     self._policyMethod = getattr( self, methName )
 
@@ -300,11 +302,11 @@ class FTS3ServerPolicy( object ):
     self._nextServerID = ( self._nextServerID + 1 ) % len( self._serverList )
     return fts3server
 
-  def _randomServerPolicy( self, _attempt ):
+  def _randomServerPolicy( self, _attempt, shuffledServerList ):
     """
-      return a random server from the list
+      return a server from shuffledServerList
     """
-    return random.choice( self._serverList )
+    return shuffledServerList[_attempt]
 
 
   @staticmethod
@@ -334,9 +336,17 @@ class FTS3ServerPolicy( object ):
 
     fts3Server = None
     attempt = 0
+    shuffledServerList = None
+
+    if self._serverPolicy == 'Random':
+      shuffledServerList = random.sample(self._serverList, len(self._serverList))
 
     while not fts3Server and attempt < self._maxAttempts:
-      fts3Server = self._policyMethod( _attempt = attempt )
+
+      if self._serverPolicy in ['Failover', 'Sequence']:
+        fts3Server = self._policyMethod( attempt )
+      else:
+        fts3Server = self._policyMethod( attempt, shuffledServerList)
 
       res = self._getFTSServerStatus( fts3Server )
       if not res['OK']:
