@@ -1,13 +1,14 @@
 """ Test_RSS_Policy_DTPolicy
 """
 
+__RCSID__ = '$Id: $'
+
 from mock import MagicMock
 import unittest
 
 from DIRAC import gLogger
 import DIRAC.ResourceStatusSystem.Policy.DowntimePolicy as moduleTested
 
-__RCSID__ = '$Id: $'
 
 ################################################################################
 
@@ -78,7 +79,7 @@ class DTPolicy_Success( DTPolicy_TestCase ):
     policy.command = self.DTCommand
 
     res = policy.evaluate()
-    self.assertEqual( True, res[ 'OK' ] )
+    self.assertTrue(res['OK'])
     self.assertEqual( 'Banned', res[ 'Value' ][ 'Status' ] )
     self.assertEqual( '123 blah', res[ 'Value' ][ 'Reason' ] )
 
@@ -90,7 +91,7 @@ class DTPolicy_Success( DTPolicy_TestCase ):
     policy.command = self.DTCommand
 
     res = policy.evaluate()
-    self.assertEqual( True, res[ 'OK' ] )
+    self.assertTrue(res['OK'])
     self.assertEqual( 'Degraded', res[ 'Value' ][ 'Status' ] )
     self.assertEqual( '123 blah', res[ 'Value' ][ 'Reason' ] )
 
