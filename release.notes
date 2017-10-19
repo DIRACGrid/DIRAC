@@ -171,6 +171,11 @@ CHANGE: Add to the TS system test, the test for transformations with meta-filter
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
 
+[v6r17p35]
+
+*Core
+FIX: GOCDBClient - add EXTENSIONS & SCOPE tag support to GOCDB service queries.
+
 [v6r17p34]
 
 *SMS
