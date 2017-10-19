@@ -69,6 +69,7 @@ class ModuleBase( object ):
     self.appSteps = []
     self.inputDataList = []
     self.InputData = []
+    self.inputDataType = ''
 
     # These are useful objects (see the getFileReporter(), getJobReporter() and getRequestContainer() functions)
     self.fileReport = None
@@ -311,6 +312,8 @@ class ModuleBase( object ):
 
     self.applicationLog = self.step_commons.get('applicationLog', 
                                                 self.step_commons.get('logFile', self.applicationLog))
+
+    self.inputDataType = self.step_commons.get( 'inputDataType', self.inputDataType )
 
     stepInputData = []
     if 'inputData' in self.step_commons and self.step_commons['inputData']:
