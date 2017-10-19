@@ -111,7 +111,7 @@ function installSite(){
   sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
 
   echo '==> Started installing'
-  $SERVERINSTALLDIR/dirac-install.py -t server $SERVERINSTALLDIR/install.cfg $DEBUG
+  $SERVERINSTALLDIR/dirac-install.py -t fullserver $SERVERINSTALLDIR/install.cfg $DEBUG
 
   echo '==> Done installing, now configuring'
   source $SERVERINSTALLDIR/bashrc
