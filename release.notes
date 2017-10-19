@@ -1,4 +1,4 @@
-[v6r20-pre2]
+[v6r20-pre3]
 
 *Framework
 CHANGE: ComponentInstaller - remove the old web portal configuration data 
@@ -9,6 +9,9 @@ NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
 
 *DMS
 NEW: FTS3Agent working only with the FTS3 service to replace the existing one
+
+^Resources
+NEW: New SingularityComputingElement to submit jobs to a Singularity container
 
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
