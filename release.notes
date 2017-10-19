@@ -1,3 +1,8 @@
+[v6r17p35]
+
+*Core
+FIX: GOCDBClient - add EXTENSIONS & SCOPE tag support to GOCDB service queries.
+
 [v6r17p34]
 
 *SMS
