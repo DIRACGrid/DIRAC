@@ -5,7 +5,7 @@ Managing Code with Git
 ====================================
 
 DIRAC uses Git to manage it's source code. Git is a Distributed Version Control System (DVCS). 
-That means that there's no central repository like the one CVS/Subversion use. Each developer has 
+That means that there's no central repository like the one Subversion use. Each developer has 
 a copy of the whole repository. Because there are lots of repositories, code changes travel across 
 different repositories all the time by merging changes from different branches and repositories. 
 In any centralized VCS branching/merging is an advanced topic. In Git branching and merging are daily 
@@ -16,7 +16,7 @@ heavily inspired on `A successful Git branching model <http://nvie.com/posts/a-s
 How decentralization works
 ===========================
 
-Git doesn't have a centralized repository like CVS or Subversion do. Each developer has it's own repository. 
+Git doesn't have a centralized repository like Subversion do. Each developer has it's own repository. 
 That means that commits, branches, tags... everything is local. Almost all Git operations are blazingly fast. 
 By definition only one person works with one repository directly. But people don't develop alone. Git has a 
 set of operations to send and bring information to/from remote repositories. Users work with their local 

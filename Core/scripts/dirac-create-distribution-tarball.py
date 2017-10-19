@@ -25,7 +25,7 @@ __RCSID__ = "$Id$"
 
 class TarModuleCreator( object ):
 
-  VALID_VCS = ( 'cvs', 'svn', 'git', 'hg', 'file' )
+  VALID_VCS = ( 'svn', 'git', 'hg', 'file' )
 
   class Params( object ):
 
@@ -123,9 +123,6 @@ class TarModuleCreator( object ):
       sourceURL = os.path.expanduser( sourceURL )
       self.params.vcs = "file"
       return True
-    if sourceURL.find( ":" ) == 0:
-      self.params.vcs = "cvs"
-      return True
     if sourceURL.find( ".git" ) == len( sourceURL ) - 4:
       self.params.vcs = "git"
       return True
@@ -137,7 +134,7 @@ class TarModuleCreator( object ):
 
   def __checkoutSource( self, moduleName = None, sourceURL = None, tagVersion = None ):
     """
-    This method will checkout a given module from a given repository: cvsm svn, hg, git
+    This method will checkout a given module from a given repository: svn, hg, git
     
     :param str moduleName: The name of the Module: for example: LHCbWebDIRAC
     :param str sourceURL: The code repository: ssh://git@gitlab.cern.ch:7999/lhcb-dirac/LHCbWebDIRAC.git
@@ -150,8 +147,6 @@ class TarModuleCreator( object ):
 
     if self.params.vcs == "file":
       return self.__checkoutFromFile( moduleName, sourceURL )
-    elif self.params.vcs == "cvs":
-      return self.__checkoutFromCVS( moduleName, sourceURL )
     elif self.params.vcs == "svn":
       return self.__checkoutFromSVN( moduleName, sourceURL, tagVersion )
     elif self.params.vcs == "hg":
@@ -189,35 +184,9 @@ class TarModuleCreator( object ):
         shutil.copytree( sourceURL,
                          os.path.join( self.params.destination, moduleName ),
                          symlinks = True,
-                         ignore = shutil.ignore_patterns( '.svn', '.git', '.hg', '*.pyc', '*.pyo', 'CVS' ) )
+                         ignore = shutil.ignore_patterns( '.svn', '.git', '.hg', '*.pyc', '*.pyo' ) )
     except Exception as e:
       return S_ERROR( "Could not copy data from source URL: %s" % str( e ) )
-    return S_OK()
-
-  def __checkoutFromCVS( self, moduleName = None, sourceURL = None ):
-    """
-    This method checkout a given tag from a SVN repository. 
-    Note: we can checkout any project form a SVN repository 
-    
-    :param str moduleName: The name of the Module
-    :param str sourceURL: The code repository
-    :param str tagVersion: the tag for example: v4r3p6
-    
-    """
-    if not moduleName:
-      moduleName = self.params.name
-    
-    if not sourceURL:
-      sourceURL = self.params.sourceURL   
-      
-    cmd = "cvs export -d '%s' '%s'" % ( sourceURL, os.path.join( self.params.destination, moduleName ) )
-    gLogger.verbose( "Executing: %s" % cmd )
-    result = Subprocess.systemCall( 900, shlex.split(cmd) )
-    if not result[ 'OK' ]:
-      return S_ERROR( "Error while retrieving sources from CVS: %s" % result[ 'Message' ] )
-    exitStatus, stdData, errData = result[ 'Value' ]
-    if exitStatus:
-      return S_ERROR( "Error while retrieving sources from CVS: %s" % "\n".join( [ stdData, errData ] ) )
     return S_OK()
 
   def __checkoutFromSVN( self, moduleName = None, sourceURL = None, tagVersion = None ):
@@ -601,7 +570,7 @@ class TarModuleCreator( object ):
     gLogger.info( "Tar file %s created" % tarName )
     return S_OK( tarfilePath )
   
-  def __compileWebApp( self, isExtension = False ):
+  def __compileWebApp( self ):
     """
     This method is compile the DIRAC web framework
     """
@@ -639,7 +608,6 @@ class TarModuleCreator( object ):
     if not result[ 'OK' ]:
       gLogger.error( "Won't generate release notes: %s" % result[ 'Message' ] )
     
-    extension = False
     if 'Web' in self.params.name and self.params.name != 'Web': 
       # if we have an extension, we have to download, because it will be
       # required to compile the code
@@ -648,8 +616,7 @@ class TarModuleCreator( object ):
         result = self.__checkoutSource( "WebAppDIRAC", self.params.extensionSource, self.params.extensionVersion )
         if not result['OK']:
           return result 
-        extension = True
-      retVal = self.__compileWebApp( extension )
+      retVal = self.__compileWebApp()
       if not retVal['OK']: #it can fail, if we do not have sencha cmd and extjs farmework installed
         gLogger.warn( 'Web is not compiled: %s' % retVal['Message'] )
     
