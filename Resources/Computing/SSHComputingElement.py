@@ -474,8 +474,8 @@ class SSHComputingElement( ComputingElement ):
     for _i in range( numberOfJobs ):
       jobStamps.append( makeGuid()[:8] )
 
-    numberOfProcessors = self.ceParameters['NumberOfProcessors']
-    wholeNode = self.ceParameters['WholeNode']
+    numberOfProcessors = self.ceParameters.get( 'NumberOfProcessors', 1 )
+    wholeNode = self.ceParameters.get( 'WholeNode', False )
 
     # Collect command options
     commandOptions = { 'Executable': submitFile,
