@@ -85,7 +85,7 @@ class ReqClientMix( ReqClientTestCase ):
 
   def test01fullChain( self ):
     put = self.requestClient.putRequest( self.request )
-    self.assert_( put['OK'] )
+    self.assertTrue( put['OK'] )
 
     self.assertEqual( type( put['Value'] ), long )
     reqID = put['Value']
@@ -99,7 +99,7 @@ class ReqClientMix( ReqClientTestCase ):
                                    'File': { 'Waiting': 2L} } } )
 
     get = self.requestClient.getRequest( reqID )
-    self.assert_( get['OK'] )
+    self.assertTrue( get['OK'] )
     self.assertEqual( isinstance( get['Value'], Request ), True )
     # # summary - the request became "Assigned"
     res = RequestDB().getDBSummary()
@@ -124,7 +124,7 @@ class ReqClientMix( ReqClientTestCase ):
 
     res = self.requestClient.readRequestsForJobs( [123] )
     self.assertEqual( res['OK'], True, res['Message'] if 'Message' in res else 'OK' )
-    self.assert_( isinstance( res['Value']['Successful'][123], Request ) )
+    self.assertTrue( isinstance( res['Value']['Successful'][123], Request ) )
 
     # Adding new request
     request2 = Request()

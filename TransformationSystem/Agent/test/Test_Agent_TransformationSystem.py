@@ -51,18 +51,18 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
   def test__fillTheQueue( self ):
     operationsOnTransformationsDict = {1:{'Operations':['op1', 'op2'], 'Body':'veryBigBody'}}
     self.tmab._fillTheQueue( operationsOnTransformationsDict )
-    self.assert_( self.tmab.transInQueue == [1] )
-    self.assert_( self.tmab.transQueue.qsize() == 1 )
+    self.assertTrue( self.tmab.transInQueue == [1] )
+    self.assertTrue( self.tmab.transQueue.qsize() == 1 )
 
     operationsOnTransformationsDict = {2:{'Operations':['op3', 'op2'], 'Body':'veryveryBigBody'}}
     self.tmab._fillTheQueue( operationsOnTransformationsDict )
-    self.assert_( self.tmab.transInQueue == [1, 2] )
-    self.assert_( self.tmab.transQueue.qsize() == 2 )
+    self.assertTrue( self.tmab.transInQueue == [1, 2] )
+    self.assertTrue( self.tmab.transQueue.qsize() == 2 )
 
     operationsOnTransformationsDict = {2:{'Operations':['op3', 'op2'], 'Body':'veryveryBigBody'}}
     self.tmab._fillTheQueue( operationsOnTransformationsDict )
-    self.assert_( self.tmab.transInQueue == [1, 2] )
-    self.assert_( self.tmab.transQueue.qsize() == 2 )
+    self.assertTrue( self.tmab.transInQueue == [1, 2] )
+    self.assertTrue( self.tmab.transQueue.qsize() == 2 )
 
   def test_updateTaskStatusSuccess( self ):
     clients = {'TransformationClient':self.tc_mock, 'TaskManager':self.tm_mock}
@@ -77,7 +77,7 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
     # no tasks
     self.tc_mock.getTransformationTasks.return_value = {'OK': True, 'Value': []}
     res = self.tmab.updateTaskStatus( transIDOPBody, clients )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     # tasks, fail in update
     self.tc_mock.getTransformationTasks.return_value = {'OK': True,
@@ -123,7 +123,7 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
 
     self.tm_mock.getSubmittedTaskStatus.return_value = {'OK': True, 'Value': {}}
     res = self.tmab.updateTaskStatus( transIDOPBody, clients )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     # tasks, to update, no errors
     self.tc_mock.getTransformationTasks.return_value = {'OK': True,
@@ -146,7 +146,7 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
 
     self.tm_mock.getSubmittedTaskStatus.return_value = {'OK': True, 'Value': {'Running': [1, 2], 'Done': [3]}}
     res = self.tmab.updateTaskStatus( transIDOPBody, clients )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
 
   def test_updateFileStatusSuccess( self ):
@@ -162,7 +162,7 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
     # no files
     self.tc_mock.getTransformationFiles.return_value = {'OK': True, 'Value': []}
     res = self.tmab.updateFileStatus( transIDOPBody, clients )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     # files, failing to update
     self.tc_mock.getTransformationFiles.return_value = {'OK': True, 'Value': [{'file1': 'boh', 'TaskID':1}]}
@@ -174,13 +174,13 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
     self.tc_mock.getTransformationFiles.return_value = {'OK': True, 'Value': [{'file1': 'boh', 'TaskID':1}]}
     self.tm_mock.getSubmittedFileStatus.return_value = {'OK': True, 'Value': []}
     res = self.tmab.updateFileStatus( transIDOPBody, clients )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     # files, something to update
     self.tc_mock.getTransformationFiles.return_value = {'OK': True, 'Value': [{'file1': 'boh', 'TaskID':1}]}
     self.tm_mock.getSubmittedFileStatus.return_value = {'OK': True, 'Value': {'file1': 'OK', 'file2': 'NOK'}}
     res = self.tmab.updateFileStatus( transIDOPBody, clients )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
   def test_checkReservedTasks( self ):
     clients = {'TransformationClient':self.tc_mock, 'TaskManager':self.tm_mock}
@@ -195,7 +195,7 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
     # no tasks
     self.tc_mock.getTransformationTasks.return_value = {'OK': True, 'Value': []}
     res = self.tmab.checkReservedTasks( transIDOPBody, clients )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     # tasks, failing to update
     self.tc_mock.getTransformationTasks.return_value = {'OK': True,
@@ -231,7 +231,7 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
     self.tm_mock.updateTransformationReservedTasks.return_value = {'OK': True, 'Value': {'NoTasks': ['3_4', '5_6'],
                                                                                          'TaskNameIDs': {'1_1':123, '2_1':456}}}
     res = self.tmab.checkReservedTasks( transIDOPBody, clients )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
 
 
@@ -248,7 +248,7 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
     # no tasks
     self.tc_mock.getTasksToSubmit.return_value = {'OK': True, 'Value': {'JobDictionary': {}}}
     res = self.tmab.submitTasks( transIDOPBody, clients )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     # tasks, errors
     self.tc_mock.getTasksToSubmit.return_value = {'OK': True, 'Value': {'JobDictionary': {123: 'foo', 456: 'bar'}}}
@@ -277,7 +277,7 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
     self.tm_mock.submitTransformationTasks.return_value = {'OK': True, 'Value': [] }
     self.tm_mock.updateDBAfterTaskSubmission.return_value = {'OK': True, 'Value': [] }
     res = self.tmab.submitTasks( transIDOPBody, clients )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
 
 
