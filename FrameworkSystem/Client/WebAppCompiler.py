@@ -5,7 +5,12 @@ It is used to compile the web framework
 
 __RCSID__ = "$Id$"
 
-import os, tempfile, shutil, subprocess, gzip, sys, imp
+import os
+import tempfile
+import shutil
+import subprocess 
+import gzip 
+import sys 
 
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
