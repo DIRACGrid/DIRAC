@@ -310,7 +310,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 #
 #     command = DowntimeCommand({'element' : 'Site', "name": 'aSite', 'elementType': 'Z'})
 #     res = command.doNew()
-#     self.assertEqual( True, res[ 'OK' ] )
+#     self.assertTrue(res['OK'])
 #     self.assertEqual( None, res[ 'Value' ] )
 #
 #
@@ -332,7 +332,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 #     self.moduleTested.GOCDBClient.return_value = mock_GOCDB
 #     command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' } )
 #     res = command.doNew()
-#     self.assertEqual( True, res[ 'OK' ] )
+#     self.assertTrue(res['OK'])
 #     self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
 #     self.assertEqual( 'OUTAGE', res[ 'Value' ][ 'DT' ] )
 #     self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )
@@ -357,7 +357,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 #
 #     command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' } )
 #     res = command.doMaster()
-#     self.assertEqual( True, res[ 'OK' ] )
+#     self.assertTrue(res['OK'])
 #     self.assertEqual( { 'DT' : None }, res[ 'Value' ] )
 #
 #     mock_GOCDB = mock.Mock()
@@ -379,7 +379,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 #     command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' } )
 #     res = command.doMaster()
 #
-#     self.assertEqual( True, res[ 'OK' ] )
+#     self.assertTrue(res['OK'])
 #     self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
 #     self.assertEqual( 'OUTAGE', res[ 'Value' ][ 'DT' ] )
 #     self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )
@@ -387,7 +387,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 #     command = self.testClass( args = { 'element' : 'X', 'name' : 'Y', 'hours' : 1 } )
 #     res = command.doMaster()
 #
-#     self.assertEqual( True, res[ 'OK' ] )
+#     self.assertTrue(res['OK'])
 #     self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
 #     self.assertEqual( 'OUTAGE', res[ 'Value' ][ 'DT' ] )
 #     self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )
@@ -414,7 +414,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 #     command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' } )
 #     res = command.doMaster()
 #
-#     self.assertEqual( True, res[ 'OK' ] )
+#     self.assertTrue(res['OK'])
 #     self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
 #     self.assertEqual( 'OUTAGE in 3:00:00', res[ 'Value' ][ 'DT' ] )
 #     self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )
@@ -448,7 +448,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 #     command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' } )
 #     res = command.doMaster()
 #
-#     self.assertEqual( True, res[ 'OK' ] )
+#     self.assertTrue(res['OK'])
 #     self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
 #     self.assertEqual( 'OUTAGE in 3:00:00', res[ 'Value' ][ 'DT' ] )
 #     self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )
@@ -482,7 +482,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 #     command = self.testClass( args = { 'element' : 'Site', 'name' : 'Y' } )
 #     res = command.doMaster()
 #
-#     self.assertEqual( True, res[ 'OK' ] )
+#     self.assertTrue(res['OK'])
 #     self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
 #     self.assertEqual( 'OUTAGE', res[ 'Value' ][ 'DT' ] )
 #     self.assertEqual( '2013-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )

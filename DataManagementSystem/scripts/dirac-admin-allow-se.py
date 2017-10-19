@@ -128,7 +128,7 @@ for se, seOptions in res[ 'Value' ].iteritems():
                           ( statusType, se, seOptions[ 'ReadAccess' ], ALLOWED_STATUSES ) )
           gLogger.notice( 'Try specifying the command switches' )
         else:
-          resR = resourceStatus.setStorageElementStatus( se, statusType, 'Active', reason, userName )
+          resR = resourceStatus.setElementStatus( se, "StorageElement", statusType, 'Active', reason, userName )
           if not resR['OK']:
             gLogger.fatal( "Failed to update %s %s to Active, exit -" % ( se, statusType ), resR['Message'] )
             DIRAC.exit( -1 )

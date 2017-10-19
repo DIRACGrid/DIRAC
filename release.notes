@@ -16,6 +16,15 @@ NEW: New SingularityComputingElement to submit jobs to a Singularity container
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
 
+[v6r19p2]
+
+*DMS
+FIX: dirac-admin-allow-se: fix crash because of usage of old RSS function
+
+*RSS
+FIX: ResourceStatusDB - microseconds should always be 0 
+FIX: Multiple fixes for the RSS tests
+
 [v6r19p1]
 
 *Core
@@ -179,6 +188,11 @@ NEW: Added client (scripts) system test
 CHANGE: Add to the TS system test, the test for transformations with meta-filters
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
+
+[v6r17p35]
+
+*Core
+FIX: GOCDBClient - add EXTENSIONS & SCOPE tag support to GOCDB service queries.
 
 [v6r17p34]
 
