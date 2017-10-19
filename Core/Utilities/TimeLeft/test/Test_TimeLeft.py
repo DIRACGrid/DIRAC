@@ -193,7 +193,7 @@ class TimeLeftSuccess( TimeLeftTestCase ):
       tl.batchPlugin.wallClockLimit = 1000
 
       res = tl.getTimeLeft()
-      self.assert_( res['OK'] )
+      self.assertTrue(res['OK'])
       self.assertEqual( res['Value'], 9400.0 )
 
 

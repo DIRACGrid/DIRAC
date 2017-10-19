@@ -51,7 +51,7 @@ class DTPolicy_Success( DTPolicy_TestCase ):
     self.DTCommand.doCommand.return_value = { 'OK' : False, 'Message' : 'Grumpy command' }
     policy.setCommand( self.DTCommand )
     res = policy.evaluate()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( 'Grumpy command', res['Value']['Reason'] )
     self.assertEqual( 'Error', res['Value']['Status'] )
 
@@ -63,11 +63,11 @@ class DTPolicy_Success( DTPolicy_TestCase ):
     self.assertEqual( 'Error', res['Value']['Status'] )
 
     res = policy.evaluate()
-    self.assert_( res[ 'OK' ] )
+    self.assertTrue( res[ 'OK' ] )
     # command result empty
     self.DTCommand.doCommand.return_value = {'OK': True, 'Value': None}
     res = policy.evaluate()
-    self.assert_( res[ 'OK' ] )
+    self.assertTrue( res[ 'OK' ] )
     self.assertEqual( 'Active', res[ 'Value' ][ 'Status' ] )
     self.assertEqual( 'No DownTime announced', res[ 'Value' ][ 'Reason' ] )
 
