@@ -85,9 +85,9 @@ class Condor( object ):
     submitOptions = kwargs['SubmitOptions']
 
     if wholeNode:
-      requirements = '+RequiresWholeMachine=True\n Requirements = ( CAN_RUN_WHOLE_MACHINE ) && ( TARGET.OpSys == "LINUX" )'
+      requirements = '+RequiresWholeMachine=True\n Requirements = ( CAN_RUN_WHOLE_MACHINE ) && ( OpSys == "LINUX" )'
     else:
-      requirements = 'Requirements = TARGET.OpSys == "LINUX"'
+      requirements = 'Requirements = OpSys == "LINUX"'
 
     jdlFile = tempfile.NamedTemporaryFile( dir=outputDir, suffix=".jdl" )
     jdlFile.write("""
@@ -100,6 +100,7 @@ class Condor( object ):
     Log = test.log
     Environment = CONDOR_JOBID=$(Cluster).$(Process)
     Getenv = False
+
     request_cpus = %s
 
     Queue %s
