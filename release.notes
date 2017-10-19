@@ -20,7 +20,7 @@ FIX: ElasticSearchDB - certifi package was miscalled
 FIX: ElasticSearchDB - added debug messages for DB connection
 
 *Framework
-FIX: ComponentInstalle - handling correctly extensions of DBs found in sql files
+FIX: ComponentInstaller - handling correctly extensions of DBs found in sql files
 
 *WMS
 FIX: SudoComputingElement - prevent message overwriting application errors
