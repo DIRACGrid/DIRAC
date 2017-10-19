@@ -23,6 +23,23 @@ def _parseSingleElement( element, attributes = None ):
     if attributes is not None:
       if attrName not in attributes:
         continue
+
+    if child.nodeName == "SCOPES":
+      for subchild in child.childNodes:
+        if subchild.childNodes:
+          handler.setdefault('SCOPES', []).append(subchild.childNodes[0].nodeValue.encode('utf-8'))
+      continue
+
+    if child.nodeName == "EXTENSIONS":
+      for subchild in child.childNodes:
+        if subchild.childNodes:
+          dct = {}
+          for subsubchild in  subchild.childNodes:
+            if subsubchild.childNodes:
+              dct[subsubchild.nodeName.encode('utf-8')] = subsubchild.childNodes[0].nodeValue.encode('utf-8')
+          handler.setdefault('EXTENSIONS', []).append(dct)
+      continue
+
     try:
       nodeValue = child.childNodes[0].nodeValue
       attrValue = nodeValue.encode('utf-8')
