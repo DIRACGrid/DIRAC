@@ -4,7 +4,6 @@
 import threading
 import select
 import time
-import types
 import socket
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -231,7 +230,7 @@ class MessageBroker( object ):
     #Load message
     if 'attrs' in msg:
       attrs = msg[ 'attrs' ]
-      if type( attrs ) not in( types.TupleType, types.ListType ):
+      if not isinstance( attrs, (tuple, list) ):
         return S_ERROR( "Message args has to be a tuple or a list, not %s" % type( attrs ) )
     else:
       attrs = None

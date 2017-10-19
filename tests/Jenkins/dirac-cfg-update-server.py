@@ -94,29 +94,41 @@ csAPI.setOption( 'Resources/FileCatalogs/FileCatalog/Master', 'True' )
 #       {
 #         DIRAC
 #         {
-#           DIRAC.Jenkins.org
+#           DIRAC.Jenkins.ch
 #           {
 #             CEs
 #             {
-#               some.CE.org
+#               jenkins.cern.ch
 #               {
-#                 CEType = SSH
+#                 CEType = Test
+#                 Queues
+#                 {
+#                   jenkins-queue_not_important
+#                   {
+#                     maxCPUTime = 200000
+#                     SI00 = 2400
+#                   }
+#                 }
 #               }
 #             }
 #           }
 #         }
 #       }
 
-res = csAPI.createSection( 'Resources/Sites/DIRAC/DIRAC.Jenkins.org/CEs/' )
-if not res['OK']:
-  print res['Message']
-  exit( 1 )
-res = csAPI.createSection( 'Resources/Sites/DIRAC/DIRAC.Jenkins.org/CEs/some.CE.org/' )
+for st in ['Resources/Sites/DIRAC/',
+           'Resources/Sites/DIRAC/DIRAC.Jenkins.ch',
+           'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/jenkins.cern.ch',
+           'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/jenkins.cern.ch/Queues'
+           'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/jenkins.cern.ch/Queues/jenkins-queue_not_important']:
+  res = csAPI.createSection( st )
 if not res['OK']:
   print res['Message']
   exit( 1 )
 
-csAPI.setOption( 'Resources/Sites/DIRAC/DIRAC.Jenkins.org/CEs/some.CE.org/CEType', 'SSH' )
+
+csAPI.setOption( 'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/CEType', 'Test' )
+csAPI.setOption( 'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/maxCPUTime', '200000' )
+csAPI.setOption( 'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/SI00', '2400' )
 
 
 # Now setting a RSS section as the following inside /Operations/Defaults:
