@@ -54,10 +54,10 @@ class ModuleBase( object ):
     self.executable = ''
     self.command = None
 
-    self.workflowStatus = None
-    self.stepStatus = None
-    self.workflow_commons = None
-    self.step_commons = None
+    self.workflowStatus = {}
+    self.stepStatus = {}
+    self.workflow_commons = {}
+    self.step_commons = {}
 
     self.applicationName = ''
     self.applicationVersion = ''
