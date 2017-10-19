@@ -1,3 +1,12 @@
+[v6r19p2]
+
+*DMS
+FIX: dirac-admin-allow-se: fix crash because of usage of old RSS function
+
+*RSS
+FIX: ResourceStatusDB - microseconds should always be 0 
+FIX: Multiple fixes for the RSS tests
+
 [v6r19p1]
 
 *Core
