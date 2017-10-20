@@ -407,7 +407,7 @@ function diracInstall(){
 
 #This is what VOs may replace
 function diracInstallCommand(){
-  $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t server -d
+  $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t fullserver -d
 }
 
 

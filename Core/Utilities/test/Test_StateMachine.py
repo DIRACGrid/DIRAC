@@ -75,7 +75,7 @@ class StateMachineTests(unittest.TestCase):
     self.assertRaises( TypeError, StateMachine, False )
 
     sm = StateMachine( self.waiting, {} )
-    self.assert_( sm )
+    self.assertTrue( sm )
 
 
 

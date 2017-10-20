@@ -47,12 +47,12 @@ class TestFTS3Serialization( unittest.TestCase ):
     obj2 = json.loads( obj.toJSON(), cls = FTS3JSONDecoder )
 
 
-    self.assert_( obj.string == obj2.string )
-    self.assert_( obj.date == obj2.date )
-    self.assert_( obj.dic == obj2.dic )
+    self.assertTrue( obj.string == obj2.string )
+    self.assertTrue( obj.date == obj2.date )
+    self.assertTrue( obj.dic == obj2.dic )
 
 
-    self.assert_( not hasattr( obj2, 'notSerialized' ) )
+    self.assertTrue( not hasattr( obj2, 'notSerialized' ) )
 
 
   def test_02_subobjects( self ):
@@ -73,7 +73,7 @@ class TestFTS3Serialization( unittest.TestCase ):
 
     obj2 = json.loads( obj.toJSON(), cls = FTS3JSONDecoder )
 
-    self.assert_( obj.sub.string == obj2.sub.string )
+    self.assertTrue( obj.sub.string == obj2.sub.string )
 
 
 
@@ -123,20 +123,20 @@ class TestFileGrouping( unittest.TestCase ):
   def test_01_groupFilesByTarget( self ):
 
     # empty input
-    self.assert_( groupFilesByTarget( [] )['Value'] == {} )
+    self.assertTrue( groupFilesByTarget( [] )['Value'] == {} )
 
 
 
     res = groupFilesByTarget( self.allFiles )
     
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     groups = res['Value']
 
-    self.assert_( self.f1 in groups['target1'] )
-    self.assert_( self.f2 in groups['target2'] )
-    self.assert_( self.f3 in groups['target1'] )
-    self.assert_( self.f4 in groups['target3'] )
+    self.assertTrue( self.f1 in groups['target1'] )
+    self.assertTrue( self.f2 in groups['target2'] )
+    self.assertTrue( self.f3 in groups['target1'] )
+    self.assertTrue( self.f4 in groups['target3'] )
 
 
   @mock.patch( 'DIRAC.DataManagementSystem.private.FTS3Utilities._checkSourceReplicas', side_effect = mock__checkSourceReplicas )
@@ -145,14 +145,14 @@ class TestFileGrouping( unittest.TestCase ):
     # We assume here that they all go to the same target
     res = generatePossibleTransfersBySources( self.allFiles )
 
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     groups = res['Value']
-    self.assert_( self.f1 in groups['Src1'] )
-    self.assert_( self.f1 in groups['Src2'] )
-    self.assert_( self.f2 in groups['Src2'] )
-    self.assert_( self.f2 in groups['Src3'] )
-    self.assert_( self.f3 in groups['Src4'] )
-    self.assert_( self.f2 in groups['Src3'] )
+    self.assertTrue( self.f1 in groups['Src1'] )
+    self.assertTrue( self.f1 in groups['Src2'] )
+    self.assertTrue( self.f2 in groups['Src2'] )
+    self.assertTrue( self.f2 in groups['Src3'] )
+    self.assertTrue( self.f3 in groups['Src4'] )
+    self.assertTrue( self.f2 in groups['Src3'] )
 
   @mock.patch( 'DIRAC.DataManagementSystem.private.FTS3Utilities._checkSourceReplicas', side_effect = mock__checkSourceReplicas )
   def test_03_selectUniqueSourceforTransfers( self, _mk_checkSourceReplicas ):
@@ -162,14 +162,14 @@ class TestFileGrouping( unittest.TestCase ):
 
     res = selectUniqueSourceforTransfers( groupBySource )
 
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     uniqueSources = res['Value']
     # Src1 and Src2 should not be here because f1 and f2 should be taken from Src2
-    self.assert_( sorted( uniqueSources.keys() ) == sorted( ['Src2', 'Src4'] ) )
-    self.assert_( self.f1 in uniqueSources['Src2'] )
-    self.assert_( self.f2 in uniqueSources['Src2'] )
-    self.assert_( self.f3 in uniqueSources['Src4'] )
+    self.assertTrue( sorted( uniqueSources.keys() ) == sorted( ['Src2', 'Src4'] ) )
+    self.assertTrue( self.f1 in uniqueSources['Src2'] )
+    self.assertTrue( self.f2 in uniqueSources['Src2'] )
+    self.assertTrue( self.f3 in uniqueSources['Src4'] )
 
 
 
