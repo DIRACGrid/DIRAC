@@ -89,65 +89,31 @@ class Pilot3Synchronizer( object ):
 
     gLogger.info( '-- Getting the content of the CS --' )
 
-    gLogger.verbose( 'From Operations/[Setup]/Pilot' )
+    # These are in fact not only setups: they may be "Defaults" sections, or VOs, in multi-VOs installations
     setups = gConfig.getSections( '/Operations/' )
     if not setups['OK']:
       gLogger.error( setups['Message'] )
       return setups
+    setups = setups['Value']
+
     try:
-      setups['Value'].remove( 'SoftwareDistribution' ) #TODO: remove this section
+      setups.remove( 'SoftwareDistribution' ) #TODO: remove this section
     except (AttributeError, ValueError):
       pass
 
-    for setup in setups['Value']:
-      options = gConfig.getOptionsDict( '/Operations/%s/Pilot' % setup )
-      if not options['OK']:
-        gLogger.error( options['Message'] )
-        return options
-      # We include everything that's in the Pilot section for this setup
-      if setup == self.pilotSetup:
-        self.pilotVOVersion = options['Value']['Version']
-      pilotDict['Setups'][setup] = options['Value']
-      ceTypesCommands = gConfig.getOptionsDict( '/Operations/%s/Pilot/Commands' % setup )
-      if ceTypesCommands['OK']:
-        # It's ok if the Pilot section doesn't list any Commands too
-        pilotDict['Setups'][setup]['Commands'] = {}
-        for ceType in ceTypesCommands['Value']:
-          # FIXME: inconsistent that we break Commands down into a proper list but other things are comma-list strings
-          pilotDict['Setups'][setup]['Commands'][ceType] = ceTypesCommands['Value'][ceType].split(', ')
-          # pilotDict['Setups'][setup]['Commands'][ceType] = ceTypesCommands['Value'][ceType]
-      if 'CommandExtensions' in pilotDict['Setups'][setup]:
-        # FIXME: inconsistent that we break CommandExtensionss down into a proper list but other things are comma-list strings
-        pilotDict['Setups'][setup]['CommandExtensions'] = pilotDict['Setups'][setup]['CommandExtensions'].split(', ')
-        # pilotDict['Setups'][setup]['CommandExtensions'] = pilotDict['Setups'][setup]['CommandExtensions']
+    # Something inside? (for multi-VO setups)
+    for vo in setups:
+      setupsFromVOs = gConfig.getSections( '/Operations/%s' % vo )
+      if not setupsFromVOs['OK']:
+        continue
+      else:
+        setups.append("%s/%s" %(vo, setupsFromVOs))
 
-      # Getting the details aboout the MQ Services to be used for logging, if any
-      if 'LoggingMQService' in pilotDict['Setups'][setup]:
-        loggingMQService = gConfig.getOptionsDict( '/Resources/MQServices/%s' \
-                                                    % pilotDict['Setups'][setup]['LoggingMQService'])
-        if not loggingMQService['OK']:
-          gLogger.error( loggingMQService['Message'] )
-          return loggingMQService
-        pilotDict['Setups'][setup]['Logging'] = {}
-        pilotDict['Setups'][setup]['Logging']['Host'] = loggingMQService['Value']['Host']
-        pilotDict['Setups'][setup]['Logging']['Port'] = loggingMQService['Value']['Port']
 
-        loggingMQServiceQueuesSections = gConfig.getSections( '/Resources/MQServices/%s/Queues' \
-                                                              % pilotDict['Setups'][setup]['LoggingMQService'])
-        if not loggingMQServiceQueuesSections['OK']:
-          gLogger.error( loggingMQServiceQueuesSections['Message'] )
-          return loggingMQServiceQueuesSections
-        pilotDict['Setups'][setup]['Logging']['Queue'] = {}
-        
-        for queue in loggingMQServiceQueuesSections['Value']:
-          loggingMQServiceQueue = gConfig.getOptionsDict( '/Resources/MQServices/%s/Queues/%s' \
-                                                          % (pilotDict['Setups'][setup]['LoggingMQService'], queue) )
-          if not loggingMQServiceQueue['OK']:
-            gLogger.error( loggingMQServiceQueue['Message'] )
-            return loggingMQServiceQueue
-          pilotDict['Setups'][setup]['Logging']['Queue'][queue] = loggingMQServiceQueue['Value']
+    gLogger.verbose( 'From Operations/[Setup]/Pilot' )
 
-        pilotDict['Setups'][setup]['Logging']['Queues'] = loggingMQService['Value']['Queues']
+    for setup in setups:
+      self._getPilotOptionsPerSetup(setup, pilotDict)
 
     gLogger.verbose( 'From Resources/Sites' )
     sitesSection = gConfig.getSections( '/Resources/Sites/' )
@@ -187,6 +153,61 @@ class Pilot3Synchronizer( object ):
     gLogger.verbose( "Got %s"  %str(pilotDict) )
 
     return pilotDict
+
+
+  def _getPilotOptionsPerSetup(self, setup, pilotDict):
+    """ Given a setup, returns its pilot options in a dictionary
+    """
+
+    options = gConfig.getOptionsDict( '/Operations/%s/Pilot' % setup )
+    if not options['OK']:
+      gLogger.warn( "Section /Operations/%s/Pilot does not exist: skipping" % setup )
+      return
+
+    # We include everything that's in the Pilot section for this setup
+    if setup == self.pilotSetup:
+      self.pilotVOVersion = options['Value']['Version']
+    pilotDict['Setups'][setup] = options['Value']
+    ceTypesCommands = gConfig.getOptionsDict( '/Operations/%s/Pilot/Commands' % setup )
+    if ceTypesCommands['OK']:
+      # It's ok if the Pilot section doesn't list any Commands too
+      pilotDict['Setups'][setup]['Commands'] = {}
+      for ceType in ceTypesCommands['Value']:
+        # FIXME: inconsistent that we break Commands down into a proper list but other things are comma-list strings
+        pilotDict['Setups'][setup]['Commands'][ceType] = ceTypesCommands['Value'][ceType].split(', ')
+        # pilotDict['Setups'][setup]['Commands'][ceType] = ceTypesCommands['Value'][ceType]
+    if 'CommandExtensions' in pilotDict['Setups'][setup]:
+      # FIXME: inconsistent that we break CommandExtensionss down into a proper list but other things are comma-list strings
+      pilotDict['Setups'][setup]['CommandExtensions'] = pilotDict['Setups'][setup]['CommandExtensions'].split(', ')
+      # pilotDict['Setups'][setup]['CommandExtensions'] = pilotDict['Setups'][setup]['CommandExtensions']
+
+    # Getting the details aboout the MQ Services to be used for logging, if any
+    if 'LoggingMQService' in pilotDict['Setups'][setup]:
+      loggingMQService = gConfig.getOptionsDict( '/Resources/MQServices/%s' \
+                                                  % pilotDict['Setups'][setup]['LoggingMQService'])
+      if not loggingMQService['OK']:
+        gLogger.error( loggingMQService['Message'] )
+        return loggingMQService
+      pilotDict['Setups'][setup]['Logging'] = {}
+      pilotDict['Setups'][setup]['Logging']['Host'] = loggingMQService['Value']['Host']
+      pilotDict['Setups'][setup]['Logging']['Port'] = loggingMQService['Value']['Port']
+
+      loggingMQServiceQueuesSections = gConfig.getSections( '/Resources/MQServices/%s/Queues' \
+                                                            % pilotDict['Setups'][setup]['LoggingMQService'])
+      if not loggingMQServiceQueuesSections['OK']:
+        gLogger.error( loggingMQServiceQueuesSections['Message'] )
+        return loggingMQServiceQueuesSections
+      pilotDict['Setups'][setup]['Logging']['Queue'] = {}
+      
+      for queue in loggingMQServiceQueuesSections['Value']:
+        loggingMQServiceQueue = gConfig.getOptionsDict( '/Resources/MQServices/%s/Queues/%s' \
+                                                        % (pilotDict['Setups'][setup]['LoggingMQService'], queue) )
+        if not loggingMQServiceQueue['OK']:
+          gLogger.error( loggingMQServiceQueue['Message'] )
+          return loggingMQServiceQueue
+        pilotDict['Setups'][setup]['Logging']['Queue'][queue] = loggingMQServiceQueue['Value']
+
+      pilotDict['Setups'][setup]['Logging']['Queues'] = loggingMQService['Value']['Queues']
 
 
   def _syncScripts(self):
