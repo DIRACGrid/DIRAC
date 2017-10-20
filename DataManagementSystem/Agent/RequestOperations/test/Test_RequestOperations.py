@@ -184,7 +184,7 @@ class ReplicateAndRegisterSuccess( ReqOpsTestCase ):
                   '/lhcb/2.dst': [file2, ['SE4'], ['SE5', 'SE6']]}
 
     res = self.rr._addMetadataToFiles( toSchedule )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     for lfn in toSchedule:
       self.assertEqual( res['Value'][lfn].LFN, lfn )
