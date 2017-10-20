@@ -37,7 +37,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 __RCSID__ = "$Id$"
 
 def _isOlderThan( stringTime, days ):
-  """ Check if a time stamp is older than a gieven number of days """
+  """ Check if a time stamp is older than a given number of days """
   timeDelta = timedelta( days=days )
   maxCTime = datetime.utcnow() - timeDelta
   # st = time.strptime( stringTime, "%a %b %d %H:%M:%S %Y" )
