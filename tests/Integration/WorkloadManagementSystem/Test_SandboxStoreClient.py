@@ -62,22 +62,22 @@ class SSC( TestSSCTestCase ):
     exeScriptLocation = find_all( 'exe-script.py', '..', '/DIRAC/tests/Integration' )[0]
     fileList = [exeScriptLocation]
     res = ssc.uploadFilesAsSandbox( fileList )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 #     SEPFN = res['Value'].split( '|' )[1]
     res = ssc.uploadFilesAsSandboxForJob( fileList, 1, 'Input' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 #     res = ssc.downloadSandboxForJob( 1, 'Input' ) #to run this would need the RSS on
-#     self.assert_( res['OK'] )
+#     self.assertTrue(res['OK'])
 
     # only ones needing the DB
     res = smDB.getUnusedSandboxes()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 #     print res
 #     ssc.get
 #     smDB.getSandboxId( SEName, SEPFN, requesterName, requesterGroup )
     # cleaning
 #     res = smDB.deleteSandboxes( SBIdList )
-#     self.assert_( res['OK'] )
+#     self.assertTrue(res['OK'])
 
 
 

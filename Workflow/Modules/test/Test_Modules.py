@@ -476,7 +476,7 @@ class FailoverRequestSuccess( ModulesTestCase ):
         self.fr.workflow_commons = wf_commons
         self.fr.step_commons = step_commons
         res = self.fr.execute()
-        self.assert_( res['OK'] )
+        self.assertTrue(res['OK'])
 
 #############################################################################
 # Scripy.py

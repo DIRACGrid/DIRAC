@@ -28,26 +28,26 @@ class JobLoggingCase( JobLoggingDBTestCase ):
                                            minor = 'date=datetime.datetime.utcnow()',
                                            date = datetime.datetime.utcnow(),
                                            source = 'Unittest' )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     date = '2006-04-25 14:20:17'
     result = self.jlogDB.addLoggingRecord( 1, status = "testing",
                                            minor = '2006-04-25 14:20:17',
                                            date = date,
                                            source = 'Unittest' )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     result = self.jlogDB.addLoggingRecord( 1, status = "testing",
                                            minor = 'No date 1',
                                            source = 'Unittest' )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     result = self.jlogDB.addLoggingRecord( 1, status = "testing",
                                            minor = 'No date 2',
                                            source = 'Unittest' )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     result = self.jlogDB.getJobLoggingInfo( 1 )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
     result = self.jlogDB.getWMSTimeStamps( 1 )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
     self.jlogDB.deleteJob( 1 )
 

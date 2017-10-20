@@ -117,6 +117,10 @@ class SudoComputingElement( ComputingElement ):
                         '/usr/bin/sudo -u %s sh -c "cp -f %s /tmp/x509up_u%d ; chmod 0400 /tmp/x509up_u%d"' % ( payloadUsername,  payloadProxy, payloadUID, payloadUID ),
                         callbackFunction = self.sendOutput )
 
+    # 3) Make sure the current directory is +rwx by the pilot's group
+    #    (needed for InstallDIRAC but not for LHCbInstallDIRAC, for example)
+    os.chmod('.', os.stat('.').st_mode | stat.S_IRWXG)
+    
     # Run the executable (the wrapper in fact)
     cmd = "/usr/bin/sudo -u %s PATH=$PATH DIRACSYSCONFIG=/scratch/%s/pilot.cfg LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH X509_CERT_DIR=$X509_CERT_DIR X509_USER_PROXY=/tmp/x509up_u%d sh -c '%s'" % ( payloadUsername, os.environ['USER'], payloadUID, executableFile )
     self.log.info( 'CE submission command is: %s' % cmd )
@@ -126,10 +130,13 @@ class SudoComputingElement( ComputingElement ):
       return result
 
     resultTuple = result['Value']
-    status = resultTuple[0]
-    self.log.info( "Status after the sudo execution is %d" % status )
-    if status > 0:
-      error = S_ERROR( 'sudo execution fails with return code %d' % status )
+    status    = resultTuple[0]
+    stdOutput = resultTuple[1]
+    stdError  = resultTuple[2]
+    self.log.info( "Status after the sudo execution is %s" % str( status ) )
+    if status > 128:
+      error = S_ERROR( status )
+      error['Value'] = ( status, stdOutput, stdError )
       return error
 
     return result
