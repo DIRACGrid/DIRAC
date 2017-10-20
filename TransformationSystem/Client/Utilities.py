@@ -122,7 +122,7 @@ class PluginUtilities( object ):
     tasks = []
     nTasks = 0
 
-    if files:
+    if not files:
       return S_OK( tasks )
 
     files = dict( files )
