@@ -3,7 +3,8 @@
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+from DIRAC.WorkloadManagementSystem.Utilities.Pilot3Synchronizer import Pilot3Synchronizer
 
 gServiceInterface = False
 
@@ -17,6 +18,23 @@ def initializeConfigurationHandler( serviceInfo ):
 class ConfigurationHandler( RequestHandler ):
   """ The CS handler
   """
+
+  def initializeHandler( self, _serviceInfo ):
+    """
+    Handler class initialization
+    """
+    # Check the flag for updating the pilot 3 JSON file
+    self.updatePilot3JSONFile = self.srv_getCSOption( 'UpdatePilot3JSONFile', False )
+    if self.updatePilot3JSONFile:
+      self.paramDict = {}
+      self.paramDict['pilotFileServer'] = getServiceOption( _serviceInfo, "pilotFileServer", '' )
+      self.paramDict['pilotRepo'] = getServiceOption( _serviceInfo, "pilotRepo", '' )
+      self.paramDict['pilotVORepo'] = getServiceOption( _serviceInfo, "pilotVORepo", '' )
+      self.paramDict['projectDir'] = getServiceOption( _serviceInfo, "projectDir", '' )
+      self.paramDict['pilotVOScriptPath'] = getServiceOption( _serviceInfo, "pilotVOScriptPath", '' )
+      self.paramDict['pilotScriptsPath'] = getServiceOption( _serviceInfo, "pilotScriptsPath", '' )
+
+    return S_OK( 'Initialization went well' )
 
   types_getVersion = []
   def export_getVersion( self ):
@@ -45,7 +63,13 @@ class ConfigurationHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     if not 'DN' in credDict or not 'username' in credDict:
       return S_ERROR( "You must be authenticated!" )
-    return gServiceInterface.updateConfiguration( sData, credDict[ 'username' ] )
+    res = gServiceInterface.updateConfiguration( sData, credDict[ 'username' ] )
+
+    if self.updatePilot3JSONFile:
+      if not res['OK']:
+        return res
+      return Pilot3Synchronizer( self.paramDict ).sync()
+
 
   types_writeEnabled = []
   def export_writeEnabled( self ):
@@ -79,4 +103,6 @@ class ConfigurationHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     if not 'DN' in credDict or not 'username' in credDict:
       return S_ERROR( "You must be authenticated!" )
-    return gServiceInterface.updateConfiguration( retVal[ 'Value' ] , credDict[ 'username' ], updateVersionOption = True )
+    return gServiceInterface.updateConfiguration( retVal[ 'Value' ],
+                                                  credDict[ 'username' ],
+                                                  updateVersionOption = True )

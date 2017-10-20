@@ -51,7 +51,7 @@ class Pilot3Synchronizer( object ):
     self.pilotVersion = ''
     self.pilotVOVersion =''
 
-  def sync( self, _eventName, _params ):
+  def sync( self ):
     ''' Main synchronizer method.
     '''
     gLogger.notice( '-- Synchronizing the content of the JSON file %s with the content of the CS --' % self.jsonFile )
