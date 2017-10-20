@@ -76,7 +76,7 @@ class PluginsBaseSuccess( PluginsTestCase ):
     pluginStandard = TransformationPlugin( 'Standard' )
     pluginStandard.setParameters( params )
     res = pluginStandard.run()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], [] )
 
   def test__Standard_Data_G10( self ):
@@ -87,7 +87,7 @@ class PluginsBaseSuccess( PluginsTestCase ):
     pluginStandard.setParameters( params )
     pluginStandard.setInputData( data )
     res = pluginStandard.run()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], [] )
 
   def test__Standard_Flush_G10( self ):
@@ -106,7 +106,7 @@ class PluginsBaseSuccess( PluginsTestCase ):
                     '/this/is/at.12']),
                   ('SE2', ['/this/is/als/at.2', '/this/is/at_23', '/this/is/at.2']),
                   ('SE4', ['/this/is/at_4'])]
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], sortedData )
 
   def test__Standard_G1( self ):
@@ -114,7 +114,7 @@ class PluginsBaseSuccess( PluginsTestCase ):
     pluginStandard = TransformationPlugin( 'Standard' )
     pluginStandard.setParameters( paramsBase )
     res = pluginStandard.run()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], [] )
 
   def test__Standard_Data_G1( self ):
@@ -123,7 +123,7 @@ class PluginsBaseSuccess( PluginsTestCase ):
     pluginStandard.setParameters( paramsBase )
     pluginStandard.setInputData( data )
     res = pluginStandard.run()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     sortedData = sorted([ (",".join(SEs), [lfn]) for lfn,SEs in data.iteritems() ])
     self.assertEqual( res['Value'], sortedData )
 
@@ -136,7 +136,7 @@ class PluginsBaseSuccess( PluginsTestCase ):
     pluginStandard.setInputData( data )
     res = pluginStandard.run()
     sortedData = sorted([ (",".join(SEs), [lfn]) for lfn,SEs in data.iteritems() ])
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], sortedData )
 
 #############################################################################
