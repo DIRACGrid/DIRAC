@@ -147,7 +147,7 @@ class PluginUtilities( object ):
           tasksLfns = breakListIntoChunks( lfns, self.groupSize )
           lfnsInTasks = []
           for taskLfns in tasksLfns:
-            if ( flush and not groupSE ) or ( len( taskLfns ) >= self.groupSize ):
+            if flush or ( len( taskLfns ) >= self.groupSize ):
               tasks.append( ( replicaSE, taskLfns ) )
               lfnsInTasks += taskLfns
           # In case the file was at more than one site, remove it from the other sites' list
