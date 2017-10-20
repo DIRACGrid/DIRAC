@@ -63,7 +63,7 @@ class TestParametricUtilityCase( unittest.TestCase ):
     self.assertEqual( nParam, 3 )
 
     result = generateParametricJobs( clad )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
     jobDescList = result['Value']
     self.assertEqual( nParam, len( jobDescList ) )
@@ -81,7 +81,7 @@ class TestParametricUtilityCase( unittest.TestCase ):
     self.assertEqual( nParam, 3 )
 
     result = generateParametricJobs( clad )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
     jobDescList = result['Value']
     self.assertEqual( nParam, len( jobDescList ) )
@@ -99,7 +99,7 @@ class TestParametricUtilityCase( unittest.TestCase ):
     self.assertEqual( nParam, 3 )
 
     result = generateParametricJobs( clad )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
     jobDescList = result['Value']
     self.assertEqual( nParam, len( jobDescList ) )
@@ -117,7 +117,7 @@ class TestParametricUtilityCase( unittest.TestCase ):
     self.assertEqual( nParam, 3 )
 
     result = generateParametricJobs( clad )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
     jobDescList = result['Value']
     self.assertEqual( nParam, len( jobDescList ) )

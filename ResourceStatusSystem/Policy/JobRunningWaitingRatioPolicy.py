@@ -70,9 +70,9 @@ class JobRunningWaitingRatioPolicy( PolicyBase ):
 
     efficiency = running / total
 
-    if efficiency < 0.4:
+    if efficiency <= 0.4:
       result[ 'Status' ] = 'Banned'
-    elif efficiency < 0.65:
+    elif efficiency <= 0.65:
       result[ 'Status' ] = 'Degraded'
     else:
       result[ 'Status' ] = 'Active'
