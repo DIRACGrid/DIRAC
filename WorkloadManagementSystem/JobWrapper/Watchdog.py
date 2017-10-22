@@ -39,20 +39,25 @@ class Watchdog( object ):
   def __init__( self, pid, exeThread, spObject, jobCPUtime, jobArgs, memoryLimit = 0, processors = 1, systemFlag = 'linux' ):
     """ Constructor, takes system flag as argument.
     """
-    if "StopSignalSeconds" in jobArgs:
-      self.stopSignalSeconds = int ( jobArgs['StopSignalSeconds'] )
+    if "StopSigStartSeconds" in jobArgs:
+      self.stopSigStartSeconds = int ( jobArgs['StopSigStartSeconds'] )
     else:
-      self.stopSignalSeconds = 30 * 60 # 30 minutes
+      self.stopSigStartSeconds = 30 * 60 # 30 minutes
 
-    if "StopSignalNumber" in jobArgs:
-      self.stopSignalNumber = int ( jobArgs['StopSignalNumber'] )      
+    if "StopSigFinishSeconds" in jobArgs:
+      self.stopSigFinishSeconds = int ( jobArgs['StopSigFinishSeconds'] )
     else:
-      self.stopSignalNumber = 2 # SIGINT
+      self.stopSigFinishSeconds = 30 * 60 # 30 minutes
 
-    if "StopSignalRegex" in jobArgs:
-      self.stopSignalRegex = jobArgs['StopSignalRegex']
+    if "StopSigNumber" in jobArgs:
+      self.stopSigNumber = int ( jobArgs['StopSigNumber'] )      
     else:
-      self.stopSignalRegex = None
+      self.stopSigNumber = 2 # SIGINT
+
+    if "StopSigRegex" in jobArgs:
+      self.stopSigRegex = jobArgs['StopSigRegex']
+    else:
+      self.stopSigRegex = None
       
     self.log = gLogger.getSubLogger( "Watchdog" )
     self.systemFlag = systemFlag
@@ -197,8 +202,8 @@ class Watchdog( object ):
       self.log.info( 'Process to monitor has completed, Watchdog will exit.' )
       return S_OK( "Ended" )
 
-    # WallClock checks every self.wallClockCheckSeconds, but only if StopSignalRegex is defined in JDL
-    if self.stopSignalRegex is not None and ( time.time() - self.initialValues['StartTime'] ) > self.wallClockCheckSeconds * self.wallClockCheckCount:
+    # WallClock checks every self.wallClockCheckSeconds, but only if StopSigRegex is defined in JDL
+    if self.stopSigRegex is not None and ( time.time() - self.initialValues['StartTime'] ) > self.wallClockCheckSeconds * self.wallClockCheckCount:
       self.wallClockCheckCount += 1
       self._performWallClockChecks()
 
@@ -239,9 +244,15 @@ class Watchdog( object ):
       # Just stop if we can't get the wall clock seconds left
       return S_OK()
 
-    if wallClockSecondsLeft < self.stopSignalSeconds + self.wallClockCheckSeconds:
+    jobstartSeconds = mjf.getIntJobFeature( 'jobstart_secs' )
+    if jobstartSeconds is None:
+      # Just stop if we don't know when the job started
+      return S_OK()
+
+    if (  int( time.time() ) > jobstartSeconds + self.stopSigStartSeconds ) and \
+       ( wallClockSecondsLeft < self.stopSigFinishSeconds + self.wallClockCheckSeconds ):
       # Need to send the signal!
-      self.log.info( 'Sending signal %d to JobWrapper children' % self.stopSignalNumber )
+      self.log.info( 'Sending signal %d to JobWrapper children' % self.stopSigNumber )
       try:
         for childPid in getChildrenPIDs( self.wrapperPID ):
           try:
@@ -250,9 +261,9 @@ class Watchdog( object ):
             # Process gone away? Not running on Linux? Skip anyway
             continue
 
-          if re.search( self.stopSignalRegex, cmdline ) is not None:
-            self.log.info( 'Sending signal %d to process ID %d, cmdline = "%s"' % ( self.stopSignalNumber, childPid, cmdline ) )
-            os.kill( childPid, self.stopSignalNumber )
+          if re.search( self.stopSigRegex, cmdline ) is not None:
+            self.log.info( 'Sending signal %d to process ID %d, cmdline = "%s"' % ( self.stopSigNumber, childPid, cmdline ) )
+            os.kill( childPid, self.stopSigNumber )
           
       except Exception as e:
         self.log.error( 'Failed to send signals to JobWrapper children! (%s)' % str(e) )
