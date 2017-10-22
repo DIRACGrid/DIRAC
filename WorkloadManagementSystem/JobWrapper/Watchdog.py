@@ -20,22 +20,51 @@
 __RCSID__ = "$Id$"
 
 import os
+import re
 import time
 
 from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities                               import Time
+from DIRAC.Core.Utilities                               import MJF
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ConfigurationSystem.Client.Config            import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder        import getSystemInstance
 from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
+from DIRAC.Core.Utilities.Subprocess                    import getChildrenPIDs
 
 class Watchdog( object ):
 
   #############################################################################
-  def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux' ):
+  def __init__( self, pid, exeThread, spObject, jobCPUtime, jobArgs, memoryLimit = 0, processors = 1, systemFlag = 'linux' ):
     """ Constructor, takes system flag as argument.
     """
+    if "StopSignalSeconds" in jobArgs:
+      self.stopSignalSeconds = int ( jobArgs['StopSignalSeconds'] )
+    else:
+      self.stopSignalSeconds = 30 * 60 # 30 minutes
+
+    if "StopSignalNumber" in jobArgs:
+      self.stopSignalNumber = int ( jobArgs['StopSignalNumber'] )      
+    else:
+      self.stopSignalNumber = 2 # SIGINT
+
+    if "StopSignalRegex" in jobArgs:
+      self.stopSignalRegex = jobArgs['StopSignalRegex']
+      # FIXME: testing 1 code starts
+      if self.stopSignalRegex == 'prodConf_Gauss':
+        self.stopSignalRegex = '^/cvmfs/[^ ]*/python /cvmfs/[^ ]*/gaudirun.py .* prodConf_Gauss_[0-9_]*.py$'
+        print 'Hard code StopSignalRegex as ',self.stopSignalRegex
+      # FIXME: testing 1 code ends
+    else:
+      self.stopSignalRegex = None
+      
+    #FIXME testing code 2 starts
+    print 'self.stopSignalSeconds',self.stopSignalSeconds
+    print 'self.stopSignalNumber',self.stopSignalNumber
+    print 'self.stopSignalRegex',self.stopSignalRegex
+    #FIXME testing code 2 ends
+
     self.log = gLogger.getSubLogger( "Watchdog" )
     self.systemFlag = systemFlag
     self.exeThread = exeThread
@@ -67,6 +96,7 @@ class Watchdog( object ):
     self.pollingTime = 10  # 10 seconds
     self.checkingTime = 30 * 60  # 30 minute period
     self.minCheckingTime = 20 * 60  # 20 mins
+    self.wallClockCheckSeconds = 5 * 60 # 5 minutes
     self.maxWallClockTime = 3 * 24 * 60 * 60  # e.g. 4 days
     self.jobPeekFlag = 1  # on / off
     self.minDiskSpace = 10  # MB
@@ -76,6 +106,7 @@ class Watchdog( object ):
     self.minCPUWallClockRatio = 5  # ratio %age
     self.nullCPULimit = 5  # After 5 sample times return null CPU consumption kill job
     self.checkCount = 0
+    self.wallClockCheckCount = 0
     self.nullCPUCount = 0
 
     self.grossTimeLeftLimit = 10 * self.checkingTime
@@ -177,6 +208,12 @@ class Watchdog( object ):
       self.log.info( 'Process to monitor has completed, Watchdog will exit.' )
       return S_OK( "Ended" )
 
+    print self.stopSignalRegex, time.time(), self.initialValues['StartTime'], self.wallClockCheckSeconds, self.wallClockCheckCount # FIXME For testing
+    # WallClock checks every self.wallClockCheckSeconds, but only if StopSignalRegex is defined in JDL
+    if self.stopSignalRegex is not None and ( time.time() - self.initialValues['StartTime'] ) > self.wallClockCheckSeconds * self.wallClockCheckCount:
+      self.wallClockCheckCount += 1
+      self._performWallClockChecks()
+
     if self.littleTimeLeft:
       # if we have gone over enough iterations query again
       if self.littleTimeLeftCount == 0 and self.__timeLeft() == -1:
@@ -201,6 +238,40 @@ class Watchdog( object ):
       # self.log.debug('Application thread is alive: checking count is %s' %(self.checkCount))
       return S_OK()
 
+  #############################################################################
+  def _performWallClockChecks( self ):
+    """Watchdog performs the wall clock checks based on MJF. Signals are sent 
+       to processes if we need to stop, but function always returns S_OK()
+    """
+    mjf = MJF.MJF()
+    
+    try:
+      wallClockSecondsLeft = mjf.getWallClockSecondsLeft()
+    except Exception as e:
+      print 'mjf.getWallClockSecondsLeft() exception',str(e) # FIXME for testing
+      # Just stop if we can't get the wall clock seconds left
+      return S_OK()
+
+    print 'in performWallClockChecks', wallClockSecondsLeft, self.stopSignalSeconds, self.wallClockCheckSeconds # FIXME testing
+    if wallClockSecondsLeft < self.stopSignalSeconds + self.wallClockCheckSeconds:
+      # Need to send the signal!
+      self.log.info( 'Sending signal %d to JobWrapper children' % self.stopSignalNumber )
+      try:
+        for childPid in getChildrenPIDs( self.wrapperPID ):
+          try:
+            cmdline = open( '/proc/%d/cmdline' % childPid, 'r' ).read().replace( '\0', ' ' ).strip()
+          except IOError:
+            # Process gone away? Not running on Linux? Skip anyway
+            continue
+
+          if re.search( self.stopSignalRegex, cmdline ) is not None:
+            self.log.info( 'Sending signal %d to process ID %d, cmdline = "%s"' % ( self.stopSignalNumber, childPid, cmdline ) )
+            os.kill( childPid, self.stopSignalNumber )
+          
+      except Exception as e:
+        self.log.error( 'Failed to send signals to JobWrapper children! (%s)' % str(e) )
+
+    return S_OK()
 
   #############################################################################
   def _performChecks( self ):
