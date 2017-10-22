@@ -51,20 +51,9 @@ class Watchdog( object ):
 
     if "StopSignalRegex" in jobArgs:
       self.stopSignalRegex = jobArgs['StopSignalRegex']
-      # FIXME: testing 1 code starts
-      if self.stopSignalRegex == 'prodConf_Gauss':
-        self.stopSignalRegex = '^/cvmfs/[^ ]*/python /cvmfs/[^ ]*/gaudirun.py .* prodConf_Gauss_[0-9_]*.py$'
-        print 'Hard code StopSignalRegex as ',self.stopSignalRegex
-      # FIXME: testing 1 code ends
     else:
       self.stopSignalRegex = None
       
-    #FIXME testing code 2 starts
-    print 'self.stopSignalSeconds',self.stopSignalSeconds
-    print 'self.stopSignalNumber',self.stopSignalNumber
-    print 'self.stopSignalRegex',self.stopSignalRegex
-    #FIXME testing code 2 ends
-
     self.log = gLogger.getSubLogger( "Watchdog" )
     self.systemFlag = systemFlag
     self.exeThread = exeThread
@@ -208,7 +197,6 @@ class Watchdog( object ):
       self.log.info( 'Process to monitor has completed, Watchdog will exit.' )
       return S_OK( "Ended" )
 
-    print self.stopSignalRegex, time.time(), self.initialValues['StartTime'], self.wallClockCheckSeconds, self.wallClockCheckCount # FIXME For testing
     # WallClock checks every self.wallClockCheckSeconds, but only if StopSignalRegex is defined in JDL
     if self.stopSignalRegex is not None and ( time.time() - self.initialValues['StartTime'] ) > self.wallClockCheckSeconds * self.wallClockCheckCount:
       self.wallClockCheckCount += 1
@@ -248,11 +236,9 @@ class Watchdog( object ):
     try:
       wallClockSecondsLeft = mjf.getWallClockSecondsLeft()
     except Exception as e:
-      print 'mjf.getWallClockSecondsLeft() exception',str(e) # FIXME for testing
       # Just stop if we can't get the wall clock seconds left
       return S_OK()
 
-    print 'in performWallClockChecks', wallClockSecondsLeft, self.stopSignalSeconds, self.wallClockCheckSeconds # FIXME testing
     if wallClockSecondsLeft < self.stopSignalSeconds + self.wallClockCheckSeconds:
       # Need to send the signal!
       self.log.info( 'Sending signal %d to JobWrapper children' % self.stopSignalNumber )
