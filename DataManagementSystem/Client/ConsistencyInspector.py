@@ -37,8 +37,8 @@ class ConsistencyInspector(object):
     """
     self.interactive = interactive
     self.transClient = TransformationClient() if transClient is None else transClient
-    self.dm = dm if dm else DataManager()
-    self.fc = fc if fc else FileCatalog()
+    self.dataManager = dm if dm else DataManager()
+    self.fileCatalog = fc if fc else FileCatalog()
     self.dic = dic if dic else DataIntegrityClient()
     self.dirac = Dirac()
 
@@ -82,8 +82,7 @@ class ConsistencyInspector(object):
   def __logVerbose(self, msg, msg1=''):
     """ logger helper for verbose information """
     if self._verbose:
-      newMsg = '[ConsistencyChecks] ' + \
-          ('[%s] ' % str(self.prod)) if self.prod else ''
+      newMsg = '[ConsistencyChecks] ' + ('[%s] ' % str(self.prod)) if self.prod else ''
       # Add that prefix to all lines of the message
       newMsg1 = msg1.replace('\n', '\n' + newMsg)
       newMsg += msg.replace('\n', '\n' + newMsg)
@@ -116,7 +115,7 @@ class ConsistencyInspector(object):
       if printProgress:
         self.__write('.')
       for _ in xrange(1, 10):
-        res = self.fc.getReplicas(chunk)
+        res = self.fileCatalog.getReplicas(chunk)
         if res['OK']:
           present.update(res['Value']['Successful'])
           self.cachedReplicas.update(res['Value']['Successful'])
@@ -198,7 +197,7 @@ class ConsistencyInspector(object):
 
     level = gLogger.getLevel()
     gLogger.setLevel('FATAL')
-    res = self.dm.getFilesFromDirectory(dirs)
+    res = self.dataManager.getFilesFromDirectory(dirs)
     gLogger.setLevel(level)
     if not res['OK']:
       if 'No such file or directory' not in res['Message']:
@@ -278,7 +277,7 @@ class ConsistencyInspector(object):
         else:
           printout = True
           topDir = os.path.dirname(directory)
-          res = self.fc.listDirectory(topDir)
+          res = self.fileCatalog.listDirectory(topDir)
           if not res['OK']:
             # DError(errno.ENOENT, res['Message'] )
             return S_ERROR(errno.ENOENT, res['Message'])
@@ -380,7 +379,7 @@ class ConsistencyInspector(object):
                    (len(lfnsLeft), chunkSize))
       for lfnChunk in breakListIntoChunks(lfnsLeft, chunkSize):
         self.__write('.')
-        replicasRes = self.fc.getReplicas(lfnChunk)
+        replicasRes = self.fileCatalog.getReplicas(lfnChunk)
         if not replicasRes['OK']:
           gLogger.error("error:  %s" % replicasRes['Message'])
           return S_ERROR(errno.ENOENT, "error:  %s" % replicasRes['Message'])
@@ -393,7 +392,7 @@ class ConsistencyInspector(object):
     metadata = {}
     for lfnChunk in breakListIntoChunks(replicas, chunkSize):
       self.__write('.')
-      res = self.fc.getFileMetadata(lfnChunk)
+      res = self.fileCatalog.getFileMetadata(lfnChunk)
       if not res['OK']:
         return S_ERROR(errno.ENOENT, "error %s" % res['Message'])
       metadata.update(res['Value']['Successful'])
@@ -592,7 +591,7 @@ class ConsistencyInspector(object):
     return S_OK(resDict)
 
   def checkPhysicalFiles(self, replicas, catalogMetadata, ses=None):
-    """ This method takes the supplied replica and metadata information obtained 
+    """ This method takes the supplied replica and metadata information obtained
         from the catalog and checks against the storage elements.
     """
 
@@ -699,7 +698,7 @@ class ConsistencyInspector(object):
     gLogger.info('Checking %s storage files exist in the catalog' %
                  len(storageMetadata))
 
-    res = self.fc.getReplicas(storageMetadata)
+    res = self.fileCatalog.getReplicas(storageMetadata)
     if not res['OK']:
       gLogger.error("Failed to get replicas for LFN", res['Message'])
       return res
@@ -828,7 +827,7 @@ class ConsistencyInspector(object):
 
       gLogger.debug("Examining %s" % directory)
 
-      res = self.fc.listDirectory(directory)
+      res = self.fileCatalog.listDirectory(directory)
       if not res['OK']:
         gLogger.error('Failed to get directory contents', res['Message'])
         return res
@@ -871,7 +870,7 @@ class ConsistencyInspector(object):
 
     gLogger.debug("Content of directories examined: %d files" % len(allFiles))
 
-    replicas = self.fc.getReplicas(list(allFiles))
+    replicas = self.fileCatalog.getReplicas(list(allFiles))
     if not replicas['OK']:
       return replicas
     if replicas['Value']['Failed']:
@@ -885,7 +884,7 @@ class ConsistencyInspector(object):
     gLogger.info('Obtaining the replicas for %s files' % len(lfns))
 
     zeroReplicaFiles = []
-    res = self.fc.getReplicas(lfns, allStatus=True)
+    res = self.fileCatalog.getReplicas(lfns, allStatus=True)
     if not res['OK']:
       gLogger.error('Failed to get catalog replicas', res['Message'])
       return res
@@ -905,7 +904,7 @@ class ConsistencyInspector(object):
 
     missingCatalogFiles = []
     zeroSizeFiles = []
-    res = self.fc.getFileMetadata(lfns)
+    res = self.fileCatalog.getFileMetadata(lfns)
     if not res['OK']:
       gLogger.error('Failed to get catalog metadata', res['Message'])
       return res
