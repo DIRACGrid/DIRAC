@@ -1,7 +1,6 @@
-import types
 from DIRAC.Core.Utilities import Time
 
-class DBUtils:
+class DBUtils(object):
 
   def __init__( self, db, setup ):
     self._acDB = db
@@ -31,11 +30,13 @@ class DBUtils:
                        ( "%s, %s", ( "field1name", "field2name", "field3name" )
     """
     validCondDict = {}
-    if type( condDict ) == types.DictType:
+    if isinstance(condDict, dict):
       for key in condDict:
-        if type( condDict[ key ] ) in ( types.ListType, types.TupleType ) and len( condDict[ key ] ) > 0:
+        if isinstance(condDict[ key ], (list, tuple)) and len(condDict[key]):
           validCondDict[ key ] = condDict[ key ]
-    return self._acDB.retrieveBucketedData( self._setup, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields )
+    return self._acDB.retrieveBucketedData( self._setup, typeName, startTime,
+                                            endTime, selectFields,
+                                            condDict, groupFields, orderFields )
 
   def _getUniqueValues( self, typeName, startTime, endTime, condDict, fieldList ):
     stringList = [ "%s" for field in fieldList ]
@@ -55,7 +56,7 @@ class DBUtils:
       groupingField = row[ fieldIndex ]
       if not groupingField in groupDict:
         groupDict[ groupingField ] = []
-      if type( row ) == types.TupleType:
+      if isinstance(row, tuple):
         rowL = list( row[ :fieldIndex ] )
         rowL.extend( row[ fieldIndex + 1: ] )
         row = rowL

@@ -1,23 +1,18 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import os
-try:
-  import hashlib
-  md5 = hashlib
-except:
-  import md5
-import types
+import hashlib as md5
 import threading
 import cStringIO
 import tarfile
 import tempfile
+
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 gLogger = gLogger.getSubLogger( "FileTransmissionHelper" )
 
-class FileHelper:
+class FileHelper(object):
 
   __validDirections = ( "toClient", "fromClient", 'receive', 'send' )
   __directionsMapping = { 'toClient' : 'send', 'fromClient' : 'receive' }
