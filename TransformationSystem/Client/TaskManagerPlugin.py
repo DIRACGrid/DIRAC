@@ -12,7 +12,7 @@ from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
 __RCSID__ = "$Id$"
 
 
-class TaskManagerPlugin( PluginBase ):
+class TaskManagerPlugin(PluginBase):
   """ A TaskManagerPlugin object should be instantiated by every TaskManager object.
 
       self.params here could be
@@ -21,7 +21,7 @@ class TaskManagerPlugin( PluginBase ):
       which corresponds to paramsDict in TaskManager (which is in fact a tasks dict)
   """
 
-  def _BySE( self ):
+  def _BySE(self):
     """ Matches using TargetSE. This is the standard plugin.
     """
 
@@ -30,9 +30,9 @@ class TaskManagerPlugin( PluginBase ):
     try:
       seList = ['Unknown']
       if self.params['TargetSE']:
-        if isinstance( self.params['TargetSE'], basestring ):
-          seList = fromChar( self.params['TargetSE'] )
-        elif isinstance( self.params['TargetSE'], list ):
+        if isinstance(self.params['TargetSE'], basestring):
+          seList = fromChar(self.params['TargetSE'])
+        elif isinstance(self.params['TargetSE'], list):
           seList = self.params['TargetSE']
     except KeyError:
       pass
@@ -41,20 +41,19 @@ class TaskManagerPlugin( PluginBase ):
       return destSites
 
     for se in seList:
-      res = getSitesForSE( se )
+      res = getSitesForSE(se)
       if not res['OK']:
-        gLogger.warn( "Could not get Sites associated to SE", res['Message'] )
+        gLogger.warn("Could not get Sites associated to SE", res['Message'])
       else:
         thisSESites = res['Value']
         if thisSESites:
           # We make an OR of the possible sites
-          destSites.update( thisSESites )
+          destSites.update(thisSESites)
 
-    gLogger.debug( "Destinations: %s" % ','.join ( destSites ) )
+    gLogger.debug("Destinations: %s" % ','.join(destSites))
     return destSites
 
-
-  def _ByJobType( self ):
+  def _ByJobType(self):
     """ By default, all sites are allowed to do every job.
         The actual rules are freely specified in the Operation JobTypeMapping section.
         The content of the section may look like this:
@@ -105,22 +104,22 @@ class TaskManagerPlugin( PluginBase ):
     # 1. get sites list
     res = getSites()
     if not res['OK']:
-      gLogger.error( "Could not get the list of sites", res['Message'] )
+      gLogger.error("Could not get the list of sites", res['Message'])
       return res
-    destSites = set( res['Value'] )
+    destSites = set(res['Value'])
 
     # 2. get JobTypeMapping "Exclude" value (and add autoAddedSites)
-    gLogger.debug( "Getting JobTypeMapping 'Exclude' value (and add autoAddedSites)" )
+    gLogger.debug("Getting JobTypeMapping 'Exclude' value (and add autoAddedSites)")
     jobType = self.params['JobType']
     if not jobType:
-      raise RuntimeError( "No jobType specified" )
-    excludedSites = set( self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, [] ) )
-    gLogger.debug( "Explicitly excluded sites for %s task: %s" % ( jobType, ','.join( excludedSites ) ) )
-    autoAddedSites = self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
+      raise RuntimeError("No jobType specified")
+    excludedSites = set(self.opsH.getValue('JobTypeMapping/%s/Exclude' % jobType, []))
+    gLogger.debug("Explicitly excluded sites for %s task: %s" % (jobType, ','.join(excludedSites)))
+    autoAddedSites = self.opsH.getValue('JobTypeMapping/AutoAddedSites', [])
     if 'WithStorage' in autoAddedSites:
       # Add all sites with storage, such that jobs can run wherever data is
-      autoAddedSites.remove( 'WithStorage' )
-      autoAddedSites += DMSHelpers().getTiers( withStorage=True, tier=( 0, 1, 2 ) )
+      autoAddedSites.remove('WithStorage')
+      autoAddedSites += DMSHelpers().getTiers(withStorage=True, tier=(0, 1, 2))
 
     # 3. removing sites in Exclude
     if not excludedSites:
@@ -131,19 +130,19 @@ class TaskManagerPlugin( PluginBase ):
       destSites -= excludedSites
 
     # 4. get JobTypeMapping "Allow" section
-    res = self.opsH.getOptionsDict( 'JobTypeMapping/%s/Allow' % jobType )
+    res = self.opsH.getOptionsDict('JobTypeMapping/%s/Allow' % jobType)
     if not res['OK']:
-      gLogger.verbose( res['Message'] )
+      gLogger.verbose(res['Message'])
       allowed = {}
     else:
-      allowed = dict( ( site, set( fromChar( fromSites ) ) ) for site, fromSites in res['Value'].iteritems() )
+      allowed = dict((site, set(fromChar(fromSites))) for site, fromSites in res['Value'].iteritems())
 
-    autoAddedSites = set( self.opsH.getValue( 'JobTypeMapping/%s/AutoAddedSites' % jobType, autoAddedSites ) )
-    gLogger.debug( "Auto-added sites for %s task: %s" % ( jobType, ','.join( autoAddedSites ) ) )
+    autoAddedSites = set(self.opsH.getValue('JobTypeMapping/%s/AutoAddedSites' % jobType, autoAddedSites))
+    gLogger.debug("Auto-added sites for %s task: %s" % (jobType, ','.join(autoAddedSites)))
     # 5. add autoAddedSites, if requested
     for autoAddedSite in autoAddedSites:
-      allowed.setdefault( autoAddedSite, set() ).add( autoAddedSite )
-    gLogger.debug( "Allowed sites for %s task: %s" % ( jobType, ','.join( allowed ) ) )
+      allowed.setdefault(autoAddedSite, set()).add(autoAddedSite)
+    gLogger.debug("Allowed sites for %s task: %s" % (jobType, ','.join(allowed)))
 
     # 6. Allowing sites that should be allowed
     taskSiteDestination = self._BySE()
@@ -151,9 +150,9 @@ class TaskManagerPlugin( PluginBase ):
     for destSite, fromSites in allowed.iteritems():
       for fromSite in fromSites:
         if not taskSiteDestination or fromSite in taskSiteDestination:
-          destSites.add( destSite )
+          destSites.add(destSite)
 
-    gLogger.verbose( "Computed list of destination sites for %s task with TargetSE %s: %s" % ( jobType,
-                                                                                               self.params['TargetSE'],
-                                                                                               ','.join( destSites ) ) )
+    gLogger.verbose("Computed list of destination sites for %s task with TargetSE %s: %s" % (jobType,
+                                                                                             self.params['TargetSE'],
+                                                                                             ','.join(destSites)))
     return destSites

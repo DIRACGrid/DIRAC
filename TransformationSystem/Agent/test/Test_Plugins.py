@@ -56,8 +56,7 @@ class PluginsTestCase(unittest.TestCase):
     self.tPlugin.DataManager = dm_mock
     self.tPlugin.FileCatalog = fc_mock
 
-    self.util = importlib.import_module(
-        'DIRAC.TransformationSystem.Client.Utilities')
+    self.util = importlib.import_module('DIRAC.TransformationSystem.Client.Utilities')
     self.util.FileCatalog = fc_mock
     self.util.StorageElement = MagicMock()
 
@@ -127,8 +126,7 @@ class PluginsBaseSuccess(PluginsTestCase):
     pluginStandard.setInputData(data)
     res = pluginStandard.run()
     self.assert_(res['OK'])
-    sortedData = sorted([(",".join(SEs), [lfn])
-                         for lfn, SEs in data.iteritems()])
+    sortedData = sorted([(",".join(SEs), [lfn]) for lfn, SEs in data.iteritems()])
     self.assertEqual(res['Value'], sortedData)
 
   def test__Standard_Flush_G1(self):
@@ -139,8 +137,7 @@ class PluginsBaseSuccess(PluginsTestCase):
     pluginStandard.setParameters(params)
     pluginStandard.setInputData(data)
     res = pluginStandard.run()
-    sortedData = sorted([(",".join(SEs), [lfn])
-                         for lfn, SEs in data.iteritems()])
+    sortedData = sorted([(",".join(SEs), [lfn]) for lfn, SEs in data.iteritems()])
     self.assert_(res['OK'])
     self.assertEqual(res['Value'], sortedData)
 
@@ -151,8 +148,7 @@ class PluginsBaseSuccess(PluginsTestCase):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(PluginsTestCase)
-  suite.addTest(
-      unittest.defaultTestLoader.loadTestsFromTestCase(PluginsBaseSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PluginsBaseSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

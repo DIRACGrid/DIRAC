@@ -17,14 +17,14 @@ from DIRAC.Core.Utilities import DIRACSingleton
 class LoggingRoot(Logging):
   """
   LoggingRoot is a Logging object and it is particular because it is the first parent of the chain.
-  In this context, it has more possibilities because it is the one that initializes the logger of the 
+  In this context, it has more possibilities because it is the one that initializes the logger of the
   standard logging library and it configures it with the configuration.
 
   There is a difference between the parent Logging and the other because the parent defines the behaviour
-  of all the Logging objects, so it needs a specific class.  
+  of all the Logging objects, so it needs a specific class.
 
-  LoggingRoot has to be unique, because we want one and only one parent on the top of the chain: that is why 
-  we created a singleton to keep it unique. 
+  LoggingRoot has to be unique, because we want one and only one parent on the top of the chain: that is why
+  we created a singleton to keep it unique.
   """
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
@@ -39,13 +39,13 @@ class LoggingRoot(Logging):
     - set the correct level defines by the user, or the default
     - add the custom level to logging: verbose, notice, always
     - register a default backend: stdout : all messages will be displayed here
-    - update the format according to the command line argument 
+    - update the format according to the command line argument
     """
     super(LoggingRoot, self).__init__()
 
     # this line removes some useless information from log records and improves
     # the performances
-    logging._srcfile = None
+    logging._srcfile = None  # pylint: disable=protected-access
 
     # initialize the root logger
     # actually a child of the root logger to avoid conflicts with other
@@ -89,7 +89,7 @@ class LoggingRoot(Logging):
     """
     Configure the root Logging.
     It can be possible to :
-    - attach it some backends : LogBackends = stdout,stderr,file,server 
+    - attach it some backends : LogBackends = stdout,stderr,file,server
     - attach backend options : BackendOptions { FileName = /tmp/file.log }
     - add colors and the path of the call : LogColor = True, LogShowLine = True
     - precise a level : LogLevel = DEBUG
@@ -140,8 +140,8 @@ class LoggingRoot(Logging):
 
   def __getBackendsFromCFG(self, cfgPath):
     """
-    Get backends from the configuration and register them in LoggingRoot. 
-    This is the new way to get the backends providing a general configuration. 
+    Get backends from the configuration and register them in LoggingRoot.
+    This is the new way to get the backends providing a general configuration.
 
     :params cfgPath: string of the configuration path
     """
@@ -172,10 +172,10 @@ class LoggingRoot(Logging):
 
   def __getBackendOptionsFromCFG(self, cfgPath, backend):
     """
-    Get backend options from the configuration. 
+    Get backend options from the configuration.
 
     :params cfgPath: string of the configuration path
-    :params backend: string representing a backend identifier: stdout, file, f04 
+    :params backend: string representing a backend identifier: stdout, file, f04
     """
     # We have to put the import lines here to avoid a dependancy loop
     from DIRAC import gConfig
@@ -209,7 +209,7 @@ class LoggingRoot(Logging):
     Configure the log level of the root Logging according to the argv parameter
     It can be : -d, -dd, -ddd
     Work only for clients, scripts and tests
-    Configuration/Client/LocalConfiguration manages services,agents and executors 
+    Configuration/Client/LocalConfiguration manages services,agents and executors
     """
     debLevs = 0
     for arg in sys.argv:
@@ -240,11 +240,11 @@ class LoggingRoot(Logging):
   @staticmethod
   def __enableLogsFromExternalLibs(isEnabled=True):
     """
-    Configure the root logger from 'logging' for an external library use. 
+    Configure the root logger from 'logging' for an external library use.
     By default the root logger is configured with:
     - debug level,
     - stderr output
-    - custom format close to the DIRAC format 
+    - custom format close to the DIRAC format
 
     :params isEnabled: boolean value. True allows the logs in the external lib,
                        False do not.

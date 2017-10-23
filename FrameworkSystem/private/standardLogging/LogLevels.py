@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 import logging
 
 
-class LogLevels( object ):
+class LogLevels(object):
   """
   Wrapper of the old LogLevels class.
   LogLevels is used to integrate custom levels to logging: verbose, notice and always.
@@ -42,7 +42,7 @@ class LogLevels( object ):
                  "FATAL": FATAL}
 
   @classmethod
-  def getLevelValue( cls, sName ):
+  def getLevelValue(cls, sName):
     """
     Get a level value from a level name.
     We could use logging.getLevelName() to get the level value but it is less simple.
@@ -50,10 +50,10 @@ class LogLevels( object ):
     :params sName: string representing a level name
     :return: a level value according to a level name
     """
-    return cls.__levelDict.get( sName.upper() )
+    return cls.__levelDict.get(sName.upper())
 
   @classmethod
-  def getLevel( cls, level ):
+  def getLevel(cls, level):
     """
     Get a level name from a level value.
     We could use logging.getLevelName() to get the level value but it is less simple.
@@ -67,14 +67,14 @@ class LogLevels( object ):
     return None
 
   @classmethod
-  def getLevelNames( cls ):
+  def getLevelNames(cls):
     """
     :return: all level names available in the wrapper
     """
     return cls.__levelDict.keys()
 
   @classmethod
-  def getLevels( cls ):
+  def getLevels(cls):
     """
     :return: the level dictionary. Must no be redefined
     """
