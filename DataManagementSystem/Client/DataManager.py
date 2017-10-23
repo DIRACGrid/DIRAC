@@ -98,8 +98,8 @@ class DataManager( object ):
     self.fileCatalog = FileCatalog( catalogs=catalogsToUse, vo=self.voName )
     self.accountingClient = None
     self.resourceStatus = ResourceStatus()
-    self.ignoreMissingInFC = Operations( self.voName ).getValue( 'DataManagement/IgnoreMissingInFC', False )
-    self.useCatalogPFN = Operations( self.voName ).getValue( 'DataManagement/UseCatalogPFN', True )
+    self.ignoreMissingInFC = Operations( vo=self.voName ).getValue( 'DataManagement/IgnoreMissingInFC', False )
+    self.useCatalogPFN = Operations( vo=self.voName ).getValue( 'DataManagement/UseCatalogPFN', True )
     self.dmsHelper = DMSHelpers( vo=vo )
     self.registrationProtocol = self.dmsHelper.getRegistrationProtocols()
     self.thirdPartyProtocols = self.dmsHelper.getThirdPartyProtocols()
