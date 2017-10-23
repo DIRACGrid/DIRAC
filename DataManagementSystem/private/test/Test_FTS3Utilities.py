@@ -178,7 +178,7 @@ fakeFTS3Server = "https://fts-fake.cern.ch:8446"
 def mock__failoverServerPolicy(_attempt):
   return fakeFTS3Server
 
-def mock__randomServerPolicy(_attempt, shuffledServerList):
+def mock__randomServerPolicy(_attempt):
   return fakeFTS3Server
 
 def mock__sequenceServerPolicy(_attempt):
@@ -229,7 +229,6 @@ class TestFTS3ServerPolicy ( unittest.TestCase ):
     for i in range(len(self.fakeServerList)):
       self.assertEquals('server_%d'%i, obj._failoverServerPolicy(i))
 
-
   @mock.patch( 'DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._getFTSServerStatus', side_effect = mock__ErrorFTSServerStatus )
   def testSequenceServerPolicy( self, mockFTSServerStatus):
     """ Test if the sequence server policy selects the servers Sequentially """
@@ -250,10 +249,9 @@ class TestFTS3ServerPolicy ( unittest.TestCase ):
     serverSet = set()
 
     for i in range(len(self.fakeServerList)):
-      serverSet.add(obj._sequenceServerPolicy(i))
+      serverSet.add(obj._randomServerPolicy(i))
 
     self.assertEquals(len(serverSet), len(self.fakeServerList))
-
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestFTS3Serialization )

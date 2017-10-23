@@ -4,12 +4,12 @@
 import json
 import datetime
 import random
+import threading
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
-
 
 def _checkSourceReplicas( ftsFiles ):
   """ Check the active replicas
@@ -259,6 +259,7 @@ class FTS3JSONDecoder( json.JSONDecoder ):
       dataDict['__datetime__'] = datetimeAttributes
       return dataDict
 
+threadLocal = threading.local()
 
 class FTS3ServerPolicy( object ):
   """
@@ -286,7 +287,6 @@ class FTS3ServerPolicy( object ):
     self._policyMethod = getattr( self, methName )
 
 
-
   def _failoverServerPolicy( self, _attempt ):
     """
        Returns always the server at a given position (normally the first one)
@@ -297,6 +297,7 @@ class FTS3ServerPolicy( object ):
       raise Exception( "FTS3ServerPolicy.__failoverServerPolicy: attempt to reach non existing server index" )
     return self._serverList[_attempt]
 
+
   def _sequenceServerPolicy( self, _attempt ):
     """
        Every time the this policy is called, return the next server on the list
@@ -306,11 +307,22 @@ class FTS3ServerPolicy( object ):
     self._nextServerID = ( self._nextServerID + 1 ) % len( self._serverList )
     return fts3server
 
-  def _randomServerPolicy( self, _attempt, shuffledServerList ):
+
+  def _randomServerPolicy( self, _attempt ):
     """
       return a server from shuffledServerList
     """
-    return shuffledServerList[_attempt]
+
+    if getattr(threadLocal, 'shuffledServerList', None) is None:
+      threadLocal.shuffledServerList = self._serverList[:]
+      random.shuffle(threadLocal.shuffledServerList)
+
+    fts3Server = threadLocal.shuffledServerList[_attempt]
+
+    if _attempt == self._maxAttempts-1:
+      random.shuffle(threadLocal.shuffledServerList)
+
+    return fts3Server
 
 
   @staticmethod
@@ -340,19 +352,12 @@ class FTS3ServerPolicy( object ):
 
     fts3Server = None
     attempt = 0
-    shuffledServerList = None
-
-    if self._serverPolicy == 'Random':
-      shuffledServerList = random.sample(self._serverList, len(self._serverList))
 
     while not fts3Server and attempt < self._maxAttempts:
 
-      if self._serverPolicy in ['Failover', 'Sequence']:
-        fts3Server = self._policyMethod( attempt )
-      else:
-        fts3Server = self._policyMethod( attempt, shuffledServerList)
-
+      fts3Server = self._policyMethod( attempt )
       res = self._getFTSServerStatus( fts3Server )
+
       if not res['OK']:
         self.log.warn( "Error getting the RSS status for %s: %s" % ( fts3Server, res ) )
         fts3Server = None
