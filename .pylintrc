@@ -16,7 +16,6 @@ persistent=yes
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
 load-plugins=
-disable=multiple_types
 
 
 [MESSAGES CONTROL]
@@ -24,7 +23,6 @@ disable=multiple_types
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time.
-enable=C
 
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifier separated by comma (,) or put this option
@@ -34,7 +32,7 @@ enable=C
 #R0903 = Too few public methods (%s/%s)
 #C0326 = bad-whitespace
 #I0011 = locally-disabling
-disable=R0903,C0326,I0011
+disable=R0903,C0326,I0011,redefined-variable-type
 
 
 [REPORTS]
