@@ -276,13 +276,11 @@ class FTS3ServerPolicy( object ):
     self._serverList = initialServerList
     self._maxAttempts = len( self._serverList )
     self._nextServerID = 0
-    self._serverPolicy = serverPolicy
 
     methName = "_%sServerPolicy"%serverPolicy.lower()
     if not hasattr(self, methName):
       self.log.error( 'Unknown server policy %s. Using Random instead' % serverPolicy )
       methName = "_randomServerPolicy"
-      self._serverPolicy = 'Random'
 
     self._policyMethod = getattr( self, methName )
 
