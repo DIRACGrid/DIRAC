@@ -43,23 +43,27 @@ class LoggingRoot(Logging):
     """
     super(LoggingRoot, self).__init__()
 
-    # this line removes some useless information from log records and improves the performances
+    # this line removes some useless information from log records and improves
+    # the performances
     logging._srcfile = None
 
     # initialize the root logger
-    # actually a child of the root logger to avoid conflicts with other libraries which used 'logging'
+    # actually a child of the root logger to avoid conflicts with other
+    # libraries which used 'logging'
     self._logger = logging.getLogger('dirac')
     # prevent propagation to the root logger to avoid conflicts with external libraries
     # which want to use the root logger
     self._logger.propagate = False
 
-    # here we redefine the custom name to the empty string to remove the "\" in the display
+    # here we redefine the custom name to the empty string to remove the "\"
+    # in the display
     self._customName = ""
 
     # this level is not the Logging level, it is only used to send all log messages to the central logging system
     # to do such an operation, we need to let pass all log messages to the root logger, so all logger needs to be
     # at debug. Then, all the backends have a level associated to a Logging level, which can be changed with the
-    # setLevel method of Logging, and these backends will choose to send the log messages or not.
+    # setLevel method of Logging, and these backends will choose to send the
+    # log messages or not.
     self._logger.setLevel(LogLevels.DEBUG)
 
     # initialization of the UTC time
@@ -110,14 +114,17 @@ class LoggingRoot(Logging):
           handlersToRemove.append(backend.getHandler())
         del self._backendsList[:]
 
-        # get the backends, the backend options and add them to the root Logging
+        # get the backends, the backend options and add them to the root
+        # Logging
         desiredBackends = self.__getBackendsFromCFG(cfgPath)
         for backend in desiredBackends:
           desiredOptions = self.__getBackendOptionsFromCFG(cfgPath, backend)
-          self.registerBackend(desiredOptions.get('Plugin', backend), desiredOptions)
+          self.registerBackend(desiredOptions.get(
+              'Plugin', backend), desiredOptions)
 
         # Format options
-        self._options['Color'] = gConfig.getValue("%s/LogColor" % cfgPath, False)
+        self._options['Color'] = gConfig.getValue(
+            "%s/LogColor" % cfgPath, False)
 
         # Remove the old backends
         for handler in handlersToRemove:
@@ -150,8 +157,10 @@ class LoggingRoot(Logging):
     # Search desired backends in the component
     desiredBackends = gConfig.getValue("%s/%s" % (cfgPath, 'LogBackends'), [])
     if not desiredBackends:
-      # Search desired backends in the operation section according to the component type
-      desiredBackends = operation.getValue("Logging/Default%sBackends" % component, [])
+      # Search desired backends in the operation section according to the
+      # component type
+      desiredBackends = operation.getValue(
+          "Logging/Default%sBackends" % component, [])
       if not desiredBackends:
         # Search desired backends in the operation section
         desiredBackends = operation.getValue("Logging/DefaultBackends", [])
@@ -179,11 +188,13 @@ class LoggingRoot(Logging):
       backendOptions = retDictRessources['Value']
 
     # Search backends config in the component to update some options
-    retDictConfig = gConfig.getOptionsDict("%s/%s/%s" % (cfgPath, 'LogBackendsConfig', backend))
+    retDictConfig = gConfig.getOptionsDict(
+        "%s/%s/%s" % (cfgPath, 'LogBackendsConfig', backend))
     if retDictConfig['OK']:
       backendOptions.update(retDictConfig['Value'])
     else:
-      # Search backends config in the component with the old option 'BackendsOptions'
+      # Search backends config in the component with the old option
+      # 'BackendsOptions'
       retDictOptions = gConfig.getOptionsDict("%s/BackendsOptions" % cfgPath)
       if retDictOptions['OK']:
         # We have to write the deprecated message with the print method because we are changing
@@ -198,7 +209,7 @@ class LoggingRoot(Logging):
     Configure the log level of the root Logging according to the argv parameter
     It can be : -d, -dd, -ddd
     Work only for clients, scripts and tests
-    Configuration/Client/LocalConfiguration manages services,agents and executors
+    Configuration/Client/LocalConfiguration manages services,agents and executors 
     """
     debLevs = 0
     for arg in sys.argv:
@@ -244,5 +255,5 @@ class LoggingRoot(Logging):
       logging.basicConfig(level=logging.DEBUG,
                           format='%(asctime)s UTC ExternalLibrary/%(name)s %(levelname)s: %(message)s',
                           datefmt='%Y-%m-%d %H:%M:%S')
-    else: 
+    else:
       rootLogger.addHandler(logging.NullHandler())
