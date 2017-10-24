@@ -47,18 +47,13 @@ if __name__ == "__main__":
 
   if result is None:
     gLogger.error( 'Cannot make benchmark measurements' )
-    
+    DIRAC.exit(1)
+  
   db12Measured = round ( result['NORM'], 1 )
   corr         = Operations().getValue( 'JobScheduling/CPUNormalizationCorrection', 1. )
   norm         = round ( result['NORM'] / corr, 1 )
 
   gLogger.notice( 'Estimated CPU power is %.1f HS06' % norm )
-
-#  mjfPower = getPowerFromMJF()
-#  if mjfPower:
-#    gLogger.notice( 'CPU power from MJF is %.2f HS06' % mjfPower )
-#  else:
-#    gLogger.notice( 'MJF not available on this node' )
 
   if update:
     gConfig.setOptionValue( '/LocalSite/CPUScalingFactor', hs06JobFeature if hs06JobFeature else norm ) # deprecate?
