@@ -86,7 +86,7 @@ class PilotsLoggingDB( object ):
     tablesInDB = self.inspector.get_table_names( )
 
     for table in self.tablesList:
-      if not table in tablesInDB:
+      if table not in tablesInDB:
         found = False
         #is it in the extension? (fully or extended)
         for ext in gConfig.getValue( 'DIRAC/Extensions', [] ):
@@ -97,10 +97,10 @@ class PilotsLoggingDB( object ):
           except (ImportError, AttributeError):
             continue
           # If not found in extensions, import it from DIRAC base.
-          if not found:
-            getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
+        if not found:
+          getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:
-        gLogger.debug( 'Table \'%s\' already exists' %table )
+        gLogger.debug( "Table \'%s\' already exists" %table )
 
     return S_OK( )
 
