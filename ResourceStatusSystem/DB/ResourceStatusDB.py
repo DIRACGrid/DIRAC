@@ -578,6 +578,8 @@ class ResourceStatusDB( object ):
         if changeDE and columnName == 'DateEffective' and not columnValue:
           columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
         if columnValue:
+          if isinstance(columnValue, datetime.datetime):
+            columnValue = columnValue.replace(microsecond = 0)
           setattr(res, columnName.lower(), columnValue)
       session.commit()
 
