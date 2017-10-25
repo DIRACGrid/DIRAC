@@ -27,9 +27,9 @@ import random
 import urllib
 import multiprocessing
 
-version = '00.03 DB12'
+version = '00.04 DB12'
 
-def singleDiracBenchmark( iterations = 1, extraIteration = False ):
+def singleDiracBenchmark( iterations = 1, measuredCopies = None ):
   """ Get Normalized Power of one CPU in DIRAC Benchmark 2012 units (DB12)
   """
 
@@ -43,8 +43,9 @@ def singleDiracBenchmark( iterations = 1, extraIteration = False ):
   p = 0
   p2 = 0
   # Do one iteration extra to allow CPUs with variable speed (we ignore zeroth iteration)
-  # Possibly do one extra iteration to avoid tail effects when copies run in parallel
-  for i in range( iterations + 1 + (1 if extraIteration else 0)):
+  # Do one or more extra iterations to avoid tail effects when copies run in parallel
+  i = 0
+  while (i <= iterations) or (measuredCopies is not None and measuredCopies.value > 0):
     if i == 1:
       start = os.times()
 
@@ -58,7 +59,12 @@ def singleDiracBenchmark( iterations = 1, extraIteration = False ):
 
     if i == iterations:
       end = os.times()
+      if measuredCopies is not None:
+        # Reduce the total of running copies by one
+        measuredCopies.value -= 1
 
+    i += 1
+    
   cput = sum( end[:4] ) - sum( start[:4] )
   wall = end[4] - start[4]
 
@@ -68,12 +74,12 @@ def singleDiracBenchmark( iterations = 1, extraIteration = False ):
   # Return DIRAC-compatible values
   return { 'CPU' : cput, 'WALL' : wall, 'NORM' : calib * iterations / cput, 'UNIT' : 'DB12' }
 
-def singleDiracBenchmarkProcess( resultObject, iterations = 1, extraIteration = False ):
+def singleDiracBenchmarkProcess( resultObject, iterations = 1, measuredCopies = None ):
 
   """ Run singleDiracBenchmark() in a multiprocessing friendly way
   """
 
-  benchmarkResult = singleDiracBenchmark( iterations = iterations, extraIteration = extraIteration )
+  benchmarkResult = singleDiracBenchmark( iterations = iterations, measuredCopies = measuredCopies )
   
   if not benchmarkResult or 'NORM' not in benchmarkResult:
     return None
@@ -88,11 +94,18 @@ def multipleDiracBenchmark( copies = 1, iterations = 1, extraIteration = False )
 
   processes = []
   results = []
+  
+  if extraIteration:
+    # If true, then we run one or more extra iterations in each
+    # copy until the number still being meausured is zero. 
+    measuredCopies = multiprocessing.Value('i', copies)
+  else:
+    measuredCopies = None
 
   # Set up all the subprocesses
   for i in range( copies ):
     results.append( multiprocessing.Value('d', 0.0) )
-    processes.append( multiprocessing.Process( target = singleDiracBenchmarkProcess, args = ( results[i], iterations, extraIteration) ) )
+    processes.append( multiprocessing.Process( target = singleDiracBenchmarkProcess, args = ( results[i], iterations, measuredCopies ) ) )
  
   # Start them all off at the same time 
   for p in processes:  
@@ -125,14 +138,14 @@ def wholenodeDiracBenchmark( copies = None, iterations = 1, extraIteration = Fal
   """
   
   # Try $MACHINEFEATURES first if not given by caller
-  if not copies and 'MACHINEFEATURES' in os.environ:
+  if copies is None and 'MACHINEFEATURES' in os.environ:
     try:
       copies = int( urllib.urlopen( os.environ['MACHINEFEATURES'] + '/total_cpu' ).read() )
     except:
       pass
 
   # If not given by caller or $MACHINEFEATURES/total_cpu then just count CPUs
-  if not copies:
+  if copies is None:
     try:
       copies = multiprocessing.cpu_count()
     except:
@@ -146,14 +159,14 @@ def jobslotDiracBenchmark( copies = None, iterations = 1, extraIteration = False
   """
 
   # Try $JOBFEATURES first if not given by caller
-  if not copies and 'JOBFEATURES' in os.environ:
+  if copies is None and 'JOBFEATURES' in os.environ:
     try:
       copies = int( urllib.urlopen( os.environ['JOBFEATURES'] + '/allocated_cpu' ).read() )
     except:
       pass
 
   # If not given by caller or $JOBFEATURES/allocated_cpu then just run one copy
-  if not copies:
+  if copies is None:
     copies = 1
   
   return multipleDiracBenchmark( copies = copies, iterations = iterations, extraIteration = extraIteration )
@@ -172,8 +185,9 @@ command line.
 By default one benchmarking iteration is run, in addition to the initial 
 iteration which DB12 runs and ignores to avoid ramp-up effects at the start.
 The number of benchmarking iterations can be increased using the --iterations
-option. An additional final iteration which is also ignored can be added with
-the --extra-iteration option, to avoid tail effects.
+option. Additional iterations which are also ignored can be added with the 
+--extra-iteration option  to avoid tail effects. In this case copies which
+finish early run additional iterations until all the measurements finish.
 
 The COPIES (ie an integer) argument causes multiple copies of the benchmark to
 be run in parallel. The tokens "wholenode", "jobslot" and "single" can be 
