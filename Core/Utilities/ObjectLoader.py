@@ -24,11 +24,38 @@ class ObjectLoader( object ):
   def __init__( self, baseModules = False ):
     """ init
     """
+    # We save the original arguments in case
+    # we need to reinitialize the rootModules
+    # CAUTION: we cant do it after doing
+    # baseModules = ['DIRAC']
+    # because then baseModules, self.baseModules, and __rootModules
+    # are the same and edited in place by __generateRootModules !!
+    # (Think of it, it's a binding to a list)
+    self.originalBaseModules = baseModules
+    self._init(baseModules)
+
+  def _init(self, baseModules):
+    """ Actually performs the initialization """
+
     if not baseModules:
       baseModules = [ 'DIRAC' ]
     self.__rootModules = baseModules
     self.__objs = {}
     self.__generateRootModules( baseModules )
+
+  def reloadRootModules(self):
+    """ Retrigger the initialization of the rootModules.
+
+        This should be used with care.
+        Currently, its only use is (and should stay) to retrigger
+        the initialization after the CS has been fully initialized in
+        LocalConfiguration.enableCS
+    """
+    # Load the original baseModule argument that was given
+    # to the constructor
+    baseModules = self.originalBaseModules
+    # and replay the init sequence
+    self._init(baseModules)
 
   def __rootImport( self, modName, hideExceptions = False ):
     """ Auto search which root module has to be used
