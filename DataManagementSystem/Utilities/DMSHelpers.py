@@ -19,7 +19,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
 
   :param seGroupList: list of SEs to resolve or comma-separated SEs
   :type seGroupList: list or string
-  :param allSEs: if provised, list of all known SEs
+  :param allSEs: if provided, list of all known SEs
   :type allSEs: list
 
   :return : list of resolved SEs or [] if error
@@ -398,23 +398,25 @@ class DMSHelpers(object):
 
   def getSEInGroupAtSite(self, seGroup, site):
     """ Get the SE in a group or list of SEs that is present at a site """
-    if isinstance(seGroup, basestring):
-      seList = gConfig.getValue(
-          '/Resources/StorageElementGroups/%s' % seGroup, [])
-    else:
-      seList = list(seGroup)
+    seList = self.getAllSEsInGroupAtSite(seGroup, site)
+    if not seList['OK'] or seList['Value'] is None:
+      return seList
+    return S_OK(seList['Value'][0])
+
+  def getAllSEsInGroupAtSite(self, seGroup, site):
+    """ Get all SEs in a group or list of SEs that are present at a site """
+    seList = resolveSEGroup(seGroup)
     if not seList:
       return S_ERROR('SEGroup does not exist')
     sesAtSite = self.getSEsAtSite(site)
     if not sesAtSite['OK']:
       return sesAtSite
-    sesAtSite = sesAtSite['Value']
-    se = set(seList) & set(sesAtSite)
-    if not se:
+    foundSEs = set(seList) & set(sesAtSite['Value'])
+    if not foundSEs:
       gLogger.warn('No SE found at that site',
                    'in group %s at %s' % (seGroup, site))
       return S_OK()
-    return S_OK(list(se)[0])
+    return S_OK(sorted(foundSEs))
 
   def getRegistrationProtocols(self):
     """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
