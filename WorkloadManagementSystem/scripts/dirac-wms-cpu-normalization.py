@@ -35,7 +35,7 @@ if __name__ == "__main__":
   from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
   from DIRAC import gLogger, gConfig
-  from DIRAC.Core.Utilities import MJF
+  from DIRAC.Core.Utilities.MJF import MJF
   
   mjf = MJF.MJF()
   mjf.updateConfig()
