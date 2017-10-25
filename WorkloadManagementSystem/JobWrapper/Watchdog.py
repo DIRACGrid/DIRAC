@@ -25,7 +25,7 @@ import time
 
 from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities                               import Time
-from DIRAC.Core.Utilities                               import MJF
+from DIRAC.Core.Utilities.MJF                           import MJF
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ConfigurationSystem.Client.Config            import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder        import getSystemInstance
