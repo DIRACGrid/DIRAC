@@ -17,15 +17,15 @@ class Logging(object):
   Logging is a wrapper of the logger object from the standard "logging" library which integrate
   some DIRAC concepts. It is the equivalent to the old gLogger object.
 
-  It is used like an interface to use the logger object of the "logging" library. 
-  Its purpose is to replace transparently the old gLogger object in the existing code in order to 
-  minimize the changes. 
+  It is used like an interface to use the logger object of the "logging" library.
+  Its purpose is to replace transparently the old gLogger object in the existing code in order to
+  minimize the changes.
 
   In this way, each Logging embed a logger of "logging". It is possible to create sublogger,
   set and get the level of the embedded logger and create log messages with it.
 
   Logging could delegate the initialization and the configuration to a factory of the root logger be it can not
-  because it has to wrap the old gLogger.  
+  because it has to wrap the old gLogger.
 
   Logging should not be instancied directly. It is LoggingRoot which is instancied and which instantiates Logging
   objects.
@@ -44,8 +44,8 @@ class Logging(object):
     """
     Initialization of the Logging object.
     By default, 'fatherName' and 'name' are empty, because getChild accepts only string and the first empty
-    string corresponds to the root logger. 
-    Example: 
+    string corresponds to the root logger.
+    Example:
     logging.getLogger('') == logging.getLogger('root') == root logger
     logging.getLogger('root').getChild('log') == root.log == log child of root
 
@@ -120,7 +120,7 @@ class Logging(object):
     The options of the children will be updated if they were not modified before by a developer.
 
     :params optionName: string representing the name of the option to modify
-    :params value: boolean to give to the option  
+    :params value: boolean to give to the option
     :params directCall: boolean indicating if it is a call by the user or not
     """
     # lock to prevent that two threads change the options at the same time
@@ -178,7 +178,7 @@ class Logging(object):
     self._lockObjectLoader.acquire()
     try:
       # load the Backend class
-      _class = objLoader.loadObject('DIRAC.Resources.LogBackends.%sBackend' % desiredBackend)
+      _class = objLoader.loadObject('Resources.LogBackends.%sBackend' % desiredBackend)
     finally:
       self._lockObjectLoader.release()
 
@@ -379,9 +379,9 @@ class Logging(object):
   def _createLogRecord(self, level, sMsg, sVarMsg, exc_info=False):
     """
     Create a log record according to the level of the message. The log record is always sent to the different backends
-    Backends have their own levels and can manage the display of the message or not according to the level. 
-    Nevertheless, backends and the logger have the same level value, 
-    so we can test if the message will be displayed or not. 
+    Backends have their own levels and can manage the display of the message or not according to the level.
+    Nevertheless, backends and the logger have the same level value,
+    so we can test if the message will be displayed or not.
 
     :params level: positive integer representing the level of the log record
     :params sMsg: string representing the message
