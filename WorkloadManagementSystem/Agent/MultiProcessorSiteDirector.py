@@ -24,6 +24,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
     if not result['OK']:
       return result
 
+    remQueues = []
     for queueName in self.queueDict:
       ce = self.queueDict[queueName]['CEName']
       site = self.queueDict[queueName]['Site']
@@ -45,11 +46,14 @@ class MultiProcessorSiteDirector( SiteDirector ):
         self.queueDict[queueName]['ParametersDict']['Tags'].append( 'WholeNode' )
 
       if 'Tags' not in self.queueDict[queueName]['ParametersDict']:
-        del self.queueDict[queueName]
+        remQueues.append( queueName )
       else:
         tags = self.queueDict[queueName]['ParametersDict']['Tags']
         if '2Processors' not in tags and 'WholeNode' not in tags:
-          del self.queueDict[queueName]
+          remQueues.append( queueName )
+
+    for queueName in remQueues:
+      del self.queueDict[queueName]
 
     return S_OK()
 
