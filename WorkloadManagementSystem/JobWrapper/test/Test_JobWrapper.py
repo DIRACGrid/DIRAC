@@ -66,7 +66,7 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     self.assertTrue( res['OK'] )
 
   def test__performChecks( self ):
-    wd = WatchdogLinux( os.getpid(), MagicMock(), MagicMock(), 1000, { 'StopSigNumber' : 10 }, 1024 * 1024 )
+    wd = WatchdogLinux( os.getpid(), MagicMock(), MagicMock(), 1000, 1024 * 1024, jobArgs = { 'StopSigNumber' : 10 } )
     res = wd._performChecks()
     self.assertTrue( res['OK'] )
 
