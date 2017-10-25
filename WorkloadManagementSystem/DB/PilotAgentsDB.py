@@ -212,7 +212,7 @@ class PilotAgentsDB( DB ):
     if failed:
       return S_ERROR( 'Failed to remove pilot from %s tables' % ', '.join( failed ) )
     else:
-      return S_OK()
+      return S_OK( pilotIDs )
 
 ##########################################################################################
   def deletePilot( self, pilotRef, conn = False ):
