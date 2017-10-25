@@ -1,3 +1,6 @@
+""" Class that collects utilities used in Accounting and Monitoring systems
+"""
+
 from DIRAC.Core.Utilities import Time
 
 class DBUtils(object):
@@ -32,14 +35,14 @@ class DBUtils(object):
     validCondDict = {}
     if isinstance(condDict, dict):
       for key in condDict:
-        if isinstance(condDict[ key ], (list, tuple)) and len(condDict[key]):
+        if isinstance(condDict[ key ], (list, tuple)) and condDict[key]:
           validCondDict[ key ] = condDict[ key ]
     return self._acDB.retrieveBucketedData( self._setup, typeName, startTime,
                                             endTime, selectFields,
                                             condDict, groupFields, orderFields )
 
   def _getUniqueValues( self, typeName, startTime, endTime, condDict, fieldList ):
-    stringList = [ "%s" for field in fieldList ]
+    stringList = [ "%s" for _field in fieldList ]
     return self._retrieveBucketedData( typeName,
                                        startTime,
                                        endTime,

@@ -1,3 +1,6 @@
+""" Within this module is defined the class from which all other accounting types are defined
+"""
+
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
@@ -38,7 +41,7 @@ class BaseAccountingType(object):
     self.fieldsList.extend( self.keyFieldsList )
     self.fieldsList.extend( self.valueFieldsList )
     if len( self.valuesList ) != len( self.fieldsList ):
-      self.valuesList = [ None for _i in self.fieldsList ]
+      self.valuesList = [None] * len(self.fieldsList)
 
   def getDataTimespan( self ):
     """
@@ -112,7 +115,7 @@ class BaseAccountingType(object):
     errorList = []
     for i in range( len( self.valuesList ) ):
       key = self.fieldsList[i]
-      if self.valuesList[i] == None:
+      if self.valuesList[i] is None:
         errorList.append( "no value for %s" % key )
       if key in self.valueFieldsList and not isinstance( self.valuesList[i], (int, long, float) ):
         errorList.append( "value for key %s is not numerical type" % key )
@@ -182,13 +185,13 @@ class BaseAccountingType(object):
     if not retVal[ 'OK' ]:
       return retVal
     return gDataStoreClient.commit()
-  
+
   def delayedCommit( self ):
     """
     Commit register to the server. Delayed commit allows to speed up
     the operation as more registers will be sent at once.
     """
-    
+
     retVal = gDataStoreClient.addRegister( self )
     if not retVal[ 'OK' ]:
       return retVal
