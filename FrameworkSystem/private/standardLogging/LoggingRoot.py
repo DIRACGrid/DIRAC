@@ -85,7 +85,7 @@ class LoggingRoot(Logging):
     self.__configureLevel()
     self._generateBackendFormat()
 
-  def initialize(self, systemName, cfgPath):
+  def initialize(self, systemName, cfgPath, forceInit= False):
     """
     Configure the root Logging.
     It can be possible to :
@@ -96,13 +96,16 @@ class LoggingRoot(Logging):
 
     :params systemName: string represented as "system name/component name"
     :params cfgPath: string of the configuration path
+    :params forceInit: Force the initialization even if it had already happened.
+                       This should not be used !! The only case is LocalConfiguration.enableCS
+                       In order to take into account extensions' backends
     """
     # we have to put the import line here to avoid a dependancy loop
     from DIRAC import gConfig
 
     self._lockConfig.acquire()
     try:
-      if not LoggingRoot.__configuredLogging:
+      if not LoggingRoot.__configuredLogging or forceInit:
         Logging._componentName = systemName
 
         # Prepare to remove all the backends from the root Logging as in the old gLogger.

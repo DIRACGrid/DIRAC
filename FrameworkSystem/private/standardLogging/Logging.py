@@ -183,8 +183,7 @@ class Logging(object):
     self._lockObjectLoader.acquire()
     try:
       # load the Backend class
-      _class = objLoader.loadObject(
-          'DIRAC.Resources.LogBackends.%sBackend' % desiredBackend)
+      _class = objLoader.loadObject('Resources.LogBackends.%sBackend' % desiredBackend)
     finally:
       self._lockObjectLoader.release()
 
