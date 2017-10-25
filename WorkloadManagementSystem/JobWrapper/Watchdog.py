@@ -36,28 +36,13 @@ from DIRAC.Core.Utilities.Subprocess                    import getChildrenPIDs
 class Watchdog( object ):
 
   #############################################################################
-  def __init__( self, pid, exeThread, spObject, jobCPUtime, jobArgs, memoryLimit = 0, processors = 1, systemFlag = 'linux' ):
-    """ Constructor, takes system flag as argument.
+  def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux', jobArgs = {} ):
+   """ Constructor, takes system flag as argument.
     """
-    if "StopSigStartSeconds" in jobArgs:
-      self.stopSigStartSeconds = int ( jobArgs['StopSigStartSeconds'] )
-    else:
-      self.stopSigStartSeconds = 30 * 60 # 30 minutes
-
-    if "StopSigFinishSeconds" in jobArgs:
-      self.stopSigFinishSeconds = int ( jobArgs['StopSigFinishSeconds'] )
-    else:
-      self.stopSigFinishSeconds = 30 * 60 # 30 minutes
-
-    if "StopSigNumber" in jobArgs:
-      self.stopSigNumber = int ( jobArgs['StopSigNumber'] )      
-    else:
-      self.stopSigNumber = 2 # SIGINT
-
-    if "StopSigRegex" in jobArgs:
-      self.stopSigRegex = jobArgs['StopSigRegex']
-    else:
-      self.stopSigRegex = None
+    self.stopSigStartSeconds  = int( jobArgs.get( 'StopSigStartSeconds',  1800 ) ) # 30 minutes
+    self.stopSigFinishSeconds = int( jobArgs.get( 'StopSigFinishSeconds', 1800 ) ) # 30 minutes
+    self.stopSigNumber        = int( jobArgs.get( 'StopSigNumber',           2 ) ) # SIGINT
+    self.stopSigRegex         = jobArgs.get( 'StopSigRegex', None )
       
     self.log = gLogger.getSubLogger( "Watchdog" )
     self.systemFlag = systemFlag

@@ -22,10 +22,10 @@ from DIRAC.Core.Utilities.Os import getDiskSpace
 
 class WatchdogLinux( Watchdog ):
 
-  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux' ):
+  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux', jobArgs = {} ):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, processors, systemFlag )
+    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, processors, systemFlag, jobArgs )
 
   ############################################################################
   def getNodeInformation( self ):
