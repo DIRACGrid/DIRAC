@@ -37,7 +37,7 @@ class Watchdog( object ):
 
   #############################################################################
   def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux', jobArgs = {} ):
-   """ Constructor, takes system flag as argument.
+    """ Constructor, takes system flag as argument.
     """
     self.stopSigStartSeconds  = int( jobArgs.get( 'StopSigStartSeconds',  1800 ) ) # 30 minutes
     self.stopSigFinishSeconds = int( jobArgs.get( 'StopSigFinishSeconds', 1800 ) ) # 30 minutes
