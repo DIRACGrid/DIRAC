@@ -247,10 +247,7 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
-        ceTags = ceDict.get( 'Tag', [] )
         pilotRunDirectory = ceDict.get( 'PilotRunDirectory', '' )
-        if isinstance( ceTags, basestring ):
-          ceTags = fromChar( ceTags )
         ceMaxRAM = ceDict.get( 'MaxRAM', None )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
@@ -273,17 +270,22 @@ class SiteDirector( AgentModule ):
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
 
-          # Tags defined on the Queue level and on the CE level are concatenated
-          queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
-          if queueTags and isinstance( queueTags, basestring ):
-            queueTags = fromChar( queueTags )
-            self.queueDict[queueName]['ParametersDict']['Tag'] = queueTags
-          if ceTags:
-            if queueTags:
-              allTags = list( set( ceTags + queueTags ) )
-              self.queueDict[queueName]['ParametersDict']['Tag'] = allTags
-            else:
-              self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
+          # Tags & RequiredTags defined on the Queue level and on the CE level are concatenated
+          # This also converts them from a string to a list if required.
+          for tagFieldName in ( 'Tag', 'RequiredTag' ):
+            ceTags = ceDict.get( tagFieldName, [] )
+            if isinstance( ceTags, basestring ):
+              ceTags = fromChar( ceTags )
+            queueTags = self.queueDict[queueName]['ParametersDict'].get( tagFieldName )
+            if queueTags and isinstance( queueTags, basestring ):
+              queueTags = fromChar( queueTags )
+              self.queueDict[queueName]['ParametersDict'][tagFieldName] = queueTags
+            if ceTags:
+              if queueTags:
+                allTags = list( set( ceTags + queueTags ) )
+                self.queueDict[queueName]['ParametersDict'][tagFieldName] = allTags
+              else:
+                self.queueDict[queueName]['ParametersDict'][tagFieldName] = ceTags
 
           # Some parameters can be defined on the CE level and are inherited by all Queues
           for parameter in [ 'MaxRAM', 'NumberOfProcessors', 'WholeNode' ]:

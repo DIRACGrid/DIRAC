@@ -1,7 +1,9 @@
-import types
+""" Example of ExecutorMindHandler implementation
+"""
+
 import time
 import random
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 
@@ -9,7 +11,7 @@ random.seed()
 
 class PingPongMindHandler( ExecutorMindHandler ):
 
-  MSG_DEFINITIONS = { 'StartReaction' : { 'numBounces' : ( types.IntType, types.LongType ) } }
+  MSG_DEFINITIONS = { 'StartReaction' : { 'numBounces' : ( int, long ) } }
 
   auth_msg_StartReaction = [ 'all' ]
   def msg_StartReaction( self, msgObj ):
@@ -19,7 +21,7 @@ class PingPongMindHandler( ExecutorMindHandler ):
     return self.executeTask( time.time() + random.random(), taskData )
 
   auth_startPingOfDeath = [ 'all' ]
-  types_startPingOfDeath = [ types.IntType ]
+  types_startPingOfDeath = [ int ]
   def export_startPingOfDeath( self, numBounces ):
     taskData = { 'bouncesLeft' : numBounces }
     gLogger.info( "START TASK = %s" % taskData )

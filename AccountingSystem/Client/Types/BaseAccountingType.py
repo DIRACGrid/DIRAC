@@ -1,15 +1,14 @@
-# $HeadURL$
+""" Within this module is defined the class from which all other accounting types are defined
+"""
+
 __RCSID__ = "$Id$"
 
-import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
-class BaseAccountingType:
-
-  __validDataValues = ( types.IntType, types.LongType, types.FloatType, types.LongType )
+class BaseAccountingType(object):
 
   def __init__( self ):
     self.keyFieldsList = []
@@ -42,7 +41,7 @@ class BaseAccountingType:
     self.fieldsList.extend( self.keyFieldsList )
     self.fieldsList.extend( self.valueFieldsList )
     if len( self.valuesList ) != len( self.fieldsList ):
-      self.valuesList = [ None for i in self.fieldsList ]
+      self.valuesList = [None] * len(self.fieldsList)
 
   def getDataTimespan( self ):
     """
@@ -116,19 +115,19 @@ class BaseAccountingType:
     errorList = []
     for i in range( len( self.valuesList ) ):
       key = self.fieldsList[i]
-      if self.valuesList[i] == None:
+      if self.valuesList[i] is None:
         errorList.append( "no value for %s" % key )
-      if key in self.valueFieldsList and type( self.valuesList[i] ) not in self.__validDataValues:
+      if key in self.valueFieldsList and not isinstance( self.valuesList[i], (int, long, float) ):
         errorList.append( "value for key %s is not numerical type" % key )
     if errorList:
       return S_ERROR( "Invalid values: %s" % ", ".join( errorList ) )
     if not self.startTime:
       return S_ERROR( "Start time has not been defined" )
-    if type( self.startTime ) != Time._dateTimeType:
+    if not isinstance(self.startTime, Time._dateTimeType):
       return S_ERROR( "Start time is not a datetime object" )
     if not self.endTime:
       return S_ERROR( "End time has not been defined" )
-    if type( self.endTime ) != Time._dateTimeType:
+    if not isinstance(self.endTime, Time._dateTimeType):
       return S_ERROR( "End time is not a datetime object" )
     return self.checkRecord()
 
@@ -186,13 +185,13 @@ class BaseAccountingType:
     if not retVal[ 'OK' ]:
       return retVal
     return gDataStoreClient.commit()
-  
+
   def delayedCommit( self ):
     """
     Commit register to the server. Delayed commit allows to speed up
     the operation as more registers will be sent at once.
     """
-    
+
     retVal = gDataStoreClient.addRegister( self )
     if not retVal[ 'OK' ]:
       return retVal
