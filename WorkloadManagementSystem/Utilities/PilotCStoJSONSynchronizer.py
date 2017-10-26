@@ -21,14 +21,14 @@ from DIRAC.Core.DISET.HTTPDISETConnection     import HTTPDISETConnection
 __RCSID__ = '$Id:  $'
 
 
-class Pilot3Synchronizer( object ):
+class PilotCStoJSONSynchronizer( object ):
   '''
   2 functions are executed:
   - It updates a JSON file with the values on the CS which can be used by Pilot3 pilots
   - It updates the pilot 3 files
 
-  This synchronizer can be triggeres at any time via Pilot3Synchronizer().sync().
-  As it is todat, this is triggered every time there is a successful write on the CS.
+  This synchronizer can be triggered at any time via Pilot3Synchronizer().sync().
+  As it is today, this is triggered every time there is a successful write on the CS.
   '''
 
   def __init__( self, paramDict ):
