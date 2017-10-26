@@ -17,15 +17,15 @@ class Logging(object):
   Logging is a wrapper of the logger object from the standard "logging" library which integrate
   some DIRAC concepts. It is the equivalent to the old gLogger object.
 
-  It is used like an interface to use the logger object of the "logging" library. 
-  Its purpose is to replace transparently the old gLogger object in the existing code in order to 
-  minimize the changes. 
+  It is used like an interface to use the logger object of the "logging" library.
+  Its purpose is to replace transparently the old gLogger object in the existing code in order to
+  minimize the changes.
 
   In this way, each Logging embed a logger of "logging". It is possible to create sublogger,
   set and get the level of the embedded logger and create log messages with it.
 
   Logging could delegate the initialization and the configuration to a factory of the root logger be it can not
-  because it has to wrap the old gLogger.  
+  because it has to wrap the old gLogger.
 
   Logging should not be instancied directly. It is LoggingRoot which is instancied and which instantiates Logging
   objects.
@@ -33,7 +33,8 @@ class Logging(object):
 
   # componentName is a class variable because the component name is the same for every Logging objects
   # its default value is "Framework" but it can be configured in initialize() in LoggingRoot
-  # it can be composed by the system name and the component name. For instance: "Monitoring/Atom"
+  # it can be composed by the system name and the component name. For
+  # instance: "Monitoring/Atom"
   _componentName = "Framework"
   # use the lockRing singleton to save the Logging object
   _lockRing = LockRing()
@@ -44,8 +45,8 @@ class Logging(object):
     """
     Initialization of the Logging object.
     By default, 'fatherName' and 'name' are empty, because getChild accepts only string and the first empty
-    string corresponds to the root logger. 
-    Example: 
+    string corresponds to the root logger.
+    Example:
     logging.getLogger('') == logging.getLogger('root') == root logger
     logging.getLogger('root').getChild('log') == root.log == log child of root
 
@@ -67,8 +68,10 @@ class Logging(object):
       self._options = self._parent.getDisplayOptions()
       self._level = LogLevels.getLevelValue(father.getLevel())
     else:
-      self._options = {'headerIsShown': True, 'threadIDIsShown': False, 'Color': False}
-      # the native level is not used because it has to be to debug to send all messages to the log central
+      self._options = {'headerIsShown': True,
+                       'threadIDIsShown': False, 'Color': False}
+      # the native level is not used because it has to be to debug to send all
+      # messages to the log central
       self._level = None
 
     # dictionary of the option state, modified by the user or not
@@ -83,7 +86,8 @@ class Logging(object):
     # name of the Logging
     self.name = str(name)
     self._logger = logging.getLogger(fatherName).getChild(self.name)
-    # update the custom name of the Logging adding the new Logging name in the entire path
+    # update the custom name of the Logging adding the new Logging name in the
+    # entire path
     self._customName = os.path.join("/", customName, self.name)
 
     # Locks to make Logging thread-safe
@@ -120,7 +124,7 @@ class Logging(object):
     The options of the children will be updated if they were not modified before by a developer.
 
     :params optionName: string representing the name of the option to modify
-    :params value: boolean to give to the option  
+    :params value: boolean to give to the option
     :params directCall: boolean indicating if it is a call by the user or not
     """
     # lock to prevent that two threads change the options at the same time
@@ -137,7 +141,7 @@ class Logging(object):
 
       # propagate in the children
       for child in self._children.itervalues():
-        child._setOption(optionName, value, directCall=False)
+        child._setOption(optionName, value, directCall=False)  # pylint: disable=protected-access
       # update the format to apply the option change
       self._generateBackendFormat()
     finally:
@@ -174,11 +178,13 @@ class Logging(object):
     desiredBackend = desiredBackend.strip()
     desiredBackend = desiredBackend[0].upper() + desiredBackend[1:]
 
-    # lock to avoid problem in ObjectLoader which is a singleton not thread-safe
+    # lock to avoid problem in ObjectLoader which is a singleton not
+    # thread-safe
     self._lockObjectLoader.acquire()
     try:
       # load the Backend class
-      _class = objLoader.loadObject('DIRAC.Resources.LogBackends.%sBackend' % desiredBackend)
+      _class = objLoader.loadObject(
+          'DIRAC.Resources.LogBackends.%sBackend' % desiredBackend)
     finally:
       self._lockObjectLoader.release()
 
@@ -201,7 +207,8 @@ class Logging(object):
     backend.createHandler(backendOptions)
 
     # lock to prevent that the level change before adding the new backend in the backendsList
-    # and to prevent a change of the backendsList during the reading of the list
+    # and to prevent a change of the backendsList during the reading of the
+    # list
     self._lockLevel.acquire()
     self._lockOptions.acquire()
     try:
@@ -240,7 +247,8 @@ class Logging(object):
     self._lockLevel.acquire()
     try:
       # if the level logging level was previously modified by the developer
-      # and it is not a direct call from him, then we return in order to stop the propagation
+      # and it is not a direct call from him, then we return in order to stop
+      # the propagation
       if self._levelModified and not directCall:
         return
 
@@ -261,7 +269,7 @@ class Logging(object):
 
       # propagate in the children
       for child in self._children.itervalues():
-        child._setLevel(level, directCall=False)
+        child._setLevel(level, directCall=False)  # pylint: disable=protected-access
     finally:
       self._lockLevel.release()
 
@@ -368,6 +376,8 @@ class Logging(object):
     """
     Exception level
     """
+    _ = lException  # Make pylint happy
+    _ = lExcInfo
     return self._createLogRecord(LogLevels.ERROR, sMsg, sVarMsg, exc_info=True)
 
   def fatal(self, sMsg, sVarMsg=''):
@@ -379,9 +389,9 @@ class Logging(object):
   def _createLogRecord(self, level, sMsg, sVarMsg, exc_info=False):
     """
     Create a log record according to the level of the message. The log record is always sent to the different backends
-    Backends have their own levels and can manage the display of the message or not according to the level. 
-    Nevertheless, backends and the logger have the same level value, 
-    so we can test if the message will be displayed or not. 
+    Backends have their own levels and can manage the display of the message or not according to the level.
+    Nevertheless, backends and the logger have the same level value,
+    so we can test if the message will be displayed or not.
 
     :params level: positive integer representing the level of the log record
     :params sMsg: string representing the message
@@ -399,7 +409,8 @@ class Logging(object):
       # - 'componentname': the system/component name
       # - 'varmessage': the variable message
       # - 'customname' : the name of the logger for the DIRAC usage: without 'root' and separated with '/'
-      # extras attributes are not camel case because log record attributes are not either.
+      # extras attributes are not camel case because log record attributes are
+      # not either.
       extra = {'componentname': self._componentName,
                'varmessage': sVarMsg,
                'customname': self._customName}
@@ -426,7 +437,8 @@ class Logging(object):
     # and to prevent a modification of the backendsList
     self._lockOptions.acquire()
     try:
-      # give options and level to AbstractBackend to receive the new format for the backends list
+      # give options and level to AbstractBackend to receive the new format for
+      # the backends list
       datefmt, fmt = AbstractBackend.createFormat(self._options)
 
       for backend in self._backendsList:
@@ -440,6 +452,7 @@ class Logging(object):
 
     :params subName: the name of the child Logging
     """
+    _ = child  # make pylint happy
     # lock to prevent that the method initializes two Logging for the same 'logging' logger
     # and to erase the existing _children[subName]
     self._lockInit.acquire()
@@ -449,22 +462,24 @@ class Logging(object):
       if result is not None:
         return result
       # create a new child Logging
-      childLogging = Logging(self, self._logger.name, subName, self._customName)
+      childLogging = Logging(self, self._logger.name,
+                             subName, self._customName)
       self._children[subName] = childLogging
       return childLogging
     finally:
       self._lockInit.release()
 
-  def initialized(self):
+  def initialized(self):  # pylint: disable=no-self-use
     """
     initialized: Deleted method. Do not use it.
     """
     return True
 
-  def processMessage(self, messageObject):
+  def processMessage(self, messageObject):  # pylint: disable=no-self-use
     """
     processMessage: Deleted method. Do not use it.
     """
+    _ = messageObject  # make pylint happy
     return False
 
   def flushAllMessages(self, exitCode=0):
