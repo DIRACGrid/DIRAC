@@ -363,6 +363,7 @@ class ConfigureBasics( CommandBase ):
     if self.pp.configServer:
       self.cfg.append( '-C "%s"' % self.pp.configServer )
     if self.pp.releaseProject:
+      self.cfg.append( '-e "%s"' % self.pp.releaseProject )
       self.cfg.append( '-o /LocalSite/ReleaseProject=%s' % self.pp.releaseProject )
     if self.pp.gateway:
       self.cfg.append( '-W "%s"' % self.pp.gateway )

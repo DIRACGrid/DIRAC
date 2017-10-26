@@ -1,8 +1,9 @@
 """ Accounting reporter
 """
 
-import hashlib as md5
+import hashlib
 import re
+
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
@@ -39,7 +40,7 @@ class MainReporter( object ):
     for key in ( 'startTime', 'endTime' ):
       epoch = requestToHash[ key ]
       requestToHash[ key ] = epoch - epoch % granularity
-    md5Hash = md5.md5()
+    md5Hash = hashlib.md5()
     md5Hash.update( repr( requestToHash ) )
     md5Hash.update( self.setup )
     return md5Hash.hexdigest()

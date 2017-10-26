@@ -18,7 +18,7 @@ import re
 import urllib2
 import tempfile
 import imp
-import hashlib as md5
+import hashlib
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.File import mkDir
@@ -43,7 +43,7 @@ except Exception as excp:
 ##END OF LOAD
 
 
-class Params:
+class Params(object):
 
   def __init__( self ):
     self.releasesToBuild = []
@@ -314,7 +314,7 @@ class DistributionMaker:
       try:
         relFile = file( os.path.join( self.cliParams.destination,
                                       "release-%s-%s.md5" % ( self.cliParams.projectName, relVersion ) ), "w" )
-        relFile.write( md5.md5( projectCFGData ).hexdigest() )
+        relFile.write( hashlib.md5( projectCFGData ).hexdigest() )
         relFile.close()
       except Exception, exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
