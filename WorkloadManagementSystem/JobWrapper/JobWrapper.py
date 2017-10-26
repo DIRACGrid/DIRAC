@@ -368,10 +368,9 @@ class JobWrapper( object ):
                                                       exeThread,
                                                       spObject,
                                                       jobCPUTime,
-                                                      self.jobArgs, 
                                                       jobMemory,
                                                       processors,
-                                                      self.jobArgs )
+                                                      jobArgs = self.jobArgs )
     if not watchdogInstance['OK']:
       self.log.error( 'Could not create Watchdog instance', watchdogInstance['Message'] )
       return S_ERROR( 'Could not create Watchdog instance' )
