@@ -27,7 +27,7 @@ class PilotCStoJSONSynchronizer( object ):
   - It updates a JSON file with the values on the CS which can be used by Pilot3 pilots
   - It updates the pilot 3 files
 
-  This synchronizer can be triggered at any time via Pilot3Synchronizer().sync().
+  This synchronizer can be triggered at any time via PilotCStoJSONSynchronizer().sync().
   As it is today, this is triggered every time there is a successful write on the CS.
   '''
 

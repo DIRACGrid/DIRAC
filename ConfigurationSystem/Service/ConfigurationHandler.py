@@ -4,7 +4,7 @@
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
-from DIRAC.WorkloadManagementSystem.Utilities.Pilot3Synchronizer import Pilot3Synchronizer
+from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 
 gServiceInterface = False
 
@@ -24,8 +24,8 @@ class ConfigurationHandler( RequestHandler ):
     Handler class initialization
     """
     # Check the flag for updating the pilot 3 JSON file
-    self.updatePilot3JSONFile = self.srv_getCSOption( 'UpdatePilot3JSONFile', False )
-    if self.updatePilot3JSONFile:
+    self.updatePilotJSONFile = self.srv_getCSOption( 'UpdatePilotCStoJSONFile', False )
+    if self.updatePilotJSONFile:
       self.paramDict = {}
       self.paramDict['pilotFileServer'] = getServiceOption( _serviceInfo, "pilotFileServer", '' )
       self.paramDict['pilotRepo'] = getServiceOption( _serviceInfo, "pilotRepo", '' )
@@ -65,10 +65,10 @@ class ConfigurationHandler( RequestHandler ):
       return S_ERROR( "You must be authenticated!" )
     res = gServiceInterface.updateConfiguration( sData, credDict[ 'username' ] )
 
-    if self.updatePilot3JSONFile:
+    if self.updatePilotJSONFile:
       if not res['OK']:
         return res
-      return Pilot3Synchronizer( self.paramDict ).sync()
+      return PilotCStoJSONSynchronizer( self.paramDict ).sync()
 
 
   types_writeEnabled = []
