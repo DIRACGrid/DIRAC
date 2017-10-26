@@ -20,6 +20,10 @@ FIX: MultiProcessorSiteDirector - fix dictionary changed size exception
 *Workflow
 FIX: application log name can also come from step_commons.get['logFile']
 
+*Resources
+CHANGE: Condor, SLURM, SSHComputingElement - added parameters to force allocation
+        of multi-core job slots
+
 [v6r19p2]
 
 *DMS
