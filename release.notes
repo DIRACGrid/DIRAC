@@ -10,7 +10,7 @@ NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
 *DMS
 NEW: FTS3Agent working only with the FTS3 service to replace the existing one
 
-^Resources
+*Resources
 NEW: New SingularityComputingElement to submit jobs to a Singularity container
 
 *Docs
