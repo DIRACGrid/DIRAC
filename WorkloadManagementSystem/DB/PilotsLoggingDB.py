@@ -13,37 +13,31 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, S_OK, S_ERROR
+
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
-import DIRAC.Core.Utilities.Time as Time
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
-import threading
+from DIRAC.ResourceStatusSystem.Utilities import Utils
 
-from sqlalchemy.sql.schema import ForeignKey, PrimaryKeyConstraint
-from sqlalchemy.sql.sqltypes import DateTime
-from sqlalchemy.orm import session, sessionmaker, scoped_session, mapper
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.engine.reflection import Inspector
-from sqlalchemy import create_engine, Table, Column, MetaData, Integer, String
+from sqlalchemy import create_engine, Column, MetaData, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
 from sqlalchemy.exc import SQLAlchemyError
 
-import datetime
-import time
 
-DEBUG = 1
+TABLESLIST = ['PilotsLogging']
 
 metadata = MetaData( )
 Base = declarative_base( )
 
 
 #############################################################################
-class PilotsLoggingDB( ):
+class PilotsLoggingDB( object ):
   def __init__( self ):
 
+    self.log = gLogger.getSubLogger( 'PilotsLoggingDB' )
+    
     result = getDBParameters( 'WorkloadManagement/PilotsLoggingDB' )
     if not result['OK']:
       raise RuntimeError( 'Cannot get database parameters: %s' % result['Message'] )
@@ -55,33 +49,58 @@ class PilotsLoggingDB( ):
     self.dbPass = dbParameters['Password']
     self.dbName = dbParameters['DBName']
 
-    self.__initializeConnection( 'WorkloadManagement/PilotsLoggingDB' )
+    #These are the list of tables that will be created.
+    #They can be extended in an extension module
+    self.tablesList = getattr(Utils.voimport( 'DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB' ),
+                              'TABLESLIST')
+
+    self.__initializeConnection()
     resp = self.__initializeDB( )
     if not resp['OK']:
       raise Exception( "Couldn't create tables: " + resp['Message'] )
 
   ##########################################################################################
 
-  def __initializeConnection( self, dbPath ):
+  def __initializeConnection( self ):
+    """
+    This should be in a base class eventually
+    """
 
-    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s'
-                                 % (self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName),
-                                 pool_recycle = 3600, echo_pool = True )
+    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % (self.dbUser,
+                                                             self.dbPass,
+                                                             self.dbHost,
+                                                             self.dbPort,
+                                                             self.dbName),
+                                 pool_recycle = 3600,
+                                 echo_pool = True,
+                                 echo = self.log.getLevel() == 'DEBUG' )
     self.sqlalchemySession = scoped_session( sessionmaker( bind = self.engine ) )
     self.inspector = Inspector.from_engine( self.engine )
 
   ##########################################################################################
   def __initializeDB( self ):
+    """
+    Create the tables, if they are not there yet
+    """
 
     tablesInDB = self.inspector.get_table_names( )
 
-    if not 'PilotsLogging' in tablesInDB:
-      try:
-        PilotsLogging.__table__.create( self.engine )
-      except SQLAlchemyError as e:
-        return S_ERROR( DErrno.ESQLA, e )
-    else:
-      gLogger.debug( "Table PilotsLogging exists" )
+    for table in self.tablesList:
+      if table not in tablesInDB:
+        found = False
+        #is it in the extension? (fully or extended)
+        for ext in gConfig.getValue( 'DIRAC/Extensions', [] ):
+          try:
+            getattr(__import__(ext + __name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
+            found = True
+            break
+          except (ImportError, AttributeError):
+            continue
+          # If not found in extensions, import it from DIRAC base.
+        if not found:
+          getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
+      else:
+        gLogger.debug( "Table %s already exists" %table )
 
     return S_OK( )
 
@@ -138,7 +157,7 @@ class PilotsLoggingDB( ):
     session = self.sqlalchemySession( )
 
     session.query( PilotsLogging ).filter( PilotsLogging.pilotUUID.in_( pilotUUID ) ).delete(
-      synchronize_session = 'fetch' )
+        synchronize_session = 'fetch' )
 
     try:
       session.commit( )
@@ -152,10 +171,13 @@ class PilotsLoggingDB( ):
   ##########################################################################################
 
 class PilotsLogging( Base ):
+  """ PilotsLogging table
+  """
+
   __tablename__ = 'PilotsLogging'
   __table_args__ = {
-    'mysql_engine': 'InnoDB',
-    'mysql_charset': 'utf8'
+      'mysql_engine': 'InnoDB',
+      'mysql_charset': 'utf8'
   }
 
   logID = Column( 'LogID', Integer, primary_key = True, autoincrement = True )
