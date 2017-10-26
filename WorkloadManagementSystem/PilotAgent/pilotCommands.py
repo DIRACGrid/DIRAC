@@ -418,7 +418,7 @@ class CheckCECapabilities( CommandBase ):
 
     self.cfg = []
     # Pick up all the relevant resource parameters that will be used in the job matching
-    for ceParam in [ "WholeNode", "NumberOfProcessors", "RequiredTag" ]:
+    for ceParam in [ "WholeNode", "NumberOfProcessors" ]:
       if ceParam in resourceDict:
         self.cfg.append( '-o  /Resources/Computing/CEDefaults/%s=%s' % ( ceParam, resourceDict[ ceParam ] ) )
 
@@ -427,6 +427,12 @@ class CheckCECapabilities( CommandBase ):
       self.pp.tags += resourceDict['Tag']
     if self.pp.tags:
       self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( ( str( x ) for x in self.pp.tags ) ) )
+
+    # RequiredTags are similar to tags.
+    if resourceDict.get( 'RequiredTag' ):
+      self.pp.reqtags += resourceDict['RequiredTag']
+    if self.pp.reqtags:
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/RequiredTag=%s"' % ','.join( ( str( x ) for x in self.pp.reqtags ) ) )
 
     # If there is anything to be added to the local configuration, let's do it
     if self.cfg:
