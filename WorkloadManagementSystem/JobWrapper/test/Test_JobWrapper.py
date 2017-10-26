@@ -76,6 +76,7 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     jw = JobWrapper()
     jw.jobArgs = {'Executable':'/bin/ls'}
     res = jw.execute('')
+    print 'jw.execute() returns',str(res) 
     self.assertTrue( res['OK'] )
 
     shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
