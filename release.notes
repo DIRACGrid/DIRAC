@@ -1,4 +1,7 @@
-[v6r20-pre3]
+[v6r20-pre4]
+
+*Core
+CHANGE: Removed deprecated option "ExtraModules" (dirac-configure, dirac-install scripts)
 
 *Framework
 CHANGE: ComponentInstaller - remove the old web portal configuration data 
@@ -6,9 +9,12 @@ CHANGE: ComponentInstaller - remove the old web portal configuration data
 
 *WMS
 NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
+NEW: added a new synchronizer for Pilot3: sync of subset of CS info to JSON file, 
+     and sync of pilot3 files
 
 *DMS
 NEW: FTS3Agent working only with the FTS3 service to replace the existing one
+NEW: FTS3Utilities - use correct FTS Server Selection Policy
 
 *Resources
 NEW: New SingularityComputingElement to submit jobs to a Singularity container
