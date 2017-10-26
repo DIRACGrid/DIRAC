@@ -1,3 +1,25 @@
+[v6r19p3]
+
+CHANGE: .pylintrc - disable redefined-variable-type
+CHANGE: .pylintrc - max-nested-blocks=10 due to the many tests of result['OK']
+CHANGE: use autopep8 for auto-formatting with following exceptions:
+        tabs = 2 spaces and not 4
+        line length check disabled (i.e. 120 characters instead of 80)
+        Option for autopep8 are: --ignore E111,E101,E501
+
+*Configuration
+FIX: retrigger the initialization of the logger and the ObjectLoader after 
+     all the CS has been loaded
+
+*WMS
+FIX: pilot commands will add /DIRAC/Extensions=extensions if requested
+FIX: SiteDirector, pilotCommands - fix support for multiple values in the 
+     RequiredTag CE parameter
+FIX: MultiProcessorSiteDirector - fix dictionary changed size exception 
+
+*Workflow
+FIX: application log name can also come from step_commons.get['logFile']
+
 [v6r19p2]
 
 *DMS
