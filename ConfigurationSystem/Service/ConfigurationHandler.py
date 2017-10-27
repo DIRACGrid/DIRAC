@@ -70,6 +70,8 @@ class ConfigurationHandler( RequestHandler ):
       if not res['OK']:
         return res
       return PilotCStoJSONSynchronizer( self.paramDict ).sync()
+    else:
+      return res
 
 
   types_writeEnabled = []
