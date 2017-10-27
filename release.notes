@@ -1,4 +1,7 @@
-[v6r20-pre2]
+[v6r20-pre4]
+
+*Core
+CHANGE: Removed deprecated option "ExtraModules" (dirac-configure, dirac-install scripts)
 
 *Framework
 CHANGE: ComponentInstaller - remove the old web portal configuration data 
@@ -6,12 +9,53 @@ CHANGE: ComponentInstaller - remove the old web portal configuration data
 
 *WMS
 NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
+NEW: added a new synchronizer for Pilot3: sync of subset of CS info to JSON file, 
+     and sync of pilot3 files
 
 *DMS
 NEW: FTS3Agent working only with the FTS3 service to replace the existing one
+NEW: FTS3Utilities - use correct FTS Server Selection Policy
+
+*Resources
+NEW: New SingularityComputingElement to submit jobs to a Singularity container
 
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
+
+[v6r19p3]
+
+CHANGE: .pylintrc - disable redefined-variable-type
+CHANGE: .pylintrc - max-nested-blocks=10 due to the many tests of result['OK']
+CHANGE: use autopep8 for auto-formatting with following exceptions:
+        tabs = 2 spaces and not 4
+        line length check disabled (i.e. 120 characters instead of 80)
+        Option for autopep8 are: --ignore E111,E101,E501
+
+*Configuration
+FIX: retrigger the initialization of the logger and the ObjectLoader after 
+     all the CS has been loaded
+
+*WMS
+FIX: pilot commands will add /DIRAC/Extensions=extensions if requested
+FIX: SiteDirector, pilotCommands - fix support for multiple values in the 
+     RequiredTag CE parameter
+FIX: MultiProcessorSiteDirector - fix dictionary changed size exception 
+
+*Workflow
+FIX: application log name can also come from step_commons.get['logFile']
+
+*Resources
+CHANGE: Condor, SLURM, SSHComputingElement - added parameters to force allocation
+        of multi-core job slots
+
+[v6r19p2]
+
+*DMS
+FIX: dirac-admin-allow-se: fix crash because of usage of old RSS function
+
+*RSS
+FIX: ResourceStatusDB - microseconds should always be 0 
+FIX: Multiple fixes for the RSS tests
 
 [v6r19p1]
 
@@ -20,7 +64,7 @@ FIX: ElasticSearchDB - certifi package was miscalled
 FIX: ElasticSearchDB - added debug messages for DB connection
 
 *Framework
-FIX: ComponentInstalle - handling correctly extensions of DBs found in sql files
+FIX: ComponentInstaller - handling correctly extensions of DBs found in sql files
 
 *WMS
 FIX: SudoComputingElement - prevent message overwriting application errors
@@ -176,6 +220,11 @@ NEW: Added client (scripts) system test
 CHANGE: Add to the TS system test, the test for transformations with meta-filters
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
+
+[v6r17p35]
+
+*Core
+FIX: GOCDBClient - add EXTENSIONS & SCOPE tag support to GOCDB service queries.
 
 [v6r17p34]
 

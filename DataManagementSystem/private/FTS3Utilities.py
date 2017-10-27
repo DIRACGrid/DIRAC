@@ -4,12 +4,12 @@
 import json
 import datetime
 import random
+import threading
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
-
 
 def _checkSourceReplicas( ftsFiles ):
   """ Check the active replicas
@@ -259,6 +259,7 @@ class FTS3JSONDecoder( json.JSONDecoder ):
       dataDict['__datetime__'] = datetimeAttributes
       return dataDict
 
+threadLocal = threading.local()
 
 class FTS3ServerPolicy( object ):
   """
@@ -284,16 +285,16 @@ class FTS3ServerPolicy( object ):
     self._policyMethod = getattr( self, methName )
 
 
-
-  def _failoverServerPolicy( self, attempt ):
+  def _failoverServerPolicy( self, _attempt ):
     """
        Returns always the server at a given position (normally the first one)
 
        :param attempt: position of the server in the list
     """
-    if attempt >= len( self._serverList ):
+    if _attempt >= len( self._serverList ):
       raise Exception( "FTS3ServerPolicy.__failoverServerPolicy: attempt to reach non existing server index" )
-    return self._serverList[attempt]
+    return self._serverList[_attempt]
+
 
   def _sequenceServerPolicy( self, _attempt ):
     """
@@ -304,11 +305,22 @@ class FTS3ServerPolicy( object ):
     self._nextServerID = ( self._nextServerID + 1 ) % len( self._serverList )
     return fts3server
 
+
   def _randomServerPolicy( self, _attempt ):
     """
-      return a random server from the list
+      return a server from shuffledServerList
     """
-    return random.choice( self._serverList )
+
+    if getattr(threadLocal, 'shuffledServerList', None) is None:
+      threadLocal.shuffledServerList = self._serverList[:]
+      random.shuffle(threadLocal.shuffledServerList)
+
+    fts3Server = threadLocal.shuffledServerList[_attempt]
+
+    if _attempt == self._maxAttempts-1:
+      random.shuffle(threadLocal.shuffledServerList)
+
+    return fts3Server
 
 
   @staticmethod
@@ -340,9 +352,10 @@ class FTS3ServerPolicy( object ):
     attempt = 0
 
     while not fts3Server and attempt < self._maxAttempts:
-      fts3Server = self._failoverServerPolicy( attempt = attempt )
 
+      fts3Server = self._policyMethod( attempt )
       res = self._getFTSServerStatus( fts3Server )
+
       if not res['OK']:
         self.log.warn( "Error getting the RSS status for %s: %s" % ( fts3Server, res ) )
         fts3Server = None

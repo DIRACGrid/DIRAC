@@ -303,22 +303,14 @@ class ModuleBase( object ):
 
     self.stepName = self.step_commons['STEP_INSTANCE_NAME']
 
-    if 'executable' in self.step_commons and self.step_commons['executable']:
-      self.executable = self.step_commons['executable']
-    else:
-      self.executable = 'Unknown'
+    self.executable = self.step_commons.get('executable', 'Unknown')
 
-    if self.step_commons.has_key( 'applicationName' ) and self.step_commons['applicationName']:
-      self.applicationName = self.step_commons['applicationName']
-    else:
-      self.applicationName = 'Unknown'
+    self.applicationName = self.step_commons.get('applicationName', 'Unknown')
 
-    if self.step_commons.has_key( 'applicationVersion' ) and self.step_commons['applicationVersion']:
-      self.applicationVersion = self.step_commons['applicationVersion']
-    else:
-      self.applicationVersion = 'Unknown'
+    self.applicationVersion = self.step_commons.get('applicationVersion', 'Unknown')
 
-    self.applicationLog = self.step_commons.get('applicationLog', self.applicationLog)
+    self.applicationLog = self.step_commons.get('applicationLog', 
+                                                self.step_commons.get('logFile', self.applicationLog))
 
     stepInputData = []
     if 'inputData' in self.step_commons and self.step_commons['inputData']:

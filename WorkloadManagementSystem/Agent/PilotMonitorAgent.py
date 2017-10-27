@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule    import AgentModule
 from DIRAC                          import S_OK
-from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorHandler import WMSAdministratorHandler
+from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class PilotMonitorAgent( AgentModule ):
   """
@@ -33,7 +33,7 @@ class PilotMonitorAgent( AgentModule ):
     self.clearPilotsDelay = self.am_getOption( 'ClearPilotsDelay', 30 )
     self.clearAbortedDelay = self.am_getOption( 'ClearAbortedPilotsDelay', 7 )
 
-    self.WMSAdministrator = WMSAdministratorHandler()
+    self.WMSAdministrator = RPCClient('WorkloadManagement/WMSAdministrator')
     return S_OK()
 
   #############################################################################
