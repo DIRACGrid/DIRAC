@@ -8,6 +8,7 @@ import sys
 from DIRAC import S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 def getByUUID( optVal ):
@@ -16,15 +17,34 @@ def getByUUID( optVal ):
   if not result['OK']:
     print 'ERROR: %s' % result['Message']
     sys.exit( 1 )
-  labels = ['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']
-  content = []
-  for log in result['Value']:
-    content.append( [ log['pilotUUID'], log['timestamp'], log['source'], log['phase'], log['status'], log['messageContent'] ] )
-  printTable( labels, content, numbering = False, columnSeparator=' | ' )
+  printPilotsLogging( result['Value'] )
   return S_OK()
 
+def getByJobID( optVal ):
+  pilotDB = PilotAgentsDB()
+  pilotsLogging = PilotsLoggingClient()
+  pilots = pilotDB.getPilotsForJobID( optVal )
+  if not pilots[ 'OK ']:
+    return pilots
+  for pilotID in pilots:
+    info = pilotDB.getPilotInfo( pilotID = pilotID )
+    if not info['OK']:
+      return info
+    for pilot in info:
+      logging = pilotsLogging.getPilotsLogging( pilot['PilotJobReference'] )
+      if not logging['OK']:
+        return logging
+      printPilotsLogging( logging )
+
+def printPilotsLogging( logs ):
+  content = []
+  for log in logs:
+    content.append( [ log['pilotUUID'], log['timestamp'], log['source'], log['phase'], log['status'], log['messageContent'] ] )
+  labels = ['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']
+  printTable( labels, content, numbering = False, columnSeparator=' | ' )
+
 Script.registerSwitch( 'u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', getByUUID )
-#Script.registerSwitch( 'j:', 'jobid=', 'get PilotsLogging for given Job ID', getByJobID )
+Script.registerSwitch( 'j:', 'jobid=', 'get PilotsLogging for given Job ID', getByJobID )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
