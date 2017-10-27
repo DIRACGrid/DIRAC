@@ -18,7 +18,7 @@ def getByUUID( optVal ):
     print 'ERROR: %s' % result['Message']
     sys.exit( 1 )
   printPilotsLogging( result['Value'] )
-  return S_OK()
+  sys.exit( 0 )
 
 def getByJobID( optVal ):
   pilotDB = PilotAgentsDB()
@@ -35,6 +35,7 @@ def getByJobID( optVal ):
       if not logging['OK']:
         return logging
       printPilotsLogging( logging )
+  sys.exit( 0 )
 
 def printPilotsLogging( logs ):
   content = []
