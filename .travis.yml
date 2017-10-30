@@ -23,7 +23,7 @@ script:
     elif [[ "${CHECK}" == "docs"  ]];
     then cd docs; READTHEDOCS=True make html;
     elif [[ "${CHECK}" == "pylint"  ]];
-    then .travis.d/runPylint.sh;
+    then travis_wait 30 .travis.d/runPylint.sh;
     fi
 
 after_success:
