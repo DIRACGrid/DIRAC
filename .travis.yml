@@ -26,7 +26,8 @@ script:
     then travis_wait 30 .travis.d/runPylint.sh;
     fi
 
+## ignore errors for sourcefiles "-i"
 after_success:
   - if [[ "${CHECK}" == "py.test"  ]];
-    then coveralls;
+    then coveralls -i;
     fi
