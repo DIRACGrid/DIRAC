@@ -27,4 +27,6 @@ script:
     fi
 
 after_success:
-  - coveralls
+  - if [[ "${CHECK}" == "py.test"  ]];
+    then coveralls;
+    fi
