@@ -46,7 +46,7 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
   """ Adding quite a lot of calls from the API, for pure test purpose
   """
 
-  def test_execute_fail( self ):
+  def test_execute( self ):
 
     job = Job()
     job._siteSet = {'DIRAC.someSite.ch'}
@@ -71,7 +71,7 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
     job.setLogLevel( 'DEBUG' )
 
     res = job.runLocal( self.d )
-    self.assertFalse( res['OK'] )
+    self.assertTrue( res['OK'] )
 
 
   def test_execute_success( self ):
