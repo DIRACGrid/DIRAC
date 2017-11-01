@@ -15,11 +15,17 @@ uuid = None
 jobid = None
 
 def setUUID( optVal ):
+  """
+  Set UUID from arguments
+  """
   global uuid
   uuid = optVal
   return S_OK()
 
 def setJobID( optVal ):
+  """
+  Set JobID from arguments
+  """
   global jobid
   jobid = optVal
   return S_OK()
@@ -34,10 +40,13 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine()
 
 def printPilotsLogging( logs ):
+  """
+  Print results using printTable from PrettyPrint
+  """
   content = []
-  for log in logs:
-    content.append( [ log['pilotUUID'], log['timestamp'], log['source'], log['phase'], log['status'], log['messageContent'] ] )
   labels = ['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']
+  for log in logs:
+    content.append( [log[label] for label in labels] )
   printTable( labels, content, numbering = False, columnSeparator=' | ' )
 
 if uuid:
