@@ -11,31 +11,27 @@ from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLogg
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
-def getByUUID( optVal ):
-  pilotsLogging = PilotsLoggingClient()
-  result = pilotsLogging.getPilotsLogging( optVal )
-  if not result['OK']:
-    print 'ERROR: %s' % result['Message']
-    sys.exit( 1 )
-  printPilotsLogging( result['Value'] )
-  sys.exit( 0 )
+uuid = None
+jobid = None
 
-def getByJobID( optVal ):
-  pilotDB = PilotAgentsDB()
-  pilotsLogging = PilotsLoggingClient()
-  pilots = pilotDB.getPilotsForJobID( optVal )
-  if not pilots[ 'OK ']:
-    return pilots
-  for pilotID in pilots:
-    info = pilotDB.getPilotInfo( pilotID = pilotID )
-    if not info['OK']:
-      return info
-    for pilot in info:
-      logging = pilotsLogging.getPilotsLogging( pilot['PilotJobReference'] )
-      if not logging['OK']:
-        return logging
-      printPilotsLogging( logging )
-  sys.exit( 0 )
+def setUUID( optVal ):
+  global uuid
+  uuid = optVal
+  return S_OK()
+
+def setJobID( optVal ):
+  global jobid
+  jobid = optVal
+  return S_OK()
+
+Script.registerSwitch( 'u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', setUUID )
+Script.registerSwitch( 'j:', 'jobid=', 'get PilotsLogging for given Job ID', setJobID )
+
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s option value ' % Script.scriptName ] ) )
+
+Script.parseCommandLine()
 
 def printPilotsLogging( logs ):
   content = []
@@ -44,11 +40,27 @@ def printPilotsLogging( logs ):
   labels = ['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']
   printTable( labels, content, numbering = False, columnSeparator=' | ' )
 
-Script.registerSwitch( 'u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', getByUUID )
-Script.registerSwitch( 'j:', 'jobid=', 'get PilotsLogging for given Job ID', getByJobID )
-
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s option value ' % Script.scriptName ] ) )
-
-Script.parseCommandLine()
+if uuid:
+  pilotsLogging = PilotsLoggingClient()
+  result = pilotsLogging.getPilotsLogging( uuid )
+  if not result['OK']:
+    print 'ERROR: %s' % result['Message']
+    sys.exit( 1 )
+  printPilotsLogging( result['Value'] )
+  sys.exit( 0 )
+else:
+  pilotDB = PilotAgentsDB()
+  pilotsLogging = PilotsLoggingClient()
+  pilots = pilotDB.getPilotsForJobID( jobid )
+  if not pilots[ 'OK ']:
+    print pilots['Message']
+  for pilotID in pilots:
+    info = pilotDB.getPilotInfo( pilotID = pilotID )
+    if not info['OK']:
+      print info['Message']
+    for pilot in info:
+      logging = pilotsLogging.getPilotsLogging( pilot['PilotJobReference'] )
+      if not logging['OK']:
+        print logging['Message']
+      printPilotsLogging( logging )
+  sys.exit( 0 )
