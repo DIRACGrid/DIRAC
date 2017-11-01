@@ -38,7 +38,8 @@ Script.registerSwitch('j:', 'jobid=', 'get PilotsLogging for given Job ID', setJ
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
-                                  '  %s option value ' % Script.scriptName]))
+                                  '  %s option value ' % Script.scriptName,
+                                  'Only one option (either uuid or jobid) should be used.']))
 
 Script.parseCommandLine()
 
