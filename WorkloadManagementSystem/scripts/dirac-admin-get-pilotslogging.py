@@ -4,7 +4,7 @@
 """
 __RCSID__ = "$Id$"
 
-import sys
+import DIRAC
 from DIRAC import S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
@@ -54,9 +54,9 @@ if uuid:
   result = pilotsLogging.getPilotsLogging( uuid )
   if not result['OK']:
     print 'ERROR: %s' % result['Message']
-    sys.exit( 1 )
+    DIRAC.exit( 1 )
   printPilotsLogging( result['Value'] )
-  sys.exit( 0 )
+  DIRAC.exit( 0 )
 else:
   pilotDB = PilotAgentsDB()
   pilotsLogging = PilotsLoggingClient()
@@ -72,4 +72,4 @@ else:
       if not logging['OK']:
         print logging['Message']
       printPilotsLogging( logging )
-  sys.exit( 0 )
+  DIRAC.exit( 0 )
