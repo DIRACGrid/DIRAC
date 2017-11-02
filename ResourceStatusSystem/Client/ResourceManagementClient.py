@@ -4,11 +4,9 @@
 
 """
 
-from DIRAC                      import gLogger, S_ERROR
-from datetime                   import datetime, timedelta
-from DIRAC.Core.DISET.RPCClient import RPCClient
-
 __RCSID__ = '$Id:  $'
+
+from DIRAC.Core.DISET.RPCClient import RPCClient
 
 # a method that makes the first letter uppercase only (and leaves the rest letters unaffected)
 def uppercase_first_letter(key):
@@ -44,16 +42,13 @@ class ResourceManagementClient( object ):
   the client considerably.
   """
 
-  def __init__( self , serviceIn = None ):
+  def __init__( self ):
     '''
     The client tries to connect to :class:ResourceManagementDB by default. If it
     fails, then tries to connect to the Service :class:ResourceManagementHandler.
     '''
 
-    if not serviceIn:
-      self.rmsDB = RPCClient( "ResourceStatus/ResourceManagement" )
-    else:
-      self.rmsDB = serviceIn
+    self.rmService = RPCClient( "ResourceStatus/ResourceManagement" )
 
   def _prepare(self, sendDict):
 
@@ -63,13 +58,7 @@ class ResourceManagementClient( object ):
     # make each key name uppercase to match database column names (case sensitive)
     for key, value in sendDict.items():
       del sendDict[key]
-
-      # apply default values
-      if key in ['dateEffective', 'lastCheckTime'] and value is None:
-        sendDict.update({uppercase_first_letter(key): datetime.utcnow() })
-      elif key == 'tokenExpiration' and value is None:
-        sendDict.update({uppercase_first_letter(key): datetime.utcnow() + timedelta(hours=24)})
-      else:
+      if value:
         sendDict.update({uppercase_first_letter(key): value})
 
     return sendDict
@@ -77,7 +66,7 @@ class ResourceManagementClient( object ):
   # AccountingCache Methods ....................................................
 
   def selectAccountingCache( self, name = None, plotType = None, plotName = None,
-                                   result = None, dateEffective = None, lastCheckTime = None, meta = None ):
+                             result = None, dateEffective = None, lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
 
@@ -101,11 +90,11 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.select( 'AccountingCache', self._prepare(locals()) )
+    return self.rmService.select( 'AccountingCache', self._prepare(locals()) )
 
 
   def addOrModifyAccountingCache( self, name = None, plotType = None, plotName = None,
-                                   result = None, dateEffective = None, lastCheckTime = None ):
+                                  result = None, dateEffective = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to AccountingCache. Using `name`, `plotType`
     and `plotName` to query the database, decides whether to insert or update the
@@ -128,12 +117,12 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.addOrModify( 'AccountingCache', self._prepare(locals()) )
+    return self.rmService.addOrModify( 'AccountingCache', self._prepare(locals()) )
 
 
 
   def deleteAccountingCache( self, name = None, plotType = None, plotName = None,
-                                   result = None, dateEffective = None, lastCheckTime = None ):
+                             result = None, dateEffective = None, lastCheckTime = None ):
     '''
     Deletes from AccountingCache all rows that match the parameters given.
 
@@ -154,7 +143,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.delete( 'AccountingCache', self._prepare(locals()) )
+    return self.rmService.delete( 'AccountingCache', self._prepare(locals()) )
 
 
   # GGUSTicketsCache Methods ...................................................
@@ -179,7 +168,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.select( 'GGUSTicketsCache', self._prepare(locals()) )
+    return self.rmService.select( 'GGUSTicketsCache', self._prepare(locals()) )
 
 
   def deleteGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None,
@@ -199,11 +188,11 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.delete( 'GGUSTicketsCache', self._prepare(locals()) )
+    return self.rmService.delete( 'GGUSTicketsCache', self._prepare(locals()) )
 
 
   def addOrModifyGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None,
-                              tickets = None, lastCheckTime = None ):
+                                   tickets = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to GGUSTicketsCache all rows that match the parameters given.
 
@@ -219,7 +208,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.addOrModify( 'GGUSTicketsCache', self._prepare(locals()) )
+    return self.rmService.addOrModify( 'GGUSTicketsCache', self._prepare(locals()) )
 
 
   # DowntimeCache Methods ......................................................
@@ -261,7 +250,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.select( 'DowntimeCache', self._prepare(locals()) )
+    return self.rmService.select( 'DowntimeCache', self._prepare(locals()) )
 
 
   def deleteDowntimeCache( self, downtimeID = None, element = None, name = None,
@@ -298,13 +287,13 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.delete( 'DowntimeCache', self._prepare(locals()) )
+    return self.rmService.delete( 'DowntimeCache', self._prepare(locals()) )
 
 
   def addOrModifyDowntimeCache( self, downtimeID = None, element = None, name = None,
-                           startDate = None, endDate = None, severity = None,
-                           description = None, link = None, dateEffective = None,
-                           lastCheckTime = None, gOCDBServiceType = None ):
+                                startDate = None, endDate = None, severity = None,
+                                description = None, link = None, dateEffective = None,
+                                lastCheckTime = None, gOCDBServiceType = None ):
     '''
     Adds or updates-if-duplicated to DowntimeCache. Using `downtimeID` to query
     the database, decides whether to insert or update the table.
@@ -336,7 +325,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.addOrModify( 'DowntimeCache', self._prepare(locals()) )
+    return self.rmService.addOrModify( 'DowntimeCache', self._prepare(locals()) )
 
 
   # JobCache Methods ...........................................................
@@ -364,7 +353,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.select( 'JobCache', self._prepare(locals()) )
+    return self.rmService.select( 'JobCache', self._prepare(locals()) )
 
 
   def deleteJobCache( self, site = None, maskStatus = None, efficiency = None,
@@ -387,11 +376,11 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.delete( 'JobCache', self._prepare(locals()) )
+    return self.rmService.delete( 'JobCache', self._prepare(locals()) )
 
 
   def addOrModifyJobCache( self, site = None, maskStatus = None, efficiency = None,
-                      status = None, lastCheckTime = None ):
+                           status = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to JobCache. Using `site` to query
     the database, decides whether to insert or update the table.
@@ -411,7 +400,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.addOrModify( 'JobCache', self._prepare(locals()) )
+    return self.rmService.addOrModify( 'JobCache', self._prepare(locals()) )
 
 
   # TransferCache Methods ......................................................
@@ -439,7 +428,7 @@ class ResourceManagementClient( object ):
      :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.select( 'TransferCache', self._prepare(locals()) )
+    return self.rmService.select( 'TransferCache', self._prepare(locals()) )
 
 
   def deleteTransferCache( self, sourceName = None, destinationName = None, metric = None,
@@ -462,11 +451,11 @@ class ResourceManagementClient( object ):
      :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.delete( 'TransferCache', self._prepare(locals()) )
+    return self.rmService.delete( 'TransferCache', self._prepare(locals()) )
 
 
   def addOrModifyTransferCache( self, sourceName = None, destinationName = None, metric = None,
-                           value = None, lastCheckTime = None ):
+                                value = None, lastCheckTime = None ):
     '''
      Adds or updates-if-duplicated to TransferCache. Using `elementName`, `direction`
      and `metric` to query the database, decides whether to insert or update the table.
@@ -486,7 +475,7 @@ class ResourceManagementClient( object ):
      :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.addOrModify( 'TransferCache', self._prepare(locals()) )
+    return self.rmService.addOrModify( 'TransferCache', self._prepare(locals()) )
 
 
   # PilotCache Methods .........................................................
@@ -516,7 +505,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.select( 'PilotCache', self._prepare(locals()) )
+    return self.rmService.select( 'PilotCache', self._prepare(locals()) )
 
 
   def deletePilotCache( self, site = None, cE = None, pilotsPerJob = None,
@@ -540,11 +529,11 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()    '''
 
-    return self.rmsDB.delete( 'PilotCache', self._prepare(locals()) )
+    return self.rmService.delete( 'PilotCache', self._prepare(locals()) )
 
 
   def addOrModifyPilotCache( self, site = None, cE = None, pilotsPerJob = None,
-                        pilotJobEff = None, status = None, lastCheckTime = None ):
+                             pilotJobEff = None, status = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to PilotCache. Using `site` and `cE`
     to query the database, decides whether to insert or update the table.
@@ -566,7 +555,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.addOrModify( 'PilotCache', self._prepare(locals()) )
+    return self.rmService.addOrModify( 'PilotCache', self._prepare(locals()) )
 
 
   # PolicyResult Methods .......................................................
@@ -601,12 +590,12 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.select( 'PolicyResult', self._prepare(locals()) )
+    return self.rmService.select( 'PolicyResult', self._prepare(locals()) )
 
 
   def deletePolicyResult( self, element = None, name = None, policyName = None,
                           statusType = None, status = None, reason = None,
-                          lastCheckTime = None ):
+                          dateEffective = None, lastCheckTime = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
 
@@ -625,18 +614,20 @@ class ResourceManagementClient( object ):
         `Probing` | `Banned`
       **reason** - `[, string, list]`
         decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the policy result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the policy result was checked
 
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.delete( 'PolicyResult', self._prepare(locals()) )
+    return self.rmService.delete( 'PolicyResult', self._prepare(locals()) )
 
 
   def addOrModifyPolicyResult( self, element = None, name = None, policyName = None,
-                          statusType = None, status = None, reason = None,
-                          lastCheckTime = None ):
+                               statusType = None, status = None, reason = None,
+                               dateEffective = None, lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to PolicyResult. Using `name`, `policyName` and
     `statusType` to query the database, decides whether to insert or update the table.
@@ -664,14 +655,14 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.addOrModify( 'PolicyResult', self._prepare(locals()) )
+    return self.rmService.addOrModify( 'PolicyResult', self._prepare(locals()) )
 
 
   # PolicyResultLog Methods ....................................................
 
   def selectPolicyResultLog( self, element = None, name = None, policyName = None,
-                          statusType = None, status = None, reason = None,
-                          lastCheckTime = None, meta = None ):
+                             statusType = None, status = None, reason = None,
+                             lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResultLog all rows that match the parameters given.
 
@@ -699,12 +690,12 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.select( 'PolicyResultLog', self._prepare(locals()) )
+    return self.rmService.select( 'PolicyResultLog', self._prepare(locals()) )
 
 
   def deletePolicyResultLog( self, element = None, name = None, policyName = None,
-                          statusType = None, status = None, reason = None,
-                          lastCheckTime = None ):
+                             statusType = None, status = None, reason = None,
+                             lastCheckTime = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
 
@@ -729,12 +720,12 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.delete( 'PolicyResultLog', self._prepare(locals()) )
+    return self.rmService.delete( 'PolicyResultLog', self._prepare(locals()) )
 
 
   def addOrModifyPolicyResultLog( self, element = None, name = None, policyName = None,
-                          statusType = None, status = None, reason = None,
-                          lastCheckTime = None ):
+                                  statusType = None, status = None, reason = None,
+                                  lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to PolicyResultLog. Using `name`, `policyName`,
     'statusType` to query the database, decides whether to insert or update the table.
@@ -760,7 +751,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.addOrModify( 'PolicyResultLog', self._prepare(locals()) )
+    return self.rmService.addOrModify( 'PolicyResultLog', self._prepare(locals()) )
 
 
   # SpaceTokenOccupancyCache Methods ...........................................
@@ -791,7 +782,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.select( 'SpaceTokenOccupancyCache', self._prepare(locals()) )
+    return self.rmService.select( 'SpaceTokenOccupancyCache', self._prepare(locals()) )
 
 
   def deleteSpaceTokenOccupancyCache( self, endpoint = None, token = None,
@@ -817,12 +808,12 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.delete( 'SpaceTokenOccupancyCache', self._prepare(locals()) )
+    return self.rmService.delete( 'SpaceTokenOccupancyCache', self._prepare(locals()) )
 
 
   def addOrModifySpaceTokenOccupancyCache( self, endpoint = None, token = None,
-                                      total = None, guaranteed = None, free = None,
-                                      lastCheckTime = None ):
+                                           total = None, guaranteed = None, free = None,
+                                           lastCheckTime = None ):
     '''
     Adds or updates-if-duplicated to SpaceTokenOccupancyCache. Using `site` and `token`
     to query the database, decides whether to insert or update the table.
@@ -844,156 +835,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
 
-    return self.rmsDB.addOrModify( 'SpaceTokenOccupancyCache', self._prepare(locals()) )
-
-
-  # UserRegistryCache Methods ..................................................
-
-  def selectUserRegistryCache( self, login = None, name = None, email = None,
-                               lastCheckTime = None, meta = None ):
-    '''
-    Gets from UserRegistryCache all rows that match the parameters given.
-
-    :Parameters:
-      **login** - `[, string, list]`
-        user's login ID
-      **name** - `[, string, list]`
-        user's name
-      **email** - `[, string, list]`
-        user's email
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp from which the result is effective
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmsDB.select( 'UserRegistryCache', self._prepare(locals()) )
-
-
-  def deleteUserRegistryCache( self, login = None, name = None, email = None,
-                               lastCheckTime = None ):
-    '''
-    Deletes from UserRegistryCache all rows that match the parameters given.
-
-    :Parameters:
-      **login** - `[, string, list]`
-        user's login ID
-      **name** - `[, string, list]`
-        user's name
-      **email** - `[, string, list]`
-        user's email
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp from which the result is effective
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmsDB.delete( 'UserRegistryCache', self._prepare(locals()) )
-
-
-  def addOrModifyUserRegistryCache( self, login = None, name = None, email = None,
-                               lastCheckTime = None ):
-    '''
-    Adds or updates-if-duplicated to UserRegistryCache. Using `login` to query
-    the database, decides whether to insert or update the table.
-
-    :Parameters:
-      **login** - `string`
-        user's login ID
-      **name** - `string`
-        user's name
-      **email** - `string`
-        user's email
-      **lastCheckTime** - `datetime`
-        time-stamp from which the result is effective
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmsDB.addOrModify( 'UserRegistryCache', self._prepare(locals()) )
-
-
-  # ErrorReportBuffer Methods ..................................................
-
-  def insertErrorReportBuffer( self, name = None, elementType = None, reporter = None,
-                               errorMessage = None, operation = None, arguments = None,
-                               dateEffective = None ):
-    '''
-    Inserts to ErrorReportBuffer all rows that match the parameters given.
-
-    :Parameters:
-      **name** - `string`
-        user's name
-      **elementType** - `string`
-        the type of the element
-      **reporter** - `string`
-        the user that reported this
-      **errorMessage** - `string`
-      **operation** - `string`
-      **arguments** - `string`
-      **dateEffective** - `datetime`
-        time-stamp from which the policy result is effective
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmsDB.insert( 'ErrorReportBuffer', self._prepare(locals()) )
-
-
-  def selectErrorReportBuffer( self, name = None, elementType = None, reporter = None,
-                               errorMessage = None, operation = None, arguments = None,
-                               dateEffective = None, meta = None ):
-    '''
-    Gets from ErrorReportBuffer all rows that match the parameters given.
-
-    :Parameters:
-      **name** - `string`
-        user's name
-      **elementType** - `string`
-        the type of the element
-      **reporter** - `string`
-        the user that reported this
-      **errorMessage** - `string`
-      **operation** - `string`
-      **arguments** - `string`
-      **dateEffective** - `datetime`
-        time-stamp from which the policy result is effective
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmsDB.select( 'ErrorReportBuffer', self._prepare(locals()) )
-
-
-  def deleteErrorReportBuffer( self, name = None, elementType = None, reporter = None,
-                               errorMessage = None, operation = None, arguments = None,
-                               dateEffective = None ):
-    '''
-    Deletes from ErrorReportBuffer all rows that match the parameters given.
-
-    :Parameters:
-      **name** - `string`
-        user's name
-      **elementType** - `string`
-        the type of the element
-      **reporter** - `string`
-        the user that reported this
-      **errorMessage** - `string`
-      **operation** - `string`
-      **arguments** - `string`
-      **dateEffective** - `datetime`
-        time-stamp from which the policy result is effective
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    return self.rmsDB.delete( 'ErrorReportBuffer', self._prepare(locals()) )
+    return self.rmService.addOrModify( 'SpaceTokenOccupancyCache', self._prepare(locals()) )
 
 #...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

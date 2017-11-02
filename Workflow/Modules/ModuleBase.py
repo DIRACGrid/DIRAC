@@ -54,10 +54,10 @@ class ModuleBase( object ):
     self.executable = ''
     self.command = None
 
-    self.workflowStatus = None
-    self.stepStatus = None
-    self.workflow_commons = None
-    self.step_commons = None
+    self.workflowStatus = {}
+    self.stepStatus = {}
+    self.workflow_commons = {}
+    self.step_commons = {}
 
     self.applicationName = ''
     self.applicationVersion = ''
@@ -69,6 +69,7 @@ class ModuleBase( object ):
     self.appSteps = []
     self.inputDataList = []
     self.InputData = []
+    self.inputDataType = ''
 
     # These are useful objects (see the getFileReporter(), getJobReporter() and getRequestContainer() functions)
     self.fileReport = None
@@ -127,22 +128,28 @@ class ModuleBase( object ):
       self._finalize()
 
     # If everything is OK
-    except GracefulTermination, status:
+    except GracefulTermination as status:
       self.setApplicationStatus( status )
       self.log.info( status )
       return S_OK( status )
 
     # This catches everything that is voluntarily thrown within the modules, so an error
-    except RuntimeError, e:
-      self.log.error( e )
-      self.setApplicationStatus( e )
-      return S_ERROR( e )
+    except RuntimeError as rte:
+      if len(rte.args) > 1: # In this case the RuntimeError is supposed to return in rte[1] an error code
+                            # (possibly from DErrno)
+        self.log.error( rte[0] )
+        self.setApplicationStatus( rte[0] )
+        return S_ERROR( rte[1], rte[0] ) # rte[1] should be an error code
+      else: # In this case it is just a string
+        self.log.error( rte )
+        self.setApplicationStatus( rte )
+        return S_ERROR( rte )
 
     # This catches everything that is not voluntarily thrown (here, really writing an exception)
-    except Exception as e: #pylint: disable=broad-except
-      self.log.exception( e )
-      self.setApplicationStatus( e )
-      return S_ERROR( e )
+    except Exception as exc: #pylint: disable=broad-except
+      self.log.exception( exc )
+      self.setApplicationStatus( exc )
+      return S_ERROR( exc )
 
     finally:
       self.finalize()
@@ -297,22 +304,16 @@ class ModuleBase( object ):
 
     self.stepName = self.step_commons['STEP_INSTANCE_NAME']
 
-    if 'executable' in self.step_commons and self.step_commons['executable']:
-      self.executable = self.step_commons['executable']
-    else:
-      self.executable = 'Unknown'
+    self.executable = self.step_commons.get('executable', 'Unknown')
 
-    if self.step_commons.has_key( 'applicationName' ) and self.step_commons['applicationName']:
-      self.applicationName = self.step_commons['applicationName']
-    else:
-      self.applicationName = 'Unknown'
+    self.applicationName = self.step_commons.get('applicationName', 'Unknown')
 
-    if self.step_commons.has_key( 'applicationVersion' ) and self.step_commons['applicationVersion']:
-      self.applicationVersion = self.step_commons['applicationVersion']
-    else:
-      self.applicationVersion = 'Unknown'
+    self.applicationVersion = self.step_commons.get('applicationVersion', 'Unknown')
 
-    self.applicationLog = self.step_commons.get('applicationLog', self.applicationLog)
+    self.applicationLog = self.step_commons.get('applicationLog', 
+                                                self.step_commons.get('logFile', self.applicationLog))
+
+    self.inputDataType = self.step_commons.get( 'inputDataType', self.inputDataType )
 
     stepInputData = []
     if 'inputData' in self.step_commons and self.step_commons['inputData']:

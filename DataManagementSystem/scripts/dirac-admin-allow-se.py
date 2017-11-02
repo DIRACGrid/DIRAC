@@ -46,14 +46,6 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
-if not ( read or write or check or remove ):
-  # No switch was specified, means we need all of them
-  gLogger.notice( "No option given, all accesses will be allowed if they were not" )
-  read = True
-  write = True
-  check = True
-  remove = True
-
 # from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -61,6 +53,14 @@ from DIRAC                                               import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
+
+if not ( read or write or check or remove ):
+  # No switch was specified, means we need all of them
+  gLogger.notice( "No option given, all accesses will be allowed if they were not" )
+  read = True
+  write = True
+  check = True
+  remove = True
 
 ses = resolveSEGroup( ses )
 diracAdmin = DiracAdmin()
@@ -128,7 +128,7 @@ for se, seOptions in res[ 'Value' ].iteritems():
                           ( statusType, se, seOptions[ 'ReadAccess' ], ALLOWED_STATUSES ) )
           gLogger.notice( 'Try specifying the command switches' )
         else:
-          resR = resourceStatus.setStorageElementStatus( se, statusType, 'Active', reason, userName )
+          resR = resourceStatus.setElementStatus( se, "StorageElement", statusType, 'Active', reason, userName )
           if not resR['OK']:
             gLogger.fatal( "Failed to update %s %s to Active, exit -" % ( se, statusType ), resR['Message'] )
             DIRAC.exit( -1 )

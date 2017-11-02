@@ -37,7 +37,7 @@ for which you need to have an account before continuing.
 Stuff you need to have installed
 ================================
 
-*python*: make sure python 2.7.x is installed and set as default
+*python*: make sure python 2.7.9+ is installed and set as default
 (beware: the latest versions of Ubuntu use python 3.X as default).
 
 *python-pip*: the tool for installing python packages hosted
@@ -51,10 +51,11 @@ libfreetype6-dev, libncurses5-dev, libjpeg-dev.
 The names above are OS-dependent, distribution dependent, and version dependent,
 so you'll need to figure it out by yourself how to install them.
 Some equivalent packages for Fedora/CentOS: python-devel, openssl-devel, mysql, ncurses-libs freetype, libjpeg-devel, MySQL-python.
+If you are using a OSX machine, then you may end up in more problems than using a linux box.
 
 *editor*: get your favorite one.
 Examples include IDE like Eclipse or PyCharm, or whatever you prefer
-(vim, sublime, atom...) - anyway you'll need some plug-ins!
+(vim, sublime, atom...) - anyway you'll need some plug-ins! I think atom is an excellent choice.
 
 
 
@@ -131,9 +132,10 @@ The only important thing is what you are going to put in the $PYTHONPATH.
 Installing the dependencies
 ===========================
 
-First first, be sure setuptools is at the latest version::
+First first, be sure `setuptools` and `pip` are at the latest version::
 
    [sudo] pip install --upgrade setuptools
+   [sudo] pip install --upgrade pip
 
 We'll use `virtualenv <https://virtualenv.readthedocs.org/en/latest/>`_.
 and `virtualenvwrapper <https://virtualenvwrapper.readthedocs.org/en/latest/>`_.

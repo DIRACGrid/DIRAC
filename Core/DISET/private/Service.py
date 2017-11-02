@@ -1,11 +1,14 @@
 """
   Service class implements the server side part of the DISET protocol
 """
+#pylint: skip-file
+## __searchInitFunctions gives RuntimeError: maximum recursion depth exceeded
 
 import os
 import time
-import DIRAC
 import threading
+
+import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -262,7 +265,7 @@ class Service( object ):
     self._stats[ 'connections' ] += 1
     self._monitor.setComponentExtraParam( 'queries', self._stats[ 'connections' ] )
     self._threadPool.generateJobAndQueueIt( self._processInThread,
-                                             args = ( clientTransport, ) )
+                                            args = ( clientTransport, ) )
 
   #Threaded process function
   def _processInThread( self, clientTransport ):
@@ -454,9 +457,9 @@ class Service( object ):
 
       #This is a stable connection
       self._msgBroker.addTransportId( trid, self._name,
-                                       receiveMessageCallback = self._mbReceivedMsg,
-                                       disconnectCallback = self._mbDisconnect,
-                                       listenToConnection = False )
+                                      receiveMessageCallback = self._mbReceivedMsg,
+                                      disconnectCallback = self._mbDisconnect,
+                                      listenToConnection = False )
 
     result = self._executeAction( trid, proposalTuple, handlerObj )
     if result[ 'OK' ] and messageConnection:

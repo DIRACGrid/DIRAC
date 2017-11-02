@@ -2,6 +2,7 @@
 """
 The main DIRAC installer script
 """
+
 import sys
 import os
 import getopt
@@ -10,7 +11,6 @@ import imp
 import signal
 import time
 import stat
-import types
 import shutil
 import ssl
 import hashlib
@@ -47,6 +47,7 @@ class Params( object ):
     self.debug = False
     self.externalsOnly = False
     self.lcgVer = ''
+    self.noLcg = False
     self.useVersionsDir = False
     self.installSource = ""
     self.globalDefaults = False
@@ -78,7 +79,7 @@ class ReleaseConfig( object ):
 
     def getChild( self, path ):
       child = self
-      if type( path ) in ( types.ListType, types.TupleType ):
+      if isinstance( path, (list, tuple) ):
         pathList = path
       else:
         pathList = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ]
@@ -138,7 +139,7 @@ class ReleaseConfig( object ):
       return cIndex
 
     def createSection( self, name, cfg = False ):
-      if type( name ) in ( types.ListType, types.TupleType ):
+      if isinstance( name, ( list, tuple ) ):
         pathList = name
       else:
         pathList = [ sec.strip() for sec in name.split( "/" ) if sec.strip() ]
@@ -188,7 +189,7 @@ class ReleaseConfig( object ):
       if defaultValue == None:
         return value
       defType = type( defaultValue )
-      if defType == types.BooleanType:
+      if isinstance(defType, bool):
         return value.lower() in ( "1", "true", "yes" )
       try:
         return defType( value )
@@ -517,7 +518,7 @@ class ReleaseConfig( object ):
     if not project:
       project = self.__projectName
 
-    if type( releases ) not in ( types.ListType, types.TupleType ):
+    if not isinstance( releases, (list, tuple) ):
       releases = [ releases ]
 
     #Load defaults
@@ -810,7 +811,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     # Sometimes repositories do not return Content-Length parameter
     try:
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    except Exception, x:
+    except Exception as x:
       logWARN( 'Content-Length parameter not returned, skipping expectedBytes check' )
 
     if fileName:
@@ -981,6 +982,21 @@ def fixBuildPaths():
   except:
     pass
 
+def fixPythonShebang():
+  """
+  Some scripts (like the gfal2 scripts) come with a shebang pointing to the system python.
+  We replace it with the environment one
+ """
+
+  binaryPath = os.path.join( cliParams.targetPath, cliParams.platform )
+  try:
+    replaceCmd = "grep -rIl '#!/usr/bin/python' %s/bin | xargs sed -i'.org' 's:#!/usr/bin/python:#!/usr/bin/env python:g'" %  binaryPath
+    os.system( replaceCmd )
+  except:
+    pass
+
+
+
 
 def runExternalsPostInstall():
   """
@@ -1053,6 +1069,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'P:', 'installationPath=', 'Path where to install (default current working dir)' ),
             ( 'b', 'build', 'Force local compilation' ),
             ( 'g:', 'grid=', 'lcg tools package version' ),
+            ( '  ', 'no-lcg-bundle', 'lcg tools not to be installed' ),
             ( 'B', 'noAutoBuild', 'Do not build if not available' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'u:', 'baseURL=', "Use URL as the source for installation tarballs" ),
@@ -1123,23 +1140,19 @@ def loadConfiguration():
   for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraModules', 'extensions', 'timeout' ):
+                  'project', 'release', 'extensions', 'timeout' ):
     try:
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
       continue
 
-    if opName == 'extraModules':
-      logWARN( "extraModules is deprecated please use extensions instead!" )
-      opName = 'extensions'
-
     if opName == 'installType':
       opName = 'externalsType'
     if isinstance( getattr( cliParams, opName ), basestring ):
       setattr( cliParams, opName, opVal )
-    elif type( getattr( cliParams, opName ) ) == types.BooleanType:
+    elif isinstance( getattr( cliParams, opName ), bool ):
       setattr( cliParams, opName, opVal.lower() in ( "y", "yes", "true", "1" ) )
-    elif type( getattr( cliParams, opName ) ) == types.ListType:
+    elif isinstance( getattr( cliParams, opName ), list ):
       setattr( cliParams, opName, [ opV.strip() for opV in opVal.split( "," ) if opV ] )
 
   #Now parse the ops
@@ -1162,6 +1175,8 @@ def loadConfiguration():
       cliParams.debug = True
     elif o in ( '-g', '--grid' ):
       cliParams.lcgVer = v
+    elif o in ( '--no-lcg-bundle' ):
+      cliParams.noLcg = True
     elif o in ( '-u', '--baseURL' ):
       cliParams.installSource = v
     elif o in ( '-P', '--installationPath' ):
@@ -1265,6 +1280,20 @@ def installExternals( releaseConfig ):
     fixBuildPaths()
   logNOTICE( "Running externals post install..." )
   checkPlatformAliasLink()
+  return True
+
+def installLCGutils( releaseConfig ):
+
+  if not cliParams.platform:
+    cliParams.platform = getPlatform()
+  if not cliParams.platform:
+    return False
+
+  if cliParams.installSource:
+    tarsURL = cliParams.installSource
+  else:
+    tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
+
   #lcg utils?
   #LCG utils if required
   lcgVer = releaseConfig.getLCGVersion( cliParams.lcgVer )
@@ -1272,7 +1301,13 @@ def installExternals( releaseConfig ):
     verString = "%s-%s-python%s" % ( lcgVer, cliParams.platform, cliParams.pythonVersion )
     #HACK: try to find a more elegant solution for the lcg bundles location
     if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False, cache = True ):
-      logERROR( "Check that there is a release for your platform: DIRAC-lcg-%s" % verString )
+      logERROR( "\nThe requested LCG software version %s for the local operating system could not be downloaded." % verString )
+      logERROR( "Please, check the availability of the LCG software bindings for you platform 'DIRAC-lcg-%s' \n in the repository %s/lcgBundles/." % ( verString, os.path.dirname( tarsURL ) ) )
+      logERROR( "\nIf you would like to skip the installation of the LCG software, redo the installation with adding the option --no-lcg-bundle to the command line." )
+      return False
+    
+  logNOTICE( "Fixing Python Shebang..." )
+  fixPythonShebang()
   return True
 
 def createPermanentDirLinks():
@@ -1358,7 +1393,8 @@ def createBashrc():
                      'export DIRACSCRIPTS=%s' % os.path.join( "$DIRAC", 'scripts' ),
                      'export DIRACLIB=%s' % os.path.join( "$DIRAC", cliParams.platform, 'lib' ),
                      'export TERMINFO=%s' % __getTerminfoLocations( os.path.join( "$DIRAC", cliParams.platform, 'share', 'terminfo' ) ),
-                     'export RRD_DEFAULT_FONT=%s' % os.path.join( "$DIRAC", cliParams.platform, 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
+                     'export RRD_DEFAULT_FONT=%s' % os.path.join( "$DIRAC", cliParams.platform, 'share',
+                                                                  'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
       lines.extend( ['# Prepend the PYTHONPATH, the LD_LIBRARY_PATH, and the DYLD_LIBRARY_PATH'] )
 
@@ -1552,6 +1588,12 @@ if __name__ == "__main__":
   logNOTICE( "Installing %s externals..." % cliParams.externalsType )
   if not installExternals( releaseConfig ):
     sys.exit( 1 )
+  if cliParams.noLcg:
+    logNOTICE( "Skipping installation of LCG software..." )
+  else:
+    logNOTICE( "Installing LCG software..." )
+    if not installLCGutils( releaseConfig ):
+      sys.exit( 1 )
   if not createOldProLinks():
     sys.exit( 1 )
   if not createBashrc():

@@ -136,32 +136,27 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [transTypes, [basestring, dict]]
-  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus, lfns = [], force = False ):
+  def _wasFileInError( self, newStatus, currentStatus ):
+    """ Tells whether the file was Assigned and failed, i.e. was not Processed """
+    return currentStatus.lower() == 'assigned' and newStatus.lower() != 'processed'
+
+  types_setFileStatusForTransformation = [transTypes, dict]
+  def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus ):
     """ Sets the file status for the transformation.
 
         The dictOfNewFilesStatus is a dictionary with the form:
-        {12345: 'StatusA', 6789: 'StatusB',  ... }
+        {12345: ('StatusA', errorA), 6789: ('StatusB',errorB),  ... } where the keys are fileIDs
+        The tuple may be a string with only the status if the client was from an older version
     """
 
-    # create dictionary in case newLFNsStatus is a string - for backward compatibility
-    if isinstance( dictOfNewFilesStatus, basestring ):
-      dictOfNewFilesStatus = dict( [( lfn, dictOfNewFilesStatus ) for lfn in lfns ] )
-      res = database.getTransformationFiles( {'TransformationID':transName, 'LFN': dictOfNewFilesStatus.keys()} )
-      if not res['OK']:
-        return res
-      if res['Value']:
-        tsFiles = res['Value']
-      # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
-      tsFilesAsDict = {}
-      for tsFile in tsFiles:
-        tsFilesAsDict[tsFile['LFN']] = tsFile['FileID']
+    if not dictOfNewFilesStatus:
+      return S_OK( {} )
 
-      newStatusForFileIDs = dict( [( tsFilesAsDict[lfn], dictOfNewFilesStatus[lfn] ) for lfn in dictOfNewFilesStatus.keys()] )
-
-    else:
+    statusSample = dictOfNewFilesStatus.values()[0]
+    if isinstance( statusSample, ( list, tuple ) ) and len( statusSample ) == 2:
       newStatusForFileIDs = dictOfNewFilesStatus
-
+    else:
+      return S_ERROR( "Status field should be a list or tuple with two values" )
 
     res = database._getConnectionTransID( False, transName )
     if not res['OK']:
@@ -332,7 +327,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.addFile( fileDicts, force = force )
     return self._parseRes( res )
 
-  types_removeFile = [[list,dict]]
+  types_removeFile = [[list, dict]]
   def export_removeFile( self, lfns ):
     """ Interface provides [ LFN1, LFN2, ... ]
     """
@@ -403,13 +398,13 @@ class TransformationManagerHandlerBase( RequestHandler ):
   types_getTabbedSummaryWeb = [basestring, dict, dict, list, int, int]
   def export_getTabbedSummaryWeb( self, table, requestedTables, selectDict, sortList, startItem, maxItems ):
     tableDestinations = {  'Transformations'      : { 'TransformationFiles' : ['TransformationID'],
-                                                      'TransformationTasks' : ['TransformationID']           },
+                           'TransformationTasks' : ['TransformationID'] },
 
                            'TransformationFiles'  : { 'Transformations'     : ['TransformationID'],
-                                                      'TransformationTasks' : ['TransformationID', 'TaskID']  },
+                           'TransformationTasks' : ['TransformationID', 'TaskID'] },
 
                            'TransformationTasks'  : { 'Transformations'     : ['TransformationID'],
-                                                      'TransformationFiles' : ['TransformationID', 'TaskID']  } }
+                           'TransformationFiles' : ['TransformationID', 'TaskID'] } }
 
     tableSelections = {    'Transformations'      : ['TransformationID', 'AgentType', 'Type', 'TransformationGroup',
                                                      'Plugin'],
@@ -578,7 +573,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
     # As this list is a reference to the list in the DB, we cannot extend it, therefore copy it
     resultDict['ParameterNames'] = list( res['ParameterNames'] )
     # Add the job states to the ParameterNames entry
-    taskStateNames = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled',
+    taskStateNames = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed',
+                      'Waiting', 'Done', 'Completed', 'Stalled',
                       'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
     resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
     # Add the file states to the ParameterNames entry

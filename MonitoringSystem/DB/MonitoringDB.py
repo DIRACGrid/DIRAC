@@ -33,15 +33,17 @@ class MonitoringDB( ElasticDB ):
       typeClass = objectsLoaded[ pythonClassName ]
       indexName = "%s_%s" % ( self.getIndexPrefix(), typeClass()._getIndex() )
       doc_type = typeClass()._getDocType()
-      mapping = typeClass().getMapping()
-      monfields = typeClass().getMonitoringFields()
+      mapping = typeClass().mapping
+      monfields = typeClass().monitoringFields
+      period = typeClass().period
       self.__documents[doc_type] = {'indexName': indexName,
                                     'mapping':mapping,
-                                    'monitoringFields':monfields}
+                                    'monitoringFields':monfields,
+                                    'period' : period}
       if self.__readonly:
         gLogger.info( "Read only mode is okay" )
       else:
-        self.registerType( indexName, mapping )
+        self.registerType( indexName, mapping, period)
 
   def getIndexName( self, typeName ):
     """
@@ -57,12 +59,14 @@ class MonitoringDB( ElasticDB ):
     else:
       return S_ERROR( "Type %s is not defined" % typeName )
 
-  def registerType( self, index, mapping ):
+  def registerType( self, index, mapping, period = None ):
     """
     It register the type and index, if does not exists
 
     :param str index: name of the index
     :param dict mapping: mapping used to create the index.
+    :param str period: We can specify, which kind of indexes will be created. Currently only daily and monthly indexes are supported.
+    
     """
 
     all_index = "%s-*" % index
@@ -70,18 +74,18 @@ class MonitoringDB( ElasticDB ):
     if self.exists( all_index ):
       indexes = self.getIndexes()
       if indexes:
-        actualindexName = generateFullIndexName( index )
+        actualindexName = generateFullIndexName( index, period )
         if self.exists( actualindexName ):
           self.log.info( "The index is exists:", actualindexName )
         else:
-          result = self.createIndex( index, mapping )
+          result = self.createIndex( index, mapping, period )
           if not result['OK']:
             self.log.error( result['Message'] )
             return result
           self.log.info( "The index is created", actualindexName )
     else:
       # in that case no index exists
-      result = self.createIndex( index, mapping )
+      result = self.createIndex( index, mapping, period )
       if not result['OK']:
         self.log.error( result['Message'] )
       else:
@@ -315,11 +319,17 @@ class MonitoringDB( ElasticDB ):
     """
     mapping = self.__getMapping( monitoringType )
     gLogger.debug( "Mapping used to create an index:", mapping )
+    period = self.__documents[monitoringType].get( 'period' )
     res = self.getIndexName( monitoringType )
     if not res['OK']:
       return res
     indexName = res['Value']
-    return self.bulk_index( indexName, monitoringType, records, mapping )
+    
+    return self.bulk_index( indexprefix = indexName,
+                            doc_type = monitoringType,
+                            data = records,
+                            mapping = mapping,
+                            period = period )
 
   def __getMapping( self, monitoringType ):
     """

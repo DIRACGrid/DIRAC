@@ -49,10 +49,10 @@ $installCfg::
      UseVersionsDir = yes
      #  The directory of the DIRAC software installation
      TargetPath = /opt/dirac
-     #  DIRAC extra modules to be installed (Web is required if you are installing the Portal on
-     #  this server).
+     #  DIRAC extension to be installed
+     # (WebApp is required if you are installing the Portal on this server).
      #  Only modules not defined as default to install in their projects need to be defined here:
-     #   i.e. LHCb, LHCbWeb for LHCb for example: ExtraModules = WebAppDIRAC,LHCb,LHCbWeb
+     #   i.e. LHCb, LHCbWeb for LHCb for example: Extensions = WebAppDIRAC,LHCb,LHCbWeb
      Externals = WebApp
      Project = DIRAC
      WebPortal = yes

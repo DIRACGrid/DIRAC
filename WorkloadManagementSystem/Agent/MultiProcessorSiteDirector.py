@@ -21,9 +21,11 @@ class MultiProcessorSiteDirector( SiteDirector ):
     """
 
     result = SiteDirector.getQueues( self, resourceDict )
-    if not result['OK']: return result
+    if not result['OK']:
+      return result
 
-    for queueName in self.queueDict.keys():
+    remQueues = []
+    for queueName in self.queueDict:
       ce = self.queueDict[queueName]['CEName']
       site = self.queueDict[queueName]['Site']
       ceDef = resourceDict[site][ce]
@@ -44,11 +46,14 @@ class MultiProcessorSiteDirector( SiteDirector ):
         self.queueDict[queueName]['ParametersDict']['Tags'].append( 'WholeNode' )
 
       if 'Tags' not in self.queueDict[queueName]['ParametersDict']:
-        del self.queueDict[queueName]
+        remQueues.append( queueName )
       else:
         tags = self.queueDict[queueName]['ParametersDict']['Tags']
         if '2Processors' not in tags and 'WholeNode' not in tags:
-          del self.queueDict[queueName]
+          remQueues.append( queueName )
+
+    for queueName in remQueues:
+      del self.queueDict[queueName]
 
     return S_OK()
 
@@ -233,10 +238,11 @@ class MultiProcessorSiteDirector( SiteDirector ):
 
         totalTQJobs += taskQueueDict[tq]['Jobs']
 
-      self.log.verbose( '%d job(s) from %d task queue(s) are eligible for %s queue' % ( totalTQJobs, len( tqIDList ), queue ) )
+      self.log.verbose( '%d job(s) from %d task queue(s) are eligible for %s queue' % ( totalTQJobs,
+                                                                                        len( tqIDList ), queue ) )
 
       queueSubmittedPilots = 0
-      for tag in tqIDListByProcessors.keys():
+      for tag in tqIDListByProcessors:
 
         self.log.verbose( "Try to submit pilots for Tag=%s (TQs=%s)" % ( tag, tqIDListByProcessors[tag] ) )
 
@@ -257,7 +263,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
           lastUpdateTime = dateTime() - self.pilotWaitingTime * second
           result = pilotAgentsDB.countPilots( {'TaskQueueID': tagTqIDList,
                                                'Status': WAITING_PILOT_STATUS},
-                                               None, lastUpdateTime )
+                                              None, lastUpdateTime )
           if not result['OK']:
             self.log.error( 'Failed to get Number of Waiting pilots', result['Message'] )
             tagWaitingPilots = 0
@@ -268,7 +274,8 @@ class MultiProcessorSiteDirector( SiteDirector ):
           self.log.verbose( "%d waiting pilots already for all the available jobs" % tagWaitingPilots )
           continue
 
-        self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" % ( tagWaitingPilots, tagTQJobs, queue ) )
+        self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" % ( tagWaitingPilots,
+                                                                                           tagTQJobs, queue ) )
 
         # Get the working proxy
         cpuTime = queueCPUTime + 86400
@@ -302,7 +309,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
           jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )
           httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
 
-          result = self.getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir, processors )
+          result = self.getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
           if not result['OK']:
             return result
 

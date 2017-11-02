@@ -405,8 +405,7 @@ class ComponentInstaller( object ):
 
     for section in [ 'Systems', 'Resources',
                      'Resources/Sites', 'Resources/Sites/DIRAC',
-                     'Resources/Sites/LCG', 'Operations',
-                     'Website', 'Registry' ]:
+                     'Resources/Sites/LCG', 'Operations', 'Registry' ]:
       if installCfg.isSection( section ):
         centralCfg.createNewSection( section, contents = installCfg[section] )
 
@@ -499,29 +498,6 @@ class ComponentInstaller( object ):
       centralCfg = centralCfg.mergeWith( operationsCfg )
       operationsCfg = self.__getCfg( cfgPath( 'Operations', 'Defaults', 'EMail' ), 'Logging', adminUserEmail )
       centralCfg = centralCfg.mergeWith( operationsCfg )
-
-    # Website
-    websiteCfg = self.__getCfg( cfgPath( 'Website', 'Authorization',
-                                         'systems', 'configuration' ), 'Default', 'all' )
-    websiteCfg['Website'].addKey( 'DefaultGroups',
-                                  ', '.join( ['visitor', defaultGroupName, adminGroupName] ), '' )
-    websiteCfg['Website'].addKey( 'DefaultSetup', self.setup, '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showHistory' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'commitConfiguration' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showCurrentDiff' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showDiff' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'rollbackToVersion' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'manageRemoteConfig' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].appendToOption( 'manageRemoteConfig' ,
-                                                                                       ', ServiceAdministrator' )
-
-    centralCfg = centralCfg.mergeWith( websiteCfg )
 
     return centralCfg
 
@@ -622,7 +598,12 @@ class ComponentInstaller( object ):
         if not isRenamed and cType == 'service':
           result = self._removeOptionFromCS( cfgPath( 'Systems', system, compInstance, 'URLs', component ) )
           if not result[ 'OK' ]:
-            return result
+            # It is maybe in the FailoverURLs ?
+            result = self._removeOptionFromCS( cfgPath( 'Systems', system, compInstance, 'FailoverURLs', component ) )
+            if not result['OK']:
+              return result
+
+
 
       if removeMain:
         result = self._removeSectionFromCS( cfgPath( 'Systems', system,
@@ -635,7 +616,10 @@ class ComponentInstaller( object ):
         if cType == 'service':
           result = self._removeOptionFromCS( cfgPath( 'Systems', system, compInstance, 'URLs', installation[ 'Component' ][ 'Module' ] ) )
           if not result[ 'OK' ]:
-            return result
+            # it is maybe in the FailoverURLs ?
+            result = self._removeOptionFromCS( cfgPath( 'Systems', system, compInstance, 'FailoverURLs', installation[ 'Component' ][ 'Module' ] ) )
+            if not result['OK']:
+              return result
 
       return S_OK( 'Successfully removed entries from CS' )
     return S_OK( 'Instances of this component still exist. It won\'t be completely removed' )
@@ -801,6 +785,8 @@ class ComponentInstaller( object ):
       if port and self.host:
         urlsPath = cfgPath( 'Systems', system, compInstance, 'URLs' )
         cfg.createNewSection( urlsPath )
+        failoverUrlsPath = cfgPath( 'Systems', system, compInstance, 'FailoverURLs' )
+        cfg.createNewSection( failoverUrlsPath )
         cfg.setOption( cfgPath( urlsPath, component ),
                        'dips://%s:%d/%s/%s' % ( self.host, port, system, component ) )
 
@@ -2496,7 +2482,17 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
     gLogger.notice( 'Installing', dbName )
 
-    dbFile = glob.glob( os.path.join( rootPath, '*', '*', 'DB', '%s.sql' % dbName ) )
+    dbFile = glob.glob(os.path.join( rootPath, 'DIRAC', '*', 'DB', '%s.sql' % dbName ))
+    # is there by chance an extension of it?
+    for extension in CSGlobals.getCSExtensions():
+      dbFileInExtension = glob.glob( os.path.join( rootPath,
+                                                   '%sDIRAC' % extension,
+                                                   '*',
+                                                   'DB',
+                                                   '%s.sql' % dbName ) )
+      if dbFileInExtension:
+        dbFile = dbFileInExtension
+        break
 
     if not dbFile:
       error = 'Database %s not found' % dbName
@@ -2506,6 +2502,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       return S_ERROR( error )
 
     dbFile = dbFile[0]
+    gLogger.debug("Installing %s" %dbFile)
 
     # just check
     result = self.execMySQL( 'SHOW STATUS' )

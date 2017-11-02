@@ -4,7 +4,19 @@ import functools
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 class ThreadConfig( threading.local ):
+  """ This class allows to contain extra information when a call is done on behalf of
+      somebody else. Typically, when a host performs the request on behalf of a user.
+      It is not used inside DIRAC, but is used in WebAppDIRAC for example
+
+      Note that the class is a singleton, meaning that you share the same object in the whole process,
+      however the attributes are thread locals (because of the threading.local inheritance).
+
+      Also, this class has to be populated manually, no Client class will do it for you.
+
+  """
+
   __metaclass__ = DIRACSingleton
+
 
   def __init__( self ):
     self.reset()

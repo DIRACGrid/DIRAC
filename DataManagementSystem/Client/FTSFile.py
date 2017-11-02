@@ -85,9 +85,9 @@ class FTSFile( object ):
                "Size": "BIGINT NOT NULL",
                "FTSGUID":  "VARCHAR(64)",
                "SourceSE": "VARCHAR(128) NOT NULL",
-               "SourceSURL": "VARCHAR(255) NOT NULL",
+               "SourceSURL": "VARCHAR(1024) NOT NULL",
                "TargetSE": "VARCHAR(128) NOT NULL",
-               "TargetSURL": "VARCHAR(255) NOT NULL",
+               "TargetSURL": "VARCHAR(1024) NOT NULL",
                "Status": "VARCHAR(128) DEFAULT 'Waiting'",
                "Error": "VARCHAR(255)"  },
              "PrimaryKey": [ "FTSFileID" ],
@@ -177,7 +177,7 @@ class FTSFile( object ):
     """ creation time setter """
     if not isinstance( value, basestring ) and not isinstance( value, datetime.datetime ):
       raise TypeError( "CreationTime should be a datetime.datetime!" )
-    if type( value ) == str:
+    if isinstance(value, basestring):
       value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["CreationTime"] = value
 
@@ -191,7 +191,7 @@ class FTSFile( object ):
     """ last update setter """
     if not isinstance( value, basestring ) and not isinstance( value, datetime.datetime ):
       raise TypeError( "LastUpdate should be a datetime.datetime!" )
-    if type( value ) == str:
+    if isinstance(value, basestring):
       value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["LastUpdate"] = value
 
@@ -261,7 +261,7 @@ class FTSFile( object ):
   @SourceSURL.setter
   def SourceSURL( self, value ):
     """ source SURL getter """
-    self.__data__["SourceSURL"] = value[:255] if value else ""
+    self.__data__["SourceSURL"] = value[:1024] if value else ""
 
   @property
   def TargetSE( self ):
@@ -281,7 +281,7 @@ class FTSFile( object ):
   @TargetSURL.setter
   def TargetSURL( self, value ):
     """ target SURL getter """
-    self.__data__["TargetSURL"] = value[:255] if value else ""
+    self.__data__["TargetSURL"] = value[:1024] if value else ""
 
   @property
   def Error( self ):
@@ -310,6 +310,7 @@ class FTSFile( object ):
     self.__data__["Status"] = value
 
   def _normalizedStatus( self, status ):
+    """ private method to return pre-defined status name for a given status (so corecting for case-sensitivity)"""
     for st in self._states:
       if status.lower() == st.lower():
         return st
@@ -318,12 +319,12 @@ class FTSFile( object ):
   def toJSON( self ):
     """ dump FTSFile to JSON format """
     return S_OK( dict( zip( self.__data__.keys(),
-                      [ val if val != None else "" for val in self.__data__.values() ] ) ) )
+                            [ val if val != None else "" for val in self.__data__.values() ] ) ) )
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = []
     for column, value in self.__data__.items():
-      if value and column not in ( "FTSFileID", "LastUpdate" ):
+      if value is not None and column not in ( "FTSFileID", "LastUpdate" ):
         colStr = "`%s`" % column
         if isinstance( value, datetime.datetime ) or isinstance( value, basestring ):
           valStr = "'%s'" % value

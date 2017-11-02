@@ -164,13 +164,14 @@ class ResourceStatus( object ):
         to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
         minutes.
 
-  :param elementName: name of the element
-  :type elementName: str
-  :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
-  :type elementType: str
-  :param statusType: type of the status (meaningful only when elementType==StorageElement, otherwise it is 'all' or ['all'])
-  :type statusType: str, list
-  """
+    :param elementName: name of the element
+    :type elementName: str
+    :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
+    :type elementType: str
+    :param statusType: type of the status (meaningful only when elementType==StorageElement,
+                       otherwise it is 'all' or ['all'])
+    :type statusType: str, list
+    """
 
     cacheMatch = self.rssCache.match( elementName, elementType, statusType )
 
@@ -194,7 +195,7 @@ class ResourceStatus( object ):
 
     # DIRAC doesn't store the status of ComputingElements nor FTS in the CS, so here we can just return 'Active'
     if elementType in ('ComputingElement', 'FTS'):
-      return S_OK( { elementName: { (elementType, 'all'): 'Active'} } )
+      return S_OK( { elementName: { 'all': 'Active'} } )
 
     # If we are here it is because elementType is either 'StorageElement' or 'Catalog'
     if elementType == 'StorageElement':
@@ -206,13 +207,16 @@ class ResourceStatus( object ):
     if not isinstance( elementName, list ):
       elementName = [ elementName ]
 
+    if not isinstance( statusType, list ):
+      statusType = [ statusType ]
+
     result = {}
     for element in elementName:
 
       for sType in statusType:
         # Look in standard location, 'Active' by default
         res = gConfig.getValue( "%s/%s/%s" % ( cs_path, element, sType ), 'Active' )
-        result[element] = {(elementType, sType): res}
+        result.setdefault( element, {} )[sType] = res
 
     if result:
       return S_OK( result )
@@ -222,7 +226,7 @@ class ResourceStatus( object ):
       return S_OK( getDictFromList( defList ) )
 
     _msg = "Element '%s', with statusType '%s' is unknown for CS."
-    return S_ERROR(DErrno.ERESUNK, _msg % ( elementName, statusType ) )
+    return S_ERROR( DErrno.ERESUNK, _msg % ( elementName, statusType ) )
 
   def __setRSSElementStatus( self, elementName, elementType, statusType, status, reason, tokenOwner ):
     """
@@ -335,17 +339,19 @@ def getDictFromList( fromList ):
 
 def getCacheDictFromRawData( rawList ):
   """
-  Formats the raw data list, which we know it must have tuples of three elements.
-  ( element1, element2, element3 ) into a list of tuples with the format
-  ( ( element1, element2 ), element3 ). Then, it is converted to a dictionary,
-  which will be the new Cache.
+  Formats the raw data list, which we know it must have tuples of four elements.
+  ( element1, element2, element3, elementt4 ) into a dictionary of tuples with the format
+  { ( element1, element2, element3 ): element4 )}.
+  The resulting dictionary will be the new Cache.
 
-  It happens that element1 is elementName, element2 is statusType and element3
-  is status.
+  It happens that element1 is elementName,
+                  element2 is elementType,
+                  element3 is statusType,
+                  element4 is status.
 
   :Parameters:
     **rawList** - `list`
-      list of three element tuples [( element1, element2, element3 ),... ]
+      list of three element tuples [( element1, element2, element3, element4 ),... ]
 
   :return: dict of the form { ( elementName, elementType, statusType ) : status, ... }
   """

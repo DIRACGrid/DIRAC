@@ -266,6 +266,7 @@ class Workflow( AttributeCollection ):
         if self.workflowStatus['OK']:
           error_message = result['Message']
         self.workflowStatus = S_ERROR( result['Message'] )
+        self.workflowStatus['Errno'] = result['Errno']
       if result.has_key( 'Value' ):
         step_result = result['Value']
 
@@ -289,7 +290,8 @@ class Workflow( AttributeCollection ):
         setattr( self, wf_parameter.getName(), wf_exec_attr[wf_parameter.getName()] )
     # Return the result of the first failed step or S_OK
     if not self.workflowStatus['OK']:
-      return S_ERROR( error_message )
+      #return S_ERROR( error_message )
+      return self.workflowStatus
     else:
       return S_OK( step_result )
 
@@ -306,4 +308,3 @@ def fromXMLFile( xml_file, obj = None ):
   handler = WorkflowXMLHandler( obj )
   xml.sax.parse( xml_file, handler )
   return handler.root
-

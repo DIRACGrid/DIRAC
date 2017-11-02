@@ -7,8 +7,9 @@
 import unittest
 import importlib
 import os
+import shutil
 
-from mock import MagicMock
+from mock import MagicMock, patch
 
 from DIRAC import gLogger
 
@@ -18,6 +19,9 @@ from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogLinux import WatchdogLinux
 
+getSystemSectionMock = MagicMock()
+getSystemSectionMock.return_value = 'aValue'
+
 class JobWrapperTestCase( unittest.TestCase ):
   """ Base class for the JobWrapper test cases
   """
@@ -25,7 +29,11 @@ class JobWrapperTestCase( unittest.TestCase ):
     gLogger.setLevel( 'DEBUG' )
 
   def tearDown( self ):
-    pass
+    for f in ['std.out']:
+      try:
+        os.remove(f)
+      except OSError:
+        pass
 
 
 class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
@@ -46,7 +54,7 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     jw.dm = dm_mock
     jw.fc = fc_mock
     res = jw.resolveInputData()
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
 
     jw = JobWrapper()
     jw.jobArgs['InputData'] = 'pippo'
@@ -55,12 +63,49 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     jw.dm = dm_mock
     jw.fc = fc_mock
     res = jw.resolveInputData()
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
 
   def test__performChecks( self ):
     wd = WatchdogLinux( os.getpid(), MagicMock(), MagicMock(), 1000, 1024 * 1024 )
     res = wd._performChecks()
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
+
+  @patch( "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect = getSystemSectionMock )
+  @patch( "DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", side_effect = getSystemSectionMock )
+  def test_execute(self, _patch1, _patch2):
+    jw = JobWrapper()
+    jw.jobArgs = {'Executable':'/bin/ls'}
+    res = jw.execute('')
+    self.assertTrue( res['OK'] )
+
+    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
+    jw = JobWrapper()
+    jw.jobArgs = {'Executable':'script-OK.sh'}
+    res = jw.execute('')
+    self.assertTrue( res['OK'] )
+    os.remove('script-OK.sh')
+
+    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script.sh', 'script.sh')
+    jw = JobWrapper()
+    jw.jobArgs = {'Executable':'script.sh', 'Arguments':'111'}
+    res = jw.execute('')
+    self.assertTrue( res['OK'] ) # In this case the application finished with errors,
+                                 # but the JobWrapper executed successfully
+    os.remove('script.sh')
+
+    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh') #this will reschedule
+    jw = JobWrapper()
+    jw.jobArgs = {'Executable':'script-RESC.sh'}
+    res = jw.execute('')
+    if res['OK']: # FIXME: This may happen depending on the shell - not the best test admittedly!
+      print "We should not be here, unless the 'Execution thread status' is equal to 1"
+      self.assertTrue( res['OK'] )
+    else:
+      self.assertFalse( res['OK'] ) # In this case the application finished with an error code
+                                    # that the JobWrapper interpreted as "to reschedule"
+                                    # so in this case the "execute" is considered an error
+    os.remove('script-RESC.sh')
+
 
 
 

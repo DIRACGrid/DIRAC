@@ -1,5 +1,8 @@
 """ General Message Queue Interface to create Consumers and Producers
 """
+
+__RCSID__ = "$Id$"
+
 from DIRAC import gLogger, S_OK
 from DIRAC.Resources.MessageQueue.MQProducer import MQProducer
 from DIRAC.Resources.MessageQueue.MQConsumer import MQConsumer
@@ -28,7 +31,10 @@ def createConsumer( mqURI, callback = generateDefaultCallback() ):
   if not result['OK']:
     gLogger.error( 'Failed to createConsumer:', result['Message'] )
     return result
-  return S_OK( MQConsumer( mqManager = connectionManager, mqURI  = mqURI, consumerId = result['Value'], callback = callback ) )
+  return S_OK( MQConsumer( mqManager = connectionManager,
+                           mqURI  = mqURI,
+                           consumerId = result['Value'],
+                           callback = callback ) )
 
 def createProducer( mqURI ):
   """
@@ -46,7 +52,9 @@ def createProducer( mqURI ):
   if not result['OK']:
     gLogger.error( 'Failed to createProducer:', result['Message'] )
     return result
-  return S_OK( MQProducer( mqManager = connectionManager, mqURI  = mqURI, producerId = result['Value'] ) )
+  return S_OK( MQProducer( mqManager = connectionManager,
+                           mqURI  = mqURI,
+                           producerId = result['Value'] ) )
 
 def _setupConnection( mqURI, mType ):
   """ Function sets up the active MQ connection. All parameters are taken

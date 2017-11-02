@@ -27,9 +27,9 @@
 #     requestType = 'transfer'
 #     requestStatus = 'waiting'
 #     result = self.requestDB.setRequest(requestType,self.requestName,requestStatus,requestString)
-#     self.assert_(result['OK'])
+#     self.assertTrue(result['OK'])
 #     result = self.requestDB.getRequest('transfer')
-#     self.assert_(result['OK'])
+#     self.assertTrue(result['OK'])
 #     request = DataManagementRequest(request=result['Value']['RequestString'])
 #     res = request.getNumSubRequests(requestType)
 #     for ind in range (res['Value']):
@@ -41,13 +41,13 @@
 #     res = request.toXML()
 #     requestString = res['Value']
 #     result = self.requestDB.updateRequest(self.requestName, requestString)
-#     self.assert_(result['OK'])
+#     self.assertTrue(result['OK'])
 #     requestStatus = 'done'
 #     result = self.requestDB.setRequestStatus(requestType,self.requestName,requestStatus)
 #     #there is some transient error here where it fails to retrieve the requestID
-#     self.assert_( result['OK'])
+#     self.assertTrue( result['OK'])
 #     result = self.requestDB.deleteRequest(self.requestName)
-#     self.assert_(result['OK'])
+#     self.assertTrue(result['OK'])
 #
 # if __name__ == '__main__':
 #

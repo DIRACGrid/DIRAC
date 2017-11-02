@@ -47,13 +47,13 @@ __RCSID__ = "$Id$"
 
 INTEGER_PARAMETERS = ['CPUTime', 'NumberOfProcessors']
 FLOAT_PARAMETERS = []
-LIST_PARAMETERS = ['Tag']
+LIST_PARAMETERS = ['Tag', 'RequiredTag']
 WAITING_TO_RUNNING_RATIO = 0.5
 MAX_WAITING_JOBS = 1
 MAX_TOTAL_JOBS = 1
 
 class ComputingElement(object):
-
+  """ ComputingElement base class """
   #############################################################################
   def __init__( self, ceName ):
     """ Standard constructor
@@ -67,7 +67,7 @@ class ComputingElement(object):
     self.mandatoryParameters = []
     self.batch = None
     self.batchSystem = None
-
+    self.batchModuleFile = None
     self.minProxyTime = gConfig.getValue( '/Registry/MinProxyLifeTime', 10800 ) #secs
     self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 43200 ) #secs
     self.proxyCheckPeriod = gConfig.getValue( '/Registry/ProxyCheckingPeriod', 3600 ) #secs
@@ -110,10 +110,10 @@ class ComputingElement(object):
     totalSeconds = delta.days * 86400 + delta.seconds
     if totalSeconds > valid:
       return S_OK( totalSeconds - valid )
-    else:
-      result = S_ERROR( 'Proxy is not valid for the requested length' )
-      result['Value'] = totalSeconds - valid
-      return result
+
+    result = S_ERROR( 'Proxy is not valid for the requested length' )
+    result['Value'] = totalSeconds - valid
+    return result
 
   def initializeParameters( self ):
     """ Initialize the CE parameters after they are collected from various sources
@@ -255,7 +255,7 @@ class ComputingElement(object):
     """
 
     # If there are no already registered jobs
-    if jobIDList is not None and len( jobIDList ) == 0:
+    if jobIDList is not None and not jobIDList:
       result = S_OK()
       result['RunningJobs'] = 0
       result['WaitingJobs'] = 0
@@ -456,7 +456,7 @@ class ComputingElement(object):
     return S_OK( ceDict )
 
   #############################################################################
-  def sendOutput( self, stdid, line ): #pylint: disable=unused-argument
+  def sendOutput( self, stdid, line ): #pylint: disable=unused-argument, no-self-use
     """ Callback function such that the results from the CE may be returned.
     """
     print line

@@ -1,23 +1,18 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import os
-try:
-  import hashlib
-  md5 = hashlib
-except:
-  import md5
-import types
+import hashlib
 import threading
 import cStringIO
 import tarfile
 import tempfile
+
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 gLogger = gLogger.getSubLogger( "FileTransmissionHelper" )
 
-class FileHelper:
+class FileHelper(object):
 
   __validDirections = ( "toClient", "fromClient", 'receive', 'send' )
   __directionsMapping = { 'toClient' : 'send', 'fromClient' : 'receive' }
@@ -25,7 +20,7 @@ class FileHelper:
   def __init__( self, oTransport = None, checkSum = True ):
     self.oTransport = oTransport
     self.__checkMD5 = checkSum
-    self.__oMD5 = md5.md5()
+    self.__oMD5 = hashlib.md5()
     self.bFinishedTransmission = False
     self.bReceivedEOF = False
     self.direction = False
@@ -151,7 +146,7 @@ class FileHelper:
   def networkToDataSink( self, dataSink, maxFileSize = 0 ):
     if "write" not in dir( dataSink ):
       return S_ERROR( "%s data sink object does not have a write method" % str( dataSink ) )
-    self.__oMD5 = md5.md5()
+    self.__oMD5 = hashlib.md5()
     self.bReceivedEOF = False
     self.bErrorInMD5 = False
     receivedBytes = 0
@@ -211,7 +206,7 @@ class FileHelper:
     return S_OK()
 
   def FDToNetwork( self, iFD ):
-    self.__oMD5 = md5.md5()
+    self.__oMD5 = hashlib.md5()
     iPacketSize = self.packetSize
     self.__fileBytes = 0
     sentBytes = 0
@@ -243,7 +238,7 @@ class FileHelper:
   def DataSourceToNetwork( self, dataSource ):
     if "read" not in dir( dataSource ):
       return S_ERROR( "%s data source object does not have a read method" % str( dataSource ) )
-    self.__oMD5 = md5.md5()
+    self.__oMD5 = hashlib.md5()
     iPacketSize = self.packetSize
     self.__fileBytes = 0
     sentBytes = 0

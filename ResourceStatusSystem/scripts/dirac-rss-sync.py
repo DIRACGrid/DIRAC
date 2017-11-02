@@ -18,7 +18,6 @@
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
-from datetime import datetime, timedelta
 from DIRAC import version, gLogger, exit as DIRACExit, S_OK
 from DIRAC.Core.Base  import Script
 
@@ -26,9 +25,6 @@ __RCSID__  = '$Id$'
 
 subLogger  = None
 switchDict = {}
-
-#Add 24 hours to the datetime (it is going to be inserted in the "TokenExpiration" Column of "SiteStatus")
-Datetime       = datetime.utcnow() + timedelta(hours=24)
 
 def registerSwitches():
   '''
@@ -94,7 +90,7 @@ DEFAULT_STATUS = switchDict.get( 'defaultStatus', 'Banned' )
 # We can define the script body now
 
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import jobDB
-from DIRAC                                             import gConfig, exit as DIRACExit
+from DIRAC                                             import gConfig
 from DIRAC.ResourceStatusSystem.Utilities              import Synchronizer, CSHelpers, RssConfiguration
 from DIRAC.ResourceStatusSystem.Client                 import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem           import StateMachine
@@ -149,19 +145,9 @@ def initSites():
     DIRACExit( 1 )
 
   for site, elements in sites['Value'].iteritems():
-    elementType = site.split( '.' )[0]
-    parameters = { 'status': elements[0],
-                   'reason': 'Synchronized',
-                   'name': site,
-                   'dateEffective': elements[1],
-                   'tokenExpiration': Datetime,
-                   'elementType': elementType,
-                   'statusType': 'all',
-                   'lastCheckTime': None,
-                   'tokenOwner': elements[2] }
-
-    result = rssClient.updateStatusElement( "Site", "Status", **parameters )
-
+    result = rssClient.addOrModifyStatusElement( "Site", "Status",
+                                                 name = site, statusType = 'all', status = elements[0],
+                                                 elementType = site.split( '.' )[0], reason = 'dirac-rss-sync' )
     if not result[ 'OK' ]:
       subLogger.error( result[ 'Message' ] )
       DIRACExit( 1 )
@@ -217,7 +203,7 @@ def initSEs():
       if status in ( 'NotAllowed', 'InActive' ):
         status = 'Banned'
 
-      if not status in statuses:
+      if status not in statuses:
         subLogger.error( '%s not a valid status for %s - %s' % ( status, se, statusType ) )
         continue
 

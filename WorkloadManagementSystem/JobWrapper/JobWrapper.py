@@ -4,8 +4,11 @@
 ########################################################################
 """ The Job Wrapper Class is instantiated with arguments tailored for running
     a particular job. The JobWrapper starts a thread for execution of the job
-    and a Watchdog Agent that can monitor progress.
+    and a Watchdog Agent that can monitor its progress.
 """
+
+__RCSID__ = "$Id: $"
+
 import os
 import stat
 import re
@@ -19,6 +22,20 @@ import urllib
 import json
 
 import DIRAC
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
+from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
+from DIRAC.Core.Utilities.Subprocess                                import systemCall
+from DIRAC.Core.Utilities.Subprocess                                import Subprocess
+from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
+from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
+from DIRAC.Core.Utilities.Adler                                     import fileAdler
+from DIRAC.Core.DISET.RPCClient                                     import RPCClient
+
 from DIRAC.DataManagementSystem.Client.DataManager                  import DataManager
 from DIRAC.Resources.Catalog.FileCatalog                            import FileCatalog
 from DIRAC.DataManagementSystem.Client.FailoverTransfer             import FailoverTransfer
@@ -34,25 +51,16 @@ from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry              import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
-from DIRAC.Core.DISET.RPCClient                                     import RPCClient
-from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
-from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
-from DIRAC.Core.Utilities.Subprocess                                import systemCall
-from DIRAC.Core.Utilities.Subprocess                                import Subprocess
-from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
-from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
-from DIRAC.Core.Utilities.Adler                                     import fileAdler
-from DIRAC.Core.Utilities                                           import List
-from DIRAC.Core.Utilities                                           import DEncode
-from DIRAC.Core.Utilities                                           import Time
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers                import resolveSEGroup
 
 
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 
 EXECUTION_RESULT = {}
 
 class JobWrapper( object ):
+  """ The only user of the JobWrapper is the JobWrapperTemplate
+  """
 
   #############################################################################
   def __init__( self, jobID = None, jobReport = None ):
@@ -106,7 +114,7 @@ class JobWrapper( object ):
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
-    self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
+    self.defaultOutputSE = resolveSEGroup( gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] ) )
     self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', [] )
     self.masterCatalogOnlyFlag = gConfig.getValue( self.section + '/MasterCatalogOnlyFlag', True )
     self.defaultFailoverSE = gConfig.getValue( '/Resources/StorageElementGroups/Tier1-Failover', [] )
@@ -299,13 +307,14 @@ class JobWrapper( object ):
       jobMemory = int( self.jobArgs['Memory'] )*1024.*1024.
 
     if 'Executable' in self.jobArgs:
-      executable = self.jobArgs['Executable'].strip()
+      executable = self.jobArgs['Executable'].strip() # This is normally dirac-jobexec script, but not necessarily
     else:
       msg = 'Job %s has no specified executable' % ( self.jobID )
       self.log.warn( msg )
       return S_ERROR( msg )
 
-    jobArguments = self.jobArgs.get( 'Arguments', '' )
+    jobArguments = self.jobArgs.get( 'Arguments', '' ) # In case the excutable is dirac-jobexec,
+                                                       # the argument is the jobDescription.xml file
 
     executable = os.path.expandvars( executable )
     exeThread = None
@@ -320,7 +329,7 @@ class JobWrapper( object ):
     if not os.access( executable, os.X_OK ):
       try:
         os.chmod( executable, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH )
-      except Exception:
+      except OSError:
         self.log.warn( 'Failed to change mode to 775 for the executable', executable )
 
     exeEnv = dict( os.environ )
@@ -336,7 +345,7 @@ class JobWrapper( object ):
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
     if os.path.exists( executable ):
-      self.__report( 'Running', 'Application', sendFlag = True )
+      self.__report( 'Running', 'Application', sendFlag = True ) # it's in fact not yet running: it will be in few lines
       spObject = Subprocess( timeout = False, bufferLimit = int( self.bufferLimit ) )
       command = executable
       if jobArguments:
@@ -425,9 +434,9 @@ class JobWrapper( object ):
 
     if watchdog.currentStats:
       self.log.info( 'Statistics collected by the Watchdog:\n ',
-                        '\n  '.join( ['%s: %s' % items for items in watchdog.currentStats.iteritems() ] ) )
+                     '\n  '.join( ['%s: %s' % items for items in watchdog.currentStats.iteritems() ] ) )
     if outputs:
-      status = threadResult['Value'][0]
+      status = threadResult['Value'][0] # the status of the payload execution
       # Send final heartbeat of a configurable number of lines here
       self.log.verbose( 'Sending final application standard output heartbeat' )
       self.__sendFinalStdOut( exeThread )
@@ -438,6 +447,10 @@ class JobWrapper( object ):
         self.__report( 'Completed', 'Application Finished Successfully', sendFlag = True )
       elif not watchdog.checkError:
         self.__report( 'Completed', 'Application Finished With Errors', sendFlag = True )
+        if status in (DErrno.EWMSRESC, DErrno.EWMSRESC & 255): # the status will be truncated to 0xDE (222)
+          self.log.verbose("job will be rescheduled")
+          self.__report( 'Completed', 'Going to reschedule job', sendFlag = True )
+          return S_ERROR(DErrno.EWMSRESC, 'Job will be rescheduled')
 
     else:
       return S_ERROR( 'No outputs generated from job execution' )
@@ -1090,7 +1103,7 @@ class JobWrapper( object ):
     return S_OK( 'InputSandbox downloaded' )
 
   #############################################################################
-  def finalize( self, arguments ):
+  def finalize( self ):
     """Perform any final actions to clean up after job execution.
     """
     self.log.info( 'Running JobWrapper finalization' )
@@ -1351,6 +1364,9 @@ class ExecutionThread( threading.Thread ):
 
   #############################################################################
   def run( self ):
+    """ Method representing the thread activity.
+        This one overrides the ~threading.Thread `run` method
+    """
     # FIXME: why local instances of object variables are created?
     cmd = self.cmd
     spObject = self.spObject

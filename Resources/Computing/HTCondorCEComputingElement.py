@@ -140,6 +140,7 @@ log = $(Cluster).$(Process).log
 environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
+transfer_output_files = "" 
 
 %(localScheddOptions)s
 
@@ -324,6 +325,14 @@ Queue %(nJobs)s
     ## SiteDirector WorkingDirectory, it might not even run on the
     ## same machine
     #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
+
+    if not self.useLocalSchedd:
+      cmd =['condor_transfer_data', '-pool', '%s:9619'%self.ceName, '-name', self.ceName, condorID ]
+      result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+      self.log.verbose( result )
+      if not result['OK']:
+        self.log.error( "Failed to get job output from htcondor", result['Message'] )
+        return result
 
     output = ''
     error = ''

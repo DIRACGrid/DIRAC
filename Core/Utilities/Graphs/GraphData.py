@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ GraphData encapsulates input data for the DIRAC Graphs plots
     
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
@@ -10,9 +6,13 @@
 
 __RCSID__ = "$Id$"
 
-import types, datetime, numpy, time
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, pretty_float
+import time
+import datetime
+import numpy
+
 from matplotlib.dates import date2num
+
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, pretty_float
 
 DEBUG = 0
 
@@ -39,7 +39,7 @@ def get_key_type( keys ):
         num_data = float( key )
       except:
         num_type = False
-    if type( key ) not in types.StringTypes:
+    if not isinstance(key, basestring):
       string_type = False
 
   # Take the most restrictive type
@@ -86,7 +86,7 @@ class GraphData:
       print "GraphData Error: empty data"
     start = time.time()
 
-    if type( self.data[keys[0]] ) == types.DictType:
+    if isinstance( self.data[keys[0]], dict ):
       for key in self.data:
         self.subplots[key] = PlotData( self.data[key], key_type = key_type )
     else:
@@ -152,7 +152,7 @@ class GraphData:
         reverse = not reverse_order
         pairs.sort( key = lambda x: x[1].last_value, reverse = reverse )
         self.labels = [ x[0] for x in pairs ]
-        self.label_values = [ x[1].last_value for x in pairs ]        
+        self.label_values = [ x[1].last_value for x in pairs ]
       elif sort_type == 'sum':
         pairs = []
         for key in self.subplots:
@@ -271,7 +271,7 @@ class GraphData:
 
     if self.plotdata:
       if zipFlag:
-        return zip( self.plotdata.getNumKeys(), self.plotdata.getValues(), self.plotdata.getErrors() )
+        return zip( self.plotdata.getNumKeys(), self.plotdata.getValues(), self.plotdata.getPlotErrors() )
       else:
         return self.plotdata.getValues()
     elif label is not None:
@@ -486,7 +486,7 @@ class PlotData:
     Otherwise, attempt to take the absolute value of that item.  If that
     fails, just return -1.
     """
-    if type( item ) == types.TupleType:
+    if isinstance(item, tuple):
       return abs( item[0] )
     try:
       return abs( item )
@@ -508,9 +508,9 @@ class PlotData:
     Parse the specific data value; this is the identity.
     """
     
-    if type( data ) in types.StringTypes and "::" in data:
+    if isinstance(data, basestring) and "::" in data:
       datum,error = data.split("::")
-    elif type( data ) == types.TupleType:
+    elif isinstance(data, tuple):
       datum,error = data
     else:  
       error = 0.  
@@ -630,9 +630,3 @@ class PlotData:
   def getMinValue( self ):
 
     return min( self.values )
-
-
-
-
-
-

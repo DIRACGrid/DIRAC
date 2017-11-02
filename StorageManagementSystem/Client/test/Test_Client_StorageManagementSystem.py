@@ -37,6 +37,12 @@ mockObjectSE5.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt'
                                                     'Failed':{}} )
 mockObjectSE5.getStatus.return_value = S_OK( {'DiskSE': True, 'TapeSE':False} )
 
+mockObjectSE6 = MagicMock()
+mockObjectSE6.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/2.txt':{'Cached':0, 'Accessible':False}},
+                                                    'Failed':{}} )
+mockObjectSE6.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
+
+
 mockObjectDMSHelper = MagicMock()
 mockObjectDMSHelper.getLocalSiteForSE.return_value = S_OK( 'mySite' )
 mockObjectDMSHelper.getSitesForSE.return_value = S_OK( ['mySite'] )
@@ -116,6 +122,34 @@ class StorageManagerSuccess( ClientsTestCase ):
     self.assertEqual( res['Value']['offlineLFNs'], {} )
     self.assertEqual( res['Value']['absentLFNs'], {} )
     self.assertEqual( res['Value']['failedLFNs'], ['/a/lfn/1.txt'] )
+
+
+  @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.DataManager", return_value = dm_mock )
+  @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.StorageElement", return_value = mockObjectSE2 )
+  def test_getFilesToStage_tapeSEOnly_1( self, _patch, _patched ):
+    """ Test where the StorageElement will return file is available
+    """
+    res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = True )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( res['Value']['onlineLFNs'], ['/a/lfn/2.txt'] )
+    self.assertEqual( res['Value']['offlineLFNs'], {} )
+    self.assertEqual( res['Value']['absentLFNs'], {} )
+    self.assertEqual( res['Value']['failedLFNs'], [] )
+
+
+  @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.DataManager", return_value = dm_mock )
+  @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.StorageElement", return_value = mockObjectSE6 )
+  def test_getFilesToStage_tapeSEOnly_2( self, _patch, _patched ):
+    """ Test where the StorageElement will return file is at offline at tape
+    """
+
+    with patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.random.choice", new=MagicMock( return_value='SERandom' )):
+      res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = True )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( res['Value']['onlineLFNs'], [] )
+    self.assertEqual( res['Value']['offlineLFNs'], {'SERandom': ['/a/lfn/2.txt']} )
+    self.assertEqual( res['Value']['absentLFNs'], {} )
+    self.assertEqual( res['Value']['failedLFNs'], [] )
 
 
 if __name__ == '__main__':

@@ -74,7 +74,7 @@ class DownloadInputDataSuccess( ClientsTestCase ):
     open( '1.txt', 'w' ).close()
     res = self.dli._downloadFromSE( '/a/lfn/1.txt', 'mySE', {'mySE': []}, 'aGuid' )
     # file would be already local, so no real download
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     try:
       os.remove( '1.txt' )
     except OSError:
@@ -93,7 +93,7 @@ class DownloadInputDataSuccess( ClientsTestCase ):
     open( '1.txt', 'w' ).close()
     res = self.dli._downloadFromBestSE( '/a/lfn/1.txt', {'mySE': []}, 'aGuid' )
     # file would be already local, so no real download
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     try:
       os.remove( '1.txt' )
     except OSError:
