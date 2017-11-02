@@ -527,11 +527,15 @@ token is used for access rights confirmation.
       try:
         space = self.__getDirectorySize( dir_path )
         return S_OK( space )
-      except Exception, error:
+      except Exception as error:
         gLogger.exception( "Exception while getting size of directory", dir_path, error )
         return S_ERROR( "Exception while getting size of directory" )
     else:
       return S_ERROR( "Directory does not exists" )
+
+  def __getDirectorySize( self, dir_path ):
+    """ dummy implementation to make pylint happy"""
+    raise NotImplementedError( "IRODSStorageElement__getDirectorySize is not implemented " )
 
   types_removeDirectory = [StringTypes, StringTypes]
   def export_removeDirectory( self, fileID, token ):

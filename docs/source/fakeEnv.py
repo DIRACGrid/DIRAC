@@ -43,9 +43,6 @@ def sum(a):
 def divide(a, b):
   pass
 
-def date2num(a):
-  pass
-
 AutoDateLocator = AutoDateFormatter = DateFormatter = RRuleLocator = HOURLY = MINUTELY = SECONDLY = YEARLY = MONTHLY = DAILY = RRuleLocator = rrulewrapper = ''
 
 class FigureCanvasAgg:
