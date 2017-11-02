@@ -39,7 +39,7 @@ class PilotsLoggingClient( Client ):
   def getPilotsLogging( self, pilotUUID ):
     """
     Get all Logging entries for Pilot
-    
+
     :param pilotUUID: Pilot reference
     """
 

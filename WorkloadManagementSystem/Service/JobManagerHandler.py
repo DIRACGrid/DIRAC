@@ -47,7 +47,8 @@ def initializeJobManagerHandler( serviceInfo ):
   gJobLoggingDB = JobLoggingDB()
   gtaskQueueDB = TaskQueueDB()
 
-  enablePilotsLogging = gConfig.getValue('/Services/PilotsLogging/Enable', 'False').lower() in ('yes', 'true')
+  # there is a problem with accessing CS with shorter paths, so full path is extracted from serviceInfo dict
+  enablePilotsLogging = gConfig.getValue( serviceInfo['serviceSectionPath'].replace('JobManager', 'PilotsLogging') + '/Enable', 'False').lower() in ('yes', 'true')
 
   if enablePilotsLogging:
     gPilotAgentsDB = PilotAgentsDB()
@@ -251,20 +252,24 @@ class JobManagerHandler( RequestHandler ):
     if not result['OK']:
       gLogger.warn( 'Failed to delete job from the TaskQueue' )
 
-    if enablePilotsLogging:
-      # if it was the last job for the pilot, clear PilotsLogging about it
-      result = gPilotAgentsDB.getPilotsForJobID( jobID )
-      if not result['OK']:
-        return result
-      for pilot in result['Value']:
-        res = gPilotAgentsDB.getJobsForPilot( pilot['PilotID'] )
-        if not res['OK']:
-          return res
-        if not res['Value']:  # if list of jobs for pilot is empty, delete pilot and pilotslogging
-          ret = gPilotAgentsDB.deletePilot( pilot['PilotID'] )
-          if not ret['OK']:
-            return ret
-          ret = gPilotsLoggingDB.deletePilotsLogging( pilot['PilotID'] )
+    # if it was the last job for the pilot, clear PilotsLogging about it
+    result = gPilotAgentsDB.getPilotsForJobID( jobID )
+    if not result['OK']:
+      return result
+    for pilot in result['Value']:
+      res = gPilotAgentsDB.getJobsForPilot( pilot['PilotID'] )
+      if not res['OK']:
+        return res
+      if not res['Value']:  # if list of jobs for pilot is empty, delete pilot and pilotslogging
+        result = gPilotAgentsDB.getPilotInfo( pilotID = pilot['PilotID'] )
+        if not result['OK']:
+          return result
+        pilotRef = result[0]['PilotJobReference']
+        ret = gPilotAgentsDB.deletePilot( pilot['PilotID'] )
+        if not ret['OK']:
+          return ret
+        if enablePilotsLogging:
+          ret = gPilotsLoggingDB.deletePilotsLogging( pilotRef )
           if not ret['OK']:
             return ret
 

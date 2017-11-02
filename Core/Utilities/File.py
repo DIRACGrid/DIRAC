@@ -4,6 +4,9 @@
    By default on Error they return None.
 """
 
+#pylint: skip-file
+## getGlobbedFiles gives "RuntimeError: maximum recursion depth exceeded" in pylint
+
 import os
 import hashlib
 import random
