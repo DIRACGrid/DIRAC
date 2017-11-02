@@ -41,13 +41,13 @@ class DynamicPropTests( unittest.TestCase ):
     self.assertEqual( hasattr( testObj, "makeProperty" ), True )
     self.assertEqual( callable( getattr( testObj, "makeProperty" ) ), True )
     # # .. and works  for rw properties
-    testObj.makeProperty( "rwTestProp", 10 )
+    testObj.makeProperty( "rwTestProp", 10 ) #pylint: disable=no-member
     self.assertEqual( hasattr( testObj, "rwTestProp" ), True )
     self.assertEqual( getattr( testObj, "rwTestProp" ), 10 )
-    testObj.rwTestProp += 1
+    testObj.rwTestProp += 1 #pylint: disable=no-member
     self.assertEqual( getattr( testObj, "rwTestProp" ), 11 )
     # # .. and ro as well
-    testObj.makeProperty( "roTestProp", "I'm read only", True )
+    testObj.makeProperty( "roTestProp", "I'm read only", True ) #pylint: disable=no-member
     self.assertEqual( hasattr( testObj, "roTestProp" ), True )
     self.assertEqual( getattr( testObj, "roTestProp" ), "I'm read only" )
     # # AttributeError for read only property setattr
@@ -90,7 +90,7 @@ class NodeTests( unittest.TestCase ):
 
     # # visited attr for walking
     self.assertEqual( hasattr( self.node, "visited" ), True )
-    self.assertEqual( self.node.visited, False )
+    self.assertEqual( self.node.visited, False )  #pylint: disable=no-member
 
     # # ro attrs
     for k, v in self.roAttrs.items():
@@ -113,8 +113,8 @@ class NodeTests( unittest.TestCase ):
     edge = self.node.connect( toNode, { "foo" : "boo" }, { "ro3" : True } )
     self.assertEqual( isinstance( edge, Edge ), True )
     self.assertEqual( edge.name, self.name + "-DeadEnd" )
-    self.assertEqual( self.node, edge.fromNode )
-    self.assertEqual( toNode, edge.toNode )
+    self.assertEqual( self.node, edge.fromNode ) #pylint: disable=no-member
+    self.assertEqual( toNode, edge.toNode ) #pylint: disable=no-member
 
 class EdgeTests( unittest.TestCase ):
   """
@@ -151,7 +151,7 @@ class EdgeTests( unittest.TestCase ):
 
     # # visited attr
     self.assertEqual( hasattr( edge, "visited" ), True )
-    self.assertEqual( edge.visited, False )
+    self.assertEqual( edge.visited, False ) #pylint: disable=no-member
 
     # # ro attrs
     for k, v in self.roAttrs.items():
@@ -170,8 +170,8 @@ class EdgeTests( unittest.TestCase ):
       self.assertEqual( getattr( edge, k ), "new value" )
 
     # # start and end
-    self.assertEqual( edge.fromNode, self.fromNode )
-    self.assertEqual( edge.toNode, self.toNode )
+    self.assertEqual( edge.fromNode, self.fromNode ) #pylint: disable=no-member
+    self.assertEqual( edge.toNode, self.toNode ) #pylint: disable=no-member
     # # in fromNode, not in toNode
     self.assertEqual( edge in self.fromNode, True )
     self.assertEqual( edge not in self.toNode, True )
