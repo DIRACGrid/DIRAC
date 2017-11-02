@@ -347,10 +347,10 @@ class X509Certificate( object ):
     if not self.__valid:
       return S_ERROR( DErrno.ENOCERT )
     extList = []
-    for ext in self.__certObj.get_extensions():
-      sn = ext.get_sn()
+    for i in self.__certObj.get_ext_count():
+      sn = self.__certObj.get_ext_at(i).get_name()
       try:
-        value = ext.get_value()
+        value = self.__certObj.get_ext_at(i).get_value()
       except Exception:
         value = "Cannot decode value"
       extList.append( ( sn, value ) )
