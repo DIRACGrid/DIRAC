@@ -91,8 +91,8 @@ class RPCClient( object ):
 
   def __getattr__( self, attrName ):
     """ Function for emulating the existance of functions.
-    
-	       In literature this is usually called a "stub function".
+
+           In literature this is usually called a "stub function".
          If the attribute exists in InnerRPCClient, return it,
          otherwise we create a _MagicMethod instance
 

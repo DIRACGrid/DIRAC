@@ -349,6 +349,9 @@ class GFAL2_StorageBase( StorageBase ):
     if self.spaceToken:
       params.dst_spacetoken = self.spaceToken
 
+    params.checksum_check = bool( self.checksumType )
+    if self.checksumType:
+      params.set_user_defined_checksum(self.checksumType, '')
 
     # Params set, copying file now
     try:
@@ -476,6 +479,8 @@ class GFAL2_StorageBase( StorageBase ):
       params.src_spacetoken = self.spaceToken
 
     params.checksum_check = bool( self.checksumType and not disableChecksum )
+    if self.checksumType:
+      params.set_user_defined_checksum(self.checksumType, '')
 
     # Params set, copying file now
     try:

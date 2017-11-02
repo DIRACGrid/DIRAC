@@ -4,7 +4,6 @@
 import threading
 import select
 import time
-import types
 import socket
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -36,6 +35,7 @@ class MessageBroker( object ):
       threadPool = getGlobalThreadPool()
     self.__threadPool = threadPool
     self.__listeningForMessages = False
+    self.__listenThread = None
 
   def getNumConnections( self ):
     return len( self.__messageTransports )
@@ -108,7 +108,7 @@ class MessageBroker( object ):
   # Listen to connections
 
   def __startListeningThread( self ):
-    threadDead = self.__listeningForMessages and not self.__listenThread.isAlive()
+    threadDead = self.__listeningForMessages and self.__listenThread is not None and not self.__listenThread.isAlive()
     if not self.__listeningForMessages or threadDead:
       self.__listeningForMessages = True
       self.__listenThread = threading.Thread( target = self.__listenAutoReceiveConnections )
@@ -231,7 +231,7 @@ class MessageBroker( object ):
     #Load message
     if 'attrs' in msg:
       attrs = msg[ 'attrs' ]
-      if type( attrs ) not in( types.TupleType, types.ListType ):
+      if not isinstance( attrs, (tuple, list) ):
         return S_ERROR( "Message args has to be a tuple or a list, not %s" % type( attrs ) )
     else:
       attrs = None

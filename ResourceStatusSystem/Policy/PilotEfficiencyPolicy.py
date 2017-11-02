@@ -66,9 +66,9 @@ class PilotEfficiencyPolicy( PolicyBase ):
 
     efficiency = done / total
 
-    if efficiency < 0.5:
+    if efficiency <= 0.5:
       result[ 'Status' ] = 'Banned'
-    elif efficiency < 0.9:
+    elif efficiency <= 0.9:
       result[ 'Status' ] = 'Degraded'
     else:
       result[ 'Status' ] = 'Active'

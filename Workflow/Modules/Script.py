@@ -9,10 +9,10 @@ import stat
 import shlex
 import distutils.spawn #pylint: disable=no-name-in-module,no-member,import-error
 
-from DIRAC.Core.Utilities.Subprocess    import systemCall
-from DIRAC                              import gLogger
+from DIRAC import gLogger
+from DIRAC.Core.Utilities.Subprocess import systemCall
 
-from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase
+from DIRAC.Workflow.Modules.ModuleBase import ModuleBase
 
 class Script( ModuleBase ):
   """ Module for running executable
@@ -68,7 +68,9 @@ class Script( ModuleBase ):
     if os.path.exists( os.path.basename( self.executable ) ):
       self.executable = os.path.basename( self.executable )
       if not os.access( '%s/%s' % ( os.getcwd(), self.executable ), 5 ):
-        os.chmod( '%s/%s' % ( os.getcwd(), self.executable ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
+        # doc in https://docs.python.org/2/library/stat.html#stat.S_IRWXU
+        os.chmod( '%s/%s' % ( os.getcwd(), self.executable ),
+                  stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
       self.command = '%s/%s' % ( os.getcwd(), self.executable )
     elif re.search( '.py$', self.executable ):
       self.command = '%s %s' % ( sys.executable, self.executable )
@@ -105,11 +107,10 @@ class Script( ModuleBase ):
     if os.path.exists( self.applicationLog ):
       self.log.verbose( 'Removing existing %s' % self.applicationLog )
       os.remove( self.applicationLog )
-    fopen = open( '%s/%s' % ( os.getcwd(), self.applicationLog ), 'w' )
-    fopen.write( "<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % ( self.executable, stdout ) )
-    if stderr:
-      fopen.write( "<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % ( self.executable, stderr ) )
-    fopen.close()
+    with open( '%s/%s' % ( os.getcwd(), self.applicationLog ), 'w' ) as fopen:
+      fopen.write( "<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % ( self.executable, stdout ) )
+      if stderr:
+        fopen.write( "<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % ( self.executable, stderr ) )
     self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:

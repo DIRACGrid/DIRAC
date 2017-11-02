@@ -1,12 +1,12 @@
 CREATE table activities (
-	id INTEGER  PRIMARY KEY,
+    id INTEGER  PRIMARY KEY,
     sourceId INTEGER,
     name TEXT,
     category TEXT,
     unit TEXT,
     type TEXT,
-	description TEXT,
-	bucketLength INTEGER,
+    description TEXT,
+    bucketLength INTEGER,
     filename TEXT,
     lastUpdate TEXT
 );
@@ -19,8 +19,8 @@ CREATE table sources (
     componentName TEXT
 );
 CREATE table views (
-	id INTEGER PRIMARY KEY,
-	name TEXT,
-	definition TEXT,
-	variableFields TEXT
+    id INTEGER PRIMARY KEY,
+    name TEXT,
+    definition TEXT,
+    variableFields TEXT
 );

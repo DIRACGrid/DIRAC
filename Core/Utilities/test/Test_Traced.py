@@ -14,6 +14,10 @@
     Traced test cases
 """
 
+
+## metaclass stuff too smart for pylint
+#pylint: disable=no-member
+
 __RCSID__ = "$Id $"
 
 ##

@@ -1,4 +1,80 @@
-[v6r19-pre9]
+[v6r20-pre4]
+
+*Core
+CHANGE: Removed deprecated option "ExtraModules" (dirac-configure, dirac-install scripts)
+
+*Framework
+CHANGE: ComponentInstaller - remove the old web portal configuration data 
+        used during the installation
+
+*WMS
+NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
+NEW: added a new synchronizer for Pilot3: sync of subset of CS info to JSON file, 
+     and sync of pilot3 files
+
+*DMS
+NEW: FTS3Agent working only with the FTS3 service to replace the existing one
+NEW: FTS3Utilities - use correct FTS Server Selection Policy
+
+*Resources
+NEW: New SingularityComputingElement to submit jobs to a Singularity container
+
+*Docs
+FIX: Drop some old stuff, add link for FTS3 page
+
+[v6r19p3]
+
+CHANGE: .pylintrc - disable redefined-variable-type
+CHANGE: .pylintrc - max-nested-blocks=10 due to the many tests of result['OK']
+CHANGE: use autopep8 for auto-formatting with following exceptions:
+        tabs = 2 spaces and not 4
+        line length check disabled (i.e. 120 characters instead of 80)
+        Option for autopep8 are: --ignore E111,E101,E501
+
+*Configuration
+FIX: retrigger the initialization of the logger and the ObjectLoader after 
+     all the CS has been loaded
+
+*WMS
+FIX: pilot commands will add /DIRAC/Extensions=extensions if requested
+FIX: SiteDirector, pilotCommands - fix support for multiple values in the 
+     RequiredTag CE parameter
+FIX: MultiProcessorSiteDirector - fix dictionary changed size exception 
+
+*Workflow
+FIX: application log name can also come from step_commons.get['logFile']
+
+*Resources
+CHANGE: Condor, SLURM, SSHComputingElement - added parameters to force allocation
+        of multi-core job slots
+
+[v6r19p2]
+
+*DMS
+FIX: dirac-admin-allow-se: fix crash because of usage of old RSS function
+
+*RSS
+FIX: ResourceStatusDB - microseconds should always be 0 
+FIX: Multiple fixes for the RSS tests
+
+[v6r19p1]
+
+*Core
+FIX: ElasticSearchDB - certifi package was miscalled
+FIX: ElasticSearchDB - added debug messages for DB connection
+
+*Framework
+FIX: ComponentInstaller - handling correctly extensions of DBs found in sql files
+
+*WMS
+FIX: SudoComputingElement - prevent message overwriting application errors
+FIX: JobDB.getInputData now returns list of cleaned LFNs strings, possible "LFN:" 
+     prefix is removed
+
+*Interfaces
+FIX: Dirac.py - bring back treatment of files in working local submission directory
+
+[v6r19]
 
 FIX: In multiple places - use systemCall() rather than shellCall() to avoid
      potential shell injection problems
@@ -16,10 +92,16 @@ NEW: Allow to define FailoverURLs and to reference MainServers in the URLs
 
 *FrameworkSystem
 NEW: gLogger is replaced by the new logging system based on the python logging module
-CHANGE: Make the new logging system thread-safe
 NEW: Added ElasticSearch backend for the logging
 NEW: Central Backends configuration to customize their use by multiple components 
 NEW: BundleDelivery - serves also CA's and CRL's all-in-one files
+NEW: added shell scripts for generating CAs and CRLs with the possibility to specify the Input and/or output directories
+CHANGE: can now send mails to multiple recipients using the NotificationClient
+CHANGE: Make the new logging system thread-safe
+FIX: Adapting query to MySLQ 5.7 "GROUP BY" clause
+FIX: TopErrorMessagesReporter - more precise selection to please stricter versions of MySQL
+CHANGE: ProxyGeneration - make RFC proxies by default, added -L/--legacy flag to dirac-proxy-init
+        to force generation of no-RFC proxies
 
 *Core
 FIX: dirac-install - allow to use local md5 files
@@ -56,6 +138,7 @@ NEW: New method in the StorageElement to generate pair of URLs for third party c
      This will be used mostly by FTS, but is not enabled as of now
 FIX: StorageElement - fix different weird behaviors in Storage Element, in particular, 
      the inheritance of the protocol sections     
+FIX: GFAL2 storage element: update for compatibility with GFAL2 2.13.3 APIs
 NEW: Introduced Resources/StorageElementBases configuration section for definitions
      of abstract SEs to be used in real SEs definition by inheritance     
 
@@ -67,9 +150,14 @@ NEW: dirac-rms-request - command including functionality of several other comman
 *RSS
 NEW: Put Sites, ComputingElements, FTS and Catalogs under the status control of the
      RSS system 
+NEW: Rewrote RsourceStatus/ResourceManagementDB tables with sqlAlchemy (RM DB with declarative base style)
 NEW: SiteStatus client to interrogate site status with respect to RSS
 CHANGE: introduced backward compatibility of RSS services with DIRAC v6r17 clients
 CHANGE: moved some integration tests from pytest to unittest
+CHANGE: Moved ResourceStatusDB to sqlAlchemy declarative_base
+FIX: Automated setting of lastCheckTime and Dateffective in ResourceStatusDB and ResourceManagementDB
+FIX: fixes for tables inheritance and extensions
+FIX: fixes for Web return structure ("meta" column)
 FIX: ResourceStatus, RSSCacheNoThread - fixed RSS cache generation 
 FIX: ResourceStatus - fixes for getting status from the CS information
 FIX: ResourceManagement/StatusDB - fixed bugs in meta parameter check
@@ -132,6 +220,46 @@ NEW: Added client (scripts) system test
 CHANGE: Add to the TS system test, the test for transformations with meta-filters
 FIX: Minor fixes in the TS system test
 FIX: correctly update the DFC DB configuration in jenkins' tests
+
+[v6r17p35]
+
+*Core
+FIX: GOCDBClient - add EXTENSIONS & SCOPE tag support to GOCDB service queries.
+
+[v6r17p34]
+
+*SMS
+FIX: StorageManagerClient - fix logic for JobScheduling executor when CheckOnlyTapeSEs is 
+     its default true and the lfn is only on a tapeSE
+
+[v6r17p33]
+
+*WMS
+FIX: StalledJobAgent - if no PilotReference found in jobs parameters, do as if there would be 
+     no pilot information, i.e. set Stalled job Failed immediately
+CHANGE: DownloadInputData - job parameters report not only successful downloads but also failed ones
+FIX: JobDB - back port - set CPUTime to 0 if not defined at all for the given job 
+FIX: JobDB - back port - use default CPUTime in the job description when rescheduling jobs
+
+*Resources
+FIX: ARCComputingElement - fix job submission issue due to timeout for newer lcg-bundles
+
+[v6r17p32]
+
+Resources:
+CHANGE: /Computing/BatchSystems/Condor.py: do not copy SiteDirector's shell environment variables into the job environment
+
+*WMS
+CHANGE: Add option to clear PYTHONPATH on pilot start
+
+[v6r17p31]
+
+*RMS
+FIX: ReqClient - avoid INFO message in client
+*WMS
+CHANGE: JobWrapper - allow SE-USER to be defined as another SE group (e.g. Tier1-USER)
+*DMS
+CHANGE: DMSHelpers - make resolveSEGroup recursive in order to be able to define SE groups in terms of SE groups
 
 [v6r17p30]
 

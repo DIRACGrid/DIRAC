@@ -25,7 +25,6 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
-from types import IntType, LongType, ListType
 import threading
 
 DEBUG = 1
@@ -198,10 +197,11 @@ class PilotAgentsDB( DB ):
   def deletePilots( self, pilotIDs, conn = False ):
     """ Delete Pilots with IDs in the given list from the PilotAgentsDB """
 
-    if type( pilotIDs ) != type( [] ):
+    if not isinstance( pilotIDs, list):
       return S_ERROR( 'Input argument is not a List' )
 
     failed = []
+
     for table in ['PilotOutput', 'PilotRequirements', 'JobToPilotMapping', 'PilotAgents']:
       idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
@@ -212,7 +212,7 @@ class PilotAgentsDB( DB ):
     if failed:
       return S_ERROR( 'Failed to remove pilot from %s tables' % ', '.join( failed ) )
     else:
-      return S_OK()
+      return S_OK( pilotIDs )
 
 ##########################################################################################
   def deletePilot( self, pilotRef, conn = False ):
@@ -233,6 +233,8 @@ class PilotAgentsDB( DB ):
     reqList.append( "SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % interval )
     reqList.append( "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % aborted_interval )
 
+    idList = None
+
     for req in reqList:
       result = self._query( req )
       if not result['OK']:
@@ -244,7 +246,7 @@ class PilotAgentsDB( DB ):
           if not result['OK']:
             gLogger.warn( 'Error while deleting pilots' )
 
-    return S_OK()
+    return S_OK( idList )
 
 ##########################################################################################
   def getPilotInfo( self, pilotRef = False, parentId = False, conn = False, paramNames = [], pilotID = False ):
@@ -261,17 +263,17 @@ class PilotAgentsDB( DB ):
     cmd = "SELECT %s FROM PilotAgents" % ", ".join( parameters )
     condSQL = []
     if pilotRef:
-      if type( pilotRef ) == ListType:
+      if isinstance( pilotRef, list ):
         condSQL.append( "PilotJobReference IN (%s)" % ",".join( [ '"%s"' % x for x in pilotRef ] ) )
       else:
         condSQL.append( "PilotJobReference = '%s'" % pilotRef )
     if pilotID:
-      if type( pilotID ) == ListType:
+      if isinstance( pilotID, list ):
         condSQL.append( "PilotID IN (%s)" % ",".join( [ '%s' % x for x in pilotID ] ) )
       else:
         condSQL.append( "PilotID = '%s'" % pilotID )
     if parentId:
-      if type( parentId ) == ListType:
+      if isinstance( parentId, list ):
         condSQL.append( "ParentID IN (%s)" % ",".join( [ '%s' % x for x in parentId ] ) )
       else:
         condSQL.append( "ParentID = %s" % parentId )
@@ -468,7 +470,7 @@ class PilotAgentsDB( DB ):
     """ Get IDs of Jobs that were executed by a pilot
     """
     cmd = "SELECT pilotID,JobID FROM JobToPilotMapping "
-    if type( pilotID ) == ListType:
+    if isinstance( pilotID, list ):
       cmd = cmd + " WHERE pilotID IN (%s)" % ",".join( [ '%s' % x for x in pilotID ] )
     else:
       cmd = cmd + " WHERE pilotID = %s" % pilotID
@@ -638,7 +640,7 @@ class PilotAgentsDB( DB ):
 #       result[ 'Total' ][ statusName ] += int( statusCount )
 #
 #     return S_OK( result )
- 
+
 ##########################################################################################
   def getPilotSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get summary of the pilot jobs status by CE/site in a standard structure
@@ -1040,7 +1042,7 @@ class PilotAgentsDB( DB ):
     for pilot in pilotList:
       parList = []
       for parameter in paramNames:
-        if type( pilotDict[pilot][parameter] ) not in [IntType, LongType]:
+        if not isinstance( pilotDict[pilot][parameter], (int, long) ):
           parList.append( str( pilotDict[pilot][parameter] ) )
         else:
           parList.append( pilotDict[pilot][parameter] )
@@ -1061,4 +1063,3 @@ class PilotAgentsDB( DB ):
     resultDict['Records'] = records
 
     return S_OK( resultDict )
-

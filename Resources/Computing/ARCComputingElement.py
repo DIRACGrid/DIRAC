@@ -47,6 +47,8 @@ class ARCComputingElement( ComputingElement ):
     self.gridEnv = ''
     self.ceHost = self.ceName
     self.usercfg = arc.common.UserConfig()
+    ## set the timeout to the default 20 seconds in case the UserConfig constructor did not
+    self.usercfg.Timeout(20) #pylint: disable=pointless-statement
     if 'Host' in self.ceParameters:
       self.ceHost = self.ceParameters['Host']
     if 'GridEnv' in self.ceParameters:

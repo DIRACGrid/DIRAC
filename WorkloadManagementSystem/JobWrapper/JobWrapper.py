@@ -51,6 +51,10 @@ from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry              import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers                import resolveSEGroup
+
+
+__RCSID__ = "$Id$"
 
 EXECUTION_RESULT = {}
 
@@ -110,7 +114,7 @@ class JobWrapper( object ):
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
-    self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
+    self.defaultOutputSE = resolveSEGroup( gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] ) )
     self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', [] )
     self.masterCatalogOnlyFlag = gConfig.getValue( self.section + '/MasterCatalogOnlyFlag', True )
     self.defaultFailoverSE = gConfig.getValue( '/Resources/StorageElementGroups/Tier1-Failover', [] )

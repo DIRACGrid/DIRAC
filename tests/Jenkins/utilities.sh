@@ -407,7 +407,7 @@ function diracInstall(){
 
 #This is what VOs may replace
 function diracInstallCommand(){
-  $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t server -d
+  $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t fullserver -d
 }
 
 
@@ -690,7 +690,7 @@ function diracRefreshCS(){
 function diracAddSite(){
   echo '==> [diracAddSite]'
 
-  dirac-admin-add-site DIRAC.Jenkins.org aNameWhatSoEver some.CE.org
+  dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch
 
 }
 
@@ -960,8 +960,8 @@ function downloadProxy(){
       echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
       python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG
     else # assuming it's the pilot
-      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
-      python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG $DEBUG
+      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG)
+      python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG $DEBUG
     fi
   else
     if [ -e $CLIENTINSTALLDIR/etc/dirac.cfg ] # called from the client directory

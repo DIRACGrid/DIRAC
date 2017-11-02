@@ -354,7 +354,7 @@ class ReqClient( Client ):
     :return: S_ERROR or S_OK( "Successful": { jobID1: reqID1, jobID2: requID2, ... },
                               "Failed" : { jobIDn: errMsg, jobIDm: errMsg, ...}  )
     """
-    self.log.info( "getRequestIDsForJobs: attempt to get request(s) for job %s" % jobIDs )
+    self.log.verbose( "getRequestIDsForJobs: attempt to get request(s) for job %s" % jobIDs )
     requests = self._getRPC().getRequestIDsForJobs( jobIDs )
     if not requests["OK"]:
       self.log.error( "getRequestIDsForJobs: unable to get request(s) for jobs",
