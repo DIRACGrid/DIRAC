@@ -77,7 +77,19 @@ class NamingConvention(object):
 
   # Long line, bigger than 79
   # There should be no space between the parameter and the default value
-  def __init__(self, width, height, color='black', emphasis=None, highlight=0):
+  def __init__(
+          self,
+          width,
+          height,
+          color='black',
+          emphasis=None,
+          highlight=0,
+          andI=0,
+          willAdd=1,
+          some=2,
+          evenmuch=7,
+          longer=9,
+          argsforhavinglongline=0):
     if width == 0 and height == 0 and \
        color == 'red' and emphasis == 'strong' or \
        highlight > 100:

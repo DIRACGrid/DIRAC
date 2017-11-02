@@ -12,15 +12,15 @@ overall project.
 Pep8, Pycodestyle and autopep8
 ------------------------------
 
-In order to ensure consistant formating between developers, it was decided to stick to the Pep8 style guide (https://www.python.org/dev/peps/pep-0008/), with two differences:
+In order to ensure consistant formatting between developers, it was decided to stick to the Pep8 style guide (https://www.python.org/dev/peps/pep-0008/), with two differences:
 * we use 2 space indentation instead of 4
 * we use a line length of 120 instead of 80
 
 This is managed by the setup.cfg at the root of the DIRAC repo.
 
-In order to ensure that the formating preference of the developer's editor does not play trick, there are two files under `tests/formating`: `pep8_bad.py` and `pep8_good.py`. The first one contains generic rules and examples of dos and donts. The developper should pass this file through the autoformat of his/her editor. The output should be exactly `pep8_good.py`. We recommand the use of autopep8 for the autoformating::
+In order to ensure that the formatting preference of the developer's editor does not play trick, there are two files under `tests/formatting`: `pep8_bad.py` and `pep8_good.py`. The first one contains generic rules and examples of dos and donts. The developper should pass this file through the autoformat of his/her editor. The output should be exactly `pep8_good.py`. We recommand the use of autopep8 for the autoformatting::
 
-      [chaen@pclhcb31 formating]$ pycodestyle pep8_bad.py
+      [chaen@pclhcb31 formatting]$ pycodestyle pep8_bad.py
       pep8_bad.py:11:121: E501 line too long (153 > 120 characters)
       pep8_bad.py:15:121: E501 line too long (124 > 120 characters)
       pep8_bad.py:26:1: E303 too many blank lines (3)
@@ -32,18 +32,28 @@ In order to ensure that the formating preference of the developer's editor does 
       pep8_bad.py:79:44: E251 unexpected spaces around keyword / parameter equals
       pep8_bad.py:79:62: E251 unexpected spaces around keyword / parameter equals
       pep8_bad.py:79:64: E251 unexpected spaces around keyword / parameter equals
+      pep8_bad.py:79:82: E231 missing whitespace after ','
+      pep8_bad.py:79:89: E231 missing whitespace after ','
+      pep8_bad.py:79:99: E231 missing whitespace after ','
+      pep8_bad.py:79:106: E231 missing whitespace after ','
+      pep8_bad.py:79:117: E231 missing whitespace after ','
+      pep8_bad.py:79:121: E501 line too long (153 > 120 characters)
+      pep8_bad.py:79:126: E231 missing whitespace after ','
+      pep8_bad.py:79:148: E251 unexpected spaces around keyword / parameter equals
+      pep8_bad.py:79:150: E251 unexpected spaces around keyword / parameter equals
       pep8_bad.py:108:1: E303 too many blank lines (3)
 
-      [chaen@pclhcb31 formating]$ autopep8 pep8_bad.py > myAutoFormat.py
 
-      [chaen@pclhcb31 formating]$ pycodestyle myAutoFormat.py
+      [chaen@pclhcb31 formatting]$ autopep8 pep8_bad.py > myAutoFormat.py
+
+      [chaen@pclhcb31 formatting]$ pycodestyle myAutoFormat.py
       myAutoFormat.py:11:121: E501 line too long (153 > 120 characters)
       myAutoFormat.py:74:3: E741 ambiguous variable name 'l'
       myAutoFormat.py:75:3: E741 ambiguous variable name 'O'
       myAutoFormat.py:76:3: E741 ambiguous variable name 'I'
 
-      [chaen@pclhcb31 formating]$ diff myAutoFormat.py pep8_good.py
-      [chaen@pclhcb31 formating]$
+      [chaen@pclhcb31 formatting]$ diff myAutoFormat.py pep8_good.py
+      [chaen@pclhcb31 formatting]$
 
 Note that pycodestyle will still complain about the ambiguous variable in the good file, since autopep8 will not remove them. Also, autopep8 will not modify comment inside docstrings, hence the first warning on the good file.
 
@@ -72,7 +82,7 @@ Some System packages might also have additional
 
 Packages are sets of Python modules and eventually compilable source code
 together with the instructions to use, build and test it. Source code files are
-maintained in the SVN code repository.
+maintained in the git code repository.
 
 **R1**
   Each package has a unique name, that should be written such that each word starts
@@ -82,11 +92,6 @@ maintained in the SVN code repository.
 Module Coding Conventions
 --------------------------------
 
-**R2**
-  The first line of every file should contain *$HeadURL: $* macro, which SVN
-  translates into the Author name and the Date of the most recent commit operation.
-  This macro is typically placed in the first comment line of the module.
-  Ignored with git.
 
 **R3**
   Each module should define the following variables in its global scope::
@@ -207,7 +212,7 @@ General lay-out
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 **R21**
-  The length of any line should be preferably limited to 80 characters to allow
+  The length of any line should be preferably limited to 120 characters to allow
   debugging on any terminal.
 
 **R22**
@@ -215,7 +220,7 @@ General lay-out
 
 **R23**
    When declaring methods with multiple arguments, consider putting one argument
-   per line. This allows inline comments and helps to stay within the 80 column
+   per line. This allows inline comments and helps to stay within the 120 column
    limit.
 
 Comments and doc strings
