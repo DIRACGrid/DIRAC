@@ -1195,15 +1195,11 @@ def loadConfiguration():
   for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraModules', 'extensions', 'timeout' ):
+                  'project', 'release', 'extensions', 'timeout' ):
     try:
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
       continue
-
-    if opName == 'extraModules':
-      logWARN( "extraModules is deprecated please use extensions instead!" )
-      opName = 'extensions'
 
     if opName == 'installType':
       opName = 'externalsType'

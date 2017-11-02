@@ -14,33 +14,34 @@ from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import S_OK
-
+from DIRAC import S_OK, gConfig
 
 class PilotsLoggingHandler( RequestHandler ):
   """Server side functions for Pilots Logging service"""
 
+  consumerSet = None
+  pilotsLoggingDB = None
+
   @classmethod
-  def initializeHandler( cls, serviceInfo ):
+  def initializeHandler( cls, serviceInfoDict ):
     """Initialization of Pilots Logging service
     """
     cls.consumersSet = set()
     cls.pilotsLoggingDB = PilotsLoggingDB()
-
-    result = createConsumer( cls.srv_getCSOption("PilotsLoggingQueue"), callback = cls.consumingCallback )
+    queue = cls.srv_getCSOption("PilotsLoggingQueue")
+    # This is pretty awful hack. Somehow, for uknown reason, I cannot access CS with srv_getCSOption.
+    # The only way is using full CS path, so I'm using it as a backup solution.
+    if not queue:
+      queue = gConfig.getValue(serviceInfoDict['serviceSectionPath'] + "/PilotsLoggingQueue")
+    result = createConsumer( queue, callback = cls.consumingCallback )
     if result['OK']:
-      cls.consumersSet.add(result)
+      cls.consumersSet.add(result['Value'])
     else:
       return result
     return S_OK()
 
-  def initialize(self):
-    """Initialization of Pilots Logging service
-    """
-    return S_OK()
-
   @classmethod
-  def consumingCallback(cls, headers, message ):
+  def consumingCallback( cls, headers, message ):
     """
     Callback function for the MQ Consumer, called for every new message and inserting it into database.
 
@@ -49,8 +50,8 @@ class PilotsLoggingHandler( RequestHandler ):
     """
     # verify received message format
     if set(message) == set(['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']):
-      cls.pilotsLoggingDB.addPilotsLogging(message['pilotUUID'], message['timestamp'], message['source'],
-                                           message['phase'], message['status'], message['messageContent'])
+      cls.pilotsLoggingDB.addPilotsLogging( message['pilotUUID'], message['timestamp'], message['source'],
+                                            message['phase'], message['status'], message['messageContent'] )
 
   types_addPilotsLogging = [ basestring, basestring, basestring, basestring, basestring, basestring ]
   def export_addPilotsLogging( self, pilotUUID, timestamp, source, phase, status, messageContent ):

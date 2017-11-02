@@ -35,6 +35,7 @@ class MessageBroker( object ):
       threadPool = getGlobalThreadPool()
     self.__threadPool = threadPool
     self.__listeningForMessages = False
+    self.__listenThread = None
 
   def getNumConnections( self ):
     return len( self.__messageTransports )
@@ -107,7 +108,7 @@ class MessageBroker( object ):
   # Listen to connections
 
   def __startListeningThread( self ):
-    threadDead = self.__listeningForMessages and not self.__listenThread.isAlive()
+    threadDead = self.__listeningForMessages and self.__listenThread is not None and not self.__listenThread.isAlive()
     if not self.__listeningForMessages or threadDead:
       self.__listeningForMessages = True
       self.__listenThread = threading.Thread( target = self.__listenAutoReceiveConnections )

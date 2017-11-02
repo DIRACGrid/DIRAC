@@ -85,7 +85,7 @@ def prepareScripts( tmpDir ):
     try:
       shutil.copy( scriptPath, newScriptPath )
     except IOError:
-      sys.exit( 'Copy from % to % failed' % ( scriptPath, newScriptPath ) )  
+      sys.exit( 'Copy from %s to %s failed' % ( scriptPath, newScriptPath ) )
       
     # Let's try EAFP style...  
     # We store the scripts on each module with the NEW name !

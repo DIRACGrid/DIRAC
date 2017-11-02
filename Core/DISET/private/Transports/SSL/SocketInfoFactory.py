@@ -6,16 +6,18 @@ __RCSID__ = "$Id$"
 import socket
 import select
 import os
-import hashlib as md5
+import hashlib
+
 import GSI
+
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import Network
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-if GSI.__version__ < "0.5.0":
-  raise Exception( "Required GSI version >= 0.5.0" )
+if GSI.__version__ < "0.6.5":
+  raise Exception( "Required GSI version >= 0.6.5" )
 
 class SocketInfoFactory(object):
 
@@ -101,7 +103,7 @@ class SocketInfoFactory(object):
     #SSL MAGIC
     sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
     #Generate sessionId
-    sessionHash = md5.md5()
+    sessionHash = hashlib.md5()
     sessionHash.update( str( hostAddress ) )
     sessionHash.update( "|%s" % str( socketInfo.getLocalCredentialsLocation() ) )
     for key in ( 'proxyLocation', 'proxyString' ):

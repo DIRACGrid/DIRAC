@@ -6,7 +6,6 @@ site banning and unbanning, WMS proxy uploading etc.
 """
 
 import os
-import types
 
 import DIRAC
 from DIRAC.Core.Utilities.PromptUser                          import promptUser
@@ -623,7 +622,7 @@ class DiracAdmin( API ):
        :type gridReference: string
        :return: S_OK,S_ERROR
     """
-    if type( gridReference ) not in types.StringTypes:
+    if not isinstance(gridReference, basestring):
       return self._errorReport( 'Expected string for pilot reference' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )

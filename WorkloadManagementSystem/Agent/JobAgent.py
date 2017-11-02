@@ -458,9 +458,13 @@ class JobAgent( AgentModule ):
     logLevel = self.am_getOption( 'DefaultLogLevel', 'INFO' )
     defaultWrapperLocation = self.am_getOption( 'JobWrapperTemplate',
                                                 'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py' )
-    result = createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
-                               extraOptions = self.extraOptions, defaultWrapperLocation = defaultWrapperLocation,
-                               log = self.log, logLevel = logLevel )
+    jobDesc = { "jobID": jobID,
+                "jobParams": jobParams,
+                "resourceParams": resourceParams,
+                "optimizerParams": optimizerParams,
+                "extraOptions": self.extraOptions,
+                "defaultWrapperLocation": defaultWrapperLocation }
+    result = createJobWrapper( log = self.log, logLevel = logLevel, **jobDesc )
     if not result['OK']:
       return result
 
@@ -478,7 +482,10 @@ class JobAgent( AgentModule ):
     payloadProxy = proxy['Value']
     submission = self.computingElement.submitJob( wrapperFile, payloadProxy,
                                                   numberOfProcessors = processors,
-                                                  wholeNode = wholeNode )
+                                                  wholeNode = wholeNode,
+                                                  jobDesc = jobDesc,
+                                                  log = self.log,
+                                                  logLevel = logLevel )
     ret = S_OK( 'Job submitted' )
 
     if submission['OK']:

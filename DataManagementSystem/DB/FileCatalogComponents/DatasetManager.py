@@ -1,13 +1,9 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ DIRAC FileCatalog plug-in class to manage dynamic datasets defined by a metadata query
 """
 
 __RCSID__ = "$Id$"
 
-import hashlib as md5
+import hashlib
 import os
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -339,7 +335,7 @@ class DatasetManager( object ):
     if not lfnIDList:
       lfnIDList = lfnIDDict.keys()
     lfnList.sort()
-    myMd5 = md5.md5()
+    myMd5 = hashlib.md5()
     myMd5.update( str( lfnList ) )
     datasetHash = myMd5.hexdigest().upper()
     numberOfFiles = len( lfnList )

@@ -48,7 +48,8 @@ def initializeWMSAdministratorHandler( serviceInfo ):
   global taskQueueDB
   global enablePilotsLogging
 
-  enablePilotsLogging = gConfig.getValue('/Services/PilotsLogging/Enable', 'False').lower() in ('yes', 'true')
+  # there is a problem with accessing CS with shorter paths, so full path is extracted from serviceInfo dict
+  enablePilotsLogging = gConfig.getValue( serviceInfo['serviceSectionPath'].replace('WMSAdministrator', 'PilotsLogging') + '/Enable', 'False').lower() in ('yes', 'true')
 
   jobDB = JobDB()
   pilotDB = PilotAgentsDB()
@@ -698,9 +699,16 @@ class WMSAdministratorHandler(RequestHandler):
     if not result['OK']:
       return result
     if enablePilotsLogging:
-      result = pilotsLoggingDB.deletePilotsLogging( pilotIDs )
-    if not result['OK']:
-      return result
+      pilotIDs = result[ 'Value' ]
+      pilots = pilotDB.getPilotInfo( pilotID = pilotIDs )
+      if not pilots['OK']:
+        return pilots
+      pilotRefs = []
+      for pilot in pilots:
+        pilotRefs.append( pilot['PilotJobReference'] )
+      result = pilotsLoggingDB.deletePilotsLogging( pilotRefs )
+      if not result['OK']:
+        return result
 
     return S_OK()
 
@@ -713,7 +721,13 @@ class WMSAdministratorHandler(RequestHandler):
       return result
     if enablePilotsLogging:
       pilotIDs = result[ 'Value' ]
-      result = pilotsLoggingDB.deletePilotsLogging( pilotIDs )
+      pilots = pilotDB.getPilotInfo( pilotID = pilotIDs )
+      if not pilots['OK']:
+        return pilots
+      pilotRefs = []
+      for pilot in pilots:
+        pilotRefs.append( pilot['PilotJobReference'] )
+      result = pilotsLoggingDB.deletePilotsLogging( pilotRefs )
       if not result['OK']:
         return result
 

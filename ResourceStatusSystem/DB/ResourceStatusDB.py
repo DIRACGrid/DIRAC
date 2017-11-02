@@ -278,7 +278,7 @@ class ResourceStatusDB( object ):
         if not found:
           getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:
-        gLogger.debug( 'Table \'%s\' already exists' %table )
+        gLogger.debug( "Table %s already exists" %table )
 
     for table in self.tablesListWithID:
       if table not in tablesInDB:
@@ -295,7 +295,7 @@ class ResourceStatusDB( object ):
         if not found:
           getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:
-        gLogger.debug( 'Table \'%s\' already exists' %table )
+        gLogger.debug( "Table %s already exists" %table )
 
 
 
@@ -578,6 +578,8 @@ class ResourceStatusDB( object ):
         if changeDE and columnName == 'DateEffective' and not columnValue:
           columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
         if columnValue:
+          if isinstance(columnValue, datetime.datetime):
+            columnValue = columnValue.replace(microsecond = 0)
           setattr(res, columnName.lower(), columnValue)
       session.commit()
 
