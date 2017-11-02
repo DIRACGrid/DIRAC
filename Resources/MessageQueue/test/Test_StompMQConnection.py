@@ -70,6 +70,7 @@ class StompMQConnectorSuccessTestCase( unittest.TestCase ):
     connectionMock.is_connected.return_value = True
 
     module.stomp = MagicMock()
+    module.stomp.Connection = MagicMock()
     module.stomp.Connection.return_value = connectionMock
 
     # internal dependencies

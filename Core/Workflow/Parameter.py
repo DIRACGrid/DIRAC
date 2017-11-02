@@ -407,7 +407,7 @@ class ParameterCollection( list ):
         else:
           par.unlink()
     elif isinstance( opt, Parameter ):
-      self.unlink()
+      opt.unlink()
     elif isinstance( opt, list ) and isinstance( opt[0], str ):
       for s in opt:
         par = self.find( s )
