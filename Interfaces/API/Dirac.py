@@ -2600,7 +2600,9 @@ class Dirac( API ):
     :param jdl: a JDL
     :type jdl: ~DIRAC.Interfaces.API.Job.Job or str or file
     """
-    if isinstance(jdl, DIRAC.Interfaces.API.Job.Job):
+    # import here, becase Job module imports this module
+    from DIRAC.Interfaces.API.Job import Job
+    if isinstance(jdl, Job):
       jdl = jdl._toJDL()
     elif os.path.exists( jdl ):
       with open( jdl, 'r' ) as jdlFile:
