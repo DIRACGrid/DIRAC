@@ -9,7 +9,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK
 class Params(object):
 
   proxyLoc = False
-  checkExists = False
   vomsEnabled = True
   csEnabled = True
   steps = False
@@ -25,10 +24,6 @@ class Params(object):
 
   def setProxyLocation( self, arg ):
     self.proxyLoc = arg
-    return S_OK()
-
-  def checkExists( self, arg ):
-    self.checkExists = True
     return S_OK()
 
   def disableVOMS( self, arg ):

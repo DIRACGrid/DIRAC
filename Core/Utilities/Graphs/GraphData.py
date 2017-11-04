@@ -152,7 +152,7 @@ class GraphData:
         reverse = not reverse_order
         pairs.sort( key = lambda x: x[1].last_value, reverse = reverse )
         self.labels = [ x[0] for x in pairs ]
-       self.label_values = [ x[1].last_value for x in pairs ]
+        self.label_values = [ x[1].last_value for x in pairs ]
       elif sort_type == 'sum':
         pairs = []
         for key in self.subplots:

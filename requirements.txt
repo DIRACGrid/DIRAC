@@ -33,3 +33,4 @@ six>=1.10
 sqlalchemy>=1.0.9
 stomp.py>=3.1.5
 suds-jurko>=0.6
+sphinx
