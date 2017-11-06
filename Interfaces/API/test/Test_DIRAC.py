@@ -24,3 +24,11 @@ class DiracTestCases(unittest.TestCase):
     self.assertEqual('Value', ret['Value']['Parameter'])
     self.assertIn('Parameter2', ret['Value'])
     self.assertEqual('Value2', ret['Value']['Parameter2'])
+
+  def test_JobJob(self):
+    from DIRAC.Interfaces.API.Job import Job
+    job = Job(stdout='printer', stderr='/dev/null')
+    ret = self.dirac._Dirac__getJDLParameters(job)
+    self.assertTrue(ret['OK'])
+    self.assertEqual('printer', ret['Value']['StdOutput'])
+    self.assertEqual('/dev/null', ret['Value']['StdError'])
