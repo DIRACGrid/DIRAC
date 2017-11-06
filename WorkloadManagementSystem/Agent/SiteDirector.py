@@ -1121,7 +1121,7 @@ EOF
     for queue in self.queueDict:
       ce = self.queueDict[queue]['CE']
 
-      if not ce.isProxyValid( 120 ):
+      if not ce.isProxyValid(120)['OK']:
         result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, 1000 )
         if not result['OK']:
           return result
