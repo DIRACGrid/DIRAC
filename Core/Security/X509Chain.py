@@ -90,7 +90,6 @@ random.seed()
     if not self.__certList:
       return S_ERROR(DErrno.EX509)
     self.__loadedChain = True
-    self.__loadedPKey = True
     # Update internals
     self.__checkProxyness()
     return S_OK()
