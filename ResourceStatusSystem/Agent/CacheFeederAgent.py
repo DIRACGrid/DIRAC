@@ -4,20 +4,23 @@
 
 '''
 
-from DIRAC                                                      import S_OK
-from DIRAC.AccountingSystem.Client.ReportsClient                import ReportsClient
-from DIRAC.Core.Base.AgentModule                                import AgentModule
-from DIRAC.Core.DISET.RPCClient                                 import RPCClient
-from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Command                         import CommandCaller
-from DIRAC.ResourceStatusSystem.Utilities                       import Utils
-ResourceManagementClient = getattr( Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ), 'ResourceManagementClient' )
+from DIRAC import S_OK
+from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Command import CommandCaller
+from DIRAC.ResourceStatusSystem.Utilities import Utils
+ResourceManagementClient = getattr(
+    Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'),
+    'ResourceManagementClient')
 
 __RCSID__ = '$Id:  $'
 AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
 
-class CacheFeederAgent( AgentModule ):
+
+class CacheFeederAgent(AgentModule):
   '''
   The CacheFeederAgent feeds the cache tables for the client and the accounting.
   It runs periodically a set of commands, and stores it's results on the
@@ -27,9 +30,9 @@ class CacheFeederAgent( AgentModule ):
   # Too many public methods
   # pylint: disable=R0904
 
-  def __init__( self, *args, **kwargs ):
+  def __init__(self, *args, **kwargs):
 
-    AgentModule.__init__( self, *args, **kwargs )
+    AgentModule.__init__(self, *args, **kwargs)
 
     self.commands = {}
     self.clients = {}
@@ -37,23 +40,22 @@ class CacheFeederAgent( AgentModule ):
     self.cCaller = None
     self.rmClient = None
 
-  def initialize( self ):
+  def initialize(self):
 
-    self.am_setOption( 'shifterProxy', 'DataManager' )
+    self.am_setOption('shifterProxy', 'DataManager')
 
     self.rmClient = ResourceManagementClient()
 
-    self.commands[ 'Downtime' ] = [ { 'Downtime'            : {} } ]
-    self.commands[ 'SpaceTokenOccupancy' ] = [ { 'SpaceTokenOccupancy' : {} } ]
-    self.commands[ 'GOCDBSync' ] = [ { 'GOCDBSync' : {} } ]
-    self.commands[ 'FreeDiskSpace' ] = [ { 'FreeDiskSpace' : {} } ]
+    self.commands['Downtime'] = [{'Downtime': {}}]
+    self.commands['SpaceTokenOccupancy'] = [{'SpaceTokenOccupancy': {}}]
+    self.commands['GOCDBSync'] = [{'GOCDBSync': {}}]
+    self.commands['FreeDiskSpace'] = [{'FreeDiskSpace': {}}]
 
     # PilotsCommand
 #    self.commands[ 'Pilots' ] = [
 #                                 { 'PilotsWMS' : { 'element' : 'Site', 'siteName' : None } },
 #                                 { 'PilotsWMS' : { 'element' : 'Resource', 'siteName' : None } }
 #                                 ]
-
 
     # FIXME: do not forget about hourly vs Always ...etc
     # AccountingCacheCommand
@@ -76,66 +78,65 @@ class CacheFeederAgent( AgentModule ):
 #
 
     # Reuse clients for the commands
-    self.clients[ 'GOCDBClient' ] = GOCDBClient()
-    self.clients[ 'ReportGenerator' ] = RPCClient( 'Accounting/ReportGenerator' )
-    self.clients[ 'ReportsClient' ] = ReportsClient()
-    self.clients[ 'ResourceStatusClient' ] = ResourceStatusClient()
-    self.clients[ 'ResourceManagementClient' ] = ResourceManagementClient()
-    self.clients[ 'WMSAdministrator' ] = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+    self.clients['GOCDBClient'] = GOCDBClient()
+    self.clients['ReportGenerator'] = RPCClient('Accounting/ReportGenerator')
+    self.clients['ReportsClient'] = ReportsClient()
+    self.clients['ResourceStatusClient'] = ResourceStatusClient()
+    self.clients['ResourceManagementClient'] = ResourceManagementClient()
+    self.clients['WMSAdministrator'] = RPCClient('WorkloadManagement/WMSAdministrator')
 
     self.cCaller = CommandCaller
 
     return S_OK()
 
-  def loadCommand( self, commandModule, commandDict ):
+  def loadCommand(self, commandModule, commandDict):
 
-    commandName = commandDict.keys()[ 0 ]
-    commandArgs = commandDict[ commandName ]
+    commandName = commandDict.keys()[0]
+    commandArgs = commandDict[commandName]
 
-    commandTuple = ( '%sCommand' % commandModule, '%sCommand' % commandName )
-    commandObject = self.cCaller.commandInvocation( commandTuple, pArgs = commandArgs,
-                                                    clients = self.clients )
+    commandTuple = ('%sCommand' % commandModule, '%sCommand' % commandName)
+    commandObject = self.cCaller.commandInvocation(commandTuple, pArgs=commandArgs,
+                                                   clients=self.clients)
 
-    if not commandObject[ 'OK' ]:
-      self.log.error( 'Error initializing %s' % commandName )
+    if not commandObject['OK']:
+      self.log.error('Error initializing %s' % commandName)
       return commandObject
-    commandObject = commandObject[ 'Value' ]
+    commandObject = commandObject['Value']
 
     # Set master mode
     commandObject.masterMode = True
 
-    self.log.info( '%s/%s' % ( commandModule, commandName ) )
+    self.log.info('%s/%s' % (commandModule, commandName))
 
-    return S_OK( commandObject )
+    return S_OK(commandObject)
 
-
-  def execute( self ):
+  def execute(self):
 
     for commandModule, commandList in self.commands.items():
 
-      self.log.info( '%s module initialization' % commandModule )
+      self.log.info('%s module initialization' % commandModule)
 
       for commandDict in commandList:
 
-        commandObject = self.loadCommand( commandModule, commandDict )
-        if not commandObject[ 'OK' ]:
-          self.log.error( commandObject[ 'Message' ] )
+        commandObject = self.loadCommand(commandModule, commandDict)
+        if not commandObject['OK']:
+          self.log.error(commandObject['Message'])
           continue
-        commandObject = commandObject[ 'Value' ]
+        commandObject = commandObject['Value']
 
-        results = commandObject.doCommand()
-
-        if not results[ 'OK' ]:
-          self.log.error( 'Failed to execute command', '%s: %s' % ( commandModule, results[ 'Message' ] ) )
-          continue
-        results = results[ 'Value' ]
-
-        if not results:
-          self.log.info( 'Empty results' )
-          continue
-
-        self.log.verbose( 'Command OK Results' )
-        self.log.verbose( results )
+        try:
+          results = commandObject.doCommand()
+          if not results['OK']:
+            self.log.error('Failed to execute command', '%s: %s' % (commandModule, results['Message']))
+            continue
+          results = results['Value']
+          if not results:
+            self.log.info('Empty results')
+            continue
+          self.log.verbose('Command OK Results')
+          self.log.verbose(results)
+        except Exception as excp:  # pylint: disable=broad-except
+          self.log.exception("Failed to execute command, with exception: %s" % commandModule, lException=excp)
 
     return S_OK()
 
