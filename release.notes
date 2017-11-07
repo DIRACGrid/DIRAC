@@ -1,7 +1,9 @@
-[v6r20-pre4]
+[v6r20-pre5]
 
 *Core
 CHANGE: Removed deprecated option "ExtraModules" (dirac-configure, dirac-install scripts)
+CHANGE: dirac-deploy-scripts, dirac-install - allow command modules with underscores in 
+        their names in order for better support for the code checking tools
 
 *Framework
 CHANGE: ComponentInstaller - remove the old web portal configuration data 
