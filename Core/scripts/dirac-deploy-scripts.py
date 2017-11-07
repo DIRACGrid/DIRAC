@@ -21,7 +21,13 @@ DEBUG = False
 moduleSuffix = "DIRAC"
 gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 excludeMask = [ '__init__.py' ]
-simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-compile-externals.py', 'dirac-install.py', 'dirac-platform.py' ]
+simpleCopyMask = [ os.path.basename( __file__ ),
+                   'dirac-compile-externals.py',
+                   'dirac-install.py',
+                   'dirac-platform.py',
+                   'dirac_compile_externals.py',
+                   'dirac_install.py',
+                   'dirac_platform.py']
 
 wrapperTemplate = """#!$PYTHONLOCATION$
 #
@@ -174,5 +180,9 @@ for rootModule in listDir:
       cLen = len( copyPath )
       reFound = pythonScriptRE.match( copyPath )
       if reFound:
-        destPath = "".join( list( reFound.groups() ) )
+        pathList = list( reFound.groups() )
+        pathList[-1] = pathList[-1].replace( '_', '-' )
+        destPath = "".join( pathList )
+        if DEBUG:
+          print " Renaming %s as %s" % ( copyPath, destPath )
         os.rename( copyPath, destPath )
