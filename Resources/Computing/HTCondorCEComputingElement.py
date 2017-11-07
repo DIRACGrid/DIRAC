@@ -48,11 +48,12 @@ MANDATORY_PARAMETERS = [ 'Queue' ]
 DEFAULT_WORKINGDIRECTORY = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT'
 DEFAULT_DAYSTOKEEPLOGS = 15
 
-def condorIDFromJobRef(jobRef ):
+
+def condorIDFromJobRef(jobRef):
   """return tuple of "jobURL" and condorID from the jobRef string"""
   jobURL = jobRef.split(":::")[0]
   condorID = jobURL.split("/")[-1]
-  return jobURL,condorID
+  return jobURL, condorID
 
 def findFile( workingDir, fileName ):
   """ find a pilot out, err, log file """
