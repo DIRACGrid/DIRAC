@@ -123,19 +123,19 @@ class CacheFeederAgent( AgentModule ):
           continue
         commandObject = commandObject[ 'Value' ]
 
-        results = commandObject.doCommand()
-
-        if not results[ 'OK' ]:
-          self.log.error( 'Failed to execute command', '%s: %s' % ( commandModule, results[ 'Message' ] ) )
-          continue
-        results = results[ 'Value' ]
-
-        if not results:
-          self.log.info( 'Empty results' )
-          continue
-
-        self.log.verbose( 'Command OK Results' )
-        self.log.verbose( results )
+        try:
+          results = commandObject.doCommand()
+          if not results[ 'OK' ]:
+            self.log.error( 'Failed to execute command', '%s: %s' % ( commandModule, results[ 'Message' ] ) )
+            continue
+          results = results[ 'Value' ]
+          if not results:
+            self.log.info( 'Empty results' )
+            continue
+          self.log.verbose( 'Command OK Results' )
+          self.log.verbose( results )
+        except Exception as excp: # pylint: disable=broad-except
+          self.log.exception("Failed to execute command, with exception: %s" % commandModule, lException = excp)
 
     return S_OK()
 
