@@ -43,6 +43,7 @@ class Watchdog( object ):
     self.stopSigFinishSeconds = int( jobArgs.get( 'StopSigFinishSeconds', 1800 ) ) # 30 minutes
     self.stopSigNumber        = int( jobArgs.get( 'StopSigNumber',           2 ) ) # SIGINT
     self.stopSigRegex         = jobArgs.get( 'StopSigRegex', None )
+    self.stopSigSent          = False
       
     self.log = gLogger.getSubLogger( "Watchdog" )
     self.systemFlag = systemFlag
@@ -188,7 +189,7 @@ class Watchdog( object ):
       return S_OK( "Ended" )
 
     # WallClock checks every self.wallClockCheckSeconds, but only if StopSigRegex is defined in JDL
-    if self.stopSigRegex is not None and ( time.time() - self.initialValues['StartTime'] ) > self.wallClockCheckSeconds * self.wallClockCheckCount:
+    if not self.stopSigSent and self.stopSigRegex is not None and ( time.time() - self.initialValues['StartTime'] ) > self.wallClockCheckSeconds * self.wallClockCheckCount:
       self.wallClockCheckCount += 1
       self._performWallClockChecks()
 
@@ -236,8 +237,10 @@ class Watchdog( object ):
 
     if (  int( time.time() ) > jobstartSeconds + self.stopSigStartSeconds ) and \
        ( wallClockSecondsLeft < self.stopSigFinishSeconds + self.wallClockCheckSeconds ):
-      # Need to send the signal!
+      # Need to send the signal! Assume it works to avoid sending the signal more than once
       self.log.info( 'Sending signal %d to JobWrapper children' % self.stopSigNumber )
+      self.stopSigSent = True
+      
       try:
         for childPid in getChildrenPIDs( self.wrapperPID ):
           try:
