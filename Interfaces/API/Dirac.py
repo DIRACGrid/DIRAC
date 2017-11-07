@@ -2600,7 +2600,7 @@ class Dirac( API ):
     :param jdl: a JDL
     :type jdl: ~DIRAC.Interfaces.API.Job.Job or str or file
     """
-    if isinstance(jdl, DIRAC.Interfaces.API.Job.Job):
+    if hasattr(jdl, '_toJDL'):
       jdl = jdl._toJDL()
     elif os.path.exists( jdl ):
       with open( jdl, 'r' ) as jdlFile:
