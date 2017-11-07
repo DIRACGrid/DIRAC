@@ -35,7 +35,7 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0] == "Y" or switch[0].lower() == "years":
     years = int( switch[1] )
   if switch[0].lower() == "w" or switch[0].lower() == "wildcard":
-    wildcard = switch[1]
+    wildcard = '*'+switch[1]
   if switch[0].lower() == "b" or switch[0].lower() == "basedir":
     baseDir = switch[1]
   if switch[0].lower() == "e" or switch[0].lower() == "emptydirs":
