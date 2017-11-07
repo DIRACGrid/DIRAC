@@ -126,7 +126,7 @@ class DowntimeCommand( Command ):
     if element == 'Site':
 
       gocSite = getGOCSiteName( elementName )
-      if not gocSite[ 'OK' ]: # The site is most probably not a grid site - not an issue, of course
+      if not gocSite['OK']: # The site is most probably is not a grid site - not an issue, of course
         pass # so, elementName remains unchanged
       else:
         elementName = gocSite[ 'Value' ]
@@ -153,11 +153,12 @@ class DowntimeCommand( Command ):
 
     elif elementType in ['FTS','FTS3']:
       gOCDBServiceType = 'FTS'
-      try:
-        #WARNING: this method presupposes that the server is an FTS3 type
-        elementName  = getGOCFTSName(elementName)
-      except:
-        return S_ERROR( 'No FTS3 server specified in dirac.cfg (see Resources/FTSEndpoints)' )
+      #WARNING: this method presupposes that the server is an FTS3 type
+      gocSite = getGOCFTSName(elementName)
+      if not gocSite['OK']:
+        self.log.warn("%s not in Resources/FTSEndpoints/FTS3 ?" % elementName)
+      else:
+        elementName = gocSite['Value']
 
     return S_OK( ( element, elementName, hours, gOCDBServiceType ) )
 
