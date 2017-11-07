@@ -123,7 +123,7 @@ if not rootPath:
   sys.exit( 1 )
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
-pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+|d[a-zA-Z0-9-]+).py" )
+pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+|[a-z]+_[a-zA-Z0-9_]+|d[a-zA-Z0-9-]+).py" )
 print "Scripts will be deployed at %s" % targetScriptsPath
 
 if not os.path.isdir( targetScriptsPath ):
@@ -153,9 +153,10 @@ for rootModule in listDir:
       continue
     scriptLen = len( scriptName )
     if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
+      newScriptName = scriptName[:-3].replace( '_', '-' )
       if DEBUG:
-        print " Wrapping %s" % scriptName[:-3]
-      fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
+        print " Wrapping %s as %s" % ( scriptName, newScriptName )
+      fakeScriptPath = os.path.join( targetScriptsPath, newScriptName )
       with open( fakeScriptPath, "w" ) as fd:
         fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
       os.chmod( fakeScriptPath, gDefaultPerms )
