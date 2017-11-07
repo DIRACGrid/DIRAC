@@ -147,25 +147,28 @@ def getStorageElementOptions( seName ):
 def getQueue( site, ce, queue ):
   """ Get parameters of the specified queue
   """
-  Tags = []
   grid = site.split( '.' )[0]
   result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( grid, site, ce ) )
   if not result['OK']:
     return result
   resultDict = result['Value']
-  ceTags = resultDict.get( 'Tag' )
-  if ceTags:
-    Tags = fromChar( ceTags )
-  result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
-  if not result['OK']:
-    return result
-  resultDict.update( result['Value'] )
-  queueTags = resultDict.get( 'Tag' )
-  if queueTags:
-    queueTags = fromChar( queueTags )
-    Tags = list( set( Tags + queueTags ) )
-  if Tags:
-    resultDict['Tag'] = Tags
+
+  for tagFieldName in ( 'Tag', 'RequiredTag' ): 
+    Tags = []
+    ceTags = resultDict.get( tagFieldName )
+    if ceTags:
+      Tags = fromChar( ceTags )
+    result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
+    if not result['OK']:
+      return result
+    resultDict.update( result['Value'] )
+    queueTags = resultDict.get( tagFieldName )
+    if queueTags:
+      queueTags = fromChar( queueTags )
+      Tags = list( set( Tags + queueTags ) )
+    if Tags:
+      resultDict[tagFieldName] = Tags
+
   resultDict['Queue'] = queue
   return S_OK( resultDict )
 

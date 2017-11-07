@@ -24,6 +24,37 @@ NEW: New SingularityComputingElement to submit jobs to a Singularity container
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
 
+[v6r19p4]
+
+NEW: Added dummy setup.py in anticipation for standard installation procedure
+
+*Core
+CHANGE: SocketInfoFactory - version check of GSI at run time is removed
+
+*Configuration 
+FIX: Resources - fix RequiredTags in getQueue() function
+
+*Interfaces
+FIX: fix exception when using Dirac.Job.getJobJDL
+
+*WMS
+FIX: SiteDirector - fix proxy validity check in updatePilotStatus, a new proxy was 
+     never created because isProxyValid returns non-empty dictionary
+FIX: JobMonitoring - web table was not considering correctly Failed jobs because 
+     stalled for setting the LastSignOfLife     
+
+*DMS
+FIX: StorageFactory - avoid complaining if Access option is not in SE section
+CHANGE: dirac-dms-user-lfns - the wildcard flag will always assume leading "*" to match files, 
+       unless the full path was specified in the wildcard no files were previously matched
+
+*RSS
+FIX: CacheFeederAgent resilient to command exceptions
+
+*Resources
+FIX: ARCComputingElement - the proxy environment variable was assumed before the 
+     return value of the prepareProxy function was checked, which could lead to exceptions
+
 [v6r19p3]
 
 CHANGE: .pylintrc - disable redefined-variable-type
