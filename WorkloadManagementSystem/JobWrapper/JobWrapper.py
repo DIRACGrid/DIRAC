@@ -368,7 +368,7 @@ class JobWrapper( object ):
                                                       exeThread = exeThread,
                                                       spObject = spObject,
                                                       jobCPUTime = jobCPUTime,
-                                                      jobMemory = jobMemory,
+                                                      memoryLimit = jobMemory,
                                                       processors = processors,
                                                       jobArgs = self.jobArgs )
     if not watchdogInstance['OK']:
