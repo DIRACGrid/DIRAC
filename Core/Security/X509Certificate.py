@@ -120,7 +120,7 @@ class X509Certificate( object ):
     Return : S_OK / S_ERROR
     """
     try:
-      self.__certObj = M2Crypto.X509.load_cert_string( pemData, M2Crypto.X509.FORMAT_PEM )
+      self.__certObj = M2Crypto.X509.load_cert_string( str(pemData), M2Crypto.X509.FORMAT_PEM )
     except Exception, e:
       return S_ERROR( DErrno.ECERTREAD, "Can't load pem data: %s" % e )
     self.__valid = True
