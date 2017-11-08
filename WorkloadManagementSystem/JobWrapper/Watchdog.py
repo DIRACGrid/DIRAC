@@ -36,7 +36,7 @@ from DIRAC.Core.Utilities.Subprocess                    import getChildrenPIDs
 class Watchdog( object ):
 
   #############################################################################
-  def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux', jobArgs = {} ):
+  def __init__( self, pid, exeThread, spObject, jobCPUTime, memoryLimit = 0, processors = 1, systemFlag = 'linux', jobArgs = {} ):
     """ Constructor, takes system flag as argument.
     """
     self.stopSigStartSeconds  = int( jobArgs.get( 'StopSigStartSeconds',  1800 ) ) # 30 minutes
@@ -51,7 +51,7 @@ class Watchdog( object ):
     self.wrapperPID = pid
     self.appPID = self.exeThread.getCurrentPID()
     self.spObject = spObject
-    self.jobCPUtime = jobCPUtime
+    self.jobCPUTime = jobCPUTime
     self.memoryLimit = memoryLimit
     self.calibration = 0
     self.initialValues = {}
@@ -613,7 +613,7 @@ class Watchdog( object ):
       return S_OK( 'Not possible to determine current CPU consumed' )
 
     if consumedCPU:
-      limit = self.jobCPUtime + self.jobCPUtime * ( self.jobCPUMargin / 100 )
+      limit = self.jobCPUTime + self.jobCPUTime * ( self.jobCPUMargin / 100 )
       cpuConsumed = float( currentCPU )
       if cpuConsumed > limit:
         self.log.info( 'Job has consumed more than the specified CPU limit with an additional %s%% margin' % ( self.jobCPUMargin ) )
