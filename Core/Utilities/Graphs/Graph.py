@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import pixelToPoint, evalPrefs, 
                                                        to_timestamp, add_time_to_title
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.Legend import Legend
-#from DIRAC import S_OK, S_ERROR
+from DIRAC import gLogger
 
 DEBUG=0
 
@@ -334,5 +334,5 @@ class Graph(object):
     self.canvas.draw()
     if fileFormat.lower() == 'png':
       self.canvas.print_png(fname)
-    elif fileFormat.lower() == 'svg':
-      self.canvas.print_svg(fname)
+    else:
+      gLogger.error("File format '%s' is not supported!" %fileFormat)
