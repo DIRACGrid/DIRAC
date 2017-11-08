@@ -134,7 +134,8 @@ class RequestTasks( TaskBase ):
       self.requestValidator = requestValidator
 
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner='', ownerGroup='', ownerDN='' ):  # pylint: disable=arguments-differ
+  def prepareTransformationTasks( self, transBody, taskDict, owner='', ownerGroup='', ownerDN='',
+                                  bulkSubmissionFlag=False ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
     if not taskDict:
