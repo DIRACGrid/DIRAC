@@ -19,20 +19,21 @@ class ConfigurationHandler( RequestHandler ):
   """ The CS handler
   """
 
-  def initializeHandler( self, _serviceInfo ):
+  @classmethod
+  def initializeHandler( cls, _serviceInfo ):
     """
     Handler class initialization
     """
     # Check the flag for updating the pilot 3 JSON file
-    self.updatePilotJSONFile = self.srv_getCSOption( 'UpdatePilotCStoJSONFile', False )
-    if self.updatePilotJSONFile:
-      self.paramDict = {}
-      self.paramDict['pilotFileServer'] = getServiceOption( _serviceInfo, "pilotFileServer", '' )
-      self.paramDict['pilotRepo'] = getServiceOption( _serviceInfo, "pilotRepo", '' )
-      self.paramDict['pilotVORepo'] = getServiceOption( _serviceInfo, "pilotVORepo", '' )
-      self.paramDict['projectDir'] = getServiceOption( _serviceInfo, "projectDir", '' )
-      self.paramDict['pilotVOScriptPath'] = getServiceOption( _serviceInfo, "pilotVOScriptPath", '' )
-      self.paramDict['pilotScriptsPath'] = getServiceOption( _serviceInfo, "pilotScriptsPath", '' )
+    cls.updatePilotJSONFile = cls.srv_getCSOption( 'UpdatePilotCStoJSONFile', False )
+    if cls.updatePilotJSONFile:
+      cls.paramDict = {}
+      cls.paramDict['pilotFileServer'] = getServiceOption( _serviceInfo, "pilotFileServer", '' )
+      cls.paramDict['pilotRepo'] = getServiceOption( _serviceInfo, "pilotRepo", '' )
+      cls.paramDict['pilotVORepo'] = getServiceOption( _serviceInfo, "pilotVORepo", '' )
+      cls.paramDict['projectDir'] = getServiceOption( _serviceInfo, "projectDir", '' )
+      cls.paramDict['pilotVOScriptPath'] = getServiceOption( _serviceInfo, "pilotVOScriptPath", '' )
+      cls.paramDict['pilotScriptsPath'] = getServiceOption( _serviceInfo, "pilotScriptsPath", '' )
 
     return S_OK( 'Initialization went well' )
 
@@ -69,6 +70,8 @@ class ConfigurationHandler( RequestHandler ):
       if not res['OK']:
         return res
       return PilotCStoJSONSynchronizer( self.paramDict ).sync()
+    else:
+      return res
 
 
   types_writeEnabled = []
