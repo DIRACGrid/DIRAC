@@ -1570,6 +1570,8 @@ if __name__ == "__main__":
         sys.exit( 1 )
     logNOTICE( "Deploying scripts..." )
     ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" )
+    if not os.path.isfile( ddeLocation ):
+      ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac_deploy_scripts.py" )
     if os.path.isfile( ddeLocation ):
       cmd = ddeLocation
       # In MacOS /usr/bin/env does not find python in the $PATH, passing binary path
