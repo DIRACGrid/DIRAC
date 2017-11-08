@@ -49,8 +49,8 @@ class TaskBase( TransformationAgentsUtilities ):
       self.log = logger
 
     self.pluginLocation = 'DIRAC.TransformationSystem.Client.TaskManagerPlugin'
-    self.transInThread = {}
-    self.debug = False
+
+    super(TaskBase, self ).__init__()
 
   def prepareTransformationTasks( self, _transBody, _taskDict, owner='', ownerGroup='', ownerDN='',  # pylint: disable=no-self-use, unused-argument
                                   bulkSubmissionFlag=False ):  # pylint: disable=unused-argument
@@ -633,7 +633,7 @@ class WorkflowTasks( TaskBase ):
         continue
       else:
         self._logDebug( 'Setting Site: ', str( sites ),
-                          transID=transID, method=method )
+			transID=transID, method=method )
         res = oJob.setDestination( sites )
         if not res['OK']:
           self._logError( 'Could not set the site: %s' % res['Message'],
