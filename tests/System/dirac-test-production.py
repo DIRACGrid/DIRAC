@@ -3,14 +3,13 @@
 
 import time
 import os
-from time import gmtime, strftime
 
 import json
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s test directory' % Script.scriptName
-                                     ] ) )
+                                   ] ) )
 
 from DIRAC.Core.Base.Script import parseCommandLine
 
@@ -89,34 +88,34 @@ transformation.setOutputDirectories([ '/dirac/outConfigName/configVersion/LOG/00
 
 ## Set directory meta data and create a transformation with a meta-data filter
 if UseFilter:
-    fc = FileCatalog()
-    dm = DataManager()
-    metaCatalog = 'DIRACFileCatalog'
+  fc = FileCatalog()
+  dm = DataManager()
+  metaCatalog = 'DIRACFileCatalog'
 
-    ## Set meta data fields in the DFC
-    MDFieldDict = {'particle':'VARCHAR(128)', 'timestamp':'VARCHAR(128)'}
-    for MDField in MDFieldDict.keys():
-      MDFieldType = MDFieldDict[MDField]
-      res = fc.addMetadataField( MDField, MDFieldType )
-      if not res['OK']:
-        gLogger.error( "Failed to add metadata fields", res['Message'] )
-        exit( -1 )
-
-    ## Set directory meta data
-    timestamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
-    MDdict1 = {'particle':'gamma', 'timestamp':timestamp}
-    res = fc.setMetadata( directory, MDdict1 )
+  ## Set meta data fields in the DFC
+  MDFieldDict = {'particle':'VARCHAR(128)', 'timestamp':'VARCHAR(128)'}
+  for MDField in MDFieldDict.keys():
+    MDFieldType = MDFieldDict[MDField]
+    res = fc.addMetadataField( MDField, MDFieldType )
     if not res['OK']:
-      gLogger.error( "Failed to set metadata", res['Message'] )
+      gLogger.error( "Failed to add metadata fields", res['Message'] )
       exit( -1 )
 
-    ## Set the transformation meta data filter
-    MDdict1b = {'particle':'gamma', 'timestamp':timestamp}
-    mqJson1b = json.dumps( MDdict1b )
-    res = transformation.setFileMask( mqJson1b )
-    if not res['OK']:
-      gLogger.error( "Failed to set FileMask", res['Message'] )
-      exit( -1 )
+  ## Set directory meta data
+  timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+  MDdict1 = {'particle':'gamma', 'timestamp':timestamp}
+  res = fc.setMetadata( directory, MDdict1 )
+  if not res['OK']:
+    gLogger.error( "Failed to set metadata", res['Message'] )
+    exit( -1 )
+
+  ## Set the transformation meta data filter
+  MDdict1b = {'particle':'gamma', 'timestamp':timestamp}
+  mqJson1b = json.dumps( MDdict1b )
+  res = transformation.setFileMask( mqJson1b )
+  if not res['OK']:
+    gLogger.error( "Failed to set FileMask", res['Message'] )
+    exit( -1 )
 
 ## Create the transformation
 result = transformation.addTransformation()

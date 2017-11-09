@@ -16,9 +16,6 @@ from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-if GSI.__version__ < "0.6.5":
-  raise Exception( "Required GSI version >= 0.6.5" )
-
 class SocketInfoFactory(object):
 
   def __init__(self):

@@ -205,10 +205,10 @@ class ARCComputingElement( ComputingElement ):
     # And none of our supported batch systems have a "-" in their name
     self.arcQueue = self.queue.split("-",2)[2]
     result = self._prepareProxy()
-    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
+    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     gLogger.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
@@ -276,10 +276,10 @@ class ARCComputingElement( ComputingElement ):
     """
 
     result = self._prepareProxy()
-    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
+    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     jobList = list( jobIDList )
     if isinstance( jobIDList, basestring ):
@@ -300,10 +300,10 @@ class ARCComputingElement( ComputingElement ):
     """
 
     result = self._prepareProxy()
-    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
+    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     # Try to find out which VO we are running for.
     vo = ''
@@ -352,10 +352,10 @@ class ARCComputingElement( ComputingElement ):
     """
 
     result = self._prepareProxy()
-    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
+    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     jobTmpList = list( jobIDList )
     if isinstance( jobIDList, basestring ):
@@ -410,10 +410,10 @@ class ARCComputingElement( ComputingElement ):
         as strings.
     """
     result = self._prepareProxy()
-    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
+    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     if jobID.find( ':::' ) != -1:
       pilotRef, stamp = jobID.split( ':::' )
