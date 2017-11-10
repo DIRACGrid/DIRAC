@@ -32,22 +32,24 @@ def getParameterVectorLength( jobClassAd ):
   """ Get the length of parameter vector in the parametric job description
 
   :param jobClassAd: ClassAd job description object
-  :return: result structure with the Value: int number of parameters, None if not a parametric job
+  :return: result structure with the Value: int number of parameter values, None if not a parametric job
   """
 
-  nParameters = None
+  nParValues = None
   attributes = jobClassAd.getAttributes()
   for attribute in attributes:
     if attribute.startswith( "Parameters" ):
       if jobClassAd.isAttributeList( attribute ):
         parameterList = jobClassAd.getListFromExpression( attribute )
-        nPar = len( parameterList )
+        nThisParValues = len( parameterList )
       else:
-        nPar = jobClassAd.getAttributeInt( attribute )
-      if nParameters is not None and nPar != nParameters:
+        nThisParValues = jobClassAd.getAttributeInt( attribute )
+      if nParValues is not None and nParValues != nThisParValues:
         return S_ERROR( EWMSJDL, "Different length of parameter vectors" )
-      nParameters = nPar
-  return S_OK( nParameters )
+      nParValues = nThisParValues
+  if nParValues is not None and nParValues <= 0:
+    return S_ERROR( EWMSJDL, 'Illegal number of job parameters %d' % ( nParValues ) )
+  return S_OK( nParValues )
 
 def __updateAttribute( classAd, attribute, parName, parValue ):
 
@@ -87,11 +89,9 @@ def generateParametricJobs( jobClassAd ):
   result = getParameterVectorLength( jobClassAd )
   if not result['OK']:
     return result
-  nParameters = result['Value']
-  if nParameters is None:
-    return S_ERROR( EWMSJDL, 'Can not determine the number of job parameters' )
-  if nParameters <= 0:
-    return S_ERROR( EWMSJDL, 'Illegal number of job parameters %d' % ( nParameters ) )
+  nParValues = result['Value']
+  if nParValues is None:
+    return S_ERROR(EWMSJDL, 'Can not determine the number of job parameters')
 
   parameterDict = {}
   attributes = jobClassAd.getAttributes()
@@ -103,7 +103,7 @@ def generateParametricJobs( jobClassAd ):
         if key == 'Parameters':
           if jobClassAd.isAttributeList( attribute ):
             parList = jobClassAd.getListFromExpression( attribute )
-            if len( parList ) != nParameters:
+            if len( parList ) != nParValues:
               return S_ERROR( EWMSJDL, 'Inconsistent parametric job description' )
             parameterDict[seqID]['ParameterList'] = parList
           else:
@@ -128,7 +128,7 @@ def generateParametricJobs( jobClassAd ):
 
   parameterLists = {}
   for seqID in parameterDict:
-    parList = __getParameterSequence( nParameters,
+    parList = __getParameterSequence( nParValues,
                                       parList = parameterDict[seqID].get( 'ParameterList', [] ),
                                       parStart = parameterDict[seqID].get( 'ParameterStart', 1 ),
                                       parStep = parameterDict[seqID].get( 'ParameterStep', 0 ),
@@ -142,8 +142,8 @@ def generateParametricJobs( jobClassAd ):
   jobDescList = []
   jobDesc = jobClassAd.asJDL()
   # Width of the sequential parameter number
-  zLength = len( str( nParameters - 1 ) )
-  for n in range( nParameters ):
+  zLength = len( str( nParValues - 1 ) )
+  for n in range( nParValues ):
     newJobDesc = jobDesc
     newJobDesc = newJobDesc.replace( '%n', str( n ).zfill( zLength ) )
     newClassAd = ClassAd( newJobDesc )
