@@ -80,7 +80,7 @@ class TestParametricUtilityCase( unittest.TestCase ):
 
     clad = ClassAd( TEST_JDL_SIMPLE )
     result = getParameterVectorLength( clad )
-    self.assert_( result['OK'] )
+    self.assertTrue( result['OK'] )
     nParam = result['Value']
 
     self.assertEqual( nParam, 3 )
@@ -100,7 +100,7 @@ class TestParametricUtilityCase( unittest.TestCase ):
 
     clad = ClassAd( TEST_JDL_SIMPLE_BUNCH )
     result = getParameterVectorLength( clad )
-    self.assert_( result['OK'] )
+    self.assertTrue( result['OK'] )
     nParam = result['Value']
 
     self.assertEqual( nParam, 3 )
@@ -120,7 +120,7 @@ class TestParametricUtilityCase( unittest.TestCase ):
 
     clad = ClassAd( TEST_JDL_SIMPLE_PROGRESSION )
     result = getParameterVectorLength( clad )
-    self.assert_( result['OK'] )
+    self.assertTrue( result['OK'] )
     nParam = result['Value']
 
     self.assertEqual( nParam, 3 )
@@ -140,7 +140,7 @@ class TestParametricUtilityCase( unittest.TestCase ):
 
     clad = ClassAd( TEST_JDL_MULTI )
     result = getParameterVectorLength( clad )
-    self.assert_( result['OK'] )
+    self.assertTrue( result['OK'] )
     nParam = result['Value']
 
     self.assertEqual( nParam, 3 )
@@ -160,15 +160,15 @@ class TestParametricUtilityCase( unittest.TestCase ):
 
     clad = ClassAd( TEST_JDL_MULTI_BAD )
     result = getParameterVectorLength( clad )
-    self.assert_( not result['OK'] )
+    self.assertTrue( not result['OK'] )
 
   def test_NoParameters(self):
 
     clad = ClassAd( TEST_JDL_NO_PARAMETERS )
     result = getParameterVectorLength( clad )
-    self.assert_( result['OK'] )
+    self.assertTrue( result['OK'] )
     nParam = result['Value']
-    self.assert_( nParam is None )
+    self.assertTrue( nParam is None )
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestParametricUtilityCase )
