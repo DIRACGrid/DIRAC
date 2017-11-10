@@ -118,11 +118,11 @@ class JobManagerHandler( RequestHandler ):
     result = getParameterVectorLength( jobClassAd )
     if not result['OK']:
       return result
-    nParameters = result['Value']
+    nJobs = result['Value']
     parametricJob = False
-    if nParameters > 0:
+    if nJobs > 0:
       parametricJob = True
-      if nParameters > self.maxParametricJobs:
+      if nJobs > self.maxParametricJobs:
         return S_ERROR( EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % self.maxParametricJobs )
       result = generateParametricJobs( jobClassAd )
       if not result['OK']:
