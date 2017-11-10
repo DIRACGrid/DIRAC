@@ -1,7 +1,7 @@
 """ Utilities to process parametric job definitions and generate
     bunches of parametric jobs. It exposes the following functions:
 
-    getNumberOfParameters() - to get the total size of the bunch of parametric jobs
+    getParameterVectorLength() - to get the total size of the bunch of parametric jobs
     generateParametricJobs() - to get a list of expanded descriptions of all the jobs
 """
 
@@ -28,20 +28,26 @@ def __getParameterSequence( nPar, parList = [], parStart = 1, parStep = 0, parFa
 
   return parameterList
 
-def getNumberOfParameters( jobClassAd ):
-  """ Get the number of parameters in the parametric job description
+def getParameterVectorLength( jobClassAd ):
+  """ Get the length of parameter vector in the parametric job description
 
   :param jobClassAd: ClassAd job description object
-  :return: int number of parameters, 0 if not a parametric job
+  :return: result structure with the Value: int number of parameters, None if not a parametric job
   """
-  if jobClassAd.lookupAttribute( 'Parameters' ):
-    if jobClassAd.isAttributeList( 'Parameters' ):
-      parameterList = jobClassAd.getListFromExpression( 'Parameters' )
-      return len( parameterList )
-    else:
-      return jobClassAd.getAttributeInt( 'Parameters' )
-  else:
-    return None
+
+  nParameters = None
+  attributes = jobClassAd.getAttributes()
+  for attribute in attributes:
+    if attribute.startswith( "Parameters" ):
+      if jobClassAd.isAttributeList( attribute ):
+	parameterList = jobClassAd.getListFromExpression( attribute )
+	nPar = len( parameterList )
+      else:
+	nPar = jobClassAd.getAttributeInt( attribute )
+      if nParameters is not None and nPar != nParameters:
+	return S_ERROR( EWMSJDL, "Different length of parameter vectors" )
+      nParameters = nPar
+  return S_OK( nParameters )
 
 def __updateAttribute( classAd, attribute, parName, parValue ):
 
@@ -78,9 +84,12 @@ def generateParametricJobs( jobClassAd ):
   if not jobClassAd.lookupAttribute( 'Parameters' ):
     return S_OK( [ jobClassAd.asJDL() ] )
 
-  nParameters = getNumberOfParameters( jobClassAd )
+  result = getParameterVectorLength( jobClassAd )
+  if not result['OK']:
+    return result
+  nParameters = result['Value']
   if nParameters is None:
-    return S_ERROR( EWMSJDL, 'Can not determine number of job parameters' )
+    return S_ERROR( EWMSJDL, 'Can not determine the number of job parameters' )
   if nParameters <= 0:
     return S_ERROR( EWMSJDL, 'Illegal number of job parameters %d' % ( nParameters ) )
 
