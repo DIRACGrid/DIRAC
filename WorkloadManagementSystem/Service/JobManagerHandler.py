@@ -29,6 +29,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
+from DIRAC.Core.Utilities.DErrno import EWMSJDL
 
 # This is a global instance of the JobDB class
 gJobDB = None
@@ -130,6 +131,8 @@ class JobManagerHandler( RequestHandler ):
     parametricJob = False
     if nParameters > 0:
       parametricJob = True
+      if nParameters > self.maxParametricJobs:
+	return S_ERROR( EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % self.maxParametricJobs )
       result = generateParametricJobs( jobClassAd )
       if not result['OK']:
         return result
