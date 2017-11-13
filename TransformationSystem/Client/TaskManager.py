@@ -49,8 +49,8 @@ class TaskBase( TransformationAgentsUtilities ):
       self.log = logger
 
     self.pluginLocation = 'DIRAC.TransformationSystem.Client.TaskManagerPlugin'
-    self.transInThread = {}
-    self.debug = False
+
+    super(TaskBase, self ).__init__()
 
   def prepareTransformationTasks( self, _transBody, _taskDict, owner='', ownerGroup='', ownerDN='',  # pylint: disable=no-self-use, unused-argument
                                   bulkSubmissionFlag=False ):  # pylint: disable=unused-argument
@@ -134,7 +134,8 @@ class RequestTasks( TaskBase ):
       self.requestValidator = requestValidator
 
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner='', ownerGroup='', ownerDN='' ):  # pylint: disable=arguments-differ
+  def prepareTransformationTasks( self, transBody, taskDict, owner='', ownerGroup='', ownerDN='',
+                                  bulkSubmissionFlag=False ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
     if not taskDict:
@@ -632,7 +633,7 @@ class WorkflowTasks( TaskBase ):
         continue
       else:
         self._logDebug( 'Setting Site: ', str( sites ),
-                          transID=transID, method=method )
+                        transID=transID, method=method )
         res = oJob.setDestination( sites )
         if not res['OK']:
           self._logError( 'Could not set the site: %s' % res['Message'],

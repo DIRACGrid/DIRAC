@@ -699,64 +699,6 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  # FIXME: this seems unused
-  def _runInputDataResolution( self, inputData, site = None ):
-    """ Run the VO plugin input data resolution mechanism.
-    """
-    localSEList = gConfig.getValue( '/LocalSite/LocalSE', '' )
-    if not localSEList:
-      return self._errorReport( 'LocalSite/LocalSE should be defined in your config file' )
-    if re.search( ',', localSEList ):
-      localSEList = localSEList.replace( ' ', '' ).split( ',' )
-    else:
-      localSEList = [localSEList.replace( ' ', '' )]
-    self.log.verbose( 'Local SEs:', localSEList )
-    inputDataModule = self.__getVOPolicyModule( 'InputDataModule' )
-    if not inputDataModule:
-      return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
-
-    self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
-    self.log.verbose( '\n'.join( inputData ) )
-    replicaDict = self.getReplicasForJobs( inputData )
-    if not replicaDict['OK']:
-      return replicaDict
-    catalogFailed = replicaDict['Value'].get( 'Failed', {} )
-
-    guidDict = self.getMetadata( inputData )
-    if not guidDict['OK']:
-      return guidDict
-    for lfn, reps in replicaDict['Value']['Successful'].iteritems():
-      guidDict['Value']['Successful'][lfn].update( reps )
-    resolvedData = guidDict
-    diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'] )
-    tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
-    configDict = {'JobID':None, 'LocalSEList':localSEList, 'DiskSEList':diskSE, 'TapeSEList':tapeSE}
-    self.log.debug( configDict )
-    if site:
-      configDict.update( {'SiteName':site} )
-    argumentsDict = {'FileCatalog':resolvedData, 'Configuration':configDict, 'InputData':inputData}
-    self.log.debug( argumentsDict )
-    moduleFactory = ModuleFactory()
-    moduleInstance = moduleFactory.getModule( inputDataModule, argumentsDict )
-    if not moduleInstance['OK']:
-      self.log.warn( 'Could not create InputDataModule' )
-      return moduleInstance
-
-    module = moduleInstance['Value']
-    result = module.execute()
-    if not result['OK']:
-      self.log.error( 'Input data resolution failed' )
-
-    if catalogFailed:
-      self.log.error( 'Replicas not found for the following files:' )
-      for key, value in catalogFailed.iteritems():
-        self.log.error( '%s %s' % ( key, value ) )
-      if 'Failed' in result:
-        result['Failed'] = catalogFailed.keys()
-
-    return result
-
-  #############################################################################
 
   def runLocal(self, job):
     """ Internal function.  This method is called by DIRAC API function submitJob(job,mode='Local').
@@ -803,7 +745,7 @@ class Dirac( API ):
         return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
 
       self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
-      self.log.verbose( '\n'.join( inputData ) )
+      self.log.verbose( '\n'.join( inputData if isinstance(inputData, (list, tuple)) else [inputData] ) )
       replicaDict = self.getReplicasForJobs( inputData )
       if not replicaDict['OK']:
         return replicaDict

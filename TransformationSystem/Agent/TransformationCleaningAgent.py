@@ -331,7 +331,7 @@ class TransformationCleaningAgent( AgentModule ):
       currentDir = activeDirs[0]
       res = returnSingleResult( fc.listDirectory( currentDir ) )
       activeDirs.remove( currentDir )
-      if not res['OK'] and res['Message'].endswith( 'The supplied path does not exist' ):
+      if not res['OK'] and 'Directory does not exist' in res['Message']: #FIXME: DFC should return errno
         self.log.info( "The supplied directory %s does not exist" % currentDir )
       elif not res['OK']:
         if "No such file or directory" in res['Message']:
