@@ -42,7 +42,10 @@ Script.parseCommandLine()
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Security.MyProxy import MyProxy
-from DIRAC.Core.Security.X509Chain import X509Chain
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+else:
+  from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations, CS
 
 if not params.proxyLoc:

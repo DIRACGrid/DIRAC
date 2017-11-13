@@ -8,6 +8,7 @@ import random
 import types
 import hashlib
 import urllib
+import os
 
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
