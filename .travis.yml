@@ -7,6 +7,7 @@ env:
     - CHECK=py.test
     - CHECK=docs
     - CHECK=pylint
+    - CHECK=format
 
 
 # command to install dependencies
@@ -24,6 +25,8 @@ script:
     then cd docs; READTHEDOCS=True make html;
     elif [[ "${CHECK}" == "pylint"  ]];
     then travis_wait 30 .travis.d/runPylint.sh;
+    elif [[ "${CHECK}" == "format" ]] && [[ "${TRAVIS_PULL_REQUEST}" != "false" ]];
+    then git remote add GH https://github.com/DIRACGrid/DIRAC.git; git fetch --no-tags GH ${TRAVIS_BRANCH}; git branch -vv; git diff -U0 GH/${TRAVIS_BRANCH} | pycodestyle --diff;
     fi
 
 ## ignore errors for sourcefiles "-i"
