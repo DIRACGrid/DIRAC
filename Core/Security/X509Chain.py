@@ -7,17 +7,13 @@ import stat
 import tempfile
 import hashlib
 import random
+import binascii
 
-import M2Crypto
-import re
-import time
-import GSI # XXX Still needed for some parts I haven't finished yet
+from GSI import crypto
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security.X509Certificate import X509Certificate, LIMITED_PROXY_OID
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security.X509Certificate import X509Certificate, LIMITED_PROXY_OID
 
 random.seed()
 
@@ -28,7 +24,6 @@ class X509Chain(object):
   def __getPass(self):
     return self.__pass
 
-  __validExtensionValueTypes = ( basestring, )
 
   __validExtensionValueTypes = (basestring, )
 
@@ -39,13 +34,7 @@ class X509Chain(object):
     self.__hash = False
     if certList:
       self.__loadedChain = True
-      self.__certList = []
-      for cert in certList:
-        if not isinstance( cert, M2Crypto.X509.X509 ):
-          # XXX walkaround for legacy code that is not updated yet, should be removed later
-          tmpCert = X509Certificate( certString = GSI.crypto.dump_certificate( GSI.crypto.FILETYPE_PEM, cert) )
-          cert = tmpCert
-        self.__certList.append( cert )
+      self.__certList = certList
     else:
       self.__loadedChain = False
     if keyObj:
@@ -78,15 +67,14 @@ class X509Chain(object):
       return S_ERROR( DErrno.EOF, "%s: %s" % ( chainLocation, repr( e ).replace( ',)', ')' ) ) )
     return self.loadChainFromString( pemData )
 
-  def loadChainFromString( self, data, dataFormat = M2Crypto.X509.FORMAT_PEM ):
+  def loadChainFromString( self, data, dataFormat = crypto.FILETYPE_PEM ):
     """
     Load a x509 cert from a string containing the pem data
     Return : S_OK / S_ERROR
     """
     self.__loadedChain = False
     try:
-      self.__certList = self.__certListFromPemString(data, dataFormat)
-      self.loadKeyFromString(data)
+      self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, data )
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(',)', ')'))
     if not self.__certList:
@@ -125,8 +113,9 @@ class X509Chain(object):
     Return : S_OK / S_ERROR
     """
     try:
-      with open(chainLocation) as fd:
-        pemData = fd.read()
+      fd = file( chainLocation )
+      pemData = fd.read()
+      fd.close()
     except Exception as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
     return self.loadKeyFromString(pemData, password)
@@ -137,10 +126,8 @@ class X509Chain(object):
     Return : S_OK / S_ERROR
     """
     self.__loadedPKey = False
-    if password:
-      self.__pass = password
     try:
-      self.__keyObj = M2Crypto.EVP.load_key_string( pemData, lambda x: self.__pass )
+      self.__keyObj = crypto.load_privatekey( crypto.FILETYPE_PEM, pemData, password )
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s (Probably bad pass phrase?)" % repr(e).replace(',)', ')'))
     self.__loadedPKey = True
@@ -201,7 +188,7 @@ class X509Chain(object):
     """
     if not self.__loadedChain:
       return S_ERROR( DErrno.ENOCHAIN )
-    return S_OK( self.__certList[ certPos ] )
+    return S_OK( X509Certificate( self.__certList[ certPos ] ) )
 
   def getIssuerCert(self):
     """
@@ -210,9 +197,9 @@ class X509Chain(object):
     if not self.__loadedChain:
       return S_ERROR(DErrno.ENOCHAIN)
     if self.__isProxy:
-      return S_OK( self.__certList[ self.__firstProxyStep + 1 ] )
+      return S_OK( X509Certificate( self.__certList[ self.__firstProxyStep + 1 ] ) )
     else:
-      return S_OK( self.__certList[ -1 ] )
+      return S_OK( X509Certificate( self.__certList[ -1 ] ) )
 
   def getPKeyObj(self):
     """
@@ -257,9 +244,8 @@ class X509Chain(object):
     issuerCert = self.__certList[0]
 
     if not proxyKey:
-      # Generating key is a two step process: create key object and then assign RSA key.
-      proxyKey = M2Crypto.EVP.PKey()
-      proxyKey.assign_rsa(M2Crypto.RSA.gen_key(strength, 65537, callback = M2Crypto.util.quiet_genparam_callback ))
+      proxyKey = crypto.PKey()
+      proxyKey.generate_key( crypto.TYPE_RSA, strength )
 
     proxyCert = M2Crypto.X509.X509()
 
@@ -304,10 +290,13 @@ class X509Chain(object):
     proxyNotAfter.set_time( int( time.time() ) + lifeTime )
     proxyCert.setNotAfter( proxyNotAfter )
     proxyCert.sign( self.__keyObj, 'sha256' )
-    proxyString = "%s%s" % ( proxyCert.asPem(), proxyKey.as_pem( cipher = None, callback = M2Crypto.util.no_passphrase_callback ) )
+
+    proxyString = "%s%s" % ( crypto.dump_certificate( crypto.FILETYPE_PEM, proxyCert ),
+                               crypto.dump_privatekey( crypto.FILETYPE_PEM, proxyKey ) )
     for i in range( len( self.__certList ) ):
-      crt = self.__certList[i]
-      proxyString += crt.asPem()
+      proxyString += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
+
+
     return S_OK( proxyString )
 
     proxyString = "%s%s" % (crypto.dump_certificate(crypto.FILETYPE_PEM, proxyCert),
@@ -407,7 +396,6 @@ class X509Chain(object):
 
 
   def __checkProxyness( self ):
-    # XXX to describe
     self.__hash = False
     self.__firstProxyStep = len(self.__certList) - 2  # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
@@ -451,17 +439,10 @@ class X509Chain(object):
      1 = proxy match
      2 = limited proxy match
     """
-    issuerSubject = self.__certList[ issuerStep ].getSubjectNameObject()
-    if issuerSubject[ 'OK' ]:
-      issuerSubject = issuerSubject[ 'Value' ]
-    else:
-      return 0
-    proxySubject = self.__certList[ certStep ].getSubjectNameObject()
-    if proxySubject[ 'OK' ]:
-      proxySubject = proxySubject[ 'Value' ]
-    else:
-      return 0
-    lastEntry = str(proxySubject).split('/')[-1].split('=')
+    issuerSubject = self.__certList[ issuerStep ].get_subject()
+    proxySubject = self.__certList[ certStep ].get_subject().clone()
+    psEntries = proxySubject.num_entries()
+    lastEntry = proxySubject.get_entry( psEntries - 1 )
     limited = False
     if lastEntry[0] != 'CN':
       return 0
@@ -478,7 +459,8 @@ class X509Chain(object):
     else:
       if lastEntry[1] == "limited proxy":
         limited = True
-    if not str(issuerSubject) == str(proxySubject)[:str( proxySubject ).rfind( '/' )]:
+    proxySubject.remove_entry( psEntries - 1 )
+    if not issuerSubject.one_line() == proxySubject.one_line():
       return 0
     return 1 if not limited else 2
 
@@ -488,11 +470,7 @@ class X509Chain(object):
     """
     issuerCert = self.__certList[ issuerStep ]
     cert = self.__certList[ certStep ]
-    pubKey = issuerCert.getPublicKey()
-    if pubKey['OK']:
-      return cert.verify( pubKey['Value'] )
-    else:
-      return pubKey
+    return cert.verify_pkey_is_issuer( issuerCert.get_pubkey() )
 
   def getDIRACGroup(self, ignoreDefault=False):
     """
@@ -519,12 +497,8 @@ class X509Chain(object):
     if not self.__loadedChain:
       return S_ERROR( DErrno.ENOCHAIN )
     for iC in range( len( self.__certList ) - 1, -1, -1 ):
-      expired = self.__certList[iC].hasExpired()
-      if expired['OK']:
-        if expired[ 'Value' ]:
-          return S_OK( True )
-      else:
-        return expired
+      if self.__certList[iC].has_expired():
+        return S_OK( True )
     return S_OK( False )
 
   def getNotAfterDate(self):
@@ -533,18 +507,10 @@ class X509Chain(object):
     """
     if not self.__loadedChain:
       return S_ERROR( DErrno.ENOCHAIN )
-    notAfter = self.__certList[0].getNotAfterDate()
-    if not notAfter['OK']:
-      return notAfter
-    notAfter = notAfter['Value']
+    notAfter = self.__certList[0].get_not_after()
     for iC in range( len( self.__certList ) - 1, -1, -1 ):
-      stepNotAfter = self.__certList[iC].getNotAfterDate()
-      if not stepNotAfter['OK']:
-        return stepNotAfter
-      expired = self.__certList[iC].hasExpired()
-      if not expired['OK']:
-        return expired
-      if expired['Value']:
+      stepNotAfter = self.__certList[iC].get_not_after()
+      if self.__certList[iC].has_expired():
         return S_OK( stepNotAfter )
       if notAfter > stepNotAfter:
         notAfter = stepNotAfter
@@ -572,7 +538,7 @@ class X509Chain(object):
     if not self.__loadedPKey:
       return S_ERROR(DErrno.ENOPKEY)
     try:
-      req = M2Crypto.X509.load_request_string( pemData, format=M2Crypto.X509.FORMAT_PEM )
+      req = crypto.load_certificate_request( crypto.FILETYPE_PEM, pemData )
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "Can't load request data: %s" % repr(e).replace(',)', ')'))
     limited = requireLimited and self.isLimitedProxy().get('Value', False)
@@ -596,11 +562,11 @@ class X509Chain(object):
     """
     if not self.__loadedChain:
       return S_ERROR( DErrno.ENOCHAIN )
-    data = self.__certList[0].asPem()
+    data = crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[0] )
     if self.__loadedPKey:
-      data += self.__keyObj.as_pem( cipher = None, callback = M2Crypto.util.no_passphrase_callback )
+      data += crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj )
     for i in range( 1, len( self.__certList ) ):
-      data += self.__certList[i].asPem()
+      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
     return S_OK( data )
 
   def dumpAllToFile(self, filename=False):
@@ -635,9 +601,7 @@ class X509Chain(object):
       return S_ERROR(DErrno.ENOCHAIN)
     data = ''
     for i in range( len( self.__certList ) ):
-      res =  self.__certList[i].asPem()
-      if res[ 'OK' ]:
-        data += res[ 'Value' ]
+      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
     return S_OK( data )
 
   def dumpPKeyToString(self):
@@ -646,14 +610,14 @@ class X509Chain(object):
     """
     if not self.__loadedPKey:
       return S_ERROR( DErrno.ENOCHAIN )
-    return S_OK( self.__keyObj.as_pem( cipher = None, callback = M2Crypto.util.no_passphrase_callback ) )
+    return S_OK( crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj ) )
 
   def __str__(self):
     repStr = "<X509Chain"
     if self.__loadedChain:
       repStr += " %s certs " % len(self.__certList)
       for cert in self.__certList:
-        repStr += "[%s]" % str(cert.getSubjectNameObject())
+        repStr += "[%s]" % cert.get_subject().one_line()
     if self.__loadedPKey:
       repStr += " with key"
     repStr += ">"
@@ -665,11 +629,8 @@ class X509Chain(object):
   def isPUSP(self):
     if self.__isProxy:
       # Check if we have a subproxy
-      dn = self.__certList[ self.__firstProxyStep ].getSubjectDN()
-      if dn[ 'OK' ]:
-        dn = dn[ 'Value' ]
-      else:
-        return dn
+      trialSubidentity = self.__certList[ self.__firstProxyStep ].get_subject()
+      dn = trialSubidentity.one_line()
       subproxyUser = isPUSPdn( dn )
       if subproxyUser:
         result = S_OK(True)
@@ -682,15 +643,15 @@ class X509Chain(object):
   def getCredentials(self, ignoreDefault=False):
     if not self.__loadedChain:
       return S_ERROR( DErrno.ENOCHAIN )
-    credDict = { 'subject' : str(self.__certList[0].getSubjectDN()['Value']),  # ['Value'] :(
-                 'issuer' : self.__certList[0].getIssuerDN()['Value'],  # ['Value'] :(
+    credDict = { 'subject' : self.__certList[0].get_subject().one_line(),
+                 'issuer' : self.__certList[0].get_issuer().one_line(),
                  'secondsLeft' : self.getRemainingSecs()[ 'Value' ],
                  'isProxy' : self.__isProxy,
                  'isLimitedProxy' : self.__isProxy and self.__isLimitedProxy,
                  'validDN' : False,
                  'validGroup' : False }
     if self.__isProxy:
-      credDict[ 'identity'] = str(self.__certList[ self.__firstProxyStep + 1 ].getSubjectDN()['Value'])  # ['Value'] :(
+      credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
 
       # Check if we have the PUSP case
       result = self.isPUSP()
@@ -732,7 +693,7 @@ class X509Chain(object):
       return S_OK(self.__hash)
     sha1 = hashlib.sha1()
     for cert in self.__certList:
-      sha1.update( str(cert.getSubjectNameObject()) )
+      sha1.update( cert.get_subject().one_line() )
     sha1.update( str( self.getRemainingSecs()[ 'Value' ] / 3600 ) )
     sha1.update( self.getDIRACGroup()[ 'Value' ] )
     if self.isVOMS():
