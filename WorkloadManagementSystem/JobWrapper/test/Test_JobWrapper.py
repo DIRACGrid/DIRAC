@@ -66,7 +66,12 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     self.assertTrue( res['OK'] )
 
   def test__performChecks( self ):
-    wd = WatchdogLinux( os.getpid(), MagicMock(), MagicMock(), 1000, 1024 * 1024 )
+    wd = WatchdogLinux( pid = os.getpid(), 
+                        exeThread = MagicMock(), 
+                        spObject = MagicMock(), 
+                        jobCPUTime = 1000, 
+                        memoryLimit = 1024 * 1024, 
+                        jobArgs = { 'StopSigNumber' : 10 } )
     res = wd._performChecks()
     self.assertTrue( res['OK'] )
 
@@ -76,6 +81,7 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     jw = JobWrapper()
     jw.jobArgs = {'Executable':'/bin/ls'}
     res = jw.execute('')
+    print 'jw.execute() returns',str(res) 
     self.assertTrue( res['OK'] )
 
     shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
