@@ -4,6 +4,7 @@
 ########################################################################
 
 import sys
+import os
 import getpass
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base import Script
@@ -133,7 +134,10 @@ class CLIParams(object):
     Script.registerSwitch( "r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC )
     Script.registerSwitch( "L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC )
 
-from DIRAC.Core.Security.X509Chain import X509Chain
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+else:
+  from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security import Locations
 
@@ -175,14 +179,22 @@ def generateProxy( params ):
   timeLeft = testChain.getRemainingSecs()[ 'Value' ] / 86400
   if timeLeft < 30:
     gLogger.notice( "\nYour certificate will expire in %d days. Please renew it!\n" % timeLeft )
-  #retVal = testChain.loadKeyFromFile( params.keyLoc, password = params.userPasswd )  # XXX why so commented?
-  #if not retVal[ 'OK' ]:
-  passwdPrompt = "Enter Certificate password:"
-  if params.stdinPasswd:
-    userPasswd = sys.stdin.readline().strip( "\n" )
+  if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+    passwdPrompt = "Enter Certificate password:"
+    if params.stdinPasswd:
+      userPasswd = sys.stdin.readline().strip( "\n" )
+    else:
+      userPasswd = getpass.getpass( passwdPrompt )
+    params.userPasswd = userPasswd
   else:
-    userPasswd = getpass.getpass( passwdPrompt )
-  params.userPasswd = userPasswd
+    retVal = testChain.loadKeyFromFile( params.keyLoc, password = params.userPasswd )  # XXX why so commented?
+    if not retVal[ 'OK' ]:
+      passwdPrompt = "Enter Certificate password:"
+      if params.stdinPasswd:
+        userPasswd = sys.stdin.readline().strip( "\n" )
+      else:
+        userPasswd = getpass.getpass( passwdPrompt )
+      params.userPasswd = userPasswd
 
   #Find location
   proxyLoc = params.proxyLoc

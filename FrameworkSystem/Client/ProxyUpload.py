@@ -4,6 +4,7 @@
 ###########################################################from DIRAC.Core.Base import Script#############
 
 import sys
+import os
 import getpass
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -99,7 +100,10 @@ class CLIParams(object):
     Script.addDefaultOptionValue( "LogLevel", "always" )
 
 from DIRAC import S_ERROR
-from DIRAC.Core.Security.X509Chain import X509Chain
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+else:
+  from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 

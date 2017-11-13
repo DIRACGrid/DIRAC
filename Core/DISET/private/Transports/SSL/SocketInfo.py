@@ -4,13 +4,17 @@ __RCSID__ = "$Id$"
 import time
 import copy
 import os.path
+import os
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.Network import checkHostsMatch
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.Core.Security import Locations
-from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.Core.Security import Locations
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+else:
+  from DIRAC.Core.Security.X509Chain import X509Chain
 
 DEFAULT_SSL_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS"
 
@@ -65,12 +69,20 @@ class SocketInfo:
         identitySubject = peerChain.getIssuerCert()['Value'].getSubjectNameObject()[ 'Value' ]
     else:
       identitySubject = peerChain.getCertInChain( 0 )['Value'].getSubjectNameObject()[ 'Value' ]
-    subjectString = str(identitySubject)
-    credDict = { 'DN' : subjectString,
-                 'CN' : subjectString.split('CN')[1][1:],
-                 'x509Chain' : peerChain,
-                 'isProxy' : isProxyChain,
-                 'isLimitedProxy' : isLimitedProxyChain }
+    credDict = {}
+    if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+      subjectString = str(identitySubject)
+      credDict = { 'DN' : subjectString,
+                   'CN' : subjectString.split('CN')[1][1:],
+                   'x509Chain' : peerChain,
+                   'isProxy' : isProxyChain,
+                   'isLimitedProxy' : isLimitedProxyChain }
+    else:
+      credDict = { 'DN' : identitySubject.one_line(),
+                   'CN' : identitySubject.commonName,
+                   'x509Chain' : peerChain,
+                   'isProxy' : isProxyChain,
+                   'isLimitedProxy' : isLimitedProxyChain }
     diracGroup = peerChain.getDIRACGroup()
     if diracGroup[ 'OK' ] and diracGroup[ 'Value' ]:
       credDict[ 'group' ] = diracGroup[ 'Value' ]
@@ -115,7 +127,11 @@ class SocketInfo:
   def _clientCallback( self, conn, cert, errnum, depth, ok ):
     # This obviously has to be updated
     if depth == 0 and ok == 1:
-      hostnameCN = str(cert.getSubjectNameObject())
+      hostnameCN = ''
+      if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+        hostnameCN = str(cert.getSubjectNameObject())
+      else:
+        hostnameCN = cert.get_subject().commonName
       #if hostnameCN in ( self.infoDict[ 'hostname' ], "host/%s" % self.infoDict[ 'hostname' ]  ):
       if self.__isSameHost( hostnameCN, self.infoDict['hostname'] ):
         return 1
