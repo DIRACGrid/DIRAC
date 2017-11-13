@@ -124,7 +124,7 @@ class ProxyManagerHandler(RequestHandler):
           seconds the proxy is valid for
     """
     credDict = self.getRemoteCredentials()
-    if not Properties.PROXY_MANAGEMENT in credDict['properties']:
+    if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       return self.__proxyDB.getUsers(validSecondsRequired, userMask=[credDict['username']])
     return self.__proxyDB.getUsers(validSecondsRequired)
 
@@ -273,7 +273,7 @@ class ProxyManagerHandler(RequestHandler):
     Delete a proxy from the DB
     """
     credDict = self.getRemoteCredentials()
-    if not Properties.PROXY_MANAGEMENT in credDict['properties']:
+    if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       if userDN != credDict['DN']:
         return S_ERROR("You aren't allowed! Bad boy!")
     retVal = self.__proxyDB.deleteProxy(userDN, userGroup)
@@ -289,7 +289,7 @@ class ProxyManagerHandler(RequestHandler):
     Retrieve the contents of the DB
     """
     credDict = self.getRemoteCredentials()
-    if not Properties.PROXY_MANAGEMENT in credDict['properties']:
+    if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       selDict['UserName'] = credDict['username']
     return self.__proxyDB.getProxiesContent(selDict, sortDict, start, limit)
 

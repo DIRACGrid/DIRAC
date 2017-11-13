@@ -242,7 +242,6 @@ class SocketInfo:
       gsiEnable = True
     # DO CA Checks?
     if not self.__getValue('skipCACheck', False):
-      # self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
       self.sslContext.set_verify(GSI.SSL.VERIFY_PEER | GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
                                  None, gsiEnable)  # Demand a certificate
       result = self.__getCAStore()
