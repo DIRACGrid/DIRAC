@@ -184,7 +184,7 @@ class SocketInfo:
                                        [ crlsDict[k] for k in crlsDict ] )
         SocketInfo.__cachedCAsCRLsLastLoaded = time.time()
     except:
-      gLogger.exception( "ASD" )
+      gLogger.exception( "Failed to init CA store" )
     finally:
       SocketInfo.__cachedCAsCRLsLoadLock.release()
     #Generate CA Store
