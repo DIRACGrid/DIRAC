@@ -2,11 +2,15 @@
  Set of utilities to retrieve Information from proxy
 """
 
+import os
 import base64
 
 from DIRAC                                     import S_OK, S_ERROR
 from DIRAC.Core.Utilities                      import DErrno
-from DIRAC.Core.Security.X509Chain             import X509Chain, g_X509ChainType
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain, g_X509ChainType
+else:
+  from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.VOMS                  import VOMS
 from DIRAC.Core.Security                       import Locations
 

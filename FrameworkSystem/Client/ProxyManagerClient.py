@@ -8,8 +8,12 @@ from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security import Locations, CS
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
-from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
-from DIRAC.Core.Security.X509Request import X509Request
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain, g_X509ChainType
+  from DIRAC.Core.Security.m2crypto.X509Request import X509Request
+else:
+  from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
+  from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
