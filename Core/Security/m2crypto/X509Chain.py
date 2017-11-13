@@ -99,8 +99,12 @@ class X509Chain(object):
     """
     Create certificates list from string. String sould contain certificates, just like plain text proxy file.
     """
-    # To get list of X509 certificates (not X509 Certificate Chain) from string it has to be parsed like that (constructors are not able to deal with big string)
-    return [X509Certificate(certString=cert[0]) for cert in re.findall(r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)", certString)]
+    # To get list of X509 certificates (not X509 Certificate Chain) from string it has to be parsed like that
+    # (constructors are not able to deal with big string)
+    certList = []
+    for cert in re.findall(r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)", certString):
+      certList.append(X509Certificate(certString=cert[0]))
+    return certList
 
   def setChain(self, certList):
     """
@@ -481,12 +485,12 @@ class X509Chain(object):
                    if line.split(":")[0] == "Path Length Constraint"]
       if len(contraint) == 0:
         return 0
-      if self.__isRFC == None:
+      if self.__isRFC is None:
         self.__isRFC = True
       if contraint[0] == LIMITED_PROXY_OID:
         limited = True
     else:
-      if self.__isRFC == None:
+      if self.__isRFC is None:
         self.__isRFC = False
       if lastEntry[1] == "limited proxy":
         limited = True

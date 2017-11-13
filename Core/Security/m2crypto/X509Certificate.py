@@ -286,7 +286,7 @@ class X509Certificate(object):
     try:
       self.__certObj.get_ext('vomsExtensions')
       return S_OK(True)
-    except:
+    except LookupError:
       # no extension found
       pass
     return S_OK(False)
