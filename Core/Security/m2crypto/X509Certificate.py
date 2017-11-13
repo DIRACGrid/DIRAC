@@ -318,7 +318,7 @@ class X509Certificate( object ):
       if lastEntry.get_data() == "limited proxy":
         limited = True
 
-    from DIRAC.Core.Security.X509Request import X509Request
+    from DIRAC.Core.Security.m2crypto.X509Request import X509Request
 
     req = X509Request()
     req.generateProxyRequest( bitStrength = bitStrength, limited = limited )
