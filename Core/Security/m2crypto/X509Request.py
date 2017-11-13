@@ -34,7 +34,8 @@ class X509Request(object):
       self.__reqObj.get_subject().add_entry_by_txt(field="CN", type=M2Crypto.ASN1.MBSTRING_ASC,
                                                    entry="limited proxy", len=-1, loc=-1, set=0)
     else:
-      self.__reqObj.get_subject().add_entry_by_txt(field="CN", type=M2Crypto.ASN1.MBSTRING_ASC, entry="proxy", len=-1, loc=-1, set=0)
+      self.__reqObj.get_subject().add_entry_by_txt(field="CN", type=M2Crypto.ASN1.MBSTRING_ASC, entry="proxy",
+                                                   len=-1, loc=-1, set=0)
     self.__reqObj.sign(self.__pkeyObj, "sha256")
     self.__valid = True
 
