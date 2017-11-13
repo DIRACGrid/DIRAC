@@ -3,4 +3,12 @@ Systems / WorkloadManagement / <INSTANCE> / Service / JobManager - Sub-subsectio
 
 JobManagerHandler is the implementation of the JobManager service in the DISET framework
 
-No special options required to configure this service.
+Some extra options are required to configure this service:
+
++---------------------------+----------------------------------------------+-----------------------------------------+
+| **Name**                  | **Description**                              | **Example**                             |
++---------------------------+----------------------------------------------+-----------------------------------------+
+| *MaxParametricJobs*       | Max number of jobs that can be submitted at  |                                         |
+|                           | once using parametric jobs mechanism,        | MaxParametricJobs = 100                 |
+|                           | default = 20                                 |                                         |
++---------------------------+----------------------------------------------+-----------------------------------------+

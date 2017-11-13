@@ -255,7 +255,7 @@ dStrError = {
               EENOPID: "No PID of process",
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
-              EWMSJDL : "Invalid JDL",
+	      EWMSJDL : "Invalid job description",
               EWMSRESC : "Job to Reschedule",
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",

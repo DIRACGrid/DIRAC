@@ -1,10 +1,10 @@
 """ Collection of user jobs for testing purposes
 """
 
-import os
 from DIRAC.tests.Utilities.utils import find_all
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC import rootPath
 
 # parameters
 
@@ -50,14 +50,14 @@ def endOfAllJobs( J ):
 def helloWorld():
 
   J = baseToAllJobs( 'helloWorld' )
-  J.setInputSandbox( [find_all( 'exe-script.py', os.environ['DIRAC'], 'tests/Workflow' )[0]] )
+  J.setInputSandbox( [find_all( 'exe-script.py', rootPath, 'DIRAC/tests/Workflow' )[0]] )
   J.setExecutable( "exe-script.py", "", "helloWorld.log" )
   return endOfAllJobs( J )
 
 def mpJob():
   J = baseToAllJobs( 'mpJob' )
-  J.setInputSandbox( [find_all( 'mpTest.py', os.environ['DIRAC'], 'tests/Utilities' )[0]] +
-                     [find_all( 'testMpJob.sh', os.environ['DIRAC'], 'tests/Utilities' )[0]])
+  J.setInputSandbox( [find_all( 'mpTest.py', rootPath, 'DIRAC/tests/Utilities' )[0]] +
+		     [find_all( 'testMpJob.sh', rootPath, 'DIRAC/tests/Utilities' )[0]])
   J.setExecutable( 'testMpJob.sh mpTest.py' )
   J.setTag( 'MultiProcessor' )
   return endOfAllJobs( J )
