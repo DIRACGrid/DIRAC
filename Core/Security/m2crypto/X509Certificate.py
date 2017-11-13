@@ -33,9 +33,10 @@ DN_MAPPING = {
     COMMON_NAME_OID: '/CN='
 }
 
-class X509Certificate( object ):
 
-  def __init__( self, x509Obj = None, certString = None ):
+class X509Certificate(object):
+
+  def __init__(self, x509Obj=None, certString=None):
     """
     Constructor.
 
@@ -52,168 +53,168 @@ class X509Certificate( object ):
       self.__certObj = M2Crypto.X509.X509()
       self.__valid = True
     if certString:
-      self.loadFromString( certString )
+      self.loadFromString(certString)
 
-  def getCertObject( self ):
+  def getCertObject(self):
     return self.__certObj
 
-  def load( self, certificate ):
+  def load(self, certificate):
     """ Load a x509 certificate either from a file or from a string
     """
 
-    if os.path.exists( certificate ):
-      return self.loadFromFile( certificate )
+    if os.path.exists(certificate):
+      return self.loadFromFile(certificate)
     else:
-      return self.loadFromString( certificate )
+      return self.loadFromString(certificate)
 
-  def loadFromFile( self, certLocation ):
+  def loadFromFile(self, certLocation):
     """
     Load a x509 cert from a pem file
     Return : S_OK / S_ERROR
     """
     try:
-      with open( certLocation, 'r' ) as fd:
+      with open(certLocation, 'r') as fd:
         pemData = fd.read()
-        return self.loadFromString( pemData )
+        return self.loadFromString(pemData)
     except IOError:
-      return S_ERROR( DErrno.EOF, "Can't open %s file" % certLocation )
+      return S_ERROR(DErrno.EOF, "Can't open %s file" % certLocation)
 
-  def loadFromString( self, pemData ):
+  def loadFromString(self, pemData):
     """
     Load a x509 cert from a string containing the pem data
     Return : S_OK / S_ERROR
     """
     try:
-      self.__certObj = M2Crypto.X509.load_cert_string( str(pemData), M2Crypto.X509.FORMAT_PEM )
+      self.__certObj = M2Crypto.X509.load_cert_string(str(pemData), M2Crypto.X509.FORMAT_PEM)
     except Exception, e:
-      return S_ERROR( DErrno.ECERTREAD, "Can't load pem data: %s" % e )
+      return S_ERROR(DErrno.ECERTREAD, "Can't load pem data: %s" % e)
     self.__valid = True
     return S_OK()
 
-  def setCertificate( self, x509Obj ):
+  def setCertificate(self, x509Obj):
     """
     Set certificate object
     Return: S_OK/S_ERROR
     """
-    if not isinstance( x509Obj, M2Crypto.X509.X509 ):
-      return S_ERROR( DErrno.ETYPE, "Object %s has to be of type M2Crypto.X509.X509" % str( x509Obj ) )
+    if not isinstance(x509Obj, M2Crypto.X509.X509):
+      return S_ERROR(DErrno.ETYPE, "Object %s has to be of type M2Crypto.X509.X509" % str(x509Obj))
     self.__certObj = x509Obj
     self.__valid = True
     return S_OK()
 
-  def hasExpired( self ):
+  def hasExpired(self):
     """
     Check if a certificate file/proxy is still valid
     Return: S_OK( True/False )/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
+      return S_ERROR(DErrno.ENOCERT)
     notAfter = self.__certObj.get_not_after().get_datetime()
-    notAfter = notAfter.replace( tzinfo = Time.dateTime().tzinfo )
-    return S_OK( notAfter < Time.dateTime() )
+    notAfter = notAfter.replace(tzinfo=Time.dateTime().tzinfo)
+    return S_OK(notAfter < Time.dateTime())
 
-  def getNotAfterDate( self ):
+  def getNotAfterDate(self):
     """
     Get not after date of a certificate
     Return: S_OK( datetime )/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__certObj.get_not_after() )
+      return S_ERROR(DErrno.ENOCERT)
+    return S_OK(self.__certObj.get_not_after())
 
-  def setNotAfter( self, notafter ):
+  def setNotAfter(self, notafter):
     """
     Set not after date of a certificate
     Return: S_OK/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    self.__certObj.set_not_after( notafter )
+      return S_ERROR(DErrno.ENOCERT)
+    self.__certObj.set_not_after(notafter)
     return S_OK()
 
-  def getNotBeforeDate( self ):
+  def getNotBeforeDate(self):
     """
     Get not before date of a certificate
     Return: S_OK( datetime )/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__certObj.get_not_before() )
+      return S_ERROR(DErrno.ENOCERT)
+    return S_OK(self.__certObj.get_not_before())
 
-  def setNotBefore( self, notbefore ):
+  def setNotBefore(self, notbefore):
     """
     Set not before date of a certificate
     Return: S_OK/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    self.__certObj.set_not_before( notbefore )
+      return S_ERROR(DErrno.ENOCERT)
+    self.__certObj.set_not_before(notbefore)
     return S_OK()
 
-  def getSubjectDN( self ):
+  def getSubjectDN(self):
     """
     Get subject DN
     Return: S_OK( string )/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    return S_OK( str( self.__certObj.get_subject() ) )
+      return S_ERROR(DErrno.ENOCERT)
+    return S_OK(str(self.__certObj.get_subject()))
 
-  def getIssuerDN( self ):
+  def getIssuerDN(self):
     """
     Get issuer DN
     Return: S_OK( string )/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    return S_OK( str(self.__certObj.get_issuer()) )
+      return S_ERROR(DErrno.ENOCERT)
+    return S_OK(str(self.__certObj.get_issuer()))
 
-  def getSubjectNameObject( self ):
+  def getSubjectNameObject(self):
     """
     Get subject name object
     Return: S_OK( X509Name )/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__certObj.get_subject() )
+      return S_ERROR(DErrno.ENOCERT)
+    return S_OK(self.__certObj.get_subject())
 
-  def getIssuerNameObject( self ):
+  def getIssuerNameObject(self):
     """
     Get issuer name object
     Return: S_OK( X509Name )/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__certObj.get_issuer() )
+      return S_ERROR(DErrno.ENOCERT)
+    return S_OK(self.__certObj.get_issuer())
 
-  def setIssuer( self, nameObject ):
+  def setIssuer(self, nameObject):
     """
     Set issuer name object
     Return: S_OK/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    self.__certObj.set_issuer( nameObject )
+      return S_ERROR(DErrno.ENOCERT)
+    self.__certObj.set_issuer(nameObject)
     return S_OK()
 
-  def getPublicKey( self ):
+  def getPublicKey(self):
     """
     Get the public key of the certificate
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__certObj.get_pubkey() )
+      return S_ERROR(DErrno.ENOCERT)
+    return S_OK(self.__certObj.get_pubkey())
 
-  def setPublicKey( self, pubkey ):
+  def setPublicKey(self, pubkey):
     """
     Set the public key of the certificate
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    self.__certObj.set_pubkey( pubkey )
+      return S_ERROR(DErrno.ENOCERT)
+    self.__certObj.set_pubkey(pubkey)
     return S_OK()
 
-  def getVersion( self ):
+  def getVersion(self):
     """
     Get the version of the certificate
     """
@@ -221,77 +222,77 @@ class X509Certificate( object ):
       return S_ERROR(DErrno.ENOCERT)
     return S_OK(self.__certObj.get_version())
 
-  def setVersion( self, version ):
+  def setVersion(self, version):
     """
     Set the version of the certificate
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    self.__certObj.set_version( version )
+      return S_ERROR(DErrno.ENOCERT)
+    self.__certObj.set_version(version)
     return S_OK()
 
-  def getSerialNumber( self ):
+  def getSerialNumber(self):
     """
     Get certificate serial number
     Return: S_OK( serial )/S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    return S_OK( self.__certObj.get_serial_number() )
+      return S_ERROR(DErrno.ENOCERT)
+    return S_OK(self.__certObj.get_serial_number())
 
-  def setSerialNumber( self, serial ):
+  def setSerialNumber(self, serial):
     """
     Set certificate serial number
     Return: S_OK/S_ERROR
     """
     if self.__valid:
-      self.__certObj.set_serial_number( serial )
+      self.__certObj.set_serial_number(serial)
       return S_OK()
-    return S_ERROR( DErrno.ENOCERT )
+    return S_ERROR(DErrno.ENOCERT)
 
-  def sign( self, key, algo):
+  def sign(self, key, algo):
     """
     Sign the cerificate using provided key and algorithm.
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    self.__certObj.sign( key, algo )
+      return S_ERROR(DErrno.ENOCERT)
+    self.__certObj.sign(key, algo)
     return S_OK()
 
-  def getDIRACGroup( self, ignoreDefault = False ):
+  def getDIRACGroup(self, ignoreDefault=False):
     """
     Get the dirac group if present
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
+      return S_ERROR(DErrno.ENOCERT)
     extCount = self.__certObj.get_ext_count()
     for extIdx in xrange(extCount):
       ext = self.__certObj.get_ext_at(extIdx)
       if ext.get_name() == "diracGroup":
-        return S_OK( ext.get_value() )
+        return S_OK(ext.get_value())
     if ignoreDefault:
-      return S_OK( False )
+      return S_OK(False)
     result = self.getIssuerDN()
-    if not result[ 'OK' ]:
+    if not result['OK']:
       return result
-    return Registry.findDefaultGroupForDN( result['Value'] )
+    return Registry.findDefaultGroupForDN(result['Value'])
 
-  def hasVOMSExtensions( self ):
+  def hasVOMSExtensions(self):
     """
     Has voms extensions
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
+      return S_ERROR(DErrno.ENOCERT)
     try:
       self.__certObj.get_ext('vomsExtensions')
-      return S_OK( True )
+      return S_OK(True)
     except:
       # no extension found
       pass
-    return S_OK( False )
+    return S_OK(False)
 
-  def getVOMSData( self ):
-    #return S_ERROR( DErrno.EVOMS, "No VOMS data available" )
+  def getVOMSData(self):
+    # return S_ERROR( DErrno.EVOMS, "No VOMS data available" )
     """
     Get voms extensions
     """
@@ -301,46 +302,45 @@ class X509Certificate( object ):
     if data:
       return S_OK(data)
     else:
-      return S_ERROR( DErrno.EVOMS, "No VOMS data available" )
+      return S_ERROR(DErrno.EVOMS, "No VOMS data available")
 
-
-  def generateProxyRequest( self, bitStrength = 1024, limited = False ):
+  def generateProxyRequest(self, bitStrength=1024, limited=False):
     """
     Generate a proxy request
     Return S_OK( X509Request ) / S_ERROR
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
+      return S_ERROR(DErrno.ENOCERT)
 
     if not limited:
       subj = self.__certObj.get_subject()
-      lastEntry = subj[len(subj) - 1 ]
+      lastEntry = subj[len(subj) - 1]
       if lastEntry.get_data() == "limited proxy":
         limited = True
 
     from DIRAC.Core.Security.m2crypto.X509Request import X509Request
 
     req = X509Request()
-    req.generateProxyRequest( bitStrength = bitStrength, limited = limited )
-    return S_OK( req )
+    req.generateProxyRequest(bitStrength=bitStrength, limited=limited)
+    return S_OK(req)
 
-  def getRemainingSecs( self ):
+  def getRemainingSecs(self):
     """
     Get remaining lifetime in secs
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
+      return S_ERROR(DErrno.ENOCERT)
     notAfter = self.__certObj.get_not_after().get_datetime()
-    notAfter = notAfter.replace( tzinfo = Time.dateTime().tzinfo )
+    notAfter = notAfter.replace(tzinfo=Time.dateTime().tzinfo)
     remaining = notAfter - Time.dateTime()
-    return S_OK( max( 0, remaining.days * 86400 + remaining.seconds ) )
+    return S_OK(max(0, remaining.days * 86400 + remaining.seconds))
 
-  def getExtensions( self ):
+  def getExtensions(self):
     """
     Get a decoded list of extensions
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
+      return S_ERROR(DErrno.ENOCERT)
     extList = []
     for i in self.__certObj.get_ext_count():
       sn = self.__certObj.get_ext_at(i).get_name()
@@ -348,66 +348,68 @@ class X509Certificate( object ):
         value = self.__certObj.get_ext_at(i).get_value()
       except Exception:
         value = "Cannot decode value"
-      extList.append( ( sn, value ) )
-    return S_OK( sorted( extList ) )
+      extList.append((sn, value))
+    return S_OK(sorted(extList))
 
-  def verify( self, pkey ):
+  def verify(self, pkey):
     """
     Verify certificate using provided key
     """
-    ret = self.__certObj.verify( pkey )
-    return S_OK( ret )
+    ret = self.__certObj.verify(pkey)
+    return S_OK(ret)
 
-  def setSubject( self, subject ):
+  def setSubject(self, subject):
     """
     Set subject using provided X509Name object
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    self.__certObj.set_subject( subject )
+      return S_ERROR(DErrno.ENOCERT)
+    self.__certObj.set_subject(subject)
     return S_OK()
 
-  def get_subject( self ):
+  def get_subject(self):
     """
     Deprecated way of getting subject DN. Only for backward compatibility reasons.
     """
     # XXX This function should be deleted when all code depending on it is updated.
-    return self.getSubjectDN()['Value'] # XXX FIXME awful awful hack
+    return self.getSubjectDN()['Value']  # XXX FIXME awful awful hack
 
-  def asPem( self ):
+  def asPem(self):
     """
     Return cerificate as PEM string
     """
     return self.__certObj.as_pem()
 
-  def getExtension( self, name ):
+  def getExtension(self, name):
     """
     Return X509 Extension with given name
     """
     try:
-      ext = self.__certObj.get_ext( name )
+      ext = self.__certObj.get_ext(name)
     except LookupError as LE:
-      return S_ERROR( LE )
-    return S_OK( ext )
+      return S_ERROR(LE)
+    return S_OK(ext)
 
-  def addExtension( self, extension ):
+  def addExtension(self, extension):
     """
     Add extension to the certificate
     """
     if not self.__valid:
-      return S_ERROR( DErrno.ENOCERT )
-    self.__certObj.add_ext( extension )
+      return S_ERROR(DErrno.ENOCERT)
+    self.__certObj.add_ext(extension)
     return S_OK()
 
 # utility functions for handling VOMS Extension
+
+
 def extract_DN(inp):
   """
   Return DN extracted from given ASN.1 decoder
   """
-  while not inp.peek().nr == asn1.Numbers.Set: # looking for the sequence of sets, so if set is next, we're here
+  while not inp.peek().nr == asn1.Numbers.Set:  # looking for the sequence of sets, so if set is next, we're here
     inp = enterSequence(inp)
   dn = ""
-  while inp.peek(): # each set has OID and value
+  while inp.peek():  # each set has OID and value
     inp.enter()
     inp.enter()
     _, oid = inp.read()
@@ -418,7 +420,8 @@ def extract_DN(inp):
     inp.leave()
   return dn
 
-def enterSequence(seq, levels = 1):
+
+def enterSequence(seq, levels=1):
   """
   Enter sequence in ASN.1 decoder
   """
@@ -430,6 +433,7 @@ def enterSequence(seq, levels = 1):
     levels -= 1
   return seq
 
+
 def leaveSequence(inp):
   """
   Leave sequence in ASN.1 decoder. Leaves all nested sequences if there are no more values to read
@@ -437,6 +441,7 @@ def leaveSequence(inp):
   while not inp.peek():
     inp.leave()
   return inp
+
 
 def parseForVOMS(inp):
   """
@@ -446,7 +451,7 @@ def parseForVOMS(inp):
     tag = inp.peek()
     if tag.typ == asn1.Types.Primitive:
       tag, value = inp.read()
-      if tag.nr == asn1.Numbers.ObjectIdentifier and value == VOMS_EXTENSION_OID: # we have our voms
+      if tag.nr == asn1.Numbers.ObjectIdentifier and value == VOMS_EXTENSION_OID:  # we have our voms
         voms_decoder = asn1.Decoder()
         _, value = inp.read()
         voms_decoder.start(value)
@@ -462,6 +467,7 @@ def parseForVOMS(inp):
         return data
       inp.leave()
 
+
 def processVOMSExtension(inp):
   """
   Extact VOMS information from ASN.1 decoder containing VOMS extension
@@ -470,13 +476,13 @@ def processVOMSExtension(inp):
 
   # we have sequential access, no random access, only way to advance is to read
   while inp.peek().nr == asn1.Numbers.Sequence:
-    inp = enterSequence(inp) # get one level deeper
-  inp.read() # skippinng, this is not value we are looking for
+    inp = enterSequence(inp)  # get one level deeper
+  inp.read()  # skippinng, this is not value we are looking for
   data['subject'] = extract_DN(inp)
 
   # jump back to level, where there is something to read
   inp = leaveSequence(inp)
-  inp.read() # there is one more value in this sequence, but we don't care
+  inp.read()  # there is one more value in this sequence, but we don't care
   inp = leaveSequence(inp)
   data['issuer'] = extract_DN(inp)
 
@@ -503,7 +509,7 @@ def processVOMSExtension(inp):
       while inp.peek().nr == asn1.Numbers.Set:
         inp = enterSequence(inp)
       inp = enterSequence(inp)
-      inp.read() #skipping
+      inp.read()  # skipping
       inp = enterSequence(inp)
       _, value = inp.read()
       fqan.append(value.decode('utf-8'))
@@ -519,7 +525,7 @@ def processVOMSExtension(inp):
     _, vv = inp.read()
     dec.start(vv)
     dec = enterSequence(dec, 3)
-    dec.read() # skipping
+    dec.read()  # skipping
     dec = enterSequence(dec, 2)
     _, name = dec.read()
     _, value = dec.read()
