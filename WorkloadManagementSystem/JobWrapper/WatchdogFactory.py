@@ -21,7 +21,7 @@ class WatchdogFactory( object ):
     self.watchDogsLocation = 'DIRAC.WorkloadManagementSystem.JobWrapper'
 
   #############################################################################
-  def getWatchdog( self, pid, thread, spObject, jobcputime, memoryLimit, processors = 1 ):
+  def getWatchdog( self, pid, exeThread, spObject, jobCPUTime, memoryLimit, processors = 1, jobArgs = {} ):
     """ This method returns the CE instance corresponding to the local OS. The Linux watchdog is returned by default.
     """
     if re.search( 'Darwin', self.version[0] ):
@@ -42,7 +42,13 @@ class WatchdogFactory( object ):
       self.log.exception( "Failed to import module" + self.watchDogsLocation + '.%s' % subClassName + '.%s' % subClassName + ': ' + str(e) )
       return S_ERROR( "Failed to import module" )
     try:
-      wd_o = getattr( wdModule, subClassName )( pid, thread, spObject, jobcputime, memoryLimit, processors )
+      wd_o = getattr( wdModule, subClassName )( pid = pid, 
+                                                exeThread = exeThread, 
+                                                spObject = spObject, 
+                                                jobCPUTime = jobCPUTime, 
+                                                memoryLimit = memoryLimit, 
+                                                processors = processors, 
+                                                jobArgs = jobArgs )
       return S_OK( wd_o )
     except AttributeError as e:
       self.log.exception( "Failed to create %s(): %s." % ( subClassName, e ) )

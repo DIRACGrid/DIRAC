@@ -17,10 +17,10 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
-from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getNumberOfParameters
+from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
                                                              RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
@@ -29,6 +29,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
+from DIRAC.Core.Utilities.DErrno import EWMSJDL
 
 # This is a global instance of the JobDB class
 gJobDB = None
@@ -126,10 +127,15 @@ class JobManagerHandler( RequestHandler ):
 
     # Check if the job is a parametric one
     jobClassAd = ClassAd( jobDesc )
-    nParameters = getNumberOfParameters( jobClassAd )
+    result = getParameterVectorLength( jobClassAd )
+    if not result['OK']:
+      return result
+    nJobs = result['Value']
     parametricJob = False
-    if nParameters > 0:
+    if nJobs > 0:
       parametricJob = True
+      if nJobs > self.maxParametricJobs:
+        return S_ERROR( EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % self.maxParametricJobs )
       result = generateParametricJobs( jobClassAd )
       if not result['OK']:
         return result

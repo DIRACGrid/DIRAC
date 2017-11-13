@@ -32,43 +32,43 @@ for unprocSw in Script.getUnprocessedSwitches():
 if __name__ == "__main__":
 
   from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getCPUNormalization, getPowerFromMJF
+  from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
+  from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
   from DIRAC import gLogger, gConfig
+  from DIRAC.Core.Utilities import MJF
+  
+  mjf = MJF.MJF()
+  mjf.updateConfig()
+  
+  db12JobFeature = mjf.getJobFeature( 'db12' )
+  hs06JobFeature = mjf.getJobFeature( 'hs06' )
 
-  result = getCPUNormalization()
+  result = singleDiracBenchmark( 1 )
 
-  if not result['OK']:
-    gLogger.error( result['Message'] )
+  if result is None:
+    gLogger.error( 'Cannot make benchmark measurements' )
+    DIRAC.exit(1)
+  
+  db12Measured = round ( result['NORM'], 1 )
+  corr         = Operations().getValue( 'JobScheduling/CPUNormalizationCorrection', 1. )
+  norm         = round ( result['NORM'] / corr, 1 )
 
-  norm = round( result['Value']['NORM'], 1 )
+  gLogger.notice( 'Estimated CPU power is %.1f HS06' % norm )
 
-  gLogger.notice( 'Estimated CPU power is %.1f %s' % ( norm, result['Value']['UNIT'] ) )
+  if update:
+    gConfig.setOptionValue( '/LocalSite/CPUScalingFactor', hs06JobFeature if hs06JobFeature else norm ) # deprecate?
+    gConfig.setOptionValue( '/LocalSite/CPUNormalizationFactor', norm ) # deprecate?
+    gConfig.setOptionValue( '/LocalSite/DB12measured', db12Measured )
 
-  mjfPower = getPowerFromMJF()
-  if mjfPower:
-    gLogger.notice( 'CPU power from MJF is %.2f HS06' % mjfPower )
-  else:
-    gLogger.notice( 'MJF not available on this node' )
+    # Set DB12 to use by default. Remember db12JobFeature is still in /LocalSite/JOBFEATURES/db12
+    if db12JobFeature is not None:
+      gConfig.setOptionValue( '/LocalSite/DB12', db12JobFeature )
+    else:
+      gConfig.setOptionValue( '/LocalSite/DB12', db12Measured )
 
-  if update and not configFile:
-    gConfig.setOptionValue( '/LocalSite/CPUScalingFactor', mjfPower if mjfPower else norm )
-    gConfig.setOptionValue( '/LocalSite/CPUNormalizationFactor', norm )
-
-    gConfig.dumpLocalCFGToFile( gConfig.diracConfigFilePath )
-  if configFile:
-    from DIRAC.Core.Utilities.CFG import CFG
-    cfg = CFG()
-    try:
-      # Attempt to open the given file
-      cfg.loadFromFile( configFile )
-    except:
-      pass
-    # Create the section if it does not exist
-    if not cfg.existsKey( 'LocalSite' ):
-      cfg.createNewSection( 'LocalSite' )
-    cfg.setOption( '/LocalSite/CPUScalingFactor', mjfPower if mjfPower else norm )
-    cfg.setOption( '/LocalSite/CPUNormalizationFactor', norm )
-
-    cfg.writeToFile( configFile )
-
+    if configFile:
+      gConfig.dumpLocalCFGToFile( configFile )
+    else:
+      gConfig.dumpLocalCFGToFile( gConfig.diracConfigFilePath )
 
   DIRAC.exit()

@@ -1,6 +1,7 @@
-[v6r20-pre5]
+[v6r20-pre6]
 
 *Core
+NEW: MJF utility added, providing a general interface to Machine/Job Features values.
 CHANGE: Removed deprecated option "ExtraModules" (dirac-configure, dirac-install scripts)
 CHANGE: dirac-deploy-scripts, dirac-install - allow command modules with underscores in 
         their names in order for better support for the code checking tools
@@ -9,10 +10,13 @@ CHANGE: dirac-deploy-scripts, dirac-install - allow command modules with undersc
 CHANGE: ComponentInstaller - remove the old web portal configuration data 
         used during the installation
 
-*WMS
+*WorkloadManagementSystem
+NEW: StopSigRegex, StopSigStartSeconds, StopSigFinishSeconds, StopSigNumber added to JDL, which cause Watchdog to send a signal StopSigNumber to payload processes matching StopSigRegex when there are less than StopSigFinishSeconds of wall clock remaining according to MJF.
 NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
 NEW: added a new synchronizer for Pilot3: sync of subset of CS info to JSON file, 
      and sync of pilot3 files
+NEW: dirac-admin-get-pilotslogging script for viewing PilotsLogging
+CHANGE: dirac-wms-cpu-normalization uses the abstracted DB12 benchmark script used by the HEPiX Benchmarking Working Group, and the new MJF utility to obtain values from the system and to save them into the DIRAC LocalSite configuration.
 
 *DMS
 NEW: FTS3Agent working only with the FTS3 service to replace the existing one
@@ -23,6 +27,20 @@ NEW: New SingularityComputingElement to submit jobs to a Singularity container
 
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
+
+
+[v6r19p5]
+
+*WMS
+CHANGE: ParametricJob - added getParameterVectorLength() to replace getNumberOfParameters with a more detailed check of the job JDL validity
+FIX: JobManagerHandler - restored the use of MaxParametricJobs configuration option
+
+*Interfaces
+FIX: Always use a list of LFNs for input data resolution (local run, mostly)
+
+*tests
+FIX: use rootPath instead of environment variable
+
 
 [v6r19p4]
 
