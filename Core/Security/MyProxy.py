@@ -4,11 +4,15 @@
 __RCSID__ = "$Id$"
 
 import re
+import os
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
-from DIRAC.Core.Security.X509Chain import X509Chain
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+else:
+  from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 
 class MyProxy( BaseSecurity ):

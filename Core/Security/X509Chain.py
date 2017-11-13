@@ -7,16 +7,14 @@ import stat
 import tempfile
 import hashlib
 import random
+import binascii
 
-import M2Crypto
-import re
-import time
-import GSI # XXX Still needed for some parts I haven't finished yet
+from GSI import crypto
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Security.X509Certificate import X509Certificate
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security.X509Certificate import X509Certificate, LIMITED_PROXY_OID
 
 random.seed()
 
@@ -37,13 +35,7 @@ class X509Chain(object):
     self.__hash = False
     if certList:
       self.__loadedChain = True
-      self.__certList = []
-      for cert in certList:
-        if not isinstance( cert, M2Crypto.X509.X509 ):
-          # XXX walkaround for legacy code that is not updated yet, should be removed later
-          tmpCert = X509Certificate( certString = GSI.crypto.dump_certificate( GSI.crypto.FILETYPE_PEM, cert) )
-          cert = tmpCert
-        self.__certList.append( cert )
+      self.__certList = certList
     else:
       self.__loadedChain = False
     if keyObj:
@@ -108,8 +100,9 @@ class X509Chain(object):
     Return : S_OK / S_ERROR
     """
     try:
-      with open(chainLocation) as fd:
-        pemData = fd.read()
+      fd = file( chainLocation )
+      pemData = fd.read()
+      fd.close()
     except Exception as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
     return self.loadKeyFromString(pemData, password)
@@ -120,8 +113,6 @@ class X509Chain(object):
     Return : S_OK / S_ERROR
     """
     self.__loadedPKey = False
-    if password:
-      self.__pass = password
     try:
       self.__keyObj = crypto.load_privatekey(crypto.FILETYPE_PEM, pemData, password)
     except Exception as e:
@@ -247,7 +238,8 @@ class X509Chain(object):
       proxyKey = crypto.PKey()
       proxyKey.generate_key(crypto.TYPE_RSA, strength)
 
-    proxyCert = X509Certificate()
+    proxyCert = crypto.X509()
+
 
     if rfc:
       proxyCert.set_serial_number(str(int(random.random() * 10 ** 10)))
@@ -601,7 +593,7 @@ class X509Chain(object):
     if self.__loadedChain:
       repStr += " %s certs " % len(self.__certList)
       for cert in self.__certList:
-        repStr += "[%s]" % str(cert.getSubjectNameObject())
+        repStr += "[%s]" % cert.get_subject().one_line()
     if self.__loadedPKey:
       repStr += " with key"
     repStr += ">"
