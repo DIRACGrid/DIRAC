@@ -24,6 +24,20 @@ NEW: New SingularityComputingElement to submit jobs to a Singularity container
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
 
+
+[v6r19p5]
+
+*WMS
+CHANGE: ParametricJob - added getParameterVectorLength() to replace getNumberOfParameters with a more detailed check of the job JDL validity
+FIX: JobManagerHandler - restored the use of MaxParametricJobs configuration option
+
+*Interfaces
+FIX: Always use a list of LFNs for input data resolution (local run, mostly)
+
+*tests
+FIX: use rootPath instead of environment variable
+
+
 [v6r19p4]
 
 NEW: Added dummy setup.py in anticipation for standard installation procedure
