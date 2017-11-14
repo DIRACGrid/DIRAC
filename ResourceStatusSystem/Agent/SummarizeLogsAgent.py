@@ -141,11 +141,7 @@ class SummarizeLogsAgent( AgentModule ):
     """ Given an element, a key - which is a tuple ( <name>, <statusType> )
     and a list of dictionaries, this method inserts them on the <element>History
     table. Before inserting them, checks whether the first one is or is not on
-    the <element>History table. If it is, it is not inserted. It also checks
-    whether the LastCheckTime parameter of the first log to be inserted is
-    larger than the last history log LastCheckTime. If not, it means an agent
-    cycle has been interrupted and we can run into inconsistencies. It aborts to
-    prevent more dramatic results.
+    the <element>History table. If it is, it is not inserted.
 
     :Parameters:
       **element** - `string`
@@ -164,9 +160,8 @@ class SummarizeLogsAgent( AgentModule ):
 
     selectedRes = self.rsClient.selectStatusElement( element, 'History', name,
                                                      statusType,
-                                                     meta = { 'columns' : [ 'Status', 'LastCheckTime', 'TokenOwner' ],
-                                                              'limit'   : 1,
-                                                              'order'   : ('LastCheckTime', 'DESC') } )
+                                                     meta = { 'columns' : [ 'Status', 'TokenOwner' ],
+                                                              'limit'   : 1 } )
 
     if not selectedRes[ 'OK' ]:
       return selectedRes
@@ -174,13 +169,9 @@ class SummarizeLogsAgent( AgentModule ):
 
     # We want from the <element>History table the last Status, LastCheckTime
     # and TokenOwner
-    lastStatus, lastCheckTime, lastToken = None, None, None
+    lastStatus, lastToken = None, None
     if selectedRes:
-      lastStatus, lastCheckTime, lastToken = selectedRes[ 0 ]
-
-    # Sanity check to avoid running if an agent cycle has been stopped
-    if lastCheckTime and logs[ 0 ][ 'LastCheckTime' ] < lastCheckTime:
-      return S_ERROR( 'Overlapping data. Seems the DB has not been cleared properly' )
+      lastStatus, lastToken = selectedRes[ 0 ]
 
     # If the first of the selected items has a different status than the latest
     # on the history, we add it.
