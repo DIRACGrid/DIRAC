@@ -1,21 +1,24 @@
 """ SiteStatus helper
 
-  Provides methods to easily interact with the RSS
+  Provides methods to easily interact with the CS and/or RSS to get the site status
 
 """
 
 import errno
+import math
+from time import sleep
 from datetime import datetime, timedelta
 
 from DIRAC                                                  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
+from DIRAC.Core.Utilities                                   import DErrno
+from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus       import ResourceStatus
+from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread  import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
-from DIRAC.Core.Utilities                                   import DErrno
-from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
 
 __RCSID__ = '$Id: $'
 
@@ -43,6 +46,33 @@ class SiteStatus( object ):
     self.__opHelper = Operations()
     self.rssFlag = ResourceStatus().rssFlag
     self.rsClient = ResourceStatusClient()
+
+    # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
+    cacheLifeTime = int( self.rssConfig.getConfigCache() )
+
+    # RSSCache only affects the calls directed to RSS, if using the CS it is not used.
+    self.rssCache = RSSCache( cacheLifeTime, self.__updateRssCache )
+
+  def __updateRssCache( self ):
+    """ Method used to update the rssCache.
+
+        It will try 5 times to contact the RSS before giving up
+    """
+
+    meta = { 'columns' : ['Name', 'Status'] }
+
+    for ti in range( 5 ):
+      rawCache = self.rsClient.selectStatusElement( 'Site', 'Status', meta = meta )
+      if rawCache['OK']:
+        break
+      self.log.warn( "Can't get resource's status", rawCache['Message'] + "; trial %d" % ti )
+      sleep( math.pow( ti, 2 ) )
+      self.rsClient = ResourceStatusClient()
+
+    if not rawCache[ 'OK' ]:
+      return rawCache
+    return S_OK( getCacheDictFromRawData( rawCache[ 'Value' ] ) )
+
 
   def getSiteStatuses( self, siteNamesList = None ):
     """
@@ -345,6 +375,32 @@ class SiteStatus( object ):
       return result
 
     return S_OK()
+
+
+
+
+def getCacheDictFromRawData( rawList ):
+  """
+  Formats the raw data list, which we know it must have tuples of four elements.
+  ( element1, element2 ) into a dictionary of tuples with the format
+  { ( element1 ): element2 )}.
+  The resulting dictionary will be the new Cache.
+
+  It happens that element1 is elementName,
+                  element4 is status.
+
+  :Parameters:
+    **rawList** - `list`
+      list of three element tuples [( element1, element2 ),... ]
+
+  :return: dict of the form { ( elementName ) : status, ... }
+  """
+
+  res = {}
+  for entry in rawList:
+    res.update( { (entry[0]) : entry[1] } )
+
+  return res
 
 #################################################################################
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
