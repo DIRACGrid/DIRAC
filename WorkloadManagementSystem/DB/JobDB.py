@@ -1824,7 +1824,7 @@ class JobDB( DB ):
     countryCounts = {}
     for siteFullName in resultDict:
       siteDict = resultDict[siteFullName]
-      if siteFullName.find( '.' ) != -1:
+      if siteFullName.count( '.' ) == 2:
         grid, site, country = siteFullName.split( '.' )
       else:
         grid, site, country = 'Unknown', 'Unknown', 'Unknown'
