@@ -19,8 +19,8 @@ class NetworkAgent ( AgentModule ):
   Results are stored in the accounting database.
   """
 
-  BUFFER_TIMEOUT = 1800  # number of seconds after which network accounting objects
-                         # are removed form the the temporary buffer
+  BUFFER_TIMEOUT = 3600  # default number of seconds after which network accounting
+                         # objects are removed form the the temporary buffer
 
   def initialize( self ):
     
@@ -160,62 +160,79 @@ class NetworkAgent ( AgentModule ):
     for value in metadata.values():
       metadataKey += value
 
-    if body.has_key( 'summaries' ):
-      for summary in body['summaries']:
+    timestamps = sorted( body['datapoints'] )
+    
+    # approximate the value of first the timestamp
+    # (datapoints are take every 1 minute)
+    previousTimestamp = float( timestamps[0] ) - 60
+    for nextTimestamp in timestamps:
+    
+      data = body['datapoints'][nextTimestamp]
 
-        # we are interested in 5 minutes summaries only
-        if summary['summary_window'] == '300':
-          for data in summary['summary_data']:
-            try:
+      try:
+        # set the time and create a hash
+        startTime = datetime.utcfromtimestamp( previousTimestamp )
+        endTime = datetime.utcfromtimestamp( float( nextTimestamp ) )
 
-              # set the time and create a hash
-              startTime = datetime.utcfromtimestamp( float( data[0] ) )
-              endTime = datetime.utcfromtimestamp( float( data[0] ) + 300 )
+        key = "%s%s%s" % ( metadataKey, str( startTime ), str( endTime ) )
 
-              key = metadataKey
-              key += str( startTime )
-              key += str( endTime )
+        # use existing or create a new temporary accounting
+        # object to store the data in DB
+        if self.buffer.has_key( key ):
+          net = self.buffer[key]['object']
+        else:
+          net = Network()
+          net.setStartTime( startTime )
+          net.setEndTime( endTime )
+          net.setValuesFromDict( metadata )
 
-              # use existing or create a new temporary accounting object to store the data in DB
-              if self.buffer.has_key( key ):
-                net = self.buffer[key]['object']
-              else:
-                net = Network()
-                net.setStartTime( startTime )
-                net.setEndTime( endTime )
-                net.setValuesFromDict( metadata )
+        # look for supported event types
+        if headers['event-type'] == 'packet-loss-rate':
+          self.PLRMetricCount += 1
+          if data < 0 or data > 1:
+            raise Exception( 'Invalid PLR metric (%s)' % ( data ) )
+          
+          net.setValueByKey( 'PacketLossRate', data * 100 )
+        elif headers['event-type'] == 'histogram-owdelay':
+          self.OWDMetricCount += 1
 
-              # look for supported event types
-              if summary['event_type'] == 'packet-loss-rate':
-                self.PLRMetricCount += 1
-                net.setValueByKey( 'PacketLossRate', data[1] * 100 )
-              elif summary['event_type'] == 'histogram-owdelay' and summary['summary_type'] == 'statistics':
-                self.OWDMetricCount += 1
+          # calculate statistics form histogram
+          OWDMin = 999999
+          OWDMax = 0
+          total = 0
+          count = 0
+          for value, items in data.iteritems():
+            floatValue = float( value )
+            total += floatValue * items
+            count += items
+            OWDMin = min( OWDMin, floatValue )
+            OWDMax = max( OWDMax, floatValue )
+          OWDAvg = float( total ) / count
 
-                # skip metrics with invalid data
-                if data[1]['mean'] < 0 or data[1]['minimum'] < 0 or data[1]['maximum'] < 0:
-                  raise Exception( 'Invalid OWD metric (%s, %s, %s)' % ( data[1]['mean'], data[1]['minimum'], data[1]['maximum'] ) )
-                else:
-                  # approximate jitter value as OWDMax - OWDMin
-                  net.setValueByKey( 'Jitter', data[1]['maximum'] - data[1]['minimum'] )
-                  net.setValueByKey( 'OneWayDelay', data[1]['mean'] )
-              else:
-                self.skippedMetricCount += 1
-                continue
-              
-              self.buffer[key] = {'addTime': datetime.now(), 'object': net}
-
-            # suppress all exceptions to protect the listener thread
-            except Exception as e:
-              self.skippedMetricCount += 1
-              self.log.warn( 'Metric skipped because of an exception: %s' % e )
+          # skip metrics with invalid data
+          if OWDAvg < 0 or OWDMin < 0 or OWDMax < 0:
+            raise Exception( 'Invalid OWD metric (%s, %s, %s)' % 
+                            ( OWDMin, OWDAvg, OWDMax ) )
+          else:
+            # approximate jitter value as OWDMax - OWDMin
+            net.setValueByKey( 'Jitter', OWDMax - OWDMin )
+            net.setValueByKey( 'OneWayDelay', OWDAvg )
 
         else:
-          self.skippedMessagesCount += 1
-    
+          self.skippedMetricCount += 1
+          continue
+
+        self.buffer[key] = {'addTime': datetime.now(), 'object': net}
+        previousTimestamp = float( nextTimestamp )
+
+      # suppress all exceptions to protect the listener thread
+      except Exception as e:
+        self.skippedMetricCount += 1
+        self.log.warn( 'Metric skipped because of an exception: %s' % e )
+
     return S_OK()
 
-  def commitData(self):
+  def commitData( self ):
     '''
     Iterates through all object in the temporary buffer and commit objects to DB
     if both packet-loss-rate and one-way-delay values are set.
