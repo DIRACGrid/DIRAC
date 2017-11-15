@@ -335,7 +335,7 @@ class RSSCache( Cache ):
 
     if isinstance( elementType, str ):
       if not elementType or elementType == 'Site':
-        elementType = ''
+        elementType = []
       else:
         elementType = [ elementType ]
     elif elementType is None:
@@ -345,7 +345,7 @@ class RSSCache( Cache ):
 
     if isinstance( statusTypes, str ):
       if not statusTypes:
-        statusTypes = ''
+        statusTypes = []
       else:
         statusTypes = [ statusTypes ]
     elif statusTypes is None:
