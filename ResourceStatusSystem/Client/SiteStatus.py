@@ -174,7 +174,6 @@ class SiteStatus( object ):
     return S_OK( siteStatusList )
 
 
-  #FIXME: use getSitesStatuses?
   def getSites( self, siteState = 'Active' ):
     """
     By default, it gets the currently active site list
@@ -207,7 +206,7 @@ class SiteStatus( object ):
 
     if siteState.capitalize() == 'All':
       # if no siteState is set return everything
-      siteList = list(siteStatusDictRes)
+      siteList = list(siteStatusDictRes['Value'])
 
     else:
       # fix case sensitive string
@@ -218,7 +217,7 @@ class SiteStatus( object ):
 
       siteList = [x[0] for x in siteStatusDictRes['Value'].iteritems() if x[1] == siteState]
 
-      return S_OK( siteList )
+    return S_OK( siteList )
 
   def setSiteStatus( self, site, status, comment = 'No comment' ):
     """
@@ -245,25 +244,40 @@ class SiteStatus( object ):
     # fix case sensitive string
     status = status.capitalize()
     allowedStateList = ['Active', 'Banned', 'Degraded', 'Probing', 'Error', 'Unknown']
+
     if status not in allowedStateList:
       return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
-    result = getProxyInfo()
-    if result['OK']:
-      tokenOwner = result['Value']['username']
+
+    if self.rssFlag:
+      result = getProxyInfo()
+      if result['OK']:
+        tokenOwner = result['Value']['username']
+      else:
+        return S_ERROR( "Unable to get user proxy info %s " % result['Message'] )
+
+      tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
+
+      self.rssCache.acquireLock()
+      result = self.rsClient.modifyStatusElement( 'Site', 'Status', status = status, name = site,
+                                                  tokenExpiration = tokenExpiration, reason = comment,
+                                                  tokenOwner = tokenOwner )
+      if result['OK']:
+        self.rssCache.refreshCache()
+      else:
+        _msg = 'Error updating status of site %s to %s' % ( site, status )
+        gLogger.warn( 'RSS: %s' % _msg )
+
+      # Release lock, no matter what.
+      self.rssCache.releaseLock()
+
     else:
-      return S_ERROR( "Unable to get user proxy info %s " % result['Message'] )
+      if status in ['Active', 'Degraded']:
+        result = RPCClient('WorkloadManagement/WMSAdministrator').allowSite()
+      else:
+        result = RPCClient('WorkloadManagement/WMSAdministrator').banSite()
 
-    tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
-
-    result = self.rsClient.modifyStatusElement( 'Site', 'Status', status = status, name = site,
-                                                tokenExpiration = tokenExpiration, reason = comment,
-                                                tokenOwner = tokenOwner )
-
-    if not result['OK']:
-      return result
-
-    return S_OK()
+    return result
 
 
 

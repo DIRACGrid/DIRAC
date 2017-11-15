@@ -33,14 +33,18 @@ class ClientChain( TestClientSiteStatusTestCase ):
 
   def test_addAndRemove(self):
 
-    # make sure that the test site is not presented in the db
+    # make sure that the test sites are not presented in the db
     self.rsClient.deleteStatusElement('Site', 'Status', testSite)
+    self.rsClient.deleteStatusElement('Site', 'Status', 'testActive1.test.test')
+    self.rsClient.deleteStatusElement('Site', 'Status', 'testActive.test.test')
+    self.rsClient.deleteStatusElement('Site', 'Status', 'testBanned.test.test')
 
     # add test site
     res = self.rsClient.insertStatusElement('Site', 'Status', testSite, 'all',
                                             'Active', 'Site', 'Synchronized', Datetime,
                                             Datetime, 'tokenOwner', Datetime)
     self.assertTrue(res['OK'])
+    self.stClient.rssCache.refreshCache()
 
     # TEST getSites
     # ...............................................................................
@@ -69,6 +73,68 @@ class ClientChain( TestClientSiteStatusTestCase ):
     # finally delete the test site
     res = self.rsClient.deleteStatusElement('Site', 'Status', testSite)
     self.assertTrue(res['OK'])
+
+
+    # ...............................................................................
+    # adding some more test sites and more complex tests
+    # ...............................................................................
+
+    res = self.rsClient.insertStatusElement('Site', 'Status', 'testActive.test.test', 'all',
+                                            'Active', 'Site', 'Synchronized', Datetime,
+                                            Datetime, 'tokenOwner', Datetime)
+    self.assertTrue(res['OK'])
+
+    res = self.rsClient.insertStatusElement('Site', 'Status', 'testActive1.test.test', 'all',
+                                            'Active', 'Site', 'Synchronized', Datetime,
+                                            Datetime, 'tokenOwner', Datetime)
+    self.assertTrue(res['OK'])
+
+    res = self.rsClient.insertStatusElement('Site', 'Status', 'testBanned.test.test', 'all',
+                                            'Banned', 'Site', 'Synchronized', Datetime,
+                                            Datetime, 'tokenOwner', Datetime)
+    self.assertTrue(res['OK'])
+    self.stClient.rssCache.refreshCache()
+
+    # TEST getSites
+    # ...............................................................................
+
+    result = self.stClient.getSites()
+    self.assertTrue(result['OK'])
+
+    self.assertTrue( 'testActive1.test.test' in result['Value'] )
+    self.assertTrue( 'testActive.test.test' in result['Value'] )
+    self.assertFalse( 'testBanned.test.test' in result['Value'] )
+
+    # TEST getSites
+    # ...............................................................................
+
+    result = self.stClient.getSites('All')
+    self.assertTrue(result['OK'])
+
+    self.assertTrue( 'testActive1.test.test' in result['Value'] )
+    self.assertTrue( 'testActive.test.test' in result['Value'] )
+    self.assertTrue( 'testBanned.test.test' in result['Value'] )
+
+    # TEST getUsableSites
+    # ...............................................................................
+
+    result = self.stClient.getUsableSites()
+    self.assertTrue(result['OK'])
+
+    self.assertTrue( 'testActive1.test.test' in result['Value'] )
+    self.assertTrue( 'testActive.test.test' in result['Value'] )
+
+    # setting a status
+    result = self.stClient.setSiteStatus('testBanned.test.test', 'Probing')
+    self.assertTrue(result['OK'])
+    self.stClient.rssCache.refreshCache()
+
+    result = self.stClient.getSites('Probing')
+    self.assertTrue(result['OK'])
+    self.assertTrue( 'testBanned.test.test' in result['Value'] )
+    self.assertFalse( 'testActive.test.test' in result['Value'] )
+
+
 
 
 if __name__ == '__main__':
