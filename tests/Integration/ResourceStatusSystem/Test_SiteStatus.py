@@ -66,13 +66,6 @@ class ClientChain( TestClientSiteStatusTestCase ):
 
     self.assertEqual(result['Value'][0], testSite)
 
-    # TEST isUsableSite
-    # ...............................................................................
-
-    result = self.stClient.isUsableSite(testSite)
-    self.assertTrue(result['OK'])
-    self.assertTrue(result['Value'])
-
     # finally delete the test site
     res = self.rsClient.deleteStatusElement('Site', 'Status', testSite)
     self.assertTrue(res['OK'])
