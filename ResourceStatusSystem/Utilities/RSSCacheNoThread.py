@@ -326,7 +326,10 @@ class RSSCache( Cache ):
     if isinstance( elementNames, str ):
       elementNames = [ elementNames ]
     elif elementNames is None:
-      elementNames = [ cacheKey[0] for cacheKey in cacheKeys ]
+      if isinstance(cacheKeys[0], (tuple, list)):
+        elementNames = [ cacheKey[0] for cacheKey in cacheKeys ]
+      else:
+        elementNames = cacheKeys
     # Remove duplicates, makes Cartesian product faster
     elementNamesSet = set( elementNames )
 
