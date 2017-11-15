@@ -59,19 +59,19 @@ class SiteStatus( object ):
         It will try 5 times to contact the RSS before giving up
     """
 
-    meta = { 'columns' : ['Name', 'Status'] }
+    meta = {'columns' : ['Name', 'Status']}
 
-    for ti in range( 5 ):
-      rawCache = self.rsClient.selectStatusElement( 'Site', 'Status', meta = meta )
+    for ti in range(5):
+      rawCache = self.rsClient.selectStatusElement('Site', 'Status', meta = meta)
       if rawCache['OK']:
         break
-      self.log.warn( "Can't get resource's status", rawCache['Message'] + "; trial %d" % ti )
-      sleep( math.pow( ti, 2 ) )
+      self.log.warn("Can't get resource's status", rawCache['Message'] + "; trial %d" % ti)
+      sleep(math.pow(ti, 2))
       self.rsClient = ResourceStatusClient()
 
-    if not rawCache[ 'OK' ]:
+    if not rawCache['OK']:
       return rawCache
-    return S_OK( getCacheDictFromRawData( rawCache[ 'Value' ] ) )
+    return S_OK(getCacheDictFromRawData(rawCache['Value']))
 
 
   def getSiteStatuses( self, siteNamesList = None ):
@@ -104,48 +104,52 @@ class SiteStatus( object ):
     :return: S_OK() || S_ERROR()
     """
 
-    if not siteNamesList:
-
-      if self.rssFlag:
-        siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status',
-                                                            meta = { 'columns' : ['Name', 'Status'] } )
+    if self.rssFlag:
+      return self.__getRSSSiteStatus(siteNamesList)
+    else:
+      siteStatusDict = {}
+      if siteNamesList:
+        for siteName in siteNamesList:
+          result = RPCClient('WorkloadManagement/WMSAdministrator').getSiteMaskStatus(siteName)
+          if not result['OK']:
+            return result
+          else:
+            siteStatusDict[siteName] = result['Value']
       else:
-        siteStatusDict = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus()
-
-      if not siteStatusDict['OK']:
-        return siteStatusDict
-      else:
-        siteStatusDict = siteStatusDict['Value']
-
-      return S_OK( dict(siteStatusDict) )
-
-    siteStatusDict = {}
-
-    for siteName in siteNamesList:
-
-      if self.rssFlag:
-        result = self.rsClient.selectStatusElement( 'Site', 'Status',
-                                                    name = siteName,
-                                                    meta = { 'columns' : ['Status'] } )
-      else:
-        result = RPCClient( 'WorkloadManagement/WMSAdministrator' ).getSiteMaskStatus(siteName)
-
-      if not result['OK']:
-        return result
-      elif not result['Value']:
-        #if one of the listed elements does not exist continue
-        continue
-      else:
-        if self.rssFlag:
-          siteStatusDict[siteName] = result['Value'][0][0]
+        result = RPCClient('WorkloadManagement/WMSAdministrator').getSiteMaskStatus()
+        if not result['OK']:
+          return result
         else:
-          siteStatusDict[siteName] = result['Value']
+          siteStatusDict = result['Value']
 
-    return S_OK( siteStatusDict )
+      return S_OK( siteStatusDict )
 
+  def __getRSSSiteStatus(self, siteName = None):
+    """ Gets from the cache or the RSS the Sites status. The cache is a
+        copy of the DB table. If it is not on the cache, most likely is not going
+        to be on the DB.
+
+        There is one exception: item just added to the CS, e.g. new Element.
+        The period between it is added to the DB and the changes are propagated
+        to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
+        minutes.
+
+    :param siteName: name of the site
+    :type siteName: str
+    """
+
+    cacheMatch = self.rssCache.match(siteName, '', '')
+
+    self.log.debug( '__getRSSSiteStatus' )
+    self.log.debug( cacheMatch )
+
+    return cacheMatch
+
+
+  #FIXME: useless?
   def isUsableSite( self, siteName ):
     """
-    Similar method to getSiteStatus. The difference is the output.
+    Similar method to getSiteStatuses. The difference is the output.
     Given a site name, returns a bool if the site is usable:
     status is Active or Degraded outputs True
     anything else outputs False
@@ -192,6 +196,7 @@ class SiteStatus( object ):
       return S_OK(False)
 
 
+  #FIXME: use getSitesStatuses?
   def getUsableSites( self, siteNamesList = None ):
     """
     Returns all sites that are usable if their
@@ -268,6 +273,7 @@ class SiteStatus( object ):
     return S_OK( siteStatusList )
 
 
+  #FIXME: use getSitesStatuses?
   def getSites( self, siteState = 'Active' ):
     """
     By default, it gets the currently active site list
@@ -379,7 +385,7 @@ class SiteStatus( object ):
 
 
 
-def getCacheDictFromRawData( rawList ):
+def getCacheDictFromRawData( rawList ): #FIXME: to remove?
   """
   Formats the raw data list, which we know it must have tuples of four elements.
   ( element1, element2 ) into a dictionary of tuples with the format
