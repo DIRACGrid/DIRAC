@@ -96,22 +96,22 @@ Eclipse can manage several projects and developers may need have more than one d
 1. Click on the small arrow on the package explorer and then on *Select working set...*
 
 .. image:: images/workingsets-01.png
-	   :align: center
+     :align: center
 
 2. Click on *New...* and then selecte *Resource* and then click *Next>*
 
 .. image:: images/workingsets-02.png
-	   :align: center
+     :align: center
 
 3. Give it a meaningful name and select all the projects you want to include in the *working set* and click *Finish*
 
 .. image:: images/workingsets-03.png
-	   :align: center
+     :align: center
 
 4. Now the new working set will appear. If you want to activate it just select it and click *OK*
 
 .. image:: images/workingsets-04.png
-	   :align: center
+     :align: center
 
 Now, to change the active working set or to disable them:
 

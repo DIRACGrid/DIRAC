@@ -56,8 +56,8 @@ then
         -p=*|--Path=*)
         temporaryPath="${i#*=}"
         if [ ! -d "$temporaryPath" ]
-        	then
-        	mkdir -p $temporaryPath
+          then
+          mkdir -p $temporaryPath
         fi
         shift # past argument=value
         ;;
@@ -73,15 +73,15 @@ fi
 
 # Default temporary path
 if [ -z "$temporaryPath" ]
-	then
-	temporaryPath=$(mktemp -d)
+  then
+  temporaryPath=$(mktemp -d)
 fi
 
 # Move to a tmp directory
 cd $temporaryPath
 if [ $? -ne 0 ]
-	then
-	echo $(tput setaf 1)"ERROR: cannot change to directory: " $temporaryPath$(tput sgr 0)
+  then
+  echo $(tput setaf 1)"ERROR: cannot change to directory: " $temporaryPath$(tput sgr 0)
     exit $?
 fi
 

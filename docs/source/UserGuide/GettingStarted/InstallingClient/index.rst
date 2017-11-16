@@ -39,9 +39,9 @@ This installs the software and you should get the following directories and file
    drwxr-xr-x.  6 dirac dirac  4096 Jul 21 16:27 Linux_x86_64_glibc-2.12
    -rw-r--r--.  1 dirac dirac  2153 Jul 25 15:13 bashrc
    -rw-r--r--.  1 dirac dirac  2234 Jul 25 15:13 cshrc
-   -rw-r--r--.  1 dirac dirac	42 Jul 25 15:13 defaults-DIRAC.cfg
-   -rwxr-xr-x.  1 dirac dirac 61754 Jul 25 15:11 dirac-install
-   drwxr-xr-x.  2 dirac dirac 12288 Jul 25 15:13 scripts
+   -rw-r--r--.  1 dirac dirac  42   Jul 25 15:13 defaults-DIRAC.cfg
+   -rwxr-xr-x.  1 dirac dirac  61754 Jul 25 15:11 dirac-install
+   drwxr-xr-x.  2 dirac dirac  12288 Jul 25 15:13 scripts
 
 
 Instead of the *Linux_x86_64_glibc-2.12* directory there can be another one that corresponds to the binary platform

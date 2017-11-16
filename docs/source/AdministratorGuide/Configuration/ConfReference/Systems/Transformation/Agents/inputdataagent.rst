@@ -30,4 +30,3 @@ This Agent also reads some options from Operations/Transformations:
 | TransformationTypes          | TransformationTypes to handle       |                              |
 |                              | in this agent instance              |                              |
 +------------------------------+-------------------------------------+------------------------------+
-	     

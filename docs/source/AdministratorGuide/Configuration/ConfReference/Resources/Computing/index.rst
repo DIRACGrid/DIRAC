@@ -11,13 +11,13 @@ Options for computing elements can be set at different levels, from lowest to
 highest prority
 
   /Resources/Computing/CEDefaults
-	For all computing elements
+   For all computing elements
   /Resources/Computing/<CEType>
-	 For CEs of a given type, e.g., HTCondorCE or ARC
+   For CEs of a given type, e.g., HTCondorCE or ARC
   /Resources/Sites/<grid>/<site>/CEs
-	 For all CEs at a given site
+   For all CEs at a given site
   /Resources/Sites/<grid>/<site>/CEs/<CEName>
-	 For the specific CE
+   For the specific CE
 
 Values are overwritten.
 

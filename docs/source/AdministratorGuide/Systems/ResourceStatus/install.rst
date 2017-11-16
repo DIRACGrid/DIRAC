@@ -25,14 +25,14 @@ The configuration for RSS sits under the following path on the CS following the 
 Please, make sure you have the following schema::
 
     /Operations/Defaults/ResourceStatus
-	/Config
-	  State        = InActive
-	  Cache        = 300
-	  CacheHistory = 24
-	  RecordLogs   = Active
-	  /StatusTypes
-	      default = all
-	      StorageElement = ReadAccess,WriteAccess,CheckAccess,RemoveAccess
+      /Config
+        State        = InActive
+        Cache        = 300
+        CacheHistory = 24
+        RecordLogs   = Active
+        /StatusTypes
+            default = all
+            StorageElement = ReadAccess,WriteAccess,CheckAccess,RemoveAccess
 
 For a more detailed explanation, take a look to the official documentation:
 :ref:`rss-configuration`.

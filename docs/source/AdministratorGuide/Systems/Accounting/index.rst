@@ -46,9 +46,9 @@ From DIRAC v6r17p14 there is the possibility to to run multiple 'DataStore' serv
 For example:
 install service Accounting DataStoreHelper -m DataStore -p RunBucketing=True -p Port=1966
 In the CS you have to define DataStoreMaster. For example::
-     
-	URLs
-	{
+
+      URLs
+      {
         DataStore = dips://lbvobox105.cern.ch:9133/Accounting/DataStore
         DataStore += dips://lbvobox105.cern.ch:9166/Accounting/DataStoreHelper
         DataStore += dips://lbvobox102.cern.ch:9166/Accounting/DataStoreHelper
@@ -56,4 +56,4 @@ In the CS you have to define DataStoreMaster. For example::
         DataStoreHelper = dips://lbvobox105.cern.ch:9166/Accounting/DataStoreHelper
         DataStoreHelper += dips://lbvobox102.cern.ch:9166/Accounting/DataStoreHelper
         DataStoreMaster = dips://lbvobox105.cern.ch:9133/Accounting/DataStore
-       }
+      }
