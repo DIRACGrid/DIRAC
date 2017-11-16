@@ -61,7 +61,7 @@ class SiteStatus( object ):
 
     meta = {'columns' : ['Name', 'Status']}
 
-    for ti in range(5):
+    for ti in xrange(5):
       rawCache = self.rsClient.selectStatusElement('Site', 'Status', meta = meta)
       if rawCache['OK']:
         break
@@ -136,6 +136,8 @@ class SiteStatus( object ):
 
     :param siteName: name of the site
     :type siteName: str
+
+    :return: dict
     """
 
     cacheMatch = self.rssCache.match(siteName, '', '')
@@ -259,17 +261,19 @@ class SiteStatus( object ):
       tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
 
       self.rssCache.acquireLock()
-      result = self.rsClient.modifyStatusElement( 'Site', 'Status', status = status, name = site,
-                                                  tokenExpiration = tokenExpiration, reason = comment,
-                                                  tokenOwner = tokenOwner )
-      if result['OK']:
-        self.rssCache.refreshCache()
-      else:
-        _msg = 'Error updating status of site %s to %s' % ( site, status )
-        gLogger.warn( 'RSS: %s' % _msg )
+      try:
+        result = self.rsClient.modifyStatusElement( 'Site', 'Status', status = status, name = site,
+                                                    tokenExpiration = tokenExpiration, reason = comment,
+                                                    tokenOwner = tokenOwner )
+        if result['OK']:
+          self.rssCache.refreshCache()
+        else:
+          _msg = 'Error updating status of site %s to %s' % ( site, status )
+          gLogger.warn( 'RSS: %s' % _msg )
 
       # Release lock, no matter what.
-      self.rssCache.releaseLock()
+      finally:
+        self.rssCache.releaseLock()
 
     else:
       if status in ['Active', 'Degraded']:
