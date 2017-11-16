@@ -35,16 +35,16 @@ On the server running the WMS:
       Resources
       {
         Sites
-	{
-	  Cloud
-	  {
-	    Cloud.LUPM.fr
-	    {
-	      Cloud
-	      {
-		194.214.86.244
-		{
-		  User = xxxx
+        {
+          Cloud
+          {
+            Cloud.LUPM.fr
+            {
+              Cloud
+              {
+                194.214.86.244
+                {
+                  User = xxxx
                   Password = xxxx
                   HostCert = /opt/dirac/etc/grid-security/hostcert.pem
                   HostKey = /opt/dirac/etc/grid-security/hostkey.pem
@@ -73,16 +73,16 @@ Configuration
       Resources
       {
         Sites
-	{
-	  Cloud
-	  {
-	    Cloud.LUPM.fr
-	    {
-	      CE = 194.214.86.244
-	      Cloud
-	      {
-		194.214.86.244
-		{
+        {
+          Cloud
+          {
+            Cloud.LUPM.fr
+            {
+              CE = 194.214.86.244
+              Cloud
+              {
+                194.214.86.244
+                {
                   CEType = Cloud
                   ex_security_groups = default
                   ex_force_auth_url = http://194.214.86.244:5000/v3/auth/tokens
@@ -101,7 +101,7 @@ Configuration
                   # It's needed to ssh connect to VMs
                   ipPool = ext-net
                 }
-	        Images
+                Images
                 {
                   # It can be a public or a private image
                   Centos6-Officielle
@@ -134,7 +134,7 @@ Configuration
             user_data_commands += vm-pilot
             user_data_commands += vm-monitor-agent
             user_data_commands += pilotCommands.py
-	    user_data_commands += pilotTools.py
+            user_data_commands += pilotTools.py
             user_data_commands += dirac-install.py
             user_data_commands += power.sh
             user_data_commands += parse-jobagent-log

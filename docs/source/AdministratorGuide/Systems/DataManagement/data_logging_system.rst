@@ -182,10 +182,10 @@ Some methods take in paramaters a tuple, there is some specifics futures for thi
 
 .. code-block:: python
 
- @DataLoggingDecorator( argsPosition = ['self', dl_tuple, 'catalog'], getActionArgsFunction = 'Tuple',
-	 tupleArgsPosition = [dl_files, 'physicalFile', 'fileSize', dl_targetSE, 'fileGuid', 'checksum' ] )
- def registerFile( self, fileTuple, catalog = '' ):
-	
+   @DataLoggingDecorator( argsPosition = ['self', dl_tuple, 'catalog'], getActionArgsFunction = 'Tuple',
+     tupleArgsPosition = [dl_files, 'physicalFile', 'fileSize', dl_targetSE, 'fileGuid', 'checksum' ] )
+   def registerFile( self, fileTuple, catalog = '' ):
+
 It is necessary to use a special function to extract arguments. This is specify with the parameter getActionArgsFunction = 'Tuple'.
 
 It also mecessary to specify the structure of the tuple with the argument tupleArgsPosition. This one is a list of strings like the argsPosition parameter.
