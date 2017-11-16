@@ -57,7 +57,7 @@ def helloWorld():
 def mpJob():
   J = baseToAllJobs( 'mpJob' )
   J.setInputSandbox( [find_all( 'mpTest.py', rootPath, 'DIRAC/tests/Utilities' )[0]] +
-		     [find_all( 'testMpJob.sh', rootPath, 'DIRAC/tests/Utilities' )[0]])
+                     [find_all( 'testMpJob.sh', rootPath, 'DIRAC/tests/Utilities' )[0]])
   J.setExecutable( 'testMpJob.sh mpTest.py' )
   J.setTag( 'MultiProcessor' )
   return endOfAllJobs( J )

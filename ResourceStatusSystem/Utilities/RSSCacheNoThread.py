@@ -8,15 +8,16 @@ After that, the cache is empty.
 
 """
 
+__RCSID__  = '$Id:$'
+
 import itertools
 import random
 
-from DIRAC                                                 import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DictCache                        import DictCache
-from DIRAC.Core.Utilities.LockRing                         import LockRing
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
-__RCSID__  = '$Id:  $'
 
 class Cache( object ):
   """
@@ -159,7 +160,6 @@ class Cache( object ):
     # no apparent reason to suspect from that piece of code.
     return S_OK( newCache )
 
-  #...............................................................................
 
 class RSSCache( Cache ):
   """
@@ -269,7 +269,11 @@ class RSSCache( Cache ):
       return S_ERROR( 'Empty cache for: %s, %s' % ( elementNames, elementType ) )
 
     # We undo the key into <elementName> and <statusType>
-    cacheMatchesDict = self.__getDictFromCacheMatches( cacheMatches )
+    try:
+      cacheMatchesDict = self.__getDictFromCacheMatches( cacheMatches )
+    except ValueError:
+      cacheMatchesDict = cacheMatches
+
     return S_OK( cacheMatchesDict )
 
   def __getValidCache( self ):
@@ -321,25 +325,38 @@ class RSSCache( Cache ):
     if isinstance( elementNames, str ):
       elementNames = [ elementNames ]
     elif elementNames is None:
-      elementNames = [ cacheKey[0] for cacheKey in cacheKeys ]
+      if isinstance(cacheKeys[0], (tuple, list)):
+        elementNames = [ cacheKey[0] for cacheKey in cacheKeys ]
+      else:
+        elementNames = cacheKeys
     # Remove duplicates, makes Cartesian product faster
     elementNamesSet = set( elementNames )
 
     if isinstance( elementType, str ):
-      elementType = [ elementType ]
+      if not elementType or elementType == 'Site':
+        elementType = []
+      else:
+        elementType = [ elementType ]
     elif elementType is None:
       elementType = [ cacheKey[1] for cacheKey in cacheKeys ]
     # Remove duplicates, makes Cartesian product faster
     elementTypeSet = set( elementType )
 
     if isinstance( statusTypes, str ):
-      statusTypes = [ statusTypes ]
+      if not statusTypes:
+        statusTypes = []
+      else:
+        statusTypes = [ statusTypes ]
     elif statusTypes is None:
       statusTypes = self.allStatusTypes
     # Remove duplicates, makes Cartesian product faster
     statusTypesSet = set( statusTypes )
 
-    cartesianProduct = set( itertools.product( elementNamesSet, elementTypeSet, statusTypesSet ) )
+    if not elementTypeSet and not statusTypesSet:
+      cartesianProduct = elementNamesSet
+    else:
+      cartesianProduct = set( itertools.product( elementNamesSet, elementTypeSet, statusTypesSet ) )
+
 
     # Some users find funny sending empty lists, which will make the cartesianProduct
     # be []. Problem: [] is always subset, no matter what !
@@ -365,17 +382,14 @@ class RSSCache( Cache ):
         cache dictionary of the form { ( elementName, elementType, statusType ) : status, ... }
 
 
-    :return: dict of the form { elementName : { ( elementType, statusType ) : status, ... }, ... }
+    :return: dict of the form { elementName : { statusType: status, ... }, ... }
     """
 
     result = {}
 
     for cacheKey, cacheValue in cacheMatches.iteritems():
       elementName, _elementType, statusType = cacheKey
-
-      if elementName not in result:
-        result[ elementName ] = {}
-      result[ elementName ][ statusType ] = cacheValue
+      result.setdefault( elementName, {})[statusType] = cacheValue
 
     return result
 

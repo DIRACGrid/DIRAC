@@ -136,7 +136,7 @@ for the agent restart
   #############################################################################
   def __failStalledJobs( self, failedTime ):
     """ Changes the Stalled status to Failed for jobs long in the Stalled status
-"""
+    """
 
     result = self.jobDB.selectJobs( {'Status':'Stalled'} )
     if not result['OK']:

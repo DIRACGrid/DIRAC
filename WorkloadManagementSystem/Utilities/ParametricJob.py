@@ -40,12 +40,12 @@ def getParameterVectorLength( jobClassAd ):
   for attribute in attributes:
     if attribute.startswith( "Parameters" ):
       if jobClassAd.isAttributeList( attribute ):
-	parameterList = jobClassAd.getListFromExpression( attribute )
-	nThisParValues = len( parameterList )
+        parameterList = jobClassAd.getListFromExpression( attribute )
+        nThisParValues = len( parameterList )
       else:
-	nThisParValues = jobClassAd.getAttributeInt( attribute )
+        nThisParValues = jobClassAd.getAttributeInt( attribute )
       if nParValues is not None and nParValues != nThisParValues:
-	return S_ERROR( EWMSJDL, "Different length of parameter vectors" )
+        return S_ERROR( EWMSJDL, "Different length of parameter vectors" )
       nParValues = nThisParValues
   if nParValues is not None and nParValues <= 0:
     return S_ERROR( EWMSJDL, 'Illegal number of job parameters %d' % ( nParValues ) )
@@ -103,7 +103,7 @@ def generateParametricJobs( jobClassAd ):
         if key == 'Parameters':
           if jobClassAd.isAttributeList( attribute ):
             parList = jobClassAd.getListFromExpression( attribute )
-	    if len( parList ) != nParValues:
+            if len( parList ) != nParValues:
               return S_ERROR( EWMSJDL, 'Inconsistent parametric job description' )
             parameterDict[seqID]['ParameterList'] = parList
           else:

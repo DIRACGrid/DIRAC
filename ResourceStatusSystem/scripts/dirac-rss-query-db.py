@@ -159,8 +159,6 @@ def getToken( key ):
     now = Time.dateTime()
     #datetime.datetime.utcnow()
     expirationDate = now + datetime.timedelta( seconds=tokenExpiration['Value'] )
-    expirationDate = Time.toString( expirationDate )
-    expirationDate = expirationDate.split('.')[0]
     return expirationDate
 
 

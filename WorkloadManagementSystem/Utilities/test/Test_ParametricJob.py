@@ -6,7 +6,7 @@
 import unittest
 
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, \
-								   getParameterVectorLength
+                                                                   getParameterVectorLength
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 
 TEST_JDL_NO_PARAMETERS = """
