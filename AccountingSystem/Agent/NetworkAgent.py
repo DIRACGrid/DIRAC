@@ -134,7 +134,7 @@ class NetworkAgent ( AgentModule ):
   def processMessage( self, headers, body ):
     '''
     Process a message containing perfSONAR data and store the result in the Accounting DB.
-    Supports packet-loss-rate and one-way-delay metrics send in 5min summaries.
+    Supports packet-loss-rate and one-way-delay metrics send in raw data streams.
 
     Function is designed to be an MQConsumer callback function.
     '''
@@ -161,47 +161,47 @@ class NetworkAgent ( AgentModule ):
       metadataKey += value
 
     timestamps = sorted( body['datapoints'] )
-    
-    # approximate the value of first the timestamp
-    # (datapoints are take every 1 minute)
-    previousTimestamp = float( timestamps[0] ) - 60
-    for nextTimestamp in timestamps:
-    
-      data = body['datapoints'][nextTimestamp]
-
+    for timestamp in timestamps:
       try:
-        # set the time and create a hash
-        startTime = datetime.utcfromtimestamp( previousTimestamp )
-        endTime = datetime.utcfromtimestamp( float( nextTimestamp ) )
-
-        key = "%s%s%s" % ( metadataKey, str( startTime ), str( endTime ) )
+        date = datetime.utcfromtimestamp( float( timestamp ) )
+        
+        # create a key that allows to join packet-loss-rate and one-way-delay
+        # metrics in one network accounting record 
+        networkAccountingObjectKey = "%s%s" % ( metadataKey, str( date ) )
 
         # use existing or create a new temporary accounting
         # object to store the data in DB
-        if self.buffer.has_key( key ):
-          net = self.buffer[key]['object']
+        if self.buffer.has_key( networkAccountingObjectKey ):
+          net = self.buffer[networkAccountingObjectKey]['object']
+          
+          timeDifference = datetime.now() - self.buffer[networkAccountingObjectKey]['addTime']
+          if timeDifference.total_seconds() > 60:
+            self.log.warn( 'Object was taken from buffer after %s' % ( timeDifference ) )
         else:
           net = Network()
-          net.setStartTime( startTime )
-          net.setEndTime( endTime )
+          net.setStartTime( date )
+          net.setEndTime( date )
           net.setValuesFromDict( metadata )
+
+        # get data stored in metric
+        metricData = body['datapoints'][timestamp]
 
         # look for supported event types
         if headers['event-type'] == 'packet-loss-rate':
           self.PLRMetricCount += 1
-          if data < 0 or data > 1:
-            raise Exception( 'Invalid PLR metric (%s)' % ( data ) )
+          if metricData < 0 or metricData > 1:
+            raise Exception( 'Invalid PLR metric (%s)' % ( metricData ) )
           
-          net.setValueByKey( 'PacketLossRate', data * 100 )
+          net.setValueByKey( 'PacketLossRate', metricData * 100 )
         elif headers['event-type'] == 'histogram-owdelay':
           self.OWDMetricCount += 1
 
-          # calculate statistics form histogram
+          # calculate statistics from histogram
           OWDMin = 999999
           OWDMax = 0
           total = 0
           count = 0
-          for value, items in data.iteritems():
+          for value, items in metricData.iteritems():
             floatValue = float( value )
             total += floatValue * items
             count += items
@@ -214,7 +214,7 @@ class NetworkAgent ( AgentModule ):
             raise Exception( 'Invalid OWD metric (%s, %s, %s)' % 
                             ( OWDMin, OWDAvg, OWDMax ) )
           else:
-            # approximate jitter value as OWDMax - OWDMin
+            # approximate jitter value
             net.setValueByKey( 'Jitter', OWDMax - OWDMin )
             net.setValueByKey( 'OneWayDelay', OWDAvg )
 
@@ -222,8 +222,8 @@ class NetworkAgent ( AgentModule ):
           self.skippedMetricCount += 1
           continue
 
-        self.buffer[key] = {'addTime': datetime.now(), 'object': net}
-        previousTimestamp = float( nextTimestamp )
+        self.buffer[networkAccountingObjectKey] = {'addTime': datetime.now(),
+                                                   'object': net}
 
       # suppress all exceptions to protect the listener thread
       except Exception as e:
