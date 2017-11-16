@@ -949,7 +949,24 @@ class SiteDirector( AgentModule ):
     localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
 #
-import os, stat, tempfile, sys, shutil, base64, bz2
+import os
+import stat
+import tempfile
+import sys
+import shutil
+import base64
+import bz2
+import logging
+import time
+
+formatter = logging.Formatter(fmt='%(asctime)s UTC %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logging.Formatter.converter = time.gmtime
+screen_handler = logging.StreamHandler(stream=sys.stdout)
+screen_handler.setFormatter(formatter)
+logger = logging.getLogger('pippoLogger')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(screen_handler)
+
 try:
   pilotExecDir = '%(pilotExecDir)s'
   if not pilotExecDir:
@@ -973,16 +990,16 @@ try:
   os.environ["X509_CERT_DIR"]=os.path.join(pilotWorkingDirectory, 'etc/grid-security/certificates')
   # TODO: structure the output
   print '==========================================================='
-  print 'Environment of execution host'
+  logger.debug('Environment of execution host\n')
   for key in os.environ.keys():
     print key + '=' + os.environ[key]
-  print '==========================================================='
+  print '===========================================================\n'
 except Exception as x:
   print >> sys.stderr, x
   shutil.rmtree( pilotWorkingDirectory )
   sys.exit(-1)
 cmd = "python %(pilotScript)s %(pilotOptions)s"
-print 'Executing: ', cmd
+logger.info('Executing: %s' % cmd)
 sys.stdout.flush()
 os.system( cmd )
 
