@@ -9,10 +9,10 @@ echo "\n======> Test_TimeLeft <======\n"
 
 if [ ! -z "$DEBUG" ]
 then
-	echo '==> Running in DEBUG mode'
-	DEBUG='-ddd'
+  echo '==> Running in DEBUG mode'
+  DEBUG='-ddd'
 else
-	echo '==> Running in non-DEBUG mode'
+  echo '==> Running in non-DEBUG mode'
 fi
 
 
