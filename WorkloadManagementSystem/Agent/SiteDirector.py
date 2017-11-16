@@ -961,7 +961,10 @@ import time
 
 formatter = logging.Formatter(fmt='%(asctime)s UTC %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logging.Formatter.converter = time.gmtime
-screen_handler = logging.StreamHandler(stream=sys.stdout)
+try:
+  screen_handler = logging.StreamHandler(stream=sys.stdout)
+except TypeError: #python2.6
+  screen_handler = logging.StreamHandler(strm=sys.stdout)
 screen_handler.setFormatter(formatter)
 logger = logging.getLogger('pippoLogger')
 logger.setLevel(logging.DEBUG)
