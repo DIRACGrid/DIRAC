@@ -3,9 +3,13 @@
 *Core
 FIX: SocketInfo - log proper message on CA's init failure.
 
+*Accounting
+CHANGE: NetworkAgent - remove support of perfSONAR summaries and add support of raw metrics.
+
 *WMS
 FIX: JobDB - don't trigger exception in webSummary if a site with a single dot is in the system
 CHANGE: SiteDirector - added logging format and UTC timestamp to pilot wrapper
+FIX: JobMonitoring - fix in getJobPageSummaryWeb() for showing correct sign of life for stalled jobs
 
 *TS
 FIX: TransformationManager - fix for wrong method called by the Manager
