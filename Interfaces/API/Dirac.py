@@ -731,7 +731,10 @@ class Dirac( API ):
     parameters = res['Value']
 
     self.log.verbose( "Job parameters: %s" % printDict(parameters) )
-    inputData = self._getLocalInputData(parameters)
+    inputDataRes = self._getLocalInputData(parameters)
+    if not inputDataRes['OK']:
+      return inputDataRes
+    inputData = inputDataRes['Value']
 
     if inputData:
       self.log.verbose("Job has input data: %s" % inputData)
@@ -938,7 +941,7 @@ class Dirac( API ):
     if inputData:
       if isinstance( inputData, basestring ):
         inputData = [inputData]
-    return inputData
+    return S_OK(inputData)
 
 
   #############################################################################
