@@ -50,8 +50,8 @@ SEs=$(dirac-dms-show-se-status |grep BUFFER |grep -v 'Banned\|Degraded\|-new' | 
 x=0
 for n in $SEs
 do
-	arrSE[x]=$n
-	let x++
+  arrSE[x]=$n
+  let x++
 done
 # random=$[ $RANDOM % $x ]
 # randomSE=${arrSE[$random]}
