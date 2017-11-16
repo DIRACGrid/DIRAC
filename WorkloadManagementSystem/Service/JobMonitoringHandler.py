@@ -412,7 +412,8 @@ class JobMonitoringHandler(RequestHandler):
           # Not only Stalled jobs but also Failed jobs because Stalled
           if ((hbTime - lastTime) > (lastTime - lastTime) or
               jobDict['Status'] == "Stalled" or
-                  jobDict['MinorStatus'].startswith('Job Stalled')):
+                  jobDict['MinorStatus'].startswith('Job stalled') or
+                  jobDict['MinorStatus'].startswith('Stalling')):
             jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
           else:
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
