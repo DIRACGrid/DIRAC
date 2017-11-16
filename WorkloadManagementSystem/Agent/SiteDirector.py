@@ -991,8 +991,8 @@ try:
   # TODO: structure the output
   print '==========================================================='
   logger.debug('Environment of execution host\n')
-  for key in os.environ.keys():
-    print key + '=' + os.environ[key]
+  for key, val in os.environ.iteritems():
+    logger.debug( key + '=' + val )
   print '===========================================================\n'
 except Exception as x:
   print >> sys.stderr, x
