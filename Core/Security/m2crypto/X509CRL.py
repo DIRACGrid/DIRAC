@@ -8,7 +8,7 @@ import stat
 import os
 import tempfile
 
-from GSI import crypto
+import M2Crypto
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 
@@ -40,50 +40,17 @@ class X509CRL(object):
     Load a x509CRL certificate from a pem file
     Return : S_OK / S_ERROR
     """
-    try:
-      fd = file(crlLocation)
-      pemData = fd.read()
-      fd.close()
-    except Exception as e:
-      return S_ERROR(DErrno.EOF, "%s: %s" % (crlLocation, repr(e).replace(',)', ')')))
-    return self.loadChainFromString(pemData)
 
-  def loadChainFromString(self, pemData):
-    """
-    Load a x509CRL certificate from a string containing the pem data
-    Return : S_OK / S_ERROR
-    """
     self.__loadedCert = False
     try:
-      self.__revokedCert = crypto.load_crl(crypto.FILETYPE_PEM, pemData)
+      self.__revokedCert = M2Crypto.X509.load_crl(crlLocation)
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(',)', ')'))
-    if not self.__revokedCert:
-      return S_ERROR(DErrno.ECERTREAD)
     self.__loadedCert = True
+    with open(crlLocation, 'r') as crlFile:
+      pemData = crlFile.read()
     self.__pemData = pemData
-
     return S_OK()
-
-  def loadProxyFromFile(self, crlLocation):
-    """
-    Load a Proxy from a pem file
-    Return : S_OK / S_ERROR
-    """
-    try:
-      fd = file(crlLocation)
-      pemData = fd.read()
-      fd.close()
-    except Exception as e:
-      return S_ERROR(DErrno.EOF, "%s: %s" % (crlLocation, repr(e).replace(',)', ')')))
-    return self.loadProxyFromString(pemData)
-
-  def loadProxyFromString(self, pemData):
-    """
-    Load a Proxy from a pem buffer
-    Return : S_OK / S_ERROR
-    """
-    return self.loadChainFromString(pemData)
 
   def dumpAllToString(self):
     """
@@ -122,7 +89,7 @@ class X509CRL(object):
   def __str__(self):
     repStr = "<X509CRL"
     if self.__loadedCert:
-      repStr += self.__revokedCert.get_issuer().one_line()
+      repStr += ""  # self.__revokedCert.get_issuer().one_line()  # Why issuer?! XXX
     repStr += ">"
     return repStr
 
