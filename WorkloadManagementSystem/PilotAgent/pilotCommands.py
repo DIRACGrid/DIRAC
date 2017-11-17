@@ -471,10 +471,10 @@ class CheckWNCapabilities( CommandBase ):
     if self.pp.localConfigFile:
       self.cfg.append( self.pp.localConfigFile ) # this file is as input
     # Get the worker node parameters
-    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
-                                                                   self.pp.ceName,
-                                                                   self.pp.queueName,
-                                                                   " ".join( self.cfg ) )
+    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % (self.pp.site,
+                                                                     self.pp.ceName,
+                                                                     self.pp.queueName,
+                                                                     " ".join( self.cfg))
     retCode, result = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
