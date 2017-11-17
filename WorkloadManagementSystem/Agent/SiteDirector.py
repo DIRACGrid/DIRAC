@@ -993,10 +993,10 @@ try:
   os.environ["X509_CERT_DIR"]=os.path.join(pilotWorkingDirectory, 'etc/grid-security/certificates')
   # TODO: structure the output
   print '==========================================================='
-  logger.debug('Environment of execution host\n')
+  logger.debug('Environment of execution host\\n')
   for key, val in os.environ.iteritems():
     logger.debug( key + '=' + val )
-  print '===========================================================\n'
+  print '===========================================================\\n'
 except Exception as x:
   print >> sys.stderr, x
   shutil.rmtree( pilotWorkingDirectory )
