@@ -31,6 +31,12 @@ NEW: New SingularityComputingElement to submit jobs to a Singularity container
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
 
+[v6r19p7]
+
+*WorkloadManagement
+FIX: SiteDirector - correct escaping in pilot template
+FIX: dirac-wms-get-wn-parameters - added some printouts to dirac-wms-get-wn-parameters
+
 [v6r19p6]
 
 *Core
