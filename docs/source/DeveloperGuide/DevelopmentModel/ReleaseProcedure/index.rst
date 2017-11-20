@@ -17,12 +17,31 @@ The release manager needs to:
 
 The release manager of LHCbDIRAC has the triple role of:
 
-1. creating the release
-2. making basic verifications
-3. deploying DIRAC tarballs
+1. WebAppDIRAC release
+2. creating the release
+3. making basic verifications
+4. deploying DIRAC tarballs
 
+1. WebAppDIRAC release
+========================
 
-1. Creating the release(s)
+Before you start releasing DIRAC, you have to install sencha cmd and you have to download extjs sdk.
+
+Sencha Cmd
+````````````
+
+You can download from https://www.sencha.com/products/extjs/cmd-download/
+Note: you have to add sencha to the system path. Please make sure, if you type sencha in the terminal will work. 
+
+ExtJs SDK
+`````````
+
+You can download from the following link:
+https://www.sencha.com/legal/GPL/ 
+
+Note: You have to provide a valid email address and you will receive a link where the sdk can be downloaded. 
+
+2. Creating the release(s)
 ==========================
 
 The procedure consists of several steps:
@@ -170,7 +189,7 @@ with standard tools on test DIRAC servers, for example::
   > git push release integration
 
 
-2. Making basic verifications
+3. Making basic verifications
 =============================
 
 There are a set of basic tests that can be done on releases.
@@ -185,7 +204,7 @@ A second test is represented by pylint, for which you may find some more info in
 The pylint score should not decrease for newer tags.
 
 
-3. Deploying DIRAC tarballs
+4. Deploying DIRAC tarballs
 =============================
 
 Once the release branches are tagged and pushed, the new release versions are
@@ -205,3 +224,4 @@ In the end of its execution, the *dirac-distribution* will print out a command t
 used to upload generated release files to a predefined repository ( see :ref:`dirac_projects` ).
 
 It's now time to advertise that new releases have been created. Use the DIRAC google forum.
+
