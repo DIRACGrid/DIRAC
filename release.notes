@@ -1,14 +1,17 @@
-[v6r20-pre7]
+[v6r20-pre8]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
 CHANGE: Removed deprecated option "ExtraModules" (dirac-configure, dirac-install scripts)
 CHANGE: dirac-deploy-scripts, dirac-install - allow command modules with underscores in 
         their names in order for better support for the code checking tools
+CHANGE: dirac-distribution and related scripts - compile web code while release
+        generation
 
 *Framework
 CHANGE: ComponentInstaller - remove the old web portal configuration data 
         used during the installation
+NEW: WebAppCompiler methods is implemented, which is used to compile the web framework
 
 *WorkloadManagementSystem
 NEW: StopSigRegex, StopSigStartSeconds, StopSigFinishSeconds, StopSigNumber added to JDL, which cause Watchdog to send a signal StopSigNumber to payload processes matching StopSigRegex when there are less than StopSigFinishSeconds of wall clock remaining according to MJF.
