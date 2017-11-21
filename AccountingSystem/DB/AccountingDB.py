@@ -1014,7 +1014,7 @@ class AccountingDB( DB ):
         if 'bucketLength' in selectFields[1]:
           groupFields = list( groupFields )
           groupFields[0] = "%s, %s" % ( groupFields[0], "%s" )
-          groupFields[1].append( ['bucketlength'] )
+          groupFields[1].append( 'bucketlength' )
           groupFields = tuple( groupFields )
            
       except TypeError as e:
