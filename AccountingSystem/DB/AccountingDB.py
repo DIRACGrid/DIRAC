@@ -1009,7 +1009,7 @@ class AccountingDB( DB ):
         #             in this case the correct query must be: select Site, startTime, bucketlength, sum(entriesInBucket) from xxxx where yyy Group by Site, startTime, bucketlength
         #
         # When we have multiple grouping then we must have all the fields in Group by. This is from mysql 5.7.
-        # We have fields which are not in the groupFields and it is in selectedFields
+        # We have fields which are not in the groupFields and it is in selectFields
 
         if 'bucketLength' in selectFields[1]:
           groupFields = list( groupFields )
