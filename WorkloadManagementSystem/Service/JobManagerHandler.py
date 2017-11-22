@@ -29,7 +29,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-from DIRAC.Core.Utilities.DErrno import EWMSJDL
+from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSBULK
 
 # This is a global instance of the JobDB class
 gJobDB = None
@@ -102,9 +102,14 @@ class JobManagerHandler( RequestHandler ):
     self.log.info( "Optimize msg sent for %s jobs" % len( jids ) )
 
   ###########################################################################
-  types_submitJob = [ StringTypes ]
-  def export_submitJob( self, jobDesc ):
+  types_submitJob = [ basestring ]
+  def export_submitJob( self, jobDesc, bulkTransaction = False ):
     """ Submit a single job to DIRAC WMS
+
+        :param str jobDesc: job description JDL
+        :param bool bulkTransaction: optional flag to require transactional bulk submission
+
+        :return list: a list of newly created job IDs
     """
 
     if self.peerUsesLimitedProxy:
@@ -144,8 +149,22 @@ class JobManagerHandler( RequestHandler ):
       jobDescList = [ jobDesc ]
 
     jobIDList = []
+
+    if bulkTransaction and parametricJob:
+      initialStatus = 'Submitting'
+      initialMinorStatus = 'Bulk transaction confirmation'
+    else:
+      initialStatus = 'Received'
+      initialMinorStatus = 'Job accepted'
+
     for jobDescription in jobDescList:
-      result = gJobDB.insertNewJobIntoDB( jobDescription, self.owner, self.ownerDN, self.ownerGroup, self.diracSetup )
+      result = gJobDB.insertNewJobIntoDB( jobDescription,
+                                          self.owner,
+                                          self.ownerDN,
+                                          self.ownerGroup,
+                                          self.diracSetup,
+                                          initialStatus = initialStatus,
+                                          initialMinorStatus = initialMinorStatus )
       if not result['OK']:
         return result
 
@@ -167,9 +186,53 @@ class JobManagerHandler( RequestHandler ):
       result = S_OK( jobIDList[0] )
 
     result['JobID'] = result['Value']
-    result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
-    self.__sendJobsToOptimizationMind( jobIDList )
+    result['requireProxyUpload'] = self.__checkIfProxyUploadIsRequired()
+    result['requireBulkSubmissionConfirmation'] = bulkTransaction
+    if not bulkTransaction:
+      self.__sendJobsToOptimizationMind( jobIDList )
     return result
+
+###########################################################################
+  types_confirmBulkSubmission = [ list ]
+  def export_confirmBulkSubmission( self, jobIDs ):
+    """
+       Confirm the possibility to proceed with processing of the jobs specified 
+       by the jobIDList 
+       
+       :param jobIDList: list of job IDs
+       :return: confirmed job IDs
+    """
+    jobList = self.__getJobList( jobIDs )
+    if not jobList:
+      return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
+
+    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
+                                                                                                   RIGHT_SUBMIT )
+
+    # Check that all the requested jobs are eligible
+    if set( jobList ) != set( validJobList ):
+      return S_ERROR( EWMSBULK, 'Requested jobs for bulk transaction are not valid' )
+
+    result = gJobDB.getAttributesForJobList( jobList, ['Status', 'MinorStatus'] )
+    if not result['OK']:
+      return S_ERROR( EWMSBULK, 'Requested jobs for bulk transaction are not valid' )
+    jobStatusDict = result['Value']
+
+    # Check that requested job are in Submitting status
+    jobUpdateStatusList = [ jobID for jobID in jobList if jobStatusDict[jobID]['Status'] == "Submitting" ]
+    if set( jobUpdateStatusList ) != set( jobList ):
+      return S_ERROR( EWMSBULK, 'Requested jobs for bulk transaction are not valid' )
+
+    # Update status of all the requested jobs in one transaction
+    result = gJobDB.setJobAttributes( jobUpdateStatusList,
+                                      ['Status', 'MinorStatus'],
+                                      ['Received', 'Job accepted'] )
+
+    if not result['OK']:
+      return S_ERROR( EWMSBULK, 'Failed to update status of the jobs' )
+
+    self.__sendJobsToOptimizationMind( jobUpdateStatusList )
+    return S_OK( jobUpdateStatusList )
 
 ###########################################################################
   def __checkIfProxyUploadIsRequired( self ):
@@ -181,16 +244,7 @@ class JobManagerHandler( RequestHandler ):
     return result[ 'Value' ] == False
 
 ###########################################################################
-  types_invalidateJob = [ IntType ]
-  def invalidateJob( self, jobID ):
-    """ Make job with jobID invalid, e.g. because of the sandbox submission
-        errors.
-    """
-
-    pass
-
-###########################################################################
-  def __get_job_list( self, jobInput ):
+  def __getJobList( self, jobInput ):
     """ Evaluate the jobInput into a list of ints
     """
 
@@ -218,7 +272,7 @@ class JobManagerHandler( RequestHandler ):
          it will be used to refresh the proxy in the Proxy Repository
     """
 
-    jobList = self.__get_job_list( jobIDs )
+    jobList = self.__getJobList( jobIDs )
     if not jobList:
       return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
 
@@ -303,7 +357,7 @@ class JobManagerHandler( RequestHandler ):
     """  Kill or delete jobs as necessary
     """
 
-    jobList = self.__get_job_list( jobIDList )
+    jobList = self.__getJobList( jobIDList )
     if not jobList:
       return S_ERROR( 'Invalid job specification: ' + str( jobIDList ) )
 
@@ -389,7 +443,7 @@ class JobManagerHandler( RequestHandler ):
     """  Reset jobs specified in the jobIDs list
     """
 
-    jobList = self.__get_job_list( jobIDs )
+    jobList = self.__getJobList( jobIDs )
     if not jobList:
       return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
 
