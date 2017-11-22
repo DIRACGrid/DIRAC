@@ -162,11 +162,20 @@ class WMSClient( object ):
         jobIDList = resultSubmit['Value']
         if len( jobIDList ) == nJobs:
           # Confirm the submitted jobs
+          confirmed = False
           for attempt in range(3):
             result = self.jobManager.confirmBulkSubmission( jobIDList )
             if result['OK']:
+              confirmed = True
               break
             time.sleep( 1 )
+          if not confirmed:
+            # The bulk submission failed, try to delete the created jobs
+            result = self.jobManager.deleteJob( jobIDList )
+            error = "Job submission failed to confirm bulk transaction"
+            if not result['OK']:
+              error += "; removal of created jobs failed"
+            return S_ERROR( EWMSBULK, error )
         else:
           return S_ERROR( EWMSBULK, "The number of submitted jobs does not match job description ")
       else:
