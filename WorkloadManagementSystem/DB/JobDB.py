@@ -630,8 +630,14 @@ class JobDB( DB ):
 
 #############################################################################
   def setJobAttributes( self, jobID, attrNames, attrValues, update = False, myDate = None ):
-    """ Set an attribute value for job specified by jobID.
-        The LastUpdate time stamp is refreshed if explicitely requested
+    """ Set one or more attribute values for one or more jobs specified by jobID.
+        The LastUpdate time stamp is refreshed if explicitely requested with the update flag
+
+        :param int/str/list jobID: one or more job IDs
+        :param list attrNames: names of attributes to update
+        :param list attrValues: corresponding values of attributes to update
+
+        :return : S_OK/S_ERROR
     """
 
     jobIDList = jobID
@@ -652,7 +658,6 @@ class JobDB( DB ):
       if not attrName in self.jobAttributeNames:
         return S_ERROR( 'Request to set non-existing job attribute' )
 
-    # FIXME: Need to check the validity of attrNames
     attr = []
     for i in range( len( attrNames ) ):
       ret = self._escapeString( attrValues[i] )
