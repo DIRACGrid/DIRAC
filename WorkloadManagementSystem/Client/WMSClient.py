@@ -4,13 +4,17 @@
 
 import os
 import StringIO
+import time
 
 from DIRAC                                     import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.DISET.RPCClient                import RPCClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities                      import File
-from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import getParameterVectorLength
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSBULK
 
 __RCSID__ = "$Id$"
 
@@ -26,6 +30,7 @@ class WMSClient( object ):
     self.useCertificates = useCertificates
     self.timeout = timeout
     self.jobManager = jobManagerClient
+    self.operationsHelper = Operations()
     self.sandboxClient = None
     if sbRPCClient and sbTransferClient:
       self.sandboxClient = SandboxStoreClient( rpcClient = sbRPCClient,
@@ -138,13 +143,40 @@ class WMSClient( object ):
       return result
 
     # Submit the job now and get the new job ID
+    bulkTransaction = self.operationsHelper.getValue( 'JobScheduling/BulkSubmissionTransaction', False )
+    if bulkTransaction:
+      result = getParameterVectorLength( classAdJob )
+      if not result['OK']:
+        return result
+      nJobs = result['Value']
+      parametricJob = nJobs > 0
+
     if not self.jobManager:
       self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
                                    useCertificates = self.useCertificates,
                                    timeout = self.timeout )
-    result = self.jobManager.submitJob( classAdJob.asJDL() )
-    if 'requireProxyUpload' in result and result['requireProxyUpload']:
+    if bulkTransaction and parametricJob:
+      gLogger.debug( 'Applying transactional job submission' )
+      resultSubmit = self.jobManager.submitJob( classAdJob.asJDL(), True )
+      if resultSubmit['OK'] and resultSubmit.get( 'requireBulkSubmissionConfirmation' ):
+        jobIDList = resultSubmit['Value']
+        if len( jobIDList ) == nJobs:
+          # Confirm the submitted jobs
+          for attempt in range(3):
+            result = self.jobManager.confirmBulkSubmission( jobIDList )
+            if result['OK']:
+              break
+            time.sleep( 1 )
+        else:
+          return S_ERROR( EWMSBULK, "The number of submitted jobs does not match job description ")
+      else:
+        result = resultSubmit
+    else:
+      resultSubmit = self.jobManager.submitJob( classAdJob.asJDL() )
+      result = resultSubmit
+    if resultSubmit.get( 'requireProxyUpload' ):
       gLogger.warn( "Need to upload the proxy" )
+
     return result
 
   def killJob( self, jobID ):
