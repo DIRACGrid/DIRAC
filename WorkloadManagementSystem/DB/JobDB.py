@@ -634,13 +634,23 @@ class JobDB( DB ):
         The LastUpdate time stamp is refreshed if explicitely requested
     """
 
-    ret = self._escapeString( jobID )
-    if not ret['OK']:
-      return ret
-    jobID = ret['Value']
+    jobIDList = jobID
+    if not isinstance( jobID, (list, tuple) ):
+      jobIDList = [jobID]
+
+    jIDList = []
+    for jID in jobIDList:
+      ret = self._escapeString( jID )
+      if not ret['OK']:
+        return ret
+      jIDList.append( ret['Value'] )
 
     if len( attrNames ) != len( attrValues ):
       return S_ERROR( 'JobDB.setAttributes: incompatible Argument length' )
+
+    for attrName in attrNames:
+      if not attrName in self.jobAttributeNames:
+        return S_ERROR( 'Request to set non-existing job attribute' )
 
     # FIXME: Need to check the validity of attrNames
     attr = []
@@ -655,16 +665,13 @@ class JobDB( DB ):
     if len( attr ) == 0:
       return S_ERROR( 'JobDB.setAttributes: Nothing to do' )
 
-    cmd = 'UPDATE Jobs SET %s WHERE JobID=%s' % ( ', '.join( attr ), jobID )
+    cmd = 'UPDATE Jobs SET %s WHERE JobID in ( %s )' % ( ', '.join( attr ), ', '.join( jIDList ) )
 
     if myDate:
       cmd += ' AND LastUpdateTime < %s' % myDate
 
-    res = self._update( cmd )
-    if res['OK']:
-      return res
-    else:
-      return S_ERROR( 'JobDB.setAttributes: failed to set attribute' )
+    result = self._transaction( [cmd] )
+    return result
 
 #############################################################################
   def setJobStatus( self, jobID, status = '', minor = '', application = '', appCounter = None ):
@@ -983,7 +990,9 @@ class JobDB( DB ):
       return result
 
 #############################################################################
-  def insertNewJobIntoDB( self, jdl, owner, ownerDN, ownerGroup, diracSetup ):
+  def insertNewJobIntoDB( self, jdl, owner, ownerDN, ownerGroup, diracSetup,
+                          initialStatus = "Received",
+                          initialMinorStatus = "Job accepted" ):
     """ Insert the initial JDL into the Job database,
         Do initial JDL crosscheck,
         Set Initial job Attributes and Status
@@ -1093,10 +1102,10 @@ class JobDB( DB ):
     jobAttrValues.append( 'True' )
 
     jobAttrNames.append( 'Status' )
-    jobAttrValues.append( 'Received' )
+    jobAttrValues.append( initialStatus )
 
     jobAttrNames.append( 'MinorStatus' )
-    jobAttrValues.append( 'Job accepted' )
+    jobAttrValues.append( initialMinorStatus )
 
     reqJDL = classAdReq.asJDL()
     classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
@@ -1145,8 +1154,8 @@ class JobDB( DB ):
       if not result['OK']:
         return result
 
-    retVal['Status'] = 'Received'
-    retVal['MinorStatus'] = 'Job accepted'
+    retVal['Status'] = initialStatus
+    retVal['MinorStatus'] = initialMinorStatus
 
     return retVal
 
