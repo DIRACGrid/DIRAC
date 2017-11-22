@@ -561,7 +561,6 @@ used to fail jobs due to the optimizer chain.
     if not jobIDs:
       return S_OK()
 
-    # Remove those with Minor Status "Pending Requests"
     for jobID in jobIDs:
       result = self.__updateJobStatus( jobID, 'Failed' )
       if not result['OK']:
