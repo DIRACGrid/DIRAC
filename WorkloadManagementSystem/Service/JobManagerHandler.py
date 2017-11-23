@@ -30,6 +30,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSBULK
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 # This is a global instance of the JobDB class
 gJobDB = None
@@ -103,11 +104,10 @@ class JobManagerHandler( RequestHandler ):
 
   ###########################################################################
   types_submitJob = [ basestring ]
-  def export_submitJob( self, jobDesc, bulkTransaction = False ):
+  def export_submitJob( self, jobDesc ):
     """ Submit a single job to DIRAC WMS
 
         :param str jobDesc: job description JDL
-        :param bool bulkTransaction: optional flag to require transactional bulk submission
 
         :return list: a list of newly created job IDs
     """
@@ -149,6 +149,8 @@ class JobManagerHandler( RequestHandler ):
       jobDescList = [ jobDesc ]
 
     jobIDList = []
+
+    bulkTransaction = Operations(group = self.ownerGroup ).getValue('JobScheduling/BulkSubmissionTransaction', False)
 
     if bulkTransaction and parametricJob:
       initialStatus = 'Submitting'
