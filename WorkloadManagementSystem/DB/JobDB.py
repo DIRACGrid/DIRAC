@@ -49,6 +49,7 @@ from DIRAC.Core.Utilities                                    import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
 from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERROR
 from DIRAC.Core.Utilities                                    import Time
+from DIRAC.Core.Utilities.DErrno                             import EWMSSUBM
 from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations     import Operations
@@ -600,7 +601,18 @@ class JobDB( DB ):
   def setJobAttribute( self, jobID, attrName, attrValue, update = False, myDate = None ):
     """ Set an attribute value for job specified by jobID.
         The LastUpdate time stamp is refreshed if explicitly requested
+
+        :param int/str jobID: job ID
+        :param str attrName: attribute name
+        :param str attrValue: attribute value
+        :param bool update: optional flag to update the job LastUpdateTime stamp
+        :param str myDate: optional time stamp for the LastUpdateTime attribute
+
+        :return : S_OK/S_ERROR
     """
+
+    if attrName not in self.jobAttributeNames:
+      return S_ERROR( EWMSSUBM, 'Request to set non-existing job attribute' )
 
     ret = self._escapeString( jobID )
     if not ret['OK']:
@@ -611,8 +623,6 @@ class JobDB( DB ):
     if not ret['OK']:
       return ret
     value = ret['Value']
-
-    # FIXME: need to check the validity of attrName
 
     if update:
       cmd = "UPDATE Jobs SET %s=%s,LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s" % ( attrName, value, jobID )
@@ -636,6 +646,8 @@ class JobDB( DB ):
         :param int/str/list jobID: one or more job IDs
         :param list attrNames: names of attributes to update
         :param list attrValues: corresponding values of attributes to update
+        :param bool update: optional flag to update the job LastUpdateTime stamp
+        :param str myDate: optional time stamp for the LastUpdateTime attribute
 
         :return : S_OK/S_ERROR
     """
@@ -655,8 +667,8 @@ class JobDB( DB ):
       return S_ERROR( 'JobDB.setAttributes: incompatible Argument length' )
 
     for attrName in attrNames:
-      if not attrName in self.jobAttributeNames:
-        return S_ERROR( 'Request to set non-existing job attribute' )
+      if attrName not in self.jobAttributeNames:
+        return S_ERROR( EWMSSUBM, 'Request to set non-existing job attribute' )
 
     attr = []
     for i in range( len( attrNames ) ):
@@ -1001,6 +1013,15 @@ class JobDB( DB ):
     """ Insert the initial JDL into the Job database,
         Do initial JDL crosscheck,
         Set Initial job Attributes and Status
+
+        :param str jdl: job description JDL
+        :param str owner: job owner user name
+        :param str ownerDN: job owner DN
+        :param str ownerGroup: job owner group
+        :param str diracSetup: setup in which context the job is submitted
+        :param str initialStatus: optional initial job status (Received by default)
+        :param str initialMinorStatus: optional initial minor job status
+        :return : new job ID
     """
     jobManifest = JobManifest()
     result = jobManifest.load( jdl )
@@ -1022,7 +1043,7 @@ class JobDB( DB ):
       jdl = '[' + jdl + ']'
     result = self.__insertNewJDL( jdl )
     if not result[ 'OK' ]:
-      return S_ERROR( 'Can not insert JDL in to DB' )
+      return S_ERROR( EWMSSUBM, 'Failed to insert JDL in to DB' )
     jobID = result[ 'Value' ]
 
     jobManifest.setOption( 'JobID', jobID )
@@ -1250,7 +1271,7 @@ class JobDB( DB ):
 
     if error:
 
-      retVal = S_ERROR( error )
+      retVal = S_ERROR( EWMSSUBM, error )
       retVal['JobId'] = jobID
       retVal['Status'] = 'Failed'
       retVal['MinorStatus'] = error
