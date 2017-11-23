@@ -3,18 +3,26 @@
 .. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=master
    :target: https://travis-ci.org/DIRACGrid/DIRAC
    :alt: Build Status
-   
-.. image:: https://readthedocs.org/projects/dirac/badge/?version=rel-v6r17
-   :target: http://dirac.readthedocs.io/en/rel-v6r17/?badge=rel-v6r17
+
+.. image:: https://readthedocs.org/projects/dirac/badge/?version=latest
+   :target: http://dirac.readthedocs.io/en/latest/
    :alt: Documentation Status
-   
+
+
+Integration branch:
+
+.. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=integration
+  :target: https://travis-ci.org/DIRACGrid/DIRAC
+  :alt: Build Status
+
+.. image:: https://readthedocs.org/projects/dirac/badge/?version=integration
+  :target: http://dirac.readthedocs.io/en/integration/
+  :alt: Documentation Status
+
+
 
 DIRAC
 =====
-.. image:: https://img.shields.io/coveralls/DIRACGrid/DIRAC/rel-v6r17.svg?maxAge=2592000
-    :target: https://coveralls.io/github/DIRACGrid/DIRAC
-.. image:: https://landscape.io/github/DIRACGrid/DIRAC/rel-v6r17/landscape.svg?style=flat
-   :target: https://landscape.io/github/DIRACGrid/DIRAC/rel-v6r17
 
 DIRAC (Distributed Infrastructure with Remote Agent Control) INTERWARE is a software framework for distributed computing providing a complete solution to one or more user community requiring access to distributed resources. DIRAC builds a layer between the users and the resources offering a common interface to a number of heterogeneous providers, integrating them in a seamless manner, providing interoperability, at the same time as an optimized, transparent and reliable usage of the resources.
 
@@ -41,7 +49,7 @@ Development
 Contributing
 ~~~~~~~~~~~~
 
-A tutorial on how to contribute to DIRAC can be found in `this page <http://dirac.readthedocs.io/en/latest/DeveloperGuide/AddingNewComponents/index.html>`_. 
+A tutorial on how to contribute to DIRAC can be found in `this page <http://dirac.readthedocs.io/en/latest/DeveloperGuide/AddingNewComponents/index.html>`_.
 
 Code quality
 ~~~~~~~~~~~~
