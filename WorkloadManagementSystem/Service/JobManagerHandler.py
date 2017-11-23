@@ -108,7 +108,6 @@ class JobManagerHandler( RequestHandler ):
     """ Submit a single job to DIRAC WMS
 
         :param str jobDesc: job description JDL
-
         :return list: a list of newly created job IDs
     """
 
@@ -258,6 +257,9 @@ class JobManagerHandler( RequestHandler ):
 ###########################################################################
   def __getJobList( self, jobInput ):
     """ Evaluate the jobInput into a list of ints
+
+        :param str/int/list jobInput: one or more job IDs in int or str form
+        :return : a list of int job IDs
     """
 
     if isinstance( jobInput, int ):
@@ -282,6 +284,9 @@ class JobManagerHandler( RequestHandler ):
   def export_rescheduleJob( self, jobIDs ):
     """  Reschedule a single job. If the optional proxy parameter is given
          it will be used to refresh the proxy in the Proxy Repository
+
+         :param jobIDList: list of job IDs
+         :return: confirmed job IDs
     """
 
     jobList = self.__getJobList( jobIDs )
@@ -436,7 +441,10 @@ class JobManagerHandler( RequestHandler ):
 ###########################################################################
   types_deleteJob = [  ]
   def export_deleteJob( self, jobIDs ):
-    """  Delete jobs specified in the jobIDs list
+    """ Delete jobs specified in the jobIDs list
+
+        :param jobIDList: list of job IDs
+        :return: S_OK/S_ERROR
     """
 
     return self.__kill_delete_jobs( jobIDs, RIGHT_DELETE )
@@ -444,7 +452,10 @@ class JobManagerHandler( RequestHandler ):
 ###########################################################################
   types_killJob = [  ]
   def export_killJob( self, jobIDs ):
-    """  Kill jobs specified in the jobIDs list
+    """ Kill jobs specified in the jobIDs list
+
+        :param jobIDList: list of job IDs
+        :return: S_OK/S_ERROR
     """
 
     return self.__kill_delete_jobs( jobIDs, RIGHT_KILL )
@@ -452,7 +463,10 @@ class JobManagerHandler( RequestHandler ):
 ###########################################################################
   types_resetJob = [  ]
   def export_resetJob( self, jobIDs ):
-    """  Reset jobs specified in the jobIDs list
+    """ Reset jobs specified in the jobIDs list
+
+        :param jobIDList: list of job IDs
+        :return: S_OK/S_ERROR
     """
 
     jobList = self.__getJobList( jobIDs )
