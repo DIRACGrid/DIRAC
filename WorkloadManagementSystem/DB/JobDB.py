@@ -60,6 +60,10 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus                 import SiteSta
 
 #############################################################################
 
+JOB_STATES = ['Submitting','Received', 'Checking', 'Staging', 'Waiting', 'Matched',
+              'Running', 'Stalled', 'Done', 'Completed', 'Failed']
+JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
+
 class JobDB( DB ):
 
   def __init__( self ):
@@ -82,9 +86,6 @@ class JobDB( DB ):
       sys.exit( error )
       return
 
-    self.JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
-                       'Running', 'Stalled', 'Done', 'Completed', 'Failed']
-    self.JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
     self.jdl2DBParameters = ['JobName', 'JobType', 'JobGroup']
 
     self.log.info( "MaxReschedule:  %s" % self.maxRescheduling )
@@ -283,7 +284,8 @@ class JobDB( DB ):
         if not ret['OK']:
           return ret
         paramNameList.append( ret['Value'] )
-      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % ( e_jobID, ','.join( paramNameList ) )
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % \
+            ( e_jobID, ','.join( paramNameList ) )
       result = self._query( cmd )
       if result['OK']:
         if result['Value']:
@@ -301,14 +303,14 @@ class JobDB( DB ):
       result = self.getFields( 'JobParameters', ['Name', 'Value'], {'JobID': jobID} )
       if not result['OK']:
         return result
-      else:
-        for name, value in result['Value']:
-          try:
-            resultDict[name] = value.tostring()
-          except Exception:
-            resultDict[name] = value
 
-        return S_OK( resultDict )
+      for name, value in result['Value']:
+        try:
+          resultDict[name] = value.tostring()
+        except Exception:
+          resultDict[name] = value
+
+      return S_OK( resultDict )
 
 #############################################################################
   def getAtticJobParameters( self, jobID, paramList = None, rescheduleCounter = -1 ):
@@ -417,8 +419,8 @@ class JobDB( DB ):
     if result['OK']:
       value = result['Value'][attribute]
       return S_OK( value )
-    else:
-      return result
+
+    return result
 
 #############################################################################
   def getJobParameter( self, jobID, parameter ):
@@ -439,10 +441,9 @@ class JobDB( DB ):
     if result['OK']:
       if result['Value']:
         return S_OK( result['Value'][0][0] )
-      else:
-        return S_ERROR( 'Parameter not found' )
-    else:
-      return S_ERROR( 'Failed to access database' )
+      return S_ERROR( 'Parameter not found' )
+
+    return S_ERROR( 'Failed to access database' )
 
 #############################################################################
   def getJobOptParameters( self, jobID, paramList = None ):
@@ -636,8 +637,7 @@ class JobDB( DB ):
     res = self._update( cmd )
     if res['OK']:
       return res
-    else:
-      return S_ERROR( 'JobDB.setAttribute: failed to set attribute' )
+    return S_ERROR( 'JobDB.setAttribute: failed to set attribute' )
 
 #############################################################################
   def setJobAttributes( self, jobID, attrNames, attrValues, update = False, myDate = None ):
@@ -853,8 +853,7 @@ class JobDB( DB ):
     cmd = 'DELETE FROM OptimizerParameters WHERE JobID=%s AND Name=%s' % ( jobID, name )
     if not self._update( cmd )['OK']:
       return S_ERROR( 'JobDB.removeJobOptParameter: operation failed.' )
-    else:
-      return S_OK()
+    return S_OK()
 
 #############################################################################
   def setAtticJobParameter( self, jobID, key, value, rescheduleCounter ):
@@ -1003,10 +1002,8 @@ class JobDB( DB ):
       jdl = result['Value']
       if not jdl:
         return S_OK( jdl )
-      else:
-        return S_OK( result['Value'][0][0] )
-    else:
-      return result
+      return S_OK( result['Value'][0][0] )
+    return result
 
 #############################################################################
   def insertNewJobIntoDB( self, jdl, owner, ownerDN, ownerGroup, diracSetup,
@@ -1514,7 +1511,8 @@ class JobDB( DB ):
     sitesSql = ret['Value']
     sitesSql[0] = 'SELECT %s AS Site' % sitesSql[0]
     sitesSql = ' UNION SELECT '.join( sitesSql )
-    cmd = "SELECT Site FROM (%s) AS tmptable WHERE Site NOT IN (SELECT Site FROM SiteMask WHERE Status='Active')" % sitesSql
+    cmd =  "SELECT Site FROM (%s) " % sitesSql
+    cmd += "AS tmptable WHERE Site NOT IN (SELECT Site FROM SiteMask WHERE Status='Active')"
     result = self._query( cmd )
     if not result['OK']:
       return result
@@ -1591,8 +1589,8 @@ class JobDB( DB ):
 
     siteDict = {}
     if result['OK']:
-      for site, status, LastUpdateTime, Author, Comment in result['Value']:
-        siteDict[site] = status, LastUpdateTime, Author, Comment
+      for site, status, lastUpdateTime, author, comment in result['Value']:
+        siteDict[site] = status, lastUpdateTime, author, comment
 
     return S_OK( siteDict )
 
@@ -1792,7 +1790,7 @@ class JobDB( DB ):
     """
 
     paramNames = ['Site', 'GridType', 'Country', 'Tier', 'MaskStatus']
-    paramNames += self.JOB_STATES
+    paramNames += JOB_STATES
     paramNames += ['Efficiency', 'Status']
     #FIXME: hack!!!
     siteT1List = ['CERN', 'IN2P3', 'NIKHEF', 'SARA', 'PIC', 'CNAF', 'RAL', 'GRIDKA', 'RRCKI']
@@ -1841,19 +1839,19 @@ class JobDB( DB ):
         status = attDict['Status']
         if not resultDict.has_key( siteFullName ):
           resultDict[siteFullName] = {}
-          for state in self.JOB_STATES:
+          for state in JOB_STATES:
             resultDict[siteFullName][state] = 0
-        if status not in self.JOB_FINAL_STATES:
+        if status not in JOB_FINAL_STATES:
           resultDict[siteFullName][status] = count
     if resultDay['OK']:
       for attDict, count in resultDay['Value']:
         siteFullName = attDict['Site']
         if not resultDict.has_key( siteFullName ):
           resultDict[siteFullName] = {}
-          for state in self.JOB_STATES:
+          for state in JOB_STATES:
             resultDict[siteFullName][state] = 0
         status = attDict['Status']
-        if status in self.JOB_FINAL_STATES:
+        if status in JOB_FINAL_STATES:
           resultDict[siteFullName][status] = count
 
     # Collect records now
@@ -1872,19 +1870,19 @@ class JobDB( DB ):
 
       if not countryCounts.has_key( country ):
         countryCounts[country] = {}
-        for state in self.JOB_STATES:
+        for state in JOB_STATES:
           countryCounts[country][state] = 0
       rList = [siteFullName, grid, country, tier]
       if siteMask.has_key( siteFullName ):
         rList.append( siteMask[siteFullName] )
       else:
         rList.append( 'NoMask' )
-      for status in self.JOB_STATES:
+      for status in JOB_STATES:
         rList.append( siteDict[status] )
         countryCounts[country][status] += siteDict[status]
       efficiency = 0
       total_finished = 0
-      for state in self.JOB_FINAL_STATES:
+      for state in JOB_FINAL_STATES:
         total_finished += resultDict[siteFullName][state]
       if total_finished > 0:
         efficiency = float( siteDict['Done'] + siteDict['Completed'] ) / float( total_finished )
@@ -1991,8 +1989,7 @@ class JobDB( DB ):
 
     if ok:
       return S_OK()
-    else:
-      return S_ERROR( 'Failed to store some or all the parameters' )
+    return S_ERROR( 'Failed to store some or all the parameters' )
 
 #####################################################################################
   def getHeartBeatData( self, jobID ):
