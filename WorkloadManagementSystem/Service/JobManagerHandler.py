@@ -29,7 +29,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSBULK
+from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 # This is a global instance of the JobDB class
@@ -113,15 +113,15 @@ class JobManagerHandler( RequestHandler ):
     """
 
     if self.peerUsesLimitedProxy:
-      return S_ERROR( "Can't submit using a limited proxy! (bad boy!)" )
+      return S_ERROR( EWMSSUBM, "Can't submit using a limited proxy" )
 
     # Check job submission permission
     result = self.jobPolicy.getJobPolicy()
     if not result['OK']:
-      return S_ERROR( 'Failed to get job policies' )
+      return S_ERROR( EWMSSUBM, 'Failed to get job policies' )
     policyDict = result['Value']
     if not policyDict[ RIGHT_SUBMIT ]:
-      return S_ERROR( 'Job submission not authorized' )
+      return S_ERROR( EWMSSUBM, 'Job submission not authorized' )
 
     #jobDesc is JDL for now
     jobDesc = jobDesc.strip()
@@ -213,11 +213,11 @@ class JobManagerHandler( RequestHandler ):
 
     # Check that all the requested jobs are eligible
     if set( jobList ) != set( validJobList ):
-      return S_ERROR( EWMSBULK, 'Requested jobs for bulk transaction are not valid' )
+      return S_ERROR( EWMSSUBM, 'Requested jobs for bulk transaction are not valid' )
 
     result = gJobDB.getAttributesForJobList( jobList, ['Status', 'MinorStatus'] )
     if not result['OK']:
-      return S_ERROR( EWMSBULK, 'Requested jobs for bulk transaction are not valid' )
+      return S_ERROR( EWMSSUBM, 'Requested jobs for bulk transaction are not valid' )
     jobStatusDict = result['Value']
 
     # Check if the jobs are already activated
@@ -233,7 +233,7 @@ class JobManagerHandler( RequestHandler ):
     # Check that requested job are in Submitting status
     jobUpdateStatusList = [ jobID for jobID in jobList if jobStatusDict[jobID]['Status'] == "Submitting" ]
     if set( jobUpdateStatusList ) != set( jobList ):
-      return S_ERROR( EWMSBULK, 'Requested jobs for bulk transaction are not valid' )
+      return S_ERROR( EWMSSUBM, 'Requested jobs for bulk transaction are not valid' )
 
     # Update status of all the requested jobs in one transaction
     result = gJobDB.setJobAttributes( jobUpdateStatusList,
@@ -241,7 +241,7 @@ class JobManagerHandler( RequestHandler ):
                                       ['Received', 'Job accepted'] )
 
     if not result['OK']:
-      return S_ERROR( EWMSBULK, 'Failed to update status of the jobs' )
+      return S_ERROR( EWMSSUBM, 'Failed to update status of the jobs' )
 
     self.__sendJobsToOptimizationMind( jobUpdateStatusList )
     return S_OK( jobUpdateStatusList )
