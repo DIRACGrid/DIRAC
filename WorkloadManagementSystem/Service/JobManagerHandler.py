@@ -12,7 +12,6 @@
 
 __RCSID__ = "$Id$"
 
-from types import StringTypes, IntType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB

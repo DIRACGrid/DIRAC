@@ -19,7 +19,6 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
-import types
 
 class StalledJobAgent( AgentModule ):
   """
@@ -414,14 +413,14 @@ used to fail jobs due to the optimizer chain.
 
     if result['OK']:
       for name, value, heartBeatTime in result['Value']:
-        if 'CPUConsumed' == name:
+        if name == 'CPUConsumed':
           try:
             value = int( float( value ) )
             if value > lastCPUTime:
               lastCPUTime = value
           except ValueError:
             pass
-        if 'WallClockTime' == name:
+        if name == 'WallClockTime':
           try:
             value = int( float( value ) )
             if value > lastWallTime:
@@ -451,9 +450,9 @@ used to fail jobs due to the optimizer chain.
       if not startTime or startTime == 'None':
         startTime = jobDict['SubmissionTime']
 
-    if type( startTime ) in types.StringTypes:
+    if isinstance( startTime, basestring ):
       startTime = fromString( startTime )
-      if startTime == None:
+      if startTime is None:
         self.log.error( 'Wrong timestamp in DB', items[3] )
         startTime = dateTime()
 
@@ -463,7 +462,7 @@ used to fail jobs due to the optimizer chain.
     for items in logList:
       if items[0] == 'Stalled':
         endTime = fromString( items[3] )
-    if endTime == None:
+    if endTime is None:
       self.log.error( 'Wrong timestamp in DB', items[3] )
       endTime = dateTime()
 
@@ -505,8 +504,7 @@ used to fail jobs due to the optimizer chain.
 
     if message:
       return S_ERROR( message )
-    else:
-      return S_OK()
+    return S_OK()
 
   def __failCompletedJobs( self ):
     """ Failed Jobs stuck in Completed Status for a long time.

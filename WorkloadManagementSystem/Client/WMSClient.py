@@ -166,7 +166,7 @@ class WMSClient( object ):
         if len( jobIDList ) == nJobs:
           # Confirm the submitted jobs
           confirmed = False
-          for attempt in xrange(3):
+          for _attempt in xrange(3):
             result = self.jobManager.confirmBulkSubmission( jobIDList )
             if result['OK']:
               confirmed = True
