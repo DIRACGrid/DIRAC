@@ -205,7 +205,7 @@ class JobManagerHandler( RequestHandler ):
     """
     jobList = self.__getJobList( jobIDs )
     if not jobList:
-      return S_ERROR( 'Invalid job specification: ' + str( jobIDs ) )
+      return S_ERROR( EWMSSUBM, 'Invalid job specification: ' + str( jobIDs ) )
 
     validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights( jobList,
                                                                                                    RIGHT_SUBMIT )
