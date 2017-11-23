@@ -218,6 +218,16 @@ class JobManagerHandler( RequestHandler ):
       return S_ERROR( EWMSBULK, 'Requested jobs for bulk transaction are not valid' )
     jobStatusDict = result['Value']
 
+    # Check if the jobs are already activated
+    jobEnabledList = [ jobID for jobID in jobList \
+                       if jobStatusDict[jobID]['Status'] in ["Received",
+                                                             "Checking",
+                                                             "Waiting",
+                                                             "Matched",
+                                                             "Running"] ]
+    if set( jobEnabledList ) == set( jobList ):
+      return S_OK( jobList )
+
     # Check that requested job are in Submitting status
     jobUpdateStatusList = [ jobID for jobID in jobList if jobStatusDict[jobID]['Status'] == "Submitting" ]
     if set( jobUpdateStatusList ) != set( jobList ):
