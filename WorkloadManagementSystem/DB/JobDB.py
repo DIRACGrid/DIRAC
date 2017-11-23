@@ -602,7 +602,8 @@ class JobDB( DB ):
     """ Set an attribute value for job specified by jobID.
         The LastUpdate time stamp is refreshed if explicitly requested
 
-        :param int/str jobID: job ID
+        :param jobID: job ID
+        :type jobID: int or str
         :param str attrName: attribute name
         :param str attrValue: attribute value
         :param bool update: optional flag to update the job LastUpdateTime stamp

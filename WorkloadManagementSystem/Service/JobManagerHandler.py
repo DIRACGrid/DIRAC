@@ -108,7 +108,7 @@ class JobManagerHandler( RequestHandler ):
     """ Submit a single job to DIRAC WMS
 
         :param str jobDesc: job description JDL
-        :return list: a list of newly created job IDs
+        :return: S_OK/S_ERROR, a list of newly created job IDs in case of S_OK
     """
 
     if self.peerUsesLimitedProxy:
