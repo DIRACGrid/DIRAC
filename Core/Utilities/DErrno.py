@@ -112,7 +112,7 @@ EENOPID = 1148
 EWMSUKN = 1500
 EWMSJDL = 1501
 EWMSRESC = 1502
-EWMSBULK = 1503
+EWMSSUBM = 1503
 
 # ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
@@ -186,7 +186,7 @@ dErrorCode = {
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
                1502 : 'EWMSRESC',
-               1503 : 'EWMSBULK',
+               1503 : 'EWMSSUBM',
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
                1602 : 'EGFAL',
@@ -258,8 +258,8 @@ dStrError = {
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid job description",
-              EWMSRESC : "Job to Reschedule",
-              EWMSBULK : "Invalid bulk submission transaction",
+              EWMSRESC : "Job to reschedule",
+              EWMSSUBM : "Job submission error",
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
               EGFAL : "Error with the gfal call",
