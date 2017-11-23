@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities                      import File
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import getParameterVectorLength
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSBULK
+from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 
 __RCSID__ = "$Id$"
 
@@ -76,7 +76,7 @@ class WMSClient( object ):
         stringIOFilesSize = len( jobDescriptionObject.buf )
         gLogger.debug( "Size of the stringIOFiles: " + str( stringIOFilesSize ) )
       else:
-        return S_ERROR( "jobDescriptionObject is not a StringIO object" )
+        return S_ERROR( EWMSJDL, "jobDescriptionObject is not a StringIO object" )
 
     # Check real files
     for isFile in realFiles:
@@ -93,7 +93,7 @@ class WMSClient( object ):
 
     okFiles = stringIOFiles + diskFiles
     if badFiles:
-      result = S_ERROR( 'Input Sandbox is not valid' )
+      result = S_ERROR( EWMSJDL, 'Input Sandbox is not valid' )
       result['BadFile'] = badFiles
       result['TotalSize'] = totalSize
       return result
@@ -135,7 +135,7 @@ class WMSClient( object ):
       jdlString = "[%s]" % jdlString
     classAdJob = ClassAd( jdlString )
     if not classAdJob.isOK():
-      return S_ERROR( 'Invalid job JDL' )
+      return S_ERROR( EWMSJDL, 'Invalid job JDL' )
 
     # Check the size and the contents of the input sandbox
     result = self.__uploadInputSandbox( classAdJob, jobDescriptionObject )
@@ -155,15 +155,18 @@ class WMSClient( object ):
       self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
                                    useCertificates = self.useCertificates,
                                    timeout = self.timeout )
+
+    result = self.jobManager.submitJob( classAdJob.asJDL() )
+
     if bulkTransaction and parametricJob:
       gLogger.debug( 'Applying transactional job submission' )
-      resultSubmit = self.jobManager.submitJob( classAdJob.asJDL(), True )
-      if resultSubmit['OK'] and resultSubmit.get( 'requireBulkSubmissionConfirmation' ):
-        jobIDList = resultSubmit['Value']
+      # The server indeed applies transactional bulk submission, we should confirm the jobs
+      if result['OK'] and result.get( 'requireBulkSubmissionConfirmation' ):
+        jobIDList = result['Value']
         if len( jobIDList ) == nJobs:
           # Confirm the submitted jobs
           confirmed = False
-          for attempt in range(3):
+          for attempt in xrange(3):
             result = self.jobManager.confirmBulkSubmission( jobIDList )
             if result['OK']:
               confirmed = True
@@ -171,19 +174,15 @@ class WMSClient( object ):
             time.sleep( 1 )
           if not confirmed:
             # The bulk submission failed, try to delete the created jobs
-            result = self.jobManager.deleteJob( jobIDList )
+            resultDelete = self.jobManager.deleteJob( jobIDList )
             error = "Job submission failed to confirm bulk transaction"
-            if not result['OK']:
+            if not resultDelete['OK']:
               error += "; removal of created jobs failed"
-            return S_ERROR( EWMSBULK, error )
+            return S_ERROR( EWMSSUBM, error )
         else:
-          return S_ERROR( EWMSBULK, "The number of submitted jobs does not match job description ")
-      else:
-        result = resultSubmit
-    else:
-      resultSubmit = self.jobManager.submitJob( classAdJob.asJDL() )
-      result = resultSubmit
-    if resultSubmit.get( 'requireProxyUpload' ):
+          return S_ERROR( EWMSSUBM, "The number of submitted jobs does not match job description")
+
+    if result.get( 'requireProxyUpload' ):
       gLogger.warn( "Need to upload the proxy" )
 
     return result
