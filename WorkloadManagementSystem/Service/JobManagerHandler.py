@@ -239,7 +239,7 @@ class JobManagerHandler( RequestHandler ):
                                       ['Received', 'Job accepted'] )
 
     if not result['OK']:
-      return S_ERROR( EWMSSUBM, 'Failed to update status of the jobs' )
+      return result
 
     self.__sendJobsToOptimizationMind( jobUpdateStatusList )
     return S_OK( jobUpdateStatusList )
