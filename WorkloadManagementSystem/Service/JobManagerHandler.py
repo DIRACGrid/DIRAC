@@ -257,7 +257,8 @@ class JobManagerHandler( RequestHandler ):
   def __getJobList( self, jobInput ):
     """ Evaluate the jobInput into a list of ints
 
-        :param str/int/list jobInput: one or more job IDs in int or str form
+        :param jobInput: one or more job IDs in int or str form
+        :type jobInput: str or int or list
         :return : a list of int job IDs
     """
 
