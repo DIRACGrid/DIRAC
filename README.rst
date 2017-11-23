@@ -3,11 +3,23 @@
 .. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=master
    :target: https://travis-ci.org/DIRACGrid/DIRAC
    :alt: Build Status
-   
-.. image:: https://readthedocs.org/projects/dirac/badge/?version=rel-v6r17
-   :target: http://dirac.readthedocs.io/en/rel-v6r17/?badge=rel-v6r17
+
+.. image:: https://readthedocs.org/projects/dirac/badge/?version=latest
+   :target: http://dirac.readthedocs.io/en/latest/
    :alt: Documentation Status
-   
+
+
+Integration branch:
+
+.. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=integration
+  :target: https://travis-ci.org/DIRACGrid/DIRAC
+  :alt: Build Status
+
+.. image:: https://readthedocs.org/projects/dirac/badge/?version=integration
+  :target: http://dirac.readthedocs.io/en/integration/
+  :alt: Documentation Status
+
+
 
 DIRAC
 =====
@@ -41,7 +53,7 @@ Development
 Contributing
 ~~~~~~~~~~~~
 
-A tutorial on how to contribute to DIRAC can be found in `this page <http://dirac.readthedocs.io/en/latest/DeveloperGuide/AddingNewComponents/index.html>`_. 
+A tutorial on how to contribute to DIRAC can be found in `this page <http://dirac.readthedocs.io/en/latest/DeveloperGuide/AddingNewComponents/index.html>`_.
 
 Code quality
 ~~~~~~~~~~~~
