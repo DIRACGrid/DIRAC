@@ -354,7 +354,8 @@ used to fail jobs due to the optimizer chain.
       else:
         cpuNormalization = float( cpuNormalization['Value'] )
     except Exception:
-      self.log.exception( "Exception in __sendAccounting for job %s: endTime=%s, lastHBTime %s" % ( str( jobID ), str( endTime ), str( lastHeartBeatTime ) ), '' , False )
+      self.log.exception( "Exception in __sendAccounting for job %s: endTime=%s, lastHBTime %s" % \
+                          ( str( jobID ), str( endTime ), str( lastHeartBeatTime ) ), '' , False )
       return S_ERROR( "Exception" )
     processingType = self.__getProcessingType( jobID )
 
