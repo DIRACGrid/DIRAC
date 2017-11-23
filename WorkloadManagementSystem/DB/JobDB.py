@@ -641,9 +641,10 @@ class JobDB( DB ):
 #############################################################################
   def setJobAttributes( self, jobID, attrNames, attrValues, update = False, myDate = None ):
     """ Set one or more attribute values for one or more jobs specified by jobID.
-        The LastUpdate time stamp is refreshed if explicitely requested with the update flag
+        The LastUpdate time stamp is refreshed if explicitly requested with the update flag
 
-        :param int/str/list jobID: one or more job IDs
+        :param jobID: one or more job IDs
+        :type jobID: int or str or python:list
         :param list attrNames: names of attributes to update
         :param list attrValues: corresponding values of attributes to update
         :param bool update: optional flag to update the job LastUpdateTime stamp
