@@ -55,17 +55,21 @@ class CREAMComputingElement( ComputingElement ):
     fd, name = tempfile.mkstemp( suffix = '.jdl', prefix = 'CREAM_', dir = workingDirectory )
     diracStamp = os.path.basename( name ).replace( '.jdl', '' ).replace( 'CREAM_', '' )
 
-    mp = []
+    extraJDLParameters = []
     if processors != 1:
       if processors <= 0:
-        mp.append( '  HostNumber = 1;' )
-        mp.append( '  WholeNodes = true;' )
+        extraJDLParameters.append('HostNumber = 1')
+        extraJDLParameters.append('WholeNodes = true')
       else:
-        mp.append( '  SMPGranularity = %d;' % processors )
-        mp.append( '  CPUNumber = %d;' % processors )
-        mp.append( '  WholeNodes = false;' )
+        extraJDLParameters.append('SMPGranularity = %d' % processors)
+        extraJDLParameters.append('CPUNumber = %d' % processors)
+        extraJDLParameters.append('WholeNodes = false')
 
-    multiProcessorFields = "\n".join( mp )
+    extraParams = self.ceParameters.get('ExtraJDLParameters')
+    if extraParams:
+      extraJDLParameters += extraParams.strip().split(';')
+
+    extraJDLParameterList = ';\n  '.join([item.strip() for item in extraJDLParameters])
 
     jdlFile = os.fdopen( fd, 'w' )
 
@@ -78,13 +82,13 @@ class CREAMComputingElement( ComputingElement ):
   InputSandbox={"%(executableFile)s"};
   OutputSandbox={"%(diracStamp)s.out", "%(diracStamp)s.err"};
   OutputSandboxBaseDestUri="%(outputURL)s";
-  %(multiProcessorFields)s
+  %(extraJDLParameters)s
 ]
-    """ % { 'executableFile':executableFile,
-            'executable':os.path.basename( executableFile ),
-            'outputURL':self.outputURL,
-            'diracStamp':diracStamp,
-            'multiProcessorFields':multiProcessorFields,}
+    """ % { 'executableFile': executableFile,
+            'executable': os.path.basename( executableFile ),
+            'outputURL': self.outputURL,
+            'diracStamp': diracStamp,
+            'extraJDLParameters': extraJDLParameterList}
 
     jdlFile.write( jdl )
     jdlFile.close()
