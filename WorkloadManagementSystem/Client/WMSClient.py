@@ -76,7 +76,7 @@ class WMSClient( object ):
         stringIOFilesSize = len( jobDescriptionObject.buf )
         gLogger.debug( "Size of the stringIOFiles: " + str( stringIOFilesSize ) )
       else:
-        return S_ERROR( EWMSJDL, "jobDescriptionObject is not a StringIO object" )
+        return S_ERROR(EWMSJDL, "jobDescriptionObject is not a StringIO object")
 
     # Check real files
     for isFile in realFiles:
@@ -93,7 +93,7 @@ class WMSClient( object ):
 
     okFiles = stringIOFiles + diskFiles
     if badFiles:
-      result = S_ERROR( EWMSJDL, 'Input Sandbox is not valid' )
+      result = S_ERROR(EWMSJDL, 'Input Sandbox is not valid')
       result['BadFile'] = badFiles
       result['TotalSize'] = totalSize
       return result
@@ -135,7 +135,7 @@ class WMSClient( object ):
       jdlString = "[%s]" % jdlString
     classAdJob = ClassAd( jdlString )
     if not classAdJob.isOK():
-      return S_ERROR( EWMSJDL, 'Invalid job JDL' )
+      return S_ERROR(EWMSJDL, 'Invalid job JDL')
 
     # Check the size and the contents of the input sandbox
     result = self.__uploadInputSandbox( classAdJob, jobDescriptionObject )
@@ -143,9 +143,9 @@ class WMSClient( object ):
       return result
 
     # Submit the job now and get the new job ID
-    bulkTransaction = self.operationsHelper.getValue( 'JobScheduling/BulkSubmissionTransaction', False )
+    bulkTransaction = self.operationsHelper.getValue('JobScheduling/BulkSubmissionTransaction', False)
     if bulkTransaction:
-      result = getParameterVectorLength( classAdJob )
+      result = getParameterVectorLength(classAdJob)
       if not result['OK']:
         return result
       nJobs = result['Value']
@@ -159,30 +159,30 @@ class WMSClient( object ):
     result = self.jobManager.submitJob( classAdJob.asJDL() )
 
     if bulkTransaction and parametricJob:
-      gLogger.debug( 'Applying transactional job submission' )
+      gLogger.debug('Applying transactional job submission')
       # The server indeed applies transactional bulk submission, we should confirm the jobs
-      if result['OK'] and result.get( 'requireBulkSubmissionConfirmation' ):
+      if result['OK'] and result.get('requireBulkSubmissionConfirmation'):
         jobIDList = result['Value']
-        if len( jobIDList ) == nJobs:
+        if len(jobIDList) == nJobs:
           # Confirm the submitted jobs
           confirmed = False
           for _attempt in xrange(3):
-            result = self.jobManager.confirmBulkSubmission( jobIDList )
+            result = self.jobManager.confirmBulkSubmission(jobIDList)
             if result['OK']:
               confirmed = True
               break
-            time.sleep( 1 )
+            time.sleep(1)
           if not confirmed:
             # The bulk submission failed, try to delete the created jobs
-            resultDelete = self.jobManager.deleteJob( jobIDList )
+            resultDelete = self.jobManager.deleteJob(jobIDList)
             error = "Job submission failed to confirm bulk transaction"
             if not resultDelete['OK']:
               error += "; removal of created jobs failed"
-            return S_ERROR( EWMSSUBM, error )
+            return S_ERROR(EWMSSUBM, error)
         else:
-          return S_ERROR( EWMSSUBM, "The number of submitted jobs does not match job description")
+          return S_ERROR(EWMSSUBM, "The number of submitted jobs does not match job description")
 
-    if result.get( 'requireProxyUpload' ):
+    if result.get('requireProxyUpload'):
       gLogger.warn( "Need to upload the proxy" )
 
     return result

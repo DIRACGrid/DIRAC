@@ -186,7 +186,7 @@ dErrorCode = {
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
                1502 : 'EWMSRESC',
-               1503 : 'EWMSSUBM',
+               1503: 'EWMSSUBM',
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
                1602 : 'EGFAL',
@@ -258,8 +258,8 @@ dStrError = {
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid job description",
-              EWMSRESC : "Job to reschedule",
-              EWMSSUBM : "Job submission error",
+              EWMSRESC: "Job to reschedule",
+              EWMSSUBM: "Job submission error",
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
               EGFAL : "Error with the gfal call",

@@ -9,4 +9,4 @@ if __name__ == '__main__':
 
   args = ' '.join(sys.argv[1:])
 
-  sys.exit(system('''echo Hello World%s''' % args )/256)
+  sys.exit(system('''echo Hello World%s''' % args) / 256)

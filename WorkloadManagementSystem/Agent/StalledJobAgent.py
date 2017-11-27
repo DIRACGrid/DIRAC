@@ -64,7 +64,7 @@ for the agent restart
     failedTime = self.am_getOption( 'FailedTimeHours', 6 )
     self.stalledJobsToleranceTime = self.am_getOption( 'StalledJobsToleranceTime', 0 )
 
-    self.submittingTime = self.am_getOption( 'SubmittingTime', self.submittingTime )
+    self.submittingTime = self.am_getOption('SubmittingTime', self.submittingTime)
     self.matchedTime = self.am_getOption( 'MatchedTime', self.matchedTime )
     self.rescheduledTime = self.am_getOption( 'RescheduledTime', self.rescheduledTime )
     self.completedTime = self.am_getOption( 'CompletedTime', self.completedTime )
@@ -97,7 +97,7 @@ for the agent restart
 
     result = self.__failSubmittingJobs()
     if not result['OK']:
-      self.log.error( 'Failed to process jobs being submitted', result['Message'] )
+      self.log.error('Failed to process jobs being submitted', result['Message'])
 
     result = self.__kickStuckJobs()
     if not result['OK']:
@@ -354,8 +354,8 @@ used to fail jobs due to the optimizer chain.
       else:
         cpuNormalization = float( cpuNormalization['Value'] )
     except Exception:
-      self.log.exception( "Exception in __sendAccounting for job %s: endTime=%s, lastHBTime %s" % \
-                          ( str( jobID ), str( endTime ), str( lastHeartBeatTime ) ), '' , False )
+      self.log.exception("Exception in __sendAccounting for job %s: endTime=%s, lastHBTime %s" %
+                         (str(jobID), str(endTime), str(lastHeartBeatTime)), '', False)
       return S_ERROR( "Exception" )
     processingType = self.__getProcessingType( jobID )
 
@@ -451,7 +451,7 @@ used to fail jobs due to the optimizer chain.
       if not startTime or startTime == 'None':
         startTime = jobDict['SubmissionTime']
 
-    if isinstance( startTime, basestring ):
+    if isinstance(startTime, basestring):
       startTime = fromString( startTime )
       if startTime is None:
         self.log.error( 'Wrong timestamp in DB', items[3] )
@@ -544,16 +544,16 @@ used to fail jobs due to the optimizer chain.
 
     return S_OK()
 
-  def __failSubmittingJobs( self ):
+  def __failSubmittingJobs(self):
     """ Failed Jobs stuck in Submitting Status for a long time.
         They are due to a failed bulk submission transaction.
     """
 
     # Get old Submitting Jobs
-    checkTime = str( dateTime() - self.submittingTime * second )
-    result = self.jobDB.selectJobs( {'Status':'Submitting'}, older = checkTime )
+    checkTime = str(dateTime() - self.submittingTime * second)
+    result = self.jobDB.selectJobs({'Status': 'Submitting'}, older=checkTime)
     if not result['OK']:
-      self.log.error( 'Failed to select jobs', result['Message'] )
+      self.log.error('Failed to select jobs', result['Message'])
       return result
 
     jobIDs = result['Value']
@@ -561,9 +561,9 @@ used to fail jobs due to the optimizer chain.
       return S_OK()
 
     for jobID in jobIDs:
-      result = self.__updateJobStatus( jobID, 'Failed' )
+      result = self.__updateJobStatus(jobID, 'Failed')
       if not result['OK']:
-        self.log.error( 'Failed to update job status', result['Message'] )
+        self.log.error('Failed to update job status', result['Message'])
         continue
 
     return S_OK()
