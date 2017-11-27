@@ -84,7 +84,7 @@ def deprecated( reason, onlyOnce=False ):
     # function, but then have to override the name otherwise just "__init__ is
     # deprecated" will be printed.
     if inspect.isclass( func ):
-      func.__init__ = decFunc( func.__init__, func.__name__ )
+      func.__init__ = decFunc( func.__init__, clsName=func.__name__ )
       return func
     return innerFunc
 
