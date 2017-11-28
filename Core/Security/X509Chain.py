@@ -297,15 +297,6 @@ class X509Chain(object):
       proxyString += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
 
 
-    return S_OK( proxyString )
-
-    proxyString = "%s%s" % (crypto.dump_certificate(crypto.FILETYPE_PEM, proxyCert),
-                            crypto.dump_privatekey(crypto.FILETYPE_PEM, proxyKey))
-    for i in range(len(self.__certList)):
-      proxyString += crypto.dump_certificate(crypto.FILETYPE_PEM, self.__certList[i])
-
-    return S_OK(proxyString)
-
   def generateProxyToFile(self, filePath, lifeTime, diracGroup=False, strength=1024, limited=False):
     """
     Generate a proxy and put it into a file
@@ -594,6 +585,7 @@ class X509Chain(object):
     return S_OK(filename)
 
   def dumpChainToString(self):
+    if not self.__loadedChain:
     """
     Dump only cert chain to string
     """
