@@ -5,8 +5,6 @@ import inspect
 import functools
 import traceback
 
-from DIRAC import gLogger
-
 __RCSID__ = "$Id$"
 
 def deprecated( reason, onlyOnce=False ):
@@ -46,8 +44,22 @@ def deprecated( reason, onlyOnce=False ):
     """ Inner function generator.
         Returns a function which wraps the given "func" function,
         which prints a deprecation notice as it is called.
-        clsName is used internally for class handling and should be left
+        clsName is used internally for class handling, and should be left
         set to None otherwise.
+
+      Parameters
+      ----------
+      func : function
+        The function to call from the wrapper.
+      clsName : string
+        If set, the wrapped object is assumed to be the __init__ function of
+        a class called "clsName". Set to None for wrapping a normal function.
+
+      Returns
+      -------
+      function
+        A function wrapper which which prints the deprecated warning and calls
+        func.
     """
 
     decFunc.warningEn = True
@@ -72,8 +84,8 @@ def deprecated( reason, onlyOnce=False ):
         # which will be the place which called the deprecated item
         # callDetails is a tuple of (file, lineNum, function, text)
         callDetails = traceback.extract_stack()[-2]
-        gLogger.always( "NOTE: %s %s is deprecated (%s)." % ( objName, objType, reason ) )
-        gLogger.always( "NOTE:   Used at %s:%u" % ( callDetails[0], callDetails[1] ) )
+        print "NOTE: %s %s is deprecated (%s)." % ( objName, objType, reason )
+        print "NOTE:   Used at %s:%u" % ( callDetails[0], callDetails[1] )
       if onlyOnce:
         decFunc.warningEn = False
       return func( *args, **kwargs )
