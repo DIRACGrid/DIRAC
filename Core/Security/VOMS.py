@@ -264,15 +264,10 @@ class VOMS(BaseSecurity):
       cmdArgs.append('-vomses "%s"' % vomsesPath)
     cmdArgs.append("-r")  # XXX Not sure about that, maybe it's default
 
-    vpInitCmd = ''
-    for vpInit in ('voms-proxy-init', 'voms-proxy-init2'):
-      if Os.which(vpInit):
-        vpInitCmd = vpInit
-
-    if not vpInitCmd:
+    if not Os.which('voms-proxy-init'):
       return S_ERROR(DErrno.EVOMS, "Missing voms-proxy-init")
 
-    cmd = '%s %s' % (vpInitCmd, " ".join(cmdArgs))
+    cmd = 'voms-proxy-init %s' % " ".join(cmdArgs)
     result = shellCall(self._secCmdTimeout, cmd)
     if tmpDir:
       shutil.rmtree(tmpDir)
@@ -287,9 +282,7 @@ class VOMS(BaseSecurity):
 
     if status:
       self._unlinkFiles(newProxyLocation)
-      return S_ERROR(
-          DErrno.EVOMS, 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' %
-          (cmd, output, error))
+      return S_ERROR(DErrno.EVOMS, 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % (cmd, output, error))
 
     newChain = X509Chain()
     retVal = newChain.loadProxyFromFile(newProxyLocation)
@@ -303,16 +296,9 @@ class VOMS(BaseSecurity):
     """
     Is voms info available?
     """
-
-    vpInfoCmd = ''
-    for vpInfo in ('voms-proxy-info', 'voms-proxy-info2'):
-      if Os.which(vpInfo):
-        vpInfoCmd = vpInfo
-
-    if not vpInfoCmd:
+    if not Os.which("voms-proxy-info"):
       return S_ERROR(DErrno.EVOMS, "Missing voms-proxy-info")
-
-    cmd = '%s -h' % vpInfoCmd
+    cmd = 'voms-proxy-info -h'
     result = shellCall(self._secCmdTimeout, cmd)
     if not result['OK']:
       return False
