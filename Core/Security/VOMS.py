@@ -141,25 +141,18 @@ class VOMS(BaseSecurity):
       if option == "identity":
         return S_OK("%s\n" % data['subject'])
       if option == "fqan":
-        return S_OK("\n".join(
-            [f.replace("/Role=NULL", "").replace("/Capability=NULL", "") for f in data['fqan']]))
+        return S_OK("\n".join([f.replace("/Role=NULL", "").replace("/Capability=NULL", "") for f in data['fqan']]))
       if option == "all":
         lines = []
         creds = proxyDict['chain'].getCredentials()['Value']
         lines.append("subject : %s" % creds['subject'])
         lines.append("issuer : %s" % creds['issuer'])
         lines.append("identity : %s" % creds['identity'])
-        if proxyDict['chain'].isRFC().get('Value'):
-          lines.append("type : RFC compliant proxy")
-        else:
-          lines.append("type : proxy")
         left = creds['secondsLeft']
         h = int(left / 3600)
         m = int(left / 60) - h * 60
         s = int(left) - m * 60 - h * 3600
-        lines.append(
-            "timeleft  : %s:%s:%s\nkey usage : Digital Signature, Key Encipherment, Data Encipherment" %
-            (h, m, s))
+        lines.append("timeleft  : %s:%s:%s\nkey usage : Digital Signature, Key Encipherment, Data Encipherment" % (h, m, s))
         lines.append("== VO %s extension information ==" % data['vo'])
         lines.append("VO: %s" % data['vo'])
         lines.append("subject : %s" % data['subject'])
@@ -269,18 +262,12 @@ class VOMS(BaseSecurity):
     vomsesPath = self.getVOMSESLocation()
     if vomsesPath:
       cmdArgs.append('-vomses "%s"' % vomsesPath)
-    if chain.isRFC().get('Value'):
-      cmdArgs.append("-r")
+    cmdArgs.append("-r")  # XXX Not sure about that, maybe it's default
 
-    vpInitCmd = ''
-    for vpInit in ('voms-proxy-init', 'voms-proxy-init2'):
-      if Os.which(vpInit):
-        vpInitCmd = vpInit
-
-    if not vpInitCmd:
+    if not Os.which('voms-proxy-init'):
       return S_ERROR(DErrno.EVOMS, "Missing voms-proxy-init")
 
-    cmd = '%s %s' % (vpInitCmd, " ".join(cmdArgs))
+    cmd = 'voms-proxy-init %s' % " ".join(cmdArgs)
     result = shellCall(self._secCmdTimeout, cmd)
     if tmpDir:
       shutil.rmtree(tmpDir)
@@ -295,9 +282,7 @@ class VOMS(BaseSecurity):
 
     if status:
       self._unlinkFiles(newProxyLocation)
-      return S_ERROR(
-          DErrno.EVOMS, 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' %
-          (cmd, output, error))
+      return S_ERROR(DErrno.EVOMS, 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % (cmd, output, error))
 
     newChain = X509Chain()
     retVal = newChain.loadProxyFromFile(newProxyLocation)
@@ -311,16 +296,9 @@ class VOMS(BaseSecurity):
     """
     Is voms info available?
     """
-
-    vpInfoCmd = ''
-    for vpInfo in ('voms-proxy-info', 'voms-proxy-info2'):
-      if Os.which(vpInfo):
-        vpInfoCmd = vpInfo
-
-    if not vpInfoCmd:
+    if not Os.which("voms-proxy-info"):
       return S_ERROR(DErrno.EVOMS, "Missing voms-proxy-info")
-
-    cmd = '%s -h' % vpInfoCmd
+    cmd = 'voms-proxy-info -h'
     result = shellCall(self._secCmdTimeout, cmd)
     if not result['OK']:
       return False

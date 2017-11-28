@@ -19,7 +19,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 random.seed()
 
 
-  __validExtensionValueTypes = ( basestring, )
+class X509Chain(object):
 
   __validExtensionValueTypes = (basestring, )
 
@@ -57,21 +57,21 @@ random.seed()
     Return : S_OK / S_ERROR
     """
     try:
-      fd = file( chainLocation )
+      fd = file(chainLocation)
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return S_ERROR( DErrno.EOF, "%s: %s" % ( chainLocation, repr( e ).replace( ',)', ')' ) ) )
-    return self.loadChainFromString( pemData )
+      return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
+    return self.loadChainFromString(pemData)
 
-  def loadChainFromString( self, data, dataFormat = crypto.FILETYPE_PEM ):
+  def loadChainFromString(self, data, dataFormat=crypto.FILETYPE_PEM):
     """
     Load a x509 cert from a string containing the pem data
     Return : S_OK / S_ERROR
     """
     self.__loadedChain = False
     try:
-      self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, data )
+      self.__certList = crypto.load_certificate_chain(crypto.FILETYPE_PEM, data)
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(',)', ')'))
     if not self.__certList:
@@ -80,13 +80,6 @@ random.seed()
     # Update internals
     self.__checkProxyness()
     return S_OK()
-
-  def __certListFromPemString( self, certString, format = M2Crypto.X509.FORMAT_PEM ):
-    """
-    Create certificates list from string. String sould contain certificates, just like plain text proxy file.
-    """
-    # To get list of X509 certificates (not X509 Certificate Chain) from string it has to be parsed like that (constructors are not able to deal with big string)
-    return [ X509Certificate( certString = cert[0] ) for cert in re.findall(r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)", certString) ]
 
   def __certListFromPemString( self, certString, format = M2Crypto.X509.FORMAT_PEM ):
     """
@@ -110,7 +103,7 @@ random.seed()
     Return : S_OK / S_ERROR
     """
     try:
-      fd = file( chainLocation )
+      fd = file(chainLocation)
       pemData = fd.read()
       fd.close()
     except Exception as e:
@@ -124,7 +117,7 @@ random.seed()
     """
     self.__loadedPKey = False
     try:
-      self.__keyObj = crypto.load_privatekey( crypto.FILETYPE_PEM, pemData, password )
+      self.__keyObj = crypto.load_privatekey(crypto.FILETYPE_PEM, pemData, password)
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s (Probably bad pass phrase?)" % repr(e).replace(',)', ')'))
     self.__loadedPKey = True
@@ -159,25 +152,25 @@ random.seed()
     retVal = self.loadChainFromString(pemData)
     if not retVal['OK']:
       return retVal
-    return self.loadKeyFromString( pemData )
+    return self.loadKeyFromString(pemData)
 
-  def __getProxyExtensionList(self, diracGroup=False, rfc=False, rfcLimited=False):
+  def __getProxyExtensionList(self, diracGroup=False, limited=False):
     """
     Get the list of extensions for a proxy
     """
     extList = []
-    extList.append( crypto.X509Extension( 'keyUsage',
-                                          'critical, digitalSignature, keyEncipherment, dataEncipherment' ) )
-    if diracGroup and isinstance( diracGroup, self.__validExtensionValueTypes ):
-      extList.append( crypto.X509Extension( 'diracGroup', diracGroup ) )
+    extList.append(crypto.X509Extension('keyUsage',
+                                        'critical, digitalSignature, keyEncipherment, dataEncipherment'))
+    if diracGroup and isinstance(diracGroup, self.__validExtensionValueTypes):
+      extList.append(crypto.X509Extension('diracGroup', diracGroup))
     if limited:
-      blob = [ [ "1.3.6.1.4.1.3536.1.1.1.9" ] ]
-      asn1Obj = crypto.ASN1( blob )
+      blob = [["1.3.6.1.4.1.3536.1.1.1.9"]]
+      asn1Obj = crypto.ASN1(blob)
       asn1Obj[0][0].convert_to_object()
-      asn1dump = binascii.hexlify( asn1Obj.dump() )
-      extval = "critical,DER:" + ":".join( asn1dump[i:i + 2] for i in range( 0, len( asn1dump ), 2 ) )
-      ext = crypto.X509Extension( "proxyCertInfo", extval )
-      extList.append( ext )
+      asn1dump = binascii.hexlify(asn1Obj.dump())
+      extval = "critical,DER:" + ":".join(asn1dump[i:i + 2] for i in range(0, len(asn1dump), 2))
+      ext = crypto.X509Extension("proxyCertInfo", extval)
+      extList.append(ext)
     return extList
 
   def getCertInChain(self, certPos=0):
@@ -185,8 +178,8 @@ random.seed()
     Get a certificate in the chain
     """
     if not self.__loadedChain:
-      return S_ERROR( DErrno.ENOCHAIN )
-    return S_OK( X509Certificate( self.__certList[ certPos ] ) )
+      return S_ERROR(DErrno.ENOCHAIN)
+    return S_OK(X509Certificate(self.__certList[certPos]))
 
   def getIssuerCert(self):
     """
@@ -195,9 +188,9 @@ random.seed()
     if not self.__loadedChain:
       return S_ERROR(DErrno.ENOCHAIN)
     if self.__isProxy:
-      return S_OK( X509Certificate( self.__certList[ self.__firstProxyStep + 1 ] ) )
+      return S_OK(X509Certificate(self.__certList[self.__firstProxyStep + 1]))
     else:
-      return S_OK( X509Certificate( self.__certList[ -1 ] ) )
+      return S_OK(X509Certificate(self.__certList[-1]))
 
   def getPKeyObj(self):
     """
@@ -223,8 +216,7 @@ random.seed()
       return S_ERROR(DErrno.ENOCHAIN)
     return S_OK(len(self.__certList))
 
-  def generateProxyToString(self, lifeTime,
-                            diracGroup=False, strength=1024, limited=False, rfc=False, proxyKey=False):
+  def generateProxyToString(self, lifeTime, diracGroup=False, strength=1024, limited=False, proxyKey=False):
     """
     Generate a proxy and get it as a string
 
@@ -247,119 +239,31 @@ random.seed()
 
     if not proxyKey:
       proxyKey = crypto.PKey()
-      proxyKey.generate_key( crypto.TYPE_RSA, strength )
+      proxyKey.generate_key(crypto.TYPE_RSA, strength)
 
     proxyCert = M2Crypto.X509.X509()
 
-    proxyCert.set_serial_number( str( int( random.random() * 10 ** 10 ) ) )
+    proxyCert.set_serial_number(str(int(random.random() * 10 ** 10)))
     cloneSubject = issuerCert.get_subject().clone()
-    cloneSubject.insert_entry( "CN", str( int( random.random() * 10 ** 10 ) ) )
-    proxyCert.set_subject( cloneSubject )
-    proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup, limited ) )
+    cloneSubject.insert_entry("CN", str(int(random.random() * 10 ** 10)))
+    proxyCert.set_subject(cloneSubject)
+    proxyCert.add_extensions(self.__getProxyExtensionList(diracGroup, limited))
 
-    if rfc:
-      proxyCert.setSerialNumber( int( random.random() * 10 ** 10 ) )
-      # No easy way to deep-copy certificate subject
-      cloneSubject = M2Crypto.X509.X509_Name()
-      parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
-      for part in parts:
-        nid, val = part.split('=', 1)
-        cloneSubject.add_entry_by_txt(field = nid, type = M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
-      cloneSubject.add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  str( int( random.random() * 10 ** 10 ) ), len=-1, loc=-1, set=0 )
-      proxyCert.setSubject( cloneSubject )
-      for extension in self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ):
-        proxyCert.add_ext( extension )
-      proxyCert.setSerialNumber( int( random.random() * 10 ** 10 ) )
-      # No easy way to deep-copy certificate subject
-      cloneSubject = M2Crypto.X509.X509_Name()
-      parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
-      for part in parts:
-        nid, val = part.split('=', 1)
-        cloneSubject.add_entry_by_txt(field = nid, type = M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
-      cloneSubject.add_entry_by_txt( field = "CN", type = M2Crypto.ASN1.MBSTRING_ASC, entry =  str( int( random.random() * 10 ** 10 ) ), len=-1, loc=-1, set=0 )
-      proxyCert.setSubject( cloneSubject )
-      for extension in self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ):
-        proxyCert.addExtension( extension )
-    else:
-      serial = issuerCert.getSerialNumber()
-      if serial['OK']:
-        proxyCert.setSerialNumber( serial['Value'] )
-      else:
-        return serial
-      parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
-      # No easy way to deep-copy certificate subject
-      cloneSubject = M2Crypto.X509.X509_Name()
-      for part in parts:
-        nid, val = part.split('=', 1)
-        cloneSubject.add_entry_by_txt(field = nid, type = M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
-      serial = issuerCert.getSerialNumber()
-      if serial['OK']:
-        proxyCert.setSerialNumber( serial['Value'] )
-      else:
-        return serial
-      parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
-      # No easy way to deep-copy certificate subject
-      cloneSubject = M2Crypto.X509.X509_Name()
-      for part in parts:
-        nid, val = part.split('=', 1)
-        cloneSubject.add_entry_by_txt(field = nid, type = M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
-      if limited:
-        cloneSubject.insert_entry( "CN", "limited proxy" )
-      else:
-        cloneSubject.add_entry_by_txt( field = 'CN', type = M2Crypto.ASN1.MBSTRING_ASC, entry = "proxy", len = -1, loc = -1, set = 0 )
-      proxyCert.setSubject( cloneSubject )
-      for extension in self.__getProxyExtensionList( diracGroup ):
-        proxyCert.add_ext( extension )
-        cloneSubject.add_entry_by_txt( field = 'CN', type = M2Crypto.ASN1.MBSTRING_ASC, entry = "proxy", len = -1, loc = -1, set = 0 )
-      proxyCert.setSubject( cloneSubject )
-      for extension in self.__getProxyExtensionList( diracGroup ):
-        proxyCert.addExtension( extension )
+    proxyCert.set_issuer(issuerCert.get_subject())
+    proxyCert.set_version(issuerCert.get_version())
+    proxyCert.set_pubkey(proxyKey)
+    proxyCert.gmtime_adj_notBefore(-900)
+    proxyCert.gmtime_adj_notAfter(int(lifeTime))
+    proxyCert.sign(self.__keyObj, 'sha256')
 
-    subject = issuerCert.getSubjectNameObject()
-    if subject['OK']:
-      proxyCert.setIssuer( subject['Value'] )
-    else:
-      return subject
-    version = issuerCert.getVersion()
-    if version['OK']:
-      proxyCert.setVersion( version['Value'] )
-    else:
-      return version
-    proxyCert.setPublicKey( proxyKey )
-    proxyNotBefore = M2Crypto.ASN1.ASN1_UTCTIME()
-    proxyNotBefore.set_time( int( time.time() ) - 900 )
-    proxyCert.setNotBefore( proxyNotBefore )
-    proxyNotAfter = M2Crypto.ASN1.ASN1_UTCTIME()
-    proxyNotAfter.set_time( int( time.time() ) + lifeTime )
-    proxyCert.set_not_after( proxyNotAfter )
-    subject = issuerCert.getSubjectNameObject()
-    if subject['OK']:
-      proxyCert.setIssuer( subject['Value'] )
-    else:
-      return subject
-    version = issuerCert.getVersion()
-    if version['OK']:
-      proxyCert.setVersion( version['Value'] )
-    else:
-      return version
-    proxyCert.setPublicKey( proxyKey )
-    proxyNotBefore = M2Crypto.ASN1.ASN1_UTCTIME()
-    proxyNotBefore.set_time( int( time.time() ) - 900 )
-    proxyCert.setNotBefore( proxyNotBefore )
-    proxyNotAfter = M2Crypto.ASN1.ASN1_UTCTIME()
-    proxyNotAfter.set_time( int( time.time() ) + lifeTime )
-    proxyCert.setNotAfter( proxyNotAfter )
-    proxyCert.sign( self.__keyObj, 'sha256' )
+    proxyString = "%s%s" % (crypto.dump_certificate(crypto.FILETYPE_PEM, proxyCert),
+                            crypto.dump_privatekey(crypto.FILETYPE_PEM, proxyKey))
+    for i in range(len(self.__certList)):
+      proxyString += crypto.dump_certificate(crypto.FILETYPE_PEM, self.__certList[i])
 
-    proxyString = "%s%s" % ( crypto.dump_certificate( crypto.FILETYPE_PEM, proxyCert ),
-                               crypto.dump_privatekey( crypto.FILETYPE_PEM, proxyKey ) )
-    for i in range( len( self.__certList ) ):
-      proxyString += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
+    return S_OK(proxyString)
 
-
-    return S_OK( proxyString )
-
-  def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, strength = 1024, limited = False ):
+  def generateProxyToFile(self, filePath, lifeTime, diracGroup=False, strength=1024, limited=False):
     """
     Generate a proxy and put it into a file
 
@@ -370,7 +274,7 @@ random.seed()
         strength: length in bits of the pair
         limited: Create a limited proxy
     """
-    retVal = self.generateProxyToString(lifeTime, diracGroup, strength, limited, rfc)
+    retVal = self.generateProxyToString(lifeTime, diracGroup, strength, limited)
     if not retVal['OK']:
       return retVal
     try:
@@ -447,8 +351,7 @@ random.seed()
         return res
     return S_ERROR(DErrno.EVOMS)
 
-
-  def __checkProxyness( self ):
+  def __checkProxyness(self):
     self.__hash = False
     self.__firstProxyStep = len(self.__certList) - 2  # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
@@ -492,19 +395,20 @@ random.seed()
      1 = proxy match
      2 = limited proxy match
     """
-    issuerSubject = self.__certList[ issuerStep ].get_subject()
-    proxySubject = self.__certList[ certStep ].get_subject().clone()
+    issuerSubject = self.__certList[issuerStep].get_subject()
+    proxySubject = self.__certList[certStep].get_subject().clone()
     psEntries = proxySubject.num_entries()
-    lastEntry = proxySubject.get_entry( psEntries - 1 )
+    lastEntry = proxySubject.get_entry(psEntries - 1)
     limited = False
     if lastEntry[0] != 'CN':
       return 0
-    if lastEntry[1] not in ( 'proxy', 'limited proxy' ):
-      extList = self.__certList[ certStep ].get_extensions()
+    if lastEntry[1] not in ('proxy', 'limited proxy'):
+      extList = self.__certList[certStep].get_extensions()
       for ext in extList:
         if ext.get_sn() == "proxyCertInfo":
-          contraint = [ line.split( ":" )[1].strip() for line in ext.get_value().split( "\n" ) if line.split( ":" )[0] == "Path Length Constraint" ]
-          if len( contraint ) == 0:
+          contraint = [line.split(":")[1].strip() for line in ext.get_value().split("\n")
+                       if line.split(":")[0] == "Path Length Constraint"]
+          if len(contraint) == 0:
             return 0
           if contraint[0] == "1.3.6.1.4.1.3536.1.1.1.9":
             limited = True
@@ -513,7 +417,7 @@ random.seed()
         self.__isRFC = False
       if lastEntry[1] == "limited proxy":
         limited = True
-    proxySubject.remove_entry( psEntries - 1 )
+    proxySubject.remove_entry(psEntries - 1)
     if not issuerSubject.one_line() == proxySubject.one_line():
       return 0
     return 1 if not limited else 2
@@ -522,9 +426,9 @@ random.seed()
     """
     Check the issuer is really the issuer
     """
-    issuerCert = self.__certList[ issuerStep ]
-    cert = self.__certList[ certStep ]
-    return cert.verify_pkey_is_issuer( issuerCert.get_pubkey() )
+    issuerCert = self.__certList[issuerStep]
+    cert = self.__certList[certStep]
+    return cert.verify_pkey_is_issuer(issuerCert.get_pubkey())
 
   def getDIRACGroup(self, ignoreDefault=False):
     """
@@ -549,23 +453,23 @@ random.seed()
     Is any of the elements in the chain expired?
     """
     if not self.__loadedChain:
-      return S_ERROR( DErrno.ENOCHAIN )
-    for iC in range( len( self.__certList ) - 1, -1, -1 ):
+      return S_ERROR(DErrno.ENOCHAIN)
+    for iC in range(len(self.__certList) - 1, -1, -1):
       if self.__certList[iC].has_expired():
-        return S_OK( True )
-    return S_OK( False )
+        return S_OK(True)
+    return S_OK(False)
 
   def getNotAfterDate(self):
     """
     Get the smallest not after date
     """
     if not self.__loadedChain:
-      return S_ERROR( DErrno.ENOCHAIN )
+      return S_ERROR(DErrno.ENOCHAIN)
     notAfter = self.__certList[0].get_not_after()
-    for iC in range( len( self.__certList ) - 1, -1, -1 ):
+    for iC in range(len(self.__certList) - 1, -1, -1):
       stepNotAfter = self.__certList[iC].get_not_after()
       if self.__certList[iC].has_expired():
-        return S_OK( stepNotAfter )
+        return S_OK(stepNotAfter)
       if notAfter > stepNotAfter:
         notAfter = stepNotAfter
     return S_OK(notAfter)
@@ -582,8 +486,7 @@ random.seed()
     x509 = self.getCertInChain(0)['Value']
     return x509.generateProxyRequest(bitStrength, limited)
 
-  def generateChainFromRequestString(self, pemData,
-                                     lifetime=86400, requireLimited=False, diracGroup=False, rfc=False):
+  def generateChainFromRequestString(self, pemData, lifetime=86400, requireLimited=False, diracGroup=False):
     """
     Generate a x509 chain from a request
     return S_OK( string ) / S_ERROR
@@ -593,11 +496,11 @@ random.seed()
     if not self.__loadedPKey:
       return S_ERROR(DErrno.ENOPKEY)
     try:
-      req = crypto.load_certificate_request( crypto.FILETYPE_PEM, pemData )
+      req = crypto.load_certificate_request(crypto.FILETYPE_PEM, pemData)
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "Can't load request data: %s" % repr(e).replace(',)', ')'))
     limited = requireLimited and self.isLimitedProxy().get('Value', False)
-    return self.generateProxyToString(lifetime, diracGroup, 1024, limited, rfc, req.get_pubkey())
+    return self.generateProxyToString(lifetime, diracGroup, 1024, limited, req.get_pubkey())
 
   def getRemainingSecs(self):
     """
@@ -616,13 +519,13 @@ random.seed()
     Dump all to string
     """
     if not self.__loadedChain:
-      return S_ERROR( DErrno.ENOCHAIN )
-    data = crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[0] )
+      return S_ERROR(DErrno.ENOCHAIN)
+    data = crypto.dump_certificate(crypto.FILETYPE_PEM, self.__certList[0])
     if self.__loadedPKey:
-      data += crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj )
-    for i in range( 1, len( self.__certList ) ):
-      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
-    return S_OK( data )
+      data += crypto.dump_privatekey(crypto.FILETYPE_PEM, self.__keyObj)
+    for i in range(1, len(self.__certList)):
+      data += crypto.dump_certificate(crypto.FILETYPE_PEM, self.__certList[i])
+    return S_OK(data)
 
   def dumpAllToFile(self, filename=False):
     """
@@ -648,29 +551,24 @@ random.seed()
       return S_ERROR(DErrno.ESPF, "%s :%s" % (filename, repr(e).replace(',)', ')')))
     return S_OK(filename)
 
-  def isRFC(self):
-      return S_ERROR(DErrno.ENOCHAIN)
-    return S_OK(self.__isRFC)
-
   def dumpChainToString(self):
-    if not self.__loadedChain:
     """
     Dump only cert chain to string
     """
     if not self.__loadedChain:
       return S_ERROR(DErrno.ENOCHAIN)
     data = ''
-    for i in range( len( self.__certList ) ):
-      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
-    return S_OK( data )
+    for i in range(len(self.__certList)):
+      data += crypto.dump_certificate(crypto.FILETYPE_PEM, self.__certList[i])
+    return S_OK(data)
 
   def dumpPKeyToString(self):
     """
     Dump key to string
     """
     if not self.__loadedPKey:
-      return S_ERROR( DErrno.ENOCHAIN )
-    return S_OK( crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj ) )
+      return S_ERROR(DErrno.ENOCHAIN)
+    return S_OK(crypto.dump_privatekey(crypto.FILETYPE_PEM, self.__keyObj))
 
   def __str__(self):
     repStr = "<X509Chain"
@@ -689,9 +587,9 @@ random.seed()
   def isPUSP(self):
     if self.__isProxy:
       # Check if we have a subproxy
-      trialSubidentity = self.__certList[ self.__firstProxyStep ].get_subject()
+      trialSubidentity = self.__certList[self.__firstProxyStep].get_subject()
       dn = trialSubidentity.one_line()
-      subproxyUser = isPUSPdn( dn )
+      subproxyUser = isPUSPdn(dn)
       if subproxyUser:
         result = S_OK(True)
         result['Identity'] = dn
@@ -702,16 +600,16 @@ random.seed()
 
   def getCredentials(self, ignoreDefault=False):
     if not self.__loadedChain:
-      return S_ERROR( DErrno.ENOCHAIN )
-    credDict = { 'subject' : self.__certList[0].get_subject().one_line(),
-                 'issuer' : self.__certList[0].get_issuer().one_line(),
-                 'secondsLeft' : self.getRemainingSecs()[ 'Value' ],
-                 'isProxy' : self.__isProxy,
-                 'isLimitedProxy' : self.__isProxy and self.__isLimitedProxy,
-                 'validDN' : False,
-                 'validGroup' : False }
+      return S_ERROR(DErrno.ENOCHAIN)
+    credDict = {'subject': self.__certList[0].get_subject().one_line(),
+                'issuer': self.__certList[0].get_issuer().one_line(),
+                'secondsLeft': self.getRemainingSecs()['Value'],
+                'isProxy': self.__isProxy,
+                'isLimitedProxy': self.__isProxy and self.__isLimitedProxy,
+                'validDN': False,
+                'validGroup': False}
     if self.__isProxy:
-      credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
+      credDict['identity'] = self.__certList[self.__firstProxyStep + 1].get_subject().one_line()
 
       # Check if we have the PUSP case
       result = self.isPUSP()
@@ -719,7 +617,6 @@ random.seed()
         credDict['identity'] = result['Identity']
         credDict['subproxyUser'] = result['SubproxyUser']
 
-      credDict['rfc'] = self.__isRFC
       retVal = Registry.getUsernameForDN(credDict['identity'])
       if not retVal['OK']:
         return S_OK(credDict)
@@ -754,9 +651,9 @@ random.seed()
       return S_OK(self.__hash)
     sha1 = hashlib.sha1()
     for cert in self.__certList:
-      sha1.update( cert.get_subject().one_line() )
-    sha1.update( str( self.getRemainingSecs()[ 'Value' ] / 3600 ) )
-    sha1.update( self.getDIRACGroup()[ 'Value' ] )
+      sha1.update(cert.get_subject().one_line())
+    sha1.update(str(self.getRemainingSecs()['Value'] / 3600))
+    sha1.update(self.getDIRACGroup()['Value'])
     if self.isVOMS():
       sha1.update("VOMS")
       from DIRAC.Core.Security.VOMS import VOMS

@@ -123,6 +123,7 @@ class CLIParams(object):
     Script.registerSwitch("i", "version", "Print version", self.showVersion)
     Script.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck)
 
+
 if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
   from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
 else:
