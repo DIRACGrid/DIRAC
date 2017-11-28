@@ -34,7 +34,6 @@ class X509Chain(object):
     self.__isProxy = False
     self.__firstProxyStep = 0
     self.__isLimitedProxy = True
-    self.__isRFC = False
     self.__hash = False
     if certList:
       self.__loadedChain = True
@@ -174,7 +173,7 @@ class X509Chain(object):
       return retVal
     return self.loadKeyFromString(pemData, M2Crypto.util.no_passphrase_callback)
 
-  def __getProxyExtensionList(self, diracGroup=False, rfc=False, rfcLimited=False):
+  def __getProxyExtensionList(self, diracGroup=False, limited=False):
     """
     Get the list of extensions for a proxy
     """
@@ -183,16 +182,12 @@ class X509Chain(object):
                                         'digitalSignature, keyEncipherment, dataEncipherment', critical=1)
     extStack.push(kUext)
     if diracGroup and type(diracGroup) in self.__validExtensionValueTypes:
-      diracGroupStr = diracGroup
-      dGext = M2Crypto.X509.new_extension('diracGroup', diracGroupStr)  # needs that ans1 utf8 bit
+      dGext = M2Crypto.X509.new_extension('diracGroup', diracGroup)
       extStack.push(dGext)
-    if rfc or rfcLimited:
-      if rfc:
-        # this OID defines proxy as RFC proxy
-        ext = M2Crypto.X509.new_extension('proxyCertInfo', 'critical, language:1.3.6.1.5.5.7.21.1', critical=1)
-        extStack.push(ext)
-      elif rfcLimited:
-        # this OID defines proxy as RFC Limited proxy
+      ext = M2Crypto.X509.new_extension('proxyCertInfo', 'critical, language:1.3.6.1.5.5.7.21.1', critical=1)
+      extStack.push(ext)
+      if limited:
+        # this OID defines proxy as limited proxy
         ext = M2Crypto.X509.new_extension('proxyCertInfo', 'critical, language:%s' % (LIMITED_PROXY_OID), critical=1)
         extStack.push(ext)
     return extStack
@@ -240,7 +235,7 @@ class X509Chain(object):
       return S_ERROR(DErrno.ENOCHAIN)
     return S_OK(len(self.__certList))
 
-  def generateProxyToString(self, lifeTime, diracGroup=False, strength=1024, limited=False, rfc=False, proxyKey=False):
+  def generateProxyToString(self, lifeTime, diracGroup=False, strength=1024, limited=False, proxyKey=False):
     """
     Generate a proxy and get it as a string
 
@@ -256,9 +251,6 @@ class X509Chain(object):
     if not self.__loadedPKey:
       return S_ERROR(DErrno.ENOPKEY)
 
-    if self.__isProxy:
-      rfc = self.isRFC().get('Value', False)
-
     issuerCert = self.__certList[0]
 
     if not proxyKey:
@@ -268,39 +260,18 @@ class X509Chain(object):
 
     proxyCert = X509Certificate()
 
-    if rfc:
-      proxyCert.setSerialNumber(int(random.random() * 10 ** 10))
-      # No easy way to deep-copy certificate subject
-      cloneSubject = M2Crypto.X509.X509_Name()
-      parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
-      for part in parts:
-        nid, val = part.split('=', 1)
-        cloneSubject.add_entry_by_txt(field=nid, type=M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
-      cloneSubject.add_entry_by_txt(field="CN", type=M2Crypto.ASN1.MBSTRING_ASC,
-                                    entry=str(int(random.random() * 10 ** 10)), len=-1, loc=-1, set=0)
-      proxyCert.setSubject(cloneSubject)
-      for extension in self.__getProxyExtensionList(diracGroup, rfc and not limited, rfc and limited):
-        proxyCert.addExtension(extension)
-    else:
-      serial = issuerCert.getSerialNumber()
-      if serial['OK']:
-        proxyCert.setSerialNumber(serial['Value'])
-      else:
-        return serial
-      parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
-      # No easy way to deep-copy certificate subject
-      cloneSubject = M2Crypto.X509.X509_Name()
-      for part in parts:
-        nid, val = part.split('=', 1)
-        cloneSubject.add_entry_by_txt(field=nid, type=M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
-      if limited:
-        cloneSubject.add_entry_by_txt(field='CN', type=M2Crypto.ASN1.MBSTRING_ASC,
-                                      entry="limited proxy", len=-1, loc=-1, set=0)
-      else:
-        cloneSubject.add_entry_by_txt(field='CN', type=M2Crypto.ASN1.MBSTRING_ASC, entry="proxy", len=-1, loc=-1, set=0)
-      proxyCert.setSubject(cloneSubject)
-      for extension in self.__getProxyExtensionList(diracGroup):
-        proxyCert.addExtension(extension)
+    proxyCert.setSerialNumber(int(random.random() * 10 ** 10))
+    # No easy way to deep-copy certificate subject
+    cloneSubject = M2Crypto.X509.X509_Name()
+    parts = issuerCert.getSubjectNameObject()['Value'].as_text().split(', ')
+    for part in parts:
+      nid, val = part.split('=', 1)
+      cloneSubject.add_entry_by_txt(field=nid, type=M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
+    cloneSubject.add_entry_by_txt(field="CN", type=M2Crypto.ASN1.MBSTRING_ASC,
+                                  entry=str(int(random.random() * 10 ** 10)), len=-1, loc=-1, set=0)
+    proxyCert.setSubject(cloneSubject)
+    for extension in self.__getProxyExtensionList(diracGroup, limited):
+      proxyCert.addExtension(extension)
 
     subject = issuerCert.getSubjectNameObject()
     if subject['OK']:
@@ -327,7 +298,7 @@ class X509Chain(object):
       proxyString += crt.asPem()
     return S_OK(proxyString)
 
-  def generateProxyToFile(self, filePath, lifeTime, diracGroup=False, strength=1024, limited=False, rfc=False):
+  def generateProxyToFile(self, filePath, lifeTime, diracGroup=False, strength=1024, limited=False):
     """
     Generate a proxy and put it into a file
 
@@ -338,7 +309,7 @@ class X509Chain(object):
         strength: length in bits of the pair
         limited: Create a limited proxy
     """
-    retVal = self.generateProxyToString(lifeTime, diracGroup, strength, limited, rfc)
+    retVal = self.generateProxyToString(lifeTime, diracGroup, strength, limited)
     if not retVal['OK']:
       return retVal
     try:
@@ -420,7 +391,6 @@ class X509Chain(object):
     self.__hash = False
     self.__firstProxyStep = len(self.__certList) - 2  # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
-    self.__isRFC = None
     self.__isLimitedProxy = False
     prevDNMatch = 2
     # If less than 2 steps in the chain is no proxy
@@ -485,13 +455,9 @@ class X509Chain(object):
                    if line.split(":")[0] == "Path Length Constraint"]
       if len(contraint) == 0:
         return 0
-      if self.__isRFC is None:
-        self.__isRFC = True
       if contraint[0] == LIMITED_PROXY_OID:
         limited = True
     else:
-      if self.__isRFC is None:
-        self.__isRFC = False
       if lastEntry[1] == "limited proxy":
         limited = True
     if not str(issuerSubject) == str(proxySubject)[:str(proxySubject).rfind('/')]:
@@ -579,7 +545,7 @@ class X509Chain(object):
     x509 = self.getCertInChain(0)['Value']
     return x509.generateProxyRequest(bitStrength, limited)
 
-  def generateChainFromRequestString(self, pemData, lifetime=86400, requireLimited=False, diracGroup=False, rfc=False):
+  def generateChainFromRequestString(self, pemData, lifetime=86400, requireLimited=False, diracGroup=False):
     """
     Generate a x509 chain from a request
     return S_OK( string ) / S_ERROR
@@ -593,7 +559,7 @@ class X509Chain(object):
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "Can't load request data: %s" % repr(e).replace(',)', ')'))
     limited = requireLimited and self.isLimitedProxy().get('Value', False)
-    return self.generateProxyToString(lifetime, diracGroup, 1024, limited, rfc, req.get_pubkey())
+    return self.generateProxyToString(lifetime, diracGroup, 1024, limited, req.get_pubkey())
 
   def getRemainingSecs(self):
     """
@@ -644,11 +610,6 @@ class X509Chain(object):
     except Exception as e:
       return S_ERROR(DErrno.ESPF, "%s :%s" % (filename, repr(e).replace(',)', ')')))
     return S_OK(filename)
-
-  def isRFC(self):
-    if not self.__loadedChain:
-      return S_ERROR(DErrno.ENOCHAIN)
-    return S_OK(self.__isRFC)
 
   def dumpChainToString(self):
     """
@@ -721,7 +682,6 @@ class X509Chain(object):
         credDict['identity'] = result['Identity']
         credDict['subproxyUser'] = result['SubproxyUser']
 
-      credDict['rfc'] = self.__isRFC
       retVal = Registry.getUsernameForDN(credDict['identity'])
       if not retVal['OK']:
         return S_OK(credDict)

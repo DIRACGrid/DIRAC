@@ -145,27 +145,21 @@ class VOMS(BaseSecurity):
             [f.replace("/Role=NULL", "").replace("/Capability=NULL", "") for f in data['fqan']]))
       if option == "all":
         lines = []
-        creds = proxyDict['chain'].getCredentials()['Value']
-        lines.append("subject : %s" % creds['subject'])
-        lines.append("issuer : %s" % creds['issuer'])
-        lines.append("identity : %s" % creds['identity'])
-        if proxyDict['chain'].isRFC().get('Value'):
-          lines.append("type : RFC compliant proxy")
-        else:
-          lines.append("type : proxy")
-        left = creds['secondsLeft']
-        h = int(left / 3600)
-        m = int(left / 60) - h * 60
-        s = int(left) - m * 60 - h * 3600
-        lines.append(
-            "timeleft  : %s:%s:%s\nkey usage : Digital Signature, Key Encipherment, Data Encipherment" %
-            (h, m, s))
-        lines.append("== VO %s extension information ==" % data['vo'])
-        lines.append("VO: %s" % data['vo'])
-        lines.append("subject : %s" % data['subject'])
-        lines.append("issuer : %s" % data['issuer'])
-        for fqan in data['fqan']:
-          lines.append("attribute : %s" % fqan)
+        creds = proxyDict[ 'chain' ].getCredentials()[ 'Value' ]
+        lines.append( "subject : %s" % creds[ 'subject' ] )
+        lines.append( "issuer : %s" % creds[ 'issuer' ] )
+        lines.append( "identity : %s" % creds[ 'identity' ] )
+        left = creds[ 'secondsLeft' ]
+        h = int( left / 3600 )
+        m = int( left / 60 ) - h * 60
+        s = int( left ) - m * 60 - h * 3600
+        lines.append( "timeleft  : %s:%s:%s\nkey usage : Digital Signature, Key Encipherment, Data Encipherment" % (  h, m, s ) )
+        lines.append( "== VO %s extension information ==" % data[ 'vo' ] )
+        lines.append( "VO: %s" % data[ 'vo' ] )
+        lines.append( "subject : %s" % data[ 'subject' ] )
+        lines.append( "issuer : %s" % data[ 'issuer' ] )
+        for fqan in data[ 'fqan' ]:
+          lines.append( "attribute : %s" % fqan )
         if 'attribute' in data:
           lines.append("attribute : %s" % data['attribute'])
         now = Time.dateTime()
@@ -268,9 +262,8 @@ class VOMS(BaseSecurity):
     tmpDir = False
     vomsesPath = self.getVOMSESLocation()
     if vomsesPath:
-      cmdArgs.append('-vomses "%s"' % vomsesPath)
-    if chain.isRFC().get('Value'):
-      cmdArgs.append("-r")
+      cmdArgs.append( '-vomses "%s"' % vomsesPath )
+    cmdArgs.append( "-r" )  # XXX Not sure about that, maybe it's default
 
     vpInitCmd = ''
     for vpInit in ('voms-proxy-init', 'voms-proxy-init2'):
