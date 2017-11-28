@@ -99,7 +99,7 @@ class X509Chain(object):
     Return : S_OK / S_ERROR
     """
     try:
-      fd = file( chainLocation )
+      fd = file(chainLocation)
       pemData = fd.read()
       fd.close()
     except Exception as e:
@@ -150,18 +150,18 @@ class X509Chain(object):
       return retVal
     return self.loadKeyFromString(pemData)
 
-  def __getProxyExtensionList( self, diracGroup = False, limited = False ):
+  def __getProxyExtensionList(self, diracGroup=False, limited=False):
     """
     Get the list of extensions for a proxy
     """
     extList = []
-    extList.append( crypto.X509Extension( 'keyUsage',
-                                          'critical, digitalSignature, keyEncipherment, dataEncipherment' ) )
-    if diracGroup and isinstance( diracGroup, self.__validExtensionValueTypes ):
-      extList.append( crypto.X509Extension( 'diracGroup', diracGroup ) )
+    extList.append(crypto.X509Extension('keyUsage',
+                                        'critical, digitalSignature, keyEncipherment, dataEncipherment'))
+    if diracGroup and isinstance(diracGroup, self.__validExtensionValueTypes):
+      extList.append(crypto.X509Extension('diracGroup', diracGroup))
     if limited:
-      blob = [ [ "1.3.6.1.4.1.3536.1.1.1.9" ] ]
-      asn1Obj = crypto.ASN1( blob )
+      blob = [["1.3.6.1.4.1.3536.1.1.1.9"]]
+      asn1Obj = crypto.ASN1(blob)
       asn1Obj[0][0].convert_to_object()
       asn1dump = binascii.hexlify(asn1Obj.dump())
       extval = "critical,DER:" + ":".join(asn1dump[i:i + 2] for i in range(0, len(asn1dump), 2))
@@ -211,7 +211,7 @@ class X509Chain(object):
       return S_ERROR(DErrno.ENOCHAIN)
     return S_OK(len(self.__certList))
 
-  def generateProxyToString( self, lifeTime, diracGroup = False, strength = 1024, limited = False, proxyKey = False ):
+  def generateProxyToString(self, lifeTime, diracGroup=False, strength=1024, limited=False, proxyKey=False):
     """
     Generate a proxy and get it as a string
 
@@ -235,18 +235,18 @@ class X509Chain(object):
 
     proxyCert = crypto.X509()
 
-    proxyCert.set_serial_number( str( int( random.random() * 10 ** 10 ) ) )
+    proxyCert.set_serial_number(str(int(random.random() * 10 ** 10)))
     cloneSubject = issuerCert.get_subject().clone()
-    cloneSubject.insert_entry( "CN", str( int( random.random() * 10 ** 10 ) ) )
-    proxyCert.set_subject( cloneSubject )
-    proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup, limited ) )
+    cloneSubject.insert_entry("CN", str(int(random.random() * 10 ** 10)))
+    proxyCert.set_subject(cloneSubject)
+    proxyCert.add_extensions(self.__getProxyExtensionList(diracGroup, limited))
 
-    proxyCert.set_issuer( issuerCert.get_subject() )
-    proxyCert.set_version( issuerCert.get_version() )
-    proxyCert.set_pubkey( proxyKey )
-    proxyCert.gmtime_adj_notBefore( -900 )
-    proxyCert.gmtime_adj_notAfter( int( lifeTime ) )
-    proxyCert.sign( self.__keyObj, 'sha256' )
+    proxyCert.set_issuer(issuerCert.get_subject())
+    proxyCert.set_version(issuerCert.get_version())
+    proxyCert.set_pubkey(proxyKey)
+    proxyCert.gmtime_adj_notBefore(-900)
+    proxyCert.gmtime_adj_notAfter(int(lifeTime))
+    proxyCert.sign(self.__keyObj, 'sha256')
 
     proxyString = "%s%s" % (crypto.dump_certificate(crypto.FILETYPE_PEM, proxyCert),
                             crypto.dump_privatekey(crypto.FILETYPE_PEM, proxyKey))
@@ -255,8 +255,7 @@ class X509Chain(object):
 
     return S_OK(proxyString)
 
-
-  def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, strength = 1024, limited = False ):
+  def generateProxyToFile(self, filePath, lifeTime, diracGroup=False, strength=1024, limited=False):
     """
     Generate a proxy and put it into a file
 
@@ -267,8 +266,8 @@ class X509Chain(object):
         strength: length in bits of the pair
         limited: Create a limited proxy
     """
-    retVal = self.generateProxyToString( lifeTime, diracGroup, strength, limited )
-    if not retVal[ 'OK' ]:
+    retVal = self.generateProxyToString(lifeTime, diracGroup, strength, limited)
+    if not retVal['OK']:
       return retVal
     try:
       with open(filePath, 'w') as fd:
@@ -477,7 +476,7 @@ class X509Chain(object):
     x509 = self.getCertInChain(0)['Value']
     return x509.generateProxyRequest(bitStrength, limited)
 
-  def generateChainFromRequestString( self, pemData, lifetime = 86400, requireLimited = False, diracGroup = False ):
+  def generateChainFromRequestString(self, pemData, lifetime=86400, requireLimited=False, diracGroup=False):
     """
     Generate a x509 chain from a request
     return S_OK( string ) / S_ERROR
@@ -489,9 +488,9 @@ class X509Chain(object):
     try:
       req = crypto.load_certificate_request(crypto.FILETYPE_PEM, pemData)
     except Exception as e:
-      return S_ERROR( DErrno.ECERTREAD, "Can't load request data: %s" % repr( e ).replace( ',)', ')' ) )
-    limited = requireLimited and self.isLimitedProxy().get( 'Value', False )
-    return self.generateProxyToString( lifetime, diracGroup, 1024, limited, req.get_pubkey() )
+      return S_ERROR(DErrno.ECERTREAD, "Can't load request data: %s" % repr(e).replace(',)', ')'))
+    limited = requireLimited and self.isLimitedProxy().get('Value', False)
+    return self.generateProxyToString(lifetime, diracGroup, 1024, limited, req.get_pubkey())
 
   def getRemainingSecs(self):
     """
@@ -542,7 +541,7 @@ class X509Chain(object):
       return S_ERROR(DErrno.ESPF, "%s :%s" % (filename, repr(e).replace(',)', ')')))
     return S_OK(filename)
 
-  def dumpChainToString( self ):
+  def dumpChainToString(self):
     """
     Dump only cert chain to string
     """
@@ -608,7 +607,6 @@ class X509Chain(object):
         credDict['identity'] = result['Identity']
         credDict['subproxyUser'] = result['SubproxyUser']
 
-      credDict['rfc'] = self.__isRFC
       retVal = Registry.getUsernameForDN(credDict['identity'])
       if not retVal['OK']:
         return S_OK(credDict)
