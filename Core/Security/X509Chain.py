@@ -27,7 +27,6 @@ random.seed()
     self.__isProxy = False
     self.__firstProxyStep = 0
     self.__isLimitedProxy = True
-    self.__isRFC = False
     self.__hash = False
     if certList:
       self.__loadedChain = True
@@ -171,8 +170,8 @@ random.seed()
                                           'critical, digitalSignature, keyEncipherment, dataEncipherment' ) )
     if diracGroup and isinstance( diracGroup, self.__validExtensionValueTypes ):
       extList.append( crypto.X509Extension( 'diracGroup', diracGroup ) )
-    if rfc or rfcLimited:
-      blob = [ [ "1.3.6.1.5.5.7.21.1" ] ] if not rfcLimited else [ [ "1.3.6.1.4.1.3536.1.1.1.9" ] ]
+    if limited:
+      blob = [ [ "1.3.6.1.4.1.3536.1.1.1.9" ] ]
       asn1Obj = crypto.ASN1( blob )
       asn1Obj[0][0].convert_to_object()
       asn1dump = binascii.hexlify( asn1Obj.dump() )
@@ -252,6 +251,11 @@ random.seed()
 
     proxyCert = M2Crypto.X509.X509()
 
+    proxyCert.set_serial_number( str( int( random.random() * 10 ** 10 ) ) )
+    cloneSubject = issuerCert.get_subject().clone()
+    cloneSubject.insert_entry( "CN", str( int( random.random() * 10 ** 10 ) ) )
+    proxyCert.set_subject( cloneSubject )
+    proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup, limited ) )
 
     if rfc:
       proxyCert.setSerialNumber( int( random.random() * 10 ** 10 ) )
@@ -355,7 +359,7 @@ random.seed()
 
     return S_OK( proxyString )
 
-  def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, strength = 1024, limited = False, rfc = False ):
+  def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, strength = 1024, limited = False ):
     """
     Generate a proxy and put it into a file
 
@@ -448,7 +452,6 @@ random.seed()
     self.__hash = False
     self.__firstProxyStep = len(self.__certList) - 2  # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
-    self.__isRFC = None
     self.__isLimitedProxy = False
     prevDNMatch = 2
     # If less than 2 steps in the chain is no proxy
@@ -503,8 +506,6 @@ random.seed()
           contraint = [ line.split( ":" )[1].strip() for line in ext.get_value().split( "\n" ) if line.split( ":" )[0] == "Path Length Constraint" ]
           if len( contraint ) == 0:
             return 0
-          if self.__isRFC == None:
-            self.__isRFC = True
           if contraint[0] == "1.3.6.1.4.1.3536.1.1.1.9":
             limited = True
     else:
@@ -648,11 +649,11 @@ random.seed()
     return S_OK(filename)
 
   def isRFC(self):
-    if not self.__loadedChain:
       return S_ERROR(DErrno.ENOCHAIN)
     return S_OK(self.__isRFC)
 
   def dumpChainToString(self):
+    if not self.__loadedChain:
     """
     Dump only cert chain to string
     """
