@@ -98,7 +98,7 @@ class VOMS( BaseSecurity ):
           2. Proxy Certificate Timeleft in seconds (the output is an int)
           3. DN
           4. voms group (if any)
-    
+
     :type proxy: str
     :param proxy: the proxy certificate location.
     :type  option: str
@@ -148,10 +148,6 @@ class VOMS( BaseSecurity ):
         lines.append( "subject : %s" % creds[ 'subject' ] )
         lines.append( "issuer : %s" % creds[ 'issuer' ] )
         lines.append( "identity : %s" % creds[ 'identity' ] )
-        if proxyDict[ 'chain' ].isRFC().get( 'Value' ):
-          lines.append( "type : RFC compliant proxy" )
-        else:
-          lines.append( "type : proxy" )
         left = creds[ 'secondsLeft' ]
         h = int( left / 3600 )
         m = int( left / 60 ) - h * 60
@@ -267,8 +263,7 @@ class VOMS( BaseSecurity ):
     vomsesPath = self.getVOMSESLocation()
     if vomsesPath:
       cmdArgs.append( '-vomses "%s"' % vomsesPath )
-    if chain.isRFC().get( 'Value' ):
-      cmdArgs.append( "-r" )
+    cmdArgs.append( "-r" )  # XXX Not sure about that, maybe it's default
 
     if not Os.which('voms-proxy-init'):
       return S_ERROR( DErrno.EVOMS, "Missing voms-proxy-init" )
@@ -312,4 +307,3 @@ class VOMS( BaseSecurity ):
     if status:
       return False
     return True
-
