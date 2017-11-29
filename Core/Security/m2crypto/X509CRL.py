@@ -29,13 +29,13 @@ class X509CRL(object):
   def instanceFromFile(cls, crlLocation):
     """ Instance a X509CRL from a file
     """
-    chain = cls()
-    result = chain.loadChainFromFile(crlLocation)
+    crl = cls()
+    result = crl.loadCRLFromFile(crlLocation)
     if not result['OK']:
       return result
-    return S_OK(chain)
+    return S_OK(crl)
 
-  def loadChainFromFile(self, crlLocation):
+  def loadCRLFromFile(self, crlLocation):
     """
     Load a x509CRL certificate from a pem file
     Return : S_OK / S_ERROR
