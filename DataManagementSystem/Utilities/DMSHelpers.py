@@ -50,6 +50,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
         recursive = resolveSEGroup(se1, allSEs=allSEs)
         if not recursive:
           return []
+        newSEs.remove(se1)
         newSEs += recursive
     seList += newSEs
 
