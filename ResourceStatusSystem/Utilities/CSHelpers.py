@@ -257,12 +257,12 @@ def getFTS():
   return S_OK( ftsEndpoints )
 
 
-def _getFTSEndpoints(basePath = 'Resources/FTSEndpoints/FTS3'):
+def _getFTSEndpoints(basePath='Resources/FTSEndpoints/FTS3'):
   '''
     Gets all FTS endpoints that are in CS
   '''
 
-  result = gConfig.getOptions( basePath )
+  result = gConfig.getOptions(basePath)
   if result['OK']:
     return result['Value']
   else:  # nothing found

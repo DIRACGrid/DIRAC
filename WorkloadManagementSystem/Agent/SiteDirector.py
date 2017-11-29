@@ -489,10 +489,11 @@ class SiteDirector( AgentModule ):
       # Check the status of the Site
       result = self.siteClient.getUsableSites(siteName)
       if not result['OK']:
-        self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
+        self.log.error("Can not get the status of site %s: %s" %
+                       (siteName, result['Message']))
         continue
       if not result['Value'] or siteName not in result['Value']:
-        self.log.info( "site %s is not active" % siteName)
+        self.log.info("site %s is not active" % siteName)
         continue
 
       if self.rssFlag:

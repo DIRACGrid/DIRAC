@@ -159,23 +159,27 @@ class MultiProcessorSiteDirector( SiteDirector ):
       # Check the status of the Site
       result = self.siteClient.getUsableSites(siteName)
       if not result['OK']:
-        self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
+        self.log.error("Can not get the status of site %s: %s" %
+                       (siteName, result['Message']))
         continue
       if not result['Value'] or siteName not in result['Value']:
-        self.log.info( "site %s is not active" % siteName)
+        self.log.info("site %s is not active" % siteName)
         continue
 
       if self.rssFlag:
         # Check the status of the ComputingElement
         result = self.rssClient.getElementStatus(ceName, "ComputingElement")
         if not result['OK']:
-          self.log.error( "Can not get the status of computing element %s: %s" % (siteName, result['Message']) )
+          self.log.error("Can not get the status of computing element %s: %s" % (
+              siteName, result['Message']))
           continue
         if result['Value']:
-          result = result['Value'][ceName]['all']   #get the value of the status
+          # get the value of the status
+          result = result['Value'][ceName]['all']
 
         if result not in ('Active', 'Degraded'):
-          self.log.verbose( "Skipping computing element %s at %s: resource not usable" % (ceName, siteName) )
+          self.log.verbose(
+              "Skipping computing element %s at %s: resource not usable" % (ceName, siteName))
           continue
 
       for tag in queueTags:

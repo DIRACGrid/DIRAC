@@ -261,7 +261,8 @@ class Matcher( object ):
     # Check if site is allowed
     result = self.siteClient.getUsableSites(resourceDict['Site'])
     if not result['OK']:
-      self.log.error( "Internal error", "siteClient.getUsableSites: %s" % result['Message'] )
+      self.log.error("Internal error",
+                     "siteClient.getUsableSites: %s" % result['Message'])
       raise RuntimeError( "Internal error" )
 
     if resourceDict['Site'] not in result['Value']:

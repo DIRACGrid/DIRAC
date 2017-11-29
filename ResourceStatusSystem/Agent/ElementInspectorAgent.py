@@ -8,13 +8,13 @@ import datetime
 import math
 import Queue
 
-from DIRAC                                                     import S_ERROR, S_OK
-from DIRAC.Core.Base.AgentModule                               import AgentModule
-from DIRAC.Core.Utilities.ThreadPool                           import ThreadPool
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient    import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP               import PEP
-from DIRAC.ResourceStatusSystem.Utilities                      import Utils
-ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),
+from DIRAC import S_ERROR, S_OK
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
+from DIRAC.ResourceStatusSystem.Utilities import Utils
+ResourceManagementClient = getattr(Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'),
                                    'ResourceManagementClient')
 
 __RCSID__  = '$Id$'
