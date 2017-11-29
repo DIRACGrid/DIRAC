@@ -460,20 +460,10 @@ class SiteDirector( AgentModule ):
     #  self.log.info( 'No more pilots to be submitted in this cycle' )
     #  return S_OK()
 
-    if self.rssFlag:
-
-      result = self.siteClient.getUsableSites()
-      if not result['OK']:
-        return S_ERROR( 'Can not get the site status' )
-      siteMaskList = result['Value']
-
-    else:
-
-      # Use the old way, check if the site is allowed in the mask
-      result = jobDB.getSiteMask()
-      if not result['OK']:
-        return S_ERROR( 'Can not get the site mask' )
-      siteMaskList = result['Value']
+    result = self.siteClient.getUsableSites()
+    if not result['OK']:
+      return result
+    siteMaskList = result['Value']
 
     queues = self.queueDict.keys()
     random.shuffle( queues )
@@ -496,19 +486,16 @@ class SiteDirector( AgentModule ):
       platform = self.queueDict[queue]['Platform']
       siteMask = siteName in siteMaskList
 
+      # Check the status of the Site
+      result = self.siteClient.getUsableSites(siteName)
+      if not result['OK']:
+        self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
+        continue
+      if not result['Value'] or siteName not in result['Value']:
+        self.log.info( "site %s is not active" % siteName)
+        continue
+
       if self.rssFlag:
-        # Check the status of the Site
-        result = self.siteClient.getSiteStatuses({siteName})
-        if not result['OK']:
-          self.log.error( "Can not get the status of site %s: %s" % (siteName, result['Message']) )
-          continue
-        if result['Value']:
-          result = result['Value'][siteName]   #get the value of the status
-
-        if result not in ('Active', 'Degraded'):
-          self.log.verbose( "Skipping site %s: site not usable" % siteName )
-          continue
-
         # Check the status of the ComputingElement
         result = self.rssClient.getElementStatus(ceName, "ComputingElement")
         if not result['OK']:
@@ -666,9 +653,7 @@ class SiteDirector( AgentModule ):
         self.queueSlots[queue]['AvailableSlots'] -= len( pilotList )
         totalSubmittedPilots += len( pilotList )
         self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList ), queueName, ceName ) )
-        stampDict = {}
-        if result.has_key( 'PilotStampDict' ):
-          stampDict = result['PilotStampDict']
+        stampDict = result.get('PilotStampDict', {})
         tqPriorityList = []
         sumPriority = 0.
         for tq in taskQueueDict:
@@ -681,7 +666,7 @@ class SiteDirector( AgentModule ):
             if rndm < prio:
               tqID = tq
               break
-          if not tqDict.has_key( tqID ):
+          if tqID not in tqDict:
             tqDict[tqID] = []
           tqDict[tqID].append( pilotID )
 
