@@ -3,7 +3,6 @@ __RCSID__ = "$Id$"
 
 import time
 import copy
-import os.path
 import os
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK

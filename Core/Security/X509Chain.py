@@ -13,7 +13,7 @@ from GSI import crypto
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security.X509Certificate import X509Certificate
+from DIRAC.Core.Security.X509Certificate import X509Certificate, LIMITED_PROXY_OID
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 random.seed()
@@ -164,8 +164,7 @@ class X509Chain(object):
     if diracGroup and isinstance(diracGroup, self.__validExtensionValueTypes):
       extList.append(crypto.X509Extension('diracGroup', diracGroup))
     if limited:
-      blob = [["1.3.6.1.4.1.3536.1.1.1.9"]]
-      asn1Obj = crypto.ASN1(blob)
+      asn1Obj = crypto.ASN1([[LIMITED_PROXY_OID]])
       asn1Obj[0][0].convert_to_object()
       asn1dump = binascii.hexlify(asn1Obj.dump())
       extval = "critical,DER:" + ":".join(asn1dump[i:i + 2] for i in range(0, len(asn1dump), 2))
@@ -410,7 +409,7 @@ class X509Chain(object):
                        if line.split(":")[0] == "Path Length Constraint"]
           if len(contraint) == 0:
             return 0
-          if contraint[0] == "1.3.6.1.4.1.3536.1.1.1.9":
+          if contraint[0] == LIMITED_PROXY_OID:
             limited = True
     else:
       if self.__isRFC is None:
