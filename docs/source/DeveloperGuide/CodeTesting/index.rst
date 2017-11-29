@@ -573,8 +573,11 @@ Validation and system tests are usually coded by software testers. The DIRAC rep
 a minimal set of test jobs, but since most of the test jobs that you can run are VO specific, we suggest you to expand the list.
 
 The server `lbcertifdirac6.cern.ch <lbcertifdirac6.cern.ch:8443>`_ is used as "DIRAC certification machine".
-Normally, newest DIRAC pre-releases are installed there.
+With "certification machine" we mean that it is a full DIRAC installation, that connects to grid resources, and through which we certify pre-production versions. 
+Normally, the latest DIRAC pre-releases are installed there.
 Its access is restricted to some power users, for now, but do request access if you need to do some specific system test.
+This installation is usually not done for running private tests, but in a controlled way can be sometimes tried. 
+
 
 
 The certification process
