@@ -2,11 +2,11 @@
 """
 __RCSID__ = "$Id$"
 
+import os
 import M2Crypto
 import asn1
 import datetime
 
-import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import DErrno

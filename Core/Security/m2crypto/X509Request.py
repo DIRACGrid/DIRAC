@@ -3,7 +3,6 @@
 
 __RCSID__ = "$Id$"
 
-import GSI
 import M2Crypto
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
