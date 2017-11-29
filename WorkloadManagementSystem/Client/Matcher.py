@@ -258,14 +258,13 @@ class Matcher( object ):
       self.log.error( "Missing Site Name in Resource JDL" )
       raise RuntimeError( "Missing Site Name in Resource JDL" )
 
-    # Get common site mask and check the agent site
-    result = self.siteClient.getSites( siteState = 'Active' )
+    # Check if site is allowed
+    result = self.siteClient.getUsableSites(resourceDict['Site'])
     if not result['OK']:
-      self.log.error( "Internal error", "getSiteMask: %s" % result['Message'] )
+      self.log.error( "Internal error", "siteClient.getUsableSites: %s" % result['Message'] )
       raise RuntimeError( "Internal error" )
-    maskList = result['Value']
 
-    if resourceDict['Site'] not in maskList:
+    if resourceDict['Site'] not in result['Value']:
       return False
 
     return True
