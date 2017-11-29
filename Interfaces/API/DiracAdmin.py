@@ -241,7 +241,7 @@ class DiracAdmin( API ):
       return result
 
     if site:
-      if not result['Value'].has_key( site ):
+      if site not in result['Value']:
         return S_ERROR( 'Site mask information not available for %s' % ( site ) )
 
     if printOutput:
