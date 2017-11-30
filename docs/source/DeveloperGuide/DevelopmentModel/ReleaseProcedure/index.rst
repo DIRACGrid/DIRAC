@@ -53,7 +53,7 @@ Release notes
 Release notes are contained in the *release.notes* file. Each release version has a dedicated
 section in this file, for example::
 
-  [v6r10p1]
+  [v6r19p7]
 
   *Core
   BUGFIX: typo in the dirac-install script
@@ -96,8 +96,8 @@ Propagating patches
 In the DIRAC Development Model several release branches can coexist in production.
 This means that patches applied to older branches must be propagated to the newer
 release branches. This is done in the local Git repository of the release manager.
-Let's take an example of a patch created against *release* branch *rel-v6r14* while
-the new release branch *rel-v6r15* is already in production. This can be accomplished
+Let's take an example of a patch created against *release* branch *rel-v6r19* while
+the new release branch *rel-v6r20* is already in production. This can be accomplished
 by the following sequence of commands, which will bring all the changes from
 the central repository including all the *release* branches.
 We now create local branch from the the remote one containing the patch. Release notes
@@ -105,68 +105,83 @@ must be updated to create a new section for the new patch release describing the
 new changes. Now we can make a local branch corresponding to a downstream branch
 and merge the commits from the patches::
 
-  > git checkout -b rel-v6r14 release/rel-v6r14
+  > git checkout -b rel-v6r19 release/rel-v6r19
   > vim release.notes
 
 We can now start merging PRs, directly from GitHub. At the same time we edit
 the release notes to reflect what has been merged (please see the note below about how to edit this file).
-Once finished, save the file. Then we commit the changes (those done to release.notes) and update the current repository::
+Once finished, save the file. Then, modify the __init__.py file of the root directory and define the version also there.
+Then we commit the changes (those done to release.notes and __init__.py) and update the current repository::
 
-  > git commit -a #this will commit the changes we made to the release notes in rel-v6r14 local branch
-  > git fetch release #this will bring in the updated release/rel-v6r14 branch from the github repository
-  > git rebase --no-ff release/rel-v6r14 #this will rebase the current rel-v6r14 branch to the content of release/rel-v6r14
+  > git commit -a #this will commit the changes we made to the release notes in rel-v6r19 local branch
+  > git fetch release #this will bring in the updated release/rel-v6r19 branch from the github repository
+  > git rebase --no-ff release/rel-v6r19 #this will rebase the current rel-v6r19 branch to the content of release/rel-v6r19
 
 You can now proceed with tagging, pushing, and uploading::
 
-  > git tag v6r14p36 #this will create a tag, from the current branch, in the local repository
-  > git push --tags release rel-v6r14 #we push to the *release* repository (so to GitHub-hosted one) the tag just created, and the rel-v6r14 branch.
+  > git tag v6r19p7 #this will create a tag, from the current branch, in the local repository
+  > git push --tags release rel-v6r19 #we push to the *release* repository (so to GitHub-hosted one) the tag just created, and the rel-v6r19 branch.
 
-From the previous command, note that due to the fact that we are pushing a branch named *rel-v6r14*
-to the *release* repository, where it already exists a branch named *rel-v6r14*,
+From the previous command, note that due to the fact that we are pushing a branch named *rel-v6r19*
+to the *release* repository, where it already exists a branch named *rel-v6r19*,
 the local branch will override the remote one.
 
 All the patches must now be also propagated to the *upper* branches.
-In this example we are going through, we are supposing that it exists rel-v6r15 branch,
+In this example we are going through, we are supposing that it exists rel-v6r20 branch,
 from which we already derived production tags. We then have to propagate the changes done to
-rel-v61r4 to rel-v6r15. Note that if even the patch was made to an upstream release branch, the subsequent
+rel-v6r19 to rel-v6r20. Note that if even the patch was made to an upstream release branch, the subsequent
 release branch must also receive a new patch release tag. Multiple patches can be
 add in one release operation. If the downstream release branch has got its own patches,
-those should be described in its release notes under the v6r14p36 section. ::
+those should be described in its release notes under the v6r19p7 section. ::
 
-  > git checkout -b rel-v6r15 release/rel-v6r15 # We start by checking out the rel-v6r15 branch
-  > git merge rel-v6r14 # Merge to rel-v6r15 what we have advanced in rel-v6r14
+  > git checkout -b rel-v6r20 release/rel-v6r20 # We start by checking out the rel-v6r20 branch
+  > git merge rel-v6r19 # Merge to rel-v6r20 what we have advanced in rel-v6r19
 
 The last command may result in merge conflicts, which should be resolved "by hand".
 One typical conflict is about the content of the release.notes file.
 
 From now on, the process will look very similar to what we have already done for
-creating tag v6r14p36. We should then repeat the process for v6r15::
+creating tag v6r19p7. We should then repeat the process for v6r20::
 
-  > vim release.notes
+  > vim release.notes 
+  > vim __init__.py
 
-Merge PRs (if any), then save the release.notes. Then, modify the __init__.py file and define the version. Then::
+Merge PRs (if any), then save the files above. Then::
 
-  > git commit -a #this will commit the changes we made to the release notes in rel-v6r15 local branch
-  > git fetch release #this will bring in the updated release/rel-v6r15 branch from the github repository
-  > git rebase --no-ff release/rel-v6r15 #this will rebase the current rel-v6r15 branch to the content of release/rel-v6r15
-  > git tag v6r15p4 #this will create a tag, from the current branch, in the local repository
-  > git push --tags release rel-v6r15 #we push to the *release* repository (so to GitHub-hosted one) the tag just created, and the rel-v6r15 branch.
+  > git commit -a #this will commit the changes we made to the release notes in rel-v6r20 local branch
+  > git fetch release #this will bring in the updated release/rel-v6r20 branch from the github repository
+  > git rebase --no-ff release/rel-v6r20 #this will rebase the current rel-v6r20 branch to the content of release/rel-v6r20
+  > git tag v6r20p2 #this will create a tag, from the current branch, in the local repository
+  > git push --tags release rel-v6r20 #we push to the *release* repository (so to GitHub-hosted one) the tag just created, and the rel-v6r20 branch.
 
 The *master* branch of DIRAC always contains the latest stable release.
-If this correspons to rel-v6r15, we should make sure that this is updated:
+If this corresponds to rel-v6r20, we should make sure that this is updated:
 
-  > git push release rel-v6r15:master
+  > git push release rel-v6r20:master
 
 Repeat the process for every "upper" release branch.
-The *integration* branch is also receiving new features to go into the next release.
-Therefore, it is used to tag *prerelease* versions that can be then installed
-with standard tools on test DIRAC servers, for example::
 
+The *integration* branch is also receiving new features to go into the next release.
+The *integration* branch also contains the *releases.cfg* file, which holds all the versions of DIRAC
+together with the dependencies among the different packages. 
+
+From the *integration* branch we also do all the tags of *pre-release* versions, that can be then installed
+with standard tools on test DIRAC servers. 
+
+The procedure for creating pre-releases is very similar to creating releases::
 
   > git checkout -b integration release/integration
-  > git merge --no-ff rel-v6r16 #replace with the "last" branch
-  > vim releases.cfg #add the created tags
+  > git merge rel-v6r20 #replace with the "last" branch
+  > vim release.notes 
+  > vim __init__.py
+  > vim releases.cfg #add the created tags (all of them, releases and pre-releases)
+
+Merge all the PRs targeting integration that have been approved (if any), then save the files above. Then::
+
   > git commit -a
+  > git fetch release #this will bring in the updated release/integration branch from the github repository
+  > git rebase --no-ff release/integration #this will rebase the current integration branch to the content of release/integration
+  > git tag v6r21-pre3 #this will create a tag, from the current branch, in the local repository
   > git push release integration
 
 
@@ -182,19 +197,21 @@ Travis also runs on all the Pull Requests, so if for all the PRs merged travis d
 there's a good chance (but NOT the certainty) that the created tags are also sane.
 
 A second test is represented by pylint, for which you may find some more info in section :ref:`code_quality`.
-The pylint score should not decrease for newer tags.
+Within Travis, we run also a "pylint --errors-only" test, which should be strictly equal to 0.
 
 
 3. Deploying DIRAC tarballs
 =============================
 
-Once the release branches are tagged and pushed, the new release versions are
+Once the release and integration branches are tagged and pushed, the new release and pre-release versions are
 properly described in the *release.cfg* file in the *integration* branch and
 also pushed to the central repository, the tar archives containing the new
-codes can be created. Just execute *dirac-distribution* command with the appropriate
+codes can be created. To do this, just execute *dirac-distribution* command with the appropriate
 flags. For instance::
 
- dirac-distribution -r v6r14p36 -l DIRAC
+  > dirac-distribution -r v6r19p7 -l DIRAC
+  > dirac-distribution -r v6r20p2 -l DIRAC
+  > dirac-distribution -r v6r21-pre3 -l DIRAC
 
 You can also pass the releases.cfg to use via command line using the *-C* switch. *dirac-distribution*
 will generate a set of tarballs, release and md5 files. Please copy those to your installation source
