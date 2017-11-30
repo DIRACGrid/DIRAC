@@ -251,7 +251,9 @@ def getFTS():
     Gets all FTS endpoints
   '''
 
-  ftsEndpoints = _getFTSEndpoints('Resources/FTSEndpoints/FTS2')
+  #FIXME: FTS2 will be deprecated (first 2 lines that follow)
+  ftsEndpoints = gConfig.getValue('Resources/FTSEndpoints/Default/FTSEndpoint', [])
+  ftsEndpoints =+ _getFTSEndpoints('Resources/FTSEndpoints/FTS2')
   ftsEndpoints += _getFTSEndpoints()
 
   return S_OK( ftsEndpoints )
