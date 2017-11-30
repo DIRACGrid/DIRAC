@@ -1009,16 +1009,14 @@ class AccountingDB( DB ):
         #             in this case the correct query must be: select Site, startTime, bucketlength, sum(entriesInBucket) from xxxx where yyy Group by Site, startTime, bucketlength
         #
         # When we have multiple grouping then we must have all the fields in Group by. This is from mysql 5.7.
-        # We have fields which are not in the groupFields
+        # We have fields which are not in the groupFields and it is in selectFields
 
-        diff = list( set( selectFields[1] ) - set( groupFields[1] ) )
-        if diff:  # add the missing fields to the group by if there is any
+        if 'bucketLength' in selectFields[1]:
           groupFields = list( groupFields )
-          missingfields = ", ".join( repeat( "%s", len( diff ) ) )  # this will contain all elements which are not in the group by
-          groupFields[0] = "%s, %s" % ( groupFields[0], missingfields )
-          groupFields[1].extend( diff )
+          groupFields[0] = "%s, %s" % ( groupFields[0], "%s" )
+          groupFields[1].append( 'bucketlength' )
           groupFields = tuple( groupFields )
-
+           
       except TypeError as e:
         return S_ERROR( "Cannot format properly group string: %s" % repr( e ) )
     if orderFields:
