@@ -92,3 +92,16 @@ Options for the HTCondorCEs
 | DaysToKeepLogFiles  | How many days pilot log files are kept on the disk  | 15                                                        |
 |                     | before they are removed                             |                                                           |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+
+
+.. _res-comp-cream:
+
+CREAM CE Parameters
+-------------------
+
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+| **Name**            | **Description**                                     | **Example**                                               |
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+| ExtraJDLParameters  | Additional JDL parameters to submit pilot jobs      | ExtraJDLParameters = GPUNumber=1; OneMore="value"         |
+|                     | to CREAm CE. Separate entries with ";".             |                                                           |
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+

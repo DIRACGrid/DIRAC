@@ -248,53 +248,27 @@ def getStorageElementEndpoints( storageElements = None ):
 
 def getFTS():
   '''
-    Gets all storage elements from /Resources/FTSEndpoints
+    Gets all FTS endpoints
   '''
 
-  ftsEndpoints = []
-
-  fts2 = getFTS2()
-
-  if not fts2['OK']:
-    return fts2
-
-  ftsEndpoints += fts2['Value']
-
-  fts3 = getFTS3()
-
-  if not fts3['OK']:
-    return fts3
-
-  ftsEndpoints += fts3['Value']
-
-
+  #FIXME: FTS2 will be deprecated (first 2 lines that follow)
+  ftsEndpoints = gConfig.getValue('Resources/FTSEndpoints/Default/FTSEndpoint', [])
+  ftsEndpoints =+ _getFTSEndpoints('Resources/FTSEndpoints/FTS2')
+  ftsEndpoints += _getFTSEndpoints()
 
   return S_OK( ftsEndpoints )
 
 
-def getFTS2():
+def _getFTSEndpoints(basePath='Resources/FTSEndpoints/FTS3'):
   '''
-    Gets all storage elements from /Resources/FTSEndpoints
-  '''
-
-  _basePath = 'Resources/FTSEndpoints/FTS2'
-
-  ftsEndpoints = gConfig.getOptions( _basePath )
-  ftsEndpointDefaultLocation = gConfig.getValue( '/Resources/FTSEndpoints/Default/FTSEndpoint', '' )
-  if ftsEndpoints['OK'] and ftsEndpointDefaultLocation:
-    ftsEndpoints['Value'].append( ftsEndpointDefaultLocation )
-
-  return ftsEndpoints
-
-def getFTS3():
-  '''
-    Gets all storage elements from /Resources/FTSEndpoints
+    Gets all FTS endpoints that are in CS
   '''
 
-  _basePath = 'Resources/FTSEndpoints/FTS3'
-
-  ftsEndpoints = gConfig.getOptions( _basePath )
-  return ftsEndpoints
+  result = gConfig.getOptions(basePath)
+  if result['OK']:
+    return result['Value']
+  else:  # nothing found
+    return []
 
 def getSpaceTokenEndpoints():
   ''' Get Space Token Endpoints '''

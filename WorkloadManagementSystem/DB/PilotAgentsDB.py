@@ -19,13 +19,15 @@
 
 __RCSID__ = "$Id$"
 
+from types import IntType, LongType, ListType
+import threading
+
 from DIRAC  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
-import threading
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 DEBUG = 1
 
@@ -884,8 +886,7 @@ class PilotAgentsDB( DB ):
       records = new_records
 
     # Get the Site Mask data
-    client = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = client.getSiteMask()
+    result = SiteStatus().getUsableSites()
     if result['OK']:
       siteMask = result['Value']
       for r in records:

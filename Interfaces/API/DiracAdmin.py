@@ -8,20 +8,21 @@ site banning and unbanning, WMS proxy uploading etc.
 import os
 
 import DIRAC
-from DIRAC.Core.Utilities.PromptUser                          import promptUser
-from DIRAC.Core.Base.API                                      import API
-from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
-from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
-from DIRAC.Core.DISET.RPCClient                               import RPCClient
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
-from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteCEMapping
-from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus         import ResourceStatus
-from DIRAC.ResourceStatusSystem.Client.SiteStatus             import SiteStatus
-from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService
-from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSE
+from DIRAC.Core.Utilities.PromptUser import promptUser
+from DIRAC.Core.Base.API import API
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
+from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView, ldapSE
 
 __RCSID__ = "$Id$"
 
@@ -235,13 +236,17 @@ class DiracAdmin( API ):
     if not result['OK']:
       return result
 
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.getSiteMaskLogging( site )
+    if self.rssFlag:
+      result = ResourceStatusClient().selectStatusElement('Site', 'History', name=site)
+    else:
+      wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+      result = wmsAdmin.getSiteMaskLogging(site)
+
     if not result['OK']:
       return result
 
     if site:
-      if not result['Value'].has_key( site ):
+      if site not in result['Value']:
         return S_ERROR( 'Site mask information not available for %s' % ( site ) )
 
     if printOutput:

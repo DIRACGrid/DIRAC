@@ -1551,7 +1551,13 @@ class JobDB( DB ):
     """ Get the currently site mask status
     """
     if isinstance(sites, list):
-      sitesString = ",".join( "'%s'" % site for site in sites)
+      safeSites = []
+      for site in sites:
+        res = self._escapeString( site )
+        if not ret['OK']:
+          return ret
+        safeSites.append( res['Value'] )
+      sitesString = ",".join( safeSites )
       cmd = "SELECT Site, Status FROM SiteMask WHERE Site in (%s)" % sitesString
 
       result = self._query( cmd )
@@ -1559,7 +1565,10 @@ class JobDB( DB ):
 
     elif isinstance(sites, str):
 
-      cmd = "SELECT Status FROM SiteMask WHERE Site='%s'" % sites
+      ret = self._escapeString( sites )
+      if not ret['OK']:
+        return ret
+      cmd = "SELECT Status FROM SiteMask WHERE Site=%s" % ret['Value']
       result = self._query( cmd )
       return S_OK( result['Value'][0][0] )
 

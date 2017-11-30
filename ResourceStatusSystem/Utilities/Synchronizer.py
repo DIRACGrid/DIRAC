@@ -408,8 +408,8 @@ class Synchronizer( object ):
     #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
     result = self.rStatus.selectStatusElement( 'Resource', 'Status',
-                                                 elementType = 'FTS',
-                                                 meta = { 'columns' : [ 'Name', 'StatusType' ] } )
+                                               elementType='FTS',
+                                               meta={'columns': ['Name', 'StatusType']})
     if not result[ 'OK' ]:
       return result
     sesTuple = [ (x[0],x[1]) for x in result['Value'] ]

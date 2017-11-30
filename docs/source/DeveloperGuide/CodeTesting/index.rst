@@ -180,7 +180,6 @@ for ``CheeseShopOwner``:
 
 .. code-block:: python
 
-   from types import *
    from DIRAC import S_OK, S_ERROR, gLogger, gConfig
    from DIRAC.Core.DISET.RequestHandler import RequestHandler
    from DIRAC.CheeseShopSystem.DB.CheeseShopDB import CheeseShopDB
@@ -196,16 +195,16 @@ for ``CheeseShopOwner``:
 
    class CheeseShopOwner( RequestHandler ):
 
-     types_isThere = [ StringType ]
+     types_isThere = [ basestring ]
      def export_isThere( self, cheese ):
        return cheeseShopDB.isThere( cheese )
 
-     types_buyCheese = [ StringType, FloatType ]
+     types_buyCheese = [ basestring, float ]
      def export_buyCheese( self, cheese, quantity ):
        return cheeseShopDB.buyCheese( cheese, quantity )
 
      # ... and so on, so on and so on, i.e:
-     types_insertCheese = [ StringType, FloatType, FloatType ]
+     types_insertCheese = [ basestring, float, float ]
      def export_insertCheese( self, cheeseName, price, quantity ):
        return cheeseShopDB.insertCheese( cheeseName, price, quantity )
 
@@ -470,22 +469,12 @@ it is a good idea to run the test, and verify its result.
 
 Within section :ref:`adding_new_components` we will develop one of these tests as an exercise.
 
-
-Validation and System tests
-============================
-
-Validation and System tests are black-box tests. As such, coding them should not require knowledge of the inner design of the code or logic.
-At the same time, to run them you'll require a DIRAC server installation.
-Examples of a system test might be: send jobs on the Grid, and expecting them to be completed after hours. Or, replicate a file or two.
-
-Validation and system tests are usually coded by software testers. The DIRAC repository contains, in the *tests* `package <https://github.com/DIRACGrid/DIRAC/tree/integration/tests>`_
-a minimal set of test jobs, but since most of the test jobs that you can run are VO specific, we suggest you to expand the list.
-
-
+Integration tests are a good example of the type of tests that can be run by a machinery.
+Continuous integration tools like Jenkins are indeed used for running these type of tests.
 
 
 Continuous Integration software
-================================
+------------------------------------------
 
 There are several tools, on the free market, for so-called *Continuous Integration*, or simply CI_. The most used right now is probably Jenkins_, which is also our recommendation. If you have looked in the `DIRAC/tests <https://github.com/DIRACGrid/DIRAC/tree/integration/tests>`_ (and if you haven't yet, you should, now!) you will see also a Jenkins folder.
 
@@ -505,13 +494,14 @@ What can you do with those above? You can run the Integration tests you read abo
 
 How do I do that?
 
-- you need a MySQL DB somewhere. Empty. To be used only for testing purposes.
+- you need a MySQL DB somewhere, empty, to be used only for testing purposes.
+- if you have tests that need to access other DBs, you should also have them ready, again used for testing purposes.
 - you need to configure the Jenkins jobs. What follows is an example of Jenkins job for system tests::
 
 
    #!/bin/bash
 
-   export DIRACBRANCH=v6r13
+   export DIRACBRANCH=v6r19
 
    export PRERELEASE=True
    export DEBUG=True
@@ -525,8 +515,6 @@ How do I do that?
 
    git clone git://github.com/DIRACGrid/DIRAC.git
    source DIRAC/tests/Jenkins/dirac_ci.sh
-
-   stopRunsv
 
    fullInstallDIRAC
 
@@ -571,6 +559,34 @@ How do I do that?
    clean
 
    echo "*** DONE ****"
+
+
+
+Validation and System tests
+============================
+
+Validation and System tests are black-box tests. As such, coding them should not require knowledge of the inner design of the code or logic.
+At the same time, to run them you'll require a DIRAC server installation.
+Examples of a system test might be: send jobs on the Grid, and expecting them to be completed after hours. Or, replicate a file or two.
+
+Validation and system tests are usually coded by software testers. The DIRAC repository contains, in the *tests* `package <https://github.com/DIRACGrid/DIRAC/tree/integration/tests>`_
+a minimal set of test jobs, but since most of the test jobs that you can run are VO specific, we suggest you to expand the list.
+
+The server `lbcertifdirac6.cern.ch <lbcertifdirac6.cern.ch:8443>`_ is used as "DIRAC certification machine".
+With "certification machine" we mean that it is a full DIRAC installation, that connects to grid resources, and through which we certify pre-production versions. 
+Normally, the latest DIRAC pre-releases are installed there.
+Its access is restricted to some power users, for now, but do request access if you need to do some specific system test.
+This installation is usually not done for running private tests, but in a controlled way can be sometimes tried. 
+
+
+
+The certification process
+============================
+
+Each DIRAC release go through a long and detailed certification process. 
+A certification process is a series of steps that include unit, integration, validation and system tests.
+We use detailed trello boards and slack channel. Please DO ASK to be included in such process.
+
 
 
 Footnotes

@@ -1,14 +1,13 @@
 .. _installwebappdirac:
 
-===================
-Install WebAppDIRAC
-===================
+=======================
+Installing WebAppDIRAC
+=======================
 
-The first section describes the install procedure of the web framework. The configuration of the web will be presented in the next section.
-Nginx can be used to improve the performance of the web interface. It is not mandatory to use Nginx. The installation and configuration of NGinx will be presented in the last section.
+The first section describes the install procedure of the web framework. The configuration of the web will be presented in the next sections.
+While not mandatory, Nginx can be used to improve the performance of the web framework. 
+The installation and configuration of NGinx will be presented in the last section.
 
-Install WebAppDIRAC
--------------------
 
 Requirements
 ------------
@@ -39,7 +38,7 @@ $installCfg::
      #
      #  DIRAC release version (this is an example, you should find out the current
      #  production release)
-     Release = v6r15
+     Release = v6r19
      #  Python version of the installation
      PythonVersion = 27
      #  To install the Server version of DIRAC (the default is client)

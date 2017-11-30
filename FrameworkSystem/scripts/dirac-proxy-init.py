@@ -209,8 +209,8 @@ class ProxyInit( object ):
       return
     newestFPath = max( crlList, key=os.path.getmtime )
     newestFTime = os.path.getmtime( newestFPath )
-    if newestFTime > ( time.time() - ( 28 * 24 * 3600 ) ):
-      # At least one of the files has been updated in the last 28 days
+    if newestFTime > ( time.time() - ( 2 * 24 * 3600 ) ):
+      # At least one of the files has been updated in the last 2 days
       return S_OK()
     if not os.access(caDir, os.W_OK):
       gLogger.error("Your CRLs appear to be outdated, but you have no access to update them.")

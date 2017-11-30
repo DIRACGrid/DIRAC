@@ -33,6 +33,34 @@ NEW: New SingularityComputingElement to submit jobs to a Singularity container
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
 
+[v6r19p8]
+
+*Configuration
+FIX; Resources - don't overwrite queue tags if requiredtags are set.
+
+*Framework
+CHANGE: dirac-proxy-init - increase dirac-proxy-init CRL update frequency
+
+*Accounting
+CHANGE: AccountingDB - if the bucket length is part of the selected conditions, 
+        add to the grouping
+
+*WorkloadManagement
+FIX: ConfigTemplate.cfg - allow user access to getSiteMaskStatus
+
+*DataManagementSystem
+FIX: DMSHelpers - recursive resolution of SEGroup was keeping the SEGroup in the list
+
+*RSS
+FIX: CSHelper - getting FTS from the correct location
+CHANGE: use the SiteStatus object wherever possible
+
+*Resources
+FIX: CREAMComputingElement - added CS option for extra JDL parameters
+
+*Documentation
+CHANGE: point README to master and add badges for integration
+
 [v6r19p7]
 
 *WorkloadManagement
