@@ -54,6 +54,17 @@ def helloWorldJob():
   job.setExecutable( exeScriptLocation, "", "helloWorld.log" )
   return job
 
+
+def parametricJob():
+  job = Job()
+  job.setName("parametric_helloWorld_%n")
+  exeScriptLocation = find_all('exe-script.py', '..', '/DIRAC/tests/Integration')[0]
+  job.setInputSandbox(exeScriptLocation)
+  job.setParameterSequence("args", ['one', 'two', 'three'])
+  job.setParameterSequence("iargs", [1, 2, 3])
+  job.setExecutable(exeScriptLocation, arguments=": testing %(args)s %(iargs)s", logFile='helloWorld_%n.log')
+  return job
+
 def createFile( job ):
   tmpdir = tempfile.mkdtemp()
   jobDescription = tmpdir + '/jobDescription.xml'
@@ -146,6 +157,39 @@ class WMSChain( TestWMSTestCase ):
     self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], 'Deleted' )
 
+  def test_ParametricChain(self):
+    """ This test will submit a parametric job which should generate 3 actual jobs
+    """
+    wmsClient = WMSClient()
+    jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobMonitor = JobMonitoringClient()
+
+    # create the job
+    job = parametricJob()
+    jobDescription = createFile(job)
+
+    # submit the job
+    result = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
+    self.assertTrue(result['OK'])
+    jobIDList = result['Value']
+    self.assertEqual(jobIDList, 3)
+
+    result = jobMonitor.getJobsParameters(jobIDList, ['JobName'])
+    self.assertTrue(result['OK'])
+    jobNames = [result['Value'][jobID]['JobName'] for jobID in result['Value']]
+    self.assertEqual(set(jobNames), set(['parametric_helloWorld_%s' % nJob for nJob in range(3)]))
+
+    for jobID in jobIDList:
+      result = jobStateUpdate.setJobStatus(jobID, 'Done', 'matching', 'source')
+      self.assertTrue(result['OK'])
+
+    result = wmsClient.deleteJob(jobIDList)
+    self.assertTrue(result['OK'])
+
+    for jobID in jobIDList:
+      result = jobMonitor.getJobStatus(jobID)
+      self.assertTrue(result['OK'])
+      self.assertEqual(result['Value'], 'Deleted')
 
 class JobMonitoring( TestWMSTestCase ):
 

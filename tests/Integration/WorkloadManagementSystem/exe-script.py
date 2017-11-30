@@ -7,4 +7,6 @@ from os import system
 # Main
 if __name__ == '__main__':
 
-  sys.exit(system('''echo Hello World''')/256)
+  args = ' '.join(sys.argv[1:])
+
+  sys.exit(system('''echo Hello World%s''' % args) / 256)
