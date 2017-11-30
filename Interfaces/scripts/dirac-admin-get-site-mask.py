@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-get-site-mask
 # Author :  Stuart Paterson
 ########################################################################
+
 __RCSID__ = "$Id$"
 
 
@@ -31,4 +31,3 @@ if result['OK']:
 else:
   print result['Message']
   DIRACExit( 2 )
-

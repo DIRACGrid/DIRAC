@@ -225,12 +225,7 @@ __RCSID__ = '$Id: $'
 #    if panel in ('Site_Panel', 'SE_Panel'):
 #
 #      if panel == 'Site_Panel':
-#        DIRACStatus = self.WMSAdmin.getSiteMaskLogging(name)
-#        if DIRACStatus['OK']:
-#          DIRACStatus = DIRACStatus['Value'][name].pop()[0]
-#        else:
-#          gLogger.error( DIRACStatus[ 'Message' ] )
-#          return None
+#      # something from RSS
 #
 #      elif panel == 'SE_Panel':
 #        ra = getElementStatus(name, 'StorageElement', 'ReadAccess')['Value']
