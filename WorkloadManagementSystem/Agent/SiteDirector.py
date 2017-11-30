@@ -489,10 +489,10 @@ class SiteDirector( AgentModule ):
       # Check the status of the Site
       result = self.siteClient.getUsableSites(siteName)
       if not result['OK']:
-        self.log.error("Can not get the status of site %s: %s" %
-                       (siteName, result['Message']))
+        self.log.error("Can not get the status of site",
+                       " %s: %s" % (siteName, result['Message']))
         continue
-      if not result['Value'] or siteName not in result['Value']:
+      if siteName not in result.get('Value', []):
         self.log.info("site %s is not active" % siteName)
         continue
 
@@ -500,7 +500,8 @@ class SiteDirector( AgentModule ):
         # Check the status of the ComputingElement
         result = self.rssClient.getElementStatus(ceName, "ComputingElement")
         if not result['OK']:
-          self.log.error( "Can not get the status of computing element %s: %s" % (siteName, result['Message']) )
+          self.log.error("Can not get the status of computing element",
+                         " %s: %s" % (siteName, result['Message']))
           continue
         if result['Value']:
           result = result['Value'][ceName]['all']   #get the value of the status
@@ -1031,7 +1032,7 @@ EOF
                                             'OwnerDN': self.pilotDN,
                                             'OwnerGroup': self.pilotGroup } )
       if not result['OK']:
-        self.log.error( 'Failed to select pilots: %s' % result['Message'] )
+        self.log.error('Failed to select pilots", ": %s' % result['Message'])
         continue
       pilotRefs = result['Value']
       if not pilotRefs:
