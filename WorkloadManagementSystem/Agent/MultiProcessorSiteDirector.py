@@ -157,7 +157,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
       processorTags = []
 
       # Check the status of the Site
-      result = self.siteClient.getUsableSites(siteName)
+      result = self.siteClient.getUsableSites( [ siteName ] )
       if not result['OK']:
         self.log.error("Can not get the status of site %s: %s" %
                        (siteName, result['Message']))
