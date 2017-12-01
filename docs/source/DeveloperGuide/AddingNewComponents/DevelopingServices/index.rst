@@ -61,7 +61,7 @@ The types can also be imported from the ''types'' standard python module.
 Default Service Configuration parameters
 ----------------------------------------
 
-The Hello Handler is written. There's not even the need to copy/paste, because you can do
+The Hello Handler is written. There's not even the need to copy/paste, because you can do::
 
   cp $DEVROOT/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/HelloHandler.py $DEVROOT/FrameworkSystem/Service/
 
@@ -78,7 +78,7 @@ for example we can use FrameworkSystem. The following file can be used as dirac.
 
 .. literalinclude:: dirac.cfg.service.example
 
-Again, there's no need to copy/paste, because you can do
+Again, there's no need to copy/paste, because you can do::
 
   cp $DEVROOT/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/dirac.cfg.service.example $DEVROOT/etc/dirac.cfg
 
@@ -109,6 +109,25 @@ If everything goes well, you should see something like::
   2014-05-23 13:58:04 UTC Framework/Hello[MppQ] ALWAYS: Listening at dips://localhost:3234/Framework/Hello
 
 The URL displayed should be added to the local *dirac.cfg* in the URLs section (for this example, it already is).
+
+Just a quick note on the URL displayed: it starts with "dips://". "dip" stands for *DISET protocol* and the "s" is for "secure",
+which for DIRAC means using X509 based authentication.
+
+While "secure" is the default, it is also possible to run, for testing purpose, in unsecure way, which translates into using a "dip://" URL.
+For pure testing purpose this is often a convenience (no need for proxies nor certificates).
+If you want to run your services using the "dip" protocol, use the following configuration::
+
+  Services
+  {
+    Hello
+    {
+      Port = 3424
+      DefaultWhom = Universe
+      Protocol = dip
+    }
+  }
+
+which is the same configuration used above with the difference of the "Protocol = dip" line.
 
 
 Calling the Service from a Client

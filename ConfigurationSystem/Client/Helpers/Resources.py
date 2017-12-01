@@ -153,15 +153,18 @@ def getQueue( site, ce, queue ):
     return result
   resultDict = result['Value']
 
+  # Get queue defaults
+  result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
+  if not result['OK']:
+    return result
+  resultDict.update( result['Value'] )
+
+  # Handle tag lists for the queue
   for tagFieldName in ( 'Tag', 'RequiredTag' ): 
     Tags = []
     ceTags = resultDict.get( tagFieldName )
     if ceTags:
       Tags = fromChar( ceTags )
-    result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
-    if not result['OK']:
-      return result
-    resultDict.update( result['Value'] )
     queueTags = resultDict.get( tagFieldName )
     if queueTags:
       queueTags = fromChar( queueTags )

@@ -1,4 +1,4 @@
-[v6r20-pre8]
+[v6r20-pre9]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -7,6 +7,7 @@ CHANGE: dirac-deploy-scripts, dirac-install - allow command modules with undersc
         their names in order for better support for the code checking tools
 CHANGE: dirac-distribution and related scripts - compile web code while release
         generation
+NEW: DEncode - added unit tests        
 
 *Framework
 CHANGE: ComponentInstaller - remove the old web portal configuration data 
@@ -20,6 +21,7 @@ NEW: added a new synchronizer for Pilot3: sync of subset of CS info to JSON file
      and sync of pilot3 files
 NEW: dirac-admin-get-pilotslogging script for viewing PilotsLogging
 CHANGE: dirac-wms-cpu-normalization uses the abstracted DB12 benchmark script used by the HEPiX Benchmarking Working Group, and the new MJF utility to obtain values from the system and to save them into the DIRAC LocalSite configuration.
+NEW: Bulk job submission with protection of the operation transaction
 
 *DMS
 NEW: FTS3Agent working only with the FTS3 service to replace the existing one
@@ -30,6 +32,34 @@ NEW: New SingularityComputingElement to submit jobs to a Singularity container
 
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
+
+[v6r19p8]
+
+*Configuration
+FIX; Resources - don't overwrite queue tags if requiredtags are set.
+
+*Framework
+CHANGE: dirac-proxy-init - increase dirac-proxy-init CRL update frequency
+
+*Accounting
+CHANGE: AccountingDB - if the bucket length is part of the selected conditions, 
+        add to the grouping
+
+*WorkloadManagement
+FIX: ConfigTemplate.cfg - allow user access to getSiteMaskStatus
+
+*DataManagementSystem
+FIX: DMSHelpers - recursive resolution of SEGroup was keeping the SEGroup in the list
+
+*RSS
+FIX: CSHelper - getting FTS from the correct location
+CHANGE: use the SiteStatus object wherever possible
+
+*Resources
+FIX: CREAMComputingElement - added CS option for extra JDL parameters
+
+*Documentation
+CHANGE: point README to master and add badges for integration
 
 [v6r19p7]
 
