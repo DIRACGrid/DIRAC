@@ -28,21 +28,22 @@ import urllib
 import shlex
 import StringIO
 
-from DIRAC                                                    import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Workflow.Parameter                            import Parameter
-from DIRAC.Core.Workflow.Workflow                             import Workflow
-from DIRAC.Core.Base.API                                      import API
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight                import ClassAd
-from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
-from DIRAC.Core.Utilities.Subprocess                          import systemCall
-from DIRAC.Core.Utilities.List                                import uniqueElements
-from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSites
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers                 import Resources
-from DIRAC.Interfaces.API.Dirac                               import Dirac
-from DIRAC.Workflow.Utilities.Utils                           import getStepDefinition, addStepToWorkflow
-from DIRAC.Core.Utilities.DErrno                              import EWMSJDL
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Base.API import API
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Workflow.Parameter import Parameter
+from DIRAC.Core.Workflow.Workflow import Workflow
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.List import uniqueElements
+from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getSites
+from DIRAC.Core.Utilities.DErrno import EWMSJDL
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers import Resources
+from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.Workflow.Utilities.Utils import getStepDefinition, addStepToWorkflow
 
 __RCSID__ = "$Id$"
 
@@ -244,6 +245,8 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
+
+  @deprecated("Use function setParameterSequence")
   def setParametricInputSandbox( self, files ):
     """Helper function.
 
@@ -334,6 +337,8 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
+
+  @deprecated("Use function setParameterSequence")
   def setParametricInputData( self, lfns ):
     """Helper function.
 
