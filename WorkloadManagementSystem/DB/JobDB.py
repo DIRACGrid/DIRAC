@@ -282,7 +282,8 @@ class JobDB( DB ):
         if not ret['OK']:
           return ret
         paramNameList.append( ret['Value'] )
-      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % ( e_jobID, ','.join( paramNameList ) )
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % (e_jobID,
+                                                                                       ','.join(paramNameList))
       result = self._query( cmd )
       if result['OK']:
         if result['Value']:
@@ -1519,8 +1520,8 @@ class JobDB( DB ):
       safeSites = []
       for site in sites:
         res = self._escapeString( site )
-        if not ret['OK']:
-          return ret
+        if not res['OK']:
+          return res
         safeSites.append( res['Value'] )
       sitesString = ",".join( safeSites )
       cmd = "SELECT Site, Status FROM SiteMask WHERE Site in (%s)" % sitesString
