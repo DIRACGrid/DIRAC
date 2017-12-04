@@ -2,6 +2,7 @@
 '''
 
 import urllib2
+import re
 
 from datetime import datetime, timedelta
 from operator import itemgetter
@@ -9,7 +10,8 @@ from operator import itemgetter
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getGOCFTSName
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementOptions, getFTS3Servers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
@@ -132,13 +134,16 @@ class DowntimeCommand(Command):
     # The DIRAC se names mean nothing on the grid, but their hosts do mean.
     elif elementType == 'StorageElement':
       # We need to distinguish if it's tape or disk
-      seOptions = getStorageElementOptions(elementName)
-      if not seOptions['OK']:
-        return seOptions
-      if seOptions['Value'].get('TapeSE'):
-        gOCDBServiceType = "srm.nearline"
-      elif seOptions['Value'].get('DiskSE'):
-        gOCDBServiceType = "srm"
+      seOptions = StorageElement(elementName).options
+      if 'SEType' in seOptions:
+        # Type should follow the convention TXDY
+        seType = seOptions['SEType']
+        diskSE = re.search('D[1-9]', seType) != None
+        tapeSE = re.search('T[1-9]', seType) != None
+        if tapeSE:
+          gOCDBServiceType = "srm.nearline"
+        elif diskSE:
+          gOCDBServiceType = "srm"
 
       seHost = CSHelpers.getSEHost(elementName)
       if not seHost['OK']:
