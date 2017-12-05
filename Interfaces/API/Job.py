@@ -97,8 +97,8 @@ class Job( API ):
 
   #############################################################################
 
-  def setExecutable( self, executable, arguments = '', logFile = '',
-                     modulesList = None, parameters = None, paramValues = None ):
+  def setExecutable(self, executable, arguments='', logFile='',
+                    modulesList=None, parameters=None, paramValues=None):
     """Helper function.
 
        Specify executable script to run with optional arguments and log file
@@ -475,7 +475,7 @@ class Job( API ):
       description = 'Output data file'
       self._addParameter(self.workflow, 'OutputData', 'JDL', lfns, description)
     else:
-      return self._reportError( 'Expected file name string or list of file names for output data', **kwargs )
+      return self._reportError('Expected file name string or list of file names for output data', **kwargs)
 
     if outputSE:
       description = 'User specified Output SE'
@@ -508,17 +508,18 @@ class Job( API ):
     """
     kwargs = {'platform':platform}
 
-    if not isinstance( platform, basestring ):
-      return self._reportError( "Expected string for platform", **kwargs )
+    if not isinstance(platform, basestring):
+      return self._reportError("Expected string for platform", **kwargs)
 
     if not platform.lower() == 'any':
       availablePlatforms = Resources.getDIRACPlatforms()
       if not availablePlatforms['OK']:
-        return self._reportError( "Can't check for platform", **kwargs )
+        return self._reportError("Can't check for platform", **kwargs)
       if platform in availablePlatforms['Value']:
-        self._addParameter( self.workflow, 'Platform', 'JDL', platform, 'Platform ( Operating System )' )
+        self._addParameter(self.workflow, 'Platform', 'JDL',
+                           platform, 'Platform ( Operating System )')
       else:
-        return self._reportError( "Invalid platform", **kwargs )
+        return self._reportError("Invalid platform", **kwargs)
 
     return S_OK()
 
