@@ -68,7 +68,7 @@ class EmailAction(BaseAction):
       elif elementType == 'ComputingElement':
         siteName = getSiteForCE(name)
       else:
-        siteName = {'OK':True, 'Value':'Unassigned'}
+        siteName = {'OK': True, 'Value': 'Unassigned'}
 
       if not siteName['OK']:
         self.log.error('Resource %s does not exist at any site: %s' % (name, siteName['Message']))
