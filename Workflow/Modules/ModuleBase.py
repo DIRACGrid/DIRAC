@@ -56,7 +56,7 @@ class ModuleBase( object ):
 
     self.workflowStatus = None
     self.stepStatus = None
-    self.workflow_commons = None
+    self.workflow_commons = {}
     self.step_commons = None
 
     self.applicationName = ''

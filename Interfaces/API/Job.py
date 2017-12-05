@@ -444,51 +444,59 @@ class Job( API ):
        / <VO> / user / <initial> / <username>
        directory.
 
+       The output data can be LFNs or local file names.
+       If they are LFNs they should be pre-prended by "LFN:",
+       otherwise they will be interpreted as local files to be found.
+       If local files are specified, then specifying the outputPath may become necessary,
+       because if it's not specified then it will be constructed starting from the user name.
+
        Example usage:
 
        >>> job = Job()
        >>> job.setOutputData(['DVNtuple.root'])
 
-       :param lfns: Output data file or files
+       :param lfns: Output data file or files.
        :type lfns: Single string or list of strings ['','']
-       :param outputSE: Optional parameter to specify the Storage Element
-       :param outputPath: Optional parameter to specify part of the path in the storage (see above)
-                          Element to store data or files, e.g. CERN-tape
+       :param outputSE: Optional parameter to specify the Storage Element to store data or files, e.g. CERN-tape
        :type outputSE: string or python:list
+       :param outputPath: Optional parameter to specify part of the path in the storage (see above)
        :type outputPath: string
 
     """
     if outputSE is None:
       outputSE = []
     kwargs = {'lfns':lfns, 'OutputSE':outputSE, 'OutputPath':outputPath}
-    if isinstance( lfns, list ) and lfns:
-      outputDataStr = ';'.join( lfns )
+    if isinstance(lfns, list) and lfns:
+      outputDataStr = ';'.join(lfns)
       description = 'List of output data files'
-      self._addParameter( self.workflow, 'OutputData', 'JDL', outputDataStr, description )
-    elif isinstance( lfns, basestring ):
+      self._addParameter(self.workflow, 'OutputData',
+                         'JDL', outputDataStr, description)
+    elif isinstance(lfns, basestring):
       description = 'Output data file'
-      self._addParameter( self.workflow, 'OutputData', 'JDL', lfns, description )
+      self._addParameter(self.workflow, 'OutputData', 'JDL', lfns, description)
     else:
       return self._reportError( 'Expected file name string or list of file names for output data', **kwargs )
 
     if outputSE:
       description = 'User specified Output SE'
-      if isinstance( outputSE, basestring ):
+      if isinstance(outputSE, basestring):
         outputSE = [outputSE]
-      elif not isinstance( outputSE, list ):
-        return self._reportError( 'Expected string or list for OutputSE', **kwargs )
-      outputSE = ';'.join( outputSE )
-      self._addParameter( self.workflow, 'OutputSE', 'JDL', outputSE, description )
+      elif not isinstance(outputSE, list):
+        return self._reportError('Expected string or list for OutputSE', **kwargs)
+      outputSE = ';'.join(oSE.strip() for oSE in outputSE)
+      self._addParameter(self.workflow, 'OutputSE',
+                         'JDL', outputSE, description)
 
     if outputPath:
       description = 'User specified Output Path'
-      if not isinstance( outputPath, basestring ):
-        return self._reportError( 'Expected string for OutputPath', **kwargs )
+      if not isinstance(outputPath, basestring):
+        return self._reportError('Expected string for OutputPath', **kwargs)
       # Remove leading "/" that might cause problems with os.path.join
       # This will prevent to set OutputPath outside the Home of the User
       while outputPath[0] == '/':
         outputPath = outputPath[1:]
-      self._addParameter( self.workflow, 'OutputPath', 'JDL', outputPath, description )
+      self._addParameter(self.workflow, 'OutputPath',
+                         'JDL', outputPath, description)
 
     return S_OK()
 
