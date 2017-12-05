@@ -1,7 +1,7 @@
 """ Helper for the CS Resources section
 """
 
-
+import re
 from distutils.version import LooseVersion #pylint: disable=no-name-in-module,import-error
 
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -117,6 +117,37 @@ def getSiteGrid( site ):
   if len( sitetuple ) != 3:
     return S_ERROR( 'Wrong Site Name format' )
   return S_OK( sitetuple[0] )
+
+@deprecated("Unused and dangerous, use StorageElement('seName').options ")
+def getStorageElementOptions( seName ):
+  """ Get the CS StorageElementOptions
+  """
+  storageConfigPath = '/Resources/StorageElements/%s' % seName
+  result = gConfig.getOptionsDict( storageConfigPath )
+  if not result['OK']:
+    return result
+  options = result['Value']
+  # If the SE is an baseSE or an alias, derefence it
+  if 'BaseSE' in options or 'Alias' in options:
+    storageConfigPath = '/Resources/StorageElements/%s' % options.get( 'BaseSE', options.get( 'Alias' ) )
+    result = gConfig.getOptionsDict( storageConfigPath )
+    if not result['OK']:
+      return result
+    result['Value'].update( options )
+    options = result['Value']
+
+  # Help distinguishing storage type
+  diskSE = True
+  tapeSE = False
+  if 'SEType' in options:
+    # Type should follow the convention TXDY
+    seType = options['SEType']
+    diskSE = re.search( 'D[1-9]', seType ) != None
+    tapeSE = re.search( 'T[1-9]', seType ) != None
+  options['DiskSE'] = diskSE
+  options['TapeSE'] = tapeSE
+
+  return S_OK( options )
 
 def getQueue( site, ce, queue ):
   """ Get parameters of the specified queue
