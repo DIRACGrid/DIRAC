@@ -136,14 +136,15 @@ if __name__ == "__main__":
     allR = True
 
   elif not jobs:
-    args = Script.getPositionalArgs()
-    if len(args) == 1:
-      if os.path.exists(args[0]):
-        lines = open(args[0], 'r').readlines()
-        requests = [reqID.strip() for line in lines for reqID in line.split(',')]
+    requests = []
+    # Get full list of arguments, with and without comma
+    for arg in [x.strip() for arg in Script.getPositionalArgs() for x in arg.split(',')]:
+      if os.path.exists(arg):
+        lines = open(arg, 'r').readlines()
+        requests += [reqID.strip() for line in lines for reqID in line.split(',')]
         gLogger.notice("Found %d requests in file" % len(requests))
       else:
-        requests = [reqID for reqID in args[0].split(',') if reqID]
+        requests.append(arg)
       allR = True
   else:
     res = reqClient.getRequestIDsForJobs(jobs)
