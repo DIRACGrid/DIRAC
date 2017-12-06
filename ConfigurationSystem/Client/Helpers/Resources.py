@@ -118,6 +118,7 @@ def getSiteGrid( site ):
     return S_ERROR( 'Wrong Site Name format' )
   return S_OK( sitetuple[0] )
 
+
 @deprecated("Unused and dangerous, use StorageElement('seName').options ")
 def getStorageElementOptions( seName ):
   """ Get the CS StorageElementOptions
