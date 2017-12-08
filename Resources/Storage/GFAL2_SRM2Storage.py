@@ -9,11 +9,11 @@
 
 # pylint: disable=invalid-name
 
-import lcg_util #pylint: disable=import-error
+import lcg_util  # pylint: disable=import-error
 
 # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess                            import pythonCall
+from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 
@@ -209,7 +209,6 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
     return S_OK( protocolsList )
 
-
   def getOccupancy(self):
     """ Gets the GFAL2_SRM2Storage occupancy info.
 
@@ -222,23 +221,24 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
                                               self.protocolParameters['Port'],
                                               self.protocolParameters['WSUrl'].split('?')[0])
 
-    occupancyResult = pythonCall( 10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
-    if not occupancyResult[ 'OK' ]:
-      self.log.error( "Could not get spaceToken occupancy", "from endPoint/spaceToken %s/%s : %s" % \
-                      ( spaceTokenEndpoint, spaceToken, occupancyResult['Message'] ) )
+    occupancyResult = pythonCall(10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0)
+    if not occupancyResult['OK']:
+      self.log.error("Could not get spaceToken occupancy", "from endPoint/spaceToken %s/%s : %s" %
+                     (spaceTokenEndpoint, spaceToken, occupancyResult['Message']))
       return occupancyResult
     else:
-      occupancy = occupancyResult[ 'Value' ]
+      occupancy = occupancyResult['Value']
 
-    if occupancy[ 0 ] != 0:
-      return S_ERROR( occupancy )
-    output = occupancy[ 1 ][ 0 ]
+    if occupancy[0] != 0:
+      return S_ERROR(occupancy)
+    output = occupancy[1][0]
 
     sTokenDict = {}
-    sTokenDict[ 'Endpoint' ] = spaceTokenEndpoint
-    sTokenDict[ 'Token' ] = spaceToken
-    sTokenDict[ 'Total' ] = float( output.get( 'totalsize', '0' ) ) / 1e12  # Bytes to Terabytes #FIXME: have to harmonize with other SE types
-    sTokenDict[ 'Guaranteed' ] = float( output.get( 'guaranteedsize', '0' ) ) / 1e12
-    sTokenDict[ 'Free' ] = float( output.get( 'unusedsize', '0' ) ) / 1e12
+    sTokenDict['Endpoint'] = spaceTokenEndpoint
+    sTokenDict['Token'] = spaceToken
+    # Bytes to Terabytes #FIXME: have to harmonize with other SE types
+    sTokenDict['Total'] = float(output.get('totalsize', '0')) / 1e12
+    sTokenDict['Guaranteed'] = float(output.get('guaranteedsize', '0')) / 1e12
+    sTokenDict['Free'] = float(output.get('unusedsize', '0')) / 1e12
 
     return S_OK(sTokenDict)

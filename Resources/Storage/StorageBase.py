@@ -418,7 +418,6 @@ class StorageBase( object ):
 
     return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
 
-
   #############################################################
   #
   # These are the methods for getting information about the Storage element:
@@ -429,4 +428,4 @@ class StorageBase( object ):
         :returns: S_OK/S_ERROR dictionary
     """
     #FIXME: put an implementation that just gets a file and check its content
-    return S_ERROR( "Storage.occupancy: implement me!" )
+    return S_ERROR("Storage.occupancy: implement me!")
