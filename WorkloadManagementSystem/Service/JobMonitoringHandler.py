@@ -6,15 +6,15 @@
 
 __RCSID__ = "$Id$"
 
-from types import IntType, LongType, ListType, DictType, StringTypes, NoneType, BooleanType
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+import DIRAC.Core.Utilities.Time as Time
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
-import DIRAC.Core.Utilities.Time as Time
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 # These are global instances of the DB classes
 gJobDB = False
@@ -141,7 +141,7 @@ class JobMonitoringHandler(RequestHandler):
     # queryDict = {}
 
     # if attrDict:
-    #  if type ( attrDict ) != DictType:
+    #  if type ( attrDict ) != dict:
     #    return S_ERROR( 'Argument must be of Dict Type' )
     #  for attribute in self.queryAttributes:
     #    # Only those Attribute in self.queryAttributes can be used
@@ -153,7 +153,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.selectJobs(attrDict, newer=cutDate)
 
 ##############################################################################
-  types_getCounters = [ListType]
+  types_getCounters = [list]
 
   @staticmethod
   def export_getCounters(attrList, attrDict=None, cutDate=''):
@@ -220,7 +220,7 @@ class JobMonitoringHandler(RequestHandler):
     return S_OK(resultDict)
 
 ##############################################################################
-  types_getJobStatus = [IntType]
+  types_getJobStatus = [int]
 
   @staticmethod
   def export_getJobStatus(jobID):
@@ -228,7 +228,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getJobAttribute(jobID, 'Status')
 
 ##############################################################################
-  types_getJobOwner = [IntType]
+  types_getJobOwner = [int]
 
   @staticmethod
   def export_getJobOwner(jobID):
@@ -236,7 +236,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getJobAttribute(jobID, 'Owner')
 
 ##############################################################################
-  types_getJobSite = [IntType]
+  types_getJobSite = [int]
 
   @staticmethod
   def export_getJobSite(jobID):
@@ -244,7 +244,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getJobAttribute(jobID, 'Site')
 
 ##############################################################################
-  types_getJobJDL = [IntType, BooleanType]
+  types_getJobJDL = [int, bool]
 
   @staticmethod
   def export_getJobJDL(jobID, original):
@@ -252,7 +252,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getJobJDL(jobID, original=original)
 
 ##############################################################################
-  types_getJobLoggingInfo = [IntType]
+  types_getJobLoggingInfo = [int]
 
   @staticmethod
   def export_getJobLoggingInfo(jobID):
@@ -260,7 +260,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobLoggingDB.getJobLoggingInfo(jobID)
 
 ##############################################################################
-  types_getJobsParameters = [ListType, ListType]
+  types_getJobsParameters = [list, list]
 
   @staticmethod
   def export_getJobsParameters(jobIDs, parameters):
@@ -269,7 +269,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getAttributesForJobList(jobIDs, parameters)
 
 ##############################################################################
-  types_getJobsStatus = [ListType]
+  types_getJobsStatus = [list]
 
   @staticmethod
   def export_getJobsStatus(jobIDs):
@@ -278,7 +278,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getAttributesForJobList(jobIDs, ['Status'])
 
 ##############################################################################
-  types_getJobsMinorStatus = [ListType]
+  types_getJobsMinorStatus = [list]
 
   @staticmethod
   def export_getJobsMinorStatus(jobIDs):
@@ -286,7 +286,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getAttributesForJobList(jobIDs, ['MinorStatus'])
 
 ##############################################################################
-  types_getJobsApplicationStatus = [ListType]
+  types_getJobsApplicationStatus = [list]
 
   @staticmethod
   def export_getJobsApplicationStatus(jobIDs):
@@ -294,7 +294,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getAttributesForJobList(jobIDs, ['ApplicationStatus'])
 
 ##############################################################################
-  types_getJobsSites = [ListType]
+  types_getJobsSites = [list]
 
   @staticmethod
   def export_getJobsSites(jobIDs):
@@ -302,21 +302,21 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getAttributesForJobList(jobIDs, ['Site'])
 
 ##############################################################################
-  types_getJobSummary = [IntType]
+  types_getJobSummary = [int]
 
   @staticmethod
   def export_getJobSummary(jobID):
     return gJobDB.getJobAttributes(jobID, SUMMARY)
 
 ##############################################################################
-  types_getJobPrimarySummary = [IntType]
+  types_getJobPrimarySummary = [int]
 
   @staticmethod
   def export_getJobPrimarySummary(jobID):
     return gJobDB.getJobAttributes(jobID, PRIMARY_SUMMARY)
 
 ##############################################################################
-  types_getJobsSummary = [ListType]
+  types_getJobsSummary = [list]
 
   @staticmethod
   def export_getJobsSummary(jobIDs):
@@ -330,7 +330,7 @@ class JobMonitoringHandler(RequestHandler):
     return S_OK(restring)
 
 ##############################################################################
-  types_getJobPageSummaryWeb = [DictType, ListType, IntType, IntType]
+  types_getJobPageSummaryWeb = [dict, list, int, int]
 
   def export_getJobPageSummaryWeb(self, selectDict, sortList, startItem, maxItems, selectJobs=True):
     """ Get the summary of the job information for a given page in the
@@ -412,8 +412,8 @@ class JobMonitoringHandler(RequestHandler):
           # Not only Stalled jobs but also Failed jobs because Stalled
           if ((hbTime - lastTime) > (lastTime - lastTime) or
               jobDict['Status'] == "Stalled" or
-                  jobDict['MinorStatus'].startswith('Job stalled') or
-                  jobDict['MinorStatus'].startswith('Stalling')):
+              jobDict['MinorStatus'].startswith('Job stalled') or
+              jobDict['MinorStatus'].startswith('Stalling')):
             jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
           else:
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
@@ -445,7 +445,7 @@ class JobMonitoringHandler(RequestHandler):
     return S_OK(resultDict)
 
 ##############################################################################
-  types_getJobStats = [StringTypes, DictType]
+  types_getJobStats = [basestring, dict]
 
   @staticmethod
   def export_getJobStats(attribute, selectDict):
@@ -475,46 +475,46 @@ class JobMonitoringHandler(RequestHandler):
     return S_OK(resultDict)
 
 ##############################################################################
-  types_getJobsPrimarySummary = [ListType]
+  types_getJobsPrimarySummary = [list]
 
   @staticmethod
   def export_getJobsPrimarySummary(jobIDs):
     return gJobDB.getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
 
 ##############################################################################
-  types_getJobParameter = [list(StringTypes) + [IntType, LongType], StringTypes]
+  types_getJobParameter = [[basestring, int, long], basestring]
 
   @staticmethod
   def export_getJobParameter(jobID, parName):
     return gJobDB.getJobParameters(jobID, [parName])
 
 ##############################################################################
-  types_getJobParameters = [[IntType, LongType]]
+  types_getJobParameters = [[int, long]]
 
   @staticmethod
   def export_getJobParameters(jobID):
     return gJobDB.getJobParameters(jobID)
 
 ##############################################################################
-  types_traceJobParameter = [StringTypes, list(StringTypes) + [IntType, LongType, ListType],
-                             StringTypes, list(StringTypes) + [NoneType],
-                             list(StringTypes) + [NoneType]]
+  types_traceJobParameter = [basestring, [basestring, int, long, list],
+                             basestring, [basestring, None],
+                             [basestring, None]]
 
   @staticmethod
   def export_traceJobParameter(site, localID, parameter, date, until):
     return gJobDB.traceJobParameter(site, localID, parameter, date, until)
 
 ##############################################################################
-  types_traceJobParameters = [StringTypes, list(StringTypes) + [IntType, LongType, ListType],
-                              [ListType, NoneType], [ListType, NoneType],
-                              list(StringTypes) + [NoneType], list(StringTypes) + [NoneType]]
+  types_traceJobParameters = [basestring, [basestring, int, long, list],
+                              [list, None], [list, None],
+                              [basestring, None], [basestring, None]]
 
   @staticmethod
   def export_traceJobParameters(site, localID, parameterList, attributeList, date, until):
     return gJobDB.traceJobParameters(site, localID, parameterList, attributeList, date, until)
 
 ##############################################################################
-  types_getAtticJobParameters = [[IntType, LongType]]
+  types_getAtticJobParameters = [[int, long]]
 
   @staticmethod
   def export_getAtticJobParameters(jobID, parameters=None, rescheduleCycle=-1):
@@ -523,14 +523,14 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getAtticJobParameters(jobID, parameters, rescheduleCycle)
 
 ##############################################################################
-  types_getJobAttributes = [IntType]
+  types_getJobAttributes = [int]
 
   @staticmethod
   def export_getJobAttributes(jobID):
     return gJobDB.getJobAttributes(jobID)
 
 ##############################################################################
-  types_getJobAttribute = [IntType, StringTypes]
+  types_getJobAttribute = [int, basestring]
 
   @staticmethod
   def export_getJobAttribute(jobID, attribute):
@@ -544,14 +544,14 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getSiteSummary()
 
 ##############################################################################
-  types_getJobHeartBeatData = [IntType]
+  types_getJobHeartBeatData = [int]
 
   @staticmethod
   def export_getJobHeartBeatData(jobID):
     return gJobDB.getHeartBeatData(jobID)
 
 ##############################################################################
-  types_getInputData = [[IntType, LongType]]
+  types_getInputData = [[int, long]]
 
   @staticmethod
   def export_getInputData(jobID):
