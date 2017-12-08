@@ -97,6 +97,7 @@ class SpaceTokenOccupancyCommand( Command ):
         return params
       spaceTokenEndpoint, spaceToken = params[ 'Value' ]
 
+    #FIXME: should just use StorageElement('SE').getOccupancy()
     # 10 secs of timeout. If it works, the reply is immediate.
     occupancyResult = pythonCall( 10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
     if not occupancyResult[ 'OK' ]:
@@ -105,9 +106,6 @@ class SpaceTokenOccupancyCommand( Command ):
       return occupancyResult
     else:
       occupancy = occupancyResult[ 'Value' ]
-
-    # Timeout does not work here...
-    # occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )
 
     if occupancy[ 0 ] != 0:
       return S_ERROR( occupancy )

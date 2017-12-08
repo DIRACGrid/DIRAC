@@ -28,14 +28,16 @@ These are the methods for manipulating the client:
       getName()
       getParameters()
       getCurrentURL()
+
+These are the methods for getting information about the Storage:
+      getOccupancy()
+
 """
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
-
-import os
 
 class StorageBase( object ):
   """
@@ -415,3 +417,16 @@ class StorageBase( object ):
       return S_OK( True )
 
     return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
+
+
+  #############################################################
+  #
+  # These are the methods for getting information about the Storage element:
+  #
+
+  def getOccupancy(self, *parms, **kws):
+    """ Get the StorageElement occupancy info.
+        :returns: S_OK/S_ERROR dictionary
+    """
+    #FIXME: put an implementation that just gets a file and check its content
+    return S_ERROR( "Storage.occupancy: implement me!" )

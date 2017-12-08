@@ -94,6 +94,7 @@ class StorageElementItem( object ):
   createDirectory( lfn )
   putDirectory( lfn )
   getDirectory( lfn, localPath = False )
+  getOccupancy()
 
 
   """
@@ -123,6 +124,7 @@ class StorageElementItem( object ):
                               "createDirectory" : "createDirectory",
                               "putDirectory" : "putDirectory",
                               "getDirectory" : "getDirectory",
+                              "getOccupancy" : "getOccupancy"
                             }
 
   # We can set default argument in the __executeFunction which impacts all plugins
@@ -224,7 +226,8 @@ class StorageElementItem( object ):
                           'createDirectory',
                           'putDirectory' ]
 
-    self.removeMethods = [ 'removeFile', 'removeDirectory' ]
+    self.removeMethods = [ 'removeFile',
+                           'removeDirectory' ]
 
     self.checkMethods = [ 'exists',
                           'getDirectoryMetadata',
@@ -234,6 +237,7 @@ class StorageElementItem( object ):
                           'listDirectory',
                           'isDirectory',
                           'isFile',
+                          'getOccupancy'
                         ]
 
     self.okMethods = [ 'getLocalProtocols',

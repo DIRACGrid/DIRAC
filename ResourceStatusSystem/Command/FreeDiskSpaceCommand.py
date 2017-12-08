@@ -14,6 +14,9 @@ from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceM
 
 __RCSID__ = '$Id:  $'
 
+# FIXME: this command may not be needed anymore, as we can get the space occupancy for DIP SE (and not only) by simply
+# se = StorageElement().getOccupancy()
+
 
 class FreeDiskSpaceCommand( Command ):
   '''
