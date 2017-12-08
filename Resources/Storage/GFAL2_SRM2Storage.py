@@ -216,8 +216,11 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       It queries the srm interface, and hopefully it will not crash. Out of the
       results, we keep totalsize, guaranteedsize, and unusedsize.
     """
-    # FIXME: not working still!
-    spaceToken, spaceTokenEndpoint = 'FILL_ME' #FIXME
+    # FIXME: Untested!
+    spaceToken = self.protocolParameters['SpaceToken']
+    spaceTokenEndpoint = 'httpg://%s:%s%s' % (self.protocolParameters['Host'],
+                                              self.protocolParameters['Port'],
+                                              self.protocolParameters['WSUrl'].split('?')[0])
 
     occupancyResult = pythonCall( 10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
     if not occupancyResult[ 'OK' ]:
