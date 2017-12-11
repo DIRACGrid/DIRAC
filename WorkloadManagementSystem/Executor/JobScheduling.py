@@ -10,27 +10,25 @@
 
 """
 
+__RCSID__ = "$Id: $"
+
 import random
-import errno
 
 from DIRAC import S_OK, S_ERROR, gConfig
 
-from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
-from DIRAC.Core.Utilities.Time                                      import fromString, toEpoch
-from DIRAC.Core.Security                                            import Properties
-from DIRAC.Core.Utilities.DErrno                                    import cmpError
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources             import getSiteTier
-from DIRAC.ConfigurationSystem.Client.Helpers                       import Registry
-from DIRAC.ConfigurationSystem.Client.Helpers.Path                  import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import StorageManagerClient, getFilesToStage
-from DIRAC.Resources.Storage.StorageElement                         import StorageElement
+from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+from DIRAC.Core.Utilities.Time import fromString, toEpoch
+from DIRAC.Core.Security import Properties
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient, getFilesToStage
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
-from DIRAC.ResourceStatusSystem.Client.SiteStatus                   import SiteStatus
-from DIRAC.WorkloadManagementSystem.DB.JobDB                        import JobDB
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 
-__RCSID__ = "$Id: $"
 
 class JobScheduling( OptimizerExecutor ):
   """
