@@ -1,3 +1,24 @@
+[v6r19p9]
+
+*WMS
+CHANGE: DownloadInputData was instantiating all local SEs which is not necessary... Only instantiate those that are needed
+CHANGE: JobWrapper - use resolveSEGroup in order to allow defining SE groups including other SE groups
+FIX: JobDB - fixed typo in getSiteMaskStatus() method
+FIX: Fix getSiteMaskStatus in SiteDirector and MultiProcessSiteDirector
+
+*DMS
+FIX: in DMSHelpers don't complain if an SE is at 0 sites
+
+*Interfaces
+CHANGE: Job.py - using the deprecated decorator for 2 deprecated methods
+
+*RSS
+FIX: EmailAction considers also CEs, not only SEs
+
+*Resources
+FIX: removed a useless/broken method in Resources helper
+FIX: marked as obsoleted two methods in Resources helper (FTS2 related)
+
 [v6r19p8]
 
 *Configuration
