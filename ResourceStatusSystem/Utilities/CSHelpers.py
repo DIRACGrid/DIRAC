@@ -215,7 +215,7 @@ def getStorageElementEndpoint( seName ):
     gLogger.warn( "Could not get SE parameters", "SE: %s" % seName )
     return seParameters
 
-  if seParameters['Value']['PluginName'] == 'GFAL2_SRM2':
+  if seParameters['Value']['Protocol'].lower() == 'srm':
     # we need to construct the URL with httpg://
     host = seParameters['Value']['Host']
     port = seParameters['Value']['Port']
