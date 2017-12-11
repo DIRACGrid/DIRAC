@@ -370,6 +370,7 @@ class SiteDirector( AgentModule ):
       self.log.warn( 'No site defined, exiting the cycle' )
       return S_OK()
 
+    self.rpcMatcher = RPCClient("WorkloadManagement/Matcher")
     result = self.submitJobs()
     if not result['OK']:
       self.log.error( 'Errors in the job submission: ', result['Message'] )
@@ -385,73 +386,12 @@ class SiteDirector( AgentModule ):
   def submitJobs( self ):
     """ Go through defined computing elements and submit jobs if necessary
     """
-    # Check that there is some work at all
-    setup = CSGlobals.getSetup()
-    tqDict = { 'Setup':setup,
-               'CPUTime': 9999999,
-               'SubmitPool' : self.defaultSubmitPools }
-    if self.vo:
-      tqDict['Community'] = self.vo
-    if self.voGroups:
-      tqDict['OwnerGroup'] = self.voGroups
-    result = Resources.getCompatiblePlatforms( self.platforms )
-    if not result['OK']:
-      return result
-    tqDict['Platform'] = result['Value']
-    tqDict['Site'] = self.sites
 
-    # Get a union of all tags
-    tags = []
-    for queue in self.queueDict:
-      tags += self.queueDict[queue]['ParametersDict'].get( 'Tag', [] )
-    tqDict['Tag'] = list( set( tags ) )
-
-    # Add overall max values for all queues
-    tqDict.update( self.globalParameters )
-
-    self.log.verbose( 'Checking overall TQ availability with requirements' )
-    self.log.verbose( tqDict )
-
-    rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
-    result = rpcMatcher.getMatchingTaskQueues( tqDict )
-    if not result[ 'OK' ]:
-      return result
-    if not result['Value']:
-      self.log.verbose( 'No Waiting jobs suitable for the director' )
+    submit, anySite, jobSites, testSites = self._ifAndWhereToSubmit()
+    if not submit:
       return S_OK()
 
-    jobSites = set()
-    anySite = False
-    testSites = set()
-    totalWaitingJobs = 0
-    for tqID in result['Value']:
-      if "Sites" in result['Value'][tqID]:
-        for site in result['Value'][tqID]['Sites']:
-          if site.lower() != 'any':
-            jobSites.add( site )
-          else:
-            anySite = True
-      else:
-        anySite = True
-      if "JobTypes" in result['Value'][tqID]:
-        if "Sites" in result['Value'][tqID]:
-          for site in result['Value'][tqID]['Sites']:
-            if site.lower() != 'any':
-              testSites.add( site )
-      totalWaitingJobs += result['Value'][tqID]['Jobs']
-
-    tqIDList = result['Value'].keys()
-    result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
-                                          'Status': WAITING_PILOT_STATUS },
-                                        None )
-    totalWaitingPilots = 0
-    if result['OK']:
-      totalWaitingPilots = result['Value']
-    self.log.info( 'Total %d jobs in %d task queues with %d waiting pilots' \
-                  % (totalWaitingJobs, len( tqIDList ), totalWaitingPilots ) )
-    #if totalWaitingPilots >= totalWaitingJobs:
-    #  self.log.info( 'No more pilots to be submitted in this cycle' )
-    #  return S_OK()
+    # From here on we assume we are going to (try to) submit some pilots
 
     result = self.siteClient.getUsableSites()
     if not result['OK']:
@@ -534,7 +474,7 @@ class SiteDirector( AgentModule ):
       ceDict['Platform'] = result['Value']
 
       # Get the number of eligible jobs for the target site/queue
-      result = rpcMatcher.getMatchingTaskQueues( ceDict )
+      result = self.rpcMatcher.getMatchingTaskQueues( ceDict )
       if not result['OK']:
         self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
         return result
@@ -607,7 +547,7 @@ class SiteDirector( AgentModule ):
       pilotsToSubmit = min( self.maxPilotsToSubmit, pilotsToSubmit )
 
       while pilotsToSubmit > 0:
-	res = self.submitPilotsToQueue(
+	res = self._submitPilotsToQueue(
 	    pilotsToSubmit, ce, queue, taskQueueDict)
 	if not res['OK']:
 	  continue
@@ -617,7 +557,86 @@ class SiteDirector( AgentModule ):
 		  % (self.totalSubmittedPilots, matchedQueues))
     return S_OK()
 
-  def submitPilotsToQueue(self, pilotsToSubmit, ce, queue, taskQueueDict):
+  def _ifAndWhereToSubmit(self):
+    """ Return a tuple that says if and where to submit pilots:
+
+	(submit, anySite, jobSites, testSites)
+	e.g.
+	(True, False, {'Site1', 'Site2'}, {'Test1', 'Test2'})
+
+	VOs may want to replace this method with different strategies
+    """
+
+    submit = False
+    jobSites = set()
+    anySite = False
+    testSites = set()
+
+    # Check that there is some work at all
+    setup = CSGlobals.getSetup()
+    tqDict = {'Setup': setup,
+	      'CPUTime': 9999999,
+	      'SubmitPool': self.defaultSubmitPools}
+    if self.vo:
+      tqDict['Community'] = self.vo
+    if self.voGroups:
+      tqDict['OwnerGroup'] = self.voGroups
+    result = Resources.getCompatiblePlatforms(self.platforms)
+    if not result['OK']:
+      return result
+    tqDict['Platform'] = result['Value']
+    tqDict['Site'] = self.sites
+
+    # Get a union of all tags
+    tags = []
+    for queue in self.queueDict:
+      tags += self.queueDict[queue]['ParametersDict'].get('Tag', [])
+    tqDict['Tag'] = list(set(tags))
+
+    # Add overall max values for all queues
+    tqDict.update(self.globalParameters)
+
+    self.log.verbose('Checking overall TQ availability with requirements')
+    self.log.verbose(tqDict)
+
+    result = self.rpcMatcher.getMatchingTaskQueues(tqDict)
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      self.log.notice(
+	  'No Waiting jobs suitable for the director, so nothing to submit')
+      return submit, anySite, jobSites, testSites
+
+    totalWaitingJobs = 0
+    for tqID in result['Value']:
+      if "Sites" in result['Value'][tqID]:
+	for site in result['Value'][tqID]['Sites']:
+	  if site.lower() != 'any':
+	    jobSites.add(site)
+	  else:
+	    anySite = True
+      else:
+	anySite = True
+      if "JobTypes" in result['Value'][tqID]:
+	if "Sites" in result['Value'][tqID]:
+	  for site in result['Value'][tqID]['Sites']:
+	    if site.lower() != 'any':
+	      testSites.add(site)
+      totalWaitingJobs += result['Value'][tqID]['Jobs']
+
+    tqIDList = result['Value'].keys()
+    result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
+					'Status': WAITING_PILOT_STATUS},
+				       None)
+    totalWaitingPilots = 0
+    if result['OK']:
+      totalWaitingPilots = result['Value']
+    self.log.info('Total %d jobs in %d task queues with %d waiting pilots'
+		  % (totalWaitingJobs, len(tqIDList), totalWaitingPilots))
+
+    return submit, anySite, jobSites, testSites
+
+  def _submitPilotsToQueue(self, pilotsToSubmit, ce, queue, taskQueueDict):
     """ Method that really submits the pilots to the ComputingElements' queue
     """
     self.log.info('Going to submit %d pilots to %s queue' %
