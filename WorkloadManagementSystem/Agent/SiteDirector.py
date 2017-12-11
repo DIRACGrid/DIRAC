@@ -16,24 +16,24 @@ from collections import defaultdict
 
 
 import DIRAC
-from DIRAC                                                 import S_OK, S_ERROR, gConfig
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus      import ResourceStatus
-from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
-from DIRAC.Core.Utilities.File                             import mkDir
-from DIRAC.Core.Base.AgentModule                           import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
-from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
-from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
-from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
-from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
-from DIRAC.Core.DISET.RPCClient                            import RPCClient
-from DIRAC.Core.Security                                   import CS
-from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
-from DIRAC.Core.Utilities.Time                             import dateTime, second
-from DIRAC.Core.Utilities.List                             import fromChar
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Operations, Resources
+from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
+from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Security import CS
+from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
+from DIRAC.Core.Utilities.Time import dateTime, second
+from DIRAC.Core.Utilities.List import fromChar
 
 __RCSID__ = "$Id$"
 
@@ -474,7 +474,6 @@ class SiteDirector( AgentModule ):
 
       ce = self.queueDict[queue]['CE']
       ceName = self.queueDict[queue]['CEName']
-      ceType = self.queueDict[queue]['CEType']
       queueName = self.queueDict[queue]['QueueName']
       siteName = self.queueDict[queue]['Site']
       platform = self.queueDict[queue]['Platform']
@@ -482,12 +481,14 @@ class SiteDirector( AgentModule ):
 
       # Check the status of the site
       if not siteMask and siteName not in testSites:
-        self.log.verbose( "Skipping queue %s: site %s not in the mask" % (queueName, siteName) )
+	self.log.verbose(
+	    "Skipping queue %s: site %s not in the mask" % (queueName, siteName))
         continue
 
       # Check that there are task queues waiting for this site
       if not anySite and siteName not in jobSites:
-        self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )
+	self.log.verbose(
+	    "Skipping queue %s at %s: no workload expected" % (queueName, siteName))
         continue
 
       # Check the status of the CE (only for RSS=Active)
@@ -606,56 +607,65 @@ class SiteDirector( AgentModule ):
       pilotsToSubmit = min( self.maxPilotsToSubmit, pilotsToSubmit )
 
       while pilotsToSubmit > 0:
-	self.submitPilots(pilotsToSubmit, queue)
+	res = self.submitPilotsToQueue(
+	    pilotsToSubmit, ce, queue, taskQueueDict)
+	if not res['OK']:
+	  continue
+	pilotsToSubmit = res['Value']
 
-    self.log.info( "%d pilots submitted in total in this cycle, %d matched queues" \
-		  % ( self.totalSubmittedPilots, matchedQueues ) )
+    self.log.info("%d pilots submitted in total in this cycle, %d matched queues"
+		  % (self.totalSubmittedPilots, matchedQueues))
     return S_OK()
 
-
-  def submitPilots(self, pilotsToSubmit, queue):
+  def submitPilotsToQueue(self, pilotsToSubmit, ce, queue, taskQueueDict):
     """ Method that really submits the pilots to the ComputingElements' queue
     """
-    self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
+    self.log.info('Going to submit %d pilots to %s queue' %
+		  (pilotsToSubmit, queue))
 
-    bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
+    bundleProxy = self.queueDict[queue].get('BundleProxy', False)
     jobExecDir = ''
-    jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )
-    httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
+    jobExecDir = self.queueDict[queue]['ParametersDict'].get(
+	'JobExecDir', jobExecDir)
+    httpProxy = self.queueDict[queue]['ParametersDict'].get('HttpProxy', '')
 
-    result = self.getExecutable( queue, pilotsToSubmit,
-				 bundleProxy = bundleProxy,
-				 httpProxy = httpProxy,
-				 jobExecDir = jobExecDir )
+    result = self.getExecutable(queue, pilotsToSubmit,
+				bundleProxy=bundleProxy,
+				httpProxy=httpProxy,
+				jobExecDir=jobExecDir)
     if not result['OK']:
       return result
-
     executable, pilotSubmissionChunk = result['Value']
-    result = ce.submitJob( executable, '', pilotSubmissionChunk )
+
+    submitResult = ce.submitJob(executable, '', pilotSubmissionChunk)
     ### FIXME: The condor thing only transfers the file with some
     ### delay, so when we unlink here the script is gone
     ### FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
-    if not ( ceType == 'HTCondorCE' or ( ceType == 'Local' and ce.batchSystem == 'Condor' ) ):
-      os.unlink( executable )
-    if not result['OK']:
-      self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
+    if not (self.queueDict[queue]['CEType'] == 'HTCondorCE'
+	    or (self.queueDict[queue]['CEType'] == 'Local' and ce.batchSystem == 'Condor')):
+      os.unlink(executable)
+    if not submitResult['OK']:
+      self.log.error('Failed submission to queue %s:\n' %
+		     queue, submitResult['Message'])
       pilotsToSubmit = 0
       self.failedQueues[queue] += 1
-      continue
+      return submitResult
 
     pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
     # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
     # task queue priorities
     pilotList = result['Value']
-    self.queueSlots[queue]['AvailableSlots'] -= len( pilotList )
-    self.totalSubmittedPilots += len( pilotList )
-    self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList ), queueName, ceName ) )
+    self.queueSlots[queue]['AvailableSlots'] -= len(pilotList)
+    self.totalSubmittedPilots += len(pilotList)
+    self.log.info('Submitted %d pilots to %s@%s' % (len(pilotList),
+						    self.queueDict[queue]['QueueName'],
+						    self.queueDict[queue]['CEName']))
     stampDict = result.get('PilotStampDict', {})
     tqPriorityList = []
     sumPriority = 0.
     for tq in taskQueueDict:
       sumPriority += taskQueueDict[tq]['Priority']
-      tqPriorityList.append( ( tq, sumPriority ) )
+      tqPriorityList.append((tq, sumPriority))
     tqDict = {}
     for pilotID in pilotList:
       rndm = random.random() * sumPriority
@@ -665,27 +675,33 @@ class SiteDirector( AgentModule ):
 	  break
       if tqID not in tqDict:
 	tqDict[tqID] = []
-      tqDict[tqID].append( pilotID )
+      tqDict[tqID].append(pilotID)
 
     for tqID, pilotList in tqDict.items():
-      result = pilotAgentsDB.addPilotTQReference( pilotList,
-						  tqID,
-						  self.pilotDN,
-						  self.pilotGroup,
-						  self.localhost,
-						  ceType,
-						  '',
-						  stampDict )
+      result = pilotAgentsDB.addPilotTQReference(pilotList,
+						 tqID,
+						 self.pilotDN,
+						 self.pilotGroup,
+						 self.localhost,
+						 self.queueDict[queue]['CEType'],
+						 '',
+						 stampDict)
       if not result['OK']:
-	self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
+	self.log.error(
+	    'Failed add pilots to the PilotAgentsDB: ', result['Message'])
 	continue
       for pilot in pilotList:
-	result = pilotAgentsDB.setPilotStatus(pilot, 'Submitted', ceName,
+	result = pilotAgentsDB.setPilotStatus(pilot,
+					      'Submitted',
+					      self.queueDict[queue]['CEName'],
 					      'Successfully submitted by the SiteDirector',
-					      siteName, queueName )
-        if not result['OK']:
-	  self.log.error( 'Failed to set pilot status: ', result['Message'] )
-          continue
+					      self.queueDict[queue]['Site'],
+					      self.queueDict[queue]['QueueName'])
+	if not result['OK']:
+	  self.log.error('Failed to set pilot status: ', result['Message'])
+	  continue
+
+    return S_OK(pilotsToSubmit)
 
 
   def getQueueSlots( self, queue, manyWaitingPilotsFlag ):
