@@ -5,54 +5,51 @@
 '''
 
 
-import lcg_util #pylint: disable=import-error
+import lcg_util  # pylint: disable=import-error
 
 
-from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess                            import pythonCall
-from DIRAC.ResourceStatusSystem.Command.Command                 import Command
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Subprocess import pythonCall
+from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
 __RCSID__ = '$Id:  $'
 
 
-class SpaceTokenOccupancyCommand( Command ):
+class SpaceTokenOccupancyCommand(Command):
   '''
   Uses lcg_util to query status of endpoint for a given token.
   '''
 
+  def __init__(self, args=None, clients=None):
 
-  def __init__( self, args = None, clients = None ):
-
-    super( SpaceTokenOccupancyCommand, self ).__init__( args, clients )
+    super(SpaceTokenOccupancyCommand, self).__init__(args, clients)
 
     if 'ResourceManagementClient' in self.apis:
-      self.rmClient = self.apis[ 'ResourceManagementClient' ]
+      self.rmClient = self.apis['ResourceManagementClient']
     else:
       self.rmClient = ResourceManagementClient()
 
-
-  def _storeCommand( self, results ):
+  def _storeCommand(self, results):
     '''
       Stores the results of doNew method on the database.
     '''
 
     for result in results:
 
-      resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( result[ 'Endpoint' ],
-                                                                    result[ 'Token' ],
-                                                                    result[ 'Total' ],
-                                                                    result[ 'Guaranteed' ],
-                                                                    result[ 'Free' ] )
-      if not resQuery[ 'OK' ]:
+      resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache(result['Endpoint'],
+                                                                   result['Token'],
+                                                                   result['Total'],
+                                                                   result['Guaranteed'],
+                                                                   result['Free'])
+      if not resQuery['OK']:
         return resQuery
 
     return S_OK()
 
-
-  def _prepareCommand( self ):
+  def _prepareCommand(self):
     '''
       SpaceTokenOccupancy requires one argument:
       - elementName : <str>
@@ -62,23 +59,22 @@ class SpaceTokenOccupancyCommand( Command ):
     '''
 
     if 'name' not in self.args:
-      return S_ERROR( '"name" not found in self.args' )
-    elementName = self.args[ 'name' ]
+      return S_ERROR('"name" not found in self.args')
+    elementName = self.args['name']
 
-    endpoint = CSHelpers.getStorageElementEndpoint( elementName )
-    if not endpoint[ 'OK' ]:
+    endpoint = CSHelpers.getStorageElementEndpoint(elementName)
+    if not endpoint['OK']:
       return endpoint
-    endpoint = endpoint[ 'Value' ]
+    endpoint = endpoint['Value']
 
-    spaceToken = CSHelpers.getSEToken( elementName )
-    if not spaceToken[ 'OK' ]:
+    spaceToken = CSHelpers.getSEToken(elementName)
+    if not spaceToken['OK']:
       return spaceToken
-    spaceToken = spaceToken[ 'Value']
+    spaceToken = spaceToken['Value']
 
-    return S_OK( ( endpoint, spaceToken ) )
+    return S_OK((endpoint, spaceToken))
 
-
-  def doNew( self, masterParams = None ):
+  def doNew(self, masterParams=None):
     '''
       Gets the parameters to run, either from the master method or from its
       own arguments.
@@ -93,57 +89,55 @@ class SpaceTokenOccupancyCommand( Command ):
       spaceTokenEndpoint, spaceToken = masterParams
     else:
       params = self._prepareCommand()
-      if not params[ 'OK' ]:
+      if not params['OK']:
         return params
-      spaceTokenEndpoint, spaceToken = params[ 'Value' ]
+      spaceTokenEndpoint, spaceToken = params['Value']
 
-    #FIXME: should just use StorageElement('SE').getOccupancy()
+    # FIXME: should just use StorageElement('SE').getOccupancy()
     # 10 secs of timeout. If it works, the reply is immediate.
-    occupancyResult = pythonCall( 10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0 )
-    if not occupancyResult[ 'OK' ]:
-      self.log.error( "Could not get spaceToken occupancy", "from endPoint/spaceToken %s/%s : %s" % \
-                      ( spaceTokenEndpoint, spaceToken, occupancyResult['Message'] ) )
+    occupancyResult = pythonCall(10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0)
+    if not occupancyResult['OK']:
+      self.log.error("Could not get spaceToken occupancy", "from endPoint/spaceToken %s/%s : %s" %
+                     (spaceTokenEndpoint, spaceToken, occupancyResult['Message']))
       return occupancyResult
     else:
-      occupancy = occupancyResult[ 'Value' ]
+      occupancy = occupancyResult['Value']
 
-    if occupancy[ 0 ] != 0:
-      return S_ERROR( occupancy )
-    output = occupancy[ 1 ][ 0 ]
+    if occupancy[0] != 0:
+      return S_ERROR(occupancy)
+    output = occupancy[1][0]
 
     sTokenDict = {}
-    sTokenDict[ 'Endpoint' ] = spaceTokenEndpoint
-    sTokenDict[ 'Token' ] = spaceToken
-    sTokenDict[ 'Total' ] = float( output.get( 'totalsize', '0' ) ) / 1e12  # Bytes to Terabytes
-    sTokenDict[ 'Guaranteed' ] = float( output.get( 'guaranteedsize', '0' ) ) / 1e12
-    sTokenDict[ 'Free' ] = float( output.get( 'unusedsize', '0' ) ) / 1e12
+    sTokenDict['Endpoint'] = spaceTokenEndpoint
+    sTokenDict['Token'] = spaceToken
+    sTokenDict['Total'] = float(output.get('totalsize', '0')) / 1e12  # Bytes to Terabytes
+    sTokenDict['Guaranteed'] = float(output.get('guaranteedsize', '0')) / 1e12
+    sTokenDict['Free'] = float(output.get('unusedsize', '0')) / 1e12
 
-    storeRes = self._storeCommand( [ sTokenDict ] )
-    if not storeRes[ 'OK' ]:
+    storeRes = self._storeCommand([sTokenDict])
+    if not storeRes['OK']:
       return storeRes
 
-    return S_OK( [ sTokenDict ] )
+    return S_OK([sTokenDict])
 
-
-  def doCache( self ):
+  def doCache(self):
     '''
       Method that reads the cache table and tries to read from it. It will
       return a list of dictionaries if there are results.
     '''
 
     params = self._prepareCommand()
-    if not params[ 'OK' ]:
+    if not params['OK']:
       return params
-    spaceTokenEndpoint, spaceToken = params[ 'Value' ]
+    spaceTokenEndpoint, spaceToken = params['Value']
 
-    result = self.rmClient.selectSpaceTokenOccupancyCache( spaceTokenEndpoint, spaceToken )
-    if result[ 'OK' ]:
-      result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
+    result = self.rmClient.selectSpaceTokenOccupancyCache(spaceTokenEndpoint, spaceToken)
+    if result['OK']:
+      result = S_OK([dict(zip(result['Columns'], res)) for res in result['Value']])
 
     return result
 
-
-  def doMaster( self ):
+  def doMaster(self):
     '''
       Master method. Gets all endpoints from the storage elements and all
       the spaceTokens. Could have taken from Shares/Disk as well.
@@ -151,40 +145,40 @@ class SpaceTokenOccupancyCommand( Command ):
       in the database for those combinations, which then are not queried.
     '''
 
-    self.log.verbose( "Getting all SEs defined in the CS" )
+    self.log.verbose("Getting all SEs defined in the CS")
     storageElementNames = CSHelpers.getStorageElements()
-    if not storageElementNames[ 'OK' ]:
-      self.log.warn( storageElementNames['Message'] )
+    if not storageElementNames['OK']:
+      self.log.warn(storageElementNames['Message'])
       return storageElementNames
-    storageElementNames = storageElementNames[ 'Value' ]
+    storageElementNames = storageElementNames['Value']
 
     endpointTokenSet = set()
 
     for storageElementName in storageElementNames:
 
-      endpoint = CSHelpers.getStorageElementEndpoint( storageElementName )
-      if not endpoint[ 'OK' ]:
-        self.log.warn( endpoint['Message'] )
+      endpoint = CSHelpers.getStorageElementEndpoint(storageElementName)
+      if not endpoint['OK']:
+        self.log.warn(endpoint['Message'])
         continue
-      endpoint = endpoint[ 'Value' ]
+      endpoint = endpoint['Value']
 
-      spaceToken = CSHelpers.getSEToken( storageElementName )
-      if not spaceToken[ 'OK' ]:
-        self.log.warn( spaceToken['Message'] )
+      spaceToken = CSHelpers.getSEToken(storageElementName)
+      if not spaceToken['OK']:
+        self.log.warn(spaceToken['Message'])
         continue
-      spaceToken = spaceToken[ 'Value' ]
+      spaceToken = spaceToken['Value']
 
-      endpointTokenSet.add( ( endpoint, spaceToken ) )
+      endpointTokenSet.add((endpoint, spaceToken))
 
-    self.log.verbose( 'Processing %s' % endpointTokenSet )
+    self.log.verbose('Processing %s' % endpointTokenSet)
 
     for elementToQuery in endpointTokenSet:
 
-      result = self.doNew( elementToQuery )
-      if not result[ 'OK' ]:
-        self.metrics[ 'failed' ].append( result )
+      result = self.doNew(elementToQuery)
+      if not result['OK']:
+        self.metrics['failed'].append(result)
 
-    return S_OK( self.metrics )
+    return S_OK(self.metrics)
 
 
 # ...............................................................................
