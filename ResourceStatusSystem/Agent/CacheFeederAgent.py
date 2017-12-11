@@ -4,6 +4,8 @@
 
 '''
 
+__RCSID__ = '$Id:$'
+
 from DIRAC import S_OK
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -16,7 +18,6 @@ ResourceManagementClient = getattr(
     Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'),
     'ResourceManagementClient')
 
-__RCSID__ = '$Id:  $'
 AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
 
 
@@ -41,6 +42,8 @@ class CacheFeederAgent(AgentModule):
     self.rmClient = None
 
   def initialize(self):
+    """ Define the commands to be executed, and instantiate the clients that will be used.
+    """
 
     self.am_setOption('shifterProxy', 'DataManager')
 
@@ -90,6 +93,13 @@ class CacheFeederAgent(AgentModule):
     return S_OK()
 
   def loadCommand(self, commandModule, commandDict):
+    """ Loads and executes commands.
+
+       :param commandModule: Name of the command (e.g. 'Downtime')
+       :type commandModule: basestring
+       :param commandDict: dictionary of {'CommandClass':{arguments}}
+       :type commandDict: dict
+    """
 
     commandName = commandDict.keys()[0]
     commandArgs = commandDict[commandName]
@@ -111,8 +121,10 @@ class CacheFeederAgent(AgentModule):
     return S_OK(commandObject)
 
   def execute(self):
+    """ Just executes, via `loadCommand`, the commands in self.commands one after the other
+    """
 
-    for commandModule, commandList in self.commands.items():
+    for commandModule, commandList in self.commands.iteritems():
 
       self.log.info('%s module initialization' % commandModule)
 
