@@ -1514,7 +1514,14 @@ class JobDB( DB ):
 
 #############################################################################
   def getSiteMaskStatus( self, sites = None ):
-    """ Get the currently site mask status
+    """ Get the current site mask status
+        :param:sites - A string for a single site to check, or a list
+                       to check multiple sites.
+        :returns:If input was a list, a dictionary of sites, keys are site
+                 names and values are the site statuses. Unknown sites are
+                 not included in the output dictionary.
+                 If input was a string, then a single value with that site's
+                 status, or S_ERROR if the site does not exist in the DB.
     """
     if isinstance(sites, list):
       safeSites = []
@@ -1536,7 +1543,10 @@ class JobDB( DB ):
         return ret
       cmd = "SELECT Status FROM SiteMask WHERE Site=%s" % ret['Value']
       result = self._query( cmd )
-      return S_OK( result['Value'][0][0] )
+      if result['Value']:
+        return S_OK( result['Value'][0][0] )
+      else:
+        return S_ERROR( "Unknown site %s" % sites )
 
     else:
       cmd = "SELECT Site,Status FROM SiteMask"
