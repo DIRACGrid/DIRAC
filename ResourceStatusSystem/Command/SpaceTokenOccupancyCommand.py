@@ -94,7 +94,7 @@ class SpaceTokenOccupancyCommand(Command):
       spaceTokenEndpoint, spaceToken = params['Value']
 
     se = StorageElement(self.args['name'])
-    occupancyResult = se.getOccupancy
+    occupancyResult = se.getOccupancy()
     if not occupancyResult['OK']:
       return occupancyResult
     else:
