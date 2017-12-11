@@ -16,6 +16,7 @@ __RCSID__ = '$Id:  $'
 
 # FIXME: this command may not be needed anymore, as we can get the space occupancy for DIP SE (and not only) by simply
 # se = StorageElement().getOccupancy()
+# Alternatively, this may survive and we remove SpaceTokenOccupancyCommand
 
 
 class FreeDiskSpaceCommand( Command ):

@@ -4,18 +4,18 @@
 
 '''
 
-
-import lcg_util  # pylint: disable=import-error
+__RCSID__ = '$Id:$'
 
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
-
-__RCSID__ = '$Id:  $'
+# FIXME: this command by calling StorageElement(se).getOccupancy() becomes a duplicate of the FreeDiskSpaceCommand
+# so only one should survive.
+# Also, the concept of "space token" should remain hidden in StorageElement interface.
 
 
 class SpaceTokenOccupancyCommand(Command):
@@ -93,26 +93,19 @@ class SpaceTokenOccupancyCommand(Command):
         return params
       spaceTokenEndpoint, spaceToken = params['Value']
 
-    # FIXME: should just use StorageElement('SE').getOccupancy()
-    # 10 secs of timeout. If it works, the reply is immediate.
-    occupancyResult = pythonCall(10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0)
+    se = StorageElement(self.args['name'])
+    occupancyResult = se.getOccupancy
     if not occupancyResult['OK']:
-      self.log.error("Could not get spaceToken occupancy", "from endPoint/spaceToken %s/%s : %s" %
-                     (spaceTokenEndpoint, spaceToken, occupancyResult['Message']))
       return occupancyResult
     else:
       occupancy = occupancyResult['Value']
 
-    if occupancy[0] != 0:
-      return S_ERROR(occupancy)
-    output = occupancy[1][0]
-
     sTokenDict = {}
     sTokenDict['Endpoint'] = spaceTokenEndpoint
     sTokenDict['Token'] = spaceToken
-    sTokenDict['Total'] = float(output.get('totalsize', '0')) / 1e12  # Bytes to Terabytes
-    sTokenDict['Guaranteed'] = float(output.get('guaranteedsize', '0')) / 1e12
-    sTokenDict['Free'] = float(output.get('unusedsize', '0')) / 1e12
+    sTokenDict['Total'] = float(occupancy.get('totalsize', '0')) / 1e12  # Bytes to Terabytes
+    sTokenDict['Guaranteed'] = float(occupancy.get('guaranteedsize', '0')) / 1e12
+    sTokenDict['Free'] = float(occupancy.get('unusedsize', '0')) / 1e12
 
     storeRes = self._storeCommand([sTokenDict])
     if not storeRes['OK']:
