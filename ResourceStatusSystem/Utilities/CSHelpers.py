@@ -215,15 +215,18 @@ def getStorageElementEndpoint( seName ):
     gLogger.warn( "Could not get SE parameters", "SE: %s" % seName )
     return seParameters
 
-  host = seParameters['Value']['Host']
-  port = seParameters['Value']['Port']
-  wsurl = seParameters['Value']['WSUrl']
-
-  # MAYBE wusrl is not defined
-  if host and port:
-    url = 'httpg://%s:%s%s' % ( host, port, wsurl )
-    url = url.replace( '?SFN=', '' )
-    return S_OK( url )
+  if seParameters['Value']['Protocol'].lower() == 'srm':
+    # we need to construct the URL with httpg://
+    host = seParameters['Value']['Host']
+    port = seParameters['Value']['Port']
+    wsurl = seParameters['Value']['WSUrl']
+    # MAYBE wusrl is not defined
+    if host and port:
+      url = 'httpg://%s:%s%s' % (host, port, wsurl)
+      url = url.replace('?SFN=', '')
+      return S_OK(url)
+  else:
+    return S_OK(seParameters['Value']['URLBase'])
 
   return S_ERROR( ( host, port, wsurl ) )
 

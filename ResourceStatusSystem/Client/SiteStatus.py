@@ -74,9 +74,10 @@ class SiteStatus( object ):
     return S_OK(getCacheDictFromRawData(rawCache['Value']))
 
 
-  def getSiteStatuses( self, siteNamesList = None ):
+  def getSiteStatuses( self, siteNames = None ):
     """
     Method that queries the database for status of the sites in a given list.
+    A single string site name may also be provides as "siteNames"
     If the input is None, it is interpreted as * ( all ).
 
     If match is positive, the output looks like:
@@ -98,18 +99,20 @@ class SiteStatus( object ):
               )
 
     :Parameters:
-      **siteNamesList** - `list`
+      **siteNames** - `list` or `str`
         name(s) of the sites to be matched
 
     :return: S_OK() || S_ERROR()
     """
 
     if self.rssFlag:
-      return self.__getRSSSiteStatus(siteNamesList)
+      return self.__getRSSSiteStatus(siteNames)
     else:
       siteStatusDict = {}
-      if siteNamesList:
-        for siteName in siteNamesList:
+      if siteNames:
+        if isinstance(siteNames, basestring):
+          siteNames = [siteNames]
+        for siteName in siteNames:
           result = RPCClient('WorkloadManagement/WMSAdministrator').getSiteMaskStatus(siteName)
           if not result['OK']:
             return result
@@ -148,7 +151,7 @@ class SiteStatus( object ):
     return cacheMatch
 
 
-  def getUsableSites( self, siteNamesList = None ):
+  def getUsableSites( self, siteNames = None ):
     """
     Returns all sites that are usable if their
     statusType is either Active or Degraded; in a list.
@@ -162,13 +165,13 @@ class SiteStatus( object ):
           S_ERROR( ... )
 
     :Parameters:
-      **siteNamesList** - `List`
+      **siteNames** - `List` or `str`
         name(s) of the sites to be matched
 
     :return: S_OK() || S_ERROR()
     """
 
-    siteStatusDictRes = self.getSiteStatuses(siteNamesList)
+    siteStatusDictRes = self.getSiteStatuses(siteNames)
     if not siteStatusDictRes['OK']:
       return siteStatusDictRes
     siteStatusList = [x[0] for x in siteStatusDictRes['Value'].iteritems() if x[1] in ['Active', 'Degraded']]

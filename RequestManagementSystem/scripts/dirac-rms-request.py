@@ -3,40 +3,45 @@
 __RCSID__ = "$Id: $"
 
 import datetime
-def convertDate( date ):
+import os
+
+
+def convertDate(date):
   try:
-    value = datetime.datetime.strptime( date, '%Y-%m-%d' )
+    value = datetime.datetime.strptime(date, '%Y-%m-%d')
     return value
-  except:
+  except Exception:
     pass
   try:
-    value = datetime.datetime.utcnow() - datetime.timedelta( hours = int( 24 * float( date ) ) )
-  except:
-    gLogger.fatal( "Invalid date", date )
+    value = datetime.datetime.utcnow() - datetime.timedelta(hours=int(24 * float(date)))
+  except Exception:
+    gLogger.fatal("Invalid date", date)
     value = None
   return value
 
 
 from DIRAC.Core.Base import Script
-Script.registerSwitch( '', 'Job=', '   JobID[,jobID2,...]' )
-Script.registerSwitch( '', 'Transformation=', '   transformation ID' )
-Script.registerSwitch( '', 'Tasks=', '      Associated to --Transformation, list of taskIDs' )
-Script.registerSwitch( '', 'Verbose', '   Print more information' )
-Script.registerSwitch( '', 'Terse', '   Only print request status' )
-Script.registerSwitch( '', 'Full', '   Print full request content' )
-Script.registerSwitch( '', 'Status=', '   Select all requests in a given status' )
-Script.registerSwitch( '', 'Since=', '      Associated to --Status, start date yyyy-mm-dd or nb of days (default= -one day' )
-Script.registerSwitch( '', 'Until=', '      Associated to --Status, end date (default= now' )
-Script.registerSwitch( '', 'Maximum=', '      Associated to --Status, max number of requests ' )
-Script.registerSwitch( '', 'Reset', '   Reset Failed files to Waiting if any' )
-Script.registerSwitch( '', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures' )
-Script.registerSwitch( '', 'FixJob', '   Set job Done if the request is Done' )
-Script.registerSwitch( '', 'Cancel', '   Cancel the request' )
-Script.setUsageMessage( '\n'.join( [ __doc__,
-                                     'Usage:',
-                                     ' %s [option|cfgfile] [requestID/requestName(if unique)]' % Script.scriptName,
-                                     'Arguments:',
-                                     ' requestID: a request ID' ] ) )
+Script.registerSwitch('', 'Job=', '   JobID[,jobID2,...]')
+Script.registerSwitch('', 'Transformation=', '   transformation ID')
+Script.registerSwitch('', 'Tasks=', '      Associated to --Transformation, list of taskIDs')
+Script.registerSwitch('', 'Verbose', '   Print more information')
+Script.registerSwitch('', 'Terse', '   Only print request status')
+Script.registerSwitch('', 'Full', '   Print full request content')
+Script.registerSwitch('', 'Status=', '   Select all requests in a given status')
+Script.registerSwitch('', 'Since=',
+                      '      Associated to --Status, start date yyyy-mm-dd or nb of days (default= -one day')
+Script.registerSwitch('', 'Until=', '      Associated to --Status, end date (default= now')
+Script.registerSwitch('', 'Maximum=', '      Associated to --Status, max number of requests ')
+Script.registerSwitch('', 'Reset', '   Reset Failed files to Waiting if any')
+Script.registerSwitch('', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures')
+Script.registerSwitch('', 'FixJob', '   Set job Done if the request is Done')
+Script.registerSwitch('', 'Cancel', '   Cancel the request')
+Script.setUsageMessage('\n'.join([__doc__,
+                                  'Usage:',
+                                  ' %s [option|cfgfile] [request[,request1,...]|<file>' % Script.scriptName,
+                                  'Arguments:',
+                                  ' request: a request ID or a unique request name',
+                                  ' <file>: a file containing a list of requests (Comma-separated on each line)']))
 
 # # execution
 if __name__ == "__main__":
@@ -66,19 +71,19 @@ if __name__ == "__main__":
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
       try:
-        jobs = [int( job ) for job in switch[1].split( ',' )]
-      except:
-        gLogger.fatal( "Invalid jobID", switch[1] )
+        jobs = [int(job) for job in switch[1].split(',')]
+      except Exception:
+        gLogger.fatal("Invalid jobID", switch[1])
     elif switch[0] == 'Transformation':
       try:
-        transID = int( switch[1] )
-      except:
-        gLogger.fatal( 'Invalid transID', switch[1] )
+        transID = int(switch[1])
+      except Exception:
+        gLogger.fatal('Invalid transID', switch[1])
     elif switch[0] == 'Tasks':
       try:
-        taskIDs = [int( task ) for task in switch[1].split( ',' )]
-      except:
-        gLogger.fatal( 'Invalid tasks', switch[1] )
+        taskIDs = [int(task) for task in switch[1].split(',')]
+      except Exception:
+        gLogger.fatal('Invalid tasks', switch[1])
     elif switch[0] == 'Full':
       full = True
     elif switch[0] == 'Verbose':
@@ -92,17 +97,17 @@ if __name__ == "__main__":
     elif switch[0] == 'Status':
       status = switch[1].capitalize()
     elif switch[0] == 'Since':
-      since = convertDate( switch[1] )
+      since = convertDate(switch[1])
     elif switch[0] == 'Until':
-      until = convertDate( switch[1] )
+      until = convertDate(switch[1])
     elif switch[0] == 'FixJob':
       fixJob = True
     elif switch[0] == 'Cancel':
       cancel = True
     elif switch[0] == 'Maximum':
       try:
-        maxRequests = int( switch[1] )
-      except:
+        maxRequests = int(switch[1])
+      except Exception:
         pass
 
   if reset:
@@ -115,118 +120,119 @@ if __name__ == "__main__":
     if not until:
       until = datetime.datetime.utcnow()
     if not since:
-      since = until - datetime.timedelta( hours = 24 )
+      since = until - datetime.timedelta(hours=24)
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
   from DIRAC.RequestManagementSystem.Client.ReqClient import printRequest, recoverableRequest
   reqClient = ReqClient()
   if transID:
     if not taskIDs:
-      gLogger.fatal( "If Transformation is set, a list of Tasks should also be set" )
+      gLogger.fatal("If Transformation is set, a list of Tasks should also be set")
       Script.showHelp()
-      DIRAC.exit( 2 )
+      DIRAC.exit(2)
     # In principle, the task name is unique, so the request name should be unique as well
     # If ever this would not work anymore, we would need to use the transformationClient
     # to fetch the ExternalID
-    requests = ['%08d_%08d' % ( transID, task ) for task in taskIDs]
+    requests = ['%08d_%08d' % (transID, task) for task in taskIDs]
     allR = True
 
   elif not jobs:
-    args = Script.getPositionalArgs()
-    if len( args ) == 1:
+    requests = []
+    # Get full list of arguments, with and without comma
+    for arg in [x.strip() for arg in Script.getPositionalArgs() for x in arg.split(',')]:
+      if os.path.exists(arg):
+        lines = open(arg, 'r').readlines()
+        requests += [reqID.strip() for line in lines for reqID in line.split(',')]
+        gLogger.notice("Found %d requests in file" % len(requests))
+      else:
+        requests.append(arg)
       allR = True
-      requests = [reqID for reqID in args[0].split( ',' ) if reqID]
   else:
-    res = reqClient.getRequestIDsForJobs( jobs )
+    res = reqClient.getRequestIDsForJobs(jobs)
     if not res['OK']:
-      gLogger.fatal( "Error getting request for jobs", res['Message'] )
-      DIRAC.exit( 2 )
+      gLogger.fatal("Error getting request for jobs", res['Message'])
+      DIRAC.exit(2)
     if res['Value']['Failed']:
-      gLogger.error( "No request found for jobs %s" % ','.join( sorted( str( job ) for job in res['Value']['Failed'] ) ) )
-    requests = sorted( res['Value']['Successful'].values() )
+      gLogger.error("No request found for jobs %s" % ','.join(sorted(str(job) for job in res['Value']['Failed'])))
+    requests = sorted(res['Value']['Successful'].values())
     if requests:
       allR = True
     else:
-      DIRAC.exit( 0 )
-
+      DIRAC.exit(0)
 
   if status and not requests:
     allR = allR or status != 'Failed'
-    res = reqClient.getRequestIDsList( [status], limit = maxRequests, since = since, until = until )
+    res = reqClient.getRequestIDsList([status], limit=maxRequests, since=since, until=until)
 
     if not res['OK']:
-      gLogger.error( "Error getting requests:", res['Message'] )
-      DIRAC.exit( 2 )
+      gLogger.error("Error getting requests:", res['Message'])
+      DIRAC.exit(2)
     requests = [reqID for reqID, _st, updTime in res['Value'] if updTime > since and updTime <= until and reqID]
-    gLogger.notice( 'Obtained %d requests %s between %s and %s' % ( len( requests ), status, since, until ) )
+    gLogger.notice('Obtained %d requests %s between %s and %s' % (len(requests), status, since, until))
   if not requests:
-    gLogger.notice( 'No request selected....' )
+    gLogger.notice('No request selected....')
     Script.showHelp()
-    DIRAC.exit( 2 )
+    DIRAC.exit(2)
   okRequests = []
   warningPrinted = False
   for reqID in requests:
     # We allow reqID to be the requestName if it is unique
     try:
-      requestID = int( reqID )
+      requestID = int(reqID)
     except ValueError:
-      requestID = reqClient.getRequestIDForName( reqID )
+      requestID = reqClient.getRequestIDForName(reqID)
       if not requestID['OK']:
-        gLogger.notice( requestID['Message'] )
+        gLogger.notice(requestID['Message'])
         continue
       requestID = requestID['Value']
 
-    request = reqClient.peekRequest( requestID )
+    request = reqClient.peekRequest(requestID)
     if not request["OK"]:
-      gLogger.error( request["Message"] )
-      DIRAC.exit( -1 )
+      gLogger.error(request["Message"])
+      DIRAC.exit(-1)
 
     request = request["Value"]
     if not request:
-      gLogger.error( "no such request %s" % requestID )
+      gLogger.error("no such request %s" % requestID)
       continue
     if status and request.Status != status:
-      gLogger.notice( "Request %s is not in requested status %s%s" % \
-                      ( reqID, status, ' (cannot be reset)' if reset else '' ) )
+      gLogger.notice("Request %s is not in requested status %s%s" %
+                     (reqID, status, ' (cannot be reset)' if reset else ''))
       continue
 
     if fixJob and request.Status == 'Done' and request.JobID:
       # The request is for a job and is Done, verify that the job is in the proper status
-      result = reqClient.finalizeRequest( request.RequestID, request.JobID, useCertificates = False )
+      result = reqClient.finalizeRequest(request.RequestID, request.JobID, useCertificates=False)
       if not result['OK']:
-        gLogger.error( "Error finalizing job", result['Message'] )
+        gLogger.error("Error finalizing job", result['Message'])
       else:
-        gLogger.notice( "Job %d updated to %s" % ( request.JobID, result['Value'] ) )
+        gLogger.notice("Job %d updated to %s" % (request.JobID, result['Value']))
       continue
 
     if cancel:
-      if request.Status not in ( 'Done', 'Failed' ):
-        ret = reqClient.cancelRequest( requestID )
+      if request.Status not in ('Done', 'Failed'):
+        ret = reqClient.cancelRequest(requestID)
         if not ret['OK']:
-          gLogger.error( "Error canceling request %s" % reqID, ret['Message'] )
+          gLogger.error("Error canceling request %s" % reqID, ret['Message'])
         else:
-          gLogger.notice( "Request %s cancelled" % reqID )
+          gLogger.notice("Request %s cancelled" % reqID)
       else:
-        gLogger.notice( "Request %s is in status %s, not cancelled" % ( reqID, request.Status ) )
+        gLogger.notice("Request %s is in status %s, not cancelled" % (reqID, request.Status))
 
-    elif allR or recoverableRequest( request ):
-      okRequests.append( str( requestID ) )
+    elif allR or recoverableRequest(request):
+      okRequests.append(str(requestID))
       if reset:
-        gLogger.notice( '============ Request %s =============' % requestID )
-        ret = reqClient.resetFailedRequest( requestID, allR = allR )
+        gLogger.notice('============ Request %s =============' % requestID)
+        ret = reqClient.resetFailedRequest(requestID, allR=allR)
         if not ret['OK']:
-          gLogger.error( "Error resetting request %s" % requestID, ret['Message'] )
+          gLogger.error("Error resetting request %s" % requestID, ret['Message'])
       else:
-        if len( requests ) > 1:
-          gLogger.notice( '\n===================================' )
-        dbStatus = reqClient.getRequestStatus( requestID ).get( 'Value', 'Unknown' )
-        printRequest( request, status = dbStatus, full = full, verbose = verbose, terse = terse )
-
+        if len(requests) > 1:
+          gLogger.notice('\n===================================')
+        dbStatus = reqClient.getRequestStatus(requestID).get('Value', 'Unknown')
+        printRequest(request, status=dbStatus, full=full, verbose=verbose, terse=terse)
 
   if status and okRequests:
     from DIRAC.Core.Utilities.List import breakListIntoChunks
-    gLogger.notice( '\nList of %d selected requests:' % len( okRequests ) )
-    for reqs in breakListIntoChunks( okRequests, 100 ):
-      gLogger.notice( ','.join( reqs ) )
-
-
-
+    gLogger.notice('\nList of %d selected requests:' % len(okRequests))
+    for reqs in breakListIntoChunks(okRequests, 100):
+      gLogger.notice(','.join(reqs))

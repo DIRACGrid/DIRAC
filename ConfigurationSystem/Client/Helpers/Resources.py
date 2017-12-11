@@ -1,13 +1,13 @@
 """ Helper for the CS Resources section
 """
 
-
 import re
 from distutils.version import LooseVersion #pylint: disable=no-name-in-module,import-error
 
-from DIRAC                                              import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
-from DIRAC.Core.Utilities.List                          import uniqueElements, fromChar
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+from DIRAC.Core.Utilities.List import uniqueElements, fromChar
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 __RCSID__ = "$Id$"
 
@@ -31,6 +31,8 @@ def getSites():
 
   return S_OK( sites )
 
+
+@deprecated("Only for FTS2")
 def getStorageElementSiteMapping( siteList = None ):
   """ Get Storage Element belonging to the given sites
   """
@@ -48,6 +50,8 @@ def getStorageElementSiteMapping( siteList = None ):
 
   return S_OK( siteDict )
 
+
+@deprecated("Only for FTS2")
 def getFTS2ServersForSites( siteList = None ):
   """ get FTSServers for sites
 
@@ -114,6 +118,8 @@ def getSiteGrid( site ):
     return S_ERROR( 'Wrong Site Name format' )
   return S_OK( sitetuple[0] )
 
+
+@deprecated("Unused and dangerous, use StorageElement('seName').options ")
 def getStorageElementOptions( seName ):
   """ Get the CS StorageElementOptions
   """
@@ -161,16 +167,16 @@ def getQueue( site, ce, queue ):
 
   # Handle tag lists for the queue
   for tagFieldName in ( 'Tag', 'RequiredTag' ): 
-    Tags = []
+    tags = []
     ceTags = resultDict.get( tagFieldName )
     if ceTags:
-      Tags = fromChar( ceTags )
+      tags = fromChar(ceTags)
     queueTags = resultDict.get( tagFieldName )
     if queueTags:
       queueTags = fromChar( queueTags )
-      Tags = list( set( Tags + queueTags ) )
-    if Tags:
-      resultDict[tagFieldName] = Tags
+      tags = list(set(tags + queueTags))
+    if tags:
+      resultDict[tagFieldName] = tags
 
   resultDict['Queue'] = queue
   return S_OK( resultDict )
