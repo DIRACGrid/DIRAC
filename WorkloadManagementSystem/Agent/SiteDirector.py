@@ -21,7 +21,8 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Operations, Resources
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Resources
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
@@ -832,7 +833,7 @@ class SiteDirector( AgentModule ):
       self.log.error( 'Setup is not defined in the configuration' )
       return [ None, None ]
     pilotOptions.append( '-S %s' % setup )
-    opsHelper = Operations.Operations( group = self.pilotGroup, setup = setup )
+    opsHelper = Operations( group = self.pilotGroup, setup = setup )
 
     #Installation defined?
     installationName = opsHelper.getValue( "Pilot/Installation", "" )

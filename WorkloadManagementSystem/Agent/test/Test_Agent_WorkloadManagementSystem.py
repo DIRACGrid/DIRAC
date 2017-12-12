@@ -3,7 +3,7 @@
 
 # imports
 import unittest
-from mock import MagicMock, patch
+from mock import Mock, MagicMock, patch
 
 from DIRAC import gLogger
 
@@ -21,7 +21,8 @@ mockOPSReply = MagicMock()
 mockOPSReply.return_value = '123'
 
 mockOPS = MagicMock()
-mockOPS.Operations.return_value = mockOPSObject
+mockOPS.return_value = mockOPSObject
+# mockOPS.Operations = mockOPSObject
 mockPM = MagicMock()
 mockPM.requestToken.return_value = {'OK':True, 'Value': ('token', 1)}
 mockPMReply = MagicMock()
@@ -43,7 +44,6 @@ class SiteDirectorBaseSuccess( AgentsTestCase ):
 
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect = mockGCReply)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Operations", side_effect = mockOPS)
-  # @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gProxyManager", side_effect = mockPM)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gProxyManager.requestToken", side_effect =mockPMReply)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect = mockAM)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__", new = mockAM)
@@ -58,10 +58,13 @@ class SiteDirectorBaseSuccess( AgentsTestCase ):
 						'Community': 'lhcb',
 						'OwnerGroup': ['lhcb_user'],
 						'Setup': 'LHCb-Production',
-						'Site': ['LCG.CERN.cern', 'LCG.CNAF.it'],
+						'Site': 'LCG.CERN.cern',
 						'SubmitPool': ''}}}
     res = sd._getPilotOptions( 'aQueue', 10 )
-    self.assertEqual(res, [None, None])
+    self.assertEqual(res, [['-S TestSetup', '-V 123', '-l 123','-r 1,2,3', '-g 123',
+			    '-o /Security/ProxyToken=token', '-M 1', '-C T,e,s,t,S,e,t,u,p',
+			    '-e 1,2,3', '-T 12345', '-N aCE', '-Q aQueue', '-n LCG.CERN.cern'],
+			   1])
 
 
 
