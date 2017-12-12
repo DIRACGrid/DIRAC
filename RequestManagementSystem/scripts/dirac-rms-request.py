@@ -36,6 +36,7 @@ Script.registerSwitch('', 'Reset', '   Reset Failed files to Waiting if any')
 Script.registerSwitch('', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures')
 Script.registerSwitch('', 'FixJob', '   Set job Done if the request is Done')
 Script.registerSwitch('', 'Cancel', '   Cancel the request')
+Script.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
 Script.setUsageMessage('\n'.join([__doc__,
                                   'Usage:',
                                   ' %s [option|cfgfile] [request[,request1,...]|<file>' % Script.scriptName,
@@ -68,6 +69,7 @@ if __name__ == "__main__":
   fixJob = False
   maxRequests = 999999999999
   cancel = False
+  listJobs = False
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
       try:
@@ -104,6 +106,8 @@ if __name__ == "__main__":
       fixJob = True
     elif switch[0] == 'Cancel':
       cancel = True
+    elif switch[0] == 'ListJobs':
+      listJobs = True
     elif switch[0] == 'Maximum':
       try:
         maxRequests = int(switch[1])
@@ -174,6 +178,7 @@ if __name__ == "__main__":
     DIRAC.exit(2)
   okRequests = []
   warningPrinted = False
+  jobIDList = []
   for reqID in requests:
     # We allow reqID to be the requestName if it is unique
     try:
@@ -194,6 +199,10 @@ if __name__ == "__main__":
     if not request:
       gLogger.error("no such request %s" % requestID)
       continue
+    # keep a list of jobIDs if requested
+    if request.JobID and listJobs:
+      jobIDList.append(request.JobID)
+
     if status and request.Status != status:
       gLogger.notice("Request %s is not in requested status %s%s" %
                      (reqID, status, ' (cannot be reset)' if reset else ''))
@@ -230,6 +239,10 @@ if __name__ == "__main__":
           gLogger.notice('\n===================================')
         dbStatus = reqClient.getRequestStatus(requestID).get('Value', 'Unknown')
         printRequest(request, status=dbStatus, full=full, verbose=verbose, terse=terse)
+
+  if listJobs:
+    gLogger.notice("List of jobs:\n",
+                   ','.join(str(jobID) for jobID in jobIDList))
 
   if status and okRequests:
     from DIRAC.Core.Utilities.List import breakListIntoChunks
