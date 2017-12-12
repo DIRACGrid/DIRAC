@@ -71,7 +71,7 @@ def filterReplicas(opFile, logger=None, dataManager=None):
       else:
         # There are replicas but we cannot get metadata because the replica is not active
         ret['NoMetadata'] += list(allReplicas)
-      log.warn("File has no%s replica in File Catalog" % ('' if noReplicas else ' active'), opFile.LFN)
+      log.verbose("File has no%s replica in File Catalog" % ('' if noReplicas else ' active'), opFile.LFN)
     else:
       return allReplicas
 
@@ -301,22 +301,22 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
           err = "Couldn't get metadata"
           errors[err] = errors.setdefault(err, 0) + 1
           self.log.verbose(
-              "unable to schedule '%s', couldn't get metadata at %s" %
-              (opFile.LFN, ','.join(noMetaReplicas)))
-          opFile.Error = "Couldn't get metadata"
+              "unable to schedule '%s', %s at %s" %
+              (opFile.LFN, err, ','.join(noMetaReplicas)))
+          opFile.Error = err
         elif noReplicas:
           err = "File doesn't exist"
           errors[err] = errors.setdefault(err, 0) + 1
           self.log.error("Unable to schedule transfer",
-                         "File %s doesn't exist at %s" % (opFile.LFN, ','.join(noReplicas)))
-          opFile.Error = 'No replicas found'
+                         "%s %s at %s" % (opFile.LFN, err, ','.join(noReplicas)))
+          opFile.Error = err
           opFile.Status = 'Failed'
         elif badReplicas:
           err = "All replicas have a bad checksum"
           errors[err] = errors.setdefault(err, 0) + 1
           self.log.error("Unable to schedule transfer",
-                         "File %s, all replicas have a bad checksum at %s" % (opFile.LFN, ','.join(badReplicas)))
-          opFile.Error = 'All replicas have a bad checksum'
+                         "%s, %s at %s" % (opFile.LFN, err, ','.join(badReplicas)))
+          opFile.Error = err
           opFile.Status = 'Failed'
 
     # Log error counts
@@ -403,6 +403,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       self.log.info("Trying transfer using replica manager as FTS failed")
     else:
       self.log.info("Transferring files using Data manager...")
+    errors = {}
     for opFile in waitingFiles:
 
       gMonitor.addMark("ReplicateAndRegisterAtt", 1)
@@ -423,24 +424,32 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       if not validReplicas:
         gMonitor.addMark("ReplicateFail")
         if noMetaReplicas:
-          self.log.warn(
+          err = "Couldn't get metadata"
+          errors[err] = errors.setdefault(err, 0) + 1
+          self.log.verbose(
               "unable to replicate '%s', couldn't get metadata at %s" %
               (opFile.LFN, ','.join(noMetaReplicas)))
-          opFile.Error = "Couldn't get metadata"
+          opFile.Error = err
         elif noReplicas:
-          self.log.error("Unable to replicate", "File %s doesn't exist at %s" % (opFile.LFN, ','.join(noReplicas)))
-          opFile.Error = 'No replicas found'
+          err = "File doesn't exist"
+          errors[err] = errors.setdefault(err, 0) + 1
+          self.log.verbose("Unable to replicate", "File %s doesn't exist at %s" % (opFile.LFN, ','.join(noReplicas)))
+          opFile.Error = err
           opFile.Status = 'Failed'
         elif badReplicas:
+          err = "All replicas have a bad checksum"
+          errors[err] = errors.setdefault(err, 0) + 1
           self.log.error(
               "Unable to replicate", "%s, all replicas have a bad checksum at %s" %
               (opFile.LFN, ','.join(badReplicas)))
-          opFile.Error = 'All replicas have a bad checksum'
+          opFile.Error = err
           opFile.Status = 'Failed'
         continue
       # # get the first one in the list
       if sourceSE not in validReplicas:
         if sourceSE:
+          err = "File not at specified source"
+          errors[err] = errors.setdefault(err, 0) + 1
           self.log.warn("%s is not at specified sourceSE %s, changed to %s" % (lfn, sourceSE, validReplicas[0]))
         sourceSE = validReplicas[0]
 
@@ -508,5 +517,8 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         if len(self.operation.targetSEList) > 1:
           self.log.info("file %s has been replicated to all targetSEs" % lfn)
         opFile.Status = "Done"
+    # Log error counts
+    for error, count in errors.iteritems():
+      self.log.error(error, 'for %d files' % count)
 
     return S_OK()
