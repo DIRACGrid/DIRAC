@@ -96,136 +96,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
     """ tests the doCache method
     """
     self.mock_GOCDBClient.selectDowntimeCache.return_value = {'OK':True, 'Value':{}}
-<<<<<<< HEAD
-    command = DowntimeCommand( self.args, {'ResourceManagementClient':self.mock_GOCDBClient} )
-    self.getStorageElementOptionsMock.return_value = {'OK':True, 'Value': {'TapeSE':True, 'DiskSE': False}}
-    res = command.doCache()
-    self.assertTrue(res['OK'])
-    self.getStorageElementOptionsMock.return_value = {'OK':True, 'Value': {'TapeSE':False, 'DiskSE': True}}
-    res = command.doCache()
-    self.assertTrue(res['OK'])
 
-
-    #CASE01: get ongoing DT from 2 DTs where one ongoing the other in the future
-    now = datetime.utcnow()
-    resFromDB = {'OK':True,
-                 'Value':( ( now - timedelta( hours = 2 ),
-                             '1 aRealName',
-                             'https://blah',
-                             now + timedelta( hours = 3 ),
-                             'aRealName',
-                             now - timedelta( hours = 2 ),
-                             'maintenance',
-                             'OUTAGE',
-                             now,
-                             'Resource' ),
-                           ( now + timedelta( hours = 12 ),
-                             '2 aRealName',
-                             'https://blah',
-                             now + timedelta( hours = 14 ),
-                             'aRealName',
-                             now + timedelta( hours = 12 ),
-                             'maintenance',
-                             'OUTAGE',
-                             now,
-                             'Resource' )
-                         ),
-                 'Columns': ['StartDate','DowntimeID', 'Link','EndDate', 'Name',
-                             'DateEffective', 'Description', 'Severity','LastCheckTime', 'Element']}
-
-    self.mock_GOCDBClient.selectDowntimeCache.return_value = resFromDB
-    command = DowntimeCommand( self.args, {'ResourceManagementClient':self.mock_GOCDBClient} )
-    res = command.doCache()
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value']['DowntimeID'], '1 aRealName' )
-
-    self.mock_GOCDBClient.selectDowntimeCache.return_value = resFromDB
-    self.args.update( {'hours':2} )
-    command = DowntimeCommand( self.args, {'ResourceManagementClient':self.mock_GOCDBClient} )
-    res = command.doCache()
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value']['DowntimeID'], '1 aRealName' )
-
-    #CASE02: get future DT from 2 DTs where one ongoing the other in the future
-    resFromDB = {'OK':True,
-                 'Value':( ( now - timedelta( hours = 12 ),
-                             '1 aRealName',
-                             'https://blah',
-                             now - timedelta( hours = 2 ),
-                             'aRealName',
-                             now - timedelta( hours = 12 ),
-                             'maintenance',
-                             'OUTAGE',
-                             now,
-                             'Resource' ),
-                           ( now + timedelta( hours = 2 ),
-                             '2 aRealName',
-                             'https://blah',
-                             now + timedelta( hours = 14 ),
-                             'aRealName',
-                             now + timedelta( hours = 2 ),
-                             'maintenance',
-                             'OUTAGE',
-                             now,
-                             'Resource' )
-                         ),
-                 'Columns': ['StartDate', 'DowntimeID', 'Link', 'EndDate', 'Name',
-                             'DateEffective', 'Description', 'Severity', 'LastCheckTime', 'Element']}
-
-    self.mock_GOCDBClient.selectDowntimeCache.return_value = resFromDB
-    self.args.update( {'hours':3} )
-    command = DowntimeCommand( self.args, {'ResourceManagementClient':self.mock_GOCDBClient} )
-    res = command.doCache()
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value']['DowntimeID'], '2 aRealName' )
-
-    #CASE03: get DT from 2 overlapping OUTAGE DTs, one ongoing the other starting in the future
-    resFromDB = {'OK':True,
-                 'Value':( ( now - timedelta( hours = 12 ),
-                             '1 aRealName',
-                             'https://blah',
-                             now + timedelta( hours = 2 ),
-                             'aRealName',
-                             now - timedelta( hours = 12 ),
-                             'maintenance',
-                             'OUTAGE',
-                             now,
-                             'Resource' ),
-                           ( now + timedelta( hours = 2 ),
-                             '2 aRealName',
-                             'https://blah',
-                             now + timedelta( hours = 14 ),
-                             'aRealName',
-                             now + timedelta( hours = 2 ),
-                             'maintenance',
-                             'OUTAGE',
-                             now,
-                             'Resource' )
-                         ),
-                 'Columns': ['StartDate', 'DowntimeID', 'Link', 'EndDate', 'Name',
-                             'DateEffective', 'Description', 'Severity', 'LastCheckTime', 'Element']}
-
-    self.mock_GOCDBClient.selectDowntimeCache.return_value = resFromDB
-    self.args.update( {'hours':0} )
-    command = DowntimeCommand( self.args, {'ResourceManagementClient':self.mock_GOCDBClient} )
-    res = command.doCache()
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value']['DowntimeID'], '1 aRealName' )
-
-
-    #CASE04: get DT from 2 ongoing DTs, first OUTAGE the other WARNING
-    resFromDB = {'OK':True,
-                 'Value':( ( now - timedelta( hours = 10 ),
-                             '1 aRealName',
-                             'https://blah',
-                             now + timedelta( hours = 2 ),
-                             'aRealName',
-                             now - timedelta( hours = 12 ),
-                             'maintenance',
-                             'OUTAGE',
-                             now,
-                             'Resource' ),
-=======
     with mock.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.StorageElement", new=mock.MagicMock()):
       command = DowntimeCommand(
           self.args, {'ResourceManagementClient': self.mock_GOCDBClient})
@@ -356,7 +227,6 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
                               'OUTAGE',
                               now,
                               'Resource'),
->>>>>>> rel-v6r19
                              ( now - timedelta( hours = 12 ),
                                '2 aRealName',
                                'https://blah',
@@ -367,33 +237,6 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
                                'WARNING',
                                now,
                                'Resource' )
-<<<<<<< HEAD
-                          ),
-                 'Columns': ['StartDate', 'DowntimeID', 'Link', 'EndDate', 'Name',
-                             'DateEffective', 'Description', 'Severity', 'LastCheckTime', 'Element']
-
-                 }
-
-    self.mock_GOCDBClient.selectDowntimeCache.return_value = resFromDB
-    self.args.update( {'hours':0} )
-    command = DowntimeCommand( self.args, {'ResourceManagementClient':self.mock_GOCDBClient} )
-    res = command.doCache()
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value']['DowntimeID'], '1 aRealName' )
-
-    #CASE05: get DT from 2 overlapping future DTs, the first WARNING the other OUTAGE
-    resFromDB = {'OK':True,
-                 'Value':( ( now + timedelta( hours = 8 ),
-                             '1 aRealName',
-                             'https://blah',
-                             now + timedelta( hours = 12 ),
-                             'aRealName',
-                             now + timedelta( hours = 8 ),
-                             'maintenance',
-                             'WARNING',
-                             now,
-                             'Resource' ),
-=======
                              ),
                    'Columns': ['StartDate', 'DowntimeID', 'Link', 'EndDate', 'Name',
                                'DateEffective', 'Description', 'Severity', 'LastCheckTime', 'Element']
@@ -419,7 +262,6 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
                               'WARNING',
                               now,
                               'Resource'),
->>>>>>> rel-v6r19
                              ( now + timedelta( hours = 9 ),
                                '2 aRealName',
                                'https://blah',
@@ -430,20 +272,6 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
                                'OUTAGE',
                                now,
                                'Resource' )
-<<<<<<< HEAD
-                          ),
-                 'Columns': ['StartDate', 'DowntimeID', 'Link', 'EndDate', 'Name',
-                             'DateEffective', 'Description', 'Severity', 'LastCheckTime', 'Element']
-
-                 }
-
-    self.mock_GOCDBClient.selectDowntimeCache.return_value = resFromDB
-    self.args.update( {'hours':10} )
-    command = DowntimeCommand( self.args, {'ResourceManagementClient':self.mock_GOCDBClient} )
-    res = command.doCache()
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value']['DowntimeID'], '2 aRealName' )
-=======
                              ),
                    'Columns': ['StartDate', 'DowntimeID', 'Link', 'EndDate', 'Name',
                                'DateEffective', 'Description', 'Severity', 'LastCheckTime', 'Element']
@@ -456,7 +284,6 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
       res = command.doCache()
       self.assert_(res['OK'])
       self.assertEqual(res['Value']['DowntimeID'], '2 aRealName')
->>>>>>> rel-v6r19
 
 
 # FIXME: rest to be reviewed: doNew
