@@ -105,6 +105,10 @@ def getFreeDiskSpace( ignoreMaxStorageSize = True ):
 
       :return: S_OK/S_ERROR, Value is the free space of the SE storage in MB
   """
+
+  global MAX_STORAGE_SIZE
+  global BASE_PATH
+
   result = getDiskSpace(BASE_PATH, 'MB')
   if not result['OK']:
     return result
