@@ -45,7 +45,7 @@ def filterReplicas(opFile, logger=None, dataManager=None):
     dataManager = DataManager()
 
   log = logger.getSubLogger("filterReplicas")
-  ret = {"Valid": [], "NoMetadata": [], "Bad": [], 'NoReplicas': [], 'NoPFN': []}
+  ret = {"Valid": [], "NoMetadata": [], "Bad": [], 'NoReplicas': []}
 
   replicas = dataManager.getActiveReplicas(opFile.LFN, getUrl=False)
   if not replicas["OK"]:
@@ -273,6 +273,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
     toSchedule = {}
 
+    errors = {}
     for opFile in self.getWaitingFilesList():
       opFile.Error = ''
       gMonitor.addMark("FTSScheduleAtt")
@@ -286,7 +287,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       noMetaReplicas = replicas["NoMetadata"]
       noReplicas = replicas['NoReplicas']
       badReplicas = replicas['Bad']
-      noPFN = replicas['NoPFN']
 
       if validReplicas:
         validTargets = list(set(self.operation.targetSEList) - set(validReplicas))
@@ -298,20 +298,30 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       else:
         gMonitor.addMark("FTSScheduleFail")
         if noMetaReplicas:
-          self.log.warn("unable to schedule '%s', couldn't get metadata at %s" % (opFile.LFN, ','.join(noMetaReplicas)))
+          err = "Couldn't get metadata"
+          errors[err] = errors.setdefault(err, 0) + 1
+          self.log.verbose(
+              "unable to schedule '%s', couldn't get metadata at %s" %
+              (opFile.LFN, ','.join(noMetaReplicas)))
           opFile.Error = "Couldn't get metadata"
         elif noReplicas:
+          err = "File doesn't exist"
+          errors[err] = errors.setdefault(err, 0) + 1
           self.log.error("Unable to schedule transfer",
                          "File %s doesn't exist at %s" % (opFile.LFN, ','.join(noReplicas)))
           opFile.Error = 'No replicas found'
           opFile.Status = 'Failed'
         elif badReplicas:
+          err = "All replicas have a bad checksum"
+          errors[err] = errors.setdefault(err, 0) + 1
           self.log.error("Unable to schedule transfer",
                          "File %s, all replicas have a bad checksum at %s" % (opFile.LFN, ','.join(badReplicas)))
           opFile.Error = 'All replicas have a bad checksum'
           opFile.Status = 'Failed'
-        elif noPFN:
-          self.log.warn("unable to schedule %s, could not get a PFN at %s" % (opFile.LFN, ','.join(noPFN)))
+
+    # Log error counts
+    for error, count in errors.iteritems():
+      self.log.error(error, 'for %d files' % count)
 
     res = self._addMetadataToFiles(toSchedule)
     if not res['OK']:
@@ -409,7 +419,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       noMetaReplicas = replicas["NoMetadata"]
       noReplicas = replicas['NoReplicas']
       badReplicas = replicas['Bad']
-      noPFN = replicas['NoPFN']
 
       if not validReplicas:
         gMonitor.addMark("ReplicateFail")
@@ -428,8 +437,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
               (opFile.LFN, ','.join(badReplicas)))
           opFile.Error = 'All replicas have a bad checksum'
           opFile.Status = 'Failed'
-        elif noPFN:
-          self.log.warn("unable to replicate %s, could not get a PFN" % opFile.LFN)
         continue
       # # get the first one in the list
       if sourceSE not in validReplicas:
