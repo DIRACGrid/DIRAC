@@ -221,7 +221,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     if toSchedule:
       self.log.info("found %s files to schedule, getting metadata from FC" % len(toSchedule))
     else:
-      self.log.info("No files to schedule")
+      self.log.verbose("No files to schedule")
       return S_OK()
 
     res = self.fc.getFileMetadata(toSchedule.keys())
@@ -405,6 +405,16 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       self.log.info("Transferring files using Data manager...")
     errors = {}
     for opFile in waitingFiles:
+      if opFile.Status == 'Failed':
+        err = "File already Failed"
+        errors[err] = errors.setdefault(err, 0) + 1
+        continue
+      if opFile.Error in ("Couldn't get metadata",
+                          "File doesn't exist",
+                          "All replicas have a bad checksum",):
+        err = "File already in error status"
+        errors[err] = errors.setdefault(err, 0) + 1
+        continue
 
       gMonitor.addMark("ReplicateAndRegisterAtt", 1)
       opFile.Error = ''
