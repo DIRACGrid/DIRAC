@@ -5,12 +5,13 @@
 
 """
 
-from DIRAC                                              import S_OK
-from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
-
 __RCSID__ = '$Id$'
 
-class SpaceTokenOccupancyPolicy( PolicyBase ):
+from DIRAC import S_OK
+from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
+
+
+class SpaceTokenOccupancyPolicy(PolicyBase):
   """
   The SpaceTokenOccupancyPolicy class is a policy class satisfied when a SE has a
   low occupancy.
@@ -19,7 +20,7 @@ class SpaceTokenOccupancyPolicy( PolicyBase ):
   """
 
   @staticmethod
-  def _evaluate( commandResult ):
+  def _evaluate(commandResult):
     """
     Evaluate policy on SE occupancy: Use SpaceTokenOccupancyCommand
 
@@ -37,42 +38,41 @@ class SpaceTokenOccupancyPolicy( PolicyBase ):
 
     result = {}
 
-    if not commandResult[ 'OK' ]:
-      result[ 'Status' ] = 'Error'
-      result[ 'Reason' ] = commandResult[ 'Message' ]
-      return S_OK( result )
+    if not commandResult['OK']:
+      result['Status'] = 'Error'
+      result['Reason'] = commandResult['Message']
+      return S_OK(result)
 
-    commandResult = commandResult[ 'Value' ]
+    commandResult = commandResult['Value']
 
     if not commandResult:
-      result[ 'Status' ] = 'Unknown'
-      result[ 'Reason' ] = 'No values to take a decision'
-      return S_OK( result )
+      result['Status'] = 'Unknown'
+      result['Reason'] = 'No values to take a decision'
+      return S_OK(result)
 
-    commandResult = commandResult[ 0 ]
+    commandResult = commandResult[0]
 
-    for key in [ 'Total', 'Free', 'Guaranteed' ]:
+    for key in ['Total', 'Free', 'Guaranteed']:
 
       if key not in commandResult.keys():
-        result[ 'Status' ] = 'Error'
-        result[ 'Reason' ] = 'Key %s missing' % key.lower()
-        return S_OK( result )
+        result['Status'] = 'Error'
+        result['Reason'] = 'Key %s missing' % key.lower()
+        return S_OK(result)
 
-    free = float( commandResult[ 'Free' ] )
+    free = float(commandResult['Free'])
 
     # Units are TB ! ( 0.01 == 10 GB )
     if free < 0.1:
-      result[ 'Status' ] = 'Banned'
-      result[ 'Reason' ] = 'Free space < 100GB'
+      result['Status'] = 'Banned'
+      result['Reason'] = 'Free space < 100GB'
     elif free < 5:
-      result[ 'Status' ] = 'Degraded'
-      result[ 'Reason' ] = 'Free space < 5TB'
+      result['Status'] = 'Degraded'
+      result['Reason'] = 'Free space < 5TB'
     else:
-      result[ 'Status' ] = 'Active'
-      result[ 'Reason' ] = 'Free space > 5TB'
+      result['Status'] = 'Active'
+      result['Reason'] = 'Free space > 5TB'
 
-    return S_OK( result )
+    return S_OK(result)
 
 #...............................................................................
 #EOF
-
