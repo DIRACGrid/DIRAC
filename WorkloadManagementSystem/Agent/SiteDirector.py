@@ -84,6 +84,7 @@ class SiteDirector( AgentModule ):
     self.pilotGroup = ''
     self.platforms = []
     self.sites = []
+    self.defaultSubmitPools = ''
     self.totalSubmittedPilots = 0
 
     self.proxy = None
@@ -98,6 +99,8 @@ class SiteDirector( AgentModule ):
 
     self.globalParameters = { "NumberOfProcessors": 1,
                               "MaxRAM": 2048 }
+
+    self.pilotLogLevel = 'INFO'
 
   def initialize( self ):
     """ Initial settings
@@ -151,7 +154,7 @@ class SiteDirector( AgentModule ):
     self.extraModules = self.am_getOption( 'ExtraPilotModules', [] ) + DIRAC_MODULES
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
-    self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', 'INFO' )
+    self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', self.pilotLogLevel )
     self.maxJobsInFillMode = self.am_getOption( 'MaxJobsInFillMode', self.maxJobsInFillMode )
     self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', self.maxPilotsToSubmit )
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
@@ -817,6 +820,7 @@ class SiteDirector( AgentModule ):
     return S_OK( [ executable, pilotsToSubmit ] )
 
 #####################################################################################
+
   def _getPilotOptions( self, queue, pilotsToSubmit ):
     """ Prepare pilot options
     """
