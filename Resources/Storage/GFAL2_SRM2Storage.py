@@ -47,6 +47,16 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     self.__setSRMOptionsToDefault()
 
 
+    # This lists contains the list of protocols to ask to SRM to get a URL
+    # It can be either defined in the plugin of the SE, or as a global option
+    if 'ProtocolsList' in parameters:
+      self.protocolsList = parameters['ProtocolsList'].split(',')
+    else:
+      self.log.debug( "GFAL2_SRM2Storage: No protocols provided, using the default protocols." )
+      self.protocolsList = self.defaultLocalProtocols
+      self.log.debug( 'GFAL2_SRM2Storage: protocolsList = %s' % self.protocolsList )
+
+
 
   def __setSRMOptionsToDefault( self ):
     ''' Resetting the SRM options back to default
@@ -76,6 +86,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     metadataDict['Unavailable'] = int( user_status == 'UNAVAILABLE' )
     metadataDict['Accessible'] = not metadataDict['Lost'] and metadataDict['Cached'] and not metadataDict['Unavailable']
 
+
   def getTransportURL( self, path, protocols = False ):
     """ obtain the tURLs for the supplied path and protocols
 
@@ -96,10 +107,9 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     failed = {}
     successful = {}
     if not protocols:
-      protocols = self.__getProtocols()
-      if not protocols['OK']:
-        return protocols
-      listProtocols = protocols['Value']
+      listProtocols = self.protocolsList
+      if not listProtocols:
+        return S_ERROR( "GFAL2_SRM2Storage.getTransportURL: No local protocols defined and no defaults found." )
     elif isinstance( protocols, basestring ):
       listProtocols = [protocols]
     elif isinstance( protocols, list ):
@@ -115,15 +125,6 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       listProtocols.insert( listProtocols.index( 'xroot' ) + 1, 'root' )
 
 
-    # Compatibility because of castor returning a castor: url if you ask
-    # for a root URL, and a root: url if you ask for a xroot url...
-    if 'root' in listProtocols and 'xroot' not in listProtocols:
-      listProtocols.insert( listProtocols.index( 'root' ), 'xroot' )
-    elif 'xroot' in listProtocols and 'root' not in listProtocols:
-      listProtocols.insert( listProtocols.index( 'xroot' ) + 1, 'root' )
-
-    # I doubt this can happen... 'srm' is not in the listProtocols,
-    # it is normally, gsiftp, root, etc
     if self.protocolParameters['Protocol'] in listProtocols:
       successful = {}
       failed = {}
@@ -170,38 +171,3 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       errStr = 'GFAL2_SRM2Storage.__getSingleTransportURL: Extended attribute tURL is not set.'
       self.log.debug( errStr, res['Message'] )
       return res
-
-
-
-  def __getProtocols( self ):
-    """ returns list of protocols to use at a given site
-
-    :warn: priority is given to a protocols list defined in the CS
-
-    :param self: self reference
-    """
-    sections = gConfig.getSections( '/Resources/StorageElements/%s/' % ( self.name ) )
-    self.log.debug( "GFAL2_SRM2Storage.__getProtocols: Trying to get protocols for storage %s." % self.name )
-    if not sections['OK']:
-      return sections
-
-    protocolsList = []
-    for section in sections['Value']:
-      path = '/Resources/StorageElements/%s/%s/PluginName' % ( self.name, section )
-      if gConfig.getValue( path, '' ) == self.pluginName:
-        protPath = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( self.name, section )
-        siteProtocols = gConfig.getValue( protPath, [] )
-        if siteProtocols:
-          self.log.debug( 'GFAL2_SRM2Storage.__getProtocols: Found SE protocols list to override defaults:', ', '.join( siteProtocols, ) )
-          protocolsList = siteProtocols
-
-    if not protocolsList:
-      self.log.debug( "GFAL2_SRM2Storage.__getProtocols: No protocols provided, using the default protocols." )
-      protocolsList = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
-      self.log.debug( 'GFAL2_SRM2Storage.__getProtocols: protocolList = %s' % protocolsList )
-
-    # if there is even no default protocol
-    if not protocolsList:
-      return S_ERROR( "GFAL2_SRM2Storage.__getProtocols: No local protocols defined and no defaults found." )
-
-    return S_OK( protocolsList )
