@@ -54,17 +54,10 @@ class ModuleBase( object ):
     self.executable = ''
     self.command = None
 
-<<<<<<< HEAD
     self.workflowStatus = {}
     self.stepStatus = {}
     self.workflow_commons = {}
     self.step_commons = {}
-=======
-    self.workflowStatus = None
-    self.stepStatus = None
-    self.workflow_commons = {}
-    self.step_commons = None
->>>>>>> rel-v6r19
 
     self.applicationName = ''
     self.applicationVersion = ''
