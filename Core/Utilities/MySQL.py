@@ -322,7 +322,12 @@ class MySQL( object ):
         if len( self.__spares ) < self.__maxSpares:
           self.__spares.append( ( data[0], data[1] ) )
         else:
-          data[ 0 ].close()
+          try:
+            data[0].close()
+          except MySQLdb.ProgrammingError:
+            pass
+          except Exception:
+            pass
       except KeyError:
         pass
 
