@@ -426,14 +426,14 @@ class SiteDirector( AgentModule ):
 
       # Check the status of the site
       if not siteMask and siteName not in testSites:
-	self.log.verbose(
-	    "Skipping queue %s: site %s not in the mask" % (queueName, siteName))
+        self.log.verbose(
+           "Skipping queue %s: site %s not in the mask" % (queueName, siteName))
         continue
 
       # Check that there are task queues waiting for this site
       if not anySite and siteName not in jobSites:
-	self.log.verbose(
-	    "Skipping queue %s at %s: no workload expected" % (queueName, siteName))
+        self.log.verbose(
+            "Skipping queue %s at %s: no workload expected" % (queueName, siteName))
         continue
 
       # Check the status of the CE (only for RSS=Active)
@@ -552,24 +552,24 @@ class SiteDirector( AgentModule ):
       pilotsToSubmit = min( self.maxPilotsToSubmit, pilotsToSubmit )
 
       while pilotsToSubmit > 0:
-	res = self._submitPilotsToQueue(
-	    pilotsToSubmit, ce, queue, taskQueueDict)
-	if not res['OK']:
-	  continue
-	pilotsToSubmit = res['Value']
+        res = self._submitPilotsToQueue(
+            pilotsToSubmit, ce, queue, taskQueueDict)
+        if not res['OK']:
+          continue
+        pilotsToSubmit = res['Value']
 
     self.log.info("%d pilots submitted in total in this cycle, %d matched queues"
-		  % (self.totalSubmittedPilots, matchedQueues))
+                  % (self.totalSubmittedPilots, matchedQueues))
     return S_OK()
 
   def _ifAndWhereToSubmit(self):
     """ Return a tuple that says if and where to submit pilots:
 
-	(submit, anySite, jobSites, testSites)
-	e.g.
-	(True, False, {'Site1', 'Site2'}, {'Test1', 'Test2'})
+        (submit, anySite, jobSites, testSites)
+        e.g.
+        (True, False, {'Site1', 'Site2'}, {'Test1', 'Test2'})
 
-	VOs may want to replace this method with different strategies
+        VOs may want to replace this method with different strategies
     """
 
     submit = False
@@ -580,8 +580,8 @@ class SiteDirector( AgentModule ):
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
     tqDict = {'Setup': setup,
-	      'CPUTime': 9999999,
-	      'SubmitPool': self.defaultSubmitPools}
+              'CPUTime': 9999999,
+              'SubmitPool': self.defaultSubmitPools}
     if self.vo:
       tqDict['Community'] = self.vo
     if self.voGroups:
@@ -609,35 +609,35 @@ class SiteDirector( AgentModule ):
       return result
     if not result['Value']:
       self.log.notice(
-	  'No Waiting jobs suitable for the director, so nothing to submit')
+          'No Waiting jobs suitable for the director, so nothing to submit')
       return submit, anySite, jobSites, testSites
 
     totalWaitingJobs = 0
     for tqID in result['Value']:
       if "Sites" in result['Value'][tqID]:
-	for site in result['Value'][tqID]['Sites']:
-	  if site.lower() != 'any':
-	    jobSites.add(site)
-	  else:
-	    anySite = True
+        for site in result['Value'][tqID]['Sites']:
+          if site.lower() != 'any':
+            jobSites.add(site)
+          else:
+            anySite = True
       else:
-	anySite = True
+        anySite = True
       if "JobTypes" in result['Value'][tqID]:
-	if "Sites" in result['Value'][tqID]:
-	  for site in result['Value'][tqID]['Sites']:
-	    if site.lower() != 'any':
-	      testSites.add(site)
+        if "Sites" in result['Value'][tqID]:
+          for site in result['Value'][tqID]['Sites']:
+            if site.lower() != 'any':
+              testSites.add(site)
       totalWaitingJobs += result['Value'][tqID]['Jobs']
 
     tqIDList = result['Value'].keys()
     result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
-					'Status': WAITING_PILOT_STATUS},
-				       None)
+                                        'Status': WAITING_PILOT_STATUS},
+                                       None)
     totalWaitingPilots = 0
     if result['OK']:
       totalWaitingPilots = result['Value']
     self.log.info('Total %d jobs in %d task queues with %d waiting pilots'
-		  % (totalWaitingJobs, len(tqIDList), totalWaitingPilots))
+                  % (totalWaitingJobs, len(tqIDList), totalWaitingPilots))
 
     submit = True
 
@@ -647,18 +647,18 @@ class SiteDirector( AgentModule ):
     """ Method that really submits the pilots to the ComputingElements' queue
     """
     self.log.info('Going to submit %d pilots to %s queue' %
-		  (pilotsToSubmit, queue))
+                  (pilotsToSubmit, queue))
 
     bundleProxy = self.queueDict[queue].get('BundleProxy', False)
     jobExecDir = ''
     jobExecDir = self.queueDict[queue]['ParametersDict'].get(
-	'JobExecDir', jobExecDir)
+        'JobExecDir', jobExecDir)
     httpProxy = self.queueDict[queue]['ParametersDict'].get('HttpProxy', '')
 
     result = self.getExecutable(queue, pilotsToSubmit,
-				bundleProxy=bundleProxy,
-				httpProxy=httpProxy,
-				jobExecDir=jobExecDir)
+                                bundleProxy=bundleProxy,
+                                httpProxy=httpProxy,
+                                jobExecDir=jobExecDir)
     if not result['OK']:
       return result
     executable, pilotSubmissionChunk = result['Value']
@@ -668,11 +668,11 @@ class SiteDirector( AgentModule ):
     ### delay, so when we unlink here the script is gone
     ### FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
     if not (self.queueDict[queue]['CEType'] == 'HTCondorCE'
-	    or (self.queueDict[queue]['CEType'] == 'Local' and ce.batchSystem == 'Condor')):
+            or (self.queueDict[queue]['CEType'] == 'Local' and ce.batchSystem == 'Condor')):
       os.unlink(executable)
     if not submitResult['OK']:
       self.log.error('Failed submission to queue %s:\n' %
-		     queue, submitResult['Message'])
+                     queue, submitResult['Message'])
       pilotsToSubmit = 0
       self.failedQueues[queue] += 1
       return submitResult
@@ -684,8 +684,8 @@ class SiteDirector( AgentModule ):
     self.queueSlots[queue]['AvailableSlots'] -= len(pilotList)
     self.totalSubmittedPilots += len(pilotList)
     self.log.info('Submitted %d pilots to %s@%s' % (len(pilotList),
-						    self.queueDict[queue]['QueueName'],
-						    self.queueDict[queue]['CEName']))
+                                                    self.queueDict[queue]['QueueName'],
+                                                    self.queueDict[queue]['CEName']))
     stampDict = result.get('PilotStampDict', {})
     tqPriorityList = []
     sumPriority = 0.
@@ -696,36 +696,36 @@ class SiteDirector( AgentModule ):
     for pilotID in pilotList:
       rndm = random.random() * sumPriority
       for tq, prio in tqPriorityList:
-	if rndm < prio:
-	  tqID = tq
-	  break
+        if rndm < prio:
+          tqID = tq
+          break
       if tqID not in tqDict:
-	tqDict[tqID] = []
+        tqDict[tqID] = []
       tqDict[tqID].append(pilotID)
 
     for tqID, pilotList in tqDict.items():
       result = pilotAgentsDB.addPilotTQReference(pilotList,
-						 tqID,
-						 self.pilotDN,
-						 self.pilotGroup,
-						 self.localhost,
-						 self.queueDict[queue]['CEType'],
-						 '',
-						 stampDict)
+                                                 tqID,
+                                                 self.pilotDN,
+                                                 self.pilotGroup,
+                                                 self.localhost,
+                                                 self.queueDict[queue]['CEType'],
+                                                 '',
+                                                 stampDict)
       if not result['OK']:
-	self.log.error(
-	    'Failed add pilots to the PilotAgentsDB: ', result['Message'])
-	continue
+        self.log.error(
+            'Failed add pilots to the PilotAgentsDB: ', result['Message'])
+        continue
       for pilot in pilotList:
-	result = pilotAgentsDB.setPilotStatus(pilot,
-					      'Submitted',
-					      self.queueDict[queue]['CEName'],
-					      'Successfully submitted by the SiteDirector',
-					      self.queueDict[queue]['Site'],
-					      self.queueDict[queue]['QueueName'])
-	if not result['OK']:
-	  self.log.error('Failed to set pilot status: ', result['Message'])
-	  continue
+        result = pilotAgentsDB.setPilotStatus(pilot,
+                                              'Submitted',
+                                              self.queueDict[queue]['CEName'],
+                                              'Successfully submitted by the SiteDirector',
+                                              self.queueDict[queue]['Site'],
+                                              self.queueDict[queue]['QueueName'])
+        if not result['OK']:
+          self.log.error('Failed to set pilot status: ', result['Message'])
+          continue
 
     return S_OK(pilotsToSubmit)
 
