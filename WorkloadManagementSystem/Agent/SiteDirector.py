@@ -102,6 +102,7 @@ class SiteDirector( AgentModule ):
                               "MaxRAM": 2048 }
 
     self.pilotLogLevel = 'INFO'
+    self.rpcMatcher = None
 
   def initialize( self ):
     """ Initial settings
@@ -637,6 +638,8 @@ class SiteDirector( AgentModule ):
       totalWaitingPilots = result['Value']
     self.log.info('Total %d jobs in %d task queues with %d waiting pilots'
 		  % (totalWaitingJobs, len(tqIDList), totalWaitingPilots))
+
+    submit = True
 
     return submit, anySite, jobSites, testSites
 

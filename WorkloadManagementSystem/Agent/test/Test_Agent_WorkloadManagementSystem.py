@@ -28,6 +28,12 @@ mockPM.requestToken.return_value = {'OK':True, 'Value': ('token', 1)}
 mockPMReply = MagicMock()
 mockPMReply.return_value = {'OK':True, 'Value': ('token', 1)}
 
+mockCSGlobalReply = MagicMock()
+mockCSGlobalReply.return_value = 'TestSetup'
+mockResourcesReply = MagicMock()
+mockResourcesReply.return_value = {'OK':True, 'Value': ['x86_64-slc6','x86_64-slc5']}
+
+
 
 gLogger.setLevel('DEBUG')
 
@@ -68,8 +74,8 @@ class SiteDirectorBaseSuccess( AgentsTestCase ):
 
 
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect = mockGCReply)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Operations", side_effect = mockOPS)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gProxyManager.requestToken", side_effect =mockPMReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect = mockCSGlobalReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Resources.getCompatiblePlatforms", side_effect = mockResourcesReply)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect = mockAM)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__", new = mockAM)
   def test__ifAndWhereToSubmit( self, _patch1, _patch2, _patch3, _patch4 ):
@@ -77,7 +83,9 @@ class SiteDirectorBaseSuccess( AgentsTestCase ):
     sd.log = gLogger
     sd.am_getOption = mockAM
     sd.log.setLevel( 'DEBUG' )
-    res = sd._ifAndWhereToSubmit()
+    sd.rpcMatcher = MagicMock()
+    submit, _anySite, _jobSites, _testSites = sd._ifAndWhereToSubmit()
+    self.assertTrue(submit)
 
 #############################################################################
 # Test Suite run
