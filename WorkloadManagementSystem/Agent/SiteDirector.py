@@ -100,6 +100,7 @@ class SiteDirector( AgentModule ):
 
     self.globalParameters = { "NumberOfProcessors": 1,
                               "MaxRAM": 2048 }
+    self.failedQueueCycleFactor = 10
 
     self.pilotLogLevel = 'INFO'
     self.rpcMatcher = None
@@ -161,7 +162,7 @@ class SiteDirector( AgentModule ):
     self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', self.maxPilotsToSubmit )
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
     self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 3600 )
-    self.failedQueueCycleFactor = self.am_getOption( 'FailedQueueCycleFactor', 10 )
+    self.failedQueueCycleFactor = self.am_getOption('FailedQueueCycleFactor', self.failedQueueCycleFactor)
     self.pilotStatusUpdateCycleFactor = self.am_getOption( 'PilotStatusUpdateCycleFactor', 10 )
     self.addPilotsToEmptySites = self.am_getOption( 'AddPilotsToEmptySites', False )
 
@@ -611,6 +612,8 @@ class SiteDirector( AgentModule ):
 
   def _allowedToSubmit(self, queue, siteMask, anySite, jobSites, testSites):
     """ Check if we are allowed to submit to a certain queue
+
+        :return: True/False
     """
 
     # Check if the queue failed previously
@@ -655,6 +658,15 @@ class SiteDirector( AgentModule ):
 
   def _submitPilotsToQueue(self, pilotsToSubmit, ce, queue, taskQueueDict):
     """ Method that really submits the pilots to the ComputingElements' queue
+
+       :param pilotsToSubmit: number of pilots to submit
+       :type pilotsToSubmit: int
+       :param ce: computing element object to where we submit
+       :type ce: ComputingElement
+       :param queue: queue where to submit
+       :type queue: basestring
+       :param taskQueueDict: dictionary of taskQueues
+       :type taskQueueDict: dict
     """
     self.log.info('Going to submit %d pilots to %s queue' %
                   (pilotsToSubmit, queue))

@@ -71,7 +71,7 @@ class SiteDirectorBaseSuccess( AgentsTestCase ):
                             '-e 1,2,3', '-T 12345', '-N aCE', '-Q aQueue', '-n LCG.CERN.cern'],
                            1])
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect= mockGCReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Resources.getCompatiblePlatforms", side_effect=mockResourcesReply)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
@@ -84,6 +84,55 @@ class SiteDirectorBaseSuccess( AgentsTestCase ):
     sd.rpcMatcher = MagicMock()
     submit, _anySite, _jobSites, _testSites = sd._ifAndWhereToSubmit()
     self.assertTrue(submit)
+
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Resources.getCompatiblePlatforms", side_effect=mockResourcesReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__", new=mockAM)
+  def test__allowedToSubmit(self, _patch1, _patch2, _patch3, _patch4):
+    sd = SiteDirector()
+    sd.log = gLogger
+    sd.am_getOption = mockAM
+    sd.log.setLevel('DEBUG')
+    sd.rpcMatcher = MagicMock()
+    sd.rssClient = MagicMock()
+    sd.queueDict = {'aQueue': {'Site': 'LCG.CERN.cern',
+                               'CEName': 'aCE',
+                               'QueueName': 'aQueue',
+                               'ParametersDict': {'CPUTime': 12345,
+                                                  'Community': 'lhcb',
+                                                  'OwnerGroup': ['lhcb_user'],
+                                                  'Setup': 'LHCb-Production',
+                                                  'Site': 'LCG.CERN.cern',
+                                                  'SubmitPool': ''}}}
+    submit = sd._allowedToSubmit('aQueue', True, False, set(['LCG.CERN.cern']), set())
+    self.assertTrue(submit)
+
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Resources.getCompatiblePlatforms", side_effect=mockResourcesReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__", new=mockAM)
+  def test__submitPilotsToQueue(self, _patch1, _patch2, _patch3, _patch4):
+    sd = SiteDirector()
+    sd.log = gLogger
+    sd.am_getOption = mockAM
+    sd.log.setLevel('DEBUG')
+    sd.rpcMatcher = MagicMock()
+    sd.rssClient = MagicMock()
+    sd.queueDict = {'aQueue': {'Site': 'LCG.CERN.cern',
+                               'CEName': 'aCE',
+                               'QueueName': 'aQueue',
+                               'ParametersDict': {'CPUTime': 12345,
+                                                  'Community': 'lhcb',
+                                                  'OwnerGroup': ['lhcb_user'],
+                                                  'Setup': 'LHCb-Production',
+                                                  'Site': 'LCG.CERN.cern',
+                                                  'SubmitPool': ''}}}
+    res = sd._submitPilotsToQueue(1, MagicMock(), 'aQueue', sd.queueDict)
+    self.assertFalse(res['OK'])
+    #FIXME: provide more tests here
 
 #############################################################################
 # Test Suite run
