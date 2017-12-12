@@ -81,6 +81,46 @@ def getDiskSpace(path, size = 'TB', total = False):
 
   return S_OK( round(result, 4) )
 
+def getTotalDiskSpace():
+  """  Returns the total maximum volume of the SE storage in MB. The total volume
+       can be limited either by the amount of the available disk space or by the
+       MAX_STORAGE_SIZE value.
+
+       :return: S_OK/S_ERROR, Value is the max total volume of the SE storage in MB
+  """
+
+  global BASE_PATH
+  global MAX_STORAGE_SIZE
+
+  result = getDiskSpace(BASE_PATH, size = 'MB', total = True)
+  if not result['OK']:
+    return result
+  totalSpace = result['Value']
+  maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
+  return S_OK(maxTotalSpace)
+
+def getFreeDiskSpace( ignoreMaxStorageSize = True ):
+  """ Returns the free disk space still available for writing taking into account
+      the total available disk space and the MAX_STORAGE_SIZE limitation
+
+      :return: S_OK/S_ERROR, Value is the free space of the SE storage in MB
+  """
+  result = getDiskSpace(BASE_PATH, 'MB')
+  if not result['OK']:
+    return result
+  freeSpace = result['Value']
+  result = getTotalDiskSpace()
+  if not result['OK']:
+    return result
+  totalSpace = result['Value']
+  if ignoreMaxStorageSize:
+    maxTotalSpace = totalSpace
+  else:
+    maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
+  occupiedSpace = totalSpace - freeSpace
+  freeSpace = maxTotalSpace - occupiedSpace
+  return S_OK(freeSpace)
+
 def initializeStorageElementHandler( serviceInfo ):
   """  Initialize Storage Element global settings
   """
@@ -117,13 +157,30 @@ class StorageElementHandler( RequestHandler ):
     return True
 
   @staticmethod
-  def __checkForDiskSpace( dpath, size ):
-    """ Check if the directory dpath can accommodate 'size' volume of data
+  def __checkForDiskSpace(size):
+    """ Check if the StorageElement can accommodate 'size' volume of data
+
+        :param int size: size of a new file to store in the StorageElement
+        :return: S_OK/S_ERROR, Value is boolean flag True if enough space is available
     """
-    stats = os.statvfs( dpath )
-    dsize = stats.f_bsize * stats.f_bavail
-    maxStorageSizeBytes = MAX_STORAGE_SIZE * 1024 * 1024
-    return min( dsize, maxStorageSizeBytes ) > size
+    result = getFreeDiskSpace(ignoreMaxStorageSize = False)
+    if not result['OK']:
+      return result
+    freeSpace = result['Value']
+    spaceFlag = freeSpace * 1024 * 1024 > size
+    if spaceFlag:
+      return S_OK(spaceFlag)
+
+    # We do not have enough space taking into account MAX_STORAGE_SIZE limit
+    # check if the total disk space is enough however
+    result = getFreeDiskSpace(ignoreMaxStorageSize = True)
+    if not result['OK']:
+      return result
+    freeSpace = result['Value']
+    spaceFlag = freeSpace * 1024 * 1024 > size
+    if spaceFlag:
+      gLogger.warn('Space limited by MAX_STORAGE_SIZE is not enough to store file')
+    return S_OK(spaceFlag)
 
   def __resolveFileID( self, fileID ):
     """ get path to file for a given :fileID: """
@@ -196,7 +253,7 @@ class StorageElementHandler( RequestHandler ):
 
   types_exists = [basestring]
   def export_exists( self, fileID ):
-    """ Check existance of the fileID """
+    """ Check existence of the fileID """
     if os.path.exists( self.__resolveFileID( fileID ) ):
       return S_OK( True )
     return S_OK( False )
@@ -207,19 +264,23 @@ class StorageElementHandler( RequestHandler ):
     """
     return self.__getFileStat( self.__resolveFileID( fileID ) )
 
-  types_getFreeDiskSpace = [basestring]
-  def export_getFreeDiskSpace( self, path, size = 'TB' ):
+  types_getFreeDiskSpace = []
+  @staticmethod
+  def export_getFreeDiskSpace():
     """ Get the free disk space of the storage element
-        If no size is specified, terabytes will be used by default.
-    """
-    return getDiskSpace(path, size)
 
-  types_getTotalDiskSpace = [basestring]
-  def export_getTotalDiskSpace( self, path, size = 'TB' ):
-    """ Get the total disk space of the storage element
-        If no size is specified, terabytes will be used by default.
+        :return: S_OK/S_ERROR, Value is the free space on the SE storage in MB
     """
-    return getDiskSpace(path, size, total = True)
+    return getFreeDiskSpace()
+
+  types_getTotalDiskSpace = []
+  @staticmethod
+  def export_getTotalDiskSpace():
+    """ Get the total disk space of the storage element
+
+        :return: S_OK/S_ERROR, Value is the max total volume of the SE storage in MB
+    """
+    return getTotalDiskSpace()
 
   types_createDirectory = [basestring]
   def export_createDirectory( self, dir_path ):
@@ -297,8 +358,11 @@ class StorageElementHandler( RequestHandler ):
         fileSize can be Xbytes or -1 if unknown.
         token is used for access rights confirmation.
     """
-    if not self.__checkForDiskSpace( BASE_PATH, fileSize ):
-      return S_ERROR( 'Not enough disk space' )
+    result = self.__checkForDiskSpace(fileSize)
+    if not result['OK']:
+      return S_ERROR('Failed to get available free space')
+    elif not result['Value']:
+      return S_ERROR('Not enough disk space')
     file_path = self.__resolveFileID( fileID )
     try:
       mkDir(os.path.dirname( file_path ))
@@ -342,8 +406,11 @@ class StorageElementHandler( RequestHandler ):
     """ Receive files packed into a tar archive by the fileHelper logic.
         token is used for access rights confirmation.
     """
-    if not self.__checkForDiskSpace( BASE_PATH, 10 * 1024 * 1024 ):
-      return S_ERROR( 'Less than 10MB remaining' )
+    result = self.__checkForDiskSpace(10 * 1024 * 1024)
+    if not result['OK']:
+      return S_ERROR('Failed to get available free space')
+    elif not result['Value']:
+      return S_ERROR('Not enough disk space')
     dirName = fileID.replace( '.bz2', '' ).replace( '.tar', '' )
     dir_path = self.__resolveFileID( dirName )
     res = fileHelper.networkToBulk( dir_path )
