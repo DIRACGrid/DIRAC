@@ -156,7 +156,7 @@ class SiteDirector( AgentModule ):
     self.extraModules = self.am_getOption( 'ExtraPilotModules', [] ) + DIRAC_MODULES
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
-    self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', self.pilotLogLevel )
+    self.pilotLogLevel = self.am_getOption('PilotLogLevel', self.pilotLogLevel)
     self.maxJobsInFillMode = self.am_getOption( 'MaxJobsInFillMode', self.maxJobsInFillMode )
     self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', self.maxPilotsToSubmit )
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
@@ -409,47 +409,12 @@ class SiteDirector( AgentModule ):
     self.totalSubmittedPilots = 0
 
     for queue in queues:
+      # now submitting to the single queues
 
-      # Check if the queue failed previously
-      failedCount = self.failedQueues[ queue ] % self.failedQueueCycleFactor
-      if failedCount != 0:
-        self.log.warn( "%s queue failed recently, skipping %d cycles" % ( queue, 10-failedCount ) )
-        self.failedQueues[queue] += 1
+      siteMask = self.queueDict[queue]['Site'] in siteMaskList
+
+      if not self._allowedToSubmit(queue, siteMask, anySite, jobSites, testSites):
         continue
-
-      ce = self.queueDict[queue]['CE']
-      ceName = self.queueDict[queue]['CEName']
-      queueName = self.queueDict[queue]['QueueName']
-      siteName = self.queueDict[queue]['Site']
-      platform = self.queueDict[queue]['Platform']
-      siteMask = siteName in siteMaskList
-
-      # Check the status of the site
-      if not siteMask and siteName not in testSites:
-        self.log.verbose(
-           "Skipping queue %s: site %s not in the mask" % (queueName, siteName))
-        continue
-
-      # Check that there are task queues waiting for this site
-      if not anySite and siteName not in jobSites:
-        self.log.verbose(
-            "Skipping queue %s at %s: no workload expected" % (queueName, siteName))
-        continue
-
-      # Check the status of the CE (only for RSS=Active)
-      if self.rssFlag:
-        result = self.rssClient.getElementStatus(ceName, "ComputingElement")
-        if not result['OK']:
-          self.log.error("Can not get the status of computing element",
-                         " %s: %s" % (siteName, result['Message']))
-          continue
-        if result['Value']:
-          result = result['Value'][ceName]['all']   #get the value of the status
-
-        if result not in ('Active', 'Degraded'):
-          self.log.verbose( "Skipping computing element %s at %s: resource not usable" % (ceName, siteName) )
-          continue
-
 
       if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
         queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )
@@ -460,8 +425,9 @@ class SiteDirector( AgentModule ):
         queueCPUTime = self.maxQueueLength
 
       # Prepare the queue description to look for eligible jobs
+      ce = self.queueDict[queue]['CE']
       ceDict = ce.getParameterDict()
-      ceDict[ 'GridCE' ] = ceName
+      ceDict['GridCE'] = self.queueDict[queue]['CEName']
 
       if not siteMask:
         ceDict['JobType'] = "Test"
@@ -473,13 +439,13 @@ class SiteDirector( AgentModule ):
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools
 
-      result = Resources.getCompatiblePlatforms( platform )
+      result = Resources.getCompatiblePlatforms(self.queueDict[queue]['Platform'])
       if not result['OK']:
         continue
       ceDict['Platform'] = result['Value']
 
       # Get the number of eligible jobs for the target site/queue
-      result = self.rpcMatcher.getMatchingTaskQueues( ceDict )
+      result = self.rpcMatcher.getMatchingTaskQueues(ceDict)
       if not result['OK']:
         self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
         return result
@@ -642,6 +608,50 @@ class SiteDirector( AgentModule ):
     submit = True
 
     return submit, anySite, jobSites, testSites
+
+  def _allowedToSubmit(self, queue, siteMask, anySite, jobSites, testSites):
+    """ Check if we are allowed to submit to a certain queue
+    """
+
+    # Check if the queue failed previously
+    failedCount = self.failedQueues[queue] % self.failedQueueCycleFactor
+    if failedCount != 0:
+      self.log.warn("%s queue failed recently, skipping %d cycles" % (queue, 10 - failedCount))
+      self.failedQueues[queue] += 1
+      return False
+
+    # Check the status of the site
+    if not siteMask and self.queueDict[queue]['Site'] not in testSites:
+      self.log.verbose(
+          "Skipping queue %s: site %s not in the mask" % (self.queueDict[queue]['QueueName'],
+                                                          self.queueDict[queue]['Site']))
+      return False
+
+    # Check that there are task queues waiting for this site
+    if not anySite and self.queueDict[queue]['Site'] not in jobSites:
+      self.log.verbose(
+          "Skipping queue %s at %s: no workload expected" % (self.queueDict[queue]['QueueName'],
+                                                             self.queueDict[queue]['Site']))
+      return False
+
+    # Check the status of the CE (only for RSS=Active)
+    if self.rssFlag:
+      result = self.rssClient.getElementStatus(self.queueDict[queue]['CEName'], "ComputingElement")
+      if not result['OK']:
+        self.log.error("Can not get the status of computing element",
+                       " %s: %s" % (self.queueDict[queue]['CEName'],
+                                    result['Message']))
+        return False
+      if result['Value']:
+        result = result['Value'][self.queueDict[queue]['CEName']]['all']  # get the value of the status
+
+      if result not in ('Active', 'Degraded'):
+        self.log.verbose("Skipping computing element %s at %s: resource not usable" % (self.queueDict[queue]['CEName'],
+                                                                                       self.queueDict[queue]['Site']))
+        return False
+
+    # if we are here, it means that we are allowed to submit to the queue
+    return True
 
   def _submitPilotsToQueue(self, pilotsToSubmit, ce, queue, taskQueueDict):
     """ Method that really submits the pilots to the ComputingElements' queue
@@ -836,7 +846,7 @@ class SiteDirector( AgentModule ):
       self.log.error( 'Setup is not defined in the configuration' )
       return [ None, None ]
     pilotOptions.append( '-S %s' % setup )
-    opsHelper = Operations( group = self.pilotGroup, setup = setup )
+    opsHelper = Operations(group=self.pilotGroup, setup=setup)
 
     #Installation defined?
     installationName = opsHelper.getValue( "Pilot/Installation", "" )
