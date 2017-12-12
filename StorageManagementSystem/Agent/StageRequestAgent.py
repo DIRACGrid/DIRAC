@@ -224,8 +224,8 @@ class StageRequestAgent( AgentModule ):
     """ Retrieve cache size for SE
     """
     if storageElement not in self.storageElementCache:
-      self.storageElementCache[storageElement] = gConfig.getValue( "/Resources/StorageElements/%s/DiskCacheTB" % storageElement,
-                                                                   1. ) * 1000. / THROTTLING_STEPS
+      diskCacheTB = float(StorageElement(storageElement).options.get('DiskCacheTB', 1.0))
+      self.storageElementCache[storageElement] = diskCacheTB * 1000. / THROTTLING_STEPS
     return self.storageElementCache[storageElement]
 
   def __add( self, storageElement, size ):
