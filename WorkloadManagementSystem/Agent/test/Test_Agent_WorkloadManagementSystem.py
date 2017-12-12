@@ -67,6 +67,17 @@ class SiteDirectorBaseSuccess( AgentsTestCase ):
 			   1])
 
 
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect = mockGCReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Operations", side_effect = mockOPS)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gProxyManager.requestToken", side_effect =mockPMReply)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect = mockAM)
+  @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__", new = mockAM)
+  def test__ifAndWhereToSubmit( self, _patch1, _patch2, _patch3, _patch4 ):
+    sd = SiteDirector()
+    sd.log = gLogger
+    sd.am_getOption = mockAM
+    sd.log.setLevel( 'DEBUG' )
+    res = sd._ifAndWhereToSubmit()
 
 #############################################################################
 # Test Suite run
