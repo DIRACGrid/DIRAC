@@ -10,16 +10,17 @@
 
 __RCSID__ = '$Id:  $'
 
-from DIRAC                                                 import gLogger, S_OK
-from DIRAC.ResourceStatusSystem.Client                     import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Utilities                  import CSHelpers
+from DIRAC import gLogger, S_OK
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
-from DIRAC.ResourceStatusSystem.Utilities                  import Utils
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources    import getFTS3Servers
-from DIRAC.ConfigurationSystem.Client.PathFinder           import getServiceURL
-from DIRAC.Core.Security.ProxyInfo                         import getProxyInfo
+from DIRAC.ResourceStatusSystem.Utilities import Utils
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
+ResourceManagementClient = getattr(Utils.voimport(
+    'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'), 'ResourceManagementClient')
 
 class Synchronizer( object ):
   '''
@@ -28,13 +29,13 @@ class Synchronizer( object ):
 
   '''
 
-  def __init__( self, rStatus = None, rManagement = None, defaultStatus = "Unknown" ):
+  def __init__(self, rStatus=None, rManagement=None, defaultStatus="Unknown"):
 
     # Warm up local CS
     CSHelpers.warmUp()
 
     if rStatus is None:
-      self.rStatus     = ResourceStatusClient.ResourceStatusClient()
+      self.rStatus = ResourceStatusClient()
     if rManagement is None:
       self.rManagement = ResourceManagementClient()
     self.defaultStatus = defaultStatus
@@ -250,9 +251,9 @@ class Synchronizer( object ):
 
     gLogger.verbose( '%s Computing elements found in CS' % len( cesCS ) )
 
-    cesDB = self.rStatus.selectStatusElement( 'Resource', 'Status',
-                                               elementType = 'ComputingElement',
-                                               meta = { 'columns' : [ 'Name' ] } )
+    cesDB = self.rStatus.selectStatusElement('Resource', 'Status',
+                                             elementType='ComputingElement',
+                                             meta={'columns': ['Name']})
     if not cesDB[ 'OK' ]:
       return cesDB
     cesDB = [ ceDB[0] for ceDB in cesDB[ 'Value' ] ]
@@ -273,9 +274,9 @@ class Synchronizer( object ):
     #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
     statusTypes = self.rssConfig.getConfigStatusType( 'ComputingElement' )
 
-    result = self.rStatus.selectStatusElement( 'Resource', 'Status',
-                                                 elementType = 'ComputingElement',
-                                                 meta = { 'columns' : [ 'Name', 'StatusType' ] } )
+    result = self.rStatus.selectStatusElement('Resource', 'Status',
+                                              elementType='ComputingElement',
+                                              meta={'columns': ['Name', 'StatusType']})
     if not result[ 'OK' ]:
       return result
     cesTuple = [ (x[0],x[1]) for x in result['Value'] ]
@@ -378,133 +379,132 @@ class Synchronizer( object ):
     '''
 
     ftsCS = CSHelpers.getFTS()
-    if not ftsCS[ 'OK' ]:
+    if not ftsCS['OK']:
       return ftsCS
-    ftsCS = ftsCS[ 'Value' ]
+    ftsCS = ftsCS['Value']
 
-    gLogger.verbose( '%s FTS endpoints found in CS' % len( ftsCS ) )
+    gLogger.verbose('%s FTS endpoints found in CS' % len(ftsCS))
 
-    ftsDB = self.rStatus.selectStatusElement( 'Resource', 'Status',
-                                              elementType = 'FTS',
-                                              meta = { 'columns' : [ 'Name' ] } )
+    ftsDB = self.rStatus.selectStatusElement('Resource', 'Status',
+                                             elementType='FTS',
+                                             meta={'columns': ['Name']})
     if not ftsDB[ 'OK' ]:
       return ftsDB
     ftsDB = [ fts[0] for fts in ftsDB[ 'Value' ] ]
 
     # StorageElements that are in DB but not in CS
-    toBeDeleted = list( set( ftsDB ).difference( set( ftsCS ) ) )
-    gLogger.verbose( '%s FTS endpoints to be deleted' % len( toBeDeleted ) )
+    toBeDeleted = list(set(ftsDB).difference(set(ftsCS)))
+    gLogger.verbose('%s FTS endpoints to be deleted' % len(toBeDeleted))
 
     # Delete storage elements
     for ftsName in toBeDeleted:
 
-      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', ftsName )
+      deleteQuery = self.rStatus._extermineStatusElement('Resource', ftsName)
 
       gLogger.verbose( '... %s' % ftsName )
       if not deleteQuery[ 'OK' ]:
         return deleteQuery
 
-    statusTypes = self.rssConfig.getConfigStatusType( 'FTS' )
+    statusTypes = self.rssConfig.getConfigStatusType('FTS')
     #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
-    result = self.rStatus.selectStatusElement( 'Resource', 'Status',
-                                               elementType='FTS',
-                                               meta={'columns': ['Name', 'StatusType']})
+    result = self.rStatus.selectStatusElement('Resource', 'Status',
+                                              elementType='FTS',
+                                              meta={'columns': ['Name', 'StatusType']})
     if not result[ 'OK' ]:
       return result
     sesTuple = [ (x[0],x[1]) for x in result['Value'] ]
 
     # For each ( se, statusType ) tuple not present in the DB, add it.
-    ftsStatusTuples = [ ( se, statusType ) for se in ftsCS for statusType in statusTypes ]
-    toBeAdded = list( set( ftsStatusTuples ).difference( set( sesTuple ) ) )
+    ftsStatusTuples = [(se, statusType)
+                       for se in ftsCS for statusType in statusTypes]
+    toBeAdded = list(set(ftsStatusTuples).difference(set(sesTuple)))
 
-    gLogger.verbose( '%s FTS endpoints entries to be added' % len( toBeAdded ) )
+    gLogger.verbose('%s FTS endpoints entries to be added' % len(toBeAdded))
 
     for ftsTuple in toBeAdded:
 
-      _name            = ftsTuple[ 0 ]
-      _statusType      = ftsTuple[ 1 ]
-      _status          = self.defaultStatus
-      _reason          = 'Synchronized'
-      _elementType     = 'FTS'
+      _name = ftsTuple[0]
+      _statusType = ftsTuple[1]
+      _status = self.defaultStatus
+      _reason = 'Synchronized'
+      _elementType = 'FTS'
 
-      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name,
-                                                       statusType = _statusType,
-                                                       status = _status,
-                                                       elementType = _elementType,
-                                                       tokenOwner = self.tokenOwner,
-                                                       reason = _reason )
-      if not query[ 'OK' ]:
+      query = self.rStatus.addIfNotThereStatusElement('Resource', 'Status', name=_name,
+                                                      statusType=_statusType,
+                                                      status=_status,
+                                                      elementType=_elementType,
+                                                      tokenOwner=self.tokenOwner,
+                                                      reason=_reason)
+      if not query['OK']:
         return query
 
     return S_OK()
 
-  def __syncStorageElements( self ):
+  def __syncStorageElements(self):
     '''
       Sync StorageElements: compares CS with DB and does the necessary modifications.
     '''
 
     sesCS = CSHelpers.getStorageElements()
-    if not sesCS[ 'OK' ]:
+    if not sesCS['OK']:
       return sesCS
-    sesCS = sesCS[ 'Value' ]
+    sesCS = sesCS['Value']
 
-    gLogger.verbose( '%s storage elements found in CS' % len( sesCS ) )
+    gLogger.verbose('%s storage elements found in CS' % len(sesCS))
 
-    sesDB = self.rStatus.selectStatusElement( 'Resource', 'Status',
-                                              elementType = 'StorageElement',
-                                              meta = { 'columns' : [ 'Name' ] } )
-    if not sesDB[ 'OK' ]:
+    sesDB = self.rStatus.selectStatusElement('Resource', 'Status',
+                                             elementType='StorageElement',
+                                             meta={'columns': ['Name']})
+    if not sesDB['OK']:
       return sesDB
-    sesDB = [ seDB[0] for seDB in sesDB[ 'Value' ] ]
+    sesDB = [seDB[0] for seDB in sesDB['Value']]
 
     # StorageElements that are in DB but not in CS
-    toBeDeleted = list( set( sesDB ).difference( set( sesCS ) ) )
-    gLogger.verbose( '%s storage elements to be deleted' % len( toBeDeleted ) )
+    toBeDeleted = list(set(sesDB).difference(set(sesCS)))
+    gLogger.verbose('%s storage elements to be deleted' % len(toBeDeleted))
 
     # Delete storage elements
     for sesName in toBeDeleted:
 
-      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', sesName )
+      deleteQuery = self.rStatus._extermineStatusElement('Resource', sesName)
 
-      gLogger.verbose( '... %s' % sesName )
-      if not deleteQuery[ 'OK' ]:
+      gLogger.verbose('... %s' % sesName)
+      if not deleteQuery['OK']:
         return deleteQuery
 
-    statusTypes = self.rssConfig.getConfigStatusType( 'StorageElement' )
+    statusTypes = self.rssConfig.getConfigStatusType('StorageElement')
     #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
-    result = self.rStatus.selectStatusElement( 'Resource', 'Status',
-                                                 elementType = 'StorageElement',
-                                                 meta = { 'columns' : [ 'Name', 'StatusType' ] } )
+    result = self.rStatus.selectStatusElement('Resource', 'Status',
+                                              elementType='StorageElement',
+                                              meta={'columns': ['Name', 'StatusType']})
     if not result[ 'OK' ]:
       return result
     sesTuple = [ (x[0],x[1]) for x in result['Value'] ]
 
     # For each ( se, statusType ) tuple not present in the DB, add it.
-    sesStatusTuples = [ ( se, statusType ) for se in sesCS for statusType in statusTypes ]
-    toBeAdded = list( set( sesStatusTuples ).difference( set( sesTuple ) ) )
+    sesStatusTuples = [(se, statusType)
+                       for se in sesCS for statusType in statusTypes]
+    toBeAdded = list(set(sesStatusTuples).difference(set(sesTuple)))
 
-    gLogger.verbose( '%s storage element entries to be added' % len( toBeAdded ) )
+    gLogger.verbose('%s storage element entries to be added' % len(toBeAdded))
 
     for seTuple in toBeAdded:
 
-      _name            = seTuple[ 0 ]
-      _statusType      = seTuple[ 1 ]
-      _status          = self.defaultStatus
-      _reason          = 'Synchronized'
-      _elementType     = 'StorageElement'
+      _name = seTuple[0]
+      _statusType = seTuple[1]
+      _status = self.defaultStatus
+      _reason = 'Synchronized'
+      _elementType = 'StorageElement'
 
-
-      print "AT >>> _name, _statusType, _status, _elementType, self.tokenOwner", _name, _statusType, _status, _elementType, self.tokenOwner
-
-      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name,
-                                                       statusType = _statusType,
-                                                       status = _status,
-                                                       elementType = _elementType,
-                                                       tokenOwner = self.tokenOwner,
-                                                       reason = _reason )
-      if not query[ 'OK' ]:
+      query = self.rStatus.addIfNotThereStatusElement('Resource', 'Status', name=_name,
+                                                      statusType=_statusType,
+                                                      status=_status,
+                                                      elementType=_elementType,
+                                                      tokenOwner=self.tokenOwner,
+                                                      reason=_reason)
+      if not query['OK']:
         return query
 
     return S_OK()
