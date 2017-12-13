@@ -331,6 +331,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
           delayExecution = 60
 
     if delayExecution:
+      self.log.info("Delay execution of the request by %d minutes" % delayExecution)
       self.request.delayNextExecution(delayExecution)
     # Log error counts
     for error, count in errors.iteritems():
@@ -417,6 +418,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     else:
       self.log.info("Transferring files using Data manager...")
     errors = defaultdict(int)
+    delayExecution = 0
     for opFile in waitingFiles:
       if opFile.Status == 'Failed':
         err = "File already Failed"
@@ -476,7 +478,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                            "%s, %s at %s" % (opFile.LFN, err, ','.join(noActiveReplicas)))
           opFile.Error = err
           # All source SEs are banned, delay execution by 1 hour
-          self.request.delayNextExecution(60)
+          delayExecution = 60
         continue
       # # get the first one in the list
       if sourceSE not in validReplicas:
@@ -551,6 +553,9 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
           self.log.info("file %s has been replicated to all targetSEs" % lfn)
         opFile.Status = "Done"
     # Log error counts
+    if delayExecution:
+      self.log.info("Delay execution of the request by %d minutes" % delayExecution)
+      self.request.delayNextExecution(delayExecution)
     for error, count in errors.iteritems():
       self.log.error(error, 'for %d files' % count)
 
