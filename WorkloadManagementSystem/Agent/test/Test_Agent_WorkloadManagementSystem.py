@@ -119,8 +119,6 @@ class SiteDirectorBaseSuccess( AgentsTestCase ):
     submit = sd._allowedToSubmit('aQueue', True, set(['LCG.CERN.cern']), set())
     self.assertTrue(submit)
 
-
-
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Resources.getCompatiblePlatforms",

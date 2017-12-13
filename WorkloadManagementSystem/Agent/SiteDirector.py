@@ -389,8 +389,8 @@ class SiteDirector( AgentModule ):
       if not result['OK']:
         self.log.error("Can not get the status of computing elements",
                        " %s" % result['Message'])
-      self.ceMaskList = [ceName for ceName in result['Value'].iterkeys() if result['Value'][ceName]['all'] in ('Active', 'Degraded')]
-
+      self.ceMaskList = [ceName for ceName in result['Value'].iterkeys() if result['Value'][ceName]
+                         ['all'] in ('Active', 'Degraded')]
 
     self.rpcMatcher = RPCClient("WorkloadManagement/Matcher")
     result = self.submitJobs()
@@ -417,11 +417,10 @@ class SiteDirector( AgentModule ):
       self.log.notice('Not submitting any pilots at this cycle')
       return S_OK()
 
-
     # From here on we assume we are going to (try to) submit some pilots
 
     queues = self.queueDict.keys()
-    random.shuffle( queues )
+    random.shuffle(queues)
     self.totalSubmittedPilots = 0
 
     for queue in queues:
@@ -431,10 +430,10 @@ class SiteDirector( AgentModule ):
       if not self._allowedToSubmit(queue, anySite, jobSites, testSites):
         continue
 
-      if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
-        queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )
+      if 'CPUTime' in self.queueDict[queue]['ParametersDict']:
+        queueCPUTime = int(self.queueDict[queue]['ParametersDict']['CPUTime'])
       else:
-        self.log.warn( 'CPU time limit is not specified for queue %s, skipping...' % queue )
+        self.log.warn('CPU time limit is not specified for queue %s, skipping...' % queue)
         continue
       if queueCPUTime > self.maxQueueLength:
         queueCPUTime = self.maxQueueLength
@@ -442,61 +441,61 @@ class SiteDirector( AgentModule ):
       ce, ceDict = self._getCE(queue)
 
       pilotsWeMayWantToSubmit, additionalInfo = self._getPilotsWeMayWantToSubmit(ceDict)
-      self.log.verbose( '%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queue) )
+      self.log.verbose('%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queue))
 
       # Get the number of already waiting pilots for these task queues
       totalWaitingPilots = 0
       manyWaitingPilotsFlag = False
       if self.pilotWaitingFlag:
         lastUpdateTime = dateTime() - self.pilotWaitingTime * second
-        result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
-                                              'Status': WAITING_PILOT_STATUS },
-                                            None, lastUpdateTime )
+        result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
+                                            'Status': WAITING_PILOT_STATUS},
+                                           None, lastUpdateTime)
         if not result['OK']:
-          self.log.error( 'Failed to get Number of Waiting pilots', result['Message'] )
+          self.log.error('Failed to get Number of Waiting pilots', result['Message'])
           totalWaitingPilots = 0
         else:
           totalWaitingPilots = result['Value']
-          self.log.verbose( 'Waiting Pilots: %s' % totalWaitingPilots )
+          self.log.verbose('Waiting Pilots: %s' % totalWaitingPilots)
       if totalWaitingPilots >= pilotsWeMayWantToSubmit:
-        self.log.verbose( "%d waiting pilots already waiting: possibly enough" % totalWaitingPilots )
+        self.log.verbose("%d waiting pilots already waiting: possibly enough" % totalWaitingPilots)
         manyWaitingPilotsFlag = True
         if not self.addPilotsToEmptySites:
           continue
 
-      self.log.verbose( "%d waiting pilots for the total of %d eligible pilots for %s" % (totalWaitingPilots, pilotsWeMayWantToSubmit, queue) )
+      self.log.verbose("%d waiting pilots for the total of %d eligible pilots for %s" %
+                       (totalWaitingPilots, pilotsWeMayWantToSubmit, queue))
 
       # Get the number of available slots on the target site/queue
-      totalSlots = self.getQueueSlots( queue, manyWaitingPilotsFlag )
+      totalSlots = self.getQueueSlots(queue, manyWaitingPilotsFlag)
       if totalSlots == 0:
-        self.log.debug( '%s: No slots available' % queue )
+        self.log.debug('%s: No slots available' % queue)
         continue
 
       if manyWaitingPilotsFlag:
         # Throttle submission of extra pilots to empty sites
-        pilotsToSubmit = self.maxPilotsToSubmit/10 + 1
+        pilotsToSubmit = self.maxPilotsToSubmit / 10 + 1
       else:
-        pilotsToSubmit = max( 0, min( totalSlots, pilotsWeMayWantToSubmit - totalWaitingPilots ) )
-        self.log.info( '%s: Slots=%d, TQ jobs(pilotsWeMayWantToSubmit)=%d, Pilots: waiting %d, to submit=%d' % ( queue, totalSlots, pilotsWeMayWantToSubmit, totalWaitingPilots, pilotsToSubmit ) )
+        pilotsToSubmit = max(0, min(totalSlots, pilotsWeMayWantToSubmit - totalWaitingPilots))
+        self.log.info('%s: Slots=%d, TQ jobs(pilotsWeMayWantToSubmit)=%d, Pilots: waiting %d, to submit=%d' %
+                      (queue, totalSlots, pilotsWeMayWantToSubmit, totalWaitingPilots, pilotsToSubmit))
 
       # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
-      pilotsToSubmit = min( self.maxPilotsToSubmit, pilotsToSubmit )
-
-
+      pilotsToSubmit = min(self.maxPilotsToSubmit, pilotsToSubmit)
 
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
-      self.log.verbose( "Getting pilot proxy for %s/%s %d long" % ( self.pilotDN, self.pilotGroup, cpuTime ) )
-      result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, cpuTime )
+      self.log.verbose("Getting pilot proxy for %s/%s %d long" % (self.pilotDN, self.pilotGroup, cpuTime))
+      result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, cpuTime)
       if not result['OK']:
         return result
       self.proxy = result['Value']
       # Check returned proxy lifetime
-      result = self.proxy.getRemainingSecs() #pylint: disable=no-member
+      result = self.proxy.getRemainingSecs()  # pylint: disable=no-member
       if not result['OK']:
         return result
       lifetime_secs = result['Value']
-      ce.setProxy( self.proxy, lifetime_secs )
+      ce.setProxy(self.proxy, lifetime_secs)
 
       # now really submitting
       while pilotsToSubmit > 0:
@@ -617,7 +616,7 @@ class SiteDirector( AgentModule ):
 
     # Check the status of the site
     if self.queueDict[queue]['Site'] not in self.siteMaskList\
-    and self.queueDict[queue]['Site'] not in testSites:
+            and self.queueDict[queue]['Site'] not in testSites:
       self.log.verbose(
           "Skipping queue %s: site %s not in the mask" % (self.queueDict[queue]['QueueName'],
                                                           self.queueDict[queue]['Site']))
@@ -639,7 +638,6 @@ class SiteDirector( AgentModule ):
 
     # if we are here, it means that we are allowed to submit to the queue
     return True
-
 
   def _getCE(self, queue):
     """ Prepare the queue description to look for eligible jobs
@@ -669,7 +667,6 @@ class SiteDirector( AgentModule ):
 
     return ce, ceDict
 
-
   def _getPilotsWeMayWantToSubmit(self, ceDict):
     """ Returns the number of pilots that we may want to submit to the ce described in ceDict
 
@@ -686,17 +683,16 @@ class SiteDirector( AgentModule ):
 
     result = self.rpcMatcher.getMatchingTaskQueues(ceDict)
     if not result['OK']:
-      self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
+      self.log.error('Could not retrieve TaskQueues from TaskQueueDB', result['Message'])
       return result
     taskQueueDict = result['Value']
     if not taskQueueDict:
-      self.log.verbose( 'No matching TQs found for %s' % ceDict )
+      self.log.verbose('No matching TQs found for %s' % ceDict)
 
     for tq in taskQueueDict.itervalues():
       pilotsWeMayWantToSubmit += tq['Jobs']
 
     return pilotsWeMayWantToSubmit, taskQueueDict
-
 
   def _submitPilotsToQueue(self, pilotsToSubmit, ce, queue):
     """ Method that really submits the pilots to the ComputingElements' queue
@@ -753,7 +749,6 @@ class SiteDirector( AgentModule ):
     stampDict = result.get('PilotStampDict', {})
 
     return S_OK((pilotsToSubmit, pilotList, stampDict))
-
 
   def _addPilotTQReference(self, queue, taskQueueDict, pilotList, stampDict):
     """ Add to pilotAgentsDB the reference of for which TqID the pilots have been sent
