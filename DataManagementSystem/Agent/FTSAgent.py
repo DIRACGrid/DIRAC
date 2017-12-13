@@ -833,6 +833,7 @@ class FTSAgent(AgentModule):
       elif noActiveReplicas:
         log.warn("unable to schedule '%s', couldn't find active replicas at %s" %
                  (opFile.LFN, ','.join(noActiveReplicas)))
+        request.delayNextExecution(60)
 
     # # do real schedule here
     if toSchedule:
