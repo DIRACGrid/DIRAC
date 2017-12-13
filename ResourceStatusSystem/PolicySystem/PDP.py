@@ -278,12 +278,12 @@ class PDP( object ):
       return S_OK( policyCombined )
 
     # We set the rssMachine on the current state ( ensures it is a valid one )
-    # FIXME: probably this check can be done at takeDecission
+    # FIXME: probably this check can be done at takeDecision
     machineStatus = self.rssMachine.setState( self.decisionParams['status'] )
     if not machineStatus['OK']:
       return machineStatus
 
-    # Discard all single policy results which belogs to policies that have set
+    # Discard all single policy results which belongs to policies that have set
     # the option `doNotCombine` in the CS
     policiesToCombine = self._findPoliciesToCombine( singlePolicyRes )
 

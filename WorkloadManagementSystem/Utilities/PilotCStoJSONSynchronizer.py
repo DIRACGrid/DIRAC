@@ -15,8 +15,8 @@ import glob
 import tarfile
 from git import Repo
 
-from DIRAC                                    import gLogger, S_OK, gConfig, S_ERROR
-from DIRAC.Core.DISET.HTTPDISETConnection     import HTTPDISETConnection
+from DIRAC import gLogger, S_OK, gConfig, S_ERROR
+from DIRAC.Core.DISET.HTTPDISETConnection import HTTPDISETConnection
 
 __RCSID__ = '$Id:  $'
 
@@ -54,14 +54,14 @@ class PilotCStoJSONSynchronizer( object ):
   def sync( self ):
     ''' Main synchronizer method.
     '''
-    gLogger.notice( '-- Synchronizing the content of the JSON file %s with the content of the CS --' % self.jsonFile )
+    gLogger.notice('-- Synchronizing the content of the JSON file %s with the content of the CS --' % self.jsonFile)
 
     result = self._syncFile()
     if not result['OK']:
-      gLogger.error( "Error uploading the pilot file: %s" % result['Message'] )
+      gLogger.error("Error uploading the pilot file: %s" % result['Message'])
       return result
 
-    gLogger.notice( '-- Synchronizing the pilot scripts %s with the content of the repository --' % self.pilotRepo )
+    gLogger.notice('-- Synchronizing the pilot scripts %s with the content of the repository --' % self.pilotRepo)
 
     self._syncScripts()
 
@@ -87,7 +87,7 @@ class PilotCStoJSONSynchronizer( object ):
 
     pilotDict = { 'Setups' : {}, 'CEs' : {} }
 
-    gLogger.info( '-- Getting the content of the CS --' )
+    gLogger.info('-- Getting the content of the CS --')
 
     # These are in fact not only setups: they may be "Defaults" sections, or VOs, in multi-VOs installations
     setups = gConfig.getSections( '/Operations/' )
@@ -103,7 +103,7 @@ class PilotCStoJSONSynchronizer( object ):
 
     # Something inside? (for multi-VO setups)
     for vo in setups:
-      setupsFromVOs = gConfig.getSections( '/Operations/%s' % vo )
+      setupsFromVOs = gConfig.getSections('/Operations/%s' % vo)
       if not setupsFromVOs['OK']:
         continue
       else:
@@ -122,16 +122,16 @@ class PilotCStoJSONSynchronizer( object ):
       return sitesSection
 
     for grid in sitesSection['Value']:
-      gridSection = gConfig.getSections( '/Resources/Sites/' + grid )
+      gridSection = gConfig.getSections('/Resources/Sites/' + grid)
       if not gridSection['OK']:
         gLogger.error( gridSection['Message'] )
         return gridSection
 
       for site in gridSection['Value']:
-        ceList = gConfig.getSections( '/Resources/Sites/' + grid + '/' + site + '/CEs/' )
+        ceList = gConfig.getSections('/Resources/Sites/' + grid + '/' + site + '/CEs/')
         if not ceList['OK']:
           # Skip but log it
-          gLogger.error( 'Site ' + site + ' has no CEs! - skipping' )
+          gLogger.error('Site ' + site + ' has no CEs! - skipping')
           continue
 
         for ce in ceList['Value']:
@@ -222,9 +222,9 @@ class PilotCStoJSONSynchronizer( object ):
     upstream.fetch()
     upstream.pull( upstream.refs[0].remote_head )
     if repo_VO.tags:
-      repo_VO.git.checkout( repo_VO.tags[self.pilotVOVersion], b = 'pilotScripts' )
+      repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotScripts')
     else:
-      repo_VO.git.checkout( 'upstream/master', b = 'pilotVOScripts' )
+      repo_VO.git.checkout('upstream/master', b='pilotVOScripts')
     scriptDir = ( os.path.join( self.pilotVOLocalRepo, self.projectDir, self.pilotVOScriptPath, "*.py" ) )
     tarFiles = []
     for fileVO in glob.glob( scriptDir ):
@@ -250,8 +250,8 @@ class PilotCStoJSONSynchronizer( object ):
     else:
       repo.git.checkout( 'master', b = 'pilotVOScripts' )
     try:
-      scriptDir = os.path.join( self.pilotLocalRepo, self.pilotScriptsPath, "*.py" )
-      for filename in glob.glob( scriptDir ):
+      scriptDir = os.path.join(self.pilotLocalRepo, self.pilotScriptsPath, "*.py")
+      for filename in glob.glob(scriptDir):
         result = self._upload(filename = os.path.basename(filename),
                               pilotScript = filename)
         tarFiles.append(filename)
@@ -266,7 +266,7 @@ class PilotCStoJSONSynchronizer( object ):
         for ptf in tarFiles:
           tf.add(ptf)
       result = self._upload(filename = 'pilot.tar',
-                            pilotScript = os.path.join( self.pilotLocalRepo, 'pilot.tar'))
+                            pilotScript='pilot.tar')
 
     except ValueError:
       gLogger.error( "Error uploading the pilot scripts: %s" % result['Message'] )
@@ -279,17 +279,17 @@ class PilotCStoJSONSynchronizer( object ):
     """
 
     if pilotDict:
-      params = urllib.urlencode( {'filename':self.jsonFile, 'data':json.dumps( pilotDict ) } )
+      params = urllib.urlencode({'filename': self.jsonFile, 'data': json.dumps(pilotDict)})
     else:
-      with open( pilotScript, "rb" ) as psf:
+      with open(pilotScript, "rb") as psf:
         script = psf.read()
-      params = urllib.urlencode( {'filename':filename, 'data':script} )
+      params = urllib.urlencode({'filename': filename, 'data': script})
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-    con = HTTPDISETConnection( self.pilotFileServer, '443' )
-    con.request( "POST", "/DIRAC/upload", params, headers )
+    con = HTTPDISETConnection(self.pilotFileServer, '443')
+    con.request("POST", "/DIRAC/upload", params, headers)
     resp = con.getresponse()
     if resp.status != 200:
-      return S_ERROR( resp.status )
+      return S_ERROR(resp.status)
     else:
-      gLogger.info( '-- File and scripts upload done --' )
+      gLogger.info('-- File and scripts upload done --')
     return S_OK()
