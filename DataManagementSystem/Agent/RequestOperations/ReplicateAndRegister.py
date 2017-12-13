@@ -274,6 +274,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
     toSchedule = {}
 
+    delayExecution = 0
     errors = defaultdict(int)
     for opFile in self.getWaitingFilesList():
       opFile.Error = ''
@@ -327,8 +328,10 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                            "%s, %s at %s" % (opFile.LFN, err, ','.join(noActiveReplicas)))
           opFile.Error = err
           # All source SEs are banned, delay execution by 1 hour
-          self.request.delayNextExecution(60)
+          delayExecution = 60
 
+    if delayExecution:
+      self.request.delayNextExecution(delayExecution)
     # Log error counts
     for error, count in errors.iteritems():
       self.log.error(error, 'for %d files' % count)
