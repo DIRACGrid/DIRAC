@@ -143,7 +143,7 @@ class SiteDirectorBaseSuccess( AgentsTestCase ):
                                                   'Setup': 'LHCb-Production',
                                                   'Site': 'LCG.CERN.cern',
                                                   'SubmitPool': ''}}}
-    res = sd._submitPilotsToQueue(1, MagicMock(), 'aQueue', sd.queueDict)
+    res = sd._submitPilotsToQueue(1, MagicMock(), 'aQueue')
     self.assertFalse(res['OK'])
 
 #############################################################################
