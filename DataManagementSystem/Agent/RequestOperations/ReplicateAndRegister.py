@@ -46,7 +46,7 @@ def filterReplicas(opFile, logger=None, dataManager=None):
     dataManager = DataManager()
 
   log = logger.getSubLogger("filterReplicas")
-  ret = {"Valid": [], "NoMetadata": [], "Bad": [], 'NoReplicas': []}
+  result = defaultdict(list)
 
   replicas = dataManager.getActiveReplicas(opFile.LFN, getUrl=False)
   if not replicas["OK"]:
@@ -67,11 +67,11 @@ def filterReplicas(opFile, logger=None, dataManager=None):
     if allReplicas['OK']:
       allReplicas = allReplicas['Value']['Successful'].get(opFile.LFN, {})
       if not allReplicas:
-        ret['NoReplicas'].append(None)
+        result['NoReplicas'].append(None)
         noReplicas = True
       else:
         # There are replicas but we cannot get metadata because the replica is not active
-        ret['NoMetadata'] += list(allReplicas)
+        result['NoActiveReplicas'] += list(allReplicas)
       log.verbose("File has no%s replica in File Catalog" % ('' if noReplicas else ' active'), opFile.LFN)
     else:
       return allReplicas
@@ -90,7 +90,7 @@ def filterReplicas(opFile, logger=None, dataManager=None):
 
   # If no replica was found, return what we collected as information
   if not replicas:
-    return S_OK(ret)
+    return S_OK(result)
 
   for repSEName in replicas:
     repSEMetadata = StorageElement(repSEName).getFileMetadata(opFile.LFN)
@@ -98,16 +98,16 @@ def filterReplicas(opFile, logger=None, dataManager=None):
     if error:
       log.warn('unable to get metadata at %s for %s' % (repSEName, opFile.LFN), error.replace('\n', ''))
       if 'File does not exist' in error:
-        ret['NoReplicas'].append(repSEName)
+        result['NoReplicas'].append(repSEName)
       else:
-        ret["NoMetadata"].append(repSEName)
+        result["NoMetadata"].append(repSEName)
     elif not noReplicas:
       repSEMetadata = repSEMetadata['Value']['Successful'][opFile.LFN]
 
       seChecksum = hexAdlerToInt(repSEMetadata.get("Checksum"))
       # As from here seChecksum is an integer or False, not a hex string!
       if seChecksum is False and opFile.Checksum:
-        ret['NoMetadata'].append(repSEName)
+        result['NoMetadata'].append(repSEName)
       elif not seChecksum and opFile.Checksum:
         opFile.Checksum = None
         opFile.ChecksumType = None
@@ -117,18 +117,18 @@ def filterReplicas(opFile, logger=None, dataManager=None):
         opFile.ChecksumType = 'Adler32'
       if not opFile.Checksum or not seChecksum or compareAdler(intAdlerToHex(seChecksum), opFile.Checksum):
         # # All checksums are OK
-        ret["Valid"].append(repSEName)
+        result["Valid"].append(repSEName)
       else:
         log.warn(" %s checksum mismatch, FC: '%s' @%s: '%s'" % (opFile.LFN,
                                                                 opFile.Checksum,
                                                                 repSEName,
                                                                 intAdlerToHex(seChecksum)))
-        ret["Bad"].append(repSEName)
+        result["Bad"].append(repSEName)
     else:
       # If a replica was found somewhere, don't set the file as no replicas
-      ret['NoReplicas'] = []
+      result['NoReplicas'] = []
 
-  return S_OK(ret)
+  return S_OK(result)
 
 
 ########################################################################
@@ -284,10 +284,11 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         continue
       replicas = replicas["Value"]
 
-      validReplicas = replicas["Valid"]
-      noMetaReplicas = replicas["NoMetadata"]
-      noReplicas = replicas['NoReplicas']
-      badReplicas = replicas['Bad']
+      validReplicas = replicas.get("Valid")
+      noMetaReplicas = replicas.get("NoMetadata")
+      noReplicas = replicas.get('NoReplicas')
+      badReplicas = replicas.get('Bad')
+      noActiveReplicas = replicas.get('NoActiveReplicas')
 
       if validReplicas:
         validTargets = list(set(self.operation.targetSEList) - set(validReplicas))
@@ -319,6 +320,14 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                          "%s, %s at %s" % (opFile.LFN, err, ','.join(badReplicas)))
           opFile.Error = err
           opFile.Status = 'Failed'
+        elif noActiveReplicas:
+          err = "No active replica found"
+          errors[err] += 1
+          self.log.error("Unable to schedule transfer",
+                         "%s, %s at %s" % (opFile.LFN, err, ','.join(noActiveReplicas)))
+          opFile.Error = err
+          # All source SEs are banned, delay execution by 1 hour
+          self.request.delayNextExecution(60)
 
     # Log error counts
     for error, count in errors.iteritems():
@@ -412,6 +421,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         continue
       if opFile.Error in ("Couldn't get metadata",
                           "File doesn't exist",
+                          'No active replicas found',
                           "All replicas have a bad checksum",):
         err = "File already in error status"
         errors[err] += 1
@@ -427,10 +437,11 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         self.log.error('Failed to check replicas', replicas["Message"])
         continue
       replicas = replicas["Value"]
-      validReplicas = replicas["Valid"]
-      noMetaReplicas = replicas["NoMetadata"]
-      noReplicas = replicas['NoReplicas']
-      badReplicas = replicas['Bad']
+      validReplicas = replicas.get("Valid")
+      noMetaReplicas = replicas.get("NoMetadata")
+      noReplicas = replicas.get('NoReplicas')
+      badReplicas = replicas.get('Bad')
+      noActiveReplicas = replicas.get('NoActiveReplicas')
 
       if not validReplicas:
         gMonitor.addMark("ReplicateFail")
@@ -455,6 +466,14 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
               (opFile.LFN, ','.join(badReplicas)))
           opFile.Error = err
           opFile.Status = 'Failed'
+        elif noActiveReplicas:
+          err = "No active replica found"
+          errors[err] += 1
+          self.log.error("Unable to schedule transfer",
+                         "%s, %s at %s" % (opFile.LFN, err, ','.join(noActiveReplicas)))
+          opFile.Error = err
+          # All source SEs are banned, delay execution by 1 hour
+          self.request.delayNextExecution(60)
         continue
       # # get the first one in the list
       if sourceSE not in validReplicas:
