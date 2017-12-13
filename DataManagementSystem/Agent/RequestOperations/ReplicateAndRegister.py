@@ -24,6 +24,7 @@ __RCSID__ = "$Id $"
 
 # # imports
 import re
+from collections import defaultdict
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Adler import compareAdler, hexAdlerToInt, intAdlerToHex
@@ -273,7 +274,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
     toSchedule = {}
 
-    errors = {}
+    errors = defaultdict(int)
     for opFile in self.getWaitingFilesList():
       opFile.Error = ''
       gMonitor.addMark("FTSScheduleAtt")
@@ -299,21 +300,21 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         gMonitor.addMark("FTSScheduleFail")
         if noMetaReplicas:
           err = "Couldn't get metadata"
-          errors[err] = errors.setdefault(err, 0) + 1
+          errors[err] += 1
           self.log.verbose(
               "unable to schedule '%s', %s at %s" %
               (opFile.LFN, err, ','.join(noMetaReplicas)))
           opFile.Error = err
         elif noReplicas:
           err = "File doesn't exist"
-          errors[err] = errors.setdefault(err, 0) + 1
+          errors[err] += 1
           self.log.error("Unable to schedule transfer",
                          "%s %s at %s" % (opFile.LFN, err, ','.join(noReplicas)))
           opFile.Error = err
           opFile.Status = 'Failed'
         elif badReplicas:
           err = "All replicas have a bad checksum"
-          errors[err] = errors.setdefault(err, 0) + 1
+          errors[err] += 1
           self.log.error("Unable to schedule transfer",
                          "%s, %s at %s" % (opFile.LFN, err, ','.join(badReplicas)))
           opFile.Error = err
@@ -403,17 +404,17 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       self.log.info("Trying transfer using replica manager as FTS failed")
     else:
       self.log.info("Transferring files using Data manager...")
-    errors = {}
+    errors = defaultdict(int)
     for opFile in waitingFiles:
       if opFile.Status == 'Failed':
         err = "File already Failed"
-        errors[err] = errors.setdefault(err, 0) + 1
+        errors[err] += 1
         continue
       if opFile.Error in ("Couldn't get metadata",
                           "File doesn't exist",
                           "All replicas have a bad checksum",):
         err = "File already in error status"
-        errors[err] = errors.setdefault(err, 0) + 1
+        errors[err] += 1
         continue
 
       gMonitor.addMark("ReplicateAndRegisterAtt", 1)
@@ -435,20 +436,20 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         gMonitor.addMark("ReplicateFail")
         if noMetaReplicas:
           err = "Couldn't get metadata"
-          errors[err] = errors.setdefault(err, 0) + 1
+          errors[err] += 1
           self.log.verbose(
               "unable to replicate '%s', couldn't get metadata at %s" %
               (opFile.LFN, ','.join(noMetaReplicas)))
           opFile.Error = err
         elif noReplicas:
           err = "File doesn't exist"
-          errors[err] = errors.setdefault(err, 0) + 1
+          errors[err] += 1
           self.log.verbose("Unable to replicate", "File %s doesn't exist at %s" % (opFile.LFN, ','.join(noReplicas)))
           opFile.Error = err
           opFile.Status = 'Failed'
         elif badReplicas:
           err = "All replicas have a bad checksum"
-          errors[err] = errors.setdefault(err, 0) + 1
+          errors[err] += 1
           self.log.error(
               "Unable to replicate", "%s, all replicas have a bad checksum at %s" %
               (opFile.LFN, ','.join(badReplicas)))
@@ -459,7 +460,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       if sourceSE not in validReplicas:
         if sourceSE:
           err = "File not at specified source"
-          errors[err] = errors.setdefault(err, 0) + 1
+          errors[err] += 1
           self.log.warn("%s is not at specified sourceSE %s, changed to %s" % (lfn, sourceSE, validReplicas[0]))
         sourceSE = validReplicas[0]
 
