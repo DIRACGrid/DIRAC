@@ -50,8 +50,8 @@ class ResourceStatus( object ):
     Helper function, tries to get information from the RSS for the given
     Element, otherwise, it gets it from the CS.
 
-    :param elementName: name of the element
-    :type elementName: str
+    :param elementName: name of the element or list of element names
+    :type elementName: str, list
     :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
     :type elementType: str
     :param statusType: type of the status (meaningful only when elementType==StorageElement)
@@ -79,6 +79,9 @@ class ResourceStatus( object ):
                          'WriteAccess': 'Active',
                          'CheckAccess': 'Degraded',
                          'RemoveAccess': 'Banned'} } } )
+    >>> getElementStatus(['CE1', 'CE2'], 'ComputingElement')
+        S_OK( {'CE1': {'all': 'Active'},
+               'CE2': {'all': 'Probing'}}}
     """
 
     allowedParameters = ["StorageElement", "ComputingElement", "FTS", "Catalog"]
@@ -164,8 +167,8 @@ class ResourceStatus( object ):
         to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
         minutes.
 
-    :param elementName: name of the element
-    :type elementName: str
+    :param elementName: name of the element or list of element names
+    :type elementName: str, list
     :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
     :type elementType: str
     :param statusType: type of the status (meaningful only when elementType==StorageElement,

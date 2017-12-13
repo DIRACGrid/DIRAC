@@ -322,7 +322,7 @@ class RSSCache( Cache ):
 
     cacheKeys = validCache.keys()
 
-    if isinstance( elementNames, str ):
+    if isinstance( elementNames, basestring ):
       elementNames = [ elementNames ]
     elif elementNames is None:
       if isinstance(cacheKeys[0], (tuple, list)):
@@ -332,7 +332,7 @@ class RSSCache( Cache ):
     # Remove duplicates, makes Cartesian product faster
     elementNamesSet = set( elementNames )
 
-    if isinstance( elementType, str ):
+    if isinstance( elementType, basestring ):
       if not elementType or elementType == 'Site':
         elementType = []
       else:
@@ -342,7 +342,7 @@ class RSSCache( Cache ):
     # Remove duplicates, makes Cartesian product faster
     elementTypeSet = set( elementType )
 
-    if isinstance( statusTypes, str ):
+    if isinstance( statusTypes, basestring ):
       if not statusTypes:
         statusTypes = []
       else:
