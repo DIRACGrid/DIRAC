@@ -443,12 +443,12 @@ class SiteDirector( AgentModule ):
       pilotsWeMayWantToSubmit, additionalInfo = self._getPilotsWeMayWantToSubmit(ceDict)
       self.log.verbose('%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queue))
 
-      # Get the number of already waiting pilots for these task queues
+      # Get the number of already waiting pilots for the queue
       totalWaitingPilots = 0
       manyWaitingPilotsFlag = False
       if self.pilotWaitingFlag:
         lastUpdateTime = dateTime() - self.pilotWaitingTime * second
-        result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
+        result = pilotAgentsDB.countPilots({'Queue': queue,
                                             'Status': WAITING_PILOT_STATUS},
                                            None, lastUpdateTime)
         if not result['OK']:
