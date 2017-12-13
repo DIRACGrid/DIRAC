@@ -323,8 +323,8 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         elif noActiveReplicas:
           err = "No active replica found"
           errors[err] += 1
-          self.log.error("Unable to schedule transfer",
-                         "%s, %s at %s" % (opFile.LFN, err, ','.join(noActiveReplicas)))
+          self.log.verbose("Unable to schedule transfer",
+                           "%s, %s at %s" % (opFile.LFN, err, ','.join(noActiveReplicas)))
           opFile.Error = err
           # All source SEs are banned, delay execution by 1 hour
           self.request.delayNextExecution(60)
