@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 
 import time as nativetime
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.WorkloadManagementSystem.private.correctors.BaseCorrector import BaseCorrector
 
@@ -19,6 +19,7 @@ class BaseHistoryCorrector(BaseCorrector):
   _SLICE_MAX_CORRECTION = 'MaxCorrection'
 
   def initialize(self):
+    self.log = gLogger.getSubLogger("HistoryCorrector")
     self.__usageHistory = {}
     self.__slices = {}
     self.__lastHistoryUpdate = 0
