@@ -1,4 +1,4 @@
-[v6r20-pre9]
+[v6r20-pre10]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -26,6 +26,8 @@ NEW: Bulk job submission with protection of the operation transaction
 *DMS
 NEW: FTS3Agent working only with the FTS3 service to replace the existing one
 NEW: FTS3Utilities - use correct FTS Server Selection Policy
+NEW: StorageElement service - getFreeDiskSpace() and getTotalDiskSpace() take into account 
+     MAX_STORAGE_SIZE parameter value
 
 *Resources
 NEW: New SingularityComputingElement to submit jobs to a Singularity container
