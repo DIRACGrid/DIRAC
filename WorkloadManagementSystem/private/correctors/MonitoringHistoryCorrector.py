@@ -12,6 +12,7 @@ from DIRAC.WorkloadManagementSystem.private.correctors.BaseHistoryCorrector impo
 from DIRAC.Core.Utilities import Time
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 
+
 class MonitoringHistoryCorrector(BaseHistoryCorrector):
 
   def initialize(self):
@@ -42,5 +43,5 @@ class MonitoringHistoryCorrector(BaseHistoryCorrector):
     result = monitoringClient.getReport('WMSHistory', 'AverageNumberOfJobs',
                                         now - datetime.timedelta(seconds=timeSpan), now,
                                         reportCondition, reportGrouping,
-                                        {'lastSeconds' : timeSpan})
+                                        {'lastSeconds': timeSpan})
     return result

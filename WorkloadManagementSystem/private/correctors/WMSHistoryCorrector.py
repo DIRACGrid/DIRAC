@@ -13,7 +13,8 @@ from DIRAC.WorkloadManagementSystem.private.correctors.BaseHistoryCorrector impo
 from DIRAC.Core.Utilities import Time
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 
-class WMSHistoryCorrector( BaseHistoryCorrector ):
+
+class WMSHistoryCorrector(BaseHistoryCorrector):
 
   def initialize(self):
     super(WMSHistoryCorrector, self).initialize()
@@ -37,7 +38,7 @@ class WMSHistoryCorrector( BaseHistoryCorrector ):
       reportCondition = {'UserGroup': groupToUse}
     now = Time.dateTime()
     result = reportsClient.getReport('WMSHistory', 'AverageNumberOfJobs',
-                                      now - datetime.timedelta(seconds=timeSpan), now,
-                                      reportCondition, reportGrouping,
-                                      {'lastSeconds': timeSpan})
+                                     now - datetime.timedelta(seconds=timeSpan), now,
+                                     reportCondition, reportGrouping,
+                                     {'lastSeconds': timeSpan})
     return result
