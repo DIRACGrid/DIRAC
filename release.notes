@@ -1,3 +1,25 @@
+[v6r19p10]
+
+*Core
+FIX: MySQL - catch exception when closing closed connection
+
+*TS
+CHANGE: add possibility to get extension-specific tasks and files statuses in TransformationMonitor web application
+
+*RMS
+NEW: dirac-rms-request - add option --ListJobs to list the jobs for a set of requests
+
+*Resources
+FIX: Use parameters given at construction for SRM2 protocols List
+
+*StorageManagement
+FIX: use StorageElement object to get disk cache size
+
+*DMS
+FIX: DMSHelpers - fix case when no site is found for an SE
+FIX: ReplicateAndRegister - don't try and get SE metadata is replica is inactive
+
+
 [v6r19p9]
 
 *WMS
