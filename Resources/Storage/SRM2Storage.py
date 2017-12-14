@@ -23,10 +23,12 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.File import getSize
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 # # RCSID
 __RCSID__ = "$Id$"
 
+@deprecated('Replaced by gfal2 based plugins', onlyOnce = True)
 class SRM2Storage( StorageBase ):
   """ .. class:: SRM2Storage
 
