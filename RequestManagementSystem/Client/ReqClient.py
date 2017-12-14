@@ -398,11 +398,11 @@ class ReqClient(Client):
         op.Error = ''
         if op.Status == 'Failed':
           printOperation((i, op), onlyFailed=True)
-        for f in op:
-          if f.Status == 'Failed':
-            f.Attempt = 1
-            f.Error = ''
-            f.Status = 'Waiting'
+        for fi in op:
+          if fi.Status == 'Failed':
+            fi.Attempt = 1
+            fi.Error = ''
+            fi.Status = 'Waiting'
         if op.Status == 'Failed':
           op.Status = 'Waiting'
 
@@ -507,11 +507,12 @@ def printOperation(indexOperation, verbose=True, onlyFailed=False):
       prStr += '\n      Arguments:\n' + output.strip('\n')
     else:
       prStr += '\n      Service: %s' % decode[0][0]
-  gLogger.always("  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s" % (i, op.Type, op.OperationID if hasattr(op, 'OperationID') else '(not set yet)',
-                                                                                op.Order, op.Status,
-                                                                                (" Error='%s'" % op.Error) if op.Error and op.Error.strip(
-  ) else "",
-      (" Catalog=%s" % op.Catalog) if op.Catalog else ""))
+  gLogger.always("  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s" %
+                 (i, op.Type,
+                  op.OperationID if hasattr(op, 'OperationID') else '(not set yet)',
+                  op.Order, op.Status,
+                  (" Error='%s'" % op.Error) if op.Error and op.Error.strip() else "",
+                  (" Catalog=%s" % op.Catalog) if op.Catalog else ""))
   if prStr:
     gLogger.always("      %s" % prStr)
   for indexFile in enumerate(op):
@@ -520,15 +521,14 @@ def printOperation(indexOperation, verbose=True, onlyFailed=False):
 
 
 def printFile(indexFile):
-  j, f = indexFile
-  gLogger.always("    [%02d] ID=%s LFN='%s' Status='%s'%s%s%s" % (j + 1, f.FileID if hasattr(f, 'FileID') else '(not set yet)', f.LFN, f.Status,
-                                                                  (" Checksum='%s'" % f.Checksum) if f.Checksum or (
-      f.Error and 'checksum' in f.Error.lower()) else "",
-      (" Error='%s'" %
-       f.Error) if f.Error and f.Error.strip() else "",
-      (" Attempts=%d" % f.Attempt) if f.Attempt > 1 else ""
-  )
-  )
+  ind, fi = indexFile
+  gLogger.always("    [%02d] ID=%s LFN='%s' Status='%s'%s%s%s" %
+                 (ind + 1, fi.FileID if hasattr(fi, 'FileID') else '(not set yet)', fi.LFN, fi.Status,
+                  (" Checksum='%s'" % fi.Checksum) if fi.Checksum or
+                  (fi.Error and 'checksum' in fi.Error.lower()) else "",
+                  (" Error='%s'" % fi.Error) if fi.Error and fi.Error.strip() else "",
+                  (" Attempts=%d" % fi.Attempt) if fi.Attempt > 1 else "")
+                 )
 
 
 def recoverableRequest(request):
@@ -538,9 +538,9 @@ def recoverableRequest(request):
   operationErrorsOK = ('is banned for', 'Failed to perform exists from any catalog')
   for op in request:
     if op.Status == 'Failed' and (not op.Error or not [errStr for errStr in operationErrorsOK if errStr in op.Error]):
-      for f in op:
-        if f.Status == 'Failed':
-          if [errStr for errStr in excludedErrors if errStr in f.Error]:
+      for fi in op:
+        if fi.Status == 'Failed':
+          if [errStr for errStr in excludedErrors if errStr in fi.Error]:
             return False
           return True
   return True
