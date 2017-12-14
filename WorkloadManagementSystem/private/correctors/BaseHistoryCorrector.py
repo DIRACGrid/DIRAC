@@ -82,7 +82,7 @@ class BaseHistoryCorrector(BaseCorrector):
 
   def _getUsageHistoryForTimeSpan(self, timeSpan, groupToUse=""):
 
-    result = self._getHistoryData(self, timeSpan, groupToUse)
+    result = self._getHistoryData(timeSpan, groupToUse)
 
     if not result['OK']:
       self.log.error("Cannot get history data", result['Message'])
