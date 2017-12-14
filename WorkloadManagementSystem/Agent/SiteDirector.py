@@ -789,25 +789,25 @@ class SiteDirector(AgentModule):
       tqDict[tqID].append(pilotID)
 
     for tqID, pilotList in tqDict.items():
-      result = pilotAgentsDB.addPilotTQReference(pilotRef = pilotList,
-                                                 taskQueueID = tqID,
-                                                 ownerDN = self.pilotDN,
-                                                 ownerGroup = self.pilotGroup,
-                                                 broker = self.localhost,
-                                                 gridType = self.queueDict[queue]['CEType'],
-                                                 requirements = '',
-                                                 pilotStampDict = stampDict)
+      result = pilotAgentsDB.addPilotTQReference(pilotRef=pilotList,
+                                                 taskQueueID=tqID,
+                                                 ownerDN=self.pilotDN,
+                                                 ownerGroup=self.pilotGroup,
+                                                 broker=self.localhost,
+                                                 gridType=self.queueDict[queue]['CEType'],
+                                                 requirements='',
+                                                 pilotStampDict=stampDict)
       if not result['OK']:
         self.log.error(
             'Failed add pilots to the PilotAgentsDB: ', result['Message'])
         continue
       for pilot in pilotList:
-        result = pilotAgentsDB.setPilotStatus(pilotRef = pilot,
-                                              status = 'Submitted',
-                                              destination = self.queueDict[queue]['CEName'],
-                                              statusReason = 'Successfully submitted by the SiteDirector',
-                                              gridSite = self.queueDict[queue]['Site'],
-                                              queue = self.queueDict[queue]['QueueName'])
+        result = pilotAgentsDB.setPilotStatus(pilotRef=pilot,
+                                              status='Submitted',
+                                              destination=self.queueDict[queue]['CEName'],
+                                              statusReason='Successfully submitted by the SiteDirector',
+                                              gridSite=self.queueDict[queue]['Site'],
+                                              queue=self.queueDict[queue]['QueueName'])
         if not result['OK']:
           self.log.error('Failed to set pilot status: ', result['Message'])
           continue
