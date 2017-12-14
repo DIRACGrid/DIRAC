@@ -426,17 +426,21 @@ class SiteDirector(AgentModule):
     # First, we check if we want to submit pilots at all, and also where
     submit, anySite, jobSites, testSites = self._ifAndWhereToSubmit()
     if not submit:
-      self.log.notice('Not submitting any pilots at this cycle')
+      self.log.notice("Not submitting any pilots at this cycle")
       return S_OK()
 
     # From here on we assume we are going to (try to) submit some pilots
+    self.log.debug("Going to try to submit some pilots")
 
     queues = self.queueDict.keys()
     random.shuffle(queues)
+    self.log.verbose("Queues treated: %s" % ','.join(queues))
+
     self.totalSubmittedPilots = 0
 
     for queue in queues:
       # now submitting to the single queues
+      self.log.verbose("Evaluating queue %s" % queue)
 
       # are we going to submit pilots to this specific queue?
       if not self._allowedToSubmit(queue, anySite, jobSites, testSites):
@@ -754,13 +758,13 @@ class SiteDirector(AgentModule):
     pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
     # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
     # task queue priorities
-    pilotList = result['Value']
+    pilotList = submitResult['Value']
     self.queueSlots[queue]['AvailableSlots'] -= len(pilotList)
     self.totalSubmittedPilots += len(pilotList)
     self.log.info('Submitted %d pilots to %s@%s' % (len(pilotList),
                                                     self.queueDict[queue]['QueueName'],
                                                     self.queueDict[queue]['CEName']))
-    stampDict = result.get('PilotStampDict', {})
+    stampDict = submitResult.get('PilotStampDict', {})
 
     return S_OK((pilotsToSubmit, pilotList, stampDict))
 
@@ -785,25 +789,25 @@ class SiteDirector(AgentModule):
       tqDict[tqID].append(pilotID)
 
     for tqID, pilotList in tqDict.items():
-      result = pilotAgentsDB.addPilotTQReference(pilotList,
-                                                 tqID,
-                                                 self.pilotDN,
-                                                 self.pilotGroup,
-                                                 self.localhost,
-                                                 self.queueDict[queue]['CEType'],
-                                                 '',
-                                                 stampDict)
+      result = pilotAgentsDB.addPilotTQReference(pilotRef = pilotList,
+                                                 taskQueueID = tqID,
+                                                 ownerDN = self.pilotDN,
+                                                 ownerGroup = self.pilotGroup,
+                                                 broker = self.localhost,
+                                                 gridType = self.queueDict[queue]['CEType'],
+                                                 requirements = '',
+                                                 pilotStampDict = stampDict)
       if not result['OK']:
         self.log.error(
             'Failed add pilots to the PilotAgentsDB: ', result['Message'])
         continue
       for pilot in pilotList:
-        result = pilotAgentsDB.setPilotStatus(pilot,
-                                              'Submitted',
-                                              self.queueDict[queue]['CEName'],
-                                              'Successfully submitted by the SiteDirector',
-                                              self.queueDict[queue]['Site'],
-                                              self.queueDict[queue]['QueueName'])
+        result = pilotAgentsDB.setPilotStatus(pilotRef = pilot,
+                                              status = 'Submitted',
+                                              destination = self.queueDict[queue]['CEName'],
+                                              statusReason = 'Successfully submitted by the SiteDirector',
+                                              gridSite = self.queueDict[queue]['Site'],
+                                              queue = self.queueDict[queue]['QueueName'])
         if not result['OK']:
           self.log.error('Failed to set pilot status: ', result['Message'])
           continue
