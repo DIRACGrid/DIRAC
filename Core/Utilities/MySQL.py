@@ -322,7 +322,14 @@ class MySQL( object ):
         if len( self.__spares ) < self.__maxSpares:
           self.__spares.append( ( data[0], data[1] ) )
         else:
-          data[ 0 ].close()
+          try:
+            data[0].close()
+          except MySQLdb.ProgrammingError as exc:
+            gLogger.warn("ProgrammingError exception while closing MySQL connection: %s" % exc)
+            pass
+          except Exception as exc:
+            gLogger.warn("Exception while closing MySQL connection: %s" % exc)
+            pass
       except KeyError:
         pass
 
