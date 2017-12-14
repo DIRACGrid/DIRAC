@@ -324,9 +324,11 @@ class MySQL( object ):
         else:
           try:
             data[0].close()
-          except MySQLdb.ProgrammingError:
+          except MySQLdb.ProgrammingError as exc:
+            gLogger.warn("ProgrammingError exception while closing MySQL connection: %s" % exc)
             pass
-          except Exception:
+          except Exception as exc:
+            gLogger.warn("Exception while closing MySQL connection: %s" % exc)
             pass
       except KeyError:
         pass
