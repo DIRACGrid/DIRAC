@@ -420,16 +420,16 @@ def prettyPrint(mainItem, key='', offset=0):
   if key:
     key += ': '
   blanks = offset * ' '
-  if mainItem and isinstance(mainItem, type({})):
+  if mainItem and isinstance(mainItem, dict):
     output += "%s%s%s\n" % (blanks, key, '{') if blanks or key else ''
     for key in sorted(mainItem):
       prettyPrint(mainItem[key], key=key, offset=offset)
     output += "%s%s\n" % (blanks, '}') if blanks else ''
-  elif mainItem and isinstance(mainItem, type([])) or isinstance(mainItem, type(tuple())):
-    output += "%s%s%s\n" % (blanks, key, '[' if isinstance(mainItem, type([])) else '(')
+  elif mainItem and isinstance(mainItem, list) or isinstance(mainItem, tuple):
+    output += "%s%s%s\n" % (blanks, key, '[' if isinstance(mainItem, list) else '(')
     for item in mainItem:
       prettyPrint(item, offset=offset + 2)
-    output += "%s%s\n" % (blanks, ']' if isinstance(mainItem, type([])) else ')')
+    output += "%s%s\n" % (blanks, ']' if isinstance(mainItem, list) else ')')
   elif isinstance(mainItem, basestring):
     if '\n' in mainItem:
       prettyPrint(mainItem.strip('\n').split('\n'), offset=offset)
