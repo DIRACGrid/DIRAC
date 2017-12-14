@@ -106,7 +106,10 @@ class SiteDirector(AgentModule):
     self.globalParameters = {"NumberOfProcessors": 1,
                              "MaxRAM": 2048}
     self.failedQueueCycleFactor = 10
+    self.maxQueueLength = 86400 * 3
 
+    self.pilotWaitingFlag = True
+    self.pilotWaitingTime = 3600
     self.pilotLogLevel = 'INFO'
     self.rpcMatcher = None
     self.siteMaskList = []
@@ -117,21 +120,13 @@ class SiteDirector(AgentModule):
   def initialize(self):
     """ Initial settings
     """
-    # Clients
-    self.siteClient = SiteStatus()
-    self.rssClient = ResourceStatus()
-    self.rssFlag = self.rssClient.rssFlag
 
     # set of CS options
     self.am_setOption("PollingTime", 60.0)
     self.am_setOption("maxPilotWaitingHours", 6)
-    return S_OK()
-
-  def beginExecution(self):
-    """ This is run at every cycle
-    """
 
     self.gridEnv = self.am_getOption("GridEnv", getGridEnv())
+
     # The SiteDirector is for a particular user community
     self.vo = self.am_getOption("VO", '')
     if not self.vo:
@@ -155,6 +150,20 @@ class SiteDirector(AgentModule):
     else:
       self.voGroups = [self.group]
 
+    self.pilot = self.am_getOption('PilotScript', self.pilot)
+    self.extraModules = self.am_getOption('ExtraPilotModules', self.extraModules) + DIRAC_MODULES
+
+    return S_OK()
+
+  def beginExecution(self):
+    """ This is run at every cycle
+    """
+
+    # Get the clients
+    self.siteClient = SiteStatus()
+    self.rssClient = ResourceStatus()
+    self.rssFlag = self.rssClient.rssFlag
+
     result = findGenericPilotCredentials(vo=self.vo)
     if not result['OK']:
       return result
@@ -163,23 +172,21 @@ class SiteDirector(AgentModule):
     self.pilotGroup = self.am_getOption("PilotGroup", self.pilotGroup)
 
     self.defaultSubmitPools = getSubmitPools(self.group, self.vo)
-    self.pilot = self.am_getOption('PilotScript', self.pilot)
-    self.extraModules = self.am_getOption('ExtraPilotModules', self.extraModules) + DIRAC_MODULES
     self.workingDirectory = self.am_getOption('WorkDirectory')
-    self.maxQueueLength = self.am_getOption('MaxQueueLength', 86400 * 3)
+    self.maxQueueLength = self.am_getOption('MaxQueueLength', self.maxQueueLength)
     self.pilotLogLevel = self.am_getOption('PilotLogLevel', self.pilotLogLevel)
     self.maxJobsInFillMode = self.am_getOption('MaxJobsInFillMode', self.maxJobsInFillMode)
     self.maxPilotsToSubmit = self.am_getOption('MaxPilotsToSubmit', self.maxPilotsToSubmit)
-    self.pilotWaitingFlag = self.am_getOption('PilotWaitingFlag', True)
-    self.pilotWaitingTime = self.am_getOption('MaxPilotWaitingTime', 3600)
+    self.pilotWaitingFlag = self.am_getOption('PilotWaitingFlag', self.pilotWaitingFlag)
+    self.pilotWaitingTime = self.am_getOption('MaxPilotWaitingTime', self.pilotWaitingTime)
     self.failedQueueCycleFactor = self.am_getOption('FailedQueueCycleFactor', self.failedQueueCycleFactor)
     self.pilotStatusUpdateCycleFactor = self.am_getOption('PilotStatusUpdateCycleFactor', 10)
     self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', False)
 
     # Flags
-    self.updateStatus = self.am_getOption('UpdatePilotStatus', True)
-    self.getOutput = self.am_getOption('GetPilotOutput', False)
-    self.sendAccounting = self.am_getOption('SendPilotAccounting', True)
+    self.updateStatus = self.am_getOption('UpdatePilotStatus', self.updateStatus)
+    self.getOutput = self.am_getOption('GetPilotOutput', self.getOutput)
+    self.sendAccounting = self.am_getOption('SendPilotAccounting', self.sendAccounting)
 
     # Get the site description dictionary
     siteNames = None
@@ -445,7 +452,8 @@ class SiteDirector(AgentModule):
 
       ce, ceDict = self._getCE(queue)
 
-      pilotsWeMayWantToSubmit, additionalInfo = self._getPilotsWeMayWantToSubmit(ceDict)
+      pilotsWeMayWantToSubmit, additionalInfo = self._getPilotsWeMayWantToSubmit(
+          ceDict)  # additionalInfo is normally taskQueueDict
       self.log.verbose('%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queue))
 
       # Get the number of already waiting pilots for the queue
@@ -453,7 +461,8 @@ class SiteDirector(AgentModule):
       manyWaitingPilotsFlag = False
       if self.pilotWaitingFlag:
         lastUpdateTime = dateTime() - self.pilotWaitingTime * second
-        result = pilotAgentsDB.countPilots({'Queue': queue,
+        tqIDList = additionalInfo.keys()
+        result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
                                             'Status': WAITING_PILOT_STATUS},
                                            None, lastUpdateTime)
         if not result['OK']:
