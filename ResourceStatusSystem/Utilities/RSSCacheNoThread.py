@@ -8,7 +8,7 @@ After that, the cache is empty.
 
 """
 
-__RCSID__  = '$Id:$'
+__RCSID__ = '$Id:$'
 
 import itertools
 import random
@@ -19,7 +19,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 
-class Cache( object ):
+class Cache(object):
   """
     Cache basic class.
 
@@ -27,7 +27,7 @@ class Cache( object ):
     using them !
   """
 
-  def __init__( self, lifeTime, updateFunc ):
+  def __init__(self, lifeTime, updateFunc):
     """
     Constructor
 
@@ -42,53 +42,53 @@ class Cache( object ):
 
     # We set a 20% of the lifetime randomly, so that if we have thousands of jobs
     # starting at the same time, all the caches will not end at the same time.
-    randomLifeTimeBias  = 0.2 * random.random()
+    randomLifeTimeBias = 0.2 * random.random()
 
-    self.log            = gLogger.getSubLogger( self.__class__.__name__ )
+    self.log = gLogger.getSubLogger(self.__class__.__name__)
 
-    self.__lifeTime     = int( lifeTime * ( 1 + randomLifeTimeBias ) )
-    self.__updateFunc   = updateFunc
+    self.__lifeTime = int(lifeTime * (1 + randomLifeTimeBias))
+    self.__updateFunc = updateFunc
     # The records returned from the cache must be valid at least 30 seconds.
     self.__validSeconds = 30
 
     # Cache
-    self.__cache       = DictCache()
-    self.__cacheLock   = LockRing()
+    self.__cache = DictCache()
+    self.__cacheLock = LockRing()
     self.__cacheLock.getLock(self.__class__.__name__)
 
   #.............................................................................
   # internal cache object getter
 
-  def cacheKeys( self ):
+  def cacheKeys(self):
     """
     Cache keys getter
 
     :returns: list with valid keys on the cache
     """
 
-    return self.__cache.getKeys( validSeconds = self.__validSeconds )
+    return self.__cache.getKeys(validSeconds=self.__validSeconds)
 
   #.............................................................................
   # acquire / release Locks
 
-  def acquireLock( self ):
+  def acquireLock(self):
     """
     Acquires Cache lock
     """
 
-    self.__cacheLock.acquire( self.__class__.__name__ )
+    self.__cacheLock.acquire(self.__class__.__name__)
 
-  def releaseLock( self ):
+  def releaseLock(self):
     """
     Releases Cache lock
     """
 
-    self.__cacheLock.release( self.__class__.__name__)
+    self.__cacheLock.release(self.__class__.__name__)
 
   #.............................................................................
   # Cache getters
 
-  def get( self, cacheKeys ):
+  def get(self, cacheKeys):
     """
     Gets values for cacheKeys given, if all are found ( present on the cache and
     valid ), returns S_OK with the results. If any is not neither present not
@@ -103,45 +103,44 @@ class Cache( object ):
 
     result = {}
 
-
     for cacheKey in cacheKeys:
-      cacheRow = self.__cache.get( cacheKey, validSeconds = self.__validSeconds )
+      cacheRow = self.__cache.get(cacheKey, validSeconds=self.__validSeconds)
 
       if not cacheRow:
-        return S_ERROR( 'Cannot get %s' % str( cacheKey ) )
-      result.update( { cacheKey : cacheRow } )
+        return S_ERROR('Cannot get %s' % str(cacheKey))
+      result.update({cacheKey: cacheRow})
 
-    return S_OK( result )
+    return S_OK(result)
 
   #.............................................................................
   # Cache refreshers
 
-  def refreshCache( self ):
+  def refreshCache(self):
     """
     Purges the cache and gets fresh data from the update function.
 
     :return: S_OK | S_ERROR. If the first, its content is the new cache.
     """
 
-    self.log.verbose( 'refreshing...' )
+    self.log.verbose('refreshing...')
 
     self.__cache.purgeAll()
 
     newCache = self.__updateFunc()
-    if not newCache[ 'OK' ]:
-      self.log.error( newCache[ 'Message' ] )
+    if not newCache['OK']:
+      self.log.error(newCache['Message'])
       return newCache
 
-    newCache = self.__updateCache( newCache[ 'Value' ] )
+    newCache = self.__updateCache(newCache['Value'])
 
-    self.log.verbose( 'refreshed' )
+    self.log.verbose('refreshed')
 
     return newCache
 
   #.............................................................................
   # Private methods
 
-  def __updateCache( self, newCache ):
+  def __updateCache(self, newCache):
     """
     Given the new cache dictionary, updates the internal cache with it. It sets
     a duration to the entries of <self.__lifeTime> seconds.
@@ -154,14 +153,14 @@ class Cache( object ):
     """
 
     for cacheKey, cacheValue in newCache.items():
-      self.__cache.add( cacheKey, self.__lifeTime, value = cacheValue )
+      self.__cache.add(cacheKey, self.__lifeTime, value=cacheValue)
 
     # We are assuming nothing will fail while inserting in the cache. There is
     # no apparent reason to suspect from that piece of code.
-    return S_OK( newCache )
+    return S_OK(newCache)
 
 
-class RSSCache( Cache ):
+class RSSCache(Cache):
   """
   The RSSCache is an extension of Cache in which the cache keys are pairs of the
   form: ( elementName, statusType ).
@@ -173,7 +172,7 @@ class RSSCache( Cache ):
   methods are not !!
   """
 
-  def __init__( self, lifeTime, updateFunc ):
+  def __init__(self, lifeTime, updateFunc):
     """
     Constructor
 
@@ -191,11 +190,11 @@ class RSSCache( Cache ):
 
     """
 
-    super( RSSCache, self ).__init__( lifeTime, updateFunc )
+    super(RSSCache, self).__init__(lifeTime, updateFunc)
 
     self.allStatusTypes = RssConfiguration().getConfigStatusType()
 
-  def match( self, elementNames, elementType, statusTypes ):
+  def match(self, elementNames, elementType, statusTypes):
     """
     In first instance, if the cache is invalid, it will request a new one from
     the server.
@@ -220,7 +219,7 @@ class RSSCache( Cache ):
 
     self.acquireLock()
     try:
-      return self._match( elementNames, elementType, statusTypes )
+      return self._match(elementNames, elementType, statusTypes)
     finally:
       # Release lock, no matter what !
       self.releaseLock()
@@ -228,7 +227,7 @@ class RSSCache( Cache ):
   #.............................................................................
   # Private methods: NOT THREAD SAFE !!
 
-  def _match( self, elementNames, elementType, statusTypes ):
+  def _match(self, elementNames, elementType, statusTypes):
     """
     Method doing the actual work. It must be wrapped around locks to ensure no
     disaster happens.
@@ -246,37 +245,37 @@ class RSSCache( Cache ):
 
     # Gets the entire cache or a new one if it is empty / invalid
     validCache = self.__getValidCache()
-    if not validCache[ 'OK' ]:
+    if not validCache['OK']:
       return validCache
-    validCache = validCache[ 'Value' ]
+    validCache = validCache['Value']
 
     # Gets matched keys
-    matchKeys = self.__match( validCache, elementNames, elementType, statusTypes )
+    matchKeys = self.__match(validCache, elementNames, elementType, statusTypes)
 
-    if not matchKeys[ 'OK' ]:
+    if not matchKeys['OK']:
       return matchKeys
-    matchKeys = matchKeys[ 'Value' ]
+    matchKeys = matchKeys['Value']
 
     # Gets objects for matched keys. It will return S_ERROR if the cache value
     # has expired in between. It has 30 valid seconds, which means something was
     # extremely slow above.
-    cacheMatches = self.get( matchKeys )
-    if not cacheMatches[ 'OK' ]:
+    cacheMatches = self.get(matchKeys)
+    if not cacheMatches['OK']:
       return cacheMatches
 
-    cacheMatches = cacheMatches[ 'Value' ]
+    cacheMatches = cacheMatches['Value']
     if not cacheMatches:
-      return S_ERROR( 'Empty cache for: %s, %s' % ( elementNames, elementType ) )
+      return S_ERROR('Empty cache for: %s, %s' % (elementNames, elementType))
 
     # We undo the key into <elementName> and <statusType>
     try:
-      cacheMatchesDict = self.__getDictFromCacheMatches( cacheMatches )
+      cacheMatchesDict = self.__getDictFromCacheMatches(cacheMatches)
     except ValueError:
       cacheMatchesDict = cacheMatches
 
-    return S_OK( cacheMatchesDict )
+    return S_OK(cacheMatchesDict)
 
-  def __getValidCache( self ):
+  def __getValidCache(self):
     """
     Obtains the keys on the cache which are valid. If any, returns the complete
     valid dictionary. If the list is empty, we assume the cache is invalid or
@@ -290,11 +289,11 @@ class RSSCache( Cache ):
     if not cacheKeys:
       cache = self.refreshCache()
     else:
-      cache = self.get( cacheKeys )
+      cache = self.get(cacheKeys)
 
     return cache
 
-  def __match( self, validCache, elementNames, elementType, statusTypes ):
+  def __match(self, validCache, elementNames, elementType, statusTypes):
     """
     Obtains all keys on the cache ( should not be empty ! ).
 
@@ -323,57 +322,56 @@ class RSSCache( Cache ):
     cacheKeys = validCache.keys()
 
     if isinstance(elementNames, basestring):
-      elementNames = [ elementNames ]
+      elementNames = [elementNames]
     elif elementNames is None:
       if isinstance(cacheKeys[0], (tuple, list)):
-        elementNames = [ cacheKey[0] for cacheKey in cacheKeys ]
+        elementNames = [cacheKey[0] for cacheKey in cacheKeys]
       else:
         elementNames = cacheKeys
     # Remove duplicates, makes Cartesian product faster
-    elementNamesSet = set( elementNames )
+    elementNamesSet = set(elementNames)
 
     if isinstance(elementType, basestring):
       if not elementType or elementType == 'Site':
         elementType = []
       else:
-        elementType = [ elementType ]
+        elementType = [elementType]
     elif elementType is None:
-      elementType = [ cacheKey[1] for cacheKey in cacheKeys ]
+      elementType = [cacheKey[1] for cacheKey in cacheKeys]
     # Remove duplicates, makes Cartesian product faster
-    elementTypeSet = set( elementType )
+    elementTypeSet = set(elementType)
 
     if isinstance(statusTypes, basestring):
       if not statusTypes:
         statusTypes = []
       else:
-        statusTypes = [ statusTypes ]
+        statusTypes = [statusTypes]
     elif statusTypes is None:
       statusTypes = self.allStatusTypes
     # Remove duplicates, makes Cartesian product faster
-    statusTypesSet = set( statusTypes )
+    statusTypesSet = set(statusTypes)
 
     if not elementTypeSet and not statusTypesSet:
       cartesianProduct = elementNamesSet
     else:
-      cartesianProduct = set( itertools.product( elementNamesSet, elementTypeSet, statusTypesSet ) )
-
+      cartesianProduct = set(itertools.product(elementNamesSet, elementTypeSet, statusTypesSet))
 
     # Some users find funny sending empty lists, which will make the cartesianProduct
     # be []. Problem: [] is always subset, no matter what !
 
     if not cartesianProduct:
-      self.log.warn( 'Empty cartesian product' )
-      return S_ERROR( 'Empty cartesian product' )
+      self.log.warn('Empty cartesian product')
+      return S_ERROR('Empty cartesian product')
 
-    notInCache = list( cartesianProduct.difference( set( cacheKeys ) ) )
+    notInCache = list(cartesianProduct.difference(set(cacheKeys)))
     if notInCache:
-      self.log.warn( 'Cache misses: %s' % notInCache )
-      return S_ERROR( 'Cache misses: %s' % notInCache )
+      self.log.warn('Cache misses: %s' % notInCache)
+      return S_ERROR('Cache misses: %s' % notInCache)
 
-    return S_OK( cartesianProduct )
+    return S_OK(cartesianProduct)
 
   @staticmethod
-  def __getDictFromCacheMatches( cacheMatches ):
+  def __getDictFromCacheMatches(cacheMatches):
     """
     Formats the cacheMatches to a format expected by the RSS helpers clients.
 
@@ -389,9 +387,9 @@ class RSSCache( Cache ):
 
     for cacheKey, cacheValue in cacheMatches.iteritems():
       elementName, _elementType, statusType = cacheKey
-      result.setdefault( elementName, {})[statusType] = cacheValue
+      result.setdefault(elementName, {})[statusType] = cacheValue
 
     return result
 
 #...............................................................................
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
