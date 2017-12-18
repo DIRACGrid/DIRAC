@@ -58,3 +58,4 @@ pytests.xml
 nosetests.xml
 coverage.xml
 Local_*
+.hypothesis
