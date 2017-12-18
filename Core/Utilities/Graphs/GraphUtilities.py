@@ -5,6 +5,9 @@
     CMS/Phedex Project by ... <to be added>
 """
 
+__RCSID__ = "$Id$"
+
+
 import os
 import time
 import datetime
@@ -18,7 +21,6 @@ from matplotlib.dates import AutoDateLocator, AutoDateFormatter, DateFormatter, 
                              rrulewrapper, HOURLY, MINUTELY, SECONDLY, YEARLY, MONTHLY, DAILY
 from dateutil.relativedelta import relativedelta
 
-__RCSID__ = "$Id$"
 
 
 def evalPrefs( *args, **kw ):
