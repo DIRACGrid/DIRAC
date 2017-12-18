@@ -20,7 +20,7 @@ numpy>=1.10.1
 pexpect>=4.0.1
 psutil>=4.2.0
 Pygments>=1.5
-pylint==1.6.5
+pylint>=1.6.5
 pyparsing>=2.0.6
 pytest>=2.8.5
 pytest-cov>=2.2.0
