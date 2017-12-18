@@ -79,7 +79,7 @@ GOOD LUCK !
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-import cx_Oracle
+import cx_Oracle #pylint:disable=import-error
 import time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getGroupsWithVOMSAttribute
 import os
