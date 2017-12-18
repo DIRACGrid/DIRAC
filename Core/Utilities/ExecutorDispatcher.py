@@ -170,8 +170,7 @@ class ExecutorQueues:
                                                                                     self.__taskInQueue[taskId])
           self.__log.fatal(errMsg)
           return 0
-        else:
-          return len(self.__queues[eType])
+        return len(self.__queues[eType])
       if eType not in self.__queues:
         self.__queues[eType] = []
       self.__lastUse[eType] = time.time()
@@ -191,7 +190,7 @@ class ExecutorQueues:
     for eType in eTypes:
       try:
         taskId = self.__queues[eType].pop(0)
-        del(self.__taskInQueue[taskId])
+        del self.__taskInQueue[taskId]
         # Found! release and return!
         self.__lock.release()
         self.__lastUse[eType] = time.time()
@@ -229,7 +228,7 @@ class ExecutorQueues:
         iPos = self.__queues[eType].index(taskId)
       except ValueError:
         return False
-      del(self.__queues[eType][iPos])
+      del self.__queues[eType][iPos]
       return True
     finally:
       self.__lock.release()
@@ -803,14 +802,9 @@ class ExecutorDispatcher:
       return S_ERROR("Exception while sending task to executor")
     if isReturnStructure(result):
       return result
-    else:
-      errMsg = "Send task callback did not send back an S_OK/S_ERROR structure"
-      self.__log.fatal(errMsg)
-      return S_ERROR("Send task callback did not send back an S_OK/S_ERROR structure")
-    # Seems an executor problem
-    self.__log.verbose("Disconnecting executor")
-    self.removeExecutor(eId)
-    return S_ERROR("Exception while sending task to executor")
+    errMsg = "Send task callback did not send back an S_OK/S_ERROR structure"
+    self.__log.fatal(errMsg)
+    return S_ERROR(errMsg)
 
 
 if __name__ == "__main__":
