@@ -24,13 +24,13 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Resources
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.Time import dateTime, second
@@ -111,7 +111,7 @@ class SiteDirector(AgentModule):
     self.pilotWaitingFlag = True
     self.pilotWaitingTime = 3600
     self.pilotLogLevel = 'INFO'
-    self.rpcMatcher = None
+    self.matcherClient = None
     self.siteMaskList = []
     self.ceMaskList = []
 
@@ -404,7 +404,7 @@ class SiteDirector(AgentModule):
       self.ceMaskList = [ceName for ceName in result['Value'].iterkeys() if result['Value'][ceName]
                          ['all'] in ('Active', 'Degraded')]
 
-    self.rpcMatcher = RPCClient("WorkloadManagement/Matcher")
+    self.matcherClient = MatcherClient()
     result = self.submitJobs()
     if not result['OK']:
       self.log.error('Errors in the job submission: ', result['Message'])
@@ -573,7 +573,7 @@ class SiteDirector(AgentModule):
     self.log.verbose('Checking overall TQ availability with requirements')
     self.log.verbose(tqDict)
 
-    result = self.rpcMatcher.getMatchingTaskQueues(tqDict)
+    result = self.matcherClient.getMatchingTaskQueues(tqDict)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -699,7 +699,7 @@ class SiteDirector(AgentModule):
 
     pilotsWeMayWantToSubmit = 0
 
-    result = self.rpcMatcher.getMatchingTaskQueues(ceDict)
+    result = self.matcherClient.getMatchingTaskQueues(ceDict)
     if not result['OK']:
       self.log.error('Could not retrieve TaskQueues from TaskQueueDB', result['Message'])
       return result
@@ -1116,15 +1116,15 @@ shutil.rmtree( pilotWorkingDirectory )
 
 EOF
 """ % {'compressedAndEncodedProxy': compressedAndEncodedProxy,
-        'compressedAndEncodedPilot': compressedAndEncodedPilot,
-        'compressedAndEncodedInstall': compressedAndEncodedInstall,
-        'extraModuleString': extraModuleString,
-        'httpProxy': httpProxy,
-        'pilotExecDir': pilotExecDir,
-        'pilotScript': os.path.basename(self.pilot),
-        'installScript': os.path.basename(self.install),
-        'pilotOptions': ' '.join(pilotOptions),
-        'proxyFlag': proxyFlag}
+       'compressedAndEncodedPilot': compressedAndEncodedPilot,
+       'compressedAndEncodedInstall': compressedAndEncodedInstall,
+       'extraModuleString': extraModuleString,
+       'httpProxy': httpProxy,
+       'pilotExecDir': pilotExecDir,
+       'pilotScript': os.path.basename(self.pilot),
+       'installScript': os.path.basename(self.install),
+       'pilotOptions': ' '.join(pilotOptions),
+       'proxyFlag': proxyFlag}
 
     fd, name = tempfile.mkstemp(suffix='_pilotwrapper.py', prefix='DIRAC_', dir=workingDirectory)
     pilotWrapper = os.fdopen(fd, 'w')
