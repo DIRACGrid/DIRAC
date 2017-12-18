@@ -53,7 +53,7 @@ def convert_to_datetime( dstring ):
   orig_string = str( dstring )
   try:
     if isinstance( dstring, datetime.datetime ):
-      results = string
+      results = dstring
     else:
       results = eval( str( dstring ), {'__builtins__':None, 'time':time, 'math':math}, {} )
     if isinstance(results, (int, float)):
@@ -66,7 +66,7 @@ def convert_to_datetime( dstring ):
     t = None
     for dateformat in datestrings:
       try:
-        t = time.strptime( string, dateformat )
+        t = time.strptime( dstring, dateformat )
         timestamp = calendar.timegm( t ) #-time.timezone
         results = datetime.datetime.fromtimestamp( timestamp )
         break
@@ -74,8 +74,8 @@ def convert_to_datetime( dstring ):
         pass
     if t is None:
       try:
-        string = string.split( '.', 1 )[0]
-        t = time.strptime( string, dateformat )
+        dstring = dstring.split( '.', 1 )[0]
+        t = time.strptime( dstring, dateformat )
         timestamp = time.mktime( t ) #-time.timezone
         results = datetime.datetime.fromtimestamp( timestamp )
       except:
