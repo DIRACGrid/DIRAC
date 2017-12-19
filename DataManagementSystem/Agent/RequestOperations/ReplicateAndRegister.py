@@ -175,9 +175,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
     # Clients
     self.fc = FileCatalog()
-    if hasattr(self, "FTSMode") and getattr(self, "FTSMode"):
-      from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
-      self.ftsClient = FTSClient()
 
   def __call__(self):
     """ call me maybe """
@@ -256,9 +253,11 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         opFileToSchedule.ChecksumType = metadata[lfn]['ChecksumType']
       opFileToSchedule.Size = metadata[lfn]['Size']
 
-      filesToScheduleList.append((opFileToSchedule.toJSON()['Value'],
-                                  toSchedule[lfn][1],
-                                  toSchedule[lfn][2]))
+
+      filesToSchedule[opFileToSchedule.LFN] = opFileToSchedule
+
+
+    return S_OK( filesToSchedule )
 
     return S_OK(filesToScheduleList)
 
@@ -348,7 +347,10 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     for error, count in errors.iteritems():
       self.log.error(error, 'for %d files' % count)
 
-    res = self._addMetadataToFiles(toSchedule)
+
+
+    filesToScheduleList = []
+    res = self._addMetadataToFiles( toSchedule )
     if not res['OK']:
       return res
     else:
@@ -360,9 +362,10 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                                       toSchedule[lfn][2] ) )
 
     if filesToScheduleList:
-      ftsSchedule = self.ftsClient.ftsSchedule(self.request.RequestID,
-                                               self.operation.OperationID,
-                                               filesToScheduleList)
+
+      ftsSchedule = FTSClient().ftsSchedule( self.request.RequestID,
+                                             self.operation.OperationID,
+                                             filesToScheduleList )
       if not ftsSchedule["OK"]:
         self.log.error("Completely failed to schedule to FTS:", ftsSchedule["Message"])
         return ftsSchedule
@@ -494,6 +497,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
     # Just in case some transfers could not be scheduled, try them with RM
     return self.dmTransfer( fromFTS = True )
+
 
   def dmTransfer(self, fromFTS=False):
     """ replicate and register using dataManager  """
