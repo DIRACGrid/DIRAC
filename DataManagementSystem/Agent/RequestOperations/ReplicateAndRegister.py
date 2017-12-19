@@ -43,6 +43,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 
+
 def filterReplicas(opFile, logger=None, dataManager=None):
   """ filter out banned/invalid source SEs """
 
@@ -188,7 +189,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         self.log.verbose("usage of FTS system is banned for request's owner")
         return self.dmTransfer()
 
-      if getattr( self, 'UseNewFTS3', False ):
+      if getattr(self, 'UseNewFTS3', False):
         return self.fts3Transfer()
       else:
         return self.ftsTransfer()
@@ -238,8 +239,8 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       return res
     else:
       if res['Value']['Failed']:
-        self.log.warn("Can't schedule %d files: problems getting the metadata: %s" % (len(res['Value']['Failed']),
-                                                                                      ', '.join(res['Value']['Failed'])))
+        self.log.warn("Can't schedule %d files: problems getting the metadata: %s" %
+                      (len(res['Value']['Failed']), ', '.join(res['Value']['Failed'])))
       metadata = res['Value']['Successful']
 
     filesToSchedule = {}
@@ -253,13 +254,9 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         opFileToSchedule.ChecksumType = metadata[lfn]['ChecksumType']
       opFileToSchedule.Size = metadata[lfn]['Size']
 
-
       filesToSchedule[opFileToSchedule.LFN] = opFileToSchedule
 
-
-    return S_OK( filesToSchedule )
-
-    return S_OK(filesToScheduleList)
+    return S_OK(filesToSchedule)
 
   def _filterReplicas(self, opFile):
     """ filter out banned/invalid source SEs """
@@ -347,25 +344,23 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     for error, count in errors.iteritems():
       self.log.error(error, 'for %d files' % count)
 
-
-
     filesToScheduleList = []
-    res = self._addMetadataToFiles( toSchedule )
+    res = self._addMetadataToFiles(toSchedule)
     if not res['OK']:
       return res
     else:
       filesToSchedule = res['Value']
 
       for lfn in filesToSchedule:
-        filesToScheduleList.append( ( filesToSchedule[lfn][0].toJSON()['Value'],
-                                      toSchedule[lfn][1],
-                                      toSchedule[lfn][2] ) )
+        filesToScheduleList.append((filesToSchedule[lfn][0].toJSON()['Value'],
+                                    toSchedule[lfn][1],
+                                    toSchedule[lfn][2]))
 
     if filesToScheduleList:
 
-      ftsSchedule = FTSClient().ftsSchedule( self.request.RequestID,
-                                             self.operation.OperationID,
-                                             filesToScheduleList )
+      ftsSchedule = FTSClient().ftsSchedule(self.request.RequestID,
+                                            self.operation.OperationID,
+                                            filesToScheduleList)
       if not ftsSchedule["OK"]:
         self.log.error("Completely failed to schedule to FTS:", ftsSchedule["Message"])
         return ftsSchedule
@@ -395,11 +390,10 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     # Just in case some transfers could not be scheduled, try them with RM
     return self.dmTransfer(fromFTS=True)
 
-  def fts3Transfer( self ):
+  def fts3Transfer(self):
     """ replicate and register using FTS3 """
 
-    self.log.info( "scheduling files in FTS3..." )
-
+    self.log.info("scheduling files in FTS3...")
 
     fts3Files = []
     toSchedule = {}
@@ -411,9 +405,9 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       rmsFilesIds[opFile.FileID] = opFile
 
       opFile.Error = ''
-      gMonitor.addMark( "FTSScheduleAtt" )
+      gMonitor.addMark("FTSScheduleAtt")
       # # check replicas
-      replicas = self._filterReplicas( opFile )
+      replicas = self._filterReplicas(opFile)
       if not replicas["OK"]:
         continue
       replicas = replicas["Value"]
@@ -425,32 +419,32 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       noPFN = replicas['NoPFN']
 
       if validReplicas:
-        validTargets = list( set( self.operation.targetSEList ) - set( validReplicas ) )
+        validTargets = list(set(self.operation.targetSEList) - set(validReplicas))
         if not validTargets:
-          self.log.info( "file %s is already present at all targets" % opFile.LFN )
+          self.log.info("file %s is already present at all targets" % opFile.LFN)
           opFile.Status = "Done"
         else:
-          toSchedule[opFile.LFN] = [ opFile, validTargets ]
+          toSchedule[opFile.LFN] = [opFile, validTargets]
 
       else:
-        gMonitor.addMark( "FTSScheduleFail" )
+        gMonitor.addMark("FTSScheduleFail")
         if noMetaReplicas:
-          self.log.warn( "unable to schedule '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
+          self.log.warn("unable to schedule '%s', couldn't get metadata at %s" % (opFile.LFN, ','.join(noMetaReplicas)))
           opFile.Error = "Couldn't get metadata"
         elif noReplicas:
-          self.log.error( "Unable to schedule transfer",
-                          "File %s doesn't exist at %s" % ( opFile.LFN, ','.join( noReplicas ) ) )
+          self.log.error("Unable to schedule transfer",
+                         "File %s doesn't exist at %s" % (opFile.LFN, ','.join(noReplicas)))
           opFile.Error = 'No replicas found'
           opFile.Status = 'Failed'
         elif badReplicas:
-          self.log.error( "Unable to schedule transfer",
-                          "File %s, all replicas have a bad checksum at %s" % ( opFile.LFN, ','.join( badReplicas ) ) )
+          self.log.error("Unable to schedule transfer",
+                         "File %s, all replicas have a bad checksum at %s" % (opFile.LFN, ','.join(badReplicas)))
           opFile.Error = 'All replicas have a bad checksum'
           opFile.Status = 'Failed'
         elif noPFN:
-          self.log.warn( "unable to schedule %s, could not get a PFN at %s" % ( opFile.LFN, ','.join( noPFN ) ) )
+          self.log.warn("unable to schedule %s, could not get a PFN at %s" % (opFile.LFN, ','.join(noPFN)))
 
-    res = self._addMetadataToFiles( toSchedule )
+    res = self._addMetadataToFiles(toSchedule)
     if not res['OK']:
       return res
     else:
@@ -460,44 +454,40 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         opFile = filesToSchedule[lfn]
         validTargets = toSchedule[lfn][1]
         for targetSE in validTargets:
-          ftsFile = FTS3File.fromRMSFile( opFile, targetSE )
-          fts3Files.append( ftsFile )
-
-
+          ftsFile = FTS3File.fromRMSFile(opFile, targetSE)
+          fts3Files.append(ftsFile)
 
     if fts3Files:
-      res = Registry.getUsernameForDN( self.request.OwnerDN )
+      res = Registry.getUsernameForDN(self.request.OwnerDN)
       if not res['OK']:
-        self.log.error( "Cannot get username for DN", "%s %s" % ( self.request.OwnerDN, res['Message'] ) )
+        self.log.error("Cannot get username for DN", "%s %s" % (self.request.OwnerDN, res['Message']))
         return res
 
       username = res['Value']
-      fts3Operation = FTS3TransferOperation.fromRMSObjects( self.request, self.operation, username )
+      fts3Operation = FTS3TransferOperation.fromRMSObjects(self.request, self.operation, username)
       fts3Operation.ftsFiles = fts3Files
 
-      ftsSchedule = FTS3Client().persistOperation( fts3Operation )
+      ftsSchedule = FTS3Client().persistOperation(fts3Operation)
       if not ftsSchedule["OK"]:
-        self.log.error( "Completely failed to schedule to FTS3:", ftsSchedule["Message"] )
+        self.log.error("Completely failed to schedule to FTS3:", ftsSchedule["Message"])
         return ftsSchedule
 
       # might have nothing to schedule
       ftsSchedule = ftsSchedule["Value"]
-      self.log.info( "Scheduled with FTS3Operation id %s" % ftsSchedule )
+      self.log.info("Scheduled with FTS3Operation id %s" % ftsSchedule)
 
-
-      self.log.info( "%d files have been scheduled to FTS3" % len( fts3Files ) )
+      self.log.info("%d files have been scheduled to FTS3" % len(fts3Files))
 
       for ftsFile in fts3Files:
         opFile = rmsFilesIds[ftsFile.rmsFileID]
-        gMonitor.addMark( "FTSScheduleOK", 1 )
+        gMonitor.addMark("FTSScheduleOK", 1)
         opFile.Status = "Scheduled"
-        self.log.debug( "%s has been scheduled for FTS" % opFile.LFN )
+        self.log.debug("%s has been scheduled for FTS" % opFile.LFN)
     else:
-      self.log.info( "No files to schedule after metadata checks" )
+      self.log.info("No files to schedule after metadata checks")
 
     # Just in case some transfers could not be scheduled, try them with RM
-    return self.dmTransfer( fromFTS = True )
-
+    return self.dmTransfer(fromFTS=True)
 
   def dmTransfer(self, fromFTS=False):
     """ replicate and register using dataManager  """
