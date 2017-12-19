@@ -253,13 +253,10 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         opFileToSchedule.ChecksumType = metadata[lfn]['ChecksumType']
       opFileToSchedule.Size = metadata[lfn]['Size']
 
-
       filesToSchedule[opFileToSchedule.LFN] = opFileToSchedule
-
 
     return S_OK( filesToSchedule )
 
-    return S_OK(filesToScheduleList)
 
   def _filterReplicas(self, opFile):
     """ filter out banned/invalid source SEs """
