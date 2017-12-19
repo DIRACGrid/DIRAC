@@ -66,7 +66,7 @@ def convert_to_datetime( dstring ):
     t = None
     for dateformat in datestrings:
       try:
-        t = time.strptime( dstring, dateformat )
+        t = time.strptime(dstring, dateformat)
         timestamp = calendar.timegm( t ) #-time.timezone
         results = datetime.datetime.fromtimestamp( timestamp )
         break
@@ -74,8 +74,8 @@ def convert_to_datetime( dstring ):
         pass
     if t is None:
       try:
-        dstring = dstring.split( '.', 1 )[0]
-        t = time.strptime( dstring, dateformat )
+        dstring = dstring.split('.', 1)[0]
+        t = time.strptime(dstring, dateformat)
         timestamp = time.mktime( t ) #-time.timezone
         results = datetime.datetime.fromtimestamp( timestamp )
       except:
