@@ -89,7 +89,7 @@ import cx_Oracle  # pylint:disable=import-error
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getGroupsWithVOMSAttribute
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getGroupsWithVOMSAttribute  # noqa
 
 
 
