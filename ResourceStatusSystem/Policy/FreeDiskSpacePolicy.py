@@ -1,6 +1,6 @@
-""" SpaceTokenOccupancyPolicy
+""" FreeDiskSpacePolicy
 
-   SpaceTokenOccupancyPolicy.__bases__:
+   FreeDiskSpacePolicy.__bases__:
      DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase.PolicyBase
 
 """
@@ -11,23 +11,23 @@ from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
 
-class SpaceTokenOccupancyPolicy(PolicyBase):
+class FreeDiskSpacePolicy(PolicyBase):
   """
-  The SpaceTokenOccupancyPolicy class is a policy class satisfied when a SE has a
+  The FreeDiskSpacePolicy class is a policy class satisfied when a SE has a
   low occupancy.
 
-  SpaceTokenOccupancyPolicy, given the space left at the element, proposes a new status.
+  FreeDiskSpacePolicy, given the space left at the element, proposes a new status.
   """
 
   @staticmethod
   def _evaluate(commandResult):
     """
-    Evaluate policy on SE occupancy: Use SpaceTokenOccupancyCommand
+    Evaluate policy on SE occupancy: Use FreeDiskSpaceCommand
 
     :Parameters:
       **commandResult** - S_OK / S_ERROR
         result of the command. It is expected ( iff S_OK ) a dictionary like
-        { 'Total' : .., 'Free' : .., 'Guaranteed': .. }
+        { 'Total' : .., 'Free' : ..}
 
     :return:
       {
@@ -52,25 +52,26 @@ class SpaceTokenOccupancyPolicy(PolicyBase):
 
     commandResult = commandResult[0]
 
-    for key in ['Total', 'Free', 'Guaranteed']:
+    for key in ['Total', 'Free']:
 
-      if key not in commandResult.keys():
+      if key not in commandResult:
         result['Status'] = 'Error'
         result['Reason'] = 'Key %s missing' % key.lower()
         return S_OK(result)
 
     free = float(commandResult['Free'])
 
-    # Units are TB ! ( 0.01 == 10 GB )
+    # Units (TB, GB, MB) may change,
+    # depending on the configuration of the command in Configurations.py
     if free < 0.1:
       result['Status'] = 'Banned'
-      result['Reason'] = 'Free space < 100GB'
+      result['Reason'] = 'Too little free space'
     elif free < 5:
       result['Status'] = 'Degraded'
-      result['Reason'] = 'Free space < 5TB'
+      result['Reason'] = 'Little free space'
     else:
       result['Status'] = 'Active'
-      result['Reason'] = 'Free space > 5TB'
+      result['Reason'] = 'Enough free space'
 
     return S_OK(result)
 

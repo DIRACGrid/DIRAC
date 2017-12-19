@@ -503,15 +503,18 @@ class DIPStorage(StorageBase):
     resDict = {'Failed': failed, 'Successful': successful}
     return S_OK(resDict)
 
-  def getOccupancy(self):
+  def getOccupancy(self, *parms, **kws):
     """ Gets the DIPStorage occupancy info
+
+        :return: S_OK/S_ERROR (free and total space, in MB)
     """
     rpc = RPCClient(self.getURLBase(), timeout=120)
-    free = rpc.getFreeDiskSpace("/")
+
+    free = rpc.getFreeDiskSpace()
     if not free['OK']:
       return free
 
-    total = rpc.getTotalDiskSpace("/")
+    total = rpc.getTotalDiskSpace()
     if not total['OK']:
       return total
 

@@ -1,23 +1,20 @@
 ''' FreeDiskSpaceCommand
 
-  The Command gets the free space that is left in a DIRAC Storage Element
+  The Command gets the free space that is left in a Storage Element
 
 '''
 
+__RCSID__ = '$Id:$'
+
 from datetime import datetime
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
-__RCSID__ = '$Id:  $'
-
-# FIXME: this command may not be needed anymore, as we can get the space occupancy for DIP SE (and not only) by simply
-# se = StorageElement().getOccupancy()
-# Alternatively, this may survive and we remove SpaceTokenOccupancyCommand
-
+#FIXME: use unit!
 
 class FreeDiskSpaceCommand(Command):
   '''
@@ -28,8 +25,7 @@ class FreeDiskSpaceCommand(Command):
 
     super(FreeDiskSpaceCommand, self).__init__(args, clients=clients)
 
-    self.rpc = None
-    self.rsClient = ResourceManagementClient()
+    self.rmClient = ResourceManagementClient()
 
   def _prepareCommand(self):
     '''
@@ -41,54 +37,44 @@ class FreeDiskSpaceCommand(Command):
       return S_ERROR('"name" not found in self.args')
     elementName = self.args['name']
 
-    return S_OK(elementName)
+    unit = 'TB'
+    if 'unit' in self.args:
+      unit = self.args['unit']
+
+    return S_OK((elementName, unit))
 
   def doNew(self, masterParams=None):
     """
-    Gets the total and the free disk space of a DIPS storage element that
-    is found in the CS and inserts the results in the SpaceTokenOccupancyCache table
+    Gets the parameters to run, either from the master method or from its
+    own arguments.
+
+    Gets the total and the free disk space of a storage element
+    and inserts the results in the SpaceTokenOccupancyCache table
     of ResourceManagementDB database.
     """
 
     if masterParams is not None:
       elementName = masterParams
+      unit = 'TB'
     else:
-      elementName = self._prepareCommand()
+      elementName, unit = self._prepareCommand()
       if not elementName['OK']:
         return elementName
 
+    endpointResult = CSHelpers.getStorageElementEndpoint(elementName)
+    if not endpointResult['OK']:
+      return endpointResult
+
     se = StorageElement(elementName)
+    occupancyResult = se.getOccupancy()
+    if not occupancyResult['OK']:
+      return occupancyResult
+    occupancy = occupancyResult['Value']
 
-    elementURL = se.getStorageParameters(protocol="dips")
-
-    if elementURL['OK']:
-      elementURL = se.getStorageParameters(protocol="dips")['Value']['URLBase']
-    else:
-      gLogger.verbose("Not a DIPS storage element, skipping...")
-      return S_OK()
-
-    self.rpc = RPCClient(elementURL, timeout=120)
-
-    free = self.rpc.getFreeDiskSpace("/")
-
-    if not free['OK']:
-      return free
-    free = free['Value']
-
-    total = self.rpc.getTotalDiskSpace("/")
-
-    if not total['OK']:
-      return total
-    total = total['Value']
-
-    if free and free < 1:
-      free = 1
-    if total and total < 1:
-      total = 1
-
-    result = self.rsClient.addOrModifySpaceTokenOccupancyCache(endpoint=elementURL,
+    result = self.rmClient.addOrModifySpaceTokenOccupancyCache(endpoint=endpointResult['Value'],
                                                                lastCheckTime=datetime.utcnow(),
-                                                               free=free, total=total,
+                                                               free=occupancy['Free'],
+                                                               total=occupancy['Total'],
                                                                token=elementName)
     if not result['OK']:
       return result
@@ -98,13 +84,14 @@ class FreeDiskSpaceCommand(Command):
   def doCache(self):
     """
     This is a method that gets the element's details from the spaceTokenOccupancy cache.
+    It will return a list of dictionaries if there are results.
     """
 
-    elementName = self._prepareCommand()
+    elementName, unit = self._prepareCommand()
     if not elementName['OK']:
       return elementName
 
-    result = self.rsClient.selectSpaceTokenOccupancyCache(token=elementName)
+    result = self.rmClient.selectSpaceTokenOccupancyCache(token=elementName)
 
     if not result['OK']:
       return result

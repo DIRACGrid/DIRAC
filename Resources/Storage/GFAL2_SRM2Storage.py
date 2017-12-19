@@ -9,8 +9,6 @@
 
 # pylint: disable=invalid-name
 
-import lcg_util  # pylint: disable=import-error
-
 # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import pythonCall
@@ -170,12 +168,12 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
     if res['OK']:
       return S_OK( res['Value']['user.replicas'] )
-    else:
-      errStr = 'GFAL2_SRM2Storage.__getSingleTransportURL: Extended attribute tURL is not set.'
-      self.log.debug( errStr, res['Message'] )
-      return res
 
-  def getOccupancy(self):
+    errStr = 'GFAL2_SRM2Storage.__getSingleTransportURL: Extended attribute tURL is not set.'
+    self.log.debug( errStr, res['Message'] )
+    return res
+
+  def getOccupancy(self, *parms, **kws):
     """ Gets the GFAL2_SRM2Storage occupancy info.
 
       It queries the srm interface, and hopefully it will not crash. Out of the
@@ -187,6 +185,8 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
                                               self.protocolParameters['Port'],
                                               self.protocolParameters['WSUrl'].split('?')[0])
 
+    # FIXME: re-do without lcg_util (gfal1)
+    import lcg_util  # pylint: disable=import-error
     occupancyResult = pythonCall(10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0)
     if not occupancyResult['OK']:
       self.log.error("Could not get spaceToken occupancy", "from endPoint/spaceToken %s/%s : %s" %
@@ -202,7 +202,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     sTokenDict = {}
     sTokenDict['Endpoint'] = spaceTokenEndpoint
     sTokenDict['Token'] = spaceToken
-    # Bytes to Terabytes #FIXME: have to harmonize with other SE types
+    # Bytes to Terabytes #FIXME: have to harmonize with other SE types ---> use MB?
     sTokenDict['Total'] = float(output.get('totalsize', '0')) / 1e12
     sTokenDict['Guaranteed'] = float(output.get('guaranteedsize', '0')) / 1e12
     sTokenDict['Free'] = float(output.get('unusedsize', '0')) / 1e12

@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = '$Id:  $'
+__RCSID__ = '$Id: $'
 
 
 POLICIESMETA = { # DownTime POLICIES
@@ -38,16 +38,32 @@ POLICIESMETA = { # DownTime POLICIES
                     'args'        : { 'hours' : 12, 'onlyCache' : True }, },
 
 
-    # Space Token POLICIES........................................................
-    'SpaceTokenOccupancy': {
-        'description' : "Space token occupancy",
-        'module'      : 'SpaceTokenOccupancyPolicy',
-        'command'     : ( 'SpaceTokenOccupancyCommand', 'SpaceTokenOccupancyCommand' ),
-        'args'        : { 'onlyCache' : True },
+    # Free Disk Space in Terabytes
+    'FreeDiskSpaceTB': {
+        'description' : "Free disk space",
+        'module'      : 'FreeDiskSpacePolicy',
+        'command'     : ( 'FreeDiskSpaceCommand', 'FreeDiskSpaceCommand' ),
+        'args'        : { 'unit': 'TB', 'onlyCache' : True },
+    },
+
+    # Free Disk Space in Gigabytes
+    'FreeDiskSpaceTB': {
+        'description' : "Free disk space",
+        'module'      : 'FreeDiskSpacePolicy',
+        'command'     : ( 'FreeDiskSpaceCommand', 'FreeDiskSpaceCommand' ),
+        'args'        : { 'unit': 'GB', 'onlyCache' : True },
+    },
+
+    # Free Disk Space in Megabytes
+    'FreeDiskSpaceTB': {
+        'description' : "Free disk space",
+        'module'      : 'FreeDiskSpacePolicy',
+        'command'     : ( 'FreeDiskSpaceCommand', 'FreeDiskSpaceCommand' ),
+        'args'        : { 'unit': 'MB', 'onlyCache' : True },
     },
 
 
-    # Job POLICIES..............................................................
+    # Job POLICIES
     'JobDoneRatio': {
         'description' : "done / ( completed + done ) jobs ( 30 min )",
         'module'      : 'JobDoneRatioPolicy',
