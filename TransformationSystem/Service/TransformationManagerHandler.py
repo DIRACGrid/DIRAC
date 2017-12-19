@@ -10,6 +10,11 @@ transTypes = [basestring, int, long]
 
 __RCSID__ = "$Id$"
 
+TASKS_STATE_NAMES = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled',
+                     'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
+FILES_STATE_NAMES = ['PercentProcessed', 'Processed', 'Unused', 'Assigned', 'Total', 'Problematic',
+                     'ApplicationCrash', 'MaxReset']
+
 
 class TransformationManagerHandlerBase(RequestHandler):
 
@@ -616,6 +621,7 @@ class TransformationManagerHandlerBase(RequestHandler):
     if not res['OK']:
       return self._parseRes(res)
 
+    ops = Operations()
     # Prepare the standard structure now within the resultDict dictionary
     resultDict = {}
     trList = res['Records']
@@ -626,13 +632,10 @@ class TransformationManagerHandlerBase(RequestHandler):
     # As this list is a reference to the list in the DB, we cannot extend it, therefore copy it
     resultDict['ParameterNames'] = list(res['ParameterNames'])
     # Add the job states to the ParameterNames entry
-    taskStateNames = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed',
-                      'Waiting', 'Done', 'Completed', 'Stalled',
-                      'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
+    taskStateNames = TASKS_STATE_NAMES + ops.getValue('Transformations/AdditionalTaskStates', [])
     resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
     # Add the file states to the ParameterNames entry
-    fileStateNames = ['PercentProcessed', 'Processed', 'Unused', 'Assigned', 'Total', 'Problematic',
-                      'ApplicationCrash', 'MaxReset']
+    fileStateNames = FILES_STATE_NAMES + ops.getValue('Transformations/AdditionalFileStates', [])
     resultDict['ParameterNames'] += ['Files_' + x for x in fileStateNames]
 
     # Get the transformations which are within the selected window
@@ -647,12 +650,12 @@ class TransformationManagerHandlerBase(RequestHandler):
     transList = trList[ini:last]
 
     statusDict = {}
-    extendableTranfs = Operations().getValue('Transformations/ExtendableTransfTypes',
-                                             ['Simulation', 'MCsimulation'])
-    givenUpFileStatus = Operations().getValue('Transformations/GivenUpFileStatus',
-                                              ['NotProcessed', 'Removed', 'MissingInFC', 'MissingLFC'])
-    problematicStatuses = Operations().getValue('Transformations/ProblematicStatuses',
-                                                ['Problematic'])
+    extendableTranfs = ops.getValue('Transformations/ExtendableTransfTypes',
+                                    ['Simulation', 'MCsimulation'])
+    givenUpFileStatus = ops.getValue('Transformations/GivenUpFileStatus',
+                                     ['MissingInFC'])
+    problematicStatuses = ops.getValue('Transformations/ProblematicStatuses',
+                                       ['Problematic'])
     # Add specific information for each selected transformation
     for trans in transList:
       transDict = dict(zip(resultDict['ParameterNames'], trans))

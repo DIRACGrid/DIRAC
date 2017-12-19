@@ -60,6 +60,13 @@ class StorageBase(object):
 
     self.__updateParameters(parameterDict)
 
+    # Keep the list of all parameters passed for constructions
+    # Taken from the CS
+    # In a further major release, this could be nerged together
+    # with protocolParameters. There is no reason for it to
+    # be so strict about the possible content.  
+    self._allProtocolParameters = parameterDict
+
     if hasattr(self, '_INPUT_PROTOCOLS'):
       self.protocolParameters['InputProtocols'] = getattr(self, '_INPUT_PROTOCOLS')
     else:
