@@ -14,7 +14,8 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
-#FIXME: use unit!
+# FIXME: use unit!
+
 
 class FreeDiskSpaceCommand(Command):
   '''
