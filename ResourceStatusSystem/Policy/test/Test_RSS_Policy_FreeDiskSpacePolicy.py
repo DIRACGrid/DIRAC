@@ -62,36 +62,35 @@ class FreeDiskSpacePolicy_Success(FreeDiskSpacePolicy_TestCase):
     res = module._evaluate({'OK': True, 'Value': [{'A': 1}]})
     self.assertTrue(res['OK'])
     self.assertEqual('Error', res['Value']['Status'])
-    self.assertEqual('Key total missing', res['Value']['Reason'])
+    self.assertEqual('Key Total missing', res['Value']['Reason'])
 
     res = module._evaluate({'OK': True, 'Value': [{'Total': 1}]})
     self.assertTrue(res['OK'])
     self.assertEqual('Error', res['Value']['Status'])
-    self.assertEqual('Key free missing', res['Value']['Reason'])
+    self.assertEqual('Key Free missing', res['Value']['Reason'])
+
+    res = module._evaluate({'OK': True, 'Value': [{'Total': 100, 'Fre': 0.0}]})
+    self.assertTrue(res['OK'])
+    self.assertEqual('Error', res['Value']['Status'])
+    self.assertEqual('Key Free missing', res['Value']['Reason'])
 
     res = module._evaluate({'OK': True, 'Value': [{'Total': 100, 'Free': 0.0}]})
     self.assertTrue(res['OK'])
-    self.assertEqual('Error', res['Value']['Status'])
-    self.assertEqual('Key guaranteed missing', res['Value']['Reason'])
-
-    res = module._evaluate({'OK': True, 'Value': [{'Total': 100, 'Free': 0.0,
-                                                   'Guaranteed': 1}]})
-    self.assertTrue(res['OK'])
     self.assertEqual('Banned', res['Value']['Status'])
-    self.assertEqual('Free space < 100GB', res['Value']['Reason'])
+    self.assertEqual('Too little free space', res['Value']['Reason'])
 
     res = module._evaluate({'OK': True, 'Value': [{'Total': 100, 'Free': 4.0,
                                                    'Guaranteed': 1}]})
     self.assertTrue(res['OK'])
     self.assertEqual('Degraded', res['Value']['Status'])
-    self.assertEqual('Free space < 5TB',
+    self.assertEqual('Little free space',
                      res['Value']['Reason'])
 
     res = module._evaluate({'OK': True, 'Value': [{'Total': 100, 'Free': 100,
                                                    'Guaranteed': 1}]})
     self.assertTrue(res['OK'])
     self.assertEqual('Active', res['Value']['Status'])
-    self.assertEqual('Free space > 5TB',
+    self.assertEqual('Enough free space',
                      res['Value']['Reason'])
 
 
