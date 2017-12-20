@@ -53,7 +53,6 @@ MAX_STORAGE_SIZE = 0
 USE_TOKENS = False
 
 
-
 def getDiskSpace(path, total=False):
   """
     Returns disk usage of the given path, in MB.
@@ -70,7 +69,7 @@ def getDiskSpace(path, total=False):
       # return free space
       queriedSize = st.f_bavail
 
-    result = float(queriedSize * st.f_frsize) / float(1024*1024)
+    result = float(queriedSize * st.f_frsize) / float(1024 * 1024)
 
   except OSError as e:
     return S_ERROR(errno.EIO, "Error while getting the available disk space: %s" % repr(e))

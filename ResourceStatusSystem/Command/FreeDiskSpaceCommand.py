@@ -96,7 +96,7 @@ class FreeDiskSpaceCommand(Command):
     if unit not in UNIT_CONVERSION:
       return S_ERROR("No valid unit specified")
     convert = UNIT_CONVERSION[unit]
-    return S_OK({'Free': float(free)/float(convert), 'Total': float(total)/float(convert)})
+    return S_OK({'Free': float(free) / float(convert), 'Total': float(total) / float(convert)})
 
   def doCache(self):
     """
@@ -121,7 +121,7 @@ class FreeDiskSpaceCommand(Command):
     if unit not in UNIT_CONVERSION:
       return S_ERROR("No valid unit specified")
     convert = UNIT_CONVERSION[unit]
-    return S_OK({'Free': float(free)/float(convert), 'Total': float(total)/float(convert)})
+    return S_OK({'Free': float(free) / float(convert), 'Total': float(total) / float(convert)})
 
   def doMaster(self):
     """
