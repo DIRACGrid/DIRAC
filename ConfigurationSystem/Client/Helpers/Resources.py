@@ -89,6 +89,15 @@ def getFTS3Servers():
   return S_OK( ftsServers )
 
 
+def getFTS3ServerName(serverUrl):
+  """ returns the fts server name for a given fts server url
+  """
+  csPath = cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3")
+  for resourceName in gConfig.getOptions(csPath).get('Value', []):
+    if serverUrl == gConfig.getValue(cfgPath(csPath, resourceName)):
+      return S_OK(resourceName)
+  return S_ERROR("FTS server not found ", serverUrl)
+
 def getSiteTier( site ):
   """
     Return Tier level of the given Site

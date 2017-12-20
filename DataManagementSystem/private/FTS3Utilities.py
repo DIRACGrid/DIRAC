@@ -6,10 +6,19 @@ import datetime
 import random
 import threading
 
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerName
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
+
+
+def _getVoName(lfn):
+  try:
+    voName = lfn.split('/')[1]
+    return S_OK(voName)
+  except:
+    return S_ERROR("Failed to extract vo name from lfn")
 
 def _checkSourceReplicas( ftsFiles ):
   """ Check the active replicas
@@ -326,9 +335,14 @@ class FTS3ServerPolicy( object ):
   @staticmethod
   def _getFTSServerStatus( ftsServer ):
     """ Fetch the status of the FTS server from RSS """
-    pub = RPCClient( 'ResourceStatus/Publisher' )
-    res = pub.getElementStatuses( 'Resource', ftsServer, None, None, None, None )
 
+    res = getFTS3ServerName(ftsServer)
+    if not res['OK']:
+      return res
+    ftsServerName = res['Value']
+
+    pub = RPCClient('ResourceStatus/Publisher')
+    res = pub.getElementStatuses('Resource', ftsServerName, 'FTS', None, None, None)
     if not res['OK']:
       return res
 

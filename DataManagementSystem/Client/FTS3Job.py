@@ -14,7 +14,7 @@ from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
-
+from DIRAC.DataManagementSystem.private.FTS3Utilities import _getVoName
 
 class FTS3Job( FTS3Serializable ):
   """ Abstract class to represent a job to be executed by FTS. It belongs
@@ -141,8 +141,7 @@ class FTS3Job( FTS3Serializable ):
     if seName:
       seObj = StorageElement( seName )
 
-
-      res = seObj.getStorageParameters( "SRM2" )
+      res = seObj.getStorageParameters("GFAL2_SRM2")
       if not res['OK']:
         return res
 
@@ -200,11 +199,19 @@ class FTS3Job( FTS3Serializable ):
     source_spacetoken = res['Value']
 
     # getting all the source surls
-    res = StorageElement( self.sourceSE ).getURL( allTargetSURLs, protocol = 'srm' )
+    lfns = allTargetSURLs.keys()
+
+    voName = None
+    if lfns:
+      res = _getVoName(lfns[0])
+      if res['OK']:
+        voName = res['Value']
+
+    res = StorageElement(self.sourceSE, vo=voName).getURL(allTargetSURLs, protocol='srm')
     if not res['OK']:
       return res
 
-    for lfn, reason in res['Value']['Failed']:
+    for lfn, reason in res['Value']['Failed'].iteritems():
       failedLFNs.add( lfn )
       log.error( "Could not get source SURL", "%s %s" % ( lfn, reason ) )
 
@@ -436,18 +443,21 @@ class FTS3Job( FTS3Serializable ):
       return res
     target_spacetoken = res['Value']
 
-
     allLFNs = [ftsFile.lfn for ftsFile in self.filesToSubmit]
 
     failedLFNs = set()
-
+    voName = None
+    if allLFNs:
+      res = _getVoName(allLFNs[0])
+      if res['OK']:
+        voName = res['Value']
 
     # getting all the target surls
-    res = StorageElement( self.targetSE ).getURL( allLFNs, protocol = 'srm' )
+    res = StorageElement(self.targetSE, vo=voName).getURL(allLFNs, protocol='srm')
     if not res['OK']:
       return res
 
-    for lfn, reason in res['Value']['Failed']:
+    for lfn, reason in res['Value']['Failed'].iteritems():
       failedLFNs.add( lfn )
       log.error( "Could not get target SURL", "%s %s" % ( lfn, reason ) )
 

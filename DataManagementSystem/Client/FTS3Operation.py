@@ -18,6 +18,7 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
+from DIRAC.DataManagementSystem.private.FTS3Utilities import _getVoName
 
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation as rmsOperation
@@ -163,9 +164,8 @@ class FTS3Operation( FTS3Serializable ):
     return toSubmit
 
 
-
   @staticmethod
-  def _checkSEAccess( seName, accessType ):
+  def _checkSEAccess(seName, accessType, voName=None):
     """Check the Status of a storage element
         :param seName: name of the StorageElement
         :param accessType ReadAccess, WriteAccess,CheckAccess,RemoveAccess
@@ -179,8 +179,7 @@ class FTS3Operation( FTS3Serializable ):
 #     if access["Value"][seName][accessType] not in ( "Active", "Degraded" ):
 #       return S_ERROR( "%s does not have %s in Active or Degraded" % ( seName, accessType ) )
 
-
-    status = StorageElement( seName ).getStatus()
+    status = StorageElement(seName, vo=voName).getStatus()
     if not status['OK']:
       return status
 
@@ -384,7 +383,13 @@ class FTS3TransferOperation(FTS3Operation):
 
     for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
 
-      res = self._checkSEAccess( targetSE, 'WriteAccess' )
+      voName = None
+      if ftsFiles:
+        res = _getVoName(ftsFiles[0].lfn)
+        if res['OK']:
+          voName = res['Value']
+
+      res = self._checkSEAccess(targetSE, 'WriteAccess', voName=voName)
 
       if not res['OK']:
         log.error( res )
@@ -471,7 +476,13 @@ class FTS3TransferOperation(FTS3Operation):
       if operation.Catalog:
         registerOperation.Catalog = operation.Catalog
 
-      targetSE = StorageElement( target )
+      voName = None
+      if ftsFileList:
+        res = _getVoName(ftsFileList[0].lfn)
+        if res['OK']:
+          voName = res['Value']
+
+      targetSE = StorageElement(target, vo=voName)
       for ftsFile in ftsFileList:
         opFile = rmsFile()
         opFile.LFN = ftsFile.lfn
@@ -515,7 +526,13 @@ class FTS3StagingOperation( FTS3Operation ):
 
     for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
 
-      res = self._checkSEAccess( targetSE, 'ReadAccess' )
+      voName = None
+      if ftsFiles:
+        res = _getVoName(ftsFiles[0].lfn)
+        if res['OK']:
+          voName = res['Value']
+
+      res = self._checkSEAccess(targetSE, 'ReadAccess', voName=voName)
 
       if not res['OK']:
         log.error( res )
