@@ -87,7 +87,7 @@ class SiteDirectorBaseSuccess(AgentsTestCase):
     sd.log = gLogger
     sd.am_getOption = mockAM
     sd.log.setLevel('DEBUG')
-    sd.rpcMatcher = MagicMock()
+    sd.matcherClient = MagicMock()
     submit, _anySite, _jobSites, _testSites = sd._ifAndWhereToSubmit()
     self.assertTrue(submit)
 
