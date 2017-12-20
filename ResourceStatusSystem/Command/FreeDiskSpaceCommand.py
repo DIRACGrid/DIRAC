@@ -1,6 +1,10 @@
 ''' FreeDiskSpaceCommand
+    The Command gets the free space that is left in a Storage Element
 
-  The Command gets the free space that is left in a Storage Element
+    Note: there are, still, many references to "space tokens",
+    for example ResourceManagementClient().selectSpaceTokenOccupancyCache(token=elementName)
+    This is for historical reasons, and shoud be fixed one day.
+    For the moment, when you see "token" or "space token" here, just read "StorageElement".
 
 '''
 
@@ -14,7 +18,8 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
-# FIXME: use unit!
+
+UNIT_CONVERSION = {"MB": 1, "GB": 1024, "TB": 1024 * 1024}
 
 
 class FreeDiskSpaceCommand(Command):
@@ -38,9 +43,9 @@ class FreeDiskSpaceCommand(Command):
       return S_ERROR('"name" not found in self.args')
     elementName = self.args['name']
 
-    unit = 'TB'
-    if 'unit' in self.args:
-      unit = self.args['unit']
+    # We keep TB as default as this is what was used (and will still be used)
+    # in the policy for "space tokens" ("real", "data" SEs)
+    unit = self.args.get('unit', 'TB')
 
     return S_OK((elementName, unit))
 
@@ -52,15 +57,19 @@ class FreeDiskSpaceCommand(Command):
     Gets the total and the free disk space of a storage element
     and inserts the results in the SpaceTokenOccupancyCache table
     of ResourceManagementDB database.
+
+    The result is also returned to the caller, not only inserted.
+    What is inserted in the DB will be in MB,
+    what is returned will be in the specified unit.
     """
 
     if masterParams is not None:
-      elementName = masterParams
-      unit = 'TB'
+      elementName, unit = masterParams
     else:
-      elementName, unit = self._prepareCommand()
-      if not elementName['OK']:
-        return elementName
+      params = self._prepareCommand()
+      if not params['OK']:
+        return params
+      elementName, unit = params['Value']
 
     endpointResult = CSHelpers.getStorageElementEndpoint(elementName)
     if not endpointResult['OK']:
@@ -71,33 +80,48 @@ class FreeDiskSpaceCommand(Command):
     if not occupancyResult['OK']:
       return occupancyResult
     occupancy = occupancyResult['Value']
+    free = occupancy['Free']
+    total = occupancy['Total']
 
     result = self.rmClient.addOrModifySpaceTokenOccupancyCache(endpoint=endpointResult['Value'],
                                                                lastCheckTime=datetime.utcnow(),
-                                                               free=occupancy['Free'],
-                                                               total=occupancy['Total'],
+                                                               free=free,
+                                                               total=total,
                                                                token=elementName)
     if not result['OK']:
       return result
 
-    return S_OK()
+    # results are normally in 'MB'
+    unit = unit.upper()
+    if unit not in UNIT_CONVERSION:
+      return S_ERROR("No valid unit specified")
+    convert = UNIT_CONVERSION[unit]
+    return S_OK({'Free': float(free)/float(convert), 'Total': float(total)/float(convert)})
 
   def doCache(self):
     """
-    This is a method that gets the element's details from the spaceTokenOccupancy cache.
-    It will return a list of dictionaries if there are results.
+    This is a method that gets the element's details from the spaceTokenOccupancyCache DB table.
+    It will return a dictionary with th results, converted to "correct" unit.
     """
 
-    elementName, unit = self._prepareCommand()
-    if not elementName['OK']:
-      return elementName
+    params = self._prepareCommand()
+    if not params['OK']:
+      return params
+    elementName, unit = params['Value']
 
     result = self.rmClient.selectSpaceTokenOccupancyCache(token=elementName)
 
     if not result['OK']:
       return result
 
-    return S_OK(result)
+    # results are normally in 'MB'
+    free = result['Value'][0][3]
+    total = result['Value'][0][4]
+    unit = unit.upper()
+    if unit not in UNIT_CONVERSION:
+      return S_ERROR("No valid unit specified")
+    convert = UNIT_CONVERSION[unit]
+    return S_OK({'Free': float(free)/float(convert), 'Total': float(total)/float(convert)})
 
   def doMaster(self):
     """
@@ -110,7 +134,7 @@ class FreeDiskSpaceCommand(Command):
     for name in elements['Value']:
       diskSpace = self.doNew(name)
       if not diskSpace['OK']:
-        gLogger.error("Unable to calculate free disk space", "name: %s" % name)
+        gLogger.error("Unable to calculate free/total disk space", "name: %s" % name)
         continue
 
     return S_OK()

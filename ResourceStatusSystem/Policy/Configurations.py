@@ -1,3 +1,4 @@
+
 """ Configurations module
 
   Configuration to use policies.
@@ -40,23 +41,23 @@ POLICIESMETA = {  # DownTime POLICIES
 
     # Free Disk Space in Terabytes
     'FreeDiskSpaceTB': {
-        'description': "Free disk space",
+        'description': "Free disk space, in TB",
         'module': 'FreeDiskSpacePolicy',
         'command': ('FreeDiskSpaceCommand', 'FreeDiskSpaceCommand'),
         'args': {'unit': 'TB', 'onlyCache': True},
     },
 
     # Free Disk Space in Gigabytes
-    'FreeDiskSpaceTB': {
-        'description': "Free disk space",
+    'FreeDiskSpaceGB': {
+        'description': "Free disk space, in GB",
         'module': 'FreeDiskSpacePolicy',
         'command': ('FreeDiskSpaceCommand', 'FreeDiskSpaceCommand'),
         'args': {'unit': 'GB', 'onlyCache': True},
     },
 
     # Free Disk Space in Megabytes
-    'FreeDiskSpaceTB': {
-        'description': "Free disk space",
+    'FreeDiskSpaceMB': {
+        'description': "Free disk space, in MB",
         'module': 'FreeDiskSpacePolicy',
         'command': ('FreeDiskSpaceCommand', 'FreeDiskSpaceCommand'),
         'args': {'unit': 'MB', 'onlyCache': True},
