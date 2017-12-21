@@ -44,10 +44,8 @@ class FTS3Agent(AgentModule):
     CAUTION: This agent and the FTSAgent cannot run together.
 
   """
-
-  def initialize(self):
-    """ agent's initialization """
-    self.fts3db = FTS3DB()
+  def readConf(self):
+    """ read configurations """
 
     # Getting all the possible servers
     res = getFTS3Servers()
@@ -57,7 +55,6 @@ class FTS3Agent(AgentModule):
 
     srvList = res['Value']
     serverPolicyType = opHelper().getValue('DataManagement/FTSPlacement/FTS3/ServerPolicy', 'Random')
-
     self._serverPolicy = FTS3Utilities.FTS3ServerPolicy(srvList, serverPolicy = serverPolicyType)
 
     self._globalContextCache = {}
@@ -71,10 +68,29 @@ class FTS3Agent(AgentModule):
     self.maxFilesPerJob = self.am_getOption("MaxFilesPerJob", 100)
     self.maxAttemptsPerFile = self.am_getOption("maxAttemptsPerFile", 256)
 
+    return S_OK()
+
+  def initialize(self):
+    """ agent's initialization """
+    self.fts3db = FTS3DB()
+
     # name that will be used in DB for assignment tag
     self.assignmentTag = gethostname().split('.')[0]
 
+    res = self.readConf()
+    if not res['OK']:
+      return res
+
     return S_OK()
+
+  def beginExecution(self):
+    """ reload configurations before start of a cycle """
+    res = self.readConf()
+    if not res['OK']:
+      return res
+
+    return S_OK()
+
 
   def getFTS3Context(self, username, group, ftsServer, threadID):
     """ Returns an fts3 context for a given user, group and fts server

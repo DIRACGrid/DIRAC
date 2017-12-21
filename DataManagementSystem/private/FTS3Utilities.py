@@ -17,8 +17,9 @@ def _getVoName(lfn):
   try:
     voName = lfn.split('/')[1]
     return S_OK(voName)
-  except:
+  except IndexError:
     return S_ERROR("Failed to extract vo name from lfn")
+
 
 def _checkSourceReplicas( ftsFiles ):
   """ Check the active replicas
@@ -31,7 +32,6 @@ def _checkSourceReplicas( ftsFiles ):
   res = DataManager().getActiveReplicas( lfns )
 
   return res
-
 
 
 def selectUniqueSourceforTransfers( multipleSourceTransfers ):
@@ -67,7 +67,6 @@ def selectUniqueSourceforTransfers( multipleSourceTransfers ):
   return S_OK( transfersBySource )
 
 
-
 def generatePossibleTransfersBySources( ftsFiles, allowedSources = None ):
   """
       For a list of FTS3files object, group the transfer possible sources
@@ -93,7 +92,6 @@ def generatePossibleTransfersBySources( ftsFiles, allowedSources = None ):
 
   filteredReplicas = res['Value']
 
-
   for ftsFile in ftsFiles:
 
     if ftsFile.lfn in filteredReplicas['Failed']:
@@ -103,14 +101,11 @@ def generatePossibleTransfersBySources( ftsFiles, allowedSources = None ):
     replicaDict = filteredReplicas['Successful'][ftsFile.lfn]
 
     for se in replicaDict:
-
       # if we are imposed a source, respect it
       if allowedSources and se not in allowedSources:
         continue
 
-
       groupBySource.setdefault( se, [] ).append( ftsFile )
-
 
   return S_OK( groupBySource )
 
@@ -194,7 +189,6 @@ class FTS3Serializable( object ):
       jsonData['__module__'] = self.__module__
       jsonData['__datetime__'] = datetimeAttributes
 
-
     return jsonData
 
 
@@ -218,11 +212,9 @@ class FTS3JSONEncoder( json.JSONEncoder ):
       return json.JSONEncoder.default( self, obj )
 
 
-
 class FTS3JSONDecoder( json.JSONDecoder ):
   """ This class is an decoder for the FTS3 objects
   """
-
 
   def __init__( self, *args, **kargs ):
     json.JSONDecoder.__init__( self, object_hook = self.dict_to_object,
@@ -332,7 +324,6 @@ class FTS3ServerPolicy( object ):
 
     return fts3Server
 
-
   def _getFTSServerStatus(self, ftsServer):
     """ Fetch the status of the FTS server from RSS """
 
@@ -347,7 +338,7 @@ class FTS3ServerPolicy( object ):
 
     result = res['Value']
     if ftsServerName not in result:
-      return S_ERROR( "No FTS Server %s known to RSS" % ftsServerName )
+      return S_ERROR("No FTS Server %s known to RSS" % ftsServerName)
 
     if result[ftsServerName]['all'] == 'Active':
       return S_OK( True )
@@ -380,7 +371,6 @@ class FTS3ServerPolicy( object ):
         self.log.warn( 'FTS server %s is not in good shape. Choose another one' % fts3Server )
         fts3Server = None
         attempt += 1
-
 
     if fts3Server:
       return S_OK( fts3Server )
