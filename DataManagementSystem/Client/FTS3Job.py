@@ -199,11 +199,9 @@ class FTS3Job( FTS3Serializable ):
     source_spacetoken = res['Value']
 
     # getting all the source surls
-    lfns = allTargetSURLs.keys()
-
     voName = None
-    if lfns:
-      res = _getVoName(lfns[0])
+    if allTargetSURLs:
+      res = _getVoName(allTargetSURLs.iterkeys().next())
       if res['OK']:
         voName = res['Value']
 

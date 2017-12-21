@@ -10,7 +10,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerName
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 
 def _getVoName(lfn):
@@ -285,6 +285,7 @@ class FTS3ServerPolicy( object ):
     self._serverList = initialServerList
     self._maxAttempts = len( self._serverList )
     self._nextServerID = 0
+    self._resourceStatus = ResourceStatus()
 
     methName = "_%sServerPolicy"%serverPolicy.lower()
     if not hasattr(self, methName):
@@ -332,8 +333,7 @@ class FTS3ServerPolicy( object ):
     return fts3Server
 
 
-  @staticmethod
-  def _getFTSServerStatus( ftsServer ):
+  def _getFTSServerStatus(self, ftsServer):
     """ Fetch the status of the FTS server from RSS """
 
     res = getFTS3ServerName(ftsServer)
@@ -341,17 +341,15 @@ class FTS3ServerPolicy( object ):
       return res
     ftsServerName = res['Value']
 
-    pub = RPCClient('ResourceStatus/Publisher')
-    res = pub.getElementStatuses('Resource', ftsServerName, 'FTS', None, None, None)
+    res = self._resourceStatus.getElementStatus(ftsServerName, 'FTS')
     if not res['OK']:
       return res
 
-    if not res['Value']:
-      return S_ERROR( "No FTS Server %s known to RSS" % ftsServer )
+    result = res['Value']
+    if ftsServerName not in result:
+      return S_ERROR( "No FTS Server %s known to RSS" % ftsServerName )
 
-    rssDict = dict( zip( res['Columns'], res['Value'][0] ) )
-
-    if rssDict['Status'] == 'Active':
+    if result[ftsServerName]['all'] == 'Active':
       return S_OK( True )
 
     return S_OK( False )
