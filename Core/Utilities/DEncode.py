@@ -16,6 +16,78 @@ __RCSID__ = "$Id$"
 
 import types
 import datetime
+import os
+
+import inspect
+import traceback
+from pprint import pprint
+
+
+
+# Setting this environment variable will enable the dump of the debugging
+# call stack
+DIRAC_DEBUG_DENCODE_CALLSTACK=bool(os.environ.get('DIRAC_DEBUG_DENCODE_CALLSTACK', False))
+
+
+def printDebugCallstack():
+  """ Prints information about the current stack as well as the caller parameters.
+      The purpose of this method is to track down all the places in DIRAC that might
+      not survive the change to JSON encoding.
+
+      :returns: nothing, just prints
+
+  """
+  def stripArgs(frame):
+    """ Keeps only the parameters and their values from a frame
+
+        :param frame: frame object
+
+        :returns: dict {param name: value}
+    """
+    # Get all the arguments of the call
+    allArgs = inspect.getargvalues(frame)
+    # Keep only the arguments that are parameters of the call, as well as their value
+    return dict([(argName, allArgs.locals[argName]) for argName in allArgs.args ])
+
+
+  tb = traceback.format_stack()
+  frames = inspect.stack(context=100)
+
+
+  # print the traceback that leads us here
+  # remove the last element which is the traceback module call
+  for line in tb[:-1]:
+    print line
+
+
+  # Now we try to navigate up to the caller of dEncode.
+  # For this, we find the frame in which we enter dEncode.
+  # We keep the parameters to display it.
+  # Then we navigate to the parent frame, and we display the file
+  # and line number where this call was done
+  try:
+    framesIter = iter(frames)
+    for frame in framesIter:
+      # First check that we are using either 'encode' or 'decode' function
+      if frame[3] in ('encode','decode'):
+        # Then check it is the good file
+        if frame[1].endswith('DIRAC/Core/Utilities/DEncode.py'):
+          # Keep the arguments of the DEncode call
+          dencArgs = stripArgs(frame[0])
+          # Take the calling frame
+          frame = next(framesIter)
+          print "Calling frame: %s"%(frame[1:3],)
+          print "With arguments ",
+          pprint(dencArgs)
+          break
+
+
+  except:
+    pass
+  print "="*100
+  print
+  print
+
 
 _dateTimeObject = datetime.datetime.utcnow()
 _dateTimeType = type( _dateTimeObject )
@@ -189,12 +261,21 @@ g_dDecodeFunctions[ "l" ] = decodeList
 
 #Encode and decode a tuple
 def encodeTuple( lValue, eList ):
+
+  if DIRAC_DEBUG_DENCODE_CALLSTACK:
+    print '='*45, "Encoding tuples", '='*45
+    printDebugCallstack()
+
   eList.append( "t" )
   for uObject in lValue:
     g_dEncodeFunctions[ type( uObject ) ]( uObject, eList )
   eList.append( "e" )
 
 def decodeTuple( data, i ):
+  if DIRAC_DEBUG_DENCODE_CALLSTACK:
+    print '='*45, "Decoding tuples", '='*45
+    printDebugCallstack()
+
   oL, i = decodeList( data, i )
   return ( tuple( oL ), i )
 
@@ -203,6 +284,13 @@ g_dDecodeFunctions[ "t" ] = decodeTuple
 
 #Encode and decode a dictionary
 def encodeDict( dValue, eList ):
+
+  if DIRAC_DEBUG_DENCODE_CALLSTACK:
+    # If we have numbers as keys
+    if any([isinstance(x,(int,float, long)) for x in dValue]):
+      print '='*40, "Encoding dict with numeric keys", '='*40
+      printDebugCallstack()
+
   eList.append( "d" )
   for key in sorted( dValue ):
     g_dEncodeFunctions[ type( key ) ]( key, eList )
@@ -213,12 +301,20 @@ def decodeDict( data, i ):
   oD = {}
   i += 1
   while data[ i ] != "e":
+
+    if DIRAC_DEBUG_DENCODE_CALLSTACK:
+      # If we have numbers as keys
+      if data[i] in ('i', 'I', 'f'):
+        print '='*40, "Decoding dict with numeric keys", '='*40
+        printDebugCallstack()
+
     k, i = g_dDecodeFunctions[ data[ i ] ]( data, i )
     oD[ k ], i = g_dDecodeFunctions[ data[ i ] ]( data, i )
   return ( oD, i + 1 )
 
 g_dEncodeFunctions[ types.DictType ] = encodeDict
 g_dDecodeFunctions[ "d" ] = decodeDict
+
 
 
 #Encode function
@@ -247,5 +343,3 @@ if __name__ == "__main__":
   gData = encode( gObject )
   print "Encoded: %s" % gData
   print "Decoded: %s, [%s]" % decode( gData )
-
-
