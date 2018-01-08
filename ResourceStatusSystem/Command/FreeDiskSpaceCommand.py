@@ -83,11 +83,11 @@ class FreeDiskSpaceCommand(Command):
     free = occupancy['Free']
     total = occupancy['Total']
 
-    result = self.rmClient.addOrModifySpaceTokenOccupancyCache(endpoint=endpointResult['Value'],
-                                                               lastCheckTime=datetime.utcnow(),
-                                                               free=free,
-                                                               total=total,
-                                                               token=elementName)
+    results = {'Endpoint': endpointResult['Value'],
+               'Free': free,
+               'Total': total,
+               'ElementName': elementName}
+    result = self._storeCommand(results)
     if not result['OK']:
       return result
 
@@ -97,6 +97,15 @@ class FreeDiskSpaceCommand(Command):
       return S_ERROR("No valid unit specified")
     convert = UNIT_CONVERSION[unit]
     return S_OK({'Free': float(free) / float(convert), 'Total': float(total) / float(convert)})
+
+  def _storeCommand(self, results):
+    """ Here purely for extensibility
+    """
+    return self.rmClient.addOrModifySpaceTokenOccupancyCache(endpoint=results['Endpoint'],
+                                                             lastCheckTime=datetime.utcnow(),
+                                                             free=results['Free'],
+                                                             total=results['Total'],
+                                                             token=results['ElementName'])
 
   def doCache(self):
     """
