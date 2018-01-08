@@ -33,10 +33,12 @@ Script.registerSwitch('', 'Since=',
 Script.registerSwitch('', 'Until=', '      Associated to --Status, end date (default= now')
 Script.registerSwitch('', 'Maximum=', '      Associated to --Status, max number of requests ')
 Script.registerSwitch('', 'Reset', '   Reset Failed files to Waiting if any')
+Script.registerSwitch('', 'Force', '   Force reset even if not Failed')
 Script.registerSwitch('', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures')
 Script.registerSwitch('', 'FixJob', '   Set job Done if the request is Done')
 Script.registerSwitch('', 'Cancel', '   Cancel the request')
 Script.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
+Script.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
 Script.setUsageMessage('\n'.join([__doc__,
                                   'Usage:',
                                   ' %s [option|cfgfile] [request[,request1,...]|<file>' % Script.scriptName,
@@ -70,12 +72,21 @@ if __name__ == "__main__":
   maxRequests = 999999999999
   cancel = False
   listJobs = False
+  force = False
+  targetSE = set()
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
       try:
-        jobs = [int(job) for job in switch[1].split(',')]
-      except Exception:
-        gLogger.fatal("Invalid jobID", switch[1])
+        jobs = []
+        for arg in switch[1].split(','):
+          if os.path.exists(arg):
+            lines = open(arg, 'r').readlines()
+            jobs += [int(job.strip()) for line in lines for job in line.split(',')]
+            gLogger.notice("Found %d jobs in file %s" % (len(jobs), arg))
+          else:
+            jobs.append(int(arg))
+      except TypeError:
+        gLogger.fatal("Invalid jobID", job)
     elif switch[0] == 'Transformation':
       try:
         transID = int(switch[1])
@@ -96,6 +107,8 @@ if __name__ == "__main__":
       allR = True
     elif switch[0] == 'Reset':
       reset = True
+    elif switch[0] == 'Force':
+      force = True
     elif switch[0] == 'Status':
       status = switch[1].capitalize()
     elif switch[0] == 'Since':
@@ -113,8 +126,10 @@ if __name__ == "__main__":
         maxRequests = int(switch[1])
       except Exception:
         pass
+    elif switch[0] == 'TargetSE':
+      targetSE = set(switch[1].split(','))
 
-  if reset:
+  if reset and not force:
     status = 'Failed'
   if fixJob:
     status = 'Done'
@@ -199,6 +214,15 @@ if __name__ == "__main__":
     if not request:
       gLogger.error("no such request %s" % requestID)
       continue
+    # If no operation as the targetSE, skip
+    if targetSE:
+      found = False
+      for op in request:
+        if op.TargetSE and targetSE.intersection(op.TargetSE.split(',')):
+          found = True
+          break
+      if not found:
+        continue
     # keep a list of jobIDs if requested
     if request.JobID and listJobs:
       jobIDList.append(request.JobID)
@@ -241,7 +265,7 @@ if __name__ == "__main__":
         printRequest(request, status=dbStatus, full=full, verbose=verbose, terse=terse)
 
   if listJobs:
-    gLogger.notice("List of jobs:\n",
+    gLogger.notice("List of %d jobs:\n" % len(jobIDList),
                    ','.join(str(jobID) for jobID in jobIDList))
 
   if status and okRequests:
