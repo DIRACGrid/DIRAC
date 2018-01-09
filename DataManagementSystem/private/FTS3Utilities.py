@@ -6,7 +6,6 @@ import datetime
 import random
 import threading
 
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerName
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -267,14 +266,15 @@ class FTS3ServerPolicy( object ):
   This class manages the policy for choosing a server
   """
 
-  def __init__( self, initialServerList, serverPolicy = "Random" ):
+  def __init__(self, serverDict, serverPolicy="Random"):
     """
         Call the init of the parent, and initialize the list of FTS3 servers
     """
 
     self.log = gLogger.getSubLogger( "FTS3ServerPolicy" )
 
-    self._serverList = initialServerList
+    self._serverDict = serverDict
+    self._serverList = serverDict.keys()
     self._maxAttempts = len( self._serverList )
     self._nextServerID = 0
     self._resourceStatus = ResourceStatus()
@@ -327,20 +327,15 @@ class FTS3ServerPolicy( object ):
   def _getFTSServerStatus(self, ftsServer):
     """ Fetch the status of the FTS server from RSS """
 
-    res = getFTS3ServerName(ftsServer)
-    if not res['OK']:
-      return res
-    ftsServerName = res['Value']
-
-    res = self._resourceStatus.getElementStatus(ftsServerName, 'FTS')
+    res = self._resourceStatus.getElementStatus(ftsServer, 'FTS')
     if not res['OK']:
       return res
 
     result = res['Value']
-    if ftsServerName not in result:
-      return S_ERROR("No FTS Server %s known to RSS" % ftsServerName)
+    if ftsServer not in result:
+      return S_ERROR("No FTS Server %s known to RSS" % ftsServer)
 
-    if result[ftsServerName]['all'] == 'Active':
+    if result[ftsServer]['all'] == 'Active':
       return S_OK( True )
 
     return S_OK( False )
@@ -373,6 +368,6 @@ class FTS3ServerPolicy( object ):
         attempt += 1
 
     if fts3Server:
-      return S_OK( fts3Server )
+      return S_OK(self._serverDict[fts3Server])
 
     return S_ERROR ( "Could not find an FTS3 server (max attempt reached)" )

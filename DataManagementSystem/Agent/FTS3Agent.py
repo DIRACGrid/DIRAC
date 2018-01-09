@@ -10,7 +10,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.DataManagementSystem.private import FTS3Utilities
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 
@@ -48,16 +48,14 @@ class FTS3Agent(AgentModule):
     """ read configurations """
 
     # Getting all the possible servers
-    res = getFTS3Servers()
+    res = getFTS3ServerDict()
     if not res['OK']:
       gLogger.error(res['Message'])
       return res
 
-    srvList = res['Value']
+    srvDict = res['Value']
     serverPolicyType = opHelper().getValue('DataManagement/FTSPlacement/FTS3/ServerPolicy', 'Random')
-    self._serverPolicy = FTS3Utilities.FTS3ServerPolicy(srvList, serverPolicy = serverPolicyType)
-
-    self._globalContextCache = {}
+    self._serverPolicy = FTS3Utilities.FTS3ServerPolicy(srvDict, serverPolicy=serverPolicyType)
 
     self.maxNumberOfThreads = self.am_getOption("MaxThreads", 10)
 
@@ -73,6 +71,7 @@ class FTS3Agent(AgentModule):
   def initialize(self):
     """ agent's initialization """
     self.fts3db = FTS3DB()
+    self._globalContextCache = {}
 
     # name that will be used in DB for assignment tag
     self.assignmentTag = gethostname().split('.')[0]
