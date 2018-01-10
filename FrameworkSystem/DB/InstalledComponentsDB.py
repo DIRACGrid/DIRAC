@@ -160,7 +160,7 @@ class InstalledComponent( componentsBase ):
                    ForeignKey( 'Hosts.HostID' ),
                    primary_key = True )
   instance = Column( 'Instance',
-                     String( 64 ),
+                     String(64),
                      primary_key = True )
   installationTime = Column( 'InstallationTime',
                              DateTime,
