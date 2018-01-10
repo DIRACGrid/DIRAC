@@ -159,11 +159,13 @@ class JobCleaningAgent( AgentModule ):
     error_count = 0
     result = SandboxStoreClient( useCertificates = True ).unassignJobs( jobList )
     if not result[ 'OK' ]:
-      gLogger.warn( "Cannot unassign jobs to sandboxes", result[ 'Message' ] )
+      gLogger.error("Cannot unassign jobs to sandboxes", result['Message'])
+      return result
 
     result = self.deleteJobOversizedSandbox(jobList)
     if not result[ 'OK' ]:
-      gLogger.warn( "Cannot schedule removal of oversized sandboxes", result[ 'Message' ] )
+      gLogger.error(
+          "Cannot schedule removal of oversized sandboxes", result['Message'])
       return result
 
     failedJobs = result['Value']['Failed']
