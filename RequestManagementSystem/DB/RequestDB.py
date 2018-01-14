@@ -566,7 +566,6 @@ class RequestDB( object ):
     """
 
 
-
     parameterList = [ 'RequestID', 'RequestName', 'JobID', 'OwnerDN', 'OwnerGroup',
                       'Status', "Error", "CreationTime", "LastUpdate"]
 
@@ -594,7 +593,8 @@ class RequestDB( object ):
           tableName = 'Request'
 
           if key == 'Type':
-            summaryQuery = summaryQuery.group_by( Request.RequestID, Operation.Type )
+            summaryQuery = summaryQuery.join(Request.__operations__)\
+                                       .group_by(Request.RequestID, Operation.Type)
             tableName = 'Operation'
           elif key == 'Status':
             key = '_Status'
