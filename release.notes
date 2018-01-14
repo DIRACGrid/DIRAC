@@ -63,6 +63,7 @@ CHANGE: DownloadInputData was instantiating all local SEs which is not necessary
 CHANGE: JobWrapper - use resolveSEGroup in order to allow defining SE groups including other SE groups
 FIX: JobDB - fixed typo in getSiteMaskStatus() method
 FIX: Fix getSiteMaskStatus in SiteDirector and MultiProcessSiteDirector
+CHANGE: WatchdogLinux - using python modules in  instead of shell calls
 
 *DMS
 FIX: in DMSHelpers don't complain if an SE is at 0 sites
