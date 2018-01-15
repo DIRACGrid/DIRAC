@@ -117,53 +117,52 @@ class FTSAgent(AgentModule):
   # request cache
   __reqCache = dict()
 
-
-    # # fts placement refresh in seconds
+  # # fts placement refresh in seconds
   FTSPLACEMENT_REFRESH = FTSHistoryView.INTERVAL / 2
-    # # placeholder for max job per channel
+  # # placeholder for max job per channel
   MAX_ACTIVE_JOBS = 50
-    # # min threads
+  # # min threads
   MIN_THREADS = 1
-    # # max threads
+  # # max threads
   MAX_THREADS = 10
-    # # files per job
+  # # files per job
   MAX_FILES_PER_JOB = 100
-    # # MAX FTS transfer per FTSFile
+  # # MAX FTS transfer per FTSFile
   MAX_ATTEMPT = 256
-    # # stage flag
+  # # stage flag
   PIN_TIME = 0
-    # # FTS submission command
+  # # FTS submission command
   SUBMIT_COMMAND = 'glite-transfer-submit'
-    # # FTS monitoring command
+  # # FTS monitoring command
   MONITOR_COMMAND = 'glite-transfer-status'
-    # Max number of requests fetched from the RMS
+  # Max number of requests fetched from the RMS
   MAX_REQUESTS = 100
-    # Minimum interval (seconds) between 2 job monitoring
+  # Minimum interval (seconds) between 2 job monitoring
   MONITORING_INTERVAL = 600
-    # Flag to know if one selects JOb requests (True) or not (False) or don't care (None)
+  # Flag to know if one selects JOb requests (True) or not (False) or don't care (None)
   PROCESS_JOB_REQUESTS = None
 
-    # # placeholder for FTS client
+  # # placeholder for FTS client
   __ftsClient = None
-    # # placeholder for the FTS version
+  # # placeholder for the FTS version
   __ftsVersion = None
-    # # placeholder for request client
+  # # placeholder for request client
   __requestClient = None
-    # # placeholder for resources helper
+  # # placeholder for resources helper
   __resources = None
-    # # placeholder for RSS client
+  # # placeholder for RSS client
   __rssClient = None
-    # # placeholder for FTSPlacement
+  # # placeholder for FTSPlacement
   __ftsPlacement = None
 
-    # # placement regeneration time delta
+  # # placement regeneration time delta
   __ftsPlacementValidStamp = None
 
-    # # placeholder for threadPool
+  # # placeholder for threadPool
   __threadPool = None
-    # # update lock
+  # # update lock
   __updateLock = None
-    # # request cache
+  # # request cache
   __reqCache = dict()
 
   registrationProtocols = None
@@ -291,7 +290,8 @@ class FTSAgent(AgentModule):
       self.updateLock().release()
 
     # # save time stamp
-    self.__ftsPlacementValidStamp = datetime.datetime.now() + datetime.timedelta(seconds=self.FTSPLACEMENT_REFRESH)
+    self.__ftsPlacementValidStamp = datetime.datetime.now(
+    ) + datetime.timedelta(seconds=self.FTSPLACEMENT_REFRESH)
 
     return S_OK()
 
@@ -311,15 +311,21 @@ class FTSAgent(AgentModule):
 
     log = self.log.getSubLogger("initialize")
 
-    self.FTSPLACEMENT_REFRESH = self.am_getOption("FTSPlacementValidityPeriod", self.FTSPLACEMENT_REFRESH)
-    log.info("FTSPlacement validity period       = %s s" % self.FTSPLACEMENT_REFRESH)
+    self.FTSPLACEMENT_REFRESH = self.am_getOption(
+        "FTSPlacementValidityPeriod", self.FTSPLACEMENT_REFRESH)
+    log.info("FTSPlacement validity period       = %s s" %
+             self.FTSPLACEMENT_REFRESH)
 
-    self.SUBMIT_COMMAND = self.am_getOption("SubmitCommand", self.SUBMIT_COMMAND)
+    self.SUBMIT_COMMAND = self.am_getOption(
+        "SubmitCommand", self.SUBMIT_COMMAND)
     log.info("FTS submit command = %s" % self.SUBMIT_COMMAND)
-    self.MONITOR_COMMAND = self.am_getOption("MonitorCommand", self.MONITOR_COMMAND)
-    log.info("FTS commands: submit = %s monitor %s" % (self.SUBMIT_COMMAND, self.MONITOR_COMMAND))
+    self.MONITOR_COMMAND = self.am_getOption(
+        "MonitorCommand", self.MONITOR_COMMAND)
+    log.info("FTS commands: submit = %s monitor %s" %
+             (self.SUBMIT_COMMAND, self.MONITOR_COMMAND))
     self.PIN_TIME = self.am_getOption("PinTime", self.PIN_TIME)
-    log.info("Stage files before submission  = ", {True: "yes", False: "no"}[bool(self.PIN_TIME)])
+    log.info("Stage files before submission  = ", {
+             True: "yes", False: "no"}[bool(self.PIN_TIME)])
 
     self.MAX_ACTIVE_JOBS = self.am_getOption("MaxActiveJobsPerRoute", self.MAX_ACTIVE_JOBS)
     log.info("Max active FTSJobs/route       = ", str(self.MAX_ACTIVE_JOBS))
@@ -340,8 +346,10 @@ class FTSAgent(AgentModule):
     self.MAX_REQUESTS = self.am_getOption("MaxRequests", self.MAX_REQUESTS)
     log.info("Max Requests fetched           = ", str(self.MAX_REQUESTS))
 
-    self.MONITORING_INTERVAL = self.am_getOption("MonitoringInterval", self.MONITORING_INTERVAL)
-    log.info("Minimum monitoring interval    = ", str(self.MONITORING_INTERVAL))
+    self.MONITORING_INTERVAL = self.am_getOption(
+        "MonitoringInterval", self.MONITORING_INTERVAL)
+    log.info("Minimum monitoring interval    = ",
+             str(self.MONITORING_INTERVAL))
 
     self.PROCESS_JOB_REQUESTS = self.am_getOption("ProcessJobRequests", self.PROCESS_JOB_REQUESTS)
     # We get a string as the default value is None... better than an eval()!
@@ -533,7 +541,8 @@ class FTSAgent(AgentModule):
       now = datetime.datetime.utcnow()
       jobsToMonitor = [job for job in ftsJobs if
                        (now - job.LastUpdate).seconds >
-                       (self.MONITORING_INTERVAL * (3. if StorageElement(job.SourceSE).status()['TapeSE'] else 1.))
+                       (self.MONITORING_INTERVAL *
+                        (3. if StorageElement(job.SourceSE).status()['TapeSE'] else 1.))
                        ]
       if jobsToMonitor:
         log.info("==> found %s FTSJobs to monitor" % len(jobsToMonitor))
@@ -966,7 +975,8 @@ class FTSAgent(AgentModule):
     # # this will be returned
     ftsFilesDict = dict((k, list()) for k in ("toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate"))
 
-    monitor = ftsJob.monitorFTS(self.__ftsVersion, command=self.MONITOR_COMMAND)
+    monitor = ftsJob.monitorFTS(
+        self.__ftsVersion, command=self.MONITOR_COMMAND)
     if not monitor["OK"]:
       gMonitor.addMark("FTSMonitorFail", 1)
       log.error(monitor["Message"])
@@ -1024,7 +1034,8 @@ class FTSAgent(AgentModule):
     # # this will be returned
     ftsFilesDict = dict((k, list()) for k in ("toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate"))
 
-    monitor = ftsJob.monitorFTS(self.__ftsVersion, command=self.MONITOR_COMMAND, full=True)
+    monitor = ftsJob.monitorFTS(
+        self.__ftsVersion, command=self.MONITOR_COMMAND, full=True)
     if not monitor["OK"]:
       log.error(monitor["Message"])
       return monitor
