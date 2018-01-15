@@ -35,6 +35,31 @@ NEW: New SingularityComputingElement to submit jobs to a Singularity container
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
 
+[v6r19p11]
+
+*Framework:
+CHANGE: moved column "Instance" of InstalledComponentsDB.InstalledComponent 
+        table from 64 to 32 characters
+
+*WMS
+FIX: JobWrapperTemplate - fix exception handling
+CHANGE: dirac-wms-select-jobs - new option to limit the number of selected jobs
+CHANGE: returning an error when sandboxes can't be unassigned from jobs (JobCleaningAgent)
+
+*RMS
+FIX: RequestDB - add missing JOIN in the web summary query
+NEW: dirac-rms-request - add option to allow resetting the NotBefore member even 
+     for non-failed requests
+
+*DMS
+FIX: FTSAgent - change data member names from uppercase to lower case
+
+*Interfaces
+CHANGE: autopep8 on the API/Dirac module
+
+*docs:
+NEW: added some doc about shifterProxy
+
 [v6r19p10]
 
 *Core
@@ -63,6 +88,7 @@ CHANGE: DownloadInputData was instantiating all local SEs which is not necessary
 CHANGE: JobWrapper - use resolveSEGroup in order to allow defining SE groups including other SE groups
 FIX: JobDB - fixed typo in getSiteMaskStatus() method
 FIX: Fix getSiteMaskStatus in SiteDirector and MultiProcessSiteDirector
+CHANGE: WatchdogLinux - using python modules in  instead of shell calls
 
 *DMS
 FIX: in DMSHelpers don't complain if an SE is at 0 sites

@@ -3,7 +3,6 @@
 
 __RCSID__ = "$Id$"
 
-import types
 from DIRAC  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import List
@@ -76,19 +75,21 @@ class SandboxMetadataDB( DB ):
     """
     Get the owner ID and register it if it's not there
     """
-    sqlCmd = "SELECT OwnerId FROM `sb_Owners` WHERE Owner = %s AND OwnerDN = %s AND OwnerGroup = %s" % ( self._escapeString( owner )[ 'Value' ],
-                                                                                                         self._escapeString( ownerDN )[ 'Value' ],
-                                                                                                         self._escapeString( ownerGroup )[ 'Value' ] )
+    sqlCmd = "SELECT OwnerId FROM `sb_Owners` WHERE Owner = %s AND OwnerDN = %s AND OwnerGroup = %s" % (self._escapeString(owner)['Value'],
+                                                                                                        self._escapeString(ownerDN)[
+        'Value'],
+        self._escapeString(ownerGroup)['Value'])
     result = self._query( sqlCmd )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
-    if len( data ) > 0:
+    if data:
       return S_OK( data[0][0] )
     #Its not there, insert it
-    sqlCmd = "INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerDN, OwnerGroup ) VALUES ( 0, %s, %s, %s )" % ( self._escapeString( owner )[ 'Value' ],
-                                                                                                                  self._escapeString( ownerDN )[ 'Value' ],
-                                                                                                                  self._escapeString( ownerGroup )[ 'Value' ] )
+    sqlCmd = "INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerDN, OwnerGroup ) VALUES ( 0, %s, %s, %s )" % (self._escapeString(owner)['Value'],
+                                                                                                           self._escapeString(ownerDN)[
+        'Value'],
+        self._escapeString(ownerGroup)['Value'])
     result = self._update( sqlCmd )
     if not result[ 'OK' ]:
       return result
@@ -121,7 +122,7 @@ class SandboxMetadataDB( DB ):
       result = self._query( sqlCmd )
       if not result[ 'OK' ]:
         return result
-      if len( result[ 'Value' ] ) == 0:
+      if not result['Value']:
         return S_ERROR( "Location %s already exists but doesn't belong to the user or setup" )
       sbId = result[ 'Value' ][0][0]
       self.accessedSandboxById( sbId )
@@ -161,7 +162,7 @@ class SandboxMetadataDB( DB ):
     entitiesToSandboxList = []
     for entityId in enDict:
       for sbTuple in enDict[ entityId ]:
-        if type( sbTuple ) not in ( types.TupleType, types.ListType ):
+        if not isinstance(sbTuple, (tuple, list)):
           return S_ERROR( "Entry for entity %s is not a itterable of tuples/lists" % entityId )
         if len( sbTuple ) != 2:
           return S_ERROR( "SB definition is not ( SBLocation, Type )! It's '%s'" % str( sbTuple ) )
@@ -224,7 +225,6 @@ class SandboxMetadataDB( DB ):
     else:
       return S_ERROR( "Not authorized to access sandbox" )
     for i in range( len( entitiesList ) ):
-
       entitiesList[i] = self._escapeString( entitiesList[ i ] )[ 'Value' ]
     if len( entitiesList ) == 1:
       sqlCond.append( "e.EntityId = %s" % entitiesList[0] )
@@ -270,9 +270,9 @@ class SandboxMetadataDB( DB ):
     Get the sandboxes and the type of assignation to the jobId
     """
     sqlTables = [ "`sb_SandBoxes` s", "`sb_EntityMapping` e" ]
-    sqlCond = [ "s.SBId = e.SBId",
-               "e.EntityId = %s" % self._escapeString( entityId )[ 'Value' ],
-               "e.EntitySetup = %s" % self._escapeString( entitySetup )[ 'Value' ] ]
+    sqlCond = ["s.SBId = e.SBId",
+               "e.EntityId = %s" % self._escapeString(entityId)['Value'],
+               "e.EntitySetup = %s" % self._escapeString(entitySetup)['Value']]
     requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
     if Properties.JOB_ADMINISTRATOR in requesterProps or Properties.JOB_MONITOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
@@ -338,6 +338,6 @@ class SandboxMetadataDB( DB ):
     data = result[ 'Value' ]
     if len( data ) > 1:
       self.log.error( "More than one sandbox registered with the same Id!", data )
-    if len( data ) == 0:
+    if not data:
       return S_ERROR( "No sandbox matches the requirements" )
     return S_OK( data[0][0] )

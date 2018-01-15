@@ -140,19 +140,19 @@ def execute( arguments ):
       gLogger.error( 'Failed to execute job', result['Message'] )
       raise JobWrapperError( (result['Message'], result['Errno']) )
   except JobWrapperError as exc:
-    if exc[1] == 0 or str(exc[0]) == '0':
+    if exc.value[1] == 0 or str(exc.value[0]) == '0':
       gLogger.verbose( 'JobWrapper exited with status=0 after execution' )
-    if exc[1] == DErrno.EWMSRESC:
+    if exc.value[1] == DErrno.EWMSRESC:
       gLogger.warn("Asked to reschedule job")
       rescheduleResult = rescheduleFailedJob( jobID, 'JobWrapper execution', gJobReport )
       job.sendJobAccounting( rescheduleResult, 'JobWrapper execution' )
       return 1
-    else:
-      gLogger.exception( 'Job failed in execution phase' )
-      gJobReport.setJobParameter( 'Error Message', str( exc ), sendFlag = False )
-      gJobReport.setJobStatus( 'Failed', 'Exception During Execution', sendFlag = False )
-      job.sendFailoverRequest( 'Failed', 'Exception During Execution' )
-      return 1
+    gLogger.exception('Job failed in execution phase')
+    gJobReport.setJobParameter('Error Message', str(exc), sendFlag=False)
+    gJobReport.setJobStatus(
+        'Failed', 'Exception During Execution', sendFlag=False)
+    job.sendFailoverRequest('Failed', 'Exception During Execution')
+    return 1
   except Exception as exc: #pylint: disable=broad-except
     gLogger.exception( 'Job raised exception during execution phase', lException = exc )
     gJobReport.setJobParameter( 'Error Message', str( exc ), sendFlag = False )
@@ -172,7 +172,7 @@ def execute( arguments ):
       gJobReport.setJobStatus( 'Failed', 'Uploading Job Outputs', sendFlag = False )
       job.sendFailoverRequest( 'Failed', 'Uploading Job Outputs' )
       return 2
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
       gLogger.exception( 'JobWrapper raised exception while processing output files', lException = exc )
       gJobReport.setJobParameter( 'Error Message', str( exc ), sendFlag = False )
       gJobReport.setJobStatus( 'Failed', 'Uploading Job Outputs', sendFlag = False )

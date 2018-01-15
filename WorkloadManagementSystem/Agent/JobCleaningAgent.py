@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    JobCleaningAgent.py
 # Author :  A.T.
 ########################################################################
@@ -11,22 +10,23 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                                     import S_OK, gLogger
-from DIRAC.Core.Base.AgentModule                               import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
-from DIRAC.WorkloadManagementSystem.DB.JobDB                   import JobDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB             import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB            import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
-from DIRAC.RequestManagementSystem.Client.Request              import Request
-from DIRAC.RequestManagementSystem.Client.Operation            import Operation
-from DIRAC.RequestManagementSystem.Client.File                 import File
-from DIRAC.RequestManagementSystem.Client.ReqClient            import ReqClient
+import time
+import os
+
+from DIRAC import S_OK, gLogger
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 import DIRAC.Core.Utilities.Time as Time
 
-import time
-import os
 
 
 class JobCleaningAgent( AgentModule ):
@@ -55,6 +55,8 @@ class JobCleaningAgent( AgentModule ):
     self.jobByJob = False
     self.throttlingPeriod = 0.
 
+    self.prodTypes = []
+
     self.removeStatusDelay = {}
 
   #############################################################################
@@ -69,14 +71,16 @@ class JobCleaningAgent( AgentModule ):
     # self.sandboxDB = SandboxDB( 'SandboxDB' )
     agentTSTypes = self.am_getOption('ProductionTypes', [])
     if agentTSTypes:
-      self.prod_types = agentTSTypes
+      self.prodTypes = agentTSTypes
     else:
-      self.prod_types = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
-    gLogger.info( "Will exclude the following Production types from cleaning %s" % ( ', '.join( self.prod_types ) ) )
+      self.prodTypes = Operations().getValue(
+          'Transformations/DataProcessing', ['MCSimulation', 'Merge'])
+    gLogger.info("Will exclude the following Production types from cleaning %s" % (
+        ', '.join(self.prodTypes)))
     self.maxJobsAtOnce = self.am_getOption( 'MaxJobsAtOnce', 500 )
     self.jobByJob = self.am_getOption( 'JobByJob', False )
     self.throttlingPeriod = self.am_getOption('ThrottlingPeriod', 0.)
-    
+
     self.removeStatusDelay['Done'] = self.am_getOption( 'RemoveStatusDelay/Done', 7 )
     self.removeStatusDelay['Killed'] = self.am_getOption( 'RemoveStatusDelay/Killed', 7 )
     self.removeStatusDelay['Failed'] = self.am_getOption( 'RemoveStatusDelay/Failed', 7 )
@@ -92,7 +96,7 @@ class JobCleaningAgent( AgentModule ):
       return result
     cleanJobTypes = []
     for jobType in result[ 'Value' ]:
-      if jobType not in self.prod_types:
+      if jobType not in self.prodTypes:
         cleanJobTypes.append( jobType )
     self.log.notice( "JobTypes to clean %s" % cleanJobTypes )
     return S_OK( cleanJobTypes )
@@ -109,11 +113,11 @@ class JobCleaningAgent( AgentModule ):
     result = self.__getAllowedJobTypes()
     if not result[ 'OK' ]:
       return result
-    
+
     # No jobs in the system subject to removal
     if not result['Value']:
       return S_OK()
-    
+
     baseCond = { 'JobType' : result[ 'Value' ] }
     # Remove jobs with final status
     for status in self.removeStatusDelay:
@@ -155,17 +159,18 @@ class JobCleaningAgent( AgentModule ):
     error_count = 0
     result = SandboxStoreClient( useCertificates = True ).unassignJobs( jobList )
     if not result[ 'OK' ]:
-      gLogger.warn( "Cannot unassign jobs to sandboxes", result[ 'Message' ] )
+      gLogger.error("Cannot unassign jobs to sandboxes", result['Message'])
+      return result
 
-      
-    result = self.deleteJobOversizedSandbox( jobList ) 
+    result = self.deleteJobOversizedSandbox(jobList)
     if not result[ 'OK' ]:
-      gLogger.warn( "Cannot schedule removal of oversized sandboxes", result[ 'Message' ] )
-      return result 
-    
+      gLogger.error(
+          "Cannot schedule removal of oversized sandboxes", result['Message'])
+      return result
+
     failedJobs = result['Value']['Failed']
     for job in failedJobs:
-      jobList.pop( jobList.index( job ) ) 
+      jobList.pop(jobList.index(job))
 
     # TODO: we should not remove a job if it still has requests in the RequestManager.
     # But this logic should go in the client or in the service, and right now no service expose jobDB.removeJobFromDB
@@ -185,26 +190,26 @@ class JobCleaningAgent( AgentModule ):
         if not resultLogDB['OK']:
           gLogger.warn( 'Failed to remove job %d from JobLoggingDB' % jobID, result['Message'] )
           errorFlag = True
-        if errorFlag:  
-          error_count += 1  
+        if errorFlag:
+          error_count += 1
         else:
           count += 1
         if self.throttlingPeriod:
-          time.sleep(self.throttlingPeriod)  
-    else:    
+          time.sleep(self.throttlingPeriod)
+    else:
       result = self.jobDB.removeJobFromDB( jobList )
       if not result['OK']:
         gLogger.error('Failed to delete %d jobs from JobDB' % len(jobList) )
       else:
         gLogger.info('Deleted %d jobs from JobDB' % len(jobList) )
-  
+
       for jobID in jobList:
         resultTQ = self.taskQueueDB.deleteJob( jobID )
         if not resultTQ['OK']:
           gLogger.warn( 'Failed to remove job %d from TaskQueueDB' % jobID, resultTQ['Message'] )
           error_count += 1
         else:
-          count += 1    
+          count += 1
 
       result = self.jobLoggingDB.deleteJob( jobList )
       if not result['OK']:
@@ -218,7 +223,7 @@ class JobCleaningAgent( AgentModule ):
 
   def deleteJobOversizedSandbox( self, jobIDList ):
     """ Delete the job oversized sandbox files from storage elements
-    """ 
+    """
 
     failed = {}
     successful = {}
@@ -235,7 +240,7 @@ class JobCleaningAgent( AgentModule ):
       else:
         gLogger.warn( 'Error interrogating JobDB: %s' % result['Message'] )
     if not lfnDict:
-      return S_OK( {'Successful':successful, 'Failed':failed} )   
+      return S_OK({'Successful': successful, 'Failed': failed})
 
     # Schedule removal of the LFNs now
 
@@ -255,10 +260,10 @@ class JobCleaningAgent( AgentModule ):
         failed[jobID] = lfn
       else:
         successful[jobID] = lfn
-           
+
     result = {'Successful':successful, 'Failed':failed}
-    return S_OK( result )   
-    
+    return S_OK(result)
+
   def __setRemovalRequest( self, lfn, ownerDN, ownerGroup ):
     """ Set removal request with the given credentials
     """
