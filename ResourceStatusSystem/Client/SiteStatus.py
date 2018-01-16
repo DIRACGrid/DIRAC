@@ -9,20 +9,21 @@ import math
 from time import sleep
 from datetime import datetime, timedelta
 
-from DIRAC                                                  import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
-from DIRAC.Core.DISET.RPCClient                             import RPCClient
-from DIRAC.Core.Utilities                                   import DErrno
-from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus       import ResourceStatus
-from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread  import RSSCache
-from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
+from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 __RCSID__ = '$Id: $'
 
-class SiteStatus( object ):
+
+class SiteStatus(object):
   """
   RSS helper to interact with the 'Site' family on the DB. It provides the most
   demanded functions and a cache to avoid hitting the server too often.
@@ -36,33 +37,33 @@ class SiteStatus( object ):
 
   __metaclass__ = DIRACSingleton
 
-  def __init__( self ):
+  def __init__(self):
     """
     Constructor, initializes the rssClient.
     """
 
-    self.log = gLogger.getSubLogger( self.__class__.__name__ )
+    self.log = gLogger.getSubLogger(self.__class__.__name__)
     self.rssConfig = RssConfiguration()
     self.__opHelper = Operations()
     self.rssFlag = ResourceStatus().rssFlag
     self.rsClient = ResourceStatusClient()
 
     # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
-    cacheLifeTime = int( self.rssConfig.getConfigCache() )
+    cacheLifeTime = int(self.rssConfig.getConfigCache())
 
     # RSSCache only affects the calls directed to RSS, if using the CS it is not used.
-    self.rssCache = RSSCache( cacheLifeTime, self.__updateRssCache )
+    self.rssCache = RSSCache(cacheLifeTime, self.__updateRssCache)
 
-  def __updateRssCache( self ):
+  def __updateRssCache(self):
     """ Method used to update the rssCache.
 
         It will try 5 times to contact the RSS before giving up
     """
 
-    meta = {'columns' : ['Name', 'Status']}
+    meta = {'columns': ['Name', 'Status']}
 
     for ti in xrange(5):
-      rawCache = self.rsClient.selectStatusElement('Site', 'Status', meta = meta)
+      rawCache = self.rsClient.selectStatusElement('Site', 'Status', meta=meta)
       if rawCache['OK']:
         break
       self.log.warn("Can't get resource's status", rawCache['Message'] + "; trial %d" % ti)
@@ -73,8 +74,7 @@ class SiteStatus( object ):
       return rawCache
     return S_OK(getCacheDictFromRawData(rawCache['Value']))
 
-
-  def getSiteStatuses( self, siteNames = None ):
+  def getSiteStatuses(self, siteNames=None):
     """
     Method that queries the database for status of the sites in a given list.
     A single string site name may also be provides as "siteNames"
@@ -126,9 +126,9 @@ class SiteStatus( object ):
         else:
           siteStatusDict = result['Value']
 
-      return S_OK( siteStatusDict )
+      return S_OK(siteStatusDict)
 
-  def __getRSSSiteStatus(self, siteName = None):
+  def __getRSSSiteStatus(self, siteName=None):
     """ Gets from the cache or the RSS the Sites status. The cache is a
         copy of the DB table. If it is not on the cache, most likely is not going
         to be on the DB.
@@ -146,13 +146,12 @@ class SiteStatus( object ):
 
     cacheMatch = self.rssCache.match(siteName, '', '')
 
-    self.log.debug( '__getRSSSiteStatus' )
-    self.log.debug( cacheMatch )
+    self.log.debug('__getRSSSiteStatus')
+    self.log.debug(cacheMatch)
 
     return cacheMatch
 
-
-  def getUsableSites( self, siteNames = None ):
+  def getUsableSites(self, siteNames=None):
     """
     Returns all sites that are usable if their
     statusType is either Active or Degraded; in a list.
@@ -177,10 +176,9 @@ class SiteStatus( object ):
       return siteStatusDictRes
     siteStatusList = [x[0] for x in siteStatusDictRes['Value'].iteritems() if x[1] in ['Active', 'Degraded']]
 
-    return S_OK( siteStatusList )
+    return S_OK(siteStatusList)
 
-
-  def getSites( self, siteState = 'Active' ):
+  def getSites(self, siteState='Active'):
     """
     By default, it gets the currently active site list
 
@@ -223,9 +221,9 @@ class SiteStatus( object ):
 
       siteList = [x[0] for x in siteStatusDictRes['Value'].iteritems() if x[1] == siteState]
 
-    return S_OK( siteList )
+    return S_OK(siteList)
 
-  def setSiteStatus( self, site, status, comment = 'No comment' ):
+  def setSiteStatus(self, site, status, comment='No comment'):
     """
     Set the status of a site in the 'SiteStatus' table of RSS
 
@@ -254,26 +252,25 @@ class SiteStatus( object ):
     if status not in allowedStateList:
       return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
-
     if self.rssFlag:
       result = getProxyInfo()
       if result['OK']:
         tokenOwner = result['Value']['username']
       else:
-        return S_ERROR( "Unable to get user proxy info %s " % result['Message'] )
+        return S_ERROR("Unable to get user proxy info %s " % result['Message'])
 
-      tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
+      tokenExpiration = datetime.utcnow() + timedelta(days=1)
 
       self.rssCache.acquireLock()
       try:
-        result = self.rsClient.modifyStatusElement( 'Site', 'Status', status = status, name = site,
-                                                    tokenExpiration = tokenExpiration, reason = comment,
-                                                    tokenOwner = tokenOwner )
+        result = self.rsClient.modifyStatusElement('Site', 'Status', status=status, name=site,
+                                                   tokenExpiration=tokenExpiration, reason=comment,
+                                                   tokenOwner=tokenOwner)
         if result['OK']:
           self.rssCache.refreshCache()
         else:
-          _msg = 'Error updating status of site %s to %s' % ( site, status )
-          gLogger.warn( 'RSS: %s' % _msg )
+          _msg = 'Error updating status of site %s to %s' % (site, status)
+          gLogger.warn('RSS: %s' % _msg)
 
       # Release lock, no matter what.
       finally:
@@ -288,9 +285,7 @@ class SiteStatus( object ):
     return result
 
 
-
-
-def getCacheDictFromRawData( rawList ): #FIXME: to remove?
+def getCacheDictFromRawData(rawList):  # FIXME: to remove?
   """
   Formats the raw data list, which we know it must have tuples of four elements.
   ( element1, element2 ) into a dictionary of tuples with the format
@@ -309,7 +304,7 @@ def getCacheDictFromRawData( rawList ): #FIXME: to remove?
 
   res = {}
   for entry in rawList:
-    res.update( { (entry[0]) : entry[1] } )
+    res.update({(entry[0]): entry[1]})
 
   return res
 
