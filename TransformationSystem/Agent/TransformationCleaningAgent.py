@@ -59,17 +59,15 @@ class TransformationCleaningAgent( AgentModule ):
     # # transformations types
     self.transformationTypes = None
     # # directory locations
-    self.directoryLocations = None
-    # # transformation metadata
-    self.transfidmeta = None
+    self.directoryLocations = ['TransformationDB', 'MetadataCatalog']
     # # archive periof in days
-    self.archiveAfter = None
+    self.archiveAfter = 7
     # # active SEs
-    self.activeStorages = None
+    self.activeStorages = []
     # # transformation log SEs
-    self.logSE = None
+    self.logSE = 'LogSE'
     # # enable/disable execution
-    self.enableFlag = None
+    self.enableFlag = 'True'
 
     self.dataProcTTypes = ['MCSimulation', 'Merge']
     self.dataManipTTypes = ['Replication', 'Removal']
@@ -93,23 +91,17 @@ class TransformationCleaningAgent( AgentModule ):
       self.transformationTypes = sorted( self.dataProcTTypes + self.dataManipTTypes )
     self.log.info( "Will consider the following transformation types: %s" % str( self.transformationTypes ) )
     # # directory locations
-    self.directoryLocations = sorted( self.am_getOption( 'DirectoryLocations', [ 'TransformationDB',
-                                                                                 'MetadataCatalog' ] ) )
+    self.directoryLocations = sorted( self.am_getOption( 'DirectoryLocations', self.directoryLocations ) )
     self.log.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
-    # # transformation metadata
-    self.transfidmeta = self.am_getOption( 'TransfIDMeta', "TransformationID" )
-    self.log.info( "Will use %s as metadata tag name for TransformationID" % self.transfidmeta )
     # # archive periof in days
-    self.archiveAfter = self.am_getOption( 'ArchiveAfter', 7 )  # days
+    self.archiveAfter = self.am_getOption( 'ArchiveAfter', self.archiveAfter )  # days
     self.log.info( "Will archive Completed transformations after %d days" % self.archiveAfter )
     # # active SEs
-    self.activeStorages = sorted( self.am_getOption( 'ActiveSEs', [] ) )
+    self.activeStorages = sorted( self.am_getOption( 'ActiveSEs', self.activeStorages ) )
     self.log.info( "Will check the following storage elements: %s" % str( self.activeStorages ) )
     # # transformation log SEs
-    self.logSE = Operations().getValue( '/LogStorage/LogSE', 'LogSE' )
+    self.logSE = Operations().getValue( '/LogStorage/LogSE', self.logSE )
     self.log.info( "Will remove logs found on storage element: %s" % self.logSE )
-    # # enable/disable execution, should be using CS option Status?? with default value as 'Active'??
-    self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
 
     # # transformation client
     self.transClient = TransformationClient()
@@ -129,7 +121,7 @@ class TransformationCleaningAgent( AgentModule ):
     :param self: self reference
     """
 
-    self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
+    self.enableFlag = self.am_getOption( 'EnableFlag', self.enableFlag )
     if self.enableFlag != 'True':
       self.log.info( 'TransformationCleaningAgent is disabled by configuration option EnableFlag' )
       return S_OK( 'Disabled via CS flag' )
@@ -207,7 +199,7 @@ class TransformationCleaningAgent( AgentModule ):
       directories = self._addDirs( transID, transDirectories, directories )
 
     if 'MetadataCatalog' in self.directoryLocations:
-      res = self.metadataClient.findDirectoriesByMetadata( {self.transfidmeta:transID} )
+      res = self.metadataClient.findDirectoriesByMetadata( {'TransformationID':transID} )
       if not res['OK']:
         self.log.error( "Failed to obtain metadata catalog directories", res['Message'] )
         return res
@@ -327,7 +319,7 @@ class TransformationCleaningAgent( AgentModule ):
     activeDirs = directories
     allFiles = {}
     fc = FileCatalog()
-    while len( activeDirs ) > 0:
+    while activeDirs:
       currentDir = activeDirs[0]
       res = returnSingleResult( fc.listDirectory( currentDir ) )
       activeDirs.remove( currentDir )
@@ -462,7 +454,7 @@ class TransformationCleaningAgent( AgentModule ):
 
   def cleanMetadataCatalogFiles( self, transID ):
     """ wipe out files from catalog """
-    res = self.metadataClient.findFilesByMetadata( { self.transfidmeta : transID } )
+    res = self.metadataClient.findFilesByMetadata( { 'TransformationID' : transID } )
     if not res['OK']:
       return res
     fileToRemove = res['Value']
