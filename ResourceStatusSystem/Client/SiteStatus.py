@@ -109,17 +109,18 @@ class SiteStatus( object ):
       return self.__getRSSSiteStatus(siteNames)
     else:
       siteStatusDict = {}
+      wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
       if siteNames:
         if isinstance(siteNames, basestring):
           siteNames = [siteNames]
         for siteName in siteNames:
-          result = RPCClient('WorkloadManagement/WMSAdministrator').getSiteMaskStatus(siteName)
+          result = wmsAdmin.getSiteMaskStatus(siteName)
           if not result['OK']:
             return result
           else:
             siteStatusDict[siteName] = result['Value']
       else:
-        result = RPCClient('WorkloadManagement/WMSAdministrator').getSiteMaskStatus()
+        result = wmsAdmin.getSiteMaskStatus()
         if not result['OK']:
           return result
         else:
