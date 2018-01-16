@@ -262,7 +262,7 @@ class JobManagerHandler(RequestHandler):
       gLogger.error("Can't check if the user has proxy uploaded:", result['Message'])
       return True
     # Check if an upload is required
-    return result['Value'] == False
+    return not result['Value']
 
 ###########################################################################
   def __getJobList(self, jobInput):
