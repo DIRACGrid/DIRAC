@@ -23,9 +23,12 @@ import traceback
 from pprint import pprint
 
 
-# Setting this environment variable will enable the dump of the debugging
+# Setting this environment variable to any value will enable the dump of the debugging
 # call stack
 DIRAC_DEBUG_DENCODE_CALLSTACK = bool(os.environ.get('DIRAC_DEBUG_DENCODE_CALLSTACK', False))
+
+# Depth of the stack to look for with inspect
+CONTEXT_DEPTH = 100
 
 
 def printDebugCallstack():
@@ -33,7 +36,7 @@ def printDebugCallstack():
       The purpose of this method is to track down all the places in DIRAC that might
       not survive the change to JSON encoding.
 
-      :returns: nothing, just prints
+      :returns: None
 
   """
   def stripArgs(frame):
@@ -49,7 +52,7 @@ def printDebugCallstack():
     return dict([(argName, allArgs.locals[argName]) for argName in allArgs.args])
 
   tb = traceback.format_stack()
-  frames = inspect.stack(context=100)
+  frames = inspect.stack(context=CONTEXT_DEPTH)
 
   # print the traceback that leads us here
   # remove the last element which is the traceback module call
@@ -92,14 +95,16 @@ _timeType = type(_dateTimeObject.time())
 g_dEncodeFunctions = {}
 g_dDecodeFunctions = {}
 
-# Encoding and decoding ints
-
 
 def encodeInt(iValue, eList):
+  """Encoding ints """
+
   eList.extend(("i", str(iValue), "e"))
 
 
 def decodeInt(data, i):
+  """Decoding ints """
+
   i += 1
   end = data.index('e', i)
   value = int(data[i:end])
@@ -109,15 +114,17 @@ def decodeInt(data, i):
 g_dEncodeFunctions[types.IntType] = encodeInt
 g_dDecodeFunctions["i"] = decodeInt
 
-# Encoding and decoding longs
-
 
 def encodeLong(iValue, eList):
+  """ Encoding longs """
+
   # corrected by KGG   eList.extend( ( "l", str( iValue ), "e" ) )
   eList.extend(("I", str(iValue), "e"))
 
 
 def decodeLong(data, i):
+  """ Decoding longs """
+
   i += 1
   end = data.index('e', i)
   value = long(data[i:end])
@@ -127,14 +134,16 @@ def decodeLong(data, i):
 g_dEncodeFunctions[types.LongType] = encodeLong
 g_dDecodeFunctions["I"] = decodeLong
 
-# Encoding and decoding floats
-
 
 def encodeFloat(iValue, eList):
+  """ Encoding floats """
+
   eList.extend(("f", str(iValue), "e"))
 
 
 def decodeFloat(data, i):
+  """ Decoding floats """
+
   i += 1
   end = data.index('e', i)
   if end + 1 < len(data) and data[end + 1] in ('+', '-'):
@@ -149,10 +158,10 @@ def decodeFloat(data, i):
 g_dEncodeFunctions[types.FloatType] = encodeFloat
 g_dDecodeFunctions["f"] = decodeFloat
 
-# Encoding and decoding booleand
-
 
 def encodeBool(bValue, eList):
+  """ Encoding booleans """
+
   if bValue:
     eList.append("b1")
   else:
@@ -160,6 +169,8 @@ def encodeBool(bValue, eList):
 
 
 def decodeBool(data, i):
+  """ Decoding booleans """
+
   if data[i + 1] == "0":
     return (False, i + 2)
   else:
@@ -169,14 +180,14 @@ def decodeBool(data, i):
 g_dEncodeFunctions[types.BooleanType] = encodeBool
 g_dDecodeFunctions["b"] = decodeBool
 
-# Encoding and decoding strings
-
 
 def encodeString(sValue, eList):
+  """ Encoding strings """
   eList.extend(('s', str(len(sValue)), ':', sValue))
 
 
 def decodeString(data, i):
+  """ Decoding strings """
   i += 1
   colon = data.index(":", i)
   value = int(data[i: colon])
@@ -188,15 +199,16 @@ def decodeString(data, i):
 g_dEncodeFunctions[types.StringType] = encodeString
 g_dDecodeFunctions["s"] = decodeString
 
-# Encoding and decoding unicode strings
-
 
 def encodeUnicode(sValue, eList):
+  """ Encoding unicode strings """
   valueStr = sValue.encode('utf-8')
   eList.extend(('u', str(len(valueStr)), ':', valueStr))
 
 
 def decodeUnicode(data, i):
+  """ Decoding unicode strings """
+
   i += 1
   colon = data.index(":", i)
   value = int(data[i: colon])
@@ -208,10 +220,10 @@ def decodeUnicode(data, i):
 g_dEncodeFunctions[types.UnicodeType] = encodeUnicode
 g_dDecodeFunctions["u"] = decodeUnicode
 
-# Encoding and decoding datetime
-
 
 def encodeDateTime(oValue, eList):
+  """ Encoding datetime """
+
   if isinstance(oValue, _dateTimeType):
     tDateTime = (oValue.year, oValue.month, oValue.day,
                  oValue.hour, oValue.minute, oValue.second,
@@ -234,6 +246,8 @@ def encodeDateTime(oValue, eList):
 
 
 def decodeDateTime(data, i):
+  """ Decoding datetime """
+
   i += 1
   dataType = data[i]
   # corrected by KGG tupleObject, i = decode( data, i + 1 )
@@ -254,24 +268,26 @@ g_dEncodeFunctions[_dateType] = encodeDateTime
 g_dEncodeFunctions[_timeType] = encodeDateTime
 g_dDecodeFunctions['z'] = decodeDateTime
 
-# Encoding and decoding None
 
+def encodeNone(_oValue, eList):
+  """ Encoding None """
 
-def encodeNone(oValue, eList):
   eList.append("n")
 
 
-def decodeNone(data, i):
+def decodeNone(_data, i):
+  """ Decoding None """
+
   return (None, i + 1)
 
 
 g_dEncodeFunctions[types.NoneType] = encodeNone
 g_dDecodeFunctions['n'] = decodeNone
 
-# Encode and decode a list
-
 
 def encodeList(lValue, eList):
+  """ Encoding list """
+
   eList.append("l")
   for uObject in lValue:
     g_dEncodeFunctions[type(uObject)](uObject, eList)
@@ -279,6 +295,8 @@ def encodeList(lValue, eList):
 
 
 def decodeList(data, i):
+  """ Decoding list """
+
   oL = []
   i += 1
   while data[i] != "e":
@@ -290,10 +308,9 @@ def decodeList(data, i):
 g_dEncodeFunctions[types.ListType] = encodeList
 g_dDecodeFunctions["l"] = decodeList
 
-# Encode and decode a tuple
-
 
 def encodeTuple(lValue, eList):
+  """ Encoding tuple """
 
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
     print '=' * 45, "Encoding tuples", '=' * 45
@@ -306,6 +323,8 @@ def encodeTuple(lValue, eList):
 
 
 def decodeTuple(data, i):
+  """ Decoding tuple """
+
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
     print '=' * 45, "Decoding tuples", '=' * 45
     printDebugCallstack()
@@ -317,10 +336,9 @@ def decodeTuple(data, i):
 g_dEncodeFunctions[types.TupleType] = encodeTuple
 g_dDecodeFunctions["t"] = decodeTuple
 
-# Encode and decode a dictionary
-
 
 def encodeDict(dValue, eList):
+  """ Encoding dictionary """
 
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
     # If we have numbers as keys
@@ -336,6 +354,8 @@ def encodeDict(dValue, eList):
 
 
 def decodeDict(data, i):
+  """ Decoding dictionary """
+
   oD = {}
   i += 1
   while data[i] != "e":
@@ -357,6 +377,8 @@ g_dDecodeFunctions["d"] = decodeDict
 
 # Encode function
 def encode(uObject):
+  """ Generic encoding function """
+
   try:
     eList = []
     # print "ENCODE FUNCTION : %s" % g_dEncodeFunctions[ type( uObject ) ]
@@ -367,6 +389,7 @@ def encode(uObject):
 
 
 def decode(data):
+  """ Generic decoding function """
   if not data:
     return data
   try:
