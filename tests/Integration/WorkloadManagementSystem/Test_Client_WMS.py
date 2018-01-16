@@ -172,7 +172,7 @@ class WMSChain( TestWMSTestCase ):
     result = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
     self.assertTrue(result['OK'])
     jobIDList = result['Value']
-    self.assertEqual(jobIDList, 3)
+    self.assertEqual(len(jobIDList), 3)
 
     result = jobMonitor.getJobsParameters(jobIDList, ['JobName'])
     self.assertTrue(result['OK'])

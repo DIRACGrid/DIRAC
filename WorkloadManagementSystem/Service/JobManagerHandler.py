@@ -43,20 +43,22 @@ MAX_PARAMETRIC_JOBS = 20
 
 def initializeJobManagerHandler( serviceInfo ):
 
-  global gJobDB, gJobLoggingDB, gtaskQueueDB, enablePilotsLogging
+  global gJobDB, gJobLoggingDB, gtaskQueueDB, enablePilotsLogging, gPilotAgentsDB, gPilotsLoggingDB
   gJobDB = JobDB()
   gJobLoggingDB = JobLoggingDB()
   gtaskQueueDB = TaskQueueDB()
+  gPilotAgentsDB = PilotAgentsDB()
 
   # there is a problem with accessing CS with shorter paths, so full path is extracted from serviceInfo dict
   enablePilotsLogging = gConfig.getValue( serviceInfo['serviceSectionPath'].replace('JobManager', 'PilotsLogging') + '/Enable', 'False').lower() in ('yes', 'true')
 
   if enablePilotsLogging:
-    gPilotAgentsDB = PilotAgentsDB()
     gPilotsLoggingDB = PilotsLoggingDB()
   return S_OK()
 
 class JobManagerHandler( RequestHandler ):
+  """ RequestHandler implementation of the JobManager
+  """
 
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
@@ -207,8 +209,8 @@ class JobManagerHandler( RequestHandler ):
     if not jobList:
       return S_ERROR(EWMSSUBM, 'Invalid job specification: ' + str(jobIDs))
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights(jobList,
-                                                                                                  RIGHT_SUBMIT)
+    validJobList, _invalidJobList, _nonauthJobList, _ownerJobList = self.jobPolicy.evaluateJobRights(jobList,
+                                                                                                     RIGHT_SUBMIT)
 
     # Check that all the requested jobs are eligible
     if set(jobList) != set(validJobList):
