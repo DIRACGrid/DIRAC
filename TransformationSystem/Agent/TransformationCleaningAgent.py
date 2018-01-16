@@ -81,7 +81,11 @@ class TransformationCleaningAgent(AgentModule):
     :param self: self reference
     """
     # # shifter proxy
+    # See cleanCatalogContents method: this proxy will be used ALSO when the file catalog used
+    # is the DIRAC File Catalog (DFC).
+    # This is possible because of unset of the "UseServerCertificate" option
     self.am_setOption('shifterProxy', 'DataManager')
+
     # # transformations types
     self.dataProcTTypes = Operations().getValue('Transformations/DataProcessing', self.dataProcTTypes)
     self.dataManipTTypes = Operations().getValue('Transformations/DataManipulation', self.dataManipTTypes)
@@ -99,7 +103,8 @@ class TransformationCleaningAgent(AgentModule):
     self.log.info("Will archive Completed transformations after %d days" % self.archiveAfter)
     # # active SEs
     self.activeStorages = sorted(self.am_getOption('ActiveSEs', self.activeStorages))
-    self.log.info("Will check the following storage elements: %s" % str(self.activeStorages))
+    if self.activeStorages:
+      self.log.info("Will check the following storage elements: %s" % str(self.activeStorages))
     # # transformation log SEs
     self.logSE = Operations().getValue('/LogStorage/LogSE', self.logSE)
     self.log.info("Will remove logs found on storage element: %s" % self.logSE)
@@ -239,6 +244,9 @@ class TransformationCleaningAgent(AgentModule):
     :param self: self reference
     :param sre directory: folder name
     """
+    if not self.activeStorages:
+      return S_OK()
+
     self.log.verbose("Cleaning Storage Contents")
     for storageElement in self.activeStorages:
       res = self.__removeStorageDirectory(directory, storageElement)
