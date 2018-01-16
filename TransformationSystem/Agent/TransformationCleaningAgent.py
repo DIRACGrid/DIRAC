@@ -61,6 +61,8 @@ class TransformationCleaningAgent(AgentModule):
     self.transformationTypes = None
     # # directory locations
     self.directoryLocations = ['TransformationDB', 'MetadataCatalog']
+    # # transformation metadata
+    self.transfidmeta = 'TransformationID'
     # # archive periof in days
     self.archiveAfter = 7
     # # active SEs
@@ -98,6 +100,9 @@ class TransformationCleaningAgent(AgentModule):
     # # directory locations
     self.directoryLocations = sorted(self.am_getOption('DirectoryLocations', self.directoryLocations))
     self.log.info("Will search for directories in the following locations: %s" % str(self.directoryLocations))
+    # # transformation metadata
+    self.transfidmeta = self.am_getOption('TransfIDMeta', self.transfidmeta)
+    self.log.info("Will use %s as metadata tag name for TransformationID" % self.transfidmeta)
     # # archive periof in days
     self.archiveAfter = self.am_getOption('ArchiveAfter', self.archiveAfter)  # days
     self.log.info("Will archive Completed transformations after %d days" % self.archiveAfter)
@@ -205,7 +210,7 @@ class TransformationCleaningAgent(AgentModule):
       directories = self._addDirs(transID, transDirectories, directories)
 
     if 'MetadataCatalog' in self.directoryLocations:
-      res = self.metadataClient.findDirectoriesByMetadata({'TransformationID': transID})
+      res = self.metadataClient.findDirectoriesByMetadata({self.transfidmeta: transID})
       if not res['OK']:
         self.log.error("Failed to obtain metadata catalog directories", res['Message'])
         return res
@@ -463,7 +468,7 @@ class TransformationCleaningAgent(AgentModule):
 
   def cleanMetadataCatalogFiles(self, transID):
     """ wipe out files from catalog """
-    res = self.metadataClient.findFilesByMetadata({'TransformationID': transID})
+    res = self.metadataClient.findFilesByMetadata({self.transfidmeta: transID})
     if not res['OK']:
       return res
     fileToRemove = res['Value']

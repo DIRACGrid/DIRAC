@@ -6,6 +6,9 @@ The TransformationCleaningAgent cleans up finalised (completed or cleaned) trans
 +------------------------------+----------------------------------------+------------------------------------+
 | **Name**                     | **Description**                        | **Example**                        |
 +------------------------------+----------------------------------------+------------------------------------+
+| TransfIDMeta                 | MetaData key to use to identify        | TransfIDMeta=TransformationID      |
+|                              | output data                            |                                    |
++------------------------------+----------------------------------------+------------------------------------+
 | DirectoryLocations           | Location of the OutputData             | TransformationDB, MetadataCatalog  |
 |                              |                                        |                                    |
 +------------------------------+----------------------------------------+------------------------------------+
