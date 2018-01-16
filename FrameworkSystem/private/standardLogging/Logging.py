@@ -412,6 +412,7 @@ class Logging(object):
       # not either.
       extra = {'componentname': self._componentName,
                'varmessage': sVarMsg,
+               'spacer': '' if not sVarMsg else ' ',
                'customname': self._customName}
       self._logger.log(level, "%s", sMsg, exc_info=exc_info, extra=extra)
       # test to know if the message is displayed or not
