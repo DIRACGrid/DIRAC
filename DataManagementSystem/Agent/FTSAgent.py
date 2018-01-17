@@ -327,12 +327,15 @@ class FTSAgent(AgentModule):
     log.info("Stage files before submission  = ", {
              True: "yes", False: "no"}[bool(self.PIN_TIME)])
 
-    self.MAX_ACTIVE_JOBS = self.am_getOption("MaxActiveJobsPerRoute", self.MAX_ACTIVE_JOBS)
+    self.MAX_ACTIVE_JOBS = self.am_getOption(
+        "MaxActiveJobsPerRoute", self.MAX_ACTIVE_JOBS)
     log.info("Max active FTSJobs/route       = ", str(self.MAX_ACTIVE_JOBS))
-    self.MAX_FILES_PER_JOB = self.am_getOption("MaxFilesPerJob", self.MAX_FILES_PER_JOB)
+    self.MAX_FILES_PER_JOB = self.am_getOption(
+        "MaxFilesPerJob", self.MAX_FILES_PER_JOB)
     log.info("Max FTSFiles/FTSJob            = ", str(self.MAX_FILES_PER_JOB))
 
-    self.MAX_ATTEMPT = self.am_getOption("MaxTransferAttempts", self.MAX_ATTEMPT)
+    self.MAX_ATTEMPT = self.am_getOption(
+        "MaxTransferAttempts", self.MAX_ATTEMPT)
     log.info("Max transfer attempts          = ", str(self.MAX_ATTEMPT))
 
     # # thread pool
@@ -351,11 +354,14 @@ class FTSAgent(AgentModule):
     log.info("Minimum monitoring interval    = ",
              str(self.MONITORING_INTERVAL))
 
-    self.PROCESS_JOB_REQUESTS = self.am_getOption("ProcessJobRequests", self.PROCESS_JOB_REQUESTS)
+    self.PROCESS_JOB_REQUESTS = self.am_getOption(
+        "ProcessJobRequests", self.PROCESS_JOB_REQUESTS)
     # We get a string as the default value is None... better than an eval()!
-    self.PROCESS_JOB_REQUESTS = {'True': True, 'False': False}.get(self.PROCESS_JOB_REQUESTS, self.PROCESS_JOB_REQUESTS)
+    self.PROCESS_JOB_REQUESTS = {'True': True, 'False': False}.get(
+        self.PROCESS_JOB_REQUESTS, self.PROCESS_JOB_REQUESTS)
     if self.PROCESS_JOB_REQUESTS is not None:
-      log.info("Process job requests           = ", str(self.PROCESS_JOB_REQUESTS))
+      log.info("Process job requests           = ",
+               str(self.PROCESS_JOB_REQUESTS))
 
     self.__ftsVersion = Operations().getValue('DataManagement/FTSVersion', 'FTS2')
     log.info("FTSVersion : %s" % self.__ftsVersion)
@@ -439,7 +445,8 @@ class FTSAgent(AgentModule):
       if not resetFTSPlacement["OK"]:
         log.error("FTSPlacement recreation error:", resetFTSPlacement["Message"])
         return resetFTSPlacement
-      self.__ftsPlacementValidStamp = now + datetime.timedelta(seconds=self.FTSPLACEMENT_REFRESH)
+      self.__ftsPlacementValidStamp = now + \
+          datetime.timedelta(seconds=self.FTSPLACEMENT_REFRESH)
 
     # To be sure we have enough requests, ask for several times as much
     requestIDs = self.requestClient().getRequestIDsList(
