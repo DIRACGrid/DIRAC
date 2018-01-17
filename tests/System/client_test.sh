@@ -32,70 +32,30 @@ then
 fi
 echo " "
 
+
 echo " "
 echo " "
-echo " ########################## Resources Management #############################"
+echo " ########################## BEGIN OF WMS scripts tests #############################"
 echo " "
 echo " "
 
-echo "======  dirac-admin-get-banned-sites"
-dirac-admin-get-banned-sites
-if [ $? -ne 0 ]
-then
-   exit $?
-fi
-echo " "
-echo "======  dirac-admin-get-site-mask"
-dirac-admin-get-site-mask
-if [ $? -ne 0 ]
-then
-   exit $?
-fi
-echo " "
-echo "======   dirac-admin-site-info LCG.CERN.cern"
-dirac-admin-site-info LCG.CERN.cern
-if [ $? -ne 0 ]
-then
-   exit $?
-fi
-echo " "
-echo "======  dirac-dms-show-se-status"
-dirac-dms-show-se-status
-if [ $? -ne 0 ]
-then
-   exit $?
-fi
-echo " "
-echo "======  dirac-rss-list-status --element=Site"
-dirac-rss-list-status --element=Site
-if [ $? -ne 0 ]
-then
-   exit $?
-fi
-echo " "
-echo "======  dirac-rss-list-status --element=Resource --name=CERN-USER"
-dirac-rss-list-status --element=Resource --name=CERN-USER
-if [ $? -ne 0 ]
-then
-   exit $?
-fi
-# echo " "
-# echo "======  dirac-rss-list-status --element=Resource --name=CERN-RAW,CERN-DST"
-# dirac-rss-list-status --element=Resource --name=CERN-RAW,CERN-DST
-# if [ $? -ne 0 ]
-# then
-#    exit $?
-# fi
-# echo " "
+# TODO: add 
+# submit
+# status
+# logging info
+# paramaters....
 
-# echo " "
-# echo "======  dirac-rss-query-dt-cache select --element=Site"
-# dirac-rss-query-dt-cache select --element=Site
-# if [ $? -ne 0 ]
-# then
-#    exit $?
-# fi
+
 echo " "
+echo "======  dirac-wms-select-jobs --Site=LCG.Cern.cern --Status=Running"
+dirac-wms-select-jobs --Site=LCG.Cern.cern --Status=Running
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+
+
+
 
 echo " "
 echo " "
@@ -125,6 +85,22 @@ then
    exit $?
 fi
 echo " "
+
+echo " "
+echo "======  dirac-dms-check-directory-integrity /lhcb/user/m/msoares/Dirac_Scripts_Test_Directory/"
+dirac-dms-check-directory-integrity /lhcb/user/m/msoares/Dirac_Scripts_Test_Directory/
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+echo " "
+echo "====== dirac-dms-check-file-integrity /lhcb/user/m/msoares/Dirac_Scripts_Test_Directory/Test_Files_20170810_121717_002.init"
+dirac-dms-check-file-integrity /lhcb/user/m/msoares/Dirac_Scripts_Test_Directory/Test_Files_20170810_121717_002.init
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+
 
 echo " "
 echo " "
