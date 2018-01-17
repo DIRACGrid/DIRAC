@@ -156,7 +156,7 @@ class JobState( object ):
       self.__checkType( initialState , dict )
       self.__checkType( cache , dict )
       self.__checkType( jobLog , ( list, tuple ) )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     result = self.getAttributes( initialState.keys() )
     if not result[ 'OK' ]:
@@ -236,7 +236,7 @@ class JobState( object ):
       self.__checkType( appStatus, basestring, canBeNone = True )
       self.__checkType( source, basestring, canBeNone = True )
       self.__checkType( updateTime, datetime.datetime, canBeNone = True )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     result = JobState.__db.job.setJobStatus( self.__jid, majorStatus, minorStatus, appStatus )
     if not result[ 'OK' ]:
@@ -255,7 +255,7 @@ class JobState( object ):
     try:
       self.__checkType( minorStatus, basestring )
       self.__checkType( source, basestring, canBeNone = True )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     result = JobState.__db.job.setJobStatus( self.__jid, minor = minorStatus )
     if not result[ 'OK' ]:
@@ -282,7 +282,7 @@ class JobState( object ):
     try:
       self.__checkType( appStatus, basestring )
       self.__checkType( source, basestring, canBeNone = True )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     result = JobState.__db.job.setJobStatus( self.__jid, application = appStatus )
     if not result[ 'OK' ]:
@@ -308,7 +308,7 @@ class JobState( object ):
     try:
       self.__checkType( name, basestring )
       self.__checkType( value, basestring )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.setJobAttribute( self.__jid, name, value )
 
@@ -317,7 +317,7 @@ class JobState( object ):
   def setAttributes( self, attDict ):
     try:
       self.__checkType( attDict, dict )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     keys = [ key for key in attDict ]
     values = [ attDict[ key ] for key in keys ]
@@ -328,7 +328,7 @@ class JobState( object ):
   def getAttribute( self, name ):
     try:
       self.__checkType( name , basestring )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobAttribute( self.__jid, name )
 
@@ -337,7 +337,7 @@ class JobState( object ):
   def getAttributes( self, nameList = None ):
     try:
       self.__checkType( nameList , ( list, tuple ), canBeNone = True )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobAttributes( self.__jid, nameList )
 
@@ -349,7 +349,7 @@ class JobState( object ):
     try:
       self.__checkType( name, basestring )
       self.__checkType( value, basestring )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.setJobParameter( self.__jid, name, value )
 
@@ -358,7 +358,7 @@ class JobState( object ):
   def setParameters( self, pDict ):
     try:
       self.__checkType( pDict, dict )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     pList = []
     for name in pDict:
@@ -370,7 +370,7 @@ class JobState( object ):
   def getParameter( self, name ):
     try:
       self.__checkType( name, basestring )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobParameter( self.__jid, name )
 
@@ -379,7 +379,7 @@ class JobState( object ):
   def getParameters( self, nameList = None ):
     try:
       self.__checkType( nameList, ( list, tuple ), canBeNone = True )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobParameters( self.__jid, nameList )
 
@@ -392,7 +392,7 @@ class JobState( object ):
     try:
       self.__checkType( name, basestring )
       self.__checkType( value, basestring )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.setJobOptParameter( self.__jid, name, value )
 
@@ -401,7 +401,7 @@ class JobState( object ):
   def setOptParameters( self, pDict ):
     try:
       self.__checkType( pDict, dict )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     for name in pDict:
       result = JobState.__db.job.setJobOptParameter( self.__jid, name, pDict[ name ] )
@@ -416,7 +416,7 @@ class JobState( object ):
       nameList = [ nameList ]
     try:
       self.__checkType( nameList, ( list, tuple ) )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     for name in nameList:
       result = JobState.__db.job.removeJobOptParameter( self.__jid, name )
@@ -429,7 +429,7 @@ class JobState( object ):
   def getOptParameter( self, name ):
     try:
       self.__checkType( name, basestring )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobOptParameter( self.__jid, name )
 
@@ -438,7 +438,7 @@ class JobState( object ):
   def getOptParameters( self, nameList = None ):
     try:
       self.__checkType( nameList, ( list, tuple ), canBeNone = True )
-    except TypeError, excp:
+    except TypeError as excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobOptParameters( self.__jid, nameList )
 
