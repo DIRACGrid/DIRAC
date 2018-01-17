@@ -121,7 +121,7 @@ class ElasticSearchDB( object ):
     return A( name_or_agg, aggsfilter, **params )
   ########################################################################
   def __tryToConnect( self ):
-    """Before we use the database we try to connect and retrive the cluster name
+    """Before we use the database we try to connect and retrieve the cluster name
 
     :param self: self reference
 
@@ -135,7 +135,7 @@ class ElasticSearchDB( object ):
         self._connected = True
       else:
         self._connected = False
-        gLogger.error( "Cannot connect to the database!" )
+        gLogger.error("Cannot ping ElasticsearchDB!")
     except ConnectionError as e:
       gLogger.error( repr( e ) )
       self._connected = False
@@ -352,7 +352,7 @@ class ElasticSearchDB( object ):
     gLogger.debug( "Nb of unique rows retrieved", len( values ) )
     return S_OK( values )
 
-  def pingDB ( self ):
+  def pingDB(self):
     """
     Try to connect to the database
     :return: S_OK(TRUE/FALSE)
