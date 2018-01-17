@@ -27,13 +27,13 @@ class Test_DisplayOptions(Test_Logging):
     Set the headers
     """
     gLogger.showHeaders(False)
-    gLogger.notice('message')
+    gLogger.notice('message', 'varmessage')
 
     oldgLogger.showHeaders(False)
-    oldgLogger.notice('message')
+    oldgLogger.notice('message', 'varmessage')
 
-    self.assertEqual("message \n", self.buffer.getvalue())
-    self.assertEqual(self.buffer.getvalue().replace(" ", ""), self.oldbuffer.getvalue().replace(" ", ""))
+    self.assertEqual("message varmessage\n", self.buffer.getvalue())
+    self.assertEqual(self.buffer.getvalue(), self.oldbuffer.getvalue())
     self.buffer.truncate(0)
     self.oldbuffer.truncate(0)
 
@@ -98,8 +98,8 @@ class Test_DisplayOptions(Test_Logging):
     oldgLogger.showThreadIDs(False)
     oldgLogger.notice('message')
 
-    self.assertEqual("message \n", self.buffer.getvalue())
-    self.assertEqual(self.buffer.getvalue().replace(" ", ""), self.oldbuffer.getvalue().replace(" ", ""))
+    self.assertEqual("message\n", self.buffer.getvalue())
+    self.assertEqual(self.buffer.getvalue(), self.oldbuffer.getvalue())
     self.buffer.truncate(0)
     self.oldbuffer.truncate(0)
 
@@ -111,8 +111,8 @@ class Test_DisplayOptions(Test_Logging):
     oldgLogger.showThreadIDs(True)
     oldgLogger.notice('message')
 
-    self.assertEqual("message \n", self.buffer.getvalue())
-    self.assertEqual(self.buffer.getvalue().replace(" ", ""), self.oldbuffer.getvalue().replace(" ", ""))
+    self.assertEqual("message\n", self.buffer.getvalue())
+    self.assertEqual(self.buffer.getvalue(), self.oldbuffer.getvalue())
     self.buffer.truncate(0)
     self.oldbuffer.truncate(0)
 
@@ -163,7 +163,7 @@ class Test_DisplayOptions(Test_Logging):
     with open(self.filename) as file:
       message = file.read()
 
-    self.assertEqual(message, "message \n")
+    self.assertEqual(message, "message\n")
     logstring1 = cleaningLog(self.buffer.getvalue())
     self.assertEqual(logstring1, "UTCFramework/sublogNOTICE:message\n")
 
@@ -182,8 +182,8 @@ class Test_DisplayOptions(Test_Logging):
     with open(self.filename) as file:
       message = file.read()
 
-    self.assertEqual(message, "message \n")
-    self.assertEqual(self.buffer.getvalue(), "message \n")
+    self.assertEqual(message, "message\n")
+    self.assertEqual(self.buffer.getvalue(), "message\n")
 
   def test_05setSubLoggLoggerShowHeaders(self):
     """
@@ -202,7 +202,7 @@ class Test_DisplayOptions(Test_Logging):
     with open(self.filename) as file:
       message = file.read()
 
-    self.assertEqual(message, "message \n")
+    self.assertEqual(message, "message\n")
     logstring1 = cleaningLog(self.buffer.getvalue())
     self.assertEqual(logstring1, "UTCFramework/sublog3NOTICE:message\n")
 
@@ -223,7 +223,7 @@ class Test_DisplayOptions(Test_Logging):
     with open(self.filename) as file:
       message = file.read()
 
-    self.assertEqual(message, "message \n")
+    self.assertEqual(message, "message\n")
     logstring1 = cleaningLog(self.buffer.getvalue())
     self.assertEqual(logstring1, "UTCFramework/sublog4NOTICE:message\n")
 
@@ -246,8 +246,8 @@ class Test_DisplayOptions(Test_Logging):
     with open(self.filename) as file:
       message = file.read()
 
-    self.assertEqual(message, "message \nmessage \n")
-    self.assertEqual(self.buffer.getvalue(), "message \n")
+    self.assertEqual(message, "message\nmessage\n")
+    self.assertEqual(self.buffer.getvalue(), "message\n")
 
   def test_07subLogShowHeadersChangeSetSubLogger(self):
     """
@@ -268,7 +268,7 @@ class Test_DisplayOptions(Test_Logging):
     with open(self.filename) as file:
       message = file.read()
 
-    self.assertEqual(message, "message \nmessage \n")
+    self.assertEqual(message, "message\nmessage\n")
     logstring1 = cleaningLog(self.buffer.getvalue())
     self.assertEqual(logstring1, "UTCFramework/sublog6/subsublogNOTICE:message\n")
 
@@ -293,7 +293,7 @@ class Test_DisplayOptions(Test_Logging):
     with open(self.filename) as file:
       message = file.read()
 
-    self.assertIn("UTC Framework/sublog7/subsublog NOTICE: message \nmessage \n", message)
+    self.assertIn("UTC Framework/sublog7/subsublog NOTICE: message\nmessage\n", message)
     logstring1 = cleaningLog(self.buffer.getvalue())
     self.assertEqual(logstring1, "UTCFramework/sublog7/subsublogNOTICE:message\n")
 
@@ -312,14 +312,14 @@ class Test_DisplayOptions(Test_Logging):
     with open(self.filename) as file:
       message = file.read()
 
-    self.assertEqual("message \n", message)
+    self.assertEqual("message\n", message)
 
     gLogger.showHeaders(True)
     sublog.notice("message")
     
     with open(self.filename) as file:
       message = file.read()
-    self.assertIn("UTC Framework/sublog8 NOTICE: message \n", message)
+    self.assertIn("UTC Framework/sublog8 NOTICE: message\n", message)
 
 
 if __name__ == '__main__':
