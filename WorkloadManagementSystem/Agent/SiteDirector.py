@@ -773,6 +773,17 @@ class SiteDirector(AgentModule):
 
   def _addPilotTQReference(self, queue, taskQueueDict, pilotList, stampDict):
     """ Add to pilotAgentsDB the reference of for which TqID the pilots have been sent
+
+        :param queue: the queue name
+        :type queue: basestring
+        :param taskQueueDict: dict of task queues
+        :type taskQueueDict: dict
+        :param pilotList: list of pilots
+        :type pilotList: list
+        :param stampDict: dictionary of pilots timestamps
+        :type stampDict: dict
+
+        :return: None
     """
 
     tqPriorityList = []
@@ -791,8 +802,8 @@ class SiteDirector(AgentModule):
         tqDict[tqID] = []
       tqDict[tqID].append(pilotID)
 
-    for tqID, pilotList in tqDict.items():
-      result = pilotAgentsDB.addPilotTQReference(pilotRef=pilotList,
+    for tqID, pilotsList in tqDict.items():
+      result = pilotAgentsDB.addPilotTQReference(pilotRef=pilotsList,
                                                  taskQueueID=tqID,
                                                  ownerDN=self.pilotDN,
                                                  ownerGroup=self.pilotGroup,
@@ -804,7 +815,7 @@ class SiteDirector(AgentModule):
         self.log.error(
             'Failed add pilots to the PilotAgentsDB: ', result['Message'])
         continue
-      for pilot in pilotList:
+      for pilot in pilotsList:
         result = pilotAgentsDB.setPilotStatus(pilotRef=pilot,
                                               status='Submitted',
                                               destination=self.queueDict[queue]['CEName'],
@@ -1002,16 +1013,6 @@ class SiteDirector(AgentModule):
 
     if 'SharedArea' in queueDict:
       pilotOptions.append("-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'])
-
-#     if 'SI00' in queueDict:
-#       factor = float( queueDict['SI00'] ) / 250.
-#       pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % factor )
-#       pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % factor )
-#     else:
-#       if 'CPUScalingFactor' in queueDict:
-#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
-#       if 'CPUNormalizationFactor' in queueDict:
-#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
 
     if "ExtraPilotOptions" in queueDict:
       pilotOptions.append(queueDict['ExtraPilotOptions'])

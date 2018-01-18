@@ -1,7 +1,7 @@
 """ Test class for WMS agents
 """
 
-# pylint: disable=protected-access,missing-docstring
+# pylint: disable=protected-access
 
 # imports
 import unittest
@@ -58,6 +58,8 @@ class SiteDirectorBaseSuccess(AgentsTestCase):
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__", new=mockAM)
   def test__getPilotOptions(self, _patch1, _patch2, _patch3, _patch4):
+    """ Testing SiteDirector()._getPilotOptions()
+    """
     sd = SiteDirector()
     sd.log = gLogger
     sd.am_getOption = mockAM
@@ -83,6 +85,8 @@ class SiteDirectorBaseSuccess(AgentsTestCase):
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__", new=mockAM)
   def test__ifAndWhereToSubmit(self, _patch1, _patch2, _patch3, _patch4):
+    """ Testing SiteDirector()._ifAndWhereToSubmit()
+    """
     sd = SiteDirector()
     sd.log = gLogger
     sd.am_getOption = mockAM
@@ -94,6 +98,8 @@ class SiteDirectorBaseSuccess(AgentsTestCase):
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__", new=mockAM)
   def test__allowedToSubmit(self, _patch1):
+    """ Testing SiteDirector()._allowedToSubmit()
+    """
     sd = SiteDirector()
     sd.log = gLogger
     sd.am_getOption = mockAM
@@ -129,6 +135,8 @@ class SiteDirectorBaseSuccess(AgentsTestCase):
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__", new=mockAM)
   def test__submitPilotsToQueue(self, _patch1, _patch2, _patch3, _patch4):
+    """ Testing SiteDirector()._submitPilotsToQueue()
+    """
     sd = SiteDirector()
     sd.log = gLogger
     sd.am_getOption = mockAM
