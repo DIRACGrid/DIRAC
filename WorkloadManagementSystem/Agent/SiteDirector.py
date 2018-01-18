@@ -401,6 +401,7 @@ class SiteDirector(AgentModule):
       if not result['OK']:
         self.log.error("Can not get the status of computing elements",
                        " %s" % result['Message'])
+        return result
       self.ceMaskList = [ceName for ceName in result['Value'].iterkeys() if result['Value'][ceName]
                          ['all'] in ('Active', 'Degraded')]
 
@@ -408,12 +409,14 @@ class SiteDirector(AgentModule):
     result = self.submitJobs()
     if not result['OK']:
       self.log.error('Errors in the job submission: ', result['Message'])
+      return result
 
     cyclesDone = self.am_getModuleParam('cyclesDone')
     if self.updateStatus and cyclesDone % self.pilotStatusUpdateCycleFactor == 0:
       result = self.updatePilotStatus()
       if not result['OK']:
         self.log.error('Errors in updating pilot status: ', result['Message'])
+        return result
 
     return S_OK()
 
