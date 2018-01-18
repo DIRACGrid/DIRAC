@@ -35,7 +35,7 @@ from DIRAC.Core.Security import Locations, X509Chain, X509CRL
 from DIRAC import gLogger, S_OK, S_ERROR
 
 
-def generateCAFile( location = None ):
+def generateCAFile(location=None):
   """
 
   Generate a single CA file with all the PEMs
@@ -45,34 +45,35 @@ def generateCAFile( location = None ):
 
   """
   caDir = Locations.getCAsLocation()
-  for fn in ( os.path.join( os.path.dirname( caDir ), "cas.pem" ),
-              os.path.join( os.path.dirname( Locations.getHostCertificateAndKeyLocation( location )[0] ), "cas.pem" ),
-              False ):
+  for fn in (os.path.join(os.path.dirname(caDir), "cas.pem"),
+             os.path.join(os.path.dirname(Locations.getHostCertificateAndKeyLocation(location)[0]), "cas.pem"),
+             False):
     if not fn:
-      fn = tempfile.mkstemp( prefix = "cas.", suffix = ".pem" )[1]
+      fn = tempfile.mkstemp(prefix="cas.", suffix=".pem")[1]
 
     try:
 
-      with open( fn, "w" ) as fd:
-        for caFile in os.listdir( caDir ):
-          caFile = os.path.join( caDir, caFile )
-          result = X509Chain.X509Chain.instanceFromFile( caFile )
-          if not result[ 'OK' ]:
+      with open(fn, "w") as fd:
+        for caFile in os.listdir(caDir):
+          caFile = os.path.join(caDir, caFile)
+          result = X509Chain.X509Chain.instanceFromFile(caFile)
+          if not result['OK']:
             continue
-          chain = result[ 'Value' ]
+          chain = result['Value']
           expired = chain.hasExpired()
-          if not expired[ 'OK' ] or expired[ 'Value' ]:
+          if not expired['OK'] or expired['Value']:
             continue
-          fd.write( chain.dumpAllToString()[ 'Value' ] )
+          fd.write(chain.dumpAllToString()['Value'])
 
-      gLogger.info( "CAs used from: %s" % str( fn ) )
-      return S_OK( fn )
+      gLogger.info("CAs used from: %s" % str(fn))
+      return S_OK(fn)
     except IOError as err:
-      gLogger.warn( err )
+      gLogger.warn(err)
 
-  return S_ERROR( caDir )
+  return S_ERROR(caDir)
 
-def generateRevokedCertsFile( location = None ):
+
+def generateRevokedCertsFile(location=None):
   """
 
   Generate a single CA file with all the PEMs
@@ -82,22 +83,22 @@ def generateRevokedCertsFile( location = None ):
 
   """
   caDir = Locations.getCAsLocation()
-  for fn in ( os.path.join( os.path.dirname( caDir ), "crls.pem" ),
-              os.path.join( os.path.dirname( Locations.getHostCertificateAndKeyLocation( location )[0] ), "crls.pem" ),
-              False ):
+  for fn in (os.path.join(os.path.dirname(caDir), "crls.pem"),
+             os.path.join(os.path.dirname(Locations.getHostCertificateAndKeyLocation(location)[0]), "crls.pem"),
+             False):
     if not fn:
-      fn = tempfile.mkstemp( prefix = "crls", suffix = ".pem" )[1]
+      fn = tempfile.mkstemp(prefix="crls", suffix=".pem")[1]
     try:
-      with open( fn, "w" ) as fd:
-        for caFile in os.listdir( caDir ):
-          caFile = os.path.join( caDir, caFile )
-          result = X509CRL.X509CRL.instanceFromFile( caFile )
-          if not result[ 'OK' ]:
+      with open(fn, "w") as fd:
+        for caFile in os.listdir(caDir):
+          caFile = os.path.join(caDir, caFile)
+          result = X509CRL.X509CRL.instanceFromFile(caFile)
+          if not result['OK']:
             continue
-          chain = result[ 'Value' ]
-          fd.write( chain.dumpAllToString()[ 'Value' ] )
-        return S_OK( fn )
+          chain = result['Value']
+          fd.write(chain.dumpAllToString()['Value'])
+        return S_OK(fn)
     except IOError:
       continue
 
-  return S_ERROR( caDir )
+  return S_ERROR(caDir)
