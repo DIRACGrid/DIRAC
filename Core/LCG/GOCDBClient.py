@@ -1,16 +1,19 @@
 """ GOCDBClient module is a client for the GOC DB, looking for Downtimes.
+
+    WARN: the URL of the GOC DB API is hardcoded, and is: https://goc.egi.eu/gocdbpi/public/
 """
+
+__RCSID__ = "$Id$"
 
 import time
 import socket
-import requests
 
 from datetime import datetime, timedelta
 from xml.dom import minidom
 
-from DIRAC import S_OK, S_ERROR, gLogger
+import requests
 
-__RCSID__ = "$Id$"
+from DIRAC import S_OK, S_ERROR, gLogger
 
 def _parseSingleElement( element, attributes = None ):
   """
@@ -127,23 +130,24 @@ class GOCDBClient( object ):
       # so the curlDownload method will search for only ongoing DTs
       resXML_ongoing = self._downTimeCurlDownload( name )
       if resXML_ongoing is None:
-        res_ongoing = {}
+        resOngoing = {}
       else:
-        res_ongoing = self._downTimeXMLParsing( resXML_ongoing, granularity, name )
+        resOngoing = self._downTimeXMLParsing(
+            resXML_ongoing, granularity, name)
 
       # second call: pass the startDate argument
       resXML_startDate = self._downTimeCurlDownload( name, startDate_STR )
       if resXML_startDate is None:
-        res_startDate = {}
+        resStartDate = {}
       else:
-        res_startDate = self._downTimeXMLParsing( resXML_startDate, granularity,
-                                                  name, startDateMax )
+        resStartDate = self._downTimeXMLParsing(resXML_startDate, granularity,
+                                                name, startDateMax)
 
       # merge the results of the 2 queries:
-      res = res_ongoing
-      for k in res_startDate.keys():
-        if k not in res.keys():
-          res[k] = res_startDate[k]
+      res = resOngoing
+      for k in resStartDate:
+        if k not in res:
+          res[k] = resStartDate[k]
 
     else:
       #just query for onGoing downtimes
@@ -224,7 +228,8 @@ class GOCDBClient( object ):
       params += '&ongoing_only=yes'
 
     try:
-      response = requests.get('https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime&topentity=' + params)
+      response = requests.get(
+          'https://goc.egi.eu/gocdbpi/public/?method=get_downtime&topentity=' + params)
       response.raise_for_status()
     except requests.exceptions.RequestException as e:
       return S_ERROR("Error %s" % e)
@@ -263,7 +268,7 @@ class GOCDBClient( object ):
     #GOCDB-PI url and method settings
     #
     # Set the GOCDB URL
-    gocdbpi_url = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime"
+    gocdbpi_url = "https://goc.egi.eu/gocdbpi/public/?method=get_downtime"
     # Set the desidered start date
     if startDate is None:
       when = "&ongoing_only=yes"
@@ -301,7 +306,7 @@ class GOCDBClient( object ):
       raise ValueError( "Arguments must be strings." )
 
     # GOCDB-PI query
-    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_service_endpoint&" \
+    gocdb_ep = "https://goc.egi.eu/gocdbpi/public/?method=get_service_endpoint&" \
         + granularity + '=' + entity
 
     service_endpoint_page = requests.get( gocdb_ep )
@@ -319,7 +324,7 @@ class GOCDBClient( object ):
 #    """
 #
 #    # GOCDB-PI query
-#    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_site&sitename="+site
+#    gocdb_ep = "https://goc.egi.eu/gocdbpi/public/?method=get_site&sitename="+site
 #
 #    site_page = requests.get( gocdb_ep )
 #
@@ -330,6 +335,7 @@ class GOCDBClient( object ):
   def _downTimeXMLParsing( self, dt, siteOrRes, entities = None, startDateMax = None ):
     """ Performs xml parsing from the dt string (returns a dictionary)
     """
+    dt = dt.encode('utf-8')
     doc = minidom.parseString( dt )
 
     downtimeElements = doc.getElementsByTagName( "DOWNTIME" )
@@ -349,33 +355,33 @@ class GOCDBClient( object ):
         except Exception:
           dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['SITENAME'] ] = elements
 
-    for dt_ID in dtDict.keys():
+    for dtID in dtDict:
       if siteOrRes in ( 'Site', 'Sites' ):
-        if 'SITENAME' not in dtDict[dt_ID]:
-          dtDict.pop( dt_ID )
+        if 'SITENAME' not in dtDict[dtID]:
+          dtDict.pop(dtID)
           continue
         if entities is not None:
           if not isinstance( entities, list ):
             entities = [entities]
-          if not dtDict[dt_ID]['SITENAME'] in entities:
-            dtDict.pop( dt_ID )
+          if not dtDict[dtID]['SITENAME'] in entities:
+            dtDict.pop(dtID)
 
       elif siteOrRes in ( 'Resource', 'Resources' ):
-        if 'HOSTNAME' not in dtDict[dt_ID]:
-          dtDict.pop( dt_ID )
+        if 'HOSTNAME' not in dtDict[dtID]:
+          dtDict.pop(dtID)
           continue
         if entities is not None:
           if not isinstance( entities, list ):
             entities = [entities]
-          if dtDict[dt_ID]['HOSTNAME'] not in entities:
-            dtDict.pop( dt_ID )
+          if dtDict[dtID]['HOSTNAME'] not in entities:
+            dtDict.pop(dtID)
 
     if startDateMax is not None:
-      for dt_ID in dtDict.keys():
-        startDateMaxFromKeys = datetime( *time.strptime( dtDict[dt_ID]['FORMATED_START_DATE'],
+      for dtID in dtDict:
+        startDateMaxFromKeys = datetime(*time.strptime(dtDict[dtID]['FORMATED_START_DATE'],
                                                          "%Y-%m-%d %H:%M" )[0:5] )
         if startDateMaxFromKeys > startDateMax:
-          dtDict.pop( dt_ID )
+          dtDict.pop(dtID)
 
     return dtDict
 
