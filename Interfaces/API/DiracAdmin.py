@@ -689,7 +689,7 @@ class DiracAdmin(API):
 
     for ce, summary in ceDict.iteritems():
       line = ce.ljust(28)
-      states = sorted(summary.keys())
+      states = sorted(summary)
       for state in states:
         count = str(summary[state])
         line += state.ljust(12) + count.ljust(12)

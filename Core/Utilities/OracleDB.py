@@ -225,7 +225,7 @@ class OracleDB(object):
       cursor = connection.cursor()
       result = None
       results = None
-      if array is not None and array:
+      if array:
         if isinstance(type(array[0]), basestring):
           result = cursor.arrayvar(cx_Oracle.STRING, array)
           parameters += [result]
