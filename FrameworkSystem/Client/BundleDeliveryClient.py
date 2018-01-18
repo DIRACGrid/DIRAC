@@ -1,8 +1,11 @@
+""" Client for interacting with Framework/BundleDelivery service
+"""
 
 import os
 import tarfile
 import cStringIO
-from DIRAC import S_OK, S_ERROR, gLogger
+
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.Security import Locations, CS, Utilities
@@ -28,19 +31,17 @@ class BundleDeliveryClient:
 
   def __getHash( self, bundleID, dirToSyncTo ):
     try:
-      fd = open( os.path.join( dirToSyncTo, ".dab.%s" % bundleID ), "rb" )
-      hash = fd.read().strip()
-      fd.close()
-      return hash
+      with open( os.path.join( dirToSyncTo, ".dab.%s" % bundleID ), "rb" ) as fd:
+        bdHash = fd.read().strip()
+        return bdHash
     except:
       return ""
 
-  def __setHash( self, bundleID, dirToSyncTo, hash ):
+  def __setHash( self, bundleID, dirToSyncTo, bdHash ):
     try:
       fileName = os.path.join( dirToSyncTo, ".dab.%s" % bundleID )
-      fd = open( fileName, "wb" )
-      fd.write( hash )
-      fd.close()
+      with open( fileName, "wb" ) as fd:
+        fd.write( bdHash )
     except Exception as e:
       self.log.error( "Could not save hash after synchronization", "%s: %s" % ( fileName, str( e ) ) )
 
@@ -98,11 +99,11 @@ class BundleDeliveryClient:
     if X509_CERT_DIR:
       os.environ['X509_CERT_DIR'] = X509_CERT_DIR
     return result
-  
+
   def getCAs( self ):
     """
     This method can be used to create the CAs. If the file can not be created, it will be downloaded from
-    the server. 
+    the server.
     """
     retVal = Utilities.generateCAFile()
     if not retVal['OK']:
@@ -113,15 +114,14 @@ class BundleDeliveryClient:
         result = transferClient.receiveFile( fd, 'CAs' )
         if not result[ 'OK' ]:
           return result
-        else:
-          return S_OK( casFile )
+        return S_OK( casFile )
     else:
       return retVal
-  
+
   def getCLRs( self ):
     """
     This method can be used to create the CAs. If the file can not be created, it will be downloaded from
-    the server. 
+    the server.
     """
     retVal = Utilities.generateRevokedCertsFile()
     if not retVal['OK']:
@@ -132,7 +132,6 @@ class BundleDeliveryClient:
         result = transferClient.receiveFile( fd, 'CRLs' )
         if not result[ 'OK' ]:
           return result
-        else:
-          return S_OK( casFile )
+        return S_OK( casFile )
     else:
       return retVal
