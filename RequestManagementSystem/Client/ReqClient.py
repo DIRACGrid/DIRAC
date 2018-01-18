@@ -10,7 +10,7 @@ import os
 import time
 import random
 import json
-
+import datetime
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -394,18 +394,23 @@ class ReqClient(Client):
     req = res['Value']
     if allR or recoverableRequest(req):
       # Only reset requests that can be recovered
-      for i, op in enumerate(req):
-        op.Error = ''
-        if op.Status == 'Failed':
-          printOperation((i, op), onlyFailed=True)
-        for fi in op:
-          if fi.Status == 'Failed':
-            fi.Attempt = 1
-            fi.Error = ''
-            fi.Status = 'Waiting'
-        if op.Status == 'Failed':
-          op.Status = 'Waiting'
+      if req.Status != 'Failed':
+        gLogger.notice("Reset NotBefore time, was %s" % str(req.NotBefore))
+      else:
+        for i, op in enumerate(req):
+          op.Error = ''
+          if op.Status == 'Failed':
+            printOperation((i, op), onlyFailed=True)
+          for fi in op:
+            if fi.Status == 'Failed':
+              fi.Attempt = 1
+              fi.Error = ''
+              fi.Status = 'Waiting'
+          if op.Status == 'Failed':
+            op.Status = 'Waiting'
 
+      # Reset also NotBefore
+      req.NotBefore = datetime.datetime.utcnow().replace(microsecond=0)
       return self.putRequest(req)
     return S_OK("Not reset")
 

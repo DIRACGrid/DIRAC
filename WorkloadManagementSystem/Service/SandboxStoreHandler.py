@@ -10,6 +10,7 @@ import tempfile
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Security import Properties
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
 from DIRAC.DataManagementSystem.Service.StorageElementHandler import getDiskSpace
@@ -18,14 +19,13 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.Core.Security import Properties
 
 __RCSID__ = "$Id$"
 
 sandboxDB = False
 
 def initializeSandboxStoreHandler( serviceInfo ):
-  global sandboxDB, gSBDeletionPool
+  global sandboxDB
   sandboxDB = SandboxMetadataDB()
   return S_OK()
 
@@ -46,7 +46,7 @@ class SandboxStoreHandler( RequestHandler ):
       self.__useLocalStorage = False
       self.__externalSEName = self.__backend
       self.__seNameToUse = self.__backend
-    # Execute the purge once every 100 calls
+    # Execute the purge once every 1000 calls
     SandboxStoreHandler.__purgeCount += 1
     if SandboxStoreHandler.__purgeCount > self.getCSOption( "QueriesBeforePurge", 1000 ):
       SandboxStoreHandler.__purgeCount = 0
