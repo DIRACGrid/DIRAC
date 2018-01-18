@@ -746,7 +746,6 @@ class ExecutorDispatcher:
       self.__unfreezeTasks(eType)
     self.__log.verbose("Filling %s executors" % eType)
     eId = self.__states.getIdleExecutor(eType)
-    processedTasks = set()
     while eId:
       result = self.__sendTaskToExecutor(eId, eType)
       if not result['OK']:
@@ -805,42 +804,3 @@ class ExecutorDispatcher:
     errMsg = "Send task callback did not send back an S_OK/S_ERROR structure"
     self.__log.fatal(errMsg)
     return S_ERROR(errMsg)
-
-
-if __name__ == "__main__":
-  def testExecState():
-    execState = ExecutorState()
-    execState.addExecutor(1, "type1", 2)
-    print execState.freeSlots(1) == 2
-    print execState.addTask(1, "t1") == 1
-    print execState.addTask(1, "t1") == 1
-    print execState.addTask(1, "t2") == 2
-    print execState.freeSlots(1) == 0
-    print execState.full(1)
-    print execState.removeTask("t1") == 1
-    print execState.freeSlots(1) == 1
-    print execState.getFreeExecutors("type1") == {1: 1}
-    print execState.getTasksForExecutor(1) == ["t2"]
-    print execState.removeExecutor(1)
-    print execState._internals()
-
-  def testExecQueues():
-    eQ = ExecutorQueues()
-    for y in range(2):
-      for i in range(3):
-        print eQ.pushTask("type%s" % y, "t%s%s" % (y, i)) == i + 1
-    print "DONE IN"
-    print eQ.pushTask("type0", "t01") == 3
-    print eQ.getState()
-    print eQ.popTask("type0") == "t00"
-    print eQ.pushTask("type0", "t00", ahead=True) == 3
-    print eQ.popTask("type0") == "t00"
-    print eQ.deleteTask("t01")
-    print eQ.getState()
-    print eQ.deleteTask("t02")
-    print eQ.getState()
-    for i in range(3):
-      print eQ.popTask("type1") == "t1%s" % i
-    print eQ._internals()
-
-  testExecQueues()
