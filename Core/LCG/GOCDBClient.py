@@ -355,7 +355,7 @@ class GOCDBClient( object ):
         except Exception:
           dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['SITENAME'] ] = elements
 
-    for dtID in dtDict:
+    for dtID in dtDict.keys():  # pylint: disable=consider-iterating-dictionary
       if siteOrRes in ( 'Site', 'Sites' ):
         if 'SITENAME' not in dtDict[dtID]:
           dtDict.pop(dtID)
@@ -377,7 +377,7 @@ class GOCDBClient( object ):
             dtDict.pop(dtID)
 
     if startDateMax is not None:
-      for dtID in dtDict:
+      for dtID in dtDict.keys():  # pylint: disable=consider-iterating-dictionary
         startDateMaxFromKeys = datetime(*time.strptime(dtDict[dtID]['FORMATED_START_DATE'],
                                                          "%Y-%m-%d %H:%M" )[0:5] )
         if startDateMaxFromKeys > startDateMax:
