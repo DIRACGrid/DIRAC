@@ -85,7 +85,7 @@ class PDPDecision_Success( PDPTestCase ):
     # empty
     pdp.setup( None )
     res = pdp.takeDecision()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     # site
     decisionParams = {'element'     : 'Site',
@@ -97,7 +97,7 @@ class PDPDecision_Success( PDPTestCase ):
                       'tokenOwner'  : None}
     pdp.setup( decisionParams )
     res = pdp.takeDecision()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Banned' )
 
     # site2
@@ -111,7 +111,7 @@ class PDPDecision_Success( PDPTestCase ):
                       'tokenOwner'  : None}
     pdp.setup( decisionParams )
     res = pdp.takeDecision()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Banned' )
 
     # mySE
@@ -124,7 +124,7 @@ class PDPDecision_Success( PDPTestCase ):
                       'tokenOwner'  : None}
     pdp.setup( decisionParams )
     res = pdp.takeDecision()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Active' )
 
     # SE1
@@ -137,7 +137,7 @@ class PDPDecision_Success( PDPTestCase ):
                       'tokenOwner'  : None}
     pdp.setup( decisionParams )
     res = pdp.takeDecision()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Banned' )
 
 ################################################################################

@@ -147,7 +147,8 @@ class ModuleInstance( AttributeCollection ):
   def execute( self, step_parameters, definitions ):
     #print 'Executing ModuleInstance ',self.getName(),'of type',self.getType()
     self.instance_obj = definitions[self.getType()].main_class_obj() # creating instance
-    self.parameters.execute( self.getName() )
+    #FIXME: pylint complains that ParameterCollection doesn't have execute. What should this be?
+    self.parameters.execute( self.getName() ) #pylint: disable=no-member
     self.instance_obj.execute2()
 
 class DefinitionsPool( dict ):

@@ -246,7 +246,7 @@ def mock_getGroupOption( grpName, grpOption ):
 
 
 
-class BaseCase( object ):
+class BaseCaseMixin( object ):
   """ Base test class. Defines all the method to test
   """
 
@@ -396,7 +396,7 @@ class BaseCase( object ):
 
 
 
-class TestNonExistingUser( BaseCase, unittest.TestCase ):
+class TestNonExistingUser( BaseCaseMixin, unittest.TestCase ):
   """ As anonymous user and no group
   """
 
@@ -636,7 +636,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
 
 
 
-class TestAdminGrpAnonUser( BaseCase, unittest.TestCase ):
+class TestAdminGrpAnonUser( BaseCaseMixin, unittest.TestCase ):
   """ The grp_admin has adminAccess so should be able to do everything
   """
 
@@ -791,7 +791,7 @@ class TestAdminGrpAnonUser( BaseCase, unittest.TestCase ):
 
 
 
-class TestAdminGrpAdminUser( BaseCase, unittest.TestCase ):
+class TestAdminGrpAdminUser( BaseCaseMixin, unittest.TestCase ):
   """ The grp_admin has adminAccess so should be able to do everything
   """
 
@@ -947,7 +947,7 @@ class TestAdminGrpAdminUser( BaseCase, unittest.TestCase ):
 
 
 
-class TestDataGrpDmUser( BaseCase, unittest.TestCase ):
+class TestDataGrpDmUser( BaseCaseMixin, unittest.TestCase ):
   """ Should have the permission of the 'dm' user and the group
       permission of all the vomsRole 'prod' (grp_data, grp_mc)
   """
@@ -1245,7 +1245,7 @@ class TestDataGrpDmUser( BaseCase, unittest.TestCase ):
 
 
 
-class TestDataGrpUsr1User( BaseCase, unittest.TestCase ):
+class TestDataGrpUsr1User( BaseCaseMixin, unittest.TestCase ):
   """ Should have the permission of the 'usr1' user and the group
       permission of all the vomsRole 'prod' (grp_data, grp_mc)
   """
@@ -1539,7 +1539,7 @@ class TestDataGrpUsr1User( BaseCase, unittest.TestCase ):
 
 
 
-class TestUserGrpUsr1User( BaseCase, unittest.TestCase ):
+class TestUserGrpUsr1User( BaseCaseMixin, unittest.TestCase ):
   """ Just a normal user, should be able to write only in its own directory
   """
 

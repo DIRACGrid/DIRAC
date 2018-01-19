@@ -29,15 +29,15 @@ class TQChain( TQDBTestCase ):
     """
     tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup':'myGroup', 'Setup':'aSetup', 'CPUTime':50000}
     result = self.tqDB.insertJob( 123, tqDefDict, 10 )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     result = self.tqDB.getTaskQueueForJobs( [123] )
-    self.assert_( result['OK'] )
-    self.assert_( 123 in result['Value'].keys() )
+    self.assertTrue(result['OK'])
+    self.assertTrue( 123 in result['Value'].keys() )
     tq = result['Value'][123]
     result = self.tqDB.deleteJob( 123 )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     result = self.tqDB.deleteTaskQueue( tq )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
 class TQTests( TQDBTestCase ):
   """
@@ -50,27 +50,27 @@ class TQTests( TQDBTestCase ):
     self.tqDB.insertJob( 123, tqDefDict, 10 )
 
     result = self.tqDB.getNumTaskQueues()
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'], 1 )
     result = self.tqDB.retrieveTaskQueues()
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'].values()[0],
                       {'OwnerDN': '/my/DN', 'Jobs': 1L, 'OwnerGroup': 'myGroup',
                        'Setup': 'aSetup', 'CPUTime': 86400L, 'Priority': 1.0} )
     result = self.tqDB.findOrphanJobs()
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     result = self.tqDB.recalculateTQSharesForAll()
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
     # this will also remove the job
     result = self.tqDB.matchAndGetJob( {'Setup': 'aSetup', 'CPUTime': 300000} )
-    self.assert_( result['OK'] )
-    self.assert_( result['Value']['matchFound'] )
+    self.assertTrue(result['OK'])
+    self.assertTrue( result['Value']['matchFound'] )
     self.assertEqual( result['Value']['jobId'], 123L )
     tq = result['Value']['taskQueueId']
 
     result = self.tqDB.deleteTaskQueue( tq )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
 
 

@@ -118,14 +118,14 @@ class MonitoringReporterAdd( MonitoringTestCase ):
     for record in self.data:
       self.wmsMonitoringReporter.addRecord( record )
     result = self.wmsMonitoringReporter.commit()
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'], len( self.data ) )
   
   def test_addComponentRecords( self ):
     for record in self.data:
       self.componentMonitoringReporter.addRecord( record )
     result = self.componentMonitoringReporter.commit()
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'], len( self.data ) )
     
 
@@ -134,21 +134,21 @@ class MonitoringDeleteChain( MonitoringTestCase ):
 
   def test_deleteWMSIndex( self ):
     result = self.monitoringDB.getIndexName('WMSHistory')
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
     today = datetime.today().strftime( "%Y-%m-%d" )
     indexName = "%s-%s" % ( result['Value'], today )
     res = self.monitoringDB.deleteIndex( indexName )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
   
   def test_deleteComponentIndex( self ):
     result = self.monitoringDB.getIndexName('ComponentMonitoring')
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
     today = datetime.today().strftime( "%Y-%m" )
     indexName = "%s-%s" % ( result['Value'], today )
     res = self.monitoringDB.deleteIndex( indexName )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     
 
 if __name__ == '__main__':

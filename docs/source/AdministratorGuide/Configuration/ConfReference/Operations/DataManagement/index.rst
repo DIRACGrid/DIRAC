@@ -1,3 +1,6 @@
+.. _dirac-operations-dms:
+
+
 Operations / DataManagement
 =================================
 
@@ -13,5 +16,5 @@ Operations / DataManagement
 
   - FTS2 section: deprecated
   - FTS3 section:
-  
+
     - ServerPolicy (Random): policy to choose between FTS3 servers (Random, Sequence, Failover)

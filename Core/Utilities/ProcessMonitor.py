@@ -120,7 +120,7 @@ class ProcessMonitor( object ):
     if not procGroup['OK']:
       return procGroup
 
-    procGroup = procGroup['Value'].strip()
+    procGroup = procGroup['Value'].strip() #pylint: disable=no-member
 
     for pidCheck, info in infoDict.items():
       if pidCheck in infoDict and info[3] == pid:

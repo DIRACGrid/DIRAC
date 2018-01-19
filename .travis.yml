@@ -1,6 +1,15 @@
 language: python
 python:
   - "2.7"
+
+env:
+  matrix:
+    - CHECK=py.test
+    - CHECK=docs
+    - CHECK=pylint
+    - CHECK=format
+
+
 # command to install dependencies
 install: 
   - "pip install --upgrade setuptools"
@@ -10,6 +19,18 @@ install:
 script:
   - export PYTHONPATH=${PWD%/*}
   - ls $PYTHONPATH
-  - py.test
+  - if [[ "${CHECK}" == "py.test"  ]];
+    then py.test;
+    elif [[ "${CHECK}" == "docs"  ]];
+    then cd docs; READTHEDOCS=True make html;
+    elif [[ "${CHECK}" == "pylint"  ]];
+    then travis_wait 30 .travis.d/runPylint.sh;
+    elif [[ "${CHECK}" == "format" ]] && [[ "${TRAVIS_PULL_REQUEST}" != "false" ]];
+    then git remote add GH https://github.com/DIRACGrid/DIRAC.git; git fetch --no-tags GH ${TRAVIS_BRANCH}; git branch -vv; git diff -U0 GH/${TRAVIS_BRANCH} | pycodestyle --diff;
+    fi
+
+## ignore errors for sourcefiles "-i"
 after_success:
-  - coveralls
+  - if [[ "${CHECK}" == "py.test"  ]];
+    then coveralls -i;
+    fi

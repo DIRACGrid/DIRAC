@@ -16,16 +16,16 @@ class TestfilenamePlugin( unittest.TestCase ):
 
     fnp = FilenamePlugin("endswith('n')")
 
-    self.assert_( not fnp.eval( lfn = '/lhcb/lfn1' ) )
-    self.assert_( fnp.eval( lfn = '/lhcb/lfn' ) )
+    self.assertTrue( not fnp.eval( lfn = '/lhcb/lfn1' ) )
+    self.assertTrue( fnp.eval( lfn = '/lhcb/lfn' ) )
 
   def test_02_find( self ):
     """ Testing special case of find"""
 
     fnp = FilenamePlugin( "find('lfn')" )
 
-    self.assert_( fnp.eval( lfn = '/lhcb/lfn1' ) )
-    self.assert_( not fnp.eval( lfn = '/lhcb/l0f0n' ) )
+    self.assertTrue( fnp.eval( lfn = '/lhcb/lfn1' ) )
+    self.assertTrue( not fnp.eval( lfn = '/lhcb/l0f0n' ) )
 
 
   def test_03_isalnum( self ):
@@ -33,16 +33,16 @@ class TestfilenamePlugin( unittest.TestCase ):
 
     fnp = FilenamePlugin( "isalnum()" )
 
-    self.assert_( fnp.eval( lfn = 'lhcblfn1' ) )
-    self.assert_( not fnp.eval( lfn = '/lhcb/lf_n' ) )
+    self.assertTrue( fnp.eval( lfn = 'lhcblfn1' ) )
+    self.assertTrue( not fnp.eval( lfn = '/lhcb/lf_n' ) )
 
   def test_04_nonExisting( self ):
     """ Testing non existing string method"""
 
     fnp = FilenamePlugin( "nonexisting()" )
 
-    self.assert_( not fnp.eval( lfn = 'lhcblfn1' ) )
-    self.assert_( not fnp.eval( lfn = '/lhcb/lf_n' ) )
+    self.assertTrue( not fnp.eval( lfn = 'lhcblfn1' ) )
+    self.assertTrue( not fnp.eval( lfn = '/lhcb/lf_n' ) )
 
 
 

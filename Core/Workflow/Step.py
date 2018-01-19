@@ -41,7 +41,7 @@ class StepDefinition( AttributeCollection ):
       self.setOrigin( obj.getOrigin() )
       self.setVersion( obj.getVersion() )
       # copy instances and definitions
-      self.parameters = ParameterCollection( self, obj.parameters )
+      self.parameters = ParameterCollection( obj.parameters )
       self.module_instances = InstancesPool( self, obj.module_instances )
       if obj.module_definitions != None:
         self.module_definitions = DefinitionsPool( obj.module_definitions )
@@ -107,7 +107,8 @@ class StepDefinition( AttributeCollection ):
   def updateParent( self, parent ):
     """
     """
-    AttributeCollection.updateParents( self, parent )
+    #FIXME: no updateParents for AttributeCollection, What should this be?
+    AttributeCollection.updateParents( self, parent ) #pylint: disable=no-member
     self.module_instances.updateParents( self )
     if self.module_definitions is not None :
       self.module_definitions.updateParents( self )

@@ -114,7 +114,7 @@ dirac-proxy-init -g lhcb_user
 dir=$( echo "$USER" |cut -c 1)/$USER
 echo "this is a test file" >> DMS_Scripts_Test_File.txt
 
-echo "====== dirac-dms-add-file /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CNAF-USER"
+echo "====== dirac-dms-add-file /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt ./DMS_Scripts_Test_File.txt CNAF-USER"
 dirac-dms-add-file /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt ./DMS_Scripts_Test_File.txt CNAF-USER
 if [ $? -ne 0 ]
 then

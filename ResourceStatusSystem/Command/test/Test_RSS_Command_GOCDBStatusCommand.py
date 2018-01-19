@@ -96,6 +96,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
     """ tests the doCache method
     """
     self.mock_GOCDBClient.selectDowntimeCache.return_value = {'OK':True, 'Value':{}}
+
     with mock.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.StorageElement", new=mock.MagicMock()):
       command = DowntimeCommand(
           self.args, {'ResourceManagementClient': self.mock_GOCDBClient})

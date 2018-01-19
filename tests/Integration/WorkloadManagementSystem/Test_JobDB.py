@@ -49,11 +49,11 @@ class JobDBTestCase( unittest.TestCase ):
 
   def tearDown( self ):
     result = self.jobDB.selectJobs( {} )
-    self.assert_( result['OK'], 'Status after selectJobs' )
+    self.assertTrue( result['OK'], 'Status after selectJobs' )
     jobs = result['Value']
     for job in jobs:
       result = self.jobDB.removeJobFromDB( job )
-      self.assert_( result['OK'] )
+      self.assertTrue(result['OK'])
 
 
 class JobSubmissionCase( JobDBTestCase ):
@@ -63,16 +63,16 @@ class JobSubmissionCase( JobDBTestCase ):
   def test_insertAndRemoveJobIntoDB( self ):
 
     res = self.jobDB.insertNewJobIntoDB( jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     jobID = res['JobID']
     res = self.jobDB.getJobAttribute( jobID, 'Status' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], 'Received' )
     res = self.jobDB.getJobAttribute( jobID, 'MinorStatus' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], 'Job accepted' )
     res = self.jobDB.getJobOptParameters( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], {} )
     
 class JobRescheduleCase(JobDBTestCase):  
@@ -80,17 +80,17 @@ class JobRescheduleCase(JobDBTestCase):
   def test_rescheduleJob(self):
     
     res = self.jobDB.insertNewJobIntoDB( jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     jobID = res['JobID']
 
     result = self.jobDB.rescheduleJob(jobID)
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     
     res = self.jobDB.getJobAttribute( jobID, 'Status' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], 'Received' )
     result = self.jobDB.getJobAttribute( jobID, 'MinorStatus' )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'], 'Job Rescheduled' )
 
 
@@ -99,7 +99,7 @@ class CountJobsCase(JobDBTestCase):
   def test_getCounters(self):
   
     result = self.jobDB.getCounters( 'Jobs', ['Status', 'MinorStatus'], {}, '2007-04-22 00:00:00' )
-    self.assert_( result['OK'],'Status after getCounters') 
+    self.assertTrue( result['OK'],'Status after getCounters') 
        
       
 if __name__ == '__main__':

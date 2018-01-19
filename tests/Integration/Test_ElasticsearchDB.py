@@ -41,7 +41,7 @@ class ElasticBulkCreateChain( ElasticTestCase ):
 
   def test_bulkindex( self ):
     result = self.el.bulk_index( 'integrationtest', 'test', self.data )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'], 10 )
     time.sleep( 10 )
   
@@ -51,7 +51,7 @@ class ElasticBulkCreateChain( ElasticTestCase ):
                                  doc_type = 'test',
                                  data = self.data,
                                  period = 'month' )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'], 10 )
     time.sleep( 10 )
 
@@ -63,23 +63,23 @@ class ElasticCreateChain( ElasticTestCase ):
 
   def test_wrongdataindex( self ):
     result = self.el.createIndex( 'dsh63tsdgad', {} )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     index_name = result['Value']
     result = self.el.index( index_name, 'test', {"Color": "red", "quantity": 1, "Product": "a", "timestamp": 1458226213})
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     result = self.el.index( index_name, 'test', {"Color": "red", "quantity": 1, "Product": "a", "timestamp": "2015-02-09T16:15:00Z"})
-    self.assert_( result['Message'] )
+    self.assertTrue( result['Message'] )
     result = self.el.deleteIndex( index_name )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
 
 
   def test_index( self ):
     result = self.el.createIndex( 'integrationtest', {} )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.index_name = result['Value']
     for i in self.data:
       result = self.el.index( self.index_name, 'test', i )
-      self.assert_( result['OK'] )
+      self.assertTrue(result['OK'])
 
 
 
@@ -87,18 +87,18 @@ class ElasticDeleteChain( ElasticTestCase ):
 
   def test_deleteNonExistingIndex(self):
     result = self.el.deleteIndex( 'dsdssuu' )
-    self.assert_( result['Message'] )
+    self.assertTrue( result['Message'] )
 
   def test_deleteIndex( self ):
     result = generateFullIndexName( 'integrationtest' )
     res = self.el.deleteIndex( result )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], result )
 
   def test_deleteMonthlyIndex( self ):
     result = generateFullIndexName( 'integrationtestmontly', 'month' )
     res = self.el.deleteIndex( result )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], result )
 
 class ElasticTestChain( ElasticTestCase ):
@@ -108,22 +108,22 @@ class ElasticTestChain( ElasticTestCase ):
                                port = elPort, 
                                useSSL = False )
     result = generateFullIndexName( 'integrationtest' )
-    self.assert_( len( result ) > len( 'integrationtest' ) )
+    self.assertTrue( len( result ) > len( 'integrationtest' ) )
     self.index_name = result
 
   def test_getIndexes( self ):
     result = self.el.getIndexes()
-    self.assert_( len( result ) > 0 )
+    self.assertTrue( len( result ) > 0 )
 
 
   def test_getDocTypes( self ):
     result = self.el.getDocTypes( self.index_name )
-    self.assert_( result )
+    self.assertTrue( result )
     self.assertDictEqual( result['Value'], {u'test': {u'properties': {u'Color': {u'type': u'string'}, u'timestamp': {u'type': u'long'}, u'Product': {u'type': u'string'}, u'quantity': {u'type': u'long'}}}} )
 
   def test_exists( self ):
     result = self.el.exists( self.index_name )
-    self.assert_( result )
+    self.assertTrue( result )
 
   def test_generateFullIndexName( self ):
     indexName = 'test'
@@ -141,13 +141,13 @@ class ElasticTestChain( ElasticTestCase ):
   
   def test_getUniqueValue( self ):
     result = self.el.getUniqueValue( self.index_name, 'Color', )
-    self.assert_( result )
+    self.assertTrue( result )
     self.assertEqual( result['Value'], [] )
     result = self.el.getUniqueValue( self.index_name, 'Product' )
-    self.assert_( result )
+    self.assertTrue( result )
     self.assertEqual( result['Value'], [] )
     result = self.el.getUniqueValue( self.index_name, 'quantity' )
-    self.assert_( result )
+    self.assertTrue( result )
     self.assertEqual( result['Value'], [] )
 
   def test_query( self ):

@@ -121,7 +121,7 @@ class FileTestCase(unittest.TestCase):
 
     md5sum = getMD5ForFiles( self.filesList )
     reMD5 = re.compile( "^[0-9a-fA-F]+$" )
-    self.assert_( reMD5.match( md5sum) != None )
+    self.assertTrue( reMD5.match( md5sum) != None )
     # OK for python 2.7
     # self.assertRegexpMatches( md5sum, reMD5, "regexp doesn't match" )
 

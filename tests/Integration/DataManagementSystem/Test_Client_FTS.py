@@ -169,7 +169,7 @@ class FTSClientChain( FTSDBTestCase ):
     print 'deleteFiles'
     for i in self.opIDs:
       res = self.ftsClient.deleteFTSFiles( i )
-      self.assert_( res['OK'] )
+      self.assertTrue(res['OK'])
 
 class FTSClientMix( FTSDBTestCase ):
 
@@ -183,7 +183,7 @@ class FTSClientMix( FTSDBTestCase ):
 #    ftsSchedule can't work since the FTSStrategy object is refreshed in the service so it can't be mocked
 #    for opID in self.opIDs:
 #      res = self.ftsClient.ftsSchedule( 12345, opID, opFileList )
-#      self.assert_( res['OK'] )
+#      self.assertTrue(res['OK'])
 
     print 'setFTSFilesWaiting'
     for operationID in self.opIDs:
@@ -194,7 +194,7 @@ class FTSClientMix( FTSDBTestCase ):
     print 'getFTSHistory'
     res = self.ftsClient.getFTSHistory()
     self.assertEqual( res['OK'], True )
-    self.assert_( type( res['Value'] ) == type( [] ) )
+    self.assertTrue( type( res['Value'] ) == type( [] ) )
 
     print 'getFTSJobsForRequest'
     res = self.ftsClient.getFTSJobsForRequest( 12345 )
@@ -217,7 +217,7 @@ class FTSClientMix( FTSDBTestCase ):
     print 'deleteFiles'
     for i in self.opIDs:
       res = self.ftsClient.deleteFTSFiles( i )
-      self.assert_( res['OK'] )
+      self.assertTrue(res['OK'])
 
 
 if __name__ == '__main__':

@@ -104,7 +104,6 @@ class TaskBaseSuccess(ClientsTestCase):
 
 #############################################################################
 
-
 class PluginUtilitiesSuccess(ClientsTestCase):
 
   def test_groupByReplicas(self):
@@ -115,7 +114,7 @@ class PluginUtilitiesSuccess(ClientsTestCase):
                                    '/this/is/at_23': ['SE2', 'SE3'],
                                    '/this/is/at_4': ['SE4']},
                                   'Flush')
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], [('SE1', ['/this/is/at.1']),
                                     ('SE1,SE2', ['/this/is/at.12']),
                                     ('SE1,SE2,SE3', ['/this/is/at_123']),
@@ -127,7 +126,7 @@ class PluginUtilitiesSuccess(ClientsTestCase):
                                    '/this/is/at.12': ['SE1', 'SE2'],
                                    '/this/is/at.134': ['SE1', 'SE3', 'SE4']},
                                   'Flush')
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     print res['Value']
     self.assertEqual(res['Value'], [
                      ('SE1,SE2', ['/this/is/at.12']),
@@ -207,7 +206,7 @@ class RequestTasksSuccess(ClientsTestCase):
     # No tasks in input
     taskDict = {}
     res = self.requestTasks.prepareTransformationTasks('', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN')
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     self.assertEqual(len(taskDict), 0)
 
     # 3 tasks, 1 task not OK (in second transformation)
@@ -215,7 +214,7 @@ class RequestTasksSuccess(ClientsTestCase):
                       'TargetSE': 'SE3', 'b3': 'bb3', 'InputData': ''}}
     res = self.requestTasks.prepareTransformationTasks(
         '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN')
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     # We should "lose" one of the task in the preparation
     self.assertEqual(len(taskDict), 0)
 
@@ -226,11 +225,11 @@ class RequestTasksSuccess(ClientsTestCase):
                 3: {'TransformationID': 2, 'TargetSE': 'SE3', 'b3': 'bb3', 'InputData': ''}}
 
     res = self.requestTasks.prepareTransformationTasks('', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN')
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     # We should "lose" one of the task in the preparation
     self.assertEqual(len(taskDict), 2)
     for task in res['Value'].values():
-      self.assert_(isinstance(task['TaskObject'], Request))
+      self.assertTrue(isinstance(task['TaskObject'], Request))
       self.assertEqual(task['TaskObject'][0].Type, 'ReplicateAndRegister')
       try:
         self.assertEqual(task['TaskObject'][0][0].LFN, '/this/is/a1.lfn')
@@ -243,11 +242,11 @@ class RequestTasksSuccess(ClientsTestCase):
 
     # # test another (single) OperationType
     res = self.requestTasks.prepareTransformationTasks('someType;LogUpload', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN')
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     # We should "lose" one of the task in the preparation
     self.assertEqual(len(taskDict), 2)
     for task in res['Value'].values():
-      self.assert_(isinstance(task['TaskObject'], Request))
+      self.assertTrue(isinstance(task['TaskObject'], Request))
       self.assertEqual(task['TaskObject'][0].Type, 'LogUpload')
 
     # ## Multiple operations
@@ -264,11 +263,11 @@ class RequestTasksSuccess(ClientsTestCase):
                     'InputData': ''}}
 
     res = self.requestTasks.prepareTransformationTasks(jsonBody, taskDict, 'owner', 'ownerGroup', '/bih/boh/DN')
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     # We should "lose" one of the task in the preparation
     self.assertEqual(len(taskDict), 2)
     for task in res['Value'].values():
-      self.assert_(isinstance(task['TaskObject'], Request))
+      self.assertTrue(isinstance(task['TaskObject'], Request))
       self.assertEqual(task['TaskObject'][0].Type, 'ReplicateAndRegister')
       self.assertEqual(task['TaskObject'][1].Type, 'RemoveReplica')
       try:
@@ -382,14 +381,14 @@ class TransformationSuccess(ClientsTestCase):
   def test_setGet(self):
 
     res = self.transformation.setTransformationName('TestTName')
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     description = 'Test transformation description'
     res = self.transformation.setDescription(description)
     longDescription = 'Test transformation long description'
     res = self.transformation.setLongDescription(longDescription)
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     res = self.transformation.setType('MCSimulation')
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     res = self.transformation.setPlugin('aPlugin')
     self.assertTrue(res['OK'])
 
@@ -446,7 +445,7 @@ class TransformationSuccess(ClientsTestCase):
     """
 
     res = self.transformation.getParameters()
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     defaultParams = res['Value'].copy()
     for parameterName, defaultValue in res['Value'].items():
       if isinstance(defaultValue, basestring):
@@ -456,24 +455,24 @@ class TransformationSuccess(ClientsTestCase):
       # # set*
 
       setterName = 'set%s' % parameterName
-      self.assert_(hasattr(self.transformation, setterName))
+      self.assertTrue(hasattr(self.transformation, setterName))
       setter = getattr(self.transformation, setterName)
-      self.assert_(callable(setter))
+      self.assertTrue(callable(setter))
       res = setter(testValue)
-      self.assert_(res['OK'])
+      self.assertTrue(res['OK'])
       # # get*
       getterName = "get%s" % parameterName
-      self.assert_(hasattr(self.transformation, getterName))
+      self.assertTrue(hasattr(self.transformation, getterName))
       getter = getattr(self.transformation, getterName)
-      self.assert_(callable(getter))
+      self.assertTrue(callable(getter))
       res = getter()
-      self.assert_(res['OK'])
-      self.assert_(res['Value'], testValue)
+      self.assertTrue(res['OK'])
+      self.assertTrue(res['Value'], testValue)
 
     res = self.transformation.reset()
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     res = self.transformation.getParameters()
-    self.assert_(res['OK'])
+    self.assertTrue(res['OK'])
     for parameterName, resetValue in res['Value'].items():
       self.assertEqual(resetValue, defaultParams[parameterName])
     self.assertRaises(AttributeError, self.transformation.getTargetSE)

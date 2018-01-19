@@ -93,6 +93,7 @@ EVOMS = 1121
 # Databases : 3X
 EDB = 1130
 EMYSQL = 1131
+ESQLA = 1132
 # Message Queues: 4X
 EMQUKN = 1140
 EMQNOM = 1141
@@ -111,6 +112,7 @@ EENOPID = 1148
 EWMSUKN = 1500
 EWMSJDL = 1501
 EWMSRESC = 1502
+EWMSSUBM = 1503
 
 # ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
@@ -167,6 +169,8 @@ dErrorCode = {
                # 113X: Databases
                1130 : 'EDB',
                1131 : 'EMYSQL',
+               1132 : 'ESQLA',
+
                # 114X: Message Queues
                1140 : 'EMQUKN',
                1141 : 'EMQNOM',
@@ -182,6 +186,7 @@ dErrorCode = {
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
                1502 : 'EWMSRESC',
+               1503: 'EWMSSUBM',
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
                1602 : 'EGFAL',
@@ -237,6 +242,8 @@ dStrError = {
               # 113X: Databases
               EDB : "Database Error",
               EMYSQL : "MySQL Error",
+              ESQLA : "SQLAlchemy Error",
+
               # 114X: Message Queues
               EMQUKN : "Unknown MQ Error",
               EMQNOM : "No messages",
@@ -251,7 +258,8 @@ dStrError = {
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid job description",
-              EWMSRESC : "Job to Reschedule",
+              EWMSRESC: "Job to reschedule",
+              EWMSSUBM: "Job submission error",
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
               EGFAL : "Error with the gfal call",

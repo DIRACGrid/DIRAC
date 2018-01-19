@@ -83,9 +83,9 @@ class ComponentInstallationChain( TestComponentInstallation ):
 
     # Check installation in CS
     cfg = self.csClient.getCurrentCFG()[ 'Value' ]
-    self.assert_( cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification/' ) and cfg.isOption( 'Systems/Framework/' + self.frameworkSetup + '/URLs/Notification' ) )
+    self.assertTrue( cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification/' ) and cfg.isOption( 'Systems/Framework/' + self.frameworkSetup + '/URLs/Notification' ) )
 
-    self.assert_( cfg.getOption( 'Systems/Framework/' + self.frameworkSetup + '/URLs/Notification' ) == 'dips://' + self.host + ':' + str( self.notificationPort ) + '/Framework/Notification' )
+    self.assertTrue( cfg.getOption( 'Systems/Framework/' + self.frameworkSetup + '/URLs/Notification' ) == 'dips://' + self.host + ':' + str( self.notificationPort ) + '/Framework/Notification' )
 
     # Check installation in database
     if not service1Present:
@@ -98,7 +98,7 @@ class ComponentInstallationChain( TestComponentInstallation ):
                                                        { 'System': 'Framework', 'Type': 'service', 'Module': 'Notification' },
                                                        {}, False )
 
-    self.assert_( result[ 'OK' ] and len( result[ 'Value' ] ) == 1 )
+    self.assertTrue( result[ 'OK' ] and len( result[ 'Value' ] ) == 1 )
 
     # Check whether the second service is already present or not
     cfg = self.csClient.getCurrentCFG()[ 'Value' ]
@@ -112,7 +112,7 @@ class ComponentInstallationChain( TestComponentInstallation ):
     # Check installation in CS
     self.csClient.downloadCSData()
     cfg = self.csClient.getCurrentCFG()[ 'Value' ]
-    self.assert_( cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification2/' ) and cfg.isOption( 'Systems/Framework/' + self.frameworkSetup + '/URLs/Notification2' ) )
+    self.assertTrue( cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification2/' ) and cfg.isOption( 'Systems/Framework/' + self.frameworkSetup + '/URLs/Notification2' ) )
 
     if not service1Present:
       # Uninstall component
@@ -121,7 +121,7 @@ class ComponentInstallationChain( TestComponentInstallation ):
     # Check CS is intact ( there should still be at least one instance of Notification )
     self.csClient.downloadCSData()
     cfg = self.csClient.getCurrentCFG()[ 'Value' ]
-    self.assert_( cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification/' ) and cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification/' ) and cfg.isOption( 'Systems/Framework/' + self.frameworkSetup + '/URLs/Notification' ) )
+    self.assertTrue( cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification/' ) and cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification/' ) and cfg.isOption( 'Systems/Framework/' + self.frameworkSetup + '/URLs/Notification' ) )
 
     if not service2Present:
       # Uninstall second component
@@ -131,7 +131,7 @@ class ComponentInstallationChain( TestComponentInstallation ):
       # Check uninstallation in CS ( only if the services were not already present )
       self.csClient.downloadCSData()
       cfg = self.csClient.getCurrentCFG()[ 'Value' ]
-      self.assert_( not cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification/' ) and not cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification2/' ) and not cfg.isOption( 'Systems/Framework/' + self.frameworkSetup + '/URLs/Notification' ) )
+      self.assertTrue( not cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification/' ) and not cfg.isSection( 'Systems/Framework/' + self.frameworkSetup + '/Services/Notification2/' ) and not cfg.isOption( 'Systems/Framework/' + self.frameworkSetup + '/URLs/Notification' ) )
 
   def testDatabase( self ):
 
@@ -143,13 +143,13 @@ class ComponentInstallationChain( TestComponentInstallation ):
     # Check installation in CS
     self.csClient.downloadCSData()
     cfg = self.csClient.getCurrentCFG()[ 'Value' ]
-    self.assert_( cfg.isSection( 'Systems/DataManagement/' + self.frameworkSetup + '/Databases/FTSDB/' ) )
+    self.assertTrue( cfg.isSection( 'Systems/DataManagement/' + self.frameworkSetup + '/Databases/FTSDB/' ) )
 
     # Check in database
     result = self.monitoringClient.getInstallations( { 'Instance': 'FTSDB', 'UnInstallationTime': None, 'InstalledBy': self.user },
                                                      { 'System': 'DataManagement', 'Type': 'DB', 'Module': 'FTSDB' },
                                                      {}, False )
-    self.assert_( result[ 'OK' ] and len( result[ 'Value' ] ) == 1 )
+    self.assertTrue( result[ 'OK' ] and len( result[ 'Value' ] ) == 1 )
 
     # Uninstall database
     self.client.do_uninstall( 'db FTSDB' )
@@ -157,7 +157,7 @@ class ComponentInstallationChain( TestComponentInstallation ):
     # Check uninstallation in CS
     self.csClient.downloadCSData()
     cfg = self.csClient.getCurrentCFG()[ 'Value' ]
-    self.assert_( not cfg.isSection( 'Systems/DataManagement/' + self.frameworkSetup + '/Databases/FTSDB/' ) )
+    self.assertTrue( not cfg.isSection( 'Systems/DataManagement/' + self.frameworkSetup + '/Databases/FTSDB/' ) )
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestComponentInstallation )

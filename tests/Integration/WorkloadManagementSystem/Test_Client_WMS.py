@@ -54,6 +54,17 @@ def helloWorldJob():
   job.setExecutable( exeScriptLocation, "", "helloWorld.log" )
   return job
 
+
+def parametricJob():
+  job = Job()
+  job.setName("parametric_helloWorld_%n")
+  exeScriptLocation = find_all('exe-script.py', '..', '/DIRAC/tests/Integration')[0]
+  job.setInputSandbox(exeScriptLocation)
+  job.setParameterSequence("args", ['one', 'two', 'three'])
+  job.setParameterSequence("iargs", [1, 2, 3])
+  job.setExecutable(exeScriptLocation, arguments=": testing %(args)s %(iargs)s", logFile='helloWorld_%n.log')
+  return job
+
 def createFile( job ):
   tmpdir = tempfile.mkdtemp()
   jobDescription = tmpdir + '/jobDescription.xml'
@@ -77,7 +88,7 @@ class TestWMSTestCase( unittest.TestCase ):
     jca.initialize()
     res = jca.removeJobsByStatus( { 'Status' : ['Killed', 'Deleted'] } )
     print res
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
 class WMSChain( TestWMSTestCase ):
 
@@ -99,7 +110,7 @@ class WMSChain( TestWMSTestCase ):
 
     # submit the job
     res = wmsClient.submitJob( job._toJDL( xmlFile = jobDescription ) )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
   # self.assertEqual( type( res['Value'] ), int )
   # self.assertEqual( res['Value'], res['JobID'] )
   # jobID = res['JobID']
@@ -110,13 +121,13 @@ class WMSChain( TestWMSTestCase ):
 
     # reset the job
     res = wmsClient.resetJob( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     # reschedule the job
     res = wmsClient.rescheduleJob( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getJobStatus( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], 'Received' )
 
     # updating the status again
@@ -124,9 +135,9 @@ class WMSChain( TestWMSTestCase ):
 
     # kill the job
     res = wmsClient.killJob( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getJobStatus( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], 'Killed' )
 
     # updating the status aaaagain
@@ -134,18 +145,51 @@ class WMSChain( TestWMSTestCase ):
 
     # kill the job
     res = wmsClient.killJob( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getJobStatus( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], 'Done' )  # this time it won't kill... it's done!
 
     # delete the job - this will just set its status to "deleted"
     res = wmsClient.deleteJob( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getJobStatus( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], 'Deleted' )
 
+  def test_ParametricChain(self):
+    """ This test will submit a parametric job which should generate 3 actual jobs
+    """
+    wmsClient = WMSClient()
+    jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobMonitor = JobMonitoringClient()
+
+    # create the job
+    job = parametricJob()
+    jobDescription = createFile(job)
+
+    # submit the job
+    result = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
+    self.assertTrue(result['OK'])
+    jobIDList = result['Value']
+    self.assertEqual(jobIDList, 3)
+
+    result = jobMonitor.getJobsParameters(jobIDList, ['JobName'])
+    self.assertTrue(result['OK'])
+    jobNames = [result['Value'][jobID]['JobName'] for jobID in result['Value']]
+    self.assertEqual(set(jobNames), set(['parametric_helloWorld_%s' % nJob for nJob in range(3)]))
+
+    for jobID in jobIDList:
+      result = jobStateUpdate.setJobStatus(jobID, 'Done', 'matching', 'source')
+      self.assertTrue(result['OK'])
+
+    result = wmsClient.deleteJob(jobIDList)
+    self.assertTrue(result['OK'])
+
+    for jobID in jobIDList:
+      result = jobMonitor.getJobStatus(jobID)
+      self.assertTrue(result['OK'])
+      self.assertEqual(result['Value'], 'Deleted')
 
 class JobMonitoring( TestWMSTestCase ):
 
@@ -162,75 +206,75 @@ class JobMonitoring( TestWMSTestCase ):
 
     # submitting the job. Checking few stuff
     res = wmsClient.submitJob( job._toJDL( xmlFile = jobDescription ) )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     jobID = int ( res['Value'] )
     # jobID = res['JobID']
     res = jobMonitor.getJobJDL( jobID, True )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getJobJDL( jobID, False )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getJobsParameters( [jobID], [] )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], {} )
     res = jobMonitor.getJobsParameters( [jobID], ['Owner'] )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     # Adding stuff
     res = jobStateUpdate.setJobStatus( jobID, 'Matched', 'matching', 'source' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobStateUpdate.setJobParameters( jobID, [( 'par1', 'par1Value' ), ( 'par2', 'par2Value' )] )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobStateUpdate.setJobApplicationStatus( jobID, 'app status', 'source' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 #     res = jobStateUpdate.setJobFlag()
-#     self.assert_( res['OK'] )
+#     self.assertTrue(res['OK'])
 #     res = jobStateUpdate.unsetJobFlag()
-#     self.assert_( res['OK'] )
+#     self.assertTrue(res['OK'])
     res = jobStateUpdate.setJobSite( jobID, 'Site' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 #     res = jobMonitor.traceJobParameter( 'Site', 1, 'Status' )
-#     self.assert_( res['OK'] )
+#     self.assertTrue(res['OK'])
 
     # now checking few things
     res = jobMonitor.getJobStatus( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], 'Running' )
     res = jobMonitor.getJobParameter( jobID, 'par1' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], {'par1': 'par1Value'} )
     res = jobMonitor.getJobParameters( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], {'par1': 'par1Value', 'par2': 'par2Value'} )
     res = jobMonitor.getJobAttribute( jobID, 'Site' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], 'Site' )
     res = jobMonitor.getJobAttributes( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['ApplicationStatus'], 'app status' )
     self.assertEqual( res['Value']['JobName'], 'helloWorld' )
     res = jobMonitor.getJobSummary( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['ApplicationStatus'], 'app status' )
     self.assertEqual( res['Value']['Status'], 'Running' )
     res = jobMonitor.getJobHeartBeatData( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], [] )
     res = jobMonitor.getInputData( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], [] )
     res = jobMonitor.getJobPrimarySummary( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getAtticJobParameters( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobStateUpdate.setJobsStatus( [jobID], 'Done', 'MinorStatus', 'Unknown' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getJobSummary( jobID )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['Status'], 'Done' )
     self.assertEqual( res['Value']['MinorStatus'], 'MinorStatus' )
     self.assertEqual( res['Value']['ApplicationStatus'], 'app status' )
     res = jobStateUpdate.sendHeartBeat( jobID, {'bih':'bih'}, {'boh':'boh'} )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
 
     # delete the job - this will just set its status to "deleted"
@@ -249,7 +293,7 @@ class JobMonitoring( TestWMSTestCase ):
 #     job.setBannedSites( ['LCG.CERN.ch', 'LCG.CNAF.it', 'LCG.GRIDKA.de', 'LCG.IN2P3.fr',
 #                          'LCG.NIKHEF.nl', 'LCG.PIC.es', 'LCG.RAL.uk', 'LCG.SARA.nl'] )
 #     res = WMSClient().submitJob( job._toJDL( xmlFile = jobDescription ) )
-#     self.assert_( res['OK'] )
+#     self.assertTrue(res['OK'])
 #     self.assertEqual( type( res['Value'] ), int )
 
 
@@ -275,59 +319,59 @@ class JobMonitoringMore( TestWMSTestCase ):
           job.setType( jobType )
           jobDescription = createFile( job )
           res = wmsClient.submitJob( job._toJDL( xmlFile = jobDescription ) )
-          self.assert_( res['OK'] )
+          self.assertTrue(res['OK'])
           jobID = res['Value']
           jobIDs.append( jobID )
 
     res = jobMonitor.getSites()
-    self.assert_( res['OK'] )
-    self.assert_( set( res['Value'] ) <= set( dests + ['ANY', 'DIRAC.Jenkins.ch'] ) )
+    self.assertTrue(res['OK'])
+    self.assertTrue( set( res['Value'] ) <= set( dests + ['ANY', 'DIRAC.Jenkins.ch'] ) )
     res = jobMonitor.getJobTypes()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( sorted( res['Value'] ), sorted( types ) )
     res = jobMonitor.getApplicationStates()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( sorted( res['Value'] ), sorted( ['Unknown'] ) )
 
     res = jobMonitor.getOwners()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getOwnerGroup()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getProductionIds()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getJobGroups()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getStates()
-    self.assert_( res['OK'] )
-    self.assert_( sorted( res['Value'] ) in [['Received'], sorted( ['Received', 'Waiting'] )] )
+    self.assertTrue(res['OK'])
+    self.assertTrue( sorted( res['Value'] ) in [['Received'], sorted( ['Received', 'Waiting'] )] )
     res = jobMonitor.getMinorStates()
-    self.assert_( res['OK'] )
-    self.assert_( sorted( res['Value'] ) in [['Job accepted'], sorted( ['Job accepted', 'matching'] ) ] )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
+    self.assertTrue( sorted( res['Value'] ) in [['Job accepted'], sorted( ['Job accepted', 'matching'] ) ] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getJobs()
-    self.assert_( res['OK'] )
-    self.assert_( set( [str( x ) for x in jobIDs] ) <= set( res['Value'] ) )
+    self.assertTrue(res['OK'])
+    self.assertTrue( set( [str( x ) for x in jobIDs] ) <= set( res['Value'] ) )
 #     res = jobMonitor.getCounters(attrList)
-#     self.assert_( res['OK'] )
+#     self.assertTrue(res['OK'])
     res = jobMonitor.getCurrentJobCounters()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     try:
-      self.assert_( res['Value'].get( 'Received' ) + res['Value'].get( 'Waiting' ) >= long( len( dests ) * len( lfnss ) * len( types ) ) )
+      self.assertTrue( res['Value'].get( 'Received' ) + res['Value'].get( 'Waiting' ) >= long( len( dests ) * len( lfnss ) * len( types ) ) )
     except TypeError:
       pass
     res = jobMonitor.getJobsSummary( jobIDs )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobMonitor.getJobPageSummaryWeb( {}, [], 0, 100 )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     res = jobStateUpdate.setJobStatusBulk( jobID,
                                            {str( datetime.datetime.utcnow() ):{'Status': 'Running',
                                                                                'MinorStatus': 'MinorStatus',
                                                                                'ApplicationStatus': 'ApplicationStatus',
                                                                                'Source': 'Unknown'}} )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = jobStateUpdate.setJobsParameter( {jobID:['Status', 'Running']} )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     # delete the jobs - this will just set its status to "deleted"
     wmsClient.deleteJob( jobIDs )
@@ -341,7 +385,7 @@ class JobMonitoringMore( TestWMSTestCase ):
 #     jobDescription = createFile( job )
 #
 #     res = WMSClient().submitJob( job._toJDL( xmlFile = jobDescription ) )
-#     self.assert_( res['OK'] )
+#     self.assertTrue(res['OK'])
 #
 #     WMSClient().deleteJob( res['Value'] )
 
@@ -356,38 +400,38 @@ class WMSAdministrator( TestWMSTestCase ):
 
     sitesList = ['My.Site.org', 'Your.Site.org']
     res = wmsAdministrator.setSiteMask( sitesList )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.getSiteMask()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( sorted( res['Value'] ), sorted( sitesList ) )
     res = wmsAdministrator.banSite( 'My.Site.org', 'This is a comment' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.getSiteMask()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( sorted( res['Value'] ), ['Your.Site.org'] )
     res = wmsAdministrator.allowSite( 'My.Site.org', 'This is a comment' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.getSiteMask()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( sorted( res['Value'] ), sorted( sitesList ) )
 
     res = wmsAdministrator.getSiteMaskLogging( sitesList )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['My.Site.org'][0][3], 'No comment' )
     res = wmsAdministrator.getSiteMaskSummary()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['My.Site.org'], 'Active' )
 
     res = wmsAdministrator.getSiteSummaryWeb( {}, [], 0, 100 )
-    self.assert_( res['OK'] )
-    self.assert_( res['Value']['TotalRecords'] in [0, 1, 2, 34] )
+    self.assertTrue(res['OK'])
+    self.assertTrue( res['Value']['TotalRecords'] in [0, 1, 2, 34] )
     res = wmsAdministrator.getSiteSummarySelectors()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     res = wmsAdministrator.clearMask()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.getSiteMask()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], [] )
 
 class WMSAdministratorPilots( TestWMSTestCase ):
@@ -401,22 +445,22 @@ class WMSAdministratorPilots( TestWMSTestCase ):
 
 
     res = wmsAdministrator.addPilotTQReference( ['aPilot'], 1, '/a/ownerDN', 'a/owner/Group' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.getCurrentPilotCounters( {} )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], {'Submitted': 1L} )
     res = pilotAgentDB.deletePilot( 'aPilot' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.getCurrentPilotCounters( {} )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], {} )
 
     res = wmsAdministrator.addPilotTQReference( ['anotherPilot'], 1, '/a/ownerDN', 'a/owner/Group' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.storePilotOutput( 'anotherPilot', 'This is an output', 'this is an error' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.getPilotOutput( 'anotherPilot' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], {'OwnerDN': '/a/ownerDN',
                                      'OwnerGroup': 'a/owner/Group',
                                      'StdErr': 'this is an error',
@@ -426,24 +470,24 @@ class WMSAdministratorPilots( TestWMSTestCase ):
 #     res = wmsAdministrator.getJobPilotOutput( 1 )
 #     self.assertEqual( res['Value'], {'OwnerDN': '/a/ownerDN', 'OwnerGroup': 'a/owner/Group',
 #                                      'StdErr': 'this is an error', 'FileList': [], 'StdOut': 'This is an output'} )
-#     self.assert_( res['OK'] )
+#     self.assertTrue(res['OK'])
     res = wmsAdministrator.getPilotInfo( 'anotherPilot' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['anotherPilot']['AccountingSent'], 'False' )
     self.assertEqual( res['Value']['anotherPilot']['PilotJobReference'], 'anotherPilot' )
 
     res = wmsAdministrator.selectPilots( {} )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 #     res = wmsAdministrator.getPilotLoggingInfo( 'anotherPilot' )
-#     self.assert_( res['OK'] )
+#     self.assertTrue(res['OK'])
     res = wmsAdministrator.getPilotSummary( '', '' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['Total']['Submitted'], 1 )
     res = wmsAdministrator.getPilotMonitorWeb( {}, [], 0, 100 )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['TotalRecords'], 1 )
     res = wmsAdministrator.getPilotMonitorSelectors()
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], {'GridType': ['DIRAC'],
                                      'OwnerGroup': ['a/owner/Group'],
                                      'DestinationSite': ['NotAssigned'],
@@ -452,31 +496,31 @@ class WMSAdministratorPilots( TestWMSTestCase ):
                                      'GridSite': ['Unknown'],
                                      'Owner': []} )
     res = wmsAdministrator.getPilotSummaryWeb( {}, [], 0, 100 )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['TotalRecords'], 1 )
 
     res = wmsAdministrator.setAccountingFlag( 'anotherPilot', 'True' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.setPilotStatus( 'anotherPilot', 'Running' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.getPilotInfo( 'anotherPilot' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value']['anotherPilot']['AccountingSent'], 'True' )
     self.assertEqual( res['Value']['anotherPilot']['Status'], 'Running' )
 
     res = wmsAdministrator.setJobForPilot( 123, 'anotherPilot' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.setPilotBenchmark( 'anotherPilot', 12.3 )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.countPilots( {} )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 #     res = wmsAdministrator.getCounters()
 #     # getPilotStatistics
 
     res = pilotAgentDB.deletePilot( 'anotherPilot' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     res = wmsAdministrator.getCurrentPilotCounters( {} )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], {} )
 
 
@@ -499,23 +543,23 @@ class Matcher ( TestWMSTestCase ):
     job.setType( 'User' )
     jobDescription = createFile( job )
     res = wmsClient.submitJob( job._toJDL( xmlFile = jobDescription ) )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     jobID = res['Value']
 
     res = JobStateUpdate.setJobStatus( jobID, 'Waiting', 'matching', 'source' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
 
     tqDB = TaskQueueDB()
     tqDefDict = {'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
                  'OwnerGroup':'prod', 'Setup':'dirac-JenkinsSetup', 'CPUTime':86400}
     res = tqDB.insertJob( jobID, tqDefDict, 10 )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     res = matcher.requestJob( resourceDescription )
     print res
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     wmsClient.deleteJob( jobID )
 
 

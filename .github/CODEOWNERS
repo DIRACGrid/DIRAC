@@ -1,0 +1,28 @@
+# Taken from https://help.github.com/articles/about-codeowners/
+
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# they will be requested for review when someone opens a pull request.
+
+*                         @fstagni @atsareg
+
+
+
+# Order is important; the last matching pattern takes the most
+# precedence. 
+# e.g. when someone opens a pull request that only
+# modifies files in /DIRAC/docs/tools/ files, only @andresailer and not the global
+# owner(s) will be requested for a review.
+
+AccontingSystem/          @zmathe
+MonitoringSystem/         @zmathe
+DataManagementSystem/     @phicharp @chaen
+RequestManagementSystem/  @phicharp @chaen
+StorageManagementSystem/  @phicharp @chaen
+TransformationSystem/     @phicharp @fstagni
+Resources/Storage/        @chaen
+Resources/Catalog/        @chaen
+Resources/Computing/      @atsareg
+Resources/MessageQueue    @wkrzemien
+docs/                     @andresailer
+tests/                    @fstagni

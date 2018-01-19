@@ -405,8 +405,7 @@ class ComponentInstaller( object ):
 
     for section in [ 'Systems', 'Resources',
                      'Resources/Sites', 'Resources/Sites/DIRAC',
-                     'Resources/Sites/LCG', 'Operations',
-                     'Website', 'Registry' ]:
+                     'Resources/Sites/LCG', 'Operations', 'Registry' ]:
       if installCfg.isSection( section ):
         centralCfg.createNewSection( section, contents = installCfg[section] )
 
@@ -499,29 +498,6 @@ class ComponentInstaller( object ):
       centralCfg = centralCfg.mergeWith( operationsCfg )
       operationsCfg = self.__getCfg( cfgPath( 'Operations', 'Defaults', 'EMail' ), 'Logging', adminUserEmail )
       centralCfg = centralCfg.mergeWith( operationsCfg )
-
-    # Website
-    websiteCfg = self.__getCfg( cfgPath( 'Website', 'Authorization',
-                                         'systems', 'configuration' ), 'Default', 'all' )
-    websiteCfg['Website'].addKey( 'DefaultGroups',
-                                  ', '.join( ['visitor', defaultGroupName, adminGroupName] ), '' )
-    websiteCfg['Website'].addKey( 'DefaultSetup', self.setup, '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showHistory' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'commitConfiguration' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showCurrentDiff' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showDiff' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'rollbackToVersion' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'manageRemoteConfig' ,
-                                                                               'CSAdministrator' , '' )
-    websiteCfg['Website']['Authorization']['systems']['configuration'].appendToOption( 'manageRemoteConfig' ,
-                                                                                       ', ServiceAdministrator' )
-
-    centralCfg = centralCfg.mergeWith( websiteCfg )
 
     return centralCfg
 

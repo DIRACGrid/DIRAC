@@ -29,21 +29,15 @@ class WMSHistory( BaseType ):
 
     self.index = 'wmshistory_index'
     self.doc_type =  "WMSHistory"
-
-    self.addMapping( {'status_type': {'_all': {'enabled': 'false'}, 'properties': {'Status': {'index': 'not_analyzed', 'type': 'string'}}},
-                      'site_type':{'_all': {'enabled': 'false'}, 'properties': {'Site': {'index': 'not_analyzed', 'type': 'string'}}},
-                      'jobsplit_type':{'_all': {'enabled': 'false'}, 'properties': {'JobSplitType': { 'index': 'not_analyzed',
-                                                                                                      'type': 'string'}}},
-                      'appStatus_type':{'_all': {'enabled': 'false'}, 'properties': {'ApplicationStatus': {'index': 'not_analyzed',
-                                                                                                           'type': 'string'}}},
-                      'monorStat_type':{'_all': {'enabled': 'false'}, 'properties': {'MinorStatus': { 'index': 'not_analyzed',
-                                                                                                      'type': 'string'}}},
-                      'user_type':{'_all': {'enabled': 'false'}, 'properties': {'User': { 'index': 'not_analyzed',
-                                                                                          'type': 'string'}}},
-                      'jobgroup_type':{'_all': {'enabled': 'false'}, 'properties': {'JobGroup': { 'index': 'not_analyzed',
-                                                                                                  'type': 'string'}}},
-                      'usergroup_type':{'_all': {'enabled': 'false'}, 'properties': {'UserGroup': { 'index': 'not_analyzed',
-                                                                                                    'type': 'string'}}}} )
+    
+    self.addMapping( {'Status': {'type': 'keyword'},
+                      'Site': {'type': 'keyword'},
+                      'JobSplitType': { 'type': 'keyword'},
+                      'ApplicationStatus': {'type': 'keyword'},
+                      'MinorStatus': {'type': 'keyword'},
+                      'User': {'type': 'keyword'},
+                      'JobGroup': { 'type': 'keyword'},
+                      'UserGroup': {'type': 'keyword'}} )
 
     self.dataToKeep =  86400 * 30
 

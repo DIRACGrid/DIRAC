@@ -103,7 +103,7 @@ class OperationHandlerBase( object ):
         value = eval( value )
       except NameError:
         pass
-      self.makeProperty( option, value, True )
+      self.makeProperty( option, value, True ) #pylint: disable=no-member
 
     # # pre setup logger
     self.log = gLogger.getSubLogger( name, True )

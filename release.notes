@@ -1,3 +1,40 @@
+[v6r20-pre10]
+
+*Core
+NEW: MJF utility added, providing a general interface to Machine/Job Features values.
+CHANGE: Removed deprecated option "ExtraModules" (dirac-configure, dirac-install scripts)
+CHANGE: dirac-deploy-scripts, dirac-install - allow command modules with underscores in 
+        their names in order for better support for the code checking tools
+CHANGE: dirac-distribution and related scripts - compile web code while release
+        generation
+NEW: DEncode - added unit tests        
+
+*Framework
+CHANGE: ComponentInstaller - remove the old web portal configuration data 
+        used during the installation
+NEW: WebAppCompiler methods is implemented, which is used to compile the web framework
+
+*WorkloadManagementSystem
+NEW: StopSigRegex, StopSigStartSeconds, StopSigFinishSeconds, StopSigNumber added to JDL, which cause Watchdog to send a signal StopSigNumber to payload processes matching StopSigRegex when there are less than StopSigFinishSeconds of wall clock remaining according to MJF.
+NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
+NEW: added a new synchronizer for Pilot3: sync of subset of CS info to JSON file, 
+     and sync of pilot3 files
+NEW: dirac-admin-get-pilotslogging script for viewing PilotsLogging
+CHANGE: dirac-wms-cpu-normalization uses the abstracted DB12 benchmark script used by the HEPiX Benchmarking Working Group, and the new MJF utility to obtain values from the system and to save them into the DIRAC LocalSite configuration.
+NEW: Bulk job submission with protection of the operation transaction
+
+*DMS
+NEW: FTS3Agent working only with the FTS3 service to replace the existing one
+NEW: FTS3Utilities - use correct FTS Server Selection Policy
+NEW: StorageElement service - getFreeDiskSpace() and getTotalDiskSpace() take into account 
+     MAX_STORAGE_SIZE parameter value
+
+*Resources
+NEW: New SingularityComputingElement to submit jobs to a Singularity container
+
+*Docs
+FIX: Drop some old stuff, add link for FTS3 page
+
 [v6r19p11]
 
 *Framework:
@@ -44,7 +81,6 @@ FIX: use StorageElement object to get disk cache size
 FIX: DMSHelpers - fix case when no site is found for an SE
 FIX: ReplicateAndRegister - don't try and get SE metadata is replica is inactive
 
-
 [v6r19p9]
 
 *WMS
@@ -52,6 +88,7 @@ CHANGE: DownloadInputData was instantiating all local SEs which is not necessary
 CHANGE: JobWrapper - use resolveSEGroup in order to allow defining SE groups including other SE groups
 FIX: JobDB - fixed typo in getSiteMaskStatus() method
 FIX: Fix getSiteMaskStatus in SiteDirector and MultiProcessSiteDirector
+CHANGE: WatchdogLinux - using python modules in  instead of shell calls
 
 *DMS
 FIX: in DMSHelpers don't complain if an SE is at 0 sites
@@ -206,7 +243,7 @@ FIX: ElasticSearchDB - certifi package was miscalled
 FIX: ElasticSearchDB - added debug messages for DB connection
 
 *Framework
-FIX: ComponentInstalle - handling correctly extensions of DBs found in sql files
+FIX: ComponentInstaller - handling correctly extensions of DBs found in sql files
 
 *WMS
 FIX: SudoComputingElement - prevent message overwriting application errors

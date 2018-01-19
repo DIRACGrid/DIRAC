@@ -3,7 +3,8 @@
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 
 gServiceInterface = False
 
@@ -17,6 +18,24 @@ def initializeConfigurationHandler( serviceInfo ):
 class ConfigurationHandler( RequestHandler ):
   """ The CS handler
   """
+
+  @classmethod
+  def initializeHandler( cls, _serviceInfo ):
+    """
+    Handler class initialization
+    """
+    # Check the flag for updating the pilot 3 JSON file
+    cls.updatePilotJSONFile = cls.srv_getCSOption( 'UpdatePilotCStoJSONFile', False )
+    if cls.updatePilotJSONFile:
+      cls.paramDict = {}
+      cls.paramDict['pilotFileServer'] = getServiceOption( _serviceInfo, "pilotFileServer", '' )
+      cls.paramDict['pilotRepo'] = getServiceOption( _serviceInfo, "pilotRepo", '' )
+      cls.paramDict['pilotVORepo'] = getServiceOption( _serviceInfo, "pilotVORepo", '' )
+      cls.paramDict['projectDir'] = getServiceOption( _serviceInfo, "projectDir", '' )
+      cls.paramDict['pilotVOScriptPath'] = getServiceOption( _serviceInfo, "pilotVOScriptPath", '' )
+      cls.paramDict['pilotScriptsPath'] = getServiceOption( _serviceInfo, "pilotScriptsPath", '' )
+
+    return S_OK( 'Initialization went well' )
 
   types_getVersion = []
   def export_getVersion( self ):
@@ -45,7 +64,15 @@ class ConfigurationHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     if not 'DN' in credDict or not 'username' in credDict:
       return S_ERROR( "You must be authenticated!" )
-    return gServiceInterface.updateConfiguration( sData, credDict[ 'username' ] )
+    res = gServiceInterface.updateConfiguration( sData, credDict[ 'username' ] )
+
+    if self.updatePilotJSONFile:
+      if not res['OK']:
+        return res
+      return PilotCStoJSONSynchronizer( self.paramDict ).sync()
+    else:
+      return res
+
 
   types_writeEnabled = []
   def export_writeEnabled( self ):
@@ -79,4 +106,6 @@ class ConfigurationHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     if not 'DN' in credDict or not 'username' in credDict:
       return S_ERROR( "You must be authenticated!" )
-    return gServiceInterface.updateConfiguration( retVal[ 'Value' ] , credDict[ 'username' ], updateVersionOption = True )
+    return gServiceInterface.updateConfiguration( retVal[ 'Value' ],
+                                                  credDict[ 'username' ],
+                                                  updateVersionOption = True )

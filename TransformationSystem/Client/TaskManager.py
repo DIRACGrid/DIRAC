@@ -135,7 +135,7 @@ class RequestTasks( TaskBase ):
 
 
   def prepareTransformationTasks( self, transBody, taskDict, owner='', ownerGroup='', ownerDN='',
-                                  bulkSubmissionFlag=False ):
+                                  bulkSubmissionFlag=False):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
     if not taskDict:

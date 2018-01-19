@@ -267,6 +267,7 @@ class ReleaseConfig( object ):
     self.__globalDefaults = ReleaseConfig.CFG()
     self.__loadedCfgs = []
     self.__prjDepends = {}
+    self.__diracBaseModules = {}
     self.__prjRelCFG = {}
     self.__projectsLoadedBy = {}
     self.__cfgCache = {}
@@ -293,7 +294,13 @@ class ReleaseConfig( object ):
   def __dbgMsg( self, msg ):
     if self.__debugCB:
       self.__debugCB( msg )
-
+  
+  def getDiracModules( self ):
+    """
+    It return all DIRAC modules
+    """
+    return self.__diracBaseModules
+  
   def __loadCFGFromURL( self, urlcfg, checkHash = False ):
 
     # This can be a local file
@@ -515,6 +522,17 @@ class ReleaseConfig( object ):
 
 
   def loadProjectRelease( self, releases, project = False, sourceURL = False, releaseMode = False, relLocation = False ):
+    """
+    This method loads all project configurations (*.cfg). If a project is an extension of DIRAC, it will load the extension and 
+    after will load the base DIRAC module. 
+    
+    :param list releases: list of releases, which will be loaded: for example: v6r19
+    :param str project: the name of the project, if it is given. For example: DIRAC
+    :param str sourceURL: the code repository
+    :param str releaseMode:
+    :param str relLocation: local configuration file, which contains the releases. for example: file:///`pwd`/releases.cfg
+    """
+    
     if not project:
       project = self.__projectName
 
@@ -536,8 +554,6 @@ class ReleaseConfig( object ):
       if not result[ 'OK' ]:
         return result
       relCFG = result[ 'Value' ]
-
-
       #Calculate dependencies and avoid circular deps
       self.__prjDepends[ project ][ release ] = [ ( project, release ) ]
       relDeps = self.__prjDepends[ project ][ release ]
@@ -551,7 +567,6 @@ class ReleaseConfig( object ):
       relDeps.extend( [ ( p, initialDeps[p] ) for p in initialDeps ] )
       for depProject in initialDeps:
         depVersion = initialDeps[ depProject ]
-
         #Check if already processed
         dKey = ( depProject, depVersion )
         if dKey not in self.__projectsLoadedBy:
@@ -581,12 +596,28 @@ class ReleaseConfig( object ):
                                                                                                           pKey[1], vrs,
                                                                                                           project, release )
               return S_ERROR( errMsg )
-          #Same version already required
+      
+      #Same version already required
       if project in relDeps and relDeps[ project ] != release:
         errMsg = "%s:%s requires itself with a different version through dependencies ( %s )" % ( project, release,
                                                                                                   relDeps[ project ] )
         return S_ERROR( errMsg )
-
+      
+      #we have now all dependencies, let's retrieve the resources (code repository)
+      for project, version in relDeps:
+        if project in self.__diracBaseModules:
+          continue
+        modules = self.getModulesForRelease(version, project)
+        if modules['OK']:
+          for dependency in modules['Value']:
+            self.__diracBaseModules.setdefault( dependency, {} )
+            self.__diracBaseModules[ dependency ]['Version'] = modules['Value'][dependency]
+            res = self.getModSource( version, dependency, project )
+            if not res['OK']:
+              self.__dbgMsg( "Unable to found the source URL for %s : %s" % ( dependency, res['Message'] ) )
+            else:
+              self.__diracBaseModules[ dependency ]['sourceUrl'] = res['Value'][1]
+              
     return S_OK()
 
   def getReleaseOption( self, project, release, option ):
@@ -649,10 +680,34 @@ class ReleaseConfig( object ):
           return S_ERROR( "Module %s does not start with the name %s" % ( modName, project ) )
     return S_OK( modules )
 
-  def getModSource( self, release, modName ):
+  def getModSource( self, release, modName, project = None ):
+    """
+    It reads the Sources section from the .cfg file for example:
+    Sources
+    {
+      Web = git://github.com/DIRACGrid/DIRACWeb.git
+      VMDIRAC = git://github.com/DIRACGrid/VMDIRAC.git
+      DIRAC = git://github.com/DIRACGrid/DIRAC.git
+      MPIDIRAC = git://github.com/DIRACGrid/MPIDIRAC.git
+      BoincDIRAC = git://github.com/DIRACGrid/BoincDIRAC.git
+      RESTDIRAC = git://github.com/DIRACGrid/RESTDIRAC.git
+      COMDIRAC = git://github.com/DIRACGrid/COMDIRAC.git
+      FSDIRAC = git://github.com/DIRACGrid/FSDIRAC.git
+      WebAppDIRAC = git://github.com/DIRACGrid/WebAppDIRAC.git
+    }
+    
+    :param str release: the release which is already loaded for example: v6r19
+    :param str modName: the name of the DIRAC module for example: WebAppDIRAC
+    :param str project: the name of the project for example: DIRAC
+    """
+    
     if not self.__projectName in self.__prjRelCFG:
       return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % self.__projectName )
-    modLocation = self.getReleaseOption( self.__projectName, release, "Sources/%s" % modName )
+    
+    if not project:
+      project = self.__projectName
+    
+    modLocation = self.getReleaseOption( project, release, "Sources/%s" % modName )
     if not modLocation:
       return S_ERROR( "Source origin for module %s is not defined" % modName )
     modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ] # pylint: disable=no-member
@@ -1140,15 +1195,11 @@ def loadConfiguration():
   for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraModules', 'extensions', 'timeout' ):
+                  'project', 'release', 'extensions', 'timeout' ):
     try:
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
       continue
-
-    if opName == 'extraModules':
-      logWARN( "extraModules is deprecated please use extensions instead!" )
-      opName = 'extensions'
 
     if opName == 'installType':
       opName = 'externalsType'
@@ -1574,6 +1625,8 @@ if __name__ == "__main__":
         sys.exit( 1 )
     logNOTICE( "Deploying scripts..." )
     ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" )
+    if not os.path.isfile( ddeLocation ):
+      ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac_deploy_scripts.py" )
     if os.path.isfile( ddeLocation ):
       cmd = ddeLocation
       # In MacOS /usr/bin/env does not find python in the $PATH, passing binary path

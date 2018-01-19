@@ -122,7 +122,7 @@ class JobRepository( object ):
     return S_OK()
 
   def removeJob( self, jobID ):
-    res = self.repo['Jobs'].deleteKey( str( jobID ) )
+    res = self.repo['Jobs'].deleteKey( str( jobID ) ) #pylint: disable=no-member
     if res:
       self._writeRepository( self.location )
     return S_OK()

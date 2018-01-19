@@ -128,7 +128,7 @@ class SECase ( FileCatalogDBTestCase ):
     ret = self.db.addSE( seName, credDict )
     if isAdmin:
 
-      self.assert_( ret["OK"], "addSE failed when adding new SE: %s" % ret )
+      self.assertTrue( ret["OK"], "addSE failed when adding new SE: %s" % ret )
 
       seId = ret["Value"]
       # create it again
@@ -213,31 +213,31 @@ class FileCase( FileCatalogDBTestCase ):
                                          'Size':123,
                                          'GUID':'1000',
                                          'Checksum':'0' } }, credDict )
-    self.assert_( result['OK'], "addFile failed when adding new file %s" % result )
+    self.assertTrue( result['OK'], "addFile failed when adding new file %s" % result )
     result = self.db.exists( testFile , credDict )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
                        testFile, "exists( testFile) should be the same lfn %s" % result )
 
 
     result = self.db.exists( {testFile:'1000'} , credDict )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
                        testFile, "exists( testFile : 1000) should be the same lfn %s" % result )
 
     result = self.db.exists( {testFile:{'GUID' : '1000', 'PFN' : 'blabla'}} , credDict )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
                        testFile, "exists( testFile : 1000) should be the same lfn %s" % result )
 
     # In fact, we don't check if the GUID is correct...
     result = self.db.exists( {testFile:'1001'}, credDict )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
                        testFile, "exists( testFile : 1001) should be the same lfn %s" % result )
 
     result = self.db.exists( {testFile + '2' : '1000'}, credDict )
-    self.assert_( result['OK'] )
+    self.assertTrue(result['OK'])
     self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile + '2' ),
                        testFile, "exists( testFile2 : 1000) should return testFile %s" % result )
 
@@ -247,8 +247,8 @@ class FileCase( FileCatalogDBTestCase ):
                                          'Size':123,
                                          'GUID':'1000',
                                          'Checksum':'0' } }, credDict )
-    self.assert_( result["OK"], "addFile failed when adding existing file with same param %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "addFile failed: it should be possible to add an existing lfn with same param %s" % result )
+    self.assertTrue( result["OK"], "addFile failed when adding existing file with same param %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "addFile failed: it should be possible to add an existing lfn with same param %s" % result )
 
     # Adding same file with different param
     result = self.db.addFile( { testFile: { 'PFN': 'testfile',
@@ -256,8 +256,8 @@ class FileCase( FileCatalogDBTestCase ):
                                          'Size':123,
                                          'GUID':'1000',
                                          'Checksum':'1' } }, credDict )
-    self.assert_( result["OK"], "addFile failed when adding existing file with different parem %s" % result )
-    self.assert_( testFile in result["Value"]["Failed"], "addFile failed: it should not be possible to add an existing lfn with different param %s" % result )
+    self.assertTrue( result["OK"], "addFile failed when adding existing file with different parem %s" % result )
+    self.assertTrue( testFile in result["Value"]["Failed"], "addFile failed: it should not be possible to add an existing lfn with different param %s" % result )
 
 
     result = self.db.addFile( { testFile + '2':  { 'PFN': 'testfile',
@@ -265,76 +265,76 @@ class FileCase( FileCatalogDBTestCase ):
                                          'Size':123,
                                          'GUID':'1000',
                                          'Checksum':'0' } }, credDict )
-    self.assert_( result["OK"], "addFile failed when adding existing file %s" % result )
-    self.assert_( testFile + '2' in result["Value"]["Failed"], "addFile failed: it should not be possible to add a new lfn with existing GUID %s" % result )
+    self.assertTrue( result["OK"], "addFile failed when adding existing file %s" % result )
+    self.assertTrue( testFile + '2' in result["Value"]["Failed"], "addFile failed: it should not be possible to add a new lfn with existing GUID %s" % result )
 
     ##################################################################################
     # Setting existing status of existing file
     result = self.db.setFileStatus( {testFile:"AprioriGood"}, credDict )
-    self.assert_( result["OK"], "setFileStatus failed when setting existing status of existing file %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "setFileStatus failed: %s should be in successful (%s)" % ( testFile, result ) )
+    self.assertTrue( result["OK"], "setFileStatus failed when setting existing status of existing file %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "setFileStatus failed: %s should be in successful (%s)" % ( testFile, result ) )
 
     # Setting unexisting status of existing file
     result = self.db.setFileStatus( {testFile:"Happy"}, credDict )
-    self.assert_( result["OK"], "setFileStatus failed when setting un-existing status of existing file %s" % result )
-    self.assert_( testFile in result["Value"]["Failed"], "setFileStatus should have failed %s" % result )
+    self.assertTrue( result["OK"], "setFileStatus failed when setting un-existing status of existing file %s" % result )
+    self.assertTrue( testFile in result["Value"]["Failed"], "setFileStatus should have failed %s" % result )
 
     # Setting existing status of unexisting file
     result = self.db.setFileStatus( {nonExistingFile:"Trash"}, credDict )
-    self.assert_( result["OK"], "setFileStatus failed when setting existing status of non-existing file %s" % result )
-    self.assert_( nonExistingFile in result["Value"]["Failed"], "setFileStatus failed: %s should be in failed (%s)" % ( nonExistingFile, result ) )
+    self.assertTrue( result["OK"], "setFileStatus failed when setting existing status of non-existing file %s" % result )
+    self.assertTrue( nonExistingFile in result["Value"]["Failed"], "setFileStatus failed: %s should be in failed (%s)" % ( nonExistingFile, result ) )
 
     ##################################################################################
 
     result = self.db.isFile( [testFile, nonExistingFile], credDict )
-    self.assert_( result["OK"], "isFile failed: %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "isFile : %s should be in Successful %s" % ( testFile, result ) )
-    self.assert_( result["Value"]["Successful"][testFile], "isFile : %s should be seen as a file %s" % ( testFile, result ) )
-    self.assert_( nonExistingFile in result["Value"]["Successful"], "isFile : %s should be in Successful %s" % ( nonExistingFile, result ) )
-    self.assert_( result["Value"]["Successful"][nonExistingFile] == False, "isFile : %s should be seen as a file %s" % ( nonExistingFile, result ) )
+    self.assertTrue( result["OK"], "isFile failed: %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "isFile : %s should be in Successful %s" % ( testFile, result ) )
+    self.assertTrue( result["Value"]["Successful"][testFile], "isFile : %s should be seen as a file %s" % ( testFile, result ) )
+    self.assertTrue( nonExistingFile in result["Value"]["Successful"], "isFile : %s should be in Successful %s" % ( nonExistingFile, result ) )
+    self.assertTrue( result["Value"]["Successful"][nonExistingFile] == False, "isFile : %s should be seen as a file %s" % ( nonExistingFile, result ) )
 
     result = self.db.changePathOwner( {testFile :  "toto", nonExistingFile : "tata"}, credDict )
-    self.assert_( result["OK"], "changePathOwner failed: %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "changePathOwner : %s should be in Successful %s" % ( testFile, result ) )
-    self.assert_( nonExistingFile in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( nonExistingFile, result ) )
+    self.assertTrue( result["OK"], "changePathOwner failed: %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "changePathOwner : %s should be in Successful %s" % ( testFile, result ) )
+    self.assertTrue( nonExistingFile in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( nonExistingFile, result ) )
 
     result = self.db.changePathGroup( {testFile : "toto", nonExistingFile :"tata"}, credDict )
-    self.assert_( result["OK"], "changePathGroup failed: %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( testFile, result ) )
-    self.assert_( nonExistingFile in result["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( nonExistingFile, result ) )
+    self.assertTrue( result["OK"], "changePathGroup failed: %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( testFile, result ) )
+    self.assertTrue( nonExistingFile in result["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( nonExistingFile, result ) )
 
     result = self.db.changePathMode( {testFile : 044, nonExistingFile : 044}, credDict )
-    self.assert_( result["OK"], "changePathMode failed: %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "changePathMode : %s should be in Successful %s" % ( testFile, result ) )
-    self.assert_( nonExistingFile in result["Value"]["Failed"], "changePathMode : %s should be in Failed %s" % ( nonExistingFile, result ) )
+    self.assertTrue( result["OK"], "changePathMode failed: %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "changePathMode : %s should be in Successful %s" % ( testFile, result ) )
+    self.assertTrue( nonExistingFile in result["Value"]["Failed"], "changePathMode : %s should be in Failed %s" % ( nonExistingFile, result ) )
 
     result = self.db.getFileSize( [testFile, nonExistingFile], credDict )
-    self.assert_( result["OK"], "getFileSize failed: %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "getFileSize : %s should be in Successful %s" % ( testFile, result ) )
+    self.assertTrue( result["OK"], "getFileSize failed: %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "getFileSize : %s should be in Successful %s" % ( testFile, result ) )
     self.assertEqual( result["Value"]["Successful"][testFile], 123, "getFileSize got incorrect file size %s" % result )
-    self.assert_( nonExistingFile in result["Value"]["Failed"], "getFileSize : %s should be in Failed %s" % ( nonExistingFile, result ) )
+    self.assertTrue( nonExistingFile in result["Value"]["Failed"], "getFileSize : %s should be in Failed %s" % ( nonExistingFile, result ) )
 
     result = self.db.getFileMetadata( [testFile, nonExistingFile], credDict )
-    self.assert_( result["OK"], "getFileMetadata failed: %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "getFileMetadata : %s should be in Successful %s" % ( testFile, result ) )
+    self.assertTrue( result["OK"], "getFileMetadata failed: %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "getFileMetadata : %s should be in Successful %s" % ( testFile, result ) )
     self.assertEqual( result["Value"]["Successful"][testFile]["Owner"], "toto", "getFileMetadata got incorrect Owner %s" % result )
     self.assertEqual( result["Value"]["Successful"][testFile]["Status"], "AprioriGood", "getFileMetadata got incorrect status %s" % result )
-    self.assert_( nonExistingFile in result["Value"]["Failed"], "getFileMetadata : %s should be in Failed %s" % ( nonExistingFile, result ) )
+    self.assertTrue( nonExistingFile in result["Value"]["Failed"], "getFileMetadata : %s should be in Failed %s" % ( nonExistingFile, result ) )
 
 #      DOES NOT FOLLOW THE SUCCESSFUL/FAILED CONVENTION
 #     result = self.db.getFileDetails( [testFile, nonExistingFile], credDict )
-#     self.assert_( result["OK"], "getFileDetails failed: %s" % result )
-#     self.assert_( testFile in result["Value"]["Successful"], "getFileDetails : %s should be in Successful %s" % ( testFile, result ) )
+#     self.assertTrue( result["OK"], "getFileDetails failed: %s" % result )
+#     self.assertTrue( testFile in result["Value"]["Successful"], "getFileDetails : %s should be in Successful %s" % ( testFile, result ) )
 #     self.assertEqual( result["Value"]["Successful"][testFile]["Owner"], "toto", "getFileDetails got incorrect Owner %s" % result )
-#     self.assert_( nonExistingFile in result["Value"]["Failed"], "getFileDetails : %s should be in Failed %s" % ( nonExistingFile, result ) )
+#     self.assertTrue( nonExistingFile in result["Value"]["Failed"], "getFileDetails : %s should be in Failed %s" % ( nonExistingFile, result ) )
 
 #    ADD SOMETHING ABOUT FILE ANCESTORS AND DESCENDENTS
 
     result = self.db.removeFile( [testFile, nonExistingFile], credDict )
-    self.assert_( result["OK"], "removeFile failed: %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "removeFile : %s should be in Successful %s" % ( testFile, result ) )
-    self.assert_( result["Value"]["Successful"][testFile], "removeFile : %s should be in True %s" % ( testFile, result ) )
-    self.assert_( result["Value"]["Successful"][nonExistingFile], "removeFile : %s should be in True %s" % ( nonExistingFile, result ) )
+    self.assertTrue( result["OK"], "removeFile failed: %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "removeFile : %s should be in Successful %s" % ( testFile, result ) )
+    self.assertTrue( result["Value"]["Successful"][testFile], "removeFile : %s should be in True %s" % ( testFile, result ) )
+    self.assertTrue( result["Value"]["Successful"][nonExistingFile], "removeFile : %s should be in True %s" % ( nonExistingFile, result ) )
 
 
 
@@ -350,90 +350,90 @@ class ReplicaCase( FileCatalogDBTestCase ):
                                          'Size':123,
                                          'GUID':'1000',
                                          'Checksum':'0' } }, credDict )
-    self.assert_( result['OK'], "addFile failed when adding new file %s" % result )
+    self.assertTrue( result['OK'], "addFile failed when adding new file %s" % result )
 
     # Adding new replica
     result = self.db.addReplica( {testFile : {"PFN" : "testFile", "SE" : "otherSE"}}, credDict )
-    self.assert_( result['OK'], "addReplica failed when adding new Replica %s" % result )
-    self.assert_( testFile in result['Value']["Successful"], "addReplica failed when adding new Replica %s" % result )
+    self.assertTrue( result['OK'], "addReplica failed when adding new Replica %s" % result )
+    self.assertTrue( testFile in result['Value']["Successful"], "addReplica failed when adding new Replica %s" % result )
 
     # Adding the same replica
     result = self.db.addReplica( {testFile : {"PFN" : "testFile", "SE" : "otherSE"}}, credDict )
-    self.assert_( result['OK'], "addReplica failed when adding new Replica %s" % result )
-    self.assert_( testFile in result['Value']["Successful"], "addReplica failed when adding new Replica %s" % result )
+    self.assertTrue( result['OK'], "addReplica failed when adding new Replica %s" % result )
+    self.assertTrue( testFile in result['Value']["Successful"], "addReplica failed when adding new Replica %s" % result )
 
     # Adding replica of a non existing file
     result = self.db.addReplica( {nonExistingFile : {"PFN" : "Idontexist", "SE" : "otherSE"}}, credDict )
-    self.assert_( result['OK'], "addReplica failed when adding Replica to non existing Replica %s" % result )
-    self.assert_( nonExistingFile in result['Value']["Failed"], "addReplica for non existing file should go in Failed  %s" % result )
+    self.assertTrue( result['OK'], "addReplica failed when adding Replica to non existing Replica %s" % result )
+    self.assertTrue( nonExistingFile in result['Value']["Failed"], "addReplica for non existing file should go in Failed  %s" % result )
 
 
     # Setting existing status of existing Replica
     result = self.db.setReplicaStatus( {testFile: {"Status" : "Trash", "SE" : "otherSE"}}, credDict )
-    self.assert_( result["OK"], "setReplicaStatus failed when setting existing status of existing Replica %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "setReplicaStatus failed: %s should be in successful (%s)" % ( testFile, result ) )
+    self.assertTrue( result["OK"], "setReplicaStatus failed when setting existing status of existing Replica %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "setReplicaStatus failed: %s should be in successful (%s)" % ( testFile, result ) )
 
     # Setting non existing status of existing Replica
     result = self.db.setReplicaStatus( {testFile: {"Status" : "randomStatus", "SE" : "otherSE"}}, credDict )
-    self.assert_( result["OK"], "setReplicaStatus failed when setting non-existing status of existing Replica %s" % result )
-    self.assert_( testFile in result["Value"]["Failed"], "setReplicaStatus failed: %s should be in Failed (%s)" % ( testFile, result ) )
+    self.assertTrue( result["OK"], "setReplicaStatus failed when setting non-existing status of existing Replica %s" % result )
+    self.assertTrue( testFile in result["Value"]["Failed"], "setReplicaStatus failed: %s should be in Failed (%s)" % ( testFile, result ) )
 
     # Setting existing status of non-existing Replica
     result = self.db.setReplicaStatus( {testFile: {"Status" : "Trash", "SE" : "nonExistingSe"}}, credDict )
-    self.assert_( result["OK"], "setReplicaStatus failed when setting existing status of non-existing Replica %s" % result )
-    self.assert_( testFile in result["Value"]["Failed"], "setReplicaStatus failed: %s should be in Failed (%s)" % ( testFile, result ) )
+    self.assertTrue( result["OK"], "setReplicaStatus failed when setting existing status of non-existing Replica %s" % result )
+    self.assertTrue( testFile in result["Value"]["Failed"], "setReplicaStatus failed: %s should be in Failed (%s)" % ( testFile, result ) )
 
     # Setting existing status of non-existing File
     result = self.db.setReplicaStatus( {nonExistingFile: {"Status" : "Trash", "SE" : "nonExistingSe"}}, credDict )
-    self.assert_( result["OK"], "setReplicaStatus failed when setting existing status of non-existing File %s" % result )
-    self.assert_( nonExistingFile in result["Value"]["Failed"], "setReplicaStatus failed: %s should be in Failed (%s)" % ( nonExistingFile, result ) )
+    self.assertTrue( result["OK"], "setReplicaStatus failed when setting existing status of non-existing File %s" % result )
+    self.assertTrue( nonExistingFile in result["Value"]["Failed"], "setReplicaStatus failed: %s should be in Failed (%s)" % ( nonExistingFile, result ) )
 
 
     # Getting existing status of existing Replica but not visible
     result = self.db.getReplicaStatus( {testFile: "testSE"}, credDict )
-    self.assert_( result["OK"], "getReplicaStatus failed when getting existing status of existing Replica %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "getReplicaStatus failed: %s should be in Successful (%s)" % ( testFile, result ) )
+    self.assertTrue( result["OK"], "getReplicaStatus failed when getting existing status of existing Replica %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "getReplicaStatus failed: %s should be in Successful (%s)" % ( testFile, result ) )
 
     # Getting existing status of existing Replica but not visible
     result = self.db.getReplicaStatus( {testFile : "otherSE"}, credDict )
-    self.assert_( result["OK"], "getReplicaStatus failed when getting existing status of existing Replica but not visible %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "getReplicaStatus failed: %s should be in Successful (%s)" % ( testFile, result ) )
+    self.assertTrue( result["OK"], "getReplicaStatus failed when getting existing status of existing Replica but not visible %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "getReplicaStatus failed: %s should be in Successful (%s)" % ( testFile, result ) )
 
     # Getting status of non-existing File but not visible
     result = self.db.getReplicaStatus( {nonExistingFile: "testSE"}, credDict )
-    self.assert_( result["OK"], "getReplicaStatus failed when getting status of non existing File %s" % result )
-    self.assert_( nonExistingFile in result["Value"]["Failed"], "getReplicaStatus failed: %s should be in failed (%s)" % ( nonExistingFile, result ) )
+    self.assertTrue( result["OK"], "getReplicaStatus failed when getting status of non existing File %s" % result )
+    self.assertTrue( nonExistingFile in result["Value"]["Failed"], "getReplicaStatus failed: %s should be in failed (%s)" % ( nonExistingFile, result ) )
 
     # Getting replicas of existing File and non existing file, seeing all replicas
     result = self.db.getReplicas( [testFile, nonExistingFile], allStatus = True, credDict = credDict )
-    self.assert_( result["OK"], "getReplicas failed %s" % result )
-    self.assert_( testFile in result["Value"]["Successful"], "getReplicas failed, %s should be in Successful %s" % ( testFile, result ) )
+    self.assertTrue( result["OK"], "getReplicas failed %s" % result )
+    self.assertTrue( testFile in result["Value"]["Successful"], "getReplicas failed, %s should be in Successful %s" % ( testFile, result ) )
     self.assertEqual( result["Value"]["Successful"][testFile], {"otherSE" : "", "testSE" : ""}, "getReplicas failed, %s should be in Successful %s" % ( testFile, result ) )
-    self.assert_( nonExistingFile in result["Value"]["Failed"], "getReplicas failed, %s should be in Failed %s" % ( nonExistingFile, result ) )
+    self.assertTrue( nonExistingFile in result["Value"]["Failed"], "getReplicas failed, %s should be in Failed %s" % ( nonExistingFile, result ) )
 
     # removing master replica
     result = self.db.removeReplica( {testFile : { "SE" : "testSE"}}, credDict )
-    self.assert_( result['OK'], "removeReplica failed when removing master Replica %s" % result )
-    self.assert_( testFile in result['Value']["Successful"], "removeReplica failed when removing master Replica %s" % result )
+    self.assertTrue( result['OK'], "removeReplica failed when removing master Replica %s" % result )
+    self.assertTrue( testFile in result['Value']["Successful"], "removeReplica failed when removing master Replica %s" % result )
 
     # removing non existing replica of existing File
     result = self.db.removeReplica( {testFile : { "SE" : "nonExistingSe2"}}, credDict )
-    self.assert_( result['OK'], "removeReplica failed when removing non existing Replica %s" % result )
-    self.assert_( testFile in result['Value']["Successful"], "removeReplica failed when removing new Replica %s" % result )
+    self.assertTrue( result['OK'], "removeReplica failed when removing non existing Replica %s" % result )
+    self.assertTrue( testFile in result['Value']["Successful"], "removeReplica failed when removing new Replica %s" % result )
 
     # removing non existing replica of non existing file
     result = self.db.removeReplica( {nonExistingFile : { "SE" : "nonExistingSe3"}}, credDict )
-    self.assert_( result['OK'], "removeReplica failed when removing replica of non existing File %s" % result )
-    self.assert_( nonExistingFile in result['Value']["Successful"], "removeReplica of non existing file, %s should be in Successful %s" % ( nonExistingFile, result ) )
+    self.assertTrue( result['OK'], "removeReplica failed when removing replica of non existing File %s" % result )
+    self.assertTrue( nonExistingFile in result['Value']["Successful"], "removeReplica of non existing file, %s should be in Successful %s" % ( nonExistingFile, result ) )
 
     # removing last replica
     result = self.db.removeReplica( {testFile : { "SE" : "otherSE"}}, credDict )
-    self.assert_( result['OK'], "removeReplica failed when removing last Replica %s" % result )
-    self.assert_( testFile in result['Value']["Successful"], "removeReplica failed when removing last Replica %s" % result )
+    self.assertTrue( result['OK'], "removeReplica failed when removing last Replica %s" % result )
+    self.assertTrue( testFile in result['Value']["Successful"], "removeReplica failed when removing last Replica %s" % result )
 
     # Cleaning after us
     result = self.db.removeFile( testFile, credDict )
-    self.assert_( result["OK"], "removeFile failed: %s" % result )
+    self.assertTrue( result["OK"], "removeFile failed: %s" % result )
 
 
 
@@ -446,54 +446,54 @@ class DirectoryCase( FileCatalogDBTestCase ):
     """
     # Adding a new directory
     result = self.db.createDirectory( testDir, credDict )
-    self.assert_( result['OK'], "addDirectory failed when adding new directory %s" % result )
+    self.assertTrue( result['OK'], "addDirectory failed when adding new directory %s" % result )
 
     result = self.db.addFile( { testFile: { 'PFN': 'testfile',
                                          'SE': 'testSE' ,
                                          'Size':123,
                                          'GUID':'1000',
                                          'Checksum':'0' } }, credDict )
-    self.assert_( result['OK'], "addFile failed when adding new file %s" % result )
+    self.assertTrue( result['OK'], "addFile failed when adding new file %s" % result )
 
 
 
     # Re-adding the same directory (CAUTION, different from addFile)
     result = self.db.createDirectory( testDir, credDict )
-    self.assert_( result["OK"], "addDirectory failed when adding existing directory %s" % result )
-    self.assert_( testDir in result["Value"]["Successful"], "addDirectory failed: it should be possible to add an existing lfn %s" % result )
+    self.assertTrue( result["OK"], "addDirectory failed when adding existing directory %s" % result )
+    self.assertTrue( testDir in result["Value"]["Successful"], "addDirectory failed: it should be possible to add an existing lfn %s" % result )
 
 
     result = self.db.isDirectory( [testDir, nonExistingDir], credDict )
-    self.assert_( result["OK"], "isDirectory failed: %s" % result )
-    self.assert_( testDir in result["Value"]["Successful"], "isDirectory : %s should be in Successful %s" % ( testDir, result ) )
-    self.assert_( result["Value"]["Successful"][testDir], "isDirectory : %s should be seen as a directory %s" % ( testDir, result ) )
-    self.assert_( nonExistingDir in result["Value"]["Successful"], "isDirectory : %s should be in Successful %s" % ( nonExistingDir, result ) )
-    self.assert_( result["Value"]["Successful"][nonExistingDir] == False, "isDirectory : %s should be seen as a directory %s" % ( nonExistingDir, result ) )
+    self.assertTrue( result["OK"], "isDirectory failed: %s" % result )
+    self.assertTrue( testDir in result["Value"]["Successful"], "isDirectory : %s should be in Successful %s" % ( testDir, result ) )
+    self.assertTrue( result["Value"]["Successful"][testDir], "isDirectory : %s should be seen as a directory %s" % ( testDir, result ) )
+    self.assertTrue( nonExistingDir in result["Value"]["Successful"], "isDirectory : %s should be in Successful %s" % ( nonExistingDir, result ) )
+    self.assertTrue( result["Value"]["Successful"][nonExistingDir] == False, "isDirectory : %s should be seen as a directory %s" % ( nonExistingDir, result ) )
 
     result = self.db.getDirectorySize( [testDir, nonExistingDir], False, False, credDict )
-    self.assert_( result["OK"], "getDirectorySize failed: %s" % result )
-    self.assert_( testDir in result["Value"]["Successful"], "getDirectorySize : %s should be in Successful %s" % ( testDir, result ) )
+    self.assertTrue( result["OK"], "getDirectorySize failed: %s" % result )
+    self.assertTrue( testDir in result["Value"]["Successful"], "getDirectorySize : %s should be in Successful %s" % ( testDir, result ) )
     self.assertEqual( result["Value"]["Successful"][testDir], {'LogicalFiles': 1, 'LogicalDirectories': 0, 'LogicalSize': 123}, "getDirectorySize got incorrect directory size %s" % result )
-    self.assert_( nonExistingDir in result["Value"]["Failed"], "getDirectorySize : %s should be in Failed %s" % ( nonExistingDir, result ) )
+    self.assertTrue( nonExistingDir in result["Value"]["Failed"], "getDirectorySize : %s should be in Failed %s" % ( nonExistingDir, result ) )
 
 
     result = self.db.getDirectorySize( [testDir, nonExistingDir], False, True, credDict )
-    self.assert_( result["OK"], "getDirectorySize (calc) failed: %s" % result )
-    self.assert_( testDir in result["Value"]["Successful"], "getDirectorySize (calc): %s should be in Successful %s" % ( testDir, result ) )
+    self.assertTrue( result["OK"], "getDirectorySize (calc) failed: %s" % result )
+    self.assertTrue( testDir in result["Value"]["Successful"], "getDirectorySize (calc): %s should be in Successful %s" % ( testDir, result ) )
     self.assertEqual( result["Value"]["Successful"][testDir], {'LogicalFiles': 1, 'LogicalDirectories': 0, 'LogicalSize': 123}, "getDirectorySize got incorrect directory size %s" % result )
-    self.assert_( nonExistingDir in result["Value"]["Failed"], "getDirectorySize (calc) : %s should be in Failed %s" % ( nonExistingDir, result ) )
+    self.assertTrue( nonExistingDir in result["Value"]["Failed"], "getDirectorySize (calc) : %s should be in Failed %s" % ( nonExistingDir, result ) )
 
 
 
     result = self.db.listDirectory( [parentDir, testDir, nonExistingDir], credDict )
-    self.assert_( result["OK"], "listDirectory failed: %s" % result )
-    self.assert_( parentDir in result["Value"]["Successful"], "listDirectory : %s should be in Successful %s" % ( parentDir, result ) )
+    self.assertTrue( result["OK"], "listDirectory failed: %s" % result )
+    self.assertTrue( parentDir in result["Value"]["Successful"], "listDirectory : %s should be in Successful %s" % ( parentDir, result ) )
     self.assertEqual( result["Value"]["Successful"][parentDir]["SubDirs"].keys(), [testDir], \
                      "listDir : incorrect content for %s (%s)" % ( parentDir, result ) )
-    self.assert_( testDir in result["Value"]["Successful"], "listDirectory : %s should be in Successful %s" % ( testDir, result ) )
+    self.assertTrue( testDir in result["Value"]["Successful"], "listDirectory : %s should be in Successful %s" % ( testDir, result ) )
     self.assertEqual( result["Value"]["Successful"][testDir]["Files"].keys(), [testFile.split( "/" )[-1]], \
                      "listDir : incorrect content for %s (%s)" % ( testDir, result ) )
-    self.assert_( nonExistingDir in result["Value"]["Failed"], "listDirectory : %s should be in Failed %s" % ( nonExistingDir, result ) )
+    self.assertTrue( nonExistingDir in result["Value"]["Failed"], "listDirectory : %s should be in Failed %s" % ( nonExistingDir, result ) )
 
 
 
@@ -510,37 +510,37 @@ class DirectoryCase( FileCatalogDBTestCase ):
 
       result2 = self.db.getDirectoryMetadata( [parentDir, testDir], credDict )
 
-      self.assert_( result["OK"], "changePathOwner failed: %s" % result )
-      self.assert_( resultG["OK"], "changePathOwner failed: %s" % result )
-      self.assert_( resultM["OK"], "changePathMode failed: %s" % result )
+      self.assertTrue( result["OK"], "changePathOwner failed: %s" % result )
+      self.assertTrue( resultG["OK"], "changePathOwner failed: %s" % result )
+      self.assertTrue( resultM["OK"], "changePathMode failed: %s" % result )
 
 
-      self.assert_( result2["OK"], "getDirectoryMetadata failed: %s" % result )
+      self.assertTrue( result2["OK"], "getDirectoryMetadata failed: %s" % result )
 
       # Since we were the owner we should have been able to do it in any case, admin or not
 
-      self.assert_( parentDir in resultM["Value"]["Successful"], "changePathMode : %s should be in Successful %s" % ( parentDir, resultM ) )
+      self.assertTrue( parentDir in resultM["Value"]["Successful"], "changePathMode : %s should be in Successful %s" % ( parentDir, resultM ) )
       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Mode' ), 0777, "parentDir should have mode  %s %s" % ( 0777, result2 ) )
       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Mode' ), 0775, "testDir should not have changed %s" % result2 )
 
 
       if isAdmin:
-        self.assert_( parentDir in result["Value"]["Successful"], "changePathOwner : %s should be in Successful %s" % ( parentDir, result ) )
+        self.assertTrue( parentDir in result["Value"]["Successful"], "changePathOwner : %s should be in Successful %s" % ( parentDir, result ) )
         self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), 'toto', "parentDir should belong to  %s %s" % ( proxyUser, result2 ) )
         self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
 
-        self.assert_( parentDir in resultG["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( parentDir, resultG ) )
+        self.assertTrue( parentDir in resultG["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( parentDir, resultG ) )
         self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), 'toto', "parentDir should belong to  %s %s" % ( proxyUser, result2 ) )
         self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
 
 
       else:
         # depends on the policy manager so I comment
-  #       self.assert_( parentDir in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
+  #       self.assertTrue( parentDir in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
   #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), proxyUser, "parentDir should not have changed %s" % result2 )
   #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
 
-  #       self.assert_( parentDir in resultG["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
+  #       self.assertTrue( parentDir in resultG["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
   #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), proxyGroup, "parentDir should not have changed %s" % result2 )
   #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
         pass
@@ -554,26 +554,26 @@ class DirectoryCase( FileCatalogDBTestCase ):
     result2 = self.db.getDirectoryMetadata( [parentDir, testDir], credDict )
     result3 = self.db.getFileMetadata( testFile, credDict )
 
-    self.assert_( result["OK"], "changePathOwner failed: %s" % result )
-    self.assert_( resultG["OK"], "changePathOwner failed: %s" % result )
-    self.assert_( resultM["OK"], "changePathMode failed: %s" % result )
+    self.assertTrue( result["OK"], "changePathOwner failed: %s" % result )
+    self.assertTrue( resultG["OK"], "changePathOwner failed: %s" % result )
+    self.assertTrue( resultM["OK"], "changePathMode failed: %s" % result )
 
-    self.assert_( result2["OK"], "getDirectoryMetadata failed: %s" % result )
-    self.assert_( result3["OK"], "getFileMetadata failed: %s" % result )
+    self.assertTrue( result2["OK"], "getDirectoryMetadata failed: %s" % result )
+    self.assertTrue( result3["OK"], "getFileMetadata failed: %s" % result )
 
     # Since we were the owner we should have been able to do it in any case, admin or not
-    self.assert_( parentDir in resultM["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( parentDir, resultM ) )
+    self.assertTrue( parentDir in resultM["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( parentDir, resultM ) )
     self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Mode' ), 0777, "parentDir should have mode %s %s" % ( 0777, result2 ) )
     self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Mode' ), 0777, "testDir should have mode %s %s" % ( 0777, result2 ) )
     self.assertEqual( result3['Value'].get( 'Successful', {} ).get( testFile, {} ).get( 'Mode' ), 0777, "testFile should have mode %s %s" % ( 0777, result3 ) )
 
     if isAdmin:
-      self.assert_( parentDir in result["Value"]["Successful"], "changePathOwner : %s should be in Successful %s" % ( parentDir, result ) )
+      self.assertTrue( parentDir in result["Value"]["Successful"], "changePathOwner : %s should be in Successful %s" % ( parentDir, result ) )
       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), 'toto', "parentDir should belong to %s %s" % ( proxyUser, result2 ) )
       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), 'toto', "testDir should belong to %s %s" % ( proxyUser, result2 ) )
       self.assertEqual( result3['Value'].get( 'Successful', {} ).get( testFile, {} ).get( 'Owner' ), 'toto', "testFile should belong to %s %s" % ( proxyUser, result3 ) )
 
-      self.assert_( parentDir in resultG["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( parentDir, resultG ) )
+      self.assertTrue( parentDir in resultG["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( parentDir, resultG ) )
       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), 'toto', "parentDir should belong to %s %s" % ( proxyGroup, result2 ) )
       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), 'toto', "testDir should belong to %s %s" % ( proxyGroup, result2 ) )
       self.assertEqual( result3['Value'].get( 'Successful', {} ).get( testFile, {} ).get( 'OwnerGroup' ), 'toto', "testFile should belong to %s %s" % ( proxyGroup, result3 ) )
@@ -582,12 +582,12 @@ class DirectoryCase( FileCatalogDBTestCase ):
     else:
         # depends on the policy manager so I comment
 
-#       self.assert_( parentDir in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
+#       self.assertTrue( parentDir in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
 #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), proxyUser, "parentDir should not have changed %s" % result2 )
 #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
 #       self.assertEqual( result3['Value'].get( 'Successful', {} ).get( testFile, {} ).get( 'Owner' ), proxyUser, "testFile should not have changed %s" % result3 )
 #
-#       self.assert_( parentDir in resultG["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
+#       self.assertTrue( parentDir in resultG["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
 #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), proxyGroup, "parentDir should not have changed %s" % result2 )
 #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
 #       self.assertEqual( result3['Value'].get( 'Successful', {} ).get( testFile, {} ).get( 'OwnerGroup' ), proxyGroup, "testFile should not have changed %s" % result3 )
@@ -598,7 +598,7 @@ class DirectoryCase( FileCatalogDBTestCase ):
 
     # Cleaning after us
     result = self.db.removeFile( testFile, credDict )
-    self.assert_( result["OK"], "removeFile failed: %s" % result )
+    self.assertTrue( result["OK"], "removeFile failed: %s" % result )
 
 
     pathParts = testDir.split( '/' )[1:]
@@ -612,16 +612,16 @@ class DirectoryCase( FileCatalogDBTestCase ):
 
     for toRemove in pathToRemove:
       result = self.db.removeDirectory( toRemove, credDict )
-      self.assert_( result["OK"], "removeDirectory failed: %s" % result )
+      self.assertTrue( result["OK"], "removeDirectory failed: %s" % result )
 
 
 #
 #     result = self.db.removeDirectory( [testDir, nonExistingDir], credDict )
-#     self.assert_( result["OK"], "removeDirectory failed: %s" % result )
-#     self.assert_( testDir in result["Value"]["Successful"], "removeDirectory : %s should be in Successful %s" % ( testDir, result ) )
-#     self.assert_( result["Value"]["Successful"][testDir], "removeDirectory : %s should be in True %s" % ( testDir, result ) )
-#     self.assert_( nonExistingDir in result["Value"]["Successful"], "removeDirectory : %s should be in Successful %s" % ( nonExistingDir, result ) )
-#     self.assert_( result["Value"]["Successful"][nonExistingDir], "removeDirectory : %s should be in True %s" % ( nonExistingDir, result ) )
+#     self.assertTrue( result["OK"], "removeDirectory failed: %s" % result )
+#     self.assertTrue( testDir in result["Value"]["Successful"], "removeDirectory : %s should be in Successful %s" % ( testDir, result ) )
+#     self.assertTrue( result["Value"]["Successful"][testDir], "removeDirectory : %s should be in True %s" % ( testDir, result ) )
+#     self.assertTrue( nonExistingDir in result["Value"]["Successful"], "removeDirectory : %s should be in Successful %s" % ( nonExistingDir, result ) )
+#     self.assertTrue( result["Value"]["Successful"][nonExistingDir], "removeDirectory : %s should be in True %s" % ( nonExistingDir, result ) )
 
 
 
@@ -661,8 +661,8 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     retTable = self.db.getDirectorySize( dirList, True, False, credDict )
     retCalc = self.db.getDirectorySize( dirList, True, True, credDict )
 
-    self.assert_( retTable["OK"] )
-    self.assert_( retCalc["OK"] )
+    self.assertTrue( retTable["OK"] )
+    self.assertTrue( retCalc["OK"] )
 
 
     succTable = retTable['Value']['Successful']
@@ -671,7 +671,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     # Since we have simple type, the == is recursive for dict :-)
     retEquals = ( succTable == succCalc )
 
-    self.assert_( retEquals, "Calc and table results different %s %s" % ( succTable, succCalc ) )
+    self.assertTrue( retEquals, "Calc and table results different %s %s" % ( succTable, succCalc ) )
 
     return retTable
 
@@ -704,11 +704,11 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
     for sen in ['se1', 'se2', 'se3']:
       ret = self.db.addSE( sen, credDict )
-      self.assert_( ret["OK"] )
+      self.assertTrue( ret["OK"] )
 
     for din in [d1, d2]:
       ret = self.db.createDirectory( din, credDict )
-      self.assert_( ret["OK"] )
+      self.assertTrue( ret["OK"] )
 
 
     ret = self.db.addFile( { f1: { 'PFN': 'f1se1',
@@ -724,11 +724,11 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
 
 
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
 
     ret = self.getAndCompareDirectorySize( [d1, d2] )
 
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
     d1s1 = self.getPhysicalSize( val, d1, 'se1' )
@@ -743,10 +743,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
                                f2 : {"PFN" : "f1se3", "SE" : "se3"}},
                               credDict )
 
-    self.assert_( ret['OK'] )
+    self.assertTrue( ret['OK'] )
 
     ret = self.getAndCompareDirectorySize( [d1, d2] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
     d1s1 = self.getPhysicalSize( val, d1, 'se1' )
@@ -761,10 +761,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
 
     ret = self.db.removeFile( [f1], credDict )
-    self.assert_( ret['OK'] )
+    self.assertTrue( ret['OK'] )
 
     ret = self.getAndCompareDirectorySize( [d1, d2] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
     # Here we should have the KeyError, since there are no files left on s1 in principle
@@ -783,10 +783,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
 
     ret = self.db.removeReplica( {f2 : { "SE" : "se2"}}, credDict )
-    self.assert_( ret['OK'] )
+    self.assertTrue( ret['OK'] )
 
     ret = self.getAndCompareDirectorySize( [d1, d2] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
     # Here we should have the KeyError, since there are no files left on s1 in principle
@@ -814,10 +814,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
                                          'Checksum':'3' } }, credDict )
 
 
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
 
     ret = self.getAndCompareDirectorySize( [d1, d2] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
     d1s1 = self.getPhysicalSize( val, d1, 'se1' )
@@ -834,10 +834,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
 
     ret = self.db.removeReplica( {f1 : { "SE" : "se1"}}, credDict )
-    self.assert_( ret['OK'] )
+    self.assertTrue( ret['OK'] )
 
     ret = self.getAndCompareDirectorySize( [d1, d2] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
 
@@ -860,10 +860,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
 
     ret = self.db.removeFile( [f1], credDict )
-    self.assert_( ret['OK'] )
+    self.assertTrue( ret['OK'] )
 
     ret = self.getAndCompareDirectorySize( [d1, d2] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
     try:
@@ -886,10 +886,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
     ret = self.db.removeReplica( {f2 : { "SE" : "se3"},
                                   f3 : { "SE" : "se3"}}, credDict )
-    self.assert_( ret['OK'] )
+    self.assertTrue( ret['OK'] )
 
     ret = self.getAndCompareDirectorySize( [d1, d2] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
 
@@ -919,10 +919,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
 
     ret = self.db.removeFile( [f2, f3], credDict )
-    self.assert_( ret['OK'] )
+    self.assertTrue( ret['OK'] )
 
     ret = self.getAndCompareDirectorySize( [d1, d2] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
 
@@ -968,10 +968,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
     ret = self.db.removeReplica( {f1 : { "SE" : "se1"},
                                   f2 : { "SE" : "se1"}}, credDict )
-    self.assert_( ret['OK'] )
+    self.assertTrue( ret['OK'] )
 
     ret = self.getAndCompareDirectorySize( [d1] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
 
@@ -983,10 +983,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
 
     ret = self.db.removeFile( [f1, f2], credDict )
-    self.assert_( ret['OK'] )
+    self.assertTrue( ret['OK'] )
 
     ret = self.getAndCompareDirectorySize( [d1] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
     d1l = self.getLogicalSize( val, d1 )
     self.assertEqual( d1l , ( 0, 0 ), "Unexpected size %s, expected %s" % ( d1l, ( 0, 0 ) ) )
@@ -1002,10 +1002,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
     ret = self.db.removeReplica( {f1 : { "SE" : "se2"}}, credDict )
 
-    self.assert_( ret['OK'] )
+    self.assertTrue( ret['OK'] )
 
     ret = self.getAndCompareDirectorySize( [d1] )
-    self.assert_( ret["OK"] )
+    self.assertTrue( ret["OK"] )
     val = ret['Value']['Successful']
 
     try:

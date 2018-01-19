@@ -210,7 +210,9 @@ class StorageElementProxyHandler(RequestHandler):
     result = pythonCall( 300, self.__prepareFileForHTTP, lfn, key )
     if result['OK']:
       result = result['Value']
-      if result['OK']:
+      #pylint believes it is a tuple because it is the only possible return type
+      #it finds in Subprocess.py
+      if result['OK']: #pylint: disable=invalid-sequence-index
         if HTTP_FLAG:
           host = socket.getfqdn()
           url = 'http://%s:%d/%s' % ( host, HTTP_PORT, key )

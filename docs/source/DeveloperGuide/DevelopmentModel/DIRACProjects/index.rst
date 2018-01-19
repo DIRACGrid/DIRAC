@@ -95,10 +95,6 @@ file
  A directory in the filesystem. *dirac-distribution* will assume that the directory especified contains 
  the required module version of the module.
  
-cvs
- The cvs root where to find the code. *dirac-distribution* will assume there's a tag with the same name 
- name as the module version to be tagged.
- 
 svn
  A subversion url that contains a directory with the same name as the version to be tagged. If the module 
  version is v1r0 and the url is http://host/extName, *dirac-distribution* will check out 

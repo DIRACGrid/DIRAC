@@ -21,7 +21,13 @@ DEBUG = False
 moduleSuffix = "DIRAC"
 gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 excludeMask = [ '__init__.py' ]
-simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-compile-externals.py', 'dirac-install.py', 'dirac-platform.py' ]
+simpleCopyMask = [ os.path.basename( __file__ ),
+                   'dirac-compile-externals.py',
+                   'dirac-install.py',
+                   'dirac-platform.py',
+                   'dirac_compile_externals.py',
+                   'dirac_install.py',
+                   'dirac_platform.py']
 
 wrapperTemplate = """#!$PYTHONLOCATION$
 #
@@ -123,7 +129,7 @@ if not rootPath:
   sys.exit( 1 )
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
-pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+|d[a-zA-Z0-9-]+).py" )
+pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+|[a-z]+_[a-zA-Z0-9_]+|d[a-zA-Z0-9-]+).py" )
 print "Scripts will be deployed at %s" % targetScriptsPath
 
 if not os.path.isdir( targetScriptsPath ):
@@ -153,9 +159,10 @@ for rootModule in listDir:
       continue
     scriptLen = len( scriptName )
     if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
+      newScriptName = scriptName[:-3].replace( '_', '-' )
       if DEBUG:
-        print " Wrapping %s" % scriptName[:-3]
-      fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
+        print " Wrapping %s as %s" % ( scriptName, newScriptName )
+      fakeScriptPath = os.path.join( targetScriptsPath, newScriptName )
       with open( fakeScriptPath, "w" ) as fd:
         fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
       os.chmod( fakeScriptPath, gDefaultPerms )
@@ -173,5 +180,9 @@ for rootModule in listDir:
       cLen = len( copyPath )
       reFound = pythonScriptRE.match( copyPath )
       if reFound:
-        destPath = "".join( list( reFound.groups() ) )
+        pathList = list( reFound.groups() )
+        pathList[-1] = pathList[-1].replace( '_', '-' )
+        destPath = "".join( pathList )
+        if DEBUG:
+          print " Renaming %s as %s" % ( copyPath, destPath )
         os.rename( copyPath, destPath )

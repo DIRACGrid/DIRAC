@@ -3,7 +3,7 @@
     Can be automatized.
 """
 
-#pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
+# pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
 
 import unittest
 import multiprocessing
@@ -11,107 +11,135 @@ import multiprocessing
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-from DIRAC import gLogger
+from DIRAC import gLogger, rootPath
 from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
 from DIRAC.tests.Utilities.utils import find_all
 
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
 
-class UserJobTestCase( IntegrationTest ):
+
+class UserJobTestCase(IntegrationTest):
   """ Base class for the UserJob test cases
   """
-  def setUp( self ):
-    super( UserJobTestCase, self ).setUp()
+
+  def setUp(self):
+    super(UserJobTestCase, self).setUp()
 
     self.d = Dirac()
-    self.exeScriptLocation = find_all( 'exe-script.py', '..', '/DIRAC/tests/Workflow' )[0]
-    self.helloWorld = find_all( "helloWorld.py", '..', '/DIRAC/tests/Workflow' )[0]
-    self.mpExe = find_all( 'testMpJob.sh', '..', '/DIRAC/tests/Utilities' )[0]
+    self.exeScriptLocation = find_all('exe-script.py', rootPath, '/DIRAC/tests/Workflow')[0]
+    self.helloWorld = find_all("helloWorld.py", rootPath, '/DIRAC/tests/Workflow')[0]
+    self.mpExe = find_all('testMpJob.sh', rootPath, '/DIRAC/tests/Utilities')[0]
     gLogger.setLevel('DEBUG')
 
-class HelloWorldSuccess( UserJobTestCase ):
-  def test_execute( self ):
+
+class HelloWorldSuccess(UserJobTestCase):
+  def test_execute(self):
 
     j = Job()
 
-    j.setName( "helloWorld-test" )
-    j.setExecutable( self.exeScriptLocation )
-    j.setLogLevel( 'DEBUG' )
-    res = j.runLocal( self.d )
-    self.assertTrue( res['OK'] )
+    j.setName("helloWorld-test")
+    j.setExecutable(self.exeScriptLocation)
+    j.setLogLevel('DEBUG')
+    res = j.runLocal(self.d)
+    self.assertTrue(res['OK'])
 
 
-class HelloWorldPlusSuccess( UserJobTestCase ):
+class HelloWorldPlusSuccess(UserJobTestCase):
   """ Adding quite a lot of calls from the API, for pure test purpose
   """
 
-  def test_execute( self ):
+  def test_execute(self):
 
     job = Job()
     job._siteSet = {'DIRAC.someSite.ch'}
 
-    job.setName( "helloWorld-test" )
-    job.setExecutable( self.helloWorld,
-                       arguments = "This is an argument",
-                       logFile = "aLogFileForTest.txt" ,
-                       parameters=[('executable', 'string', '', "Executable Script"),
-                                   ('arguments', 'string', '', 'Arguments for executable Script'),
-                                   ( 'applicationLog', 'string', '', "Log file name" ),
-                                   ( 'someCustomOne', 'string', '', "boh" )],
-                       paramValues = [( 'someCustomOne', 'aCustomValue' )] )
-    job.setBannedSites( ['LCG.SiteA.com', 'DIRAC.SiteB.org'] )
-    job.setOwner( 'ownerName' )
-    job.setOwnerGroup( 'ownerGroup' )
-    job.setName( 'jobName' )
-    job.setJobGroup( 'jobGroup' )
-    job.setType( 'jobType' )
-    job.setDestination( 'DIRAC.someSite.ch' )
-    job.setCPUTime( 12345 )
-    job.setLogLevel( 'DEBUG' )
+    job.setName("helloWorld-test")
+    job.setExecutable(self.helloWorld,
+                      arguments="This is an argument",
+                      logFile="aLogFileForTest.txt",
+                      parameters=[('executable', 'string', '', "Executable Script"),
+                                  ('arguments', 'string', '', 'Arguments for executable Script'),
+                                  ('applicationLog', 'string', '', "Log file name"),
+                                  ('someCustomOne', 'string', '', "boh")],
+                      paramValues=[('someCustomOne', 'aCustomValue')])
+    job.setBannedSites(['LCG.SiteA.com', 'DIRAC.SiteB.org'])
+    job.setOwner('ownerName')
+    job.setOwnerGroup('ownerGroup')
+    job.setName('jobName')
+    job.setJobGroup('jobGroup')
+    job.setType('jobType')
+    job.setDestination('DIRAC.someSite.ch')
+    job.setCPUTime(12345)
+    job.setLogLevel('DEBUG')
 
-    res = job.runLocal( self.d )
-    self.assertTrue( res['OK'] )
+    res = job.runLocal(self.d)
+    self.assertTrue(res['OK'])
+
+  def test_execute_success(self):
+
+    job = Job()
+    job._siteSet = {'DIRAC.someSite.ch'}
+
+    job.setName("helloWorld-test")
+    job.setExecutable(self.helloWorld,
+                      logFile="aLogFileForTest.txt",
+                      parameters=[('executable', 'string', '', "Executable Script"),
+                                  ('arguments', 'string', '', 'Arguments for executable Script'),
+                                  ('applicationLog', 'string', '', "Log file name"),
+                                  ('someCustomOne', 'string', '', "boh")],
+                      paramValues=[('someCustomOne', 'aCustomValue')])
+    job.setBannedSites(['LCG.SiteA.com', 'DIRAC.SiteB.org'])
+    job.setOwner('ownerName')
+    job.setOwnerGroup('ownerGroup')
+    job.setName('jobName')
+    job.setJobGroup('jobGroup')
+    job.setType('jobType')
+    job.setDestination('DIRAC.someSite.ch')
+    job.setCPUTime(12345)
+    job.setLogLevel('DEBUG')
+
+    res = job.runLocal(self.d)
+    self.assertTrue(res['OK'])
 
 
-class LSSuccess( UserJobTestCase ):
-  def test_execute( self ):
+class LSSuccess(UserJobTestCase):
+  def test_execute(self):
     """ just testing unix "ls"
     """
 
     job = Job()
 
-    job.setName( "ls-test" )
-    job.setExecutable( "/bin/ls", '-l' )
-    job.setLogLevel( 'DEBUG' )
-    res = job.runLocal( self.d )
-    self.assertTrue( res['OK'] )
+    job.setName("ls-test")
+    job.setExecutable("/bin/ls", '-l')
+    job.setLogLevel('DEBUG')
+    res = job.runLocal(self.d)
+    self.assertTrue(res['OK'])
 
 
-class MPSuccess( UserJobTestCase ):
-  def test_execute( self ):
+class MPSuccess(UserJobTestCase):
+  def test_execute(self):
     """ this one tests that I can execute a job that requires multi-processing
     """
 
     j = Job()
 
-    j.setName( "MP-test" )
-    j.setExecutable( self.mpExe )
-    j.setInputSandbox( find_all( 'mpTest.py', '..', 'DIRAC/tests/Utilities' )[0] )
-    j.setTag( 'MultiProcessor' )
-    j.setLogLevel( 'DEBUG' )
-    res = j.runLocal( self.d )
+    j.setName("MP-test")
+    j.setExecutable(self.mpExe)
+    j.setInputSandbox(find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0])
+    j.setTag('MultiProcessor')
+    j.setLogLevel('DEBUG')
+    res = j.runLocal(self.d)
     if multiprocessing.cpu_count() > 1:
-      self.assertTrue( res['OK'] )
+      self.assertTrue(res['OK'])
     else:
-      self.assertFalse( res['OK'] )
-
+      self.assertFalse(res['OK'])
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( UserJobTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldSuccess ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( HelloWorldPlusSuccess ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( LSSuccess ) )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(UserJobTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldPlusSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(LSSuccess))
   #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MPSuccess ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)

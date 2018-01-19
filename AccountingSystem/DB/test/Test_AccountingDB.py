@@ -166,14 +166,14 @@ class MakeQuery( TestCase ):
     expectedEndTime = retVal
     
     expectedQuery = "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, `ac_bucket_LHCb-Certification_DataOperation`.`startTime`, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) FROM `ac_bucket_LHCb-Certification_DataOperation`, `ac_key_LHCb-Certification_DataOperation_Source` WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= %s AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= %s AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, bucketlength ORDER BY startTime" % ( expectedStartTime, expectedEndTime )
-    retVal = module._AccountingDB__queryType( "LHCb-Certification_DataOperation",
+    retVal = module._AccountingDB__queryType("LHCb-Certification_DataOperation", #pylint: disable=no-member
                                 startTime,
                                 endTime,
                                 ( '%s, %s, %s, SUM(%s), SUM(%s)-SUM(%s)', ['Source', 'startTime', 'bucketLength', 'TransferOK', 'TransferTotal', 'TransferOK'] ),
                                 {},
                                 ( '%s, %s', ['startTime', 'Source'] ),
                                 ( '%s', ['startTime'] ),
-                                'bucket' )
+                                'bucket')
 
     self.assertTrue( retVal )
     self.assertEqual( retVal, expectedQuery )
@@ -225,7 +225,7 @@ class MakeQuery( TestCase ):
     
     expectedQuery = "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, `ac_bucket_LHCb-Certification_DataOperation`.`startTime`, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) FROM `ac_bucket_LHCb-Certification_DataOperation`, `ac_key_LHCb-Certification_DataOperation_Source` WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= %s AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= %s AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, bucketlength ORDER BY startTime" % ( expectedStartTime, expectedEndTime )
     
-    retVal = module._AccountingDB__queryType( "LHCb-Certification_DataOperation",
+    retVal = module._AccountingDB__queryType( "LHCb-Certification_DataOperation", #pylint: disable=no-member
                                 startTime,
                                 endTime,
                                 ( '%s, %s, %s, SUM(%s), SUM(%s)-SUM(%s)', ['Source', 'startTime', 'bucketLength', 'TransferOK', 'TransferTotal', 'TransferOK'] ),

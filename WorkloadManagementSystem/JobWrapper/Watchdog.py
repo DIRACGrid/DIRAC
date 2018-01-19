@@ -20,29 +20,38 @@
 __RCSID__ = "$Id$"
 
 import os
+import re
 import time
 
 from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities                               import Time
+from DIRAC.Core.Utilities                               import MJF
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ConfigurationSystem.Client.Config            import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder        import getSystemInstance
 from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
+from DIRAC.Core.Utilities.Subprocess                    import getChildrenPIDs
 
 class Watchdog( object ):
 
   #############################################################################
-  def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'linux' ):
+  def __init__( self, pid, exeThread, spObject, jobCPUTime, memoryLimit = 0, processors = 1, systemFlag = 'linux', jobArgs = {} ):
     """ Constructor, takes system flag as argument.
     """
+    self.stopSigStartSeconds  = int( jobArgs.get( 'StopSigStartSeconds',  1800 ) ) # 30 minutes
+    self.stopSigFinishSeconds = int( jobArgs.get( 'StopSigFinishSeconds', 1800 ) ) # 30 minutes
+    self.stopSigNumber        = int( jobArgs.get( 'StopSigNumber',           2 ) ) # SIGINT
+    self.stopSigRegex         = jobArgs.get( 'StopSigRegex', None )
+    self.stopSigSent          = False
+      
     self.log = gLogger.getSubLogger( "Watchdog" )
     self.systemFlag = systemFlag
     self.exeThread = exeThread
     self.wrapperPID = pid
     self.appPID = self.exeThread.getCurrentPID()
     self.spObject = spObject
-    self.jobCPUtime = jobCPUtime
+    self.jobCPUTime = jobCPUTime
     self.memoryLimit = memoryLimit
     self.calibration = 0
     self.initialValues = {}
@@ -67,6 +76,7 @@ class Watchdog( object ):
     self.pollingTime = 10  # 10 seconds
     self.checkingTime = 30 * 60  # 30 minute period
     self.minCheckingTime = 20 * 60  # 20 mins
+    self.wallClockCheckSeconds = 5 * 60 # 5 minutes
     self.maxWallClockTime = 3 * 24 * 60 * 60  # e.g. 4 days
     self.jobPeekFlag = 1  # on / off
     self.minDiskSpace = 10  # MB
@@ -76,6 +86,7 @@ class Watchdog( object ):
     self.minCPUWallClockRatio = 5  # ratio %age
     self.nullCPULimit = 5  # After 5 sample times return null CPU consumption kill job
     self.checkCount = 0
+    self.wallClockCheckCount = 0
     self.nullCPUCount = 0
 
     self.grossTimeLeftLimit = 10 * self.checkingTime
@@ -177,6 +188,11 @@ class Watchdog( object ):
       self.log.info( 'Process to monitor has completed, Watchdog will exit.' )
       return S_OK( "Ended" )
 
+    # WallClock checks every self.wallClockCheckSeconds, but only if StopSigRegex is defined in JDL
+    if not self.stopSigSent and self.stopSigRegex is not None and ( time.time() - self.initialValues['StartTime'] ) > self.wallClockCheckSeconds * self.wallClockCheckCount:
+      self.wallClockCheckCount += 1
+      self._performWallClockChecks()
+
     if self.littleTimeLeft:
       # if we have gone over enough iterations query again
       if self.littleTimeLeftCount == 0 and self.__timeLeft() == -1:
@@ -201,6 +217,46 @@ class Watchdog( object ):
       # self.log.debug('Application thread is alive: checking count is %s' %(self.checkCount))
       return S_OK()
 
+  #############################################################################
+  def _performWallClockChecks( self ):
+    """Watchdog performs the wall clock checks based on MJF. Signals are sent 
+       to processes if we need to stop, but function always returns S_OK()
+    """
+    mjf = MJF.MJF()
+    
+    try:
+      wallClockSecondsLeft = mjf.getWallClockSecondsLeft()
+    except Exception as e:
+      # Just stop if we can't get the wall clock seconds left
+      return S_OK()
+
+    jobstartSeconds = mjf.getIntJobFeature( 'jobstart_secs' )
+    if jobstartSeconds is None:
+      # Just stop if we don't know when the job started
+      return S_OK()
+
+    if (  int( time.time() ) > jobstartSeconds + self.stopSigStartSeconds ) and \
+       ( wallClockSecondsLeft < self.stopSigFinishSeconds + self.wallClockCheckSeconds ):
+      # Need to send the signal! Assume it works to avoid sending the signal more than once
+      self.log.info( 'Sending signal %d to JobWrapper children' % self.stopSigNumber )
+      self.stopSigSent = True
+      
+      try:
+        for childPid in getChildrenPIDs( self.wrapperPID ):
+          try:
+            cmdline = open( '/proc/%d/cmdline' % childPid, 'r' ).read().replace( '\0', ' ' ).strip()
+          except IOError:
+            # Process gone away? Not running on Linux? Skip anyway
+            continue
+
+          if re.search( self.stopSigRegex, cmdline ) is not None:
+            self.log.info( 'Sending signal %d to process ID %d, cmdline = "%s"' % ( self.stopSigNumber, childPid, cmdline ) )
+            os.kill( childPid, self.stopSigNumber )
+          
+      except Exception as e:
+        self.log.error( 'Failed to send signals to JobWrapper children! (%s)' % str(e) )
+
+    return S_OK()
 
   #############################################################################
   def _performChecks( self ):
@@ -557,7 +613,7 @@ class Watchdog( object ):
       return S_OK( 'Not possible to determine current CPU consumed' )
 
     if consumedCPU:
-      limit = self.jobCPUtime + self.jobCPUtime * ( self.jobCPUMargin / 100 )
+      limit = self.jobCPUTime + self.jobCPUTime * ( self.jobCPUMargin / 100 )
       cpuConsumed = float( currentCPU )
       if cpuConsumed > limit:
         self.log.info( 'Job has consumed more than the specified CPU limit with an additional %s%% margin' % ( self.jobCPUMargin ) )

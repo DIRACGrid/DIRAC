@@ -21,17 +21,17 @@ class TestLogicEvaluation( unittest.TestCase ):
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "Dummy=False" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
   def test_02_notLogic( self ):
     """Testing the ! operator"""
@@ -39,17 +39,17 @@ class TestLogicEvaluation( unittest.TestCase ):
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "!Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "!Dummy=False" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
   def test_03_andLogic( self ):
     """Testing the & operator"""
@@ -57,25 +57,25 @@ class TestLogicEvaluation( unittest.TestCase ):
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "Dummy=True & Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "Dummy=False & Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "Dummy=True & Dummy=False" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
   def test_04_orLogic( self ):
     """Testing the | operator"""
@@ -83,24 +83,24 @@ class TestLogicEvaluation( unittest.TestCase ):
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "Dummy=True | Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "Dummy=False | Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "Dummy=False | Dummy=False" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
 
   def test_05_priority( self ):
@@ -109,105 +109,105 @@ class TestLogicEvaluation( unittest.TestCase ):
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "!Dummy=False & Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "!Dummy=True | Dummy=False" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns ,
                      condition = "Dummy=True & Dummy=False | Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns ,
                      condition = "Dummy=True | Dummy=False & Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns ,
                      condition = "!Dummy=True | Dummy=False & Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns ,
                      condition = "!Dummy=True | !Dummy=False & Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns ,
                      condition = "!Dummy=True | !Dummy=False & !Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "[!Dummy=False] & Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "![Dummy=False] & Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "![Dummy=False & Dummy=True]" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns ,
                      condition = "[Dummy=True | Dummy=False] & Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns ,
                      condition = "Dummy=True | [Dummy=False & Dummy=True]" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     res = self.fcp( 'catalogName', 'operationName', self.lfns ,
                      condition = "Dummy=False | [Dummy=False & Dummy=True]" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
   def test_06_errors( self ):
     """Testing different error situation"""
@@ -215,26 +215,26 @@ class TestLogicEvaluation( unittest.TestCase ):
     # Error in the plugin
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "Dummy=CantParse" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
     # Non existing plugin
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "NonExistingPlugin=something" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
     # Error in the grammar
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "[Dummy=True" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to False
     for lfn in self.lfns:
-      self.assert_( not res['Value']['Successful'][lfn], res )
+      self.assertTrue( not res['Value']['Successful'][lfn], res )
 
 
 
@@ -244,19 +244,19 @@ class TestLogicEvaluation( unittest.TestCase ):
     # Non condition given
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = "" )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
     # Can't retrive conditions
     # It so happen that it will all be True
     res = self.fcp( 'catalogName', 'operationName', self.lfns , condition = None )
 
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     # We expect all the lfn to be to True
     for lfn in self.lfns:
-      self.assert_( res['Value']['Successful'][lfn], res )
+      self.assertTrue( res['Value']['Successful'][lfn], res )
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestLogicEvaluation )

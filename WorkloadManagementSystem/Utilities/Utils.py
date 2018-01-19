@@ -68,3 +68,58 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
     jobFile.write( jobFileContents )
 
   return S_OK( jobExeFile )
+
+
+def createRelocatedJobWrapper( wrapperPath, rootLocation,
+                               jobID, jobParams, resourceParams, optimizerParams,
+                               extraOptions = '',
+                               defaultWrapperLocation = 'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py',
+                               log = gLogger, logLevel = 'INFO' ):
+  """ This method creates a job wrapper for a specific job in wrapperPath,
+      but assumes this has been reloated to rootLocation before running it.
+  """
+
+  arguments = {'Job':jobParams,
+               'CE':resourceParams,
+               'Optimizer':optimizerParams}
+  log.verbose( 'Job arguments are: \n %s' % ( arguments ) )
+
+  diracRoot = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( __file__ ) ) ) )
+
+  jobWrapperFile = os.path.join( wrapperPath, 'Wrapper_%s' % jobID )
+  if os.path.exists( jobWrapperFile ):
+    log.verbose( 'Removing existing Job Wrapper for %s' % ( jobID ) )
+    os.remove( jobWrapperFile )
+  with open( os.path.join( diracRoot, defaultWrapperLocation ), 'r' ) as fd:
+    wrapperTemplate = fd.read()
+
+  if jobParams.has_key( 'LogLevel' ):
+    logLevel = jobParams['LogLevel']
+    log.info( 'Found Job LogLevel JDL parameter with value: %s' % ( logLevel ) )
+  else:
+    log.info( 'Applying default LogLevel JDL parameter with value: %s' % ( logLevel ) )
+
+  # Making real substitutions
+  # wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str( arguments ) )
+  wrapperTemplate = wrapperTemplate.replace( "@SITEPYTHON@", rootLocation )
+
+  jobWrapperJsonFile = jobWrapperFile + '.json'
+  with io.open( jobWrapperJsonFile, 'w', encoding = 'utf8' ) as jsonFile:
+    json.dump( unicode(arguments), jsonFile, ensure_ascii=False )
+
+  with open( jobWrapperFile, "w" ) as wrapper:
+    wrapper.write( wrapperTemplate )
+
+  # The "real" location of the jobwrapper after it is started
+  jobWrapperDirect = os.path.join( rootLocation, 'Wrapper_%s' % jobID )
+  jobExeFile = os.path.join( wrapperPath, 'Job%s' % jobID )
+  jobFileContents = \
+"""#!/bin/sh
+python %s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
+""" % ( jobWrapperDirect, extraOptions, logLevel )
+  with open( jobExeFile, 'w' ) as jobFile:
+    jobFile.write( jobFileContents )
+
+  jobExeDirect = os.path.join( rootLocation, 'Job%s' % jobID )
+  return S_OK( jobExeDirect )
+

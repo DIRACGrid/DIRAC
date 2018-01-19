@@ -53,12 +53,12 @@ class submitSuccess( GridSubmissionTestCase ):
 #     counter = 0
 #     while counter < 36:
 #       jobStatus = self.dirac.status( jobsSubmittedList )
-#       self.assert_( jobStatus['OK'] )
+#       self.assertTrue( jobStatus['OK'] )
 #       for jobID in jobsSubmittedList:
 #         status = jobStatus['Value'][jobID]['Status']
 #         minorStatus = jobStatus['Value'][jobID]['MinorStatus']
 #         if status == 'Done':
-#           self.assert_( minorStatus in ['Execution Complete', 'Requests Done'] )
+#           self.assertTrue( minorStatus in ['Execution Complete', 'Requests Done'] )
 #           jobsSubmittedList.remove( jobID )
 #           res = self.dirac.getJobOutputLFNs( jobID )
 #           if res['OK']:

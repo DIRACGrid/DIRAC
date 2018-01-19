@@ -161,7 +161,6 @@ class Cache( object ):
     return S_OK( newCache )
 
 
-
 class RSSCache( Cache ):
   """
   The RSSCache is an extension of Cache in which the cache keys are pairs of the

@@ -21,10 +21,18 @@ from DIRAC.Core.Utilities.Subprocess                    import shellCall
 
 class WatchdogMac( Watchdog ):
 
-  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, processors = 1, systemFlag = 'mac' ):
+  def __init__( self, pid, exeThread, spObject, jobCPUTime, memoryLimit = 0, processors = 1, systemFlag = 'mac', jobArgs = {} ):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, processors, systemFlag )
+    Watchdog.__init__( self, 
+                       pid = pid, 
+                       exeThread = exeThread, 
+                       spObject = spObject, 
+                       jobCPUTime = jobCPUTime, 
+                       memoryLimit = memoryLimit, 
+                       processors = processors, 
+                       systemFlag = systemFlag, 
+                       jobArgs = jobArgs )
 
   #############################################################################
   def getNodeInformation( self ):
