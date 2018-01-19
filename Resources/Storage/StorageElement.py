@@ -13,6 +13,7 @@ import sys
 # # from DIRAC
 from DIRAC import gLogger, gConfig, siteName
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.File import convertSizeUnits
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
@@ -96,7 +97,6 @@ class StorageElementItem(object):
   createDirectory( lfn )
   putDirectory( lfn )
   getDirectory( lfn, localPath = False )
-  getOccupancy()
 
 
   """
@@ -126,7 +126,6 @@ class StorageElementItem(object):
                              "createDirectory": "createDirectory",
                              "putDirectory": "putDirectory",
                              "getDirectory": "getDirectory",
-                             "getOccupancy": "getOccupancy"
                              }
 
   # We can set default argument in the __executeFunction which impacts all plugins
@@ -207,7 +206,9 @@ class StorageElementItem(object):
 
     if self.valid:
 
-      self.useCatalogURL = gConfig.getValue('/Resources/StorageElements/%s/UseCatalogURL' % self.name, False)
+      self.useCatalogURL = gConfig.getValue(
+          '/Resources/StorageElements/%s/UseCatalogURL' %
+          self.name, False)
       self.log.debug("useCatalogURL: %s" % self.useCatalogURL)
 
       self.__dmsHelper = DMSHelpers(vo=vo)
@@ -290,7 +291,8 @@ class StorageElementItem(object):
 
   def storageElementName(self):
     """ SE name getter """
-    self.log.getSubLogger('storageElementName').verbose("The Storage Element name is %s." % self.name)
+    self.log.getSubLogger('storageElementName').verbose(
+        "The Storage Element name is %s." % self.name)
     return self.name
 
   def getChecksumType(self):
@@ -315,6 +317,39 @@ class StorageElementItem(object):
       return valid
     return S_OK(self.status())
 
+  def getOccupancy(self, unit='MB', **kwargs):
+    """ Retrieves the space information about the storage.
+        It returns the Total, Guaranteed and Free space .
+
+        It loops over the different Storage Plugins to query it.
+
+        :returns: S_OK with dict (keys: Total, Guaranteed, Free)
+    """
+    log = self.log.getSubLogger('getOccupancy', True)
+
+    filteredPlugins = self.__filterPlugins('getOccupancy')
+    if not filteredPlugins:
+      return S_ERROR(errno.EPROTONOSUPPORT, "No storage plugins to query the occupancy")
+    # Try all of the storages one by one
+    for storage in filteredPlugins:
+      # The result of the plugin is always in MB
+      res = storage.getOccupancy(**kwargs)
+      if res['OK']:
+        occupancyDict = res['Value']
+        if unit != 'MB':
+          for space in ['Total', 'Free']:
+            convertedSpace = convertSizeUnits(occupancyDict[space], 'MB', unit)
+            # If we have a conversion error, we go to the next plugin
+            if convertedSpace == -sys.maxsize:
+              log.verbose(
+                  "Error converting %s space from MB to %s: %s" %
+                  (space, unit, occupancyDict[space]))
+              break
+            occupancyDict[space] = convertedSpace
+        return res
+
+    return S_ERROR("Could not retrieve the occupancy from any plugin")
+
   def status(self):
     """
      Return Status of the SE, a dictionary with:
@@ -324,7 +359,8 @@ class StorageElementItem(object):
       * Remove: True (is allowed), False (it is not allowed)
       * Check: True (is allowed), False (it is not allowed).
 
-        .. note:: Check is always allowed IF Read is allowed (regardless of what set in the Check option of the configuration)
+        .. note:: Check is always allowed IF Read is allowed
+                  (regardless of what set in the Check option of the configuration)
 
       * DiskSE: True if TXDY with Y > 0 (defaults to True)
       * TapeSE: True if TXDY with X > 0 (defaults to False)
@@ -349,8 +385,12 @@ class StorageElementItem(object):
 
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
-    retDict['Read'] = not ('ReadAccess' in self.options and self.options['ReadAccess'] not in ('Active', 'Degraded'))
-    retDict['Write'] = not ('WriteAccess' in self.options and self.options['WriteAccess'] not in ('Active', 'Degraded'))
+    retDict['Read'] = not (
+        'ReadAccess' in self.options and self.options['ReadAccess'] not in (
+            'Active', 'Degraded'))
+    retDict['Write'] = not (
+        'WriteAccess' in self.options and self.options['WriteAccess'] not in (
+            'Active', 'Degraded'))
     retDict['Remove'] = not (
         'RemoveAccess' in self.options and self.options['RemoveAccess'] not in (
             'Active', 'Degraded'))
@@ -396,7 +436,9 @@ class StorageElementItem(object):
     if 'VO' in self.options and self.vo not in self.options['VO']:
       log.debug("StorageElement is not allowed for VO", self.vo)
       return S_ERROR(errno.EACCES, "StorageElement.isValid: StorageElement is not allowed for VO")
-    log.verbose("Determining if the StorageElement %s is valid for operation '%s'" % (self.name, operation))
+    log.verbose(
+        "Determining if the StorageElement %s is valid for operation '%s'" %
+        (self.name, operation))
     if (not operation) or (operation in self.okMethods):
       return S_OK()
 
@@ -458,7 +500,8 @@ class StorageElementItem(object):
   def getRemotePlugins(self):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
-    self.log.getSubLogger('getRemotePlugins').verbose("Obtaining remote protocols for %s." % self.name)
+    self.log.getSubLogger('getRemotePlugins').verbose(
+        "Obtaining remote protocols for %s." % self.name)
     if not self.valid:
       return S_ERROR(self.errorReason)
     return S_OK(self.remotePlugins)
@@ -466,7 +509,8 @@ class StorageElementItem(object):
   def getLocalPlugins(self):
     """ Get the list of all the local access protocols defined for this Storage Element
     """
-    self.log.getSubLogger('getLocalPlugins').verbose("Obtaining local protocols for %s." % self.name)
+    self.log.getSubLogger('getLocalPlugins').verbose(
+        "Obtaining local protocols for %s." % self.name)
     if not self.valid:
       return S_ERROR(self.errorReason)
     return S_OK(self.localPlugins)
@@ -508,7 +552,8 @@ class StorageElementItem(object):
     """ Returns the list of all protocols for Input or Output
         :param proto = InputProtocols or OutputProtocols
     """
-    return set(reduce(lambda x, y: x + y, [plugin.protocolParameters[protoType] for plugin in self.storages]))
+    return set(reduce(lambda x, y: x +
+                      y, [plugin.protocolParameters[protoType] for plugin in self.storages]))
 
   def _getAllInputProtocols(self):
     """ Returns all the protocols supported by the SE for Input
@@ -641,7 +686,9 @@ class StorageElementItem(object):
 
     log = self.log.getSubLogger('negociateProtocolWithOtherSE', child=True)
 
-    log.debug("Negociating protocols between %s and %s (protocols %s)" % (sourceSE.name, self.name, protocols))
+    log.debug(
+        "Negociating protocols between %s and %s (protocols %s)" %
+        (sourceSE.name, self.name, protocols))
 
     # Take all the protocols the destination can accept as input
     destProtocols = self._getAllInputProtocols()
@@ -859,7 +906,9 @@ class StorageElementItem(object):
 
     log = self.log.getSubLogger('__filterPlugins', child=True)
 
-    log.debug("Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" % (methodName, protocols, inputProtocol))
+    log.debug(
+        "Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" %
+        (methodName, protocols, inputProtocol))
 
     if isinstance(protocols, basestring):
       protocols = [protocols]
@@ -892,7 +941,8 @@ class StorageElementItem(object):
           key=lambda x: self.__getIndexInList(
               x.protocolParameters['Protocol'],
               self.localAccessProtocolList))
-      log.debug("Plugins to be used for %s: %s" % (methodName, [p.pluginName for p in pluginsToUse]))
+      log.debug("Plugins to be used for %s: %s" %
+                (methodName, [p.pluginName for p in pluginsToUse]))
       return pluginsToUse
 
     log.debug("Allowed protocol: %s" % allowedProtocols)
@@ -928,13 +978,18 @@ class StorageElementItem(object):
       # If we are attempting a putFile and we know the inputProtocol
       if methodName == 'putFile' and inputProtocol:
         if inputProtocol not in pluginParameters['InputProtocols']:
-          log.debug("Plugin %s not appropriate for %s protocol as input." % (pluginName, inputProtocol))
+          log.debug(
+              "Plugin %s not appropriate for %s protocol as input." %
+              (pluginName, inputProtocol))
           continue
 
       pluginsToUse.append(plugin)
 
     # sort the plugins according to the lists in the CS
-    pluginsToUse.sort(key=lambda x: self.__getIndexInList(x.protocolParameters['Protocol'], allowedProtocols))
+    pluginsToUse.sort(
+        key=lambda x: self.__getIndexInList(
+            x.protocolParameters['Protocol'],
+            allowedProtocols))
 
     log.debug("Plugins to be used for %s: %s" % (methodName, [p.pluginName for p in pluginsToUse]))
 
@@ -966,7 +1021,9 @@ class StorageElementItem(object):
       if len(methDefaultArgs):
         kwargs[methDefaultArgs[0]] = args[0]
         args = args[1:]
-      log.verbose("put it in kwargs, but dirty and might be dangerous!args %s kwargs %s" % (args, kwargs))
+      log.verbose(
+          "put it in kwargs, but dirty and might be dangerous!args %s kwargs %s" %
+          (args, kwargs))
 
     # We check the deprecated arguments
     for depArg in StorageElementItem.__deprecatedArguments:
@@ -990,7 +1047,9 @@ class StorageElementItem(object):
       return res
     lfnDict = res['Value']
 
-    log.verbose("Attempting to perform '%s' operation with %s lfns." % (self.methodName, len(lfnDict)))
+    log.verbose(
+        "Attempting to perform '%s' operation with %s lfns." %
+        (self.methodName, len(lfnDict)))
 
     res = self.isValid(operation=self.methodName)
     if not res['OK']:
@@ -1009,8 +1068,8 @@ class StorageElementItem(object):
     filteredPlugins = self.__filterPlugins(self.methodName, kwargs.get('protocols'), inputProtocol)
     if not filteredPlugins:
       return S_ERROR(errno.EPROTONOSUPPORT, "No storage plugins matching the requirements\
-                                           (operation %s protocols %s inputProtocol %s)"
-                                            % (self.methodName, kwargs.get('protocols'), inputProtocol))
+                                           (operation %s protocols %s inputProtocol %s)" %
+                     (self.methodName, kwargs.get('protocols'), inputProtocol))
     # Try all of the storages one by one
     for storage in filteredPlugins:
       # Determine whether to use this storage object
@@ -1032,7 +1091,9 @@ class StorageElementItem(object):
       if not len(urlDict):
         log.verbose("__executeMethod No urls generated for protocol %s." % pluginName)
       else:
-        log.verbose("Attempting to perform '%s' for %s physical files" % (self.methodName, len(urlDict)))
+        log.verbose(
+            "Attempting to perform '%s' for %s physical files" %
+            (self.methodName, len(urlDict)))
         fcn = None
         if hasattr(storage, self.methodName) and callable(getattr(storage, self.methodName)):
           fcn = getattr(storage, self.methodName)

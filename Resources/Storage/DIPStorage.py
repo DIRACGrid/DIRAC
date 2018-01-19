@@ -122,7 +122,9 @@ class DIPStorage(StorageBase):
       srcSEURL = res['Value']
       localCache = True
       transferClient = TransferClient(srcSEURL)
-      res = transferClient.receiveFile(srcDict['FileName'], os.path.join(srcDict['Path'], srcDict['FileName']))
+      res = transferClient.receiveFile(
+          srcDict['FileName'], os.path.join(
+              srcDict['Path'], srcDict['FileName']))
       if not res['OK']:
         return res
       src_file = srcDict['FileName']
@@ -216,7 +218,9 @@ class DIPStorage(StorageBase):
     urls = res['Value']
     successful = {}
     failed = {}
-    gLogger.debug("DIPStorage.isFile: Attempting to determine whether %s paths are files." % len(urls))
+    gLogger.debug(
+        "DIPStorage.isFile: Attempting to determine whether %s paths are files." %
+        len(urls))
     serviceClient = RPCClient(self.url)
     for url in urls:
       res = serviceClient.getMetadata(url)
@@ -268,7 +272,9 @@ class DIPStorage(StorageBase):
     urls = res['Value']
     successful = {}
     failed = {}
-    gLogger.debug("DIPStorage.getFileMetadata: Attempting to obtain metadata for %s files." % len(urls))
+    gLogger.debug(
+        "DIPStorage.getFileMetadata: Attempting to obtain metadata for %s files." %
+        len(urls))
     serviceClient = RPCClient(self.url)
     for url in urls:
       pfn = url
@@ -278,7 +284,9 @@ class DIPStorage(StorageBase):
       if res['OK']:
         if res['Value']['Exists']:
           if res['Value']['Type'] == 'File':
-            gLogger.debug("DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url)
+            gLogger.debug(
+                "DIPStorage.getFileMetadata: Successfully obtained metadata for %s." %
+                url)
             successful[url] = res['Value']
           else:
             failed[url] = 'Supplied path is not a file'
@@ -334,7 +342,9 @@ class DIPStorage(StorageBase):
     urls = res['Value']
     successful = {}
     failed = {}
-    gLogger.debug("DIPStorage.isDirectory: Attempting to determine whether %s paths are directories." % len(urls))
+    gLogger.debug(
+        "DIPStorage.isDirectory: Attempting to determine whether %s paths are directories." %
+        len(urls))
     serviceClient = RPCClient(self.url)
     for url in urls:
       res = serviceClient.getMetadata(url)
@@ -363,7 +373,9 @@ class DIPStorage(StorageBase):
     urls = res['Value']
     successful = {}
     failed = {}
-    gLogger.debug("DIPStorage.isDirectory: Attempting to determine whether %s paths are directories." % len(urls))
+    gLogger.debug(
+        "DIPStorage.isDirectory: Attempting to determine whether %s paths are directories." %
+        len(urls))
     serviceClient = RPCClient(self.url)
     for url in urls:
       res = serviceClient.getDirectorySize(url)
@@ -383,7 +395,9 @@ class DIPStorage(StorageBase):
     urls = res['Value']
     successful = {}
     failed = {}
-    gLogger.debug("DIPStorage.getFileMetadata: Attempting to obtain metadata for %s directories." % len(urls))
+    gLogger.debug(
+        "DIPStorage.getFileMetadata: Attempting to obtain metadata for %s directories." %
+        len(urls))
     serviceClient = RPCClient(self.url)
     for url in urls:
       res = serviceClient.getMetadata(url)
@@ -391,7 +405,9 @@ class DIPStorage(StorageBase):
         if res['Value']['Exists']:
           if res['Value']['Type'] == 'Directory':
             res['Value']['Directory'] = True
-            gLogger.debug("DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url)
+            gLogger.debug(
+                "DIPStorage.getFileMetadata: Successfully obtained metadata for %s." %
+                url)
             successful[url] = res['Value']
           else:
             failed[url] = 'Supplied path is not a directory'
@@ -418,7 +434,9 @@ class DIPStorage(StorageBase):
     for url in urls:
       res = serviceClient.createDirectory(url)
       if res['OK']:
-        gLogger.debug("DIPStorage.createDirectory: Successfully created directory on storage: %s" % url)
+        gLogger.debug(
+            "DIPStorage.createDirectory: Successfully created directory on storage: %s" %
+            url)
         successful[url] = True
       else:
         gLogger.error(
@@ -437,7 +455,9 @@ class DIPStorage(StorageBase):
     urls = res['Value']
     successful = {}
     failed = {}
-    gLogger.debug("DIPStorage.putDirectory: Attemping to put %s directories to remote storage." % len(urls))
+    gLogger.debug(
+        "DIPStorage.putDirectory: Attemping to put %s directories to remote storage." %
+        len(urls))
     transferClient = TransferClient(self.url)
     for destDir, sourceDir in urls.items():
       tmpList = os.listdir(sourceDir)
@@ -464,7 +484,9 @@ class DIPStorage(StorageBase):
     for url in urls:
       res = serviceClient.removeDirectory(url, '')
       if res['OK']:
-        gLogger.debug("DIPStorage.removeDirectory: Successfully removed directory on storage: %s" % url)
+        gLogger.debug(
+            "DIPStorage.removeDirectory: Successfully removed directory on storage: %s" %
+            url)
         successful[url] = {'FilesRemoved': 0, 'SizeRemoved': 0}
       else:
         gLogger.error(
@@ -484,7 +506,9 @@ class DIPStorage(StorageBase):
 
     failed = {}
     successful = {}
-    gLogger.debug("DIPStorage.getDirectory: Attempting to get local copies of %s directories." % len(urls))
+    gLogger.debug(
+        "DIPStorage.getDirectory: Attempting to get local copies of %s directories." %
+        len(urls))
     transferClient = TransferClient(self.url)
     for src_dir in urls:
       if localPath:
@@ -508,7 +532,8 @@ class DIPStorage(StorageBase):
 
         :return: S_OK/S_ERROR (free and total space, in MB)
     """
-    rpc = RPCClient(self.getURLBase(), timeout=120)
+
+    rpc = RPCClient(self.url, timeout=120)
 
     free = rpc.getFreeDiskSpace()
     if not free['OK']:

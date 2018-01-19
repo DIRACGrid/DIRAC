@@ -64,7 +64,7 @@ class StorageBase(object):
     # Taken from the CS
     # In a further major release, this could be nerged together
     # with protocolParameters. There is no reason for it to
-    # be so strict about the possible content.  
+    # be so strict about the possible content.
     self._allProtocolParameters = parameterDict
 
     if hasattr(self, '_INPUT_PROTOCOLS'):
@@ -340,7 +340,8 @@ class StorageBase(object):
     # 2. VO name must not appear as any subdirectory or file name
     lfnSplitList = lfn.split('/')
     voLFN = lfnSplitList[1]
-    # TODO comparison to Sandbox below is for backward compatibility, should be removed in the next release
+    # TODO comparison to Sandbox below is for backward compatibility, should
+    # be removed in the next release
     if voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox":
 
       return S_ERROR('LFN does not follow the DIRAC naming convention %s' % lfn)
@@ -429,7 +430,7 @@ class StorageBase(object):
   #
 
   def getOccupancy(self, *parms, **kws):
-    """ Get the StorageElement occupancy info.
+    """ Get the StorageElement occupancy info in MB.
         :returns: S_OK/S_ERROR dictionary
     """
     # FIXME: put an implementation that just gets a file and check its content

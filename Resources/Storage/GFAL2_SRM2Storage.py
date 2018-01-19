@@ -9,9 +9,12 @@
 
 # pylint: disable=invalid-name
 
+import errno
+import json
+
+import gfal2
 # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 
@@ -97,14 +100,17 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
       return res
     urls = res['Value']
 
-    self.log.debug('GFAL2_SRM2Storage.getTransportURL: Attempting to retrieve tURL for %s paths' % len(urls))
+    self.log.debug(
+        'GFAL2_SRM2Storage.getTransportURL: Attempting to retrieve tURL for %s paths' %
+        len(urls))
 
     failed = {}
     successful = {}
     if not protocols:
       listProtocols = self.protocolsList
       if not listProtocols:
-        return S_ERROR("GFAL2_SRM2Storage.getTransportURL: No local protocols defined and no defaults found.")
+        return S_ERROR(
+            "GFAL2_SRM2Storage.getTransportURL: No local protocols defined and no defaults found.")
     elif isinstance(protocols, basestring):
       listProtocols = [protocols]
     elif isinstance(protocols, list):
@@ -149,7 +155,9 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
     :returns: S_OK( Transport_URL ) in case of success
               S_ERROR( errStr ) in case of a failure
     """
-    self.log.debug('GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' % path)
+    self.log.debug(
+        'GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' %
+        path)
     if protocols:
       self.ctx.set_opt_string_list("SRM PLUGIN", "TURL_PROTOCOLS", protocols)
 
@@ -166,35 +174,42 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
   def getOccupancy(self, *parms, **kws):
     """ Gets the GFAL2_SRM2Storage occupancy info.
 
-      It queries the srm interface, and hopefully it will not crash. Out of the
-      results, we keep totalsize, guaranteedsize, and unusedsize.
+      TODO: needs gfal2.15 because of bugs:
+      https://its.cern.ch/jira/browse/DMC-979
+      https://its.cern.ch/jira/browse/DMC-977
+
+      It queries the srm interface for a given space token.
+      Out of the results, we keep totalsize, guaranteedsize, and unusedsize all in MB.
     """
-    # FIXME: Untested!
-    spaceToken = self.protocolParameters['SpaceToken']
-    spaceTokenEndpoint = 'httpg://%s:%s%s' % (self.protocolParameters['Host'],
-                                              self.protocolParameters['Port'],
-                                              self.protocolParameters['WSUrl'].split('?')[0])
 
-    # FIXME: re-do without lcg_util (gfal1)
-    import lcg_util  # pylint: disable=import-error
-    occupancyResult = pythonCall(10, lcg_util.lcg_stmd, spaceToken, spaceTokenEndpoint, True, 0)
-    if not occupancyResult['OK']:
-      self.log.error("Could not get spaceToken occupancy", "from endPoint/spaceToken %s/%s : %s" %
-                     (spaceTokenEndpoint, spaceToken, occupancyResult['Message']))
-      return occupancyResult
-    else:
-      occupancy = occupancyResult['Value']
+    # Gfal2 extended parameter name to query the space token occupancy
+    spaceTokenAttr = 'spacetoken.description?%s' % self.protocolParameters['SpaceToken']
+    # gfal2 can take any srm url as a base.
+    spaceTokenEndpoint = self.getURLBase()['Value']
+    print "%s %s" % (spaceTokenEndpoint, spaceTokenAttr)
+    try:
+      occupancyStr = self.ctx.getxattr(spaceTokenEndpoint, spaceTokenAttr)
+      try:
+        occupancyDict = json.loads(occupancyStr)
+      except ValueError:
+        # https://its.cern.ch/jira/browse/DMC-977
+        # a closing bracket is missing, so we retry after adding it
+        occupancyStr = occupancyStr[:-1] + '}]'
+        occupancyDict = json.loads(occupancyStr)[0]
 
-    if occupancy[0] != 0:
-      return S_ERROR(occupancy)
-    output = occupancy[1][0]
+        # https://its.cern.ch/jira/browse/DMC-979
+        # We set totalsize to guaranteed size
+        # (it is anyway true for all the SEs I could test)
+        occupancyDict['totalsize'] = occupancyDict.get('guaranteedsize', 0)
+
+    except (gfal2.GError, ValueError) as e:
+      errStr = 'Something went wrong while checking for spacetoken occupancy.'
+      self.log.verbose(errStr, e.message)
+      return S_ERROR(getattr(e, 'code', errno.EINVAL), "%s %s" % (errStr, repr(e)))
 
     sTokenDict = {}
-    sTokenDict['Endpoint'] = spaceTokenEndpoint
-    sTokenDict['Token'] = spaceToken
-    # Bytes to Terabytes #FIXME: have to harmonize with other SE types ---> use MB?
-    sTokenDict['Total'] = float(output.get('totalsize', '0')) / 1e12
-    sTokenDict['Guaranteed'] = float(output.get('guaranteedsize', '0')) / 1e12
-    sTokenDict['Free'] = float(output.get('unusedsize', '0')) / 1e12
+
+    sTokenDict['Total'] = float(occupancyDict.get('totalsize', '0')) / 1e6
+    sTokenDict['Free'] = float(occupancyDict.get('unusedsize', '0')) / 1e6
 
     return S_OK(sTokenDict)

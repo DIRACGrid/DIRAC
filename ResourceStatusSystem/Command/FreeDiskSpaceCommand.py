@@ -10,16 +10,16 @@
 
 __RCSID__ = '$Id:$'
 
+import sys
+
 from datetime import datetime
 
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities.File import convertSizeUnits
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-
-
-UNIT_CONVERSION = {"MB": 1, "GB": 1024, "TB": 1024 * 1024}
 
 
 class FreeDiskSpaceCommand(Command):
@@ -76,7 +76,7 @@ class FreeDiskSpaceCommand(Command):
       return endpointResult
 
     se = StorageElement(elementName)
-    occupancyResult = se.getOccupancy()
+    occupancyResult = se.getOccupancy(unit=unit)
     if not occupancyResult['OK']:
       return occupancyResult
     occupancy = occupancyResult['Value']
@@ -91,12 +91,7 @@ class FreeDiskSpaceCommand(Command):
     if not result['OK']:
       return result
 
-    # results are normally in 'MB'
-    unit = unit.upper()
-    if unit not in UNIT_CONVERSION:
-      return S_ERROR("No valid unit specified")
-    convert = UNIT_CONVERSION[unit]
-    return S_OK({'Free': float(free) / float(convert), 'Total': float(total) / float(convert)})
+    return S_OK({'Free': free, 'Total': total})
 
   def _storeCommand(self, results):
     """ Here purely for extensibility
@@ -126,11 +121,14 @@ class FreeDiskSpaceCommand(Command):
     # results are normally in 'MB'
     free = result['Value'][0][3]
     total = result['Value'][0][4]
-    unit = unit.upper()
-    if unit not in UNIT_CONVERSION:
+
+    free = convertSizeUnits(free, 'MB', unit)
+    total = convertSizeUnits(total, 'MB', unit)
+
+    if free == -sys.maxsize or total == -sys.maxsize:
       return S_ERROR("No valid unit specified")
-    convert = UNIT_CONVERSION[unit]
-    return S_OK({'Free': float(free) / float(convert), 'Total': float(total) / float(convert)})
+
+    return S_OK({'Free': free, 'Total': total})
 
   def doMaster(self):
     """
