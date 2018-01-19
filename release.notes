@@ -1,8 +1,14 @@
 [v6r19p11]
 
+*Core
+CHANGE: QualityMapGraph - change the color map of the Quality plots
+
 *Framework:
 CHANGE: moved column "Instance" of InstalledComponentsDB.InstalledComponent 
         table from 64 to 32 characters
+
+*MonitoringSystem
+CHANGE: ElasticSearch 6 does not support multiple types, only one type is created instead.
 
 *WMS
 FIX: JobWrapperTemplate - fix exception handling
@@ -19,6 +25,9 @@ FIX: FTSAgent - change data member names from uppercase to lower case
 
 *Interfaces
 CHANGE: autopep8 on the API/Dirac module
+
+*RSS
+FIX: GOCDBClient - encode in utf-8, update goc db web api URL
 
 *docs:
 NEW: added some doc about shifterProxy
