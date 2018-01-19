@@ -173,13 +173,14 @@ class FTS3Operation( FTS3Serializable ):
         :return S_ERROR if not allowed or error, S_OK() otherwise
     """
     # Check that the target is writable
-#     access = self.rssClient.getStorageElementStatus( seName, accessType )
-#     if not access["OK"]:
-#       return access
-#     if access["Value"][seName][accessType] not in ( "Active", "Degraded" ):
-#       return S_ERROR( "%s does not have %s in Active or Degraded" % ( seName, accessType ) )
+    # access = self.rssClient.getStorageElementStatus( seName, accessType )
+    # if not access["OK"]:
+    #   return access
+    # if access["Value"][seName][accessType] not in ( "Active", "Degraded" ):
+    #   return S_ERROR( "%s does not have %s in Active or Degraded" % ( seName, accessType ) )
 
-    status = StorageElement(seName, vo=voName).getStatus()
+    #status = StorageElement(seName, vo=voName).getStatus()
+    status = StorageElement(seName).getStatus()
     if not status['OK']:
       return status
 

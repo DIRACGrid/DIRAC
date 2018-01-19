@@ -133,7 +133,7 @@ class FTS3Job( FTS3Serializable ):
     if seName:
       seObj = StorageElement( seName )
 
-      res = seObj.getStorageParameters("GFAL2_SRM2")
+      res = seObj.getStorageParameters(protocol='srm')
       if not res['OK']:
         return res
 

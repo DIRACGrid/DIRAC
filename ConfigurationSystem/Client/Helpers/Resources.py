@@ -90,17 +90,9 @@ def getFTS3Servers():
 
 
 def getFTS3ServerDict():
-  """ returns a dict of key = server name and value = server url
+  """:returns: dict of key = server name and value = server url
   """
-
-  csPath = cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3")
-  ftsServerNames = gConfig.getOptions(csPath).get('Value', [])
-  serverDict = {}
-
-  for name in ftsServerNames:
-    serverDict[name] = gConfig.getValue(cfgPath(csPath, name))
-
-  return S_OK(serverDict)
+  return gConfig.getOptionsDict(cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3"))
 
 def getSiteTier( site ):
   """

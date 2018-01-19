@@ -44,7 +44,7 @@ class FTS3Agent(AgentModule):
     CAUTION: This agent and the FTSAgent cannot run together.
 
   """
-  def readConf(self):
+  def __readConf(self):
     """ read configurations """
 
     # Getting all the possible servers
@@ -76,19 +76,11 @@ class FTS3Agent(AgentModule):
     # name that will be used in DB for assignment tag
     self.assignmentTag = gethostname().split('.')[0]
 
-    res = self.readConf()
-    if not res['OK']:
-      return res
-
-    return S_OK()
+    return self.__readConf()
 
   def beginExecution(self):
     """ reload configurations before start of a cycle """
-    res = self.readConf()
-    if not res['OK']:
-      return res
-
-    return S_OK()
+    return self.__readConf()
 
 
   def getFTS3Context(self, username, group, ftsServer, threadID):
