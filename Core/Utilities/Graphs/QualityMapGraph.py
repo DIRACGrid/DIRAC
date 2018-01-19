@@ -171,7 +171,7 @@ class QualityMapGraph( PlotBase ):
     setp( self.ax.get_yticklines(), markersize = 0. )
 
     cax, kw = make_axes( self.ax, orientation = 'vertical', fraction = 0.07 )
-    cb = ColorbarBase( cax, cmap = cm.RdYlGn, norm = self.norms,  #pylint: disable=no-member
+    cb = ColorbarBase( cax, cmap = self.cmap, norm = self.norms,
                        boundaries = self.cbBoundaries,
                        values = self.cbValues,
                        ticks = self.cbTicks )
