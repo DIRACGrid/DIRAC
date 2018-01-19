@@ -161,7 +161,8 @@ class SummarizeLogsAgent( AgentModule ):
     selectedRes = self.rsClient.selectStatusElement( element, 'History', name,
                                                      statusType,
                                                      meta = { 'columns' : [ 'Status', 'TokenOwner' ],
-                                                              'limit'   : 1 } )
+                                                              'limit': 1,
+                                                              'order': ('DateEffective', 'desc')})
 
     if not selectedRes[ 'OK' ]:
       return selectedRes

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-wms-select-jobs
 # Author :  Stuart Paterson
 ########################################################################
@@ -8,6 +7,7 @@
   Select DIRAC jobs matching the given conditions
 """
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
@@ -54,11 +54,11 @@ for switch in Script.getUnprocessedSwitches():
   elif switch[0].lower() == "owner":
     owner = switch[1]
   elif switch[0].lower() == "jobgroup":
-    for xx in switch[1].split(','):
-      if xx.isdigit():
-        jobGroups.append('%08d' % int(xx))
+    for jg in switch[1].split(','):
+      if jg.isdigit():
+        jobGroups.append('%08d' % int(jg))
       else:
-        jobGroups.append(xx)
+        jobGroups.append(jg)
   elif switch[0].lower() == "date":
     date = switch[1]
   elif switch[0] == 'Maximum':
@@ -75,23 +75,44 @@ conditions = {'Status': status,
               'MinorStatus': minorStatus,
               'ApplicationStatus': appStatus,
               'Owner': owner,
-              'JobGroup': ','.join(str(xx) for xx in jobGroups),
+              'JobGroup': ','.join(str(jg) for jg in jobGroups),
               'Date': selDate}
 
+
+
 from DIRAC.Interfaces.API.Dirac import Dirac
+
 dirac = Dirac()
 jobs = []
-for jobGroup in jobGroups:
+
+if jobGroups:
+  for jobGroup in jobGroups:
+    res = dirac.selectJobs(status=status,
+                           minorStatus=minorStatus,
+                           applicationStatus=appStatus,
+                           site=site,
+                           owner=owner,
+                           jobGroup=jobGroup,
+                           date=date,
+                           printErrors=False)
+    if res['OK']:
+      jobs.extend(res['Value'])
+    else:
+      gLogger.error("Can't select jobs: ", res['Message'])
+else:
   res = dirac.selectJobs(status=status,
                          minorStatus=minorStatus,
                          applicationStatus=appStatus,
                          site=site,
                          owner=owner,
-                         jobGroup=jobGroup,
                          date=date,
                          printErrors=False)
   if res['OK']:
     jobs.extend(res['Value'])
+  else:
+    gLogger.error("Can't select jobs: ", res['Message'])
+
+
 
 conds = ['%s = %s' % (n, v) for n, v in conditions.iteritems() if v]
 if maxJobs and len(jobs) > maxJobs:
