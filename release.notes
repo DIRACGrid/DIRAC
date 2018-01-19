@@ -3,11 +3,21 @@
 *Core
 CHANGE: QualityMapGraph - change the color map of the Quality plots
 
+*Framework
+FIX: Logging - remove the space after log messages if no variable message is printed, fixes #3587
+
 *MonitoringSystem
 CHANGE: ElasticSearch 6 does not support multiple types, only one type is created instead.
 
 *RSS
 FIX: GOCDBClient - encode in utf-8, update goc db web api URL
+FIX: fixed bug in creation of history of status (avoid repetition of entries)
+
+*DMS
+FIX: fixed bug in FTSAgent initialization
+
+*WMS
+FIX: fix bug in dirac-wms-job-select: treating the case of jobGroup(s) not requested
 
 [v6r19p11]
 
