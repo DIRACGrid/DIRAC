@@ -34,9 +34,9 @@ class UserJobTestCase(IntegrationTest):
       self.helloWorld = find_all("helloWorld.py", rootPath, '/DIRAC/tests/Workflow')[0]
       self.mpExe = find_all('testMpJob.sh', rootPath, '/DIRAC/tests/Utilities')[0]
     except IndexError:  # we are in Jenkins
-      self.exeScriptLocation = find_all('exe-script.py', os.environ['TESTCODE'], '/DIRAC/tests/Workflow')[0]
-      self.helloWorld = find_all("helloWorld.py", os.environ['TESTCODE'], '/DIRAC/tests/Workflow')[0]
-      self.mpExe = find_all('testMpJob.sh', os.environ['TESTCODE'], '/DIRAC/tests/Utilities')[0]
+      self.exeScriptLocation = find_all('exe-script.py', os.environ['WORKSPACE'], '/DIRAC/tests/Workflow')[0]
+      self.helloWorld = find_all("helloWorld.py", os.environ['WORKSPACE'], '/DIRAC/tests/Workflow')[0]
+      self.mpExe = find_all('testMpJob.sh', os.environ['WORKSPACE'], '/DIRAC/tests/Utilities')[0]
 
     gLogger.setLevel('DEBUG')
 
