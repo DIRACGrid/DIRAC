@@ -5,6 +5,7 @@
 
 # pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
 
+import os
 import unittest
 import multiprocessing
 
@@ -27,9 +28,16 @@ class UserJobTestCase(IntegrationTest):
     super(UserJobTestCase, self).setUp()
 
     self.d = Dirac()
-    self.exeScriptLocation = find_all('exe-script.py', rootPath, '/DIRAC/tests/Workflow')[0]
-    self.helloWorld = find_all("helloWorld.py", rootPath, '/DIRAC/tests/Workflow')[0]
-    self.mpExe = find_all('testMpJob.sh', rootPath, '/DIRAC/tests/Utilities')[0]
+
+    try:
+      self.exeScriptLocation = find_all('exe-script.py', rootPath, '/DIRAC/tests/Workflow')[0]
+      self.helloWorld = find_all("helloWorld.py", rootPath, '/DIRAC/tests/Workflow')[0]
+      self.mpExe = find_all('testMpJob.sh', rootPath, '/DIRAC/tests/Utilities')[0]
+    except IndexError:  # we are in Jenkins
+      self.exeScriptLocation = find_all('exe-script.py', os.environ['TESTCODE'], '/DIRAC/tests/Workflow')[0]
+      self.helloWorld = find_all("helloWorld.py", os.environ['TESTCODE'], '/DIRAC/tests/Workflow')[0]
+      self.mpExe = find_all('testMpJob.sh', os.environ['TESTCODE'], '/DIRAC/tests/Utilities')[0]
+
     gLogger.setLevel('DEBUG')
 
 
