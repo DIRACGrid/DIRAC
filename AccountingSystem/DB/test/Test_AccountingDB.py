@@ -1,7 +1,7 @@
 """ Test class for AccountingDB
 """
 
-# pylint: disable=line-too-long
+# pylint: disable=protected-access
 
 # imports
 import unittest
@@ -53,8 +53,10 @@ class TestCase(unittest.TestCase):
 
 
 class MakeQuery(TestCase):
+  """ testing making a query
+  """
 
-  def query(self, cmd, conn):
+  def query(self, cmd, conn): #pylint: disable=no-self-use,unused-argument
     """Because we are not able to execute the query, the method returns the query"""
     return cmd
 
@@ -224,19 +226,19 @@ class MakeQuery(TestCase):
     expectedEndTime = retVal
 
     expectedQuery = "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, \
-    `ac_bucket_LHCb-Certification_DataOperation`.`startTime`, \
-    `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, \
-    SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), \
-    SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-\
-    SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) \
-    FROM `ac_bucket_LHCb-Certification_DataOperation`, \
-    `ac_key_LHCb-Certification_DataOperation_Source` \
-    WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= %s \
-    AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= %s \
-    AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` \
-    GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, bucketlength \
-    ORDER BY startTime" % (
-        expectedStartTime, expectedEndTime)
+`ac_bucket_LHCb-Certification_DataOperation`.`startTime`, \
+`ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, \
+SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), \
+SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-\
+SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) \
+FROM `ac_bucket_LHCb-Certification_DataOperation`, \
+`ac_key_LHCb-Certification_DataOperation_Source` \
+WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= %s \
+AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= %s \
+AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` \
+GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, bucketlength \
+ORDER BY startTime" % (
+    expectedStartTime, expectedEndTime)
     retVal = module._AccountingDB__queryType("LHCb-Certification_DataOperation",  # pylint: disable=no-member
                                              startTime,
                                              endTime,
@@ -357,10 +359,20 @@ class MakeQuery(TestCase):
     self.assertTrue(retVal)
     expectedEndTime = retVal
 
-    expectedQuery = "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, `ac_bucket_LHCb-Certification_DataOperation`.`startTime`, `ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) FROM `ac_bucket_LHCb-Certification_DataOperation`, `ac_key_LHCb-Certification_DataOperation_Source` WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= %s AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= %s AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, bucketlength ORDER BY startTime" % (
-        expectedStartTime, expectedEndTime)
+    expectedQuery = "SELECT `ac_key_LHCb-Certification_DataOperation_Source`.`value`, \
+`ac_bucket_LHCb-Certification_DataOperation`.`startTime`, \
+`ac_bucket_LHCb-Certification_DataOperation`.`bucketLength`, \
+SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`), \
+SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferTotal`)-\
+SUM(`ac_bucket_LHCb-Certification_DataOperation`.`TransferOK`) \
+FROM `ac_bucket_LHCb-Certification_DataOperation`, \
+`ac_key_LHCb-Certification_DataOperation_Source` \
+WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= %s \
+AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= %s \
+AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` \
+GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, bucketlength ORDER BY startTime" % (
+    expectedStartTime, expectedEndTime)
 
-    print module
     retVal = module._AccountingDB__queryType("LHCb-Certification_DataOperation",  # pylint: disable=no-member
                                              startTime,
                                              endTime,
