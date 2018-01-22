@@ -471,12 +471,16 @@ class FTS3TransferOperation(FTS3Operation):
         registerOperation.Catalog = operation.Catalog
 
       voName = None
+      targetSE = None
       if ftsFileList:
         res = _getVoName(ftsFileList[0].lfn)
         if res['OK']:
           voName = res['Value']
+          targetSE = StorageElement(target, vo=voName)
 
-      targetSE = StorageElement(target, vo=voName)
+      if not targetSE:
+        targetSE = StorageElement(target)
+
       for ftsFile in ftsFileList:
         opFile = rmsFile()
         opFile.LFN = ftsFile.lfn

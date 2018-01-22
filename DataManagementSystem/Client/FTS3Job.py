@@ -192,12 +192,17 @@ class FTS3Job( FTS3Serializable ):
 
     # getting all the source surls
     voName = None
+    se = None
     if allTargetSURLs:
       res = _getVoName(allTargetSURLs.iterkeys().next())
       if res['OK']:
         voName = res['Value']
+        se = StorageElement(self.sourceSE, vo=voName)
 
-    res = StorageElement(self.sourceSE, vo=voName).getURL(allTargetSURLs, protocol='srm')
+    if not se:
+      se = StorageElement(self.sourceSE)
+
+    res = se.getURL(allTargetSURLs, protocol='srm')
     if not res['OK']:
       return res
 
@@ -408,13 +413,18 @@ class FTS3Job( FTS3Serializable ):
 
     failedLFNs = set()
     voName = None
+    se = None
     if allLFNs:
       res = _getVoName(allLFNs[0])
       if res['OK']:
         voName = res['Value']
+        se = StorageElement(self.targetSE, vo=voName)
+
+    if not se:
+      se = StorageElement(self.targetSE)
 
     # getting all the target surls
-    res = StorageElement(self.targetSE, vo=voName).getURL(allLFNs, protocol='srm')
+    res = se.getURL(allLFNs, protocol='srm')
     if not res['OK']:
       return res
 
