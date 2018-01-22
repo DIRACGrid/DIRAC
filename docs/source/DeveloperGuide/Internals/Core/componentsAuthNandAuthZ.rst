@@ -35,3 +35,8 @@ If you want to use proxy certificate inside an agent for ALL service calls (insi
     gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'false')
 
 in the initialize or in the execute (or use a CS option in the local .cfg file)
+
+Two decorators are available for safely doing all that:
+
+  * :py:func:`~DIRAC.Core.Utilities.Proxy.executeWithoutServerCertificate`
+  * :py:func:`~DIRAC.Core.Utilities.Proxy.executeWithUserProxy`
