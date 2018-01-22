@@ -165,7 +165,7 @@ class FTS3Operation( FTS3Serializable ):
 
 
   @staticmethod
-  def _checkSEAccess(seName, accessType, voName=None):
+  def _checkSEAccess(seName, accessType):
     """Check the Status of a storage element
         :param seName: name of the StorageElement
         :param accessType ReadAccess, WriteAccess,CheckAccess,RemoveAccess
@@ -179,7 +179,6 @@ class FTS3Operation( FTS3Serializable ):
     # if access["Value"][seName][accessType] not in ( "Active", "Degraded" ):
     #   return S_ERROR( "%s does not have %s in Active or Degraded" % ( seName, accessType ) )
 
-    #status = StorageElement(seName, vo=voName).getStatus()
     status = StorageElement(seName).getStatus()
     if not status['OK']:
       return status
@@ -384,13 +383,7 @@ class FTS3TransferOperation(FTS3Operation):
 
     for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
 
-      voName = None
-      if ftsFiles:
-        res = _getVoName(ftsFiles[0].lfn)
-        if res['OK']:
-          voName = res['Value']
-
-      res = self._checkSEAccess(targetSE, 'WriteAccess', voName=voName)
+      res = self._checkSEAccess(targetSE, 'WriteAccess')
 
       if not res['OK']:
         log.error( res )
@@ -518,34 +511,22 @@ class FTS3StagingOperation( FTS3Operation ):
     filesToSubmit = self._getFilesToSubmit( maxAttemptsPerFile = maxAttemptsPerFile )
     log.debug( "%s ftsFiles to submit" % len( filesToSubmit ) )
 
-
     newJobs = []
-
 
     # {targetSE : [FTS3Files] }
     filesGroupedByTarget = FTS3Utilities.groupFilesByTarget( filesToSubmit )
 
     for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
 
-      voName = None
-      if ftsFiles:
-        res = _getVoName(ftsFiles[0].lfn)
-        if res['OK']:
-          voName = res['Value']
-
-      res = self._checkSEAccess(targetSE, 'ReadAccess', voName=voName)
-
+      res = self._checkSEAccess(targetSE, 'ReadAccess')
       if not res['OK']:
         log.error( res )
         continue
 
-
       for ftsFilesChunk in breakListIntoChunks( ftsFiles, maxFilesPerJob ):
 
         newJob = self._createNewJob( 'Staging', ftsFilesChunk, targetSE, sourceSE = targetSE )
-
         newJobs.append( newJob )
-
 
     return S_OK( newJobs )
 
@@ -564,6 +545,5 @@ class FTS3StagingOperation( FTS3Operation ):
       return res
 
     request = res['Value']['request']
-
 
     return self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
