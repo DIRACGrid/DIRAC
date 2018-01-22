@@ -191,23 +191,21 @@ class ElasticSearchDB( object ):
     """
     :param str indexPrefix: it is the index name.
     :param dict mapping: the configuration of the index.
-    :param str period: We can specify, which kind of indexes will be created.
+    :param str period: We can specify, which kind of index will be created.
                        Currently only daily and monthly indexes are supported.
 
     """
-    result = None
     fullIndex = generateFullIndexName( indexPrefix, period )  # we have to create an index each day...
     if self.exists( fullIndex ):
-      result = S_OK( fullIndex )
-    else:
-      try:
-        gLogger.info( "Create index: ", fullIndex + str( mapping ) )
-        self.__client.indices.create( fullIndex, body = {'mappings': mapping} )
-        result = S_OK( fullIndex )
-      except Exception as e:  # pylint: disable=broad-except
-        gLogger.error( "Can not create the index:", e )
-        result = S_ERROR( e )
-    return result
+      return S_OK( fullIndex )
+
+    try:
+      gLogger.info( "Create index: ", fullIndex + str( mapping ) )
+      self.__client.indices.create( fullIndex, body = {'mappings': mapping} )
+      return S_OK( fullIndex )
+    except Exception as e:  # pylint: disable=broad-except
+      gLogger.error( "Can not create the index:", e )
+      return S_ERROR( "Can not create the index" )
 
   def deleteIndex( self, indexName ):
     """
@@ -223,12 +221,12 @@ class ElasticSearchDB( object ):
     if retVal.get( 'acknowledged' ):
       # if the value exists and the value is not None
       return S_OK( indexName )
-    else:
-      return S_ERROR( retVal )
+
+    return S_ERROR( retVal )
 
   def index( self, indexName, doc_type, body ):
     """
-    :param str indexName: the name of the index to be deleted...
+    :param str indexName: the name of the index to be used...
     :param str doc_type: the type of the document
     :param dict body: the data which will be indexed
     :return: the index name in case of success.
@@ -240,20 +238,20 @@ class ElasticSearchDB( object ):
     except TransportError as e:
       return S_ERROR( e )
 
-    if res.get( 'created' ):  # pylint: disable=no-member
-      # the created is exists but the value can be None.
+    if res.get( 'created' ) or res.get('result') == 'created':
+      # the created index exists but the value can be None.
       return S_OK( indexName )
-    else:
-      return S_ERROR( res )
+
+    return S_ERROR( res )
 
 
   def bulk_index( self, indexprefix, doc_type, data, mapping = None, period = None ):
     """
-    :param str indexPrefix: it is the index name.
+    :param str indexPrefix: index name.
     :param str doc_type: the type of the document
-    :param dict data: contains a list of dictionary
+    :param list data: contains a list of dictionary
     :paran dict mapping: the mapping used by elasticsearch
-    :param str period: We can specify, which kind of indexes will be created.
+    :param str period: We can specify which kind of indices will be created.
                        Currently only daily and monthly indexes are supported.
     """
     gLogger.info( "%d records will be insert to %s" % ( len( data ), doc_type ) )
