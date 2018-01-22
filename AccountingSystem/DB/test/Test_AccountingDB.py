@@ -56,7 +56,7 @@ class MakeQuery(TestCase):
   """ testing making a query
   """
 
-  def query(self, cmd, conn): #pylint: disable=no-self-use,unused-argument
+  def query(self, cmd, conn):  # pylint: disable=no-self-use,unused-argument
     """Because we are not able to execute the query, the method returns the query"""
     return cmd
 
@@ -237,8 +237,7 @@ WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= %s \
 AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= %s \
 AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` \
 GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, bucketlength \
-ORDER BY startTime" % (
-    expectedStartTime, expectedEndTime)
+ORDER BY startTime" % (expectedStartTime, expectedEndTime)
     retVal = module._AccountingDB__queryType("LHCb-Certification_DataOperation",  # pylint: disable=no-member
                                              startTime,
                                              endTime,
@@ -370,8 +369,8 @@ FROM `ac_bucket_LHCb-Certification_DataOperation`, \
 WHERE `ac_bucket_LHCb-Certification_DataOperation`.`startTime` >= %s \
 AND `ac_bucket_LHCb-Certification_DataOperation`.`startTime` <= %s \
 AND `ac_bucket_LHCb-Certification_DataOperation`.`Source` = `ac_key_LHCb-Certification_DataOperation_Source`.`id` \
-GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, bucketlength ORDER BY startTime" % (
-    expectedStartTime, expectedEndTime)
+GROUP BY startTime, `ac_key_LHCb-Certification_DataOperation_Source`.Value, bucketlength \
+ORDER BY startTime" % (expectedStartTime, expectedEndTime)
 
     retVal = module._AccountingDB__queryType("LHCb-Certification_DataOperation",  # pylint: disable=no-member
                                              startTime,
