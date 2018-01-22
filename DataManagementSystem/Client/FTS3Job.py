@@ -29,6 +29,7 @@ class FTS3Job( FTS3Serializable ):
                 'Canceled', # Job canceled
                 'Failed', # All files Failed
                 'Finisheddirty',  # Some files Failed
+                'Staging',
                ]
 
   FINAL_STATES = ['Canceled', 'Failed', 'Finished', 'Finisheddirty']
