@@ -6,7 +6,7 @@ echo " ########################## BEGIN OF USER FILES TEST #####################
 echo " "
 echo " "
 
-echo "====== dirac-proxy-init -g lhcb_user" #this is necesary to 
+echo "====== dirac-proxy-init -g lhcb_user" #this is necesary to upload user files
 dirac-proxy-init -g lhcb_user
 
 dir=$( echo "$USER" |cut -c 1)/$USER
