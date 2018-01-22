@@ -4,7 +4,9 @@ Message Queue Handler
 
 __RCSID__ = "$Id$"
 
+import json
 import logging
+import socket
 
 from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
 
@@ -16,6 +18,8 @@ class MessageQueueHandler(logging.Handler):
 
   It is useful to send log messages to a destination, like the StreamHandler to a stream, the FileHandler to a file.
   Here, this handler send log messages to a message queue server.
+
+  There is an assumption made that the formatter used is JsonFormatter
   """
 
   def __init__(self, queue):
@@ -30,6 +34,7 @@ class MessageQueueHandler(logging.Handler):
     result = createProducer(queue)
     if result['OK']:
       self.producer = result['Value']
+    self.hostname = socket.gethostname()
 
   def emit(self, record):
     """
@@ -37,6 +42,8 @@ class MessageQueueHandler(logging.Handler):
 
     :params record: log record object
     """
+    # add the hostname to the record
+    record.hostname = self.hostname
     strRecord = self.format(record)
     if self.producer is not None:
-      self.producer.put(strRecord)
+      self.producer.put(json.loads(strRecord))

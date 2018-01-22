@@ -36,3 +36,4 @@ stomp.py>=3.1.5
 suds-jurko>=0.6
 sphinx
 hypothesis
+python-json-logger>=0.1.8
