@@ -193,8 +193,8 @@ class DistributionMaker:
             dctArgs.append( "-e '%s'" % webData.get("Version") )
             dctArgs.append( "-E '%s'" % webData.get("sourceUrl") )
           
-          if self.cliParams.extjspath:
-            dctArgs.append( "-P '%s'" % self.cliParams.extjspath )
+        if self.cliParams.extjspath:
+          dctArgs.append( "-P '%s'" % self.cliParams.extjspath )
             
       #Source
       result = self.relConf.getModSource( releaseVersion, modName )
