@@ -12,17 +12,15 @@ The TransformationCleaningAgent cleans up finalised (completed or cleaned) trans
 | DirectoryLocations           | Location of the OutputData             | TransformationDB, MetadataCatalog  |
 |                              |                                        |                                    |
 +------------------------------+----------------------------------------+------------------------------------+
-| ActiveSEs                    | From which SEs files will be removed   | []                                 |
-|                              |                                        |                                    |
+| ActiveSEs                    | From which SEs files will be removed   | [CERN-Disk, IN2P3-DST]             |
+|                              | If empty or not existing, only         | Default: []                        |
+|                              | files in the Catalog will be removed   |                                    |
 +------------------------------+----------------------------------------+------------------------------------+
-| EnableFlag                   |                                        |  True/False                        |
-|                              |                                        |                                    |
+| EnableFlag                   | Do something or not?                   |  True/False                        |
+|                              |                                        |  Default: True                     |
 +------------------------------+----------------------------------------+------------------------------------+
-| TransformationLogSE          | StorageElement holding log files       | LogSE                              |
-|                              |                                        |                                    |
+| ArchiveAfter                 | How many days to wait before archiving | 14                                 |
+|                              | transformations                        | Default: 7                         |
 +------------------------------+----------------------------------------+------------------------------------+
-| ArchiveAfter                 | How many days before archiving         | ArchiveAfter=7                     |
-|                              | transformations                        |                                    |
-+------------------------------+----------------------------------------+------------------------------------+
-| shifterProxy                 | shifter to use to operations           | shifterProxy=DataManager           |
+| shifterProxy                 | shifter to use for removal operations  | DataManager (also the default)     |
 +------------------------------+----------------------------------------+------------------------------------+
