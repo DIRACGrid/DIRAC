@@ -10,7 +10,8 @@ CHANGE: dirac-distribution and related scripts - compile web code while release
 NEW: DEncode - added unit tests   
 NEW: JEncode for json based serialization
 NEW: Add conditional printout of the traceback when serializing/deserializing non json compatible 
-     object in DEncode (enabled with DIRAC_DEBUG_DENCODE_CALLSTACK environment variable)    
+     object in DEncode (enabled with DIRAC_DEBUG_DENCODE_CALLSTACK environment variable) 
+FIX: dirac-distribution - fixed wrong indentation  
 
 *Framework
 CHANGE: ComponentInstaller - remove the old web portal configuration data 
