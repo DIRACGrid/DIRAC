@@ -47,28 +47,30 @@
 
 """
 
-import cx_Oracle
-import types
+__RCSID__ = "$Id$"
+
+
 import Queue
 import time
 import threading
 
-from DIRAC                                  import gLogger
-from DIRAC                                  import S_OK, S_ERROR
+import cx_Oracle  # pylint: disable=import-error
+
+from DIRAC import gLogger
+from DIRAC import S_OK, S_ERROR
 
 gInstancesCount = 0
 
-__RCSID__ = "$Id$"
-
 maxConnectRetry = 100
-maxArraysize = 5000 #max allowed
+maxArraysize = 5000  # max allowed
+
 
 class OracleDB(object):
   """
   Basic multithreaded DIRAC Oracle Client Class
   """
 
-  def __init__( self, userName, password = '', tnsEntry = '', maxQueueSize = 100 ):
+  def __init__(self, userName, password='', tnsEntry='', maxQueueSize=100):
     """
     set Oracle connection parameters and try to connect
     """
@@ -78,28 +80,27 @@ class OracleDB(object):
     self.__initialized = False
     self._connected = False
 
-    if 'logger' not in dir( self ):
-      self.logger = gLogger.getSubLogger( 'Oracle' )
+    if 'logger' not in dir(self):
+      self.logger = gLogger.getSubLogger('Oracle')
 
     # let the derived class decide what to do with if is not 1
     self._threadsafe = cx_Oracle.threadsafety
-    self.logger.debug( 'thread_safe = %s' % self._threadsafe )
+    self.logger.debug('thread_safe = %s' % self._threadsafe)
 
-    self.__checkQueueSize( maxQueueSize )
+    self.__checkQueueSize(maxQueueSize)
 
-    self.__userName = str( userName )
-    self.__passwd = str( password )
-    self.__tnsName = str( tnsEntry )
+    self.__userName = str(userName)
+    self.__passwd = str(password)
+    self.__tnsName = str(tnsEntry)
     # Create the connection Queue to reuse connections
-    self.__connectionQueue = Queue.Queue( maxQueueSize )
+    self.__connectionQueue = Queue.Queue(maxQueueSize)
     # Create the connection Semaphore to limit total number of open connection
-    self.__connectionSemaphore = threading.Semaphore( maxQueueSize )
+    self.__connectionSemaphore = threading.Semaphore(maxQueueSize)
 
     self.__initialized = True
     self._connect()
 
-
-  def __del__( self ):
+  def __del__(self):
     global gInstancesCount
 
     while 1 and self.__initialized:
@@ -108,20 +109,19 @@ class OracleDB(object):
         connection = self.__connectionQueue.get_nowait()
         connection.close()
       except Queue.Empty:
-        self.logger.debug( 'No more connection in Queue' )
+        self.logger.debug('No more connection in Queue')
         break
 
-  def __checkQueueSize( self, maxQueueSize ):
+  def __checkQueueSize(self, maxQueueSize):
 
     if maxQueueSize <= 0:
-      raise Exception( 'OracleDB.__init__: maxQueueSize must positive' )
+      raise Exception('OracleDB.__init__: maxQueueSize must positive')
     try:
       test = maxQueueSize - 1
-    except:
-      raise Exception( 'OracleDB.__init__: wrong type for maxQueueSize' )
+    except BaseException:
+      raise Exception('OracleDB.__init__: wrong type for maxQueueSize')
 
-
-  def _except( self, methodName, x, err ):
+  def _except(self, methodName, x, err):
     """
     print Oracle error or exeption
     return S_ERROR with Exception
@@ -129,81 +129,78 @@ class OracleDB(object):
 
     try:
       raise x
-    except cx_Oracle.Error, e:
-      self.logger.debug( '%s: %s' % ( methodName, err ),
-                     '%s' % ( e ) )
-      return S_ERROR( '%s: ( %s )' % ( err, e ) )
+    except cx_Oracle.Error as e:
+      self.logger.debug('%s: %s' % (methodName, err),
+                        '%s' % (e))
+      return S_ERROR('%s: ( %s )' % (err, e))
     except Exception as x:
-      self.logger.debug( '%s: %s' % ( methodName, err ), str( x ) )
-      return S_ERROR( '%s: (%s)' % ( err, str( x ) ) )
+      self.logger.debug('%s: %s' % (methodName, err), str(x))
+      return S_ERROR('%s: (%s)' % (err, str(x)))
 
+  def __checkFields(self, inFields, inValues):
 
-  def __checkFields( self, inFields, inValues ):
-
-    if len( inFields ) != len( inValues ):
-      return S_ERROR( 'Missmatch between inFields and inValues.' )
+    if len(inFields) != len(inValues):
+      return S_ERROR('Mismatch between inFields and inValues.')
     return S_OK()
 
-
-  def _connect( self ):
+  def _connect(self):
     """
     open connection to Oracle DB and put Connection into Queue
     set connected flag to True and return S_OK
     return S_ERROR upon failure
     """
-    self.logger.debug( '_connect:', self._connected )
+    self.logger.debug('_connect:', self._connected)
     if self._connected:
       return S_OK()
 
-    self.logger.debug( '_connect: Attempting to access DB',
-                        'by user %s/%s.' %
-                        ( self.__userName, self.__passwd ) )
+    self.logger.debug('_connect: Attempting to access DB',
+                      'by user %s/%s.' %
+                      (self.__userName, self.__passwd))
     try:
       self.__newConnection()
-      self.logger.debug( '_connect: Connected.' )
+      self.logger.debug('_connect: Connected.')
       self._connected = True
       return S_OK()
     except Exception as x:
-      return self._except( '_connect', x, 'Could not connect to DB.' )
+      return self._except('_connect', x, 'Could not connect to DB.')
 
-
-  def _query( self, cmd, conn = False ):
+  def _query(self, cmd, conn=False):
     """
     execute Oracle query command
     return S_OK structure with fetchall result as tuple
     it returns an empty tuple if no matching rows are found
     return S_ERROR upon error
     """
-    self.logger.debug( '_query:', cmd )
+    self.logger.debug('_query:', cmd)
 
-    retDict = self.__getConnection( conn = conn )
-    if not retDict['OK'] :
+    retDict = self.__getConnection(conn=conn)
+    if not retDict['OK']:
       return retDict
     connection = retDict['Value']
 
     try:
       cursor = connection.cursor()
       cursor.arraysize = maxArraysize
-      if cursor.execute( cmd ):
+      if cursor.execute(cmd):
         res = cursor.fetchall()
       else:
         res = ()
 
       # Log the result limiting it to just 10 records
-      if len( res ) < 10:
-        self.logger.debug( '_query:', res )
+      if len(res) < 10:
+        self.logger.debug('_query:', res)
       else:
-        self.logger.debug( '_query: Total %d records returned' % len( res ) )
-        self.logger.debug( '_query: %s ...' % str( res[:10] ) )
+        self.logger.debug('_query: Total %d records returned' % len(res))
+        self.logger.debug('_query: %s ...' % str(res[:10]))
 
-      retDict = S_OK( res )
+      retDict = S_OK(res)
     except Exception as x:
 
-      self.logger.debug( '_query:', cmd )
-      retDict = self._except( '_query', x, 'Execution failed.' )
-      self.logger.debug( 'Start Roolback transaktio!' )
+      self.logger.debug('_query:', cmd)
+      retDict = self._except('_query', x, 'Execution failed.')
+      self.logger.debug('Start Rollback transaction!')
       connection.rollback()
-      self.logger.debug( 'End Roolback transaktio!' )
+      self.logger.debug('End Rollback transaction!')
 
     try:
       connection.commit()
@@ -211,15 +208,15 @@ class OracleDB(object):
     except Exception:
       pass
     if not conn:
-      self.__putConnection( connection )
+      self.__putConnection(connection)
 
     return retDict
 
-  def executeStoredProcedure( self, packageName, parameters, output = True, array = None, conn = False ):
+  def executeStoredProcedure(self, packageName, parameters, output=True, array=None, conn=False):
 
-    self.logger.debug( '_query:', packageName + "(" + str( parameters ) + ")" )
+    self.logger.debug('_query:', packageName + "(" + str(parameters) + ")")
 
-    retDict = self.__getConnection( conn = conn )
+    retDict = self.__getConnection(conn=conn)
     if not retDict['OK']:
       return retDict
     connection = retDict['Value']
@@ -228,109 +225,104 @@ class OracleDB(object):
       cursor = connection.cursor()
       result = None
       results = None
-      if array != None and len(array) > 0:
-        if isinstance( type( array[0] ), basestring ):
-          result = cursor.arrayvar( cx_Oracle.STRING, array )
+      if array:
+        if isinstance(type(array[0]), basestring):
+          result = cursor.arrayvar(cx_Oracle.STRING, array)
           parameters += [result]
-        elif type(array[0]) == types.LongType or type(array[0]) == types.IntType:
-          result = cursor.arrayvar( cx_Oracle.NUMBER, array )
+        elif isinstance(array[0], (long, int)):
+          result = cursor.arrayvar(cx_Oracle.NUMBER, array)
           parameters += [result]
         else:
           return S_ERROR('The array type is not supported!!!')
-      if output == True:
+      if output:
         result = connection.cursor()
-        result.arraysize = maxArraysize # 500x faster!!
+        result.arraysize = maxArraysize  # 500x faster!!
         parameters += [result]
-        cursor.callproc( packageName, parameters )
+        cursor.callproc(packageName, parameters)
         results = result.fetchall()
       else:
-        cursor.callproc( packageName, parameters )
-      retDict = S_OK( results )
+        cursor.callproc(packageName, parameters)
+      retDict = S_OK(results)
     except Exception as x:
 
-      self.logger.debug( '_query:', packageName + "(" + str( parameters ) + ")" )
-      retDict = self._except( '_query', x, 'Execution failed.' )
+      self.logger.debug('_query:', packageName + "(" + str(parameters) + ")")
+      retDict = self._except('_query', x, 'Execution failed.')
       connection.rollback()
-
-
 
     try:
       cursor.close()
     except Exception:
       pass
     if not conn:
-      self.__putConnection( connection )
+      self.__putConnection(connection)
 
     return retDict
 
-
-  def executeStoredFunctions( self, packageName, returnType, parameters = None, conn = False ):
-    if parameters == None:
+  def executeStoredFunctions(self, packageName, returnType, parameters=None, conn=False):
+    if parameters is None:
       parameters = []
-    retDict = self.__getConnection( conn = conn )
+    retDict = self.__getConnection(conn=conn)
     if not retDict['OK']:
       return retDict
     connection = retDict['Value']
     try:
       cursor = connection.cursor()
       cursor.arraysize = maxArraysize
-      result = cursor.callfunc( packageName, returnType, parameters )
-      retDict = S_OK( result )
+      result = cursor.callfunc(packageName, returnType, parameters)
+      retDict = S_OK(result)
     except Exception as x:
-      self.logger.debug( '_query:', packageName + "(" + str( parameters ) + ")" )
-      retDict = self._except( '_query', x, 'Excution failed.' )
+      self.logger.debug('_query:', packageName + "(" + str(parameters) + ")")
+      retDict = self._except('_query', x, 'Excution failed.')
       connection.rollback()
-
 
     try:
       cursor.close()
     except Exception:
       pass
     if not conn:
-      self.__putConnection( connection )
+      self.__putConnection(connection)
     return retDict
 
-  def __newConnection( self ):
+  def __newConnection(self):
     """
     Create a New connection and put it in the Queue
     """
-    self.logger.debug( '__newConnection:' )
+    self.logger.debug('__newConnection:')
 
-    connection = cx_Oracle.Connection( self.__userName, self.__passwd, self.__tnsName, threaded = True )
-    self.__putConnection( connection )
+    connection = cx_Oracle.Connection(self.__userName, self.__passwd, self.__tnsName, threaded=True)
+    self.__putConnection(connection)
 
-
-  def __putConnection( self, connection ):
+  def __putConnection(self, connection):
     """
     Put a connection in the Queue, if the queue is full, the connection is closed
     """
-    self.logger.debug( '__putConnection:' )
+    self.logger.debug('__putConnection:')
 
     # Release the semaphore first, in case something fails
     self.__connectionSemaphore.release()
     try:
-      self.__connectionQueue.put_nowait( connection )
-    except Queue.Full, x:
-      self.logger.debug( '__putConnection: Full Queue' )
+      self.__connectionQueue.put_nowait(connection)
+    except Queue.Full as x:
+      self.logger.debug('__putConnection: Full Queue')
       try:
         connection.close()
       except Exception:
         pass
     except Exception as x:
-      self._except( '__putConnection', x, 'Failed to put Connection in Queue' )
+      self._except('__putConnection', x, 'Failed to put Connection in Queue')
 
-  def _getConnection( self ):
+  def _getConnection(self):
     """
     Return a new connection to the DB
     It uses the private method __getConnection
     """
-    self.logger.debug( '_getConnection:' )
+    self.logger.debug('_getConnection:')
 
-    retDict = self.__getConnection( trial = 0 )
+    retDict = self.__getConnection(trial=0)
     self.__connectionSemaphore.release()
     return retDict
 
-  def __getConnection( self, conn = False, trial = 0 ):
+  def __getConnection(self, conn=False, trial=0):
     """
     Return a new connection to the DB,
     if conn is provided then just return it.
@@ -338,39 +330,39 @@ class OracleDB(object):
     it will retry maxConnectRetry to open a new connection and will return
     an error if it fails.
     """
-    self.logger.debug( '__getConnection:' )
+    self.logger.debug('__getConnection:')
 
     if conn:
-      return S_OK( conn )
+      return S_OK(conn)
 
     try:
       self.__connectionSemaphore.acquire()
       connection = self.__connectionQueue.get_nowait()
-      self.logger.debug( '__getConnection: Got a connection from Queue' )
+      self.logger.debug('__getConnection: Got a connection from Queue')
       if connection:
         try:
           # This will try to reconect if the connection has timeout
           connection.commit()
-        except:
+        except BaseException:
           # if the ping fails try with a new connection from the Queue
           self.__connectionSemaphore.release()
           return self.__getConnection()
-        return S_OK( connection )
-    except Queue.Empty, x:
+        return S_OK(connection)
+    except Queue.Empty as x:
       self.__connectionSemaphore.release()
-      self.logger.debug( '__getConnection: Empty Queue' )
+      self.logger.debug('__getConnection: Empty Queue')
       try:
-        if trial == min( 100, maxConnectRetry ):
-          return S_ERROR( 'Could not get a connection after %s retries.' % maxConnectRetry )
+        if trial == min(100, maxConnectRetry):
+          return S_ERROR('Could not get a connection after %s retries.' % maxConnectRetry)
         try:
           self.__newConnection()
           return self.__getConnection()
         except Exception as x:
-          self.logger.debug( '__getConnection: Fails to get connection from Queue', x )
-          time.sleep( trial * 5.0 )
+          self.logger.debug('__getConnection: Fails to get connection from Queue', x)
+          time.sleep(trial * 5.0)
           newtrial = trial + 1
-          return self.__getConnection( trial = newtrial )
+          return self.__getConnection(trial=newtrial)
       except Exception as x:
-        return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
+        return self._except('__getConnection:', x, 'Failed to get connection from Queue')
     except Exception as x:
-      return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
+      return self._except('__getConnection:', x, 'Failed to get connection from Queue')
