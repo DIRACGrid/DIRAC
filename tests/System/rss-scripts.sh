@@ -37,6 +37,66 @@ echo " ########################## Resource Status #############################"
 echo " "
 echo " "
 
+echo "======  dirac-admin-get-banned-sites"
+dirac-admin-get-banned-sites
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+echo " "
+echo "======  dirac-admin-get-site-mask"
+dirac-admin-get-site-mask
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+echo " "
+echo "======   dirac-admin-site-info LCG.CERN.cern"
+dirac-admin-site-info LCG.CERN.cern
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+echo " "
+echo "======  dirac-dms-show-se-status"
+dirac-dms-show-se-status
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+echo " "
+echo "======  dirac-rss-list-status --element=Site"
+dirac-rss-list-status --element=Site
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+echo " "
+echo "======  dirac-rss-list-status --element=Resource --name=CERN-USER"
+dirac-rss-list-status --element=Resource --name=CERN-USER
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+# echo " "
+# echo "======  dirac-rss-list-status --element=Resource --name=CERN-RAW,CERN-DST"
+# dirac-rss-list-status --element=Resource --name=CERN-RAW,CERN-DST
+# if [ $? -ne 0 ]
+# then
+#    exit $?
+# fi
+# echo " "
+
+# echo " "
+# echo "======  dirac-rss-query-dt-cache select --element=Site"
+# dirac-rss-query-dt-cache select --element=Site
+# if [ $? -ne 0 ]
+# then
+#    exit $?
+# fi
+echo " "
+
+
 echo -e "\n\n TESTING: dirac-rss-query-db --name=test123 --status=Banned --statusType=ReadAccess --reason=test add resource status"
 dirac-rss-query-db --name=test123 --status=Banned --statusType=ReadAccess --elementType=StorageElement --reason=test add resource status -dd
 if [ $? -ne 0 ]
