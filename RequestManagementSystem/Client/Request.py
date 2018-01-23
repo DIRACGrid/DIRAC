@@ -404,7 +404,7 @@ class Request( object ):
 
       if isinstance( value, datetime.datetime ):
         # We convert date time to a string
-        jsonData[attrName] = value.strftime( self._datetimeFormat )
+        jsonData[attrName] = value.strftime(self._datetimeFormat)  # pylint: disable=no-member
       else:
         jsonData[attrName] = value
 

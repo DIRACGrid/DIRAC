@@ -783,7 +783,7 @@ class SRM2Storage( StorageBase ):
       else:
         self.log.debug( "__putFile: Unable to remove remote file remnant %s." % dest_url )
       return res
-    errCode, errStr = res['Value']
+    errCode, errStr = res['Value']  # pylint: disable=invalid-sequence-index
     if errCode == 0:
       self.log.info( '__putFile: Successfully put file to storage.' )
       # # checksum check? return!
@@ -920,7 +920,7 @@ class SRM2Storage( StorageBase ):
     res = res['Value']
     if not res['OK']:  # pylint:disable=invalid-sequence-index
       return res
-    errCode, errStr = res['Value']
+    errCode, errStr = res['Value']  # pylint: disable=invalid-sequence-index
     if errCode == 0:
       self.log.debug( '__getFile: Got a file from storage.' )
       localSize = getSize( dest_file )
