@@ -159,12 +159,6 @@ class ElasticTestChain(ElasticTestCase):
   def test_getDocTypes(self):
     """ test get document types
     """
-    result = self.elasticSearchDB.index(self.index_name, 'test', {"Color": "red",
-                                                                  "quantity": 1,
-                                                                  "Product": "a",
-                                                                  "timestamp": 1458226213})
-    self.assertTrue(result['OK'])
-
     result = self.elasticSearchDB.getDocTypes(self.index_name)
     self.assertTrue(result)
     self.assertEqual(result['Value']['test']['properties'].keys(), [u'Color', u'timestamp', u'Product', u'quantity'])
@@ -194,7 +188,7 @@ class ElasticTestChain(ElasticTestCase):
     self.assertEqual(result['Value'], [])
 
 
-    # this, and the next (Product) are not run because (possibly only for ES 6+:
+    # this, and the next (Product) are not run because (possibly only for ES 6+):
     # # 'Fielddata is disabled on text fields by default.
     # # Set fielddata=true on [Color] in order to load fielddata in memory by uninverting the inverted index.
     # # Note that this can however use significant memory. Alternatively use a keyword field instead.'
@@ -208,19 +202,19 @@ class ElasticTestChain(ElasticTestCase):
 
   def test_query(self):
     body = {"size": 0,
-            "query": {"filtered": {"query": {"query_string": {"query": "*"}},
-                                   "filter": {"bool":
-                                              {"must": [{"range":
-                                                         {"timestamp":
-                                                          {"gte": 1423399451544,
-                                                           "lte": 1423631917911
-                                                          }
-                                                         }
-                                                        }],
-                                               "must_not": []
-                                              }
-                                             }
-                                  }
+            {"query": {"query_string": {"query": "*"}},
+             "filter": {"bool":
+                        {"must": [{"range":
+                                   {"timestamp":
+                                    {"gte": 1423399451544,
+                                     "lte": 1423631917911
+                                    }
+                                   }
+                                  }],
+                         "must_not": []
+                        }
+                       }
+            }
                      },
             "aggs": {
                 "3": {
