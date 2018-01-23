@@ -14,7 +14,6 @@ from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
-from DIRAC.DataManagementSystem.private.FTS3Utilities import _getVoName
 
 class FTS3Job( FTS3Serializable ):
   """ Abstract class to represent a job to be executed by FTS. It belongs
@@ -191,18 +190,7 @@ class FTS3Job( FTS3Serializable ):
     source_spacetoken = res['Value']
 
     # getting all the source surls
-    voName = None
-    se = None
-    if allTargetSURLs:
-      res = _getVoName(allTargetSURLs.iterkeys().next())
-      if res['OK']:
-        voName = res['Value']
-        se = StorageElement(self.sourceSE, vo=voName)
-
-    if not se:
-      se = StorageElement(self.sourceSE)
-
-    res = se.getURL(allTargetSURLs, protocol='srm')
+    res = StorageElement(self.sourceSE).getURL(allTargetSURLs, protocol='srm')
     if not res['OK']:
       return res
 
@@ -412,19 +400,9 @@ class FTS3Job( FTS3Serializable ):
     allLFNs = [ftsFile.lfn for ftsFile in self.filesToSubmit]
 
     failedLFNs = set()
-    voName = None
-    se = None
-    if allLFNs:
-      res = _getVoName(allLFNs[0])
-      if res['OK']:
-        voName = res['Value']
-        se = StorageElement(self.targetSE, vo=voName)
-
-    if not se:
-      se = StorageElement(self.targetSE)
 
     # getting all the target surls
-    res = se.getURL(allLFNs, protocol='srm')
+    res = StorageElement(self.targetSE).getURL(allLFNs, protocol='srm')
     if not res['OK']:
       return res
 

@@ -12,14 +12,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 
-def _getVoName(lfn):
-  try:
-    voName = lfn.split('/')[1]
-    return S_OK(voName)
-  except IndexError:
-    return S_ERROR("Failed to extract vo name from lfn")
-
-
 def _checkSourceReplicas( ftsFiles ):
   """ Check the active replicas
       :params ftsFiles: list of FT3Files

@@ -57,6 +57,7 @@ class FTS3Agent(AgentModule):
     serverPolicyType = opHelper().getValue('DataManagement/FTSPlacement/FTS3/ServerPolicy', 'Random')
     self._serverPolicy = FTS3Utilities.FTS3ServerPolicy(srvDict, serverPolicy=serverPolicyType)
 
+    self.shifterProxy = self.am_setOption('shifterProxy', 'DataManager')
     self.maxNumberOfThreads = self.am_getOption("MaxThreads", 10)
 
     # Number of Operation we treat in one loop

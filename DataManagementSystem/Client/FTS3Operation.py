@@ -18,7 +18,6 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
-from DIRAC.DataManagementSystem.private.FTS3Utilities import _getVoName
 
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation as rmsOperation
@@ -470,16 +469,7 @@ class FTS3TransferOperation(FTS3Operation):
       if operation.Catalog:
         registerOperation.Catalog = operation.Catalog
 
-      voName = None
-      targetSE = None
-      if ftsFileList:
-        res = _getVoName(ftsFileList[0].lfn)
-        if res['OK']:
-          voName = res['Value']
-          targetSE = StorageElement(target, vo=voName)
-
-      if not targetSE:
-        targetSE = StorageElement(target)
+      targetSE = StorageElement(target)
 
       for ftsFile in ftsFileList:
         opFile = rmsFile()
