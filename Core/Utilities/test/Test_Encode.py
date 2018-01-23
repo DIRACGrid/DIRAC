@@ -1,19 +1,27 @@
-"""Test Encoding function of DIRAC
-Any library that would pretend replacing diset should pass this tests.
+""" Test Encoding function of DIRAC
+It contains tests for DISET and JSON.
+Some tests can be passed by both, while some can only be passed by one.
+
+Typically, we know JSON cannot serialize tuples, or integers as dictionary keys.
+On the other hand, it can serialize some objects, while DISET cannot.
 
 """
 
 
 from string import printable
+import datetime
 import sys
 
+
 from DIRAC.Core.Utilities.DEncode import encode as disetEncode, decode as disetDecode, g_dEncodeFunctions
+from DIRAC.Core.Utilities.JEncode import encode as jsonEncode, decode as jsonDecode, JSerializable
 
 from hypothesis import given
 from hypothesis.strategies import integers, lists, recursive, floats, text,\
-    booleans, none, dictionaries, tuples, datetimes
+    booleans, none, dictionaries, tuples
+from hypothesis.searchstrategy.datetime import DatetimeStrategy
 
-from pytest import mark, approx
+from pytest import mark, approx, raises
 parametrize = mark.parametrize
 
 
@@ -21,14 +29,40 @@ parametrize = mark.parametrize
 # In order to test a new library, import the encode/decode
 # function, and add the tuple here
 
-enc_dec_imp = ((disetEncode, disetDecode),)
+disetTuple = (disetEncode, disetDecode)
+jsonTuple = (jsonEncode, jsonDecode)
+
+enc_dec_imp = (disetTuple, jsonTuple)
+
+
+# We define a custom datetime strategy in order
+# to pull date after 1900 (limitation of strftime)
+# and without microseconds
+
+class myDateTimeSearchStrategy(DatetimeStrategy):
+  """ Class to draw datetime without microseconds"""
+
+  def do_draw(self, *args, **kwargs):
+    """ Just draw from the parent class and replace microseconds with 0 """
+    return super(myDateTimeSearchStrategy, self).do_draw(*args, **kwargs).replace(microsecond=0)
+
+
+def myDatetimes():
+  """ Convenience 'constructor' like hypothesis datetimes().
+      Only pull dates after 1900
+  """
+  return myDateTimeSearchStrategy(datetime.datetime(
+      1900, 1, 1, 0, 0), datetime.datetime.max, none())
 
 
 # These initial strategies are the basic types supported by the original dEncode
 # Unfortuately we cannot make nested structure with floats because as the floats
 # are not stable, the result is approximative, and it becomes extremely difficult
 # to compare
-initialStrategies = none() | booleans() | text() | integers() | datetimes()
+# Datetime also starts only at 1900 because earlier date can't be dumped with strftime
+initialStrategies = none() | booleans() | text() | integers() | myDatetimes()
+initialJsonStrategies = none() | booleans() | text() | myDatetimes()
+
 
 # From a strategy (x), make a new strategy
 # We basically use that to make nested structures
@@ -39,6 +73,13 @@ nestedStrategy = recursive(
     lambda x: lists(x) | dictionaries(
         text(),
         x) | tuples(x))
+
+# This strategy does not return tuples
+nestedStrategyJson = recursive(
+    initialJsonStrategies,
+    lambda x: lists(x) | dictionaries(
+        text(),
+        x))
 
 
 def test_everyBaseTypeIsTested():
@@ -68,6 +109,8 @@ def agnosticTestFunction(enc_dec, data):
   assert data == decodedData
   assert lenData == len(encodedData)
 
+  return decodedData
+
 
 @parametrize('enc_dec', enc_dec_imp)
 @given(data=booleans())
@@ -77,13 +120,15 @@ def test_BaseType_Bool(enc_dec, data):
 
 
 @parametrize('enc_dec', enc_dec_imp)
-@given(data=datetimes())
+@given(data=myDatetimes())
 def test_BaseType_DateTime(enc_dec, data):
   """ Test for data time"""
+
   agnosticTestFunction(enc_dec, data)
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# Json does not serialize keys as integers but as string
+@parametrize('enc_dec', [disetTuple])
 @given(data=dictionaries(integers(), integers()))
 def test_BaseType_Dict(enc_dec, data):
   """ Test for basic dict"""
@@ -139,7 +184,8 @@ def test_BaseType_String(enc_dec, data):
   agnosticTestFunction(enc_dec, data)
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# Tuple are not serialized in JSON
+@parametrize('enc_dec', [disetTuple])
 @given(data=tuples(integers()))
 def test_BaseType_Tuple(enc_dec, data):
   """ Test basic tuple """
@@ -153,8 +199,90 @@ def test_BaseType_Unicode(enc_dec, data):
   agnosticTestFunction(enc_dec, data)
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# Json will not pass this because of tuples and integers as dict keys
+@parametrize('enc_dec', [disetTuple])
 @given(data=nestedStrategy)
 def test_nestedStructure(enc_dec, data):
   """ Test nested structure """
   agnosticTestFunction(enc_dec, data)
+
+
+# DEncode raises KeyError.....
+# Others raise TypeError
+@parametrize('enc_dec', enc_dec_imp)
+def test_NonSerializable(enc_dec):
+  """ Test that a class that does not inherit from the serializable class
+      raises TypeError
+  """
+
+  class NonSerializable(object):
+    """ Dummy class not serializable"""
+    pass
+
+  data = NonSerializable()
+  with raises((TypeError, KeyError)):
+    agnosticTestFunction(enc_dec, data)
+
+
+class Serializable(JSerializable):
+  """ Dummy class inheriting from JSerializable"""
+
+  _attrToSerialize = ['instAttr']
+
+  def __init__(self, instAttr=None):
+    self.instAttr = instAttr
+
+  def __eq__(self, other):
+    return all([getattr(self, attr) == getattr(other, attr) for attr in self._attrToSerialize])
+
+
+@given(data=nestedStrategyJson)
+def test_Serializable(data):
+  """ Test if a simple serializable class with one random argument
+      can be serialized
+  """
+
+  objData = Serializable(instAttr=data)
+
+  agnosticTestFunction(jsonTuple, objData)
+
+
+def test_nonDeclaredAttr():
+  """ Tests that an argument not in the list of arguments to serialized
+      is not serialized
+  """
+
+  objData = Serializable()
+  objData.notToBeSerialized = 1
+
+  encodedData = jsonEncode(objData)
+  decodedData, _lenData = jsonDecode(encodedData)
+
+  assert not hasattr(decodedData, 'notToBeSerialized')
+
+
+class BadSerializable(JSerializable):
+  """ Missing _attrToSerialize attribute """
+  pass
+
+
+def test_missingAttrToSerialize():
+  """ Tests that an argument not in the list of arguments to serialized
+      is not serialized
+  """
+
+  objData = BadSerializable()
+
+  with raises(TypeError):
+    agnosticTestFunction(jsonTuple, objData)
+
+
+@given(data=nestedStrategyJson)
+def test_nestedSerializable(data):
+  """ Test that a serializable containing a serializable class
+      can be serialized
+  """
+
+  subObj = Serializable(instAttr=data)
+  objData = Serializable(instAttr=subObj)
+  agnosticTestFunction(jsonTuple, objData)

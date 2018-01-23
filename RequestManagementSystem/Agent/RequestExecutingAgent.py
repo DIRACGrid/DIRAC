@@ -25,6 +25,7 @@ __RCSID__ = '$Id$'
 # @date 2013/03/12 15:36:56
 # @brief Definition of RequestExecutingAgent class.
 # # imports
+import sys
 import time
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -343,8 +344,13 @@ class RequestExecutingAgent( AgentModule ):
 
     self.log.info( 'Flushing callbacks (%d requests still in cache)' % len( self.__requestCache ) )
     processed = self.processPool().processResults()
+    # This happens when the result queue is screwed up.
+    # Returning S_ERROR proved not to be sufficient,
+    # and when in this situation, there is nothing we can do.
+    # So we just exit. runit will restart from scratch.
     if processed < 0:
-      return S_ERROR( "Results queue is screwed up" )
+      self.log.fatal("Results queue is screwed up")
+      sys.exit(1)
     # # clean return
     return S_OK()
 
