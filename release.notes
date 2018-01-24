@@ -1,4 +1,4 @@
-[v6r20-pre10]
+[v6r20-pre11]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -7,12 +7,18 @@ CHANGE: dirac-deploy-scripts, dirac-install - allow command modules with undersc
         their names in order for better support for the code checking tools
 CHANGE: dirac-distribution and related scripts - compile web code while release
         generation
-NEW: DEncode - added unit tests        
+NEW: DEncode - added unit tests   
+NEW: JEncode for json based serialization
+NEW: Add conditional printout of the traceback when serializing/deserializing non json compatible 
+     object in DEncode (enabled with DIRAC_DEBUG_DENCODE_CALLSTACK environment variable) 
+FIX: dirac-distribution - fixed wrong indentation  
 
 *Framework
 CHANGE: ComponentInstaller - remove the old web portal configuration data 
         used during the installation
 NEW: WebAppCompiler methods is implemented, which is used to compile the web framework
+NEW: add JsonFormatter for logs
+CHANGE: MessageQueue log handler uses JsonFormatter
 
 *WorkloadManagementSystem
 NEW: StopSigRegex, StopSigStartSeconds, StopSigFinishSeconds, StopSigNumber added to JDL, which cause Watchdog to send a signal StopSigNumber to payload processes matching StopSigRegex when there are less than StopSigFinishSeconds of wall clock remaining according to MJF.
@@ -22,6 +28,12 @@ NEW: added a new synchronizer for Pilot3: sync of subset of CS info to JSON file
 NEW: dirac-admin-get-pilotslogging script for viewing PilotsLogging
 CHANGE: dirac-wms-cpu-normalization uses the abstracted DB12 benchmark script used by the HEPiX Benchmarking Working Group, and the new MJF utility to obtain values from the system and to save them into the DIRAC LocalSite configuration.
 NEW: Bulk job submission with protection of the operation transaction
+NEW: WMSHistoryCorrector and MonitoringHistoryCorrector classes inheriting from a common BaseHistoryCorrector class
+CHANGE: SiteDirector - refactored Site Director for better extensibility
+FIX: always initialize gPilotAgentsDB object
+
+*TS
+FIX: TranformationCleaningAgent - just few simplifications 
 
 *DMS
 NEW: FTS3Agent working only with the FTS3 service to replace the existing one
@@ -29,11 +41,38 @@ NEW: FTS3Utilities - use correct FTS Server Selection Policy
 NEW: StorageElement service - getFreeDiskSpace() and getTotalDiskSpace() take into account 
      MAX_STORAGE_SIZE parameter value
 
+*RMS
+FIX: Really exit the RequestExecutingAgent when the result queue is buggy
+
+*RSS
+FIX: Initialize RPC to WMSAdministrator only once
+
 *Resources
 NEW: New SingularityComputingElement to submit jobs to a Singularity container
 
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
+
+[v6r19p12]
+
+*Core
+CHANGE: QualityMapGraph - change the color map of the Quality plots
+
+*Framework
+FIX: Logging - remove the space after log messages if no variable message is printed, fixes #3587
+
+*MonitoringSystem
+CHANGE: ElasticSearch 6 does not support multiple types, only one type is created instead.
+
+*RSS
+FIX: GOCDBClient - encode in utf-8, update goc db web api URL
+FIX: fixed bug in creation of history of status (avoid repetition of entries)
+
+*DMS
+FIX: fixed bug in FTSAgent initialization
+
+*WMS
+FIX: fix bug in dirac-wms-job-select: treating the case of jobGroup(s) not requested
 
 [v6r19p11]
 

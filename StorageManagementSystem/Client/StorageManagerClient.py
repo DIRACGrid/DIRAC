@@ -43,7 +43,10 @@ def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog =
         # FIXME: it is not possible to return here an S_ERROR(), return the message only
         absentLFNs[lfn] = S_ERROR( errno.ENOENT, 'File not in FC' )['Message']
     if absentLFNs:
-      return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict, 'failedLFNs':list( failedLFNs ), 'absentLFNs':absentLFNs} )
+      return S_OK({'onlineLFNs': list(onlineLFNs),
+                   'offlineLFNs': offlineLFNsDict,
+                   'failedLFNs': list(failedLFNs),
+                   'absentLFNs': absentLFNs})
     return S_ERROR( "Failures in getting replicas" )
 
   lfnListReplicas = lfnListReplicas['Value']['Successful']
@@ -105,8 +108,11 @@ def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog =
       if not found:
         offlineLFNsDict.setdefault( random.choice( ses ), list() ).append( lfn )
 
-
-  return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict, 'failedLFNs':list( failedLFNs ), 'absentLFNs':absentLFNs, 'onlineSites':onlineSites} )
+  return S_OK({'onlineLFNs': list(onlineLFNs),
+               'offlineLFNs': offlineLFNsDict,
+               'failedLFNs': list(failedLFNs),
+               'absentLFNs': absentLFNs,
+               'onlineSites': onlineSites})
 
 def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
                         checkOnlyTapeSEs = None, jobLog = None,

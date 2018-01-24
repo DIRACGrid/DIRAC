@@ -33,7 +33,8 @@ class BaseType( object ):
     """
     self.doc_type = None
     self.keyFields = []
-    self.mapping = {'time_type':{'properties' : {'timestamp': {'type': 'date'} } } } #we use timestamp for all monitoring types.
+    self.mapping = {} #by default we do not have mapping
+    self.timeType = {'properties' : {'timestamp': {'type': 'date'} } }  #we use timestamp for all monitoring types.
     self.period = 'day'
     self.monitoringFields = ["Value"]
     self.index = None
@@ -84,4 +85,6 @@ class BaseType( object ):
     """
     :param dict mapping: the mapping used by elasticsearch
     """
-    self.mapping.update(mapping)
+    docType = self._getDocType()
+    self.mapping.setdefault(docType, self.timeType)
+    self.mapping[docType]['properties'].update(mapping)

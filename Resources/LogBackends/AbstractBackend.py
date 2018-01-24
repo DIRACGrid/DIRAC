@@ -88,5 +88,5 @@ class AbstractBackend(object):
       if options['threadIDIsShown']:
         fmt += ' [%(thread)d]'
       fmt += ' %(levelname)s: '
-    fmt += '%(message)s %(varmessage)s'
+    fmt += '%(message)s%(spacer)s%(varmessage)s'
     return (datefmt, fmt)
