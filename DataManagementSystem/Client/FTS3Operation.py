@@ -23,6 +23,8 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation as rmsOperation
 from DIRAC.RequestManagementSystem.Client.File import File as rmsFile
 
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+
 
 class FTS3Operation( FTS3Serializable ):
   """ Abstract class to represent an operation to be executed by FTS. It is a
@@ -48,7 +50,7 @@ class FTS3Operation( FTS3Serializable ):
   INIT_STATE = 'Active'
 
   _attrToSerialize = ['operationID', 'username', 'userGroup', 'rmsReqID', 'rmsOpID',
-                      'sourceSEs','ftsFiles','activity','priority',
+                      'sourceSEs', 'ftsFiles', 'activity', 'priority',
                       'ftsJobs', 'creationTime', 'lastUpdate', 'error', 'status']
 
   def __init__( self, ftsFiles = None, username = None, userGroup = None, rmsReqID = -1,
@@ -101,7 +103,6 @@ class FTS3Operation( FTS3Serializable ):
     self.dManager = None
     self._log = None
     self.init_on_load()
-
 
 
   @orm.reconstructor
@@ -209,6 +210,7 @@ class FTS3Operation( FTS3Serializable ):
     newJob.priority = self.priority
     newJob.username = self.username
     newJob.userGroup = self.userGroup
+    newJob.vo = getVOForGroup(self.userGroup)
     newJob.filesToSubmit = ftsFiles
     newJob.operationID = getattr( self, 'operationID' )
 
@@ -342,7 +344,6 @@ class FTS3Operation( FTS3Serializable ):
     ftsOp.rmsReqID = rmsReq.RequestID
     ftsOp.rmsOpID = rmsOp.OperationID
 
-
     ftsOp.sourceSEs = rmsOp.SourceSE
 
     try:
@@ -360,8 +361,6 @@ class FTS3Operation( FTS3Serializable ):
 class FTS3TransferOperation(FTS3Operation):
   """ Class to be used for a Replication operation
   """
-
-
 
   def prepareNewJobs( self, maxFilesPerJob = 100, maxAttemptsPerFile = 10 ):
 
@@ -469,8 +468,7 @@ class FTS3TransferOperation(FTS3Operation):
       if operation.Catalog:
         registerOperation.Catalog = operation.Catalog
 
-      targetSE = StorageElement(target)
-
+      targetSE = StorageElement(target, vo=getVOForGroup(self.userGroup))
       for ftsFile in ftsFileList:
         opFile = rmsFile()
         opFile.LFN = ftsFile.lfn

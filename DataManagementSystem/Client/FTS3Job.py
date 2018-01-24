@@ -6,14 +6,18 @@ import datetime
 # Requires at least version 3.3.3
 import fts3.rest.client.easy as fts3
 from fts3.rest.client.exceptions import FTS3ClientException
+from fts3.rest.client.request import Request as ftsSSLRequest
 
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
+
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+
+from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 class FTS3Job( FTS3Serializable ):
   """ Abstract class to represent a job to be executed by FTS. It belongs
@@ -57,6 +61,8 @@ class FTS3Job( FTS3Serializable ):
     self.username = None
     self.userGroup = None
 
+    self.vo = None
+
     # temporary used only for submission
     # Set by FTS Operation when preparing
     self.type = None  # Transfer, Staging, Removal
@@ -66,6 +72,7 @@ class FTS3Job( FTS3Serializable ):
     self.filesToSubmit = []
     self.activity = None
     self.priority = None
+
 
   def monitor( self, context = None, ftsServer = None, ucert = None ):
     """ Queries the fts server to monitor the job
@@ -87,7 +94,7 @@ class FTS3Job( FTS3Serializable ):
     if not context:
       if not ftsServer:
         ftsServer = self.ftsServer
-      context = fts3.Context( endpoint = ftsServer, ucert = ucert )
+      context = fts3.Context(endpoint=ftsServer, ucert=ucert, request_class=ftsSSLRequest, verify=False)
 
     jobStatusDict = None
     try:
@@ -190,7 +197,7 @@ class FTS3Job( FTS3Serializable ):
     source_spacetoken = res['Value']
 
     # getting all the source surls
-    res = StorageElement(self.sourceSE).getURL(allTargetSURLs, protocol='srm')
+    res = StorageElement(self.sourceSE, vo=self.vo).getURL(allTargetSURLs, protocol='srm')
     if not res['OK']:
       return res
 
@@ -389,7 +396,7 @@ class FTS3Job( FTS3Serializable ):
     if not context:
       if not ftsServer:
         ftsServer = self.ftsServer
-      context = fts3.Context( endpoint = ftsServer, ucert = ucert )
+      context = fts3.Context(endpoint=ftsServer, ucert=ucert, request_class=ftsSSLRequest, verify=False)
 
     # Construct the target SURL
     res = self.__fetchSpaceToken( self.targetSE )
@@ -402,7 +409,7 @@ class FTS3Job( FTS3Serializable ):
     failedLFNs = set()
 
     # getting all the target surls
-    res = StorageElement(self.targetSE).getURL(allLFNs, protocol='srm')
+    res = StorageElement(self.targetSE, vo=self.vo).getURL(allLFNs, protocol='srm')
     if not res['OK']:
       return res
 
@@ -457,7 +464,7 @@ class FTS3Job( FTS3Serializable ):
         :returns: an fts3 context
     """
     try:
-      context = fts3.Context( endpoint = ftsServer, ucert = ucert )
+      context = fts3.Context(endpoint=ftsServer, ucert=ucert, request_class=ftsSSLRequest, verify=False)
       return S_OK(context)
     except FTS3ClientException as e:
       gLogger.exception( "Error generating context", repr( e ) )
