@@ -10,7 +10,8 @@ from DIRAC.Interfaces.API.Job import Job
 
 
 # With a script that returns 0
-scriptSHLocation = find_all('script-OK.sh', '..', '/DIRAC/WorkloadManagementSystem/JobWrapper')[0]
+scriptSHLocation = find_all(
+    'script-OK.sh', '..', '/DIRAC/WorkloadManagementSystem/JobWrapper')[0]
 
 j = Job()
 j.setExecutable('sh %s' % scriptSHLocation)
@@ -20,14 +21,16 @@ with open(jobXMLFile, 'w+') as fd:
 
 # With a script that returns 0 - multiple steps
 j = Job()
-j.setExecutable('sh %s' % scriptSHLocation, modulesList=['Script', 'FailoverRequest'])
+j.setExecutable('sh %s' % scriptSHLocation, modulesList=[
+                'Script', 'FailoverRequest'])
 jobXMLFile = 'jobDescription-OK-multiSteps.xml'
 with open(jobXMLFile, 'w+') as fd:
   fd.write(j._toXML())
 
 
 # With a script that returns 111
-scriptSHLocation = find_all('script.sh', '..', '/DIRAC/WorkloadManagementSystem/JobWrapper')[0]
+scriptSHLocation = find_all(
+    'script.sh', '..', '/DIRAC/WorkloadManagementSystem/JobWrapper')[0]
 
 j = Job()
 j.setExecutable('sh %s' % scriptSHLocation)
@@ -37,14 +40,16 @@ with open(jobXMLFile, 'w+') as fd:
 
 # With a script that returns 111 - multiple steps
 j = Job()
-j.setExecutable('sh %s' % scriptSHLocation, modulesList=['Script', 'FailoverRequest'])
+j.setExecutable('sh %s' % scriptSHLocation, modulesList=[
+                'Script', 'FailoverRequest'])
 jobXMLFile = 'jobDescription-FAIL-multiSteps.xml'
 with open(jobXMLFile, 'w+') as fd:
   fd.write(j._toXML())
 
 
 # With a script that returns 1502
-scriptSHLocation = find_all('script-RESC.sh', '..', '/DIRAC/WorkloadManagementSystem/JobWrapper')[0]
+scriptSHLocation = find_all('script-RESC.sh', '..',
+                            '/DIRAC/WorkloadManagementSystem/JobWrapper')[0]
 
 j = Job()
 j.setExecutable('sh %s' % scriptSHLocation)

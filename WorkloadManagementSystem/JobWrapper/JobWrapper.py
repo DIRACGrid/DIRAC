@@ -364,12 +364,14 @@ class JobWrapper(object):
 
     self.__setJobParam('PayloadPID', payloadPID)
 
-    watchdogInstance = WatchdogFactory().getWatchdog(self.currentPID,
-                                                     exeThread,
-                                                     spObject,
-                                                     jobCPUTime,
-                                                     jobMemory,
-                                                     processors)
+    watchdogInstance = WatchdogFactory().getWatchdog(pid=self.currentPID,
+                                                     exeThread=exeThread,
+                                                     spObject=spObject,
+                                                     jobCPUTime=jobCPUTime,
+                                                     memoryLimit=jobMemory,
+                                                     processors=processors,
+                                                     jobArgs=self.jobArgs)
+
     if not watchdogInstance['OK']:
       self.log.error('Could not create Watchdog instance', watchdogInstance['Message'])
       return S_ERROR('Could not create Watchdog instance')
@@ -1369,6 +1371,8 @@ class ExecutionThread(threading.Thread):
     start = time.time()
     initialStat = os.times()
     output = spObject.systemCall(cmd, env=self.exeEnv, callbackFunction=self.sendOutput, shell=True)
+    gLogger.verbose(
+        "Output of system call within execution thread: %s" % output)
     EXECUTION_RESULT['Thread'] = output
     timing = time.time() - start
     EXECUTION_RESULT['Timing'] = timing
@@ -1413,6 +1417,8 @@ class ExecutionThread(threading.Thread):
 
 
 def rescheduleFailedJob(jobID, message, jobReport=None):
+  """ Function for rescheduling a jobID, with a message
+  """
 
   rescheduleResult = 'Rescheduled'
 
