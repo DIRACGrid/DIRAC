@@ -1,4 +1,4 @@
-########################################################################
+  ########################################################################
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -365,12 +365,11 @@ class JobWrapper(object):
     self.__setJobParam('PayloadPID', payloadPID)
 
     watchdogInstance = WatchdogFactory().getWatchdog(pid=self.currentPID,
-                                                     exeThread=exeThread,
+                                                     thread=exeThread,
                                                      spObject=spObject,
-                                                     jobCPUTime=jobCPUTime,
+                                                     jobcputime=jobCPUTime,
                                                      memoryLimit=jobMemory,
-                                                     processors=processors,
-                                                     jobArgs=self.jobArgs)
+                                                     processors=processors)
 
     if not watchdogInstance['OK']:
       self.log.error('Could not create Watchdog instance', watchdogInstance['Message'])
