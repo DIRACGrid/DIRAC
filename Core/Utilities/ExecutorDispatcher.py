@@ -35,7 +35,7 @@ class ExecutorState(object):
       self.__maxTasks[eId] = max(1, maxTasks)
       if eId not in self.__execTasks:
         self.__execTasks[eId] = set()
-      if not isinstance(eTypes, (int, tuple)):
+      if not isinstance(eTypes, (list, tuple)):
         eTypes = [eTypes]
       for eType in eTypes:
         if eType not in self.__typeToId:
@@ -184,7 +184,7 @@ class ExecutorQueues:
       self.__lock.release()
 
   def popTask(self, eTypes):
-    if not isinstance(eTypes, (int, tuple)):
+    if not isinstance(eTypes, (list, tuple)):
       eTypes = [eTypes]
     self.__lock.acquire()
     for eType in eTypes:
@@ -220,7 +220,7 @@ class ExecutorQueues:
     try:
       try:
         eType = self.__taskInQueue[taskId]
-        del(self.__taskInQueue[taskId])
+        del self.__taskInQueue[taskId]
         self.__lastUse[eType] = time.time()
       except KeyError:
         return False
@@ -365,7 +365,7 @@ class ExecutorDispatcher:
     try:
       if eId in self.__idMap:
         return
-      if not isinstance(eTypes, (int, tuple)):
+      if not isinstance(eTypes, (list, tuple)):
         eTypes = [eTypes]
       self.__idMap[eId] = list(eTypes)
       self.__states.addExecutor(eId, eTypes, maxTasks)
@@ -767,7 +767,7 @@ class ExecutorDispatcher:
       self.__log.verbose("Executor %s invalid/disconnected" % eId)
       return S_ERROR("Invalid executor")
     if eTypes:
-      if not isinstance(eTypes, (int, tuple)):
+      if not isinstance(eTypes, (list, tuple)):
         eTypes = [eTypes]
       for eType in reversed(eTypes):
         try:
