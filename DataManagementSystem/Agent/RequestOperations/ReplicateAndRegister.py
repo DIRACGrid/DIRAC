@@ -232,7 +232,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       self.log.info("found %s files to schedule, getting metadata from FC" % len(toSchedule))
     else:
       self.log.verbose("No files to schedule")
-      return S_OK()
+      return S_OK([])
 
     res = self.fc.getFileMetadata(toSchedule.keys())
     if not res['OK']:
