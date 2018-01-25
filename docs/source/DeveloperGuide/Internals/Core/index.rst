@@ -67,23 +67,24 @@ Here is a rough overview of what is happening when you are calling a method from
    # Calling <class 'DIRAC.Core.DISET.private.InnerRPCClient.InnerRPCClient'>.executeRPC('ping', ()): the RPC call is finally
    #   executed
 
-   ThreadConfig
-   ============
 
-   This special class is to be used in case you want to execute an operation on behalf of somebody else. Typically the WebApp uses it. This object is a singleton, but all its attributes are thread local. The host/identity wanting to use that requires the TrustedHost property.
+ThreadConfig
+============
 
-   Let's take an example
+This special class is to be used in case you want to execute an operation on behalf of somebody else. Typically the WebApp uses it. This object is a singleton, but all its attributes are thread local. The host/identity wanting to use that requires the TrustedHost property.
 
-   .. code-block:: python
+Let's take an example
+
+.. code-block:: python
 
       from DIRAC.Core.DISET.RPCClient import RPCClient
       rpc = RPCClient('System/Component')
 
       rpc.ping()
 
-   In the previous code, the code will be executed as whatever is set in the environment: host certificate or proxy.
+In the previous code, the code will be executed as whatever is set in the environment: host certificate or proxy.
 
-   .. code-block:: python
+.. code-block:: python
 
       from DIRAC.Core.DISET.RPCClient import RPCClient
       from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
@@ -94,10 +95,11 @@ Here is a rough overview of what is happening when you are calling a method from
       rpc = RPCClient('System/Component')
       rpc.ping()
 
-   In that case, the call will still be performed using whatever is set in the environment, however the remote service will act as if the request was done by ``/Whatever/user`` (providing that the TrustedHost property is granted).
-   And because of the ``threading.local`` inheritance, we can have separate users actions like bellow.
 
-   .. code-block:: python
+In that case, the call will still be performed using whatever is set in the environment, however the remote service will act as if the request was done by ``/Whatever/user`` (providing that the TrustedHost property is granted).
+And because of the ``threading.local`` inheritance, we can have separate users actions like bellow.
+
+.. code-block:: python
 
      import threading
      from DIRAC.Core.DISET.RPCClient import RPCClient
