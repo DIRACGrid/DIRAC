@@ -110,8 +110,9 @@ class FTS3Operation( FTS3Serializable ):
     """ This method initializes some attributes.
         It is called by sqlalchemy (which does not call __init__)
     """
-    self.dManager = DataManager()
+    self._vo = None
 
+    self.dManager = DataManager()
     self.rssClient = ResourceStatus()
 
     opID = getattr( self, 'operationID', None )
@@ -119,6 +120,17 @@ class FTS3Operation( FTS3Serializable ):
     loggerName += 'req_%s/op_%s' % (self.rmsReqID, self.rmsOpID )
 
     self._log = gLogger.getSubLogger( loggerName , True )
+
+  @property
+  def vo(self):
+    """:returns: return vo of the usergroup """
+    if self._vo:
+      return self._vo
+
+    if self.userGroup:
+      self._vo = getVOForGroup(self.userGroup)
+
+    return self._vo
 
 
   def isTotallyProcessed( self ):
@@ -210,7 +222,7 @@ class FTS3Operation( FTS3Serializable ):
     newJob.priority = self.priority
     newJob.username = self.username
     newJob.userGroup = self.userGroup
-    newJob.vo = getVOForGroup(self.userGroup)
+    newJob.vo = self.vo
     newJob.filesToSubmit = ftsFiles
     newJob.operationID = getattr( self, 'operationID' )
 
@@ -468,7 +480,8 @@ class FTS3TransferOperation(FTS3Operation):
       if operation.Catalog:
         registerOperation.Catalog = operation.Catalog
 
-      targetSE = StorageElement(target, vo=getVOForGroup(self.userGroup))
+      targetSE = StorageElement(target, vo=self.vo)
+
       for ftsFile in ftsFileList:
         opFile = rmsFile()
         opFile.LFN = ftsFile.lfn

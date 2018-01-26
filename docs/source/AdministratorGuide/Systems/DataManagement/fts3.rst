@@ -62,6 +62,7 @@ These are the states for FTS3File::
                  'Staging', # From FTS: When staging of a file is requested
                  'Failed', # From FTS: File failure
                  'Defunct', # Totally fail, no more attempt will be made
+                 'Started', # From FTS: File transfer has started
                  ]
 
   FINAL_STATES = ['Canceled', 'Finished', 'Defunct']
@@ -89,6 +90,7 @@ States from the FTS3Job::
                 'Canceled', # Job canceled
                 'Failed', # All files Failed
                 'Finisheddirty',  # Some files Failed
+                'Staging', # One of the files within a job went to Staging state
                ]
 
   FINAL_STATES = ['Canceled', 'Failed', 'Finished', 'Finisheddirty']

@@ -17,7 +17,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 class FTS3Job( FTS3Serializable ):
   """ Abstract class to represent a job to be executed by FTS. It belongs
@@ -32,7 +31,7 @@ class FTS3Job( FTS3Serializable ):
                 'Canceled', # Job canceled
                 'Failed', # All files Failed
                 'Finisheddirty',  # Some files Failed
-                'Staging',
+                'Staging',  # One of the files within a job went to Staging state
                ]
 
   FINAL_STATES = ['Canceled', 'Failed', 'Finished', 'Finisheddirty']
@@ -61,8 +60,6 @@ class FTS3Job( FTS3Serializable ):
     self.username = None
     self.userGroup = None
 
-    self.vo = None
-
     # temporary used only for submission
     # Set by FTS Operation when preparing
     self.type = None  # Transfer, Staging, Removal
@@ -72,6 +69,7 @@ class FTS3Job( FTS3Serializable ):
     self.filesToSubmit = []
     self.activity = None
     self.priority = None
+    self.vo = None
 
 
   def monitor( self, context = None, ftsServer = None, ucert = None ):
