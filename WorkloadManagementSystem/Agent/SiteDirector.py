@@ -809,7 +809,6 @@ class SiteDirector(AgentModule):
                                                  ownerGroup=self.pilotGroup,
                                                  broker=self.localhost,
                                                  gridType=self.queueDict[queue]['CEType'],
-                                                 requirements='',
                                                  pilotStampDict=stampDict)
       if not result['OK']:
         self.log.error(
