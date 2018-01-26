@@ -226,7 +226,8 @@ class PilotAgentsDB(DB):
         "SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         interval)
     reqList.append(
-        "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
+        "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' \
+AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         aborted_interval)
 
     idList = None

@@ -356,10 +356,10 @@ class WMSAdministratorHandler(RequestHandler):
 
     gridType = pilotDict['GridType']
     if gridType == "gLite":
-      result = getWMSPilotOutput(
+      result = getWMSPilotOutput(  # pylint: disable=unexpected-keyword-arg
           pilotReference,
           proxyUserDN=owner,
-          proxyUserGroup=group)  # pylint: disable=unexpected-keyword-arg
+          proxyUserGroup=group)
       if not result['OK']:
         return S_ERROR('Failed to get pilot output: ' + result['Message'])
       # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
