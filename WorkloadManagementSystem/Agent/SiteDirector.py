@@ -462,6 +462,9 @@ class SiteDirector(AgentModule):
       pilotsWeMayWantToSubmit, additionalInfo = self._getPilotsWeMayWantToSubmit(
           ceDict)  # additionalInfo is normally taskQueueDict
       self.log.verbose('%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queue))
+      if not pilotsWeMayWantToSubmit:
+        self.log.verbose('...so skipping %s' % queue)
+        continue
 
       # Get the number of already waiting pilots for the queue
       totalWaitingPilots = 0
