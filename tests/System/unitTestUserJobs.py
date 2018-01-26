@@ -1,44 +1,52 @@
 """ Collection of user jobs for testing purposes
 """
 
+import unittest
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
-
-import unittest
 
 from DIRAC import gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob
 
-gLogger.setLevel( 'VERBOSE' )
+gLogger.setLevel('VERBOSE')
 
 jobsSubmittedList = []
 
-class GridSubmissionTestCase( unittest.TestCase ):
+
+class GridSubmissionTestCase(unittest.TestCase):
   """ Base class for the Regression test cases
   """
-  def setUp( self ):
+
+  def setUp(self):
     result = getProxyInfo()
     if result['Value']['group'] not in ['lhcb_user', 'dirac_user']:
       print "GET A USER GROUP"
-      exit( 1 )
+      exit(1)
 
-  def tearDown( self ):
+  def tearDown(self):
     pass
 
-class submitSuccess( GridSubmissionTestCase ):
 
-  def test_submit( self ):
+class submitSuccess(GridSubmissionTestCase):
+  """ submit jobs
+  """
+
+  def test_submit(self):
+    """ submit jobs defined in DIRAC.tests.Utilities.testJobDefinitions
+    """
 
     res = helloWorld()
-    self.assertTrue( res['OK'] )
-    jobsSubmittedList.append( res['Value'] )
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
 
     res = mpJob()
-    self.assertTrue( res['OK'] )
-    jobsSubmittedList.append( res['Value'] )
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
 
+    print "submitted %d jobs: %s" % (len(jobsSubmittedList), ','.join(jobsSubmittedList))
 
 
 # FIXME: This is also in the extension...? To try!
@@ -85,7 +93,7 @@ class submitSuccess( GridSubmissionTestCase ):
 #############################################################################
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( GridSubmissionTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( submitSuccess ) )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(GridSubmissionTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(submitSuccess))
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( monitorSuccess ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
