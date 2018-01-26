@@ -470,9 +470,10 @@ class TaskQueueDB(DB):
     if not result['OK']:
       return result
 
-    sqlCmd = "SELECT COUNT( `tq_Jobs`.JobID ), `tq_TaskQueues`.TQId, `tq_TaskQueues`.Enabled FROM `tq_TaskQueues`, `tq_Jobs`"
-    sqlCmd = "%s WHERE `tq_TaskQueues`.TQId = `tq_Jobs`.TQId AND %s GROUP BY `tq_Jobs`.TQId ORDER BY COUNT( `tq_Jobs`.JobID ) ASC" % (
-        sqlCmd, result['Value'])
+    sqlCmd = "SELECT COUNT( `tq_Jobs`.JobID ), `tq_TaskQueues`.TQId, `tq_TaskQueues`.Enabled \
+FROM `tq_TaskQueues`, `tq_Jobs`"
+    sqlCmd = "%s WHERE `tq_TaskQueues`.TQId = `tq_Jobs`.TQId AND %s GROUP BY `tq_Jobs`.TQId \
+ORDER BY COUNT( `tq_Jobs`.JobID ) ASC" % (sqlCmd, result['Value'])
     result = self._query(sqlCmd, conn=connObj)
     if not result['OK']:
       return S_ERROR("Can't find task queue: %s" % result['Message'])
@@ -495,8 +496,10 @@ class TaskQueueDB(DB):
     if not retVal['OK']:
       return S_ERROR("Can't connect to DB: %s" % retVal['Message'])
     connObj = retVal['Value']
-    preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s AND `tq_Jobs`.Priority = %s"
-    prioSQL = "SELECT `tq_Jobs`.Priority FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
+    preJobSQL = "SELECT `tq_Jobs`.JobId, `tq_Jobs`.TQId \
+FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s AND `tq_Jobs`.Priority = %s"
+    prioSQL = "SELECT `tq_Jobs`.Priority FROM `tq_Jobs` \
+WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     postJobSQL = " ORDER BY `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
     for _ in range(self.__maxMatchRetry):
       noJobsFound = False
@@ -792,7 +795,9 @@ class TaskQueueDB(DB):
         return S_ERROR("Can't delete job: %s" % retVal['Message'])
       connObj = retVal['Value']
     retVal = self._query(
-        "SELECT t.TQId, t.OwnerDN, t.OwnerGroup FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE j.JobId = %s AND t.TQId = j.TQId" %
+        "SELECT t.TQId, t.OwnerDN, t.OwnerGroup \
+FROM `tq_TaskQueues` t, `tq_Jobs` j \
+WHERE j.JobId = %s AND t.TQId = j.TQId" %
         jobId, conn=connObj)
     if not retVal['OK']:
       return S_ERROR("Could not get job from task queue %s: %s" % (jobId, retVal['Message']))
@@ -862,7 +867,7 @@ class TaskQueueDB(DB):
     if not retVal['OK']:
       return retVal
     data = retVal['Value']
-    if len(data) == 0:
+    if not data:
       return S_OK(False)
     return S_OK(retVal['Value'][0])
 
@@ -1119,7 +1124,8 @@ class TaskQueueDB(DB):
       tqCond.append("t.OwnerDN= %s " % userDN)
     tqCond.append("t.TQId = j.TQId")
     if consolidationFunc == 'AVG':
-      selectSQL = "SELECT j.TQId, SUM( j.RealPriority )/COUNT(j.RealPriority) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
+      selectSQL = "SELECT j.TQId, SUM( j.RealPriority )/COUNT(j.RealPriority) \
+FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
     elif consolidationFunc == 'SUM':
       selectSQL = "SELECT j.TQId, SUM( j.RealPriority ) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
     else:
@@ -1131,7 +1137,7 @@ class TaskQueueDB(DB):
       return result
 
     tqDict = dict(result['Value'])
-    if len(tqDict) == 0:
+    if not tqDict:
       return S_OK()
     # Calculate Sum of priorities
     totalPrio = 0
