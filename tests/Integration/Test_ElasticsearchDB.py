@@ -451,7 +451,8 @@ class ElasticTestChain(ElasticTestCase):
     # s = s.filter('bool', must=q)
     # query = s.to_dict()
     # self.assertEqual(query, {'query': {'bool': {'filter': [{'bool': {
-    #                  'must': [{'range': {'timestamp': {'gte': 1423399451544, 'lte': 1423631917911}}}, {'match': {'Product': 'a'}}]}}]}}})
+    #                  'must': [{'range': {'timestamp': {'gte': 1423399451544, 'lte': 1423631917911}}},
+    #                  {'match': {'Product': 'a'}}]}}]}}})
     # result = s.execute()
     # self.assertEqual(len(result.hits), 5)
     # self.assertEqual(result.hits[0].Product, 'a')
@@ -465,7 +466,8 @@ class ElasticTestChain(ElasticTestCase):
   #   s.aggs.bucket('2', a1)
   #   query = s.to_dict()
   #   self.assertEqual(query, {'query': {'bool': {'filter': [{'bool': {'must': [{'range': {'timestamp': {
-  #                    'gte': 1423399451544, 'lte': 1423631917911}}}]}}]}}, 'aggs': {'2': {'terms': {'field': 'Product', 'size': 0}}}})
+  #                    'gte': 1423399451544, 'lte': 1423631917911}}}]}}]}},
+  #                    'aggs': {'2': {'terms': {'field': 'Product', 'size': 0}}}})
   #   result = s.execute()
   #   self.assertEqual(result.aggregations['2'].buckets, [
   #                    {u'key': u'a', u'doc_count': 5}, {u'key': u'b', u'doc_count': 5}])
@@ -497,7 +499,8 @@ class ElasticTestChain(ElasticTestCase):
   #                           'sum': {
   #                               'field': 'quantity'}}}}}})
   #   result = s.execute()
-  #   self.assertEqual(result.aggregations['2'].buckets, [{u'total_quantity': {u'value': 5.0}, u'key': u'a', u'doc_count': 5}, {
+  #   self.assertEqual(result.aggregations['2'].buckets,
+  #   [{u'total_quantity': {u'value': 5.0}, u'key': u'a', u'doc_count': 5}, {
   #                    u'total_quantity': {u'value': 8.0}, u'key': u'b', u'doc_count': 5}])
 
   # def test_piplineaggregation(self):
