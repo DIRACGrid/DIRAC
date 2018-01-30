@@ -817,54 +817,54 @@ dropDBs(){
 #-------------------------------------------------------------------------------
 
 
-  #.............................................................................
-  #
-  # killRunsv:
-  #
-  #   it makes sure there are no runsv processes running. If it finds any, it
-  #   terminates it. This means, no more than one Job running this kind of test
-  #   on the same machine at the same time ( executors =< 1 ). Indeed, it cleans
-  #   two particular processes, 'runsvdir' and 'runsv'.
-  #
-  #.............................................................................
+#.............................................................................
+#
+# killRunsv:
+#
+#   it makes sure there are no runsv processes running. If it finds any, it
+#   terminates it. This means, no more than one Job running this kind of test
+#   on the same machine at the same time ( executors =< 1 ). Indeed, it cleans
+#   two particular processes, 'runsvdir' and 'runsv'.
+#
+#.............................................................................
 
 function killRunsv(){
   echo '==> [killRunsv]'
 
-    # Bear in mind that we run with 'errexit' mode. This call, if finds nothing
-    # will return an error, which will make the whole script exit. However, if
-    # finds nothing we are good, it means there are not leftover processes from
-    # other runs. So, we disable 'errexit' mode for this call.
+  # Bear in mind that we run with 'errexit' mode. This call, if finds nothing
+  # will return an error, which will make the whole script exit. However, if
+  # finds nothing we are good, it means there are not leftover processes from
+  # other runs. So, we disable 'errexit' mode for this call.
 
-    #set +o errexit
-    runsvdir=`ps aux | grep 'runsvdir ' | grep -v 'grep'`
-    #set -o errexit
+  #set +o errexit
+  runsvdir=`ps aux | grep 'runsvdir ' | grep -v 'grep'`
+  #set -o errexit
 
-    if [ ! -z "$runsvdir" ]
-    then
-      killall runsvdir
-    fi
+  if [ ! -z "$runsvdir" ]
+  then
+    killall runsvdir
+  fi
 
-    # Same as before
+  # Same as before
   #set +o errexit
   runsv=`ps aux | grep 'runsv ' | grep -v 'grep'`
   #set -o errexit
 
-    if [ ! -z "$runsv" ]
-    then
-      killall runsv
-    fi
+  if [ ! -z "$runsv" ]
+  then
+    killall runsv
+  fi
 
 }
 
-  #.............................................................................
-  #
-  # killES:
-  #
-  #   it makes sure there are no ElasticSearch processes running. If it finds any, it
-  #   terminates it.
-  #
-  #.............................................................................
+#.............................................................................
+#
+# killES:
+#
+#   it makes sure there are no ElasticSearch processes running. If it finds any, it
+#   terminates it.
+#
+#.............................................................................
 
 function killES(){
   echo '==> [killES]'
@@ -877,13 +877,13 @@ function killES(){
     fi
 }
 
-  #.............................................................................
-  #
-  # stopRunsv:
-  #
-  #   if runsv is running, it stops it.
-  #
-  #.............................................................................
+#.............................................................................
+#
+# stopRunsv:
+#
+#   if runsv is running, it stops it.
+#
+#.............................................................................
 
 function stopRunsv(){
   echo '==> [stopRunsv]'
@@ -899,30 +899,30 @@ function stopRunsv(){
 }
 
 
-  #.............................................................................
-  #
-  # startRunsv:
-  #
-  #   starts runsv processes
-  #
-  #.............................................................................
+#.............................................................................
+#
+# startRunsv:
+#
+#   starts runsv processes
+#
+#.............................................................................
 
 function startRunsv(){
-    echo '==> [startRunsv]'
+  echo '==> [startRunsv]'
 
-    # Let's try to be a bit more delicated than the function above
+  # Let's try to be a bit more delicated than the function above
 
-    source $SERVERINSTALLDIR/bashrc
-    runsvdir -P $SERVERINSTALLDIR/startup &
+  source $SERVERINSTALLDIR/bashrc
+  runsvdir -P $SERVERINSTALLDIR/startup &
 
-    # Gives some time to the components to start
-    sleep 10
-    # Just in case 10 secs are not enough, we disable exit on error for this call.
-    set +o errexit
-    runsvctrl u $SERVERINSTALLDIR/startup/*
-    set -o errexit
+  # Gives some time to the components to start
+  sleep 10
+  # Just in case 10 secs are not enough, we disable exit on error for this call.
+  set +o errexit
+  runsvctrl u $SERVERINSTALLDIR/startup/*
+  set -o errexit
 
-    runsvstat $SERVERINSTALLDIR/startup/*
+  runsvstat $SERVERINSTALLDIR/startup/*
 
 }
 
