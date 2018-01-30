@@ -7,7 +7,8 @@ from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
 
 __RCSID__ = "$Id$"
 
-class MonitoringClient( object ):
+
+class MonitoringClient(object):
   """
   .. class:: MonitoringClient
 
@@ -17,37 +18,45 @@ class MonitoringClient( object ):
 
   """
 
-  def __init__( self, rpcClient = None ):
+  def __init__(self, rpcClient=None):
     self.__rpcClient = rpcClient
 
-  def __getServer( self, timeout = 3600 ):
+  def __getServer(self, timeout=3600):
     """It returns the access protocol to the Monitoring service"""
     if self.__rpcClient:
       return self.__rpcClient
-    else:
-      return RPCClient( 'Monitoring/Monitoring', timeout = timeout )
+    return RPCClient('Monitoring/Monitoring', timeout=timeout)
 
   #############################################################################
-  def listUniqueKeyValues( self, typeName ):
+  def listUniqueKeyValues(self, typeName):
     """
     :param str typeName: is the monitoring type registered in the Types.
 
     :return: S_OK({key:[]}) or S_ERROR()   The key is element of the __keyFields of the BaseType
     """
     server = self.__getServer()
-    return server.listUniqueKeyValues( typeName )
+    return server.listUniqueKeyValues(typeName)
 
   #############################################################################
-  def listReports( self, typeName ):
+  def listReports(self, typeName):
     """
     :param str typeName: monitoring type for example WMSHistory
 
     :return: S_OK([]) or S_ERROR() the list of available plots
     """
     rpcClient = self.__getServer()
-    return rpcClient.listReports( typeName )
+    return rpcClient.listReports(typeName)
 
-  def generateDelayedPlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = None, compress = True ):
+  def generateDelayedPlot(
+          self,
+          typeName,
+          reportName,
+          startTime,
+          endTime,
+          condDict,
+          grouping,
+          extraArgs=None,
+          compress=True):
     """
     It is used to encode the plot parameters used to create a certain plot.
 
@@ -61,18 +70,18 @@ class MonitoringClient( object ):
 
     :return: S_OK(str) or S_ERROR() it returns the encoded plot parameters
     """
-    if not isinstance( extraArgs, dict ):
+    if not isinstance(extraArgs, dict):
       extraArgs = {}
-    plotRequest = { 'typeName' : typeName,
-                    'reportName' : reportName,
-                    'startTime' : startTime,
-                    'endTime' : endTime,
-                    'condDict' : condDict,
-                    'grouping' : grouping,
-                    'extraArgs' : extraArgs }
-    return codeRequestInFileId( plotRequest, compress )
+    plotRequest = {'typeName': typeName,
+                   'reportName': reportName,
+                   'startTime': startTime,
+                   'endTime': endTime,
+                   'condDict': condDict,
+                   'grouping': grouping,
+                   'extraArgs': extraArgs}
+    return codeRequestInFileId(plotRequest, compress)
 
-  def getReport( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = None ):
+  def getReport(self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs=None):
     """
     It is used to get the raw data used to create a plot.
     :param str typeName the type of the monitoring
@@ -85,30 +94,30 @@ class MonitoringClient( object ):
     :rerturn S_OK or S_ERROR
     """
     rpcClient = self.__getServer()
-    if not isinstance( extraArgs, dict ):
+    if not isinstance(extraArgs, dict):
       extraArgs = {}
-    plotRequest = { 'typeName' : typeName,
-                    'reportName' : reportName,
-                    'startTime' : startTime,
-                    'endTime' : endTime,
-                    'condDict' : condDict,
-                    'grouping' : grouping,
-                    'extraArgs' : extraArgs }
-    result = rpcClient.getReport( plotRequest )
+    plotRequest = {'typeName': typeName,
+                   'reportName': reportName,
+                   'startTime': startTime,
+                   'endTime': endTime,
+                   'condDict': condDict,
+                   'grouping': grouping,
+                   'extraArgs': extraArgs}
+    result = rpcClient.getReport(plotRequest)
     if 'rpcStub' in result:
-      del result[ 'rpcStub' ]
+      del result['rpcStub']
     return result
 
-  def addMonitoringRecords( self, monitoringtype, doc_type, data ):
+  def addMonitoringRecords(self, monitoringtype, doc_type, data):
     """
     :param str monitoringtype:
     :param str doc_type:
     :param dict data:
     """
     rpcClient = self.__getServer()
-    return rpcClient.addMonitoringRecords( monitoringtype, doc_type, data )
+    return rpcClient.addMonitoringRecords(monitoringtype, doc_type, data)
 
-  def addRecords( self, indexName, doc_type, data ):
+  def addRecords(self, indexName, doc_type, data):
     """
     add records to the database
 
@@ -117,7 +126,7 @@ class MonitoringClient( object ):
     :param dict data:
     """
     rpcClient = self.__getServer()
-    return rpcClient.addRecords( indexName, doc_type, data )
+    return rpcClient.addRecords(indexName, doc_type, data)
 
   def deleteIndex(self, indexName):
     """
@@ -128,7 +137,7 @@ class MonitoringClient( object ):
     rpcClient = self.__getServer()
     return rpcClient.deleteIndex(indexName)
 
-  def getLastDayData( self, typeName, condDict ):
+  def getLastDayData(self, typeName, condDict):
     """
     It returns the data from the last day index. Note: we create daily indexes.
 
@@ -139,10 +148,9 @@ class MonitoringClient( object ):
                   * value -> list of possible values
     """
     rpcClient = self.__getServer()
-    return rpcClient.getLastDayData( typeName, condDict )
+    return rpcClient.getLastDayData(typeName, condDict)
 
-
-  def getLimitedData( self, typeName, condDict, size = 10 ):
+  def getLimitedData(self, typeName, condDict, size=10):
     '''
     Returns a list of records for a given selection.
 
@@ -155,9 +163,9 @@ class MonitoringClient( object ):
     :return: Up to size entries for the given component from the database
     '''
     rpcClient = self.__getServer()
-    return rpcClient.getLimitedData( typeName, condDict, size )
+    return rpcClient.getLimitedData(typeName, condDict, size)
 
-  def getDataForAGivenPeriod( self, typeName, condDict, initialDate = '', endDate = '' ):
+  def getDataForAGivenPeriod(self, typeName, condDict, initialDate='', endDate=''):
     """
     Retrieves the history of logging entries for the given component during a given given time period
 
@@ -173,4 +181,4 @@ class MonitoringClient( object ):
 
     """
     rpcClient = self.__getServer()
-    return rpcClient.getDataForAGivenPeriod( typeName, condDict, initialDate, endDate )
+    return rpcClient.getDataForAGivenPeriod(typeName, condDict, initialDate, endDate)

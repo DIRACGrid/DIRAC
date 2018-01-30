@@ -1,7 +1,7 @@
 """
 It is used to test the MonitoringReporter. It requires MonitoringDB which is based on elasticsearch and MQ which is optional...
 
-CS:
+CS (not strictly necessary):
 
 Systems
 {
@@ -56,18 +56,18 @@ from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 
-#pylint: disable=line-too-long
-#pylint: disable=missing-docstring
+# pylint: disable=line-too-long
 
-class MonitoringTestCase( unittest.TestCase ):
 
-  def setUp( self ):
-    gLogger.setLevel( 'INFO' )
+class MonitoringTestCase(unittest.TestCase):
+
+  def setUp(self):
+    gLogger.setLevel('INFO')
 
     self.monitoringDB = MonitoringDB()
-    self.wmsMonitoringReporter = MonitoringReporter( monitoringType = "WMSHistory" )
-    self.componentMonitoringReporter = MonitoringReporter( monitoringType = "ComponentMonitoring" )
-    
+    self.wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
+    self.componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+
     self.data = [{u'Status': u'Waiting', 'Jobs': 2, u'timestamp': 1458130176, u'JobSplitType': u'MCStripping', u'MinorStatus': u'unset', u'Site': u'LCG.GRIDKA.de', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00049848', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'timestamp': 1458130176, u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.PIC.es', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton', u'JobGroup': u'lhcb', u'UserGroup': u'lhcb_user', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'timestamp': 1458130176, u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.RAL.uk', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton', u'JobGroup': u'lhcb', u'UserGroup': u'lhcb_user', u'metric': u'WMSHistory'},
@@ -109,50 +109,50 @@ class MonitoringTestCase( unittest.TestCase ):
                  {u'Status': u'Waiting', 'Jobs': 1, u'timestamp': 1458226213, u'JobSplitType': u'MCReconstruction', u'MinorStatus': u'unset', u'Site': u'LCG.RAL.uk', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00050243', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 2, u'timestamp': 1458226213, u'JobSplitType': u'MCReconstruction', u'MinorStatus': u'unset', u'Site': u'LCG.RAL.uk', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00050247', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'}]
 
-  def tearDown( self ):
+  def tearDown(self):
     pass
 
-class MonitoringReporterAdd( MonitoringTestCase ):
 
-  def test_addWMSRecords( self ):
+class MonitoringReporterAdd(MonitoringTestCase):
+
+  def test_addWMSRecords(self):
     for record in self.data:
-      self.wmsMonitoringReporter.addRecord( record )
+      self.wmsMonitoringReporter.addRecord(record)
     result = self.wmsMonitoringReporter.commit()
     self.assertTrue(result['OK'])
-    self.assertEqual( result['Value'], len( self.data ) )
-  
-  def test_addComponentRecords( self ):
+    self.assertEqual(result['Value'], len(self.data))
+
+  def test_addComponentRecords(self):
     for record in self.data:
-      self.componentMonitoringReporter.addRecord( record )
+      self.componentMonitoringReporter.addRecord(record)
     result = self.componentMonitoringReporter.commit()
     self.assertTrue(result['OK'])
-    self.assertEqual( result['Value'], len( self.data ) )
-    
-
-class MonitoringDeleteChain( MonitoringTestCase ):
+    self.assertEqual(result['Value'], len(self.data))
 
 
-  def test_deleteWMSIndex( self ):
+class MonitoringDeleteChain(MonitoringTestCase):
+
+  def test_deleteWMSIndex(self):
     result = self.monitoringDB.getIndexName('WMSHistory')
     self.assertTrue(result['OK'])
 
-    today = datetime.today().strftime( "%Y-%m-%d" )
-    indexName = "%s-%s" % ( result['Value'], today )
-    res = self.monitoringDB.deleteIndex( indexName )
+    today = datetime.today().strftime("%Y-%m-%d")
+    indexName = "%s-%s" % (result['Value'], today)
+    res = self.monitoringDB.deleteIndex(indexName)
     self.assertTrue(res['OK'])
-  
-  def test_deleteComponentIndex( self ):
+
+  def test_deleteComponentIndex(self):
     result = self.monitoringDB.getIndexName('ComponentMonitoring')
     self.assertTrue(result['OK'])
 
-    today = datetime.today().strftime( "%Y-%m" )
-    indexName = "%s-%s" % ( result['Value'], today )
-    res = self.monitoringDB.deleteIndex( indexName )
+    today = datetime.today().strftime("%Y-%m")
+    indexName = "%s-%s" % (result['Value'], today)
+    res = self.monitoringDB.deleteIndex(indexName)
     self.assertTrue(res['OK'])
-    
+
 
 if __name__ == '__main__':
-  testSuite = unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringTestCase )
-  testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringReporterAdd ) )
-  testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringDeleteChain ) )
-  unittest.TextTestRunner( verbosity = 2 ).run( testSuite )
+  testSuite = unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringTestCase)
+  testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringReporterAdd))
+  testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringDeleteChain))
+  unittest.TextTestRunner(verbosity=2).run(testSuite)
