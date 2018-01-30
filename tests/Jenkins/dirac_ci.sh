@@ -180,6 +180,9 @@ function fullInstallDIRAC(){
   diracDFCDB
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py $DEBUG
 
+  # install ElasticSearch locally
+  installES
+
   #services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
   diracServices
@@ -229,6 +232,8 @@ function clean(){
   dropDBs
   mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS FileCatalogDB;"
   mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS InstalledComponentsDB;"
+
+  killES
 
   #clean all
   finalCleanup

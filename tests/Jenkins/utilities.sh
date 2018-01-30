@@ -855,8 +855,27 @@ function killRunsv(){
       killall runsv
     fi
 
-  }
+}
 
+  #.............................................................................
+  #
+  # killES:
+  #
+  #   it makes sure there are no ElasticSearch processes running. If it finds any, it
+  #   terminates it.
+  #
+  #.............................................................................
+
+function killES(){
+  echo '==> [killES]'
+
+    res=`ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 4 -d ' '`
+
+    if [ ! -z "$res" ]
+    then
+      kill -9 $res
+    fi
+}
 
   #.............................................................................
   #
