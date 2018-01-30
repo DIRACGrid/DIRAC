@@ -980,3 +980,21 @@ function downloadProxy(){
     return
   fi
 }
+
+
+#.............................................................................
+#
+# installES:
+#
+#   install (and run) ElasticSearch in the current directory
+#
+#.............................................................................
+
+function installES(){
+  echo '==> [installES]'
+
+  curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.2.tar.gz
+  tar -xvf elasticsearch-6.1.2.tar.gz
+  cd elasticsearch-6.1.2/bin
+  ./elasticsearch -Ecluster.name=jenkins_cluster -Enode.name=jenkins_node
+}
