@@ -225,7 +225,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
         continue
       ceDict['Platform'] = result['Value']
 
-      ceDict['Tag'] = processorTags
+      ceDict['Tag'] = queueTags
       # Get the number of eligible jobs for the target site/queue
       result = rpcMatcher.getMatchingTaskQueues( ceDict )
       if not result['OK']:
