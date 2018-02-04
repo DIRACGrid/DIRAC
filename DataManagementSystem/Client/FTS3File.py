@@ -15,6 +15,7 @@ class FTS3File( FTS3Serializable ):
                  'Staging', # From FTS: When staging of a file is requested
                  'Failed', # From FTS: File failure
                  'Defunct', # Totally fail, no more attempt will be made
+                 'Started',  # From FTS: File transfer has started
                  ]
   
   FINAL_STATES = ['Canceled', 'Finished', 'Defunct']

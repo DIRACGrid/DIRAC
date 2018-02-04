@@ -23,6 +23,8 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation as rmsOperation
 from DIRAC.RequestManagementSystem.Client.File import File as rmsFile
 
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+
 
 class FTS3Operation( FTS3Serializable ):
   """ Abstract class to represent an operation to be executed by FTS. It is a
@@ -48,7 +50,7 @@ class FTS3Operation( FTS3Serializable ):
   INIT_STATE = 'Active'
 
   _attrToSerialize = ['operationID', 'username', 'userGroup', 'rmsReqID', 'rmsOpID',
-                      'sourceSEs','ftsFiles','activity','priority',
+                      'sourceSEs', 'ftsFiles', 'activity', 'priority',
                       'ftsJobs', 'creationTime', 'lastUpdate', 'error', 'status']
 
   def __init__( self, ftsFiles = None, username = None, userGroup = None, rmsReqID = -1,
@@ -103,14 +105,14 @@ class FTS3Operation( FTS3Serializable ):
     self.init_on_load()
 
 
-
   @orm.reconstructor
   def init_on_load( self ):
     """ This method initializes some attributes.
         It is called by sqlalchemy (which does not call __init__)
     """
-    self.dManager = DataManager()
+    self._vo = None
 
+    self.dManager = DataManager()
     self.rssClient = ResourceStatus()
 
     opID = getattr( self, 'operationID', None )
@@ -118,6 +120,17 @@ class FTS3Operation( FTS3Serializable ):
     loggerName += 'req_%s/op_%s' % (self.rmsReqID, self.rmsOpID )
 
     self._log = gLogger.getSubLogger( loggerName , True )
+
+  @property
+  def vo(self):
+    """:returns: return vo of the usergroup """
+    if self._vo:
+      return self._vo
+
+    if self.userGroup:
+      self._vo = getVOForGroup(self.userGroup)
+
+    return self._vo
 
 
   def isTotallyProcessed( self ):
@@ -163,9 +176,8 @@ class FTS3Operation( FTS3Serializable ):
     return toSubmit
 
 
-
   @staticmethod
-  def _checkSEAccess( seName, accessType ):
+  def _checkSEAccess(seName, accessType):
     """Check the Status of a storage element
         :param seName: name of the StorageElement
         :param accessType ReadAccess, WriteAccess,CheckAccess,RemoveAccess
@@ -173,14 +185,13 @@ class FTS3Operation( FTS3Serializable ):
         :return S_ERROR if not allowed or error, S_OK() otherwise
     """
     # Check that the target is writable
-#     access = self.rssClient.getStorageElementStatus( seName, accessType )
-#     if not access["OK"]:
-#       return access
-#     if access["Value"][seName][accessType] not in ( "Active", "Degraded" ):
-#       return S_ERROR( "%s does not have %s in Active or Degraded" % ( seName, accessType ) )
+    # access = self.rssClient.getStorageElementStatus( seName, accessType )
+    # if not access["OK"]:
+    #   return access
+    # if access["Value"][seName][accessType] not in ( "Active", "Degraded" ):
+    #   return S_ERROR( "%s does not have %s in Active or Degraded" % ( seName, accessType ) )
 
-
-    status = StorageElement( seName ).getStatus()
+    status = StorageElement(seName).getStatus()
     if not status['OK']:
       return status
 
@@ -211,6 +222,7 @@ class FTS3Operation( FTS3Serializable ):
     newJob.priority = self.priority
     newJob.username = self.username
     newJob.userGroup = self.userGroup
+    newJob.vo = self.vo
     newJob.filesToSubmit = ftsFiles
     newJob.operationID = getattr( self, 'operationID' )
 
@@ -344,7 +356,6 @@ class FTS3Operation( FTS3Serializable ):
     ftsOp.rmsReqID = rmsReq.RequestID
     ftsOp.rmsOpID = rmsOp.OperationID
 
-
     ftsOp.sourceSEs = rmsOp.SourceSE
 
     try:
@@ -362,8 +373,6 @@ class FTS3Operation( FTS3Serializable ):
 class FTS3TransferOperation(FTS3Operation):
   """ Class to be used for a Replication operation
   """
-
-
 
   def prepareNewJobs( self, maxFilesPerJob = 100, maxAttemptsPerFile = 10 ):
 
@@ -384,7 +393,7 @@ class FTS3TransferOperation(FTS3Operation):
 
     for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
 
-      res = self._checkSEAccess( targetSE, 'WriteAccess' )
+      res = self._checkSEAccess(targetSE, 'WriteAccess')
 
       if not res['OK']:
         log.error( res )
@@ -471,7 +480,8 @@ class FTS3TransferOperation(FTS3Operation):
       if operation.Catalog:
         registerOperation.Catalog = operation.Catalog
 
-      targetSE = StorageElement( target )
+      targetSE = StorageElement(target, vo=self.vo)
+
       for ftsFile in ftsFileList:
         opFile = rmsFile()
         opFile.LFN = ftsFile.lfn
@@ -506,28 +516,22 @@ class FTS3StagingOperation( FTS3Operation ):
     filesToSubmit = self._getFilesToSubmit( maxAttemptsPerFile = maxAttemptsPerFile )
     log.debug( "%s ftsFiles to submit" % len( filesToSubmit ) )
 
-
     newJobs = []
-
 
     # {targetSE : [FTS3Files] }
     filesGroupedByTarget = FTS3Utilities.groupFilesByTarget( filesToSubmit )
 
     for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
 
-      res = self._checkSEAccess( targetSE, 'ReadAccess' )
-
+      res = self._checkSEAccess(targetSE, 'ReadAccess')
       if not res['OK']:
         log.error( res )
         continue
 
-
       for ftsFilesChunk in breakListIntoChunks( ftsFiles, maxFilesPerJob ):
 
         newJob = self._createNewJob( 'Staging', ftsFilesChunk, targetSE, sourceSE = targetSE )
-
         newJobs.append( newJob )
-
 
     return S_OK( newJobs )
 
@@ -546,6 +550,5 @@ class FTS3StagingOperation( FTS3Operation ):
       return res
 
     request = res['Value']['request']
-
 
     return self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
