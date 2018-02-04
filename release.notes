@@ -59,6 +59,15 @@ NEW: New SingularityComputingElement to submit jobs to a Singularity container
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
 
+[v6r19p13]
+
+*WMS
+FIX: JobWrapper - added a debug message
+FIX: Allow non-processor related tags to match TQ in MultiProcessorSiteDirector.
+
+*Test
+CHANGE: improve Gfal2 integration tests by checking the metadata
+
 [v6r19p12]
 
 *Core
