@@ -1,4 +1,4 @@
-[v6r20-pre11]
+[v6r20-pre12]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -20,6 +20,9 @@ NEW: WebAppCompiler methods is implemented, which is used to compile the web fra
 NEW: add JsonFormatter for logs
 CHANGE: MessageQueue log handler uses JsonFormatter
 
+*Monitoring
+CHANGE: fixes for testing in Jenkins with locally-deployed ElasticSearch
+
 *WorkloadManagementSystem
 NEW: StopSigRegex, StopSigStartSeconds, StopSigFinishSeconds, StopSigNumber added to JDL, which cause Watchdog to send a signal StopSigNumber to payload processes matching StopSigRegex when there are less than StopSigFinishSeconds of wall clock remaining according to MJF.
 NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
@@ -31,6 +34,7 @@ NEW: Bulk job submission with protection of the operation transaction
 NEW: WMSHistoryCorrector and MonitoringHistoryCorrector classes inheriting from a common BaseHistoryCorrector class
 CHANGE: SiteDirector - refactored Site Director for better extensibility
 FIX: always initialize gPilotAgentsDB object
+CHANGE: Removed TaskQueueDirector and the other old style (WMS) *PilotDirector
 
 *TS
 FIX: TranformationCleaningAgent - just few simplifications 
@@ -40,6 +44,8 @@ NEW: FTS3Agent working only with the FTS3 service to replace the existing one
 NEW: FTS3Utilities - use correct FTS Server Selection Policy
 NEW: StorageElement service - getFreeDiskSpace() and getTotalDiskSpace() take into account 
      MAX_STORAGE_SIZE parameter value
+CHANGE: Adding vo name argument for StorageElement   
+CHANGE: Fixing rss to fetch fts3 server status  
 
 *RMS
 FIX: Really exit the RequestExecutingAgent when the result queue is buggy
