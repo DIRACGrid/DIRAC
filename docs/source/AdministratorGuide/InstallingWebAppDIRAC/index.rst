@@ -148,7 +148,7 @@ Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. I
 Web configuration file
 ----------------------
 
-We use **web.cfg** configuration file. The location of the file is /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg The structure of the web.cfg file is the following::
+We use **web.cfg** configuration file, which is used to configure the web framework. It also contains the schema of the menu under Schema section, which is used by the users. The structure of the web.cfg file is the following::
 
       WebApp
       {
@@ -199,6 +199,14 @@ Define external links::
          volhcb01 = link|https://lemonweb.cern.ch/lemon-web/info.php?entity=lbvobox01&detailed=yes
        }
    }
+
+The default location of the configuration file is /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg. This is the default configuration file which provided by
+by the developer. If you want to change the default configuration file, you have to add the web.cfg to the directory where the dirac.cfg is found, for example: /opt/dirac/etc
+
+If the web.cfg file exists in /opt/dirac/etc directory, this file will be used.
+
+Note: The Web framework uses the Schema section for creating the menu. It shows the Schema content, without manipulating it for example: sorting the applications, or creating some structure. 
+Consequently, if you want to sort the menu, you have to create your own configuration file and place the directory where dirac.cfg exists.   
 
 Install and configure NGINX
 ---------------------------
