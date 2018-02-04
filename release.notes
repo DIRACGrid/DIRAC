@@ -1,3 +1,12 @@
+[v6r19p13]
+
+*WMS
+FIX: JobWrapper - added a debug message
+FIX: Allow non-processor related tags to match TQ in MultiProcessorSiteDirector.
+
+*Test
+CHANGE: improve Gfal2 integration tests by checking the metadata
+
 [v6r19p12]
 
 *Core
