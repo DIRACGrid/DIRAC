@@ -36,19 +36,19 @@ class MultiProcessorSiteDirector( SiteDirector ):
         maxProcessorsList = range( 1, int( maxProcessors ) + 1 )
         processorsTags = ['%dProcessors' % processors for processors in maxProcessorsList]
         if processorsTags:
-          self.queueDict[queueName]['ParametersDict'].setdefault( 'Tags', [] )
-          self.queueDict[queueName]['ParametersDict']['Tags'] += processorsTags
+          self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
+          self.queueDict[queueName]['ParametersDict']['Tag'] += processorsTags
 
       ceWholeNode = ceDef.get( 'WholeNode', 'false' )
       wholeNode = self.queueDict[queueName]['ParametersDict'].get( 'WholeNode', ceWholeNode )
       if wholeNode.lower() in ( 'yes', 'true' ):
-        self.queueDict[queueName]['ParametersDict'].setdefault( 'Tags', [] )
-        self.queueDict[queueName]['ParametersDict']['Tags'].append( 'WholeNode' )
+        self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
+        self.queueDict[queueName]['ParametersDict']['Tag'].append( 'WholeNode' )
 
-      if 'Tags' not in self.queueDict[queueName]['ParametersDict']:
+      if 'Tag' not in self.queueDict[queueName]['ParametersDict']:
         remQueues.append( queueName )
       else:
-        tags = self.queueDict[queueName]['ParametersDict']['Tags']
+        tags = self.queueDict[queueName]['ParametersDict']['Tag']
         if '2Processors' not in tags and 'WholeNode' not in tags:
           remQueues.append( queueName )
 
@@ -80,7 +80,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
     tqDict['Site'] = self.sites
     tags = []
     for queue in queues:
-      tags += self.queueDict[queue]['ParametersDict']['Tags']
+      tags += self.queueDict[queue]['ParametersDict']['Tag']
     tqDict['Tag'] = list( set( tags ) )
 
     self.log.verbose( 'Checking overall TQ availability with requirements' )
@@ -152,7 +152,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
       queueName = self.queueDict[queue]['QueueName']
       siteName = self.queueDict[queue]['Site']
       platform = self.queueDict[queue]['Platform']
-      queueTags = self.queueDict[queue]['ParametersDict']['Tags']
+      queueTags = self.queueDict[queue]['ParametersDict']['Tag']
       siteMask = siteName in siteMaskList
       processorTags = []
 
@@ -225,7 +225,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
         continue
       ceDict['Platform'] = result['Value']
 
-      ceDict['Tag'] = processorTags
+      ceDict['Tag'] = queueTags
       # Get the number of eligible jobs for the target site/queue
       result = rpcMatcher.getMatchingTaskQueues( ceDict )
       if not result['OK']:
