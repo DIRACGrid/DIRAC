@@ -1,7 +1,7 @@
 """ Test class for JobWrapper
 """
 
-#pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
+#pylint: disable=protected-access, invalid-name
 
 # imports
 import unittest
