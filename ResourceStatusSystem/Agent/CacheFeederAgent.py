@@ -50,7 +50,6 @@ class CacheFeederAgent(AgentModule):
     self.rmClient = ResourceManagementClient()
 
     self.commands['Downtime'] = [{'Downtime': {}}]
-    self.commands['SpaceTokenOccupancy'] = [{'SpaceTokenOccupancy': {}}]
     self.commands['GOCDBSync'] = [{'GOCDBSync': {}}]
     self.commands['FreeDiskSpace'] = [{'FreeDiskSpace': {}}]
 
