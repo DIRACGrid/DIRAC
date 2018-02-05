@@ -9,7 +9,8 @@ import threading
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+
 
 def _checkSourceReplicas( ftsFiles ):
   """ Check the active replicas
@@ -22,7 +23,6 @@ def _checkSourceReplicas( ftsFiles ):
   res = DataManager().getActiveReplicas( lfns )
 
   return res
-
 
 
 def selectUniqueSourceforTransfers( multipleSourceTransfers ):
@@ -58,7 +58,6 @@ def selectUniqueSourceforTransfers( multipleSourceTransfers ):
   return S_OK( transfersBySource )
 
 
-
 def generatePossibleTransfersBySources( ftsFiles, allowedSources = None ):
   """
       For a list of FTS3files object, group the transfer possible sources
@@ -84,7 +83,6 @@ def generatePossibleTransfersBySources( ftsFiles, allowedSources = None ):
 
   filteredReplicas = res['Value']
 
-
   for ftsFile in ftsFiles:
 
     if ftsFile.lfn in filteredReplicas['Failed']:
@@ -94,14 +92,11 @@ def generatePossibleTransfersBySources( ftsFiles, allowedSources = None ):
     replicaDict = filteredReplicas['Successful'][ftsFile.lfn]
 
     for se in replicaDict:
-
       # if we are imposed a source, respect it
       if allowedSources and se not in allowedSources:
         continue
 
-
       groupBySource.setdefault( se, [] ).append( ftsFile )
-
 
   return S_OK( groupBySource )
 
@@ -185,7 +180,6 @@ class FTS3Serializable( object ):
       jsonData['__module__'] = self.__module__
       jsonData['__datetime__'] = datetimeAttributes
 
-
     return jsonData
 
 
@@ -209,11 +203,9 @@ class FTS3JSONEncoder( json.JSONEncoder ):
       return json.JSONEncoder.default( self, obj )
 
 
-
 class FTS3JSONDecoder( json.JSONDecoder ):
   """ This class is an decoder for the FTS3 objects
   """
-
 
   def __init__( self, *args, **kargs ):
     json.JSONDecoder.__init__( self, object_hook = self.dict_to_object,
@@ -266,16 +258,18 @@ class FTS3ServerPolicy( object ):
   This class manages the policy for choosing a server
   """
 
-  def __init__( self, initialServerList, serverPolicy = "Random" ):
+  def __init__(self, serverDict, serverPolicy="Random"):
     """
         Call the init of the parent, and initialize the list of FTS3 servers
     """
 
     self.log = gLogger.getSubLogger( "FTS3ServerPolicy" )
 
-    self._serverList = initialServerList
+    self._serverDict = serverDict
+    self._serverList = serverDict.keys()
     self._maxAttempts = len( self._serverList )
     self._nextServerID = 0
+    self._resourceStatus = ResourceStatus()
 
     methName = "_%sServerPolicy"%serverPolicy.lower()
     if not hasattr(self, methName):
@@ -322,22 +316,18 @@ class FTS3ServerPolicy( object ):
 
     return fts3Server
 
-
-  @staticmethod
-  def _getFTSServerStatus( ftsServer ):
+  def _getFTSServerStatus(self, ftsServer):
     """ Fetch the status of the FTS server from RSS """
-    pub = RPCClient( 'ResourceStatus/Publisher' )
-    res = pub.getElementStatuses( 'Resource', ftsServer, None, None, None, None )
 
+    res = self._resourceStatus.getElementStatus(ftsServer, 'FTS')
     if not res['OK']:
       return res
 
-    if not res['Value']:
-      return S_ERROR( "No FTS Server %s known to RSS" % ftsServer )
+    result = res['Value']
+    if ftsServer not in result:
+      return S_ERROR("No FTS Server %s known to RSS" % ftsServer)
 
-    rssDict = dict( zip( res['Columns'], res['Value'][0] ) )
-
-    if rssDict['Status'] == 'Active':
+    if result[ftsServer]['all'] == 'Active':
       return S_OK( True )
 
     return S_OK( False )
@@ -369,8 +359,7 @@ class FTS3ServerPolicy( object ):
         fts3Server = None
         attempt += 1
 
-
     if fts3Server:
-      return S_OK( fts3Server )
+      return S_OK(self._serverDict[fts3Server])
 
     return S_ERROR ( "Could not find an FTS3 server (max attempt reached)" )

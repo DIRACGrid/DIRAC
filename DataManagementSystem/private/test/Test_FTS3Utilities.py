@@ -173,16 +173,14 @@ class TestFileGrouping( unittest.TestCase ):
     self.assertTrue( self.f3 in uniqueSources['Src4'] )
 
 
-fakeFTS3Server = "https://fts-fake.cern.ch:8446"
-
 def mock__failoverServerPolicy(_attempt):
-  return fakeFTS3Server
+  return "server_0"
 
 def mock__randomServerPolicy(_attempt):
-  return fakeFTS3Server
+  return "server_0"
 
 def mock__sequenceServerPolicy(_attempt):
-  return fakeFTS3Server
+  return "server_0"
 
 def mock__OKFTSServerStatus(ftsServer):
   return S_OK( ftsServer )
@@ -194,7 +192,9 @@ class TestFTS3ServerPolicy ( unittest.TestCase ):
   """ Testing FTS3 ServerPolicy selection """
 
   def setUp(self):
-    self.fakeServerList = ["server_0", "server_1", "server_2"]
+    self.fakeServerDict = {"server_0": "server0.cern.ch",
+                           "server_1": "server1.cern.ch",
+                           "server_2": "server2.cern.ch"}
 
   @mock.patch( 'DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._getFTSServerStatus', side_effect = mock__OKFTSServerStatus )
   @mock.patch( 'DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._sequenceServerPolicy', side_effect = mock__sequenceServerPolicy )
@@ -203,20 +203,20 @@ class TestFTS3ServerPolicy ( unittest.TestCase ):
   def testCorrectServerPolicyIsUsed( self, mockFailoverFunc, mockRandomFunc, mockSequenceFunc, mockFTSServerStatus ):
     " Test correct server policy method is called "
 
-    obj = FTS3ServerPolicy(self.fakeServerList, "Sequence")
+    obj = FTS3ServerPolicy(self.fakeServerDict, "Sequence")
     obj.chooseFTS3Server()
     self.assertTrue(mockSequenceFunc.called)
 
-    obj = FTS3ServerPolicy(self.fakeServerList, "Random")
+    obj = FTS3ServerPolicy(self.fakeServerDict, "Random")
     obj.chooseFTS3Server()
     self.assertTrue(mockRandomFunc.called)
 
-    obj = FTS3ServerPolicy(self.fakeServerList, "Failover")
+    obj = FTS3ServerPolicy(self.fakeServerDict, "Failover")
     obj.chooseFTS3Server()
     self.assertTrue(mockFailoverFunc.called)
 
     # random policy should be selected for an invalid policy
-    obj = FTS3ServerPolicy(self.fakeServerList, "InvalidPolicy")
+    obj = FTS3ServerPolicy(self.fakeServerDict, "InvalidPolicy")
     obj.chooseFTS3Server()
     self.assertTrue(mockRandomFunc.called)
 
@@ -225,17 +225,17 @@ class TestFTS3ServerPolicy ( unittest.TestCase ):
   def testFailoverServerPolicy( self, mockFTSServerStatus):
     """ Test if the failover server policy returns server at a given position"""
 
-    obj = FTS3ServerPolicy(self.fakeServerList, "Failover")
-    for i in range(len(self.fakeServerList)):
+    obj = FTS3ServerPolicy(self.fakeServerDict, "Failover")
+    for i in range(len(self.fakeServerDict)):
       self.assertEquals('server_%d'%i, obj._failoverServerPolicy(i))
 
   @mock.patch( 'DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._getFTSServerStatus', side_effect = mock__ErrorFTSServerStatus )
   def testSequenceServerPolicy( self, mockFTSServerStatus):
     """ Test if the sequence server policy selects the servers Sequentially """
 
-    obj = FTS3ServerPolicy(self.fakeServerList, "Sequence")
+    obj = FTS3ServerPolicy(self.fakeServerDict, "Sequence")
 
-    for i in range(len(self.fakeServerList)):
+    for i in range(len(self.fakeServerDict)):
       self.assertEquals('server_%d'%i, obj._sequenceServerPolicy(i))
 
     self.assertEquals('server_0',obj._sequenceServerPolicy(i))
@@ -245,13 +245,13 @@ class TestFTS3ServerPolicy ( unittest.TestCase ):
   def testRandomServerPolicy( self, mockFTSServerStatus):
     """ Test if the random server policy does not selects the same server multiple times """
 
-    obj = FTS3ServerPolicy(self.fakeServerList, "Random")
+    obj = FTS3ServerPolicy(self.fakeServerDict, "Random")
     serverSet = set()
 
-    for i in range(len(self.fakeServerList)):
+    for i in range(len(self.fakeServerDict)):
       serverSet.add(obj._randomServerPolicy(i))
 
-    self.assertEquals(len(serverSet), len(self.fakeServerList))
+    self.assertEquals(len(serverSet), len(self.fakeServerDict))
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestFTS3Serialization )

@@ -5,10 +5,11 @@ DIRAC Internals Core documentation
 ==================================
 
 
-Documentation aboout the low level behavior of DIRAC
+Documentation about the low level behavior of DIRAC
 
 .. toctree::
    :maxdepth: 1
 
    ClientServer.rst
    Serialization.rst
+

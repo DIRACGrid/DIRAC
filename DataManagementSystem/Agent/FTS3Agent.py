@@ -10,7 +10,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.DataManagementSystem.private import FTS3Utilities
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 
@@ -44,23 +44,18 @@ class FTS3Agent(AgentModule):
     CAUTION: This agent and the FTSAgent cannot run together.
 
   """
-
-  def initialize(self):
-    """ agent's initialization """
-    self.fts3db = FTS3DB()
+  def __readConf(self):
+    """ read configurations """
 
     # Getting all the possible servers
-    res = getFTS3Servers()
+    res = getFTS3ServerDict()
     if not res['OK']:
       gLogger.error(res['Message'])
       return res
 
-    srvList = res['Value']
+    srvDict = res['Value']
     serverPolicyType = opHelper().getValue('DataManagement/FTSPlacement/FTS3/ServerPolicy', 'Random')
-
-    self._serverPolicy = FTS3Utilities.FTS3ServerPolicy(srvList, serverPolicy = serverPolicyType)
-
-    self._globalContextCache = {}
+    self._serverPolicy = FTS3Utilities.FTS3ServerPolicy(srvDict, serverPolicy=serverPolicyType)
 
     self.maxNumberOfThreads = self.am_getOption("MaxThreads", 10)
 
@@ -71,10 +66,22 @@ class FTS3Agent(AgentModule):
     self.maxFilesPerJob = self.am_getOption("MaxFilesPerJob", 100)
     self.maxAttemptsPerFile = self.am_getOption("maxAttemptsPerFile", 256)
 
+    return S_OK()
+
+  def initialize(self):
+    """ agent's initialization """
+    self.fts3db = FTS3DB()
+    self._globalContextCache = {}
+
     # name that will be used in DB for assignment tag
     self.assignmentTag = gethostname().split('.')[0]
 
-    return S_OK()
+    return self.__readConf()
+
+  def beginExecution(self):
+    """ reload configurations before start of a cycle """
+    return self.__readConf()
+
 
   def getFTS3Context(self, username, group, ftsServer, threadID):
     """ Returns an fts3 context for a given user, group and fts server

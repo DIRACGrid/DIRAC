@@ -6,14 +6,16 @@ import datetime
 # Requires at least version 3.3.3
 import fts3.rest.client.easy as fts3
 from fts3.rest.client.exceptions import FTS3ClientException
+from fts3.rest.client.request import Request as ftsSSLRequest
 
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
-from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
-
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
+from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 
 
 class FTS3Job( FTS3Serializable ):
@@ -29,6 +31,7 @@ class FTS3Job( FTS3Serializable ):
                 'Canceled', # Job canceled
                 'Failed', # All files Failed
                 'Finisheddirty',  # Some files Failed
+                'Staging',  # One of the files within a job went to Staging state
                ]
 
   FINAL_STATES = ['Canceled', 'Failed', 'Finished', 'Finisheddirty']
@@ -51,14 +54,11 @@ class FTS3Job( FTS3Serializable ):
     self.error = None
     self.status = FTS3Job.INIT_STATE
 
-
     self.completeness = None
-
     self.operationID = None
 
     self.username = None
     self.userGroup = None
-
 
     # temporary used only for submission
     # Set by FTS Operation when preparing
@@ -69,8 +69,7 @@ class FTS3Job( FTS3Serializable ):
     self.filesToSubmit = []
     self.activity = None
     self.priority = None
-
-
+    self.vo = None
 
 
   def monitor( self, context = None, ftsServer = None, ucert = None ):
@@ -93,8 +92,7 @@ class FTS3Job( FTS3Serializable ):
     if not context:
       if not ftsServer:
         ftsServer = self.ftsServer
-      context = fts3.Context( endpoint = ftsServer, ucert = ucert )
-
+      context = fts3.Context(endpoint=ftsServer, ucert=ucert, request_class=ftsSSLRequest, verify=False)
 
     jobStatusDict = None
     try:
@@ -112,16 +110,14 @@ class FTS3Job( FTS3Serializable ):
       self.error = jobStatusDict['reason']
 
     filesInfoList = jobStatusDict['files']
-
     filesStatus = {}
-
     statusSummary = {}
+
     for fileDict in filesInfoList:
       file_state = fileDict['file_state'].capitalize()
       file_id = fileDict['file_metadata']
       file_error = fileDict['reason']
       filesStatus[file_id] = {'status' : file_state, 'error' : file_error}
-
 
       statusSummary[file_state] = statusSummary.get( file_state, 0 ) + 1
 
@@ -130,6 +126,7 @@ class FTS3Job( FTS3Serializable ):
     self.completeness = 100 * completed / total
 
     return S_OK( filesStatus )
+
 
   @staticmethod
   def __fetchSpaceToken( seName ):
@@ -141,8 +138,7 @@ class FTS3Job( FTS3Serializable ):
     if seName:
       seObj = StorageElement( seName )
 
-
-      res = seObj.getStorageParameters( "SRM2" )
+      res = seObj.getStorageParameters(protocol='srm')
       if not res['OK']:
         return res
 
@@ -167,7 +163,6 @@ class FTS3Job( FTS3Serializable ):
                                      .get( 'TapeSE', True )
 
     return isTape
-
 
 
   def _constructTransferJob( self, context, pinTime, allTargetSURLs, failedLFNs, target_spacetoken ):
@@ -200,11 +195,11 @@ class FTS3Job( FTS3Serializable ):
     source_spacetoken = res['Value']
 
     # getting all the source surls
-    res = StorageElement( self.sourceSE ).getURL( allTargetSURLs, protocol = 'srm' )
+    res = StorageElement(self.sourceSE, vo=self.vo).getURL(allTargetSURLs, protocol='srm')
     if not res['OK']:
       return res
 
-    for lfn, reason in res['Value']['Failed']:
+    for lfn, reason in res['Value']['Failed'].iteritems():
       failedLFNs.add( lfn )
       log.error( "Could not get source SURL", "%s %s" % ( lfn, reason ) )
 
@@ -220,7 +215,6 @@ class FTS3Job( FTS3Serializable ):
       if ftsFile.lfn in failedLFNs:
         log.debug( "Not preparing transfer for file %s" % ftsFile.lfn )
         continue
-
 
       sourceSURL = allSourceSURLs[ftsFile.lfn]
       targetSURL = allTargetSURLs[ftsFile.lfn]
@@ -241,15 +235,12 @@ class FTS3Job( FTS3Serializable ):
       transfers.append( trans )
       fileIDsInTheJob.append( getattr( ftsFile, 'fileID' ) )
 
-
     # If the source is not an tape SE, we should set the
     # copy_pin_lifetime and bring_online params to None,
     # otherwise they will do an extra useless queue in FTS
     sourceIsTape = self.__isTapeSE( self.sourceSE )
     copy_pin_lifetime = pinTime if sourceIsTape else None
     bring_online = 86400 if sourceIsTape else None
-
-
 
     if not transfers:
       log.error( "No transfer possible!" )
@@ -265,10 +256,7 @@ class FTS3Job( FTS3Serializable ):
                         metadata = self.operationID,
                         priority = self.priority )
 
-
     return S_OK( ( job, fileIDsInTheJob ) )
-
-
 
 
   def _constructRemovalJob( self, context, allTargetSURLs, failedLFNs, target_spacetoken ):
@@ -300,21 +288,15 @@ class FTS3Job( FTS3Serializable ):
         log.debug( "Not preparing transfer for file %s" % ftsFile.lfn )
         continue
 
-
       transfers.append( {'surl' : allTargetSURLs[ftsFile.lfn],
                          'metadata' : getattr(ftsFile, 'fileID')})
       fileIDsInTheJob.append( getattr( ftsFile, 'fileID' ) )
 
-
-
     job = fts3.new_delete_job( transfers,
                                spacetoken = target_spacetoken,
                                metadata = self.operationID )
-
     job['params']['retry'] = 3
     job['params']['priority'] = self.priority
-
-
 
     return S_OK( ( job, fileIDsInTheJob ) )
 
@@ -329,7 +311,6 @@ class FTS3Job( FTS3Serializable ):
           * filesToSubmit
           * operationID (optional, used as metadata for the job)
 
-
         :param context: fts3 context
         :param pinTime: pining time in case staging is needed
         :param allTargetSURLs: dict {lfn:surl} for the target
@@ -341,9 +322,7 @@ class FTS3Job( FTS3Serializable ):
 
     log = gLogger.getSubLogger( "constructStagingJob/%s/%s" % ( self.operationID, self.targetSE ) , True )
 
-
     transfers = []
-
     fileIDsInTheJob = []
 
     for ftsFile in self.filesToSubmit:
@@ -351,7 +330,6 @@ class FTS3Job( FTS3Serializable ):
       if ftsFile.lfn in failedLFNs:
         log.debug( "Not preparing transfer for file %s" % ftsFile.lfn )
         continue
-
 
       sourceSURL = targetSURL = allTargetSURLs[ftsFile.lfn]
       trans = fts3.new_transfer( sourceSURL,
@@ -364,16 +342,12 @@ class FTS3Job( FTS3Serializable ):
       transfers.append( trans )
       fileIDsInTheJob.append( getattr( ftsFile, 'fileID' ) )
 
-
     # If the source is not an tape SE, we should set the
     # copy_pin_lifetime and bring_online params to None,
     # otherwise they will do an extra useless queue in FTS
     sourceIsTape = self.__isTapeSE( self.sourceSE )
     copy_pin_lifetime = pinTime if sourceIsTape else None
     bring_online = 86400 if sourceIsTape else None
-
-
-
 
     job = fts3.new_job( transfers = transfers,
                         overwrite = True,
@@ -385,9 +359,7 @@ class FTS3Job( FTS3Serializable ):
                         metadata = self.operationID,
                         priority = self.priority )
 
-
     return S_OK( ( job, fileIDsInTheJob ) )
-
 
 
   def submit( self, context = None, ftsServer = None, ucert = None, pinTime = 36000, ):
@@ -417,42 +389,33 @@ class FTS3Job( FTS3Serializable ):
         :returns S_OK([FTSFiles ids of files submitted])
     """
 
-
-
     log = gLogger.getSubLogger( "submit/%s/%s_%s" % ( self.operationID, self.sourceSE, self.targetSE ) , True )
-
-
 
     if not context:
       if not ftsServer:
         ftsServer = self.ftsServer
-      context = fts3.Context( endpoint = ftsServer, ucert = ucert )
-
+      context = fts3.Context(endpoint=ftsServer, ucert=ucert, request_class=ftsSSLRequest, verify=False)
 
     # Construct the target SURL
-
     res = self.__fetchSpaceToken( self.targetSE )
     if not res['OK']:
       return res
     target_spacetoken = res['Value']
 
-
     allLFNs = [ftsFile.lfn for ftsFile in self.filesToSubmit]
 
     failedLFNs = set()
 
-
     # getting all the target surls
-    res = StorageElement( self.targetSE ).getURL( allLFNs, protocol = 'srm' )
+    res = StorageElement(self.targetSE, vo=self.vo).getURL(allLFNs, protocol='srm')
     if not res['OK']:
       return res
 
-    for lfn, reason in res['Value']['Failed']:
+    for lfn, reason in res['Value']['Failed'].iteritems():
       failedLFNs.add( lfn )
       log.error( "Could not get target SURL", "%s %s" % ( lfn, reason ) )
 
     allTargetSURLs = res['Value']['Successful']
-
 
     if self.type == 'Transfer':
       res = self._constructTransferJob( context, pinTime, allTargetSURLs, failedLFNs, target_spacetoken )
@@ -465,7 +428,6 @@ class FTS3Job( FTS3Serializable ):
       return res
 
     job, fileIDsInTheJob = res['Value']
-
     setFileIdsInTheJob = set( fileIDsInTheJob )
 
     try:
@@ -488,9 +450,7 @@ class FTS3Job( FTS3Serializable ):
       log.exception( "Error at submission", repr( e ) )
       return S_ERROR( "Error at submission: %s" % e )
 
-
     return S_OK( fileIDsInTheJob )
-
 
 
   @staticmethod
@@ -502,7 +462,7 @@ class FTS3Job( FTS3Serializable ):
         :returns: an fts3 context
     """
     try:
-      context = fts3.Context( endpoint = ftsServer, ucert = ucert )
+      context = fts3.Context(endpoint=ftsServer, ucert=ucert, request_class=ftsSSLRequest, verify=False)
       return S_OK(context)
     except FTS3ClientException as e:
       gLogger.exception( "Error generating context", repr( e ) )

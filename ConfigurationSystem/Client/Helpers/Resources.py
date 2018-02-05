@@ -89,6 +89,11 @@ def getFTS3Servers():
   return S_OK( ftsServers )
 
 
+def getFTS3ServerDict():
+  """:returns: dict of key = server name and value = server url
+  """
+  return gConfig.getOptionsDict(cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3"))
+
 def getSiteTier( site ):
   """
     Return Tier level of the given Site
