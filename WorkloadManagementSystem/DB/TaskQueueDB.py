@@ -309,17 +309,25 @@ class TaskQueueDB(DB):
     Delete all empty task queues
     """
     self.log.info("Cleaning orphaned TQs")
-    result = self._update(
-        "DELETE FROM `tq_TaskQueues` WHERE Enabled >= 1 AND TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )",
-        conn=connObj)
+    sq = "SELECT TQId FROM `tq_TaskQueues` WHERE Enabled >= 1 AND TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )"
+    result = self._query(sq, conn=connObj)
     if not result['OK']:
       return result
+    orphanedTQs = result['Value']
+    if not orphanedTQs:
+      return S_OK()
+    orphanedTQs = [str(otq[0]) for otq in orphanedTQs]
+
     for mvField in multiValueDefFields:
       result = self._update(
-          "DELETE FROM `tq_TQTo%s` WHERE TQId not in ( SELECT DISTINCT TQId from `tq_TaskQueues` )" %
-          mvField, conn=connObj)
+          "DELETE FROM `tq_TQTo%s` WHERE TQId in ( %s )" % (mvField, ','.join(orphanedTQs)), conn=connObj)
       if not result['OK']:
         return result
+
+    result = self._update(
+        "DELETE FROM `tq_TaskQueues` WHERE TQId in ( %s )" % ','.join(orphanedTQs), conn=connObj)
+    if not result['OK']:
+      return result
     return S_OK()
 
   def __setTaskQueueEnabled(self, tqId, enabled=True, connObj=False):
