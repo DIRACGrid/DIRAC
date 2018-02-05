@@ -1,18 +1,21 @@
-"""  The Multi Processor Site Director is an agent performing pilot job submission to particular sites. It is able to handle multicore jobs.
+""" The Multi Processor Site Director is an agent performing pilot job submission to particular sites.
+    It is able to handle multicore jobs.
 """
+
+__RCSID__ = "$Id$"
+
 import os
 import random
 import re
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector, WAITING_PILOT_STATUS
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Resources
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB, jobDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.Core.Utilities.Time import dateTime, second
 
-__RCSID__ = "$Id$"
 
 
 class MultiProcessorSiteDirector(SiteDirector):
