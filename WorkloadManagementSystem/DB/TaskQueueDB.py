@@ -92,36 +92,36 @@ class TaskQueueDB(DB):
     tablesToCreate = {}
     self.__tablesDesc = {}
 
-    self.__tablesDesc[ 'tq_TaskQueues' ] = { 'Fields' : { 'TQId' : 'INTEGER(11) UNSIGNED AUTO_INCREMENT NOT NULL',
-                                                          'OwnerDN' : 'VARCHAR(255) NOT NULL',
-                                                          'OwnerGroup' : 'VARCHAR(32) NOT NULL',
-                                                          'Setup' : 'VARCHAR(32) NOT NULL',
-                                                          'CPUTime' : 'BIGINT(20) UNSIGNED NOT NULL',
-                                                          'Priority' : 'FLOAT NOT NULL',
-                                                          'Enabled' : 'TINYINT(1) NOT NULL DEFAULT 0'
-                                                        },
-                                             'PrimaryKey' : 'TQId',
-                                             'Indexes': { 'TQOwner': [ 'OwnerDN', 'OwnerGroup',
-                                                                       'Setup', 'CPUTime' ]
-                                                        }
-                                           }
+    self.__tablesDesc['tq_TaskQueues'] = {'Fields': {'TQId': 'INTEGER(11) UNSIGNED AUTO_INCREMENT NOT NULL',
+                                                     'OwnerDN': 'VARCHAR(255) NOT NULL',
+                                                     'OwnerGroup': 'VARCHAR(32) NOT NULL',
+                                                     'Setup': 'VARCHAR(32) NOT NULL',
+                                                     'CPUTime': 'BIGINT(20) UNSIGNED NOT NULL',
+                                                     'Priority': 'FLOAT NOT NULL',
+                                                     'Enabled': 'TINYINT(1) NOT NULL DEFAULT 0'
+                                                     },
+                                          'PrimaryKey': 'TQId',
+                                          'Indexes': {'TQOwner': ['OwnerDN', 'OwnerGroup',
+                                                                  'Setup', 'CPUTime']
+                                                      }
+                                          }
 
-    self.__tablesDesc[ 'tq_Jobs' ] = { 'Fields' : { 'TQId' : 'INTEGER(11) UNSIGNED NOT NULL',
-                                                    'JobId' : 'INTEGER(11) UNSIGNED NOT NULL',
-                                                    'Priority' : 'INTEGER UNSIGNED NOT NULL',
-                                                    'RealPriority' : 'FLOAT NOT NULL'
-                                                  },
-                                       'PrimaryKey' : 'JobId',
-                                       'Indexes': { 'TaskIndex': [ 'TQId' ] },
-                                     }
+    self.__tablesDesc['tq_Jobs'] = {'Fields': {'TQId': 'INTEGER(11) UNSIGNED NOT NULL',
+                                               'JobId': 'INTEGER(11) UNSIGNED NOT NULL',
+                                               'Priority': 'INTEGER UNSIGNED NOT NULL',
+                                               'RealPriority': 'FLOAT NOT NULL'
+                                               },
+                                    'PrimaryKey': 'JobId',
+                                    'Indexes': {'TaskIndex': ['TQId']},
+                                    }
 
     for multiField in multiValueDefFields:
       tableName = 'tq_TQTo%s' % multiField
-      self.__tablesDesc[ tableName ] = { 'Fields' : { 'TQId' : 'INTEGER(11) UNSIGNED NOT NULL',
-                                                      'Value' : 'VARCHAR(64) NOT NULL'
-                                                    },
-                                         'Indexes': { 'TaskIndex': [ 'TQId' ], '%sIndex' % multiField: [ 'Value' ] },
-                                       }
+      self.__tablesDesc[tableName] = {'Fields': {'TQId': 'INTEGER(11) UNSIGNED NOT NULL',
+                                                 'Value': 'VARCHAR(64) NOT NULL'
+                                                 },
+                                      'Indexes': {'TaskIndex': ['TQId'], '%sIndex' % multiField: ['Value']},
+                                      }
 
     for tableName in self.__tablesDesc:
       if tableName not in tablesInDB:
