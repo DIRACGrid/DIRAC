@@ -1,4 +1,6 @@
-""" This tests only need the TaskQueueDB, and connects directly to it
+""" This integration test only need the TaskQueueDB
+    (which should of course be properly defined also in the configuration),
+    and connects directly to it
 """
 
 import unittest
@@ -21,8 +23,37 @@ class TQDBTestCase( unittest.TestCase ):
     pass
 
 class TQChain( TQDBTestCase ):
+  """ chaining some commands
   """
-  """
+
+  def test_basicBasicChain( self ):
+    """ a basic put - remove
+    """
+    tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup':'myGroup', 'Setup':'aSetup', 'CPUTime':50000}
+    result = self.tqDB.insertJob( 123, tqDefDict, 10 )
+    self.assert_( result['OK'] )
+    result = self.tqDB.getTaskQueueForJobs( [123] )
+    tq = result['Value'][123]
+    result = self.tqDB.deleteTaskQueue( tq )
+    self.assertFalse(result['OK']) # This will fail because of the foreign key
+    result = self.tqDB.cleanOrphanedTaskQueues()
+    self.assertTrue(result['OK'])
+    result = self.tqDB.deleteTaskQueueIfEmpty( tq )
+    self.assertTrue(result['OK'])
+
+    tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup':'myGroup', 'Setup':'aSetup', 'CPUTime':50000}
+    result = self.tqDB.insertJob( 125, tqDefDict, 10 )
+    self.assertTrue(result['OK'])
+    result = self.tqDB.cleanOrphanedTaskQueues()
+    self.assertTrue(result['OK'])
+    result = self.tqDB.getTaskQueueForJobs( [125] )
+    tq = result['Value'][125]
+    result = self.tqDB.deleteTaskQueue( tq )
+    self.assertFalse(result['OK']) # This will fail because of the foreign key
+    result = self.tqDB.cleanOrphanedTaskQueues()
+    self.assertTrue(result['OK'])
+    result = self.tqDB.deleteTaskQueueIfEmpty( tq )
+    self.assertTrue(result['OK'])
 
   def test_basicChain( self ):
     """ a basic put - remove
@@ -35,9 +66,11 @@ class TQChain( TQDBTestCase ):
     self.assertTrue( 123 in result['Value'].keys() )
     tq = result['Value'][123]
     result = self.tqDB.deleteJob( 123 )
-    self.assertTrue(result['OK'])
-    result = self.tqDB.deleteTaskQueue( tq )
-    self.assertTrue(result['OK'])
+    self.assert_( result['OK'] )
+    result = self.tqDB.cleanOrphanedTaskQueues()
+    self.assertTrue( result['OK'] )
+    result = self.tqDB.deleteTaskQueueIfEmpty( tq )
+    self.assertTrue( result['OK'] )
 
 class TQTests( TQDBTestCase ):
   """
@@ -55,7 +88,7 @@ class TQTests( TQDBTestCase ):
     result = self.tqDB.retrieveTaskQueues()
     self.assertTrue(result['OK'])
     self.assertEqual( result['Value'].values()[0],
-                      {'OwnerDN': '/my/DN', 'Jobs': 1L, 'OwnerGroup': 'myGroup',
+                      {'OwnerDN': '/my/DN', 'Jobs': 2L, 'OwnerGroup': 'myGroup',
                        'Setup': 'aSetup', 'CPUTime': 86400L, 'Priority': 1.0} )
     result = self.tqDB.findOrphanJobs()
     self.assertTrue(result['OK'])
@@ -66,12 +99,11 @@ class TQTests( TQDBTestCase ):
     result = self.tqDB.matchAndGetJob( {'Setup': 'aSetup', 'CPUTime': 300000} )
     self.assertTrue(result['OK'])
     self.assertTrue( result['Value']['matchFound'] )
-    self.assertEqual( result['Value']['jobId'], 123L )
+    self.assertTrue( result['Value']['jobId'] in [123L, 125L] )
     tq = result['Value']['taskQueueId']
 
-    result = self.tqDB.deleteTaskQueue( tq )
+    result = self.tqDB.deleteTaskQueueIfEmpty( tq )
     self.assertTrue(result['OK'])
-
 
 
 if __name__ == '__main__':
