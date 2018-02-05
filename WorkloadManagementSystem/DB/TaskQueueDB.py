@@ -29,6 +29,8 @@ priorityIgnoredFields = ('Sites', 'BannedSites')
 
 
 class TaskQueueDB(DB):
+  """ MySQL DB of "Task Queues"
+  """
 
   def __init__(self):
     random.seed()
@@ -99,29 +101,32 @@ class TaskQueueDB(DB):
                                                      'CPUTime': 'BIGINT(20) UNSIGNED NOT NULL',
                                                      'Priority': 'FLOAT NOT NULL',
                                                      'Enabled': 'TINYINT(1) NOT NULL DEFAULT 0'
-                                                     },
+                                                    },
                                           'PrimaryKey': 'TQId',
                                           'Indexes': {'TQOwner': ['OwnerDN', 'OwnerGroup',
                                                                   'Setup', 'CPUTime']
-                                                      }
-                                          }
+                                                     }
+                                         }
 
     self.__tablesDesc['tq_Jobs'] = {'Fields': {'TQId': 'INTEGER(11) UNSIGNED NOT NULL',
                                                'JobId': 'INTEGER(11) UNSIGNED NOT NULL',
                                                'Priority': 'INTEGER UNSIGNED NOT NULL',
                                                'RealPriority': 'FLOAT NOT NULL'
-                                               },
+                                              },
                                     'PrimaryKey': 'JobId',
                                     'Indexes': {'TaskIndex': ['TQId']},
-                                    }
+                                    'ForeignKeys': {'TQId': 'tq_TaskQueues.TQId'}
+                                   }
 
     for multiField in multiValueDefFields:
       tableName = 'tq_TQTo%s' % multiField
       self.__tablesDesc[tableName] = {'Fields': {'TQId': 'INTEGER(11) UNSIGNED NOT NULL',
                                                  'Value': 'VARCHAR(64) NOT NULL'
-                                                 },
+                                                },
+                                      'PrimaryKey': ['TQId', 'Value'],
                                       'Indexes': {'TaskIndex': ['TQId'], '%sIndex' % multiField: ['Value']},
-                                      }
+                                      'ForeignKeys': {'TQId': 'tq_TaskQueues.TQId'}
+                                     }
 
     for tableName in self.__tablesDesc:
       if tableName not in tablesInDB:
@@ -553,9 +558,9 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         self.log.info("No jobs could be extracted from TQ %s" % tqId)
     if noJobsFound:
       return S_OK({'matchFound': False, 'tqMatch': tqMatchDict})
-    else:
-      self.log.info("Could not find a match after %s match retries" % self.__maxMatchRetry)
-      return S_ERROR("Could not find a match after %s match retries" % self.__maxMatchRetry)
+
+    self.log.info("Could not find a match after %s match retries" % self.__maxMatchRetry)
+    return S_ERROR("Could not find a match after %s match retries" % self.__maxMatchRetry)
 
   def matchAndGetTaskQueue(self, tqMatchDict, numQueuesToGet=1, skipMatchDictDef=False,
                            negativeCond={}, connObj=False):
@@ -857,8 +862,8 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       return S_ERROR('Not in TaskQueues')
 
     resultDict = {}
-    for jobID, TQID in retVal['Value']:
-      resultDict[int(jobID)] = int(TQID)
+    for jobID, tqID in retVal['Value']:
+      resultDict[int(jobID)] = int(tqID)
 
     return S_OK(resultDict)
 
@@ -898,20 +903,26 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       if not data:
         return S_OK(False)
       tqOwnerDN, tqOwnerGroup = data
-    sqlCmd = "DELETE FROM `tq_TaskQueues` WHERE Enabled >= 1 AND `tq_TaskQueues`.TQId = %s" % tqId
-    sqlCmd = "%s AND `tq_TaskQueues`.TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )" % sqlCmd
-    retVal = self._update(sqlCmd, conn=connObj)
+
+    sqlCmd = "SELECT TQId FROM `tq_TaskQueues` WHERE Enabled >= 1 AND `tq_TaskQueues`.TQId = %s " % tqId
+    sqlCmd += "AND `tq_TaskQueues`.TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )"
+    retVal = self._query(sqlCmd, conn=connObj)
     if not retVal['OK']:
-      return S_ERROR("Could not delete task queue %s: %s" % (tqId, retVal['Message']))
-    delTQ = retVal['Value']
-    if delTQ > 0:
+      gLogger.error("Could not select task queue %s" % tqId, retVal['Message'])
+      return S_ERROR("Could not select task queue")
+    tqToDel = retVal['Value']
+
+    if tqToDel:
       for mvField in multiValueDefFields:
         retVal = self._update("DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % (mvField, tqId), conn=connObj)
         if not retVal['OK']:
           return retVal
+      retVal = self._update("DELETE FROM `tq_TaskQueues` WHERE TQId = %s" % tqId, conn=connObj)
+      if not retVal['OK']:
+        return retVal
       self.recalculateTQSharesForEntity(tqOwnerDN, tqOwnerGroup, connObj=connObj)
       self.log.info("Deleted empty and enabled TQ %s" % tqId)
-      return S_OK(True)
+      return S_OK()
     return S_OK(False)
 
   def deleteTaskQueue(self, tqId, tqOwnerDN=False, tqOwnerGroup=False, connObj=False):
@@ -987,7 +998,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     sqlCmd = "SELECT %s FROM `tq_TaskQueues`, `tq_Jobs`" % ", ".join(sqlSelectEntries)
     sqlTQCond = ""
     if tqIdList:
-      if len(tqIdList) == 0:
+      if not tqIdList:
         return S_OK({})
       else:
         sqlTQCond += " AND `tq_TaskQueues`.TQId in ( %s )" % ", ".join([str(id_) for id_ in tqIdList])
