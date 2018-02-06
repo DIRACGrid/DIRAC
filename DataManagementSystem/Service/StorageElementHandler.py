@@ -16,6 +16,8 @@ remove()           - remove one file
 removeDirectory()  - remove on directory recursively
 removeFileList()   - remove files in the list
 getAdminInfo()     - get administration information about the SE status
+getFreeDiskSpace() - get the free disk space
+getTotalDiskSpace() - get the free total space
 
 The handler implements also the DISET data transfer calls
 toClient(), fromClient(), bulkToClient(), bulkFromClient
@@ -50,32 +52,24 @@ BASE_PATH = ""
 MAX_STORAGE_SIZE = 0
 USE_TOKENS = False
 
-UNIT_CONVERSION = {"KB": 1024, "MB": 1024 * 1024, "GB": 1024 * 1024 * 1024, "TB": 1024 * 1024 * 1024 * 1024}
 
-
-def getDiskSpace(path, size='TB', total=False):
+def getDiskSpace(path, total=False):
   """
-    Returns disk usage of the given path.
-    If no size is specified, terabytes will be used by default.
+    Returns disk usage of the given path, in MB.
     If total is set to true, the total disk space will be returned instead.
   """
-
-  size_to_convert = size.upper()
-  if size_to_convert not in UNIT_CONVERSION:
-    return S_ERROR("No valid size specified")
-  convert = UNIT_CONVERSION[size_to_convert]
 
   try:
     st = os.statvfs(path)
 
     if total:
       # return total space
-      queried_size = st.f_blocks
+      queriedSize = st.f_blocks
     else:
       # return free space
-      queried_size = st.f_bavail
+      queriedSize = st.f_bavail
 
-    result = float(queried_size * st.f_frsize) / float(convert)
+    result = float(queriedSize * st.f_frsize) / float(1024 * 1024)
 
   except OSError as e:
     return S_ERROR(errno.EIO, "Error while getting the available disk space: %s" % repr(e))
@@ -94,7 +88,7 @@ def getTotalDiskSpace():
   global BASE_PATH
   global MAX_STORAGE_SIZE
 
-  result = getDiskSpace(BASE_PATH, size='MB', total=True)
+  result = getDiskSpace(BASE_PATH, total=True)
   if not result['OK']:
     return result
   totalSpace = result['Value']
@@ -112,7 +106,7 @@ def getFreeDiskSpace(ignoreMaxStorageSize=True):
   global MAX_STORAGE_SIZE
   global BASE_PATH
 
-  result = getDiskSpace(BASE_PATH, 'MB')
+  result = getDiskSpace(BASE_PATH)
   if not result['OK']:
     return result
   freeSpace = result['Value']

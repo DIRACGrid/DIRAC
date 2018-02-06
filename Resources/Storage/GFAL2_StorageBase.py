@@ -11,7 +11,6 @@
 
 # # imports
 import os
-import sys
 import datetime
 import errno
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
