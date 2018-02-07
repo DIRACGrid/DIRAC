@@ -10,7 +10,7 @@ class DataOperation( BaseAccountingType ):
     BaseAccountingType.__init__( self )
     self.definitionKeyFields = [ ( 'OperationType' , "VARCHAR(32)" ),
                                  ( 'User', "VARCHAR(32)" ),
-                                 ( 'ExecutionSite', 'VARCHAR(32)' ),
+                                 ( 'ExecutionSite', 'VARCHAR(256)' ),
                                  ( 'Source', 'VARCHAR(32)' ),
                                  ( 'Destination', 'VARCHAR(32)' ),
                                  ( 'Protocol', 'VARCHAR(32)' ),

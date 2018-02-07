@@ -13,7 +13,7 @@ class Job( BaseAccountingType ):
                                  ( 'JobGroup', "VARCHAR(64)" ),
                                  ( 'JobType', 'VARCHAR(32)' ),
                                  ( 'JobClass', 'VARCHAR(32)' ),
-                                 ( 'ProcessingType', 'VARCHAR(32)' ),
+                                 ( 'ProcessingType', 'VARCHAR(256)' ),
                                  ( 'Site', 'VARCHAR(32)' ),
                                  ( 'FinalMajorStatus', 'VARCHAR(32)' ),
                                  ( 'FinalMinorStatus', 'VARCHAR(64)' )
