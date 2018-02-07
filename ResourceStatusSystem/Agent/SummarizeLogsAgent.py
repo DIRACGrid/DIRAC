@@ -1,8 +1,8 @@
 """ SummarizeLogsAgent module
 
-  This agents scans all the log tables ( SiteLog, ResouceLog and NodeLog ) on the
+  This agents scans all the log tables ( SiteLog, ResourceLog and NodeLog ) on the
   ResourceStatusDB and summarizes them. The results are stored on the History
-  tables ( SiteHistory, ResourceHistory and NodeHistory ) and the Log tables
+  tables (SiteHistory, ResourceHistory and NodeHistory) and the Log tables
   cleared.
 
   In order to summarize the logs, all entries with no changes on the Status or
@@ -13,11 +13,12 @@
 
 """
 
+__RCSID__  = '$Id$'
+
 from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
-__RCSID__  = '$Id:  $'
 AGENT_NAME = 'ResourceStatus/SummarizeLogsAgent'
 
 class SummarizeLogsAgent( AgentModule ):
@@ -98,7 +99,7 @@ class SummarizeLogsAgent( AgentModule ):
 
     :Parameters:
       **element** - `string`
-        name of the table family ( either Site, Resource and Node )
+        name of the table family ( either Site, Resource or Node )
 
     :return: S_OK( lastID, listOfLogs ) / S_ERROR
 
