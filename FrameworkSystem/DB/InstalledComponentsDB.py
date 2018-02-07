@@ -249,7 +249,7 @@ class HostLogging( componentsBase ):
   Load5 = Column( 'Load5', String( 32 ) ) # float
   Load15 = Column( 'Load15', String( 32 ) ) # float
   Memory = Column( 'Memory', String( 32 ) )
-  DiskOccupancy = Column( 'DiskOccupancy', String( 32 ) )
+  DiskOccupancy = Column( 'DiskOccupancy', String( 256 ) )
   Swap = Column( 'Swap', String( 32 ) )
   CPUClock = Column( 'CPUClock', String( 32 ) ) # float
   CPUModel = Column( 'CPUModel', String( 64 ) )
