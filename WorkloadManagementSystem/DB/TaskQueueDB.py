@@ -101,32 +101,32 @@ class TaskQueueDB(DB):
                                                      'CPUTime': 'BIGINT(20) UNSIGNED NOT NULL',
                                                      'Priority': 'FLOAT NOT NULL',
                                                      'Enabled': 'TINYINT(1) NOT NULL DEFAULT 0'
-                                                    },
+                                                     },
                                           'PrimaryKey': 'TQId',
                                           'Indexes': {'TQOwner': ['OwnerDN', 'OwnerGroup',
                                                                   'Setup', 'CPUTime']
-                                                     }
-                                         }
+                                                      }
+                                          }
 
     self.__tablesDesc['tq_Jobs'] = {'Fields': {'TQId': 'INTEGER(11) UNSIGNED NOT NULL',
                                                'JobId': 'INTEGER(11) UNSIGNED NOT NULL',
                                                'Priority': 'INTEGER UNSIGNED NOT NULL',
                                                'RealPriority': 'FLOAT NOT NULL'
-                                              },
+                                               },
                                     'PrimaryKey': 'JobId',
                                     'Indexes': {'TaskIndex': ['TQId']},
                                     'ForeignKeys': {'TQId': 'tq_TaskQueues.TQId'}
-                                   }
+                                    }
 
     for multiField in multiValueDefFields:
       tableName = 'tq_TQTo%s' % multiField
       self.__tablesDesc[tableName] = {'Fields': {'TQId': 'INTEGER(11) UNSIGNED NOT NULL',
                                                  'Value': 'VARCHAR(64) NOT NULL'
-                                                },
+                                                 },
                                       'PrimaryKey': ['TQId', 'Value'],
                                       'Indexes': {'TaskIndex': ['TQId'], '%sIndex' % multiField: ['Value']},
                                       'ForeignKeys': {'TQId': 'tq_TaskQueues.TQId'}
-                                     }
+                                      }
 
     for tableName in self.__tablesDesc:
       if tableName not in tablesInDB:

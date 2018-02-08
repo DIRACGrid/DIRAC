@@ -17,7 +17,6 @@ from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.Core.Utilities.Time import dateTime, second
 
 
-
 class MultiProcessorSiteDirector(SiteDirector):
 
   def getQueues(self, resourceDict):
@@ -40,17 +39,17 @@ class MultiProcessorSiteDirector(SiteDirector):
         maxProcessorsList = range(1, int(maxProcessors) + 1)
         processorsTags = ['%dProcessors' % processors for processors in maxProcessorsList]
         if processorsTags:
-          self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
+          self.queueDict[queueName]['ParametersDict'].setdefault('Tag', [])
           self.queueDict[queueName]['ParametersDict']['Tag'] += processorsTags
 
-      ceWholeNode = ceDef.get( 'WholeNode', 'false' )
-      wholeNode = self.queueDict[queueName]['ParametersDict'].get( 'WholeNode', ceWholeNode )
-      if wholeNode.lower() in ( 'yes', 'true' ):
-        self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-        self.queueDict[queueName]['ParametersDict']['Tag'].append( 'WholeNode' )
+      ceWholeNode = ceDef.get('WholeNode', 'false')
+      wholeNode = self.queueDict[queueName]['ParametersDict'].get('WholeNode', ceWholeNode)
+      if wholeNode.lower() in ('yes', 'true'):
+        self.queueDict[queueName]['ParametersDict'].setdefault('Tag', [])
+        self.queueDict[queueName]['ParametersDict']['Tag'].append('WholeNode')
 
       if 'Tag' not in self.queueDict[queueName]['ParametersDict']:
-        remQueues.append( queueName )
+        remQueues.append(queueName)
       else:
         tags = self.queueDict[queueName]['ParametersDict']['Tag']
         if '2Processors' not in tags and 'WholeNode' not in tags:
@@ -85,7 +84,7 @@ class MultiProcessorSiteDirector(SiteDirector):
     tags = []
     for queue in queues:
       tags += self.queueDict[queue]['ParametersDict']['Tag']
-    tqDict['Tag'] = list( set( tags ) )
+    tqDict['Tag'] = list(set(tags))
 
     self.log.verbose('Checking overall TQ availability with requirements')
     self.log.verbose(tqDict)

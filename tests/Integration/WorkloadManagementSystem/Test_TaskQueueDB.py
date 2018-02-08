@@ -60,7 +60,7 @@ class TQChain(TQDBTestCase):
     self.assertFalse(result['OK'])  # This will fail because of the foreign key
     result = self.tqDB.cleanOrphanedTaskQueues()
     self.assertTrue(result['OK'])
-    result = self.tqDB.deleteTaskQueueIfEmpty(tq) # this won't delete anything
+    result = self.tqDB.deleteTaskQueueIfEmpty(tq)  # this won't delete anything
     self.assertTrue(result['OK'])
 
     # second job
@@ -70,8 +70,8 @@ class TQChain(TQDBTestCase):
     tq = result['Value'][125]
     result = self.tqDB.deleteTaskQueue(tq)
     self.assertFalse(result['OK'])  # This will fail because of the foreign key
-    result = self.tqDB.deleteTaskQueueIfEmpty(tq) # this won't delete anything, as both 123 and 125 are in
-    self.assertTrue(result['OK']) # but still it won't fail
+    result = self.tqDB.deleteTaskQueueIfEmpty(tq)  # this won't delete anything, as both 123 and 125 are in
+    self.assertTrue(result['OK'])  # but still it won't fail
     self.assertFalse(result['Value'])
     result = self.tqDB.retrieveTaskQueues()
     self.assertTrue(result['OK'])
@@ -84,7 +84,7 @@ class TQChain(TQDBTestCase):
     self.assertTrue(result['OK'])
     result = self.tqDB.deleteJob(125)
     self.assertTrue(result['OK'])
-    result = self.tqDB.deleteTaskQueueIfEmpty(tq) # this should now delete tq
+    result = self.tqDB.deleteTaskQueueIfEmpty(tq)  # this should now delete tq
     self.assertTrue(result['OK'])
     result = self.tqDB.retrieveTaskQueues()
     self.assertTrue(result['OK'])
@@ -94,22 +94,21 @@ class TQChain(TQDBTestCase):
     """ put - remove with parameters
     """
     tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 50000,
-                 'BannedSites':['LCG.CERN.ch', 'CLOUD.IN2P3.fr']}
+                 'BannedSites': ['LCG.CERN.ch', 'CLOUD.IN2P3.fr']}
     result = self.tqDB.insertJob(127, tqDefDict, 10)
     self.assertTrue(result['OK'])
     result = self.tqDB.getTaskQueueForJobs([127])
     tq = result['Value'][127]
-    result = self.tqDB.deleteTaskQueueIfEmpty(tq) # this won't delete anything, as 127 is in
-    self.assertTrue(result['OK']) # but still it won't fail
+    result = self.tqDB.deleteTaskQueueIfEmpty(tq)  # this won't delete anything, as 127 is in
+    self.assertTrue(result['OK'])  # but still it won't fail
     self.assertFalse(result['Value'])
     result = self.tqDB.deleteJob(127)
     self.assertTrue(result['OK'])
-    result = self.tqDB.deleteTaskQueueIfEmpty(tq) # this should now delete tq
+    result = self.tqDB.deleteTaskQueueIfEmpty(tq)  # this should now delete tq
     self.assertTrue(result['OK'])
     result = self.tqDB.retrieveTaskQueues()
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], {})
-
 
 
 class TQTests(TQDBTestCase):
