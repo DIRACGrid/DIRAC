@@ -428,7 +428,7 @@ class InstalledComponentsDB(object):
         comparison = '<'
         actualKey = key.replace('.smaller', '')
 
-      if matchFields[key] == None:
+      if matchFields[key] is None:
         sql = '%s IS NULL' % (actualKey)
       elif isinstance(matchFields[key], list):
         if len(matchFields[key]) > 0 and None not in matchFields[key]:

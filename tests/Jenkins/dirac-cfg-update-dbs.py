@@ -6,7 +6,6 @@ import os
 
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.private.monitoring.MonitoringCatalog import MonitoringCatalog
-from DIRAC.ProductionManagementSystem.Client.Production import Production
 from sqlalchemy import databases
 from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
 from idlelib.rpc import LOCALHOST
