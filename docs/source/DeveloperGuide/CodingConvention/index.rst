@@ -12,13 +12,13 @@ overall project.
 Pep8, Pycodestyle and autopep8
 ------------------------------
 
-In order to ensure consistant formatting between developers, it was decided to stick to the Pep8 style guide (https://www.python.org/dev/peps/pep-0008/), with two differences:
+In order to ensure consistent formatting between developers, it was decided to stick to the Pep8 style guide (https://www.python.org/dev/peps/pep-0008/), with two differences:
 * we use 2 space indentation instead of 4
 * we use a line length of 120 instead of 80
 
-This is managed by the setup.cfg at the root of the DIRAC repo.
+This is managed by the setup.cfg at the root of the DIRAC repository.
 
-In order to ensure that the formatting preference of the developer's editor does not play trick, there are two files under `tests/formatting`: `pep8_bad.py` and `pep8_good.py`. The first one contains generic rules and examples of dos and donts. The developper should pass this file through the autoformat of his/her editor. The output should be exactly `pep8_good.py`. We recommand the use of autopep8 for the autoformatting::
+In order to ensure that the formatting preference of the developer's editor does not play trick, there are two files under `tests/formatting`: `pep8_bad.py` and `pep8_good.py`. The first one contains generic rules and examples of dos and donts. The developer should pass this file through the autoformat of his/her editor. The output should be exactly `pep8_good.py`. We recommand the use of autopep8 for the autoformatting::
 
       [chaen@pclhcb31 formatting]$ pycodestyle pep8_bad.py
       pep8_bad.py:11:121: E501 line too long (153 > 120 characters)

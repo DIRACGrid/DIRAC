@@ -6,7 +6,7 @@ import os
 
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.private.monitoring.MonitoringCatalog import MonitoringCatalog
-from ProductionManagementSystem.Client.Production import Production
+from DIRAC.ProductionManagementSystem.Client.Production import Production
 from sqlalchemy import databases
 from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
 from idlelib.rpc import LOCALHOST
@@ -98,36 +98,4 @@ csAPI.setOption( 'Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIR
 csAPI.setOption( 'Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIRACBookkeepingServer', 'FILL_ME' )
 
 # Commit
-
-#setup MonitoringDB
-# Monitoring
-# {
-#   Production
-#   {
-#     Databases
-#     {
-#       MonitoringDB
-#       {
-#         Host = localhost
-#         Port 9200
-#       }
-#     }
-#   }
-# }
-
-for sct in ['Systems/Monitoring',
-            'Systems/Monitoring/Production',
-            'Systems/Monitoring/Production/Databases',
-            'Systems/Monitoring/Production/Databases/MonitoringDB' ]:
-  res = csAPI.createSection( sct )
-  if not res['OK']:
-    print res['Message']
-    exit( 1 )
-
-dbHost = os.environ['NoSQLDB_HOST']
-dbPort = os.environ['NoSQLDB_PORT']
-
-csAPI.setOption( 'Systems/Monitoring/Production/Databases/MonitoringDB/Host', dbHost )
-csAPI.setOption( 'Systems/Monitoring/Production/Databases/MonitoringDB/Port', dbPort )
-
 csAPI.commit()
