@@ -493,6 +493,11 @@ class CheckWNCapabilities( CommandBase ):
     # values are preferred
     numberOfProcessors = self.pp.queueParameters.get(
         'NumberOfProcessors', numberOfProcessors)
+    # if maxNumberOfProcessors is asked in pilotWrapper
+    if self.pp.maxNumberOfProcessors:
+      self.log.debug("Overriding with a requested number of processors")
+      numberOfProcessors = self.pp.maxNumberOfProcessors
+
     if not numberOfProcessors:
       self.log.warn("Could not retrieve number of processors, assuming 1")
       numberOfProcessors = 1
@@ -847,6 +852,7 @@ class ConfigureCPURequirements( CommandBase ):
 
     # HS06s = seconds * HS06
     try:
+      # determining the CPU time left (in HS06s)
       self.pp.jobCPUReq = float( cpuTime ) * float( cpuNormalizationFactor )
       self.log.info( "Queue length (which is also set as CPUTimeLeft) is %f" % self.pp.jobCPUReq )
     except ValueError:
