@@ -5,10 +5,7 @@
 import os
 
 from DIRAC.Core.Base import Script
-from DIRAC.FrameworkSystem.private.monitoring.MonitoringCatalog import MonitoringCatalog
-from sqlalchemy import databases
-from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
-from idlelib.rpc import LOCALHOST
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
@@ -17,7 +14,6 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 csAPI = CSAPI()
 
 

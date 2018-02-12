@@ -1,6 +1,3 @@
-# $HeadURL$
-
-
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 import DIRAC
 
