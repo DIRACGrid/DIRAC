@@ -31,12 +31,17 @@ Sencha Cmd
 ````````````
 
 You can download from https://www.sencha.com/products/extjs/cmd-download/
-Note: you have to add sencha to the system path. Please make sure, if you type sencha in the terminal will work. 
+Note: you have to add sencha to the system path. Please make sure, if you type sencha in the terminal it will work. 
 
 ExtJs SDK
 `````````
 
-You can download from the following link:
+If you are using DIRAC v6r20 series, You can download from the following link: 
+
+wget http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
+
+otherwise:
+
 https://www.sencha.com/legal/GPL/ 
 
 Note: You have to provide a valid email address and you will receive a link where the sdk can be downloaded. 
@@ -228,9 +233,12 @@ also pushed to the central repository, the tar archives containing the new
 codes can be created. To do this, just execute *dirac-distribution* command with the appropriate
 flags. For instance::
 
-  > dirac-distribution -r v6r19p7 -l DIRAC
-  > dirac-distribution -r v6r20p2 -l DIRAC
-  > dirac-distribution -r v6r21-pre3 -l DIRAC
+  > dirac-distribution -r v6r19p7 -l DIRAC --extjspath=<extjs library path> for example: /home/diracCertif/extjs/ext-4.2.1.883/
+  > dirac-distribution -r v6r20p2 -l DIRAC --extjspath=<extjs library path> for example: /home/diracCertif/extjs/ext-4.2.1.883/
+  > dirac-distribution -r v6r21-pre3 -l DIRAC --extjspath=<extjs library path> for example: /home/diracCertif/extjs/ext-4.2.1.883/
+
+
+Note: if the sencha or extjs library is missing, the web will be not compiled.
 
 You can also pass the releases.cfg to use via command line using the *-C* switch. *dirac-distribution*
 will generate a set of tarballs, release and md5 files. Please copy those to your installation source
