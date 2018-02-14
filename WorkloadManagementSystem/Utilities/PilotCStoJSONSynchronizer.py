@@ -304,7 +304,10 @@ class PilotCStoJSONSynchronizer(object):
         script = psf.read()
       params = urllib.urlencode({'filename': filename, 'data': script})
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-    con = HTTPDISETConnection(self.pilotFileServer, '443')
+    if ':' in self.pilotFileServer:
+      con = HTTPDISETConnection(self.pilotFileServer.split(':')[0], self.pilotFileServer.split(':')[1])
+    else:
+      con = HTTPDISETConnection(self.pilotFileServer, '443')
     con.request("POST", "/DIRAC/upload", params, headers)
     resp = con.getresponse()
     if resp.status != 200:
