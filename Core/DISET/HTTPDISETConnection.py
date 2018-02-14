@@ -1,15 +1,15 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import httplib
 import socket
 import time
 import GSI
+
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.private.SSLSocketFactory import gSSLSocketFactory
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
-class HTTPDISETSocket:
+class HTTPDISETSocket(object):
 
   def __init__( self, gsiSocket ):
     self.gsiSocket = gsiSocket
@@ -108,7 +108,3 @@ class HTTPDISETConnection( httplib.HTTPConnection ):
       break
     if not self.sock:
       raise socket.error, errorMsg
-
-
-
-

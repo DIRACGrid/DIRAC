@@ -7,6 +7,8 @@
 
 """
 
+__RCSID__ = '$Id$'
+
 import json
 import urllib
 import shutil
@@ -17,8 +19,6 @@ from git import Repo
 
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.HTTPDISETConnection import HTTPDISETConnection
-
-__RCSID__ = '$Id:  $'
 
 
 class PilotCStoJSONSynchronizer( object ):
@@ -198,7 +198,7 @@ class PilotCStoJSONSynchronizer( object ):
         gLogger.error( loggingMQServiceQueuesSections['Message'] )
         return loggingMQServiceQueuesSections
       pilotDict['Setups'][setup]['Logging']['Queue'] = {}
-      
+
       for queue in loggingMQServiceQueuesSections['Value']:
         loggingMQServiceQueue = gConfig.getOptionsDict( '/Resources/MQServices/%s/Queues/%s' \
                                                         % (pilotDict['Setups'][setup]['LoggingMQService'], queue) )
@@ -207,42 +207,64 @@ class PilotCStoJSONSynchronizer( object ):
           return loggingMQServiceQueue
         pilotDict['Setups'][setup]['Logging']['Queue'][queue] = loggingMQServiceQueue['Value']
 
-      pilotDict['Setups'][setup]['Logging']['Queues'] = loggingMQService['Value']['Queues']
+      queuesRes = gConfig.getSections('/Resources/MQServices/%s/Queues' \
+                                      % pilotDict['Setups'][setup]['LoggingMQService'])
+      if not queuesRes['OK']:
+        return queuesRes
+      queues = queuesRes['Value']
+      queuesDict = {}
+      for queue in queues:
+        queueOptionRes = gConfig.getOptionsDict('/Resources/MQServices/%s/Queues/%s' \
+                                                 % (pilotDict['Setups'][setup]['LoggingMQService'], queue))
+        if not queueOptionRes['OK']:
+          return queueOptionRes
+        queuesDict[queue] = queueOptionRes['Value']
+      pilotDict['Setups'][setup]['Logging']['Queues'] = queuesDict
 
 
   def _syncScripts(self):
     """Clone the pilot scripts from the repository and upload them to the web server
     """
     gLogger.info( '-- Uploading the pilot scripts --' )
-    if os.path.isdir( self.pilotVOLocalRepo ):
-      shutil.rmtree( self.pilotVOLocalRepo )
-    os.mkdir( self.pilotVOLocalRepo )
-    repo_VO = Repo.init( self.pilotVOLocalRepo )
-    upstream = repo_VO.create_remote( 'upstream', self.pilotVORepo )
-    upstream.fetch()
-    upstream.pull( upstream.refs[0].remote_head )
-    if repo_VO.tags:
-      repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotScripts')
-    else:
-      repo_VO.git.checkout('upstream/master', b='pilotVOScripts')
-    scriptDir = ( os.path.join( self.pilotVOLocalRepo, self.projectDir, self.pilotVOScriptPath, "*.py" ) )
+
     tarFiles = []
-    for fileVO in glob.glob( scriptDir ):
-      result = self._upload( filename = os.path.basename( fileVO ), pilotScript = fileVO )
-      tarFiles.append(fileVO)
-    if not result['OK']:
-      gLogger.error( "Error uploading the VO pilot script: %s" % result['Message'] )
-      return result
+
+    # Extension, if it exists
+    if self.pilotVORepo:
+      if os.path.isdir( self.pilotVOLocalRepo ):
+        shutil.rmtree( self.pilotVOLocalRepo )
+      os.mkdir( self.pilotVOLocalRepo )
+      repo_VO = Repo.init( self.pilotVOLocalRepo )
+      upstream = repo_VO.create_remote( 'upstream', self.pilotVORepo )
+      upstream.fetch()
+      upstream.pull( upstream.refs[0].remote_head )
+      if repo_VO.tags:
+        repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotScripts')
+      else:
+        repo_VO.git.checkout('upstream/master', b='pilotVOScripts')
+      scriptDir = ( os.path.join( self.pilotVOLocalRepo, self.projectDir, self.pilotVOScriptPath, "*.py" ) )
+      for fileVO in glob.glob( scriptDir ):
+        result = self._upload( filename = os.path.basename( fileVO ), pilotScript = fileVO )
+        tarFiles.append(fileVO)
+      if not result['OK']:
+        gLogger.error( "Error uploading the VO pilot script: %s" % result['Message'] )
+        return result
+
+    # DIRAC repo
     if os.path.isdir( self.pilotLocalRepo ):
       shutil.rmtree( self.pilotLocalRepo )
     os.mkdir( self.pilotLocalRepo )
     repo = Repo.init( self.pilotLocalRepo )
-    releases = repo.create_remote( 'releases', self.pilotRepo )
-    releases.fetch()
-    releases.pull( releases.refs[0].remote_head )
+    upstream = repo.create_remote( 'upstream', self.pilotRepo )
+    upstream.fetch()
+    upstream.pull( upstream.refs[0].remote_head )
     if repo.tags:
-      with open( os.path.join( self.pilotVOLocalRepo, self.projectDir, 'releases.cfg' ), 'r' ) as releases_file:
-        lines = [line.rstrip( '\n' ) for line in releases_file]
+      if self.pilotVORepo:
+        localRepo = self.pilotVOLocalRepo
+      else:
+        localRepo = self.pilotLocalRepo
+      with open( os.path.join( localRepo, self.projectDir, 'releases.cfg' ), 'r' ) as releasesFile:
+        lines = [line.rstrip( '\n' ) for line in releasesFile]
         lines = [s.strip() for s in lines]
         if self.pilotVOVersion in lines:
           self.pilotVersion = lines[( lines.index( self.pilotVOVersion ) ) + 3].split( ':' )[1]
@@ -274,7 +296,7 @@ class PilotCStoJSONSynchronizer( object ):
     return S_OK()
 
 
-  def _upload ( self, pilotDict = None, filename = '', pilotScript = '' ):
+  def _upload( self, pilotDict = None, filename = '', pilotScript = '' ):
     """ Method to upload the pilot json file and the pilot scripts to the server.
     """
 
