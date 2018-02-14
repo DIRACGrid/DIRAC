@@ -36,9 +36,9 @@ Note: you have to add sencha to the system path. Please make sure, if you type s
 ExtJs SDK
 `````````
 
-If you are using DIRAC v6r20 series, You can download from the following link: 
+If you are using DIRAC v6r20 series or later, You can download from the following link: 
 
-wget http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
+curl -O http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
 
 otherwise:
 
