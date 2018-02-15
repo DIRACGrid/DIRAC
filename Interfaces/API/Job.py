@@ -226,7 +226,7 @@ class Job( API ):
        :param files: Input sandbox files, can specify full path
        :type files: Single string or list of strings ['','']
     """
-    if isinstance( files, list ) and len( files ):
+    if isinstance(files, list) and files:
       resolvedFiles = self._resolveInputSandbox( files )
       fileList = ';'.join( resolvedFiles )
       description = 'Input sandbox file list'
@@ -1086,11 +1086,20 @@ class Job( API ):
           scriptName = os.path.abspath( self.script )
           self.log.verbose( 'Found script name %s' % scriptName )
         else:
-          self.log.error( "File not found", self.script )
+          self.log.warn("File not found", self.script)
       else:
         if xmlFile:
-          self.log.verbose( 'Found XML File %s' % xmlFile )
-          scriptName = xmlFile
+          if os.path.exists(self.script):
+            self.log.verbose('Found XML File %s' % xmlFile)
+            scriptName = xmlFile
+          else:
+            self.log.warn("File not found", xmlFile)
+        else:
+          if os.path.exists('jobDescription.xml'):
+            scriptName = os.path.abspath('jobDescription.xml')
+            self.log.verbose('Found script name %s' % scriptName)
+          else:
+            self.log.warn("Job description XML file not found")
       self.addToInputSandbox.append( scriptName )
 
     elif isinstance( jobDescriptionObject, StringIO.StringIO ):
