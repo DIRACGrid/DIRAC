@@ -49,17 +49,18 @@ __RCSID__ = "$Id$"
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 
-class Job( API ):
+
+class Job(API):
   """ DIRAC jobs
   """
 
   #############################################################################
 
-  def __init__( self, script = None, stdout = 'std.out', stderr = 'std.err' ):
+  def __init__(self, script=None, stdout='std.out', stderr='std.err'):
     """Instantiates the Workflow object and some default parameters.
     """
 
-    super( Job, self ).__init__()
+    super(Job, self).__init__()
 
     self.stepCount = 0
     self.owner = 'NotSpecified'
@@ -67,9 +68,9 @@ class Job( API ):
     self.type = 'User'
     self.priority = 1
     vo = ''
-    ret = getProxyInfo( disableVOMS = True )
+    ret = getProxyInfo(disableVOMS=True)
     if ret['OK'] and 'group' in ret['Value']:
-      vo = getVOForGroup( ret['Value']['group'] )
+      vo = getVOForGroup(ret['Value']['group'])
     self.group = vo
     self.site = 'ANY'  # ANY
     # self.setup = 'Development'
@@ -93,8 +94,8 @@ class Job( API ):
       self.workflow = Workflow()
       self.__setJobDefaults()
     else:
-      self.workflow = Workflow( script )
-    self._siteSet = set( getSites().get( 'Value', [] ) )
+      self.workflow = Workflow(script)
+    self._siteSet = set(getSites().get('Value', []))
 
   #############################################################################
 
@@ -129,57 +130,57 @@ class Job( API ):
        :param paramValues: Optional list of parameters values (to be used mostly when extending this method)
        :type parameters: python:list of tuples
     """
-    kwargs = {'executable':executable, 'arguments':arguments, 'logFile':logFile}
-    if not isinstance( executable, basestring ) or not isinstance( arguments, basestring ) or \
-       not isinstance( logFile, basestring ):
-      return self._reportError( 'Expected strings for executable and arguments', **kwargs )
+    kwargs = {'executable': executable, 'arguments': arguments, 'logFile': logFile}
+    if not isinstance(executable, basestring) or not isinstance(arguments, basestring) or \
+       not isinstance(logFile, basestring):
+      return self._reportError('Expected strings for executable and arguments', **kwargs)
 
-    if os.path.exists( executable ):
-      self.log.verbose( 'Found script executable file %s' % ( executable ) )
-      self.addToInputSandbox.append( executable )
-      logName = '%s.log' % ( os.path.basename( executable ) )
+    if os.path.exists(executable):
+      self.log.verbose('Found script executable file %s' % (executable))
+      self.addToInputSandbox.append(executable)
+      logName = '%s.log' % (os.path.basename(executable))
     else:
-      self.log.warn( 'The executable code could not be found locally' )
+      self.log.warn('The executable code could not be found locally')
       logName = 'CodeOutput.log'
 
     self.stepCount += 1
-    stepName = 'RunScriptStep%s' % ( self.stepCount )
+    stepName = 'RunScriptStep%s' % (self.stepCount)
 
     if logFile:
-      if isinstance( logFile, basestring ):
-        logName = str( logFile )
+      if isinstance(logFile, basestring):
+        logName = str(logFile)
     else:
-      logName = "Script%s_%s" % ( self.stepCount, logName )
+      logName = "Script%s_%s" % (self.stepCount, logName)
 
     if not modulesList:
       modulesList = ['Script']
     if not parameters:
-      parameters = [( 'executable', 'string', '', "Executable Script" ),
-                    ( 'arguments', 'string', '', 'Arguments for executable Script' ),
-                    ( 'applicationLog', 'string', '', "Log file name" )]
+      parameters = [('executable', 'string', '', "Executable Script"),
+                    ('arguments', 'string', '', 'Arguments for executable Script'),
+                    ('applicationLog', 'string', '', "Log file name")]
 
-    step = getStepDefinition( 'ScriptStep%s' % ( self.stepCount ), modulesList, parametersList = parameters )
-    self.addToOutputSandbox.append( logName )
+    step = getStepDefinition('ScriptStep%s' % (self.stepCount), modulesList, parametersList=parameters)
+    self.addToOutputSandbox.append(logName)
 
-    stepInstance = addStepToWorkflow( self.workflow, step, stepName )
+    stepInstance = addStepToWorkflow(self.workflow, step, stepName)
 
-    stepInstance.setValue( 'applicationLog', logName )
-    stepInstance.setValue( 'executable', executable )
+    stepInstance.setValue('applicationLog', logName)
+    stepInstance.setValue('executable', executable)
     if arguments:
       # If arguments are expressed in terms of parameters, pass them to Workflow
       # These arguments will be resolved on the server side for each parametric job
-      if re.search( r'%\(.*\)s', arguments ) or re.search( '%n', arguments ):
+      if re.search(r'%\(.*\)s', arguments) or re.search('%n', arguments):
         self.parametricWFArguments['arguments'] = arguments
       else:
-        stepInstance.setValue( 'arguments', arguments )
+        stepInstance.setValue('arguments', arguments)
     if paramValues:
       for param, value in paramValues:
-        stepInstance.setValue( param, value )
+        stepInstance.setValue(param, value)
 
-    return S_OK( stepInstance )
+    return S_OK(stepInstance)
 
   #############################################################################
-  def setName( self, jobName ):
+  def setName(self, jobName):
     """Helper function.
 
        A name for the job can be specified if desired. This will appear
@@ -194,17 +195,17 @@ class Job( API ):
        :param jobName: Name of job
        :type jobName: string
     """
-    kwargs = {'jobname':jobName}
-    if not isinstance( jobName, basestring ):
-      return self._reportError( 'Expected strings for job name', **kwargs )
+    kwargs = {'jobname': jobName}
+    if not isinstance(jobName, basestring):
+      return self._reportError('Expected strings for job name', **kwargs)
     else:
-      self.workflow.setName( jobName )
-      self._addParameter( self.workflow, 'JobName', 'JDL', jobName, 'User specified name' )
+      self.workflow.setName(jobName)
+      self._addParameter(self.workflow, 'JobName', 'JDL', jobName, 'User specified name')
 
     return S_OK()
 
   #############################################################################
-  def setInputSandbox( self, files ):
+  def setInputSandbox(self, files):
     """Helper function.
 
        Specify input sandbox files less than 10MB in size.  If over 10MB, files
@@ -227,27 +228,27 @@ class Job( API ):
        :type files: Single string or list of strings ['','']
     """
     if isinstance(files, list) and files:
-      resolvedFiles = self._resolveInputSandbox( files )
-      fileList = ';'.join( resolvedFiles )
+      resolvedFiles = self._resolveInputSandbox(files)
+      fileList = ';'.join(resolvedFiles)
       description = 'Input sandbox file list'
-      self._addParameter( self.workflow, 'InputSandbox', 'JDL', fileList, description )
+      self._addParameter(self.workflow, 'InputSandbox', 'JDL', fileList, description)
       # self.sandboxFiles=resolvedFiles
-    elif isinstance( files, basestring ):
-      resolvedFiles = self._resolveInputSandbox( [files] )
-      fileList = ';'.join( resolvedFiles )
+    elif isinstance(files, basestring):
+      resolvedFiles = self._resolveInputSandbox([files])
+      fileList = ';'.join(resolvedFiles)
       description = 'Input sandbox file'
       # self.sandboxFiles = [files]
-      self._addParameter( self.workflow, 'InputSandbox', 'JDL', fileList, description )
+      self._addParameter(self.workflow, 'InputSandbox', 'JDL', fileList, description)
     else:
-      kwargs = {'files':files}
-      return self._reportError( 'Expected file string or list of files for input sandbox contents', **kwargs )
+      kwargs = {'files': files}
+      return self._reportError('Expected file string or list of files for input sandbox contents', **kwargs)
 
     return S_OK()
 
   #############################################################################
 
   @deprecated("Use function setParameterSequence")
-  def setParametricInputSandbox( self, files ):
+  def setParametricInputSandbox(self, files):
     """Helper function.
 
        .. deprecated:: v6r15
@@ -265,19 +266,19 @@ class Job( API ):
        :param files: Logical File Names
        :type files: Single LFN string or list of LFNs
     """
-    kwargs = {'files':files}
-    if isinstance( files, list ) and files:
+    kwargs = {'files': files}
+    if isinstance(files, list) and files:
       for fileName in files:
-        if not fileName.lower().startswith( "lfn:" ):
-          return self._reportError( 'All files should be LFNs', **kwargs )
-      self.setParameterSequence( 'InputSandbox', files, addToWorkflow = 'ParametricInputSandbox' )
+        if not fileName.lower().startswith("lfn:"):
+          return self._reportError('All files should be LFNs', **kwargs)
+      self.setParameterSequence('InputSandbox', files, addToWorkflow='ParametricInputSandbox')
     else:
-      return self._reportError( 'Expected file string or list of files for input sandbox contents', **kwargs )
+      return self._reportError('Expected file string or list of files for input sandbox contents', **kwargs)
 
     return S_OK()
 
   #############################################################################
-  def setOutputSandbox( self, files ):
+  def setOutputSandbox(self, files):
     """Helper function.
 
        Specify output sandbox files. If specified files are over 10MB, these
@@ -293,21 +294,21 @@ class Job( API ):
        :type files: Single string or list of strings ['','']
 
     """
-    if isinstance( files, list ) and files:
-      fileList = ';'.join( files )
+    if isinstance(files, list) and files:
+      fileList = ';'.join(files)
       description = 'Output sandbox file list'
-      self._addParameter( self.workflow, 'OutputSandbox', 'JDL', fileList, description )
-    elif isinstance( files, basestring ):
+      self._addParameter(self.workflow, 'OutputSandbox', 'JDL', fileList, description)
+    elif isinstance(files, basestring):
       description = 'Output sandbox file'
-      self._addParameter( self.workflow, 'OutputSandbox', 'JDL', files, description )
+      self._addParameter(self.workflow, 'OutputSandbox', 'JDL', files, description)
     else:
-      kwargs = {'files':files}
-      return self._reportError( 'Expected file string or list of files for output sandbox contents', **kwargs )
+      kwargs = {'files': files}
+      return self._reportError('Expected file string or list of files for output sandbox contents', **kwargs)
 
     return S_OK()
 
   #############################################################################
-  def setInputData( self, lfns ):
+  def setInputData(self, lfns):
     """Helper function.
 
        Specify input data by Logical File Name (LFN).
@@ -320,26 +321,26 @@ class Job( API ):
        :param lfns: Logical File Names
        :type lfns: Single LFN string or list of LFNs
     """
-    if isinstance( lfns, list ) and lfns :
-      for i in xrange( len( lfns ) ):
-        lfns[i] = lfns[i].replace( 'LFN:', '' )
-      inputData = ['LFN:' + x for x in lfns ]
-      inputDataStr = ';'.join( inputData )
+    if isinstance(lfns, list) and lfns:
+      for i in xrange(len(lfns)):
+        lfns[i] = lfns[i].replace('LFN:', '')
+      inputData = ['LFN:' + x for x in lfns]
+      inputDataStr = ';'.join(inputData)
       description = 'List of input data specified by LFNs'
-      self._addParameter( self.workflow, 'InputData', 'JDL', inputDataStr, description )
-    elif isinstance( lfns, basestring ):  # single LFN
+      self._addParameter(self.workflow, 'InputData', 'JDL', inputDataStr, description)
+    elif isinstance(lfns, basestring):  # single LFN
       description = 'Input data specified by LFN'
-      self._addParameter( self.workflow, 'InputData', 'JDL', lfns, description )
+      self._addParameter(self.workflow, 'InputData', 'JDL', lfns, description)
     else:
-      kwargs = {'lfns':lfns}
-      return self._reportError( 'Expected lfn string or list of lfns for input data', **kwargs )
+      kwargs = {'lfns': lfns}
+      return self._reportError('Expected lfn string or list of lfns for input data', **kwargs)
 
     return S_OK()
 
   #############################################################################
 
   @deprecated("Use function setParameterSequence")
-  def setParametricInputData( self, lfns ):
+  def setParametricInputData(self, lfns):
     """Helper function.
 
        .. deprecated:: v6r15
@@ -355,21 +356,21 @@ class Job( API ):
        :param lfns: Logical File Names
        :type lfns: list of LFNs or list of lists of LFNs
     """
-    if isinstance( lfns, list ) and lfns:
-      for i in xrange( len( lfns ) ):
-        if isinstance( lfns[i], list ) and lfns[i]:
-          for k in xrange( len( lfns[i] ) ):
-            lfns[i][k] = 'LFN:' + lfns[i][k].replace( 'LFN:', '' )
+    if isinstance(lfns, list) and lfns:
+      for i in xrange(len(lfns)):
+        if isinstance(lfns[i], list) and lfns[i]:
+          for k in xrange(len(lfns[i])):
+            lfns[i][k] = 'LFN:' + lfns[i][k].replace('LFN:', '')
         else:
-          lfns[i] = 'LFN:' + lfns[i].replace( 'LFN:', '' )
-      self.setParameterSequence( 'InputData', lfns, addToWorkflow = 'ParametricInputData' )
+          lfns[i] = 'LFN:' + lfns[i].replace('LFN:', '')
+      self.setParameterSequence('InputData', lfns, addToWorkflow='ParametricInputData')
     else:
-      kwargs = {'lfns':lfns}
-      return self._reportError( 'Expected lfn list or list of lists of lfns for parametric input data', **kwargs )
+      kwargs = {'lfns': lfns}
+      return self._reportError('Expected lfn list or list of lists of lfns for parametric input data', **kwargs)
 
     return S_OK()
 
-  def setParameterSequence( self, name, parameterList, addToWorkflow = False ):
+  def setParameterSequence(self, name, parameterList, addToWorkflow=False):
     """ Function to define a sequence of values for parametric jobs.
 
     :param str name: sequence parameter name
@@ -381,19 +382,19 @@ class Job( API ):
     """
 
     if self.numberOfParameters == 0:
-      self.numberOfParameters = len( parameterList )
-    elif self.numberOfParameters != len( parameterList ):
-      return S_ERROR( EWMSJDL, 'Parameter sequences of different length' )
+      self.numberOfParameters = len(parameterList)
+    elif self.numberOfParameters != len(parameterList):
+      return S_ERROR(EWMSJDL, 'Parameter sequences of different length')
 
     self.parameterSeqs[name] = parameterList
     if addToWorkflow:
-      if isinstance( addToWorkflow, basestring ):
+      if isinstance(addToWorkflow, basestring):
         self.wfArguments[name] = addToWorkflow
       else:
         self.wfArguments[name] = name
 
   #############################################################################
-  def setInputDataPolicy( self, policy, dataScheduling = True ):
+  def setInputDataPolicy(self, policy, dataScheduling=True):
     """Helper function.
 
        Specify a job input data policy, this takes precedence over any site specific or
@@ -408,7 +409,7 @@ class Job( API ):
        >>> job.setInputDataPolicy('download')
 
     """
-    kwargs = {'policy':policy, 'dataScheduling':dataScheduling}
+    kwargs = {'policy': policy, 'dataScheduling': dataScheduling}
     csSection = 'InputDataPolicy'
     possible = ['Download', 'Protocol']
     finalPolicy = ''
@@ -417,30 +418,30 @@ class Job( API ):
         finalPolicy = value
 
     if not finalPolicy:
-      return self._reportError( 'Expected one of %s for input data policy' % ( ', '.join( possible ) ),
-                                __name__, **kwargs )
+      return self._reportError('Expected one of %s for input data policy' % (', '.join(possible)),
+                               __name__, **kwargs)
 
-    jobPolicy = Operations().getValue( '%s/%s' % ( csSection, finalPolicy ), '' )
+    jobPolicy = Operations().getValue('%s/%s' % (csSection, finalPolicy), '')
     if not jobPolicy:
-      return self._reportError( 'Could not get value for Operations option %s/%s' % ( csSection, finalPolicy ),
-                                __name__, **kwargs )
+      return self._reportError('Could not get value for Operations option %s/%s' % (csSection, finalPolicy),
+                               __name__, **kwargs)
 
     description = 'User specified input data policy'
-    self._addParameter( self.workflow, 'InputDataPolicy', 'JDL', jobPolicy, description )
+    self._addParameter(self.workflow, 'InputDataPolicy', 'JDL', jobPolicy, description)
 
     if not dataScheduling and policy.lower() == 'download':
-      self.log.verbose( 'Scheduling by input data is disabled, jobs will run anywhere and download input data' )
-      self._addParameter( self.workflow, 'DisableDataScheduling', 'JDL', 'True', 'Disable scheduling by input data' )
+      self.log.verbose('Scheduling by input data is disabled, jobs will run anywhere and download input data')
+      self._addParameter(self.workflow, 'DisableDataScheduling', 'JDL', 'True', 'Disable scheduling by input data')
 
     if not dataScheduling and policy.lower() != 'download':
-      self.log.error( 'Expected policy to be "download" for bypassing data scheduling' )
-      return self._reportError( 'Expected policy to be "download" for bypassing data scheduling',
-                                __name__, **kwargs )
+      self.log.error('Expected policy to be "download" for bypassing data scheduling')
+      return self._reportError('Expected policy to be "download" for bypassing data scheduling',
+                               __name__, **kwargs)
 
     return S_OK()
 
   #############################################################################
-  def setOutputData( self, lfns, outputSE = None, outputPath = '' ):
+  def setOutputData(self, lfns, outputSE=None, outputPath=''):
     """Helper function.
 
        For specifying output data to be registered in Grid storage.  If a list
@@ -470,7 +471,7 @@ class Job( API ):
     """
     if outputSE is None:
       outputSE = []
-    kwargs = {'lfns':lfns, 'OutputSE':outputSE, 'OutputPath':outputPath}
+    kwargs = {'lfns': lfns, 'OutputSE': outputSE, 'OutputPath': outputPath}
     if isinstance(lfns, list) and lfns:
       outputDataStr = ';'.join(lfns)
       description = 'List of output data files'
@@ -506,12 +507,12 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def setPlatform( self, platform ):
+  def setPlatform(self, platform):
     """Developer function: sets the target platform, e.g. Linux_x86_64_glibc-2.5.
        This platform is in the form of what it is returned by the dirac-platform script
        (or dirac-architecture if your extension provides it)
     """
-    kwargs = {'platform':platform}
+    kwargs = {'platform': platform}
 
     if not isinstance(platform, basestring):
       return self._reportError("Expected string for platform", **kwargs)
@@ -529,24 +530,24 @@ class Job( API ):
     return S_OK()
 
   #############################################################################
-  def setSubmitPool( self, backend ):
+  def setSubmitPool(self, backend):
     """Developer function.
 
        Choose submission pool on which job is executed.
        Default in place for users.
     """
     # should add protection here for list of supported platforms
-    kwargs = {'backend':backend}
-    if not isinstance( backend, basestring ):
-      return self._reportError( 'Expected string for SubmitPool', **kwargs )
+    kwargs = {'backend': backend}
+    if not isinstance(backend, basestring):
+      return self._reportError('Expected string for SubmitPool', **kwargs)
 
     if not backend.lower() == 'any':
-      self._addParameter( self.workflow, 'SubmitPools', 'JDL', backend, 'Submit Pool' )
+      self._addParameter(self.workflow, 'SubmitPools', 'JDL', backend, 'Submit Pool')
 
     return S_OK()
 
   #############################################################################
-  def setCPUTime( self, timeInSecs ):
+  def setCPUTime(self, timeInSecs):
     """Helper function.
 
        Under Development. Specify CPU time requirement in DIRAC units.
@@ -559,21 +560,21 @@ class Job( API ):
        :param timeInSecs: CPU time
        :type timeInSecs: Int
     """
-    kwargs = {'timeInSecs':timeInSecs}
-    if not isinstance( timeInSecs, int ):
+    kwargs = {'timeInSecs': timeInSecs}
+    if not isinstance(timeInSecs, int):
       try:
-        timeInSecs = int( timeInSecs )
+        timeInSecs = int(timeInSecs)
       except ValueError:
-        if not re.search( '{{', timeInSecs ):
-          return self._reportError( 'Expected numerical string or int for CPU time in seconds', **kwargs )
+        if not re.search('{{', timeInSecs):
+          return self._reportError('Expected numerical string or int for CPU time in seconds', **kwargs)
 
     description = 'CPU time in secs'
-    self._addParameter( self.workflow, 'MaxCPUTime', 'JDL', timeInSecs, description )
-    self._addParameter( self.workflow, 'CPUTime', 'JDL', timeInSecs, description )
+    self._addParameter(self.workflow, 'MaxCPUTime', 'JDL', timeInSecs, description)
+    self._addParameter(self.workflow, 'CPUTime', 'JDL', timeInSecs, description)
     return S_OK()
 
   #############################################################################
-  def setDestination( self, destination ):
+  def setDestination(self, destination):
     """Helper function.
 
        Can specify a desired destination site or sites for job.  This can be useful
@@ -588,60 +589,60 @@ class Job( API ):
        :param destination: site string
        :type destination: str or python:list
     """
-    kwargs = {'destination':destination}
-    if isinstance( destination, basestring ):
-      destination = destination.replace( ' ', '' ).split( ',' )
+    kwargs = {'destination': destination}
+    if isinstance(destination, basestring):
+      destination = destination.replace(' ', '').split(',')
       description = 'User specified destination site'
     else:
       description = 'List of sites selected by user'
-    if isinstance( destination, list ):
-      sites = set( site for site in destination if site.lower() != 'any' )
+    if isinstance(destination, list):
+      sites = set(site for site in destination if site.lower() != 'any')
       if sites:
-        result = self.__checkSiteIsValid( sites )
+        result = self.__checkSiteIsValid(sites)
         if not result['OK']:
-          return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
-      destSites = ';'.join( destination )
-      self._addParameter( self.workflow, 'Site', 'JDL', destSites, description )
+          return self._reportError('%s is not a valid destination site' % (destination), **kwargs)
+      destSites = ';'.join(destination)
+      self._addParameter(self.workflow, 'Site', 'JDL', destSites, description)
     else:
-      return self._reportError( 'Invalid destination site, expected string or list', **kwargs )
+      return self._reportError('Invalid destination site, expected string or list', **kwargs)
     return S_OK()
 
   #############################################################################
-  def __checkSiteIsValid( self, site ):
+  def __checkSiteIsValid(self, site):
     """Internal function to check that a site name is valid.
     """
-    if isinstance( site, ( list, set, dict ) ):
-      site = set( site ) - self._siteSet
+    if isinstance(site, (list, set, dict)):
+      site = set(site) - self._siteSet
       if not site:
         return S_OK()
     elif site in self._siteSet:
       return S_OK()
-    return S_ERROR( 'Specified site %s is not in list of defined sites' % str( site ) )
+    return S_ERROR('Specified site %s is not in list of defined sites' % str(site))
 
   #############################################################################
-  def setDestinationCE( self, ceName, diracSite = None ):
+  def setDestinationCE(self, ceName, diracSite=None):
     """ Developer function.
 
         Allows to direct a job to a particular Grid CE.
     """
-    kwargs = {'ceName':ceName}
+    kwargs = {'ceName': ceName}
 
     if not diracSite:
-      diracSite = getSiteForCE( ceName )
+      diracSite = getSiteForCE(ceName)
       if not diracSite['OK']:
-        return self._reportError( diracSite['Message'], **kwargs )
+        return self._reportError(diracSite['Message'], **kwargs)
       if not diracSite['Value']:
-        return self._reportError( 'No DIRAC site name found for CE %s' % ( ceName ), **kwargs )
+        return self._reportError('No DIRAC site name found for CE %s' % (ceName), **kwargs)
       diracSite = diracSite['Value']
 
-    self.setDestination( diracSite )
+    self.setDestination(diracSite)
     # Keep GridRequiredCEs for backward compatibility
-    self._addJDLParameter( 'GridRequiredCEs', ceName )
-    self._addJDLParameter( 'GridCE', ceName )
+    self._addJDLParameter('GridRequiredCEs', ceName)
+    self._addJDLParameter('GridCE', ceName)
     return S_OK()
 
   #############################################################################
-  def setBannedSites( self, sites ):
+  def setBannedSites(self, sites):
     """Helper function.
 
        Can specify a desired destination site for job.  This can be useful
@@ -656,69 +657,69 @@ class Job( API ):
        :param sites: single site string or list
        :type sites: str or python:list
     """
-    if isinstance( sites, list ) and sites:
-      bannedSites = ';'.join( sites )
+    if isinstance(sites, list) and sites:
+      bannedSites = ';'.join(sites)
       description = 'List of sites excluded by user'
-      self._addParameter( self.workflow, 'BannedSites', 'JDL', bannedSites, description )
-    elif isinstance( sites, basestring ):
+      self._addParameter(self.workflow, 'BannedSites', 'JDL', bannedSites, description)
+    elif isinstance(sites, basestring):
       description = 'Site excluded by user'
-      self._addParameter( self.workflow, 'BannedSites', 'JDL', sites, description )
+      self._addParameter(self.workflow, 'BannedSites', 'JDL', sites, description)
     else:
-      kwargs = {'sites':sites}
-      return self._reportError( 'Expected site string or list of sites', **kwargs )
+      kwargs = {'sites': sites}
+      return self._reportError('Expected site string or list of sites', **kwargs)
     return S_OK()
 
   #############################################################################
-  def setOwner( self, ownerProvided ):
+  def setOwner(self, ownerProvided):
     """Developer function.
 
        Normally users should always specify their immutable DIRAC nickname.
     """
-    if not isinstance( ownerProvided, basestring ):
-      return self._reportError( 'Expected string for owner', **{'ownerProvided':ownerProvided} )
+    if not isinstance(ownerProvided, basestring):
+      return self._reportError('Expected string for owner', **{'ownerProvided': ownerProvided})
 
-    self._addParameter( self.workflow, 'Owner', 'JDL', ownerProvided, 'User specified ID' )
+    self._addParameter(self.workflow, 'Owner', 'JDL', ownerProvided, 'User specified ID')
     return S_OK()
 
   #############################################################################
-  def setOwnerGroup( self, ownerGroup ):
+  def setOwnerGroup(self, ownerGroup):
     """Developer function.
 
        Allows to force expected owner group of proxy.
     """
-    if not isinstance( ownerGroup, basestring ):
-      return self._reportError( 'Expected string for job owner group', **{'ownerGroup':ownerGroup} )
+    if not isinstance(ownerGroup, basestring):
+      return self._reportError('Expected string for job owner group', **{'ownerGroup': ownerGroup})
 
-    self._addParameter( self.workflow, 'OwnerGroup', 'JDL', ownerGroup, 'User specified owner group.' )
+    self._addParameter(self.workflow, 'OwnerGroup', 'JDL', ownerGroup, 'User specified owner group.')
     return S_OK()
 
   #############################################################################
-  def setOwnerDN( self, ownerDN ):
+  def setOwnerDN(self, ownerDN):
     """Developer function.
 
        Allows to force expected owner DN of proxy.
     """
-    if not isinstance( ownerDN, basestring ):
-      return self._reportError( 'Expected string for job owner DN', **{'ownerGroup':ownerDN} )
+    if not isinstance(ownerDN, basestring):
+      return self._reportError('Expected string for job owner DN', **{'ownerGroup': ownerDN})
 
-    self._addParameter( self.workflow, 'OwnerDN', 'JDL', ownerDN, 'User specified owner DN.' )
+    self._addParameter(self.workflow, 'OwnerDN', 'JDL', ownerDN, 'User specified owner DN.')
     return S_OK()
 
   #############################################################################
-  def setType( self, jobType ):
+  def setType(self, jobType):
     """Developer function.
 
        Specify job type for testing purposes.
     """
-    if not isinstance( jobType, basestring ):
-      return self._reportError( 'Expected string for job type', **{'jobType':jobType} )
+    if not isinstance(jobType, basestring):
+      return self._reportError('Expected string for job type', **{'jobType': jobType})
 
-    self._addParameter( self.workflow, 'JobType', 'JDL', jobType, 'User specified type' )
+    self._addParameter(self.workflow, 'JobType', 'JDL', jobType, 'User specified type')
     self.type = jobType
     return S_OK()
 
   #############################################################################
-  def setTag( self, tags ):
+  def setTag(self, tags):
     """ Set the Tags job requirements
 
         Example usage:
@@ -730,18 +731,18 @@ class Job( API ):
         :type tags: str or python:list
     """
 
-    if isinstance( tags, basestring ):
+    if isinstance(tags, basestring):
       tagValue = tags
-    elif isinstance( tags, list ):
-      tagValue = ";".join( tags )
+    elif isinstance(tags, list):
+      tagValue = ";".join(tags)
     else:
-      return self._reportError( 'Expected string or list for job tags', tags = tags )
+      return self._reportError('Expected string or list for job tags', tags=tags)
 
-    self._addParameter( self.workflow, 'Tags', 'JDL', tagValue, 'User specified job tags' )
+    self._addParameter(self.workflow, 'Tags', 'JDL', tagValue, 'User specified job tags')
     return S_OK()
 
   #############################################################################
-  def _setSoftwareTags( self, tags ):
+  def _setSoftwareTags(self, tags):
     """Developer function.
 
        Choose any software tags if desired.  These are not compulsory but will ensure jobs only
@@ -756,19 +757,19 @@ class Job( API ):
        :param tags: software tags
        :type tags: string or list
     """
-    if isinstance( tags, basestring ):
-      self._addParameter( self.workflow, 'SoftwareTag', 'JDL', tags, 'VO software tag' )
-    elif isinstance( tags, list ):
-      swTags = ';'.join( tags )
-      self._addParameter( self.workflow, 'SoftwareTag', 'JDL', swTags, 'List of VO software tags' )
+    if isinstance(tags, basestring):
+      self._addParameter(self.workflow, 'SoftwareTag', 'JDL', tags, 'VO software tag')
+    elif isinstance(tags, list):
+      swTags = ';'.join(tags)
+      self._addParameter(self.workflow, 'SoftwareTag', 'JDL', swTags, 'List of VO software tags')
     else:
-      kwargs = {'tags':tags}
-      return self._reportError( 'Expected String or List of software tags', **kwargs )
+      kwargs = {'tags': tags}
+      return self._reportError('Expected String or List of software tags', **kwargs)
 
     return S_OK()
 
   #############################################################################
-  def setJobGroup( self, jobGroup ):
+  def setJobGroup(self, jobGroup):
     """Helper function.
 
        Allows to group certain jobs according to an ID.
@@ -781,15 +782,15 @@ class Job( API ):
        :param jobGroup: JobGroup name
        :type jobGroup: string
     """
-    if not isinstance( jobGroup, basestring ):
-      return self._reportError( 'Expected string for job group name', **{'jobGroup':jobGroup} )
+    if not isinstance(jobGroup, basestring):
+      return self._reportError('Expected string for job group name', **{'jobGroup': jobGroup})
 
     description = 'User specified job group'
-    self._addParameter( self.workflow, 'JobGroup', 'JDL', jobGroup, description )
+    self._addParameter(self.workflow, 'JobGroup', 'JDL', jobGroup, description)
     return S_OK()
 
   #############################################################################
-  def setLogLevel( self, logLevel ):
+  def setLogLevel(self, logLevel):
     """Helper function.
 
        Optionally specify a DIRAC logging level for the job, e.g.
@@ -804,32 +805,32 @@ class Job( API ):
        :param logLevel: Logging level
        :type logLevel: string
     """
-    kwargs = {'logLevel':logLevel}
-    if isinstance( logLevel, basestring ):
+    kwargs = {'logLevel': logLevel}
+    if isinstance(logLevel, basestring):
       if logLevel.upper() in gLogger.getAllPossibleLevels():
         description = 'User specified logging level'
         self.logLevel = logLevel
-        self._addParameter( self.workflow, 'LogLevel', 'JDL', logLevel, description )
+        self._addParameter(self.workflow, 'LogLevel', 'JDL', logLevel, description)
       else:
-        return self._reportError( 'Error Level "%s" not valid' % logLevel, **kwargs )
+        return self._reportError('Error Level "%s" not valid' % logLevel, **kwargs)
     else:
-      return self._reportError( 'Expected string for logging level', **kwargs )
+      return self._reportError('Expected string for logging level', **kwargs)
     return S_OK()
 
   #############################################################################
-  def setConfigArgs( self, cfgString ):
+  def setConfigArgs(self, cfgString):
     """Developer function. Allow to pass arbitrary settings to the payload
        configuration service environment.
     """
-    if not isinstance( cfgString, basestring ):
-      return self._reportError( 'Expected string for DIRAC Job Config Args', **{'cfgString':cfgString} )
+    if not isinstance(cfgString, basestring):
+      return self._reportError('Expected string for DIRAC Job Config Args', **{'cfgString': cfgString})
 
     description = 'User specified cfg settings'
-    self._addParameter( self.workflow, 'JobConfigArgs', 'JDL', cfgString, description )
+    self._addParameter(self.workflow, 'JobConfigArgs', 'JDL', cfgString, description)
     return S_OK()
 
   #############################################################################
-  def setExecutionEnv( self, environmentDict ):
+  def setExecutionEnv(self, environmentDict):
     """Helper function.
 
        Optionally specify a dictionary of key, value pairs to be set before
@@ -846,32 +847,32 @@ class Job( API ):
        :param environmentDict: Environment variables
        :type environmentDict: dictionary
     """
-    kwargs = {'environmentDict':environmentDict}
-    if not isinstance( environmentDict, dict ):
-      return self._reportError( 'Expected dictionary of environment variables', **kwargs )
+    kwargs = {'environmentDict': environmentDict}
+    if not isinstance(environmentDict, dict):
+      return self._reportError('Expected dictionary of environment variables', **kwargs)
 
     if environmentDict:
       environment = []
       for var, val in environmentDict.iteritems():
         try:
-          environment.append( '='.join( [str( var ), urllib.quote( str( val ) )] ) )
+          environment.append('='.join([str(var), urllib.quote(str(val))]))
         except Exception:
-          return self._reportError( 'Expected string for environment variable key value pairs', **kwargs )
+          return self._reportError('Expected string for environment variable key value pairs', **kwargs)
 
-      envStr = ';'.join( environment )
+      envStr = ';'.join(environment)
       description = 'Env vars specified by user'
-      self._addParameter( self.workflow, 'ExecutionEnvironment', 'JDL', envStr, description )
+      self._addParameter(self.workflow, 'ExecutionEnvironment', 'JDL', envStr, description)
     return S_OK()
 
   #############################################################################
-  def execute( self ):
+  def execute(self):
     """Developer function. Executes the job locally.
     """
     self.workflow.createCode()
     self.workflow.execute()
 
   #############################################################################
-  def _getParameters( self ):
+  def _getParameters(self):
     """Developer function.
        Method to return the workflow parameters.
     """
@@ -882,17 +883,17 @@ class Job( API ):
     return wfParams
 
   #############################################################################
-  def _dumpParameters( self, showType = None ):
+  def _dumpParameters(self, showType=None):
     """Developer function.
        Method to print the workflow parameters.
     """
     paramsDict = {}
     paramList = self.workflow.parameters
     for param in paramList:
-      paramsDict[param.getName()] = {'type':param.getType(), 'value':param.getValue()}
-    self.log.info( '--------------------------------------' )
-    self.log.info( 'Workflow parameter summary:           ' )
-    self.log.info( '--------------------------------------' )
+      paramsDict[param.getName()] = {'type': param.getType(), 'value': param.getValue()}
+    self.log.info('--------------------------------------')
+    self.log.info('Workflow parameter summary:           ')
+    self.log.info('--------------------------------------')
     # print self.workflow.parameters
     # print params.getParametersNames()
     for name, _props in paramsDict.iteritems():
@@ -900,39 +901,39 @@ class Job( API ):
       value = paramsDict[name]['value']
       if showType:
         if ptype == showType:
-          self.log.info( 'NAME: %s\nTYPE: %s\nVALUE: %s ' % ( name, ptype, value ) )
-          self.log.info( '--------------------------------------' )
+          self.log.info('NAME: %s\nTYPE: %s\nVALUE: %s ' % (name, ptype, value))
+          self.log.info('--------------------------------------')
       else:
-        self.log.info( 'NAME: %s\nTYPE: %s\nVALUE: %s ' % ( name, ptype, value ) )
-        self.log.info( '--------------------------------------' )
+        self.log.info('NAME: %s\nTYPE: %s\nVALUE: %s ' % (name, ptype, value))
+        self.log.info('--------------------------------------')
 
   #############################################################################
 
-  def __setJobDefaults( self ):
+  def __setJobDefaults(self):
     """Set job default values. Note that the system configuration is set to "ANY".
     """
-    self._addParameter( self.workflow, 'JobType', 'JDL', self.type, 'Job Type' )
-    self._addParameter( self.workflow, 'Priority', 'JDL', self.priority, 'User Job Priority' )
-    self._addParameter( self.workflow, 'JobGroup', 'JDL', self.group, 'Name of the JobGroup' )
-    self._addParameter( self.workflow, 'JobName', 'JDL', self.name, 'Name of Job' )
+    self._addParameter(self.workflow, 'JobType', 'JDL', self.type, 'Job Type')
+    self._addParameter(self.workflow, 'Priority', 'JDL', self.priority, 'User Job Priority')
+    self._addParameter(self.workflow, 'JobGroup', 'JDL', self.group, 'Name of the JobGroup')
+    self._addParameter(self.workflow, 'JobName', 'JDL', self.name, 'Name of Job')
     # self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
-    self._addParameter( self.workflow, 'Site', 'JDL', self.site, 'Site Requirement' )
-    self._addParameter( self.workflow, 'Origin', 'JDL', self.origin, 'Origin of client' )
-    self._addParameter( self.workflow, 'StdOutput', 'JDL', self.stdout, 'Standard output file' )
-    self._addParameter( self.workflow, 'StdError', 'JDL', self.stderr, 'Standard error file' )
-    self._addParameter( self.workflow, 'InputData', 'JDL', '', 'Default null input data value' )
-    self._addParameter( self.workflow, 'LogLevel', 'JDL', self.logLevel, 'Job Logging Level' )
-    self._addParameter( self.workflow, 'arguments', 'string', '', 'Arguments to executable Step' )
+    self._addParameter(self.workflow, 'Site', 'JDL', self.site, 'Site Requirement')
+    self._addParameter(self.workflow, 'Origin', 'JDL', self.origin, 'Origin of client')
+    self._addParameter(self.workflow, 'StdOutput', 'JDL', self.stdout, 'Standard output file')
+    self._addParameter(self.workflow, 'StdError', 'JDL', self.stderr, 'Standard error file')
+    self._addParameter(self.workflow, 'InputData', 'JDL', '', 'Default null input data value')
+    self._addParameter(self.workflow, 'LogLevel', 'JDL', self.logLevel, 'Job Logging Level')
+    self._addParameter(self.workflow, 'arguments', 'string', '', 'Arguments to executable Step')
     # Those 2 below are need for on-site resolution
-    self._addParameter( self.workflow, 'ParametricInputData', 'string', '',
-                        'Default null parametric input data value' )
-    self._addParameter( self.workflow, 'ParametricInputSandbox', 'string', '',
-                        'Default null parametric input sandbox value' )
+    self._addParameter(self.workflow, 'ParametricInputData', 'string', '',
+                       'Default null parametric input data value')
+    self._addParameter(self.workflow, 'ParametricInputSandbox', 'string', '',
+                       'Default null parametric input sandbox value')
 
   #############################################################################
 
   @staticmethod
-  def _addParameter( wObject, name, ptype, value, description, io = 'input' ):
+  def _addParameter(wObject, name, ptype, value, description, io='input'):
     """ Internal Function
 
         Adds a parameter to the object.
@@ -944,13 +945,13 @@ class Job( API ):
       inBool = False
       outBool = True
     else:
-      raise TypeError( 'I/O flag is either input or output' )
+      raise TypeError('I/O flag is either input or output')
 
-    par = Parameter( name, value, ptype, "", "", inBool, outBool, description )
-    wObject.addParameter( Parameter( parameter = par ) )
+    par = Parameter(name, value, ptype, "", "", inBool, outBool, description)
+    wObject.addParameter(Parameter(parameter=par))
 
   ############################################################################
-  def _resolveInputSandbox( self, inputSandbox ):
+  def _resolveInputSandbox(self, inputSandbox):
     """ Internal function.
 
         Resolves wildcards for input sandbox files.  This is currently linux
@@ -958,94 +959,94 @@ class Job( API ):
     """
     resolvedIS = []
     for i in inputSandbox:
-      if not re.search( r'\*', i ):
-        if not os.path.isdir( i ):
-          resolvedIS.append( i )
+      if not re.search(r'\*', i):
+        if not os.path.isdir(i):
+          resolvedIS.append(i)
 
     for name in inputSandbox:
-      if re.search( r'\*', name ):  # escape the star character...
+      if re.search(r'\*', name):  # escape the star character...
         cmd = 'ls -d ' + name
-        output = systemCall( 10, shlex.split(cmd) )
+        output = systemCall(10, shlex.split(cmd))
         if not output['OK']:
-          self.log.error( 'Could not perform: ', cmd )
+          self.log.error('Could not perform: ', cmd)
         elif output['Value'][0]:
-          self.log.error( " Failed getting the files ", output['Value'][2] )
+          self.log.error(" Failed getting the files ", output['Value'][2])
         else:
           files = output['Value'][1].split()
           for check in files:
-            if os.path.isfile( check ):
-              self.log.verbose( 'Found file ' + check + ' appending to Input Sandbox' )
-              resolvedIS.append( check )
-            if os.path.isdir( check ):
-              if re.search( '/$', check ):  # users can specify e.g. /my/dir/lib/
+            if os.path.isfile(check):
+              self.log.verbose('Found file ' + check + ' appending to Input Sandbox')
+              resolvedIS.append(check)
+            if os.path.isdir(check):
+              if re.search('/$', check):  # users can specify e.g. /my/dir/lib/
                 check = check[:-1]
-              tarName = os.path.basename( check )
-              directory = os.path.dirname( check )  # if just the directory this is null
+              tarName = os.path.basename(check)
+              directory = os.path.dirname(check)  # if just the directory this is null
               if directory:
                 cmd = 'tar cfz ' + tarName + '.tar.gz ' + ' -C ' + directory + ' ' + tarName
               else:
                 cmd = 'tar cfz ' + tarName + '.tar.gz ' + tarName
 
-              output = systemCall( 60, shlex.split( cmd ) )
+              output = systemCall(60, shlex.split(cmd))
               if not output['OK']:
-                self.log.error( 'Could not perform: %s' % ( cmd ) )
-              resolvedIS.append( tarName + '.tar.gz' )
-              self.log.verbose( 'Found directory ' + check + ', appending ' + check + '.tar.gz to Input Sandbox' )
+                self.log.error('Could not perform: %s' % (cmd))
+              resolvedIS.append(tarName + '.tar.gz')
+              self.log.verbose('Found directory ' + check + ', appending ' + check + '.tar.gz to Input Sandbox')
 
-      if os.path.isdir( name ):
-        self.log.verbose( 'Found specified directory ' + name + ', appending ' + name + '.tar.gz to Input Sandbox' )
-        if re.search( '/$', name ):  # users can specify e.g. /my/dir/lib/
+      if os.path.isdir(name):
+        self.log.verbose('Found specified directory ' + name + ', appending ' + name + '.tar.gz to Input Sandbox')
+        if re.search('/$', name):  # users can specify e.g. /my/dir/lib/
           name = name[:-1]
-        tarName = os.path.basename( name )
-        directory = os.path.dirname( name )  # if just the directory this is null
+        tarName = os.path.basename(name)
+        directory = os.path.dirname(name)  # if just the directory this is null
         if directory:
           cmd = 'tar cfz ' + tarName + '.tar.gz ' + ' -C ' + directory + ' ' + tarName
         else:
           cmd = 'tar cfz ' + tarName + '.tar.gz ' + tarName
 
-        output = systemCall( 60, shlex.split( cmd ) )
+        output = systemCall(60, shlex.split(cmd))
         if not output['OK']:
-          self.log.error( 'Could not perform: %s' % ( cmd ) )
+          self.log.error('Could not perform: %s' % (cmd))
         else:
-          resolvedIS.append( tarName + '.tar.gz' )
+          resolvedIS.append(tarName + '.tar.gz')
 
     return resolvedIS
 
   #############################################################################
 
-  def _toXML( self ):
+  def _toXML(self):
     """Creates an XML representation of itself as a Job.
     """
     return self.workflow.toXML()
 
-  def _handleParameterSequences( self, paramsDict, arguments ):
+  def _handleParameterSequences(self, paramsDict, arguments):
 
     for pName in self.parameterSeqs:
       if pName in paramsDict:
         if pName == "InputSandbox":
-          if isinstance( paramsDict[pName]['value'], list ):
-            paramsDict[pName]['value'].append( '%%(%s)s' % pName )
-          elif isinstance( paramsDict[pName]['value'], basestring ):
+          if isinstance(paramsDict[pName]['value'], list):
+            paramsDict[pName]['value'].append('%%(%s)s' % pName)
+          elif isinstance(paramsDict[pName]['value'], basestring):
             if paramsDict[pName]['value']:
               paramsDict[pName]['value'] += ';%%(%s)s' % pName
             else:
               paramsDict[pName]['value'] = '%%(%s)s' % pName
         else:
-          if isinstance( paramsDict[pName]['value'], list ):
+          if isinstance(paramsDict[pName]['value'], list):
             currentParams = paramsDict[pName]['value']
-          elif isinstance( paramsDict[pName]['value'], basestring ):
+          elif isinstance(paramsDict[pName]['value'], basestring):
             if paramsDict[pName]['value']:
-              currentParams = paramsDict[pName]['value'].split( ';' )
+              currentParams = paramsDict[pName]['value'].split(';')
             else:
               currentParams = []
           tmpList = []
           pData = self.parameterSeqs[pName]
-          if isinstance( pData[0], list ):
+          if isinstance(pData[0], list):
             for pElement in pData:
-              tmpList.append( currentParams + pElement )
+              tmpList.append(currentParams + pElement)
           else:
             for pElement in pData:
-              tmpList.append( currentParams + [pElement] )
+              tmpList.append(currentParams + [pElement])
           self.parameterSeqs[pName] = tmpList
           paramsDict[pName]['value'] = '%%(%s)s' % pName
       else:
@@ -1057,24 +1058,24 @@ class Job( API ):
       paramsDict['Parameters.%s' % pName]['value'] = self.parameterSeqs[pName]
       paramsDict['Parameters.%s' % pName]['type'] = 'JDL'
       if pName in self.wfArguments:
-        arguments.append( ' -p %s=%%(%s)s' % ( self.wfArguments[pName],
-                                               pName ) )
+        arguments.append(' -p %s=%%(%s)s' % (self.wfArguments[pName],
+                                             pName))
 
     return paramsDict, arguments
 
   #############################################################################
-  def _toJDL( self, xmlFile = '', jobDescriptionObject = None ):  # messy but need to account for xml file being in /tmp/guid dir
+  def _toJDL(self, xmlFile='', jobDescriptionObject=None):  # messy but need to account for xml file being in /tmp/guid dir
     """Creates a JDL representation of itself as a Job.
     """
     # Check if we have to do old bootstrap...
-    classadJob = ClassAd( '[]' )
+    classadJob = ClassAd('[]')
 
     paramsDict = {}
     params = self.workflow.parameters  # ParameterCollection object
 
     paramList = params
     for param in paramList:
-      paramsDict[param.getName()] = {'type':param.getType(), 'value':param.getValue()}
+      paramsDict[param.getName()] = {'type': param.getType(), 'value': param.getValue()}
 
     arguments = []
     scriptName = 'jobDescription.xml'
@@ -1082,9 +1083,9 @@ class Job( API ):
     if jobDescriptionObject is None:
       # if we are here it's because there's a real file, on disk, that is named 'jobDescription.xml'
       if self.script:
-        if os.path.exists( self.script ):
-          scriptName = os.path.abspath( self.script )
-          self.log.verbose( 'Found script name %s' % scriptName )
+        if os.path.exists(self.script):
+          scriptName = os.path.abspath(self.script)
+          self.log.verbose('Found script name %s' % scriptName)
         else:
           self.log.warn("File not found", self.script)
       else:
@@ -1100,83 +1101,83 @@ class Job( API ):
             self.log.verbose('Found script name %s' % scriptName)
           else:
             self.log.warn("Job description XML file not found")
-      self.addToInputSandbox.append( scriptName )
+      self.addToInputSandbox.append(scriptName)
 
-    elif isinstance( jobDescriptionObject, StringIO.StringIO ):
-      self.log.verbose( "jobDescription is passed in as a StringIO object" )
+    elif isinstance(jobDescriptionObject, StringIO.StringIO):
+      self.log.verbose("jobDescription is passed in as a StringIO object")
 
     else:
-      self.log.error( "Where's the job description?" )
+      self.log.error("Where's the job description?")
 
-    arguments.append( os.path.basename( scriptName ) )
-    if paramsDict.has_key( 'LogLevel' ):
+    arguments.append(os.path.basename(scriptName))
+    if 'LogLevel' in paramsDict:
       if paramsDict['LogLevel']['value']:
-        arguments.append( '-o LogLevel=%s' % ( paramsDict['LogLevel']['value'] ) )
+        arguments.append('-o LogLevel=%s' % (paramsDict['LogLevel']['value']))
       else:
-        self.log.warn( 'Job LogLevel defined with null value' )
-    if paramsDict.has_key( 'DIRACSetup' ):
+        self.log.warn('Job LogLevel defined with null value')
+    if 'DIRACSetup' in paramsDict:
       if paramsDict['DIRACSetup']['value']:
-        arguments.append( '-o DIRAC/Setup=%s' % ( paramsDict['DIRACSetup']['value'] ) )
+        arguments.append('-o DIRAC/Setup=%s' % (paramsDict['DIRACSetup']['value']))
       else:
-        self.log.warn( 'Job DIRACSetup defined with null value' )
-    if paramsDict.has_key( 'JobMode' ):
+        self.log.warn('Job DIRACSetup defined with null value')
+    if 'JobMode' in paramsDict:
       if paramsDict['JobMode']['value']:
-        arguments.append( '-o JobMode=%s' % ( paramsDict['JobMode']['value'] ) )
+        arguments.append('-o JobMode=%s' % (paramsDict['JobMode']['value']))
       else:
-        self.log.warn( 'Job Mode defined with null value' )
-    if paramsDict.has_key( 'JobConfigArgs' ):
+        self.log.warn('Job Mode defined with null value')
+    if 'JobConfigArgs' in paramsDict:
       if paramsDict['JobConfigArgs']['value']:
-        arguments.append( '%s' % ( paramsDict['JobConfigArgs']['value'] ) )
+        arguments.append('%s' % (paramsDict['JobConfigArgs']['value']))
       else:
-        self.log.warn( 'JobConfigArgs defined with null value' )
+        self.log.warn('JobConfigArgs defined with null value')
     if self.parametricWFArguments:
       for name, value in self.parametricWFArguments.items():
-        arguments.append( "-p %s='%s'" % ( name, value ) )
+        arguments.append("-p %s='%s'" % (name, value))
 
-    classadJob.insertAttributeString( 'Executable', self.executable )
-    self.addToOutputSandbox.append( self.stderr )
-    self.addToOutputSandbox.append( self.stdout )
+    classadJob.insertAttributeString('Executable', self.executable)
+    self.addToOutputSandbox.append(self.stderr)
+    self.addToOutputSandbox.append(self.stdout)
 
     # Extract i/o sandbox parameters from steps and any input data parameters
     # to do when introducing step-level api...
 
     # To add any additional files to input and output sandboxes
     if self.addToInputSandbox:
-      extraFiles = ';'.join( self.addToInputSandbox )
-      if paramsDict.has_key( 'InputSandbox' ):
+      extraFiles = ';'.join(self.addToInputSandbox)
+      if 'InputSandbox' in paramsDict:
         currentFiles = paramsDict['InputSandbox']['value']
         finalInputSandbox = currentFiles + ';' + extraFiles
-        uniqueInputSandbox = uniqueElements( finalInputSandbox.split( ';' ) )
-        paramsDict['InputSandbox']['value'] = ';'.join( uniqueInputSandbox )
-        self.log.verbose( 'Final unique Input Sandbox %s' % ( ';'.join( uniqueInputSandbox ) ) )
+        uniqueInputSandbox = uniqueElements(finalInputSandbox.split(';'))
+        paramsDict['InputSandbox']['value'] = ';'.join(uniqueInputSandbox)
+        self.log.verbose('Final unique Input Sandbox %s' % (';'.join(uniqueInputSandbox)))
       else:
         paramsDict['InputSandbox'] = {}
         paramsDict['InputSandbox']['value'] = extraFiles
         paramsDict['InputSandbox']['type'] = 'JDL'
 
     if self.addToOutputSandbox:
-      extraFiles = ';'.join( self.addToOutputSandbox )
-      if paramsDict.has_key( 'OutputSandbox' ):
+      extraFiles = ';'.join(self.addToOutputSandbox)
+      if 'OutputSandbox' in paramsDict:
         currentFiles = paramsDict['OutputSandbox']['value']
         finalOutputSandbox = currentFiles + ';' + extraFiles
-        uniqueOutputSandbox = uniqueElements( finalOutputSandbox.split( ';' ) )
-        paramsDict['OutputSandbox']['value'] = ';'.join( uniqueOutputSandbox )
-        self.log.verbose( 'Final unique Output Sandbox %s' % ( ';'.join( uniqueOutputSandbox ) ) )
+        uniqueOutputSandbox = uniqueElements(finalOutputSandbox.split(';'))
+        paramsDict['OutputSandbox']['value'] = ';'.join(uniqueOutputSandbox)
+        self.log.verbose('Final unique Output Sandbox %s' % (';'.join(uniqueOutputSandbox)))
       else:
         paramsDict['OutputSandbox'] = {}
         paramsDict['OutputSandbox']['value'] = extraFiles
         paramsDict['OutputSandbox']['type'] = 'JDL'
 
     if self.addToInputData:
-      extraFiles = ';'.join( self.addToInputData )
-      if paramsDict.has_key( 'InputData' ):
+      extraFiles = ';'.join(self.addToInputData)
+      if 'InputData' in paramsDict:
         currentFiles = paramsDict['InputData']['value']
         finalInputData = extraFiles
         if currentFiles:
           finalInputData = currentFiles + ';' + extraFiles
-        uniqueInputData = uniqueElements( finalInputData.split( ';' ) )
-        paramsDict['InputData']['value'] = ';'.join( uniqueInputData )
-        self.log.verbose( 'Final unique Input Data %s' % ( ';'.join( uniqueInputData ) ) )
+        uniqueInputData = uniqueElements(finalInputData.split(';'))
+        paramsDict['InputData']['value'] = ';'.join(uniqueInputData)
+        self.log.verbose('Final unique Input Data %s' % (';'.join(uniqueInputData)))
       else:
         paramsDict['InputData'] = {}
         paramsDict['InputData']['value'] = extraFiles
@@ -1184,66 +1185,66 @@ class Job( API ):
 
     # Handle parameter sequences
     if self.numberOfParameters > 0:
-      paramsDict, arguments = self._handleParameterSequences( paramsDict, arguments )
+      paramsDict, arguments = self._handleParameterSequences(paramsDict, arguments)
 
-    classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
+    classadJob.insertAttributeString('Arguments', ' '.join(arguments))
 
     # Add any JDL parameters to classad obeying lists with ';' rule
     for name, props in paramsDict.iteritems():
       ptype = props['type']
       value = props['value']
-      if isinstance( value, basestring ) and re.search( ';', value ):
-        value = value.split( ';' )
+      if isinstance(value, basestring) and re.search(';', value):
+        value = value.split(';')
       if name.lower() == 'requirements' and ptype == 'JDL':
-        self.log.verbose( 'Found existing requirements: %s' % ( value ) )
+        self.log.verbose('Found existing requirements: %s' % (value))
 
-      if re.search( '^JDL', ptype ):
-        if isinstance( value, list ):
-          if isinstance( value[0], list ):
-            classadJob.insertAttributeVectorStringList( name, value )
+      if re.search('^JDL', ptype):
+        if isinstance(value, list):
+          if isinstance(value[0], list):
+            classadJob.insertAttributeVectorStringList(name, value)
           else:
-            classadJob.insertAttributeVectorInt( name, value )
-        elif isinstance( value, basestring ) and value:
-          classadJob.insertAttributeInt( name, value )
-        elif isinstance( value, ( int, long, float ) ):
-          classadJob.insertAttributeInt( name, value )
+            classadJob.insertAttributeVectorInt(name, value)
+        elif isinstance(value, basestring) and value:
+          classadJob.insertAttributeInt(name, value)
+        elif isinstance(value, (int, long, float)):
+          classadJob.insertAttributeInt(name, value)
 
     if self.numberOfParameters > 0:
-      classadJob.insertAttributeInt( 'Parameters', self.numberOfParameters )
+      classadJob.insertAttributeInt('Parameters', self.numberOfParameters)
 
     for fToBeRemoved in [scriptName, self.stdout, self.stderr]:
       try:
-        self.addToInputSandbox.remove( fToBeRemoved )
+        self.addToInputSandbox.remove(fToBeRemoved)
       except ValueError:
         pass
 
     jdl = classadJob.asJDL()
-    start = jdl.find( '[' )
-    end = jdl.rfind( ']' )
-    return jdl[( start + 1 ):( end - 1 )]
+    start = jdl.find('[')
+    end = jdl.rfind(']')
+    return jdl[(start + 1):(end - 1)]
 
   #############################################################################
-  def _setParamValue( self, name, value ):
+  def _setParamValue(self, name, value):
     """Internal Function. Sets a parameter value, used for production.
     """
-    return self.workflow.setValue( name, value )
+    return self.workflow.setValue(name, value)
 
   #############################################################################
-  def _addJDLParameter( self, name, value ):
+  def _addJDLParameter(self, name, value):
     """Developer function, add an arbitrary JDL parameter.
     """
-    self._addParameter( self.workflow, name, 'JDL', value, 'Optional JDL parameter added' )
-    return self.workflow.setValue( name, value )
+    self._addParameter(self.workflow, name, 'JDL', value, 'Optional JDL parameter added')
+    return self.workflow.setValue(name, value)
 
   #############################################################################
 
-  def runLocal( self, dirac = None ):
+  def runLocal(self, dirac=None):
     """ The dirac (API) object is for local submission.
     """
 
     if dirac is None:
       dirac = Dirac()
 
-    return dirac.submitJob( self, mode = 'local' )
+    return dirac.submitJob(self, mode='local')
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
