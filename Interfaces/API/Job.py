@@ -1015,7 +1015,7 @@ class Job(API):
   #############################################################################
 
   def _toXML(self):
-    """Creates an XML representation of itself as a Job.
+    """ Returns an XML representation of itself as a Job.
     """
     return self.workflow.toXML()
 
@@ -1064,8 +1064,20 @@ class Job(API):
     return paramsDict, arguments
 
   #############################################################################
-  def _toJDL(self, xmlFile='', jobDescriptionObject=None):  # messy but need to account for xml file being in /tmp/guid dir
-    """Creates a JDL representation of itself as a Job.
+  def _toJDL(self, xmlFile='', jobDescriptionObject=None):
+    """ Creates a JDL representation of itself as a Job.
+
+       Example usage:
+
+       >>> job = Job()
+       >>> job._toJDL()
+
+       :param xmlFile: location of the XML file
+       :type xmlFile: str
+       :param jobDescriptionObject: if not None, it must be a StringIO object
+       :type jobDescriptionObject: StringIO
+
+       :returns: JDL (str)
     """
     # Check if we have to do old bootstrap...
     classadJob = ClassAd('[]')
@@ -1082,6 +1094,7 @@ class Job(API):
 
     if jobDescriptionObject is None:
       # if we are here it's because there's a real file, on disk, that is named 'jobDescription.xml'
+      # Messy but need to account for xml file being in /tmp/guid dir
       if self.script:
         if os.path.exists(self.script):
           scriptName = os.path.abspath(self.script)
