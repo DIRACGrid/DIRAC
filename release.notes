@@ -1,4 +1,4 @@
-[v6r20-pre12]
+[v6r20-pre13]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -12,6 +12,7 @@ NEW: JEncode for json based serialization
 NEW: Add conditional printout of the traceback when serializing/deserializing non json compatible 
      object in DEncode (enabled with DIRAC_DEBUG_DENCODE_CALLSTACK environment variable) 
 FIX: dirac-distribution - fixed wrong indentation  
+NEW: File.py - utility to convert file sizes between different unit
 
 *Framework
 CHANGE: ComponentInstaller - remove the old web portal configuration data 
@@ -22,6 +23,9 @@ CHANGE: MessageQueue log handler uses JsonFormatter
 
 *Monitoring
 CHANGE: fixes for testing in Jenkins with locally-deployed ElasticSearch
+
+*Configuration
+FIX: ConfigurationHandler, PilotCStoJSONSynchronizer - fixes for enabling pilotCStoJSONSynchronizer, and doc
 
 *WorkloadManagementSystem
 NEW: StopSigRegex, StopSigStartSeconds, StopSigFinishSeconds, StopSigNumber added to JDL, which cause Watchdog to send a signal StopSigNumber to payload processes matching StopSigRegex when there are less than StopSigFinishSeconds of wall clock remaining according to MJF.
@@ -35,6 +39,10 @@ NEW: WMSHistoryCorrector and MonitoringHistoryCorrector classes inheriting from 
 CHANGE: SiteDirector - refactored Site Director for better extensibility
 FIX: always initialize gPilotAgentsDB object
 CHANGE: Removed TaskQueueDirector and the other old style (WMS) *PilotDirector
+CHANGE: TaskQueueDB - removed PilotsRequirements table
+CHANGE: TaskQueueDB - added FOREIGN KEYS 
+FIX: JobManager - Added some debug message when deleting jobs
+FIX: Job.py - fixing finding XML file
 
 *TS
 FIX: TranformationCleaningAgent - just few simplifications 
@@ -52,12 +60,18 @@ FIX: Really exit the RequestExecutingAgent when the result queue is buggy
 
 *RSS
 FIX: Initialize RPC to WMSAdministrator only once
+CHANGE: Using StorageElement.getOccupancy()
 
 *Resources
 NEW: New SingularityComputingElement to submit jobs to a Singularity container
+NEW: Added StorageElement.getOccupancy() method for DIP and GFAL2_SMR2 SE types
 
 *Docs
 FIX: Drop some old stuff, add link for FTS3 page
+CHANGE: WebApp release procedure
+
+*Tests
+FIX: add MonitoringDB to the configuration
 
 [v6r19p13]
 
