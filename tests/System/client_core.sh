@@ -35,7 +35,7 @@ fi
 
 echo " "
 echo "======  dirac-proxy-destroy"
-dirac-proxy-get-destroy
+dirac-proxy-destroy
 if [ $? -ne 0 ]
 then
    exit $?

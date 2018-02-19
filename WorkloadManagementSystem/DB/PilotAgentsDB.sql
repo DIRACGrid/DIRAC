@@ -74,10 +74,3 @@ CREATE TABLE `PilotOutput` (
   PRIMARY KEY (`PilotID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-DROP TABLE IF EXISTS `PilotRequirements`;
-CREATE TABLE `PilotRequirements` (
-  `PilotID` INT(11) UNSIGNED NOT NULL,
-  `Requirements` BLOB,
-  PRIMARY KEY (`PilotID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-

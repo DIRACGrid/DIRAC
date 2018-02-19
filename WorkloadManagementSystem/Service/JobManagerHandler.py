@@ -344,22 +344,27 @@ class JobManagerHandler(RequestHandler):
     # if it was the last job for the pilot, clear PilotsLogging about it
     result = gPilotAgentsDB.getPilotsForJobID(jobID)
     if not result['OK']:
+      gLogger.error("Failed to get Pilots for JobID", result['Message'])
       return result
     for pilot in result['Value']:
       res = gPilotAgentsDB.getJobsForPilot(pilot['PilotID'])
       if not res['OK']:
+        gLogger.error("Failed to get jobs for pilot", res['Message'])
         return res
       if not res['Value']:  # if list of jobs for pilot is empty, delete pilot and pilotslogging
         result = gPilotAgentsDB.getPilotInfo(pilotID=pilot['PilotID'])
         if not result['OK']:
+          gLogger.error("Failed to get pilot info", result['Message'])
           return result
         pilotRef = result[0]['PilotJobReference']
         ret = gPilotAgentsDB.deletePilot(pilot['PilotID'])
         if not ret['OK']:
+          gLogger.error("Failed to delete pilot from PilotAgentsDB", ret['Message'])
           return ret
         if enablePilotsLogging:
           ret = gPilotsLoggingDB.deletePilotsLogging(pilotRef)
           if not ret['OK']:
+            gLogger.error("Failed to delete pilot logging from PilotAgentsDB", ret['Message'])
             return ret
 
     return S_OK()
@@ -375,10 +380,10 @@ class JobManagerHandler(RequestHandler):
     gLogger.info('Job %d is marked for termination' % jobID)
     result = gJobDB.setJobStatus(jobID, 'Killed', 'Marked for termination')
     if not result['OK']:
-      gLogger.warn('Failed to set job Killed status')
+      gLogger.warn('Failed to set job Killed status', result['Message'])
     result = gtaskQueueDB.deleteJob(jobID)
     if not result['OK']:
-      gLogger.warn('Failed to delete job from the TaskQueue')
+      gLogger.warn('Failed to delete job from the TaskQueue', result['Message'])
 
     return S_OK()
 
@@ -411,21 +416,21 @@ class JobManagerHandler(RequestHandler):
       if sDict['Status'] in ['Staging']:
         stagingJobList.append(jobID)
 
-    bad_ids = []
+    badIDs = []
     for jobID in markKilledJobList:
       result = self.__killJob(jobID, sendKillCommand=False)
       if not result['OK']:
-        bad_ids.append(jobID)
+        badIDs.append(jobID)
 
     for jobID in killJobList:
       result = self.__killJob(jobID)
       if not result['OK']:
-        bad_ids.append(jobID)
+        badIDs.append(jobID)
 
     for jobID in deleteJobList:
       result = self.__deleteJob(jobID)
       if not result['OK']:
-        bad_ids.append(jobID)
+        badIDs.append(jobID)
 
     if stagingJobList:
       stagerClient = StorageManagerClient()
@@ -434,12 +439,14 @@ class JobManagerHandler(RequestHandler):
       if not result['OK']:
         gLogger.warn('Failed to kill some Stager tasks: %s' % result['Message'])
 
-    if nonauthJobList or bad_ids:
+    if nonauthJobList or badIDs:
       result = S_ERROR('Some jobs failed deletion')
       if nonauthJobList:
+        gLogger.warn("Non-authorized JobIDs won't be deleted", str(nonauthJobList))
         result['NonauthorizedJobIDs'] = nonauthJobList
-      if bad_ids:
-        result['FailedJobIDs'] = bad_ids
+      if badIDs:
+        gLogger.warn("JobIDs failed to be deleted", str(badIDs))
+        result['FailedJobIDs'] = badIDs
       return result
 
     result = S_OK(validJobList)
@@ -491,32 +498,32 @@ class JobManagerHandler(RequestHandler):
     validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights(jobList,
                                                                                                   RIGHT_RESET)
 
-    bad_ids = []
+    badIDs = []
     good_ids = []
     for jobID in validJobList:
       result = gJobDB.setJobAttribute(jobID, 'RescheduleCounter', -1)
       if not result['OK']:
-        bad_ids.append(jobID)
+        badIDs.append(jobID)
       else:
         gtaskQueueDB.deleteJob(jobID)
         # gJobDB.deleteJobFromQueue(jobID)
         result = gJobDB.rescheduleJob(jobID)
         if not result['OK']:
-          bad_ids.append(jobID)
+          badIDs.append(jobID)
         else:
           good_ids.append(jobID)
         gJobLoggingDB.addLoggingRecord(result['JobID'], result['Status'], result['MinorStatus'],
                                        application='Unknown', source='JobManager')
 
     self.__sendJobsToOptimizationMind(good_ids)
-    if invalidJobList or nonauthJobList or bad_ids:
+    if invalidJobList or nonauthJobList or badIDs:
       result = S_ERROR('Some jobs failed resetting')
       if invalidJobList:
         result['InvalidJobIDs'] = invalidJobList
       if nonauthJobList:
         result['NonauthorizedJobIDs'] = nonauthJobList
-      if bad_ids:
-        result['FailedJobIDs'] = bad_ids
+      if badIDs:
+        result['FailedJobIDs'] = badIDs
       return result
 
     result = S_OK()
