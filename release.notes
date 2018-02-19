@@ -1,3 +1,19 @@
+[v6r19p14]
+
+*WMS
+NEW: pilotCommands/Tools - added possibility to specify a maxNumberOfProcessors parameter for pilots
+CHANGE: MultiProcessorSiteDirector - allow kwargs to SiteDirector getExecutable & _getPilotOptions functions
+
+*RMS
+FIX: Fix a bug in ReplicateAndRegister Operation preventing files having failed once to be retried
+
+*DMS
+FIX: FileCatalogWithFkAndPsDB.sql - Fixes for the DFC to be compatible with strict group by mode 
+     (https://dev.mysql.com/doc/refman/5.7/en/sql-mode.html#sqlmode_only_full_group_by)
+
+*docs
+CHANGE: added little documentation for lcgBundles
+
 [v6r19p13]
 
 *WMS
