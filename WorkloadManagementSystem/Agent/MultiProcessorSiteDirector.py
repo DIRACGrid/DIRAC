@@ -330,7 +330,8 @@ class MultiProcessorSiteDirector(SiteDirector):
           jobExecDir = self.queueDict[queue]['ParametersDict'].get('JobExecDir', jobExecDir)
           httpProxy = self.queueDict[queue]['ParametersDict'].get('HttpProxy', '')
 
-          result = self.getExecutable(queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir)
+          result = self.getExecutable(queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir,
+                                      processors=processors)
           if not result['OK']:
             return result
 

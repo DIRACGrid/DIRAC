@@ -532,17 +532,12 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     errors = defaultdict(int)
     delayExecution = 0
     for opFile in waitingFiles:
-      if opFile.Status == 'Failed':
-        err = "File already Failed"
-        errors[err] += 1
-        continue
       if opFile.Error in ("Couldn't get metadata",
                           "File doesn't exist",
                           'No active replica found',
                           "All replicas have a bad checksum",):
         err = "File already in error status"
         errors[err] += 1
-        continue
 
       gMonitor.addMark("ReplicateAndRegisterAtt", 1)
       opFile.Error = ''

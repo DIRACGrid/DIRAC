@@ -712,7 +712,7 @@ class JobDB( DB ):
       attrValues.append( minor )
     if application:
       attrNames.append( 'ApplicationStatus' )
-      attrValues.append( application )
+      attrValues.append(application[:255])
     if appCounter:
       attrNames.append( 'ApplicationNumStatus' )
       attrValues.append( appCounter )

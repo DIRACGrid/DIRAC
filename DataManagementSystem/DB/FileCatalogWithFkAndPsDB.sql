@@ -1595,7 +1595,7 @@ BEGIN
   WHERE c.ParentID = dir_id
   AND SEName != 'FakeSE'
   AND (SESize != 0 OR SEFiles != 0)
-  GROUP BY u.SEID
+  GROUP BY se.SEName
   ORDER BY NULL;
 
 
@@ -1623,7 +1623,7 @@ BEGIN
   JOIN FC_StorageElements se ON se.SEID = r.SEID
   JOIN FC_DirectoryClosure dc ON dc.ChildID = f.DirID
   WHERE dc.ParentID = dir_id
-  GROUP BY se.SEID
+  GROUP BY se.SEName
   ORDER BY NULL;
 
 END //

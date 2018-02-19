@@ -401,9 +401,9 @@ class CheckCECapabilities( CommandBase ):
       self.cfg.append( self.pp.localConfigFile ) # this file is as input
     # Get the resource description as defined in its configuration
     checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
-                                                                     self.pp.ceName,
-                                                                     self.pp.queueName,
-                                                                     " ".join( self.cfg ) )
+                                                                        self.pp.ceName,
+                                                                        self.pp.queueName,
+                                                                        " ".join(self.cfg))
     retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
@@ -479,6 +479,7 @@ class CheckWNCapabilities( CommandBase ):
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
       self.exitWithError( retCode )
+    numberOfProcessors = 0
     try:
       result = result.split( ' ' )
       numberOfProcessors = int( result[0] )
@@ -490,14 +491,25 @@ class CheckWNCapabilities( CommandBase ):
     self.cfg = []
     # If NumberOfProcessors or MaxRAM are defined in the resource configuration, these
     # values are preferred
-    if numberOfProcessors and "NumberOfProcessors" not in self.pp.queueParameters:
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % numberOfProcessors )
-    else:
-      self.log.warn( "Could not retrieve number of processors" )
-    if maxRAM and "MaxRAM" not in self.pp.queueParameters:
+    numberOfProcessors = self.pp.queueParameters.get(
+        'NumberOfProcessors', numberOfProcessors)
+    # if maxNumberOfProcessors is asked in pilotWrapper
+    if self.pp.maxNumberOfProcessors:
+      self.log.debug("Overriding with a requested number of processors")
+      numberOfProcessors = self.pp.maxNumberOfProcessors
+
+    if not numberOfProcessors:
+      self.log.warn("Could not retrieve number of processors, assuming 1")
+      numberOfProcessors = 1
+    self.cfg.append(
+        '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % numberOfProcessors)
+
+    maxRAM = self.pp.queueParameters.get('MaxRAM', maxRAM)
+    if maxRAM:
       self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%d"' % maxRAM )
     else:
-      self.log.warn( "Could not retrieve MaxRAM" )
+      self.log.warn(
+          "Could not retrieve MaxRAM, this parameter won't be filled")
 
     if self.cfg:
       self.cfg.append( '-FDMH' )
@@ -840,6 +852,7 @@ class ConfigureCPURequirements( CommandBase ):
 
     # HS06s = seconds * HS06
     try:
+      # determining the CPU time left (in HS06s)
       self.pp.jobCPUReq = float( cpuTime ) * float( cpuNormalizationFactor )
       self.log.info( "Queue length (which is also set as CPUTimeLeft) is %f" % self.pp.jobCPUReq )
     except ValueError:

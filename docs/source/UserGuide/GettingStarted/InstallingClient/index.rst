@@ -27,11 +27,15 @@ Choose the directory where you want to install the DIRAC software and run the di
 this directory giving the appropriate version of the DIRAC release,
 and, the version of the "lcgBundle" (with "-g" option) that you want to use::
 
-  dirac-install -r v6r19p2 -g v12r5
+  dirac-install -r v6r19p2 -g v13r0
 
-The example above assumes that you need version v6r19p2, and that with it you are installing lcgBundle version v12r5.
-An "lcgBundle" contains compiled libraries for interacting with grid environments.
-Please see [put link] for a in-depth explanation of lcgBundle package and its versions.
+The example above assumes that you need version v6r19p2, and that with it you are installing lcgBundle version v13r0.
+
+An "lcgBundle" is simply a tarball containing a number of statically-compiled libraries that are used
+for interacting with grid environments (e.g. GFAL2, or ARC, or Condor).
+The libraries in a "lcgBundle" are not maintained within DIRAC, but DIRAC may use them.
+The produced lcgBundles can be found in `this server <http://lhcbproject.web.cern.ch/lhcbproject/dist/Dirac_project/lcgBundles/>`_.
+
 
 This installs the software and you should get the following directories and files created::
 

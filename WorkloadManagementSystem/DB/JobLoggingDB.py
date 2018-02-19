@@ -6,13 +6,13 @@
     getWMSTimeStamps()
 """
 
+__RCSID__ = "$Id$"
+
 import time
 
-from DIRAC                import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Base.DB   import DB
-
-__RCSID__ = "$Id$"
+from DIRAC.Core.Base.DB import DB
 
 # Here for debugging purpose; should be initialized by the containing component
 gLogger.initialize( 'WMS', '/Databases/JobLoggingDB/Test' )
@@ -20,8 +20,11 @@ gLogger.initialize( 'WMS', '/Databases/JobLoggingDB/Test' )
 MAGIC_EPOC_NUMBER = 1270000000
 
 #############################################################################
-class JobLoggingDB( DB ):
 
+
+class JobLoggingDB(DB):
+  """ Frontend to JobLoggingDB MySQL table
+  """
 
   def __init__( self ):
     """ Standard Constructor
@@ -77,7 +80,8 @@ class JobLoggingDB( DB ):
 
     cmd = "INSERT INTO LoggingInfo (JobId, Status, MinorStatus, ApplicationStatus, " + \
           "StatusTime, StatusTimeOrder, StatusSource) VALUES (%d,'%s','%s','%s','%s',%f,'%s')" % \
-           ( int( jobID ), status, minor, application, str( _date ), time_order, source )
+        (int(jobID), status, minor, application[:255],
+         str(_date), time_order, source)
 
     return self._update( cmd )
 
