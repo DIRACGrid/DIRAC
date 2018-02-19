@@ -774,14 +774,15 @@ class SiteDirector( AgentModule ):
     return totalSlots
 
 #####################################################################################
-  def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '' ):
+  def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '',
+                     **kwargs ):
     """ Prepare the full executable for queue
     """
 
     proxy = None
     if bundleProxy:
       proxy = self.proxy
-    pilotOptions, pilotsToSubmit = self._getPilotOptions( queue, pilotsToSubmit )
+    pilotOptions, pilotsToSubmit = self._getPilotOptions( queue, pilotsToSubmit, **kwargs )
     if pilotOptions is None:
       self.log.error( "Pilot options empty, error in compilation" )
       return S_ERROR( "Errors in compiling pilot options" )
@@ -790,7 +791,7 @@ class SiteDirector( AgentModule ):
     return S_OK( [ executable, pilotsToSubmit ] )
 
 #####################################################################################
-  def _getPilotOptions( self, queue, pilotsToSubmit ):
+  def _getPilotOptions( self, queue, pilotsToSubmit, **kwargs ):
     """ Prepare pilot options
     """
     queueDict = self.queueDict[queue]['ParametersDict']
