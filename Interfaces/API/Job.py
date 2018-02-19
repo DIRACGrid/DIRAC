@@ -22,6 +22,9 @@
 
    Note that several executables can be provided and wil be executed sequentially.
 """
+
+__RCSID__ = "$Id$"
+
 import re
 import os
 import urllib
@@ -45,7 +48,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Workflow.Utilities.Utils import getStepDefinition, addStepToWorkflow
 
-__RCSID__ = "$Id$"
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 
@@ -1103,7 +1105,7 @@ class Job(API):
           self.log.warn("File not found", self.script)
       else:
         if xmlFile:
-          if os.path.exists(self.script):
+          if os.path.exists(xmlFile):
             self.log.verbose('Found XML File %s' % xmlFile)
             scriptName = xmlFile
           else:
