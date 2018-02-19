@@ -51,7 +51,7 @@ class ConfigurationHandler(RequestHandler):
 
   def export_commitNewData(self, sData):
     credDict = self.getRemoteCredentials()
-    if 'DN' in credDict or 'username' not in credDict:
+    if 'DN' not in credDict or 'username' not in credDict:
       return S_ERROR("You must be authenticated!")
     res = gServiceInterface.updateConfiguration(sData, credDict['username'])
     if not res['OK']:
