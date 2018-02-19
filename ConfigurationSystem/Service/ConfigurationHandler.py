@@ -1,14 +1,14 @@
 """ The CS! (Configuration Service)
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 
 gServiceInterface = False
-
-__RCSID__ = "$Id$"
 
 
 def initializeConfigurationHandler(serviceInfo):
@@ -51,7 +51,7 @@ class ConfigurationHandler(RequestHandler):
 
   def export_commitNewData(self, sData):
     credDict = self.getRemoteCredentials()
-    if 'DN' in credDict or not 'username' not in credDict:
+    if 'DN' in credDict or 'username' not in credDict:
       return S_ERROR("You must be authenticated!")
     res = gServiceInterface.updateConfiguration(sData, credDict['username'])
     if not res['OK']:
