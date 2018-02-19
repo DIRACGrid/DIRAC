@@ -145,7 +145,7 @@ class ObjectLoader( object ):
   def __recurseImport( self, modName, parentModule = None, hideExceptions = False ):
     """ Internal function to load modules
     """
-    if type( modName ) in types.StringTypes:
+    if isinstance(modName, basestring):
       modName = modName.split( '.' )
     try:
       if parentModule:
@@ -365,10 +365,10 @@ class PilotParams( object ):
     self.ceName = ""
     self.ceType = ''
     self.queueName = ""
-    self.queueParameters = {}
     self.platform = ""
+    # in case users want to specify the max number of processors requested, per pilot
+    self.maxNumberOfProcessors = 0
     self.minDiskSpace = 2560 #MB
-    self.jobCPUReq = 900
     self.pythonVersion = '27'
     self.userGroup = ""
     self.userDN = ""
@@ -396,6 +396,11 @@ class PilotParams( object ):
     self.pilotCFGFile = 'pilot.json'
     self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
 
+    # Parameters that can be determined at runtime only
+    self.queueParameters = {}  # from CE description
+    self.jobCPUReq = 900  # HS06s, here just a random value
+
+
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
                      ( 'd', 'debug', 'Set debug flag' ),
@@ -408,6 +413,8 @@ class PilotParams( object ):
                      ( 'k', 'keepPP', 'Do not clear PYTHONPATH on start' ),
                      ( 'l:', 'project=', 'Project to install' ),
                      ( 'p:', 'platform=', 'Use <platform> instead of local one' ),
+                     ('P:', 'maxNumberOfProcessors=',
+                      'specify a max number of processors to use'),
                      ( 'u:', 'url=', 'Use <url> to download tarballs' ),
                      ( 'r:', 'release=', 'DIRAC release to install' ),
                      ( 'n:', 'name=', 'Set <Site> as Site Name' ),
@@ -418,7 +425,6 @@ class PilotParams( object ):
                      ( 'y:', 'CEType=', 'CE Type (normally InProcess)' ),
                      ( 'S:', 'setup=', 'DIRAC Setup to use' ),
                      ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
-                     ( 'T:', 'CPUTime', 'Requested CPU Time' ),
                      ( 'G:', 'Group=', 'DIRAC Group to use' ),
                      ( 'O:', 'OwnerDN', 'Pilot OwnerDN (for private pilots)' ),
                      ( 'U', 'Upload', 'Upload compiled distribution (if built)' ),
@@ -478,6 +484,8 @@ class PilotParams( object ):
         self.installation = v
       elif o == '-p' or o == '--platform':
         self.platform = v
+      elif o == '-P' or o == '--maxNumberOfProcessors':
+        self.maxNumberOfProcessors = v
       elif o == '-D' or o == '--disk':
         try:
           self.minDiskSpace = int( v )
@@ -502,7 +510,5 @@ class PilotParams( object ):
           self.maxCycles = min( self.MAX_CYCLES, int( v ) )
         except ValueError:
           pass
-      elif o in ( '-T', '--CPUTime' ):
-        self.jobCPUReq = v
       elif o in ( '-o', '--option' ):
         self.genericOption = v

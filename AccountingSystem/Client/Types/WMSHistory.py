@@ -13,7 +13,7 @@ class WMSHistory( BaseAccountingType ):
                                  ( 'UserGroup', 'VARCHAR(128)' ),
                                  ( 'JobGroup', 'VARCHAR(32)' ),
                                  ( 'MinorStatus', 'VARCHAR(128)' ),
-                                 ( 'ApplicationStatus', 'VARCHAR(128)' ),
+                                 ( 'ApplicationStatus', 'VARCHAR(256)' ),
                                  ( 'JobSplitType', 'VARCHAR(32)' )
                                ]
     self.definitionAccountingFields = [ ( 'Jobs', "INT UNSIGNED" ),
