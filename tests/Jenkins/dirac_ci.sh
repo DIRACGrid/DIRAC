@@ -125,7 +125,7 @@ function installSite(){
   dirac-setup-site $DEBUG
   if [ $? -ne 0 ]
   then
-    echo 'ERROR: dirac-setup-site -t fullserver failed'
+    echo 'ERROR: dirac-setup-site failed'
     return
   fi
 
@@ -149,6 +149,11 @@ function fullInstallDIRAC(){
 
   #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   installSite
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: installSite failed'
+    return
+  fi
 
   #replace the sources with custom ones if defined
   diracReplace
@@ -156,20 +161,52 @@ function fullInstallDIRAC(){
   #Dealing with security stuff
   # generateCertificates
   generateUserCredentials
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: generateUserCredentials failed'
+    return
+  fi
+
   diracCredentials
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracCredentials failed'
+    return
+  fi
 
   #just add a site
   diracAddSite
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracAddSite failed'
+    return
+  fi
 
   #Install the Framework
   findDatabases 'FrameworkSystem'
   dropDBs
   diracDBs
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracDBs failed'
+    return
+  fi
+
   findServices 'FrameworkSystem'
   diracServices
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracServices failed'
+    return
+  fi
 
   #create groups
   diracUserAndGroup
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracUserAndGroup failed'
+    return
+  fi
 
   echo '==> Restarting Framework ProxyManager'
   dirac-restart-component Framework ProxyManager $DEBUG
@@ -183,9 +220,19 @@ function fullInstallDIRAC(){
   findDatabases 'exclude' 'FrameworkSystem'
   dropDBs
   diracDBs
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracDBs failed'
+    return
+  fi
 
   #upload proxies
   diracProxies
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracProxies failed'
+    return
+  fi
 
   #fix the DBs (for the FileCatalog)
   diracDFCDB
@@ -197,6 +244,11 @@ function fullInstallDIRAC(){
   #services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
   diracServices
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracServices failed'
+    return
+  fi
 
   #fix the services
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py $DEBUG
@@ -225,6 +277,11 @@ function fullInstallDIRAC(){
   #agents
   findAgents
   diracAgents
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracAgents failed'
+    return
+  fi
 
 
 }
