@@ -310,6 +310,11 @@ function fullPilot(){
 
   #first simply install via the pilot
   DIRACPilotInstall
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: pilot installation failed'
+    return
+  fi
 
   #this should have been created, we source it so that we can continue
   source $PILOTINSTALLDIR/bashrc
@@ -357,7 +362,18 @@ function submitAndMatch(){
 
   # Here we submit the jobs (to DIRAC.Jenkins.ch)
   installDIRAC # This installs the DIRAC client
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: failure installing the DIRAC client'
+    return
+  fi
+
   submitJob # This submits the jobs
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: failure submitting the jobs'
+    return
+  fi
 
   # Then we run the full pilot, including the JobAgent, which should match the jobs we just submitted
   cd $PILOTINSTALLDIR
@@ -372,9 +388,19 @@ function submitAndMatch(){
   if [ ! -z "$PILOT_VERSION" ]
   then
     echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
-    DIRAC='' python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+    python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-pilot failure'
+      return
+    fi
   else
     echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
-    DIRAC='' python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+    python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-pilot failure'
+      return
+    fi
   fi
 }

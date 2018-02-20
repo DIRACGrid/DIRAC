@@ -403,6 +403,11 @@ function diracInstall(){
   chmod +x $SERVERINSTALLDIR/dirac-install
 
   diracInstallCommand
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-install failed'
+    return
+  fi
 }
 
 #This is what VOs may replace
@@ -440,11 +445,21 @@ function installDIRAC(){
   # now configuring
   source bashrc
   dirac-configure -S $DIRACSETUP -C $CSURL --UseServerCertificate -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-configure failed'
+    return
+  fi
 
   echo 'Content of etc/dirac.cfg:'
   more $CLIENTINSTALLDIR/etc/dirac.cfg
 
   source bashrc
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: source bashrc failed'
+    return
+  fi
 }
 
 ##############################################################################
