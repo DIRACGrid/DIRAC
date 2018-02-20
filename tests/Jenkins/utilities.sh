@@ -492,8 +492,19 @@ function getUserProxy(){
 
   cp $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py .
   python dirac-cfg-update.py -S $DIRACSETUP $CLIENTINSTALLDIR/etc/dirac.cfg -F $CLIENTINSTALLDIR/etc/dirac.cfg -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-cfg-update failed'
+    return
+  fi
+
   #Getting a user proxy, so that we can run jobs
   downloadProxy
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: downloadProxy failed'
+    return
+  fi
 
   echo '==> Done getUserProxy'
 }
@@ -523,7 +534,7 @@ function prepareForServer(){
 
 #.............................................................................
 #
-# function generateCertificat
+# function generateCertificates
 #
 #   This function generates a random host certificate ( certificate and key ),
 #   which will be stored on etc/grid-security. As we need a CA to validate it,
@@ -629,6 +640,11 @@ function diracCredentials(){
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
   dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG --rfc
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-proxy-init failed'
+    return
+  fi
   sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
 
 }
@@ -647,14 +663,53 @@ function diracUserAndGroup(){
   echo '==> [diracUserAndGroup]'
 
   dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-user failed'
+    return
+  fi
+
   dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-user failed'
+    return
+  fi
 
   dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement,FileCatalogManagement,SiteManager,NormalUser $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-group failed'
+    return
+  fi
 
   dirac-admin-add-shifter DataManager adminusername prod $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-shifter failed'
+    return
+  fi
+
   dirac-admin-add-shifter TestManager adminusername prod $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-shifter failed'
+    return
+  fi
+
   dirac-admin-add-shifter ProductionManager adminusername prod $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-shifter failed'
+    return
+  fi
+
   dirac-admin-add-shifter LHCbPR adminusername prod $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-shifter failed'
+    return
+  fi
 }
 
 
@@ -671,8 +726,19 @@ function diracProxies(){
 
   # User proxy, should be uploaded anyway
   dirac-proxy-init -U -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-proxy-init failed'
+    return
+  fi
+
   # group proxy, will be uploaded explicitly
   dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-proxy-init failed'
+    return
+  fi
 
 }
 
@@ -689,6 +755,11 @@ function diracRefreshCS(){
 
 
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-refresh-cs.py $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-refresh-cs failed'
+    return
+  fi
 }
 
 
@@ -706,6 +777,11 @@ function diracAddSite(){
   echo '==> [diracAddSite]'
 
   dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-site failed'
+    return
+  fi
 
 }
 
@@ -729,6 +805,11 @@ diracServices(){
   do
     echo '==> calling dirac-install-component' $serv $DEBUG
     dirac-install-component $serv $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-install-component failed'
+      return
+    fi
   done
 
 }
@@ -755,6 +836,11 @@ diracUninstallServices(){
   do
     echo '==> calling dirac-uninstall-component' $serv $DEBUG
     dirac-uninstall-component -f $serv $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-uninstall-component failed'
+      return
+    fi
   done
 
 }
@@ -782,6 +868,11 @@ diracAgents(){
       python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-add-option.py agent $agent
       echo '==> calling dirac-agent' $agent -o MaxCycles=1 $DEBUG
       dirac-agent $agent  -o MaxCycles=1 $DEBUG
+      if [ $? -ne 0 ]
+      then
+        echo 'ERROR: dirac-agent failed'
+        return
+      fi
     fi
   done
 
@@ -803,6 +894,11 @@ diracDBs(){
   for db in $dbs
   do
     dirac-install-db $db $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-install-db failed'
+      return
+    fi
   done
 
 }

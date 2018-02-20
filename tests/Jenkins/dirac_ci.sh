@@ -107,11 +107,27 @@ function installSite(){
 
   echo '==> Started installing'
   $SERVERINSTALLDIR/dirac-install.py -t fullserver $SERVERINSTALLDIR/install.cfg $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-install.py -t fullserver failed'
+    return
+  fi
 
   echo '==> Done installing, now configuring'
   source $SERVERINSTALLDIR/bashrc
   dirac-configure $SERVERINSTALLDIR/install.cfg $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-configure failed'
+    return
+  fi
+
   dirac-setup-site $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-setup-site -t fullserver failed'
+    return
+  fi
 
   echo '==> Completed installation'
 
