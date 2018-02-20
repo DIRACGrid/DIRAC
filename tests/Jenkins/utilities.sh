@@ -621,7 +621,7 @@ function generateUserCredentials(){
   cp $CI_CONFIG/openssl_config openssl_config .
   if [[ $save =~ e ]]
   then
-    set +e
+    set -e
   fi
 
   sed -i 's/#hostname#/ciuser/g' openssl_config
