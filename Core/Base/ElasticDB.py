@@ -52,7 +52,7 @@ class ElasticDB(ElasticSearchDB):
                                       self.__user,
                                       self.__dbPassword,
                                       indexPrefix)
-    except AttributeError as e:
+    except BaseException as e:
       self.log.warn("Attempt to connect with useSSL=True failed, trying without")
       self.log.warn(repr(e))
       super(ElasticDB, self).__init__(self.__dbHost,
