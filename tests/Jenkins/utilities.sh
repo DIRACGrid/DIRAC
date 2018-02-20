@@ -942,14 +942,22 @@ dropDBs(){
 function killRunsv(){
   echo '==> [killRunsv]'
 
-  # Bear in mind that we run with 'errexit' mode. This call, if finds nothing
+  # Bear in mind that we may run with 'errexit' mode. This call, if finds nothing
   # will return an error, which will make the whole script exit. However, if
   # finds nothing we are good, it means there are not leftover processes from
   # other runs. So, we disable 'errexit' mode for this call.
 
-  #set +o errexit
+  # check if errexit mode is set
+  save=$-
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
   runsvdir=`ps aux | grep 'runsvdir ' | grep -v 'grep'`
-  #set -o errexit
+  if [[ $save =~ e ]]
+  then
+    set -e
+  fi
 
   if [ ! -z "$runsvdir" ]
   then
@@ -957,9 +965,15 @@ function killRunsv(){
   fi
 
   # Same as before
-  #set +o errexit
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
   runsv=`ps aux | grep 'runsv ' | grep -v 'grep'`
-  #set -o errexit
+  if [[ $save =~ e ]]
+  then
+    set -e
+  fi
 
   if [ ! -z "$runsv" ]
   then
