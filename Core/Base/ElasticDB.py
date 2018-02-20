@@ -1,12 +1,11 @@
 """ ElasticDB is a base class used to connect an Elasticsearch database and manages queries.
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
 from DIRAC.ConfigurationSystem.Client.Utilities import getElasticDBParameters
-
-
-__RCSID__ = "$Id$"
 
 
 class ElasticDB(ElasticSearchDB):
