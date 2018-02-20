@@ -954,31 +954,24 @@ function killRunsv(){
     set +e
   fi
   runsvdir=`ps aux | grep 'runsvdir ' | grep -v 'grep'`
-  if [[ $save =~ e ]]
-  then
-    set -e
-  fi
 
   if [ ! -z "$runsvdir" ]
   then
     killall runsvdir
   fi
 
-  # Same as before
-  if [[ $save =~ e ]]
-  then
-    set +e
-  fi
   runsv=`ps aux | grep 'runsv ' | grep -v 'grep'`
-  if [[ $save =~ e ]]
-  then
-    set -e
-  fi
 
   if [ ! -z "$runsv" ]
   then
     killall runsv
   fi
+
+  if [[ $save =~ e ]]
+  then
+    set -e
+  fi
+
 
 }
 
