@@ -1047,9 +1047,16 @@ function startRunsv(){
   # Gives some time to the components to start
   sleep 10
   # Just in case 10 secs are not enough, we disable exit on error for this call.
-  set +o errexit
+  save=$-
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
   runsvctrl u $SERVERINSTALLDIR/startup/*
-  set -o errexit
+  if [[ $save =~ e ]]
+  then
+    set -e
+  fi
 
   runsvstat $SERVERINSTALLDIR/startup/*
 
