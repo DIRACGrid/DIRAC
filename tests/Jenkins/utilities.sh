@@ -602,27 +602,37 @@ function generateCertificates(){
 #.............................................................................
 
 function generateUserCredentials(){
-    echo '==> [generateUserCredentials]'
+  echo '==> [generateUserCredentials]'
 
-    # Generate directory where to store credentials
-    mkdir -p $SERVERINSTALLDIR/user
-    cd $SERVERINSTALLDIR/user
-    if [ $? -ne 0 ]
-    then
-      echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
-      return
-    fi
+  # Generate directory where to store credentials
+  mkdir -p $SERVERINSTALLDIR/user
+  cd $SERVERINSTALLDIR/user
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
+    return
+  fi
 
-    cp $CI_CONFIG/openssl_config openssl_config .
-    sed -i 's/#hostname#/ciuser/g' openssl_config
-    openssl genrsa -out client.key 1024 2>&1 /dev/null
-    openssl req -key client.key -new -out client.req -config openssl_config
-    # This is a little hack to make OpenSSL happy...
-    echo 00 > file.srl
+  save=$-
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
+  cp $CI_CONFIG/openssl_config openssl_config .
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
 
-    CA=$SERVERINSTALLDIR/etc/grid-security/certificates
+  sed -i 's/#hostname#/ciuser/g' openssl_config
+  openssl genrsa -out client.key 1024 2>&1 /dev/null
+  openssl req -key client.key -new -out client.req -config openssl_config
+  # This is a little hack to make OpenSSL happy...
+  echo 00 > file.srl
 
-    openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out $SERVERINSTALLDIR/user/client.pem
+  CA=$SERVERINSTALLDIR/etc/grid-security/certificates
+
+  openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out $SERVERINSTALLDIR/user/client.pem
 }
 
 
@@ -953,6 +963,7 @@ function killRunsv(){
   then
     set +e
   fi
+
   runsvdir=`ps aux | grep 'runsvdir ' | grep -v 'grep'`
 
   if [ ! -z "$runsvdir" ]
