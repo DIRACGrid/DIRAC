@@ -49,8 +49,8 @@ class PilotStatusAgent(AgentModule):
     self.pilotDB = PilotAgentsDB()
     self.diracadmin = DiracAdmin()
     self.jobDB = JobDB()
-    self.clearPilotsDelay = self.am_getOption( 'ClearPilotsDelay', 30 )
-    self.clearAbortedDelay = self.am_getOption( 'ClearAbortedPilotsDelay', 7 )
+    self.clearPilotsDelay = self.am_getOption('ClearPilotsDelay', 30)
+    self.clearAbortedDelay = self.am_getOption('ClearAbortedPilotsDelay', 7)
     self.WMSAdministrator = RPCClient('WorkloadManagement/WMSAdministrator')
 
     return S_OK()
@@ -81,9 +81,9 @@ class PilotStatusAgent(AgentModule):
 
     connection.close()
 
-    result = self.WMSAdministrator.clearPilots( self.clearPilotsDelay, self.clearAbortedDelay )
+    result = self.WMSAdministrator.clearPilots(self.clearPilotsDelay, self.clearAbortedDelay)
     if not result['OK']:
-      self.log.warn( 'Failed to clear old pilots in the PilotAgentsDB' )
+      self.log.warn('Failed to clear old pilots in the PilotAgentsDB')
 
     return S_OK()
 
@@ -106,7 +106,7 @@ class PilotStatusAgent(AgentModule):
     refList = result['Value']
 
     for pilotRef in refList:
-      #FIXME: definitely, one of the 2 lines below is wrong...
+      # FIXME: definitely, one of the 2 lines below is wrong...
       self.log.info('Setting Waiting pilot to Aborted: %s' % pilotRef)
       result = self.pilotDB.setPilotStatus(pilotRef, 'Stalled', statusReason='Exceeded max waiting time')
 

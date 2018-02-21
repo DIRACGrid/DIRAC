@@ -48,7 +48,7 @@ fts3FileTable = Table('Files', metadata,
                              server_default=FTS3File.INIT_STATE,
                              index=True),
                       mysql_engine='InnoDB',
-                      )
+                     )
 
 mapper(FTS3File, fts3FileTable)
 
@@ -72,7 +72,7 @@ fts3JobTable = Table('Jobs', metadata,
                             index=True),
                      Column('assignment', String(255), server_default=None),
                      mysql_engine='InnoDB',
-                     )
+                    )
 
 mapper(FTS3Job, fts3JobTable)
 
@@ -95,21 +95,25 @@ fts3OperationTable = Table('Operations', metadata,
                            Column('type', String(255)),
                            Column('assignment', String(255), server_default=None),
                            mysql_engine='InnoDB',
-                           )
+                          )
 
 
 fts3Operation_mapper = mapper(FTS3Operation, fts3OperationTable,
-                              properties={'ftsFiles': relationship(FTS3File,
-                                                                   lazy='joined',  # Immediately load the entirety of the object
-                                                                   innerjoin=True,  # Use inner join instead of left outer join
-                                                                   cascade='all, delete-orphan',  # if a File is removed from the list, remove it from the DB
-                                                                   passive_deletes=True,  # used together with cascade='all, delete-orphan'
-                                                                   ),
-                                          'ftsJobs': relationship(FTS3Job,
-                                                                  lazy='joined',  # Immediately load the entirety of the object
-                                                                  cascade='all, delete-orphan',  # if a File is removed from the list, remove it from the DB
-                                                                  passive_deletes=True,  # used together with cascade='all, delete-orphan'
-                                                                  ),
+                              properties={'ftsFiles': relationship(
+                                  FTS3File,
+                                  lazy='joined',  # Immediately load the entirety of the object
+                                  innerjoin=True,  # Use inner join instead of left outer join
+                                  cascade='all, delete-orphan',  # if a File is removed from the list,
+                                                                 #remove it from the DB
+                                  passive_deletes=True,  # used together with cascade='all, delete-orphan'
+                                ),
+                                          'ftsJobs': relationship(
+                                              FTS3Job,
+                                              lazy='joined',  # Immediately load the entirety of the object
+                                              cascade='all, delete-orphan',  # if a File is removed from the list,
+                                                                             # remove it from the DB
+                                              passive_deletes=True,  # used together with cascade='all, delete-orphan'
+                                              ),
                                           },
                               polymorphic_on='type',
                               polymorphic_identity='Abs'
@@ -118,12 +122,12 @@ fts3Operation_mapper = mapper(FTS3Operation, fts3OperationTable,
 mapper(FTS3TransferOperation, fts3OperationTable,
        inherits=fts3Operation_mapper,
        polymorphic_identity='Transfer'
-       )
+      )
 
 mapper(FTS3StagingOperation, fts3OperationTable,
        inherits=fts3Operation_mapper,
        polymorphic_identity='Staging'
-       )
+      )
 
 
 ########################################################################
