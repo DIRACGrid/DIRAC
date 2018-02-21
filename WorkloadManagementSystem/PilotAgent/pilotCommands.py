@@ -504,13 +504,13 @@ class CheckWNCapabilities( CommandBase ):
     self.cfg.append(
         '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % numberOfProcessors)
 
-    maxRAM = int(self.pp.queueParameters.get('MaxRAM', maxRAM))
+    maxRAM = self.pp.queueParameters.get('MaxRAM', maxRAM)
     if maxRAM:
       try:
         self.cfg.append(
             '-o "/Resources/Computing/CEDefaults/MaxRAM=%d"' % int(maxRAM))
       except ValueError:
-        self.log.warn("MaxRAM is not an integer, won't filling it")
+        self.log.warn("MaxRAM is not an integer, will not fill it")
     else:
       self.log.warn(
           "Could not retrieve MaxRAM, this parameter won't be filled")
