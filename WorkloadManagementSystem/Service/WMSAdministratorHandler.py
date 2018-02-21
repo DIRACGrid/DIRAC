@@ -320,8 +320,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     if pilotReference:
       return self.__getGridJobOutput(pilotReference)
-    else:
-      return S_ERROR('No pilot job reference found')
+    return S_ERROR('No pilot job reference found')
 
   ##############################################################################
   @classmethod
@@ -354,75 +353,50 @@ class WMSAdministratorHandler(RequestHandler):
       else:
         gLogger.warn('Empty pilot output found for %s' % pilotReference)
 
-    gridType = pilotDict['GridType']
-    if gridType == "gLite":
-      result = getWMSPilotOutput(  # pylint: disable=unexpected-keyword-arg
-          pilotReference,
-          proxyUserDN=owner,
-          proxyUserGroup=group)
-      if not result['OK']:
-        return S_ERROR('Failed to get pilot output: ' + result['Message'])
-      # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
-      stdout = result['StdOut']
-      error = result['StdErr']
-      fileList = result['FileList']
-      if stdout:
-        result = pilotDB.storePilotOutput(pilotReference, stdout, error)
-        if not result['OK']:
-          gLogger.error('Failed to store pilot output:', result['Message'])
-
-      resultDict = {}
-      resultDict['StdOut'] = stdout
-      resultDict['StdErr'] = error
-      resultDict['OwnerDN'] = owner
-      resultDict['OwnerGroup'] = group
-      resultDict['FileList'] = fileList
-      return S_OK(resultDict)
-    else:
-      # Instantiate the appropriate CE
-      ceFactory = ComputingElementFactory()
-      result = getQueue(pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'])
-      if not result['OK']:
-        return result
-      queueDict = result['Value']
-      gridEnv = getGridEnv()
-      queueDict['GridEnv'] = gridEnv
-      queueDict['WorkingDirectory'] = mkdtemp()
-      result = ceFactory.getCE(gridType, pilotDict['DestinationSite'], queueDict)
-      if not result['OK']:
-        shutil.rmtree(queueDict['WorkingDirectory'])
-        return result
-      ce = result['Value']
-      groupVOMS = getGroupOption(group, 'VOMSRole', group)
-      result = gProxyManager.getPilotProxyFromVOMSGroup(owner, groupVOMS)
-      if not result['OK']:
-        gLogger.error(result['Message'])
-        gLogger.error('Could not get proxy:', 'User "%s", Group "%s"' % (owner, groupVOMS))
-        return S_ERROR("Failed to get the pilot's owner proxy")
-      proxy = result['Value']
-      ce.setProxy(proxy)
-      pilotStamp = pilotDict['PilotStamp']
-      pRef = pilotReference
-      if pilotStamp:
-        pRef = pRef + ':::' + pilotStamp
-      result = ce.getJobOutput(pRef)
-      if not result['OK']:
-        shutil.rmtree(queueDict['WorkingDirectory'])
-        return result
-      stdout, error = result['Value']
-      if stdout:
-        result = pilotDB.storePilotOutput(pilotReference, stdout, error)
-        if not result['OK']:
-          gLogger.error('Failed to store pilot output:', result['Message'])
-
-      resultDict = {}
-      resultDict['StdOut'] = stdout
-      resultDict['StdErr'] = error
-      resultDict['OwnerDN'] = owner
-      resultDict['OwnerGroup'] = group
-      resultDict['FileList'] = []
+    # Instantiate the appropriate CE
+    ceFactory = ComputingElementFactory()
+    result = getQueue(pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'])
+    if not result['OK']:
+      return result
+    queueDict = result['Value']
+    gridEnv = getGridEnv()
+    queueDict['GridEnv'] = gridEnv
+    queueDict['WorkingDirectory'] = mkdtemp()
+    result = ceFactory.getCE(pilotDict['GridType'], pilotDict['DestinationSite'], queueDict)
+    if not result['OK']:
       shutil.rmtree(queueDict['WorkingDirectory'])
-      return S_OK(resultDict)
+      return result
+    ce = result['Value']
+    groupVOMS = getGroupOption(group, 'VOMSRole', group)
+    result = gProxyManager.getPilotProxyFromVOMSGroup(owner, groupVOMS)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+      gLogger.error('Could not get proxy:', 'User "%s", Group "%s"' % (owner, groupVOMS))
+      return S_ERROR("Failed to get the pilot's owner proxy")
+    proxy = result['Value']
+    ce.setProxy(proxy)
+    pilotStamp = pilotDict['PilotStamp']
+    pRef = pilotReference
+    if pilotStamp:
+      pRef = pRef + ':::' + pilotStamp
+    result = ce.getJobOutput(pRef)
+    if not result['OK']:
+      shutil.rmtree(queueDict['WorkingDirectory'])
+      return result
+    stdout, error = result['Value']
+    if stdout:
+      result = pilotDB.storePilotOutput(pilotReference, stdout, error)
+      if not result['OK']:
+        gLogger.error('Failed to store pilot output:', result['Message'])
+
+    resultDict = {}
+    resultDict['StdOut'] = stdout
+    resultDict['StdErr'] = error
+    resultDict['OwnerDN'] = owner
+    resultDict['OwnerGroup'] = group
+    resultDict['FileList'] = []
+    shutil.rmtree(queueDict['WorkingDirectory'])
+    return S_OK(resultDict)
 
 ##############################################################################
   types_getPilotSummary = []
@@ -600,7 +574,7 @@ class WMSAdministratorHandler(RequestHandler):
       ce = result['Value']
 
       # FIXME: quite hacky. Should be either removed, or based on some flag
-      if gridType in ["LCG", "gLite", "CREAM", "ARC", "Globus"]:
+      if gridType in ["LCG", "CREAM", "ARC", "Globus", "HTCondorCE"]:
         group = getGroupOption(group, 'VOMSRole', group)
         ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
         if not ret['OK']:
