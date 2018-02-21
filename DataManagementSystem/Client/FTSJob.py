@@ -122,7 +122,7 @@ class FTSJob( object ):
                "Files": "INTEGER NOT NULL",
                "Completeness": "INTEGER NOT NULL DEFAULT 0",
                "FailedFiles": "INTEGER DEFAULT 0",
-               "FailedSize": "INTEGER DEFAULT 0",
+               "FailedSize": "BIGINT DEFAULT 0",
                "Status" : "ENUM( 'Submitted', 'Ready', 'Staging', 'Canceled', 'Active', 'Hold', "\
                 "'Failed', 'Finished', 'FinishedDirty', 'Assigned' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
