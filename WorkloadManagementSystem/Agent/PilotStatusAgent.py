@@ -13,6 +13,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
+from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -48,6 +49,10 @@ class PilotStatusAgent(AgentModule):
     self.pilotDB = PilotAgentsDB()
     self.diracadmin = DiracAdmin()
     self.jobDB = JobDB()
+    self.clearPilotsDelay = self.am_getOption( 'ClearPilotsDelay', 30 )
+    self.clearAbortedDelay = self.am_getOption( 'ClearAbortedPilotsDelay', 7 )
+    self.WMSAdministrator = RPCClient('WorkloadManagement/WMSAdministrator')
+
     return S_OK()
 
   #############################################################################
@@ -76,6 +81,10 @@ class PilotStatusAgent(AgentModule):
 
     connection.close()
 
+    result = self.WMSAdministrator.clearPilots( self.clearPilotsDelay, self.clearAbortedDelay )
+    if not result['OK']:
+      self.log.warn( 'Failed to clear old pilots in the PilotAgentsDB' )
+
     return S_OK()
 
   def clearWaitingPilots(self, condDict):
@@ -97,6 +106,7 @@ class PilotStatusAgent(AgentModule):
     refList = result['Value']
 
     for pilotRef in refList:
+      #FIXME: definitely, one of the 2 lines below is wrong...
       self.log.info('Setting Waiting pilot to Aborted: %s' % pilotRef)
       result = self.pilotDB.setPilotStatus(pilotRef, 'Stalled', statusReason='Exceeded max waiting time')
 
