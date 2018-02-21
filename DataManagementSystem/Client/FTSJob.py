@@ -605,7 +605,7 @@ class FTSJob( object ):
     source_spacetoken = self.SourceToken if self.SourceToken else None
     dest_spacetoken = self.TargetToken if self.TargetToken else None
     copy_pin_lifetime = pinTime if pinTime else None
-    bring_online = 86400 if pinTime else None
+    bring_online = 259200 if pinTime else None
 
     job = fts3.new_job( transfers = transfers, overwrite = True,
                         source_spacetoken = source_spacetoken, spacetoken = dest_spacetoken,
