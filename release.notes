@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [v6r20-pre14]
 
 *Core
@@ -73,6 +74,24 @@ CHANGE: WebApp release procedure
 
 *Tests
 FIX: add MonitoringDB to the configuration
+=======
+[v6r19p15]
+
+*Framework
+NEW: ProxyDB - allow FROM address to be set for proxy expiry e-mails
+
+*DMS
+CHANGE: FTSJob - FailedSize is now BIGINT in FTSJob
+CHANGE: FTSJob - increase the bringonline time
+
+*WMS
+FIX: SiteDirector won't set CPUTime of the pilot
+FIX: convert MaxRAM inside the pilots to int
+
+*RSS
+FIX: SummarizeLogsAgent: comparison bug fix
+FIX: Fixed sites synchronizer
+>>>>>>> rel-v6r19
 
 [v6r19p14]
 

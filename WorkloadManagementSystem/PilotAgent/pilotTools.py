@@ -1,9 +1,7 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ A set of common tools to be used in pilot commands
 """
+
+__RCSID__ = '$Id$'
 
 import sys
 import time
@@ -11,11 +9,9 @@ import os
 import pickle
 import getopt
 import imp
-import types
 import urllib2
 import signal
 
-__RCSID__ = '$Id$'
 
 def printVersion( log ):
 

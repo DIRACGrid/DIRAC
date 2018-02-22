@@ -1003,8 +1003,6 @@ class SiteDirector(AgentModule):
     if extensionsList:
       pilotOptions.append('-e %s' % ",".join(extensionsList))
 
-    # Requested CPU time
-    pilotOptions.append('-T %s' % queueDict['CPUTime'])
     # CEName
     pilotOptions.append('-N %s' % self.queueDict[queue]['CEName'])
     # Queue
