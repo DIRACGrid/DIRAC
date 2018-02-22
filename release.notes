@@ -1,3 +1,20 @@
+[v6r19p15]
+
+*Framework
+NEW: ProxyDB - allow FROM address to be set for proxy expiry e-mails
+
+*DMS
+CHANGE: FTSJob - FailedSize is now BIGINT in FTSJob
+CHANGE: FTSJob - increase the bringonline time
+
+*WMS
+FIX: SiteDirector won't set CPUTime of the pilot
+FIX: convert MaxRAM inside the pilots to int
+
+*RSS
+FIX: SummarizeLogsAgent: comparison bug fix
+FIX: Fixed sites synchronizer
+
 [v6r19p14]
 
 *WMS
