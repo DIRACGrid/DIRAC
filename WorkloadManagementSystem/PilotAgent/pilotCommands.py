@@ -660,17 +660,6 @@ class ConfigureSite(CommandBase):
       self.pp.flavour = 'CREAM'
       pilotRef = os.environ['CREAM_JOBID']
 
-    # If we still have the GLITE_WMS_JOBID, it means that the submission
-    # was through the WMS, take this reference then
-    if 'EDG_WL_JOBID' in os.environ:
-      self.pp.flavour = 'LCG'
-      pilotRef = os.environ['EDG_WL_JOBID']
-
-    if 'GLITE_WMS_JOBID' in os.environ:
-      if os.environ['GLITE_WMS_JOBID'] != 'N/A':
-        self.pp.flavour = 'gLite'
-        pilotRef = os.environ['GLITE_WMS_JOBID']
-
     if 'OSG_WN_TMP' in os.environ:
       self.pp.flavour = 'OSG'
 
@@ -717,7 +706,7 @@ class ConfigureSite(CommandBase):
     """ Try to get the CE name
     """
     # FIXME: this should not be part of the standard configuration (flavours discriminations should stay out)
-    if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
+    if self.pp.flavour in ['LCG', 'OSG']:
       retCode, CEName = self.executeAndGetOutput('glite-brokerinfo getCE',
                                                  self.pp.installEnv)
       if retCode:
