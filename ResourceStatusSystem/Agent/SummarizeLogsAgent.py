@@ -159,21 +159,22 @@ class SummarizeLogsAgent( AgentModule ):
     # Undo key
     name, statusType = key
 
-    selectedRes = self.rsClient.selectStatusElement( element, 'History', name,
-                                                     statusType,
-                                                     meta = { 'columns' : [ 'Status', 'TokenOwner' ],
-                                                              'limit': 1,
-                                                              'order': ('DateEffective', 'desc')})
+    selectedRes = self.rsClient.selectStatusElement(element, 'History', name,
+                                                    statusType,
+                                                    meta={'columns': ['Status', 'TokenOwner'],
+                                                          'limit': 1,
+                                                          'order': ('DateEffective', 'desc')})
 
-    if not selectedRes[ 'OK' ]:
+    if not selectedRes['OK']:
       return selectedRes
-    selectedRes = selectedRes[ 'Value' ]
+    selectedRes = selectedRes['Value']
 
     # We want from the <element>History table the last Status, LastCheckTime
     # and TokenOwner
     lastStatus, lastToken = None, None
     if selectedRes:
-      lastStatus, lastToken = selectedRes[ 0 ]
+      lastStatus = selectedRes[0]
+      lastToken = selectedRes[1]
 
     # If the first of the selected items has a different status than the latest
     # on the history, we add it.
