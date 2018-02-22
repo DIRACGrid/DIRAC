@@ -18,6 +18,7 @@ from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 class ProxyDB( DB ):
@@ -45,6 +46,12 @@ class ProxyDB( DB ):
 
   def getMyProxyMaxLifeTime( self ):
     return gConfig.getValue( "/DIRAC/VOPolicy/MyProxyMaxDelegationTime", 168 ) * 3600
+
+  def getFromAddr( self ):
+    """ Get the From address to use in proxy expiry e-mails. """
+    cs_path = getDatabaseSection( self.fullname )
+    opt_path = "/%s/%s" % ( cs_path, "FromAddr" )
+    return gConfig.getValue( opt_path, "proxymanager@diracgrid.org" )
 
   def __initializeDB( self ):
     """
@@ -1113,7 +1120,8 @@ Dear %s,
 Cheers,
  DIRAC's Proxy Manager
 """ % ( userName, daysLeft, userDN, userGroup, userGroup )
-    result = self.__notifClient.sendMail( userEMail, msgSubject, msgBody, fromAddress = 'proxymanager@diracgrid.org' )
+    fromAddr = self.getFromAddr()
+    result = self.__notifClient.sendMail( userEMail, msgSubject, msgBody, fromAddress = fromAddr )
     if not result[ 'OK' ]:
       gLogger.error( "Could not send email", result[ 'Message' ] )
       return False
