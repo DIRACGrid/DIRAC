@@ -17,14 +17,14 @@
     execution.
 """
 
+__RCSID__ = "$Id$"
+
 import sys
 import os
 import stat
 import socket
 
 from pilotTools import CommandBase, retrieveUrlTimeout
-
-__RCSID__ = "$Id$"
 
 
 class GetPilotVersion(CommandBase):

@@ -107,11 +107,27 @@ function installSite(){
 
   echo '==> Started installing'
   $SERVERINSTALLDIR/dirac-install.py -t fullserver $SERVERINSTALLDIR/install.cfg $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-install.py -t fullserver failed'
+    return
+  fi
 
   echo '==> Done installing, now configuring'
   source $SERVERINSTALLDIR/bashrc
   dirac-configure $SERVERINSTALLDIR/install.cfg $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-configure failed'
+    return
+  fi
+
   dirac-setup-site $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-setup-site failed'
+    return
+  fi
 
   echo '==> Completed installation'
 
@@ -133,6 +149,11 @@ function fullInstallDIRAC(){
 
   #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   installSite
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: installSite failed'
+    return
+  fi
 
   #replace the sources with custom ones if defined
   diracReplace
@@ -140,20 +161,52 @@ function fullInstallDIRAC(){
   #Dealing with security stuff
   # generateCertificates
   generateUserCredentials
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: generateUserCredentials failed'
+    return
+  fi
+
   diracCredentials
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracCredentials failed'
+    return
+  fi
 
   #just add a site
   diracAddSite
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracAddSite failed'
+    return
+  fi
 
   #Install the Framework
   findDatabases 'FrameworkSystem'
   dropDBs
   diracDBs
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracDBs failed'
+    return
+  fi
+
   findServices 'FrameworkSystem'
   diracServices
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracServices failed'
+    return
+  fi
 
   #create groups
   diracUserAndGroup
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracUserAndGroup failed'
+    return
+  fi
 
   echo '==> Restarting Framework ProxyManager'
   dirac-restart-component Framework ProxyManager $DEBUG
@@ -167,9 +220,19 @@ function fullInstallDIRAC(){
   findDatabases 'exclude' 'FrameworkSystem'
   dropDBs
   diracDBs
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracDBs failed'
+    return
+  fi
 
   #upload proxies
   diracProxies
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracProxies failed'
+    return
+  fi
 
   #fix the DBs (for the FileCatalog)
   diracDFCDB
@@ -181,6 +244,11 @@ function fullInstallDIRAC(){
   #services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
   diracServices
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracServices failed'
+    return
+  fi
 
   #fix the services
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py $DEBUG
@@ -209,6 +277,11 @@ function fullInstallDIRAC(){
   #agents
   findAgents
   diracAgents
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracAgents failed'
+    return
+  fi
 
 
 }
@@ -310,6 +383,11 @@ function fullPilot(){
 
   #first simply install via the pilot
   DIRACPilotInstall
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: pilot installation failed'
+    return
+  fi
 
   #this should have been created, we source it so that we can continue
   source $PILOTINSTALLDIR/bashrc
@@ -357,7 +435,18 @@ function submitAndMatch(){
 
   # Here we submit the jobs (to DIRAC.Jenkins.ch)
   installDIRAC # This installs the DIRAC client
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: failure installing the DIRAC client'
+    return
+  fi
+
   submitJob # This submits the jobs
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: failure submitting the jobs'
+    return
+  fi
 
   # Then we run the full pilot, including the JobAgent, which should match the jobs we just submitted
   cd $PILOTINSTALLDIR
@@ -372,9 +461,19 @@ function submitAndMatch(){
   if [ ! -z "$PILOT_VERSION" ]
   then
     echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
-    DIRAC='' python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+    python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-pilot failure'
+      return
+    fi
   else
     echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
-    DIRAC='' python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+    python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-pilot failure'
+      return
+    fi
   fi
 }

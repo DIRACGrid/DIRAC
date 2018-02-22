@@ -56,7 +56,7 @@ class ElasticSearchDB(object):
       self.__url = "https://%s:%s@%s:%d" % (user, password, host, port)
     else:
       gLogger.debug("Username and password not specified")
-      self.__url = "%s:%d" % (host, port)
+      self.__url = "http://%s:%d" % (host, port)
 
     gLogger.verbose("Connecting to %s:%s, useSSL = %s" % (host, port, useSSL))
 
