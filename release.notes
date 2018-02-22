@@ -1,4 +1,4 @@
-[v6r20-pre13]
+[v6r20-pre14]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -43,6 +43,7 @@ CHANGE: TaskQueueDB - removed PilotsRequirements table
 CHANGE: TaskQueueDB - added FOREIGN KEYS 
 FIX: JobManager - Added some debug message when deleting jobs
 FIX: Job.py - fixing finding XML file
+CHANGE: Removed gLite pilot related WMS code
 
 *TS
 FIX: TranformationCleaningAgent - just few simplifications 
