@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [v6r20-pre14]
 
 *Core
@@ -74,7 +73,7 @@ CHANGE: WebApp release procedure
 
 *Tests
 FIX: add MonitoringDB to the configuration
-=======
+
 [v6r19p15]
 
 *Framework
@@ -91,7 +90,6 @@ FIX: convert MaxRAM inside the pilots to int
 *RSS
 FIX: SummarizeLogsAgent: comparison bug fix
 FIX: Fixed sites synchronizer
->>>>>>> rel-v6r19
 
 [v6r19p14]
 
