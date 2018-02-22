@@ -179,8 +179,7 @@ class PilotStatusAgent(AgentModule):
     pilotsDict = result['Value']
 
     for pRef in pilotsDict:
-      if pilotsDict[pRef].get('Jobs') and self._checkJobLastUpdateTime(
-          pilotsDict[pRef]['Jobs'], self.pilotStalledDays):
+      if pilotsDict[pRef].get('Jobs') and self._checkJobLastUpdateTime(pilotsDict[pRef]['Jobs'], self.pilotStalledDays):
         self.log.debug('%s should not be deleted since one job of %s is running.' %
                        (str(pRef), str(pilotsDict[pRef]['Jobs'])))
         continue
