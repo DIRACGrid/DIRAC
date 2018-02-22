@@ -1,25 +1,9 @@
-__RCSID__ = "$Id $"
-
 """
   FTS3Agent implementation
 """
 
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Base.AgentModule import AgentModule
+__RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR
-
-from DIRAC.DataManagementSystem.private import FTS3Utilities
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
-
-from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
-
-from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
-
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Utilities.DictCache import DictCache
 
 # from threading import current_thread
 from multiprocessing.pool import ThreadPool
@@ -27,9 +11,22 @@ from multiprocessing.pool import ThreadPool
 from multiprocessing.dummy import current_process
 from socket import gethostname
 
+from DIRAC import S_OK, S_ERROR
+
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.DataManagementSystem.private import FTS3Utilities
+from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
+from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
+
+
 # pylint: disable=attribute-defined-outside-init
 
-__RCSID__ = "$Id: $"
 AGENT_NAME = "DataManagement/FTS3Agent"
 
 
@@ -44,6 +41,7 @@ class FTS3Agent(AgentModule):
     CAUTION: This agent and the FTSAgent cannot run together.
 
   """
+
   def __readConf(self):
     """ read configurations """
 
@@ -82,7 +80,6 @@ class FTS3Agent(AgentModule):
     """ reload configurations before start of a cycle """
     return self.__readConf()
 
-
   def getFTS3Context(self, username, group, ftsServer, threadID):
     """ Returns an fts3 context for a given user, group and fts server
 
@@ -99,10 +96,9 @@ class FTS3Agent(AgentModule):
 
         :returns: S_OK with the context object
 
-
     """
 
-    log = gLogger.getSubLogger("getFTS3Context", child = True)
+    log = gLogger.getSubLogger("getFTS3Context", child=True)
 
     contextes = self._globalContextCache.setdefault(threadID, DictCache())
 
@@ -122,7 +118,7 @@ class FTS3Agent(AgentModule):
       # It has to have a lifetime of at least 2 hours
       # and we cache it for 1.5 hours
       res = gProxyManager.downloadVOMSProxyToFile(
-          userDN, group, requiredTimeLeft = 7200, cacheTime = 5400)
+          userDN, group, requiredTimeLeft=7200, cacheTime=5400)
       if not res['OK']:
         return res
 
@@ -149,10 +145,10 @@ class FTS3Agent(AgentModule):
     # General try catch to avoid that the tread dies
     try:
       threadID = current_process().name
-      log = gLogger.getSubLogger("_monitorJob/%s" % ftsJob.jobID, child = True)
+      log = gLogger.getSubLogger("_monitorJob/%s" % ftsJob.jobID, child=True)
 
       res = self.getFTS3Context(
-          ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer, threadID = threadID)
+          ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer, threadID=threadID)
 
       if not res['OK']:
         log.error("Error getting context", res)
@@ -160,7 +156,7 @@ class FTS3Agent(AgentModule):
 
       context = res['Value']
 
-      res = ftsJob.monitor(context = context)
+      res = ftsJob.monitor(context=context)
 
       if not res['OK']:
         log.error("Error monitoring job", res)
@@ -198,7 +194,7 @@ class FTS3Agent(AgentModule):
     """
 
     ftsJob, res = returnedValue
-    log = gLogger.getSubLogger("_monitorJobCallback/%s" % ftsJob.jobID, child = True)
+    log = gLogger.getSubLogger("_monitorJobCallback/%s" % ftsJob.jobID, child=True)
     if not res['OK']:
       log.error("Error updating job status", res)
     else:
@@ -210,13 +206,13 @@ class FTS3Agent(AgentModule):
         * spawn a thread to monitor each of them
     """
 
-    log = gLogger.getSubLogger("monitorJobs", child = True)
+    log = gLogger.getSubLogger("monitorJobs", child=True)
 
     thPool = ThreadPool(self.maxNumberOfThreads)
 
     log.debug("Getting active jobs")
     # get jobs from DB
-    res = self.fts3db.getActiveJobs(limit = self.jobBulkSize, jobAssignmentTag = self.assignmentTag)
+    res = self.fts3db.getActiveJobs(limit=self.jobBulkSize, jobAssignmentTag=self.assignmentTag)
 
     if not res['OK']:
       log.error("Could not retrieve ftsJobs from the DB", res)
@@ -230,7 +226,7 @@ class FTS3Agent(AgentModule):
       log.debug("Queuing executing of ftsJob %s" % ftsJob.jobID)
       # queue the execution of self._monitorJob( ftsJob ) in the thread pool
       # The returned value is passed to _monitorJobCallback
-      thPool.apply_async(self._monitorJob, (ftsJob, ), callback = self._monitorJobCallback)
+      thPool.apply_async(self._monitorJob, (ftsJob, ), callback=self._monitorJobCallback)
 
     log.debug("All execution queued")
 
@@ -248,7 +244,7 @@ class FTS3Agent(AgentModule):
     """
 
     operation, res = returnedValue
-    log = gLogger.getSubLogger("_treatOperationCallback/%s" % operation.operationID, child = True)
+    log = gLogger.getSubLogger("_treatOperationCallback/%s" % operation.operationID, child=True)
     if not res['OK']:
       log.error("Error treating operation", res)
     else:
@@ -264,7 +260,7 @@ class FTS3Agent(AgentModule):
     """
     try:
       threadID = current_process().name
-      log = gLogger.getSubLogger("treatOperation/%s" % operation.operationID, child = True)
+      log = gLogger.getSubLogger("treatOperation/%s" % operation.operationID, child=True)
 
       # If the operation is totally processed
       # we perform the callback
@@ -286,7 +282,7 @@ class FTS3Agent(AgentModule):
         log.debug("FTS3Operation %s is not totally processed yet" % operation.operationID)
 
         res = operation.prepareNewJobs(
-            maxFilesPerJob = self.maxFilesPerJob, maxAttemptsPerFile = self.maxAttemptsPerFile)
+            maxFilesPerJob=self.maxFilesPerJob, maxAttemptsPerFile=self.maxAttemptsPerFile)
 
         if not res['OK']:
           log.error("Cannot prepare new Jobs", "FTS3Operation %s : %s" %
@@ -310,14 +306,14 @@ class FTS3Agent(AgentModule):
           ftsJob.ftsServer = ftsServer
 
           res = self.getFTS3Context(
-              ftsJob.username, ftsJob.userGroup, ftsServer, threadID = threadID)
+              ftsJob.username, ftsJob.userGroup, ftsServer, threadID=threadID)
 
           if not res['OK']:
             log.error("Could not get context", res)
             continue
 
           context = res['Value']
-          res = ftsJob.submit(context = context)
+          res = ftsJob.submit(context=context)
 
           if not res['OK']:
             log.error("Could not submit FTS3Job", "FTS3Operation %s : %s" %
@@ -347,14 +343,14 @@ class FTS3Agent(AgentModule):
         * Spawn a thread to treat each operation
     """
 
-    log = gLogger.getSubLogger("treatOperations", child = True)
+    log = gLogger.getSubLogger("treatOperations", child=True)
 
     thPool = ThreadPool(self.maxNumberOfThreads)
 
     log.info("Getting non finished operations")
 
     res = self.fts3db.getNonFinishedOperations(
-        limit = self.operationBulkSize, operationAssignmentTag = self.assignmentTag)
+        limit=self.operationBulkSize, operationAssignmentTag=self.assignmentTag)
 
     if not res['OK']:
       log.error("Could not get incomplete operations", res)
@@ -369,7 +365,7 @@ class FTS3Agent(AgentModule):
       # queue the execution of self._treatOperation( operation ) in the thread pool
       # The returned value is passed to _treatOperationCallback
       thPool.apply_async(
-          self._treatOperation, (operation, ), callback = self._treatOperationCallback)
+          self._treatOperation, (operation, ), callback=self._treatOperationCallback)
 
     log.debug("All execution queued")
 
@@ -386,7 +382,7 @@ class FTS3Agent(AgentModule):
   def execute(self):
     """ one cycle execution """
 
-    log = gLogger.getSubLogger("execute", child = True)
+    log = gLogger.getSubLogger("execute", child=True)
 
     log.info("Monitoring job")
     res = self.monitorJobsLoop()

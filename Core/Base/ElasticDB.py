@@ -1,12 +1,11 @@
 """ ElasticDB is a base class used to connect an Elasticsearch database and manages queries.
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
 from DIRAC.ConfigurationSystem.Client.Utilities import getElasticDBParameters
-
-
-__RCSID__ = "$Id$"
 
 
 class ElasticDB(ElasticSearchDB):
@@ -53,7 +52,7 @@ class ElasticDB(ElasticSearchDB):
                                       self.__user,
                                       self.__dbPassword,
                                       indexPrefix)
-    except AttributeError as e:
+    except BaseException as e:
       self.log.warn("Attempt to connect with useSSL=True failed, trying without")
       self.log.warn(repr(e))
       super(ElasticDB, self).__init__(self.__dbHost,
