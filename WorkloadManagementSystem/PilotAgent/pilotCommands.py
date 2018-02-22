@@ -506,7 +506,11 @@ class CheckWNCapabilities( CommandBase ):
 
     maxRAM = self.pp.queueParameters.get('MaxRAM', maxRAM)
     if maxRAM:
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%d"' % maxRAM )
+      try:
+        self.cfg.append(
+            '-o "/Resources/Computing/CEDefaults/MaxRAM=%d"' % int(maxRAM))
+      except ValueError:
+        self.log.warn("MaxRAM is not an integer, will not fill it")
     else:
       self.log.warn(
           "Could not retrieve MaxRAM, this parameter won't be filled")
@@ -832,14 +836,15 @@ class ConfigureCPURequirements( CommandBase ):
     # FIXME: this is a (necessary) hack!
     cpuNormalizationFactor = float( cpuNormalizationFactorOutput.split( '\n' )[0].replace( "Estimated CPU power is ",
                                                                                            '' ).replace( " HS06", '' ) )
-    self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
+    self.log.info("Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" %
+                  cpuNormalizationFactor)
 
     configFileArg = ''
     if self.pp.useServerCertificate:
       configFileArg = '-o /DIRAC/Security/UseServerCertificate=yes'
-    retCode, cpuTimeOutput = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time %s %s' % ( configFileArg,
-                                                                                                self.pp.localConfigFile ),
-                                                       self.pp.installEnv )
+    retCode, cpuTimeOutput = self.executeAndGetOutput('dirac-wms-get-queue-cpu-time %s %s' % (configFileArg,
+                                                                                              self.pp.localConfigFile),
+                                                      self.pp.installEnv)
 
     if retCode:
       self.log.error( "Failed to determine cpu time left in the queue [ERROR %d]" % retCode )
@@ -847,6 +852,7 @@ class ConfigureCPURequirements( CommandBase ):
 
     for line in cpuTimeOutput.split( '\n' ):
       if "CPU time left determined as" in line:
+        # FIXME: this is horrible
         cpuTime = int(line.replace("CPU time left determined as", '').strip())
     self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
 
