@@ -367,16 +367,17 @@ function diracReplace(){
   wget $DIRAC_ALTERNATIVE_SRC_ZIP
   zipName=$(basename $DIRAC_ALTERNATIVE_SRC_ZIP)
   unzip $zipName
+  cd $SERVERINSTALLDIR
   dirName="DIRAC-$(echo $zipName | sed 's/\.zip//g')"
-  if [ -d "DIRAC" ];
+  if [ -d "DIRAC" ]
   then
-    mv DIRAC DIRAC.bak;
+    mv DIRAC DIRAC.bak
   else
     echo "There is no previous DIRAC directory ??!!!"
     ls
     exit 1
   fi
-  mv $dirName $SERVERINSTALLDIR/DIRAC
+  mv $dirName DIRAC
 
   cd $cwd
 
