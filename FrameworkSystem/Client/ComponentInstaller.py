@@ -25,10 +25,11 @@ The Following Options are used::
   /LocalInstallation/Database/Port:                 (default 3306)
   /LocalInstallation/Database/MySQLSmallMem:        Configure a MySQL with small memory requirements for testing purposes innodb_buffer_pool_size=200MB
   /LocalInstallation/Database/MySQLLargeMem:        Configure a MySQL with high memory requirements for production purposes innodb_buffer_pool_size=10000MB
-  /LocalInstallation/NoSQLDatabase/User:            (default Dirac)
-  /LocalInstallation/NoSQLDatabase/Password:        (must be set for SystemAdministrator Service to work)
   /LocalInstallation/NoSQLDatabase/Host:            (must be set for SystemAdministrator Service to work)
   /LocalInstallation/NoSQLDatabase/Port:            (default 9200)
+  /LocalInstallation/NoSQLDatabase/User:            (default '')
+  /LocalInstallation/NoSQLDatabase/Password:        (not strictly necessary)
+  /LocalInstallation/NoSQLDatabase/SSL:             (default True)
 
 The setupSite method (used by the dirac-setup-site command) will use the following info::
 
@@ -128,10 +129,11 @@ class ComponentInstaller(object):
     self.mysqlPort = ''
     self.mysqlSmallMem = ''
     self.mysqlLargeMem = ''
-    self.noSQLUser = ''
-    self.noSQLPassword = ''
     self.noSQLHost = ''
     self.noSQLPort = ''
+    self.noSQLUser = ''
+    self.noSQLPassword = ''
+    self.noSQLSSL = ''
     self.controlDir = ''
     self.componentTypes = ['service', 'agent', 'executor', 'consumer']
     self.monitoringClient = None
@@ -245,19 +247,6 @@ class ComponentInstaller(object):
       gLogger.verbose('Configuring MySQL server for Large Memory usage')
 
     # Now some noSQL defaults
-    self.noSQLUser = self.localCfg.getOption(cfgInstallPath('NoSQLDatabase', 'User'), self.noSQLUser)
-    if self.noSQLUser:
-      gLogger.verbose('Reading NoSQL User from local configuration')
-    else:
-      gLogger.warn('Using default NoSQL User')
-      self.noSQLUser = 'Dirac'
-
-    self.noSQLPassword = self.localCfg.getOption(cfgInstallPath('NoSQLDatabase', 'Password'), self.noSQLPassword)
-    if self.noSQLPassword:
-      gLogger.verbose('Reading %s NoSQL Password from local configuration ' % self.noSQLUser)
-    else:
-      gLogger.warn('NoSQL password not found')
-
     self.noSQLHost = self.localCfg.getOption(cfgInstallPath('NoSQLDatabase', 'Host'), '')
     if self.noSQLHost:
       gLogger.verbose('Using NoSQL Host from local configuration', self.noSQLHost)
@@ -271,6 +260,25 @@ class ComponentInstaller(object):
     else:
       gLogger.warn('Using the default port 9200')
       self.noSQLPort = 9200
+
+    self.noSQLUser = self.localCfg.getOption(cfgInstallPath('NoSQLDatabase', 'User'), self.noSQLUser)
+    if self.noSQLUser:
+      gLogger.verbose('Reading NoSQL User from local configuration')
+    else:
+      gLogger.warn('NoSQL user not found')
+
+    self.noSQLPassword = self.localCfg.getOption(cfgInstallPath('NoSQLDatabase', 'Password'), self.noSQLPassword)
+    if self.noSQLPassword:
+      gLogger.verbose('Reading %s NoSQL Password from local configuration ' % self.noSQLUser)
+    else:
+      gLogger.warn('NoSQL password not found')
+
+    self.noSQLSSL = self.localCfg.getOption(cfgInstallPath('NoSQLDatabase', 'SSL'), self.noSQLSSL)
+    if self.noSQLSSL:
+      gLogger.verbose("Reading NoSQL SSL choice from local configuration")
+    else:
+      gLogger.warn("NoSQL SSL choice not found")
+
 
     # Now ready to insert components in the Component Monitoring DB
     self.monitoringClient = ComponentMonitoringClient()
@@ -1719,9 +1727,9 @@ class ComponentInstaller(object):
           DIRAC.exit(-1)
         return S_ERROR(error)
 
-    if self.noSQLPassword:
+    if self.noSQLHost:
       if not self._addNoSQLToDiracCfg():
-        error = 'Failed to add NoSQL user/password to local configuration'
+        error = 'Failed to add NoSQL connection details to local configuration'
         if self.exitOnError:
           gLogger.error(error)
           DIRAC.exit(-1)
@@ -2696,14 +2704,15 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     """
     Add the NoSQL database access info to the local configuration
     """
-    if not self.noSQLPassword:
-      return S_ERROR('Missing %s in %s' % (cfgInstallPath('NoSQLDatabase', 'Password'), self.cfgFile))
-
     sectionPath = cfgPath('Systems', 'NoSQLDatabases')
-    cfg = self.__getCfg(sectionPath, 'User', self.noSQLUser)
-    cfg.setOption(cfgPath(sectionPath, 'Password'), self.noSQLPassword)
-    cfg.setOption(cfgPath(sectionPath, 'Host'), self.noSQLHost)
+    cfg = self.__getCfg(sectionPath, 'Host', self.noSQLHost)
     cfg.setOption(cfgPath(sectionPath, 'Port'), self.noSQLPort)
+    if self.noSQLUser:
+      cfg.setOption(cfgPath(sectionPath, 'User'), self.noSQLUser)
+    if self.noSQLPassword:
+      cfg.setOption(cfgPath(sectionPath, 'Password'), self.noSQLPassword)
+    if self.noSQLSSL:
+      cfg.setOption(cfgPath(sectionPath, 'SSL'), self.noSQLSSL)
 
     return self._addCfgToDiracCfg(cfg)
 
