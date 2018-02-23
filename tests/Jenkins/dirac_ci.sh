@@ -122,6 +122,9 @@ function installSite(){
     return
   fi
 
+  #replace the sources with custom ones if defined
+  diracReplace
+
   dirac-setup-site $DEBUG
   if [ $? -ne 0 ]
   then
@@ -157,9 +160,6 @@ function fullInstallDIRAC(){
     echo 'ERROR: installSite failed'
     return
   fi
-
-  #replace the sources with custom ones if defined
-  diracReplace
 
   #Dealing with security stuff
   # generateCertificates
