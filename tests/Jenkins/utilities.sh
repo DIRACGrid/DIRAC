@@ -362,7 +362,7 @@ function diracReplace(){
   fi
 
   cwd=$PWD
-  cd SERVERINSTALLDIR
+  cd $SERVERINSTALLDIR
 
   wget $DIRAC_ALTERNATIVE_SRC_ZIP
   zipName=$(basename $DIRAC_ALTERNATIVE_SRC_ZIP)
