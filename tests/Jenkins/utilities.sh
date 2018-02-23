@@ -1151,7 +1151,7 @@ function installES(){
   curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.2.tar.gz
   tar -xvf elasticsearch-6.1.2.tar.gz
   cd elasticsearch-6.1.2/bin
-  ./elasticsearch -d -Ecluster.name=jenkins_cluster -Enode.name=jenkins_node
+  ./elasticsearch -d -Ecluster.name=jenkins_cluster -Enode.name=jenkins_node &
 
   cd ../..
 }

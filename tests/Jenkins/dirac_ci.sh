@@ -147,6 +147,9 @@ function fullInstallDIRAC(){
 
   finalCleanup
 
+  # install ElasticSearch locally
+  installES
+
   #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   installSite
   if [ $? -ne 0 ]
@@ -237,9 +240,6 @@ function fullInstallDIRAC(){
   #fix the DBs (for the FileCatalog)
   diracDFCDB
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py $DEBUG
-
-  # install ElasticSearch locally
-  installES
 
   #services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
