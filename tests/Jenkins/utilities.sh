@@ -375,8 +375,8 @@ function diracReplace(){
   else
     echo "There is no previous DIRAC directory ??!!!"
     ls
-    exit 1
   fi
+  cd $SERVERINSTALLDIR
   mv $dirName DIRAC
 
   cd $cwd
