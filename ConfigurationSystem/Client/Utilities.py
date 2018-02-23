@@ -634,4 +634,17 @@ def getElasticDBParameters(fullname):
     dbPass = result['Value']
   parameters['Password'] = dbPass
 
+  result = gConfig.getOption(cs_path + '/SSL')
+  if not result['OK']:
+    # No SSL option found, try at the common place
+    result = gConfig.getOption('/Systems/NoSQLDatabases/SSL')
+    if not result['OK']:
+      gLogger.warn("Failed to get the configuration parameter: SSL. Assuming SSL is needed")
+      ssl = True
+    else:
+      ssl = False if result['Value'].lower() in ('false', 'no', 'n') else True
+  else:
+    ssl = False if result['Value'].lower() in ('false', 'no', 'n') else True
+  parameters['SSL'] = ssl
+
   return S_OK(parameters)

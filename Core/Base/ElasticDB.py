@@ -39,35 +39,25 @@ class ElasticDB(ElasticSearchDB):
     self.__dbHost = dbParameters['Host']
     self.__dbPort = dbParameters['Port']
     # we can have db which does not have any authentication...
-    self.__user = ''
-    if 'User' in dbParameters:
-      self.__user = dbParameters['User']
-    self.__dbPassword = ''
-    if 'Password' in dbParameters:
-      self.__dbPassword = dbParameters['Password']
+    self.__user = dbParameters.get('User', '')
+    self.__dbPassword = dbParameters.get('Password', '')
+    self.__useSSL = dbParameters.get('SSL', True)
 
-    try:
-      super(ElasticDB, self).__init__(self.__dbHost,
-                                      self.__dbPort,
-                                      self.__user,
-                                      self.__dbPassword,
-                                      indexPrefix)
-    except BaseException as e:
-      self.log.warn("Attempt to connect with useSSL=True failed, trying without")
-      self.log.warn(repr(e))
-      super(ElasticDB, self).__init__(self.__dbHost,
-                                      self.__dbPort,
-                                      self.__user,
-                                      self.__dbPassword,
-                                      indexPrefix,
-                                      useSSL=False)
-
+    super(ElasticDB, self).__init__(self.__dbHost,
+                                    self.__dbPort,
+                                    self.__user,
+                                    self.__dbPassword,
+                                    indexPrefix,
+                                    useSSL=self.__useSSL)
     if not self._connected:
       raise RuntimeError('Can not connect to DB %s, exiting...' % self.clusterName)
 
     self.log.info("==================================================")
     self.log.info("Host: %s " % self.__dbHost)
     self.log.info("Port: %d " % self.__dbPort)
+    self.log.info("Connecting with %s, %s:%s" % ('SSL' if self.__useSSL else 'no SSL',
+                                                 self.__user if self.__user else 'no user',
+                                                 'with password' if self.__dbPassword else 'no password'))
     self.log.info("ClusterName: %s   " % self.clusterName)
     self.log.info("==================================================")
 
