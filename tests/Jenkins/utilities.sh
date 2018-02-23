@@ -368,7 +368,7 @@ function diracReplace(){
   zipName=$(basename $DIRAC_ALTERNATIVE_SRC_ZIP)
   unzip $zipName
   cd $SERVERINSTALLDIR
-  dirName="DIRAC-$(echo $zipName | sed 's/\.zip//g')"
+  dirName=$(unzip -l $zipName | head | tail -n 1 | sed 's/  */ /g' | cut -f 5 -d ' ' | cut -f 1 -d '/')
   if [ -d "DIRAC" ]
   then
     mv DIRAC DIRAC.bak
