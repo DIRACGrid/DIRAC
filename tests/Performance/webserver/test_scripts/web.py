@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """
-It is used to test the tornado web framework
+It is used to test the tornado web framework. This can be used:
+-change of an underlying library such as ThreadPool
+-change of the Tornado configuration (running more Tornado processes)
+-Tornado scalability of a certain machine
 """
 
 import time
@@ -11,12 +14,13 @@ class Transaction(object):
 
   def __init__(self):
     self.custom_timers = {}
+    self.url = "/DIRAC/s:LHCb-Certification/g:lhcb_prmgr/ExampleApp/getSelectionData"
     self.conn = httplib.HTTPConnection("lhcb-cert-dirac.cern.ch")
 
   def run(self):
     # print len(datasets)
     start_time = time.time()
-    self.conn.request("GET", "/DIRAC/s:LHCb-Certification/g:lhcb_prmgr/ExampleApp/getSelectionData")
+    self.conn.request("GET", self.url)
     r1 = self.conn.getresponse()
     if r1.status != 200:
       print r1.status, r1.reason
