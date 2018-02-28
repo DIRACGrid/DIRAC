@@ -24,7 +24,7 @@
 """
 
 
-# pylint: disable=protected-access,missing-docstring,wrong-import-position,invalid-name
+# pylint: disable=protected-access,wrong-import-position,invalid-name
 
 import unittest
 import datetime
