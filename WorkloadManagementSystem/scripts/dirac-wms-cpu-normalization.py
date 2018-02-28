@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################################################
 # File :    dirac-wms-cpu-normalization
-# Author :  Ricardo Graciani
+# Author :  Andrew McNab
 ########################################################################
 """
   Determine Normalization for current CPU
