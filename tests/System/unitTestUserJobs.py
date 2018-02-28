@@ -1,6 +1,8 @@
 """ Collection of user jobs for testing purposes
 """
 
+# pylint: disable=wrong-import-position, invalid-name
+
 import unittest
 
 from DIRAC.Core.Base.Script import parseCommandLine
@@ -9,7 +11,7 @@ parseCommandLine()
 from DIRAC import gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob
+from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, parametricJob
 
 gLogger.setLevel('VERBOSE')
 
@@ -43,6 +45,10 @@ class submitSuccess(GridSubmissionTestCase):
     jobsSubmittedList.append(res['Value'])
 
     res = mpJob()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
+    res = parametricJob()
     self.assertTrue(res['OK'])
     jobsSubmittedList.append(res['Value'])
 

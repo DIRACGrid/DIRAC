@@ -1,6 +1,8 @@
 """ Collection of user jobs for testing purposes
 """
 
+# pylint: disable=invalid-name
+
 import os
 
 from DIRAC import rootPath
@@ -29,7 +31,6 @@ def getDIRAC(diracClass=None):
 
 
 def baseToAllJobs(jName, jobClass=None):
-
   print "**********************************************************************************************************"
   print "\n Submitting job ", jName
 
@@ -52,6 +53,8 @@ def endOfAllJobs(J):
 # List of jobs
 
 def helloWorld():
+  """ simple hello world job
+  """
 
   J = baseToAllJobs('helloWorld')
   try:
@@ -63,6 +66,9 @@ def helloWorld():
 
 
 def mpJob():
+  """ simple hello world job, with MultiProcessor tag
+  """
+
   J = baseToAllJobs('mpJob')
   try:
     J.setInputSandbox([find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0]] +
@@ -73,4 +79,19 @@ def mpJob():
 
   J.setExecutable('testMpJob.sh mpTest.py')
   J.setTag('MultiProcessor')
+  return endOfAllJobs(J)
+
+
+def parametricJob():
+  """ Creates a parametric job with 3 subjobs which are simple hello world jobs
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setParameterSequence("args", ['one', 'two', 'three'])
+  J.setParameterSequence("iargs", [1, 2, 3])
+  J.setExecutable("exe-script.py", arguments=": testing %(args)s %(iargs)s", logFile='helloWorld_%n.log')
   return endOfAllJobs(J)
