@@ -1228,7 +1228,7 @@ EOF
         # Retrieve the pilot output now
         if newStatus in FINAL_PILOT_STATUS:
           if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
-            self._getPilotOutput(pRef, pilotDict, ce)
+            self._getPilotOutput(pRef, pilotDict, ce, ceName)
 
       # If something wrong in the queue, make a pause for the job submission
       if abortedPilots:
@@ -1296,7 +1296,6 @@ EOF
 
     return S_OK()
 
-
   def _getPilotOutput(self, pRef, pilotDict, ce, ceName):
     """ Retrieves the pilot output for a pilot and stores it in the pilotAgentsDB
     """
@@ -1317,7 +1316,6 @@ EOF
           self.log.error('Failed to store pilot output', result['Message'])
       else:
         self.log.warn('Empty pilot output not stored to PilotDB')
-
 
   def sendPilotAccounting(self, pilotDict):
     """ Send pilot accounting record
