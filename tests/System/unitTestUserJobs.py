@@ -5,13 +5,14 @@
 
 import unittest
 
+from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, parametricJob
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, parametricJob
 
 gLogger.setLevel('VERBOSE')
 
