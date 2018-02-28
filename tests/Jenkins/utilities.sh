@@ -849,16 +849,23 @@ diracUninstallServices(){
   #  echo '==> getting/uploading proxy for prod'
   #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
 
+  # check if errexit mode is set and disabling as the component may not exist
+  save=$-
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
+
   for serv in $services
   do
     echo '==> calling dirac-uninstall-component' $serv $DEBUG
     dirac-uninstall-component -f $serv $DEBUG
-    if [ $? -ne 0 ]
-    then
-      echo 'ERROR: dirac-uninstall-component failed'
-      return
-    fi
   done
+
+  if [[ $save =~ e ]]
+  then
+    set -e
+  fi
 
 }
 
