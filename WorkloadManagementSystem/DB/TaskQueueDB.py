@@ -141,13 +141,6 @@ class TaskQueueDB(DB):
       return result
     return S_OK([row[0] for row in result['Value']])
 
-  def forceRecreationOfTables(self):
-    dropSQL = "DROP TABLE IF EXISTS %s" % ", ".join(self.__tablesDesc)
-    result = self._update(dropSQL)
-    if not result['OK']:
-      return result
-    return self._createTables(self.__tablesDesc)
-
   def fitCPUTimeToSegments(self, cpuTime):
     """
     Fit the CPU time to the valid segments
