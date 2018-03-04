@@ -5,9 +5,10 @@ __RCSID__ = "$Id$"
 
 import Queue
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.CSAPI       import CSAPI
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
-def getMQParamsFromCS( mqURI ):
+
+def getMQParamsFromCS(mqURI):
   """ Function gets parameters of a MQ destination (queue/topic) from the CS.
 
   Args:
@@ -16,57 +17,62 @@ def getMQParamsFromCS( mqURI ):
               e.g. blabla.cern.ch::Queue::MyQueue1
     mType(str): 'consumer' or 'producer'
   Returns:
-    S_OK(param_dicts) or S_ERROR:
+    S_OK(param_dicts) or S_ERROR
   """
   # API initialization is required to get an up-to-date configuration from the CS
   csAPI = CSAPI()
   csAPI.initialize()
 
-  try :
-    mqService, mqType, mqName = mqURI.split( "::" )
+  try:
+    mqService, mqType, mqName = mqURI.split("::")
   except ValueError:
-    return S_ERROR( 'Bad format of mqURI address:%s' % ( mqURI ) )
+    return S_ERROR('Bad format of mqURI address:%s' % (mqURI))
 
-  result = gConfig.getConfigurationTree( '/Resources/MQServices', mqService, mqType, mqName )
+  result = gConfig.getConfigurationTree('/Resources/MQServices', mqService, mqType, mqName)
   if not result['OK'] or not result['Value']:
-    return S_ERROR( 'Requested destination not found in the CS: %s::%s::%s' % ( mqService, mqType, mqName ) )
+    return S_ERROR('Requested destination not found in the CS: %s::%s::%s' % (mqService, mqType, mqName))
   mqDestinationPath = None
   for path, value in result['Value'].iteritems():
-    if not value and path.endswith( mqName ):
+    if not value and path.endswith(mqName):
       mqDestinationPath = path
 
   # set-up internal parameter depending on the destination type
-  tmp = mqDestinationPath.split( 'Queue' )[0].split( 'Topic' )
+  tmp = mqDestinationPath.split('Queue')[0].split('Topic')
   servicePath = tmp[0]
   serviceDict = {}
-  if len( tmp ) > 1:
+  if len(tmp) > 1:
     serviceDict['Topic'] = mqName
   else:
     serviceDict['Queue'] = mqName
 
-  result = gConfig.getOptionsDict( servicePath )
+  result = gConfig.getOptionsDict(servicePath)
   if not result['OK']:
     return result
-  serviceDict.update( result['Value'] )
+  serviceDict.update(result['Value'])
 
-  result = gConfig.getOptionsDict( mqDestinationPath )
+  result = gConfig.getOptionsDict(mqDestinationPath)
   if not result['OK']:
     return result
-  serviceDict.update( result['Value'] )
-  return S_OK( serviceDict )
+  serviceDict.update(result['Value'])
+  return S_OK(serviceDict)
 
-def getMQService( mqURI ):
-  return mqURI.split( "::" )[0]
 
-def getDestinationType( mqURI ):
-  return mqURI.split( "::" )[1]
+def getMQService(mqURI):
+  return mqURI.split("::")[0]
 
-def getDestinationName( mqURI ):
-  return mqURI.split( "::" )[2]
 
-def getDestinationAddress( mqURI ):
-  mqType, mqName = mqURI.split( "::" )[-2:]
-  return "/" + mqType.lower( ) + "/" + mqName
+def getDestinationType(mqURI):
+  return mqURI.split("::")[1]
+
+
+def getDestinationName(mqURI):
+  return mqURI.split("::")[2]
+
+
+def getDestinationAddress(mqURI):
+  mqType, mqName = mqURI.split("::")[-2:]
+  return "/" + mqType.lower() + "/" + mqName
+
 
 def generateDefaultCallback():
   """ Function generates a default callback that can
@@ -90,10 +96,12 @@ def generateDefaultCallback():
     object: callback function
   """
   msgQueue = Queue.Queue()
-  def callback( headers, body ):
-    msgQueue.put( body )
+
+  def callback(headers, body):
+    msgQueue.put(body)
     return S_OK()
-  def get( ):
-    return msgQueue.get( block = False )
+
+  def get():
+    return msgQueue.get(block=False)
   callback.get = get
   return callback

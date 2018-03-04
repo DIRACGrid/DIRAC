@@ -51,6 +51,8 @@ class AgentsTestCase(unittest.TestCase):
 
 
 class SiteDirectorBaseSuccess(AgentsTestCase):
+  """ Testing the single methods of SiteDirector
+  """
 
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Operations", side_effect=mockOPS)
@@ -75,7 +77,7 @@ class SiteDirectorBaseSuccess(AgentsTestCase):
     res = sd._getPilotOptions('aQueue', 10)
     self.assertEqual(res, [['-S TestSetup', '-V 123', '-l 123', '-r 1,2,3', '-g 123',
                             '-o /Security/ProxyToken=token', '-M 1', '-C T,e,s,t,S,e,t,u,p',
-                            '-e 1,2,3', '-T 12345', '-N aCE', '-Q aQueue', '-n LCG.CERN.cern'],
+                            '-e 1,2,3', '-N aCE', '-Q aQueue', '-n LCG.CERN.cern'],
                            1])
 
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)

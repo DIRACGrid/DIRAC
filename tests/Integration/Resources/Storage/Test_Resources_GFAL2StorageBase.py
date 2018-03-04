@@ -55,7 +55,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 #### GLOBAL VARIABLES: ################
 
 # Name of the storage element that has to be tested
-# gLogger.setLevel('DEBUG')
+gLogger.setLevel('DEBUG')
 
 STORAGE_NAME = posArgs[0]
 # Size in bytes of the file we want to produce

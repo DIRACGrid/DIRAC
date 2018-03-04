@@ -31,7 +31,8 @@ csAPI.setOption('Systems/WorkloadManagement/Production/Services/SandboxStore/Log
 #     ProductionSandboxSE
 #     {
 #       BackendType = DISET
-#       AccessProtocol.1
+#       AccessProtocol = dips
+#       DIP
 #       {
 #         Host = localhost
 #         Port = 9196
@@ -39,8 +40,6 @@ csAPI.setOption('Systems/WorkloadManagement/Production/Services/SandboxStore/Log
 #         Protocol = dips
 #         Path = /scratch/workspace/%s/sandboxes % setupName
 #         Access = remote
-#         SpaceToken =
-#         WSUrl =
 #       }
 #     }
 res = csAPI.createSection('Resources/StorageElements/')
@@ -53,16 +52,18 @@ if not res['OK']:
   print res['Message']
   exit(1)
 csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/BackendType', 'DISET')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/AccessProtocol', 'dips')
 
-res = csAPI.createSection('Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1')
+res = csAPI.createSection('Resources/StorageElements/ProductionSandboxSE/DIP')
 if not res['OK']:
   print res['Message']
   exit(1)
-csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Host', 'localhost')
-csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Port', '9196')
-csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/ProtocolName', 'DIP')
-csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Path', '%s/sandboxes' % setupName)
-csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Access', 'remote')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Host', 'localhost')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Port', '9196')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/ProtocolName', 'DIP')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Protocol', 'dips')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Access', 'remote')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Path', '%s/sandboxes' % setupName)
 
 # Now setting a FileCatalogs section as the following:
 #     FileCatalogs

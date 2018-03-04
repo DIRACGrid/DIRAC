@@ -19,7 +19,6 @@
 
 __RCSID__ = "$Id$"
 
-from types import IntType, LongType, ListType
 import threading
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -203,8 +202,7 @@ class PilotAgentsDB(DB):
 
     if failed:
       return S_ERROR('Failed to remove pilot from %s tables' % ', '.join(failed))
-    else:
-      return S_OK(pilotIDs)
+    return S_OK(pilotIDs)
 
 ##########################################################################################
   def deletePilot(self, pilotRef, conn=False):
@@ -404,18 +402,16 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       else:
         if result['Value']:
           return int(result['Value'][0][0])
-        else:
-          return 0
+        return 0
     else:
       refString = ','.join(["'" + ref + "'" for ref in pilotRef])
       req = "SELECT PilotID from PilotAgents WHERE PilotJobReference in ( %s )" % refString
       result = self._query(req)
       if not result['OK']:
         return []
-      elif result['Value']:
+      if result['Value']:
         return [x[0] for x in result['Value']]
-      else:
-        return []
+      return []
 
 ##########################################################################################
   def setJobForPilot(self, jobID, pilotRef, site=None, updateStatus=True):
@@ -490,8 +486,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       if result['Value']:
         pilotList = [x[0] for x in result['Value']]
         return S_OK(pilotList)
-      else:
-        return S_ERROR('PilotJobReferences for TaskQueueID %s not found' % taskQueueID)
+      return S_ERROR('PilotJobReferences for TaskQueueID %s not found' % taskQueueID)
 
 ##########################################################################################
   def getPilotsForJobID(self, jobID):
@@ -501,29 +496,29 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     result = self._query('SELECT PilotID FROM JobToPilotMapping WHERE JobID=%s' % jobID)
 
     if not result['OK']:
+      gLogger.error("getPilotsForJobID failed", result['Message'])
       return result
 
     if result['Value']:
       pilotList = [x[0] for x in result['Value']]
       return S_OK(pilotList)
-    else:
-      return S_ERROR('PilotID for job %d not found' % jobID)
+    gLogger.warn('PilotID for job %d not found: not matched yet?' % jobID)
+    return S_OK([])
 
 ##########################################################################################
   def getPilotCurrentJob(self, pilotRef):
-    """ The the job ID currently executed by the pilot
+    """ The job ID currently executed by the pilot
     """
     req = "SELECT CurrentJobID FROM PilotAgents WHERE PilotJobReference='%s' " % pilotRef
 
     result = self._query(req)
     if not result['OK']:
       return result
-    else:
-      if result['Value']:
-        jobID = int(result['Value'][0][0])
-        return S_OK(jobID)
-      else:
-        return S_ERROR('Current job ID for pilot %s is not known' % pilotRef)
+    if result['Value']:
+      jobID = int(result['Value'][0][0])
+      return S_OK(jobID)
+    gLogger.warn('Current job ID for pilot %s is not known: pilot did not match jobs yet?' % pilotRef)
+    return S_OK()
 
 ##########################################################################################
   # FIXME: investigate it getPilotSummaryShort can replace this method

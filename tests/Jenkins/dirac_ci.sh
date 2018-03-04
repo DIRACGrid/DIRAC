@@ -104,6 +104,8 @@ function installSite(){
   sed -i s/VAR_DB_RootPwd/$DB_ROOTPWD/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_DB_Host/$DB_HOST/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Host/$NoSQLDB_HOST/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
 
   echo '==> Started installing'
   $SERVERINSTALLDIR/dirac-install.py -t fullserver $SERVERINSTALLDIR/install.cfg $DEBUG
@@ -121,6 +123,9 @@ function installSite(){
     echo 'ERROR: dirac-configure failed'
     return
   fi
+
+  #replace the sources with custom ones if defined
+  diracReplace
 
   dirac-setup-site $DEBUG
   if [ $? -ne 0 ]
@@ -147,6 +152,9 @@ function fullInstallDIRAC(){
 
   finalCleanup
 
+  # install ElasticSearch locally
+  installES
+
   #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   installSite
   if [ $? -ne 0 ]
@@ -154,9 +162,6 @@ function fullInstallDIRAC(){
     echo 'ERROR: installSite failed'
     return
   fi
-
-  #replace the sources with custom ones if defined
-  diracReplace
 
   #Dealing with security stuff
   # generateCertificates
@@ -237,9 +242,6 @@ function fullInstallDIRAC(){
   #fix the DBs (for the FileCatalog)
   diracDFCDB
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py $DEBUG
-
-  # install ElasticSearch locally
-  installES
 
   #services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'

@@ -3,8 +3,11 @@
 # Author :  A.T.
 ########################################################################
 
-"""  The Site Director is a simple agent performing pilot job submission to particular sites.
+"""  The Site Director is an agent performing pilot job submission to particular sites.
 """
+
+__RCSID__ = "$Id$"
+
 import os
 import base64
 import bz2
@@ -13,7 +16,6 @@ import random
 import socket
 import hashlib
 from collections import defaultdict
-
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -36,7 +38,6 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.Time import dateTime, second
 from DIRAC.Core.Utilities.List import fromChar
 
-__RCSID__ = "$Id$"
 
 DIRAC_PILOT = os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py')
 DIRAC_INSTALL = os.path.join(DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py')
@@ -1227,22 +1228,7 @@ EOF
         # Retrieve the pilot output now
         if newStatus in FINAL_PILOT_STATUS:
           if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
-            self.log.info('Retrieving output for pilot %s' % pRef)
-            pilotStamp = pilotDict[pRef]['PilotStamp']
-            pRefStamp = pRef
-            if pilotStamp:
-              pRefStamp = pRef + ':::' + pilotStamp
-            result = ce.getJobOutput(pRefStamp)
-            if not result['OK']:
-              self.log.error('Failed to get pilot output', '%s: %s' % (ceName, result['Message']))
-            else:
-              output, error = result['Value']
-              if output:
-                result = pilotAgentsDB.storePilotOutput(pRef, output, error)
-                if not result['OK']:
-                  self.log.error('Failed to store pilot output', result['Message'])
-              else:
-                self.log.warn('Empty pilot output not stored to PilotDB')
+            self._getPilotOutput(pRef, pilotDict, ce, ceName)
 
       # If something wrong in the queue, make a pause for the job submission
       if abortedPilots:
@@ -1282,20 +1268,7 @@ EOF
         continue
       pilotDict = result['Value']
       if self.getOutput:
-        for pRef in pilotRefs:
-          self.log.info('Retrieving output for pilot %s' % pRef)
-          pilotStamp = pilotDict[pRef]['PilotStamp']
-          pRefStamp = pRef
-          if pilotStamp:
-            pRefStamp = pRef + ':::' + pilotStamp
-          result = ce.getJobOutput(pRefStamp)
-          if not result['OK']:
-            self.log.error('Failed to get pilot output', '%s: %s' % (ceName, result['Message']))
-          else:
-            output, error = result['Value']
-            result = pilotAgentsDB.storePilotOutput(pRef, output, error)
-            if not result['OK']:
-              self.log.error('Failed to store pilot output', result['Message'])
+        self._getPilotOutput(pRef, pilotDict, ce, ceName)
 
       # Check if the accounting is to be sent
       if self.sendAccounting:
@@ -1322,6 +1295,27 @@ EOF
           self.log.error('Failed to send pilot agent accounting')
 
     return S_OK()
+
+  def _getPilotOutput(self, pRef, pilotDict, ce, ceName):
+    """ Retrieves the pilot output for a pilot and stores it in the pilotAgentsDB
+    """
+
+    self.log.info('Retrieving output for pilot %s' % pRef)
+    pilotStamp = pilotDict[pRef]['PilotStamp']
+    pRefStamp = pRef
+    if pilotStamp:
+      pRefStamp = pRef + ':::' + pilotStamp
+    result = ce.getJobOutput(pRefStamp)
+    if not result['OK']:
+      self.log.error('Failed to get pilot output', '%s: %s' % (ceName, result['Message']))
+    else:
+      output, error = result['Value']
+      if output:
+        result = pilotAgentsDB.storePilotOutput(pRef, output, error)
+        if not result['OK']:
+          self.log.error('Failed to store pilot output', result['Message'])
+      else:
+        self.log.warn('Empty pilot output not stored to PilotDB')
 
   def sendPilotAccounting(self, pilotDict):
     """ Send pilot accounting record

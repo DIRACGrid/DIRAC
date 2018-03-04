@@ -361,18 +361,25 @@ function diracReplace(){
     return
   fi
 
-  wget $DIRAC_ALTERNATIVE_SRC_ZIP $SERVERINSTALLDIR/
+  cwd=$PWD
+  cd $SERVERINSTALLDIR
+
+  wget $DIRAC_ALTERNATIVE_SRC_ZIP
   zipName=$(basename $DIRAC_ALTERNATIVE_SRC_ZIP)
   unzip $zipName
-  dirName="DIRAC-$(echo $zipName | sed 's/\.zip//g')"
-  if [ -d "DIRAC" ];
+  cd $SERVERINSTALLDIR
+  dirName=$(unzip -l $zipName | head | tail -n 1 | sed 's/  */ /g' | cut -f 5 -d ' ' | cut -f 1 -d '/')
+  if [ -d "DIRAC" ]
   then
-    mv $SERVERINSTALLDIR/DIRAC $SERVERINSTALLDIR/DIRAC.bak;
+    mv DIRAC DIRAC.bak
   else
     echo "There is no previous DIRAC directory ??!!!"
     ls
   fi
-  mv $dirName $SERVERINSTALLDIR/DIRAC
+  cd $SERVERINSTALLDIR
+  mv $dirName DIRAC
+
+  cd $cwd
 
 }
 
@@ -805,7 +812,7 @@ function diracAddSite(){
 diracServices(){
   echo '==> [diracServices]'
 
-  services=`cat services | cut -d '.' -f 1 | grep -v FTSManagerHandler | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
+  services=`cat services | cut -d '.' -f 1 | grep -v PilotsLogging | grep -v FTSManagerHandler | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -842,16 +849,23 @@ diracUninstallServices(){
   #  echo '==> getting/uploading proxy for prod'
   #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
 
+  # check if errexit mode is set and disabling as the component may not exist
+  save=$-
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
+
   for serv in $services
   do
     echo '==> calling dirac-uninstall-component' $serv $DEBUG
     dirac-uninstall-component -f $serv $DEBUG
-    if [ $? -ne 0 ]
-    then
-      echo 'ERROR: dirac-uninstall-component failed'
-      return
-    fi
   done
+
+  if [[ $save =~ e ]]
+  then
+    set -e
+  fi
 
 }
 
@@ -1151,7 +1165,7 @@ function installES(){
   curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.2.tar.gz
   tar -xvf elasticsearch-6.1.2.tar.gz
   cd elasticsearch-6.1.2/bin
-  ./elasticsearch -d -Ecluster.name=jenkins_cluster -Enode.name=jenkins_node
+  ./elasticsearch -d -Ecluster.name=jenkins_cluster -Enode.name=jenkins_node &
 
   cd ../..
 }
