@@ -1,4 +1,4 @@
-[v6r20-pre14]
+[v6r20-pre15]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -73,6 +73,7 @@ CHANGE: WebApp release procedure
 
 *Tests
 FIX: add MonitoringDB to the configuration
+FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
 
 [v6r19p15]
 
