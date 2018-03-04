@@ -1,3 +1,9 @@
+[v6r19p16]
+
+*WMS
+FIX: pilotCommands - cast maxNumOfProcs to an int.
+CHANGE: pilotTools - change maxNumOfProcs short option from -P to -m.
+
 [v6r19p15]
 
 *Framework
