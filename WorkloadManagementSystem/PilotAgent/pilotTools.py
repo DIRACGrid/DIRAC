@@ -409,7 +409,7 @@ class PilotParams( object ):
                      ( 'k', 'keepPP', 'Do not clear PYTHONPATH on start' ),
                      ( 'l:', 'project=', 'Project to install' ),
                      ( 'p:', 'platform=', 'Use <platform> instead of local one' ),
-                     ('P:', 'maxNumberOfProcessors=',
+                     ( 'm:', 'maxNumberOfProcessors=',
                       'specify a max number of processors to use'),
                      ( 'u:', 'url=', 'Use <url> to download tarballs' ),
                      ( 'r:', 'release=', 'DIRAC release to install' ),
@@ -480,7 +480,7 @@ class PilotParams( object ):
         self.installation = v
       elif o == '-p' or o == '--platform':
         self.platform = v
-      elif o == '-P' or o == '--maxNumberOfProcessors':
+      elif o == '-m' or o == '--maxNumberOfProcessors':
         self.maxNumberOfProcessors = v
       elif o == '-D' or o == '--disk':
         try:

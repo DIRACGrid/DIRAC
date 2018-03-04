@@ -75,6 +75,12 @@ CHANGE: WebApp release procedure
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
 
+[v6r19p16]
+
+*WMS
+FIX: pilotCommands - cast maxNumOfProcs to an int.
+CHANGE: pilotTools - change maxNumOfProcs short option from -P to -m.
+
 [v6r19p15]
 
 *Framework

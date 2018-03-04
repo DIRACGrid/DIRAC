@@ -507,7 +507,7 @@ class CheckWNCapabilities(CommandBase):
       self.log.warn("Could not retrieve number of processors, assuming 1")
       numberOfProcessors = 1
     self.cfg.append(
-        '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % numberOfProcessors)
+        '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % int(numberOfProcessors))
 
     maxRAM = self.pp.queueParameters.get('MaxRAM', maxRAM)
     if maxRAM:
