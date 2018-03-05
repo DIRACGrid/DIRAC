@@ -480,23 +480,23 @@ class ComponentInstaller(object):
           users = centralCfg['Registry']['Groups'][group].getOption(  # pylint: disable=unsubscriptable-object
               'Users', [])
           if adminUserName not in users:
-            centralCfg['Registry']['Groups'][group].appendToOption(
-                'Users', ', %s' % adminUserName)  # pylint: disable=unsubscriptable-object
-          if not centralCfg['Registry']['Groups'][group].isOption(
-                  'Properties'):  # pylint: disable=unsubscriptable-object
-            centralCfg['Registry']['Groups'][group].addKey(
-                'Properties', '', '')  # pylint: disable=unsubscriptable-object
+            centralCfg['Registry']['Groups'][group].appendToOption(  # pylint: disable=unsubscriptable-object
+                'Users', ', %s' % adminUserName)
+          if not centralCfg['Registry']['Groups'][group].isOption(  # pylint: disable=unsubscriptable-object
+                  'Properties'):
+            centralCfg['Registry']['Groups'][group].addKey(  # pylint: disable=unsubscriptable-object
+                'Properties', '', '')
 
-        properties = centralCfg['Registry']['Groups'][adminGroupName].getOption(
-            'Properties', [])  # pylint: disable=unsubscriptable-object
+        properties = centralCfg['Registry']['Groups'][adminGroupName].getOption(  # pylint: disable=unsubscriptable-object
+            'Properties', [])
         for prop in adminGroupProperties:
           if prop not in properties:
             properties.append(prop)
-            centralCfg['Registry']['Groups'][adminGroupName].appendToOption(
-                'Properties', ', %s' % prop)  # pylint: disable=unsubscriptable-object
+            centralCfg['Registry']['Groups'][adminGroupName].appendToOption(  # pylint: disable=unsubscriptable-object
+                'Properties', ', %s' % prop)
 
-        properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption(
-            'Properties', [])  # pylint: disable=unsubscriptable-object
+        properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption(  # pylint: disable=unsubscriptable-object
+            'Properties', [])
         for prop in defaultGroupProperties:
           if prop not in properties:
             properties.append(prop)
