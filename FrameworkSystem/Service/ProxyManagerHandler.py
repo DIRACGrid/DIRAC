@@ -2,9 +2,8 @@
     in the DISET framework
 """
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -20,8 +19,24 @@ class ProxyManagerHandler( RequestHandler ):
   def initializeHandler( cls, serviceInfoDict ):
     useMyProxy = cls.srv_getCSOption( "UseMyProxy", False )
     try:
+      extensions = gConfig.getValue('DIRAC/Extensions', [])
+      #is it in the extension?
+      found = False
+      for ext in extensions:
+        try:
+          ProxyDB = getattr(__import__(ext + 'DIRAC.FrameworkSystem.DB.ProxyDB', globals(), locals(), ['ProxyDB']),
+                            'ProxyDB')
+          found = True
+          break
+        except (ImportError, AttributeError):
+          continue
+      # If not found in extensions, import it from DIRAC base.
+      if not found:
+        from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
+
       cls.__proxyDB = ProxyDB( useMyProxy = useMyProxy )
-    except RuntimeError, excp:
+
+    except RuntimeError as excp:
       return S_ERROR( "Can't connect to ProxyDB: %s" % excp )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredTokens, elapsedTime = 900 )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredRequests, elapsedTime = 900 )
