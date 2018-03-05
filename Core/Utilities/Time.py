@@ -293,6 +293,7 @@ def queryTime(f):
     return result
   return measureQueryTime
 
+
 _dateTimeType = type(dateTime())
 _dateType = type(date())
 _timeType = type(time())
