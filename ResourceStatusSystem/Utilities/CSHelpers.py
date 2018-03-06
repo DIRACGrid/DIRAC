@@ -1,29 +1,29 @@
-''' CSHelpers
+""" CSHelpers
 
   Module containing functions interacting with the CS and useful for the RSS
   modules.
-'''
+"""
 
 from DIRAC                                       import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Utilities        import Utils
 from DIRAC.Resources.Storage.StorageElement      import StorageElement
 
-__RCSID__ = '$Id:  $'
+__RCSID__ = '$Id$'
 
 def warmUp():
-  '''
+  """
     gConfig has its own dark side, it needs some warm up phase.
-  '''
+  """
   from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
   gRefresher.refreshConfigurationIfNeeded()
 
 ## Main functions ##############################################################
 
 def getSites():
-  '''
+  """
     Gets all sites from /Resources/Sites
-  '''
+  """
 
   _basePath = 'Resources/Sites'
 
@@ -68,9 +68,9 @@ def getGOCSites( diracSites = None ):
 
 
 def getDomainSites():
-  '''
+  """
     Gets all sites from /Resources/Sites
-  '''
+  """
 
   _basePath = 'Resources/Sites'
 
@@ -93,9 +93,9 @@ def getDomainSites():
   return S_OK( sites )
 
 def getResources():
-  '''
+  """
     Gets all resources
-  '''
+  """
 
   resources = []
 
@@ -118,9 +118,9 @@ def getResources():
   return S_OK( resources )
 
 def getNodes():
-  '''
+  """
     Gets all nodes
-  '''
+  """
 
   nodes = []
 
@@ -133,9 +133,9 @@ def getNodes():
 ################################################################################
 
 def getStorageElements():
-  '''
+  """
     Gets all storage elements from /Resources/StorageElements
-  '''
+  """
 
   _basePath = 'Resources/StorageElements'
 
@@ -143,6 +143,8 @@ def getStorageElements():
   return seNames
 
 def getStorageElementsHosts( seNames = None ):
+  """ Get the hosts of the Storage Elements
+  """
 
   seHosts = []
 
@@ -186,8 +188,8 @@ def _getSEParameters( seName ):
   return seParameters
 
 def getSEToken( seName ):
-  ''' Get StorageElement token
-  '''
+  """ Get StorageElement token
+  """
 
   seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
@@ -197,8 +199,8 @@ def getSEToken( seName ):
   return S_OK( seParameters['Value']['SpaceToken'] )
 
 def getSEHost( seName ):
-  ''' Get StorageElement host name
-  '''
+  """ Get StorageElement host name
+  """
 
   seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
@@ -231,6 +233,8 @@ def getStorageElementEndpoint( seName ):
   return S_ERROR( ( host, port, wsurl ) )
 
 def getStorageElementEndpoints( storageElements = None ):
+  """ get the endpoints of the Storage ELements
+  """
 
   if storageElements is None:
     storageElements = getStorageElements()
@@ -250,9 +254,9 @@ def getStorageElementEndpoints( storageElements = None ):
   return S_OK( list( set( storageElementEndpoints ) ) )
 
 def getFTS():
-  '''
+  """
     Gets all FTS endpoints
-  '''
+  """
 
   #FIXME: FTS2 will be deprecated (first 2 lines that follow)
   ftsEndpoints = gConfig.getValue('Resources/FTSEndpoints/Default/FTSEndpoint', [])
@@ -263,25 +267,24 @@ def getFTS():
 
 
 def _getFTSEndpoints(basePath='Resources/FTSEndpoints/FTS3'):
-  '''
+  """
     Gets all FTS endpoints that are in CS
-  '''
+  """
 
   result = gConfig.getOptions(basePath)
   if result['OK']:
     return result['Value']
-  else:  # nothing found
-    return []
+  return []
 
 def getSpaceTokenEndpoints():
-  ''' Get Space Token Endpoints '''
+  """ Get Space Token Endpoints """
 
   return Utils.getCSTree( 'Shares/Disk' )
 
 def getFileCatalogs():
-  '''
+  """
     Gets all storage elements from /Resources/FileCatalogs
-  '''
+  """
 
   _basePath = 'Resources/FileCatalogs'
 
@@ -289,9 +292,9 @@ def getFileCatalogs():
   return fileCatalogs
 
 def getComputingElements():
-  '''
+  """
     Gets all computing elements from /Resources/Sites/<>/<>/CE
-  '''
+  """
   _basePath = 'Resources/Sites'
 
   ces = []
@@ -325,9 +328,9 @@ def getComputingElements():
 # Quick functions implemented for Andrew
 
 def getSiteComputingElements( siteName ):
-  '''
+  """
     Gets all computing elements from /Resources/Sites/<>/<siteName>/CE
-  '''
+  """
 
   _basePath = 'Resources/Sites'
 
@@ -344,9 +347,9 @@ def getSiteComputingElements( siteName ):
   return []
 
 def getSiteStorageElements( siteName ):
-  '''
+  """
     Gets all computing elements from /Resources/Sites/<>/<siteName>/SE
-  '''
+  """
 
   _basePath = 'Resources/Sites'
 
@@ -363,9 +366,9 @@ def getSiteStorageElements( siteName ):
   return []
 
 def getSiteElements( siteName ):
-  '''
+  """
     Gets all the computing and storage elements for a given site
-  '''
+  """
 
   resources = []
 
@@ -378,9 +381,9 @@ def getSiteElements( siteName ):
   return S_OK( resources )
 
 def getQueues():
-  '''
+  """
     Gets all computing elements from /Resources/Sites/<>/<>/CE/Queues
-  '''
+  """
   _basePath = 'Resources/Sites'
 
   queues = []
@@ -422,9 +425,9 @@ def getQueues():
 ## /Registry ###################################################################
 
 def getRegistryUsers():
-  '''
+  """
     Gets all users from /Registry/Users
-  '''
+  """
 
   _basePath = 'Registry/Users'
 
