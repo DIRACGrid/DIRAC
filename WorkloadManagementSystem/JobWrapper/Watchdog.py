@@ -183,6 +183,9 @@ class Watchdog( object ):
   def execute( self ):
     """ The main agent execution method of the Watchdog.
     """
+
+    self.log.info("excuting watchdog") #FIXME remove me later
+
     if not self.exeThread.isAlive():
       self.__getUsageSummary()
       self.log.info( 'Process to monitor has completed, Watchdog will exit.' )
@@ -235,18 +238,8 @@ class Watchdog( object ):
       # Just stop if we don't know when the job started
       return S_OK()
 
-    # try to open /var/run/shutdown_time
-    try:
-      with open('/var/run/shutdown_time', 'r') as fd:
-        shutdown_time = int(fd.read().strip())
-    except IOError, ValueError:
-      shutdown_time = None
-  
-    self.log.info("shutdown_time: {}".format(shutdown_time)) # TODO remove
-
-    if (( int( time.time() ) > jobstartSeconds + self.stopSigStartSeconds ) and \
-       ( wallClockSecondsLeft < self.stopSigFinishSeconds + self.wallClockCheckSeconds )) or \
-       (shutdown_time is not None and time.time() > shutdown_time):
+    if ( int( time.time() ) > jobstartSeconds + self.stopSigStartSeconds ) and \
+       ( wallClockSecondsLeft < self.stopSigFinishSeconds + self.wallClockCheckSeconds ):
       # Need to send the signal! Assume it works to avoid sending the signal more than once
       self.log.info( 'Sending signal %d to JobWrapper children' % self.stopSigNumber )
       self.stopSigSent = True
