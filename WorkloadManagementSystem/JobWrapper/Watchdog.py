@@ -184,8 +184,6 @@ class Watchdog( object ):
     """ The main agent execution method of the Watchdog.
     """
 
-    self.log.info("excuting watchdog") #FIXME remove me later
-
     if not self.exeThread.isAlive():
       self.__getUsageSummary()
       self.log.info( 'Process to monitor has completed, Watchdog will exit.' )
