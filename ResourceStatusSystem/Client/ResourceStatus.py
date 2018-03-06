@@ -332,7 +332,7 @@ def getDictFromList( fromList ):
   res = {}
   for listElement in fromList:
     site, sType, status = listElement
-    if not res.has_key( site ):
+    if site not in res:
       res[ site ] = {}
     res[ site ][ sType ] = status
   return res
