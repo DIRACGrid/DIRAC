@@ -488,7 +488,7 @@ class SystemAdministratorHandler(RequestHandler):
       try:
         logFile = file(currentLog, 'r')
       except IOError as err:
-        gLogger.error("")
+        gLogger.error("File does not exists:", currentLog)
         resultDict[c] = {'ErrorsHour': -1, 'ErrorsDay': -1, 'LastError': currentLog + '::' + repr(err)}
         continue
 
