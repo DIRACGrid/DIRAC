@@ -139,7 +139,8 @@ class FreeDiskSpaceCommand(Command):
     elements = CSHelpers.getStorageElements()
 
     for name in elements['Value']:
-      diskSpace = self.doNew(name)
+      # keeping TB as default
+      diskSpace = self.doNew((name, 'MB'))
       if not diskSpace['OK']:
         gLogger.error("Unable to calculate free/total disk space", "name: %s" % name)
         continue
