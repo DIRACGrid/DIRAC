@@ -333,7 +333,7 @@ class MonitoringDB(ElasticDB):
     :param str monitoringType: is the type of the monitoring
     :type records: python:list
     """
-    mapping = self.__getMapping(monitoringType)
+    mapping = self.getMapping(monitoringType)
     gLogger.debug("Mapping used to create an index:", mapping)
     period = self.__documents[monitoringType].get('period')
     res = self.getIndexName(monitoringType)
@@ -347,7 +347,7 @@ class MonitoringDB(ElasticDB):
                            mapping=mapping,
                            period=period)
 
-  def __getMapping(self, monitoringType):
+  def getMapping(self, monitoringType):
     """
     It returns the mapping of a certain monitoring type
 
@@ -389,13 +389,14 @@ class MonitoringDB(ElasticDB):
 
     # going to create:
     # s = Search(using=cl, index = 'lhcb-certification_componentmonitoring-index-2016-09-16')
-    # s = s.filter( 'bool', must = [Q('match', host='dzmathe.cern.ch'), Q('match', component='Bookkeeping_BookkeepingManager')])
+    # s = s.filter( 'bool', must = [Q('match', host='dzmathe.cern.ch'),
+    #  Q('match', component='Bookkeeping_BookkeepingManager')])
     # s = s.query(q)
     # s = s.sort('-timestamp')
 
     mustClose = []
     for cond in condDict:
-      kwargs = {cond: condDict[cond][0]}
+      kwargs = {cond: condDict[cond]}
       query = self._Q('match', **kwargs)
       mustClose.append(query)
 
@@ -414,17 +415,16 @@ class MonitoringDB(ElasticDB):
       s = s.extra(size=size)
 
     retVal = s.execute()
-    if not retVal['OK']:
-      return retVal
-    if retVal['Value']:
+    if not retVal:
+      return S_ERROR(str(retVal))
+    hits = retVal['hits']
+    if hits and 'hits' in hits and hits['hits']:
+      print 'SSASA', hits['hits'][0]['_source']
+      print dir(hits['hits'][0]['_source'])
       records = []
-      paramNames = dir(retVal['Value'][0])
-      try:
-        paramNames.remove('meta')
-      except ValueError as e:
-        gLogger.warn("meta is not in the Result", e)
-      for resObj in retVal["Value"]:
-        records.append(dict([(paramName, getattr(resObj, paramName)) for paramName in paramNames]))
+      paramNames = dir(hits['hits'][0]['_source'])
+      for resObj in hits['hits']:
+        records.append(dict([(paramName, getattr(resObj['_source'], paramName)) for paramName in paramNames]))
       return S_OK(records)
 
   def getLastDayData(self, typeName, condDict):
