@@ -483,7 +483,7 @@ class SiteDirector(AgentModule):
           totalWaitingPilots = result['Value']
           self.log.verbose('Waiting Pilots: %s' % totalWaitingPilots)
       if totalWaitingPilots >= pilotsWeMayWantToSubmit:
-        self.log.verbose("%d waiting pilots already waiting: possibly enough" % totalWaitingPilots)
+        self.log.verbose("%d pilots already waiting: possibly enough" % totalWaitingPilots)
         manyWaitingPilotsFlag = True
         if not self.addPilotsToEmptySites:
           continue
