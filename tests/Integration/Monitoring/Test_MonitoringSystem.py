@@ -7,6 +7,10 @@ import tempfile
 import time
 from datetime import datetime
 
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
+
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
@@ -157,7 +161,6 @@ class MonitoringTestCase(unittest.TestCase):
 
 
 class MonitoringInsertData(MonitoringTestCase):
-
   def test_addMonitoringRecords(self):
     result = self.client.addMonitoringRecords('moni', 'WMSHistory', self.data)
     self.assertTrue(result['Message'])
@@ -187,72 +190,14 @@ class MonitoringTestChain(MonitoringTestCase):
     self.assertTrue('User' in result['Value'])
     self.assertTrue('JobGroup' in result['Value'])
     self.assertTrue('UserGroup' in result['Value'])
-    self.assertTrue('metric' in result['Value'])
-    self.assertDictEqual(
-        result['Value'],
-        {
-            u'Status': [
-                u'running',
-                u'waiting'],
-            u'JobSplitType': [
-                u'mcsimulation',
-                u'mcreconstruction',
-                u'user',
-                u'mcstripping',
-                u'datastripping'],
-            u'MinorStatus': [u'unset'],
-            u'Site': [
-                u'lcg.cnaf.it',
-                u'lcg.ral.uk',
-                u'lcg.ihep.su',
-                u'lcg.desyzn.de',
-                u'lcg.bari.it',
-                u'lcg.rrcki.ru',
-                u'multiple',
-                u'lcg.bristol.uk',
-                u'lcg.nikhef.nl',
-                u'group.ral.uk',
-                u'lcg.bologna.it',
-                u'lcg.cern.ch',
-                u'lcg.gridka.de',
-                u'lcg.pic.es'],
-            u'ApplicationStatus': [u'unset'],
-            u'User': [
-                u'phicharp',
-                u'olupton',
-                u'clangenb',
-                u'mamartin',
-                u'mrwillia',
-                u'mvesteri'],
-            u'JobGroup': [
-                u'lhcb',
-                u'00050248',
-                u'00050251',
-                u'00049844',
-                u'00049845',
-                u'00049848',
-                u'00050238',
-                u'00050243',
-                u'00050246',
-                u'00049847',
-                u'00050229',
-                u'00050232',
-                u'00050234',
-                u'00050236',
-                u'00050241',
-                u'00050244',
-                u'00050247',
-                u'00050250',
-                u'00050256',
-                u'00050280',
-                u'00050286',
-                u'00050299',
-                u'00050303'],
-            u'UserGroup': [
-                u'lhcb_mc',
-                u'lhcb_user',
-                u'lhcb_data'],
-            u'metric': [u'wmshistory']})
+    self.assertDictEqual(result['Value'], {u'Status': [],
+                                           u'JobSplitType': [],
+                                           u'MinorStatus': [],
+                                           u'Site': [],
+                                           u'ApplicationStatus': [],
+                                           u'User': [],
+                                           u'JobGroup': [],
+                                           u'UserGroup': []})
 
   def test_generatePlot(self):
     params = (
@@ -293,43 +238,134 @@ class MonitoringTestChain(MonitoringTestCase):
     result = self.client.getReport(*params)
     self.assertTrue(result['OK'])
     self.assertDictEqual(result['Value'],
-                         {'data': {u'multiple': {1458194400: 227.0},
-                                   u'lcg.ihep.su': {1458216000: 18.0},
-                                   u'lcg.cnaf.it': {1458151200: None,
+                         {'data': {u'Multiple': {1458198000: 227.0},
+                                   u'LCG.RRCKI.ru': {1458225000: 3.0},
+                                   u'LCG.IHEP.su': {1458217800: 18.0},
+                                   u'LCG.CNAF.it': {1458144000: None,
                                                     1458172800: None,
-                                                    1458162000: None,
                                                     1458194400: None,
-                                                    1458216000: 22.0,
-                                                    1458140400: 4.0,
+                                                    1458145800: None,
+                                                    1458189000: None,
+                                                    1458147600: None,
+                                                    1458178200: None,
                                                     1458183600: None,
-                                                    1458205200: None},
-                                   u'lcg.nikhef.nl': {1458216000: 27.0},
-                                   u'lcg.bari.it': {1458216000: 34.0},
-                                   u'lcg.rrcki.ru': {1458226800: 3.0},
-                                   u'group.ral.uk': {1458140400: 34.0},
-                                   u'lcg.desyzn.de': {1458226800: 43.0},
-                                   u'lcg.ral.uk': {1458129600: 2.0,
-                                                   1458172800: None,
-                                                   1458162000: None,
+                                                    1458212400: None,
+                                                    1458149400: None,
+                                                    1458207000: None,
+                                                    1458151200: None,
+                                                    1458169200: None,
+                                                    1458201600: None,
+                                                    1458153000: None,
+                                                    1458196200: None,
+                                                    1458154800: None,
+                                                    1458174600: None,
+                                                    1458190800: None,
+                                                    1458156600: None,
+                                                    1458185400: None,
+                                                    1458214200: None,
+                                                    1458158400: None,
+                                                    1458180000: None,
+                                                    1458216000: None,
+                                                    1458208800: None,
+                                                    1458160200: None,
+                                                    1458203400: None,
+                                                    1458162000: None,
+                                                    1458142200: None,
+                                                    1458198000: None,
+                                                    1458163800: None,
+                                                    1458192600: None,
+                                                    1458165600: None,
+                                                    1458176400: None,
+                                                    1458187200: None,
+                                                    1458167400: None,
+                                                    1458210600: None,
+                                                    1458140400: 4.0,
+                                                    1458181800: None,
+                                                    1458205200: None,
+                                                    1458171000: None,
+                                                    1458217800: 22.0,
+                                                    1458199800: None},
+                                   u'LCG.NIKHEF.nl': {1458217800: 27.0},
+                                   u'LCG.Bari.it': {1458221400: 34.0},
+                                   u'Group.RAL.uk': {1458140400: 34.0},
+                                   u'LCG.DESYZN.de': {1458225000: 43.0},
+                                   u'LCG.RAL.uk': {1458144000: None,
+                                                   1458158400: None,
                                                    1458194400: None,
-                                                   1458216000: None,
-                                                   1458140400: None,
+                                                   1458145800: None,
+                                                   1458223200: None,
+                                                   1458189000: None,
+                                                   1458221400: None,
+                                                   1458225000: 5.0,
+                                                   1458147600: None,
+                                                   1458135000: None,
                                                    1458183600: None,
+                                                   1458212400: None,
+                                                   1458149400: None,
+                                                   1458178200: None,
+                                                   1458207000: None,
+                                                   1458151200: None,
+                                                   1458169200: None,
+                                                   1458172800: None,
+                                                   1458219600: None,
+                                                   1458201600: None,
+                                                   1458153000: None,
+                                                   1458196200: None,
+                                                   1458154800: None,
+                                                   1458160200: None,
+                                                   1458190800: None,
+                                                   1458156600: None,
+                                                   1458185400: None,
+                                                   1458214200: None,
+                                                   1458129600: 2.0,
+                                                   1458165600: None,
+                                                   1458180000: None,
+                                                   1458216000: None,
+                                                   1458208800: None,
+                                                   1458131400: None,
+                                                   1458174600: None,
+                                                   1458203400: None,
+                                                   1458162000: None,
+                                                   1458171000: None,
+                                                   1458198000: None,
+                                                   1458163800: None,
+                                                   1458192600: None,
+                                                   1458136800: None,
+                                                   1458133200: None,
+                                                   1458187200: None,
+                                                   1458167400: None,
+                                                   1458181800: None,
+                                                   1458210600: None,
+                                                   1458140400: None,
+                                                   1458138600: None,
+                                                   1458176400: None,
                                                    1458205200: None,
-                                                   1458226800: 5.0,
-                                                   1458151200: None},
-                                   u'lcg.pic.es': {1458129600: 1.0},
-                                   u'lcg.gridka.de': {1458129600: 2.0},
-                                   u'lcg.bristol.uk': {1458216000: 9.0},
-                                   u'lcg.cern.ch': {1458140400: 120.0},
-                                   u'lcg.bologna.it': {1458216000: 1.0}},
-                          'granularity': 10800})
+                                                   1458142200: None,
+                                                   1458217800: None,
+                                                   1458199800: None},
+                                   u'LCG.PIC.es': {1458129600: 1.0},
+                                   u'LCG.GRIDKA.de': {1458129600: 2.0},
+                                   u'LCG.Bristol.uk': {1458221400: 9.0},
+                                   u'LCG.CERN.ch': {1458140400: 120.0},
+                                   u'LCG.Bologna.it': {1458221400: 1.0}},
+                          'granularity': 1800})
 
   def test_getLastDayData(self):
     params = {'Status': 'Running', 'Site': 'LCG.NIKHEF.nl'}
     result = self.client.getLastDayData('WMSHistory', params)
     self.assertTrue(result['OK'])
     self.assertEqual(len(result['Value']), 2)
+    self.assertEqual(sorted(result['Value'][0].keys()), sorted([u'Status',
+                                                                u'Jobs',
+                                                                u'JobSplitType',
+                                                                u'timestamp',
+                                                                u'MinorStatus',
+                                                                u'Site',
+                                                                u'Reschedules',
+                                                                u'ApplicationStatus',
+                                                                u'User',
+                                                                u'JobGroup',
+                                                                u'UserGroup']))
 
 
 class MonitoringDeleteChain(MonitoringTestCase):

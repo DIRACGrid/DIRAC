@@ -118,7 +118,7 @@ class MonitoringDB(ElasticDB):
       # There is no data in the index we can not create the plot.
       return S_ERROR("%s empty and can not retrive the Type of the index" % indexName)
     for i in docs[typeName]['properties']:
-      if i not in monfields and not i.startswith('time'):
+      if i not in monfields and not i.startswith('time') and i != 'metric':
         retVal = self.getUniqueValue(indexName, i)
         if not retVal['OK']:
           return retVal
@@ -419,10 +419,12 @@ class MonitoringDB(ElasticDB):
       return S_ERROR(str(retVal))
     hits = retVal['hits']
     if hits and 'hits' in hits and hits['hits']:
-      print 'SSASA', hits['hits'][0]['_source']
-      print dir(hits['hits'][0]['_source'])
       records = []
       paramNames = dir(hits['hits'][0]['_source'])
+      try:
+        paramNames.remove(u'metric')
+      except KeyError as e:
+        gLogger.warn("metric is not in the Result", e)
       for resObj in hits['hits']:
         records.append(dict([(paramName, getattr(resObj['_source'], paramName)) for paramName in paramNames]))
       return S_OK(records)
