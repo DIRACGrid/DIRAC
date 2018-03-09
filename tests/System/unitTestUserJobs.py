@@ -5,6 +5,7 @@
 
 import unittest
 
+from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, parametricJob
 from DIRAC import gLogger
 gLogger.setLevel('DEBUG')
 
@@ -18,8 +19,6 @@ if result['Value']['group'] not in ['lhcb_user', 'dirac_user']:
   print "GET A USER GROUP"
   exit(1)
 
-
-from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, parametricJob
 
 
 
