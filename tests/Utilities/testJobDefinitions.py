@@ -44,8 +44,7 @@ def endOfAllJobs(J):
   result = getDIRAC().submit(J)
   print "Job submission result:", result
   if result['OK']:
-    jobID = int(result['Value'])
-    print "Submitted with job ID:", jobID
+    print "Submitted with job ID:", result['Value']
 
   return result
 

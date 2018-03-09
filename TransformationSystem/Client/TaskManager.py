@@ -1,6 +1,11 @@
 """ TaskManager contains WorkflowsTasks and RequestTasks modules, for managing jobs and requests tasks
 """
 
+__RCSID__ = "$Id$"
+
+# pylint: disable=protected-access
+
+
 import time
 import StringIO
 import json
@@ -23,10 +28,6 @@ from DIRAC.TransformationSystem.Client.TransformationClient     import Transform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getDNForUsername
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
-
-# pylint: disable=protected-access
-
-__RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'TaskManager'
 
@@ -490,8 +491,7 @@ class WorkflowTasks( TaskBase ):
 
     if bulkSubmissionFlag:
       return self.__prepareTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
-    else:
-      return self.__prepareTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
+    return self.__prepareTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
 
   def __prepareTasksBulk( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
     """ Prepare transformation tasks with a single job object for bulk submission
@@ -721,7 +721,7 @@ class WorkflowTasks( TaskBase ):
       if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
         if paramValue:
           self._logDebug( 'Setting %s to %s' % ( paramName, paramValue ),
-                            transID=transID, method='handleRest' )
+                          transID=transID, method='handleRest' )
           oJob._addJDLParameter( paramName, paramValue )
 
   def _handleHospital( self, oJob ):
@@ -774,8 +774,7 @@ class WorkflowTasks( TaskBase ):
     """
     if 'BulkJobObject' in taskDict:
       return self.__submitTransformationTasksBulk( taskDict )
-    else:
-      return self.__submitTransformationTasks( taskDict )
+    return self.__submitTransformationTasks( taskDict )
 
   def __submitTransformationTasksBulk( self, taskDict ):
     """ Submit jobs in one go with one parametric job

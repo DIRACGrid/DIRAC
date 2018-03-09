@@ -5,16 +5,23 @@
 
 import unittest
 
-from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, parametricJob
+from DIRAC import gLogger
+gLogger.setLevel('DEBUG')
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-from DIRAC import gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
+result = getProxyInfo()
+if result['Value']['group'] not in ['lhcb_user', 'dirac_user']:
+  print "GET A USER GROUP"
+  exit(1)
 
-gLogger.setLevel('VERBOSE')
+
+from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, parametricJob
+
+
 
 jobsSubmittedList = []
 
@@ -24,10 +31,7 @@ class GridSubmissionTestCase(unittest.TestCase):
   """
 
   def setUp(self):
-    result = getProxyInfo()
-    if result['Value']['group'] not in ['lhcb_user', 'dirac_user']:
-      print "GET A USER GROUP"
-      exit(1)
+    pass
 
   def tearDown(self):
     pass
@@ -40,7 +44,6 @@ class submitSuccess(GridSubmissionTestCase):
   def test_submit(self):
     """ submit jobs defined in DIRAC.tests.Utilities.testJobDefinitions
     """
-
     res = helloWorld()
     self.assertTrue(res['OK'])
     jobsSubmittedList.append(res['Value'])
