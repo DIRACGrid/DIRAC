@@ -79,6 +79,11 @@ CHANGE: WebApp release procedure
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
 
+[v6r19p17]
+
+*RSS
+FIX: CSHelpers.py minor fixes
+
 [v6r19p16]
 
 *WMS

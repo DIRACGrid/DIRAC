@@ -434,7 +434,7 @@ class ResourceManagementDB( object ):
         if not found:
           getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
       else:
-        gLogger.debug( "Table %s already exists" %table )
+        gLogger.debug("Table %s already exists" % table)
 
 
  # SQL Methods ###############################################################
