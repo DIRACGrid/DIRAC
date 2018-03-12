@@ -52,9 +52,11 @@ DIRAC.iml
 .DS_Store
 
 # test stuff
+.pytest_cache
 .cache
 __pycache__
 pytests.xml
 nosetests.xml
 coverage.xml
 Local_*
+.hypothesis
