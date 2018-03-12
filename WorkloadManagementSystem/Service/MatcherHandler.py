@@ -6,27 +6,27 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                               import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 
-from DIRAC.Core.Utilities.ThreadScheduler                import gThreadScheduler
-from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
-from DIRAC.FrameworkSystem.Client.MonitoringClient       import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
-from DIRAC.WorkloadManagementSystem.DB.JobDB             import JobDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB       import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB      import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
-from DIRAC.WorkloadManagementSystem.Client.Matcher       import Matcher
-from DIRAC.WorkloadManagementSystem.Client.Limiter       import Limiter
+from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher
+from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 gJobDB = False
 gTaskQueueDB = False
 
 
-def initializeMatcherHandler( serviceInfo ):
+def initializeMatcherHandler(serviceInfo):
   """  Matcher Service initialization
   """
 
@@ -40,38 +40,41 @@ def initializeMatcherHandler( serviceInfo ):
   jlDB = JobLoggingDB()
   pilotAgentsDB = PilotAgentsDB()
 
-  gMonitor.registerActivity( 'matchTime', "Job matching time",
-                             'Matching', "secs" , gMonitor.OP_MEAN, 300 )
-  gMonitor.registerActivity( 'matchesDone', "Job Match Request",
-                             'Matching', "matches" , gMonitor.OP_RATE, 300 )
-  gMonitor.registerActivity( 'matchesOK', "Matched jobs",
-                             'Matching', "matches" , gMonitor.OP_RATE, 300 )
-  gMonitor.registerActivity( 'numTQs', "Number of Task Queues",
-                             'Matching', "tqsk queues" , gMonitor.OP_MEAN, 300 )
+  gMonitor.registerActivity('matchTime', "Job matching time",
+                            'Matching', "secs", gMonitor.OP_MEAN, 300)
+  gMonitor.registerActivity('matchesDone', "Job Match Request",
+                            'Matching', "matches", gMonitor.OP_RATE, 300)
+  gMonitor.registerActivity('matchesOK', "Matched jobs",
+                            'Matching', "matches", gMonitor.OP_RATE, 300)
+  gMonitor.registerActivity('numTQs', "Number of Task Queues",
+                            'Matching', "tqsk queues", gMonitor.OP_MEAN, 300)
 
   gTaskQueueDB.recalculateTQSharesForAll()
-  gThreadScheduler.addPeriodicTask( 120, gTaskQueueDB.recalculateTQSharesForAll )
-  gThreadScheduler.addPeriodicTask( 60, sendNumTaskQueues )
+  gThreadScheduler.addPeriodicTask(120, gTaskQueueDB.recalculateTQSharesForAll)
+  gThreadScheduler.addPeriodicTask(60, sendNumTaskQueues)
 
   sendNumTaskQueues()
 
   return S_OK()
 
+
 def sendNumTaskQueues():
   result = gTaskQueueDB.getNumTaskQueues()
-  if result[ 'OK' ]:
-    gMonitor.addMark( 'numTQs', result[ 'Value' ] )
+  if result['OK']:
+    gMonitor.addMark('numTQs', result['Value'])
   else:
-    gLogger.error( "Cannot get the number of task queues", result[ 'Message' ] )
+    gLogger.error("Cannot get the number of task queues", result['Message'])
 
-class MatcherHandler( RequestHandler ):
 
-  def initialize( self ):
-    self.limiter = Limiter( jobDB = gJobDB )
+class MatcherHandler(RequestHandler):
+
+  def initialize(self):
+    self.limiter = Limiter(jobDB=gJobDB)
 
 ##############################################################################
-  types_requestJob = [ [basestring, dict] ]
-  def export_requestJob( self, resourceDescription ):
+  types_requestJob = [[basestring, dict]]
+
+  def export_requestJob(self, resourceDescription):
     """ Serve a job to the request of an agent which is the highest priority
         one matching the agent's site capacity
     """
@@ -80,28 +83,28 @@ class MatcherHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
 
     try:
-      opsHelper = Operations( group = credDict['group'] )
-      matcher = Matcher( pilotAgentsDB = pilotAgentsDB,
-                         jobDB = gJobDB,
-                         tqDB = gTaskQueueDB,
-                         jlDB = jlDB,
-                         opsHelper = opsHelper )
-      result = matcher.selectJob( resourceDescription, credDict )
+      opsHelper = Operations(group=credDict['group'])
+      matcher = Matcher(pilotAgentsDB=pilotAgentsDB,
+                        jobDB=gJobDB,
+                        tqDB=gTaskQueueDB,
+                        jlDB=jlDB,
+                        opsHelper=opsHelper)
+      result = matcher.selectJob(resourceDescription, credDict)
     except RuntimeError as rte:
-      self.log.error( "Error requesting job: ", rte )
-      return S_ERROR( "Error requesting job" )
+      self.log.error("Error requesting job: ", rte)
+      return S_ERROR("Error requesting job")
 
     # result can be empty, meaning that no job matched
     if result:
-      gMonitor.addMark( "matchesDone" )
-      gMonitor.addMark( "matchesOK" )
-      return S_OK( result )
-    else:
-      # FIXME: This is correctly interpreted by the JobAgent, but DErrno should be used instead
-      return S_ERROR( "No match found" )
+      gMonitor.addMark("matchesDone")
+      gMonitor.addMark("matchesOK")
+      return S_OK(result)
+    # FIXME: This is correctly interpreted by the JobAgent, but DErrno should be used instead
+    return S_ERROR("No match found")
 
 ##############################################################################
   types_getActiveTaskQueues = []
+
   @staticmethod
   def export_getActiveTaskQueues():
     """ Return all task queues
@@ -109,25 +112,27 @@ class MatcherHandler( RequestHandler ):
     return gTaskQueueDB.retrieveTaskQueues()
 
 ##############################################################################
-  types_getMatchingTaskQueues = [ dict ]
-  def export_getMatchingTaskQueues( self, resourceDict ):
+  types_getMatchingTaskQueues = [dict]
+
+  def export_getMatchingTaskQueues(self, resourceDict):
     """ Return all task queues
     """
-    if 'Site' in resourceDict and isinstance( resourceDict[ 'Site' ], basestring ):
-      negativeCond = self.limiter.getNegativeCondForSite( resourceDict[ 'Site' ] )
+    if 'Site' in resourceDict and isinstance(resourceDict['Site'], basestring):
+      negativeCond = self.limiter.getNegativeCondForSite(resourceDict['Site'])
     else:
       negativeCond = self.limiter.getNegativeCond()
-    matcher = Matcher( pilotAgentsDB = pilotAgentsDB,
-                       jobDB = gJobDB,
-                       tqDB = gTaskQueueDB,
-                       jlDB = jlDB )
-    resourceDescriptionDict = matcher._processResourceDescription( resourceDict )
-    return gTaskQueueDB.retrieveTaskQueuesThatMatch( resourceDescriptionDict, negativeCond = negativeCond )
+    matcher = Matcher(pilotAgentsDB=pilotAgentsDB,
+                      jobDB=gJobDB,
+                      tqDB=gTaskQueueDB,
+                      jlDB=jlDB)
+    resourceDescriptionDict = matcher._processResourceDescription(resourceDict)
+    return gTaskQueueDB.retrieveTaskQueuesThatMatch(resourceDescriptionDict, negativeCond=negativeCond)
 
 ##############################################################################
-  types_matchAndGetTaskQueue = [ dict ]
+  types_matchAndGetTaskQueue = [dict]
+
   @staticmethod
-  def export_matchAndGetTaskQueue( resourceDict ):
+  def export_matchAndGetTaskQueue(resourceDict):
     """ Return matching task queues
     """
-    return gTaskQueueDB.matchAndGetTaskQueue( resourceDict )
+    return gTaskQueueDB.matchAndGetTaskQueue(resourceDict)

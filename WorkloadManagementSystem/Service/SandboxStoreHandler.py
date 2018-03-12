@@ -2,6 +2,8 @@
     in the DISET framework
 """
 
+__RCSID__ = "$Id$"
+
 import os
 import time
 import threading
@@ -9,7 +11,7 @@ import tempfile
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security import Properties
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -20,11 +22,10 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
-__RCSID__ = "$Id$"
-
 sandboxDB = False
 
-def initializeSandboxStoreHandler( serviceInfo ):
+
+def initializeSandboxStoreHandler(serviceInfo):
   global sandboxDB
   sandboxDB = SandboxMetadataDB()
   return S_OK()
@@ -153,7 +154,7 @@ class SandboxStoreHandler(RequestHandler):
       return result
     return S_OK(sbURL)
 
-  def transfer_bulkFromClient(self, fileId, token, fileSize, fileHelper):
+  def transfer_bulkFromClient(self, fileId, token, _fileSize, fileHelper):
     """ Receive files packed into a tar archive by the fileHelper logic.
         token is used for access rights confirmation.
     """
@@ -350,7 +351,7 @@ class SandboxStoreHandler(RequestHandler):
     if not result['OK']:
       return result
     sbDict = {}
-    for SEName, SEPFN, SBType in result['Value']:
+    for SEName, SEPFN, SBType in result['Value']:  # pylint: disable=invalid-name
       if SBType not in sbDict:
         sbDict[SBType] = []
       sbDict[SBType].append("SB:%s|%s" % (SEName, SEPFN))
@@ -359,21 +360,22 @@ class SandboxStoreHandler(RequestHandler):
   ##################
   # Disk space left management
 
-  types_getFreeDiskSpace = [basestring]
+  types_getFreeDiskSpace = []
 
-  def export_getFreeDiskSpace(self, path):
+  def export_getFreeDiskSpace(self):
     """ Get the free disk space of the storage element
         If no size is specified, terabytes will be used by default.
     """
-    return getDiskSpace(path)
 
-  types_getTotalDiskSpace = [basestring]
+    return getDiskSpace(self.getCSOption("BasePath", "/opt/dirac/storage/sandboxes"))
 
-  def export_getTotalDiskSpace(self, path):
+  types_getTotalDiskSpace = []
+
+  def export_getTotalDiskSpace(self):
     """ Get the total disk space of the storage element
         If no size is specified, terabytes will be used by default.
     """
-    return getDiskSpace(path, total=True)
+    return getDiskSpace(self.getCSOption("BasePath", "/opt/dirac/storage/sandboxes"), total=True)
 
   ##################
   # Download sandboxes
@@ -426,7 +428,7 @@ class SandboxStoreHandler(RequestHandler):
       return result
     sbList = result['Value']
     gLogger.info("Got %s sandboxes to purge" % len(sbList))
-    for sbId, SEName, SEPFN in sbList:
+    for sbId, SEName, SEPFN in sbList:  # pylint: disable=invalid-name
       self.__purgeSandbox(sbId, SEName, SEPFN)
 
     SandboxStoreHandler.__purgeWorking = False

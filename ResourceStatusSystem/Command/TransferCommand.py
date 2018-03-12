@@ -1,60 +1,61 @@
-# $HeadURL:  $
 ''' TransferCommand module
 '''
 
-from datetime                                                   import datetime, timedelta
+__RCSID__ = '$Id$'
 
-from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC.AccountingSystem.Client.ReportsClient                import ReportsClient
-from DIRAC.Core.DISET.RPCClient                                 import RPCClient
+
+from datetime import datetime, timedelta
+
+from DIRAC import S_OK, S_ERROR
+from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
+from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
-__RCSID__ = '$Id:  $'
 
-class TransferCommand( Command ):
+class TransferCommand(Command):
   '''
     Transfer "master" Command
   '''
 
-  def __init__( self, args = None, clients = None ):
+  def __init__(self, args=None, clients=None):
 
-    super( TransferCommand, self ).__init__( args, clients )
+    super(TransferCommand, self).__init__(args, clients)
 
     if 'ReportsClient' in self.apis:
-      self.rClient = self.apis[ 'ReportsClient' ]
+      self.rClient = self.apis['ReportsClient']
     else:
       self.rClient = ReportsClient()
 
     if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis[ 'ReportGenerator' ]
+      self.rgClient = self.apis['ReportGenerator']
     else:
-      self.rgClient = RPCClient( 'Accounting/ReportGenerator' )
+      self.rgClient = RPCClient('Accounting/ReportGenerator')
 
     self.rClient.rpcClient = self.rgClient
 
     if 'ResourceManagementClient' in self.apis:
-      self.rmClient = self.apis[ 'ResourceManagementClient' ]
+      self.rmClient = self.apis['ResourceManagementClient']
     else:
       self.rmClient = ResourceManagementClient()
 
-  def _storeCommand( self, results ):
+  def _storeCommand(self, results):
     '''
       Stores the results of doNew method on the database.
     '''
 
     for result in results:
 
-      resQuery = self.rmClient.addOrModifyTransferCache( result[ 'SourceName' ],
-                                                         result[ 'DestinationName' ],
-                                                         result[ 'Metric' ],
-                                                         result[ 'Value' ] )
-      if not resQuery[ 'OK' ]:
+      resQuery = self.rmClient.addOrModifyTransferCache(result['SourceName'],
+                                                        result['DestinationName'],
+                                                        result['Metric'],
+                                                        result['Value'])
+      if not resQuery['OK']:
         return resQuery
     return S_OK()
 
-  def _prepareCommand( self ):
+  def _prepareCommand(self):
     '''
       TransferChannelCommand requires four arguments:
       - hours       : <int>
@@ -67,30 +68,30 @@ class TransferCommand( Command ):
     '''
 
     if 'hours' not in self.args:
-      return S_ERROR( 'Number of hours not specified' )
-    hours = self.args[ 'hours' ]
+      return S_ERROR('Number of hours not specified')
+    hours = self.args['hours']
 
     if 'direction' not in self.args:
-      return S_ERROR( 'direction is missing' )
-    direction = self.args[ 'direction' ]
+      return S_ERROR('direction is missing')
+    direction = self.args['direction']
 
-    if direction not in [ 'Source', 'Destination' ]:
-      return S_ERROR( 'direction is not Source nor Destination' )
+    if direction not in ['Source', 'Destination']:
+      return S_ERROR('direction is not Source nor Destination')
 
     if 'name' not in self.args:
-      return S_ERROR( '"name" is missing' )
-    name = self.args[ 'name' ]
+      return S_ERROR('"name" is missing')
+    name = self.args['name']
 
     if 'metric' not in self.args:
-      return S_ERROR( 'metric is missing' )
-    metric = self.args[ 'metric' ]
+      return S_ERROR('metric is missing')
+    metric = self.args['metric']
 
-    if metric not in [ 'Quality', 'FailedTransfers' ]:
-      return S_ERROR( 'metric is not Quality nor FailedTransfers' )
+    if metric not in ['Quality', 'FailedTransfers']:
+      return S_ERROR('metric is not Quality nor FailedTransfers')
 
-    return S_OK( ( hours, name, direction, metric ) )
+    return S_OK((hours, name, direction, metric))
 
-  def doNew( self, masterParams = None ):
+  def doNew(self, masterParams=None):
     '''
       Gets the parameters to run, either from the master method or from its
       own arguments.
@@ -106,76 +107,74 @@ class TransferCommand( Command ):
 
     else:
       params = self._prepareCommand()
-      if not params[ 'OK' ]:
+      if not params['OK']:
         return params
-      hours, name, direction, metric = params[ 'Value' ]
+      hours, name, direction, metric = params['Value']
 
-    toD   = datetime.utcnow()
-    fromD = toD - timedelta( hours = hours )
+    toD = datetime.utcnow()
+    fromD = toD - timedelta(hours=hours)
 
     # dictionary with conditions for the accounting
-    transferDict = {
-                     'OperationType' : 'putAndRegister',
-                      direction       : name
-                   }
+    transferDict = {'OperationType': 'putAndRegister',
+                    direction: name}
 
     if metric == 'FailedTransfers':
-      transferDict[ 'FinalStatus' ] = [ 'Failed' ]
+      transferDict['FinalStatus'] = ['Failed']
 
-    transferResults = self.rClient.getReport( 'DataOperation', metric, fromD,
-                                              toD, transferDict, 'Channel' )
+    transferResults = self.rClient.getReport('DataOperation', metric, fromD,
+                                             toD, transferDict, 'Channel')
 
-    if not transferResults[ 'OK' ]:
+    if not transferResults['OK']:
       return transferResults
-    transferResults = transferResults[ 'Value' ]
+    transferResults = transferResults['Value']
 
-    if not 'data' in transferResults:
-      return S_ERROR( 'Missing data key' )
-    transferResults = transferResults[ 'data' ]
+    if 'data' not in transferResults:
+      return S_ERROR('Missing data key')
+    transferResults = transferResults['data']
 
     uniformResult = []
 
     for channel, elementDict in transferResults.items():
 
       try:
-        source, destination = channel.split( ' -> ' )
+        source, destination = channel.split(' -> ')
       except ValueError:
         continue
 
       channelDict = {}
-      channelDict[ 'SourceName' ]      = source
-      channelDict[ 'DestinationName' ] = destination
-      channelDict[ 'Metric' ]          = metric
-      channelDict[ 'Value' ]           = sum( elementDict.values() ) / len( elementDict.values() )
+      channelDict['SourceName'] = source
+      channelDict['DestinationName'] = destination
+      channelDict['Metric'] = metric
+      channelDict['Value'] = sum(elementDict.values()) / len(elementDict.values())
 
-      uniformResult.append( channelDict )
+      uniformResult.append(channelDict)
 
-    storeRes = self._storeCommand( uniformResult )
-    if not storeRes[ 'OK' ]:
+    storeRes = self._storeCommand(uniformResult)
+    if not storeRes['OK']:
       return storeRes
 
     # Compute mean of all transfer channels
     value = 0
     for channelDict in uniformResult:
-      value += channelDict[ 'Value' ]
+      value += channelDict['Value']
 
     if uniformResult:
-      value = float( value ) / len( uniformResult )
+      value = float(value) / len(uniformResult)
     else:
       value = None
 
-    return S_OK( { 'Mean' : value, 'Name' : name } )
+    return S_OK({'Mean': value, 'Name': name})
 
-  def doCache( self ):
+  def doCache(self):
     '''
       Method that reads the cache table and tries to read from it. It will
       return a list of dictionaries if there are results.
     '''
 
     params = self._prepareCommand()
-    if not params[ 'OK' ]:
+    if not params['OK']:
       return params
-    _hours, name, direction, metric = params[ 'Value' ]
+    _hours, name, direction, metric = params['Value']
 
     sourceName, destinationName = None, None
     if direction == 'Source':
@@ -183,25 +182,25 @@ class TransferCommand( Command ):
     if direction == 'Destination':
       destinationName = name
 
-    result = self.rmClient.selectTransferCache( sourceName, destinationName, metric )
-    if not result[ 'OK' ]:
+    result = self.rmClient.selectTransferCache(sourceName, destinationName, metric)
+    if not result['OK']:
       return result
 
-    result = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
+    result = [dict(zip(result['Columns'], res)) for res in result['Value']]
 
     # Compute mean of all transfer channels
     value = 0
     for channelDict in result:
-      value += channelDict[ 'Value' ]
+      value += channelDict['Value']
 
     if result:
-      value = float( value ) / len( result )
+      value = float(value) / len(result)
     else:
       value = None
 
-    return S_OK( { 'Mean' : value, 'Name' : name } )
+    return S_OK({'Mean': value, 'Name': name})
 
-  def doMaster( self ):
+  def doMaster(self):
     '''
       Master method, which looks little bit spaguetti code, sorry !
       - It gets all Sites.
@@ -212,14 +211,14 @@ class TransferCommand( Command ):
     '''
 
     sites = CSHelpers.getSites()
-    if not sites[ 'OK' ]:
+    if not sites['OK']:
       return sites
-    sites = sites[ 'Value' ]
+    sites = sites['Value']
 
     ses = CSHelpers.getStorageElements()
-    if not ses[ 'OK' ]:
+    if not ses['OK']:
       return ses
-    ses = ses[ 'Value' ]
+    ses = ses['Value']
 
     elementNames = sites + ses
 
@@ -229,16 +228,16 @@ class TransferCommand( Command ):
 #    sourceQuery = [ element[0] for element in sourceQuery[ 'Value' ] ]
 #
 #    sourceElementsToQuery = list( set( elementNames ).difference( set( sourceQuery ) ) )
-    self.log.info( 'Processing %s' % ', '.join( elementNames ) )
+    self.log.info('Processing %s' % ', '.join(elementNames))
 
-    for metric in [ 'Quality', 'FailedTransfers' ]:
-      for direction in [ 'Source', 'Destination' ]:
+    for metric in ['Quality', 'FailedTransfers']:
+      for direction in ['Source', 'Destination']:
         # 2 hours of window
-        result = self.doNew( ( 2, elementNames, direction, metric )  )
-        if not result[ 'OK' ]:
-          self.metrics[ 'failed' ].append( result )
+        result = self.doNew((2, elementNames, direction, metric))
+        if not result['OK']:
+          self.metrics['failed'].append(result)
 
-    return S_OK( self.metrics )
+    return S_OK(self.metrics)
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

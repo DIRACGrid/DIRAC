@@ -4,7 +4,7 @@
 
 '''
 
-__RCSID__ = '$Id:$'
+__RCSID__ = '$Id$'
 
 from DIRAC import S_OK
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient

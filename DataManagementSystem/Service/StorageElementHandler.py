@@ -27,6 +27,8 @@ The class can be used as the basis for more advanced StorageElement implementati
 
 """
 
+__RCSID__ = "$Id$"
+
 # imports
 import os
 import shutil
@@ -44,8 +46,6 @@ from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.Adler import fileAdler
 
 from DIRAC.Resources.Storage.StorageBase import StorageBase
-
-__RCSID__ = "$Id$"
 
 
 BASE_PATH = ""
@@ -223,8 +223,7 @@ class StorageElementHandler(RequestHandler):
       if str(x).find('No such file') >= 0:
         resultDict['Exists'] = False
         return S_OK(resultDict)
-      else:
-        return S_ERROR('Failed to get metadata for %s' % path)
+      return S_ERROR('Failed to get metadata for %s' % path)
 
     resultDict['Exists'] = True
     mode = statTuple[stat.ST_MODE]
@@ -298,16 +297,15 @@ class StorageElementHandler(RequestHandler):
         errStr = "Supplied path exists and is a file"
         gLogger.error("StorageElementHandler.createDirectory: %s." % errStr, path)
         return S_ERROR(errStr)
-      else:
-        gLogger.info("StorageElementHandler.createDirectory: %s already exists." % path)
-        return S_OK()
+      gLogger.info("StorageElementHandler.createDirectory: %s already exists." % path)
+      return S_OK()
     # Need to think about permissions.
     try:
       mkDir(path)
       return S_OK()
     except Exception as x:
       errStr = "Exception creating directory."
-      gLogger.error("StorageElementHandler.createDirectory: %s" % errStr, str(x))
+      gLogger.error("StorageElementHandler.createDirectory: %s" % errStr, repr(x))
       return S_ERROR(errStr)
 
   types_listDirectory = [basestring, basestring]
@@ -370,18 +368,16 @@ class StorageElementHandler(RequestHandler):
     elif not result['Value']:
       return S_ERROR('Not enough disk space')
     file_path = self.__resolveFileID(fileID)
-    try:
-      mkDir(os.path.dirname(file_path))
-      fd = open(file_path, "wb")
-    except Exception as error:
-      return S_ERROR("Cannot open to write destination file %s: %s" % (file_path, str(error)))
+
     if "NoCheckSum" in token:
       fileHelper.disableCheckSum()
-    result = fileHelper.networkToDataSink(fd, maxFileSize=(MAX_STORAGE_SIZE * 1024 * 1024))
-    if not result['OK']:
-      return result
-    fd.close()
-    return result
+
+    try:
+      mkDir(os.path.dirname(file_path))
+      with open(file_path, "wb") as fd:
+        return fileHelper.networkToDataSink(fd, maxFileSize=(MAX_STORAGE_SIZE * 1024 * 1024))
+    except Exception as error:
+      return S_ERROR("Cannot open to write destination file %s: %s" % (file_path, str(error)))
 
   def transfer_toClient(self, fileID, token, fileHelper):
     """ Method to send files to clients.
@@ -397,18 +393,16 @@ class StorageElementHandler(RequestHandler):
       # check if the file does not really exist
       if not os.path.exists(file_path):
         return S_ERROR('File %s does not exist' % os.path.basename(file_path))
-      else:
-        return S_ERROR('Failed to get file descriptor')
+      return S_ERROR('Failed to get file descriptor')
 
     fileDescriptor = result['Value']
     result = fileHelper.FDToNetwork(fileDescriptor)
     fileHelper.oFile.close()
     if not result['OK']:
       return S_ERROR('Failed to get file ' + fileID)
-    else:
-      return result
+    return result
 
-  def transfer_bulkFromClient(self, fileID, token, ignoredSize, fileHelper):
+  def transfer_bulkFromClient(self, fileID, token, _ignoredSize, fileHelper):
     """ Receive files packed into a tar archive by the fileHelper logic.
         token is used for access rights confirmation.
     """
@@ -565,7 +559,6 @@ class StorageElementHandler(RequestHandler):
     result = systemCall(10, shlex.split(comm))
     if not result['OK'] or result['Value'][0]:
       return 0
-    else:
-      output = result['Value'][1]
-      size = int(output.split()[0])
-      return size
+    output = result['Value'][1]
+    size = int(output.split()[0])
+    return size

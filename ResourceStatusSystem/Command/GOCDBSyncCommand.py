@@ -7,35 +7,36 @@
 
 '''
 
+__RCSID__ = '$Id$'
+
 import errno
 import xml.dom.minidom as minidom
-from DIRAC                                                      import S_OK, S_ERROR, gLogger
-from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
-from DIRAC.Core.LCG.GOCDBClient                                 import _parseSingleElement
-from DIRAC.ResourceStatusSystem.Command.Command                 import Command
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
+from DIRAC.Core.LCG.GOCDBClient import _parseSingleElement
+from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
-__RCSID__ = '$Id:  $'
 
-class GOCDBSyncCommand( Command ):
+class GOCDBSyncCommand(Command):
 
-  def __init__( self, args = None, clients = None ):
+  def __init__(self, args=None, clients=None):
 
-    super( GOCDBSyncCommand, self ).__init__( args, clients )
+    super(GOCDBSyncCommand, self).__init__(args, clients)
 
     if 'GOCDBClient' in self.apis:
-      self.gClient = self.apis[ 'GOCDBClient' ]
+      self.gClient = self.apis['GOCDBClient']
     else:
       self.gClient = GOCDBClient()
 
     if 'ResourceManagementClient' in self.apis:
-      self.rmClient = self.apis[ 'ResourceManagementClient' ]
+      self.rmClient = self.apis['ResourceManagementClient']
     else:
       self.rmClient = ResourceManagementClient()
 
     self.seenHostnames = set()
 
-  def doNew( self, masterParams = None ):
+  def doNew(self, masterParams=None):
     """
     Gets the downtime IDs and dates of a given hostname from the local database and compares the results
     with the remote database of GOCDB. If the downtime dates have been changed it updates the local database.
@@ -49,27 +50,27 @@ class GOCDBSyncCommand( Command ):
     else:
       return S_ERROR(errno.EINVAL, 'masterParams is not provided')
 
-    result = self.rmClient.selectDowntimeCache( name = hostname )
-    if not result[ 'OK' ]:
+    result = self.rmClient.selectDowntimeCache(name=hostname)
+    if not result['OK']:
       return result
 
     for downtimes in result['Value']:
 
-      localDBdict = { 'DowntimeID': downtimes[3],
-                      'FORMATED_START_DATE': downtimes[6].strftime('%Y-%m-%d %H:%M'),
-                      'FORMATED_END_DATE': downtimes[7].strftime('%Y-%m-%d %H:%M') }
+      localDBdict = {'DowntimeID': downtimes[3],
+                     'FORMATED_START_DATE': downtimes[6].strftime('%Y-%m-%d %H:%M'),
+                     'FORMATED_END_DATE': downtimes[7].strftime('%Y-%m-%d %H:%M')}
 
-      response = self.gClient.getHostnameDowntime( hostname, ongoing = True )
+      response = self.gClient.getHostnameDowntime(hostname, ongoing=True)
 
       if not response['OK']:
         return response
 
-      doc = minidom.parseString( response['Value'] )
-      downtimeElements = doc.getElementsByTagName( "DOWNTIME" )
+      doc = minidom.parseString(response['Value'])
+      downtimeElements = doc.getElementsByTagName("DOWNTIME")
 
       for dtElement in downtimeElements:
-        GOCDBdict = _parseSingleElement( dtElement, [ 'PRIMARY_KEY', 'ENDPOINT',
-                                                      'FORMATED_START_DATE', 'FORMATED_END_DATE' ] )
+        GOCDBdict = _parseSingleElement(dtElement, ['PRIMARY_KEY', 'ENDPOINT',
+                                                    'FORMATED_START_DATE', 'FORMATED_END_DATE'])
 
         localDowntimeID = localDBdict['DowntimeID']
         GOCDBDowntimeID = GOCDBdict['PRIMARY_KEY'] + ' ' + GOCDBdict['ENDPOINT']
@@ -77,27 +78,27 @@ class GOCDBSyncCommand( Command ):
         if localDowntimeID == GOCDBDowntimeID:
 
           if localDBdict['FORMATED_START_DATE'] != GOCDBdict['FORMATED_START_DATE']:
-            result = self.rmClient.addOrModifyDowntimeCache( downtimeID = localDBdict['DowntimeID'],
-                                                             startDate = GOCDBdict['FORMATED_START_DATE'])
+            result = self.rmClient.addOrModifyDowntimeCache(downtimeID=localDBdict['DowntimeID'],
+                                                            startDate=GOCDBdict['FORMATED_START_DATE'])
             gLogger.verbose("The start date of %s has been changed!" % downtimes[3])
 
-            if not result[ 'OK' ]:
+            if not result['OK']:
               return result
 
           if localDBdict['FORMATED_END_DATE'] != GOCDBdict['FORMATED_END_DATE']:
-            result = self.rmClient.addOrModifyDowntimeCache( downtimeID = localDBdict['DowntimeID'],
-                                                             endDate = GOCDBdict['FORMATED_END_DATE'] )
+            result = self.rmClient.addOrModifyDowntimeCache(downtimeID=localDBdict['DowntimeID'],
+                                                            endDate=GOCDBdict['FORMATED_END_DATE'])
             gLogger.verbose("The end date of %s has been changed!" % downtimes[3])
 
-            if not result[ 'OK' ]:
+            if not result['OK']:
               return result
 
     return S_OK()
 
-  def doCache( self ):
+  def doCache(self):
     return S_OK()
 
-  def doMaster( self ):
+  def doMaster(self):
     """
     This method calls the doNew method for each hostname that exists
     in the DowntimeCache table of the local database.
@@ -107,7 +108,7 @@ class GOCDBSyncCommand( Command ):
 
     # Query DB for all downtimes
     result = self.rmClient.selectDowntimeCache()
-    if not result[ 'OK' ]:
+    if not result['OK']:
       return result
 
     for data in result['Value']:
@@ -118,10 +119,10 @@ class GOCDBSyncCommand( Command ):
 
       # data[0] contains the hostname
       gLogger.verbose("Checking if the downtime of %s has been changed" % data[0])
-      result = self.doNew( data[0] )
-      if not result[ 'OK' ]:
+      result = self.doNew(data[0])
+      if not result['OK']:
         return result
 
-      self.seenHostnames.add( data[0] )
+      self.seenHostnames.add(data[0])
 
     return S_OK()
