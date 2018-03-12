@@ -1,4 +1,4 @@
-[v6r20-pre15]
+[v6r20-pre16]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -23,6 +23,7 @@ CHANGE: MessageQueue log handler uses JsonFormatter
 
 *Monitoring
 CHANGE: fixes for testing in Jenkins with locally-deployed ElasticSearch
+FIX: fixes in the query results interpretation
 
 *Configuration
 FIX: ConfigurationHandler, PilotCStoJSONSynchronizer - fixes for enabling pilotCStoJSONSynchronizer, and doc
@@ -62,6 +63,9 @@ FIX: Really exit the RequestExecutingAgent when the result queue is buggy
 *RSS
 FIX: Initialize RPC to WMSAdministrator only once
 CHANGE: Using StorageElement.getOccupancy()
+FIX: Using MB as default for the size
+FIX: flagged some commands that for the moment are unusable
+FIX: fixed documentation of how to develop commands
 
 *Resources
 NEW: New SingularityComputingElement to submit jobs to a Singularity container
