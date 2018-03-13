@@ -1,38 +1,19 @@
-""" VOMSService class encapsulated connection to the VOMS service for a given VO
+""" VOMSService class encapsulates connection to the VOMS service for a given VO
 """
 
 __RCSID__ = "$Id$"
 
+import requests
+import os
+
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.SOAPFactory import getSOAPClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
-def _processListReturn( soapReturn ):
-  data = []
-  if soapReturn:
-    for entry in soapReturn:
-      data.append( str( entry ) )
-  return data
-
-def _processListDictReturn( soapReturn ):
-  data = []
-  if soapReturn:
-    for entry in soapReturn:
-      entryData = {}
-      for info in entry:
-
-        try:
-          entryData[ info[0] ] = str( info[1] )
-        except:
-          pass
-      data.append( entryData )
-  return data
-
 class VOMSService( object ):
 
-  def __init__( self, vo = None, adminUrl = False, attributesUrl = False, certificatesUrl = False ):
+  def __init__(self, vo = None):
 
     if vo is None:
       vo = getVO()
@@ -43,136 +24,80 @@ class VOMSService( object ):
     self.vomsVO = getVOOption( vo, "VOMSName" )
     if not self.vomsVO:
       raise Exception( "Can not get VOMS name for VO %s" % vo )
-    self.__soapClients = {}
-    for key, url in ( ( 'Admin', adminUrl ), ( 'Attributes', attributesUrl ), ( 'Certificates', certificatesUrl ) ):
-      urls = []
-      if not url:
-        url = gConfig.getValue( "/Registry/VO/%s/VOMSServices/VOMS%s" % ( self.vo, key ), "" )
-      if not url:
-        result = gConfig.getSections( '/Registry/VO/%s/VOMSServers' % self.vo )
-        if result['OK']:
-          vomsServers = result['Value']
-          for server in vomsServers:
-            urls.append( 'https://%s:8443/voms/%s/services/VOMS%s' % ( server, self.vomsVO, key ) )
-      else:
-        urls = [url]
 
-      gotURL = False
-      for url in urls:
-        retries = 3
-        while retries:
-          retries -= 1
-          try:
-            client = getSOAPClient( "%s?wsdl" % url )
-            client.set_options(headers={"X-VOMS-CSRF-GUARD":"1"})
-            self.__soapClients[ key ] = client
-            gotURL = True
-            break
-          except Exception:
-            pass
-        if gotURL:
-          break
-      if not gotURL:
-        raise Exception( 'Could not connect to the %s service for VO %s' % ( key, self.vo ) )
+    self.urls = []
+    result = gConfig.getSections( '/Registry/VO/%s/VOMSServers' % self.vo )
+    if result['OK']:
+      vomsServers = result['Value']
+      for server in vomsServers:
+        self.urls.append( 'https://%s:8443/voms/%s/apiv2/users' % (server, self.vomsVO))
 
-  def admListMembers( self ):
-    try:
-      result = self.__soapClients[ 'Admin' ].service.listMembers()
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function listMembers: %s" % e )
-    if 'listMembersReturn' in dir( result ):
-      return S_OK( _processListDictReturn( result.listMembersReturn ) )
-    return S_OK( _processListDictReturn( result ) )
-
-
-  def admListCertificates( self, dn, ca ):
-    try:
-      UserID = self.__soapClients[ 'Certificates' ].service.getUserIdFromDn( dn, ca )
-      result = self.__soapClients[ 'Certificates' ].service.getCertificates( UserID )
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function getCertificates: %s" % e )
-    if 'listCertificatesReturn' in dir( result ):
-      return S_OK( _processListDictReturn( result.listCertificatesReturn ) )
-    return S_OK( _processListDictReturn( result ) )
-
-  def admListRoles( self ):
-    try:
-      result = self.__soapClients[ 'Admin' ].service.listRoles()
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function listRoles: %s" % e )
-    if 'listRolesReturn' in dir( result ):
-      return S_OK( _processListReturn( result.listRolesReturn ) )
-    return S_OK( _processListReturn( result ) )
-
-
-  def admListUsersWithRole( self, group, role ):
-    try:
-      result = self.__soapClients[ 'Admin' ].service.listUsersWithRole( group, role )
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function listUsersWithRole: %s" % e )
-    if 'listUsersWithRoleReturn' in dir( result ):
-      return S_OK( _processListDictReturn( result.listUsersWithRoleReturn ) )
-    return S_OK( _processListDictReturn( result ) )
+    self.userDict = None
 
   def admGetVOName( self ):
-    try:
-      result = self.__soapClients[ 'Admin' ].service.getVOName()
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function getVOName: %s" % e )
-    return S_OK( result )
 
-  def attGetUserNickname( self, dn, ca ):
-    user = self.__soapClients[ 'Attributes' ].factory.create( 'ns0:User' )
-    user.DN = dn
-    user.CA = ca
-    try:
-      result = self.__soapClients[ 'Attributes' ].service.listUserAttributes( user )
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function getUserNickname: %s" % e )
+    return S_OK( self.vo )
 
-    if result is not None:
-      if 'listUserAttributesReturn' in dir( result ):
-        return S_OK( str( result.listUserAttributesReturn[0].value ) )
+  def attGetUserNickname(self, dn, _ca=None):
 
-      return S_OK( str( result[0].value ) )
-    else:
-      return S_ERROR( DErrno.EVOMS )
+    if self.userDict is None:
+      result = self.getUsers()
+      if not result['OK']:
+        return result
 
-  def getUsers( self ):
+    uDict = self.userDict.get(dn)
+    if not uDict:
+      return S_ERROR(DErrno.EVOMS, "No nickname defined")
+    nickname = uDict.get('nickname')
+    if not nickname:
+      return S_ERROR(DErrno.EVOMS, "No nickname defined")
+    return S_OK(nickname)
+
+  def getUsers(self):
     """ Get all the users of the VOMS VO with their detailed information
 
     :return: user dictionary keyed by the user DN
     """
 
-    vomsUsers = {}
+    userProxy = os.environ['X509_USER_PROXY']
+    caPath = os.environ['X509_CERT_DIR']
+    rawUserList = []
+    for url in self.urls:
 
-    result = self.admListMembers()
-    if not result['OK']:
-      return result
-    members = result['Value']
+      try:
+        result = requests.get(url,
+                              headers = {"X-VOMS-CSRF-GUARD": "y"},
+                              cert = userProxy,
+                              verify = caPath,
+                              params = {"startIndex": "0",
+                                        "pageSize":"100"} )
+      except requests.ConnectionError as exc:
+        pass
 
-    result = self.admListRoles()
-    if not result['OK']:
-      return result
-    roles = result['Value']
+      if result.status_code != 200:
+        return S_ERROR(DErrno.ENOAUTH, "Failed to contact the VOMS server", result.text)
 
-    roleMembers = {}
-    for role in roles:
-      result = self.admListUsersWithRole( '/%s' % self.vomsVO, role )
-      if not result['OK']:
-        return result
-      roleMembers[role] = result['Value']
+      userList = result.json()['result']
 
-    for member in members:
-      member['Roles'] = []
-      if "DN" in member:
-        DN = member.pop( 'DN' )
-        for role in roles:
-          for rm in roleMembers[role]:
-            if DN == rm['DN']:
-              member['Roles'].append( role )
+      print "AT >>> len(userList)", len(userList)
 
-        vomsUsers[ DN ] = member
+      rawUserList.extend(userList)
+      if len(userList) < 100: break
 
-    return S_OK( vomsUsers )
+    # We have got the user info, reformat it
+    resultDict = {}
+    for user in rawUserList:
+      for cert in user['certificates']:
+        dn = cert['subjectString']
+        resultDict[dn] = user
+        resultDict[dn]['CA'] = cert['issuerString']
+        resultDict[dn]['certSuspended'] = cert['suspended']
+        resultDict[dn]['certSuspensionReason'] = cert['suspensionReason']
+        resultDict[dn]['mail'] = user['emailAddress']
+        resultDict[dn]['Roles'] = user['fqans']
+        for attribute in user['attributes']:
+          if attribute.get('name') == 'nickname':
+            resultDict[dn]['nickname'] = attribute.get('value')
 
+    self.userDict = dict(resultDict)
+    return S_OK(resultDict)
