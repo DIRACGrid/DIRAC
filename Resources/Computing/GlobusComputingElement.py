@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id$"
+__RCSID__ = "338f3a4 (2015-10-06 13:34:21 +0200) Andre Sailer <andre.philippe.sailer@cern.ch>"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
@@ -47,12 +47,14 @@ class GlobusComputingElement( ComputingElement ):
     self.outputURL = 'gsiftp://localhost'
     self.gridEnv = ''
     self.proxyRenewal = 0
+    self.extraSubmitString = ''
 
   def _reset( self ):
     self.queue = self.ceParameters['Queue']
     self.outputURL = self.ceParameters.get( 'OutputURL', 'gsiftp://localhost' )
     self.gridEnv = self.ceParameters['GridEnv']
-
+    self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
+    
   #############################################################################
   def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
     """ Method to submit job
@@ -67,7 +69,9 @@ class GlobusComputingElement( ComputingElement ):
     for _i in xrange(numberOfJobs):
       diracStamp = makeGuid()[:8]
       queueName = '%s/%s' % ( self.ceName, self.queue )
-      cmd = ['globus-job-submit', queueName, "-s", executableFile ]
+      
+      cmd = ['globus-job-submit', queueName, " ", self.extraSubmitString, "-s", executableFile ]
+      self.log.verbose(cmd)
       #cmd = ['globus-job-submit', '-r %s' % queueName, '-f %s' % jdlName ]
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
       self.log.verbose(result)
