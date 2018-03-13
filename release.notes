@@ -1,5 +1,8 @@
 [v6r19p17]
 
+*Framework
+FIX: ProxyManager - if an extension has a ProxyDB, use it
+
 *RSS
 FIX: CSHelpers.py minor fixes
 
