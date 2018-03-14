@@ -43,10 +43,6 @@ def pipInstall(package, switches=""):
 # Collect all the requested python modules to install
 reqDict = {}
 
-if instType.find("client") == 0:
-  gLogger.error("Client installations do not support externals requirements")
-  sys.exit(0)
-
 for entry in os.listdir(rootPath):
   if len(entry) < 5 or entry.find("DIRAC") != len(entry) - 5:
     continue
