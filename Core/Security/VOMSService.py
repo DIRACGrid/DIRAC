@@ -11,34 +11,43 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
-class VOMSService( object ):
+class VOMSService(object):
 
-  def __init__(self, vo = None):
+  def __init__(self, vo=None):
 
     if vo is None:
       vo = getVO()
     if not vo:
-      raise Exception( 'No VO name given' )
+      raise Exception('No VO name given')
 
     self.vo = vo
-    self.vomsVO = getVOOption( vo, "VOMSName" )
+    self.vomsVO = getVOOption(vo, "VOMSName")
     if not self.vomsVO:
-      raise Exception( "Can not get VOMS name for VO %s" % vo )
+      raise Exception("Can not get VOMS name for VO %s" % vo)
 
     self.urls = []
-    result = gConfig.getSections( '/Registry/VO/%s/VOMSServers' % self.vo )
+    result = gConfig.getSections('/Registry/VO/%s/VOMSServers' % self.vo)
     if result['OK']:
       vomsServers = result['Value']
       for server in vomsServers:
-        self.urls.append( 'https://%s:8443/voms/%s/apiv2/users' % (server, self.vomsVO))
+        self.urls.append('https://%s:8443/voms/%s/apiv2/users' % (server, self.vomsVO))
 
     self.userDict = None
 
-  def admGetVOName( self ):
+  def admGetVOName(self):
+    """ Get VOMS VO name, kept for backward compatibility
 
-    return S_OK( self.vo )
+    :return: S_OK with Value: VOMS VO name
+    """
+    return S_OK(self.vo)
 
   def attGetUserNickname(self, dn, _ca=None):
+    """ Get user nickname for a given DN if any
+    :param str dn: user DN
+    :param str _ca: CA, kept for backward compatibility
+    :return:  S_OK with Value: nickname
+    """
+
 
     if self.userDict is None:
       result = self.getUsers()
@@ -66,11 +75,11 @@ class VOMSService( object ):
 
       try:
         result = requests.get(url,
-                              headers = {"X-VOMS-CSRF-GUARD": "y"},
-                              cert = userProxy,
-                              verify = caPath,
-                              params = {"startIndex": "0",
-                                        "pageSize":"100"} )
+                              headers={"X-VOMS-CSRF-GUARD": "y"},
+                              cert=userProxy,
+                              verify=caPath,
+                              params={"startIndex": "0",
+                                      "pageSize": "100"})
       except requests.ConnectionError as exc:
         pass
 
@@ -78,11 +87,9 @@ class VOMSService( object ):
         return S_ERROR(DErrno.ENOAUTH, "Failed to contact the VOMS server", result.text)
 
       userList = result.json()['result']
-
-      print "AT >>> len(userList)", len(userList)
-
       rawUserList.extend(userList)
-      if len(userList) < 100: break
+      if len(userList) < 100:
+        break
 
     # We have got the user info, reformat it
     resultDict = {}
