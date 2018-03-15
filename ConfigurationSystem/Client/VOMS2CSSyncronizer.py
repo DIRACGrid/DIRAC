@@ -140,8 +140,7 @@ class VOMS2CSSynchronizer(object):
           userDict = { "DN": dn, "CA": self.vomsUserDict[dn]['CA'], "Email": self.vomsUserDict[dn]['mail'] }
           groupsWithRole = []
           for role in self.vomsUserDict[dn]['Roles']:
-            fullRole = "/%s/%s" % (self.vomsVOName, role )
-            groupList = vomsDIRACMapping.get( fullRole, [] )
+            groupList = vomsDIRACMapping.get( role, [] )
             for group in groupList:
               if group not in noSyncVOMSGroups:
                 groupsWithRole.append( group )
@@ -170,8 +169,7 @@ class VOMS2CSSynchronizer(object):
       nonVOGroups = list( set( existingGroups ) - set( diracVOMSMapping.keys() ) )
       groupsWithRole = []
       for role in self.vomsUserDict[dn]['Roles']:
-        fullRole = "/%s/%s" % ( self.vomsVOName, role )
-        groupList = vomsDIRACMapping.get( fullRole, [] )
+        groupList = vomsDIRACMapping.get( role, [] )
         for group in groupList:
           if group not in noSyncVOMSGroups:
             groupsWithRole.append( group )
