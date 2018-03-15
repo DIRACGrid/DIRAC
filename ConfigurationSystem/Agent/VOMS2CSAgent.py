@@ -60,9 +60,7 @@ class VOMS2CSAgent(AgentModule):
 
   def execute(self):
 
-    self.__adminMsgs = {}
-    self.csapi.downloadCSData()
-    for vo in self.__voDict:
+    for vo in self.voList:
       self.voChanged = False
       voAdminUser = getVOOption(vo, "VOAdmin")
       voAdminMail = None
@@ -131,9 +129,9 @@ class VOMS2CSAgent(AgentModule):
       if self.voChanged or self.detailedReport:
         mailMsg = ""
         if adminMessages['Errors']:
-          mailMsg += "\nErrors list:\n  %s" % "\n  ".join(self.__adminMsgs['Errors'])
+          mailMsg += "\nErrors list:\n  %s" % "\n  ".join(adminMessages['Errors'])
         if adminMessages['Info']:
-          mailMsg += "\nRun result:\n  %s" % "\n  ".join(self.__adminMsgs['Info'])
+          mailMsg += "\nRun result:\n  %s" % "\n  ".join(adminMessages['Info'])
         if self.detailedReport:
           result = vomsSync.getVOUserReport()
           if result['OK']:
