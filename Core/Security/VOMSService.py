@@ -71,25 +71,45 @@ class VOMSService(object):
     userProxy = os.environ['X509_USER_PROXY']
     caPath = os.environ['X509_CERT_DIR']
     rawUserList = []
+    result = None
     for url in self.urls:
+      rawUserList = []
+      startIndex = 0
+      result = None
+      error = None
+      urlDone = False
+      while not urlDone:
+        try:
+          result = requests.get(url,
+                                headers={"X-VOMS-CSRF-GUARD": "y"},
+                                cert=userProxy,
+                                verify=caPath,
+                                params={"startIndex": str(startIndex),
+                                        "pageSize": "100"})
+        except requests.ConnectionError as exc:
+          error = "%s:%s" % (url, repr(exc))
+          urlDone = True
+          continue
 
-      try:
-        result = requests.get(url,
-                              headers={"X-VOMS-CSRF-GUARD": "y"},
-                              cert=userProxy,
-                              verify=caPath,
-                              params={"startIndex": "0",
-                                      "pageSize": "100"})
-      except requests.ConnectionError as exc:
-        pass
+        if result.status_code != 200:
+          error = "Failed to contact the VOMS server: %s" % result.text
+          urlDone = True
+          continue
 
-      if result.status_code != 200:
-        return S_ERROR(DErrno.ENOAUTH, "Failed to contact the VOMS server", result.text)
+        userList = result.json()['result']
+        rawUserList.extend(userList)
+        if len(userList) < 100:
+          urlDone = True
+        startIndex += 100
 
-      userList = result.json()['result']
-      rawUserList.extend(userList)
-      if len(userList) < 100:
+      # This URL did not work, try another one
+      if error:
+        continue
+      else:
         break
+
+    if error:
+      return S_ERROR(DErrno.ENOAUTH, "Failed to contact the VOMS server: %s" % error)
 
     # We have got the user info, reformat it
     resultDict = {}
@@ -102,9 +122,11 @@ class VOMSService(object):
         resultDict[dn]['certSuspensionReason'] = cert['suspensionReason']
         resultDict[dn]['mail'] = user['emailAddress']
         resultDict[dn]['Roles'] = user['fqans']
-        for attribute in user['attributes']:
-          if attribute.get('name') == 'nickname':
-            resultDict[dn]['nickname'] = attribute.get('value')
+        attributes = user.get('attributes')
+        if attributes:
+          for attribute in user.get('attributes',[]):
+            if attribute.get('name') == 'nickname':
+              resultDict[dn]['nickname'] = attribute.get('value')
 
     self.userDict = dict(resultDict)
     return S_OK(resultDict)
