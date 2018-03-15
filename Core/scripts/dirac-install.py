@@ -189,10 +189,10 @@ class ReleaseConfig(object):
       try:
         value = self.__get([op.strip() for op in opName.split("/") if op.strip()])
       except KeyError:
-        if defaultValue != None:
+        if defaultValue:
           return defaultValue
         raise
-      if defaultValue == None:
+      if defaultValue is None:
         return value
       defType = type(defaultValue)
       if isinstance(defType, bool):
@@ -322,7 +322,7 @@ class ReleaseConfig(object):
       except:
         return S_ERROR("Could not open %s" % urlcfg)
     try:
-      #cfgData = cfgFile.read()
+      # cfgData = cfgFile.read()
       cfg = ReleaseConfig.CFG(cfgData)
     except Exception, excp:
       return S_ERROR("Could not parse %s: %s" % (urlcfg, excp))
@@ -526,14 +526,15 @@ class ReleaseConfig(object):
 
   def loadProjectRelease(self, releases, project=False, sourceURL=False, releaseMode=False, relLocation=False):
     """
-    This method loads all project configurations (*.cfg). If a project is an extension of DIRAC, it will load the extension and 
-    after will load the base DIRAC module. 
+    This method loads all project configurations (*.cfg). If a project is an extension of DIRAC,
+    it will load the extension and after will load the base DIRAC module.
 
     :param list releases: list of releases, which will be loaded: for example: v6r19
     :param str project: the name of the project, if it is given. For example: DIRAC
     :param str sourceURL: the code repository
     :param str releaseMode:
-    :param str relLocation: local configuration file, which contains the releases. for example: file:///`pwd`/releases.cfg
+    :param str relLocation: local configuration file,
+                            which contains the releases. for example: file:///`pwd`/releases.cfg
     """
 
     if not project:
@@ -596,9 +597,10 @@ class ReleaseConfig(object):
           prj, vrs = sKey
           for pKey in relDeps:
             if pKey[0] == prj and pKey[1] != vrs:
-              errMsg = "%s is required with two different versions ( %s and %s ) starting with %s:%s" % (prj,
-                                                                                                         pKey[1], vrs,
-                                                                                                         project, release)
+              errMsg = "%s is required with two different versions ( %s and %s ) \
+              starting with %s:%s" % (prj,
+                                      pKey[1], vrs,
+                                      project, release)
               return S_ERROR(errMsg)
 
       # Same version already required
@@ -652,9 +654,9 @@ class ReleaseConfig(object):
   def getModulesForRelease(self, release, project=False):
     if not project:
       project = self.__projectName
-    if not project in self.__prjRelCFG:
+    if project not in self.__prjRelCFG:
       return S_ERROR("Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % project)
-    if not release in self.__prjRelCFG[project]:
+    if release not in self.__prjRelCFG[project]:
       return S_ERROR("Version %s has not been loaded for project %s" % (release, project))
     config = self.__prjRelCFG[project][release]
     if not config.isSection("Releases/%s" % release):
@@ -706,7 +708,7 @@ class ReleaseConfig(object):
     :param str project: the name of the project for example: DIRAC
     """
 
-    if not self.__projectName in self.__prjRelCFG:
+    if self.__projectName not in self.__prjRelCFG:
       return S_ERROR("Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % self.__projectName)
 
     if not project:
@@ -734,21 +736,21 @@ class ReleaseConfig(object):
   def getDiracOSVersion(self, diracOSVersion=''):
     if diracOSVersion:
       return diracOSVersion
-    for objName in self.__projectsLoadedBy:
-      try:
-        return self.__prjRelCFG[self.__projectName][cliParams.release].get("Releases/%s/DiracOS" % cliParams.release, lcgVersion)
-      except KeyError:
-        pass
+    try:
+      return self.__prjRelCFG[self.__projectName][cliParams.release].get("Releases/%s/DiracOS" % cliParams.release,
+                                                                         diracOSVersion)
+    except KeyError:
+      pass
     return diracOSVersion
 
   def getLCGVersion(self, lcgVersion=""):
     if lcgVersion:
       return lcgVersion
-    for objName in self.__projectsLoadedBy:
-      try:
-        return self.__prjRelCFG[self.__projectName][cliParams.release].get("Releases/%s/LcgVer" % cliParams.release, lcgVersion)
-      except KeyError:
-        pass
+    try:
+      return self.__prjRelCFG[self.__projectName][cliParams.release].get("Releases/%s/LcgVer" % cliParams.release,
+                                                                         lcgVersion)
+    except KeyError:
+      pass
     return lcgVersion
 
   def getModulesToInstall(self, release, extensions=False):
@@ -818,7 +820,7 @@ class ReleaseConfig(object):
 #################################################################################
 
 
-#platformAlias = { 'Darwin_i386_10.6' : 'Darwin_i386_10.5' }
+# platformAlias = { 'Darwin_i386_10.6' : 'Darwin_i386_10.5' }
 platformAlias = {}
 
 ####
@@ -1014,9 +1016,9 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
     else:
       os.unlink(md5Path)
   # Extract
-  #cwd = os.getcwd()
+  # cwd = os.getcwd()
   # os.chdir(cliParams.targetPath)
-  #tf = tarfile.open( tarPath, "r" )
+  # tf = tarfile.open( tarPath, "r" )
   # for member in tf.getmembers():
   #  tf.extract( member )
   # os.chdir(cwd)
@@ -1076,7 +1078,8 @@ def fixPythonShebang():
 
   binaryPath = os.path.join(cliParams.targetPath, cliParams.platform)
   try:
-    replaceCmd = "grep -rIl '#!/usr/bin/python' %s/bin | xargs sed -i'.org' 's:#!/usr/bin/python:#!/usr/bin/env python:g'" % binaryPath
+    replaceCmd = "grep -rIl '#!/usr/bin/python' %s/bin |\
+     xargs sed -i'.org' 's:#!/usr/bin/python:#!/usr/bin/env python:g'" % binaryPath
     os.system(replaceCmd)
   except:
     pass
@@ -1406,10 +1409,12 @@ def installLCGutils(releaseConfig):
     if not downloadAndExtractTarball(tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False, cache=True):
       logERROR(
           "\nThe requested LCG software version %s for the local operating system could not be downloaded." % verString)
-      logERROR("Please, check the availability of the LCG software bindings for you platform 'DIRAC-lcg-%s' \n in the repository %s/lcgBundles/." %
+      logERROR("Please, check the availability of the LCG software bindings for you \
+      platform 'DIRAC-lcg-%s' \n in the repository %s/lcgBundles/." %
                (verString, os.path.dirname(tarsURL)))
       logERROR(
-          "\nIf you would like to skip the installation of the LCG software, redo the installation with adding the option --no-lcg-bundle to the command line.")
+          "\nIf you would like to skip the installation of the LCG software, redo the installation with \
+          adding the option --no-lcg-bundle to the command line.")
       return False
 
   logNOTICE("Fixing Python Shebang...")
@@ -1422,9 +1427,9 @@ def createPermanentDirLinks():
   """
   if cliParams.useVersionsDir:
     try:
-      for dir in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc', 'webRoot']:
-        fake = os.path.join(cliParams.targetPath, dir)
-        real = os.path.join(cliParams.basePath, dir)
+      for directory in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc', 'webRoot']:
+        fake = os.path.join(cliParams.targetPath, directory)
+        real = os.path.join(cliParams.basePath, directory)
         if not os.path.exists(real):
           os.makedirs(real)
         if os.path.exists(fake):
@@ -1511,10 +1516,14 @@ def createBashrc():
 
       lines.extend(['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                     '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
-                    '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || export LD_LIBRARY_PATH=$DIRACLIB:$LD_LIBRARY_PATH',
-                    '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || export LD_LIBRARY_PATH=$DIRACLIB/mysql:$LD_LIBRARY_PATH',
-                    '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || export DYLD_LIBRARY_PATH=$DIRACLIB:$DYLD_LIBRARY_PATH',
-                    '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH',
+                    '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
+                    export LD_LIBRARY_PATH=$DIRACLIB:$LD_LIBRARY_PATH',
+                    '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
+                    export LD_LIBRARY_PATH=$DIRACLIB/mysql:$LD_LIBRARY_PATH',
+                    '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
+                    export DYLD_LIBRARY_PATH=$DIRACLIB:$DYLD_LIBRARY_PATH',
+                    '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
+                    export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH',
                     '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'export OPENSSL_CONF=/tmp'])
@@ -1548,7 +1557,6 @@ def createBashrc():
 def createCshrc():
   """ Create DIRAC environment setting script for the (t)csh shell
   """
-
   proPath = cliParams.targetPath
   # Now create cshrc at basePath
   try:
@@ -1582,7 +1590,10 @@ def createCshrc():
                     'setenv DIRACBIN %s' % os.path.join("$DIRAC", cliParams.platform, 'bin'),
                     'setenv DIRACSCRIPTS %s' % os.path.join("$DIRAC", 'scripts'),
                     'setenv DIRACLIB %s' % os.path.join("$DIRAC", cliParams.platform, 'lib'),
-                    'setenv TERMINFO %s' % __getTerminfoLocations(os.path.join("$DIRAC", cliParams.platform, 'share', 'terminfo'))])
+                    'setenv TERMINFO %s' % __getTerminfoLocations(os.path.join("$DIRAC",
+                                                                               cliParams.platform,
+                                                                               'share',
+                                                                               'terminfo'))])
 
       lines.extend(['# Prepend the PYTHONPATH, the LD_LIBRARY_PATH, and the DYLD_LIBRARY_PATH'])
 
@@ -1592,10 +1603,14 @@ def createCshrc():
                     '( test $?PYTHONPATH -eq 1 ) || setenv PYTHONPATH ""',
                     '( echo $PATH | grep -q $DIRACBIN ) || setenv PATH ${DIRACBIN}:$PATH',
                     '( echo $PATH | grep -q $DIRACSCRIPTS ) || setenv PATH ${DIRACSCRIPTS}:$PATH',
-                    '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || setenv LD_LIBRARY_PATH ${DIRACLIB}:$LD_LIBRARY_PATH',
-                    '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || setenv LD_LIBRARY_PATH ${DIRACLIB}/mysql:$LD_LIBRARY_PATH',
-                    '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || setenv DYLD_LIBRARY_PATH ${DIRACLIB}:$DYLD_LIBRARY_PATH',
-                    '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH',
+                    '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
+                    setenv LD_LIBRARY_PATH ${DIRACLIB}:$LD_LIBRARY_PATH',
+                    '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
+                    setenv LD_LIBRARY_PATH ${DIRACLIB}/mysql:$LD_LIBRARY_PATH',
+                    '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
+                    setenv DYLD_LIBRARY_PATH ${DIRACLIB}:$DYLD_LIBRARY_PATH',
+                    '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
+                    setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH',
                     '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'setenv OPENSSL_CONF /tmp'])
@@ -1606,7 +1621,7 @@ def createCshrc():
       lines.extend(['# Gfal2 configuration and plugins',
                     'setenv GFAL_CONFIG_DIR %s' % os.path.join("$DIRAC", cliParams.platform, 'etc/gfal2.d'),
                     'setenv  GFAL_PLUGIN_DIR %s' % os.path.join("$DIRACLIB", 'gfal2-plugins')])
-     # add DIRACPLAT environment variable for client installations
+      # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend(['# DIRAC platform',
                       'test $?DIRACPLAT -eq 1 || setenv DIRACPLAT `$DIRAC/scripts/dirac-platform`'])
@@ -1689,7 +1704,7 @@ def createBashrcForDiracOS():
       bashrcFile = os.path.join(cliParams.basePath, 'bashrc')
       proPath = os.path.join(cliParams.basePath, 'pro')
     logNOTICE('Creating %s' % bashrcFile)
-    if not os.path.exists( bashrcFile ):
+    if not os.path.exists(bashrcFile):
       lines = ['# DIRAC bashrc file, used by service and agent run scripts to set environment',
                'export PYTHONUNBUFFERED=yes',
                'export PYTHONOPTIMIZE=x']
@@ -1725,13 +1740,18 @@ def createBashrcForDiracOS():
 
       lines.extend(['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                     '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
-                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || export LD_LIBRARY_PATH=$DIRACLIB:$LD_LIBRARY_PATH',
-                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || export LD_LIBRARY_PATH=$DIRACLIB/mysql:$LD_LIBRARY_PATH',
-                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || export DYLD_LIBRARY_PATH=$DIRACLIB:$DYLD_LIBRARY_PATH',
-                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH',
+                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
+                    export LD_LIBRARY_PATH=$DIRACLIB:$LD_LIBRARY_PATH',
+                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
+                    export LD_LIBRARY_PATH=$DIRACLIB/mysql:$LD_LIBRARY_PATH',
+                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
+                    export DYLD_LIBRARY_PATH=$DIRACLIB:$DYLD_LIBRARY_PATH',
+                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
+                    export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH',
                     '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
       lines.extend(
-          ['export LD_LIBRARY_PATH=$(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" | sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
+          ['export LD_LIBRARY_PATH=$(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" |\
+           sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'export OPENSSL_CONF=/tmp'])
 
@@ -1808,13 +1828,18 @@ def createCshrcForDiracOS():
                     '( test $?PYTHONPATH -eq 1 ) || setenv PYTHONPATH ""',
                     '( echo $PATH | grep -q $DIRACBIN ) || setenv PATH ${DIRACBIN}:$PATH',
                     '( echo $PATH | grep -q $DIRACSCRIPTS ) || setenv PATH ${DIRACSCRIPTS}:$PATH',
-                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || setenv LD_LIBRARY_PATH ${DIRACLIB}:$LD_LIBRARY_PATH',
-                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || setenv LD_LIBRARY_PATH ${DIRACLIB}/mysql:$LD_LIBRARY_PATH',
-                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || setenv DYLD_LIBRARY_PATH ${DIRACLIB}:$DYLD_LIBRARY_PATH',
-                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH',
+                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
+                    setenv LD_LIBRARY_PATH ${DIRACLIB}:$LD_LIBRARY_PATH',
+                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
+                    setenv LD_LIBRARY_PATH ${DIRACLIB}/mysql:$LD_LIBRARY_PATH',
+                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
+                    setenv DYLD_LIBRARY_PATH ${DIRACLIB}:$DYLD_LIBRARY_PATH',
+                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
+                    setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH',
                     '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
       lines.extend(
-          ['setenv LD_LIBRARY_PATH $(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" | sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
+          ['setenv LD_LIBRARY_PATH $(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" | \
+          sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'setenv OPENSSL_CONF /tmp'])
       lines.extend(['# IPv6 support',
@@ -1824,7 +1849,7 @@ def createCshrcForDiracOS():
       lines.extend(['# Gfal2 configuration and plugins',
                     'setenv GFAL_CONFIG_DIR $DIRACOS/etc/gfal2.d',
                     'setenv  GFAL_PLUGIN_DIR $DIRACOS/usr/lib64/gfal2-plugins/'])
-     # add DIRACPLAT environment variable for client installations
+      # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend(['# DIRAC platform',
                       'test $?DIRACPLAT -eq 1 || setenv DIRACPLAT `$DIRAC/scripts/dirac-platform`'])
