@@ -16,7 +16,7 @@ __RCSID__ = "$Id$"
 
 class VOMS2CSSynchronizer(object):
 
-  def __init__(self, vo):
+  def __init__(self, vo, autoModifyUsers = True, autoAddUsers = True, autoDeleteUsers = False):
 
     self.log = gLogger.getSubLogger("VOMS2CSSynchronizer")
     self.csapi = CSAPI()
@@ -26,9 +26,9 @@ class VOMS2CSSynchronizer(object):
       raise Exception("VOMS name not defined for VO %s" % vo)
     self.adminMsgs = { 'Errors' : [], 'Info' : [] }
     self.vomsUserDict = {}
-    self.autoModifyUsers = True
-    self.autoAddUsers = True
-    self.autoDeleteUsers = False
+    self.autoModifyUsers = autoModifyUsers
+    self.autoAddUsers = autoAddUsers
+    self.autoDeleteUsers = autoDeleteUsers
 
   def syncCSWithVOMS(self):
     resultDict = defaultdict( list )
