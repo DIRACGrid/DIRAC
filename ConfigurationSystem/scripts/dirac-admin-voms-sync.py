@@ -11,6 +11,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK
 from DIRAC.Core.Base import Script
+from DIRAC.ConfigurationSystem.Client.VOMS2CSSyncronizer import VOMS2CSSynchronizer
 
 dryRun = False
 
@@ -38,8 +39,6 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                  ))
 
 Script.parseCommandLine(ignoreErrors=True)
-
-from DIRAC.ConfigurationSystem.Client.VOMS2CSSyncronizer import VOMS2CSSynchronizer
 
 vomsSync = VOMS2CSSynchronizer(voName)
 result = vomsSync.syncCSWithVOMS()
