@@ -1169,8 +1169,8 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('M:', 'defaultsURL=', 'Where to retrieve the global defaults from'),
            ('h', 'help', 'Show this help'),
            ('T:', 'Timeout=', 'Timeout for downloads (default = %s)'),
-           ('O:', 'diracos-version=', 'the version of the DIRAC os'),
-           ('  ', 'dirac-os', 'dirscos not be installed')
+           ('O:', 'diracos-version=', 'the version of the DIRAC OS'),
+           ('  ', 'no-dirac-os', 'Do not install DIRAC OS')
            )
 
 
@@ -1295,7 +1295,7 @@ def loadConfiguration():
     elif o in ('-O', '--diracos-version'):
       cliParams.diracOSVersion = v
 
-    elif o in ('-f', '--dirac-os'):
+    elif o in ('--no-dirac-os'):
       cliParams.diracOS = v
 
   if not cliParams.release:
@@ -1689,7 +1689,7 @@ def createBashrcForDiracOS():
       bashrcFile = os.path.join(cliParams.basePath, 'bashrc')
       proPath = os.path.join(cliParams.basePath, 'pro')
     logNOTICE('Creating %s' % bashrcFile)
-    if True:  # snot os.path.exists( bashrcFile ):
+    if not os.path.exists( bashrcFile ):
       lines = ['# DIRAC bashrc file, used by service and agent run scripts to set environment',
                'export PYTHONUNBUFFERED=yes',
                'export PYTHONOPTIMIZE=x']
@@ -1751,9 +1751,8 @@ def createBashrcForDiracOS():
       lines.extend(['# ARC Computing Element',
                     'export ARC_PLUGIN_PATH=$DIRACLIB/arc'])
       lines.append('')
-      f = open(bashrcFile, 'w')
-      f.write('\n'.join(lines))
-      f.close()
+      with open(bashrcFile, 'w') as f:
+        f.write('\n'.join(lines))
   except Exception, x:
     logERROR(str(x))
     return False
@@ -1833,9 +1832,8 @@ def createCshrcForDiracOS():
       lines.extend(['# ARC Computing Element',
                     'setenv ARC_PLUGIN_PATH $DIRACLIB/arc'])
       lines.append('')
-      f = open(cshrcFile, 'w')
-      f.write('\n'.join(lines))
-      f.close()
+      with open(cshrcFile, 'w') as f:
+        f.write('\n'.join(lines))
   except Exception, x:
     logERROR(str(x))
     return False
