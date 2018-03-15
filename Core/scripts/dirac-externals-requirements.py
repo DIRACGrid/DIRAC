@@ -46,6 +46,7 @@ def pipInstall(package, switches=""):
 # Collect all the requested python modules to install
 reqDict = {}
 
+
 for entry in os.listdir(rootPath):
   if len(entry) < 5 or entry.find("DIRAC") != len(entry) - 5:
     continue
