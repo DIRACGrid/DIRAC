@@ -79,10 +79,7 @@ class VOMS2CSAgent(AgentModule):
                                      autoModifyUsers=autoModifyUsers,
                                      autoDeleteUsers=autoDeleteUsers)
 
-      result = self.__syncCSWithVOMS(
-          vomsSync,
-          proxyUserName=voAdminUser,
-          proxyUserGroup=voAdminGroup)  # pylint: disable=unexpected-keyword-arg
+      result = self.__syncCSWithVOMS(vomsSync, proxyUserName=voAdminUser, proxyUserGroup=voAdminGroup)  # pylint: disable=unexpected-keyword-arg
       if not result['OK']:
         self.log.error('Failed to perform VOMS to CS synchronization:', 'VO %s: %s' % (vo, result["Message"]))
         continue
@@ -94,7 +91,7 @@ class VOMS2CSAgent(AgentModule):
       csapi = resultDict.get("CSAPI")
       adminMessages = resultDict.get("AdminMessages", {'Errors': [], 'Info': []})
       self.log.info("Run user results: new %d, modified %d, deleted %d, new/suspended %d" %
-                    (len(newUsers), len(modUsers), len(delUsers, len(susUsers))))
+                    (len(newUsers), len(modUsers), len(delUsers), len(susUsers)))
 
       if csapi.csModified:
         # We have accumulated all the changes, commit them now
@@ -114,8 +111,7 @@ class VOMS2CSAgent(AgentModule):
       # Add user home directory in the file catalog
       if self.makeFCEntry and newUsers:
         self.log.info("Creating home directories for users %s" % str(newUsers))
-        result = self.__addHomeDirectory(vo, newUsers, proxyUserName=voAdminUser,
-                                         proxyUserGroup=voAdminGroup)  # pylint: disable=unexpected-keyword-arg
+        result = self.__addHomeDirectory(vo, newUsers, proxyUserName=voAdminUser, proxyUserGroup=voAdminGroup)  # pylint: disable=unexpected-keyword-arg
         if not result['OK']:
           self.log.error('Failed to create user home directories:', 'VO %s: %s' % (vo, result["Message"]))
         else:

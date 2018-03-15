@@ -380,7 +380,7 @@ class VOMS2CSSynchronizer(object):
 
     return dnName
 
-  def __getUserNameFromMail(mail):
+  def __getUserNameFromMail(self, mail):
     """ Utility to construct a reasonable user name from the user mail address
 
     :param str mail: e-mail address
@@ -396,15 +396,15 @@ class VOMS2CSSynchronizer(object):
 
     return mailName
 
-  def __getUserNameFromDN(dn, vo):
+  def __getUserNameFromDN(self, dn):
     """ Utility to construct a reasonable user name from the user DN
     :param str dn: user DN
     :return str: user name
     """
 
-    shortVO = vo
-    if '.' in vo:
-      vos = vo.split('.')
+    shortVO = self.vo
+    if '.' in self.vo:
+      vos = self.vo.split('.')
       if vos[0] == 'vo':
         vos = vos[1:]
       if len(vos[-1]) == 2 or vos[-1] == 'org':
