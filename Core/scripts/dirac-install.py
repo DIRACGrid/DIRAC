@@ -859,7 +859,7 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
   """
    Retrieve remote url to local file, with timeout wrapper
   """
-  
+
   if fileName:
     # This can be a local file
     if os.path.exists(url):  # we do not download from web, use localy
@@ -1718,7 +1718,7 @@ def createBashrcForDiracOS():
                     'export DIRACSCRIPTS=%s' % os.path.join("$DIRAC", 'scripts'),
                     'export DIRACLIB=$DIRACOS/lib',
                     'export TERMINFO=%s' % __getTerminfoLocations(os.path.join("$DIRACOS", 'share', 'terminfo')),
-                    'export RRD_DEFAULT_FONT=%s' % os.path.join("$DIRACOS",'share','rrdtool', 
+                    'export RRD_DEFAULT_FONT=%s' % os.path.join("$DIRACOS", 'share', 'rrdtool',
                                                                 'fonts', 'DejaVuSansMono-Roman.ttf')])
 
       lines.extend(['# Prepend the PYTHONPATH, the LD_LIBRARY_PATH, and the DYLD_LIBRARY_PATH'])
@@ -1730,7 +1730,8 @@ def createBashrcForDiracOS():
                     '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || export DYLD_LIBRARY_PATH=$DIRACLIB:$DYLD_LIBRARY_PATH',
                     '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH',
                     '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
-      lines.extend(['export LD_LIBRARY_PATH=$(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" | sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
+      lines.extend(
+          ['export LD_LIBRARY_PATH=$(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" | sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'export OPENSSL_CONF=/tmp'])
 
@@ -1813,7 +1814,8 @@ def createCshrcForDiracOS():
                     '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || setenv DYLD_LIBRARY_PATH ${DIRACLIB}:$DYLD_LIBRARY_PATH',
                     '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH',
                     '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
-      lines.extend(['setenv LD_LIBRARY_PATH $(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" | sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
+      lines.extend(
+          ['setenv LD_LIBRARY_PATH $(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" | sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'setenv OPENSSL_CONF /tmp'])
       lines.extend(['# IPv6 support',
