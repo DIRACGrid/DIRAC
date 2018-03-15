@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
+
 class VOMSService(object):
 
   def __init__(self, vo=None):
@@ -47,7 +48,6 @@ class VOMSService(object):
     :param str _ca: CA, kept for backward compatibility
     :return:  S_OK with Value: nickname
     """
-
 
     if self.userDict is None:
       result = self.getUsers()
@@ -124,7 +124,7 @@ class VOMSService(object):
         resultDict[dn]['Roles'] = user['fqans']
         attributes = user.get('attributes')
         if attributes:
-          for attribute in user.get('attributes',[]):
+          for attribute in user.get('attributes', []):
             if attribute.get('name') == 'nickname':
               resultDict[dn]['nickname'] = attribute.get('value')
 
