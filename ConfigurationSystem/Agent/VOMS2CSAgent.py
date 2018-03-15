@@ -90,10 +90,11 @@ class VOMS2CSAgent(AgentModule):
       newUsers = resultDict.get("NewUsers", [])
       modUsers = resultDict.get("ModifiedUsers", [])
       delUsers = resultDict.get("DeletedUsers", [])
+      susUsers = resultDict.get("SuspendedUsers", [])
       csapi = resultDict.get("CSAPI")
       adminMessages = resultDict.get("AdminMessages", {'Errors': [], 'Info': []})
-      self.log.info("Run results: new users %d, modified users %d, deleted users %d" %
-                    (len(newUsers), len(modUsers), len(delUsers)))
+      self.log.info("Run user results: new %d, modified %d, deleted %d, new/suspended %d" %
+                    (len(newUsers), len(modUsers), len(delUsers, len(susUsers))))
 
       if csapi.csModified:
         # We have accumulated all the changes, commit them now
