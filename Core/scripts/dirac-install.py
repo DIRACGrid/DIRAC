@@ -1153,6 +1153,7 @@ def installExternalRequirements(extType):
 # End of helper functions
 ####
 
+
 cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('l:', 'project=', 'Project to install'),
            ('e:', 'extensions=', 'Extensions to install (comma separated)'),
