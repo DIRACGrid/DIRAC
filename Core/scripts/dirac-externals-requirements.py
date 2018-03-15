@@ -25,13 +25,16 @@ __RCSID__ = "$Id$"
 # Default installation type
 instType = "server"
 
+
 def setInstallType(val):
   global instType
   instType = val
   return S_OK()
 
+
 Script.registerSwitch("t:", "type=", "Installation type. 'server' by default.", setInstallType)
 Script.parseCommandLine(ignoreErrors=True)
+
 
 def pipInstall(package, switches=""):
   # The right pip should be in the PATH, which is the case after sourcing the DIRAC bashrc
