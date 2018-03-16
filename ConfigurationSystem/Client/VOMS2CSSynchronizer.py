@@ -469,4 +469,5 @@ class VOMS2CSSynchronizer(object):
     result = initials + surnames[-1]
     if len(result) >= 12:
       return result[:11]
+    result = result.lower()
     return result
