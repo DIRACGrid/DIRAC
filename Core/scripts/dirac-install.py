@@ -189,7 +189,7 @@ class ReleaseConfig(object):
       try:
         value = self.__get([op.strip() for op in opName.split("/") if op.strip()])
       except KeyError:
-        if defaultValue:
+        if defaultValue is not None:
           return defaultValue
         raise
       if defaultValue is None:
@@ -390,7 +390,7 @@ class ReleaseConfig(object):
       cfg = result['Value']
       self.__globalDefaults.update(basePath, cfg)
       return S_OK()
-
+    
     # Load the defaults
     if self.__globalDefaults.get("%s/SkipDefaults" % basePath, False):
       defaultsLocation = ""
@@ -1298,7 +1298,6 @@ def loadConfiguration():
         pass
     elif o in ('-O', '--diracos-version'):
       cliParams.diracOSVersion = v
-
     elif o in ('--no-dirac-os'):
       cliParams.diracOS = v
 
