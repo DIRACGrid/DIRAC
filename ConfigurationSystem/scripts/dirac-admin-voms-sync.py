@@ -11,7 +11,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK
 from DIRAC.Core.Base import Script
-from DIRAC.ConfigurationSystem.Client.VOMS2CSSyncronizer import VOMS2CSSynchronizer
+from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
 
 dryRun = False
 
@@ -63,7 +63,7 @@ if csapi and csapi.csModified:
     gLogger.notice("There are changes to Registry ready to commit, skipped because of dry run")
   else:
     yn = raw_input("There are changes to Registry ready to commit, do you want to proceed [default yes] [yes|no]:")
-    if yn == '' or yn.lower() == 'y':
+    if yn == '' or yn[0].lower() == 'y':
       result = csapi.commitChanges()
       if not result['OK']:
         gLogger.error("Could not commit configuration changes", result['Message'])
