@@ -390,7 +390,7 @@ class ReleaseConfig(object):
       cfg = result['Value']
       self.__globalDefaults.update(basePath, cfg)
       return S_OK()
-    
+
     # Load the defaults
     if self.__globalDefaults.get("%s/SkipDefaults" % basePath, False):
       defaultsLocation = ""
