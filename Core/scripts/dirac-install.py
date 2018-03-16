@@ -1174,7 +1174,7 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('h', 'help', 'Show this help'),
            ('T:', 'Timeout=', 'Timeout for downloads (default = %s)'),
            ('O:', 'diracos-version=', 'the version of the DIRAC OS'),
-           ('  ', 'no-dirac-os', 'Do not install DIRAC OS')
+           ('  ', 'dirac-os', 'Do not install DIRAC OS')
            )
 
 
@@ -1298,8 +1298,8 @@ def loadConfiguration():
         pass
     elif o in ('-O', '--diracos-version'):
       cliParams.diracOSVersion = v
-    elif o in ('--no-dirac-os'):
-      cliParams.diracOS = v
+    elif o in ('--dirac-os'):
+      cliParams.diracOS = True
 
   if not cliParams.release:
     logERROR("Missing release to install")
