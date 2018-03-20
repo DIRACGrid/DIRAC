@@ -4,6 +4,7 @@
 # pylint: disable=wrong-import-position, invalid-name
 
 import unittest
+import time
 
 from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, parametricJob
 from DIRAC import gLogger
@@ -14,12 +15,11 @@ parseCommandLine()
 
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
+time.sleep(3)  # in theory this should not be needed, but I don't know why, without, it fails.
 result = getProxyInfo()
 if result['Value']['group'] not in ['lhcb_user', 'dirac_user']:
   print "GET A USER GROUP"
   exit(1)
-
-
 
 
 jobsSubmittedList = []

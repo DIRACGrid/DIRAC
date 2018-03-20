@@ -152,10 +152,10 @@ import time
 import threading
 import MySQLdb
 
-from DIRAC                      import gLogger
-from DIRAC                      import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Time  import fromString
-from DIRAC.Core.Utilities       import DErrno
+from DIRAC import gLogger
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Time import fromString
+from DIRAC.Core.Utilities import DErrno
 
 # This is for proper initialization of embedded server, it should only be called once
 try:
@@ -295,7 +295,7 @@ class MySQL( object ):
       try:
         conn.ping( True )
         return True
-      except:
+      except BaseException:
         return False
 
     def __innerGet( self ):
@@ -326,10 +326,8 @@ class MySQL( object ):
             data[0].close()
           except MySQLdb.ProgrammingError as exc:
             gLogger.warn("ProgrammingError exception while closing MySQL connection: %s" % exc)
-            pass
-          except Exception as exc:
+          except BaseException as exc:
             gLogger.warn("Exception while closing MySQL connection: %s" % exc)
-            pass
       except KeyError:
         pass
 
@@ -439,9 +437,9 @@ class MySQL( object ):
       self.log.debug( '%s: %s' % ( methodName, err ),
                       '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( DErrno.EMYSQL, '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
-    except Exception as e:
-      self.log.debug( '%s: %s' % ( methodName, err ), str( e ) )
-      return S_ERROR( DErrno.EMYSQL, '%s: (%s)' % ( err, str( e ) ) )
+    except BaseException as e:
+      self.log.debug('%s: %s' % (methodName, err), repr(e))
+      return S_ERROR(DErrno.EMYSQL, '%s: (%s)' % (err, repr(e)))
 
   def __isDateTime( self, dateString ):
 
@@ -452,9 +450,8 @@ class MySQL( object ):
       dtime = fromString( dtime )
       if dtime is None:
         return False
-      else:
-        return True
-    except:
+      return True
+    except BaseException:
       return False
 
 
@@ -496,7 +493,7 @@ class MySQL( object ):
       escape_string = connection.escape_string( str( myString ) )
       self.log.debug( '__escape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
-    except Exception as x:
+    except BaseException as x:
       self.log.debug( '__escape_string: Could not escape string', '"%s"' % myString )
       return self._except( '__escape_string', x, 'Could not escape string' )
 
@@ -644,13 +641,13 @@ class MySQL( object ):
           self.logger.verbose( '_query: %s ...' % str( res[:10] ) )
 
       retDict = S_OK( res )
-    except Exception as x:
+    except BaseException as x:
       self.log.warn( '_query: %s' % self._safeCmd( cmd ) )
       retDict = self._except( '_query', x, 'Execution failed.' )
 
     try:
       cursor.close()
-    except Exception:
+    except BaseException:
       pass
 
     if gDebugFile:

@@ -1,6 +1,8 @@
 """ SystemAdministrator service is a tool to control and monitor the DIRAC services and agents
 """
 
+__RCSID__ = "$Id$"
+
 import socket
 import os
 import re
@@ -11,28 +13,39 @@ import shutil
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
-import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.Core.Utilities import CFG, Os
 from DIRAC.Core.Utilities.File import mkLink
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities import Profiler
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities import Profiler
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 gMonitoringReporter = None
 
-__RCSID__ = "$Id$"
-
 # pylint: disable=no-self-use
+
+
+def loadDIRACCFG():
+  installPath = gConfig.getValue('/LocalInstallation/TargetPath',
+                                 gConfig.getValue('/LocalInstallation/RootPath', ''))
+  if not installPath:
+    installPath = rootPath
+  cfgPath = os.path.join(installPath, 'etc', 'dirac.cfg')
+  try:
+    diracCFG = CFG.CFG().loadFromFile(cfgPath)
+  except BaseException as excp:
+    return S_ERROR("Could not load dirac.cfg: %s" % repr(excp))
+
+  return S_OK((cfgPath, diracCFG))
 
 
 class SystemAdministratorHandler(RequestHandler):
@@ -404,23 +417,10 @@ class SystemAdministratorHandler(RequestHandler):
 
     return S_OK(oldPath)
 
-  def __loadDIRACCFG(self):
-    installPath = gConfig.getValue('/LocalInstallation/TargetPath',
-                                   gConfig.getValue('/LocalInstallation/RootPath', ''))
-    if not installPath:
-      installPath = rootPath
-    cfgPath = os.path.join(installPath, 'etc', 'dirac.cfg')
-    try:
-      diracCFG = CFG.CFG().loadFromFile(cfgPath)
-    except Exception, excp:
-      return S_ERROR("Could not load dirac.cfg: %s" % str(excp))
-
-    return S_OK((cfgPath, diracCFG))
-
   types_setProject = [basestring]
 
   def export_setProject(self, projectName):
-    result = self.__loadDIRACCFG()
+    result = loadDIRACCFG()
     if not result['OK']:
       return result
     cfgPath, diracCFG = result['Value']
@@ -429,14 +429,14 @@ class SystemAdministratorHandler(RequestHandler):
     try:
       with open(cfgPath, "w") as fd:
         fd.write(str(diracCFG))
-    except IOError, excp:
+    except IOError as excp:
       return S_ERROR("Could not write dirac.cfg: %s" % str(excp))
     return S_OK()
 
   types_getProject = []
 
   def export_getProject(self):
-    result = self.__loadDIRACCFG()
+    result = loadDIRACCFG()
     if not result['OK']:
       return result
     _cfgPath, diracCFG = result['Value']
@@ -478,10 +478,10 @@ class SystemAdministratorHandler(RequestHandler):
       componentList = component
 
     resultDict = {}
-    for c in componentList:
-      if '/' not in c:
+    for comp in componentList:
+      if '/' not in comp:
         continue
-      system, cname = c.split('/')
+      system, cname = comp.split('/')
 
       startDir = gComponentInstaller.startDir
       currentLog = startDir + '/' + system + '_' + cname + '/log/current'
@@ -489,7 +489,7 @@ class SystemAdministratorHandler(RequestHandler):
         logFile = file(currentLog, 'r')
       except IOError as err:
         gLogger.error("File does not exists:", currentLog)
-        resultDict[c] = {'ErrorsHour': -1, 'ErrorsDay': -1, 'LastError': currentLog + '::' + repr(err)}
+        resultDict[comp] = {'ErrorsHour': -1, 'ErrorsDay': -1, 'LastError': currentLog + '::' + repr(err)}
         continue
 
       logLines = logFile.readlines()
@@ -519,7 +519,7 @@ class SystemAdministratorHandler(RequestHandler):
           if recent:
             lastError = line.split('ERROR:')[-1].strip()
 
-      resultDict[c] = {'ErrorsHour': errors_1, 'ErrorsDay': errors_24, 'LastError': lastError}
+      resultDict[comp] = {'ErrorsHour': errors_1, 'ErrorsDay': errors_24, 'LastError': lastError}
 
     return S_OK(resultDict)
 
@@ -584,7 +584,7 @@ class SystemAdministratorHandler(RequestHandler):
     summary = ''
     _status, output = commands.getstatusoutput('df')
     lines = output.split('\n')
-    for i in range(len(lines)):
+    for i in xrange(len(lines)):
       if lines[i].startswith('/dev'):
         fields = lines[i].split()
         if len(fields) == 1:
@@ -594,7 +594,7 @@ class SystemAdministratorHandler(RequestHandler):
         occupancy = fields[4]
         summary += ",%s:%s" % (partition, occupancy)
     result['DiskOccupancy'] = summary[1:]
-    result['RootDiskSpace'] = Os.getDiskSpace(DIRAC.rootPath)
+    result['RootDiskSpace'] = Os.getDiskSpace(rootPath)
 
     # Open files
     puser = getpass.getuser()
@@ -641,7 +641,7 @@ class SystemAdministratorHandler(RequestHandler):
       with open('/proc/uptime', 'r') as upFile:
         uptime_seconds = float(upFile.readline().split()[0])
       result['Uptime'] = str(timedelta(seconds=uptime_seconds))
-    except:
+    except BaseException:
       pass
 
     return S_OK(result)
@@ -657,8 +657,7 @@ class SystemAdministratorHandler(RequestHandler):
 
     if result['OK']:
       return S_OK(result['Value'][0])
-    else:
-      return self.__readHostInfo()
+    return self.__readHostInfo()
 
   types_getUsedPorts = []
 
@@ -735,7 +734,7 @@ class SystemAdministratorHandler(RequestHandler):
     """
     Retrieves and stores into ElasticSearch profiling information about the components on the host
     """
-    # TODO: if we have a component which are not running, we will not ptofile the running processes
+    # TODO: if we have a component which is not running, we will not profile the running processes
     result = gComponentInstaller.getStartupComponentStatus([])
     if not result['OK']:
       gLogger.error(result['Message'])
@@ -779,7 +778,7 @@ class SystemAdministratorHandler(RequestHandler):
     :param int keepLast: the number of the software version, what we keep
     """
 
-    versionsDirectory = os.path.split(DIRAC.rootPath)[0]
+    versionsDirectory = os.path.split(rootPath)[0]
     if versionsDirectory.endswith('versions'):  # make sure we are not deleting from a wrong directory.
       softwareDirs = os.listdir(versionsDirectory)
       softwareDirs.sort(key=LooseVersion, reverse=False)
