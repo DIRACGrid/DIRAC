@@ -1173,7 +1173,7 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('M:', 'defaultsURL=', 'Where to retrieve the global defaults from'),
            ('h', 'help', 'Show this help'),
            ('T:', 'Timeout=', 'Timeout for downloads (default = %s)'),
-           ('O:', 'diracos-version=', 'the version of the DIRAC OS'),
+           ('  ', 'dirac-os-version', 'the version of the DIRAC OS'),
            ('  ', 'dirac-os', 'Do not install DIRAC OS')
            )
 
@@ -1296,7 +1296,7 @@ def loadConfiguration():
         cliParams.timeout = min(cliParams.timeout, 3600)
       except ValueError:
         pass
-    elif o in ('-O', '--diracos-version'):
+    elif o in ('--dirac-os-version'):
       cliParams.diracOSVersion = v
     elif o in ('--dirac-os'):
       cliParams.diracOS = True
@@ -1729,7 +1729,7 @@ def createBashrcForDiracOS():
       lines.extend(['# Some DIRAC locations',
                     '[ -z "$DIRAC" ] && export DIRAC=%s' % proPath,
                     'export DIRACOS=%s/diracos' % cliParams.basePath,
-                    'export DIRACBIN=%s/sbin:$DIRACOS/bin:$DIRACOs/usr/bin' % cliParams.basePath,
+                    'export DIRACBIN=%s/sbin:$DIRACOS/bin:$DIRACOS/usr/bin' % cliParams.basePath,
                     'export DIRACSCRIPTS=%s' % os.path.join("$DIRAC", 'scripts'),
                     'export DIRACLIB=$DIRACOS/lib',
                     'export TERMINFO=%s' % __getTerminfoLocations(os.path.join("$DIRACOS", 'share', 'terminfo')),
@@ -1740,14 +1740,6 @@ def createBashrcForDiracOS():
 
       lines.extend(['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                     '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
-                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
-                    export LD_LIBRARY_PATH=$DIRACLIB:$LD_LIBRARY_PATH',
-                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
-                    export LD_LIBRARY_PATH=$DIRACLIB/mysql:$LD_LIBRARY_PATH',
-                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
-                    export DYLD_LIBRARY_PATH=$DIRACLIB:$DYLD_LIBRARY_PATH',
-                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
-                    export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH',
                     '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
       lines.extend(
           ['export LD_LIBRARY_PATH=$(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" |\
@@ -1815,7 +1807,7 @@ def createCshrcForDiracOS():
       lines.extend(['# Some DIRAC locations',
                     '( test $?DIRAC -eq 1 ) || setenv DIRAC %s' % proPath,
                     'setenv DIRACOS %s/diracos' % cliParams.basePath,
-                    'setenv DIRACBIN %s/sbin:$DIRACOS/bin:$DIRACOs/usr/bin' % cliParams.basePath,
+                    'setenv DIRACBIN %s/sbin:$DIRACOS/bin:$DIRACOS/usr/bin' % cliParams.basePath,
                     'setenv DIRACSCRIPTS %s' % os.path.join("$DIRAC", 'scripts'),
                     'setenv DIRACLIB $DIRACOS/lib',
                     'setenv TERMINFO %s' % __getTerminfoLocations(os.path.join("$DIRACOS", 'share', 'terminfo'))])
@@ -1828,14 +1820,6 @@ def createCshrcForDiracOS():
                     '( test $?PYTHONPATH -eq 1 ) || setenv PYTHONPATH ""',
                     '( echo $PATH | grep -q $DIRACBIN ) || setenv PATH ${DIRACBIN}:$PATH',
                     '( echo $PATH | grep -q $DIRACSCRIPTS ) || setenv PATH ${DIRACSCRIPTS}:$PATH',
-                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
-                    setenv LD_LIBRARY_PATH ${DIRACLIB}:$LD_LIBRARY_PATH',
-                    '#( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
-                    setenv LD_LIBRARY_PATH ${DIRACLIB}/mysql:$LD_LIBRARY_PATH',
-                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
-                    setenv DYLD_LIBRARY_PATH ${DIRACLIB}:$DYLD_LIBRARY_PATH',
-                    '#( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
-                    setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH',
                     '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
       lines.extend(
           ['setenv LD_LIBRARY_PATH $(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" | \
