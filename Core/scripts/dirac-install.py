@@ -864,7 +864,7 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
 
   if fileName:
     # This can be a local file
-    if os.path.exists(url):  # we do not download from web, use localy
+    if os.path.exists(url):  # we do not download from web, use locally
       logDEBUG('Local file used: "%s"' % url)
       shutil.copy(url, fileName)
       return True
