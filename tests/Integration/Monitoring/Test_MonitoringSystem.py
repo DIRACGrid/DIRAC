@@ -1,5 +1,7 @@
 """
-It is used to test client->db-> service. It requires the  Monitoring service.
+It is used to test client->db-> service.
+  It requires the  Monitoring service to be running and installed (so discoverable in the .cfg),
+  and this monitoring service should be connecting to an ElasticSeach instance
 """
 
 import unittest
@@ -379,7 +381,7 @@ class MonitoringDeleteChain(MonitoringTestCase):
     result = "%s-%s" % ('wmshistory_index', today)
     res = self.client.deleteIndex(result)
     self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], 'test_wmshistory_index-%s' % today)
+    self.assertTrue('_index-%s' % today in res['Value'])
 
 
 if __name__ == '__main__':
