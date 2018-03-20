@@ -33,9 +33,8 @@ class ProcessMonitor( object ):
     currentOS = self.__checkCurrentOS()
     if currentOS.lower() == 'linux':
       return self.getCPUConsumedLinux( pid )
-    else:
-      self.log.warn( 'Platform %s is not supported' % ( currentOS ) )
-      return S_ERROR( 'Unsupported platform' )
+    self.log.warn('Platform %s is not supported' % (currentOS))
+    return S_ERROR('Unsupported platform')
 
   def getMemoryConsumed( self, pid ):
     """Returns the CPU consumed for supported platforms when supplied a PID.
@@ -43,9 +42,8 @@ class ProcessMonitor( object ):
     currentOS = self.__checkCurrentOS()
     if currentOS.lower() == 'linux':
       return self.getMemoryConsumedLinux( pid )
-    else:
-      self.log.warn( 'Platform %s is not supported' % ( currentOS ) )
-      return S_ERROR( 'Unsupported platform' )
+    self.log.warn('Platform %s is not supported' % (currentOS))
+    return S_ERROR('Unsupported platform')
 
   def getResourceConsumedLinux( self, pid ):
     """Returns the CPU consumed given a PID assuming a proc file system exists.
@@ -120,37 +118,41 @@ class ProcessMonitor( object ):
     if not procGroup['OK']:
       return procGroup
 
-    procGroup = procGroup['Value'].strip() #pylint: disable=no-member
+    procGroup = procGroup['Value'].strip()  # pylint: disable=no-member
 
     for pidCheck, info in infoDict.items():
       if pidCheck in infoDict and info[3] == pid:
-        contribution = float( info[13] ) / 100 + float( info[14] ) / 100 + float( info[15] ) / 100 + float( info[16] ) / 100
+        contribution = float(info[13]) / 100 + float(info[14]) / 100 + float(info[15]) / 100 + float(info[16]) / 100
         childCPU += contribution
         vsize += float( info[22] )
         rss += float( info[23] ) * pageSize
-        self.log.debug( 'Added %s to CPU total (now %s) from child PID %s %s' % ( contribution, childCPU, info[0], info[1] ) )
+        self.log.debug(
+            'Added %s to CPU total (now %s) from child PID %s %s' %
+            (contribution, childCPU, info[0], info[1]))
         del infoDict[pidCheck]
         result = self.__getChildResourceConsumedLinux( pidCheck, pidList, infoDict )
         if result['OK']:
-          childCPU += result['Value']['CPU']
-          vsize += result['Value']['Vsize']
-          rss += result['Value']['RSS']
+          childCPU += result['Value']['CPU']  # pylint: disable=invalid-sequence-index
+          vsize += result['Value']['Vsize']  # pylint: disable=invalid-sequence-index
+          rss += result['Value']['RSS']  # pylint: disable=invalid-sequence-index
 
 
     #Next add any contributions from orphan processes in same process group
     for pidCheck, info in infoDict.items():
       if pidCheck in infoDict and info[3] == 1 and info[4] == procGroup:
-        contribution = float( info[13] ) / 100 + float( info[14] ) / 100 + float( info[15] ) / 100 + float( info[16] ) / 100
+        contribution = float(info[13]) / 100 + float(info[14]) / 100 + float(info[15]) / 100 + float(info[16]) / 100
         childCPU += contribution
         vsize += float( info[22] )
         rss += float( info[23] ) * pageSize
-        self.log.debug( 'Added %s to CPU total (now %s) from orphan PID %s %s' % ( contribution, childCPU, info[0], info[1] ) )
+        self.log.debug(
+            'Added %s to CPU total (now %s) from orphan PID %s %s' %
+            (contribution, childCPU, info[0], info[1]))
         del infoDict[pidCheck]
 
     #Finally add the parent itself
     if pid in infoDict:
       info = infoDict[pid]
-      contribution = float( info[13] ) / 100 + float( info[14] ) / 100 + float( info[15] ) / 100 + float( info[16] ) / 100
+      contribution = float(info[13]) / 100 + float(info[14]) / 100 + float(info[15]) / 100 + float(info[16]) / 100
       childCPU += contribution
       vsize += float( info[22] )
       rss += float( info[23] ) * pageSize
@@ -389,7 +391,7 @@ class ProcessMonitor( object ):
     try:
       with open( procPath, 'r' ) as fopen:
         procStat = fopen.readline()
-    except Exception:
+    except BaseException:
       return S_ERROR( 'Not able to check %s' % pid )
     return S_OK( procStat.split( ' ' ) )
 
