@@ -8,8 +8,8 @@ import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import DEncode, Time
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.FrameworkSystem.private.monitoring.ServiceInterface import gServiceInterface
 
 
