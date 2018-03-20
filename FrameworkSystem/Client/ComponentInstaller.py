@@ -530,6 +530,10 @@ class ComponentInstaller(object):
       operationsCfg = self.__getCfg(cfgPath('Operations', 'Defaults', 'EMail'), 'Logging', adminUserEmail)
       centralCfg = centralCfg.mergeWith(operationsCfg)
 
+    # Website
+    websiteCfg = self.__getCfg(cfgPath('WebApp', 'Access'), 'upload', 'TrustedHost')
+    centralCfg = centralCfg.mergeWith(websiteCfg)
+
     return centralCfg
 
   def __getCfg(self, section, option='', value=''):
