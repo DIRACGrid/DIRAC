@@ -26,7 +26,7 @@ To submit the job::
 3.2 Jobs with Input Sandbox and Output Sandbox
 ----------------------------------------------
 
-In most cases the job input data or executable files are availablae locally and should be transfered to the grid to run the job. 
+In most cases the job input data or executable files are available locally and should be transfered to the grid to run the job. 
 In this case the InputSandbox attribute can be used to move the files together with the job.
 
 - Create InputAndOuputSandbox.jdl::
