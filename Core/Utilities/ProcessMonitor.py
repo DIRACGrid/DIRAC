@@ -120,7 +120,7 @@ class ProcessMonitor( object ):
     if not procGroup['OK']:
       return procGroup
 
-    procGroup = procGroup['Value'].strip() #pylint: disable=no-member
+    procGroup = procGroup['Value'].strip()  # pylint: disable=no-member
 
     for pidCheck, info in infoDict.items():
       if pidCheck in infoDict and info[3] == pid:
@@ -132,9 +132,9 @@ class ProcessMonitor( object ):
         del infoDict[pidCheck]
         result = self.__getChildResourceConsumedLinux( pidCheck, pidList, infoDict )
         if result['OK']:
-          childCPU += result['Value']['CPU']
-          vsize += result['Value']['Vsize']
-          rss += result['Value']['RSS']
+          childCPU += result['Value']['CPU']  # pylint: disable=invalid-sequence-index
+          vsize += result['Value']['Vsize']  # pylint: disable=invalid-sequence-index
+          rss += result['Value']['RSS']  # pylint: disable=invalid-sequence-index
 
 
     #Next add any contributions from orphan processes in same process group
