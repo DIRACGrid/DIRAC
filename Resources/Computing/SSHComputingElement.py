@@ -79,7 +79,7 @@ class SSH(object):
     try:
       import pexpect
       expectFlag = True
-    except Exception as x:
+    except BaseException as x:
       from DIRAC.Core.Utilities.Subprocess import shellCall
       expectFlag = False
 
@@ -112,7 +112,7 @@ class SSH(object):
           child.expect(pexpect.EOF)
           return S_OK((0, child.before, ''))
         return S_ERROR((-2, child.before, ''))
-      except Exception as x:
+      except BaseException as x:
         res = (-1, 'Encountered exception %s: %s' % (Exception, str(x)))
         return S_ERROR(res)
     else:

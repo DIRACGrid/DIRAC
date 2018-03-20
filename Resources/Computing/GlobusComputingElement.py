@@ -14,17 +14,16 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.Core.Utilities.Grid                           import executeGridCommand
-from DIRAC                                               import S_OK, S_ERROR
+import os
 
+from DIRAC                                               import S_OK, S_ERROR
+from DIRAC.Core.Utilities.File                           import makeGuid
+from DIRAC.Core.Utilities.Grid                           import executeGridCommand
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getGroupOption
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
+from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_STATUS
-from DIRAC.Core.Utilities.File                           import makeGuid
-
-import os
 
 CE_NAME = 'Globus'
 MANDATORY_PARAMETERS = [ 'Queue' ]
@@ -60,7 +59,7 @@ class GlobusComputingElement( ComputingElement ):
 
     self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0755 )
+      os.chmod( executableFile, 0o755 )
 
     batchIDList = []
     stampDict = {}
@@ -188,7 +187,7 @@ class GlobusComputingElement( ComputingElement ):
 
   def getJobOutput( self, jobID, _localDir = None ):
     """ Get the specified job standard output and error files. The output is returned
-        as strings. 
+        as strings.
     """
 
     if jobID.find( ':::' ) != -1:
@@ -201,7 +200,7 @@ class GlobusComputingElement( ComputingElement ):
 
     ## somehow when this is called from the WMSAdministrator we don't
     ## get the right proxy, so we do all this stuff here now. Probably
-    ## should be fixed in the WMSAdministrator? 
+    ## should be fixed in the WMSAdministrator?
 
     ## Because this function is called from the WMSAdminsitrator, the
     ## gridEnv that is picked up is not the one from the SiteDirector
@@ -253,4 +252,3 @@ class GlobusComputingElement( ComputingElement ):
     return S_OK( ( output, error ) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
-
