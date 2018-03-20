@@ -28,8 +28,8 @@ def initializeMonitoringHandler(serviceInfo):
     pass
   try:
     testFile = "%s/mon.jarl.test" % dataPath
-    fd = file(testFile, "w")
-    fd.close()
+    with file(testFile, "w"):
+      pass
     os.unlink(testFile)
   except IOError:
     gLogger.fatal("Can't write to %s" % dataPath)
@@ -102,7 +102,7 @@ class MonitoringHandler(RequestHandler):
     """
     Saves a view
     """
-    if len(viewName) == 0:
+    if not viewName:
       return S_OK("View name not valid")
     viewDescription, _stubLength = DEncode.decode(viewDescriptionStub)
     if 'definition' not in viewDescription:

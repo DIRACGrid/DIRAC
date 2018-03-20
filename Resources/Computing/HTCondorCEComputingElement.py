@@ -81,8 +81,9 @@ def getCondorLogFile(pilotRef):
 
 
 class HTCondorCEComputingElement(ComputingElement):
-  """HTCondorCE computing element class
-  implementing the functions jobSubmit, getJobOutput """
+  """ HTCondorCE computing element class
+      implementing the functions jobSubmit, getJobOutput
+  """
 
   #############################################################################
   def __init__(self, ceUniqueID):
@@ -109,7 +110,6 @@ class HTCondorCEComputingElement(ComputingElement):
   #############################################################################
   def __writeSub(self, executable, nJobs):
     """ Create the Sub File for submission
-
     """
 
     self.log.debug("Working directory: %s " % self.workingDirectory)
@@ -177,8 +177,6 @@ Queue %(nJobs)s
     if isinstance(self.useLocalSchedd, basestring):
       if self.useLocalSchedd == "False":
         self.useLocalSchedd = False
-      else:
-        self.useLocalSchedd
 
     self.remoteScheddOptions = "" if self.useLocalSchedd else "-pool %s:9619 -name %s " % (self.ceName, self.ceName)
 
@@ -395,7 +393,7 @@ Queue %(nJobs)s
     """ clean the working directory of old jobs"""
 
     # FIXME: again some issue with the working directory...
-    #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
+    # workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
 
     self.log.debug("Cleaning working directory: %s" % self.workingDirectory)
 
@@ -403,7 +401,7 @@ Queue %(nJobs)s
     # push files on submission, but it takes at least a few seconds until this
     # happens so we can't directly unlink after condor_submit
     status, stdout = commands.getstatusoutput('find %s -mmin +120 -name "DIRAC_*" -delete ' % self.workingDirectory)
-    if status != 0:
+    if status:
       self.log.error("Failure during HTCondorCE __cleanup", stdout)
 
     # remove all out/err/log files older than "DaysToKeepLogs" days
@@ -412,7 +410,7 @@ Queue %(nJobs)s
     status, stdout = commands.getstatusoutput(
         r'find %(workDir)s -mtime +%(days)s -type f \( -name "*.out" -o -name "*.err" -o -name "*.log" \) -delete ' %
         findPars)
-    if status != 0:
+    if status:
       self.log.error("Failure during HTCondorCE __cleanup", stdout)
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
