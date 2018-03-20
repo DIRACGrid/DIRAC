@@ -1,24 +1,28 @@
-[v6r20-pre16]
+[v6r20-pre17]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
+NEW: DEncode - added unit tests
+NEW: JEncode for json based serialization
+NEW: Add conditional printout of the traceback when serializing/deserializing non json compatible
+     object in DEncode (enabled with DIRAC_DEBUG_DENCODE_CALLSTACK environment variable)
+NEW: File.py - utility to convert file sizes between different unit
+NEW: new flag in dirac-install script to install DIRAC-OS on demand
 CHANGE: Removed deprecated option "ExtraModules" (dirac-configure, dirac-install scripts)
 CHANGE: dirac-deploy-scripts, dirac-install - allow command modules with underscores in 
         their names in order for better support for the code checking tools
 CHANGE: dirac-distribution and related scripts - compile web code while release
         generation
-NEW: DEncode - added unit tests   
-NEW: JEncode for json based serialization
-NEW: Add conditional printout of the traceback when serializing/deserializing non json compatible 
-     object in DEncode (enabled with DIRAC_DEBUG_DENCODE_CALLSTACK environment variable) 
+CHANGE: dirac-external-requirements - reimplemented to use preinstalled pip command rather than
+the pip python API
 FIX: dirac-distribution - fixed wrong indentation  
-NEW: File.py - utility to convert file sizes between different unit
 
 *Framework
-CHANGE: ComponentInstaller - remove the old web portal configuration data 
-        used during the installation
 NEW: WebAppCompiler methods is implemented, which is used to compile the web framework
 NEW: add JsonFormatter for logs
+NEW: add default configuration to CS: only TrustedHost can upload file
+CHANGE: ComponentInstaller - remove the old web portal configuration data
+	used during the installation
 CHANGE: MessageQueue log handler uses JsonFormatter
 
 *Monitoring
@@ -34,17 +38,17 @@ NEW: PilotLoggingDB, Service and Client for handling extended pilot logging
 NEW: added a new synchronizer for Pilot3: sync of subset of CS info to JSON file, 
      and sync of pilot3 files
 NEW: dirac-admin-get-pilotslogging script for viewing PilotsLogging
-CHANGE: dirac-wms-cpu-normalization uses the abstracted DB12 benchmark script used by the HEPiX Benchmarking Working Group, and the new MJF utility to obtain values from the system and to save them into the DIRAC LocalSite configuration.
 NEW: Bulk job submission with protection of the operation transaction
 NEW: WMSHistoryCorrector and MonitoringHistoryCorrector classes inheriting from a common BaseHistoryCorrector class
 CHANGE: SiteDirector - refactored Site Director for better extensibility
-FIX: always initialize gPilotAgentsDB object
+CHANGE: dirac-wms-cpu-normalization uses the abstracted DB12 benchmark script used by the HEPiX Benchmarking Working Group, and the new MJF utility to obtain values from the system and to save them into the DIRAC LocalSite configuration.
 CHANGE: Removed TaskQueueDirector and the other old style (WMS) *PilotDirector
 CHANGE: TaskQueueDB - removed PilotsRequirements table
 CHANGE: TaskQueueDB - added FOREIGN KEYS 
+CHANGE: Removed gLite pilot related WMS code
+FIX: always initialize gPilotAgentsDB object
 FIX: JobManager - Added some debug message when deleting jobs
 FIX: Job.py - fixing finding XML file
-CHANGE: Removed gLite pilot related WMS code
 
 *TS
 FIX: TranformationCleaningAgent - just few simplifications 
@@ -61,8 +65,8 @@ CHANGE: Fixing rss to fetch fts3 server status
 FIX: Really exit the RequestExecutingAgent when the result queue is buggy
 
 *RSS
-FIX: Initialize RPC to WMSAdministrator only once
 CHANGE: Using StorageElement.getOccupancy()
+FIX: Initialize RPC to WMSAdministrator only once
 FIX: Using MB as default for the size
 FIX: flagged some commands that for the moment are unusable
 FIX: fixed documentation of how to develop commands
@@ -72,8 +76,8 @@ NEW: New SingularityComputingElement to submit jobs to a Singularity container
 NEW: Added StorageElement.getOccupancy() method for DIP and GFAL2_SMR2 SE types
 
 *Docs
-FIX: Drop some old stuff, add link for FTS3 page
 CHANGE: WebApp release procedure
+FIX: Drop some old stuff, add link for FTS3 page
 
 *Tests
 FIX: add MonitoringDB to the configuration
