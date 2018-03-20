@@ -1296,9 +1296,9 @@ def loadConfiguration():
         cliParams.timeout = min(cliParams.timeout, 3600)
       except ValueError:
         pass
-    elif o in ('--dirac-os-version'):
+    elif o == '--dirac-os-version':
       cliParams.diracOSVersion = v
-    elif o in ('--dirac-os'):
+    elif o == '--dirac-os':
       cliParams.diracOS = True
 
   if not cliParams.release:
