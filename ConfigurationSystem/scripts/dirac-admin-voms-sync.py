@@ -62,13 +62,15 @@ if csapi and csapi.csModified:
   if dryRun:
     gLogger.notice("There are changes to Registry ready to commit, skipped because of dry run")
   else:
-    yn = raw_input("There are changes to Registry ready to commit, do you want to proceed [default yes] [yes|no]:")
+    yn = raw_input("There are changes to Registry ready to commit, do you want to proceed ? [Y|n]:")
     if yn == '' or yn[0].lower() == 'y':
       result = csapi.commitChanges()
       if not result['OK']:
         gLogger.error("Could not commit configuration changes", result['Message'])
       else:
         gLogger.notice("Registry changes committed for VO %s" % voName)
+    else:
+      gLogger.notice("Registry changes are not committed")
 else:
   gLogger.notice("No changes to Registry for VO %s" % voName)
 
