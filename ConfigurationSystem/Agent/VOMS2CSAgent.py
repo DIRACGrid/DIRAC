@@ -79,7 +79,9 @@ class VOMS2CSAgent(AgentModule):
                                      autoModifyUsers=autoModifyUsers,
                                      autoDeleteUsers=autoDeleteUsers)
 
-      result = self.__syncCSWithVOMS(vomsSync, proxyUserName=voAdminUser, proxyUserGroup=voAdminGroup)  # pylint: disable=unexpected-keyword-arg
+      result = self.__syncCSWithVOMS(vomsSync, # pylint: disable=unexpected-keyword-arg
+                                     proxyUserName=voAdminUser,
+                                     proxyUserGroup=voAdminGroup)
       if not result['OK']:
         self.log.error('Failed to perform VOMS to CS synchronization:', 'VO %s: %s' % (vo, result["Message"]))
         continue
@@ -111,7 +113,9 @@ class VOMS2CSAgent(AgentModule):
       # Add user home directory in the file catalog
       if self.makeFCEntry and newUsers:
         self.log.info("Creating home directories for users %s" % str(newUsers))
-        result = self.__addHomeDirectory(vo, newUsers, proxyUserName=voAdminUser, proxyUserGroup=voAdminGroup)  # pylint: disable=unexpected-keyword-arg
+        result = self.__addHomeDirectory(vo, newUsers, # pylint: disable=unexpected-keyword-arg
+                                         proxyUserName=voAdminUser,
+                                         proxyUserGroup=voAdminGroup)
         if not result['OK']:
           self.log.error('Failed to create user home directories:', 'VO %s: %s' % (vo, result["Message"]))
         else:
