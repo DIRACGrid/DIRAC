@@ -7,7 +7,6 @@ import datetime
 import time
 import threading
 import random
-from itertools import repeat
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -79,9 +78,9 @@ class AccountingDB( DB ):
 
   def __loadTablesCreated( self ):
     result = self._query( "show tables" )
-    if not result[ 'OK' ]:
+    if not result['OK']:  # pylint: disable=invalid-sequence-index
       return result
-    return S_OK( [ f[0] for f in result[ 'Value' ] ] )
+    return S_OK([f[0] for f in result['Value']])  # pylint: disable=invalid-sequence-index
 
   def autoCompactDB( self ):
     self.autoCompact = True
@@ -149,7 +148,8 @@ class AccountingDB( DB ):
     return S_OK()
 
   def __loadCatalogFromDB( self ):
-    retVal = self._query( "SELECT `name`, `keyFields`, `valueFields`, `bucketsLength` FROM `%s`" % self.catalogTableName )
+    retVal = self._query(
+        "SELECT `name`, `keyFields`, `valueFields`, `bucketsLength` FROM `%s`" % self.catalogTableName)
     if not retVal[ 'OK' ]:
       raise Exception( retVal[ 'Message' ] )
     for typesEntry in retVal[ 'Value' ]:
@@ -204,13 +204,15 @@ class AccountingDB( DB ):
       emptySlots = min( 100, emptySlots )
       sqlTableName = _getTableName( "in", typeName )
       sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
-      sqlCond = "WHERE taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
-      result = self._query( "SELECT %s FROM `%s` %s ORDER BY id ASC LIMIT %d" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
-                                                                                  sqlTableName,
-                                                                                  sqlCond,
-                                                                                  emptySlots * recordsPerSlot ) )
+      sqlCond = "WHERE taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime(
+      )
+      result = self._query("SELECT %s FROM `%s` %s ORDER BY id ASC LIMIT %d" % (", ".join(["`%s`" % f for f in sqlFields]),
+                                                                                sqlTableName,
+                                                                                sqlCond,
+                                                                                emptySlots * recordsPerSlot))
       if not result[ 'OK' ]:
-        self.log.error( "[PENDING] Error when trying to get pending records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
+        self.log.error("[PENDING] Error when trying to get pending records",
+                       "for %s : %s" % (typeName, result['Message']))
         return result
       self.log.info( "[PENDING] Got %s pending records for type %s" % ( len( result[ 'Value' ] ), typeName ) )
       dbData = result[ 'Value' ]
@@ -218,8 +220,8 @@ class AccountingDB( DB ):
       #If nothing to do, continue
       if not idList:
         continue
-      result = self._update( "UPDATE `%s` SET taken=1, takenSince=UTC_TIMESTAMP() WHERE id in (%s)" % ( sqlTableName,
-                                                                                                           ", ".join( idList ) ) )
+      result = self._update("UPDATE `%s` SET taken=1, takenSince=UTC_TIMESTAMP() WHERE id in (%s)" % (sqlTableName,
+                                                                                                      ", ".join(idList)))
       if not result[ 'OK' ]:
         self.log.error( "[PENDING] Error when trying set state to waiting records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
         self.__doingPendingLockTime = 0
