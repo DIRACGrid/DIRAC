@@ -1173,8 +1173,8 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('M:', 'defaultsURL=', 'Where to retrieve the global defaults from'),
            ('h', 'help', 'Show this help'),
            ('T:', 'Timeout=', 'Timeout for downloads (default = %s)'),
-           ('  ', 'dirac-os-version', 'the version of the DIRAC OS'),
-           ('  ', 'dirac-os', 'Do not install DIRAC OS')
+           ('  ', 'dirac-os-version=', 'the version of the DIRAC OS'),
+           ('  ', 'dirac-os', 'Enable installation of DIRAC OS')
            )
 
 
@@ -1895,7 +1895,8 @@ if __name__ == "__main__":
       logDEBUG("No dirac-deploy-scripts found. This doesn't look good")
   else:
     logNOTICE("Skipping installing DIRAC")
-  if cliParams.diracOS or cliParams.diracOSVersion:
+
+  if cliParams.diracOS and cliParams.diracOSVersion:
     logNOTICE("Installing DIRAC OS %s..." % cliParams.diracOSVersion)
     if not installDiracOS(releaseConfig):
       sys.exit(1)

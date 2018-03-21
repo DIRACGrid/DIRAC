@@ -95,7 +95,7 @@ class VOMS( BaseSecurity ):
           2. Proxy Certificate Timeleft in seconds (the output is an int)
           3. DN
           4. voms group (if any)
-    
+
     :type proxy: str
     :param proxy: the proxy certificate location.
     :type  option: str
@@ -267,10 +267,15 @@ class VOMS( BaseSecurity ):
     if chain.isRFC().get( 'Value' ):
       cmdArgs.append( "-r" )
 
-    if not Os.which('voms-proxy-init'):
+    vpInitCmd = ''
+    for vpInit in ('voms-proxy-init', 'voms-proxy-init2'):
+      if Os.which(vpInit):
+        vpInitCmd = vpInit
+
+    if not vpInitCmd:
       return S_ERROR( DErrno.EVOMS, "Missing voms-proxy-init" )
 
-    cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
+    cmd = '%s %s' %(vpInitCmd, " ".join( cmdArgs ))
     result = shellCall( self._secCmdTimeout, cmd )
     if tmpDir:
       shutil.rmtree( tmpDir )
@@ -299,9 +304,16 @@ class VOMS( BaseSecurity ):
     """
     Is voms info available?
     """
-    if not Os.which("voms-proxy-info"):
+
+    vpInfoCmd = ''
+    for vpInfo in ('voms-proxy-info', 'voms-proxy-info2'):
+      if Os.which(vpInfo):
+        vpInfoCmd = vpInfo
+
+    if not vpInfoCmd:
       return S_ERROR( DErrno.EVOMS, "Missing voms-proxy-info" )
-    cmd = 'voms-proxy-info -h'
+
+    cmd = '%s -h'%vpInfoCmd
     result = shellCall( self._secCmdTimeout, cmd )
     if not result['OK']:
       return False
@@ -309,4 +321,3 @@ class VOMS( BaseSecurity ):
     if status:
       return False
     return True
-
