@@ -170,7 +170,7 @@ class MJF(object):
     try:
       with open('/var/run/shutdown_time', 'r') as fd:
         shutdowntimeLocal = int(fd.read().strip())
-    except IOError, ValueError:
+    except (IOError, ValueError):
       shutdowntimeLocal = None
 
     if jobstartSecs is not None and wallLimitSecs is not None:
