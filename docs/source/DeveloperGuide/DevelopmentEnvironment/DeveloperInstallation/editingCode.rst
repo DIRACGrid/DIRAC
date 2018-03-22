@@ -14,7 +14,7 @@ What is this NOT for?
 =====================
 
 * This method is NOT specific for the WebAppDIRAC or Pilot code development, although several things that are described here can be applied.
-* This method will NOT work out of box if you need 3rd party python libraries that are not on PyPi.
+* This method will NOT work out of box if you need 3rd party python libraries that are not pip installable.
 
 
 
@@ -37,7 +37,7 @@ for which you need to have an account before continuing.
 Stuff you need to have installed
 ================================
 
-*python*: make sure python 2.7.9+ is installed and set as default
+*python*: make sure python 2.7.9+ (possibly 2.7.13) is installed and set as default
 (beware: the latest versions of Ubuntu use python 3.X as default).
 
 *python-pip*: the tool for installing python packages hosted
@@ -55,7 +55,7 @@ If you are using a OSX machine, then you may end up in more problems than using 
 
 *editor*: get your favorite one.
 Examples include IDE like Eclipse or PyCharm, or whatever you prefer
-(vim, sublime, atom...) - anyway you'll need some plug-ins! I think atom is an excellent choice.
+(vim, sublime, atom...) - anyway you'll need some plug-ins! I think atom and sublime are excellent choices.
 
 
 

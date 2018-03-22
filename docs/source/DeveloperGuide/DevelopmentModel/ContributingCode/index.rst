@@ -56,7 +56,7 @@ recommended to follow this convention to have homogeneous environment with other
 
 
 Working on the new code
-@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@
 
 The work on the new features to be incorporated eventually in a new release should start in a local
 feature branch created from the current *integration* branch of the main DIRAC repository. Let call the 
@@ -121,39 +121,39 @@ may use different releases. Therefore, the target release branch for a patch is 
 in production for some DIRAC installations and for which the patch is relevant. 
 
 As a matter of reminder, here is a set of commands to make a patch. First, start with the new branch
-to work on the patch based on the target release branch, for example rel-v6r11 :::
+to work on the patch based on the target release branch, for example rel-v6r19 :::
 
   git fetch release
-  git checkout -b fix-v6r11 release/rel-v6r11
+  git checkout -b fix-v6r19 release/rel-v6r19
   
 Make the necessary changes to the code of the branch and then push them to the developer's fork:::
 
-  git push origin fix-v6r11
+  git push origin fix-v6r19
   
-Do the *PR* with the rel-v6r11 as a target branch. Once the *PR* is merged, scrap the patch branch 
+Do the *PR* with the rel-v6r19 as a target branch. Once the *PR* is merged, scrap the patch branch 
 from the forked repository:::
 
-  git push origin :fix-v6r11  
+  git push origin :fix-v6r19
 
 The patches incorporated into a release branch will be propagated to the more recent release branches
 and to the integration branch by the release manager. There is no need to make separate *PR*'s of the
-same patch to other branches. 
-     
+same patch to other branches.
+
 Resolving *PR* conflicts
-@@@@@@@@@@@@@@@@@@@@@@@@@@             
+@@@@@@@@@@@@@@@@@@@@@@@@@@
              
 It should be stressed once again that you must choose carefully the target branch where the 
 newly developed code will go: new features must be included into the *integration* branch, 
 whereas small patches are targeted to relevant *release* branches. Once the choice is made,
-start the feature branch from the eventual target branch.               
-             
+start the feature branch from the eventual target branch.
+
 Even when preparing a *PR* you follow the procedure described above, there is no guarantee that there 
 will be no conflicts when merging the *PR*. You can check if your *PR* can be merged on the
 *Github* page for Pull Requests of the DIRACGrid project. In case of conflicts, the release manager 
 will ask you to find and fix conflicts made by your *PR*. Assuming you have a local clone of your 
 DIRAC repository and the new code was developed in the *featurebranch*, you have to try merge it by 
 hand to find and understand the source of conflicts. For that you should first checkout your feature 
-branch, and try to rebase your branch on the target branch, *release* or *integration*:::   
+branch, and try to rebase your branch on the target branch, *release* or *integration*:::
 
   $ git checkout featurebranch
   Switched to branch 'featurebranch'
@@ -193,5 +193,4 @@ are committed, you can now push your *feature* branch to your remote repository:
    git push origin featurebranch
    
 The fixes will be automatically taken into account, you do not need to recreate
-the *Pull Request*.       
-  
+the *Pull Request*.
