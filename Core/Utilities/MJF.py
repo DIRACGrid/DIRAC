@@ -190,7 +190,7 @@ class MJF(object):
 
     if shutdowntimeLocal is not None:
       if secondsLeft is None:
-        secondsLeft = shtudowntimeLocal - now
+        secondsLeft = shutdowntimeLocal - now
       elif shutdowntimeLocal - now < secondsLeft:
         secondsLeft = shutdowntimeLocal - now
 
