@@ -2009,7 +2009,7 @@ if __name__ == "__main__":
   else:
     logNOTICE("Skipping installing DIRAC")
 
-  if cliParams.diracOS and cliParams.diracOSVersion:
+  if cliParams.diracOS:
     logNOTICE("Installing DIRAC OS %s..." % cliParams.diracOSVersion)
     if not installDiracOS(releaseConfig):
       sys.exit(1)
