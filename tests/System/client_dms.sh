@@ -22,8 +22,8 @@ fi
 
 echo " "
 mv DMS_Scripts_Test_File.txt DMS_Scripts_Test_File.old
-echo "======  dirac-dms-replicate-lfn /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt SARA-USER CERN-USER"
-dirac-dms-replicate-lfn /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt SARA-USER CERN-USER
+echo "======  dirac-dms-replicate-lfn /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt GRIDKA-USER CERN-USER"
+dirac-dms-replicate-lfn /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt GRIDKA-USER CERN-USER
 if [ $? -ne 0 ]
 then
    exit $?
@@ -88,8 +88,8 @@ then
 fi
 
 echo " "
-echo "====== dirac-dms-remove-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt SARA-USER"
-dirac-dms-remove-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt SARA-USER
+echo "====== dirac-dms-remove-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt GRIDKA-USER"
+dirac-dms-remove-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt GRIDKA-USER
 if [ $? -ne 0 ]
 then
    exit $?

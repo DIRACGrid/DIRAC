@@ -11,24 +11,24 @@ Access to the pilot data:
 
 """
 
+__RCSID__ = "$Id$"
+
 from tempfile import mkdtemp
 import shutil
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getWMSPilotOutput, getGridEnv
-from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-from DIRAC.Core.Utilities import DErrno
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getGridEnv
 
-__RCSID__ = "$Id$"
 
 # This is a global instance of the database classes
 jobDB = None

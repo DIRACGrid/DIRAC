@@ -43,11 +43,20 @@ shown below::
        depends = DIRAC:v5r12p1
      }
    }
+   RequiredExternals
+   {
+     Server = tornado>=4.4.2, apache-libcloud==2.2.1
+     Client = apache-libcloud==2.2.1
+   }
 
 The *DefaultModules* option (outside any section) defines what modules will be installed by default 
 if there's nothing explicitly specified at installation time. Because there is only one module defined 
 in *DefaultModules* each release will try to install the *MyExt* module with the same version as the 
-release name. Each release can require a certain version of any other project (DIRAC is also an project). 
+release name. Each release can require a certain version of any other project (DIRAC is also an project).
+
+The *RequiredExternals* section contains lists of extra python modules that can be installed with
+a *pip* installer for different installation types. Each module in the lists is specified in a format
+suitable to pass to the *pip* command.
 
 An example with more than one module follows::
 

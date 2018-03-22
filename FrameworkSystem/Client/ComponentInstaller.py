@@ -9,11 +9,13 @@ The Following Options are used::
   /DIRAC/Setup:             Setup to be used for any operation
   /LocalInstallation/InstanceName:    Name of the Instance for the current Setup (default /DIRAC/Setup)
   /LocalInstallation/LogLevel:        LogLevel set in "run" script for all components installed
-  /LocalInstallation/RootPath:        Used instead of rootPath in "run" script if defined (if links are used to named versions)
+  /LocalInstallation/RootPath:        Used instead of rootPath in "run" script
+                                      if defined (if links are used to named versions)
   /LocalInstallation/InstancePath:    Location where runit and startup directories are created (default rootPath)
   /LocalInstallation/UseVersionsDir:  DIRAC is installed under versions/<Versioned Directory> with a link from pro
                                       (This option overwrites RootPath and InstancePath)
-  /LocalInstallation/Host:            Used when build the URL to be published for the installed service (default: socket.getfqdn())
+  /LocalInstallation/Host:            Used when build the URL to be published for the installed
+                                      service (default: socket.getfqdn())
   /LocalInstallation/RunitDir:        Location where runit directory is created (default InstancePath/runit)
   /LocalInstallation/StartupDir:      Location where startup directory is created (default InstancePath/startup)
   /LocalInstallation/MySQLDir:        Location where mysql databases are created (default InstancePath/mysql)
@@ -23,8 +25,10 @@ The Following Options are used::
   /LocalInstallation/Database/RootPwd:              (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/Host:                 (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/Port:                 (default 3306)
-  /LocalInstallation/Database/MySQLSmallMem:        Configure a MySQL with small memory requirements for testing purposes innodb_buffer_pool_size=200MB
-  /LocalInstallation/Database/MySQLLargeMem:        Configure a MySQL with high memory requirements for production purposes innodb_buffer_pool_size=10000MB
+  /LocalInstallation/Database/MySQLSmallMem:        Configure a MySQL with small memory requirements
+                                                    for testing purposes innodb_buffer_pool_size=200MB
+  /LocalInstallation/Database/MySQLLargeMem:        Configure a MySQL with high memory requirements
+                                                    for production purposes innodb_buffer_pool_size=10000MB
   /LocalInstallation/NoSQLDatabase/Host:            (must be set for SystemAdministrator Service to work)
   /LocalInstallation/NoSQLDatabase/Port:            (default 9200)
   /LocalInstallation/NoSQLDatabase/User:            (default '')
@@ -33,13 +37,16 @@ The Following Options are used::
 
 The setupSite method (used by the dirac-setup-site command) will use the following info::
 
-  /LocalInstallation/Systems:       List of Systems to be defined for this instance in the CS (default: Configuration, Framework)
+  /LocalInstallation/Systems:       List of Systems to be defined for this instance
+                                    in the CS (default: Configuration, Framework)
   /LocalInstallation/Databases:     List of MySQL Databases to be installed and configured
   /LocalInstallation/Services:      List of System/ServiceName to be setup
   /LocalInstallation/Agents:        List of System/AgentName to be setup
   /LocalInstallation/WebPortal:     Boolean to setup the Web Portal (default no)
-  /LocalInstallation/ConfigurationMaster: Boolean, requires Configuration/Server to be given in the list of Services (default: no)
-  /LocalInstallation/PrivateConfiguration: Boolean, requires Configuration/Server to be given in the list of Services (default: no)
+  /LocalInstallation/ConfigurationMaster: Boolean, requires Configuration/Server to be given
+                                          in the list of Services (default: no)
+  /LocalInstallation/PrivateConfiguration: Boolean, requires Configuration/Server to be given
+                                           in the list of Services (default: no)
 
 If a Master Configuration Server is being installed the following Options can be used::
 
@@ -72,7 +79,8 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.Core.Utilities.File import mkDir, mkLink
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, CSGlobals
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, \
+    cfgInstallSection, CSGlobals
 from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR, \
     CS_ADMINISTRATOR, JOB_ADMINISTRATOR, \
     FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR, \
@@ -80,7 +88,6 @@ from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRA
 
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
-from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
@@ -94,7 +101,8 @@ __RCSID__ = "$Id$"
 class ComponentInstaller(object):
 
   def __init__(self):
-    self.gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
+    self.gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | \
+        stat.S_IROTH | stat.S_IXOTH
 
     # On command line tools this can be set to True to abort after the first error.
     self.exitOnError = False
@@ -278,7 +286,6 @@ class ComponentInstaller(object):
       gLogger.verbose("Reading NoSQL SSL choice from local configuration")
     else:
       gLogger.warn("NoSQL SSL choice not found")
-
 
     # Now ready to insert components in the Component Monitoring DB
     self.monitoringClient = ComponentMonitoringClient()
@@ -522,6 +529,10 @@ class ComponentInstaller(object):
       centralCfg = centralCfg.mergeWith(operationsCfg)
       operationsCfg = self.__getCfg(cfgPath('Operations', 'Defaults', 'EMail'), 'Logging', adminUserEmail)
       centralCfg = centralCfg.mergeWith(operationsCfg)
+
+    # Website
+    websiteCfg = self.__getCfg(cfgPath('WebApp', 'Access'), 'upload', 'TrustedHost')
+    centralCfg = centralCfg.mergeWith(websiteCfg)
 
     return centralCfg
 
@@ -1313,11 +1324,26 @@ class ComponentInstaller(object):
               if compDir in runitDict:
                 resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
                 resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
-                resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
-                resultDict[compType][system][component]['CPU'] = runitDict[compDir]['CPU']
-                resultDict[compType][system][component]['MEM'] = runitDict[compDir]['MEM']
-                resultDict[compType][system][component]['RSS'] = runitDict[compDir]['RSS']
-                resultDict[compType][system][component]['VSZ'] = runitDict[compDir]['VSZ']
+                try:
+                  resultDict[compType][system][component]['PID'] = int(runitDict[compDir]['PID'])
+                except ValueError:
+                  resultDict[compType][system][component]['PID'] = -1
+                try:
+                  resultDict[compType][system][component]['CPU'] = float(runitDict[compDir]['CPU'])
+                except ValueError:
+                  resultDict[compType][system][component]['CPU'] = -1
+                try:
+                  resultDict[compType][system][component]['MEM'] = float(runitDict[compDir]['MEM'])
+                except ValueError:
+                  resultDict[compType][system][component]['MEM'] = -1
+                try:
+                  resultDict[compType][system][component]['RSS'] = float(runitDict[compDir]['RSS'])
+                except ValueError:
+                  resultDict[compType][system][component]['RSS'] = -1
+                try:
+                  resultDict[compType][system][component]['VSZ'] = float(runitDict[compDir]['VSZ'])
+                except ValueError:
+                  resultDict[compType][system][component]['VSZ'] = -1
             except Exception:
               # print str(x)
               pass
@@ -1347,11 +1373,26 @@ class ComponentInstaller(object):
               if compDir in runitDict:
                 resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
                 resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
-                resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
-                resultDict[compType][system][component]['CPU'] = runitDict[compDir]['CPU']
-                resultDict[compType][system][component]['MEM'] = runitDict[compDir]['MEM']
-                resultDict[compType][system][component]['RSS'] = runitDict[compDir]['RSS']
-                resultDict[compType][system][component]['VSZ'] = runitDict[compDir]['VSZ']
+                try:
+                  resultDict[compType][system][component]['PID'] = int(runitDict[compDir]['PID'])
+                except ValueError:
+                  resultDict[compType][system][component]['PID'] = -1
+                try:
+                  resultDict[compType][system][component]['CPU'] = float(runitDict[compDir]['CPU'])
+                except ValueError:
+                  resultDict[compType][system][component]['CPU'] = -1
+                try:
+                  resultDict[compType][system][component]['MEM'] = float(runitDict[compDir]['MEM'])
+                except ValueError:
+                  resultDict[compType][system][component]['MEM'] = -1
+                try:
+                  resultDict[compType][system][component]['RSS'] = float(runitDict[compDir]['RSS'])
+                except ValueError:
+                  resultDict[compType][system][component]['RSS'] = -1
+                try:
+                  resultDict[compType][system][component]['VSZ'] = float(runitDict[compDir]['VSZ'])
+                except ValueError:
+                  resultDict[compType][system][component]['VSZ'] = -1
             except Exception:
               # print str(x)
               pass
@@ -1390,7 +1431,7 @@ class ComponentInstaller(object):
 
     try:
       softDict = softComp[result['Value']]
-    except KeyError as e:
+    except KeyError:
       return S_ERROR('Unknown component type %s' % componentType)
 
     if system in softDict and component in softDict[system]:

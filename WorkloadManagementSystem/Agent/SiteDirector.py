@@ -19,24 +19,24 @@ from collections import defaultdict
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Resources
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
-from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.Time import dateTime, second
 from DIRAC.Core.Utilities.List import fromChar
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Resources
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
+from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
+from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 
 DIRAC_PILOT = os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py')
@@ -483,7 +483,7 @@ class SiteDirector(AgentModule):
           totalWaitingPilots = result['Value']
           self.log.verbose('Waiting Pilots: %s' % totalWaitingPilots)
       if totalWaitingPilots >= pilotsWeMayWantToSubmit:
-        self.log.verbose("%d waiting pilots already waiting: possibly enough" % totalWaitingPilots)
+        self.log.verbose("%d pilots already waiting: possibly enough" % totalWaitingPilots)
         manyWaitingPilotsFlag = True
         if not self.addPilotsToEmptySites:
           continue

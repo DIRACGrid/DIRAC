@@ -59,7 +59,7 @@ class FreeDiskSpaceCommand(Command):
     of ResourceManagementDB database.
 
     The result is also returned to the caller, not only inserted.
-    What is inserted in the DB will be in MB,
+    What is inserted in the DB will normally be in MB,
     what is returned will be in the specified unit.
     """
 
@@ -139,7 +139,8 @@ class FreeDiskSpaceCommand(Command):
     elements = CSHelpers.getStorageElements()
 
     for name in elements['Value']:
-      diskSpace = self.doNew(name)
+      # keeping TB as default
+      diskSpace = self.doNew((name, 'MB'))
       if not diskSpace['OK']:
         gLogger.error("Unable to calculate free/total disk space", "name: %s" % name)
         continue

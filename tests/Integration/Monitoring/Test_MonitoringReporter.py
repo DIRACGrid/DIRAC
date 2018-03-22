@@ -52,6 +52,9 @@ Resources
 import unittest
 from datetime import datetime
 
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
 from DIRAC import gLogger
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter

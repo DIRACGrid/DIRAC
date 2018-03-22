@@ -541,10 +541,9 @@ class Matcher (TestWMSTestCase):
         'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
         'DIRACVersion': 'pippo',
         'ReleaseVersion': 'blabla',
-        'VirtualOrganization': 'LHCB',
+        'VirtualOrganization': 'LHCb',
         'PilotInfoReportedFlag': 'True',
         'PilotBenchmark': 'anotherPilot',
-        'LHCbPlatform': 'CERTO',
         'Site': 'DIRAC.Jenkins.ch',
         'CPUTime': 86400}
     matcher = RPCClient('WorkloadManagement/Matcher')
