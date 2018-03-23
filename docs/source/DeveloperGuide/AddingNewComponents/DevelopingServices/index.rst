@@ -129,8 +129,8 @@ If you want to run your services using the "dip" protocol, use the following con
 
 which is the same configuration used above with the difference of the "Protocol = dip" line.
 
-Now, going back for a second on the service calls authorizations: in the example above we have used 
-*auth_<method_name>* to define the service authorization properties. What we have done abobe can be achieved using 
+Now, going back for a second on the service calls authorizations: in the example above we have used
+*auth_<method_name>* to define the service authorization properties. What we have done above can be achieved using
 the following CS structure:
 
   Services
@@ -149,7 +149,8 @@ the following CS structure:
 and removing the *auth_<method_name>* from the code. This is a better "production" level coding.
 
 You can also specify which default authorizations a service call should have at deploy time by editing the "ConfigTemplate.cfg"
-file present in every system. An example can be found in https://github.com/DIRACGrid/DIRAC/blob/integration/WorkloadManagementSystem/ConfigTemplate.cfg
+file present in every system.
+An example can be found in https://github.com/DIRACGrid/DIRAC/blob/integration/WorkloadManagementSystem/ConfigTemplate.cfg
 
 
 Calling the Service from a Client

@@ -29,9 +29,9 @@ functional although simplest possible agent::
    from DIRAC.Core.DISET.RPCClient import RPCClient
    
    
-   __RCSID__ = "Id: $"
+   __RCSID__ = "Id$"
    
-   class SimplestAgent( AgentModule ):
+   class SimplestAgent(AgentModule):
      """
      .. class:: SimplestAgent
    
@@ -39,28 +39,28 @@ functional although simplest possible agent::
      print a message on log
      """
    
-     def initialize( self ):
+     def initialize(self):
        """ agent's initalisation
    
        :param self: self reference
        """
-       self.message = self.am_getOption( 'Message', "SimplestAgent is working..." )
-       self.log.info( "message = %s" % self.message )
+       self.message = self.am_getOption('Message', "SimplestAgent is working...")
+       self.log.info("message = %s" % self.message)
        return S_OK()
    
-     def execute( self ):
+     def execute(self):
        """ execution in one agent's cycle
    
        :param self: self reference
        """
-       self.log.info( "message is: %s" % self.message )
-       simpleMessageService = RPCClient( 'Framework/Hello' )
-       result = simpleMessageService.sayHello( self.message )
+       self.log.info("message is: %s" % self.message)
+       simpleMessageService = RPCClient('Framework/Hello')
+       result = simpleMessageService.sayHello(self.message)
        if not result['OK']:
-         self.log.error( "Error while calling the service: %s" % result['Message'] )
+         self.log.error("Error while calling the service: %s" % result['Message'])
          return result
-       self.log.info( "Result of the request is %s" % result[ 'Value' ])
-       return S_OK()   
+       self.log.info("Result of the request is %s" % result['Value'])
+       return S_OK()
 
 Let us walk through this code to see which elements should be provided.
 
@@ -92,7 +92,7 @@ will look like the following::
       PollingTime = 60
       Message = still working...
     }
-  }  
+  }
   
 Polling time define execution time scheduling.
 The Message is this agent specific option.
@@ -129,6 +129,6 @@ If case you are running a SystemAdministrator service, you'll be able to login t
       
 An info message will appear in log::
 
-  Framewrok/SimplestAgent  INFO: message: still working...
+  Framework/SimplestAgent  INFO: message: still working...
 
 Note that the service is always returning the result in the form of S_OK/S_ERROR structure.
