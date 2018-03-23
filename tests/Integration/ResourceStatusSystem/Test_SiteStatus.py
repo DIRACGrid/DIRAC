@@ -3,7 +3,7 @@
     It supposes that the DB is present, and that the service is running
 """
 
-#pylint: disable=invalid-name,wrong-import-position,missing-docstring
+# pylint: disable=invalid-name,wrong-import-position
 
 from datetime import datetime
 import unittest
@@ -11,7 +11,7 @@ import unittest
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-from DIRAC.ResourceStatusSystem.Client.SiteStatus           import SiteStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
 
@@ -19,17 +19,19 @@ Datetime = datetime.now()
 
 testSite = 'test1234.test.test'
 
-class TestClientSiteStatusTestCase( unittest.TestCase ):
 
-  def setUp( self ):
+class TestClientSiteStatusTestCase(unittest.TestCase):
+
+  def setUp(self):
     self.rsClient = ResourceStatusClient()
     self.stClient = SiteStatus()
     self.stClient.rssFlag = True
 
-  def tearDown( self ):
+  def tearDown(self):
     pass
 
-class ClientChain( TestClientSiteStatusTestCase ):
+
+class ClientChain(TestClientSiteStatusTestCase):
 
   def test_addAndRemove(self):
 
@@ -52,20 +54,20 @@ class ClientChain( TestClientSiteStatusTestCase ):
     result = self.stClient.getSites()
     self.assertTrue(result['OK'])
 
-    self.assertTrue( testSite in result['Value'] )
+    self.assertTrue(testSite in result['Value'])
 
     # TEST getSiteStatuses
     # ...............................................................................
 
-    result = self.stClient.getSiteStatuses( [ testSite ] )
+    result = self.stClient.getSiteStatuses([testSite])
     self.assertTrue(result['OK'])
 
-    self.assertEqual( result['Value'][testSite], "Active")
+    self.assertEqual(result['Value'][testSite], "Active")
 
     # TEST getUsableSites
     # ...............................................................................
 
-    result = self.stClient.getUsableSites( [testSite] )
+    result = self.stClient.getUsableSites([testSite])
     self.assertTrue(result['OK'])
 
     self.assertEqual(result['Value'][0], testSite)
@@ -73,7 +75,6 @@ class ClientChain( TestClientSiteStatusTestCase ):
     # finally delete the test site
     res = self.rsClient.deleteStatusElement('Site', 'Status', testSite)
     self.assertTrue(res['OK'])
-
 
     # ...............................................................................
     # adding some more test sites and more complex tests
@@ -101,9 +102,9 @@ class ClientChain( TestClientSiteStatusTestCase ):
     result = self.stClient.getSites()
     self.assertTrue(result['OK'])
 
-    self.assertTrue( 'testActive1.test.test' in result['Value'] )
-    self.assertTrue( 'testActive.test.test' in result['Value'] )
-    self.assertFalse( 'testBanned.test.test' in result['Value'] )
+    self.assertTrue('testActive1.test.test' in result['Value'])
+    self.assertTrue('testActive.test.test' in result['Value'])
+    self.assertFalse('testBanned.test.test' in result['Value'])
 
     # TEST getSites
     # ...............................................................................
@@ -111,9 +112,9 @@ class ClientChain( TestClientSiteStatusTestCase ):
     result = self.stClient.getSites('All')
     self.assertTrue(result['OK'])
 
-    self.assertTrue( 'testActive1.test.test' in result['Value'] )
-    self.assertTrue( 'testActive.test.test' in result['Value'] )
-    self.assertTrue( 'testBanned.test.test' in result['Value'] )
+    self.assertTrue('testActive1.test.test' in result['Value'])
+    self.assertTrue('testActive.test.test' in result['Value'])
+    self.assertTrue('testBanned.test.test' in result['Value'])
 
     # TEST getUsableSites
     # ...............................................................................
@@ -121,8 +122,8 @@ class ClientChain( TestClientSiteStatusTestCase ):
     result = self.stClient.getUsableSites()
     self.assertTrue(result['OK'])
 
-    self.assertTrue( 'testActive1.test.test' in result['Value'] )
-    self.assertTrue( 'testActive.test.test' in result['Value'] )
+    self.assertTrue('testActive1.test.test' in result['Value'])
+    self.assertTrue('testActive.test.test' in result['Value'])
 
     # setting a status
     result = self.stClient.setSiteStatus('testBanned.test.test', 'Probing')
@@ -131,13 +132,11 @@ class ClientChain( TestClientSiteStatusTestCase ):
 
     result = self.stClient.getSites('Probing')
     self.assertTrue(result['OK'])
-    self.assertTrue( 'testBanned.test.test' in result['Value'] )
-    self.assertFalse( 'testActive.test.test' in result['Value'] )
-
-
+    self.assertTrue('testBanned.test.test' in result['Value'])
+    self.assertFalse('testActive.test.test' in result['Value'])
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestClientSiteStatusTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ClientChain ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestClientSiteStatusTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientChain))
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)

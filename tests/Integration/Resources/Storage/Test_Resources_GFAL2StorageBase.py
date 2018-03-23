@@ -16,6 +16,7 @@ Examples:
 
 """
 
+# pylint: disable=invalid-name,wrong-import-position
 
 import unittest
 import sys
