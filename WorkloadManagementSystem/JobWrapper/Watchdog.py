@@ -433,7 +433,7 @@ class Watchdog(object):
        sending a sign of life.
     """
     self.log.info('Received control signal')
-    if isinstance(signalDict, type({})):
+    if isinstance(signalDict, dict):
       if 'Kill' in signalDict:
         self.log.info('Received Kill signal, stopping job via control signal')
         self.checkError = 'Received Kill signal'
