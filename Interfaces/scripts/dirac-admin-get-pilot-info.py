@@ -8,12 +8,15 @@
 """
 __RCSID__ = "$Id$"
 
+# pylint: disable=wrong-import-position
+
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
 
 extendedPrint = False
 
 
-def setExtendedPrint(arg):
+def setExtendedPrint(_arg):
   global extendedPrint
   extendedPrint = True
 
@@ -25,14 +28,16 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   '  PilotID:  Grid ID of the pilot']))
 Script.registerSwitch('e', 'extended', 'Get extended printout', setExtendedPrint)
 Script.parseCommandLine(ignoreErrors=True)
+
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+from DIRAC.Interfaces.API.Dirac import Dirac
+
 args = Script.getPositionalArgs()
 
 if len(args) < 1:
   Script.showHelp()
 
-from DIRAC import exit as DIRACExit
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-from DIRAC.Interfaces.API.Dirac import Dirac
+
 diracAdmin = DiracAdmin()
 dirac = Dirac()
 exitCode = 0
