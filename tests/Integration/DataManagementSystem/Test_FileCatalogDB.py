@@ -24,12 +24,14 @@ parentDir = '/vo.formation.idgrilles.fr/user/a/atsareg'
 nonExistingDir = "/I/Dont/exist/dir"
 testFile = '/vo.formation.idgrilles.fr/user/a/atsareg/testdir/testfile'
 nonExistingFile = "/I/Dont/exist"
+x509Chain = "<X509Chain 3 certs [/DC=ch/DC=cern/OU=computers/CN=volhcb12.cern.ch]"
+x509Chain += "[/DC=ch/DC=cern/CN=CERN Trusted Certification Authority][/DC=ch/DC=cern/CN=CERN Root CA]>"
 credDict = {
     'DN': '/DC=ch/DC=cern/OU=computers/CN=volhcb12.cern.ch',
     'extraCredentials': 'hosts',
     'group': 'visitor',
     'CN': 'volhcb12.cern.ch',
-    'x509Chain': "<X509Chain 3 certs [/DC=ch/DC=cern/OU=computers/CN=volhcb12.cern.ch][/DC=ch/DC=cern/CN=CERN Trusted Certification Authority][/DC=ch/DC=cern/CN=CERN Root CA]>",
+    'x509Chain': x509Chain,
     'username': 'anonymous',
     'isLimitedProxy': False,
     'properties': [FC_MANAGEMENT],
@@ -59,23 +61,25 @@ proxyGroup = 'visitor'
 #                        'VisibleReplicaStatus': ['AprioriGood'] }
 
 
-DATABASE_CONFIG = {'UserGroupManager': 'UserAndGroupManagerDB',  # UserAndGroupManagerDB, UserAndGroupManagerCS
-                   'SEManager': 'SEManagerDB',  # SEManagerDB, SEManagerCS
-                   'SecurityManager': 'NoSecurityManager',  # NoSecurityManager, DirectorySecurityManager, FullSecurityManager
-                   'DirectoryManager': 'DirectoryLevelTree',  # DirectorySimpleTree, DirectoryFlatTree, DirectoryNodeTree, DirectoryLevelTree
-                   'FileManager': 'FileManager',  # FileManagerFlat, FileManager
-                   'DirectoryMetadata': 'DirectoryMetadata',
-                   'FileMetadata': 'FileMetadata',
-                   'DatasetManager': 'DatasetManager',
-                   'UniqueGUID': True,
-                   'GlobalReadAccess': True,
-                   'LFNPFNConvention': 'Strong',
-                   'ResolvePFN': True,
-                   'DefaultUmask': 0o775,
-                   'ValidFileStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
-                   'ValidReplicaStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
-                   'VisibleFileStatus': ['AprioriGood'],
-                   'VisibleReplicaStatus': ['AprioriGood']}
+DATABASE_CONFIG = {
+    'UserGroupManager': 'UserAndGroupManagerDB',  # UserAndGroupManagerDB, UserAndGroupManagerCS
+    'SEManager': 'SEManagerDB',  # SEManagerDB, SEManagerCS
+    'SecurityManager': 'NoSecurityManager',  # NoSecurityManager, DirectorySecurityManager, FullSecurityManager
+    # DirectorySimpleTree, DirectoryFlatTree, DirectoryNodeTree, DirectoryLevelTree
+    'DirectoryManager': 'DirectoryLevelTree',
+    'FileManager': 'FileManager',  # FileManagerFlat, FileManager
+    'DirectoryMetadata': 'DirectoryMetadata',
+    'FileMetadata': 'FileMetadata',
+    'DatasetManager': 'DatasetManager',
+    'UniqueGUID': True,
+    'GlobalReadAccess': True,
+    'LFNPFNConvention': 'Strong',
+    'ResolvePFN': True,
+    'DefaultUmask': 0o775,
+    'ValidFileStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
+    'ValidReplicaStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
+    'VisibleFileStatus': ['AprioriGood'],
+    'VisibleReplicaStatus': ['AprioriGood']}
 
 ALL_MANAGERS = {
     "UserGroupManager": [
@@ -331,7 +335,7 @@ class FileCase(FileCatalogDBTestCase):
         "isFile : %s should be in Successful %s" %
         (nonExistingFile,
          result))
-    self.assertTrue(result["Value"]["Successful"][nonExistingFile] == False,
+    self.assertTrue(result["Value"]["Successful"][nonExistingFile] is False,
                     "isFile : %s should be seen as a file %s" % (nonExistingFile, result))
 
     result = self.db.changePathOwner({testFile: "toto", nonExistingFile: "tata"}, credDict)
@@ -651,7 +655,7 @@ class DirectoryCase(FileCatalogDBTestCase):
         (nonExistingDir,
          result))
     self.assertTrue(
-        result["Value"]["Successful"][nonExistingDir] == False,
+        result["Value"]["Successful"][nonExistingDir] is False,
         "isDirectory : %s should be seen as a directory %s" %
         (nonExistingDir,
          result))
@@ -813,13 +817,19 @@ class DirectoryCase(FileCatalogDBTestCase):
 
       else:
         # depends on the policy manager so I comment
-        #       self.assertTrue( parentDir in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
-        #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), proxyUser, "parentDir should not have changed %s" % result2 )
-        #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
+        #       self.assertTrue( parentDir in result["Value"]["Failed"], "changePathOwner : \
+        #       %s should be in Failed %s" % ( parentDir, result ) )
+        #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), \
+        #       proxyUser, "parentDir should not have changed %s" % result2 )
+        #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), \
+        #       proxyUser, "testDir should not have changed %s" % result2 )
 
-        #       self.assertTrue( parentDir in resultG["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
-        #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), proxyGroup, "parentDir should not have changed %s" % result2 )
-        #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
+        #       self.assertTrue( parentDir in resultG["Value"]["Failed"], \
+        #       "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
+        #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), \
+        #       proxyGroup, "parentDir should not have changed %s" % result2 )
+        #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), \
+        #       proxyGroup, "testDir should not have changed %s" % result2 )
         pass
 
     # Only admin can change path group
@@ -935,15 +945,23 @@ class DirectoryCase(FileCatalogDBTestCase):
     else:
         # depends on the policy manager so I comment
 
-      #       self.assertTrue( parentDir in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
-      #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), proxyUser, "parentDir should not have changed %s" % result2 )
-      #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
-      #       self.assertEqual( result3['Value'].get( 'Successful', {} ).get( testFile, {} ).get( 'Owner' ), proxyUser, "testFile should not have changed %s" % result3 )
+      #       self.assertTrue( parentDir in result["Value"]["Failed"], \
+      #       "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
+      #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), \
+      #       proxyUser, "parentDir should not have changed %s" % result2 )
+      #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), \
+      #       proxyUser, "testDir should not have changed %s" % result2 )
+      #       self.assertEqual( result3['Value'].get( 'Successful', {} ).get( testFile, {} ).get( 'Owner' ), \
+      #       proxyUser, "testFile should not have changed %s" % result3 )
       #
-      #       self.assertTrue( parentDir in resultG["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
-      #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), proxyGroup, "parentDir should not have changed %s" % result2 )
-      #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
-      #       self.assertEqual( result3['Value'].get( 'Successful', {} ).get( testFile, {} ).get( 'OwnerGroup' ), proxyGroup, "testFile should not have changed %s" % result3 )
+      #       self.assertTrue( parentDir in resultG["Value"]["Failed"], \
+      #       "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
+      #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), \
+      #       proxyGroup, "parentDir should not have changed %s" % result2 )
+      #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), \
+      #       proxyGroup, "testDir should not have changed %s" % result2 )
+      #       self.assertEqual( result3['Value'].get( 'Successful', {} ).get( testFile, {} ).get( 'OwnerGroup' ), \
+      #       proxyGroup, "testFile should not have changed %s" % result3 )
       pass
 
     # Cleaning after us

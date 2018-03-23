@@ -92,21 +92,24 @@ class ComponentInstallationChain(TestComponentInstallation):
 
     # Check installation in CS
     cfg = self.csClient.getCurrentCFG()['Value']
-    self.assertTrue(cfg.isSection('Systems/Framework/' + self.frameworkSetup + '/Services/Notification/')
-                    and cfg.isOption('Systems/Framework/' + self.frameworkSetup + '/URLs/Notification'))
+    self.assertTrue(cfg.isSection('Systems/Framework/' + self.frameworkSetup + '/Services/Notification/') and
+                    cfg.isOption('Systems/Framework/' + self.frameworkSetup + '/URLs/Notification'))
 
     self.assertTrue(cfg.getOption('Systems/Framework/' + self.frameworkSetup + '/URLs/Notification') ==
                     'dips://' + self.host + ':' + str(self.notificationPort) + '/Framework/Notification')
 
     # Check installation in database
     if not service1Present:
-      result = self.monitoringClient.getInstallations({'Instance': 'Notification', 'UnInstallationTime': None, 'InstalledBy': self.user},
-                                                      {'System': 'Framework', 'Type': 'service', 'Module': 'Notification'},
+      result = self.monitoringClient.getInstallations({'Instance': 'Notification',
+                                                       'UnInstallationTime': None, 'InstalledBy': self.user},
+                                                      {'System': 'Framework', 'Type': 'service',
+                                                       'Module': 'Notification'},
                                                       {}, False)
     else:
       # We dont know who made the previous installation
       result = self.monitoringClient.getInstallations({'Instance': 'Notification', 'UnInstallationTime': None},
-                                                      {'System': 'Framework', 'Type': 'service', 'Module': 'Notification'},
+                                                      {'System': 'Framework',
+                                                       'Type': 'service', 'Module': 'Notification'},
                                                       {}, False)
 
     self.assertTrue(result['OK'] and len(result['Value']) == 1)
@@ -127,8 +130,8 @@ class ComponentInstallationChain(TestComponentInstallation):
     # Check installation in CS
     self.csClient.downloadCSData()
     cfg = self.csClient.getCurrentCFG()['Value']
-    self.assertTrue(cfg.isSection('Systems/Framework/' + self.frameworkSetup + '/Services/Notification2/')
-                    and cfg.isOption('Systems/Framework/' + self.frameworkSetup + '/URLs/Notification2'))
+    self.assertTrue(cfg.isSection('Systems/Framework/' + self.frameworkSetup + '/Services/Notification2/') and
+                    cfg.isOption('Systems/Framework/' + self.frameworkSetup + '/URLs/Notification2'))
 
     if not service1Present:
       # Uninstall component
@@ -141,9 +144,10 @@ class ComponentInstallationChain(TestComponentInstallation):
                                   self.frameworkSetup +
                                   '/Services/Notification/') and cfg.isSection('Systems/Framework/' +
                                                                                self.frameworkSetup +
-                                                                               '/Services/Notification/') and cfg.isOption('Systems/Framework/' +
-                                                                                                                           self.frameworkSetup +
-                                                                                                                           '/URLs/Notification'))
+                                                                               '/Services/Notification/') and
+                    cfg.isOption('Systems/Framework/' +
+                                 self.frameworkSetup +
+                                 '/URLs/Notification'))
 
     if not service2Present:
       # Uninstall second component
@@ -155,11 +159,13 @@ class ComponentInstallationChain(TestComponentInstallation):
       cfg = self.csClient.getCurrentCFG()['Value']
       self.assertTrue(not cfg.isSection('Systems/Framework/' +
                                         self.frameworkSetup +
-                                        '/Services/Notification/') and not cfg.isSection('Systems/Framework/' +
-                                                                                         self.frameworkSetup +
-                                                                                         '/Services/Notification2/') and not cfg.isOption('Systems/Framework/' +
-                                                                                                                                          self.frameworkSetup +
-                                                                                                                                          '/URLs/Notification'))
+                                        '/Services/Notification/') and not cfg.isSection(
+                                            'Systems/Framework/' +
+                                            self.frameworkSetup +
+                                            '/Services/Notification2/') and not
+                      cfg.isOption('Systems/Framework/' +
+                                   self.frameworkSetup +
+                                   '/URLs/Notification'))
 
   def testDatabase(self):
 
@@ -174,7 +180,8 @@ class ComponentInstallationChain(TestComponentInstallation):
     self.assertTrue(cfg.isSection('Systems/DataManagement/' + self.frameworkSetup + '/Databases/FTSDB/'))
 
     # Check in database
-    result = self.monitoringClient.getInstallations({'Instance': 'FTSDB', 'UnInstallationTime': None, 'InstalledBy': self.user},
+    result = self.monitoringClient.getInstallations({'Instance': 'FTSDB',
+                                                     'UnInstallationTime': None, 'InstalledBy': self.user},
                                                     {'System': 'DataManagement', 'Type': 'DB', 'Module': 'FTSDB'},
                                                     {}, False)
     self.assertTrue(result['OK'] and len(result['Value']) == 1)

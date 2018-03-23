@@ -202,7 +202,8 @@ class TestClientFTS3(unittest.TestCase):
 
     getEnd = time.time()
 
-    print "Generation of 1000 operation and 10500 files %s s, retrival %s s" % (persistEnd - persistStart, getEnd - persistEnd)
+    print "Generation of 1000 operation and 10500 files %s s, retrival %s s" % (
+        persistEnd - persistStart, getEnd - persistEnd)
 
 
 if __name__ == '__main__':

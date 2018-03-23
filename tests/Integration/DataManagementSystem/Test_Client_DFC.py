@@ -234,7 +234,7 @@ class FileCase(DFCTestCase):
         "isFile : %s should be in Successful %s" %
         (nonExistingFile,
          result))
-    self.assertTrue(result["Value"]["Successful"][nonExistingFile] == False,
+    self.assertTrue(result["Value"]["Successful"][nonExistingFile] is False,
                     "isFile : %s should be seen as a file %s" % (nonExistingFile, result))
 
     result = self.dfc.changePathOwner({testFile: "toto", nonExistingFile: "tata"})
@@ -600,7 +600,7 @@ class DirectoryCase(DFCTestCase):
         (nonExistingDir,
          result))
     self.assertTrue(
-        result["Value"]["Successful"][nonExistingDir] == False,
+        result["Value"]["Successful"][nonExistingDir] is False,
         "isDirectory : %s should be seen as a directory %s" %
         (nonExistingDir,
          result))
