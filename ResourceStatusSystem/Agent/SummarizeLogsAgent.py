@@ -15,8 +15,8 @@
 
 __RCSID__ = '$Id$'
 
-from DIRAC                                                  import S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
 AGENT_NAME = 'ResourceStatus/SummarizeLogsAgent'
@@ -169,12 +169,14 @@ class SummarizeLogsAgent( AgentModule ):
       return selectedRes
     selectedRes = selectedRes['Value']
 
-    # We want from the <element>History table the last Status, LastCheckTime
-    # and TokenOwner
+    # We want from the <element>History table the last Status, and TokenOwner
     lastStatus, lastToken = None, None
     if selectedRes:
-      lastStatus = selectedRes[0]
-      lastToken = selectedRes[1]
+      try:
+        lastStatus = selectedRes[0]
+        lastToken = selectedRes[1]
+      except IndexError:
+        pass
 
     # If the first of the selected items has a different status than the latest
     # on the history, we add it.
@@ -209,15 +211,15 @@ class SummarizeLogsAgent( AgentModule ):
 
     try:
 
-      name            = elementDict[ 'Name' ]
-      statusType      = elementDict[ 'StatusType' ]
-      status          = elementDict[ 'Status' ]
-      elementType     = elementDict[ 'ElementType' ]
-      reason          = elementDict[ 'Reason' ]
-      dateEffective   = elementDict[ 'DateEffective' ]
-      lastCheckTime   = elementDict[ 'LastCheckTime' ]
-      tokenOwner      = elementDict[ 'TokenOwner' ]
-      tokenExpiration = elementDict[ 'TokenExpiration' ]
+      name = elementDict['Name']
+      statusType = elementDict['StatusType']
+      status = elementDict['Status']
+      elementType = elementDict['ElementType']
+      reason = elementDict['Reason']
+      dateEffective = elementDict['DateEffective']
+      lastCheckTime = elementDict['LastCheckTime']
+      tokenOwner = elementDict['TokenOwner']
+      tokenExpiration = elementDict['TokenExpiration']
 
     except KeyError, e:
       return S_ERROR( e )
