@@ -166,7 +166,7 @@ class VOMS2CSSynchronizer(object):
       modified = False
       userDict = {"DN": dn, "CA": self.vomsUserDict[dn]['CA'], "Email": self.vomsUserDict[dn]['mail']}
       if newDNForExistingUser:
-        userDict['DN'] = ','.join([dn, diracUserDict.get(diracName,newAddedUserDict.get(diracName))['DN']])
+        userDict['DN'] = ','.join([dn, diracUserDict.get(diracName, newAddedUserDict.get(diracName))['DN']])
         modified = True
       existingGroups = diracUserDict.get(diracName, {}).get('Groups', [])
       nonVOGroups = list(set(existingGroups) - set(diracVOMSMapping.keys()))

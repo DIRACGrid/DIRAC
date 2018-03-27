@@ -18,6 +18,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 dryRun = False
 
+
 def setDryRun(value):
   global dryRun
   dryRun = True
@@ -47,10 +48,12 @@ Script.parseCommandLine(ignoreErrors=True)
 def syncCSWithVOMS(vomsSync):
   return vomsSync.syncCSWithVOMS()
 
+
 def getVOAdmin(voName):
   voAdminUser = getVOOption(voName, "VOAdmin")
   voAdminGroup = getVOOption(voName, "VOAdminGroup", getVOOption(voName, "DefaultGroup"))
   return voAdminUser, voAdminGroup
+
 
 voAdminUser, voAdminGroup = getVOAdmin(voName)
 
