@@ -1,3 +1,11 @@
+[v6r19p18]
+
+*Configuration
+CHANGE: Better logging of the Configuration file write exception
+
+*RSS
+FIX: SummarizeLogsAgent - fix the case when no previous history
+
 [v6r19p17]
 
 *Framework
