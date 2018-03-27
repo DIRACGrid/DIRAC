@@ -87,6 +87,14 @@ FIX: Drop some old stuff, add link for FTS3 page
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
 
+[v6r19p18]
+
+*Configuration
+CHANGE: Better logging of the Configuration file write exception
+
+*RSS
+FIX: SummarizeLogsAgent - fix the case when no previous history
+
 [v6r19p17]
 
 *Framework

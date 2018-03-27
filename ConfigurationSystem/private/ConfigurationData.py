@@ -346,8 +346,8 @@ class ConfigurationData( object ):
       with open( configurationFile, "w" ) as fd:
         fd.write( str( self.remoteCFG ) )
     except Exception as e:
-      gLogger.fatal( "Cannot write new configuration to disk!",
-                     "file %s" % configurationFile )
+      gLogger.fatal("Cannot write new configuration to disk!",
+                    "file %s exception %s" % (configurationFile, repr(e)))
       return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, repr( e ).replace( ',)', ')' ) ) )
     if backupName:
       self.__backupCurrentConfiguration( backupName )
