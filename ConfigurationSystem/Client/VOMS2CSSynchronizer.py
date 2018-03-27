@@ -52,6 +52,8 @@ class VOMS2CSSynchronizer(object):
       self.log.error('Could not retrieve user information from VOMS', result['Message'])
       return result
 
+    print "AT >>> result", result['Value']
+
     self.vomsUserDict = result['Value']
     message = "There are %s user entries in VOMS for VO %s" % (len(self.vomsUserDict), self.vomsVOName)
     self.adminMsgs['Info'].append(message)
@@ -164,7 +166,7 @@ class VOMS2CSSynchronizer(object):
       modified = False
       userDict = {"DN": dn, "CA": self.vomsUserDict[dn]['CA'], "Email": self.vomsUserDict[dn]['mail']}
       if newDNForExistingUser:
-        userDict['DN'] = ','.join([dn, diracUserDict[diracName]['DN']])
+        userDict['DN'] = ','.join([dn, diracUserDict.get(diracName,newAddedUserDict.get(diracName))['DN']])
         modified = True
       existingGroups = diracUserDict.get(diracName, {}).get('Groups', [])
       nonVOGroups = list(set(existingGroups) - set(diracVOMSMapping.keys()))
