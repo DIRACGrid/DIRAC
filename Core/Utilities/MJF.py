@@ -166,6 +166,13 @@ class MJF(object):
     shutdowntimeJob = self.getIntJobFeature('shutdowntime_job')
     shutdowntime = self.getIntMachineFeature('shutdowntime')
 
+    # look for local shutdown file
+    try:
+      with open('/var/run/shutdown_time', 'r') as fd:
+        shutdowntimeLocal = int(fd.read().strip())
+    except (IOError, ValueError):
+      shutdowntimeLocal = None
+
     if jobstartSecs is not None and wallLimitSecs is not None:
       secondsLeft = jobstartSecs + wallLimitSecs - now
 
@@ -180,6 +187,12 @@ class MJF(object):
         secondsLeft = shutdowntime - now
       elif shutdowntime - now < secondsLeft:
         secondsLeft = shutdowntime - now
+
+    if shutdowntimeLocal is not None:
+      if secondsLeft is None:
+        secondsLeft = shutdowntimeLocal - now
+      elif shutdowntimeLocal - now < secondsLeft:
+        secondsLeft = shutdowntimeLocal - now
 
     # Wall Clock time left or None if unknown
     return secondsLeft
