@@ -12,9 +12,11 @@ __RCSID__ = "$Id$"
 from DIRAC import gLogger, exit as DIRACExit, S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
+from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
+
 
 dryRun = False
-
 
 def setDryRun(value):
   global dryRun
@@ -40,8 +42,22 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
 
 Script.parseCommandLine(ignoreErrors=True)
 
+
+@executeWithUserProxy
+def syncCSWithVOMS(vomsSync):
+  return vomsSync.syncCSWithVOMS()
+
+def getVOAdmin(voName):
+  voAdminUser = getVOOption(voName, "VOAdmin")
+  voAdminGroup = getVOOption(voName, "VOAdminGroup", getVOOption(voName, "DefaultGroup"))
+  return voAdminUser, voAdminGroup
+
+voAdminUser, voAdminGroup = getVOAdmin(voName)
+
 vomsSync = VOMS2CSSynchronizer(voName)
-result = vomsSync.syncCSWithVOMS()
+result = syncCSWithVOMS(vomsSync,  # pylint: disable=unexpected-keyword-arg
+                        proxyUserName=voAdminUser,
+                        proxyUserGroup=voAdminGroup)
 if not result['OK']:
   gLogger.error("Failed to synchronize user data")
   DIRACExit(-1)
