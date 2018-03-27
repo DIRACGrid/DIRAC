@@ -32,10 +32,11 @@ you better keep reading.
 Notes before continuing, on top of what is in section :ref:`editing_code`
 =========================================================================
 
-*OS*: a DIRAC server can be installed, as of today, only on SLC6 (Scientific Linux Cern 6) or CC7 (Cern CentOS 7) OS.
-The reason being some binaries are proved to work only there,
-and this includes several DMS (Data Management) libraries.
-If you have to do many DMS development, you should consider using SLC6 or CC7.
+*OS*: a DIRAC server can be installed, as of today, only on SLC6 (Scientific Linux Cern 6) or CC7 (Cern CentOS 7).
+
+The reason is that some binaries are proved to work only there (and TBH, support for CC7 is still partial),
+and this includes several WMS (Workload Management) and DMS (Data Management) libraries.
+If you have to do many DMS (and partly WMS) developments, you should consider using SLC6 or CC7.
 Or, using a Virtual Machine, or a docker instance. We'll go through this.
 
 

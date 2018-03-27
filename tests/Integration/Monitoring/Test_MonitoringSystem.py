@@ -4,6 +4,8 @@ It is used to test client->db-> service.
   and this monitoring service should be connecting to an ElasticSeach instance
 """
 
+# pylint: disable=invalid-name,wrong-import-position
+
 import unittest
 import tempfile
 import time

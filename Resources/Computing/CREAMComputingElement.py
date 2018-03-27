@@ -290,8 +290,7 @@ class CREAMComputingElement(ComputingElement):
     if result['Value'][0]:
       if result['Value'][2]:
         return S_ERROR(result['Value'][2])
-      else:
-        return S_ERROR('Error while interrogating job statuses')
+      return S_ERROR('Error while interrogating job statuses')
     if result['Value'][1]:
       resultDict = self.__parseJobStatus(result['Value'][1])
 

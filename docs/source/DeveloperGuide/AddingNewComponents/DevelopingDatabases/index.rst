@@ -1,17 +1,35 @@
-==============================================
+====================
 Developing Databases
-==============================================
+====================
 
-Before starting developing databases, you have to make sure that MySQL is installed, as well as python-mysql, as explained in :ref:`editing_code`, and make sure that MySQL service is on.
+This is a quick guide about developing classes interacting with MySQL databases.
+DIRAC supports also Oracle SQL DB, and also the NoSQL database and ElasticSearch, but they are not part of this document.
+
+Before starting developing databases, you have to make sure that MySQL is installed, as well as python-mysql,
+as explained in :ref:`editing_code`, and make sure that MySQL service is on.
 
 Develop the database
 =====================
 
-To develop a new database structure it requires to design a database schema and develop the python database class that will interact with the database itself. A simple example of the python class of a database follows:
+To develop a new database structure it requires to design a database schema
+and develop the python database class that will interact with the database itself.
+
+The ``DIRAC.Core.Base.DB`` module provides a base class for defining and interacting with MySQL DBs.
+The example that follows make use of it.
+There is also the possibility to define the DB using `sqlalchemy` python package, (and some DIRAC DBs do indeed that)
+but this is not covered in this document.
+
+A simple example of the python class of a database follows:
 
 .. literalinclude:: AtomDB.py
 
-Let's break down the example. The first two lines are simple includes required. Then the class definition. The name of the class should be the same name as the file where it is. So *AtomDB* should be in *AtomDB.py*. The class should inherit from the *DB* class. The *DB* class includes all the methods necessary to access, query, modify... the database. 
+Let's break down the example.
+The first two lines are simple includes required.
+Then the class definition.
+The name of the class should be the same name as the file where it is.
+
+So *AtomDB* should be in *AtomDB.py*. The class should inherit from the *DB* class.
+The *DB* class includes all the methods necessary to access, query, modify... the database.
 
 The first line in the *__init__* method should be the initialization of the parent (*DB*) class. That initialization requires 3 parameters:
 
@@ -19,7 +37,11 @@ The first line in the *__init__* method should be the initialization of the pare
  2. Full name of the database. With *System/Name*. So it can know where in the CS look for the initialization parameters. In this case it would be */Systems/Test/<instance name>/Databases/AtomDB*.
  3. Maximum number of requests to queue. 10 is a good value for this setting.
  
-After the initialization of the *DB* parent class we call our own *__initializeDB* method. This method (following *__init__* in the example) first retrieves all the tables already in the database. Then for each table that has not yet been created then it creates a definition of the table and creates all the missing tables. Each table definition includes all the fields with their value type, primary keys, extra indexes... By default all tables will be created using the *InnoDB* engine.
+After the initialization of the *DB* parent class we call our own *__initializeDB* method.
+This method (following *__init__* in the example) first retrieves all the tables already in the database.
+Then for each table that has not yet been created then it creates a definition of the table and creates all the missing tables.
+Each table definition includes all the fields with their value type, primary keys, extra indexes...
+By default all tables will be created using the *InnoDB* engine.
 
 The *addStuff* method simply inserts into the created table the argument value.
 
@@ -46,12 +68,16 @@ The last step is to configure the database credentials for DIRAC to be able to c
        }
      }
   }
-  
+
+
+In a production environment, the "Password" should be defined in a non-accessible file,
+while the rest of the configuration can go in the central Configuration Service.
+
 If you encounter any problem with sockets, you should replace "localhost" (DIRAC/Systems/Test/<instance name>/AtomDB/Host) by 127.0.0.1.
 
 Keep in mind that <instance name> is the name of the instance defined under */DIRAC/Setups/<your setup>/Test* and <your setup> is defined under */DIRAC/Setup*.
 
-Once that is defined you're ready to go
+Once that is defined you're ready to go.
 
 Trying the database from the command line
 ==========================================
@@ -67,10 +93,9 @@ You can try to access the database by doing:
    except Exception:
       print "Oops. Something went wrong..."
       raise
-   result = atomdb.addStuff( 'something' )
+   result = atomdb.addStuff('something')
    if not result['OK']:
-     print "Error while inserting into db:", result['Message'] #Here, in DIRAC, you better use the gLogger
+     print "Error while inserting into db:", result['Message']  # Here, in DIRAC, you better use the gLogger
    else:
-     print result[ 'Value' ] #Here, in DIRAC, you better use the gLogger
+     print result['Value'] #Here, in DIRAC, you better use the gLogger
 
-     

@@ -1,7 +1,7 @@
 """ Hello Service is an example of how to build services in the DIRAC framework
 """
 
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
