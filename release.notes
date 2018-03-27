@@ -1,4 +1,4 @@
-[v6r20-pre17]
+[v6r20-pre18]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -16,6 +16,10 @@ CHANGE: dirac-distribution and related scripts - compile web code while release
 CHANGE: dirac-external-requirements - reimplemented to use preinstalled pip command rather than
 the pip python API
 FIX: dirac-distribution - fixed wrong indentation  
+NEW: new command name for voms proxy
+FIX: dirac-install default behaviour preserved even with diracos options
+New: Add additional check in MJF utility to look for a shutdown file located at '/var/run/shutdown_time'
+FIX: The hardcoded rule was not taken into account when the query was coming from the web server
 
 *Framework
 NEW: WebAppCompiler methods is implemented, which is used to compile the web framework
