@@ -52,8 +52,8 @@ class RemoveReplica( DMSRequestOperationsBase ):
     # # gMonitor stuff
     gMonitor.registerActivity( "RemoveReplicaAtt", "Replica removals attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveReplicaeOK", "Successful replica removals",
-                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("RemoveReplicaOK", "Successful replica removals",
+                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
     gMonitor.registerActivity( "RemoveReplicaFail", "Failed replica removals",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
