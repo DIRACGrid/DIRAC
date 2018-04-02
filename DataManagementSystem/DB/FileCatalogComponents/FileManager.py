@@ -496,9 +496,12 @@ class FileManager( FileManagerBase ):
   def _getRepIDsForReplica(self,replicaTuples,connection=False):
     connection = self._getConnection(connection)
     queryTuples = []
+    fileIDs = []
     for fileID,seID in replicaTuples:
       queryTuples.append("(%d,%d)" % (fileID,seID))
-    req = "SELECT RepID,FileID,SEID FROM FC_Replicas WHERE (FileID,SEID) IN (%s)" % intListToString(queryTuples)
+      fileIDs.append(fileID)
+    req = "SELECT RepID,FileID,SEID FROM FC_Replicas WHERE (FileID,SEID) IN (%s) AND FileID in (%s)" % \
+          (intListToString(queryTuples), intListToString(fileIDs))
     res = self.db._query(req,connection)
     if not res['OK']:
       return res
