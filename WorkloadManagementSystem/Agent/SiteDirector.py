@@ -3,11 +3,8 @@
 # Author :  A.T.
 ########################################################################
 
-"""  The Site Director is an agent performing pilot job submission to particular sites.
+"""  The Site Director is a simple agent performing pilot job submission to particular sites.
 """
-
-__RCSID__ = "$Id$"
-
 import os
 import base64
 import bz2
@@ -17,63 +14,64 @@ import socket
 import hashlib
 from collections import defaultdict
 
+
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Security import CS
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
-from DIRAC.Core.Utilities.Time import dateTime, second
-from DIRAC.Core.Utilities.List import fromChar
-from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Resources
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
-from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
-from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
-from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC                                                 import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities.File                             import mkDir
+from DIRAC.Core.Base.AgentModule                           import AgentModule
+from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
+from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
+from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
+from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
+from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
+from DIRAC.Core.DISET.RPCClient                            import RPCClient
+from DIRAC.Core.Security                                   import CS
+from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
+from DIRAC.Core.Utilities.Time                             import dateTime, second
+from DIRAC.Core.Utilities.List                             import fromChar
 
+__RCSID__ = "$Id$"
 
-DIRAC_PILOT = os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py')
-DIRAC_INSTALL = os.path.join(DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py')
-DIRAC_MODULES = [os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotCommands.py'),
-                 os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotTools.py')]
+DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
+DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
+DIRAC_MODULES = [ os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotCommands.py' ),
+                  os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotTools.py' ) ]
 TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready', 'Unknown']
 WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
-
-def getSubmitPools(group=None, vo=None):
-  """ This method gets submit pools
-  """
+def getSubmitPools( group = None, vo = None ):
   if group:
-    return Registry.getGroupOption(group, 'SubmitPools', '')
+    return Registry.getGroupOption( group, 'SubmitPools', '' )
   if vo:
-    return Registry.getVOOption(vo, 'SubmitPools', '')
+    return Registry.getVOOption( vo, 'SubmitPools', '' )
   return ''
 
 
-class SiteDirector(AgentModule):
-  """ SiteDirector class provides an implementation of a DIRAC agent.
-
-      Used for submitting pilots to Computing Elements.
+class SiteDirector( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
   """
 
-  def __init__(self, *args, **kwargs):
+  def __init__( self, *args, **kwargs ):
     """ c'tor
     """
-    super(SiteDirector, self).__init__(*args, **kwargs)
+    AgentModule.__init__( self, *args, **kwargs )
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
-    self.failedQueues = defaultdict(int)
+    self.failedQueues = defaultdict( int )
     self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
@@ -87,8 +85,6 @@ class SiteDirector(AgentModule):
     self.pilotGroup = ''
     self.platforms = []
     self.sites = []
-    self.defaultSubmitPools = ''
-    self.totalSubmittedPilots = 0
 
     self.proxy = None
 
@@ -96,162 +92,138 @@ class SiteDirector(AgentModule):
     self.getOutput = False
     self.sendAccounting = True
 
-    self.install = DIRAC_INSTALL
-    self.pilot = DIRAC_PILOT
-    self.extraModules = []
-
-    self.siteClient = None
-    self.rssClient = None
-    self.rssFlag = None
-
-    self.globalParameters = {"NumberOfProcessors": 1,
-                             "MaxRAM": 2048}
-    self.failedQueueCycleFactor = 10
-    self.maxQueueLength = 86400 * 3
-
-    self.pilotWaitingFlag = True
-    self.pilotWaitingTime = 3600
-    self.pilotLogLevel = 'INFO'
-    self.matcherClient = None
-    self.siteMaskList = []
-    self.ceMaskList = []
-
-    self.localhost = socket.getfqdn()
-
-  def initialize(self):
-    """ Initial settings
+  def initialize( self ):
+    """ Standard constructor
     """
+    self.am_setOption( "PollingTime", 60.0 )
+    self.am_setOption( "maxPilotWaitingHours", 6 )
+    return S_OK()
 
-    # set of CS options
-    self.am_setOption("PollingTime", 60.0)
-    self.am_setOption("maxPilotWaitingHours", 6)
+  def beginExecution( self ):
 
-    self.gridEnv = self.am_getOption("GridEnv", getGridEnv())
-
+    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
     # The SiteDirector is for a particular user community
-    self.vo = self.am_getOption("VO", '')
+    self.vo = self.am_getOption( "VO", '' )
     if not self.vo:
-      self.vo = self.am_getOption("Community", '')
+      self.vo = self.am_getOption( "Community", '' )
     if not self.vo:
       self.vo = CSGlobals.getVO()
     # The SiteDirector is for a particular user group
-    self.group = self.am_getOption("Group", '')
+    self.group = self.am_getOption( "Group", '' )
 
     # Choose the group for which pilots will be submitted. This is a hack until
     # we will be able to match pilots to VOs.
     if not self.group:
       if self.vo:
-        result = Registry.getGroupsForVO(self.vo)
+        result = Registry.getGroupsForVO( self.vo )
         if not result['OK']:
           return result
         self.voGroups = []
         for group in result['Value']:
-          if 'NormalUser' in Registry.getPropertiesForGroup(group):
-            self.voGroups.append(group)
+          if 'NormalUser' in Registry.getPropertiesForGroup( group ):
+            self.voGroups.append( group )
     else:
-      self.voGroups = [self.group]
+      self.voGroups = [ self.group ]
 
-    self.pilot = self.am_getOption('PilotScript', self.pilot)
-    self.extraModules = self.am_getOption('ExtraPilotModules', self.extraModules) + DIRAC_MODULES
-
-    return S_OK()
-
-  def beginExecution(self):
-    """ This is run at every cycle
-    """
-
-    # Get the clients
-    self.siteClient = SiteStatus()
-    self.rssClient = ResourceStatus()
-    self.rssFlag = self.rssClient.rssFlag
-
-    result = findGenericPilotCredentials(vo=self.vo)
-    if not result['OK']:
+    result = findGenericPilotCredentials( vo = self.vo )
+    if not result[ 'OK' ]:
       return result
-    self.pilotDN, self.pilotGroup = result['Value']
-    self.pilotDN = self.am_getOption("PilotDN", self.pilotDN)
-    self.pilotGroup = self.am_getOption("PilotGroup", self.pilotGroup)
+    self.pilotDN, self.pilotGroup = result[ 'Value' ]
+    self.pilotDN = self.am_getOption( "PilotDN", self.pilotDN )
+    self.pilotGroup = self.am_getOption( "PilotGroup", self.pilotGroup )
 
-    self.defaultSubmitPools = getSubmitPools(self.group, self.vo)
-    self.workingDirectory = self.am_getOption('WorkDirectory')
-    self.maxQueueLength = self.am_getOption('MaxQueueLength', self.maxQueueLength)
-    self.pilotLogLevel = self.am_getOption('PilotLogLevel', self.pilotLogLevel)
-    self.maxJobsInFillMode = self.am_getOption('MaxJobsInFillMode', self.maxJobsInFillMode)
-    self.maxPilotsToSubmit = self.am_getOption('MaxPilotsToSubmit', self.maxPilotsToSubmit)
-    self.pilotWaitingFlag = self.am_getOption('PilotWaitingFlag', self.pilotWaitingFlag)
-    self.pilotWaitingTime = self.am_getOption('MaxPilotWaitingTime', self.pilotWaitingTime)
-    self.failedQueueCycleFactor = self.am_getOption('FailedQueueCycleFactor', self.failedQueueCycleFactor)
-    self.pilotStatusUpdateCycleFactor = self.am_getOption('PilotStatusUpdateCycleFactor', 10)
-    self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', False)
+    self.defaultSubmitPools = getSubmitPools( self.group, self.vo )
+
+    self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
+    self.install = DIRAC_INSTALL
+    self.extraModules = self.am_getOption( 'ExtraPilotModules', [] ) + DIRAC_MODULES
+    self.workingDirectory = self.am_getOption( 'WorkDirectory' )
+    self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
+    self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', 'INFO' )
+    self.maxJobsInFillMode = self.am_getOption( 'MaxJobsInFillMode', self.maxJobsInFillMode )
+    self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', self.maxPilotsToSubmit )
+    self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
+    self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 3600 )
+    self.failedQueueCycleFactor = self.am_getOption( 'FailedQueueCycleFactor', 10 )
+    self.pilotStatusUpdateCycleFactor = self.am_getOption( 'PilotStatusUpdateCycleFactor', 10 )
+    self.addPilotsToEmptySites = self.am_getOption( 'AddPilotsToEmptySites', False )
 
     # Flags
-    self.updateStatus = self.am_getOption('UpdatePilotStatus', self.updateStatus)
-    self.getOutput = self.am_getOption('GetPilotOutput', self.getOutput)
-    self.sendAccounting = self.am_getOption('SendPilotAccounting', self.sendAccounting)
+    self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
+    self.getOutput = self.am_getOption( 'GetPilotOutput', False )
+    self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
 
     # Get the site description dictionary
     siteNames = None
-    if self.am_getOption('Site', 'Any').lower() != "any":
-      siteNames = self.am_getOption('Site', [])
+    if not self.am_getOption( 'Site', 'Any' ).lower() == "any":
+      siteNames = self.am_getOption( 'Site', [] )
       if not siteNames:
         siteNames = None
     ceTypes = None
-    if self.am_getOption('CETypes', 'Any').lower() != "any":
-      ceTypes = self.am_getOption('CETypes', [])
+    if not self.am_getOption( 'CETypes', 'Any' ).lower() == "any":
+      ceTypes = self.am_getOption( 'CETypes', [] )
     ces = None
-    if self.am_getOption('CEs', 'Any').lower() != "any":
-      ces = self.am_getOption('CEs', [])
+    if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
+      ces = self.am_getOption( 'CEs', [] )
       if not ces:
         ces = None
-    result = Resources.getQueues(community=self.vo,
-                                 siteList=siteNames,
-                                 ceList=ces,
-                                 ceTypeList=ceTypes,
-                                 mode='Direct')
+    result = Resources.getQueues( community = self.vo,
+                                  siteList = siteNames,
+                                  ceList = ces,
+                                  ceTypeList = ceTypes,
+                                  mode = 'Direct' )
     if not result['OK']:
       return result
     resourceDict = result['Value']
-    result = self.getQueues(resourceDict)
+    result = self.getQueues( resourceDict )
     if not result['OK']:
       return result
 
-    if self.updateStatus:
-      self.log.always('Pilot status update requested')
-    if self.getOutput:
-      self.log.always('Pilot output retrieval requested')
-    if self.sendAccounting:
-      self.log.always('Pilot accounting sending requested')
+    #if not siteNames:
+    #  siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
+    #  if siteName == 'Unknown':
+    #    return S_OK( 'No site specified for the SiteDirector' )
+    #  else:
+    #    siteNames = [siteName]
+    #self.siteNames = siteNames
 
-    self.log.always('VO:', self.vo)
-    if self.voGroups:
-      self.log.always('Group(s):', self.voGroups)
-    self.log.always('Sites:', siteNames)
-    self.log.always('CETypes:', ceTypes)
-    self.log.always('CEs:', ces)
-    self.log.always('PilotDN:', self.pilotDN)
-    self.log.always('PilotGroup:', self.pilotGroup)
-    self.log.always('MaxPilotsToSubmit:', self.maxPilotsToSubmit)
-    self.log.always('MaxJobsInFillMode:', self.maxJobsInFillMode)
+    if self.updateStatus:
+      self.log.always( 'Pilot status update requested' )
+    if self.getOutput:
+      self.log.always( 'Pilot output retrieval requested' )
+    if self.sendAccounting:
+      self.log.always( 'Pilot accounting sending requested' )
+
+    self.log.always( 'Sites:', siteNames )
+    self.log.always( 'CETypes:', ceTypes )
+    self.log.always( 'CEs:', ces )
+    self.log.always( 'PilotDN:', self.pilotDN )
+    self.log.always( 'PilotGroup:', self.pilotGroup )
+    self.log.always( 'MaxPilotsToSubmit:', self.maxPilotsToSubmit )
+    self.log.always( 'MaxJobsInFillMode:', self.maxJobsInFillMode )
+
+    self.localhost = socket.getfqdn()
+    self.proxy = ''
 
     if self.firstPass:
       if self.queueDict:
-        self.log.always("Agent will serve queues:")
+        self.log.always( "Agent will serve queues:" )
         for queue in self.queueDict:
-          self.log.always("Site: %s, CE: %s, Queue: %s" % (self.queueDict[queue]['Site'],
-                                                           self.queueDict[queue]['CEName'],
-                                                           queue))
+          self.log.always( "Site: %s, CE: %s, Queue: %s" % ( self.queueDict[queue]['Site'],
+                                                             self.queueDict[queue]['CEName'],
+                                                             queue ) )
     self.firstPass = False
     return S_OK()
 
-  def __generateQueueHash(self, queueDict):
+  def __generateQueueHash( self, queueDict ):
     """ Generate a hash of the queue description
     """
     myMD5 = hashlib.md5()
-    myMD5.update(str(queueDict))
+    myMD5.update( str( queueDict ) )
     hexstring = myMD5.hexdigest()
     return hexstring
 
-  def getQueues(self, resourceDict):
+  def getQueues( self, resourceDict ):
     """ Get the list of relevant CEs and their descriptions
     """
 
@@ -261,57 +233,50 @@ class SiteDirector(AgentModule):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
-        pilotRunDirectory = ceDict.get('PilotRunDirectory', '')
-        ceMaxRAM = ceDict.get('MaxRAM', None)
-        qDict = ceDict.pop('Queues')
+        ceTags = ceDict.get( 'Tag', [] )
+        pilotRunDirectory = ceDict.get( 'PilotRunDirectory', '' )
+        if isinstance( ceTags, basestring ):
+          ceTags = fromChar( ceTags )
+        ceMaxRAM = ceDict.get( 'MaxRAM', None )
+        qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
-          queueName = '%s_%s' % (ce, queue)
+          queueName = '%s_%s' % ( ce, queue )
           self.queueDict[queueName] = {}
           self.queueDict[queueName]['ParametersDict'] = qDict[queue]
           self.queueDict[queueName]['ParametersDict']['Queue'] = queue
           self.queueDict[queueName]['ParametersDict']['Site'] = site
           self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv
-          self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue('/DIRAC/Setup', 'unknown')
+          self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'unknown' )
           # Evaluate the CPU limit of the queue according to the Glue convention
           # To Do: should be a utility
           if "maxCPUTime" in self.queueDict[queueName]['ParametersDict'] and \
              "SI00" in self.queueDict[queueName]['ParametersDict']:
-            maxCPUTime = float(self.queueDict[queueName]['ParametersDict']['maxCPUTime'])
+            maxCPUTime = float( self.queueDict[queueName]['ParametersDict']['maxCPUTime'] )
             # For some sites there are crazy values in the CS
-            maxCPUTime = max(maxCPUTime, 0)
-            maxCPUTime = min(maxCPUTime, 86400 * 12.5)
-            si00 = float(self.queueDict[queueName]['ParametersDict']['SI00'])
+            maxCPUTime = max( maxCPUTime, 0 )
+            maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
+            si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
-            self.queueDict[queueName]['ParametersDict']['CPUTime'] = int(queueCPUTime)
+            self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
 
-          # Tags & RequiredTags defined on the Queue level and on the CE level are concatenated
-          # This also converts them from a string to a list if required.
-          for tagFieldName in ('Tag', 'RequiredTag'):
-            ceTags = ceDict.get(tagFieldName, [])
-            if isinstance(ceTags, basestring):
-              ceTags = fromChar(ceTags)
-            queueTags = self.queueDict[queueName]['ParametersDict'].get(tagFieldName)
-            if queueTags and isinstance(queueTags, basestring):
-              queueTags = fromChar(queueTags)
-              self.queueDict[queueName]['ParametersDict'][tagFieldName] = queueTags
-            if ceTags:
-              if queueTags:
-                allTags = list(set(ceTags + queueTags))
-                self.queueDict[queueName]['ParametersDict'][tagFieldName] = allTags
-              else:
-                self.queueDict[queueName]['ParametersDict'][tagFieldName] = ceTags
+          queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
+          if queueTags and isinstance( queueTags, basestring ):
+            queueTags = fromChar( queueTags )
+            self.queueDict[queueName]['ParametersDict']['Tag'] = queueTags
+          if ceTags:
+            if queueTags:
+              allTags = list( set( ceTags + queueTags ) )
+              self.queueDict[queueName]['ParametersDict']['Tag'] = allTags
+            else:
+              self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
-          # Some parameters can be defined on the CE level and are inherited by all Queues
-          for parameter in ['MaxRAM', 'NumberOfProcessors', 'WholeNode']:
-            queueParameter = self.queueDict[queueName]['ParametersDict'].get(parameter)
-            ceParameter = ceDict.get(parameter)
-            if ceParameter or queueParameter:
-              self.queueDict[queueName]['ParametersDict'][parameter] = ceParameter if not queueParameter \
-                  else queueParameter
-
+          maxRAM = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM' )
+          maxRAM = ceMaxRAM if not maxRAM else maxRAM
+          if maxRAM:
+            self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
           if pilotRunDirectory:
             self.queueDict[queueName]['ParametersDict']['JobExecDir'] = pilotRunDirectory
-          qwDir = os.path.join(self.workingDirectory, queue)
+          qwDir = os.path.join( self.workingDirectory, queue )
           mkDir(qwDir)
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
           platform = ''
@@ -320,31 +285,32 @@ class SiteDirector(AgentModule):
           elif "Platform" in ceDict:
             platform = ceDict['Platform']
           elif "OS" in ceDict:
-            architecture = ceDict.get('architecture', 'x86_64')
-            platform = '_'.join([architecture, ceDict['OS']])
-          if platform and platform not in self.platforms:
-            self.platforms.append(platform)
+            architecture = ceDict.get( 'architecture', 'x86_64' )
+            OS = ceDict['OS']
+            platform = '_'.join( [architecture, OS] )
+          if platform and not platform in self.platforms:
+            self.platforms.append( platform )
 
-          if "Platform" not in self.queueDict[queueName]['ParametersDict'] and platform:
-            result = Resources.getDIRACPlatform(platform)
+          if not "Platform" in self.queueDict[queueName]['ParametersDict'] and platform:
+            result = Resources.getDIRACPlatform( platform )
             if result['OK']:
               self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value'][0]
 
-          ceQueueDict = dict(ceDict)
-          ceQueueDict.update(self.queueDict[queueName]['ParametersDict'])
+          ceQueueDict = dict( ceDict )
+          ceQueueDict.update( self.queueDict[queueName]['ParametersDict'] )
 
           # Generate the CE object for the queue or pick the already existing one
           # if the queue definition did not change
-          queueHash = self.__generateQueueHash(ceQueueDict)
+          queueHash = self.__generateQueueHash( ceQueueDict )
           if queueName in self.queueCECache and self.queueCECache[queueName]['Hash'] == queueHash:
             queueCE = self.queueCECache[queueName]['CE']
           else:
-            result = ceFactory.getCE(ceName=ce,
-                                     ceType=ceDict['CEType'],
-                                     ceParametersDict=ceQueueDict)
+            result = ceFactory.getCE( ceName = ce,
+                                      ceType = ceDict['CEType'],
+                                      ceParametersDict = ceQueueDict )
             if not result['OK']:
               return result
-            self.queueCECache.setdefault(queueName, {})
+            self.queueCECache.setdefault( queueName, {} )
             self.queueCECache[queueName]['Hash'] = queueHash
             self.queueCECache[queueName]['CE'] = result['Value']
             queueCE = self.queueCECache[queueName]['CE']
@@ -355,245 +321,82 @@ class SiteDirector(AgentModule):
           self.queueDict[queueName]['Site'] = site
           self.queueDict[queueName]['QueueName'] = queue
           self.queueDict[queueName]['Platform'] = platform
-          self.queueDict[queueName]['QueryCEFlag'] = ceDict.get('QueryCEFlag', "false")
-
           result = self.queueDict[queueName]['CE'].isValid()
           if not result['OK']:
-            self.log.fatal(result['Message'])
+            self.log.fatal( result['Message'] )
             return result
           if 'BundleProxy' in self.queueDict[queueName]['ParametersDict']:
-            if self.queueDict[queueName]['ParametersDict']['BundleProxy'].lower() in ['true', 'yes', '1']:
+            if self.queueDict[queueName]['ParametersDict']['BundleProxy'].lower() in ['true','yes','1']:
               self.queueDict[queueName]['BundleProxy'] = True
           elif 'BundleProxy' in ceDict:
-            if ceDict['BundleProxy'].lower() in ['true', 'yes', '1']:
+            if ceDict['BundleProxy'].lower() in ['true','yes','1']:
               self.queueDict[queueName]['BundleProxy'] = True
 
           if site not in self.sites:
-            self.sites.append(site)
-
-          if "WholeNode" in self.queueDict[queueName]['ParametersDict']:
-            self.globalParameters['WholeNode'] = 'True'
-          for parameter in ['MaxRAM', 'NumberOfProcessors']:
-            if parameter in self.queueDict[queueName]['ParametersDict']:
-              self.globalParameters[parameter] = max(self.globalParameters[parameter],
-                                                     int(self.queueDict[queueName]['ParametersDict'][parameter]))
+            self.sites.append( site )
 
     return S_OK()
 
-  def execute(self):
-    """ Main execution method (what is called at each agent cycle).
-
-        It basically just calls self.submitJobs() method
+  def execute( self ):
+    """ Main execution method
     """
 
     if not self.queueDict:
-      self.log.warn('No site defined, exiting the cycle')
+      self.log.warn( 'No site defined, exiting the cycle' )
       return S_OK()
 
-    # get list of usable sites within this cycle
-    result = self.siteClient.getUsableSites()
-    if not result['OK']:
-      return result
-    self.siteMaskList = result.get('Value', [])
-
-    if self.rssFlag:
-      ceNamesList = [queue['CEName'] for queue in self.queueDict.itervalues()]
-      result = self.rssClient.getElementStatus(ceNamesList, "ComputingElement")
-      if not result['OK']:
-        self.log.error("Can not get the status of computing elements",
-                       " %s" % result['Message'])
-        return result
-      self.ceMaskList = [ceName for ceName in result['Value'].iterkeys() if result['Value'][ceName]
-                         ['all'] in ('Active', 'Degraded')]
-
-    self.matcherClient = MatcherClient()
     result = self.submitJobs()
     if not result['OK']:
-      self.log.error('Errors in the job submission: ', result['Message'])
-      return result
+      self.log.error( 'Errors in the job submission: ', result['Message'] )
 
-    cyclesDone = self.am_getModuleParam('cyclesDone')
+    cyclesDone = self.am_getModuleParam( 'cyclesDone' )
     if self.updateStatus and cyclesDone % self.pilotStatusUpdateCycleFactor == 0:
       result = self.updatePilotStatus()
       if not result['OK']:
-        self.log.error('Errors in updating pilot status: ', result['Message'])
-        return result
+        self.log.error( 'Errors in updating pilot status: ', result['Message'] )
 
     return S_OK()
 
-  def submitJobs(self):
-    """ Go through defined computing elements and submit jobs if necessary and possible
-
-        :return: S_OK/S_ERROR
+  def submitJobs( self ):
+    """ Go through defined computing elements and submit jobs if necessary
     """
-
-    # First, we check if we want to submit pilots at all, and also where
-    submit, anySite, jobSites, testSites = self._ifAndWhereToSubmit()
-    if not submit:
-      self.log.notice("Not submitting any pilots at this cycle")
-      return S_OK()
-
-    # From here on we assume we are going to (try to) submit some pilots
-    self.log.debug("Going to try to submit some pilots")
-
-    queues = self.queueDict.keys()
-    random.shuffle(queues)
-    self.log.verbose("Queues treated: %s" % ','.join(queues))
-
-    self.totalSubmittedPilots = 0
-
-    for queue in queues:
-      # now submitting to the single queues
-      self.log.verbose("Evaluating queue %s" % queue)
-
-      # are we going to submit pilots to this specific queue?
-      if not self._allowedToSubmit(queue, anySite, jobSites, testSites):
-        continue
-
-      if 'CPUTime' in self.queueDict[queue]['ParametersDict']:
-        queueCPUTime = int(self.queueDict[queue]['ParametersDict']['CPUTime'])
-      else:
-        self.log.warn('CPU time limit is not specified for queue %s, skipping...' % queue)
-        continue
-      if queueCPUTime > self.maxQueueLength:
-        queueCPUTime = self.maxQueueLength
-
-      ce, ceDict = self._getCE(queue)
-
-      pilotsWeMayWantToSubmit, additionalInfo = self._getPilotsWeMayWantToSubmit(
-          ceDict)  # additionalInfo is normally taskQueueDict
-      self.log.verbose('%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queue))
-      if not pilotsWeMayWantToSubmit:
-        self.log.verbose('...so skipping %s' % queue)
-        continue
-
-      # Get the number of already waiting pilots for the queue
-      totalWaitingPilots = 0
-      manyWaitingPilotsFlag = False
-      if self.pilotWaitingFlag:
-        lastUpdateTime = dateTime() - self.pilotWaitingTime * second
-        tqIDList = additionalInfo.keys()
-        result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
-                                            'Status': WAITING_PILOT_STATUS},
-                                           None, lastUpdateTime)
-        if not result['OK']:
-          self.log.error('Failed to get Number of Waiting pilots', result['Message'])
-          totalWaitingPilots = 0
-        else:
-          totalWaitingPilots = result['Value']
-          self.log.verbose('Waiting Pilots: %s' % totalWaitingPilots)
-      if totalWaitingPilots >= pilotsWeMayWantToSubmit:
-        self.log.verbose("%d pilots already waiting: possibly enough" % totalWaitingPilots)
-        manyWaitingPilotsFlag = True
-        if not self.addPilotsToEmptySites:
-          continue
-
-      self.log.verbose("%d waiting pilots for the total of %d eligible pilots for %s" %
-                       (totalWaitingPilots, pilotsWeMayWantToSubmit, queue))
-
-      # Get the number of available slots on the target site/queue
-      totalSlots = self.getQueueSlots(queue, manyWaitingPilotsFlag)
-      if totalSlots == 0:
-        self.log.debug('%s: No slots available' % queue)
-        continue
-
-      if manyWaitingPilotsFlag:
-        # Throttle submission of extra pilots to empty sites
-        pilotsToSubmit = self.maxPilotsToSubmit / 10 + 1
-      else:
-        pilotsToSubmit = max(0, min(totalSlots, pilotsWeMayWantToSubmit - totalWaitingPilots))
-        self.log.info('%s: Slots=%d, TQ jobs(pilotsWeMayWantToSubmit)=%d, Pilots: waiting %d, to submit=%d' %
-                      (queue, totalSlots, pilotsWeMayWantToSubmit, totalWaitingPilots, pilotsToSubmit))
-
-      # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
-      pilotsToSubmit = min(self.maxPilotsToSubmit, pilotsToSubmit)
-
-      # Get the working proxy
-      cpuTime = queueCPUTime + 86400
-      self.log.verbose("Getting pilot proxy for %s/%s %d long" % (self.pilotDN, self.pilotGroup, cpuTime))
-      result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, cpuTime)
-      if not result['OK']:
-        return result
-      self.proxy = result['Value']
-      # Check returned proxy lifetime
-      result = self.proxy.getRemainingSecs()  # pylint: disable=no-member
-      if not result['OK']:
-        return result
-      lifetime_secs = result['Value']
-      ce.setProxy(self.proxy, lifetime_secs)
-
-      # now really submitting
-      while pilotsToSubmit > 0:
-
-        res = self._submitPilotsToQueue(
-            pilotsToSubmit, ce, queue)
-        if not res['OK']:
-          continue
-        pilotsToSubmit, pilotList, stampDict = res['Value']
-
-        # updating the pilotAgentsDB... done by default but maybe not strictly necessary
-        res = self._addPilotTQReference(queue, additionalInfo, pilotList, stampDict)
-
-    self.log.info("%d pilots submitted in total in this cycle," % self.totalSubmittedPilots)
-
-    return S_OK()
-
-  def _ifAndWhereToSubmit(self):
-    """ Return a tuple that says if and where to submit pilots:
-
-        (submit, anySite, jobSites, testSites)
-        e.g.
-        (True, False, {'Site1', 'Site2'}, {'Test1', 'Test2'})
-
-        VOs may want to replace this method with different strategies
-    """
-
-    submit = False
-    jobSites = set()
-    anySite = False
-    testSites = set()
 
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
-    tqDict = {'Setup': setup,
-              'CPUTime': 9999999,
-              'SubmitPool': self.defaultSubmitPools}
+    tqDict = { 'Setup':setup,
+               'CPUTime': 9999999,
+               'SubmitPool' : self.defaultSubmitPools }
     if self.vo:
       tqDict['Community'] = self.vo
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
-    result = Resources.getCompatiblePlatforms(self.platforms)
+
+    result = Resources.getCompatiblePlatforms( self.platforms )
     if not result['OK']:
       return result
     tqDict['Platform'] = result['Value']
     tqDict['Site'] = self.sites
+    tqDict['Tag'] = []
+    self.log.verbose( 'Checking overall TQ availability with requirements' )
+    self.log.verbose( tqDict )
 
-    # Get a union of all tags
-    tags = []
-    for queue in self.queueDict:
-      tags += self.queueDict[queue]['ParametersDict'].get('Tag', [])
-    tqDict['Tag'] = list(set(tags))
-
-    # Add overall max values for all queues
-    tqDict.update(self.globalParameters)
-
-    self.log.verbose('Checking overall TQ availability with requirements')
-    self.log.verbose(tqDict)
-
-    result = self.matcherClient.getMatchingTaskQueues(tqDict)
-    if not result['OK']:
+    rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
+    result = rpcMatcher.getMatchingTaskQueues( tqDict )
+    if not result[ 'OK' ]:
       return result
     if not result['Value']:
-      self.log.notice(
-          'No Waiting jobs suitable for the director, so nothing to submit')
-      return submit, anySite, jobSites, testSites
+      self.log.verbose( 'No Waiting jobs suitable for the director' )
+      return S_OK()
 
+    jobSites = set()
+    anySite = False
+    testSites = set()
     totalWaitingJobs = 0
     for tqID in result['Value']:
       if "Sites" in result['Value'][tqID]:
         for site in result['Value'][tqID]['Sites']:
           if site.lower() != 'any':
-            jobSites.add(site)
+            jobSites.add( site )
           else:
             anySite = True
       else:
@@ -602,435 +405,417 @@ class SiteDirector(AgentModule):
         if "Sites" in result['Value'][tqID]:
           for site in result['Value'][tqID]['Sites']:
             if site.lower() != 'any':
-              testSites.add(site)
+              testSites.add( site )
       totalWaitingJobs += result['Value'][tqID]['Jobs']
 
     tqIDList = result['Value'].keys()
-    result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
-                                        'Status': WAITING_PILOT_STATUS},
-                                       None)
+    result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
+                                          'Status': WAITING_PILOT_STATUS },
+                                          None )
     totalWaitingPilots = 0
     if result['OK']:
       totalWaitingPilots = result['Value']
-    self.log.info('Total %d jobs in %d task queues with %d waiting pilots'
-                  % (totalWaitingJobs, len(tqIDList), totalWaitingPilots))
+    self.log.info( 'Total %d jobs in %d task queues with %d waiting pilots' % (totalWaitingJobs, len( tqIDList ), totalWaitingPilots ) )
+    #if totalWaitingPilots >= totalWaitingJobs:
+    #  self.log.info( 'No more pilots to be submitted in this cycle' )
+    #  return S_OK()
 
-    return True, anySite, jobSites, testSites
-
-  def _allowedToSubmit(self, queue, anySite, jobSites, testSites):
-    """ Check if we are allowed to submit to a certain queue
-
-        :param queue: the queue name
-        :type queue: basestring
-        :param anySite: submitting anywhere?
-        :type anySite: bool
-        :param jobSites: set of job site names
-        :type jobSites: set
-        :param testSites: set of test site names
-        :type testSites: set
-
-        :return: True/False
-    """
-
-    # Check if the queue failed previously
-    failedCount = self.failedQueues[queue] % self.failedQueueCycleFactor
-    if failedCount != 0:
-      self.log.warn("%s queue failed recently, skipping %d cycles" % (queue, 10 - failedCount))
-      self.failedQueues[queue] += 1
-      return False
-
-    # Check the status of the site
-    if self.queueDict[queue]['Site'] not in self.siteMaskList\
-            and self.queueDict[queue]['Site'] not in testSites:
-      self.log.verbose(
-          "Skipping queue %s: site %s not in the mask" % (self.queueDict[queue]['QueueName'],
-                                                          self.queueDict[queue]['Site']))
-      return False
-
-    # Check that there are task queues waiting for this site
-    if not anySite and self.queueDict[queue]['Site'] not in jobSites:
-      self.log.verbose(
-          "Skipping queue %s at %s: no workload expected" % (self.queueDict[queue]['QueueName'],
-                                                             self.queueDict[queue]['Site']))
-      return False
-
-    # Check the status of the CE (only for RSS=Active)
-    if self.rssFlag:
-      if self.queueDict[queue]['CEName'] not in self.ceMaskList:
-        self.log.verbose("Skipping computing element %s at %s: resource not usable" % (self.queueDict[queue]['CEName'],
-                                                                                       self.queueDict[queue]['Site']))
-        return False
-
-    # if we are here, it means that we are allowed to submit to the queue
-    return True
-
-  def _getCE(self, queue):
-    """ Prepare the queue description to look for eligible jobs
-
-        :param queue: queue name
-        :type queue: basestring
-
-        :return: ce (ComputingElement object), ceDict (dict)
-    """
-
-    ce = self.queueDict[queue]['CE']
-    ceDict = ce.getParameterDict()
-    ceDict['GridCE'] = self.queueDict[queue]['CEName']
-
-    if self.queueDict[queue]['Site'] not in self.siteMaskList:
-      ceDict['JobType'] = "Test"
-    if self.vo:
-      ceDict['Community'] = self.vo
-    if self.voGroups:
-      ceDict['OwnerGroup'] = self.voGroups
-
-    # This is a hack to get rid of !
-    ceDict['SubmitPool'] = self.defaultSubmitPools
-
-    # yes, this can trigger an exception. It should "never" happen anyway, so it's a "good" exception
-    ceDict['Platform'] = Resources.getCompatiblePlatforms(self.queueDict[queue]['Platform'])['Value']
-
-    return ce, ceDict
-
-  def _getPilotsWeMayWantToSubmit(self, ceDict):
-    """ Returns the number of pilots that we may want to submit to the ce described in ceDict
-
-        This implementation is based on the number of eligible WMS taskQueues for the target site/queue.
-        VOs are free to override this method and to provide a different implementation.
-
-        :param ceDict: dictionary describing CE
-        :type ceDict: dict
-
-        :return: pilotsWeMayWantToSubmit (int), taskQueueDict (dict)
-    """
-
-    pilotsWeMayWantToSubmit = 0
-
-    result = self.matcherClient.getMatchingTaskQueues(ceDict)
+    # Check if the site is allowed in the mask
+    result = jobDB.getSiteMask()
     if not result['OK']:
-      self.log.error('Could not retrieve TaskQueues from TaskQueueDB', result['Message'])
-      return result
-    taskQueueDict = result['Value']
-    if not taskQueueDict:
-      self.log.verbose('No matching TQs found for %s' % ceDict)
+      return S_ERROR( 'Can not get the site mask' )
+    siteMaskList = result['Value']
 
-    for tq in taskQueueDict.itervalues():
-      pilotsWeMayWantToSubmit += tq['Jobs']
+    queues = self.queueDict.keys()
+    random.shuffle( queues )
+    totalSubmittedPilots = 0
+    matchedQueues = 0
+    for queue in queues:
 
-    return pilotsWeMayWantToSubmit, taskQueueDict
-
-  def _submitPilotsToQueue(self, pilotsToSubmit, ce, queue):
-    """ Method that really submits the pilots to the ComputingElements' queue
-
-       :param pilotsToSubmit: number of pilots to submit
-       :type pilotsToSubmit: int
-       :param ce: computing element object to where we submit
-       :type ce: ComputingElement
-       :param queue: queue where to submit
-       :type queue: basestring
-
-       :return: S_OK/S_ERROR
-    """
-    self.log.info('Going to submit %d pilots to %s queue' %
-                  (pilotsToSubmit, queue))
-
-    bundleProxy = self.queueDict[queue].get('BundleProxy', False)
-    jobExecDir = ''
-    jobExecDir = self.queueDict[queue]['ParametersDict'].get(
-        'JobExecDir', jobExecDir)
-    httpProxy = self.queueDict[queue]['ParametersDict'].get('HttpProxy', '')
-
-    result = self.getExecutable(queue, pilotsToSubmit,
-                                bundleProxy=bundleProxy,
-                                httpProxy=httpProxy,
-                                jobExecDir=jobExecDir)
-    if not result['OK']:
-      return result
-    executable, pilotSubmissionChunk = result['Value']
-
-    submitResult = ce.submitJob(executable, '', pilotSubmissionChunk)
-    # FIXME: The condor thing only transfers the file with some
-    # delay, so when we unlink here the script is gone
-    # FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
-    if not (self.queueDict[queue]['CEType'] == 'HTCondorCE' or
-            (self.queueDict[queue]['CEType'] == 'Local' and ce.batchSystem == 'Condor')):
-      os.unlink(executable)
-    if not submitResult['OK']:
-      self.log.error('Failed submission to queue %s:\n' %
-                     queue, submitResult['Message'])
-      pilotsToSubmit = 0
-      self.failedQueues[queue] += 1
-      return submitResult
-
-    pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
-    # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
-    # task queue priorities
-    pilotList = submitResult['Value']
-    self.queueSlots[queue]['AvailableSlots'] -= len(pilotList)
-    self.totalSubmittedPilots += len(pilotList)
-    self.log.info('Submitted %d pilots to %s@%s' % (len(pilotList),
-                                                    self.queueDict[queue]['QueueName'],
-                                                    self.queueDict[queue]['CEName']))
-    stampDict = submitResult.get('PilotStampDict', {})
-
-    return S_OK((pilotsToSubmit, pilotList, stampDict))
-
-  def _addPilotTQReference(self, queue, taskQueueDict, pilotList, stampDict):
-    """ Add to pilotAgentsDB the reference of for which TqID the pilots have been sent
-
-        :param queue: the queue name
-        :type queue: basestring
-        :param taskQueueDict: dict of task queues
-        :type taskQueueDict: dict
-        :param pilotList: list of pilots
-        :type pilotList: list
-        :param stampDict: dictionary of pilots timestamps
-        :type stampDict: dict
-
-        :return: None
-    """
-
-    tqPriorityList = []
-    sumPriority = 0.
-    for tq in taskQueueDict:
-      sumPriority += taskQueueDict[tq]['Priority']
-      tqPriorityList.append((tq, sumPriority))
-    tqDict = {}
-    for pilotID in pilotList:
-      rndm = random.random() * sumPriority
-      for tq, prio in tqPriorityList:
-        if rndm < prio:
-          tqID = tq
-          break
-      if tqID not in tqDict:
-        tqDict[tqID] = []
-      tqDict[tqID].append(pilotID)
-
-    for tqID, pilotsList in tqDict.items():
-      result = pilotAgentsDB.addPilotTQReference(pilotRef=pilotsList,
-                                                 taskQueueID=tqID,
-                                                 ownerDN=self.pilotDN,
-                                                 ownerGroup=self.pilotGroup,
-                                                 broker=self.localhost,
-                                                 gridType=self.queueDict[queue]['CEType'],
-                                                 pilotStampDict=stampDict)
-      if not result['OK']:
-        self.log.error(
-            'Failed add pilots to the PilotAgentsDB: ', result['Message'])
+      # Check if the queue failed previously
+      failedCount = self.failedQueues[ queue ] % self.failedQueueCycleFactor
+      if failedCount != 0:
+        self.log.warn( "%s queue failed recently, skipping %d cycles" % ( queue, 10-failedCount ) )
+        self.failedQueues[queue] += 1
         continue
-      for pilot in pilotsList:
-        result = pilotAgentsDB.setPilotStatus(pilotRef=pilot,
-                                              status='Submitted',
-                                              destination=self.queueDict[queue]['CEName'],
-                                              statusReason='Successfully submitted by the SiteDirector',
-                                              gridSite=self.queueDict[queue]['Site'],
-                                              queue=self.queueDict[queue]['QueueName'])
+
+      ce = self.queueDict[queue]['CE']
+      ceName = self.queueDict[queue]['CEName']
+      ceType = self.queueDict[queue]['CEType']
+      queueName = self.queueDict[queue]['QueueName']
+      siteName = self.queueDict[queue]['Site']
+      platform = self.queueDict[queue]['Platform']
+      siteMask = siteName in siteMaskList
+
+      if not anySite and siteName not in jobSites:
+        self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )
+        continue
+      if not siteMask and siteName not in testSites:
+        self.log.verbose( "Skipping queue %s: site %s not in the mask" % (queueName, siteName) )
+        continue
+
+      if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
+        queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )
+      else:
+        self.log.warn( 'CPU time limit is not specified for queue %s, skipping...' % queue )
+        continue
+      if queueCPUTime > self.maxQueueLength:
+        queueCPUTime = self.maxQueueLength
+
+      # Prepare the queue description to look for eligible jobs
+      ceDict = ce.getParameterDict()
+      ceDict[ 'GridCE' ] = ceName
+      #if not siteMask and 'Site' in ceDict:
+      #  self.log.info( 'Site not in the mask %s' % siteName )
+      #  self.log.info( 'Removing "Site" from matching Dict' )
+      #  del ceDict[ 'Site' ]
+      if not siteMask:
+        ceDict['JobType'] = "Test"
+      if self.vo:
+        ceDict['Community'] = self.vo
+      if self.voGroups:
+        ceDict['OwnerGroup'] = self.voGroups
+
+      # This is a hack to get rid of !
+      ceDict['SubmitPool'] = self.defaultSubmitPools
+
+      result = Resources.getCompatiblePlatforms( platform )
+      if not result['OK']:
+        continue
+      ceDict['Platform'] = result['Value']
+
+      # Get the number of eligible jobs for the target site/queue
+      result = rpcMatcher.getMatchingTaskQueues( ceDict )
+      if not result['OK']:
+        self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
+        return result
+      taskQueueDict = result['Value']
+      if not taskQueueDict:
+        self.log.verbose( 'No matching TQs found for %s' % queue )
+        continue
+
+      matchedQueues += 1
+      totalTQJobs = 0
+      tqIDList = taskQueueDict.keys()
+      for tq in taskQueueDict:
+        totalTQJobs += taskQueueDict[tq]['Jobs']
+
+      self.log.verbose( '%d job(s) from %d task queue(s) are eligible for %s queue' % (totalTQJobs, len( tqIDList ), queue) )
+
+      # Get the number of already waiting pilots for these task queues
+      totalWaitingPilots = 0
+      manyWaitingPilotsFlag = False
+      if self.pilotWaitingFlag:
+        lastUpdateTime = dateTime() - self.pilotWaitingTime * second
+        result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
+                                              'Status': WAITING_PILOT_STATUS },
+                                              None, lastUpdateTime )
         if not result['OK']:
-          self.log.error('Failed to set pilot status: ', result['Message'])
+          self.log.error( 'Failed to get Number of Waiting pilots', result['Message'] )
+          totalWaitingPilots = 0
+        else:
+          totalWaitingPilots = result['Value']
+          self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % tqIDList, totalWaitingPilots )
+      if totalWaitingPilots >= totalTQJobs:
+        self.log.verbose( "%d waiting pilots already for all the available jobs" % totalWaitingPilots )
+        manyWaitingPilotsFlag = True
+        if not self.addPilotsToEmptySites:
           continue
 
-  def getQueueSlots(self, queue, manyWaitingPilotsFlag):
+      self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" % (totalWaitingPilots, totalTQJobs, queue) )
+
+      # Get the working proxy
+      cpuTime = queueCPUTime + 86400
+      self.log.verbose( "Getting pilot proxy for %s/%s %d long" % ( self.pilotDN, self.pilotGroup, cpuTime ) )
+      result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, cpuTime )
+      if not result['OK']:
+        return result
+      self.proxy = result['Value']
+      ce.setProxy( self.proxy, cpuTime - 60 )
+
+      # Get the number of available slots on the target site/queue
+      totalSlots = self.getQueueSlots( queue, manyWaitingPilotsFlag )
+      if totalSlots == 0:
+        self.log.debug( '%s: No slots available' % queue )
+        continue
+
+      if manyWaitingPilotsFlag:
+        # Throttle submission of extra pilots to empty sites
+        pilotsToSubmit = self.maxPilotsToSubmit/10 + 1
+      else:
+        pilotsToSubmit = max( 0, min( totalSlots, totalTQJobs - totalWaitingPilots ) )
+        self.log.info( '%s: Slots=%d, TQ jobs=%d, Pilots: waiting %d, to submit=%d' % \
+                                ( queue, totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
+
+      # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
+      pilotsToSubmit = min( self.maxPilotsToSubmit, pilotsToSubmit )
+
+      while pilotsToSubmit > 0:
+        self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
+
+        bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
+        jobExecDir = ''
+        jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )
+        httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
+
+        result = self.getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
+        if not result['OK']:
+          return result
+
+        executable, pilotSubmissionChunk = result['Value']
+        result = ce.submitJob( executable, '', pilotSubmissionChunk )
+        ### FIXME: The condor thing only transfers the file with some
+        ### delay, so when we unlink here the script is gone
+        ### FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
+        if ceType != 'HTCondorCE':
+          os.unlink( executable )
+        if not result['OK']:
+          self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
+          pilotsToSubmit = 0
+          self.failedQueues[queue] += 1
+          continue
+
+        pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
+        # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
+        # task queue priorities
+        pilotList = result['Value']
+        self.queueSlots[queue]['AvailableSlots'] -= len( pilotList )
+        totalSubmittedPilots += len( pilotList )
+        self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList ), queueName, ceName ) )
+        stampDict = {}
+        if result.has_key( 'PilotStampDict' ):
+          stampDict = result['PilotStampDict']
+        tqPriorityList = []
+        sumPriority = 0.
+        for tq in taskQueueDict:
+          sumPriority += taskQueueDict[tq]['Priority']
+          tqPriorityList.append( ( tq, sumPriority ) )
+        rndm = random.random()*sumPriority
+        tqDict = {}
+        for pilotID in pilotList:
+          rndm = random.random() * sumPriority
+          for tq, prio in tqPriorityList:
+            if rndm < prio:
+              tqID = tq
+              break
+          if not tqDict.has_key( tqID ):
+            tqDict[tqID] = []
+          tqDict[tqID].append( pilotID )
+
+        for tqID, pilotList in tqDict.items():
+          result = pilotAgentsDB.addPilotTQReference( pilotList,
+                                                      tqID,
+                                                      self.pilotDN,
+                                                      self.pilotGroup,
+                                                      self.localhost,
+                                                      ceType,
+                                                      '',
+                                                      stampDict )
+          if not result['OK']:
+            self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
+            continue
+          for pilot in pilotList:
+            result = pilotAgentsDB.setPilotStatus(pilot, 'Submitted', ceName,
+                                                  'Successfully submitted by the SiteDirector',
+                                                  siteName, queueName )
+            if not result['OK']:
+              self.log.error( 'Failed to set pilot status: ', result['Message'] )
+              continue
+
+    self.log.info( "%d pilots submitted in total in this cycle, %d matched queues" % ( totalSubmittedPilots, matchedQueues ) )
+    return S_OK()
+
+  def getQueueSlots( self, queue, manyWaitingPilotsFlag ):
     """ Get the number of available slots in the queue
     """
     ce = self.queueDict[queue]['CE']
     ceName = self.queueDict[queue]['CEName']
     queueName = self.queueDict[queue]['QueueName']
-    queryCEFlag = self.queueDict[queue]["QueryCEFlag"].lower() in ["1", "yes", "true"]
 
-    self.queueSlots.setdefault(queue, {})
-    totalSlots = self.queueSlots[queue].get('AvailableSlots', 0)
+    self.queueSlots.setdefault( queue, {} )
+    totalSlots = self.queueSlots[queue].get( 'AvailableSlots', 0 )
 
     # See if there are waiting pilots for this queue. If not, allow submission
     if totalSlots and manyWaitingPilotsFlag:
-      result = pilotAgentsDB.selectPilots({'DestinationSite': ceName,
-                                           'Queue': queueName,
-                                           'Status': WAITING_PILOT_STATUS})
+      result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
+                                            'Queue':queueName,
+                                            'Status': WAITING_PILOT_STATUS } )
       if result['OK']:
         jobIDList = result['Value']
         if not jobIDList:
           return totalSlots
       return 0
 
-    availableSlotsCount = self.queueSlots[queue].setdefault('AvailableSlotsCount', 0)
+    availableSlotsCount = self.queueSlots[queue].setdefault( 'AvailableSlotsCount', 0 )
     waitingJobs = 1
     if totalSlots == 0:
       if availableSlotsCount % 10 == 0:
 
         # Get the list of already existing pilots for this queue
         jobIDList = None
-        result = pilotAgentsDB.selectPilots({'DestinationSite': ceName,
-                                             'Queue': queueName,
-                                             'Status': TRANSIENT_PILOT_STATUS})
+        result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
+                                              'Queue':queueName,
+                                              'Status': TRANSIENT_PILOT_STATUS } )
 
         if result['OK']:
           jobIDList = result['Value']
 
-        if queryCEFlag:
-          result = ce.available(jobIDList)
-          if not result['OK']:
-            self.log.warn('Failed to check the availability of queue %s: \n%s' % (queue, result['Message']))
-            self.failedQueues[queue] += 1
-          else:
-            ceInfoDict = result['CEInfoDict']
-            self.log.info("CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" %
-                          (ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
-                           ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs']))
-            totalSlots = result['Value']
-            self.queueSlots[queue]['AvailableSlots'] = totalSlots
-            waitingJobs = ceInfoDict['WaitingJobs']
+        result = ce.available( jobIDList )
+        if not result['OK']:
+          self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
+          self.failedQueues[queue] += 1
         else:
-          maxWaitingJobs = int(self.queueDict[queue]['ParametersDict'].get('MaxWaitingJobs', 10))
-          maxTotalJobs = int(self.queueDict[queue]['ParametersDict'].get('MaxTotalJobs', 10))
-          waitingJobs = 0
-          totalJobs = 0
-          if jobIDList:
-            result = pilotAgentsDB.getPilotInfo(jobIDList)
-            if not result['OK']:
-              self.log.warn('Failed to check PilotAgentsDB for queue %s: \n%s' % (queue, result['Message']))
-              self.failedQueues[queue] += 1
-            else:
-              for _pilotRef, pilotDict in result['Value'].iteritems():
-                if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
-                  totalJobs += 1
-                  if pilotDict["Status"] in WAITING_PILOT_STATUS:
-                    waitingJobs += 1
-              runningJobs = totalJobs - waitingJobs
-              self.log.info("PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" %
-                            (ceName, queueName, waitingJobs, runningJobs, maxTotalJobs))
-          totalSlots = min((maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs))
+          ceInfoDict = result['CEInfoDict']
+          self.log.info( "CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" % \
+                         ( ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
+                           ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
+          totalSlots = result['Value']
           self.queueSlots[queue]['AvailableSlots'] = totalSlots
+          waitingJobs = ceInfoDict['WaitingJobs']
 
     self.queueSlots[queue]['AvailableSlotsCount'] += 1
 
     if manyWaitingPilotsFlag and waitingJobs:
       return 0
-    return totalSlots
+    else:
+      return totalSlots
 
 #####################################################################################
-  def getExecutable(self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '',
-                    **kwargs):
+  def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '', processors = 1 ):
     """ Prepare the full executable for queue
     """
 
     proxy = None
     if bundleProxy:
       proxy = self.proxy
-    pilotOptions, pilotsToSubmit = self._getPilotOptions(queue, pilotsToSubmit, **kwargs)
+    pilotOptions, pilotsToSubmit = self._getPilotOptions( queue, pilotsToSubmit, processors )
     if pilotOptions is None:
-      self.log.error("Pilot options empty, error in compilation")
-      return S_ERROR("Errors in compiling pilot options")
-    self.log.verbose('pilotOptions: ', ' '.join(pilotOptions))
-    executable = self._writePilotScript(self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir)
-    return S_OK([executable, pilotsToSubmit])
+      self.log.error( "Pilot options empty, error in compilation" )
+      return S_ERROR( "Errors in compiling pilot options" )
+    self.log.verbose( 'pilotOptions: ', ' '.join( pilotOptions ) )
+    executable = self._writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
+    return S_OK( [ executable, pilotsToSubmit ] )
 
 #####################################################################################
-
-  def _getPilotOptions(self, queue, pilotsToSubmit, **kwargs):
+  def _getPilotOptions( self, queue, pilotsToSubmit, processors = 1 ):
     """ Prepare pilot options
     """
+
     queueDict = self.queueDict[queue]['ParametersDict']
     pilotOptions = []
 
-    setup = gConfig.getValue("/DIRAC/Setup", "unknown")
+    setup = gConfig.getValue( "/DIRAC/Setup", "unknown" )
     if setup == 'unknown':
-      self.log.error('Setup is not defined in the configuration')
-      return [None, None]
-    pilotOptions.append('-S %s' % setup)
-    opsHelper = Operations(group=self.pilotGroup, setup=setup)
+      self.log.error( 'Setup is not defined in the configuration' )
+      return [ None, None ]
+    pilotOptions.append( '-S %s' % setup )
+    opsHelper = Operations.Operations( group = self.pilotGroup, setup = setup )
 
-    # Installation defined?
-    installationName = opsHelper.getValue("Pilot/Installation", "")
+    #Installation defined?
+    installationName = opsHelper.getValue( "Pilot/Installation", "" )
     if installationName:
-      pilotOptions.append('-V %s' % installationName)
+      pilotOptions.append( '-V %s' % installationName )
 
-    # Project defined?
-    projectName = opsHelper.getValue("Pilot/Project", "")
+    #Project defined?
+    projectName = opsHelper.getValue( "Pilot/Project", "" )
     if projectName:
-      pilotOptions.append('-l %s' % projectName)
+      pilotOptions.append( '-l %s' % projectName )
     else:
-      self.log.info('DIRAC project will be installed by pilots')
+      self.log.info( 'DIRAC project will be installed by pilots' )
 
-    # Request a release
-    diracVersion = opsHelper.getValue("Pilot/Version", [])
+    #Request a release
+    diracVersion = opsHelper.getValue( "Pilot/Version", [] )
     if not diracVersion:
-      self.log.error('Pilot/Version is not defined in the configuration')
-      return [None, None]
+      self.log.error( 'Pilot/Version is not defined in the configuration' )
+      return [ None, None ]
     # diracVersion is a list of accepted releases
-    pilotOptions.append('-r %s' % ','.join(str(it) for it in diracVersion))
-
-    # lcgBundle defined?
-    lcgBundleVersion = opsHelper.getValue("Pilot/LCGBundleVersion", "")
-    if lcgBundleVersion:
-      self.log.warn(
-          "lcgBundle version %s defined in CS: will overwrite possible per-release lcg bundle versions" %
-          lcgBundleVersion)
-      pilotOptions.append('-g %s' % lcgBundleVersion)
+    pilotOptions.append( '-r %s' % ','.join( str( it ) for it in diracVersion ) )
 
     ownerDN = self.pilotDN
     ownerGroup = self.pilotGroup
     # Request token for maximum pilot efficiency
-    result = gProxyManager.requestToken(ownerDN, ownerGroup, pilotsToSubmit * self.maxJobsInFillMode)
-    if not result['OK']:
-      self.log.error('Invalid proxy token request', result['Message'])
-      return [None, None]
-    (token, numberOfUses) = result['Value']
-    pilotOptions.append('-o /Security/ProxyToken=%s' % token)
+    result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit * self.maxJobsInFillMode )
+    if not result[ 'OK' ]:
+      self.log.error( 'Invalid proxy token request', result['Message'] )
+      return [ None, None ]
+    ( token, numberOfUses ) = result[ 'Value' ]
+    pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
     # Use Filling mode
-    pilotOptions.append('-M %s' % min(numberOfUses, self.maxJobsInFillMode))
+    pilotOptions.append( '-M %s' % min( numberOfUses, self.maxJobsInFillMode ) )
 
     # Since each pilot will execute min( numberOfUses, self.maxJobsInFillMode )
     # with numberOfUses tokens we can submit at most:
     #    numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
     # pilots
-    newPilotsToSubmit = numberOfUses / min(numberOfUses, self.maxJobsInFillMode)
+    newPilotsToSubmit = numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
     if newPilotsToSubmit != pilotsToSubmit:
-      self.log.info('Number of pilots to submit is changed to %d after getting the proxy token' % newPilotsToSubmit)
+      self.log.info( 'Number of pilots to submit is changed to %d after getting the proxy token' % newPilotsToSubmit )
       pilotsToSubmit = newPilotsToSubmit
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
-      pilotOptions.append('-ddd')
+      pilotOptions.append( '-ddd' )
     # CS Servers
-    csServers = gConfig.getValue("/DIRAC/Configuration/Servers", [])
-    pilotOptions.append('-C %s' % ",".join(csServers))
+    csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
+    pilotOptions.append( '-C %s' % ",".join( csServers ) )
 
     # DIRAC Extensions to be used in pilots
-    pilotExtensionsList = opsHelper.getValue("Pilot/Extensions", [])
+    pilotExtensionsList = opsHelper.getValue( "Pilot/Extensions", [] )
     extensionsList = []
     if pilotExtensionsList:
       if pilotExtensionsList[0] != 'None':
         extensionsList = pilotExtensionsList
     else:
-      extensionsList = [ext for ext in CSGlobals.getCSExtensions() if 'Web' not in ext]
+      extensionsList = CSGlobals.getCSExtensions()
     if extensionsList:
-      pilotOptions.append('-e %s' % ",".join(extensionsList))
+      pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
 
+    # Requested CPU time
+    pilotOptions.append( '-T %s' % queueDict['CPUTime'] )
     # CEName
-    pilotOptions.append('-N %s' % self.queueDict[queue]['CEName'])
+    pilotOptions.append( '-N %s' % self.queueDict[queue]['CEName'] )
     # Queue
-    pilotOptions.append('-Q %s' % self.queueDict[queue]['QueueName'])
+    pilotOptions.append( '-Q %s' % self.queueDict[queue]['QueueName'] )
     # SiteName
-    pilotOptions.append('-n %s' % queueDict['Site'])
+    pilotOptions.append( '-n %s' % queueDict['Site'] )
     if 'ClientPlatform' in queueDict:
-      pilotOptions.append("-p '%s'" % queueDict['ClientPlatform'])
+      pilotOptions.append( "-p '%s'" % queueDict['ClientPlatform'] )
 
     if 'SharedArea' in queueDict:
-      pilotOptions.append("-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'])
+      pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'] )
+
+#     if 'SI00' in queueDict:
+#       factor = float( queueDict['SI00'] ) / 250.
+#       pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % factor )
+#       pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % factor )
+#     else:
+#       if 'CPUScalingFactor' in queueDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
+#       if 'CPUNormalizationFactor' in queueDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
 
     if "ExtraPilotOptions" in queueDict:
-      pilotOptions.append(queueDict['ExtraPilotOptions'])
+      pilotOptions.append( queueDict['ExtraPilotOptions'] )
 
     # Hack
     if self.defaultSubmitPools:
-      pilotOptions.append('-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools)
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
+
+    if processors != 1:
+      if processors > 1:
+        pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=%sProcessors' % processors )
+        pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%sProcessors' % processors )
+      else:
+        pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=WholeNode' )
+        pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=WholeNode' )
 
     if self.group:
-      pilotOptions.append('-G %s' % self.group)
+      pilotOptions.append( '-G %s' % self.group )
 
-    return [pilotOptions, pilotsToSubmit]
+    return [ pilotOptions, pilotsToSubmit ]
 
-####################################################################################
-  def _writePilotScript(self, workingDirectory, pilotOptions, proxy=None,
-                        httpProxy='', pilotExecDir=''):
+#####################################################################################
+  def _writePilotScript( self, workingDirectory, pilotOptions, proxy = None,
+                         httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
     """
 
@@ -1038,50 +823,30 @@ class SiteDirector(AgentModule):
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
       if proxy is not None:
-        compressedAndEncodedProxy = base64.encodestring(bz2.compress(proxy.dumpAllToString()['Value']))
+        compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) )
         proxyFlag = 'True'
-      compressedAndEncodedPilot = base64.encodestring(bz2.compress(open(self.pilot, "rb").read(), 9))
-      compressedAndEncodedInstall = base64.encodestring(bz2.compress(open(self.install, "rb").read(), 9))
+      compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) )
+      compressedAndEncodedInstall = base64.encodestring( bz2.compress( open( self.install, "rb" ).read(), 9 ) )
       compressedAndEncodedExtra = {}
       for module in self.extraModules:
-        moduleName = os.path.basename(module)
-        compressedAndEncodedExtra[moduleName] = base64.encodestring(bz2.compress(open(module, "rb").read(), 9))
-    except BaseException:
-      self.log.exception('Exception during file compression of proxy, dirac-pilot or dirac-install')
-      return S_ERROR('Exception during file compression of proxy, dirac-pilot or dirac-install')
+        moduleName = os.path.basename( module )
+        compressedAndEncodedExtra[moduleName] = base64.encodestring( bz2.compress( open( module, "rb" ).read(), 9 ) )
+    except:
+      self.log.exception( 'Exception during file compression of proxy, dirac-pilot or dirac-install' )
+      return S_ERROR( 'Exception during file compression of proxy, dirac-pilot or dirac-install' )
 
     # Extra modules
     mStringList = []
     for moduleName in compressedAndEncodedExtra:
       mString = """open( '%s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%s\"\"\" ) ) )""" % \
-                (moduleName, compressedAndEncodedExtra[moduleName])
-      mStringList.append(mString)
-    extraModuleString = '\n  '.join(mStringList)
+                ( moduleName, compressedAndEncodedExtra[moduleName] )
+      mStringList.append( mString )
+    extraModuleString = '\n  '.join( mStringList )
 
     localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
 #
-import os
-import stat
-import tempfile
-import sys
-import shutil
-import base64
-import bz2
-import logging
-import time
-
-formatter = logging.Formatter(fmt='%%(asctime)s UTC %%(levelname)-8s %%(message)s', datefmt='%%Y-%%m-%%d %%H:%%M:%%S')
-logging.Formatter.converter = time.gmtime
-try:
-  screen_handler = logging.StreamHandler(stream=sys.stdout)
-except TypeError: #python2.6
-  screen_handler = logging.StreamHandler(strm=sys.stdout)
-screen_handler.setFormatter(formatter)
-logger = logging.getLogger('pippoLogger')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(screen_handler)
-
+import os, stat, tempfile, sys, shutil, base64, bz2
 try:
   pilotExecDir = '%(pilotExecDir)s'
   if not pilotExecDir:
@@ -1105,40 +870,40 @@ try:
   os.environ["X509_CERT_DIR"]=os.path.join(pilotWorkingDirectory, 'etc/grid-security/certificates')
   # TODO: structure the output
   print '==========================================================='
-  logger.debug('Environment of execution host\\n')
-  for key, val in os.environ.iteritems():
-    logger.debug( key + '=' + val )
-  print '===========================================================\\n'
+  print 'Environment of execution host'
+  for key in os.environ.keys():
+    print key + '=' + os.environ[key]
+  print '==========================================================='
 except Exception as x:
   print >> sys.stderr, x
   shutil.rmtree( pilotWorkingDirectory )
   sys.exit(-1)
 cmd = "python %(pilotScript)s %(pilotOptions)s"
-logger.info('Executing: %%s' %% cmd)
+print 'Executing: ', cmd
 sys.stdout.flush()
 os.system( cmd )
 
 shutil.rmtree( pilotWorkingDirectory )
 
 EOF
-""" % {'compressedAndEncodedProxy': compressedAndEncodedProxy,
-       'compressedAndEncodedPilot': compressedAndEncodedPilot,
-       'compressedAndEncodedInstall': compressedAndEncodedInstall,
-       'extraModuleString': extraModuleString,
-       'httpProxy': httpProxy,
-       'pilotExecDir': pilotExecDir,
-       'pilotScript': os.path.basename(self.pilot),
-       'installScript': os.path.basename(self.install),
-       'pilotOptions': ' '.join(pilotOptions),
-       'proxyFlag': proxyFlag}
+""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy,
+        'compressedAndEncodedPilot': compressedAndEncodedPilot,
+        'compressedAndEncodedInstall': compressedAndEncodedInstall,
+        'extraModuleString': extraModuleString,
+        'httpProxy': httpProxy,
+        'pilotExecDir': pilotExecDir,
+        'pilotScript': os.path.basename( self.pilot ),
+        'installScript': os.path.basename( self.install ),
+        'pilotOptions': ' '.join( pilotOptions ),
+        'proxyFlag': proxyFlag }
 
-    fd, name = tempfile.mkstemp(suffix='_pilotwrapper.py', prefix='DIRAC_', dir=workingDirectory)
-    pilotWrapper = os.fdopen(fd, 'w')
-    pilotWrapper.write(localPilot)
+    fd, name = tempfile.mkstemp( suffix = '_pilotwrapper.py', prefix = 'DIRAC_', dir = workingDirectory )
+    pilotWrapper = os.fdopen( fd, 'w' )
+    pilotWrapper.write( localPilot )
     pilotWrapper.close()
     return name
 
-  def updatePilotStatus(self):
+  def updatePilotStatus( self ):
     """ Update status of pilots in transient states
     """
     for queue in self.queueDict:
@@ -1149,58 +914,52 @@ EOF
       siteName = self.queueDict[queue]['Site']
       abortedPilots = 0
 
-      result = pilotAgentsDB.selectPilots({'DestinationSite': ceName,
-                                           'Queue': queueName,
-                                           'GridType': ceType,
-                                           'GridSite': siteName,
-                                           'Status': TRANSIENT_PILOT_STATUS,
-                                           'OwnerDN': self.pilotDN,
-                                           'OwnerGroup': self.pilotGroup})
+      result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
+                                            'Queue':queueName,
+                                            'GridType':ceType,
+                                            'GridSite':siteName,
+                                            'Status':TRANSIENT_PILOT_STATUS,
+                                            'OwnerDN': self.pilotDN,
+                                            'OwnerGroup': self.pilotGroup } )
       if not result['OK']:
-        self.log.error('Failed to select pilots", ": %s' % result['Message'])
+        self.log.error( 'Failed to select pilots: %s' % result['Message'] )
         continue
       pilotRefs = result['Value']
       if not pilotRefs:
         continue
 
-      result = pilotAgentsDB.getPilotInfo(pilotRefs)
+      result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
-        self.log.error('Failed to get pilots info from DB', result['Message'])
+        self.log.error( 'Failed to get pilots info from DB', result['Message'] )
         continue
       pilotDict = result['Value']
 
       stampedPilotRefs = []
       for pRef in pilotDict:
         if pilotDict[pRef]['PilotStamp']:
-          stampedPilotRefs.append(pRef + ":::" + pilotDict[pRef]['PilotStamp'])
+          stampedPilotRefs.append( pRef + ":::" + pilotDict[pRef]['PilotStamp'] )
         else:
-          stampedPilotRefs = list(pilotRefs)
+          stampedPilotRefs = list( pilotRefs )
           break
 
-      # This proxy is used for checking the pilot status and renewals
-      # We really need at least a few hours otherwise the renewed
-      # proxy may expire before we check again...
-      result = ce.isProxyValid(3 * 3600)
+      result = ce.isProxyValid()
       if not result['OK']:
-        result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, 23400)
+        result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, 23400 )
         if not result['OK']:
           return result
         self.proxy = result['Value']
-        ce.setProxy(self.proxy, 23300)
+        ce.setProxy( self.proxy, 23300 )
 
-      result = ce.getJobStatus(stampedPilotRefs)
+      result = ce.getJobStatus( stampedPilotRefs )
       if not result['OK']:
-        self.log.error('Failed to get pilots status from CE', '%s: %s' % (ceName, result['Message']))
+        self.log.error( 'Failed to get pilots status from CE', '%s: %s' % ( ceName, result['Message'] ) )
         continue
       pilotCEDict = result['Value']
 
       for pRef in pilotRefs:
         newStatus = ''
         oldStatus = pilotDict[pRef]['Status']
-        if pRef in pilotCEDict:
-          ceStatus = pilotCEDict[pRef]
-        else:
-          ceStatus = oldStatus
+        ceStatus = pilotCEDict[pRef]
         lastUpdateTime = pilotDict[pRef]['LastUpdateTime']
         sinceLastUpdate = dateTime() - lastUpdateTime
 
@@ -1208,27 +967,42 @@ EOF
           # Normal status did not change, continue
           continue
         elif ceStatus == "Unknown" and oldStatus == "Unknown":
-          if sinceLastUpdate < 3600 * second:
+          if sinceLastUpdate < 3600*second:
             # Allow 1 hour of Unknown status assuming temporary problems on the CE
             continue
           else:
             newStatus = 'Aborted'
-        elif ceStatus == "Unknown" and oldStatus not in FINAL_PILOT_STATUS:
+        elif ceStatus == "Unknown" and not oldStatus in FINAL_PILOT_STATUS:
           # Possible problems on the CE, let's keep the Unknown status for a while
           newStatus = 'Unknown'
-        elif ceStatus != 'Unknown':
+        elif ceStatus != 'Unknown' :
           # Update the pilot status to the new value
           newStatus = ceStatus
 
         if newStatus:
-          self.log.info('Updating status to %s for pilot %s' % (newStatus, pRef))
-          result = pilotAgentsDB.setPilotStatus(pRef, newStatus, '', 'Updated by SiteDirector')
+          self.log.info( 'Updating status to %s for pilot %s' % ( newStatus, pRef ) )
+          result = pilotAgentsDB.setPilotStatus( pRef, newStatus, '', 'Updated by SiteDirector' )
           if newStatus == "Aborted":
             abortedPilots += 1
         # Retrieve the pilot output now
         if newStatus in FINAL_PILOT_STATUS:
           if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
-            self._getPilotOutput(pRef, pilotDict, ce, ceName)
+            self.log.info( 'Retrieving output for pilot %s' % pRef )
+            pilotStamp = pilotDict[pRef]['PilotStamp']
+            pRefStamp = pRef
+            if pilotStamp:
+              pRefStamp = pRef + ':::' + pilotStamp
+            result = ce.getJobOutput( pRefStamp )
+            if not result['OK']:
+              self.log.error( 'Failed to get pilot output', '%s: %s' % ( ceName, result['Message'] ) )
+            else:
+              output, error = result['Value']
+              if output:
+                result = pilotAgentsDB.storePilotOutput( pRef, output, error )
+                if not result['OK']:
+                  self.log.error( 'Failed to store pilot output', result['Message'] )
+              else:
+                self.log.warn( 'Empty pilot output not stored to PilotDB' )
 
       # If something wrong in the queue, make a pause for the job submission
       if abortedPilots:
@@ -1238,133 +1012,125 @@ EOF
     for queue in self.queueDict:
       ce = self.queueDict[queue]['CE']
 
-      if not ce.isProxyValid(120)['OK']:
-        result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, 1000)
+      if not ce.isProxyValid( 120 ):
+        result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, 1000 )
         if not result['OK']:
           return result
-        self.proxy = result['Value']
-        ce.setProxy(self.proxy, 940)
+        ce.setProxy( self.proxy, 940 )
 
       ceName = self.queueDict[queue]['CEName']
       queueName = self.queueDict[queue]['QueueName']
       ceType = self.queueDict[queue]['CEType']
       siteName = self.queueDict[queue]['Site']
-      result = pilotAgentsDB.selectPilots({'DestinationSite': ceName,
-                                           'Queue': queueName,
-                                           'GridType': ceType,
-                                           'GridSite': siteName,
-                                           'OutputReady': 'False',
-                                           'Status': FINAL_PILOT_STATUS})
+      result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
+                                            'Queue':queueName,
+                                            'GridType':ceType,
+                                            'GridSite':siteName,
+                                            'OutputReady':'False',
+                                            'Status':FINAL_PILOT_STATUS} )
 
       if not result['OK']:
-        self.log.error('Failed to select pilots', result['Message'])
+        self.log.error( 'Failed to select pilots', result['Message'] )
         continue
       pilotRefs = result['Value']
       if not pilotRefs:
         continue
-      result = pilotAgentsDB.getPilotInfo(pilotRefs)
+      result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
-        self.log.error('Failed to get pilots info from DB', result['Message'])
+        self.log.error( 'Failed to get pilots info from DB', result['Message'] )
         continue
       pilotDict = result['Value']
       if self.getOutput:
-        self._getPilotOutput(pRef, pilotDict, ce, ceName)
+        for pRef in pilotRefs:
+          self.log.info( 'Retrieving output for pilot %s' % pRef )
+          pilotStamp = pilotDict[pRef]['PilotStamp']
+          pRefStamp = pRef
+          if pilotStamp:
+            pRefStamp = pRef + ':::' + pilotStamp
+          result = ce.getJobOutput( pRefStamp )
+          if not result['OK']:
+            self.log.error( 'Failed to get pilot output', '%s: %s' % ( ceName, result['Message'] ) )
+          else:
+            output, error = result['Value']
+            result = pilotAgentsDB.storePilotOutput( pRef, output, error )
+            if not result['OK']:
+              self.log.error( 'Failed to store pilot output', result['Message'] )
 
       # Check if the accounting is to be sent
       if self.sendAccounting:
-        result = pilotAgentsDB.selectPilots({'DestinationSite': ceName,
-                                             'Queue': queueName,
-                                             'GridType': ceType,
-                                             'GridSite': siteName,
-                                             'AccountingSent': 'False',
-                                             'Status': FINAL_PILOT_STATUS})
+        result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
+                                              'Queue':queueName,
+                                              'GridType':ceType,
+                                              'GridSite':siteName,
+                                              'AccountingSent':'False',
+                                              'Status':FINAL_PILOT_STATUS} )
 
         if not result['OK']:
-          self.log.error('Failed to select pilots', result['Message'])
+          self.log.error( 'Failed to select pilots', result['Message'] )
           continue
         pilotRefs = result['Value']
         if not pilotRefs:
           continue
-        result = pilotAgentsDB.getPilotInfo(pilotRefs)
+        result = pilotAgentsDB.getPilotInfo( pilotRefs )
         if not result['OK']:
-          self.log.error('Failed to get pilots info from DB', result['Message'])
+          self.log.error( 'Failed to get pilots info from DB', result['Message'] )
           continue
         pilotDict = result['Value']
-        result = self.sendPilotAccounting(pilotDict)
+        result = self.sendPilotAccounting( pilotDict )
         if not result['OK']:
-          self.log.error('Failed to send pilot agent accounting')
+          self.log.error( 'Failed to send pilot agent accounting' )
 
     return S_OK()
 
-  def _getPilotOutput(self, pRef, pilotDict, ce, ceName):
-    """ Retrieves the pilot output for a pilot and stores it in the pilotAgentsDB
-    """
-
-    self.log.info('Retrieving output for pilot %s' % pRef)
-    pilotStamp = pilotDict[pRef]['PilotStamp']
-    pRefStamp = pRef
-    if pilotStamp:
-      pRefStamp = pRef + ':::' + pilotStamp
-    result = ce.getJobOutput(pRefStamp)
-    if not result['OK']:
-      self.log.error('Failed to get pilot output', '%s: %s' % (ceName, result['Message']))
-    else:
-      output, error = result['Value']
-      if output:
-        result = pilotAgentsDB.storePilotOutput(pRef, output, error)
-        if not result['OK']:
-          self.log.error('Failed to store pilot output', result['Message'])
-      else:
-        self.log.warn('Empty pilot output not stored to PilotDB')
-
-  def sendPilotAccounting(self, pilotDict):
+  def sendPilotAccounting( self, pilotDict ):
     """ Send pilot accounting record
     """
     for pRef in pilotDict:
-      self.log.verbose('Preparing accounting record for pilot %s' % pRef)
+      self.log.verbose( 'Preparing accounting record for pilot %s' % pRef )
       pA = PilotAccounting()
-      pA.setEndTime(pilotDict[pRef]['LastUpdateTime'])
-      pA.setStartTime(pilotDict[pRef]['SubmissionTime'])
-      retVal = CS.getUsernameForDN(pilotDict[pRef]['OwnerDN'])
-      if not retVal['OK']:
+      pA.setEndTime( pilotDict[pRef][ 'LastUpdateTime' ] )
+      pA.setStartTime( pilotDict[pRef][ 'SubmissionTime' ] )
+      retVal = CS.getUsernameForDN( pilotDict[pRef][ 'OwnerDN' ] )
+      if not retVal[ 'OK' ]:
         userName = 'unknown'
-        self.log.error("Can't determine username for dn:", pilotDict[pRef]['OwnerDN'])
+        self.log.error( "Can't determine username for dn:", pilotDict[pRef][ 'OwnerDN' ] )
       else:
-        userName = retVal['Value']
-      pA.setValueByKey('User', userName)
-      pA.setValueByKey('UserGroup', pilotDict[pRef]['OwnerGroup'])
-      result = getSiteForCE(pilotDict[pRef]['DestinationSite'])
-      if result['OK'] and result['Value'].strip():
-        pA.setValueByKey('Site', result['Value'].strip())
+        userName = retVal[ 'Value' ]
+      pA.setValueByKey( 'User', userName )
+      pA.setValueByKey( 'UserGroup', pilotDict[pRef][ 'OwnerGroup' ] )
+      result = getSiteForCE( pilotDict[pRef][ 'DestinationSite' ] )
+      if result['OK'] and result[ 'Value' ].strip():
+        pA.setValueByKey( 'Site', result['Value'].strip() )
       else:
-        pA.setValueByKey('Site', 'Unknown')
-      pA.setValueByKey('GridCE', pilotDict[pRef]['DestinationSite'])
-      pA.setValueByKey('GridMiddleware', pilotDict[pRef]['GridType'])
-      pA.setValueByKey('GridResourceBroker', pilotDict[pRef]['Broker'])
-      pA.setValueByKey('GridStatus', pilotDict[pRef]['Status'])
-      if 'Jobs' not in pilotDict[pRef]:
-        pA.setValueByKey('Jobs', 0)
+        pA.setValueByKey( 'Site', 'Unknown' )
+      pA.setValueByKey( 'GridCE', pilotDict[pRef][ 'DestinationSite' ] )
+      pA.setValueByKey( 'GridMiddleware', pilotDict[pRef][ 'GridType' ] )
+      pA.setValueByKey( 'GridResourceBroker', pilotDict[pRef][ 'Broker' ] )
+      pA.setValueByKey( 'GridStatus', pilotDict[pRef][ 'Status' ] )
+      if not 'Jobs' in pilotDict[pRef]:
+        pA.setValueByKey( 'Jobs', 0 )
       else:
-        pA.setValueByKey('Jobs', len(pilotDict[pRef]['Jobs']))
-      self.log.verbose("Adding accounting record for pilot %s" % pilotDict[pRef]['PilotID'])
-      retVal = gDataStoreClient.addRegister(pA)
-      if not retVal['OK']:
-        self.log.error('Failed to send accounting info for pilot ', pRef)
+        pA.setValueByKey( 'Jobs', len( pilotDict[pRef]['Jobs'] ) )
+      self.log.verbose( "Adding accounting record for pilot %s" % pilotDict[pRef][ 'PilotID' ] )
+      retVal = gDataStoreClient.addRegister( pA )
+      if not retVal[ 'OK' ]:
+        self.log.error( 'Failed to send accounting info for pilot ', pRef )
       else:
         # Set up AccountingSent flag
-        result = pilotAgentsDB.setAccountingFlag(pRef)
+        result = pilotAgentsDB.setAccountingFlag( pRef )
         if not result['OK']:
-          self.log.error('Failed to set accounting flag for pilot ', pRef)
+          self.log.error( 'Failed to set accounting flag for pilot ', pRef )
 
-    self.log.info('Committing accounting records for %d pilots' % len(pilotDict))
+    self.log.info( 'Committing accounting records for %d pilots' % len( pilotDict ) )
     result = gDataStoreClient.commit()
     if result['OK']:
       for pRef in pilotDict:
-        self.log.verbose('Setting AccountingSent flag for pilot %s' % pRef)
-        result = pilotAgentsDB.setAccountingFlag(pRef)
+        self.log.verbose( 'Setting AccountingSent flag for pilot %s' % pRef )
+        result = pilotAgentsDB.setAccountingFlag( pRef )
         if not result['OK']:
-          self.log.error('Failed to set accounting flag for pilot ', pRef)
+          self.log.error( 'Failed to set accounting flag for pilot ', pRef )
     else:
       return result
 
     return S_OK()
+

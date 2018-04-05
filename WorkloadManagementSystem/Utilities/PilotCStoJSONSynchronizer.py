@@ -19,6 +19,7 @@ from git import Repo
 
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.HTTPDISETConnection import HTTPDISETConnection
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 class PilotCStoJSONSynchronizer(object):
@@ -38,7 +39,6 @@ class PilotCStoJSONSynchronizer(object):
     '''
     self.jsonFile = 'pilot.json'  # default filename of the pilot json file
     # domain name of the web server used to upload the pilot json file and the pilot scripts
-    self.pilotFileServer = paramDict['pilotFileServer']
     self.pilotRepo = paramDict['pilotRepo']  # repository of the pilot
     self.pilotVORepo = paramDict['pilotVORepo']  # repository of the VO that can contain a pilot extension
     self.pilotLocalRepo = 'pilotLocalRepo'  # local repository to be created
@@ -304,10 +304,13 @@ class PilotCStoJSONSynchronizer(object):
         script = psf.read()
       params = urllib.urlencode({'filename': filename, 'data': script})
     headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-    if ':' in self.pilotFileServer:
-      con = HTTPDISETConnection(self.pilotFileServer.split(':')[0], self.pilotFileServer.split(':')[1])
+    pilotFileServer = Operations().getValue("Pilot/pilotFileServer")
+    if not pilotFileServer:
+      return S_ERROR("could not find Pilot option pilotFileServer")
+    if ':' in pilotFileServer:
+      con = HTTPDISETConnection(pilotFileServer.split(':')[0], pilotFileServer.split(':')[1])
     else:
-      con = HTTPDISETConnection(self.pilotFileServer, '443')
+      con = HTTPDISETConnection(pilotFileServer, '443')
     con.request("POST", "/DIRAC/upload", params, headers)
     resp = con.getresponse()
     if resp.status != 200:
@@ -315,3 +318,4 @@ class PilotCStoJSONSynchronizer(object):
     else:
       gLogger.info('-- File and scripts upload done --')
     return S_OK()
+
