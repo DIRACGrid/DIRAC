@@ -12,9 +12,9 @@ from cStringIO import StringIO
 import requests
 
 
-def pilotWrapperScript(pilotFilesCompressedEncodedDict = None,
-                       pilotOptions = None,
-                       pilotExecDir = ''):
+def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
+                       pilotOptions=None,
+                       pilotExecDir=''):
   """ Returns the content of the pilot wrapper script.
 
       The pilot wrapper script is a bash script that invokes the system python. Linux only.
@@ -39,7 +39,7 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict = None,
     pilotExecDir = os.getcwd()
 
   mString = ""
-  if pilotFilesCompressedEncodedDict: # are there some pilot files to unpack? then we create the unpacking string
+  if pilotFilesCompressedEncodedDict:  # are there some pilot files to unpack? then we create the unpacking string
     for pfName, encodedPf in pilotFilesCompressedEncodedDict.iteritems():
       mString += """
 try:
@@ -50,8 +50,8 @@ except BaseException as x:
   print >> sys.stderr, x
   shutil.rmtree(pilotWorkingDirectory)
   sys.exit(-1)
-""" % {'encodedPf':encodedPf,
-       'pfName':pfName}
+""" % {'encodedPf': encodedPf,
+       'pfName': pfName}
 
   localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
@@ -106,7 +106,7 @@ shutil.rmtree(pilotWorkingDirectory)
 EOF
 """ % {'mString': mString,
        'pilotOptions': ' '.join(pilotOptions),
-       'pilotExecDir':pilotExecDir}
+       'pilotExecDir': pilotExecDir}
 
   return localPilot
 
@@ -132,7 +132,7 @@ def _writePilotWrapperFile(workingDirectory='', localPilot=''):
   return name
 
 
-def getPilotFiles(pilotFilesDir = None, pilotFilesLocation = None):
+def getPilotFiles(pilotFilesDir=None, pilotFilesLocation=None):
   """ get the pilot files to be sent in a local directory (this is for pilot3 files)
 
      :param pilotFilesDir: the directory where to store the pilot files
@@ -147,22 +147,22 @@ def getPilotFiles(pilotFilesDir = None, pilotFilesLocation = None):
   if pilotFilesDir is None:
     pilotFilesDir = os.getcwd()
 
-  shutil.rmtree(pilotFilesDir) # make sure it's empty
+  shutil.rmtree(pilotFilesDir)  # make sure it's empty
   os.mkdir(pilotFilesDir)
 
   # getting the pilot files
   if pilotFilesLocation.startswith('http'):
     res = requests.get(pilotFilesLocation)
     if res.status_code != 200:
-      raise IOError, res.text
+      raise IOError(res.text)
     fileObj = StringIO(res.content)
     tar = tarfile.open(fileobj=fileObj)
 
     res = requests.get(os.path.join(os.path.dirname(pilotFilesLocation), 'pilot.json'))
     if res.status_code != 200:
-      raise IOError, res.text
+      raise IOError(res.text)
     jsonCFG = res.json()
-  else: # maybe it's just a local file
+  else:  # maybe it's just a local file
     tar = tarfile.open(os.path.basename(pilotFilesLocation))
 
   tar.extractall(pilotFilesDir)

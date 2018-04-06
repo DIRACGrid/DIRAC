@@ -34,7 +34,7 @@ from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
 from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import pilotWrapperScript, getPilotFiles,\
-                                                                  _writePilotWrapperFile
+    _writePilotWrapperFile
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -915,7 +915,7 @@ class SiteDirector(AgentModule):
     return totalSlots
 
 #####################################################################################
-  def getExecutable(self, queue, pilotsToSubmit, bundleProxy = True, jobExecDir = '',
+  def getExecutable(self, queue, pilotsToSubmit, bundleProxy=True, jobExecDir='',
                     **kwargs):
     """ Prepare the full executable for queue
     """
@@ -1066,7 +1066,7 @@ class SiteDirector(AgentModule):
         pfContentEncoded = base64.b64encode(bz2.compress(pfContent, 9))
         pilotFilesCompressedEncodedDict[pf] = pfContentEncoded
       except BaseException as be:
-        self.log.exception("Exception during pilot modules files compression", lException = be)
+        self.log.exception("Exception during pilot modules files compression", lException=be)
         raise be
 
     if proxy is not None:
@@ -1074,7 +1074,7 @@ class SiteDirector(AgentModule):
         compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()['Value']))
         pilotFilesCompressedEncodedDict['proxy'] = compressedAndEncodedProxy
       except BaseException as be:
-        self.log.exception("Exception during proxy file compression", lException = be)
+        self.log.exception("Exception during proxy file compression", lException=be)
         raise be
 
     localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
@@ -1082,7 +1082,6 @@ class SiteDirector(AgentModule):
                                     pilotExecDir)
 
     return _writePilotWrapperFile(workingDirectory=workingDirectory, localPilot=localPilot)
-
 
   def updatePilotStatus(self):
     """ Update status of pilots in transient states

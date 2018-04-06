@@ -318,4 +318,3 @@ class PilotCStoJSONSynchronizer(object):
     else:
       gLogger.info('-- File and scripts upload done --')
     return S_OK()
-
