@@ -1,1 +1,0 @@
-/home/toffo/pyDevs/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot.py
