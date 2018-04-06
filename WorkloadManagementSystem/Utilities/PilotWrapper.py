@@ -11,15 +11,41 @@ from cStringIO import StringIO
 import requests
 
 
-def pilotWrapperScript(compressedAndEncodedProxy = '',
-                       compressedAndEncodedInstall = '',
-                       pilotFilesString = '',
-                       pilotExecDir = '',
-                       install = '',
-                       pilotOptions = '',
-                       proxyFlag = ''):
-  """ returns the content of the pilot wrapper script
+def pilotWrapperScript(pilotFiles = None,
+                       pilotOptions = None,
+                       pilotExecDir = ''):
+  """ Returns the content of the pilot wrapper script.
+
+      The pilot wrapper script is a bash script that invokes the system python. Linux only.
+
+     :param pilotFiles: this is a possible dict of name:compressed+encoded content files.
+                        the proxy can be part of this, and of course the pilot files
+     :type pilotFiles: dict
+     :param pilotOptions: options with which to start the pilot
+     :type pilotOptions: basestring
   """
+
+  # defaults
+  if not pilotOptions:
+    pilotOptions = []
+
+  if not pilotExecDir:
+    pilotExecDir = os.getcwd()
+
+  mString = ""
+  if pilotFiles: # are there some pilot files to unpack? then we create the unpacking string
+    for pfName, encodedPf in pilotFiles.iteritems():
+      mString += """
+try:
+  with open('%(pfName)s', "w") as fd:
+    fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
+  os.chmod('%(pfName)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+except BaseException as x:
+  print >> sys.stderr, x
+  shutil.rmtree(pilotWorkingDirectory)
+  sys.exit(-1)
+""" % {'encodedPf':encodedPf,
+       'pfName':pfName}
 
   localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
@@ -47,28 +73,13 @@ logger = logging.getLogger('pilotLogger')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(screen_handler)
 
-# unpacking
-try:
-  pilotExecDir = '%(pilotExecDir)s'
-  if not pilotExecDir:
-    pilotExecDir = os.getcwd()
-  pilotWorkingDirectory = tempfile.mkdtemp(suffix='pilot', prefix='DIRAC_', dir=pilotExecDir)
-  pilotWorkingDirectory = os.path.realpath(pilotWorkingDirectory)
-  os.chdir(pilotWorkingDirectory)
-  if %(proxyFlag)s:
-    with open('proxy', "w") as fd:
-      fd.write(bz2.decompress(base64.b64decode(\"\"\"%(compressedAndEncodedProxy)s\"\"\")))
-    os.chmod("proxy", stat.S_IRUSR | stat.S_IWUSR)
-    os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
-  with open('%(installScript)s', "w") as fd:
-    fd.write(bz2.decompress(base64.b64decode(\"\"\"%(compressedAndEncodedInstall)s\"\"\")))
-  os.chmod("%(installScript)s", stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-  %(pilotFilesString)s
+# putting ourselves in the right directory
+pilotWorkingDirectory = tempfile.mkdtemp(suffix='pilot', prefix='DIRAC_', dir=%(pilotExecDir)s)
+pilotWorkingDirectory = os.path.realpath(pilotWorkingDirectory)
+os.chdir(pilotWorkingDirectory)
 
-except BaseException as x:
-  print >> sys.stderr, x
-  shutil.rmtree(pilotWorkingDirectory)
-  sys.exit(-1)
+# unpacking lines
+%(mString)s
 
 # just logging the environment
 print '==========================================================='
@@ -77,7 +88,7 @@ for key, val in os.environ.iteritems():
   logger.debug(key + '=' + val)
 print '===========================================================\\n'
 
-# now finally launching the pilot script
+# now finally launching the pilot script (which should be called dirac-pilot.py)
 cmd = "python dirac-pilot.py %(pilotOptions)s"
 logger.info('Executing: %%s' %% cmd)
 sys.stdout.flush()
@@ -87,13 +98,9 @@ os.system(cmd)
 shutil.rmtree(pilotWorkingDirectory)
 
 EOF
-""" % {'compressedAndEncodedProxy': compressedAndEncodedProxy,
-       'compressedAndEncodedInstall': compressedAndEncodedInstall,
-       'pilotFilesString': pilotFilesString,
-       'pilotExecDir': pilotExecDir,
-       'installScript': os.path.basename(install),
+""" % {'mString': mString,
        'pilotOptions': ' '.join(pilotOptions),
-       'proxyFlag': proxyFlag}
+       'pilotExecDir':pilotExecDir}
 
   return localPilot
 
