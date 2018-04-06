@@ -1,7 +1,7 @@
 """ This is a test of the creation of the pilot wrapper
 """
 
-# pylint: disable=protected-access, invalid-name
+# pylint: disable=protected-access, invalid-name, no-self-use
 
 import os
 import base64
@@ -37,8 +37,8 @@ class PilotWrapperTestCaseCreation( PilotWrapperTestCase ):
     """
 
     res = pilotWrapperScript(
-        pilotFiles = {'dirac-install.py':'someContentOfDiracInstall',
-                      'someOther.py':'someOtherContent'},
+        pilotFilesCompressedEncodedDict = {'dirac-install.py':'someContentOfDiracInstall',
+                                           'someOther.py':'someOtherContent'},
         pilotOptions = ['-c 123', '--foo bar'])
 
     print res
@@ -49,10 +49,17 @@ class PilotWrapperTestCaseCreation( PilotWrapperTestCase ):
     """ test script creation
     """
     diracInstall = os.path.join(os.getcwd(), 'Core/scripts/dirac-install.py')
+    with open(diracInstall, "r") as fd:
+      diracInstall = fd.read()
     diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
+    diracPilot = os.path.join(os.getcwd(), 'WorkloadManagementSystem/PilotAgent/dirac-pilot.py')
+    with open(diracPilot, "r") as fd:
+      diracPilot = fd.read()
+    diracPilotEncoded = base64.b64encode(bz2.compress(diracPilot, 9))
 
     res = pilotWrapperScript(
-        pilotFiles = {'dirac-install.py': diracInstallEncoded},
+        pilotFilesCompressedEncodedDict = {'dirac-install.py': diracInstallEncoded,
+                                           'dirac-pilot.py': diracPilotEncoded},
         pilotOptions = ['-c 123', '--foo bar'])
 
     print res

@@ -5,24 +5,30 @@ import os
 import tempfile
 import shutil
 import tarfile
+import json
 
 from cStringIO import StringIO
 
 import requests
 
 
-def pilotWrapperScript(pilotFiles = None,
+def pilotWrapperScript(pilotFilesCompressedEncodedDict = None,
                        pilotOptions = None,
                        pilotExecDir = ''):
   """ Returns the content of the pilot wrapper script.
 
       The pilot wrapper script is a bash script that invokes the system python. Linux only.
 
-     :param pilotFiles: this is a possible dict of name:compressed+encoded content files.
+     :param pilotFilesCompressedEncodedDict: this is a possible dict of name:compressed+encoded content files.
                         the proxy can be part of this, and of course the pilot files
-     :type pilotFiles: dict
+     :type pilotFilesCompressedEncodedDict: dict
      :param pilotOptions: options with which to start the pilot
-     :type pilotOptions: basestring
+     :type pilotOptions: list
+     :param pilotExecDir: pilot execution directory
+     :type pilotExecDir: basestring
+
+     :returns: content of the pilot wrapper
+     :rtype: basestring
   """
 
   # defaults
@@ -33,8 +39,8 @@ def pilotWrapperScript(pilotFiles = None,
     pilotExecDir = os.getcwd()
 
   mString = ""
-  if pilotFiles: # are there some pilot files to unpack? then we create the unpacking string
-    for pfName, encodedPf in pilotFiles.iteritems():
+  if pilotFilesCompressedEncodedDict: # are there some pilot files to unpack? then we create the unpacking string
+    for pfName, encodedPf in pilotFilesCompressedEncodedDict.iteritems():
       mString += """
 try:
   with open('%(pfName)s', "w") as fd:
@@ -74,7 +80,7 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(screen_handler)
 
 # putting ourselves in the right directory
-pilotWorkingDirectory = tempfile.mkdtemp(suffix='pilot', prefix='DIRAC_', dir=%(pilotExecDir)s)
+pilotWorkingDirectory = tempfile.mkdtemp(suffix='pilot', prefix='DIRAC_', dir='%(pilotExecDir)s')
 pilotWorkingDirectory = os.path.realpath(pilotWorkingDirectory)
 os.chdir(pilotWorkingDirectory)
 
@@ -105,11 +111,19 @@ EOF
   return localPilot
 
 
-def _writePilotWrapperFile(workingDirectory=None, localPilot=''):
+def _writePilotWrapperFile(workingDirectory='', localPilot=''):
   """ write the localPilot string to a file, return the file name
+
+     :param workingDirectory: the directory where to store the pilot wrapper file
+     :type workingDirectory: basestring
+     :param localPilot: content of the pilot wrapper
+     :type localPilot: basestring
+
+     :returns: file name of the pilot wrapper
+     :rtype: basestring
   """
 
-  if workingDirectory is None:
+  if not workingDirectory:
     workingDirectory = os.getcwd()
 
   fd, name = tempfile.mkstemp(suffix='_pilotwrapper.py', prefix='DIRAC_', dir=workingDirectory)
@@ -143,14 +157,21 @@ def getPilotFiles(pilotFilesDir = None, pilotFilesLocation = None):
       raise IOError, res.text
     fileObj = StringIO(res.content)
     tar = tarfile.open(fileobj=fileObj)
+
+    res = requests.get(os.path.join(os.path.dirname(pilotFilesLocation), 'pilot.json'))
+    if res.status_code != 200:
+      raise IOError, res.text
+    jsonCFG = res.json()
   else: # maybe it's just a local file
     tar = tarfile.open(os.path.basename(pilotFilesLocation))
 
   tar.extractall(pilotFilesDir)
+  with open(os.path.join(pilotFilesDir, 'pilot.json'), 'w') as fd:
+    json.dump(jsonCFG, fd)
+
   # excluding some files that might got in
   pilotFiles = [pf for pf in os.listdir(pilotFilesDir) if pf not in ['__init__.py', 'dirac-install.py']]
-  pilotFiles = [pf for pf in pilotFiles if pf.endswith('.py')]
+  pilotFiles = [pf for pf in pilotFiles if pf.endswith('.py') or pf.endswith('.json')]
   pilotFiles = [os.path.join(pilotFilesDir, pf) for pf in pilotFiles]
 
   return pilotFiles
-

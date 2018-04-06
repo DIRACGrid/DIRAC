@@ -1,0 +1,1 @@
+/home/toffo/pyDevs/DIRAC/Core/scripts/dirac-install.py
