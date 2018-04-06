@@ -33,6 +33,8 @@ from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
+from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import pilotWrapperScript, getPilotFiles,\
+                                                                  _writePilotWrapperFile
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -101,8 +103,7 @@ class SiteDirector(AgentModule):
     self.sendAccounting = True
 
     self.pilot3 = False
-    self.pilot = DIRAC_PILOT
-    self.extraModules = []
+    self.pilotFiles = []
 
     self.siteClient = None
     self.rssClient = None
@@ -151,10 +152,13 @@ class SiteDirector(AgentModule):
     else:
       self.voGroups = [self.group]
 
-    self.pilot = self.am_getOption('PilotScript', self.pilot)
-    self.extraModules = self.am_getOption('ExtraPilotModules', self.extraModules) + DIRAC_MODULES
-
     self.pilot3 = self.am_getOption('Pilot3', self.pilot3)
+    if self.pilot3:
+      pilotFilesLocation = os.path.join(Operations().getValue("Pilot/pilotFileServer"), 'pilot/pilot.tar')
+      self.pilotFiles = getPilotFiles(pilotFilesDir=self.am_getWorkDirectory(),
+                                      pilotFilesLocation=pilotFilesLocation)
+    else:
+      self.pilotFiles = DIRAC_MODULES.append(DIRAC_PILOT)
 
     return S_OK()
 
@@ -1031,33 +1035,35 @@ class SiteDirector(AgentModule):
     return [pilotOptions, pilotsToSubmit]
 
 ####################################################################################
-  def _writePilotScript(self, workingDirectory, pilotOptions, proxy=None,
-                        httpProxy='', pilotExecDir=''):
+  def _writePilotScript(self, workingDirectory, pilotOptions,
+                        proxy=None,
+                        pilotExecDir=''):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
     """
 
-    # FIXME HERE
     try:
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
       if proxy is not None:
-        compressedAndEncodedProxy = base64.encodestring(bz2.compress(proxy.dumpAllToString()['Value']))
+        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()['Value']))
         proxyFlag = 'True'
-      compressedAndEncodedPilot = base64.encodestring(bz2.compress(open(self.pilot, "rb").read(), 9))
-      compressedAndEncodedInstall = base64.encodestring(bz2.compress(open(DIRAC_INSTALL, "rb").read(), 9))
-      compressedAndEncodedExtra = {}
-      for module in self.extraModules:
+      with open(DIRAC_INSTALL, "rb") as fd:
+        diracInstall = fd.read()
+      compressedAndEncodedInstall = base64.b64encode(bz2.compress(diracInstall, 9))
+      compressedAndEncodedPilotFiles = {}
+      for module in self.pilotFiles:
         moduleName = os.path.basename(module)
-        compressedAndEncodedExtra[moduleName] = base64.encodestring(bz2.compress(open(module, "rb").read(), 9))
-    except BaseException:
-      self.log.exception('Exception during file compression of proxy, dirac-pilot or dirac-install')
-      return S_ERROR('Exception during file compression of proxy, dirac-pilot or dirac-install')
+        with open(module, "rb") as fd:
+          pilotModule = fd.read()
+        compressedAndEncodedPilotFiles[moduleName] = base64.b64encode(bz2.compress(pilotModule, 9))
+    except BaseException as be:
+      self.log.exception("Exception during file compression of proxy, or pilot modules", lException = be)
+      raise be
 
-    # Extra modules
     mStringList = []
-    for moduleName in compressedAndEncodedExtra:
-      mString = """open( '%s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%s\"\"\" ) ) )""" % \
-                (moduleName, compressedAndEncodedExtra[moduleName])
+    for moduleName in compressedAndEncodedPilotFiles:
+      mString = """with open('%s', "w") as fd:\n    fd.write(bz2.decompress(base64.b64decode(\"\"\"%s\"\"\")))""" % \
+                (moduleName, compressedAndEncodedPilotFiles[moduleName])
       mStringList.append(mString)
     pilotFilesString = '\n  '.join(mStringList)
 
