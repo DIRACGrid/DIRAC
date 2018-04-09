@@ -11,7 +11,6 @@ __RCSID__ = "$Id$"
 import os
 import base64
 import bz2
-import tempfile
 import random
 import socket
 import hashlib
@@ -34,18 +33,25 @@ from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
+from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import pilotWrapperScript, getPilotFiles,\
+    _writePilotWrapperFile
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
-
-DIRAC_PILOT = os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py')
+# dirac install file
 DIRAC_INSTALL = os.path.join(DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py')
+
+# pilot2 python files (NOT needed for pilot 3)
+DIRAC_PILOT = os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py')
 DIRAC_MODULES = [os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotCommands.py'),
                  os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotTools.py')]
+
+# status
 TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready', 'Unknown']
 WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
+
 MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
@@ -96,9 +102,8 @@ class SiteDirector(AgentModule):
     self.getOutput = False
     self.sendAccounting = True
 
-    self.install = DIRAC_INSTALL
-    self.pilot = DIRAC_PILOT
-    self.extraModules = []
+    self.pilot3 = False
+    self.pilotFiles = []
 
     self.siteClient = None
     self.rssClient = None
@@ -121,10 +126,6 @@ class SiteDirector(AgentModule):
   def initialize(self):
     """ Initial settings
     """
-
-    # set of CS options
-    self.am_setOption("PollingTime", 60.0)
-    self.am_setOption("maxPilotWaitingHours", 6)
 
     self.gridEnv = self.am_getOption("GridEnv", getGridEnv())
 
@@ -151,8 +152,7 @@ class SiteDirector(AgentModule):
     else:
       self.voGroups = [self.group]
 
-    self.pilot = self.am_getOption('PilotScript', self.pilot)
-    self.extraModules = self.am_getOption('ExtraPilotModules', self.extraModules) + DIRAC_MODULES
+    self.pilot3 = self.am_getOption('Pilot3', self.pilot3)
 
     return S_OK()
 
@@ -241,6 +241,16 @@ class SiteDirector(AgentModule):
                                                            self.queueDict[queue]['CEName'],
                                                            queue))
     self.firstPass = False
+
+    # which files to send in the pilotWrapper?
+    if self.pilot3:
+      # this is a standard location, as done by the PilotCS2JSONSynchronizer
+      pilotFilesLocation = os.path.join(Operations().getValue("Pilot/pilotFileServer"), 'pilot/pilot.tar')
+      self.pilotFiles = getPilotFiles(pilotFilesDir=self.am_getWorkDirectory(),
+                                      pilotFilesLocation=pilotFilesLocation)
+    else:
+      self.pilotFiles = DIRAC_MODULES.append(DIRAC_PILOT)
+
     return S_OK()
 
   def __generateQueueHash(self, queueDict):
@@ -738,11 +748,9 @@ class SiteDirector(AgentModule):
     jobExecDir = ''
     jobExecDir = self.queueDict[queue]['ParametersDict'].get(
         'JobExecDir', jobExecDir)
-    httpProxy = self.queueDict[queue]['ParametersDict'].get('HttpProxy', '')
 
     result = self.getExecutable(queue, pilotsToSubmit,
                                 bundleProxy=bundleProxy,
-                                httpProxy=httpProxy,
                                 jobExecDir=jobExecDir)
     if not result['OK']:
       return result
@@ -907,7 +915,7 @@ class SiteDirector(AgentModule):
     return totalSlots
 
 #####################################################################################
-  def getExecutable(self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '',
+  def getExecutable(self, queue, pilotsToSubmit, bundleProxy=True, jobExecDir='',
                     **kwargs):
     """ Prepare the full executable for queue
     """
@@ -920,7 +928,7 @@ class SiteDirector(AgentModule):
       self.log.error("Pilot options empty, error in compilation")
       return S_ERROR("Errors in compiling pilot options")
     self.log.verbose('pilotOptions: ', ' '.join(pilotOptions))
-    executable = self._writePilotScript(self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir)
+    executable = self._writePilotScript(self.workingDirectory, pilotOptions, proxy, jobExecDir)
     return S_OK([executable, pilotsToSubmit])
 
 #####################################################################################
@@ -1029,114 +1037,51 @@ class SiteDirector(AgentModule):
     return [pilotOptions, pilotsToSubmit]
 
 ####################################################################################
-  def _writePilotScript(self, workingDirectory, pilotOptions, proxy=None,
-                        httpProxy='', pilotExecDir=''):
+
+  def _writePilotScript(self, workingDirectory, pilotOptions,
+                        proxy=None,
+                        pilotExecDir=''):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
+
+     :param workingDirectory: pilot wrapper working directory
+     :type workingDirectory: basestring
+     :param pilotOptions: options with which to start the pilot
+     :type pilotOptions: list
+     :param proxy: proxy file we are going to bundle
+     :type proxy: basestring
+     :param pilotExecDir: pilot executing directory
+     :type pilotExecDir: basestring
+
+     :returns: file name of the pilot wrapper created
+     :rtype: basestring
     """
 
-    try:
-      compressedAndEncodedProxy = ''
-      proxyFlag = 'False'
-      if proxy is not None:
-        compressedAndEncodedProxy = base64.encodestring(bz2.compress(proxy.dumpAllToString()['Value']))
-        proxyFlag = 'True'
-      compressedAndEncodedPilot = base64.encodestring(bz2.compress(open(self.pilot, "rb").read(), 9))
-      compressedAndEncodedInstall = base64.encodestring(bz2.compress(open(self.install, "rb").read(), 9))
-      compressedAndEncodedExtra = {}
-      for module in self.extraModules:
-        moduleName = os.path.basename(module)
-        compressedAndEncodedExtra[moduleName] = base64.encodestring(bz2.compress(open(module, "rb").read(), 9))
-    except BaseException:
-      self.log.exception('Exception during file compression of proxy, dirac-pilot or dirac-install')
-      return S_ERROR('Exception during file compression of proxy, dirac-pilot or dirac-install')
+    # this will be the dictionary of pilot files names : encodedCompressedContent
+    # that we are going to send
+    pilotFilesCompressedEncodedDict = {}
+    for pf in self.pilotFiles.append(DIRAC_INSTALL):
+      try:
+        with open(pf, "r") as fd:
+          pfContent = fd.read()
+        pfContentEncoded = base64.b64encode(bz2.compress(pfContent, 9))
+        pilotFilesCompressedEncodedDict[pf] = pfContentEncoded
+      except BaseException as be:
+        self.log.exception("Exception during pilot modules files compression", lException=be)
+        raise be
 
-    # Extra modules
-    mStringList = []
-    for moduleName in compressedAndEncodedExtra:
-      mString = """open( '%s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%s\"\"\" ) ) )""" % \
-                (moduleName, compressedAndEncodedExtra[moduleName])
-      mStringList.append(mString)
-    extraModuleString = '\n  '.join(mStringList)
+    if proxy is not None:
+      try:
+        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()['Value']))
+        pilotFilesCompressedEncodedDict['proxy'] = compressedAndEncodedProxy
+      except BaseException as be:
+        self.log.exception("Exception during proxy file compression", lException=be)
+        raise be
 
-    localPilot = """#!/bin/bash
-/usr/bin/env python << EOF
-#
-import os
-import stat
-import tempfile
-import sys
-import shutil
-import base64
-import bz2
-import logging
-import time
+    localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
+                                    pilotOptions,
+                                    pilotExecDir)
 
-formatter = logging.Formatter(fmt='%%(asctime)s UTC %%(levelname)-8s %%(message)s', datefmt='%%Y-%%m-%%d %%H:%%M:%%S')
-logging.Formatter.converter = time.gmtime
-try:
-  screen_handler = logging.StreamHandler(stream=sys.stdout)
-except TypeError: #python2.6
-  screen_handler = logging.StreamHandler(strm=sys.stdout)
-screen_handler.setFormatter(formatter)
-logger = logging.getLogger('pippoLogger')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(screen_handler)
-
-try:
-  pilotExecDir = '%(pilotExecDir)s'
-  if not pilotExecDir:
-    pilotExecDir = os.getcwd()
-  pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix = 'DIRAC_', dir = pilotExecDir )
-  pilotWorkingDirectory = os.path.realpath( pilotWorkingDirectory )
-  os.chdir( pilotWorkingDirectory )
-  if %(proxyFlag)s:
-    open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedProxy)s\"\"\" ) ) )
-    os.chmod("proxy", stat.S_IRUSR | stat.S_IWUSR)
-    os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
-  open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedPilot)s\"\"\" ) ) )
-  open( '%(installScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedInstall)s\"\"\" ) ) )
-  os.chmod("%(pilotScript)s", stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
-  os.chmod("%(installScript)s", stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
-  %(extraModuleString)s
-  if "LD_LIBRARY_PATH" not in os.environ:
-    os.environ["LD_LIBRARY_PATH"]=""
-  if "%(httpProxy)s":
-    os.environ["HTTP_PROXY"]="%(httpProxy)s"
-  os.environ["X509_CERT_DIR"]=os.path.join(pilotWorkingDirectory, 'etc/grid-security/certificates')
-  # TODO: structure the output
-  print '==========================================================='
-  logger.debug('Environment of execution host\\n')
-  for key, val in os.environ.iteritems():
-    logger.debug( key + '=' + val )
-  print '===========================================================\\n'
-except Exception as x:
-  print >> sys.stderr, x
-  shutil.rmtree( pilotWorkingDirectory )
-  sys.exit(-1)
-cmd = "python %(pilotScript)s %(pilotOptions)s"
-logger.info('Executing: %%s' %% cmd)
-sys.stdout.flush()
-os.system( cmd )
-
-shutil.rmtree( pilotWorkingDirectory )
-
-EOF
-""" % {'compressedAndEncodedProxy': compressedAndEncodedProxy,
-       'compressedAndEncodedPilot': compressedAndEncodedPilot,
-       'compressedAndEncodedInstall': compressedAndEncodedInstall,
-       'extraModuleString': extraModuleString,
-       'httpProxy': httpProxy,
-       'pilotExecDir': pilotExecDir,
-       'pilotScript': os.path.basename(self.pilot),
-       'installScript': os.path.basename(self.install),
-       'pilotOptions': ' '.join(pilotOptions),
-       'proxyFlag': proxyFlag}
-
-    fd, name = tempfile.mkstemp(suffix='_pilotwrapper.py', prefix='DIRAC_', dir=workingDirectory)
-    pilotWrapper = os.fdopen(fd, 'w')
-    pilotWrapper.write(localPilot)
-    pilotWrapper.close()
-    return name
+    return _writePilotWrapperFile(workingDirectory=workingDirectory, localPilot=localPilot)
 
   def updatePilotStatus(self):
     """ Update status of pilots in transient states
