@@ -304,10 +304,10 @@ class VOMS2CSSynchronizer(object):
     return result
 
   def getVOUserReport(self):
-    """
+    """ Get a report string with the current status of the DIRAC Registry for the
+        Virtual Organization
 
-    :param str vo: VO name
-    :return: report string
+    :return: S_OK with the report string as Value
     """
 
     result = self.getVOUserData(refreshFlag=True)
@@ -356,8 +356,8 @@ class VOMS2CSSynchronizer(object):
 
   def getUserName(self, dn):
     """ Utility to construct user name
+
     :param str dn: user DN
-    :param str mail: user e-mail address
     :return str: user name
     """
     name = self.vomsUserDict[dn].get('name')
@@ -466,6 +466,7 @@ class VOMS2CSSynchronizer(object):
 
   def __getUserNameFromSurname(self, name, surname):
     """ Construct a reasonable userName from the user name and surname
+
     :param str name: user name
     :param str surname: user surname
     :return str: constructed user name
