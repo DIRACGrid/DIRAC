@@ -20,6 +20,14 @@ __RCSID__ = "$Id$"
 
 
 class WMSClient(object):
+  """ Class exposing the following jobs methods:
+
+      submit
+      kill
+      delete
+      reschedule
+      reset
+  """
 
   def __init__(self, jobManagerClient=None, sbRPCClient=None, sbTransferClient=None,
                useCertificates=False, timeout=600):
@@ -111,7 +119,10 @@ class WMSClient(object):
     return S_OK()
 
   def submitJob(self, jdl, jobDescriptionObject=None):
-    """ Submit one job specified by its JDL to WMS
+    """ Submit one job specified by its JDL to WMS.
+
+        The JDL may actually be the desciption of a parametric job,
+        resulting in multiple DIRAC jobs submitted to the DIRAC WMS
     """
 
     if os.path.exists(jdl):
@@ -143,13 +154,11 @@ class WMSClient(object):
       return result
 
     # Submit the job now and get the new job ID
-    bulkTransaction = self.operationsHelper.getValue('JobScheduling/BulkSubmissionTransaction', False)
-    if bulkTransaction:
-      result = getParameterVectorLength(classAdJob)
-      if not result['OK']:
-        return result
-      nJobs = result['Value']
-      parametricJob = nJobs > 0
+    result = getParameterVectorLength(classAdJob)
+    if not result['OK']:
+      return result
+    nJobs = result['Value']
+    parametricJob = nJobs > 0
 
     if not self.jobManager:
       self.jobManager = RPCClient('WorkloadManagement/JobManager',
@@ -158,10 +167,10 @@ class WMSClient(object):
 
     result = self.jobManager.submitJob(classAdJob.asJDL())
 
-    if bulkTransaction and parametricJob:
+    if parametricJob:
       gLogger.debug('Applying transactional job submission')
-      # The server indeed applies transactional bulk submission, we should confirm the jobs
-      if result['OK'] and result.get('requireBulkSubmissionConfirmation'):
+      # The server applies transactional bulk submission, we should confirm the jobs
+      if result['OK']:
         jobIDList = result['Value']
         if len(jobIDList) == nJobs:
           # Confirm the submitted jobs

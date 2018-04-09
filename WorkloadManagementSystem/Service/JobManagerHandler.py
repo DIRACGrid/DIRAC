@@ -18,7 +18,6 @@ from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -114,10 +113,10 @@ class JobManagerHandler(RequestHandler):
   def export_submitJob(self, jobDesc):
     """ Submit a job to DIRAC WMS.
         The job can be a single job, or a parametric job.
-        If it is a parametric job, then the
+        If it is a parametric job, then the parameters will need to be unpacked.
 
-        :param str jobDesc: job description JDL
-        :return: S_OK/S_ERROR, a list of newly created job IDs in case of S_OK
+        :param str jobDesc: job description JDL (of a single or parametric job)
+        :return: S_OK/S_ERROR, a list of newly created job IDs in case of S_OK.
     """
 
     if self.peerUsesLimitedProxy:
@@ -160,9 +159,7 @@ class JobManagerHandler(RequestHandler):
 
     jobIDList = []
 
-    bulkTransaction = Operations(group=self.ownerGroup).getValue('JobScheduling/BulkSubmissionTransaction', False)
-
-    if bulkTransaction and parametricJob:
+    if parametricJob:
       initialStatus = 'Submitting'
       initialMinorStatus = 'Bulk transaction confirmation'
     else:
@@ -199,9 +196,6 @@ class JobManagerHandler(RequestHandler):
 
     result['JobID'] = result['Value']
     result['requireProxyUpload'] = self.__checkIfProxyUploadIsRequired()
-    result['requireBulkSubmissionConfirmation'] = bulkTransaction
-    if not bulkTransaction:
-      self.__sendJobsToOptimizationMind(jobIDList)
     return result
 
 ###########################################################################
@@ -242,7 +236,7 @@ class JobManagerHandler(RequestHandler):
       return S_OK(jobList)
 
     # Check that requested job are in Submitting status
-    jobUpdateStatusList = [jobID for jobID in jobList if jobStatusDict[jobID]['Status'] == "Submitting"]
+    jobUpdateStatusList = list(jobID for jobID in jobList if jobStatusDict[jobID]['Status'] == "Submitting")
     if set(jobUpdateStatusList) != set(jobList):
       return S_ERROR(EWMSSUBM, 'Requested jobs for bulk transaction are not valid')
 
