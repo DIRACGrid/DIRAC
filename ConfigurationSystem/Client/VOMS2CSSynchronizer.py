@@ -32,6 +32,12 @@ class VOMS2CSSynchronizer(object):
     self.autoDeleteUsers = autoDeleteUsers
 
   def syncCSWithVOMS(self):
+    """ Performs the synchronization of the DIRAC registry with the VOMS data. The resulting
+        CSAPI object containing modifications is returned as part of the output dictionary.
+        Those changes can be applied by the caller depending on the mode (dry or a real run)
+
+    :return: S_OK with a dictionary containing the results of the synchronization operation
+    """
     resultDict = defaultdict(list)
 
     # Get DIRAC group vs VOMS Role Mappings
@@ -276,7 +282,8 @@ class VOMS2CSSynchronizer(object):
   def getVOUserData(self, refreshFlag=False):
     """ Get a report for users of a given VO
 
-    :param str vo: VO name
+    :param bool refreshFlag: flag to indicate that the configuration must be refreshed
+                             before looking up user data
     :return: S_OK/S_ERROR, Value = user description dictionary
     """
     if refreshFlag:
