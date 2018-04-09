@@ -31,7 +31,7 @@ def findGenericPilotCredentials( vo = False, group = False ):
     return S_OK( ( pilotDN, pilotGroup ) )
 
   if pilotDN:
-    return S_ERROR( "DN %s does not have group %s" % ( pilotDN, pilotGroups ) )
-  return S_ERROR( "No generic proxy in the Proxy Manager with groups %s" % pilotGroups )
+    return S_ERROR( "DN %s does not have group %s" % ( pilotDN, pilotGroup ) )
+  return S_ERROR( "No generic proxy in the Proxy Manager with groups %s" % pilotGroup )
 
 
