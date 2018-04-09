@@ -1,4 +1,4 @@
-[v6r20-pre19]
+[v6r20-pre20]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -20,6 +20,7 @@ NEW: new command name for voms proxy
 FIX: dirac-install default behaviour preserved even with diracos options
 New: Add additional check in MJF utility to look for a shutdown file located at '/var/run/shutdown_time'
 FIX: The hardcoded rule was not taken into account when the query was coming from the web server
+CHANGE: VOMSService - reimplemented using VOMS REST interface
 
 *Framework
 NEW: WebAppCompiler methods is implemented, which is used to compile the web framework
@@ -35,6 +36,9 @@ FIX: fixes in the query results interpretation
 
 *Configuration
 FIX: ConfigurationHandler, PilotCStoJSONSynchronizer - fixes for enabling pilotCStoJSONSynchronizer, and doc
+NEW: dirac-admin-voms-sync - command line for VOMS to CS synchronization
+NEW: VOMS2CSSynchronizer - new class encapsulating VOMS to CS synchronization
+CHANGE: VOMS2CSAgent - reimplemented to use VOMS2CSSynchronizer
 
 *WorkloadManagementSystem
 NEW: StopSigRegex, StopSigStartSeconds, StopSigFinishSeconds, StopSigNumber added to JDL, which cause Watchdog to send a signal StopSigNumber to payload processes matching StopSigRegex when there are less than StopSigFinishSeconds of wall clock remaining according to MJF.
@@ -53,6 +57,8 @@ CHANGE: Removed gLite pilot related WMS code
 FIX: always initialize gPilotAgentsDB object
 FIX: JobManager - Added some debug message when deleting jobs
 FIX: Job.py - fixing finding XML file
+NEW: SiteDirector - added flag for sending pilot3 files
+CHANGE: SiteDirector - changed the way we create the pilotWrapper (better extensibility)
 
 *TS
 FIX: TranformationCleaningAgent - just few simplifications 
