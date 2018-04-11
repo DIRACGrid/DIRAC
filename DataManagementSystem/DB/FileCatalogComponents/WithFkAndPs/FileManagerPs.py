@@ -951,3 +951,20 @@ class FileManagerPs( FileManagerBase ):
     failed = dict.fromkeys( missingIds, "File ID not found" )
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
+
+
+  def getSEDump(self, seName):
+    """
+         Return all the files at a given SE, together with checksum and size
+
+        :param seName: name of the StorageElement
+
+        :returns: S_OK with list of tuples (lfn, checksum, size)
+    """
+
+    res = self.db.seManager.findSE(seName)
+    if not res['OK']:
+      return res
+    seID = res['Value']
+
+    return self.db.executeStoredProcedureWithCursor( 'ps_get_se_dump', ( seID,) )

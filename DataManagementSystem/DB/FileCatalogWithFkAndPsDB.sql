@@ -1712,6 +1712,28 @@ BEGIN
 END //
 DELIMITER ;
 
+
+
+-- ps_get_se_dump : dump all the lfns in an SE, with checksum and size
+-- se_id : storageElement's ID
+-- output : LFN, Checksum, Size
+
+DELIMITER //
+CREATE PROCEDURE ps_get_se_dump
+(IN se_id INT)
+BEGIN
+
+  SELECT SQL_NO_CACHE CONCAT(d.Name, '/', f.FileName), f.Checksum, f.Size
+         FROM FC_Files f
+         JOIN FC_Replicas r on f.FileID = r.FileID
+         JOIN FC_DirectoryList d on d.DirID = f.DirID
+         WHERE SEID = se_id;
+
+END //
+DELIMITER ;
+
+
+
 -- Consistency checks
 
 

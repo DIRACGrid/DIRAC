@@ -4,6 +4,8 @@
 import os
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.DISET.TransferClient import TransferClient
+
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.Resources.Catalog.Utilities                 import checkCatalogArguments
 from DIRAC.Resources.Catalog.FileCatalogClientBase     import FileCatalogClientBase
@@ -641,3 +643,23 @@ class FileCatalogClient( FileCatalogClientBase ):
     two lines !
     """
     return self._getRPC( timeout = timeout ).getDatasetFiles( datasets )
+
+
+  #############################################################################
+
+
+  def getSEDump( self, seName, outputFilename ):
+    """
+        Dump the content of an SE in the given file.
+        The file contains a list of [lfn,checksum,size] dumped as csv,
+        separated by '|'
+
+        :param seName: name of the StorageElement
+        :param outputFilename: path to the file where to dump it
+
+        :returns: result from the TransferClient
+    """
+
+
+    dfc = TransferClient( self.serverURL )
+    return dfc.receiveFile( outputFilename, seName )

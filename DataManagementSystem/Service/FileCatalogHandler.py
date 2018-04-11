@@ -1,21 +1,24 @@
 ########################################################################
 # File: FileCatalogHandler.py
 ########################################################################
-""" 
-:mod: FileCatalogHandler 
- 
+"""
+:mod: FileCatalogHandler
+
 .. module: FileCatalogHandler
-  :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service 
+  :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service
 
 """
 
 __RCSID__ = "$Id$"
 
 ## imports
+import cStringIO
+import csv
 import os
 from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType
 ## from DIRAC
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
@@ -106,12 +109,12 @@ class FileCatalogHandler( RequestHandler ):
   """
   ..class:: FileCatalogHandler
 
-  A simple Replica and Metadata Catalog service. 
+  A simple Replica and Metadata Catalog service.
   """
 
   ########################################################################
   # Path operations (not updated)
-  #  
+  #
   types_changePathOwner = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_changePathOwner( self, lfns, recursive = False ):
     """ Get replica info for the given list of LFNs
@@ -138,8 +141,8 @@ class FileCatalogHandler( RequestHandler ):
     """ Determine the ACL information for a supplied path
     """
     return gFileCatalogDB.getPathPermissions( lfns, self.getRemoteCredentials() )
-  
-  
+
+
   types_hasAccess = [ [basestring, dict], [basestring, list, dict] ]
   def export_hasAccess( self, paths, opType ):
     """ Determine if the given op can be performed on the paths
@@ -157,7 +160,7 @@ class FileCatalogHandler( RequestHandler ):
 
     return gFileCatalogDB.hasAccess( opType, paths, self.getRemoteCredentials() )
 
-  
+
 
   ###################################################################
   #
@@ -249,7 +252,7 @@ class FileCatalogHandler( RequestHandler ):
       gMonitor.addMark( "RemoveFileFailed", len( res.get( 'Value', {} ).get( 'Failed', [] ) ) )
 
     return res
-  
+
   types_setFileStatus = [ DictType ]
   def export_setFileStatus( self, lfns ):
     """ Remove the supplied lfns """
@@ -340,7 +343,7 @@ class FileCatalogHandler( RequestHandler ):
       dList = [depths]
     lfnDict = dict.fromkeys( lfns, True )
     return gFileCatalogDB.getFileDescendents( lfnDict, dList, self.getRemoteCredentials() )
-  
+
   types_getLFNForGUID = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getLFNForGUID( self, guids ):
     """Get the matching lfns for given guids"""
@@ -430,7 +433,7 @@ class FileCatalogHandler( RequestHandler ):
 
   types_deleteMetadataField = [ StringTypes ]
   def export_deleteMetadataField( self, fieldName ):
-    """ Delete the metadata field 
+    """ Delete the metadata field
     """
     result = gFileCatalogDB.dmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )
     error = ''
@@ -462,7 +465,7 @@ class FileCatalogHandler( RequestHandler ):
     """ Set metadata parameter for the given path
     """
     return gFileCatalogDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
-  
+
   types_setMetadataBulk = [ DictType ]
   def export_setMetadataBulk( self, pathMetadataDict ):
     """ Set metadata parameter for the given path
@@ -503,9 +506,9 @@ class FileCatalogHandler( RequestHandler ):
   def export_getReplicasByMetadata( self, metaDict, path = '/', allStatus = False ):
     """ Find all the files satisfying the given metadata set
     """
-    return gFileCatalogDB.fileManager.getReplicasByMetadata( metaDict, 
-                                                             path, 
-                                                             allStatus, 
+    return gFileCatalogDB.fileManager.getReplicasByMetadata( metaDict,
+                                                             path,
+                                                             allStatus,
                                                              self.getRemoteCredentials() )
 
   types_findFilesByMetadataDetailed = [ DictType, StringTypes ]
@@ -601,63 +604,105 @@ class FileCatalogHandler( RequestHandler ):
     """ Add a new dynamic dataset defined by its meta query
     """
     return gFileCatalogDB.datasetManager.addDataset( datasets, self.getRemoteCredentials() )
-  
+
   types_addDatasetAnnotation = [ DictType ]
   def export_addDatasetAnnotation( self, datasetDict ):
     """ Add annotation to an already created dataset
     """
     return gFileCatalogDB.datasetManager.addDatasetAnnotation( datasetDict, self.getRemoteCredentials() )
-  
+
   types_removeDataset = [ DictType ]
   def export_removeDataset( self, datasets ):
     """ Check the given dynamic dataset for changes since its definition
     """
     return gFileCatalogDB.datasetManager.removeDataset( datasets, self.getRemoteCredentials() )
-  
+
   types_checkDataset = [ DictType ]
   def export_checkDataset( self, datasets ):
     """ Check the given dynamic dataset for changes since its definition
     """
     return gFileCatalogDB.datasetManager.checkDataset( datasets, self.getRemoteCredentials() )
-  
+
   types_updateDataset = [ DictType ]
   def export_updateDataset( self, datasets ):
     """ Update the given dynamic dataset for changes since its definition
     """
     return gFileCatalogDB.datasetManager.updateDataset( datasets, self.getRemoteCredentials() )
-  
+
   types_getDatasets = [ DictType ]
   def export_getDatasets( self, datasets ):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
     return gFileCatalogDB.datasetManager.getDatasets( datasets, self.getRemoteCredentials() )
-  
+
   types_getDatasetParameters = [ DictType ]
   def export_getDatasetParameters( self, datasets ):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
     return gFileCatalogDB.datasetManager.getDatasetParameters( datasets, self.getRemoteCredentials() )
-  
+
   types_getDatasetAnnotation = [ DictType ]
   def export_getDatasetAnnotation( self, datasets ):
-    """ Get annotation of the given datasets 
+    """ Get annotation of the given datasets
     """
     return gFileCatalogDB.datasetManager.getDatasetAnnotation( datasets, self.getRemoteCredentials() )
-  
+
   types_freezeDataset = [ DictType ]
   def export_freezeDataset( self, datasets ):
     """ Freeze the contents of the dataset making it effectively static
     """
     return gFileCatalogDB.datasetManager.freezeDataset( datasets, self.getRemoteCredentials() )
-  
+
   types_releaseDataset = [ DictType ]
   def export_releaseDataset( self, datasets ):
     """ Release the contents of the frozen dataset allowing changes in its contents
     """
     return gFileCatalogDB.datasetManager.releaseDataset( datasets, self.getRemoteCredentials() )
-  
+
   types_getDatasetFiles = [ DictType ]
   def export_getDatasetFiles( self, datasets ):
     """ Get lfns in the given dataset
     """
     return gFileCatalogDB.datasetManager.getDatasetFiles( datasets, self.getRemoteCredentials() )
+
+
+  def getSEDump( self, seName ):
+    """
+         Return all the files at a given SE, together with checksum and size
+
+        :param seName: name of the StorageElement
+
+        :returns: S_OK with list of tuples (lfn, checksum, size)
+    """
+    return gFileCatalogDB.getSEDump(seName)['Value']
+
+
+  def transfer_toClient( self, seName, token, fileHelper ):
+    """ This method used to transfer the SEDump to the client,
+        formated as CSV with '|' separation
+
+        :param seName: name of the se to dump
+
+        :returns: the result of the FileHelper
+
+
+    """
+
+    retVal = self.getSEDump(seName)
+
+    try:
+      csvOutput = cStringIO.StringIO()
+      writer = csv.writer(csvOutput, delimiter='|')
+      for lfn in retVal:
+        writer.writerow(lfn)
+
+      csvOutput.seek(0)
+
+      ret = fileHelper.DataSourceToNetwork( csvOutput )
+      return ret
+
+    except Exception as e:
+      gLogger.exception("Exception while sending seDump", repr(e))
+      return S_ERROR("Exception while sendind seDump: %s"%repr(e))
+    finally:
+      csvOutput.close()

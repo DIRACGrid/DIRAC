@@ -5,9 +5,14 @@
 """
 
 # pylint: disable=invalid-name,wrong-import-position
+import csv
+import filecmp
 
+import os
 import unittest
+import tempfile
 import sys
+
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -334,6 +339,23 @@ class FileCase(DFCTestCase):
         "getFileMetadata : %s should be in Failed %s" %
         (nonExistingFile,
          result))
+
+
+
+    # Here we write the output to a file
+    # So we dump the expected content in a file
+    _, expectedDumpFn = tempfile.mkstemp()
+
+    with open(expectedDumpFn, 'w') as expectedDumpFd:
+      csvWriter = csv.writer(expectedDumpFd, delimiter = '|')
+      csvWriter.writerow([testFile, '0', 123])
+
+    actualDumpFn = expectedDumpFn + 'real'
+    result = self.dfc.getSEDump('testSE', actualDumpFn)
+    self.assertTrue(result['OK'],"Error when getting SE dump %s"%result)
+    self.assertTrue(filecmp.cmp(expectedDumpFn,actualDumpFn), "Did not get the expected SE Dump")
+    os.remove(expectedDumpFn)
+    os.remove(actualDumpFn)
 
     result = self.dfc.removeFile([testFile, nonExistingFile])
     self.assertTrue(result["OK"], "removeFile failed: %s" % result)

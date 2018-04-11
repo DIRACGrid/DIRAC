@@ -423,6 +423,11 @@ class FileCase(FileCatalogDBTestCase):
 
 #    ADD SOMETHING ABOUT FILE ANCESTORS AND DESCENDENTS
 
+
+    result = self.db.getSEDump('testSE')
+    self.assertTrue(result['OK'],"Error when getting SE dump %s"%result)
+    self.assertEqual(result['Value'], ((testFile, '0', 123),), "Did not get the expected SE Dump %s"%result['Value'])
+
     result = self.db.removeFile([testFile, nonExistingFile], credDict)
     self.assertTrue(result["OK"], "removeFile failed: %s" % result)
     self.assertTrue(
