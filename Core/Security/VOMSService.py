@@ -8,6 +8,7 @@ import os
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Security.Locations import getProxyLocation
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
@@ -68,7 +69,7 @@ class VOMSService(object):
     :return: user dictionary keyed by the user DN
     """
 
-    userProxy = os.environ['X509_USER_PROXY']
+    userProxy = getProxyLocation()
     caPath = os.environ['X509_CERT_DIR']
     rawUserList = []
     result = None
