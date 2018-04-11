@@ -111,8 +111,8 @@ EOF
   return localPilot
 
 
-def _writePilotWrapperFile(workingDirectory='', localPilot=''):
-  """ write the localPilot string to a file, return the file name
+def _writePilotWrapperFile(workingDirectory=None, localPilot=''):
+  """ write the localPilot string to a file, rurn the file name
 
      :param workingDirectory: the directory where to store the pilot wrapper file
      :type workingDirectory: basestring
@@ -122,9 +122,6 @@ def _writePilotWrapperFile(workingDirectory='', localPilot=''):
      :returns: file name of the pilot wrapper
      :rtype: basestring
   """
-
-  if not workingDirectory:
-    workingDirectory = os.getcwd()
 
   fd, name = tempfile.mkstemp(suffix='_pilotwrapper.py', prefix='DIRAC_', dir=workingDirectory)
   with os.fdopen(fd, 'w') as pilotWrapper:
