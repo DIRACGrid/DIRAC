@@ -756,12 +756,9 @@ class SiteDirector(AgentModule):
     bundleProxy = self.queueDict[queue].get('BundleProxy', False)
     jobExecDir = self.queueDict[queue]['ParametersDict'].get('JobExecDir', '')
 
-    result = self.getExecutable(queue, pilotsToSubmit,
-                                bundleProxy=bundleProxy,
-                                jobExecDir=jobExecDir)
-    if not result['OK']:
-      return result
-    executable, pilotSubmissionChunk = result['Value']
+    executable, pilotSubmissionChunk = self.getExecutable(queue, pilotsToSubmit,
+                                                          bundleProxy=bundleProxy,
+                                                          jobExecDir=jobExecDir)
 
     submitResult = ce.submitJob(executable, '', pilotSubmissionChunk)
     # FIXME: The condor thing only transfers the file with some
@@ -925,6 +922,18 @@ class SiteDirector(AgentModule):
   def getExecutable(self, queue, pilotsToSubmit, bundleProxy=True, jobExecDir='',
                     **kwargs):
     """ Prepare the full executable for queue
+
+    :param queue: queue name
+    :type queue: basestring
+    :param pilotsToSubmit: number of pilots to submit
+    :type pilotsToSubmit: int
+    :param bundleProxy: flag that say if to bundle or not the proxy
+    :type bundleProxy: bool
+    :param queue: pilot execution dir (normally an empty string)
+    :type queue: basestring
+
+    :returns: a string the options for the pilot
+    :rtype: basestring
     """
 
     proxy = None
@@ -936,22 +945,22 @@ class SiteDirector(AgentModule):
     pilotOptions = ' '.join(pilotOptions)
     self.log.verbose('pilotOptions: %s' % pilotOptions)
     executable = self._writePilotScript(self.workingDirectory, pilotOptions, proxy, jobExecDir)
-    return S_OK([executable, pilotsToSubmit])
+    return executable, pilotsToSubmit
 
 #####################################################################################
 
   def _getPilotOptions(self, queue, pilotsToSubmit, **kwargs):
     """ Prepare pilot options
 
-     :param queue: queue name
-     :type queue: basestring
-     :param pilotsToSubmit: number of pilots to submit
-     :type pilotsToSubmit: int
+    :param queue: queue name
+    :type queue: basestring
+    :param pilotsToSubmit: number of pilots to submit
+    :type pilotsToSubmit: int
 
-     :returns: pilotOptions, pilotsToSubmit tuple where
-               pilotOptions is a list of strings, each one is an option to the dirac-pilot script invocation
-               pilotsToSubmit is the number of pilots to submit
-     :rtype: tuple
+    :returns: pilotOptions, pilotsToSubmit tuple where
+              pilotOptions is a list of strings, each one is an option to the dirac-pilot script invocation
+              pilotsToSubmit is the number of pilots to submit
+    :rtype: tuple
     """
     queueDict = self.queueDict[queue]['ParametersDict']
     pilotOptions = []
