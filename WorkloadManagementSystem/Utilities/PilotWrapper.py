@@ -72,6 +72,13 @@ logger = logging.getLogger('pilotLogger')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(screen_handler)
 
+# just logging the environment as first thing
+print '==========================================================='
+logger.debug('Environment of execution host\\n')
+for key, val in os.environ.iteritems():
+  logger.debug(key + '=' + val)
+print '===========================================================\\n'
+
 # putting ourselves in the right directory
 pilotExecDir = '%(pilotExecDir)s'
 if not pilotExecDir:
@@ -79,16 +86,11 @@ if not pilotExecDir:
 pilotWorkingDirectory = tempfile.mkdtemp(suffix='pilot', prefix='DIRAC_', dir=pilotExecDir)
 pilotWorkingDirectory = os.path.realpath(pilotWorkingDirectory)
 os.chdir(pilotWorkingDirectory)
+logger.info("Launching dirac-pilot script from %%s" %%os.getcwd())
 
 # unpacking lines
+logger.info("But first unpacking pilot files")
 %(mString)s
-
-# just logging the environment
-print '==========================================================='
-logger.debug('Environment of execution host\\n')
-for key, val in os.environ.iteritems():
-  logger.debug(key + '=' + val)
-print '===========================================================\\n'
 
 # now finally launching the pilot script (which should be called dirac-pilot.py)
 cmd = "python dirac-pilot.py %(pilotOptions)s"
