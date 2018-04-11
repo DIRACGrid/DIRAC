@@ -40,7 +40,7 @@ class PilotWrapperTestCaseCreation(PilotWrapperTestCase):
     res = pilotWrapperScript(
         pilotFilesCompressedEncodedDict={'dirac-install.py': 'someContentOfDiracInstall',
                                          'someOther.py': 'someOtherContent'},
-        pilotOptions=['-c 123', '--foo bar'])
+        pilotOptions="-c 123 --foo bar")
 
     print res
     # no assert as it makes little sense
@@ -60,7 +60,7 @@ class PilotWrapperTestCaseCreation(PilotWrapperTestCase):
     res = pilotWrapperScript(
         pilotFilesCompressedEncodedDict={'dirac-install.py': diracInstallEncoded,
                                          'dirac-pilot.py': diracPilotEncoded},
-        pilotOptions=['-c 123', '--foo bar'])
+        pilotOptions="-c 123 --foo bar")
 
     print res
     # no assert as it makes little sense

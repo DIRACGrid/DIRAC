@@ -13,7 +13,7 @@ import requests
 
 
 def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
-                       pilotOptions=None,
+                       pilotOptions='',
                        pilotExecDir=''):
   """ Returns the content of the pilot wrapper script.
 
@@ -23,20 +23,13 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
                         the proxy can be part of this, and of course the pilot files
      :type pilotFilesCompressedEncodedDict: dict
      :param pilotOptions: options with which to start the pilot
-     :type pilotOptions: list
+     :type pilotOptions: basestring
      :param pilotExecDir: pilot execution directory
      :type pilotExecDir: basestring
 
      :returns: content of the pilot wrapper
      :rtype: basestring
   """
-
-  # defaults
-  if not pilotOptions:
-    pilotOptions = []
-
-  if not pilotExecDir:
-    pilotExecDir = os.getcwd()
 
   mString = ""
   if pilotFilesCompressedEncodedDict:  # are there some pilot files to unpack? then we create the unpacking string
@@ -80,7 +73,10 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(screen_handler)
 
 # putting ourselves in the right directory
-pilotWorkingDirectory = tempfile.mkdtemp(suffix='pilot', prefix='DIRAC_', dir='%(pilotExecDir)s')
+pilotExecDir = '%(pilotExecDir)s'
+if not pilotExecDir:
+  pilotExecDir = os.getcwd()
+pilotWorkingDirectory = tempfile.mkdtemp(suffix='pilot', prefix='DIRAC_', dir=pilotExecDir)
 pilotWorkingDirectory = os.path.realpath(pilotWorkingDirectory)
 os.chdir(pilotWorkingDirectory)
 
@@ -105,7 +101,7 @@ shutil.rmtree(pilotWorkingDirectory)
 
 EOF
 """ % {'mString': mString,
-       'pilotOptions': ' '.join(pilotOptions),
+       'pilotOptions': pilotOptions,
        'pilotExecDir': pilotExecDir}
 
   return localPilot

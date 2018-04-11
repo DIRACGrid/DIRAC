@@ -249,7 +249,7 @@ class SiteDirector(AgentModule):
       self.pilotFiles = getPilotFiles(pilotFilesDir=self.am_getWorkDirectory(),
                                       pilotFilesLocation=pilotFilesLocation)
     else:
-      self.pilotFiles = DIRAC_MODULES.append(DIRAC_PILOT)
+      self.pilotFiles = DIRAC_MODULES + [DIRAC_PILOT]
 
     return S_OK()
 
@@ -533,13 +533,16 @@ class SiteDirector(AgentModule):
       ce.setProxy(self.proxy, lifetime_secs)
 
       # now really submitting
-      while pilotsToSubmit > 0:
-
+      while pilotsToSubmit: # a cycle because pilots are submitted in chunks
         res = self._submitPilotsToQueue(
             pilotsToSubmit, ce, queue)
         if not res['OK']:
-          continue
-        pilotsToSubmit, pilotList, stampDict = res['Value']
+          self.log.info("Won't try further %s because of failures" %queue)
+          pilotsToSubmit = 0
+          pilotList = []
+          stampDict = {}
+        else:
+          pilotsToSubmit, pilotList, stampDict = res['Value']
 
         # updating the pilotAgentsDB... done by default but maybe not strictly necessary
         res = self._addPilotTQReference(queue, additionalInfo, pilotList, stampDict)
@@ -732,22 +735,26 @@ class SiteDirector(AgentModule):
   def _submitPilotsToQueue(self, pilotsToSubmit, ce, queue):
     """ Method that really submits the pilots to the ComputingElements' queue
 
-       :param pilotsToSubmit: number of pilots to submit
+       :param pilotsToSubmit: number of pilots to submit. Maybe only part of this amount will be submitted here.
        :type pilotsToSubmit: int
        :param ce: computing element object to where we submit
        :type ce: ComputingElement
        :param queue: queue where to submit
        :type queue: basestring
 
-       :return: S_OK/S_ERROR
+       :return: S_OK/S_ERROR.
+                If S_OK, returns tuple with (pilotsToSubmit, pilotList, stampDict)
+                where
+                  pilotsToSubmit is the pilots still to submit (maybe 0)
+                  pilotsList is the list of pilots submitted
+                  stampDict is a dict of timestamps of pilots submission
+       :rtype: dict
     """
-    self.log.info('Going to submit %d pilots to %s queue' %
+    self.log.info('Going to submit a maximum of %d pilots to %s queue' %
                   (pilotsToSubmit, queue))
 
     bundleProxy = self.queueDict[queue].get('BundleProxy', False)
-    jobExecDir = ''
-    jobExecDir = self.queueDict[queue]['ParametersDict'].get(
-        'JobExecDir', jobExecDir)
+    jobExecDir = self.queueDict[queue]['ParametersDict'].get('JobExecDir', '')
 
     result = self.getExecutable(queue, pilotsToSubmit,
                                 bundleProxy=bundleProxy,
@@ -814,7 +821,7 @@ class SiteDirector(AgentModule):
         tqDict[tqID] = []
       tqDict[tqID].append(pilotID)
 
-    for tqID, pilotsList in tqDict.items():
+    for tqID, pilotsList in tqDict.iteritems():
       result = pilotAgentsDB.addPilotTQReference(pilotRef=pilotsList,
                                                  taskQueueID=tqID,
                                                  ownerDN=self.pilotDN,
@@ -924,10 +931,10 @@ class SiteDirector(AgentModule):
     if bundleProxy:
       proxy = self.proxy
     pilotOptions, pilotsToSubmit = self._getPilotOptions(queue, pilotsToSubmit, **kwargs)
-    if pilotOptions is None:
-      self.log.error("Pilot options empty, error in compilation")
-      return S_ERROR("Errors in compiling pilot options")
-    self.log.verbose('pilotOptions: ', ' '.join(pilotOptions))
+    if not pilotOptions:
+      self.log.warn("Pilots will be submitted without additional options")
+    pilotOptions = ' '.join(pilotOptions)
+    self.log.verbose('pilotOptions: %s' % pilotOptions)
     executable = self._writePilotScript(self.workingDirectory, pilotOptions, proxy, jobExecDir)
     return S_OK([executable, pilotsToSubmit])
 
@@ -935,6 +942,16 @@ class SiteDirector(AgentModule):
 
   def _getPilotOptions(self, queue, pilotsToSubmit, **kwargs):
     """ Prepare pilot options
+
+     :param queue: queue name
+     :type queue: basestring
+     :param pilotsToSubmit: number of pilots to submit
+     :type pilotsToSubmit: int
+
+     :returns: pilotOptions, pilotsToSubmit tuple where
+               pilotOptions is a list of strings, each one is an option to the dirac-pilot script invocation
+               pilotsToSubmit is the number of pilots to submit
+     :rtype: tuple
     """
     queueDict = self.queueDict[queue]['ParametersDict']
     pilotOptions = []
@@ -1034,7 +1051,7 @@ class SiteDirector(AgentModule):
     if self.group:
       pilotOptions.append('-G %s' % self.group)
 
-    return [pilotOptions, pilotsToSubmit]
+    return pilotOptions, pilotsToSubmit
 
 ####################################################################################
 
@@ -1046,7 +1063,7 @@ class SiteDirector(AgentModule):
      :param workingDirectory: pilot wrapper working directory
      :type workingDirectory: basestring
      :param pilotOptions: options with which to start the pilot
-     :type pilotOptions: list
+     :type pilotOptions: basestring
      :param proxy: proxy file we are going to bundle
      :type proxy: basestring
      :param pilotExecDir: pilot executing directory
@@ -1059,7 +1076,7 @@ class SiteDirector(AgentModule):
     # this will be the dictionary of pilot files names : encodedCompressedContent
     # that we are going to send
     pilotFilesCompressedEncodedDict = {}
-    for pf in self.pilotFiles.append(DIRAC_INSTALL):
+    for pf in self.pilotFiles + [DIRAC_INSTALL]:
       try:
         with open(pf, "r") as fd:
           pfContent = fd.read()
