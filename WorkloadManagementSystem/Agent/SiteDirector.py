@@ -1090,7 +1090,7 @@ class SiteDirector(AgentModule):
         with open(pf, "r") as fd:
           pfContent = fd.read()
         pfContentEncoded = base64.b64encode(bz2.compress(pfContent, 9))
-        pilotFilesCompressedEncodedDict[pf] = pfContentEncoded
+        pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
       except BaseException as be:
         self.log.exception("Exception during pilot modules files compression", lException=be)
         raise be
