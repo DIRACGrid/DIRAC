@@ -278,7 +278,7 @@ class SiteDirector(AgentModule):
     """
 
     self.log.debug("Getting queues this SD will submit to")
-    self.log.debug("The resources dictionary contains %d entries" %len(resourceDict))
+    self.log.debug("The resources dictionary contains %d entries" % len(resourceDict))
 
     self.queueDict = {}
     queueCECache = {}
@@ -549,11 +549,11 @@ class SiteDirector(AgentModule):
       ce.setProxy(self.proxy, lifetime_secs)
 
       # now really submitting
-      while pilotsToSubmit: # a cycle because pilots are submitted in chunks
+      while pilotsToSubmit:  # a cycle because pilots are submitted in chunks
         res = self._submitPilotsToQueue(
             pilotsToSubmit, ce, queue)
         if not res['OK']:
-          self.log.info("Won't try further %s because of failures" %queue)
+          self.log.info("Won't try further %s because of failures" % queue)
           pilotsToSubmit = 0
           pilotList = []
           stampDict = {}

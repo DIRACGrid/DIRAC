@@ -146,7 +146,6 @@ class MJF(object):
     finally:
       mjfUrl.close()
 
-
   def getWallClockSecondsLeft(self):
     """Returns the number of seconds until either the wall clock limit
        or the shutdowntime(_job) is reached.
