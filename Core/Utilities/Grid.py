@@ -59,7 +59,7 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
   result = systemCall( 120, cmd, env = gridEnv )
   return result
 
-def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
+def ldapsearchBDII(filt=None, attr=None, host=None, base=None, selectionString="Glue"):
   """ Python wrapper for ldapserch at bdii.
 
       :param  filt:    Filter used to search ldap, default = '', means select all
@@ -121,7 +121,7 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
       if line.find( 'objectClass:' ) == 0:
         record['objectClass'].append( line.replace( 'objectClass:', '' ).strip() )
         continue
-      if line.find( 'Glue' ) == 0:
+      if line.find(selectionString) == 0:
         index = line.find( ':' )
         if index > 0:
           attr = line[:index]
@@ -372,13 +372,23 @@ def ldapSEVOInfo( vo, seID, attr = ["GlueVOInfoPath","GlueVOInfoAccessControlBas
 
   return S_OK( voInfo )
 
-def getBdiiCEInfo( vo, host = None ):
+def getBdiiCEInfo(vo, host=None, glue2=None):
   """ Get information for all the CEs/queues for a given VO
 
-:param vo: BDII VO name
-:return result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
+  :param str vo: BDII VO name
+  :param str host: url to query for information\
+  :param list glue2: if not None query the GLUE2 schema for information about given ceTypes: HTCondorCE, CREAM, ARC
+  :return result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
                each siteID, ceID, queueName all the BDII/Glue parameters are retrieved
   """
+  if glue2 is not None:
+    glue2SiteDict = {}
+    for ceType in glue2:
+      ceRes = getGlue2CEInfo(vo, host=host, ceType=ceType)
+      if ceRes['OK']:
+        glue2SiteDict.update(ceRes['Value'])
+    return S_OK(glue2SiteDict)
+
   result = ldapCEState( '', vo, host = host )
   if not result['OK']:
     return result
@@ -490,3 +500,80 @@ def getBdiiSEInfo( vo, host = None ):
       siteDict[siteName]["SEs"][seID]['VOPath'] = pathDict[seID]
 
   return S_OK( siteDict )
+
+
+def getGlue2CEInfo(vo, host, ceType):
+  """ call ldap for GLue2 and get information for ceType """
+
+  ceInfoFunction = {'HTCondorCE': __getGlue2HTCondorCEInfo,
+                   }
+  if ceType not in ceInfoFunction:
+    return S_ERROR("getGLUE2CEInfo not implemented for %s" % ceType)
+
+  return ceInfoFunction[ceType](vo, host)
+
+
+def __getGlue2HTCondorCEInfo(vo, host):
+  """ get information about HTCondorCEs from GLUE2
+
+  :param str vo: VirtualOrganization
+  :param str host: URL to query for information
+  :return result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
+      each siteID, ceID, queueName as many parameters as can be found are retrieved...
+
+  """
+
+  # get all Glue2Shares with _%(vo)s_ in the name
+  filt = "(&(objectClass=GLUE2Share)(GLUE2ShareID=*_%s_*)(GLUE2ComputingShareServingState=production))" % vo
+  response = ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
+  if not response['OK']:
+    return response
+
+  siteDict = {}
+  shares = response['Value']
+  for entry in shares:
+    # select for HTCondorCE, though this logic only works at CERN on 2018-04-12
+    if 'HTCondorCE' in entry['attr'].get('GLUE2ShareEndpointForeignKey', ''):
+      clusterID = entry['attr']['GLUE2ShareID'].split('_%s_' % vo, 1)[0]
+      siteName = entry['attr']['dn'].split('GLUE2DomainID=')[1].split(',', 1)[0]
+      siteDict.setdefault(siteName, {'CEs': {}})
+      queueName = 'condor'  # HTCondorCE does not really have queues
+      computingEnvironment = entry['attr']['GLUE2ComputingShareExecutionEnvironmentForeignKey']
+      resCEInfo = __getGlue2HTCondorComputingInfo(host, computingEnvironment)
+      if not resCEInfo['OK']:
+        return resCEInfo
+
+      siteDict[siteName]['CEs'][clusterID] = {'Queues': {queueName: resCEInfo['Value']}}
+
+  return S_OK(siteDict)
+
+
+def __getGlue2HTCondorComputingInfo(host, computingEnvironment):
+  """ get the information about OS version, architecture from GLUE2 """
+
+  filt = "(&(objectClass=GLUE2ExecutionEnvironment)(GLUE2ResourceID=%s))" % computingEnvironment
+  response = ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
+  if not response['OK']:
+    return response
+  if len(response['Value']) != 1:
+    return S_ERROR("Unexpected response for ExecutionEnvironment")
+  exeInfo = response['Value'][0]['attr']  # pylint: disable=unsubscriptable-object
+  maxRam = exeInfo.get('GLUE2ExecutionEnvironmentMainMemorySize', '')
+  architecture = exeInfo.get('GLUE2ExecutionEnvironmentPlatform', '')
+  architecture = 'x86_64' if architecture == 'amd64' else architecture
+  osFamily = exeInfo.get('GLUE2ExecutionEnvironmentOSFamily', '')  # e.g. linux
+  osName = exeInfo.get('GLUE2ExecutionEnvironmentOSName', '')
+  osVersion = exeInfo.get('GLUE2ExecutionEnvironmentOSVersion', '')
+
+  # translate to Glue1 like keys, because that is used later on
+  infoDict = {'GlueHostMainMemoryRAMSize': maxRam,
+              'GlueHostOperatingSystemVersion': osVersion,
+              'GlueHostOperatingSystemName': osFamily,
+              'GlueHostOperatingSystemRelease': osName,
+              'GlueHostArchitecturePlatformType': architecture,
+              'GlueCEStateStatus': 'production',
+              'GlueCEImplementationName': 'HTCondorCE',
+              'GlueCECapability': [],
+             }
+
+  return S_OK(infoDict)
