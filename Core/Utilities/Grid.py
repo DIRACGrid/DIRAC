@@ -518,7 +518,7 @@ def __getGlue2HTCondorCEInfo(vo, host):
 
   :param str vo: VirtualOrganization
   :param str host: URL to query for information
-  :return result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
+  :return: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
       each siteID, ceID, queueName as many parameters as can be found are retrieved...
 
   """
