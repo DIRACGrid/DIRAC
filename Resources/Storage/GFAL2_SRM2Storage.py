@@ -190,7 +190,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
     try:
       occupancyStr = self.ctx.getxattr(spaceTokenEndpoint, spaceTokenAttr)
       try:
-        occupancyDict = json.loads(occupancyStr)
+        occupancyDict = json.loads(occupancyStr)[0]
       except ValueError:
         # https://its.cern.ch/jira/browse/DMC-977
         # a closing bracket is missing, so we retry after adding it
