@@ -32,6 +32,8 @@ class Bdii2CSAgent( AgentModule ):
     self.alternativeBDIIs = []
     self.voBdiiCEDict = {}
     self.voBdiiSEDict = {}
+    self.glue2URLs = []
+    self.glue2CETypes = ['HTCondorCE']
 
     self.csAPI = None
 
@@ -49,6 +51,9 @@ class Bdii2CSAgent( AgentModule ):
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
     # Create a list of alternative bdii urls
     self.alternativeBDIIs = self.am_getOption( 'AlternativeBDIIs', self.alternativeBDIIs )
+    self.glue2URLs = self.am_getOption('GLUE2URLs', self.glue2URLs)
+    self.glue2CETypes = self.am_getOption('GLUE2CETypes', self.glue2CETypes)
+
     # Check if the bdii url is appended by a port number, if not append the default 2170
     for index, url in enumerate( self.alternativeBDIIs ):
       if not url.split( ':' )[-1].isdigit():
@@ -189,6 +194,15 @@ class Bdii2CSAgent( AgentModule ):
       else:
         self.log.error( "Failed getting information from %s " % bdii, resultAlt['Message'] )
         message = ( message + "\n" + resultAlt['Message'] ).strip()
+
+    for glue2URL in self.glue2URLs:
+      resultGlue2 = getBdiiCEInfo(vo, host=glue2URL, glue2=self.glue2CETypes)
+      if resultGlue2['OK']:
+        totalResult['Value'].update(resultGlue2['Value'])
+      else:
+        self.log.error("Failed getting GLUE2 information for", "%s, %s, %s: %s" %
+                       (glue2URL, self.glue2CETypes, vo, resultGlue2['Message']))
+        message = (message + "\n" + resultGlue2['Message']).strip()
 
     if mainResult['OK']:
       totalResult['Value'].update( mainResult['Value'] )
