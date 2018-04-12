@@ -28,12 +28,14 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOs, getVOOpti
 
 def processScriptSwitches():
 
-  global vo, dry, doCEs, doSEs
+  global vo, dry, doCEs, doSEs, glue2URL, ceTypes
 
   Script.registerSwitch( "V:", "vo=", "Virtual Organization" )
   Script.registerSwitch( "D", "dry", "Dry run" )
   Script.registerSwitch( "C", "ce", "Process Computing Elements" )
   Script.registerSwitch( "S", "se", "Process Storage Elements" )
+  Script.registerSwitch( "G:", "glue2=", "use this url for GLUE2 information querying" )
+  Script.registerSwitch( "T:", "cetypes=", "query GLUE2 for these ceTypes" )
 
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                        'Usage:',
@@ -44,6 +46,8 @@ def processScriptSwitches():
   dry = False
   doCEs = False
   doSEs = False
+  glue2URL = None
+  ceTypes = []
   for sw in Script.getUnprocessedSwitches():
     if sw[0] in ( "V", "vo" ):
       vo = sw[1]
@@ -53,12 +57,16 @@ def processScriptSwitches():
       doCEs = True
     if sw[0] in ( "S", "se" ):
       doSEs = True
+    if sw[0] in ( "G", "glue2" ):
+      glue2URL = sw[1]
+    if sw[0] in ( "T", "cetypes" ):
+      ceTypes = sw[1].split(',')
 
 ceBdiiDict = None
 
 def checkUnusedCEs():
 
-  global vo, dry, ceBdiiDict
+  global vo, dry, ceBdiiDict, glue2URL, ceTypes
 
   gLogger.notice( 'looking for new computing resources in the BDII database...' )
 
@@ -68,7 +76,7 @@ def checkUnusedCEs():
     DIRACExit( -1 )
   knownCEs = result['Value']
 
-  result = getGridCEs( vo, ceBlackList = knownCEs )
+  result = getGridCEs(vo, ceBlackList=knownCEs, glue2URL=glue2URL, ceTypes=ceTypes)
   if not result['OK']:
     gLogger.error( 'ERROR: failed to get CEs from BDII', result['Message'] )
     DIRACExit( -1 )
