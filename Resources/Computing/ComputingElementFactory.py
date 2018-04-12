@@ -6,8 +6,8 @@
 """  The Computing Element Factory has one method that instantiates a given Computing Element
      from the CEUnique ID specified in the JobAgent configuration section.
 """
-from DIRAC.Resources.Computing.ComputingElement  import getCEConfigDict
 from DIRAC                                       import S_OK, S_ERROR, gLogger
+from DIRAC.Resources.Computing.ComputingElement  import getCEConfigDict
 from DIRAC.Core.Utilities                        import ObjectLoader
 
 __RCSID__ = "$Id$"
@@ -26,6 +26,7 @@ class ComputingElementFactory( object ):
     """This method returns the CE instance corresponding to the supplied
        CEUniqueID.  If no corresponding CE is available, this is indicated.
     """
+    self.log = gLogger.getSubLogger( ceType )
     self.log.verbose('Creating CE of %s type with the name %s' % (ceType, ceName) )
     ceTypeLocal = ceType
     if not ceTypeLocal:
@@ -57,7 +58,7 @@ class ComputingElementFactory( object ):
       if ceParametersDict:
         ceDict.update( ceParametersDict )
       computingElement.setParameters( ceDict )
-    except Exception as x:
+    except BaseException as x:
       msg = 'ComputingElementFactory could not instantiate %s object: %s' % ( subClassName, str( x ) )
       self.log.exception()
       self.log.warn( msg )
