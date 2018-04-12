@@ -542,8 +542,16 @@ def __getGlue2HTCondorCEInfo(vo, host):
       resCEInfo = __getGlue2HTCondorComputingInfo(host, computingEnvironment)
       if not resCEInfo['OK']:
         return resCEInfo
-
-      siteDict[siteName]['CEs'][clusterID] = {'Queues': {queueName: resCEInfo['Value']}}
+      ceInfo = resCEInfo['Value']
+      siteDict[siteName]['CEs'][clusterID] = {}
+      for key in ['GlueHostOperatingSystemName',
+                  'GlueHostOperatingSystemVersion',
+                  'GlueHostOperatingSystemRelease',
+                  'GlueHostArchitecturePlatformType',
+                  'GlueHostBenchmarkSI00',
+                 ]:
+        siteDict[siteName]['CEs'][clusterID][key] = ceInfo.pop(key)
+        siteDict[siteName]['CEs'][clusterID]['Queues'] = {queueName: ceInfo}
 
   return S_OK(siteDict)
 
@@ -574,6 +582,10 @@ def __getGlue2HTCondorComputingInfo(host, computingEnvironment):
               'GlueCEStateStatus': 'production',
               'GlueCEImplementationName': 'HTCondorCE',
               'GlueCECapability': [],
+              'GlueCEInfoTotalCPUs': 0,
+              'GlueCEPolicyMaxWallClockTime': '',
+              'GlueCEPolicyMaxCPUTime': '',
+              'GlueHostBenchmarkSI00': '',
              }
 
   return S_OK(infoDict)
