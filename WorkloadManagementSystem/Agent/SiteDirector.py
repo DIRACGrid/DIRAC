@@ -956,13 +956,16 @@ class SiteDirector(AgentModule):
     proxy = None
     if bundleProxy:
       proxy = self.proxy
-    pilotOptions, pilotsToSubmit = self._getPilotOptions(queue, pilotsToSubmit, **kwargs)
+    pilotOptions, pilotsSubmitted = self._getPilotOptions(queue, pilotsToSubmit, **kwargs)
     if not pilotOptions:
       self.log.warn("Pilots will be submitted without additional options")
+      pilotOptions = []
+    if not pilotsSubmitted:
+      pilotsSubmitted = pilotsToSubmit
     pilotOptions = ' '.join(pilotOptions)
     self.log.verbose('pilotOptions: %s' % pilotOptions)
     executable = self._writePilotScript(self.workingDirectory, pilotOptions, proxy, jobExecDir)
-    return executable, pilotsToSubmit
+    return executable, pilotsSubmitted
 
 #####################################################################################
 
