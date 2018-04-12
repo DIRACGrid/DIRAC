@@ -1,4 +1,16 @@
-""" Module holding function(s) creating the pilot wrapper
+""" Module holding function(s) creating the pilot wrapper.
+
+    This is a DIRAC-free module, so it could possibly be used also outside of DIRAC installations.
+
+    The main client of this module is the SiteDirector, that invokes the functions here more or less like this:
+
+        pilotFiles = getPilotFiles()
+        pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(pilotFiles)
+        localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
+                                        pilotOptions,
+                                        pilotExecDir)
+        _writePilotWrapperFile(localPilot=localPilot)
+
 """
 
 import os
@@ -6,6 +18,8 @@ import tempfile
 import shutil
 import tarfile
 import json
+import base64
+import bz2
 
 from cStringIO import StringIO
 
@@ -107,6 +121,30 @@ EOF
        'pilotExecDir': pilotExecDir}
 
   return localPilot
+
+
+def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
+  """ this function will return the dictionary of pilot files names : encodedCompressedContent
+      that we are going to send
+
+     :param pilotFiles: list of pilot files
+     :type pilotFiles: list
+     :param proxy: proxy
+     :type proxy: basestring
+  """
+  pilotFilesCompressedEncodedDict = {}
+
+  for pf in pilotFiles:
+    with open(pf, "r") as fd:
+      pfContent = fd.read()
+    pfContentEncoded = base64.b64encode(bz2.compress(pfContent, 9))
+    pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
+
+  if proxy is not None:
+    compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()['Value']))
+    pilotFilesCompressedEncodedDict['proxy'] = compressedAndEncodedProxy
+
+  return pilotFilesCompressedEncodedDict
 
 
 def _writePilotWrapperFile(workingDirectory=None, localPilot=''):

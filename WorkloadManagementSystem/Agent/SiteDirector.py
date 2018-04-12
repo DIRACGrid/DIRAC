@@ -9,8 +9,6 @@
 __RCSID__ = "$Id$"
 
 import os
-import base64
-import bz2
 import random
 import socket
 import hashlib
@@ -34,7 +32,7 @@ from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
 from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import pilotWrapperScript, getPilotFiles,\
-    _writePilotWrapperFile
+    _writePilotWrapperFile, getPilotFilesCompressedEncodedDict
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -1102,26 +1100,11 @@ class SiteDirector(AgentModule):
      :rtype: basestring
     """
 
-    # this will be the dictionary of pilot files names : encodedCompressedContent
-    # that we are going to send
-    pilotFilesCompressedEncodedDict = {}
-    for pf in self.pilotFiles + [DIRAC_INSTALL]:
-      try:
-        with open(pf, "r") as fd:
-          pfContent = fd.read()
-        pfContentEncoded = base64.b64encode(bz2.compress(pfContent, 9))
-        pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
-      except BaseException as be:
-        self.log.exception("Exception during pilot modules files compression", lException=be)
-        raise be
-
-    if proxy is not None:
-      try:
-        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()['Value']))
-        pilotFilesCompressedEncodedDict['proxy'] = compressedAndEncodedProxy
-      except BaseException as be:
-        self.log.exception("Exception during proxy file compression", lException=be)
-        raise be
+    try:
+      pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(self.pilotFiles + [DIRAC_INSTALL],
+                                                                           proxy)
+    except BaseException as be:
+      self.log.exception("Exception during pilot modules files compression", lException=be)
 
     localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
                                     pilotOptions,
