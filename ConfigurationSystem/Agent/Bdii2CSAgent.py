@@ -32,7 +32,9 @@ class Bdii2CSAgent( AgentModule ):
     self.alternativeBDIIs = []
     self.voBdiiCEDict = {}
     self.voBdiiSEDict = {}
+    self.host = 'lcg-bdii.cern.ch:2170'
     self.glue2URLs = []
+    self.glue2Only = False
 
     self.csAPI = None
 
@@ -50,7 +52,9 @@ class Bdii2CSAgent( AgentModule ):
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
     # Create a list of alternative bdii urls
     self.alternativeBDIIs = self.am_getOption( 'AlternativeBDIIs', self.alternativeBDIIs )
+    self.host = self.am_getOption('Host', self.host)
     self.glue2URLs = self.am_getOption('GLUE2URLs', self.glue2URLs)
+    self.glue2Only = self.am_getOption('GLUE2Only', self.glue2Only)
 
     # Check if the bdii url is appended by a port number, if not append the default 2170
     for index, url in enumerate( self.alternativeBDIIs ):
@@ -180,13 +184,13 @@ class Bdii2CSAgent( AgentModule ):
     totalResult = S_OK( {} )
     message = ''
 
-    mainResult = getBdiiCEInfo( vo )
+    mainResult = getBdiiCEInfo(vo, host=self.host, glue2=self.glue2Only)
     if not mainResult['OK']:
       self.log.error( "Failed getting information from default bdii", mainResult['Message'] )
       message = mainResult['Message']
 
     for bdii in reversed( self.alternativeBDIIs ):
-      resultAlt = getBdiiCEInfo( vo, host = bdii )
+      resultAlt = getBdiiCEInfo(vo, host=bdii, glue2=self.glue2Only)
       if resultAlt['OK']:
         totalResult['Value'].update( resultAlt['Value'] )
       else:
@@ -194,6 +198,8 @@ class Bdii2CSAgent( AgentModule ):
         message = ( message + "\n" + resultAlt['Message'] ).strip()
 
     for glue2URL in self.glue2URLs:
+      if self.glue2Only:
+        break
       resultGlue2 = getBdiiCEInfo(vo, host=glue2URL, glue2=True)
       if resultGlue2['OK']:
         totalResult['Value'].update(resultGlue2['Value'])

@@ -49,8 +49,8 @@ class Bdii2CSTests( unittest.TestCase ):
                 ] )
               ) as infoMock:
       ret = self.agent._Bdii2CSAgent__getBdiiCEInfo( "vo" ) #pylint: disable=no-member
-      infoMock.assert_any_call( "vo")
-      infoMock.assert_any_call( "vo", host="server2" )
+      infoMock.assert_any_call("vo", host=self.agent.host, glue2=self.agent.glue2Only)
+      infoMock.assert_any_call("vo", host="server2", glue2=self.agent.glue2Only)
     self.assertTrue( ret['OK'] )
     self.assertEqual( expectedResult, ret['Value'] )
     self.assertEqual( ret['Value']['site2']['CEs']['ce2']['Queues']['queue2'], "SomeValues" )
@@ -67,8 +67,8 @@ class Bdii2CSTests( unittest.TestCase ):
                 ] )
               ) as infoMock:
       ret = self.agent._Bdii2CSAgent__getBdiiCEInfo( "vo" ) #pylint: disable=no-member
-      infoMock.assert_any_call( "vo")
-      infoMock.assert_any_call( "vo", host="server2" )
+      infoMock.assert_any_call("vo", host=self.agent.host, glue2=self.agent.glue2Only)
+      infoMock.assert_any_call("vo", host="server2", glue2=self.agent.glue2Only)
       self.assertTrue( any ( "Failed getting information from default" in str(args) \
                              for args in self.agent.log.error.call_args_list ),
                        self.agent.log.error.call_args_list )
@@ -86,8 +86,8 @@ class Bdii2CSTests( unittest.TestCase ):
                 ] )
               ) as infoMock:
       ret = self.agent._Bdii2CSAgent__getBdiiCEInfo( "vo" ) #pylint: disable=no-member
-      infoMock.assert_any_call( "vo")
-      infoMock.assert_any_call( "vo", host="server2" )
+      infoMock.assert_any_call("vo", host="server2", glue2=False)
+      infoMock.assert_any_call("vo", host="server2", glue2=False)
       self.assertTrue( any ( "Failed getting information from server2" in str(args) \
                              for args in self.agent.log.error.call_args_list ),
                        self.agent.log.error.call_args_list )
@@ -105,8 +105,8 @@ class Bdii2CSTests( unittest.TestCase ):
                 ] )
               ) as infoMock:
       ret = self.agent._Bdii2CSAgent__getBdiiCEInfo( "vo" ) #pylint: disable=no-member
-      infoMock.assert_any_call( "vo")
-      infoMock.assert_any_call( "vo", host="server2" )
+      infoMock.assert_any_call("vo", host=self.agent.host, glue2=False)
+      infoMock.assert_any_call("vo", host="server2", glue2=False)
       self.assertTrue( any ( "Failed getting information from server2" in str(args) \
                              for args in self.agent.log.error.call_args_list ),
                        self.agent.log.error.call_args_list )
