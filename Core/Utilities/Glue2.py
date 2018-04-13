@@ -28,16 +28,16 @@ def getGlue2CEInfo(vo, host):
   # get all Policies allowing given VO
   filt = "(&(objectClass=GLUE2Policy)(GLUE2PolicyRule=VO:%s))" % vo
   polResVO = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
-  if not polResVO['OK']:
-    return polResVO
 
   # get all Policies allowing given vo, yes, lowercase is a Thing...
   filt = "(&(objectClass=GLUE2Policy)(GLUE2PolicyRule=vo:%s))" % vo
   polResvo = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
 
-  if not polResvo['OK']:
-    return polResvo
-  polRes = list(polResVO['Value'] + polResvo['Value'])
+  # if both failed, we abort here
+  if not (polResvo['OK'] or polResVO['OK']):
+    return S_ERROR("Failed to get policies for this VO")
+
+  polRes = list(polResVO.get('Value', []) + polResvo.get('Value', []))
 
   gLogger.notice("Found %s policies for this VO %s" % (len(polRes), vo))
   siteDict = {}
