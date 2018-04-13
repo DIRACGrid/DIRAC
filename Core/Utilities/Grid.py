@@ -373,22 +373,17 @@ def ldapSEVOInfo( vo, seID, attr = ["GlueVOInfoPath","GlueVOInfoAccessControlBas
 
   return S_OK( voInfo )
 
-def getBdiiCEInfo(vo, host=None, glue2=None):
+def getBdiiCEInfo(vo, host=None, glue2=False):
   """ Get information for all the CEs/queues for a given VO
 
   :param str vo: BDII VO name
   :param str host: url to query for information
-  :param list glue2: if not None query the GLUE2 schema for information about given ceTypes: HTCondorCE, CREAM, ARC
+  :param bool glue2: if True query the GLUE2 information schema
   :return: result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
                each siteID, ceID, queueName all the BDII/Glue parameters are retrieved
   """
-  if glue2 is not None:
-    glue2SiteDict = {}
-    for ceType in glue2:
-      ceRes = Glue2.getGlue2CEInfo(vo, host=host, ceType=ceType)
-      if ceRes['OK']:
-        glue2SiteDict.update(ceRes['Value'])
-    return S_OK(glue2SiteDict)
+  if glue2:
+    return Glue2.getGlue2CEInfo(vo, host=host)
 
   result = ldapCEState( '', vo, host = host )
   if not result['OK']:

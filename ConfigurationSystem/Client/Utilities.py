@@ -89,7 +89,7 @@ def getSEsFromCS( protocol = 'srm' ):
 
   return S_OK( knownSEs )
 
-def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, glue2URL=None, ceTypes=None):
+def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
   """ Get all the CEs available for a given VO and having queues in Production state
   """
   knownCEs = set()
@@ -98,7 +98,7 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, glue2URL=None, ceTypes=None)
 
   ceBdiiDict = bdiiInfo
   if bdiiInfo is None:
-    result = getBdiiCEInfo(vo, host=glue2URL, glue2=ceTypes)
+    result = getBdiiCEInfo(vo, host=hostURL, glue2=glue2)
     if not result['OK']:
       return result
     ceBdiiDict = result['Value']
