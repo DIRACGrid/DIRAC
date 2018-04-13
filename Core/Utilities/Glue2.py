@@ -93,6 +93,13 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
   queueInfo['GlueCEPolicyMaxWallClockTime'] = str(int(shareInfoDict.get('GLUE2ComputingShareMaxWallTime', 86400)) / 60)
   queueInfo['GlueCEInfoTotalCPUs'] = shareInfoDict.get('GLUE2ComputingShareMaxRunningJobs', '10000')
   queueInfo['GlueCECapability'] = []
+
+  # sometimes the time is still in minutes
+  maxCPUTime = int(queueInfo['GlueCEPolicyMaxCPUTime'])
+  if maxCPUTime in [12, 24, 36, 48, 168]:
+    queueInfo['GlueCEPolicyMaxCPUTime'] = str(maxCPUTime * 60)
+    queueInfo['GlueCEPolicyMaxWallClockTime'] = str(int(queueInfo['GlueCEPolicyMaxWallClockTime']) * 60)
+
   executionEnvironment = shareInfoDict['GLUE2ComputingShareExecutionEnvironmentForeignKey']
   resExeInfo = __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment)
   if not resExeInfo['OK']:
@@ -107,9 +114,6 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
       for otherInfo in shareInfoDict['GLUE2EntityOtherInfo']:
         if otherInfo.startswith('CREAMCEId'):
           queueName = otherInfo.split('/', 1)[1]
-      # cream time still in minutes
-      queueInfo['GlueCEPolicyMaxCPUTime'] = str(int(queueInfo['GlueCEPolicyMaxCPUTime']) * 60)
-      queueInfo['GlueCEPolicyMaxWallClockTime'] = str(int(queueInfo['GlueCEPolicyMaxWallClockTime']) * 60)
 
     elif ceType.endswith('HTCondorCE'):
       ceType = 'HTCondorCE'
