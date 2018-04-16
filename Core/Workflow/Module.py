@@ -93,10 +93,10 @@ class ModuleDefinition(AttributeCollection):
         # but it is advisible to use 'from module import class' operator
         # otherwise i could not find the module. But it is possible that
         # in the future I can change this code to do it more wisely
-        raise TypeError('Can not find class '
-                        + self.getType()
-                        + ' in the module created from the body of the module '
-                        + self.getOrigin())
+        raise TypeError('Can not find class ' +
+                        self.getType() +
+                        ' in the module created from the body of the module ' +
+                        self.getOrigin())
     else:
       raise TypeError('The body of the Module ' + self.getType() + ' seems empty')
     return self.main_class_obj
