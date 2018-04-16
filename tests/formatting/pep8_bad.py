@@ -12,7 +12,8 @@ Normally we should have a limit of a 79 according to pep8, but in DIRAC we allow
 
 """
 
-# I am writting a very long line on purpose, and contrary to the very long line in the docstring, this comment will be split
+# I am writting a very long line on purpose, and contrary to the very long
+# line in the docstring, this comment will be split
 
 
 import os  # STD lib imports first
@@ -22,10 +23,10 @@ import some_third_party_lib  # 3rd party stuff next
 import some_third_party_other_lib  # alphabetical
 
 
-
 import local_stuff  # local stuff last
 import more_local_stuff
-import dont_import_two, modules_in_one_line  # IMPORTANT! DO NOT IMPORT TWO MODULE IN ONE LINE
+import dont_import_two
+import modules_in_one_line  # IMPORTANT! DO NOT IMPORT TWO MODULE IN ONE LINE
 
 _a_global_var = 2  # so it won't get imported by 'from foo import *'
 _b_global_var = 3
@@ -36,14 +37,14 @@ A_CONSTANT = 'ugh.'
 # 2 empty lines between top-level funcs + classes
 # This function uses 4 space indentation, in DIRAC we want two.
 def naming_convention():
-    """Write docstrings for ALL public classes, funcs and methods.
+  """Write docstrings for ALL public classes, funcs and methods.
 
-       Functions use snake_case.
-    """
-    if x == 4:  # x is blue <== USEFUL 1-liner comment (2 spaces before #)
-        x, y = y, x  # inverse x and y <== USELESS COMMENT (1 space after #)
-    c = (a + b) * (a - b)  # operator spacing should improve readability.
-    dict['key'] = dict[0] = {'x': 2, 'cat': 'not a dog'}
+     Functions use snake_case.
+  """
+  if x == 4:  # x is blue <== USEFUL 1-liner comment (2 spaces before #)
+    x, y = y, x  # inverse x and y <== USELESS COMMENT (1 space after #)
+  c = (a + b) * (a - b)  # operator spacing should improve readability.
+  dict['key'] = dict[0] = {'x': 2, 'cat': 'not a dog'}
 
 
 class NamingConvention(object):
@@ -76,7 +77,19 @@ class NamingConvention(object):
 
   # Long line, bigger than 79
   # There should be no space between the parameter and the default value
-  def __init__(self, width, height, color = 'black', emphasis = None, highlight=0,andI=0,willAdd=1,some=2,evenmuch=7,longer=9,argsforhavinglongline = 0):
+  def __init__(
+          self,
+          width,
+          height,
+          color='black',
+          emphasis=None,
+          highlight=0,
+          andI=0,
+          willAdd=1,
+          some=2,
+          evenmuch=7,
+          longer=9,
+          argsforhavinglongline=0):
     if width == 0 and height == 0 and \
        color == 'red' and emphasis == 'strong' or \
        highlight > 100:
@@ -102,7 +115,6 @@ class NamingConvention(object):
   def bar(cls):
     """Use cls!"""
     pass
-
 
 
 """

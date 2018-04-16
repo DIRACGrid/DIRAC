@@ -1,4 +1,4 @@
-[v6r20-pre20]
+[v6r20-pre21]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -69,7 +69,8 @@ NEW: FTS3Utilities - use correct FTS Server Selection Policy
 NEW: StorageElement service - getFreeDiskSpace() and getTotalDiskSpace() take into account 
      MAX_STORAGE_SIZE parameter value
 CHANGE: Adding vo name argument for StorageElement   
-CHANGE: Fixing rss to fetch fts3 server status  
+CHANGE: Fixing rss to fetch fts3 server status
+NEW: Add a feature to the DFC LHCbManager to dump the content of an SE as a CSV file
 
 *RMS
 FIX: Really exit the RequestExecutingAgent when the result queue is buggy
@@ -84,6 +85,7 @@ FIX: fixed documentation of how to develop commands
 *Resources
 NEW: New SingularityComputingElement to submit jobs to a Singularity container
 NEW: Added StorageElement.getOccupancy() method for DIP and GFAL2_SMR2 SE types
+CHANGE: enable Stomp logging only if DIRAC_DEBUG_STOMP environment variable is set to any value
 
 *Docs
 CHANGE: WebApp release procedure
