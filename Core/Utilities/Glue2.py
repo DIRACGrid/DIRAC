@@ -9,6 +9,8 @@ from pprint import pformat
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
+__RCSID__ = "$Id$"
+
 
 def __ldapsearchBDII(*args, **kwargs):
   """ wrap `DIRAC.Core.Utilities.Grid.ldapsearchBDII` to avoid circular import """
