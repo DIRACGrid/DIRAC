@@ -1,4 +1,16 @@
-""" Module holding function(s) creating the pilot wrapper
+""" Module holding function(s) creating the pilot wrapper.
+
+    This is a DIRAC-free module, so it could possibly be used also outside of DIRAC installations.
+
+    The main client of this module is the SiteDirector, that invokes the functions here more or less like this:
+
+        pilotFiles = getPilotFiles()
+        pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(pilotFiles)
+        localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
+                                        pilotOptions,
+                                        pilotExecDir)
+        _writePilotWrapperFile(localPilot=localPilot)
+
 """
 
 import os
@@ -6,6 +18,8 @@ import tempfile
 import shutil
 import tarfile
 import json
+import base64
+import bz2
 
 from cStringIO import StringIO
 
@@ -13,7 +27,7 @@ import requests
 
 
 def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
-                       pilotOptions=None,
+                       pilotOptions='',
                        pilotExecDir=''):
   """ Returns the content of the pilot wrapper script.
 
@@ -23,20 +37,13 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
                         the proxy can be part of this, and of course the pilot files
      :type pilotFilesCompressedEncodedDict: dict
      :param pilotOptions: options with which to start the pilot
-     :type pilotOptions: list
+     :type pilotOptions: basestring
      :param pilotExecDir: pilot execution directory
      :type pilotExecDir: basestring
 
      :returns: content of the pilot wrapper
      :rtype: basestring
   """
-
-  # defaults
-  if not pilotOptions:
-    pilotOptions = []
-
-  if not pilotExecDir:
-    pilotExecDir = os.getcwd()
 
   mString = ""
   if pilotFilesCompressedEncodedDict:  # are there some pilot files to unpack? then we create the unpacking string
@@ -79,20 +86,25 @@ logger = logging.getLogger('pilotLogger')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(screen_handler)
 
-# putting ourselves in the right directory
-pilotWorkingDirectory = tempfile.mkdtemp(suffix='pilot', prefix='DIRAC_', dir='%(pilotExecDir)s')
-pilotWorkingDirectory = os.path.realpath(pilotWorkingDirectory)
-os.chdir(pilotWorkingDirectory)
-
-# unpacking lines
-%(mString)s
-
-# just logging the environment
+# just logging the environment as first thing
 print '==========================================================='
 logger.debug('Environment of execution host\\n')
 for key, val in os.environ.iteritems():
   logger.debug(key + '=' + val)
 print '===========================================================\\n'
+
+# putting ourselves in the right directory
+pilotExecDir = '%(pilotExecDir)s'
+if not pilotExecDir:
+  pilotExecDir = os.getcwd()
+pilotWorkingDirectory = tempfile.mkdtemp(suffix='pilot', prefix='DIRAC_', dir=pilotExecDir)
+pilotWorkingDirectory = os.path.realpath(pilotWorkingDirectory)
+os.chdir(pilotWorkingDirectory)
+logger.info("Launching dirac-pilot script from %%s" %%os.getcwd())
+
+# unpacking lines
+logger.info("But first unpacking pilot files")
+%(mString)s
 
 # now finally launching the pilot script (which should be called dirac-pilot.py)
 cmd = "python dirac-pilot.py %(pilotOptions)s"
@@ -105,14 +117,38 @@ shutil.rmtree(pilotWorkingDirectory)
 
 EOF
 """ % {'mString': mString,
-       'pilotOptions': ' '.join(pilotOptions),
+       'pilotOptions': pilotOptions,
        'pilotExecDir': pilotExecDir}
 
   return localPilot
 
 
-def _writePilotWrapperFile(workingDirectory='', localPilot=''):
-  """ write the localPilot string to a file, return the file name
+def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
+  """ this function will return the dictionary of pilot files names : encodedCompressedContent
+      that we are going to send
+
+     :param pilotFiles: list of pilot files
+     :type pilotFiles: list
+     :param proxy: proxy
+     :type proxy: basestring
+  """
+  pilotFilesCompressedEncodedDict = {}
+
+  for pf in pilotFiles:
+    with open(pf, "r") as fd:
+      pfContent = fd.read()
+    pfContentEncoded = base64.b64encode(bz2.compress(pfContent, 9))
+    pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
+
+  if proxy is not None:
+    compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()['Value']))
+    pilotFilesCompressedEncodedDict['proxy'] = compressedAndEncodedProxy
+
+  return pilotFilesCompressedEncodedDict
+
+
+def _writePilotWrapperFile(workingDirectory=None, localPilot=''):
+  """ write the localPilot string to a file, rurn the file name
 
      :param workingDirectory: the directory where to store the pilot wrapper file
      :type workingDirectory: basestring
@@ -122,9 +158,6 @@ def _writePilotWrapperFile(workingDirectory='', localPilot=''):
      :returns: file name of the pilot wrapper
      :rtype: basestring
   """
-
-  if not workingDirectory:
-    workingDirectory = os.getcwd()
 
   fd, name = tempfile.mkstemp(suffix='_pilotwrapper.py', prefix='DIRAC_', dir=workingDirectory)
   with os.fdopen(fd, 'w') as pilotWrapper:

@@ -59,14 +59,7 @@ class ConfigurationHandler(RequestHandler):
 
     # Check the flag for updating the pilot 3 JSON file
     if self.srv_getCSOption('UpdatePilotCStoJSONFile', False):
-      paramDict = {}
-      paramDict['pilotFileServer'] = self.srv_getCSOption("pilotFileServer", '')
-      paramDict['pilotRepo'] = self.srv_getCSOption("pilotRepo", 'https://github.com/DIRACGrid/Pilot.git')
-      paramDict['pilotVORepo'] = self.srv_getCSOption("pilotVORepo", '')
-      paramDict['projectDir'] = self.srv_getCSOption("projectDir", '')
-      paramDict['pilotScriptsPath'] = self.srv_getCSOption("pilotScriptsPath", 'Pilot')
-      paramDict['pilotVOScriptPath'] = self.srv_getCSOption("pilotVOScriptPath", '')
-      return PilotCStoJSONSynchronizer(paramDict).sync()
+      return PilotCStoJSONSynchronizer().sync()
 
     return res
 

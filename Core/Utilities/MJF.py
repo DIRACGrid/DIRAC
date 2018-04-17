@@ -122,11 +122,11 @@ class MJF(object):
 
     # Simple if a file
     if url[0] == '/':
-      with open(url, 'r') as f:
-        try:
-          return f.read().strip()
-        except Exception as e:
-          return None
+      try:
+        with open(url, 'r') as fd:
+          return fd.read().strip()
+      except BaseException:
+        return None
 
     # Otherwise make sure it's an HTTP(S) URL
     if not url.startswith('http://') and not url.startswith('https://'):
@@ -136,23 +136,15 @@ class MJF(object):
     # need to check HTTP return code in case we get an HTML error page
     # instead of a true key value.
     try:
-      u = urllib.urlopen(url=url, context=self.context)
-    except Exception as e:
-      return None
-
-    try:
-      value = u.read()
-      retcode = u.getcode()
-    except Exception as e:
+      mjfUrl = urllib.urlopen(url=url, context=self.context)
+      # HTTP return codes other than 2xx mean failure
+      if mjfUrl.getcode() / 100 != 2:
+        return None
+      return mjfUrl.read().strip()
+    except BaseException:
       return None
     finally:
-      u.close()
-
-    # HTTP return codes other than 2xx mean failure
-    if retcode / 100 != 2:
-      return None
-
-    return value
+      mjfUrl.close()
 
   def getWallClockSecondsLeft(self):
     """Returns the number of seconds until either the wall clock limit
