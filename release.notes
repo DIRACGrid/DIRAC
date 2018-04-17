@@ -1,3 +1,13 @@
+[v6r19p19]
+
+*Configuration
+NEW: BDII2CSAgent - new options: GLUE2URLs, if set this is queried in addition to the other BDII;
+    GLUE2Only to turn off looking on the old schema, if true only the main BDII URL is queried;
+    Host to set the BDII host to search
+
+NEW: dirac-admin-add-resources new option G/glue2 , enable looking at GLUE2 Schema, 
+     H/host to set the host URL to something else
+
 [v6r19p18]
 
 *Configuration
