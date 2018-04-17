@@ -11,6 +11,7 @@ from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers         import Local
 from DIRAC.Core.Utilities.ReturnValues                import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess                  import systemCall, shellCall
+import DIRAC.Core.Utilities.Glue2 as Glue2
 
 __RCSID__ = "$Id$"
 
@@ -59,7 +60,7 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
   result = systemCall( 120, cmd, env = gridEnv )
   return result
 
-def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
+def ldapsearchBDII(filt=None, attr=None, host=None, base=None, selectionString="Glue"):
   """ Python wrapper for ldapserch at bdii.
 
       :param  filt:    Filter used to search ldap, default = '', means select all
@@ -121,7 +122,7 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
       if line.find( 'objectClass:' ) == 0:
         record['objectClass'].append( line.replace( 'objectClass:', '' ).strip() )
         continue
-      if line.find( 'Glue' ) == 0:
+      if line.find(selectionString) == 0:
         index = line.find( ':' )
         if index > 0:
           attr = line[:index]
@@ -372,13 +373,18 @@ def ldapSEVOInfo( vo, seID, attr = ["GlueVOInfoPath","GlueVOInfoAccessControlBas
 
   return S_OK( voInfo )
 
-def getBdiiCEInfo( vo, host = None ):
+def getBdiiCEInfo(vo, host=None, glue2=False):
   """ Get information for all the CEs/queues for a given VO
 
-:param vo: BDII VO name
-:return result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
+  :param str vo: BDII VO name
+  :param str host: url to query for information
+  :param bool glue2: if True query the GLUE2 information schema
+  :return: result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
                each siteID, ceID, queueName all the BDII/Glue parameters are retrieved
   """
+  if glue2:
+    return Glue2.getGlue2CEInfo(vo, host=host)
+
   result = ldapCEState( '', vo, host = host )
   if not result['OK']:
     return result
@@ -490,3 +496,5 @@ def getBdiiSEInfo( vo, host = None ):
       siteDict[siteName]["SEs"][seID]['VOPath'] = pathDict[seID]
 
   return S_OK( siteDict )
+
+
