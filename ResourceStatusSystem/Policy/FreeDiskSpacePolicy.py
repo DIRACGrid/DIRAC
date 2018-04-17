@@ -73,4 +73,4 @@ class FreeDiskSpacePolicy(PolicyBase):
     return S_OK(result)
 
 #...............................................................................
-#EOF
+# EOF
