@@ -268,11 +268,12 @@ class FTS3DB(object):
 
     try:
       # the tild sign is for "not"
+
       ftsJobsQuery = session.query(FTS3Job)\
           .join(FTS3Operation)\
           .filter(~FTS3Job.status.in_(FTS3Job.FINAL_STATES))\
-          .filter(FTS3Job.assignment is None)\
-          .filter(FTS3Operation.assignment is None)\
+          .filter(FTS3Job.assignment.is_(None))\
+          .filter(FTS3Operation.assignment.is_(None))
 
       if lastMonitor:
         ftsJobsQuery = ftsJobsQuery.filter(FTS3Job.lastMonitor < lastMonitor)
@@ -416,8 +417,8 @@ class FTS3DB(object):
       operationIDsQuery = session.query(FTS3Operation.operationID)\
           .outerjoin(FTS3Job)\
           .filter(FTS3Operation.status.in_(['Active', 'Processed']))\
-          .filter(FTS3Operation.assignment is None)\
-          .filter(FTS3Job.assignment is None)\
+          .filter(FTS3Operation.assignment.is_(None))\
+          .filter(FTS3Job.assignment.is_(None))\
           .limit(limit)
 
       # Block the Operations for other requests
