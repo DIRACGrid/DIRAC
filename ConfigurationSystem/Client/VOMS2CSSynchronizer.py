@@ -4,13 +4,14 @@
 
 from collections import defaultdict
 
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.Core.Security.VOMSService import VOMSService
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getVOMSRoleGroupMapping, \
-    getUsersInVO, getAllUsers
+
+from DIRAC.Core.Security.VOMSService import VOMSService
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getVOMSRoleGroupMapping, \
+    getUsersInVO, getAllUsers
 
 __RCSID__ = "$Id$"
 

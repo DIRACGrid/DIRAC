@@ -6,12 +6,12 @@
     -
 """
 
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC import S_OK, gConfig
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getUserOption
 from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
-from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 __RCSID__ = "$Id$"
