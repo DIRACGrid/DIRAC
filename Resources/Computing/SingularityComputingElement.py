@@ -93,8 +93,14 @@ class SingularityComputingElement( ComputingElement ):
     instOpts = []
     setup = gConfig.getValue( "/DIRAC/Setup", "unknown" )
     opsHelper = Operations.Operations( setup = setup )
+
+    installationName = opsHelper.getValue( "Pilot/Installation", "" )
+    if installationName:
+      instOpts.append( '-V %s' % installationName )
+
     diracVersions = opsHelper.getValue( "Pilot/Version", [] )
-    instOpts.append( "-r '%s'" % ','.join( diracVersions ) )
+    instOpts.append( "-r '%s'" % diracVersions[0] )
+
     pyVer = "%u%u" % ( sys.version_info.major, sys.version_info.minor )
     instOpts.append( "-i %s" % pyVer )
     pilotExtensionsList = opsHelper.getValue( "Pilot/Extensions", [] )
