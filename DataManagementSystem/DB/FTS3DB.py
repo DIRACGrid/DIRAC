@@ -419,7 +419,8 @@ class FTS3DB(object):
           .filter(FTS3Operation.status.in_(['Active', 'Processed']))\
           .filter(FTS3Operation.assignment.is_(None))\
           .filter(FTS3Job.assignment.is_(None))\
-          .limit(limit)
+          .limit(limit)\
+          .distinct()
 
       # Block the Operations for other requests
       if operationAssignmentTag:
