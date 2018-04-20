@@ -378,6 +378,9 @@ class FTS3DB(object):
         if 'completeness' in valueDict:
           updateDict[FTS3Job.completeness] = valueDict['completeness']
 
+        if valueDict.get('lastMonitor'):
+          updateDict[FTS3Job.lastMonitor] = func.utc_timestamp()
+
         updateDict[FTS3Job.assignment] = None
 
         session.execute(update(FTS3Job)

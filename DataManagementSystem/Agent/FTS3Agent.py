@@ -179,6 +179,7 @@ class FTS3Agent(AgentModule):
               'error': ftsJob.error,
               'completeness': ftsJob.completeness,
               'operationID': ftsJob.operationID,
+              'lastMonitor': True,
           }
       }
       res = self.fts3db.updateJobStatus(upDict)
