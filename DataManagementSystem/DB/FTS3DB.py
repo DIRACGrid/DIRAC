@@ -13,7 +13,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql.expression import and_
 from sqlalchemy.orm import relationship, sessionmaker, mapper
-from sqlalchemy.sql import update
+from sqlalchemy.sql import update, delete
 from sqlalchemy import create_engine, Table, Column, MetaData, ForeignKey, \
     Integer, String, DateTime, Enum, BigInteger, SmallInteger, Float, func, text
 
@@ -500,5 +500,41 @@ class FTS3DB(object):
     except SQLAlchemyError as e:
       session.rollback()
       return S_ERROR("kickStuckOperations: unexpected exception : %s" % e)
+    finally:
+      session.close()
+
+  def deleteFinalOperations(self, limit=20, deleteDelay=180):
+    """deletes operation in final state that are older than given time
+
+    :param int limit: number of operations to treat
+    :param int deleteDelay: age of the lastUpdate in days
+    :returns: S_OK/S_ERROR with number of deleted operations
+    """
+
+    session = self.dbSession(expire_on_commit=False)
+
+    try:
+
+      ftsOps = session.query(FTS3Operation.operationID)\
+          .filter(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
+                                                            text('INTERVAL %s DAY' % deleteDelay))))\
+          .filter(FTS3Operation.status.in_(FTS3Operation.FINAL_STATES))\
+          .limit(limit)
+
+      opIDs = [opTuple[0] for opTuple in ftsOps]
+      rowCount = 0
+      if opIDs:
+        result = session.execute(delete(FTS3Operation)
+                                 .where(FTS3Operation.operationID.in_(opIDs)))
+        rowCount = result.rowcount
+
+      session.commit()
+      session.expunge_all()
+
+      return S_OK(rowCount)
+
+    except SQLAlchemyError as e:
+      session.rollback()
+      return S_ERROR("deleteFinalOperations: unexpected exception : %s" % e)
     finally:
       session.close()

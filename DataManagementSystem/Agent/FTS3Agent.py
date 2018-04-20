@@ -65,6 +65,8 @@ class FTS3Agent(AgentModule):
     self.maxAttemptsPerFile = self.am_getOption("maxAttemptsPerFile", 256)
     self.kickDelay = self.am_getOption("KickAssignedHours", 1)
     self.maxKick = self.am_getOption("KickLimitPerCycle", 100)
+    self.deleteDelay = self.am_getOption("DeleteGraceDays", 180)
+    self.maxDelete = self.am_getOption("DeleteLimitPerCycle", 100)
 
     return S_OK()
 
@@ -392,6 +394,20 @@ class FTS3Agent(AgentModule):
 
     return S_OK()
 
+  def deleteOperations(self):
+    """ delete final operations """
+
+    log = gLogger.getSubLogger("deleteOperations", child=True)
+
+    res = self.fts3db.deleteFinalOperations(limit=self.maxDelete, deleteDelay=self.deleteDelay)
+    if not res['OK']:
+      return res
+
+    deletedOperations = res['Value']
+    log.info("Deleted %s final operations" % deletedOperations)
+
+    return S_OK()
+
   def finalize(self):
     """ finalize processing """
     return S_OK()
@@ -420,6 +436,13 @@ class FTS3Agent(AgentModule):
 
     if not res['OK']:
       log.error("Error kicking operations", res)
+      return res
+
+    log.info("Deleting final operations")
+    res = self.deleteOperations()
+
+    if not res['OK']:
+      log.error("Error deleting operations", res)
       return res
 
 
