@@ -1,7 +1,7 @@
 """ DIRAC FileCatalog component representing a directory tree with enumerated paths
 """
 
-#pylint: disable=protected-access
+# pylint: disable=protected-access
 
 
 __RCSID__ = "$Id$"
@@ -159,7 +159,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     #result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
     result = self.db._insert('FC_DirectoryLevelTree', names, values, conn)
     if not result['OK']:
-      #resUnlock = self.db._query("UNLOCK TABLES;",conn)
+      # resUnlock = self.db._query("UNLOCK TABLES;",conn)
       if result['Message'].find('Duplicate') != -1:
         # The directory is already added
         resFind = self.findDir(path)

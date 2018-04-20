@@ -3,7 +3,7 @@
 
 __RCSID__ = "$Id$"
 
-#pylint: disable=protected-access
+# pylint: disable=protected-access
 
 import os
 import stat
