@@ -1,11 +1,12 @@
 """ DIRAC FileCatalog component representing a directory tree with enumerated paths
 """
 
+#pylint: disable=protected-access
+
 
 __RCSID__ = "$Id$"
 
 import os
-from types import ListType, StringTypes
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 
@@ -89,6 +90,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """ Get the enumerated path of the given directory
     """
     epathString = ','.join(['LPATH%d' % (i + 1) for i in range(MAX_LEVELS)])
+    dirID = self.db._escapeString(dirID)
+    if not dirID['OK']:
+      return dirID
+    dirID = dirID['Value']
     req = 'SELECT LEVEL,%s FROM FC_DirectoryLevelTree WHERE DirID=%d' % (epathString, dirID)
     result = self.db._query(req, connection)
     if not result['OK']:
@@ -178,6 +183,12 @@ class DirectoryLevelTree(DirectoryTreeBase):
       #       result = self.db._update(req,conn)
       #       result = self.db._query("UNLOCK TABLES;",conn)
       lPath = "LPATH%d" % (level)
+
+      parentDirID = self.db._escapeString(parentDirID)
+      if not parentDirID['OK']:
+        return parentDirID
+      parentDirID = parentDirID['Value']
+
       req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d FOR UPDATE; " % (lPath, parentDirID)
       resultLock = self.db._query("START TRANSACTION; ", conn)
       result = self.db._query(req, conn)
@@ -201,8 +212,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
       return result
     if not result['Value']:
       return S_OK({"Exists": False})
-    else:
-      return S_OK({"Exists": True, "DirID": result['Value']})
+    return S_OK({"Exists": True, "DirID": result['Value']})
 
   def getParent(self, path):
     """ Get the parent ID of the given directory
@@ -216,7 +226,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """
 
     dirID = dirPathOrID
-    if type(dirPathOrID) in StringTypes:
+    if isinstance(dirPathOrID, basestring):
       result = self.findDir(dirPathOrID)
       if not result['OK']:
         return result
@@ -224,6 +234,11 @@ class DirectoryLevelTree(DirectoryTreeBase):
 
     if dirID == 0:
       return S_ERROR('Root directory ID given')
+
+    dirID = self.db._escapeString(dirID)
+    if not dirID['OK']:
+      return dirID
+    dirID = dirID['Value']
 
     req = "SELECT Parent FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
     result = self.db._query(req)
@@ -237,6 +252,11 @@ class DirectoryLevelTree(DirectoryTreeBase):
   def getDirectoryPath(self, dirID):
     """ Get directory name by directory ID
     """
+    dirID = self.db._escapeString(dirID)
+    if not dirID['OK']:
+      return dirID
+    dirID = dirID['Value']
+
     req = "SELECT DirName FROM FC_DirectoryLevelTree WHERE DirID=%d" % int(dirID)
     result = self.db._query(req)
     if not result['OK']:
@@ -250,13 +270,18 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """ Get directory name by directory ID list
     """
     dirs = dirIDList
-    if not isinstance(dirIDList, ListType):
+    if not isinstance(dirIDList, list):
       dirs = [dirIDList]
 
     if not dirs:
       return S_OK({})
 
     dirListString = ','.join([str(d) for d in dirs])
+
+    dirListString = self.db._escapeString(dirListString)
+    if not dirListString['OK']:
+      return dirListString
+    dirListString = dirListString['Value']
 
     req = "SELECT DirID,DirName FROM FC_DirectoryLevelTree WHERE DirID in ( %s )" % dirListString
     result = self.db._query(req)
@@ -346,7 +371,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
   def getChildren(self, path, connection=False):
     """ Get child directory IDs for the given directory
     """
-    if type(path) in StringTypes:
+    if isinstance(path, basestring):
       result = self.findDir(path, connection)
       if not result['OK']:
         return result
@@ -367,6 +392,11 @@ class DirectoryLevelTree(DirectoryTreeBase):
   def getSubdirectoriesByID(self, dirID, requestString=False, includeParent=False):
     """ Get all the subdirectories of the given directory at a given level
     """
+
+    dirID = self.db._escapeString(dirID)
+    if not dirID['OK']:
+      return dirID
+    dirID = dirID['Value']
 
     req = "SELECT Level FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
     result = self.db._query(req)
@@ -427,7 +457,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """
 
     dirs = dirList
-    if not isinstance(dirList, ListType):
+    if not isinstance(dirList, list):
       dirs = [dirList]
     resultList = []
     parentList = dirs
@@ -471,7 +501,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
       return result
 
     parentDict = {}
-    for dirID, parentID, level in result['Value']:
+    for dirID, parentID, _level in result['Value']:
 
       result = self.getDirectoryPath(dirID)
       if not result['OK']:
