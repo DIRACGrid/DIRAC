@@ -1,6 +1,8 @@
 ''' Test_RSS_Policy_FreeDiskSpacePolicy
 '''
 
+# pylint: disable=protected-access
+
 import unittest
 
 import DIRAC.ResourceStatusSystem.Policy.FreeDiskSpacePolicy as moduleTested
@@ -64,30 +66,30 @@ class FreeDiskSpacePolicy_Success(FreeDiskSpacePolicy_TestCase):
     self.assertEqual('Error', res['Value']['Status'])
     self.assertEqual('Key Total missing', res['Value']['Reason'])
 
-    res = module._evaluate({'OK': True, 'Value': [{'Total': 1}]})
+    res = module._evaluate({'OK': True, 'Value': {'Total': 1}})
     self.assertTrue(res['OK'])
     self.assertEqual('Error', res['Value']['Status'])
     self.assertEqual('Key Free missing', res['Value']['Reason'])
 
-    res = module._evaluate({'OK': True, 'Value': [{'Total': 100, 'Fre': 0.0}]})
+    res = module._evaluate({'OK': True, 'Value': {'Total': 100, 'Fre': 0.0}})
     self.assertTrue(res['OK'])
     self.assertEqual('Error', res['Value']['Status'])
     self.assertEqual('Key Free missing', res['Value']['Reason'])
 
-    res = module._evaluate({'OK': True, 'Value': [{'Total': 100, 'Free': 0.0}]})
+    res = module._evaluate({'OK': True, 'Value': {'Total': 100, 'Free': 0.0}})
     self.assertTrue(res['OK'])
     self.assertEqual('Banned', res['Value']['Status'])
     self.assertEqual('Too little free space', res['Value']['Reason'])
 
-    res = module._evaluate({'OK': True, 'Value': [{'Total': 100, 'Free': 4.0,
-                                                   'Guaranteed': 1}]})
+    res = module._evaluate({'OK': True, 'Value': {'Total': 100, 'Free': 4.0,
+                                                  'Guaranteed': 1}})
     self.assertTrue(res['OK'])
     self.assertEqual('Degraded', res['Value']['Status'])
     self.assertEqual('Little free space',
                      res['Value']['Reason'])
 
-    res = module._evaluate({'OK': True, 'Value': [{'Total': 100, 'Free': 100,
-                                                   'Guaranteed': 1}]})
+    res = module._evaluate({'OK': True, 'Value': {'Total': 100, 'Free': 100,
+                                                  'Guaranteed': 1}})
     self.assertTrue(res['OK'])
     self.assertEqual('Active', res['Value']['Status'])
     self.assertEqual('Enough free space',

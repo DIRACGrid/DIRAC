@@ -41,10 +41,10 @@ switchDict = {}
 
 
 def registerSwitches():
-  '''
+  """
     Registers all switches that can be used while calling the script from the
     command line interface.
-  '''
+  """
 
   switches = (
       ('downtimeID=', 'ID of the downtime'),
@@ -63,9 +63,9 @@ def registerSwitches():
 
 
 def registerUsageMessage():
-  '''
+  """
     Takes the script __doc__ and adds the DIRAC version to it
-  '''
+  """
 
   usageMessage = 'DIRAC version: %s \n' % version
   usageMessage += __doc__
@@ -74,9 +74,9 @@ def registerUsageMessage():
 
 
 def parseSwitches():
-  '''
+  """
     Parses the arguments passed by the user
-  '''
+  """
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
@@ -115,9 +115,9 @@ def parseSwitches():
 # UTILS: for filtering 'select' output
 
 def filterDate(selectOutput, start, end):
-  '''
+  """
     Selects all the downtimes that meet the constraints of 'start' and 'end' dates
-  '''
+  """
 
   downtimes = selectOutput
   downtimesFiltered = []
@@ -162,9 +162,9 @@ def filterDate(selectOutput, start, end):
 
 
 def filterOngoing(selectOutput):
-  '''
+  """
     Selects all the ongoing downtimes
-  '''
+  """
 
   downtimes = selectOutput
   downtimesFiltered = []
@@ -180,9 +180,9 @@ def filterOngoing(selectOutput):
 
 
 def filterDescription(selectOutput, description):
-  '''
+  """
     Selects all the downtimes that match 'description'
-  '''
+  """
 
   downtimes = selectOutput
   downtimesFiltered = []
@@ -200,9 +200,9 @@ def filterDescription(selectOutput, description):
 
 
 def error(msg):
-  '''
+  """
     Format error messages
-  '''
+  """
 
   subLogger.error("\nERROR:")
   subLogger.error("\t" + msg)
@@ -212,9 +212,9 @@ def error(msg):
 
 
 def confirm(query, matches):
-  '''
+  """
     Format confirmation messages
-  '''
+  """
 
   subLogger.notice("\nNOTICE: '%s' request successfully executed ( matches' number: %s )! \n" % (query, matches))
 
@@ -243,10 +243,10 @@ def tabularPrint(table):
 
 
 def select(switchDict):
-  '''
+  """
     Given the switches, request a query 'select' on the ResourceManagementDB
     that gets from DowntimeCache all rows that match the parameters given.
-  '''
+  """
 
   rmsClient = ResourceManagementClient()
 
@@ -257,12 +257,7 @@ def select(switchDict):
   output = rmsClient.selectDowntimeCache(downtimeID=switchDict['downtimeID'],
                                          element=switchDict['element'],
                                          name=switchDict['name'],
-                                         #startDate = switchDict[ 'startDate' ],
-                                         #endDate = switchDict[ 'endDate' ],
                                          severity=switchDict['severity'],
-                                         #description = switchDict[ 'description' ],
-                                         #link = switchDict[ 'link' ],
-                                         #dateEffective = switchDict[ 'dateEffective' ],
                                          meta=meta)
 
   if not output['OK']:
@@ -281,10 +276,10 @@ def select(switchDict):
 
 
 def add(switchDict):
-  '''
+  """
     Given the switches, request a query 'addOrModify' on the ResourceManagementDB
     that inserts or updates-if-duplicated from DowntimeCache.
-  '''
+  """
 
   rmsClient = ResourceManagementClient()
 
@@ -297,7 +292,6 @@ def add(switchDict):
                                               severity=switchDict['severity'],
                                               description=switchDict['description'],
                                               link=switchDict['link']
-                                              #dateEffective = switchDict[ 'dateEffective' ]
                                               )
 
   if not output['OK']:
@@ -312,10 +306,10 @@ def add(switchDict):
 
 
 def delete(switchDict):
-  '''
+  """
     Given the switches, request a query 'delete' on the ResourceManagementDB
     that deletes from DowntimeCache all rows that match the parameters given.
-  '''
+  """
 
   rmsClient = ResourceManagementClient()
 
@@ -328,7 +322,6 @@ def delete(switchDict):
                                          severity=switchDict['severity'],
                                          description=switchDict['description'],
                                          link=switchDict['link']
-                                         #dateEffective = switchDict[ 'dateEffective' ]
                                          )
   if not output['OK']:
     return output
@@ -344,9 +337,9 @@ def delete(switchDict):
 #...............................................................................
 
 def run(args, switchDict):
-  '''
+  """
     Main function of the script
-  '''
+  """
 
   query = args[0]
 

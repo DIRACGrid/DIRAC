@@ -65,10 +65,6 @@ def registerSwitches():
               ('file=',
                "Fullpath config file location other then the default one (but for testing use only the original)"),
               ('policy=', "Policy name to be removed")
-              #( 'statusType=',
-              #'A valid StatusType argument (it admits a comma-separated list of statusTypes); None if default' ),
-              #( 'status=',
-              #'A valid Status argument ( Active, Probing, Degraded, Banned, Unknown, Error ); None if default' ),
               )
 
   for switch in switches:

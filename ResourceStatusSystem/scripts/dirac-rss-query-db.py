@@ -309,11 +309,8 @@ def select(args, switchDict):
                                          statusType=switchDict['statusType'],
                                          status=switchDict['status'],
                                          elementType=switchDict['elementType'],
-                                         #reason = switchDict[ 'reason' ],
-                                         #dateEffective = switchDict[ 'dateEffective' ],
                                          lastCheckTime=switchDict['lastCheckTime'],
                                          tokenOwner=switchDict['tokenOwner'],
-                                         #tokenExpiration = switchDict[ 'tokenExpiration' ],
                                          meta=meta)
   result['output'] = [dict(zip(output['Columns'], e)) for e in output['Value']]
   result['output'] = filterReason(result['output'], switchDict['reason'])
@@ -341,8 +338,6 @@ def add(args, switchDict):
                                               status=switchDict['status'],
                                               elementType=switchDict['elementType'],
                                               reason=switchDict['reason'],
-                                              #dateEffective = switchDict[ 'dateEffective' ],
-                                              #lastCheckTime = switchDict[ 'lastCheckTime' ],
                                               tokenOwner=getToken('owner'),
                                               tokenExpiration=getToken('expiration')
                                               )
@@ -371,8 +366,6 @@ def modify(args, switchDict):
                                          status=switchDict['status'],
                                          elementType=switchDict['elementType'],
                                          reason=switchDict['reason'],
-                                         #dateEffective = switchDict[ 'dateEffective' ],
-                                         #lastCheckTime = switchDict[ 'lastCheckTime' ],
                                          tokenOwner=getToken('owner'),
                                          tokenExpiration=getToken('expiration')
                                          )
@@ -401,10 +394,7 @@ def delete(args, switchDict):
                                          status=switchDict['status'],
                                          elementType=switchDict['elementType'],
                                          reason=switchDict['reason'],
-                                         #dateEffective = switchDict[ 'dateEffective' ],
-                                         #lastCheckTime = switchDict[ 'lastCheckTime' ],
                                          tokenOwner=switchDict['tokenOwner'],
-                                         #tokenExpiration = switchDict[ 'tokenExpiration' ]
                                          )
 
   if 'Value' in output:
