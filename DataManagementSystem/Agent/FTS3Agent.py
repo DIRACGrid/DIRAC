@@ -63,6 +63,8 @@ class FTS3Agent(AgentModule):
     self.jobBulkSize = self.am_getOption("JobBulkSize", 20)
     self.maxFilesPerJob = self.am_getOption("MaxFilesPerJob", 100)
     self.maxAttemptsPerFile = self.am_getOption("maxAttemptsPerFile", 256)
+    self.kickDelay = self.am_getOption("KickAssignedHours", 1)
+    self.maxKick = self.am_getOption("KickLimitPerCycle", 100)
 
     return S_OK()
 
@@ -375,6 +377,20 @@ class FTS3Agent(AgentModule):
     log.debug("thPool joined")
     return S_OK()
 
+  def kickOperations(self):
+    """ kick stuck operations """
+
+    log = gLogger.getSubLogger("kickOperations", child=True)
+
+    res = self.fts3db.kickStuckOperations(limit=self.maxKick, kickDelay=self.kickDelay)
+    if not res['OK']:
+      return res
+
+    kickedOperations = res['Value']
+    log.info("Kicked %s stuck operations" % kickedOperations)
+
+    return S_OK()
+
   def finalize(self):
     """ finalize processing """
     return S_OK()
@@ -397,5 +413,13 @@ class FTS3Agent(AgentModule):
     if not res['OK']:
       log.error("Error treating operations", res)
       return res
+
+    log.info("Kicking stuck operations")
+    res = self.kickOperations()
+
+    if not res['OK']:
+      log.error("Error kicking operations", res)
+      return res
+
 
     return S_OK()

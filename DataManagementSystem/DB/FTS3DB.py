@@ -1,9 +1,6 @@
 """ Frontend to FTS3 MySQL DB. Written using sqlalchemy
 """
 
-
-__RCSID__ = "$Id $"
-
 # We disable the no-member error because
 # they are constructed by SQLAlchemy for all
 # the objects mapped to a table.
@@ -18,7 +15,7 @@ from sqlalchemy.sql.expression import and_
 from sqlalchemy.orm import relationship, sessionmaker, mapper
 from sqlalchemy.sql import update
 from sqlalchemy import create_engine, Table, Column, MetaData, ForeignKey, \
-    Integer, String, DateTime, Enum, BigInteger, SmallInteger, Float
+    Integer, String, DateTime, Enum, BigInteger, SmallInteger, Float, func, text
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -26,6 +23,8 @@ from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3T
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
+
+__RCSID__ = "$Id$"
 
 
 metadata = MetaData()
@@ -37,7 +36,7 @@ fts3FileTable = Table('Files', metadata,
                              ForeignKey('Operations.operationID', ondelete='CASCADE'),
                              nullable=False),
                       Column('attempt', Integer, server_default='0'),
-                      Column('lastUpdate', DateTime),
+                      Column('lastUpdate', DateTime, onupdate=func.utc_timestamp()),
                       Column('rmsFileID', Integer, server_default='0'),
                       Column('lfn', String(1024)),
                       Column('checksum', String(255)),
@@ -59,7 +58,7 @@ fts3JobTable = Table('Jobs', metadata,
                             ForeignKey('Operations.operationID', ondelete='CASCADE'),
                             nullable=False),
                      Column('submitTime', DateTime),
-                     Column('lastUpdate', DateTime),
+                     Column('lastUpdate', DateTime, onupdate=func.utc_timestamp()),
                      Column('lastMonitor', DateTime),
                      Column('completeness', Float),
                      Column('username', String(255)),  # Could be fetched from Operation, but bad for perf
@@ -87,7 +86,7 @@ fts3OperationTable = Table('Operations', metadata,
                            Column('activity', String(255)),
                            Column('priority', SmallInteger),
                            Column('creationTime', DateTime),
-                           Column('lastUpdate', DateTime),
+                           Column('lastUpdate', DateTime, onupdate=func.utc_timestamp()),
                            Column('status', Enum(*FTS3Operation.ALL_STATES),
                                   server_default=FTS3Operation.INIT_STATE,
                                   index=True),
@@ -198,6 +197,8 @@ class FTS3DB(object):
     # set the assignment to NULL
     # so that another agent can work on the request
     operation.assignment = None
+    # because of the merge we have to explicitely set lastUpdate
+    operation.lastUpdate = func.utc_timestamp()
     try:
 
       # Merge it in case it already is in the DB
@@ -453,5 +454,48 @@ class FTS3DB(object):
     except SQLAlchemyError as e:
       session.rollback()
       return S_ERROR("getAllProcessedOperations: unexpected exception : %s" % e)
+    finally:
+      session.close()
+
+  def kickStuckOperations(self, limit=20, kickDelay=2):
+    """finds operations that have not been updated for more than a given
+      time but are still assigned and resets the assignment
+
+    :param int limit: number of operations to treat
+    :param int kickDelay: age of the lastUpdate in hours
+    :returns: S_OK/S_ERROR with number of kicked operations
+
+    """
+
+    session = self.dbSession(expire_on_commit=False)
+
+    try:
+
+      ftsOps = session.query(FTS3Operation.operationID)\
+          .filter(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
+                                                            text('INTERVAL %s HOUR' % kickDelay
+                                                                 ))))\
+          .filter(~FTS3Operation.assignment.is_(None))\
+          .limit(limit)
+
+      opIDs = [opTuple[0] for opTuple in ftsOps]
+      rowCount = 0
+
+      if opIDs:
+        result = session.execute(update(FTS3Operation)
+                                 .where(FTS3Operation.operationID.in_(opIDs))
+                                 .where(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
+                                                                                  text('INTERVAL %s HOUR' % kickDelay
+                                                                                       )))))
+        rowCount = result.rowcount
+
+      session.commit()
+      session.expunge_all()
+
+      return S_OK(rowCount)
+
+    except SQLAlchemyError as e:
+      session.rollback()
+      return S_ERROR("kickStuckOperations: unexpected exception : %s" % e)
     finally:
       session.close()
