@@ -31,4 +31,4 @@ class AtomDB(DB):
     return self._createTables(tablesD)
 
   def addStuff(self, something):
-    return self._insert('atom_mytable', ['stuff'], [something])
+    return self.insertFields('atom_mytable', ['stuff'], [something])

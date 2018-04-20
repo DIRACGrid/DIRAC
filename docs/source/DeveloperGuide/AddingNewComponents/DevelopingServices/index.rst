@@ -63,7 +63,7 @@ Default Service Configuration parameters
 
 The Hello Handler is written. There's not even the need to copy/paste, because you can do::
 
-  cp $DEVROOT/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/HelloHandler.py $DEVROOT/FrameworkSystem/Service/
+  cp $DEVROOT/DIRAC/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/HelloHandler.py $DEVROOT/DIRAC/FrameworkSystem/Service/
 
 Now, we'll need to put the new service in the DIRAC CS in order to see it running.
 Since we are running in an isolated installation, the service will need to be added to the local "dirac.cfg" file.
