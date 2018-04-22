@@ -1,3 +1,8 @@
+[v6r19p20]
+
+*StorageManagement
+FIX: StorageManagementDB - fixed buggy group by with MySQL 5.7
+
 [v6r19p19]
 
 *Configuration
