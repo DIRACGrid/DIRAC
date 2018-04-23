@@ -1,9 +1,9 @@
 ########################################################################
 # File :    SiteDirector.py
-# Author :  A.T.
+# Author :  A.T., F.S.
 ########################################################################
 
-"""  The Site Director is an agent performing pilot job submission to particular sites.
+"""  The Site Director is an agent performing pilot job submission to particular sites/Computing Elements.
 """
 
 __RCSID__ = "$Id$"

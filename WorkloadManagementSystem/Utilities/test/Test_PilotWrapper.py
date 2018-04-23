@@ -78,6 +78,18 @@ class PilotWrapperTestCaseCreation(PilotWrapperTestCase):
     print res
     # no assert as it makes little sense
 
+  def test_scriptWithEnvVars(self):
+    """ test script creation
+    """
+    res = pilotWrapperScript(
+        pilotFilesCompressedEncodedDict={'dirac-install.py': 'someContentOfDiracInstall',
+                                         'someOther.py': 'someOtherContent'},
+        pilotOptions="-c 123 --foo bar",
+        envVariables={'someName': 'someValue',
+                      'someMore': 'oneMore'})
+
+    print res
+
 
 #############################################################################
 # Test Suite run

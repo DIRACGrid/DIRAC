@@ -28,7 +28,8 @@ import requests
 
 def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
                        pilotOptions='',
-                       pilotExecDir=''):
+                       pilotExecDir='',
+                       envVariables=None):
   """ Returns the content of the pilot wrapper script.
 
       The pilot wrapper script is a bash script that invokes the system python. Linux only.
@@ -45,6 +46,9 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
      :rtype: basestring
   """
 
+  if envVariables is None:
+    envVariables = {}
+
   mString = ""
   if pilotFilesCompressedEncodedDict:  # are there some pilot files to unpack? then we create the unpacking string
     for pfName, encodedPf in pilotFilesCompressedEncodedDict.iteritems():
@@ -59,6 +63,16 @@ except BaseException as x:
   sys.exit(-1)
 """ % {'encodedPf': encodedPf,
        'pfName': pfName}
+
+  envVariablesString = ""
+  if envVariables:  # are there some environment variables to add?
+    for name, value in envVariables.iteritems():
+      envVariablesString += """
+os.environ[\"%(name)s\"]=\"%(value)s\"
+""" % {'name': name,
+       'value': value}
+
+  mString = mString + envVariablesString
 
   localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
