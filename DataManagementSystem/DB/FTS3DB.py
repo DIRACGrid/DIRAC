@@ -489,7 +489,9 @@ class FTS3DB(object):
                                  .where(FTS3Operation.operationID.in_(opIDs))
                                  .where(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
                                                                                   text('INTERVAL %s HOUR' % kickDelay
-                                                                                       )))))
+                                                                                       ))))
+                                 .values({'assignment': None})
+                                 )
         rowCount = result.rowcount
 
       session.commit()
