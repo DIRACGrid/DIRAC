@@ -476,7 +476,7 @@ class FTS3DB(object):
 
       ftsOps = session.query(FTS3Operation.operationID)\
           .filter(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
-                                                            text('INTERVAL %s HOUR' % kickDelay
+                                                            text('INTERVAL %d HOUR' % kickDelay
                                                                  ))))\
           .filter(~FTS3Operation.assignment.is_(None))\
           .limit(limit)
@@ -488,7 +488,7 @@ class FTS3DB(object):
         result = session.execute(update(FTS3Operation)
                                  .where(FTS3Operation.operationID.in_(opIDs))
                                  .where(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
-                                                                                  text('INTERVAL %s HOUR' % kickDelay
+                                                                                  text('INTERVAL %d HOUR' % kickDelay
                                                                                        ))))
                                  .values({'assignment': None})
                                  )
@@ -519,7 +519,7 @@ class FTS3DB(object):
 
       ftsOps = session.query(FTS3Operation.operationID)\
           .filter(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
-                                                            text('INTERVAL %s DAY' % deleteDelay))))\
+                                                            text('INTERVAL %d DAY' % deleteDelay))))\
           .filter(FTS3Operation.status.in_(FTS3Operation.FINAL_STATES))\
           .limit(limit)
 
