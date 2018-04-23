@@ -1089,7 +1089,7 @@ class SiteDirector(AgentModule):
   def _writePilotScript(self, workingDirectory, pilotOptions,
                         proxy=None,
                         pilotExecDir='',
-                        envVariables = None):
+                        envVariables=None):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
 
      :param workingDirectory: pilot wrapper working directory
@@ -1111,10 +1111,10 @@ class SiteDirector(AgentModule):
     except BaseException as be:
       self.log.exception("Exception during pilot modules files compression", lException=be)
 
-    localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict = pilotFilesCompressedEncodedDict,
-                                    pilotOptions = pilotOptions,
-                                    pilotExecDir = pilotExecDir,
-                                    envVariables = envVariables)
+    localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict=pilotFilesCompressedEncodedDict,
+                                    pilotOptions=pilotOptions,
+                                    pilotExecDir=pilotExecDir,
+                                    envVariables=envVariables)
 
     return _writePilotWrapperFile(workingDirectory=workingDirectory, localPilot=localPilot)
 
