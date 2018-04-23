@@ -46,15 +46,18 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
      :rtype: basestring
   """
 
+  if pilotFilesCompressedEncodedDict is None:
+    pilotFilesCompressedEncodedDict = {}
+
   if envVariables is None:
     envVariables = {}
 
   mString = ""
-  if pilotFilesCompressedEncodedDict:  # are there some pilot files to unpack? then we create the unpacking string
-    for pfName, encodedPf in pilotFilesCompressedEncodedDict.iteritems():
-      mString += """
+  for pfName, encodedPf in pilotFilesCompressedEncodedDict.iteritems():  # are there some pilot files to unpack?
+                                                                         # then we create the unpacking string
+    mString += """
 try:
-  with open('%(pfName)s', "w") as fd:
+  with open('%(pfName)s', 'w') as fd:
     fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
   os.chmod('%(pfName)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 except BaseException as x:
@@ -65,9 +68,8 @@ except BaseException as x:
        'pfName': pfName}
 
   envVariablesString = ""
-  if envVariables:  # are there some environment variables to add?
-    for name, value in envVariables.iteritems():
-      envVariablesString += """
+  for name, value in envVariables.iteritems():  # are there some environment variables to add?
+    envVariablesString += """
 os.environ[\"%(name)s\"]=\"%(value)s\"
 """ % {'name': name,
        'value': value}
