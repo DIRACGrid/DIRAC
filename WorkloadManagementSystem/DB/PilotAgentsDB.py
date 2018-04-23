@@ -17,8 +17,6 @@
 
 """
 
-__RCSID__ = "$Id$"
-
 import threading
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -29,6 +27,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, 
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 DEBUG = 1
+
+__RCSID__ = "$Id$"
 
 #############################################################################
 
@@ -621,7 +621,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     """ Get summary of the pilot jobs status by CE/site in a standard structure
     """
 
-    stateNames = ['Submitted', 'Ready', 'Scheduled', 'Waiting', 'Running', 'Done', 'Aborted']
+    stateNames = ['Submitted', 'Ready', 'Scheduled', 'Waiting', 'Running', 'Done', 'Aborted', 'Failed']
     allStateNames = stateNames + ['Done_Empty', 'Aborted_Hour']
     paramNames = ['Site', 'CE'] + allStateNames
 
@@ -751,8 +751,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
             empty = resultDict[site][ce][state]
           if state == "Aborted":
             aborted = resultDict[site][ce][state]
-          if state == "Aborted_Hour":
-            aborted_hour = resultDict[site][ce][state]
           if state != "Aborted_Hour" and state != "Done_Empty":
             total += resultDict[site][ce][state]
 
@@ -802,7 +800,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         done = sumDict["Done"]
         empty = sumDict["Done_Empty"]
         aborted = sumDict["Aborted"]
-        aborted_hour = sumDict["Aborted_Hour"]
         total = sumDict["Total"]
 
         # Add pilot submission efficiency evaluation
@@ -885,7 +882,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     done = siteSumDict["Done"]
     empty = siteSumDict["Done_Empty"]
     aborted = siteSumDict["Aborted"]
-    aborted_hour = siteSumDict["Aborted_Hour"]
     total = siteSumDict["Total"]
 
     # Add pilot submission efficiency evaluation

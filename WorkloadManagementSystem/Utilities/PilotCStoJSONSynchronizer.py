@@ -19,6 +19,7 @@ from git import Repo
 
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.HTTPDISETConnection import HTTPDISETConnection
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 class PilotCStoJSONSynchronizer(object):
@@ -31,32 +32,48 @@ class PilotCStoJSONSynchronizer(object):
   As it is today, this is triggered every time there is a successful write on the CS.
   '''
 
-  def __init__(self, paramDict):
+  def __init__(self):
     ''' c'tor
 
         Just setting defaults
     '''
     self.jsonFile = 'pilot.json'  # default filename of the pilot json file
+
     # domain name of the web server used to upload the pilot json file and the pilot scripts
-    self.pilotFileServer = paramDict['pilotFileServer']
-    self.pilotRepo = paramDict['pilotRepo']  # repository of the pilot
-    self.pilotVORepo = paramDict['pilotVORepo']  # repository of the VO that can contain a pilot extension
-    self.pilotLocalRepo = 'pilotLocalRepo'  # local repository to be created
-    self.pilotVOLocalRepo = 'pilotVOLocalRepo'  # local VO repository to be created
+    self.pilotFileServer = ''
+
+    # pilot sync parameters
+    self.pilotRepo = 'https://github.com/DIRACGrid/Pilot.git'  # repository of the pilot
+    self.pilotVORepo = ''  # repository of the VO that can contain a pilot extension
+    # 'pilotLocalRepo' = 'pilotLocalRepo'  # local repository to be created
+    # 'pilotVOLocalRepo' = 'pilotVOLocalRepo'  # local VO repository to be created
     self.pilotSetup = gConfig.getValue('/DIRAC/Setup', '')
-    self.projectDir = paramDict['projectDir']
+    self.projectDir = ''
     # where the find the pilot scripts in the VO pilot repository
-    self.pilotVOScriptPath = paramDict['pilotVOScriptPath']
-    self.pilotScriptsPath = paramDict['pilotScriptsPath']  # where the find the pilot scripts in the pilot repository
+    self.pilotScriptPath = 'Pilot'  # where the find the pilot scripts in the pilot repository
+    self.pilotVOScriptPath = ''
     self.pilotVersion = ''
     self.pilotVOVersion = ''
 
   def sync(self):
     ''' Main synchronizer method.
     '''
+    ops = Operations()
+
+    self.pilotFileServer = ops.getValue("Pilot/PilotFileServer", self.pilotFileServer)
+    if not self.pilotFileServer:
+      gLogger.info("Pilot file server not defined, so won't sync")
+      return S_OK()
+
     gLogger.notice('-- Synchronizing the content of the JSON file %s with the content of the CS --' % self.jsonFile)
 
-    result = self._syncFile()
+    self.pilotRepo = ops.getValue("pilotRepo", self.pilotRepo)
+    self.pilotVORepo = ops.getValue("pilotVORepo", self.pilotVORepo)
+    self.projectDir = ops.getValue("projectDir", self.projectDir)
+    self.pilotScriptPath = ops.getValue("pilotScriptsPath", self.pilotScriptPath)
+    self.pilotVOScriptPath = ops.getValue("pilotVOScriptsPath", self.pilotVOScriptPath)
+
+    result = self._syncJSONFile()
     if not result['OK']:
       gLogger.error("Error uploading the pilot file: %s" % result['Message'])
       return result
@@ -67,7 +84,7 @@ class PilotCStoJSONSynchronizer(object):
 
     return S_OK()
 
-  def _syncFile(self):
+  def _syncJSONFile(self):
     ''' Creates the pilot dictionary from the CS, ready for encoding as JSON
     '''
     pilotDict = self._getCSDict()
@@ -229,10 +246,10 @@ class PilotCStoJSONSynchronizer(object):
 
     # Extension, if it exists
     if self.pilotVORepo:
-      if os.path.isdir(self.pilotVOLocalRepo):
-        shutil.rmtree(self.pilotVOLocalRepo)
-      os.mkdir(self.pilotVOLocalRepo)
-      repo_VO = Repo.init(self.pilotVOLocalRepo)
+      if os.path.isdir('pilotVOLocalRepo'):
+        shutil.rmtree('pilotVOLocalRepo')
+      os.mkdir('pilotVOLocalRepo')
+      repo_VO = Repo.init('pilotVOLocalRepo')
       upstream = repo_VO.create_remote('upstream', self.pilotVORepo)
       upstream.fetch()
       upstream.pull(upstream.refs[0].remote_head)
@@ -240,7 +257,7 @@ class PilotCStoJSONSynchronizer(object):
         repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotScripts')
       else:
         repo_VO.git.checkout('upstream/master', b='pilotVOScripts')
-      scriptDir = (os.path.join(self.pilotVOLocalRepo, self.projectDir, self.pilotVOScriptPath, "*.py"))
+      scriptDir = (os.path.join('pilotVOLocalRepo', self.projectDir, self.pilotVOScriptPath, "*.py"))
       for fileVO in glob.glob(scriptDir):
         result = self._upload(filename=os.path.basename(fileVO), pilotScript=fileVO)
         tarFiles.append(fileVO)
@@ -249,18 +266,18 @@ class PilotCStoJSONSynchronizer(object):
         return result
 
     # DIRAC repo
-    if os.path.isdir(self.pilotLocalRepo):
-      shutil.rmtree(self.pilotLocalRepo)
-    os.mkdir(self.pilotLocalRepo)
-    repo = Repo.init(self.pilotLocalRepo)
+    if os.path.isdir('pilotLocalRepo'):
+      shutil.rmtree('pilotLocalRepo')
+    os.mkdir('pilotLocalRepo')
+    repo = Repo.init('pilotLocalRepo')
     upstream = repo.create_remote('upstream', self.pilotRepo)
     upstream.fetch()
     upstream.pull(upstream.refs[0].remote_head)
     if repo.tags:
       if self.pilotVORepo:
-        localRepo = self.pilotVOLocalRepo
+        localRepo = 'pilotVOLocalRepo'
       else:
-        localRepo = self.pilotLocalRepo
+        localRepo = 'pilotLocalRepo'
       with open(os.path.join(localRepo, self.projectDir, 'releases.cfg'), 'r') as releasesFile:
         lines = [line.rstrip('\n') for line in releasesFile]
         lines = [s.strip() for s in lines]
@@ -270,21 +287,24 @@ class PilotCStoJSONSynchronizer(object):
     else:
       repo.git.checkout('master', b='pilotVOScripts')
     try:
-      scriptDir = os.path.join(self.pilotLocalRepo, self.pilotScriptsPath, "*.py")
+      scriptDir = os.path.join('pilotLocalRepo', self.pilotScriptPath, "*.py")
       for filename in glob.glob(scriptDir):
         result = self._upload(filename=os.path.basename(filename),
                               pilotScript=filename)
         tarFiles.append(filename)
-      if not os.path.isfile(os.path.join(self.pilotLocalRepo,
-                                         self.pilotScriptsPath,
+      if not os.path.isfile(os.path.join('pilotLocalRepo',
+                                         self.pilotScriptPath,
                                          "dirac-install.py")):
         result = self._upload(filename='dirac-install.py',
-                              pilotScript=os.path.join(self.pilotLocalRepo, "Core/scripts/dirac-install.py"))
+                              pilotScript=os.path.join('pilotLocalRepo', "Core/scripts/dirac-install.py"))
         tarFiles.append('dirac-install.py')
 
       with tarfile.TarFile(name='pilot.tar', mode='w') as tf:
+        pwd = os.getcwd()
         for ptf in tarFiles:
-          tf.add(ptf)
+          shutil.copyfile(ptf, os.path.join(pwd, os.path.basename(ptf)))
+          tf.add(os.path.basename(ptf), recursive=False)
+
       result = self._upload(filename='pilot.tar',
                             pilotScript='pilot.tar')
 

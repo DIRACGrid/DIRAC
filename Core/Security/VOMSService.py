@@ -1,178 +1,133 @@
-""" VOMSService class encapsulated connection to the VOMS service for a given VO
+""" VOMSService class encapsulates connection to the VOMS service for a given VO
 """
 
 __RCSID__ = "$Id$"
 
+import requests
+import os
+
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.SOAPFactory import getSOAPClient
+from DIRAC.Core.Security.Locations import getProxyLocation
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
-def _processListReturn( soapReturn ):
-  data = []
-  if soapReturn:
-    for entry in soapReturn:
-      data.append( str( entry ) )
-  return data
 
-def _processListDictReturn( soapReturn ):
-  data = []
-  if soapReturn:
-    for entry in soapReturn:
-      entryData = {}
-      for info in entry:
+class VOMSService(object):
 
-        try:
-          entryData[ info[0] ] = str( info[1] )
-        except:
-          pass
-      data.append( entryData )
-  return data
-
-class VOMSService( object ):
-
-  def __init__( self, vo = None, adminUrl = False, attributesUrl = False, certificatesUrl = False ):
+  def __init__(self, vo=None):
 
     if vo is None:
       vo = getVO()
     if not vo:
-      raise Exception( 'No VO name given' )
+      raise Exception('No VO name given')
 
     self.vo = vo
-    self.vomsVO = getVOOption( vo, "VOMSName" )
+    self.vomsVO = getVOOption(vo, "VOMSName")
     if not self.vomsVO:
-      raise Exception( "Can not get VOMS name for VO %s" % vo )
-    self.__soapClients = {}
-    for key, url in ( ( 'Admin', adminUrl ), ( 'Attributes', attributesUrl ), ( 'Certificates', certificatesUrl ) ):
-      urls = []
-      if not url:
-        url = gConfig.getValue( "/Registry/VO/%s/VOMSServices/VOMS%s" % ( self.vo, key ), "" )
-      if not url:
-        result = gConfig.getSections( '/Registry/VO/%s/VOMSServers' % self.vo )
-        if result['OK']:
-          vomsServers = result['Value']
-          for server in vomsServers:
-            urls.append( 'https://%s:8443/voms/%s/services/VOMS%s' % ( server, self.vomsVO, key ) )
-      else:
-        urls = [url]
+      raise Exception("Can not get VOMS name for VO %s" % vo)
 
-      gotURL = False
-      for url in urls:
-        retries = 3
-        while retries:
-          retries -= 1
-          try:
-            client = getSOAPClient( "%s?wsdl" % url )
-            client.set_options(headers={"X-VOMS-CSRF-GUARD":"1"})
-            self.__soapClients[ key ] = client
-            gotURL = True
-            break
-          except Exception:
-            pass
-        if gotURL:
-          break
-      if not gotURL:
-        raise Exception( 'Could not connect to the %s service for VO %s' % ( key, self.vo ) )
+    self.urls = []
+    result = gConfig.getSections('/Registry/VO/%s/VOMSServers' % self.vo)
+    if result['OK']:
+      vomsServers = result['Value']
+      for server in vomsServers:
+        self.urls.append('https://%s:8443/voms/%s/apiv2/users' % (server, self.vomsVO))
 
-  def admListMembers( self ):
-    try:
-      result = self.__soapClients[ 'Admin' ].service.listMembers()
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function listMembers: %s" % e )
-    if 'listMembersReturn' in dir( result ):
-      return S_OK( _processListDictReturn( result.listMembersReturn ) )
-    return S_OK( _processListDictReturn( result ) )
+    self.userDict = None
 
+  def admGetVOName(self):
+    """ Get VOMS VO name, kept for backward compatibility
 
-  def admListCertificates( self, dn, ca ):
-    try:
-      UserID = self.__soapClients[ 'Certificates' ].service.getUserIdFromDn( dn, ca )
-      result = self.__soapClients[ 'Certificates' ].service.getCertificates( UserID )
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function getCertificates: %s" % e )
-    if 'listCertificatesReturn' in dir( result ):
-      return S_OK( _processListDictReturn( result.listCertificatesReturn ) )
-    return S_OK( _processListDictReturn( result ) )
+    :return: S_OK with Value: VOMS VO name
+    """
+    return S_OK(self.vo)
 
-  def admListRoles( self ):
-    try:
-      result = self.__soapClients[ 'Admin' ].service.listRoles()
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function listRoles: %s" % e )
-    if 'listRolesReturn' in dir( result ):
-      return S_OK( _processListReturn( result.listRolesReturn ) )
-    return S_OK( _processListReturn( result ) )
+  def attGetUserNickname(self, dn, _ca=None):
+    """ Get user nickname for a given DN if any
+    :param str dn: user DN
+    :param str _ca: CA, kept for backward compatibility
+    :return:  S_OK with Value: nickname
+    """
 
+    if self.userDict is None:
+      result = self.getUsers()
+      if not result['OK']:
+        return result
 
-  def admListUsersWithRole( self, group, role ):
-    try:
-      result = self.__soapClients[ 'Admin' ].service.listUsersWithRole( group, role )
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function listUsersWithRole: %s" % e )
-    if 'listUsersWithRoleReturn' in dir( result ):
-      return S_OK( _processListDictReturn( result.listUsersWithRoleReturn ) )
-    return S_OK( _processListDictReturn( result ) )
+    uDict = self.userDict.get(dn)
+    if not uDict:
+      return S_ERROR(DErrno.EVOMS, "No nickname defined")
+    nickname = uDict.get('nickname')
+    if not nickname:
+      return S_ERROR(DErrno.EVOMS, "No nickname defined")
+    return S_OK(nickname)
 
-  def admGetVOName( self ):
-    try:
-      result = self.__soapClients[ 'Admin' ].service.getVOName()
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function getVOName: %s" % e )
-    return S_OK( result )
-
-  def attGetUserNickname( self, dn, ca ):
-    user = self.__soapClients[ 'Attributes' ].factory.create( 'ns0:User' )
-    user.DN = dn
-    user.CA = ca
-    try:
-      result = self.__soapClients[ 'Attributes' ].service.listUserAttributes( user )
-    except Exception as e:
-      return S_ERROR( DErrno.EVOMS, "Error in function getUserNickname: %s" % e )
-
-    if result is not None:
-      if 'listUserAttributesReturn' in dir( result ):
-        return S_OK( str( result.listUserAttributesReturn[0].value ) )
-
-      return S_OK( str( result[0].value ) )
-    else:
-      return S_ERROR( DErrno.EVOMS )
-
-  def getUsers( self ):
+  def getUsers(self):
     """ Get all the users of the VOMS VO with their detailed information
 
     :return: user dictionary keyed by the user DN
     """
 
-    vomsUsers = {}
+    userProxy = getProxyLocation()
+    caPath = os.environ['X509_CERT_DIR']
+    rawUserList = []
+    result = None
+    for url in self.urls:
+      rawUserList = []
+      startIndex = 0
+      result = None
+      error = None
+      urlDone = False
+      while not urlDone:
+        try:
+          result = requests.get(url,
+                                headers={"X-VOMS-CSRF-GUARD": "y"},
+                                cert=userProxy,
+                                verify=caPath,
+                                params={"startIndex": str(startIndex),
+                                        "pageSize": "100"})
+        except requests.ConnectionError as exc:
+          error = "%s:%s" % (url, repr(exc))
+          urlDone = True
+          continue
 
-    result = self.admListMembers()
-    if not result['OK']:
-      return result
-    members = result['Value']
+        if result.status_code != 200:
+          error = "Failed to contact the VOMS server: %s" % result.text
+          urlDone = True
+          continue
 
-    result = self.admListRoles()
-    if not result['OK']:
-      return result
-    roles = result['Value']
+        userList = result.json()['result']
+        rawUserList.extend(userList)
+        if len(userList) < 100:
+          urlDone = True
+        startIndex += 100
 
-    roleMembers = {}
-    for role in roles:
-      result = self.admListUsersWithRole( '/%s' % self.vomsVO, role )
-      if not result['OK']:
-        return result
-      roleMembers[role] = result['Value']
+      # This URL did not work, try another one
+      if error:
+        continue
+      else:
+        break
 
-    for member in members:
-      member['Roles'] = []
-      if "DN" in member:
-        DN = member.pop( 'DN' )
-        for role in roles:
-          for rm in roleMembers[role]:
-            if DN == rm['DN']:
-              member['Roles'].append( role )
+    if error:
+      return S_ERROR(DErrno.ENOAUTH, "Failed to contact the VOMS server: %s" % error)
 
-        vomsUsers[ DN ] = member
+    # We have got the user info, reformat it
+    resultDict = {}
+    for user in rawUserList:
+      for cert in user['certificates']:
+        dn = cert['subjectString']
+        resultDict[dn] = user
+        resultDict[dn]['CA'] = cert['issuerString']
+        resultDict[dn]['certSuspended'] = cert['suspended']
+        resultDict[dn]['certSuspensionReason'] = cert['suspensionReason']
+        resultDict[dn]['mail'] = user['emailAddress']
+        resultDict[dn]['Roles'] = user['fqans']
+        attributes = user.get('attributes')
+        if attributes:
+          for attribute in user.get('attributes', []):
+            if attribute.get('name') == 'nickname':
+              resultDict[dn]['nickname'] = attribute.get('value')
 
-    return S_OK( vomsUsers )
-
+    self.userDict = dict(resultDict)
+    return S_OK(resultDict)

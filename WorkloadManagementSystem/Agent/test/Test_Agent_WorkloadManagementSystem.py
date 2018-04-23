@@ -75,10 +75,10 @@ class SiteDirectorBaseSuccess(AgentsTestCase):
                                                   'Site': 'LCG.CERN.cern',
                                                   'SubmitPool': ''}}}
     res = sd._getPilotOptions('aQueue', 10)
-    self.assertEqual(res, [['-S TestSetup', '-V 123', '-l 123', '-r 1,2,3', '-g 123',
-                            '-o /Security/ProxyToken=token', '-M 1', '-C T,e,s,t,S,e,t,u,p',
-                            '-e 1,2,3', '-N aCE', '-Q aQueue', '-n LCG.CERN.cern'],
-                           1])
+    self.assertEqual(res[0], ['-S TestSetup', '-V 123', '-l 123', '-r 1,2,3', '-g 123',
+                              '-o /Security/ProxyToken=token', '-M 1', '-C T,e,s,t,S,e,t,u,p',
+                              '-e 1,2,3', '-N aCE', '-Q aQueue', '-n LCG.CERN.cern'])
+    self.assertEqual(res[1], 1)
 
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
   @patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
@@ -145,8 +145,10 @@ class SiteDirectorBaseSuccess(AgentsTestCase):
     sd.log.setLevel('DEBUG')
     sd.rpcMatcher = MagicMock()
     sd.rssClient = MagicMock()
+    sd.workingDirectory = ''
     sd.queueDict = {'aQueue': {'Site': 'LCG.CERN.cern',
                                'CEName': 'aCE',
+                               'CEType': 'SSH',
                                'QueueName': 'aQueue',
                                'ParametersDict': {'CPUTime': 12345,
                                                   'Community': 'lhcb',
@@ -154,8 +156,10 @@ class SiteDirectorBaseSuccess(AgentsTestCase):
                                                   'Setup': 'LHCb-Production',
                                                   'Site': 'LCG.CERN.cern',
                                                   'SubmitPool': ''}}}
+    sd.queueSlots = {'aQueue': {'AvailableSlots': 10}}
     res = sd._submitPilotsToQueue(1, MagicMock(), 'aQueue')
-    self.assertFalse(res['OK'])
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'][0], 0)
 
 #############################################################################
 # Test Suite run

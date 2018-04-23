@@ -5,9 +5,14 @@
 """
 
 # pylint: disable=invalid-name,wrong-import-position
+import csv
+import filecmp
 
+import os
 import unittest
+import tempfile
 import sys
+
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -62,7 +67,11 @@ class UserGroupCase(DFCTestCase):
     self.assertEqual(result['OK'], expectedRes, "AddUser failed when adding new user: %s" % result)
     # Add an existing user
     result = self.dfc.addUser(testUser)
-    self.assertEqual(result['OK'], expectedRes, "AddUser failed when adding existing user: %s" % result)
+    self.assertEqual(
+        result['OK'],
+        expectedRes,
+        "AddUser failed when adding existing user: %s" %
+        result)
     # Fetch the list of user
     result = self.dfc.getUsers()
     self.assertEqual(result['OK'], expectedRes, "getUsers failed: %s" % result)
@@ -95,7 +104,11 @@ class UserGroupCase(DFCTestCase):
     self.assertEqual(result['OK'], expectedRes, "AddGroup failed when adding new user: %s" % result)
 
     result = self.dfc.addGroup(testGroup)
-    self.assertEqual(result['OK'], expectedRes, "AddGroup failed when adding existing user: %s" % result)
+    self.assertEqual(
+        result['OK'],
+        expectedRes,
+        "AddGroup failed when adding existing user: %s" %
+        result)
 
     result = self.dfc.getGroups()
     self.assertEqual(result['OK'], expectedRes, "getGroups failed: %s" % result)
@@ -184,7 +197,10 @@ class FileCase(DFCTestCase):
                                                 'Size': 123,
                                                 'GUID': '1000',
                                                 'Checksum': '0'}})
-    self.assertTrue(result["OK"], "addFile failed when adding non existing file with existing GUID %s" % result)
+    self.assertTrue(
+        result["OK"],
+        "addFile failed when adding non existing file with existing GUID %s" %
+        result)
     self.assertTrue(
         testFile +
         '2' in result["Value"]["Failed"],
@@ -194,7 +210,10 @@ class FileCase(DFCTestCase):
     ##################################################################################
     # Setting existing status of existing file
     result = self.dfc.setFileStatus({testFile: "AprioriGood"})
-    self.assertTrue(result["OK"], "setFileStatus failed when setting existing status of existing file %s" % result)
+    self.assertTrue(
+        result["OK"],
+        "setFileStatus failed when setting existing status of existing file %s" %
+        result)
     self.assertTrue(
         testFile in result["Value"]["Successful"],
         "setFileStatus failed: %s should be in successful (%s)" %
@@ -203,12 +222,21 @@ class FileCase(DFCTestCase):
 
     # Setting unexisting status of existing file
     result = self.dfc.setFileStatus({testFile: "Happy"})
-    self.assertTrue(result["OK"], "setFileStatus failed when setting un-existing status of existing file %s" % result)
-    self.assertTrue(testFile in result["Value"]["Failed"], "setFileStatus should have failed %s" % result)
+    self.assertTrue(
+        result["OK"],
+        "setFileStatus failed when setting un-existing status of existing file %s" %
+        result)
+    self.assertTrue(
+        testFile in result["Value"]["Failed"],
+        "setFileStatus should have failed %s" %
+        result)
 
     # Setting existing status of unexisting file
     result = self.dfc.setFileStatus({nonExistingFile: "Trash"})
-    self.assertTrue(result["OK"], "setFileStatus failed when setting existing status of non-existing file %s" % result)
+    self.assertTrue(
+        result["OK"],
+        "setFileStatus failed when setting existing status of non-existing file %s" %
+        result)
     self.assertTrue(
         nonExistingFile in result["Value"]["Failed"],
         "setFileStatus failed: %s should be in failed (%s)" %
@@ -301,7 +329,11 @@ class FileCase(DFCTestCase):
         "getFileSize : %s should be in Successful %s" %
         (testFile,
          result))
-    self.assertEqual(result["Value"]["Successful"][testFile], 123, "getFileSize got incorrect file size %s" % result)
+    self.assertEqual(
+        result["Value"]["Successful"][testFile],
+        123,
+        "getFileSize got incorrect file size %s" %
+        result)
     self.assertTrue(
         nonExistingFile in result["Value"]["Failed"],
         "getFileSize : %s should be in Failed %s" %
@@ -334,6 +366,21 @@ class FileCase(DFCTestCase):
         "getFileMetadata : %s should be in Failed %s" %
         (nonExistingFile,
          result))
+
+    # Here we write the output to a file
+    # So we dump the expected content in a file
+    _, expectedDumpFn = tempfile.mkstemp()
+
+    with open(expectedDumpFn, 'w') as expectedDumpFd:
+      csvWriter = csv.writer(expectedDumpFd, delimiter='|')
+      csvWriter.writerow([testFile, '0', 123])
+
+    actualDumpFn = expectedDumpFn + 'real'
+    result = self.dfc.getSEDump('testSE', actualDumpFn)
+    self.assertTrue(result['OK'], "Error when getting SE dump %s" % result)
+    self.assertTrue(filecmp.cmp(expectedDumpFn, actualDumpFn), "Did not get the expected SE Dump")
+    os.remove(expectedDumpFn)
+    os.remove(actualDumpFn)
 
     result = self.dfc.removeFile([testFile, nonExistingFile])
     self.assertTrue(result["OK"], "removeFile failed: %s" % result)
@@ -371,16 +418,25 @@ class ReplicaCase(DFCTestCase):
     # Adding new replica
     result = self.dfc.addReplica({testFile: {"PFN": "testFilePFN", "SE": "otherSE"}})
     self.assertTrue(result['OK'], "addReplica failed when adding new Replica %s" % result)
-    self.assertTrue(testFile in result['Value']["Successful"], "addReplica failed when adding new Replica %s" % result)
+    self.assertTrue(
+        testFile in result['Value']["Successful"],
+        "addReplica failed when adding new Replica %s" %
+        result)
 
     # Adding the same replica
     result = self.dfc.addReplica({testFile: {"PFN": "testFilePFN", "SE": "otherSE"}})
     self.assertTrue(result['OK'], "addReplica failed when adding new Replica %s" % result)
-    self.assertTrue(testFile in result['Value']["Successful"], "addReplica failed when adding new Replica %s" % result)
+    self.assertTrue(
+        testFile in result['Value']["Successful"],
+        "addReplica failed when adding new Replica %s" %
+        result)
 
     # Adding replica of a non existing file
     result = self.dfc.addReplica({nonExistingFile: {"PFN": "IdontexistPFN", "SE": "otherSE"}})
-    self.assertTrue(result['OK'], "addReplica failed when adding Replica to non existing Replica %s" % result)
+    self.assertTrue(
+        result['OK'],
+        "addReplica failed when adding Replica to non existing Replica %s" %
+        result)
     self.assertTrue(
         nonExistingFile in result['Value']["Failed"],
         "addReplica for non existing file should go in Failed  %s" %
@@ -423,7 +479,8 @@ class ReplicaCase(DFCTestCase):
          result))
 
     # Setting existing status of non-existing File
-    result = self.dfc.setReplicaStatus({nonExistingFile: {"Status": "Trash", "SE": "nonExistingSe"}})
+    result = self.dfc.setReplicaStatus(
+        {nonExistingFile: {"Status": "Trash", "SE": "nonExistingSe"}})
     self.assertTrue(
         result["OK"],
         "setReplicaStatus failed when setting existing status of non-existing File %s" %
@@ -460,7 +517,10 @@ class ReplicaCase(DFCTestCase):
 
     # Getting status of non-existing File but not visible
     result = self.dfc.getReplicaStatus({nonExistingFile: "testSE"})
-    self.assertTrue(result["OK"], "getReplicaStatus failed when getting status of non existing File %s" % result)
+    self.assertTrue(
+        result["OK"],
+        "getReplicaStatus failed when getting status of non existing File %s" %
+        result)
     self.assertTrue(
         nonExistingFile in result["Value"]["Failed"],
         "getReplicaStatus failed: %s should be in failed (%s)" %
@@ -528,7 +588,10 @@ class ReplicaCase(DFCTestCase):
 
     # removing non existing replica of existing File
     result = self.dfc.removeReplica({testFile: {"SE": "nonExistingSe2"}})
-    self.assertTrue(result['OK'], "removeReplica failed when removing non existing Replica %s" % result)
+    self.assertTrue(
+        result['OK'],
+        "removeReplica failed when removing non existing Replica %s" %
+        result)
     self.assertTrue(
         testFile in result['Value']["Successful"],
         "removeReplica failed when removing new Replica %s" %
@@ -536,7 +599,10 @@ class ReplicaCase(DFCTestCase):
 
     # removing non existing replica of non existing file
     result = self.dfc.removeReplica({nonExistingFile: {"SE": "nonExistingSe3"}})
-    self.assertTrue(result['OK'], "removeReplica failed when removing replica of non existing File %s" % result)
+    self.assertTrue(
+        result['OK'],
+        "removeReplica failed when removing replica of non existing File %s" %
+        result)
     self.assertTrue(
         nonExistingFile in result['Value']["Successful"],
         "removeReplica of non existing file, %s should be in Successful %s" %

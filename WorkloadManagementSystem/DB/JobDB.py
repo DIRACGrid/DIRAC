@@ -138,15 +138,15 @@ class JobDB( DB ):
         jobDict = {}
         jobDict[ 'JobID' ] = jobID
         attrValues = retValues[1:]
-        for i in range( len( attr_tmp_list ) ):
+        for i in xrange(len(attr_tmp_list)):
           try:
             jobDict[attr_tmp_list[i]] = attrValues[i].tostring()
-          except Exception:
+          except BaseException:
             jobDict[attr_tmp_list[i]] = str( attrValues[i] )
         retDict[int( jobID )] = jobDict
       return S_OK( retDict )
-    except Exception as x:
-      return S_ERROR( 'JobDB.getAttributesForJobList: Failed\n%s' % str( x ) )
+    except BaseException as x:
+      return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(x))
 
 
 #############################################################################
@@ -181,7 +181,7 @@ class JobDB( DB ):
         localIDs = [int( localID ) for localID in localIDs]
       else:
         localIDs = [int( localIDs )]
-    except:
+    except BaseException:
       return S_ERROR( "localIDs must be integers" )
     now = datetime.datetime.utcnow()
     if until:
@@ -190,7 +190,7 @@ class JobDB( DB ):
       else:
         try:
           until = datetime.datetime.strptime( until, '%Y-%m-%d' )
-        except:
+        except BaseException:
           return S_ERROR( "Error in format for 'until', expected '%Y-%m-%d'" )
     if not date:
       until = now
@@ -201,7 +201,7 @@ class JobDB( DB ):
         try:
           since = datetime.datetime.strptime( date, dFormat )
           break
-        except:
+        except BaseException:
           exactTime = True
       if not since:
         return S_ERROR( 'Error in date format' )
@@ -292,7 +292,7 @@ class JobDB( DB ):
           for name, value in result['Value']:
             try:
               resultDict[name] = value.tostring()
-            except Exception:
+            except BaseException:
               resultDict[name] = value
 
         return S_OK( resultDict )
@@ -307,7 +307,7 @@ class JobDB( DB ):
       for name, value in result['Value']:
         try:
           resultDict[name] = value.tostring()
-        except Exception:
+        except BaseException:
           resultDict[name] = value
 
       return S_OK(resultDict)
@@ -347,11 +347,11 @@ class JobDB( DB ):
     if result['OK']:
       if result['Value']:
         for name, value, counter in result['Value']:
-          if not resultDict.has_key( counter ):
+          if counter not in resultDict:
             resultDict[counter] = {}
           try:
             resultDict[counter][name] = value.tostring()
-          except Exception:
+          except BaseException:
             resultDict[counter][name] = value
 
       return S_OK( resultDict )
@@ -395,17 +395,17 @@ class JobDB( DB ):
     if not res['OK']:
       return res
 
-    if len( res['Value'] ) == 0:
+    if not res['Value']:
       return S_OK ( {} )
 
     values = res['Value'][0]
 
     attributes = {}
     if attrList:
-      for i in range( len( attrList ) ):
+      for i in xrange(len(attrList)):
         attributes[attrList[i]] = str( values[i] )
     else:
-      for i in range( len( self.jobAttributeNames ) ):
+      for i in xrange(len(self.jobAttributeNames)):
         attributes[self.jobAttributeNames[i]] = str( values[i] )
 
     return S_OK( attributes )
@@ -476,7 +476,7 @@ class JobDB( DB ):
         for name, value in result['Value']:
           try:
             resultDict[name] = value.tostring()
-          except Exception:
+          except BaseException:
             resultDict[name] = value
 
       return S_OK( resultDict )
@@ -594,7 +594,7 @@ class JobDB( DB ):
     if not res['OK']:
       return res
 
-    if not len( res['Value'] ):
+    if not res['Value']:
       return S_OK( [] )
     return S_OK( [ self._to_value( i ) for i in  res['Value'] ] )
 
@@ -673,7 +673,7 @@ class JobDB( DB ):
         return S_ERROR(EWMSSUBM, 'Request to set non-existing job attribute')
 
     attr = []
-    for i in range( len( attrNames ) ):
+    for i in xrange(len(attrNames)):
       ret = self._escapeString( attrValues[i] )
       if not ret['OK']:
         return ret
@@ -681,7 +681,7 @@ class JobDB( DB ):
       attr.append( "%s=%s" % ( attrNames[i], value ) )
     if update:
       attr.append( "LastUpdateTime=UTC_TIMESTAMP()" )
-    if len( attr ) == 0:
+    if not attr:
       return S_ERROR( 'JobDB.setAttributes: Nothing to do' )
 
     cmd = 'UPDATE Jobs SET %s WHERE JobID in ( %s )' % (', '.join(attr), ', '.join(jIDList))
@@ -927,7 +927,7 @@ class JobDB( DB ):
     result = self._query( req )
     updateFlag = False
     if result['OK']:
-      if len( result['Value'] ) > 0:
+      if result['Value']:
         updateFlag = True
 
     if jdl:
@@ -1579,8 +1579,7 @@ class JobDB( DB ):
       result = self._query( cmd )
       if result['Value']:
         return S_OK( result['Value'][0][0] )
-      else:
-        return S_ERROR( "Unknown site %s" % sites )
+      return S_ERROR("Unknown site %s" % sites)
 
     else:
       cmd = "SELECT Site,Status FROM SiteMask"
@@ -1655,7 +1654,7 @@ class JobDB( DB ):
     req = "SELECT Status FROM SiteMask WHERE Site=%s" % site
     result = self._query( req )
     if result['OK']:
-      if len( result['Value'] ) > 0:
+      if result['Value']:
         current_status = result['Value'][0][0]
         if current_status == status:
           return S_OK()
@@ -1749,7 +1748,7 @@ class JobDB( DB ):
 
     for row in result['Value']:
       site, status, utime, author, comment = row
-      if not resultDict.has_key( site ):
+      if site not in resultDict:
         resultDict[site] = []
       resultDict[site].append( ( status, str( utime ), author, comment ) )
 
@@ -1823,7 +1822,7 @@ class JobDB( DB ):
       sortOrder = sortList[0][1]
 
     last_update = None
-    if selectDict.has_key( 'LastUpdateTime' ):
+    if 'LastUpdateTime' in selectDict:
       last_update = selectDict['LastUpdateTime']
       del selectDict['LastUpdateTime']
 
@@ -1856,7 +1855,7 @@ class JobDB( DB ):
       for attDict, count in result['Value']:
         siteFullName = attDict['Site']
         status = attDict['Status']
-        if not resultDict.has_key( siteFullName ):
+        if siteFullName not in resultDict:
           resultDict[siteFullName] = {}
           for state in JOB_STATES:
             resultDict[siteFullName][state] = 0
@@ -1865,7 +1864,7 @@ class JobDB( DB ):
     if resultDay['OK']:
       for attDict, count in resultDay['Value']:
         siteFullName = attDict['Site']
-        if not resultDict.has_key( siteFullName ):
+        if siteFullName not in resultDict:
           resultDict[siteFullName] = {}
           for state in JOB_STATES:
             resultDict[siteFullName][state] = 0
@@ -1887,12 +1886,12 @@ class JobDB( DB ):
       if site in siteT1List:
         tier = 'Tier-1'
 
-      if not countryCounts.has_key( country ):
+      if country not in countryCounts:
         countryCounts[country] = {}
         for state in JOB_STATES:
           countryCounts[country][state] = 0
       rList = [siteFullName, grid, country, tier]
-      if siteMask.has_key( siteFullName ):
+      if siteFullName in siteMask:
         rList.append( siteMask[siteFullName] )
       else:
         rList.append( 'NoMask' )
@@ -2024,7 +2023,7 @@ class JobDB( DB ):
     if not res['OK']:
       return res
 
-    if len( res['Value'] ) == 0:
+    if not res['Value']:
       return S_OK ( [] )
 
     result = []

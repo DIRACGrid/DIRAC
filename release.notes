@@ -1,4 +1,4 @@
-[v6r20-pre19]
+[v6r20-pre22]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -20,6 +20,8 @@ NEW: new command name for voms proxy
 FIX: dirac-install default behaviour preserved even with diracos options
 New: Add additional check in MJF utility to look for a shutdown file located at '/var/run/shutdown_time'
 FIX: The hardcoded rule was not taken into account when the query was coming from the web server
+CHANGE: VOMSService - reimplemented using VOMS REST interface
+FIX: MJF utility won't theow exceptions when MJF is not fully deployed at a site
 
 *Framework
 NEW: WebAppCompiler methods is implemented, which is used to compile the web framework
@@ -35,6 +37,9 @@ FIX: fixes in the query results interpretation
 
 *Configuration
 FIX: ConfigurationHandler, PilotCStoJSONSynchronizer - fixes for enabling pilotCStoJSONSynchronizer, and doc
+NEW: dirac-admin-voms-sync - command line for VOMS to CS synchronization
+NEW: VOMS2CSSynchronizer - new class encapsulating VOMS to CS synchronization
+CHANGE: VOMS2CSAgent - reimplemented to use VOMS2CSSynchronizer
 
 *WorkloadManagementSystem
 NEW: StopSigRegex, StopSigStartSeconds, StopSigFinishSeconds, StopSigNumber added to JDL, which cause Watchdog to send a signal StopSigNumber to payload processes matching StopSigRegex when there are less than StopSigFinishSeconds of wall clock remaining according to MJF.
@@ -53,6 +58,11 @@ CHANGE: Removed gLite pilot related WMS code
 FIX: always initialize gPilotAgentsDB object
 FIX: JobManager - Added some debug message when deleting jobs
 FIX: Job.py - fixing finding XML file
+NEW: SiteDirector - added flag for sending pilot3 files
+CHANGE: SiteDirector - changed the way we create the pilotWrapper (better extensibility)
+
+*Workflow
+CHANGE: Script.py: created _exitWithError method for extension possibilities
 
 *TS
 FIX: TranformationCleaningAgent - just few simplifications 
@@ -63,7 +73,8 @@ NEW: FTS3Utilities - use correct FTS Server Selection Policy
 NEW: StorageElement service - getFreeDiskSpace() and getTotalDiskSpace() take into account 
      MAX_STORAGE_SIZE parameter value
 CHANGE: Adding vo name argument for StorageElement   
-CHANGE: Fixing rss to fetch fts3 server status  
+CHANGE: Fixing rss to fetch fts3 server status
+NEW: Add a feature to the DFC LHCbManager to dump the content of an SE as a CSV file
 
 *RMS
 FIX: Really exit the RequestExecutingAgent when the result queue is buggy
@@ -78,6 +89,7 @@ FIX: fixed documentation of how to develop commands
 *Resources
 NEW: New SingularityComputingElement to submit jobs to a Singularity container
 NEW: Added StorageElement.getOccupancy() method for DIP and GFAL2_SMR2 SE types
+CHANGE: enable Stomp logging only if DIRAC_DEBUG_STOMP environment variable is set to any value
 
 *Docs
 CHANGE: WebApp release procedure
@@ -86,6 +98,22 @@ FIX: Drop some old stuff, add link for FTS3 page
 *Tests
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
+
+[v6r19p20]
+
+*StorageManagement
+FIX: StorageManagementDB - fixed buggy group by with MySQL 5.7
+
+[v6r19p19]
+
+*Configuration
+
+NEW: BDII2CSAgent - new options: GLUE2URLs, if set this is queried in addition to the other BDII;
+    GLUE2Only to turn off looking on the old schema, if true only the main BDII URL is queried;
+    Host to set the BDII host to search
+
+NEW: dirac-admin-add-resources new option G/glue2 , enable looking at GLUE2 Schema, 
+     H/host to set the host URL to something else
 
 [v6r19p18]
 
