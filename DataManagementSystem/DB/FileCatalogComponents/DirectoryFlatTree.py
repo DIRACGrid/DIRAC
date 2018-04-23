@@ -1,14 +1,17 @@
-__RCSID__ = "$Id$"
+""" DIRAC FileCatalog component representing a flat directory tree
+"""
 
-""" DIRAC FileCatalog component representing a flat directory tree """
+# pylint: disable=protected-access
+
+__RCSID__ = "$Id$"
 
 import time
 import os
-import types
 import stat
+
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 from DIRAC.Core.Utilities.List import stringListToString, intListToString
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 
 
 class DirectoryFlatTree(DirectoryTreeBase):
@@ -26,7 +29,6 @@ class DirectoryFlatTree(DirectoryTreeBase):
 
   def _findDirectories(self, paths, metadata=[]):
     """ Find file ID if it exists for the given list of LFNs """
-    startTime = time.time()
     successful = {}
     failed = {}
     req = "SELECT DirName,DirID"
@@ -36,11 +38,11 @@ class DirectoryFlatTree(DirectoryTreeBase):
     res = self.db._query(req)
     if not res['OK']:
       return res
-    for tuple in res['Value']:
-      dirName = tuple[0]
-      dirID = tuple[1]
+    for tup in res['Value']:
+      dirName = tup[0]
+      dirID = tup[1]
       metaDict = {'DirID': dirID}
-      metaDict.update(dict(zip(metadata, tuple[2:])))
+      metaDict.update(dict(zip(metadata, tup[2:])))
       successful[dirName] = metaDict
     for path in paths:
       if path not in successful:
@@ -56,9 +58,9 @@ class DirectoryFlatTree(DirectoryTreeBase):
       return res
     if not res['Value']:
       return S_OK(dirs)
-    for tuple in res['Value']:
-      dirID = tuple[0]
-      dirs[dirID] = dict(zip(metadata, tuple[1:]))
+    for tup in res['Value']:
+      dirID = tup[0]
+      dirs[dirID] = dict(zip(metadata, tup[1:]))
     return S_OK(dirs)
 
   def getPathPermissions(self, paths, credDict):
@@ -110,7 +112,9 @@ class DirectoryFlatTree(DirectoryTreeBase):
     return self.db._update(req)
 
   def makeDirectory(self, path, credDict, status=0):
-    """Create a new directory. The return value is the dictionary containing all the parameters of the newly created directory """
+    """Create a new directory.
+       The return value is the dictionary containing all the parameters of the newly created directory
+    """
 
     if path[0] != '/':
       return S_ERROR('Not an absolute path')
@@ -161,8 +165,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
       return result
     if not result['Value']:
       return S_OK({"Exists": False})
-    else:
-      return S_OK({"Exists": True, "DirID": result['Value']})
+    return S_OK({"Exists": True, "DirID": result['Value']})
 
   def getParent(self, path):
     """ Get the parent ID of the given directory """
@@ -218,7 +221,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
 
   def getChildren(self, path):
     """ Get child directory IDs for the given directory  """
-    if type(path) in types.StringTypes:
+    if isinstance(path, basestring):
       result = self.findDir(path)
       if not result['OK']:
         return result
