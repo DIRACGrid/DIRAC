@@ -1,4 +1,4 @@
-[v6r20-pre21]
+[v6r20-pre22]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -98,6 +98,11 @@ FIX: Drop some old stuff, add link for FTS3 page
 *Tests
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
+
+[v6r19p20]
+
+*StorageManagement
+FIX: StorageManagementDB - fixed buggy group by with MySQL 5.7
 
 [v6r19p19]
 
