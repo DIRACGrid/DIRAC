@@ -77,10 +77,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
       return res
 
     dirID = result['Value']
-    dirID = self.db._escapeString(dirID)
-    if not dirID['OK']:
-      return dirID
-    dirID = dirID['Value']
     req = "DELETE FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
     result = self.db._update(req)
     result['DirID'] = dirID
@@ -90,10 +86,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """ Get the enumerated path of the given directory
     """
     epathString = ','.join(['LPATH%d' % (i + 1) for i in range(MAX_LEVELS)])
-    dirID = self.db._escapeString(dirID)
-    if not dirID['OK']:
-      return dirID
-    dirID = dirID['Value']
     req = 'SELECT LEVEL,%s FROM FC_DirectoryLevelTree WHERE DirID=%d' % (epathString, dirID)
     result = self.db._query(req, connection)
     if not result['OK']:
@@ -183,12 +175,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
       #       result = self.db._update(req,conn)
       #       result = self.db._query("UNLOCK TABLES;",conn)
       lPath = "LPATH%d" % (level)
-
-      parentDirID = self.db._escapeString(parentDirID)
-      if not parentDirID['OK']:
-        return parentDirID
-      parentDirID = parentDirID['Value']
-
       req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d FOR UPDATE; " % (lPath, parentDirID)
       resultLock = self.db._query("START TRANSACTION; ", conn)
       result = self.db._query(req, conn)
@@ -235,11 +221,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
     if dirID == 0:
       return S_ERROR('Root directory ID given')
 
-    dirID = self.db._escapeString(dirID)
-    if not dirID['OK']:
-      return dirID
-    dirID = dirID['Value']
-
     req = "SELECT Parent FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
     result = self.db._query(req)
     if not result['OK']:
@@ -252,11 +233,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
   def getDirectoryPath(self, dirID):
     """ Get directory name by directory ID
     """
-    dirID = self.db._escapeString(dirID)
-    if not dirID['OK']:
-      return dirID
-    dirID = dirID['Value']
-
     req = "SELECT DirName FROM FC_DirectoryLevelTree WHERE DirID=%d" % int(dirID)
     result = self.db._query(req)
     if not result['OK']:
@@ -355,8 +331,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
     lpaths = result['Value']
 
     lpathSelects = []
-    for l in range(level):
-      sel = ' AND '.join(["Level=%d" % l] + ['LPATH%d=%d' % (ll + 1, lpaths[ll]) for ll in range(l)])
+    for lev in xrange(level):
+      sel = ' AND '.join(["Level=%d" % lev] + ['LPATH%d=%d' % (ll + 1, lpaths[ll]) for ll in range(lev)])
       lpathSelects.append(sel)
     selection = '(' + ') OR ('.join(lpathSelects) + ')'
     req = "SELECT Level,DirID from FC_DirectoryLevelTree WHERE %s ORDER BY Level" % selection
@@ -392,12 +368,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
   def getSubdirectoriesByID(self, dirID, requestString=False, includeParent=False):
     """ Get all the subdirectories of the given directory at a given level
     """
-
-    dirID = self.db._escapeString(dirID)
-    if not dirID['OK']:
-      return dirID
-    dirID = dirID['Value']
-
     req = "SELECT Level FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
     result = self.db._query(req)
     if not result['OK']:
