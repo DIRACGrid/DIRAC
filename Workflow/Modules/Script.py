@@ -114,9 +114,16 @@ class Script( ModuleBase ):
     self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:
+      self._exitWithError(status)
+
+  def _exitWithError(self, status):
+    """ Here because of possible extensions.
+
+        :param str status: the status of the application becomes the status of the workflow,
+                           and may be interpreted by JobWrapper (e.g. for rescheduling cases)
+    """
       raise RuntimeError( "'%s' Exited With Status %s" % ( os.path.basename( self.executable ).split('_')[0], status ),
                           status )
-
 
   def _finalize( self ):
     """ simply finalize
