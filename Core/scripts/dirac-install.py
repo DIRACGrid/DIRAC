@@ -56,8 +56,11 @@ class Params(object):
     self.timeout = 300
     self.diracOSVersion = ''
     self.diracOS = False
-
-
+    self.source = ""
+    self.tag = ""
+    self.modules = {}
+    self.externalVersion = ""
+    
 cliParams = Params()
 
 ###
@@ -883,12 +886,12 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
   """
    Retrieve remote url to local file, with timeout wrapper
   """
-
+  
   if fileName:
     # This can be a local file
     if os.path.exists(url):  # we do not download from web, use locally
       logDEBUG('Local file used: "%s"' % url)
-      shutil.copy(url, fileName)
+      shutil.copy(url, fileName) 
       return True
     localFD = open(fileName, "wb")
 
@@ -966,7 +969,7 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
 
   if timeout:
     signal.alarm(0)
-
+  
   if fileName:
     return True
   else:
@@ -974,12 +977,22 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
 
 
 def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=False):
+  """
+  :param str tarsURL:
+  :param str pkgName:
+  :param str pkgVer:
+  :param bool checkHash:
+  :param bool cache:
+  
+  """
+  print 'downloadAndExtractTarball', tarsURL, pkgName, pkgVer, checkHash, cache
   tarName = "%s-%s.tar.gz" % (pkgName, pkgVer)
   tarPath = os.path.join(cliParams.targetPath, tarName)
   tarFileURL = "%s/%s" % (tarsURL, tarName)
   tarFileCVMFS = "/cvmfs/dirac.egi.eu/installSource/%s" % tarName
   cacheDir = os.path.join(cliParams.basePath, ".installCache")
   tarCachePath = os.path.join(cacheDir, tarName)
+  isSource = False
   if cache and os.path.isfile(tarCachePath):
     logNOTICE("Using cached copy of %s" % tarName)
     shutil.copy(tarCachePath, tarPath)
@@ -992,12 +1005,19 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
     logNOTICE("Retrieving %s" % tarFileURL)
     try:
       if not urlretrieveTimeout(tarFileURL, tarPath, cliParams.timeout):
-        logERROR("Cannot download %s" % tarName)
-        return False
+        if os.path.exists(tarPath):
+          os.unlink(tarPath)
+        retVal = checkoutFromGit(pkgName, tarsURL, pkgVer)
+        if not retVal['OK']:
+          logERROR("Cannot download %s" % tarName)
+          logERROR("Cannot download %s" % retVal['Value'])
+          return False
+        else:
+          isSource = True
     except Exception as e:
       logERROR("Cannot download %s: %s" % (tarName, str(e)))
       sys.exit(1)
-  if checkHash:
+  if not isSource and checkHash:
     md5Name = "%s-%s.md5" % (pkgName, pkgVer)
     md5Path = os.path.join(cliParams.targetPath, md5Name)
     md5FileURL = "%s/%s" % (tarsURL, md5Name)
@@ -1044,16 +1064,17 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
   # for member in tf.getmembers():
   #  tf.extract( member )
   # os.chdir(cwd)
-  tarCmd = "tar xzf '%s' -C '%s'" % (tarPath, cliParams.targetPath)
-  os.system(tarCmd)
-  # Delete tar
-  if cache:
-    if not os.path.isdir(cacheDir):
-      os.makedirs(cacheDir)
-    os.rename(tarPath, tarCachePath)
-  else:
-    if tarPath != tarFileCVMFS:
-      os.unlink(tarPath)
+  if not isSource:
+    tarCmd = "tar xzf '%s' -C '%s'" % (tarPath, cliParams.targetPath)
+    os.system(tarCmd)
+    # Delete tar
+    if cache:
+      if not os.path.isdir(cacheDir):
+        os.makedirs(cacheDir)
+      os.rename(tarPath, tarCachePath)
+    else:
+      if tarPath != tarFileCVMFS:
+        os.unlink(tarPath)
 
   postInstallScript = os.path.join(cliParams.targetPath, pkgName, 'dirac-postInstall.py')
   if os.path.isfile(postInstallScript):
@@ -1171,6 +1192,26 @@ def installExternalRequirements(extType):
                                                                              reqScript))
   return True
 
+def discoverModules(modules):
+  """
+  Build the modules dictionary, which will be installed: {"DIRAC:{"sourceUrl":"https://github.com/zmathe/DIRAC.git","Vesrion:v6r20p11"}}
+  :param: str modules: it contains meta information for the module, which will be installed: https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch
+  """
+
+  projects = {}
+
+  for module in modules.split(","):
+    s=m=v=None
+    try:
+      s, m, v = module.split("*")
+    except ValueError:
+      m = module.split("*")[0] # the source and version is not provided
+      
+    projects[m]= {}
+    if s and v:
+      projects[m] = {"sourceUrl":s,"Version": v}
+  return projects
+    
 ####
 # End of helper functions
 ####
@@ -1196,7 +1237,11 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('h', 'help', 'Show this help'),
            ('T:', 'Timeout=', 'Timeout for downloads (default = %s)'),
            ('  ', 'dirac-os-version=', 'the version of the DIRAC OS'),
-           ('  ', 'dirac-os', 'Enable installation of DIRAC OS')
+           ('  ', 'dirac-os', 'Enable installation of DIRAC OS'),
+           ('  ', 'tag', 'release version to install from git, http or local'),
+           ('m:', 'module=', 'Module to be installed. for example: -m DIRAC or -m git://github.com/DIRACGrid/DIRAC.git:DIRAC'),
+           ('s:', 'source=', 'location of the modules to be installed'),
+           ('x:', 'external', 'external version'),
            )
 
 
@@ -1325,8 +1370,16 @@ def loadConfiguration():
       cliParams.diracOSVersion = v
     elif o == '--dirac-os':
       cliParams.diracOS = True
+    elif o == '--tag':
+      cliParams.tag = v
+    elif o in ('-s','--source'):
+      cliParams.source = v
+    elif o in ('-m','--module'):
+      cliParams.modules = discoverModules(v)    
+    elif o in ('-x','--external'):
+      cliParams.externalVersion = v
 
-  if not cliParams.release:
+  if not cliParams.release and not cliParams.modules:
     logERROR("Missing release to install")
     usage()
 
@@ -1390,7 +1443,13 @@ def getPlatform():
 
 
 def installExternals(releaseConfig):
-  externalsVersion = releaseConfig.getExtenalsVersion()
+  """
+  :param object releaseConfig:
+  """ 
+  if not releaseConfig:
+    externalsVersion = cliParams.externalVersion
+  else:
+    externalsVersion = releaseConfig.getExtenalsVersion()
   if not externalsVersion:
     logERROR("No externals defined")
     return False
@@ -1435,7 +1494,10 @@ def installLCGutils(releaseConfig):
 
   # lcg utils?
   # LCG utils if required
-  lcgVer = releaseConfig.getLCGVersion(cliParams.lcgVer)
+  if not releaseConfig:
+    lcgVer = cliParams.lcgVer
+  else:
+    lcgVer = releaseConfig.getLCGVersion(cliParams.lcgVer)
   if lcgVer:
     verString = "%s-%s-python%s" % (lcgVer, cliParams.platform, cliParams.pythonVersion)
     # HACK: try to find a more elegant solution for the lcg bundles location
@@ -1720,6 +1782,8 @@ def createCshrc():
 
 
 def writeDefaultConfiguration():
+  if not releaseConfig:
+    return
   instCFG = releaseConfig.getInstallationCFG()
   if not instCFG:
     return
@@ -1961,29 +2025,100 @@ def createCshrcForDiracOS():
   return True
 
 
+def checkoutFromGit(moduleName=None, sourceURL=None, tagVersion=None):
+  """
+  This method checkout a given tag from a git repository. 
+  Note: we can checkout any project form a git repository 
+
+  :param str moduleName: The name of the Module: for example: LHCbWebDIRAC
+  :param str sourceURL: The code repository: ssh://git@gitlab.cern.ch:7999/lhcb-dirac/LHCbWebDIRAC.git
+  :param str tagVersion: the tag for example: v4r3p6
+
+  """
+  
+  if not moduleName:
+    moduleName = self.params.name
+
+  if not sourceURL:
+    sourceURL = self.params.sourceURL
+
+  if not tagVersion:
+    tagVersion = self.params.version
+
+  if False:
+    brCmr = "-b %s" % self.params.vcsBranch
+  else:
+    brCmr = ""
+  fDirName = os.path.join(cliParams.targetPath, moduleName)
+  cmd = "git clone %s '%s' '%s'" % (brCmr,
+                                    sourceURL,
+                                    fDirName)
+
+  logNOTICE("Executing: %s" % cmd)
+  if os.system(cmd):
+    return S_ERROR("Error while retrieving sources from git")
+
+  branchName = "%s-%s" % (tagVersion, os.getpid())
+
+  isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % (fDirName, tagVersion)
+  if os.system(isTagCmd):
+    # No tag found, assume branch
+    branchSource = 'origin/%s' % tagVersion
+  else:
+    branchSource = tagVersion
+
+  cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % (fDirName, branchName, branchSource)
+
+  logNOTICE("Executing: %s" % cmd)
+  exportRes = os.system(cmd)
+
+  shutil.rmtree("%s/.git" % fDirName, ignore_errors=True)
+
+  if exportRes:
+    return S_ERROR("Error while exporting from git")
+
+  return S_OK()
+
+
 if __name__ == "__main__":
   logNOTICE("Processing installation requirements")
   result = loadConfiguration()
+  releaseConfig = None
+  modsToInstall = {}
+  modsOrder = []
   if not result['OK']:
-    logERROR(result['Message'])
-    sys.exit(1)
-  releaseConfig = result['Value']
-  if not createPermanentDirLinks():
-    sys.exit(1)
-  if not cliParams.externalsOnly:
-    logNOTICE("Discovering modules to install")
-    result = releaseConfig.getModulesToInstall(cliParams.release, cliParams.extensions)
-    if not result['OK']:
+    # the configuration files was not exists, which means the module is not released.
+    if cliParams.modules:
+      logNOTICE(str(cliParams.modules))
+      for i in cliParams.modules:
+        modsOrder.append(i)
+        modsToInstall[i] = ( cliParams.modules[i]['sourceUrl'], cliParams.modules[i]['Version'])
+    else:
+      # there is no module provided which can be deployed
       logERROR(result['Message'])
       sys.exit(1)
-    modsOrder, modsToInstall = result['Value']
-    if cliParams.debug:
+  else:
+    releaseConfig = result['Value']
+  if not createPermanentDirLinks():
+    sys.exit(1)
+  
+  if not cliParams.externalsOnly:
+    logNOTICE("Discovering modules to install")
+    if releaseConfig:
+      result = releaseConfig.getModulesToInstall(cliParams.release, cliParams.extensions)
+      if not result['OK']:
+        logERROR(result['Message'])
+        sys.exit(1)
+      modsOrder, modsToInstall = result['Value']
+    if cliParams.debug and releaseConfig:
       logNOTICE("Writing down the releases files")
       releaseConfig.dumpReleasesToPath(cliParams.targetPath)
     logNOTICE("Installing modules...")
-    for modName in modsOrder:
+    for modName in modsOrder: 
       tarsURL, modVersion = modsToInstall[modName]
-      if cliParams.installSource:
+      print '!!!!',tarsURL, modVersion
+      if cliParams.installSource and not cliParams.modules:
+        # we install not release version of DIRAC
         tarsURL = cliParams.installSource
       logNOTICE("Installing %s:%s" % (modName, modVersion))
       if not downloadAndExtractTarball(tarsURL, modName, modVersion):
