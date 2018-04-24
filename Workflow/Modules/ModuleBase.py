@@ -5,7 +5,7 @@
 
     These modules, inspired by the LHCb experience, give the possibility to define simple user and production jobs.
     Many VOs might want to extend this package. And actually, for some cases, it will be necessary. For example,
-    defining the LFN output at runtime (within the "UploadOutputs" module is a VO specific operation.
+    defining the LFN output at runtime (within the "UploadOutputs" module is a VO specific operation
 
     The DIRAC APIs are used to create Jobs that make use of these modules.
 """
@@ -69,6 +69,7 @@ class ModuleBase( object ):
     self.appSteps = []
     self.inputDataList = []
     self.InputData = []
+    self.inputDataType = ''
 
     # These are useful objects (see the getFileReporter(), getJobReporter() and getRequestContainer() functions)
     self.fileReport = None
@@ -139,13 +140,14 @@ class ModuleBase( object ):
         self.log.error( rte[0] )
         self.setApplicationStatus( rte[0] )
         return S_ERROR( rte[1], rte[0] ) # rte[1] should be an error code
-      else: # In this case it is just a string
-        self.log.error( rte )
-        self.setApplicationStatus( rte )
-        return S_ERROR( rte )
+
+      # If we are here it is just a string
+      self.log.error(rte)
+      self.setApplicationStatus(rte)
+      return S_ERROR(rte)
 
     # This catches everything that is not voluntarily thrown (here, really writing an exception)
-    except Exception as exc: #pylint: disable=broad-except
+    except BaseException as exc:
       self.log.exception( exc )
       self.setApplicationStatus( exc )
       return S_ERROR( exc )
@@ -231,10 +233,9 @@ class ModuleBase( object ):
 
     if 'JobReport' in self.workflow_commons:
       return self.workflow_commons['JobReport']
-    else:
-      jobReport = JobReport( self.jobID )
-      self.workflow_commons['JobReport'] = jobReport
-      return jobReport
+    jobReport = JobReport( self.jobID )
+    self.workflow_commons['JobReport'] = jobReport
+    return jobReport
 
   #############################################################################
 
@@ -244,10 +245,9 @@ class ModuleBase( object ):
 
     if 'FileReport' in self.workflow_commons:
       return self.workflow_commons['FileReport']
-    else:
-      fileReport = FileReport()
-      self.workflow_commons['FileReport'] = fileReport
-      return fileReport
+    fileReport = FileReport()
+    self.workflow_commons['FileReport'] = fileReport
+    return fileReport
 
   #############################################################################
 
@@ -257,10 +257,9 @@ class ModuleBase( object ):
 
     if 'Request' in self.workflow_commons:
       return self.workflow_commons['Request']
-    else:
-      request = Request()
-      self.workflow_commons['Request'] = request
-      return request
+    request = Request()
+    self.workflow_commons['Request'] = request
+    return request
 
   #############################################################################
 
@@ -293,7 +292,8 @@ class ModuleBase( object ):
     if 'outputDataFileMask' in self.workflow_commons:
       self.outputDataFileMask = self.workflow_commons['outputDataFileMask']
       if isinstance( self.outputDataFileMask, basestring ):
-        self.outputDataFileMask = [i.lower().strip() for i in self.outputDataFileMask.split( ';' )] # pylint: disable=no-member
+        self.outputDataFileMask = [i.lower().strip()
+                                   for i in self.outputDataFileMask.split(';')]  # pylint: disable=no-member
 
   #############################################################################
 
@@ -309,8 +309,10 @@ class ModuleBase( object ):
 
     self.applicationVersion = self.step_commons.get('applicationVersion', 'Unknown')
 
-    self.applicationLog = self.step_commons.get('applicationLog', 
+    self.applicationLog = self.step_commons.get('applicationLog',
                                                 self.step_commons.get('logFile', self.applicationLog))
+
+    self.inputDataType = self.step_commons.get('inputDataType', self.inputDataType)
 
     stepInputData = []
     if 'inputData' in self.step_commons and self.step_commons['inputData']:
@@ -340,8 +342,7 @@ class ModuleBase( object ):
 
       return stepInputData
 
-    else:
-      return [x.strip( 'LFN:' ) for x in inputData.split( ';' )]
+    return [x.strip( 'LFN:' ) for x in inputData.split( ';' )]
 
   #############################################################################
 
@@ -375,9 +376,8 @@ class ModuleBase( object ):
     if not self._WMSJob():
       self.log.info( 'No WMS JobID found, disabling module via control flag' )
       return False
-    else:
-      self.log.verbose( 'Found WMS JobID = %d' % self.jobID )
-      return True
+    self.log.verbose( 'Found WMS JobID = %d' % self.jobID )
+    return True
 
   #############################################################################
 
@@ -468,8 +468,8 @@ class ModuleBase( object ):
       for fileName, metadata in candidateFiles.items():
         if metadata['type'].lower() not in fileMask:  # and ( fileName.split( '.' )[-1] not in fileMask ) ):
           del candidateFiles[fileName]
-          self.log.info( 'Output file %s was produced but will not be treated (fileMask is %s)' % ( fileName,
-                                                                                                    ', '.join( fileMask ) ) )
+          self.log.info('Output file %s was produced but will not be treated (fileMask is %s)' % (fileName,
+                                                                                                  ', '.join(fileMask)))
     else:
       self.log.info( 'No outputDataFileMask provided, the files with all the extensions will be considered' )
 
@@ -478,8 +478,8 @@ class ModuleBase( object ):
       for fileName, metadata in candidateFiles.items():
         if fileName.split( '_' )[-1].split( '.' )[0] not in stepMask:
           del candidateFiles[fileName]
-          self.log.info( 'Output file %s was produced but will not be treated (stepMask is %s)' % ( fileName,
-                                                                                                    ', '.join( stepMask ) ) )
+          self.log.info('Output file %s was produced but will not be treated (stepMask is %s)' % (fileName,
+                                                                                                  ', '.join(stepMask)))
     else:
       self.log.info( 'No outputDataStep provided, the files output of all the steps will be considered' )
 
@@ -544,7 +544,7 @@ class ModuleBase( object ):
         self.log.error( "!!! Both accounting and RequestDB are down? !!!" )
         return result
 
-    if len( self.request ):
+    if self.request:
       isValid = RequestValidator().validate( self.request )
       if not isValid['OK']:
         raise RuntimeError( "Failover request is not valid: %s" % isValid['Message'] )
