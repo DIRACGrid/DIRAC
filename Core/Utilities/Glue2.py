@@ -51,7 +51,7 @@ def getGlue2CEInfo(vo, host):
     if shareID is None:  # policy not pointing to ComputingInformation
       gLogger.debug("Policy %s does not point to computing information" % (policyID,))
       continue
-    gLogger.notice("%s policy %s pointing to %s " % (siteName, policyID, shareID))
+    gLogger.verbose("%s policy %s pointing to %s " % (siteName, policyID, shareID))
     gLogger.debug("Policy values:\n%s" % pformat(policyValues))
     filt = "(&(objectClass=GLUE2Share)(GLUE2ShareID=%s))" % shareID
     shareRes = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
@@ -70,7 +70,7 @@ def getGlue2CEInfo(vo, host):
       shareEndpoints = shareInfo['attr'].get('GLUE2ShareEndpointForeignKey', [])
       ceInfo = __getGlue2ShareInfo(host, shareEndpoints, shareInfo['attr'], siteDict[siteName]['CEs'])
       if not ceInfo['OK']:
-        gLogger.error("Could not get CE info", ceInfo['Message'])
+        gLogger.error("Could not get CE info for %s:" % shareID, ceInfo['Message'])
         continue
       gLogger.debug("Found ceInfo:\n%s" % pformat(siteDict[siteName]['CEs']))
 
@@ -108,7 +108,7 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
   executionEnvironment = shareInfoDict['GLUE2ComputingShareExecutionEnvironmentForeignKey']
   resExeInfo = __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment)
   if not resExeInfo['OK']:
-    return S_ERROR("Cannot get execution environment info", resExeInfo['Message'])
+    return S_ERROR("Cannot get execution environment info for %r" % executionEnvironment, resExeInfo['Message'])
   ceInfo.update(resExeInfo['Value'])
   if isinstance(shareEndpoints, basestring):
     shareEndpoints = [shareEndpoints]
