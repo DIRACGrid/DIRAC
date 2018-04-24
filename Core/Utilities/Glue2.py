@@ -53,16 +53,19 @@ def getGlue2CEInfo(vo, host):
       continue
     gLogger.notice("%s policy %s pointing to %s " % (siteName, policyID, shareID))
     gLogger.debug("Policy values:\n%s" % pformat(policyValues))
-    filt = "(&(objectClass=GLUE2ComputingShare)(GLUE2ShareID=%s))" % shareID
+    filt = "(&(objectClass=GLUE2Share)(GLUE2ShareID=%s))" % shareID
     shareRes = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
     if not shareRes['OK']:
-      gLogger.error("Could not get computing share information for %s: %s" % (shareID, shareRes['Message']))
+      gLogger.error("Could not get share information for %s: %s" % (shareID, shareRes['Message']))
       continue
     if not shareRes['Value']:
-      gLogger.warn("Did not not find any computing share information for %s" % (shareID, ))
+      gLogger.warn("Did not not find any share information for %s" % (shareID, ))
       continue
     siteDict.setdefault(siteName, {'CEs': {}})
     for shareInfo in shareRes['Value']:
+      if 'GLUE2ComputingShare' not in shareInfo['objectClass']:
+        gLogger.debug('Share %r is not a ComputingShare: \n%s' % (shareID, pformat(shareInfo)))
+        continue
       gLogger.debug("Found computing share:\n%s" % pformat(shareInfo))
       shareEndpoints = shareInfo['attr'].get('GLUE2ShareEndpointForeignKey', [])
       ceInfo = __getGlue2ShareInfo(host, shareEndpoints, shareInfo['attr'], siteDict[siteName]['CEs'])
