@@ -212,6 +212,14 @@ csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSit
 
 
 # Now setting the catalog list in Operations/Defults/Services/Catalogs/CatalogList
+#
+#     Services
+#     {
+#       Catalogs
+#       {
+#         CatalogList = FileCatalog
+#       }
+#     }
 
 res = csAPI.createSection( 'Operations/Defaults/Services' )
 if not res['OK']:
@@ -227,6 +235,37 @@ if not res['OK']:
   exit( 1 )
 csAPI.setOption('Operations/Defaults/Services/Catalogs/CatalogList', 'FileCatalog')
 
+
+# Now setting the Registry section
+#
+#     Registry
+#     {
+#       VO
+#       {
+#         Jenkins
+#         {
+#           VOMSName = myVOMS
+#         }
+#       }
+#     }
+
+res = csAPI.createSection('Registry')
+if not res['OK']:
+  print res['Message']
+  exit(1)
+res = csAPI.createSection('Registry/VO/')
+if not res['OK']:
+  print res['Message']
+  exit(1)
+res = csAPI.createSection('Registry/VO/Jenkins')
+if not res['OK']:
+  print res['Message']
+  exit(1)
+res = csAPI.createSection('Registry/VO/Jenkins/VOMSName')
+if not res['OK']:
+  print res['Message']
+  exit(1)
+csAPI.setOption('Registry/VO/Jenkins/VOMSName', 'myVOMS')
 
 
 # Final action: commit in CS

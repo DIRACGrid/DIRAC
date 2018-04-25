@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities.Subprocess import systemCall
 
 from DIRAC.Workflow.Modules.ModuleBase import ModuleBase
 
+
 class Script( ModuleBase ):
   """ Module for running executable
   """
@@ -100,7 +101,7 @@ class Script( ModuleBase ):
       failed = True
       self.log.error( "Non-zero status while executing", "%s: %s" % ( status, self.command ) )
     else:
-      self.log.info( "%s execution completed with status %s" % ( self.executable, status ) )
+      self.log.info("%s execution completed with status %s" % (self.executable, status))
 
     self.log.verbose( stdout )
     self.log.verbose( stderr )
@@ -114,9 +115,16 @@ class Script( ModuleBase ):
     self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:
-      raise RuntimeError( "'%s' Exited With Status %s" % ( os.path.basename( self.executable ).split('_')[0], status ),
-                          status )
+      self._exitWithError(status)
 
+  def _exitWithError(self, status):
+    """ Here because of possible extensions.
+
+        :param str status: the status of the application becomes the status of the workflow,
+                           and may be interpreted by JobWrapper (e.g. for rescheduling cases)
+    """
+    raise RuntimeError("'%s' Exited With Status %s" % (os.path.basename(self.executable).split('_')[0], status),
+                       status)
 
   def _finalize( self ):
     """ simply finalize

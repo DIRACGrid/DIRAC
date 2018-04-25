@@ -361,18 +361,25 @@ function diracReplace(){
     return
   fi
 
-  wget $DIRAC_ALTERNATIVE_SRC_ZIP $SERVERINSTALLDIR/
+  cwd=$PWD
+  cd $SERVERINSTALLDIR
+
+  wget $DIRAC_ALTERNATIVE_SRC_ZIP
   zipName=$(basename $DIRAC_ALTERNATIVE_SRC_ZIP)
   unzip $zipName
-  dirName="DIRAC-$(echo $zipName | sed 's/\.zip//g')"
-  if [ -d "DIRAC" ];
+  cd $SERVERINSTALLDIR
+  dirName=$(unzip -l $zipName | head | tail -n 1 | sed 's/  */ /g' | cut -f 5 -d ' ' | cut -f 1 -d '/')
+  if [ -d "DIRAC" ]
   then
-    mv $SERVERINSTALLDIR/DIRAC $SERVERINSTALLDIR/DIRAC.bak;
+    mv DIRAC DIRAC.bak
   else
     echo "There is no previous DIRAC directory ??!!!"
     ls
   fi
-  mv $dirName $SERVERINSTALLDIR/DIRAC
+  cd $SERVERINSTALLDIR
+  mv $dirName DIRAC
+
+  cd $cwd
 
 }
 
@@ -403,6 +410,11 @@ function diracInstall(){
   chmod +x $SERVERINSTALLDIR/dirac-install
 
   diracInstallCommand
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-install failed'
+    return
+  fi
 }
 
 #This is what VOs may replace
@@ -477,8 +489,19 @@ function getUserProxy(){
 
   cp $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py .
   python dirac-cfg-update.py -S $DIRACSETUP $CLIENTINSTALLDIR/etc/dirac.cfg -F $CLIENTINSTALLDIR/etc/dirac.cfg -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-cfg-update failed'
+    return
+  fi
+
   #Getting a user proxy, so that we can run jobs
   downloadProxy
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: downloadProxy failed'
+    return
+  fi
 
   echo '==> Done getUserProxy'
 }
@@ -508,7 +531,7 @@ function prepareForServer(){
 
 #.............................................................................
 #
-# function generateCertificat
+# function generateCertificates
 #
 #   This function generates a random host certificate ( certificate and key ),
 #   which will be stored on etc/grid-security. As we need a CA to validate it,
@@ -587,7 +610,17 @@ function generateUserCredentials(){
       return
     fi
 
+  save=$-
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
     cp $CI_CONFIG/openssl_config openssl_config .
+  if [[ $save =~ e ]]
+  then
+    set -e
+  fi
+
     sed -i 's/#hostname#/ciuser/g' openssl_config
     openssl genrsa -out client.key 1024 2>&1 /dev/null
     openssl req -key client.key -new -out client.req -config openssl_config
@@ -614,6 +647,11 @@ function diracCredentials(){
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
   dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG --rfc
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-proxy-init failed'
+    return
+  fi
   sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' $SERVERINSTALLDIR/etc/Configuration_Server.cfg
 
 }
@@ -632,14 +670,53 @@ function diracUserAndGroup(){
   echo '==> [diracUserAndGroup]'
 
   dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-user failed'
+    return
+  fi
+
   dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-user failed'
+    return
+  fi
 
   dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement,FileCatalogManagement,SiteManager,NormalUser $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-group failed'
+    return
+  fi
 
   dirac-admin-add-shifter DataManager adminusername prod $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-shifter failed'
+    return
+  fi
+
   dirac-admin-add-shifter TestManager adminusername prod $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-shifter failed'
+    return
+  fi
+
   dirac-admin-add-shifter ProductionManager adminusername prod $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-shifter failed'
+    return
+  fi
+
   dirac-admin-add-shifter LHCbPR adminusername prod $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-shifter failed'
+    return
+  fi
 }
 
 
@@ -656,8 +733,19 @@ function diracProxies(){
 
   # User proxy, should be uploaded anyway
   dirac-proxy-init -U -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-proxy-init failed'
+    return
+  fi
+
   # group proxy, will be uploaded explicitly
   dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-proxy-init failed'
+    return
+  fi
 
 }
 
@@ -674,6 +762,11 @@ function diracRefreshCS(){
 
 
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-refresh-cs.py $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-refresh-cs failed'
+    return
+  fi
 }
 
 
@@ -691,6 +784,11 @@ function diracAddSite(){
   echo '==> [diracAddSite]'
 
   dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-admin-add-site failed'
+    return
+  fi
 
 }
 
@@ -736,11 +834,23 @@ diracUninstallServices(){
   #  echo '==> getting/uploading proxy for prod'
   #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc $DEBUG
 
+  # check if errexit mode is set and disabling as the component may not exist
+  save=$-
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
+
   for serv in $services
   do
     echo '==> calling dirac-uninstall-component' $serv $DEBUG
     dirac-uninstall-component -f $serv $DEBUG
   done
+
+  if [[ $save =~ e ]]
+  then
+    set -e
+  fi
 
 }
 
@@ -767,6 +877,11 @@ diracAgents(){
       python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-add-option.py agent $agent
       echo '==> calling dirac-agent' $agent -o MaxCycles=1 $DEBUG
       dirac-agent $agent  -o MaxCycles=1 $DEBUG
+      if [ $? -ne 0 ]
+      then
+        echo 'ERROR: dirac-agent failed'
+        return
+      fi
     fi
   done
 
@@ -788,6 +903,11 @@ diracDBs(){
   for db in $dbs
   do
     dirac-install-db $db $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-install-db failed'
+      return
+    fi
   done
 
 }
@@ -831,29 +951,37 @@ dropDBs(){
 function killRunsv(){
   echo '==> [killRunsv]'
 
-    # Bear in mind that we run with 'errexit' mode. This call, if finds nothing
+  # Bear in mind that we may run with 'errexit' mode. This call, if finds nothing
     # will return an error, which will make the whole script exit. However, if
     # finds nothing we are good, it means there are not leftover processes from
     # other runs. So, we disable 'errexit' mode for this call.
 
-    #set +o errexit
+  # check if errexit mode is set
+  save=$-
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
+
     runsvdir=`ps aux | grep 'runsvdir ' | grep -v 'grep'`
-    #set -o errexit
 
     if [ ! -z "$runsvdir" ]
     then
       killall runsvdir
     fi
 
-    # Same as before
-  #set +o errexit
   runsv=`ps aux | grep 'runsv ' | grep -v 'grep'`
-  #set -o errexit
 
     if [ ! -z "$runsv" ]
     then
       killall runsv
     fi
+
+  if [[ $save =~ e ]]
+  then
+    set -e
+  fi
+
 
   }
 
@@ -899,9 +1027,16 @@ function startRunsv(){
     # Gives some time to the components to start
     sleep 10
     # Just in case 10 secs are not enough, we disable exit on error for this call.
-    set +o errexit
+  save=$-
+  if [[ $save =~ e ]]
+  then
+    set +e
+  fi
     runsvctrl u $SERVERINSTALLDIR/startup/*
-    set -o errexit
+  if [[ $save =~ e ]]
+  then
+    set -e
+  fi
 
     runsvstat $SERVERINSTALLDIR/startup/*
 
