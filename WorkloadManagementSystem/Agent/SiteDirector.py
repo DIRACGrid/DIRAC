@@ -965,8 +965,11 @@ class SiteDirector(AgentModule):
       pilotsSubmitted = pilotsToSubmit
     pilotOptions = ' '.join(pilotOptions)
     self.log.verbose('pilotOptions: %s' % pilotOptions)
-    executable = self._writePilotScript(self.workingDirectory, pilotOptions,
-                                        proxy, jobExecDir, envVariables)
+    executable = self._writePilotScript(workingDirectory=self.workingDirectory,
+                                        pilotOptions=pilotOptions,
+                                        proxy=proxy,
+                                        pilotExecDir=jobExecDir,
+                                        envVariables=envVariables)
     return executable, pilotsSubmitted
 
 #####################################################################################
