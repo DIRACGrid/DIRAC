@@ -1,3 +1,11 @@
+[v6r19p21]
+
+*Configuration
+FIX: Bdii2CSAgent - make the GLUE2 information gathering less verbose; Silently ignore StorageShares
+
+*Test
+CHANGE: backported some of the CI tools from the integration branch 
+
 [v6r19p20]
 
 *StorageManagement
