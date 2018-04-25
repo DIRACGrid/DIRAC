@@ -925,7 +925,7 @@ class SiteDirector(AgentModule):
               self.log.info("PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" %
                             (ceName, queueName, waitingJobs, runningJobs, maxTotalJobs))
           totalSlots = min((maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs))
-          self.queueSlots[queue]['AvailableSlots'] = totalSlots
+          self.queueSlots[queue]['AvailableSlots'] = max(totalSlots, 0)
 
     self.queueSlots[queue]['AvailableSlotsCount'] += 1
 
