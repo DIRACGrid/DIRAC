@@ -60,6 +60,7 @@ FIX: JobManager - Added some debug message when deleting jobs
 FIX: Job.py - fixing finding XML file
 NEW: SiteDirector - added flag for sending pilot3 files
 CHANGE: SiteDirector - changed the way we create the pilotWrapper (better extensibility)
+NEW: SiteDirector - added possibility for deploying environment variables in the pilot wrapper
 
 *Workflow
 CHANGE: Script.py: created _exitWithError method for extension possibilities
@@ -75,6 +76,8 @@ NEW: StorageElement service - getFreeDiskSpace() and getTotalDiskSpace() take in
 CHANGE: Adding vo name argument for StorageElement   
 CHANGE: Fixing rss to fetch fts3 server status
 NEW: Add a feature to the DFC LHCbManager to dump the content of an SE as a CSV file
+FIX: FTS3DB: sqlalchemy filter statements with "is None" do not work and result in no lines being selected
+NEW: FTS3Agent and FTS3DB: add functionality to kick stuck requests and delete old requests
 
 *RMS
 FIX: Really exit the RequestExecutingAgent when the result queue is buggy
@@ -90,6 +93,9 @@ FIX: fixed documentation of how to develop commands
 NEW: New SingularityComputingElement to submit jobs to a Singularity container
 NEW: Added StorageElement.getOccupancy() method for DIP and GFAL2_SMR2 SE types
 CHANGE: enable Stomp logging only if DIRAC_DEBUG_STOMP environment variable is set to any value
+
+*Interfaces
+CHANGE: Dirac.py - saving output of jobs run with 'runLocal' when they fail (for DEBUG purposes)
 
 *Docs
 CHANGE: WebApp release procedure
