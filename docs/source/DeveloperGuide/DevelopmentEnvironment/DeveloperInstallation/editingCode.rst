@@ -38,7 +38,7 @@ Stuff you need to have installed
 ================================
 
 *python*: make sure python 2.7.9+ (possibly 2.7.13) is installed and set as default
-(beware: the latest versions of Ubuntu use python 3.X as default).
+(beware: the latest versions of Ubuntu use python 3.X as default, SLC6 use python 2.6 as default).
 
 *python-pip*: the tool for installing python packages hosted
 on `PyPi <https://pypi.python.org/pypi>`_.

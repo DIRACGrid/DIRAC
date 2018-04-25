@@ -202,9 +202,9 @@ If you want to create an isolated installation just create a
      }
    }
 
-Within the code we also provide a pre-filled example of dirac.cfg. You can get it simply doing (on the host):
+Within the code we also provide a pre-filled example of dirac.cfg. You can get it simply doing (on the host)::
 
-  cp $DEVROOT/docs/source/DeveloperGuide/AddingNewComponents/dirac.cfg.basic.example $DEVROOT/etc/dirac.cfg
+  cp $DEVROOT/DIRAC/docs/source/DeveloperGuide/AddingNewComponents/dirac.cfg.basic.example $DEVROOT/etc/dirac.cfg
 
 
 
