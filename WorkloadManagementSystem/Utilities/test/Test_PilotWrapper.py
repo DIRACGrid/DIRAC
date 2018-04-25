@@ -30,8 +30,8 @@ class PilotWrapperTestCaseCreation(PilotWrapperTestCase):
     """
     res = pilotWrapperScript()
 
-    print res
-    # no assert as it makes little sense
+    self.assertTrue('cmd = "python dirac-pilot.py "' in res)
+    self.assertTrue('os.environ["someName"]="someValue"' not in res)
 
   def test_scriptoptions(self):
     """ test script creation
@@ -42,8 +42,8 @@ class PilotWrapperTestCaseCreation(PilotWrapperTestCase):
                                          'someOther.py': 'someOtherContent'},
         pilotOptions="-c 123 --foo bar")
 
-    print res
-    # no assert as it makes little sense
+    self.assertTrue("with open('dirac-install.py', 'w') as fd:" in res)
+    self.assertTrue('os.environ["someName"]="someValue"' not in res)
 
   def test_scriptReal(self):
     """ test script creation
@@ -75,8 +75,21 @@ class PilotWrapperTestCaseCreation(PilotWrapperTestCase):
                                          'pilotCommands.py': diracPilotCommandsEncoded},
         pilotOptions="-c 123 --foo bar")
 
-    print res
-    # no assert as it makes little sense
+    self.assertTrue("with open('dirac-pilot.py', 'w') as fd:" in res)
+    self.assertTrue("with open('dirac-install.py', 'w') as fd:" in res)
+    self.assertTrue('os.environ["someName"]="someValue"' not in res)
+
+  def test_scriptWithEnvVars(self):
+    """ test script creation
+    """
+    res = pilotWrapperScript(
+        pilotFilesCompressedEncodedDict={'dirac-install.py': 'someContentOfDiracInstall',
+                                         'someOther.py': 'someOtherContent'},
+        pilotOptions="-c 123 --foo bar",
+        envVariables={'someName': 'someValue',
+                      'someMore': 'oneMore'})
+
+    self.assertTrue('os.environ["someName"]="someValue"' in res)
 
 
 #############################################################################
