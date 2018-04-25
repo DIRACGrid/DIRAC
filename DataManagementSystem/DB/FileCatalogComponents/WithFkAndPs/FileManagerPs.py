@@ -1,19 +1,17 @@
-########################################################################
-# $Id$
-########################################################################
+""" FileManager for ... ?
+"""
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, gLogger
+import os
+import datetime
+
+from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
 from DIRAC.Core.Utilities.List import stringListToString, \
     intListToString, \
     breakListIntoChunks
-import datetime
 
-
-import os
-from types import ListType, TupleType, StringTypes
 
 
 # The logic of some methods is basically a copy/paste from the FileManager class,
@@ -348,7 +346,7 @@ class FileManagerPs(FileManagerBase):
     if not guids:
       return S_OK({})
 
-    if type(guids) not in [ListType, TupleType]:
+    if not isinstance(guids, (list, tuple)):
       guids = [guids]
 
 #     formatedGuids = ','.join( [ '"%s"' % guid for guid in guids ] )
@@ -369,7 +367,7 @@ class FileManagerPs(FileManagerBase):
     if not guids:
       return S_OK({})
 
-    if type(guids) not in [ListType, TupleType]:
+    if not isinstance(guids, (list, tuple)):
       guids = [guids]
 
     formatedGuids = stringListToString(guids)
@@ -519,9 +517,9 @@ class FileManagerPs(FileManagerBase):
       fileID = lfns[lfn]['FileID']
 
       seName = lfns[lfn]['SE']
-      if type(seName) in StringTypes:
+      if isinstance(seName, basestring):
         seList = [seName]
-      elif isinstance(seName, ListType):
+      elif isinstance(seName, list):
         seList = seName
       else:
         return S_ERROR('Illegal type of SE list: %s' % str(type(seName)))
@@ -616,6 +614,8 @@ class FileManagerPs(FileManagerBase):
     successful = {}
     # First we get the fileIds from our lfns
     res = self._findFiles(lfns.keys(), ['FileID'], connection=connection)
+    if not res['OK']:
+      return res
 
     # If the file does not exist we consider the deletion successful
     for lfn, error in res['Value']['Failed'].items():
@@ -689,9 +689,7 @@ class FileManagerPs(FileManagerBase):
 
     if not affected:
       return S_ERROR("Replica does not exist")
-
-    else:
-      return S_OK()
+    return S_OK()
 
   def _setReplicaHost(self, fileID, se, newSE, connection=False):
     """ Move a replica from one SE to another (I don't think this should be called
@@ -748,8 +746,7 @@ class FileManagerPs(FileManagerBase):
     psNames = {'UID': 'ps_set_file_uid',
                'GID': 'ps_set_file_gid',
                'Status': 'ps_set_file_status',
-               'Mode': 'ps_set_file_mode',
-               }
+               'Mode': 'ps_set_file_mode'}
 
     psName = psNames.get(paramName, None)
 

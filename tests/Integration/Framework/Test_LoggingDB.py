@@ -3,7 +3,7 @@
     It supposes that the DB is present and installed in DIRAC
 """
 
-# pylint: disable=invalid-name,wrong-import-position
+# pylint: disable=invalid-name,wrong-import-position,protected-access
 
 import unittest
 
@@ -59,9 +59,6 @@ class testDB(TestSystemLoggingDBTestCase):
       self.assertEqual(result['lastRowId'], k + 1)
       self.assertEqual(result['Value'], 1)
 
-    result = db.insertMessage(message, longSite, nodeFQDN, userDN, userGroup, remoteAddress)
-    self.assertFalse(result['OK'])
-
     result = db._queryDB(showFieldList=['SiteName'])
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'][0][0], site)
@@ -86,6 +83,9 @@ class testDB(TestSystemLoggingDBTestCase):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'][0][1], site)
     self.assertEqual(result['Value'][0][2], records)
+
+    result = db.insertMessage(message, longSite, nodeFQDN, userDN, userGroup, remoteAddress)
+    self.assertFalse(result['OK'])
 
 
 if __name__ == '__main__':
