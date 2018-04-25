@@ -734,7 +734,7 @@ class ReleaseConfig(object):
 
     if not project:
       project = self.__projectName
-
+    print '222',project, release
     modLocation = self.getReleaseOption(project, release, "Sources/%s" % modName)
     if not modLocation:
       return S_ERROR("Source origin for module %s is not defined" % modName)
@@ -1206,7 +1206,7 @@ def discoverModules(modules):
       s, m, v = module.split("*")
     except ValueError:
       m = module.split("*")[0] # the source and version is not provided
-      
+          
     projects[m]= {}
     if s and v:
       projects[m] = {"sourceUrl":s,"Version": v}
@@ -1238,7 +1238,7 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('T:', 'Timeout=', 'Timeout for downloads (default = %s)'),
            ('  ', 'dirac-os-version=', 'the version of the DIRAC OS'),
            ('  ', 'dirac-os', 'Enable installation of DIRAC OS'),
-           ('  ', 'tag', 'release version to install from git, http or local'),
+           ('  ', 'tag=', 'release version to install from git, http or local'),
            ('m:', 'module=', 'Module to be installed. for example: -m DIRAC or -m git://github.com/DIRACGrid/DIRAC.git:DIRAC'),
            ('s:', 'source=', 'location of the modules to be installed'),
            ('x:', 'external', 'external version'),
@@ -2116,10 +2116,25 @@ if __name__ == "__main__":
     logNOTICE("Installing modules...")
     for modName in modsOrder: 
       tarsURL, modVersion = modsToInstall[modName]
-      print '!!!!',tarsURL, modVersion
       if cliParams.installSource and not cliParams.modules:
         # we install not release version of DIRAC
         tarsURL = cliParams.installSource
+      if modName in cliParams.modules:
+        sourceURL = cliParams.modules[modName].get('sourceUrl')
+        if 'Version' in cliParams.modules[modName]:
+          modVersion = cliParams.modules[modName]['Version']
+        if not sourceURL:
+          retVal = releaseConfig.getModSource(cliParams.release, modName)
+          if retVal['OK']:
+            tarsURL = retVal['Value'][1] # this is the git repository url
+            modVersion = cliParams.tag
+        else:
+          tarsURL = sourceURL
+        retVal = checkoutFromGit(modName, tarsURL, modVersion)
+        if not retVal['OK']:          
+          logERROR("Cannot checkout %s" % retVal['Message'])
+          sys.exit(1)
+        continue
       logNOTICE("Installing %s:%s" % (modName, modVersion))
       if not downloadAndExtractTarball(tarsURL, modName, modVersion):
         sys.exit(1)
