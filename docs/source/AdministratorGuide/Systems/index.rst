@@ -1,8 +1,8 @@
 .. _dirac-systems-desc:
 
-=======================================
-DIRAC Systems
-=======================================
+========================
+DIRAC Systems in details
+========================
 
 In this chapter the description of DIRAC Systems is presented. For each System, the functionality
 of all the constituent components are described together with their configuration parameters.
@@ -21,4 +21,3 @@ of all the constituent components are described together with their configuratio
    Transformation/index
    WorkloadManagement/index
    MonitoringSystem/index
-   
