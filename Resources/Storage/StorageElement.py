@@ -9,6 +9,7 @@ import copy
 import errno
 import threading
 import sys
+from functools import reduce
 
 # # from DIRAC
 from DIRAC import gLogger, gConfig, siteName
@@ -27,7 +28,6 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-from functools import reduce
 
 __RCSID__ = "$Id$"
 
@@ -125,8 +125,7 @@ class StorageElementItem(object):
                              "removeDirectory": "removeDirectory",
                              "createDirectory": "createDirectory",
                              "putDirectory": "putDirectory",
-                             "getDirectory": "getDirectory",
-                             }
+                             "getDirectory": "getDirectory"}
 
   # We can set default argument in the __executeFunction which impacts all plugins
   __defaultsArguments = {"putFile": {"sourceSize": 0},
@@ -134,8 +133,7 @@ class StorageElementItem(object):
                          "prestageFile": {"lifetime": 86400},
                          "pinFile": {"lifetime": 60 * 60 * 24},
                          "removeDirectory": {"recursive": False},
-                         "getDirectory": {"localPath": False},
-                         }
+                         "getDirectory": {"localPath": False}}
 
   def __init__(self, name, plugins=None, vo=None, hideExceptions=False):
     """ c'tor
@@ -173,16 +171,16 @@ class StorageElementItem(object):
       res = StorageFactory(
           useProxy=self.useProxy,
           vo=self.vo).getStorages(
-          name,
-          pluginList=[],
-          hideExceptions=hideExceptions)
+              name,
+              pluginList=[],
+              hideExceptions=hideExceptions)
     else:
       res = StorageFactory(
           useProxy=self.useProxy,
           vo=self.vo).getStorages(
-          name,
-          pluginList=plugins,
-          hideExceptions=hideExceptions)
+              name,
+              pluginList=plugins,
+              hideExceptions=hideExceptions)
 
     if not res['OK']:
       self.valid = False
@@ -1014,11 +1012,11 @@ class StorageElementItem(object):
     log.verbose("preparing the execution of %s" % (self.methodName))
 
     # args should normaly be empty to avoid problem...
-    if len(args):
+    if args:
       log.verbose("args should be empty!%s" % args)
       # because there is normally only one kw argument, I can move it from args to kwargs
       methDefaultArgs = StorageElementItem.__defaultsArguments.get(self.methodName, {}).keys()
-      if len(methDefaultArgs):
+      if methDefaultArgs:
         kwargs[methDefaultArgs[0]] = args[0]
         args = args[1:]
       log.verbose(
@@ -1088,7 +1086,7 @@ class StorageElementItem(object):
         failed.update(res['Value']['Failed'])
       else:
         urlDict = dict([(lfn, lfn) for lfn in lfnDict])
-      if not len(urlDict):
+      if not urlDict:
         log.verbose("__executeMethod No urls generated for protocol %s." % pluginName)
       else:
         log.verbose(
