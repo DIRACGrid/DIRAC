@@ -1,4 +1,6 @@
 """ DataStore is the service for inserting accounting reports (rows) in the Accounting DB
+
+    This service CAN be duplicated iff the first is a "master" and all the others are slaves.
 """
 
 
@@ -16,6 +18,8 @@ __RCSID__ = "$Id$"
 
 
 class DataStoreHandler(RequestHandler):
+  """ DISET implementation of service for inserting records in accountingDB.
+  """
 
   __acDB = None
 
@@ -45,12 +49,12 @@ class DataStoreHandler(RequestHandler):
       return retVal
     errorsList = []
     for setup in retVal['Value']:
-      retVal = self.__acDB.registerType(
+      retVal = self.__acDB.registerType(  # pylint: disable=no-member
           setup,
           typeName,
           definitionKeyFields,
           definitionAccountingFields,
-          bucketsLength)  # pylint: disable=too-many-function-args,no-member
+          bucketsLength)
       if not retVal['OK']:
         errorsList.append(retVal['Message'])
     if errorsList:
@@ -69,8 +73,8 @@ class DataStoreHandler(RequestHandler):
       return retVal
     errorsList = []
     for setup in retVal['Value']:
-      retVal = self.__acDB.changeBucketsLength(
-          setup, typeName, bucketsLength)  # pylint: disable=too-many-function-args,no-member
+      retVal = self.__acDB.changeBucketsLength(  # pylint: disable=no-member
+          setup, typeName, bucketsLength)
       if not retVal['OK']:
         errorsList.append(retVal['Message'])
     if errorsList:
@@ -89,7 +93,7 @@ class DataStoreHandler(RequestHandler):
       return retVal
     errorsList = []
     for setup in retVal['Value']:
-      retVal = self.__acDB.regenerateBuckets(setup, typeName)  # pylint: disable=too-many-function-args,no-member
+      retVal = self.__acDB.regenerateBuckets(setup, typeName)  # pylint: disable=no-member
       if not retVal['OK']:
         errorsList.append(retVal['Message'])
     if errorsList:
@@ -133,12 +137,12 @@ class DataStoreHandler(RequestHandler):
     setup = self.serviceInfoDict['clientSetup']
     startTime = int(Time.toEpoch(startTime))
     endTime = int(Time.toEpoch(endTime))
-    return self.__acDB.insertRecordThroughQueue(
+    return self.__acDB.insertRecordThroughQueue(  # pylint: disable=no-member
         setup,
         typeName,
         startTime,
         endTime,
-        valuesList)  # pylint: disable=too-many-function-args,no-member
+        valuesList)
 
   types_commitRegisters = [list]
 
@@ -187,12 +191,12 @@ class DataStoreHandler(RequestHandler):
     setup = self.serviceInfoDict['clientSetup']
     startTime = int(Time.toEpoch(startTime))
     endTime = int(Time.toEpoch(endTime))
-    return self.__acDB.deleteRecord(
+    return self.__acDB.deleteRecord(  # pylint: disable=no-member
         setup,
         typeName,
         startTime,
         endTime,
-        valuesList)  # pylint: disable=too-many-function-args,no-member
+        valuesList)
 
   types_removeRegisters = [list]
 
@@ -213,12 +217,12 @@ class DataStoreHandler(RequestHandler):
       startTime = int(Time.toEpoch(entry[1]))
       endTime = int(Time.toEpoch(entry[2]))
       record = entry[3]
-      result = self.__acDB.deleteRecord(
+      result = self.__acDB.deleteRecord(  # pylint: disable=no-member
           setup,
           entry[0],
           startTime,
           endTime,
-          record)  # pylint: disable=too-many-function-args,no-member
+          record)
       if not result['OK']:
         return S_OK(ok)
       ok += 1
