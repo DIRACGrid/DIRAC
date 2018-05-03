@@ -30,7 +30,7 @@ def findGenericPilotCredentials(vo=False, group=False, pilotDN='', pilotGroup=''
     if pilotUser:
       result = Registry.getDNForUsername(pilotUser)
       if result['OK']:
-        pilotDN = result['Value']
+        pilotDN = result['Value'][0]
   if pilotDN and pilotGroup:
     gLogger.verbose("Pilot credentials: %s@%s" % (pilotDN, pilotGroup))
     result = gProxyManager.userHasProxy(pilotDN, pilotGroup, 86400)
