@@ -43,20 +43,15 @@ class PoolComputingElement( ComputingElement ):
   mandatoryParameters = MandatoryParameters
 
   #############################################################################
-  def __init__( self, ceUniqueID, processors = 0 ):
+  def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
     ComputingElement.__init__( self, ceUniqueID )
     self.ceType = "Pool"
     self.log = gLogger.getSubLogger( 'Pool' )
     self.submittedJobs = 0
-    if processors > 0:
-      self.processors = processors
-    else:
-      self.processors = multiprocessing.cpu_count()
-    self.pPool = ProcessPool( minSize = self.processors,
-                              maxSize = self.processors,
-                              poolCallback = self.finalizeJob )
+    self.processors = 1
+    self.pPool = None
     self.taskID = 0
     self.processorsPerTask = {}
     self.userNumberPerTask = {}
@@ -71,7 +66,7 @@ class PoolComputingElement( ComputingElement ):
 
   def _reset( self ):
 
-    self.processors = int( self.ceParameters.get( 'NumberOfProcessors', self.processors ) )
+    self.processors = int( self.ceParameters.get('NumberOfProcessors', self.processors))
     self.ceParameters['MaxTotalJobs'] = self.processors
     self.useSudo = self.ceParameters.get( 'SudoExecution', False )
 
@@ -87,6 +82,11 @@ class PoolComputingElement( ComputingElement ):
   def submitJob( self, executableFile, proxy, **kwargs ):
     """ Method to submit job.
     """
+
+    if self.pPool is None:
+      self.pPool = ProcessPool(minSize = self.processors,
+                               maxSize = self.processors,
+                               poolCallback = self.finalizeJob)
 
     self.pPool.processResults()
 
