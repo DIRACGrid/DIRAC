@@ -466,7 +466,7 @@ and this is thread %s
           # If it is our last attempt for each URL, we increase the timeout
           if self.__retryCounter == self.__nbOfRetry - 1:
             transport.setSocketTimeout( 5 ) # we increase the socket timeout in case the network is not good
-          gLogger.info( "Retry connection: ", "%d" % self.__retry )
+          gLogger.info( "Retry connection", ": %d to %s" % (self.__retry, self.serviceURL))
           # If we tried all the URL, we increase the global counter (__retryCounter), and sleep
           if len(self.__bannedUrls) == self.__nbOfUrls:
             self.__retryCounter += 1
