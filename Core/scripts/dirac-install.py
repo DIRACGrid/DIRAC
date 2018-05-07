@@ -73,12 +73,21 @@ class ReleaseConfig(object):
   class CFG:
 
     def __init__(self, cfgData=""):
+      """ c'tor
+      :param self: self reference
+      :param str cfgData: the content of the configuration file
+      """
       self.__data = {}
       self.__children = {}
       if cfgData:
         self.parse(cfgData)
 
     def parse(self, cfgData):
+      """
+      It parse the configuration file and propagate the __data and __children 
+      with the content of the cfg file
+      :param str cfgData: 
+      """
       try:
         self.__parse(cfgData)
       except BaseException:
@@ -88,6 +97,12 @@ class ReleaseConfig(object):
       return self
 
     def getChild(self, path):
+      """
+      It return the child of a given section
+      :param str, list, tuple path: for example: Installations/DIRAC, Projects/DIRAC
+      :return object It returns a CFG instance
+      """
+
       child = self
       if isinstance(path, (list, tuple)):
         pathList = path
@@ -100,6 +115,13 @@ class ReleaseConfig(object):
       return child
 
     def __parse(self, cfgData, cIndex=0):
+      """
+      It parse a given DIRAC cfg file and store the result in self.__data variable.
+      
+      :param str cfgData:
+      :param int cIndex:
+      """
+      
       childName = ""
       numLine = 0
       while cIndex < len(cfgData):
@@ -148,7 +170,13 @@ class ReleaseConfig(object):
         childName += line.strip()
       return cIndex
 
-    def createSection(self, name, cfg=False):
+    def createSection(self, name, cfg=None):
+      """
+      It creates a subsection for an existing CS section. 
+      :param str name: the name of the section
+      :param object cfg: the ReleaseConfig.CFG object loaded into memory
+      """
+      
       if isinstance(name, (list, tuple)):
         pathList = name
       else:
@@ -166,18 +194,34 @@ class ReleaseConfig(object):
       return parent.__children[secName]
 
     def isSection(self, obList):
+      """
+      Checks if a given path is a section 
+      :param str objList: is a path: for example: Releases/v6r20-pre16
+      """
       return self.__exists([ob.strip() for ob in obList.split("/") if ob.strip()]) == 2
 
     def sections(self):
+      """
+      Returns all sections
+      """
       return [k for k in self.__children]
 
     def isOption(self, obList):
       return self.__exists([ob.strip() for ob in obList.split("/") if ob.strip()]) == 1
 
     def options(self):
+      """
+      Returns the options
+      """
       return [k for k in self.__data]
 
     def __exists(self, obList):
+      """
+      Check the existence of a certain element
+      
+      :param list obList: the list of cfg element names. 
+      for example: [Releases,v6r20-pre16] 
+      """
       if len(obList) == 1:
         if obList[0] in self.__children:
           return 2
@@ -190,6 +234,12 @@ class ReleaseConfig(object):
       return 0
 
     def get(self, opName, defaultValue=None):
+      """
+      It return the value of a certain option
+      
+      :param str opName: the name of the option
+      :param str defaultValue: the default value of a given option
+      """
       try:
         value = self.__get([op.strip() for op in opName.split("/") if op.strip()])
       except KeyError:
@@ -207,6 +257,11 @@ class ReleaseConfig(object):
         return defaultValue
 
     def __get(self, obList):
+      """
+      It return a given section
+      
+      :param list obList: the list of cfg element names. 
+      """
       if len(obList) == 1:
         if obList[0] in self.__data:
           return self.__data[obList[0]]
@@ -216,6 +271,11 @@ class ReleaseConfig(object):
       raise KeyError("Missing section %s" % obList[0])
 
     def toString(self, tabs=0):
+      """
+      It return the configuration file as a string
+      :param int tabs: the number of tabs used to format the CS string
+      """
+      
       lines = ["%s%s = %s" % ("  " * tabs, opName, self.__data[opName]) for opName in self.__data]
       for secName in self.__children:
         lines.append("%s%s" % ("  " * tabs, secName))
@@ -225,6 +285,11 @@ class ReleaseConfig(object):
       return "\n".join(lines)
 
     def getOptions(self, path=""):
+      """
+      Rturns the options for a given path
+      
+      :param str path: the path to the CS element
+      """
       parentPath = [sec.strip() for sec in path.split("/") if sec.strip()][:-1]
       if parentPath:
         parent = self.getChild(parentPath)
@@ -235,6 +300,11 @@ class ReleaseConfig(object):
       return tuple(parent.__data)
 
     def delPath(self, path):
+      """
+      It deletes a given CS element
+      
+      :param str path: the path to the CS element
+      """
       path = [sec.strip() for sec in path.split("/") if sec.strip()]
       if not path:
         return
@@ -248,6 +318,11 @@ class ReleaseConfig(object):
         parent.__data.pop(keyName)
 
     def update(self, path, cfg):
+      """
+      Used to change CS 
+      :param str path: path to the CS element
+      :param object cfg: the CS object
+      """
       parent = self.getChild(path)
       if not parent:
         self.createSection(path, cfg)
@@ -255,6 +330,11 @@ class ReleaseConfig(object):
       parent.__apply(cfg)
 
     def __apply(self, cfg):
+      """
+      It adds a certain cfg subsection to a given section
+      
+      :param object cfg: the CS object
+      """
       for k in cfg.sections():
         if k in self.__children:
           self.__children[k].__apply(cfg.getChild(k))
@@ -267,8 +347,12 @@ class ReleaseConfig(object):
 # END OF CFG CLASS
 ############################################################################
 
-  def __init__(self, instName='DIRAC', projectName='DIRAC', globalDefaultsURL=False):
-
+  def __init__(self, instName='DIRAC', projectName='DIRAC', globalDefaultsURL=None):
+    """ c'tor
+    :param str instName: the name of the installation
+    :param str projectName: the name of the project
+    :param str globalDefaultsURL: the default url
+    """
     if globalDefaultsURL:
       self.__globalDefaultsURL = globalDefaultsURL
     else:
@@ -286,21 +370,43 @@ class ReleaseConfig(object):
     self.__projectName = projectName
 
   def getInstallation(self):
+    """
+    Returns the installation, for example: DIRAC
+    """
     return self.__instName
 
   def getProject(self):
+    """
+    Returns the name of the project
+    """
     return self.__projectName
 
   def setInstallation(self, instName):
+    """
+    Change the installation name
+    :param str instName: the name of the installation
+    """
     self.__instName = instName
 
   def setProject(self, projectName):
+    """
+    change the project name
+    
+    :param str projectName: the name of the project
+    """
     self.__projectName = projectName
 
   def setDebugCB(self, debFunc):
+    """
+    Change the debug function
+    :param object debFunc: the debug function
+    """
     self.__debugCB = debFunc
 
   def __dbgMsg(self, msg):
+    """
+    :param str msg: the debug message
+    """
     if self.__debugCB:
       self.__debugCB(msg)
 
@@ -311,6 +417,10 @@ class ReleaseConfig(object):
     return self.__diracBaseModules
 
   def __loadCFGFromURL(self, urlcfg, checkHash=False):
+    """
+    :param str urlcfg:
+    :param bool checkHash:
+    """
 
     # This can be a local file
     if os.path.exists(urlcfg):
@@ -364,6 +474,10 @@ class ReleaseConfig(object):
     return self.__loadObjectDefaults("Projects", self.__projectName)
 
   def __loadGlobalDefaults(self):
+    """
+    It loads the default configuration files
+    """
+  
     self.__dbgMsg("Loading global defaults from: %s" % self.__globalDefaultsURL)
     result = self.__loadCFGFromURL(self.__globalDefaultsURL)
     if not result['OK']:
@@ -376,6 +490,12 @@ class ReleaseConfig(object):
     return S_OK()
 
   def __loadObjectDefaults(self, rootPath, objectName):
+    """
+    It loads the CFG, if it is not loaded.
+    :param str rootPath: the main section. for example: Installations
+    :param str objectName: The name of the section. for example: DIRAC
+    """
+    
     basePath = "%s/%s" % (rootPath, objectName)
     if basePath in self.__loadedCfgs:
       return S_OK()
@@ -734,7 +854,6 @@ class ReleaseConfig(object):
 
     if not project:
       project = self.__projectName
-    print '222',project, release
     modLocation = self.getReleaseOption(project, release, "Sources/%s" % modName)
     if not modLocation:
       return S_ERROR("Source origin for module %s is not defined" % modName)
@@ -744,7 +863,14 @@ class ReleaseConfig(object):
       return S_OK((False, modTpl[0]))
     return S_OK((modTpl[0], modTpl[1]))
 
-  def getExtenalsVersion(self, release=False):
+  def getExtenalsVersion(self, release=None):
+    """
+    It returns the version of DIRAC Externals. If it is not provided,
+    uses the default cfg 
+     
+    :param str release: the release version
+    """
+    
     if 'DIRAC' not in self.__prjRelCFG:
       return False
     if not release:
@@ -755,7 +881,12 @@ class ReleaseConfig(object):
     except KeyError:
       return False
 
-  def getDiracOSVersion(self, diracOSVersion=''):
+  def getDiracOSVersion(self, diracOSVersion=None):
+    """
+    It returns the DIRAC os version
+    :param str diracOSVersion: the OS version
+    """
+    
     if diracOSVersion:
       return diracOSVersion
     try:
@@ -765,7 +896,11 @@ class ReleaseConfig(object):
       pass
     return diracOSVersion
 
-  def getLCGVersion(self, lcgVersion=""):
+  def getLCGVersion(self, lcgVersion=None):
+    """
+    It returns the LCG version
+    :param str lcgVersion: LCG version
+    """
     if lcgVersion:
       return lcgVersion
     try:
@@ -775,7 +910,12 @@ class ReleaseConfig(object):
       pass
     return lcgVersion
 
-  def getModulesToInstall(self, release, extensions=False):
+  def getModulesToInstall(self, release, extensions=None):
+    """
+    It returns the modules to be installed.
+    :param str release: the release version to be deployed
+    :param str extensions: DIRAC extension
+    """
     if not extensions:
       extensions = []
     extraFound = []
