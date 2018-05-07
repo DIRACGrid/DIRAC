@@ -291,6 +291,7 @@ class BaseClient(object):
         path = "/".join( self._destinationSrv.split( "/" )[3:] )
         finalURL = "%s/%s" % ( gatewayURL, path )
         gLogger.debug( "Gateway URL conversion:\n %s -> %s" % ( self._destinationSrv, finalURL ) )
+
         return S_OK( finalURL )
 
     if gatewayURL:

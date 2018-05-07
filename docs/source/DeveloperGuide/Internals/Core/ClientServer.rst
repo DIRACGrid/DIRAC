@@ -132,3 +132,21 @@ And because of the ``threading.local`` inheritance, we can have separate users a
      # Wait for all threads to complete
      for t in threads:
         t.join()
+
+*******
+Servers
+*******
+Here a simplified sequence diagram of client-server communication.
+
+.. uml:: simplified_client-server.uml
+
+In most of the case, an RPC call follow this diagram, before starting anything DIRAC check IP. 
+Then client use the handshake to send his certificate and right after he send the remote procedure
+who need to be called. DIRAC checking authorization send a signal to client when ready. Client send 
+all informations that server needs and finaly DIRAC executing his task. Under these line you can found
+a more complete diagram who describe what DIRAC call at every step. At any point before calling the
+request handler, if IP is banned DIRAC close connection. For other steps if an error occured DIRAC
+send S_ERROR and close connection.
+
+
+.. uml:: complete_client-server.uml

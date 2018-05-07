@@ -1,0 +1,12 @@
+@startuml
+Client -> DIRAC: Connect
+note over DIRAC: Check IP address
+Client <-> DIRAC: Handshake SSL/TLS
+Client -> DIRAC: propose action
+note over DIRAC: Check authorizations
+Client <- DIRAC: S_OK
+Client -> DIRAC: Arguments
+note over DIRAC: Execute task
+Client <- DIRAC: Response
+Client <- DIRAC: Close
+@enduml
