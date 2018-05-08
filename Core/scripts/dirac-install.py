@@ -131,7 +131,6 @@ class Params(object):
     self.timeout = 300
     self.diracOSVersion = ''
     self.diracOS = False
-    self.source = ""
     self.tag = ""
     self.modules = {}
     self.externalVersion = ""
@@ -1698,8 +1697,6 @@ def loadConfiguration():
       cliParams.diracOS = True
     elif o == '--tag':
       cliParams.tag = v
-    elif o in ('-s', '--source'):
-      cliParams.source = v
     elif o in ('-m', '--module'):
       cliParams.modules = discoverModules(v)
     elif o in ('-x', '--external'):
