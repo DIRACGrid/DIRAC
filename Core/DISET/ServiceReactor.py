@@ -152,11 +152,14 @@ class ServiceReactor( object ):
 
   def __acceptIncomingConnection( self, svcName = False ):
     """
-      This method get incomming connections.
-      This method just get the incomming connection, check IP address
-      and generate job. SSL/TLS handshake and execution of remote call
+      This method gets incomming connections.
+      This method just gets the incomming connection, checks IP address
+      and generates job. SSL/TLS handshake and execution of the remote call
       are made by Service._processInThread() (in another thread) so
-      DIRAC can accept other client while Service handle remote call
+      the service can accept other clients while another thread handling remote call
+
+      :param str svcName=False: Name of a service if you use multiple 
+                                services at the same time
     """
     sockets = self.__getListeningSocketsList( svcName )
     while self.__alive:

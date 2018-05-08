@@ -1,5 +1,9 @@
 """
   Service class implements the server side part of the DISET protocol
+  There are 2 main parts in this class:
+  
+  - All useful functions for initialization
+  - All useful functions to handle the requests
 """
 #pylint: skip-file
 ## __searchInitFunctions gives RuntimeError: maximum recursion depth exceeded
@@ -36,6 +40,19 @@ class Service( object ):
   SVC_SECLOG_CLIENT = SecurityLogClient()
 
   def __init__( self, serviceData ):
+    """
+      Init the variables for the service
+
+      :param serviceData: dict with modName, standalone, loadName, moduleObj, classObj. e.g.:
+        {'modName': 'Framework/serviceName', 
+        'standalone': True, 
+        'loadName': 'Framework/serviceName', 
+        'moduleObj': <module 'serviceNameHandler' from '/home/DIRAC/FrameworkSystem/Service/serviceNameHandler.pyo'>,
+        'classObj': <class 'serviceNameHandler.serviceHandler'>}
+
+        Standalone is true if there is only one service started
+        If it's false, every service is linked to a different MonitoringClient
+    """
     self._svcData = serviceData
     self._name = serviceData[ 'modName' ]
     self._startTime = Time.dateTime()
@@ -264,9 +281,10 @@ class Service( object ):
   def handleConnection( self, clientTransport ):
     """
       This method may be called by ServiceReactor.
-      The method stack openened connection in a queue, another thread 
+      The method stacks openened connection in a queue, another thread 
       read this queue and handle connection.
-      :param clientTransport: Object who describe opened connection
+
+      :param clientTransport: Object wich describe opened connection (PlainTransport or SSLTransport)
     """
     self._stats[ 'connections' ] += 1
     self._monitor.setComponentExtraParam( 'queries', self._stats[ 'connections' ] )
@@ -276,13 +294,13 @@ class Service( object ):
   #Threaded process function
   def _processInThread( self, clientTransport ):
     """
-    This method handle a RPC, FileTransfer or Connection.
+    This method handles a RPC, FileTransfer or Connection.
     Connection may be opened via ServiceReactor.__acceptIncomingConnection
-     :param clientTransport: Object who describe opened connection
 
-    - Do the SSL/TLS Handshake (if dips is used)
-    - Get the action called by client
-    - Check if client is authorized to perform ation
+
+    - Do the SSL/TLS Handshake (if dips is used) and extract credentials
+    - Get the action called by the client
+    - Check if the client is authorized to perform ation
       - If not, connection is closed
     - Instanciate the RequestHandler (RequestHandler contain all methods callable)
 
@@ -290,8 +308,14 @@ class Service( object ):
     #Execute the action)
     - Notify the client we're ready to execute the action (via _processProposal) 
       and call RequestHandler._rh_executeAction() 
-    - Receive arguments/file/something else (depending on action) in RequestHandler
-    - Executing action asked by client
+    - Receive arguments/file/something else (depending on action) in the RequestHandler
+    - Executing the action asked by the client
+
+    :param clientTransport: Object who describe the opened connection (SSLTransport or PlainTransport)
+
+    :return: S_OK with "closeTransport" a boolean to indicate if th connection have to be closed 
+            e.g. after RPC, closeTransport=True
+
     """
     self.__maxFD = max( self.__maxFD, clientTransport.oSocket.fileno() )
     self._lockManager.lockGlobal()

@@ -37,19 +37,18 @@ def getSystemSection( serviceName, serviceTuple = False, instance = False, setup
 def getComponentSection (componentName, componentTuple = False, setup = False, componentCategory ="Services"):
   """Function returns the path to the component.
 
-  Args:
-    componentName(str): Component name prefixed by the system in which it is placed.
-                        e.g. 'WorkloadManagement/SandboxStoreHandler'
-    componentTuple
-    setup(str): Name of the setup.
-    componentCategory(str): Category of the component, it can be: 'Agents', 'Services', 'Executors'
-                            or 'Databases'.
 
-  Returns:
-    str: Complete path to the component
+  :param str componentName: Component name prefixed by the system in which it is placed.
+                            e.g. 'WorkloadManagement/SandboxStoreHandler'
+  :param tuple componentTuple: Path of the componenent already divided
+                               e.g. ('WorkloadManagement', 'SandboxStoreHandler')
+  :param str setup: Name of the setup.
+  :param str componentCategory: Category of the component, it can be: 'Agents', 'Services', 'Executors'
+                                or 'Databases'.
 
-  Raises:
-    RuntimeException: If in the componentName - the system part does not correspond to any known system in DIRAC.
+  :return str: Complete path to the component
+
+  :raise RuntimeException: If in the componentName - the system part does not correspond to any known system in DIRAC.
 
   Example:
     getComponentSection('WorkloadManagement/SandboxStoreHandler', False,False,'Services')
@@ -76,6 +75,15 @@ def getSystemURLSection( serviceName, serviceTuple = False, setup = False ):
   return "%s/URLs" % systemSection
 
 def getServiceURL( serviceName, serviceTuple = False, setup = False ):
+  """
+    Generate url.
+
+    :param serviceName: Name of service, like 'Framework/Service'.
+    :param serviceTuple: (optional) also name of service but look like ('Framework', 'Service').
+    :param str setup: DIRAC setup name, can be defined in dirac.cfg
+
+    :return: complete url. e.g. dips://some-domain:3424/Framework/Service
+  """
   if not serviceTuple:
     serviceTuple = divideFullName( serviceName )
   systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )

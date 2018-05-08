@@ -9,7 +9,7 @@ end
 group Service._processInThread()
 	Client <-> Service: Handshake
 	note right: Client send his certificate \n during the handshake.
-	Client -> Service: method
+	Client -> Service: proposalTuple
 	Service -> Service: _receiveAndCheckProposal()
 	note over Service: Check authorization
 	Service -> RequestHandler: initialize()
@@ -27,6 +27,7 @@ group Service._processInThread()
 		note right: export_method() came from\nthe service you write.
 		Client <-RequestHandler: S_OK/S_ERROR
 	end
+	Client <- RequestHandler: Close
 end
 
 @enduml
