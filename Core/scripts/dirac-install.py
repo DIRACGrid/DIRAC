@@ -1,6 +1,81 @@
 #!/usr/bin/env python
 """
-The main DIRAC installer script
+The main DIRAC installer script. It can be used to install the main DIRAC software, its
+modules, web, rest etc. and DIRAC extensions. 
+
+In order to deploy DIRAC you have to provide: globalDefaultsURL, which is by default "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg", but it can be 
+in the local file system in a separate directory. The content of this file is the following:
+
+Installations
+{
+  DIRAC
+  {
+    DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaultsDIRAC.cfg
+    LocalInstallation
+    {
+      PythonVersion = 27
+    }
+  # in case you have a DIRAC extension
+  LHCb
+  {
+    DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/lhcb.cfg
+  } 
+  }
+}
+Projects
+{
+  DIRAC
+  {
+    DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/dirac.cfg
+  }
+  # in case you have a DIRAC extension
+  LHCb
+  {
+    DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/lhcb.cfg
+  } 
+}
+
+the DefaultsLocation for example: (DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/dirac.cfg)  
+must contain a minimal configuration. The following options must be in this file:Releases=,UploadCommand=,BaseURL= 
+In case you want to overwrite the global configuration file, you have to use --defaultsURL
+
+After providing the default configuration files, DIRAC or your extension can be installed from:
+
+1.local file system
+2.dedicated web server:
+3.code repository
+
+1. in a directory you have to be present globalDefaults.cfg, dirac.cfg and all binaries. For example:
+zmathe@dzmathe zmathe]$ ls tars/
+dirac.cfg  diracos-0.1.md5  diracos-0.1.tar.gz  DIRAC-v6r20-pre16.md5  DIRAC-v6r20-pre16.tar.gz  globalDefaults.cfg  release-DIRAC-v6r20-pre16.cfg  release-DIRAC-v6r20-pre16.md5 
+zmathe@dzmathe zmathe]$
+
+for example: ./dirac-install -r v6r20-pre16 -g v14r0  -O 0.1 -u /home/zmathe/tars
+
+this command will use  /home/zmathe/tars for the code repository. It will install DIRAC v6r20-pre16, LCG v14r0 and DIRAC OS 0.1 version
+
+2. You can use your dedicated web server or the official DIRAC web server
+
+for example: ./dirac-install -r v6r20-pre16 -g v14r0
+It will install DIRAC v6r20-pre16, LCG v14r0 
+
+3. You have possibility to install a non release DIRAC, module or extension using -m or --tag options. The non release version can be specified:
+
+for example:
+./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m DIRAC --tag=integration
+it will install DIRAC v6r20-pre16 but using DIRAC integration. The external version and other packages will be the same what is specified in v6r20-pre16  
+
+./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m DIRAC --tag=v6r20-pre22
+It install a specific tag
+
+Note: If the source is not provided, DIRAC repository is used.
+We can provide the repository url:code repository*Project*branch. for example:
+./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch,https://github.com/zmathe/WebAppDIRAC.git*WebAppDIRAC*extjs6 -e WebAppDIRAC
+it will install DIRAC based on dev_main_branch and WebAppDIRAC based on extjs6
+ 
+./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m WebAppDIRAC --tag=integration -e WebAppDIRAC
+it will install DIRAC v6r20-pre16 and WebAppDIRAC integration branch
+
 """
 
 import sys
@@ -60,7 +135,7 @@ class Params(object):
     self.tag = ""
     self.modules = {}
     self.externalVersion = ""
-    
+
 cliParams = Params()
 
 ###
@@ -117,11 +192,11 @@ class ReleaseConfig(object):
     def __parse(self, cfgData, cIndex=0):
       """
       It parse a given DIRAC cfg file and store the result in self.__data variable.
-      
+
       :param str cfgData:
       :param int cIndex:
       """
-      
+
       childName = ""
       numLine = 0
       while cIndex < len(cfgData):
@@ -176,7 +251,7 @@ class ReleaseConfig(object):
       :param str name: the name of the section
       :param object cfg: the ReleaseConfig.CFG object loaded into memory
       """
-      
+
       if isinstance(name, (list, tuple)):
         pathList = name
       else:
@@ -218,7 +293,7 @@ class ReleaseConfig(object):
     def __exists(self, obList):
       """
       Check the existence of a certain element
-      
+
       :param list obList: the list of cfg element names. 
       for example: [Releases,v6r20-pre16] 
       """
@@ -236,7 +311,7 @@ class ReleaseConfig(object):
     def get(self, opName, defaultValue=None):
       """
       It return the value of a certain option
-      
+
       :param str opName: the name of the option
       :param str defaultValue: the default value of a given option
       """
@@ -259,7 +334,7 @@ class ReleaseConfig(object):
     def __get(self, obList):
       """
       It return a given section
-      
+
       :param list obList: the list of cfg element names. 
       """
       if len(obList) == 1:
@@ -275,7 +350,7 @@ class ReleaseConfig(object):
       It return the configuration file as a string
       :param int tabs: the number of tabs used to format the CS string
       """
-      
+
       lines = ["%s%s = %s" % ("  " * tabs, opName, self.__data[opName]) for opName in self.__data]
       for secName in self.__children:
         lines.append("%s%s" % ("  " * tabs, secName))
@@ -287,7 +362,7 @@ class ReleaseConfig(object):
     def getOptions(self, path=""):
       """
       Rturns the options for a given path
-      
+
       :param str path: the path to the CS element
       """
       parentPath = [sec.strip() for sec in path.split("/") if sec.strip()][:-1]
@@ -302,7 +377,7 @@ class ReleaseConfig(object):
     def delPath(self, path):
       """
       It deletes a given CS element
-      
+
       :param str path: the path to the CS element
       """
       path = [sec.strip() for sec in path.split("/") if sec.strip()]
@@ -332,7 +407,7 @@ class ReleaseConfig(object):
     def __apply(self, cfg):
       """
       It adds a certain cfg subsection to a given section
-      
+
       :param object cfg: the CS object
       """
       for k in cfg.sections():
@@ -391,7 +466,7 @@ class ReleaseConfig(object):
   def setProject(self, projectName):
     """
     change the project name
-    
+
     :param str projectName: the name of the project
     """
     self.__projectName = projectName
@@ -418,8 +493,10 @@ class ReleaseConfig(object):
 
   def __loadCFGFromURL(self, urlcfg, checkHash=False):
     """
-    :param str urlcfg:
-    :param bool checkHash:
+    It is used to load the configuration file
+
+    :param str urlcfg: the location of the binary. 
+    :param bool checkHash: check if the file is corrupted. 
     """
 
     # This can be a local file
@@ -462,12 +539,18 @@ class ReleaseConfig(object):
     return S_OK(cfg)
 
   def loadInstallationDefaults(self):
+    """
+    Load the default configurations
+    """
     result = self.__loadGlobalDefaults()
     if not result['OK']:
       return result
     return self.__loadObjectDefaults("Installations", self.__instName)
 
   def loadProjectDefaults(self):
+    """
+    Load default configurations
+    """
     result = self.__loadGlobalDefaults()
     if not result['OK']:
       return result
@@ -477,7 +560,7 @@ class ReleaseConfig(object):
     """
     It loads the default configuration files
     """
-  
+
     self.__dbgMsg("Loading global defaults from: %s" % self.__globalDefaultsURL)
     result = self.__loadCFGFromURL(self.__globalDefaultsURL)
     if not result['OK']:
@@ -495,7 +578,7 @@ class ReleaseConfig(object):
     :param str rootPath: the main section. for example: Installations
     :param str objectName: The name of the section. for example: DIRAC
     """
-    
+
     basePath = "%s/%s" % (rootPath, objectName)
     if basePath in self.__loadedCfgs:
       return S_OK()
@@ -549,6 +632,11 @@ class ReleaseConfig(object):
     return S_OK(self.__globalDefaults.getChild(basePath))
 
   def loadInstallationLocalDefaults(self, fileName):
+    """
+    Load the configuration file from a file
+
+    :param str fileName: the configuration file name
+    """
     try:
       fd = open(fileName, "r")
       # TODO: Merge with installation CFG
@@ -559,26 +647,54 @@ class ReleaseConfig(object):
     self.__globalDefaults.update("Installations/%s" % self.getInstallation(), cfg)
     return S_OK()
 
-  def getInstallationCFG(self, instName=False):
+  def getInstallationCFG(self, instName=None):
+    """
+    Returns the installation name
+
+    :param str instName: the installation name
+    """
     if not instName:
       instName = self.__instName
     return self.__globalDefaults.getChild("Installations/%s" % instName)
 
-  def getInstallationConfig(self, opName, instName=False):
+  def getInstallationConfig(self, opName, instName=None):
+    """
+    It returns the configurations from the Installations section.
+    This is usually provided in the local configuration file
+
+    :param str opName: the option name for example: LocalInstallation/Release
+    :param str instName:
+    """
     if not instName:
       instName = self.__instName
     return self.__globalDefaults.get("Installations/%s/%s" % (instName, opName))
 
   def isProjectLoaded(self, project):
+    """
+    Checks if the project is loaded.
+
+    :param str project: the name of the project
+    """
     return project in self.__prjRelCFG
 
   def getTarsLocation(self, project):
+    """
+    Returns the location of the binaries for a given project for example: LHCb or DIRAC, etc...
+
+    :param str project: the name of the project
+    """
+
     defLoc = self.__globalDefaults.get("Projects/%s/BaseURL" % project, "")
     if defLoc:
       return S_OK(defLoc)
     return S_ERROR("Don't know how to find the installation tarballs for project %s" % project)
 
-  def getUploadCommand(self, project=False):
+  def getUploadCommand(self, project=None):
+    """
+    It returns the command used to upload the binary
+
+    :param str project: the name of the project
+    """
     if not project:
       project = self.__projectName
     defLoc = self.__globalDefaults.get("Projects/%s/UploadCommand" % project, "")
@@ -586,7 +702,16 @@ class ReleaseConfig(object):
       return S_OK(defLoc)
     return S_ERROR("No UploadCommand for %s" % project)
 
-  def __loadReleaseConfig(self, project, release, releaseMode, sourceURL=False, relLocation=False):
+  def __loadReleaseConfig(self, project, release, releaseMode, sourceURL=None, relLocation=None):
+    """
+    It loads the release configuration file
+
+    :param str project: the name of the project
+    :param str release: the release version
+    :param str releaseMode: the type of the release server/client
+    :param str sourceURL: the source of the binary
+    :param str relLocation: the release configuration file
+    """
     if project not in self.__prjRelCFG:
       self.__prjRelCFG[project] = {}
     if release in self.__prjRelCFG[project]:
@@ -620,9 +745,19 @@ class ReleaseConfig(object):
     return S_OK(self.__prjRelCFG[project][release])
 
   def getReleaseCFG(self, project, release):
+    """
+    Returns the release configuration object
+
+    :param str project: the name of the project
+    :param str release: the release version
+    """
     return self.__prjRelCFG[project][release]
 
-  def dumpReleasesToPath(self, path):
+  def dumpReleasesToPath(self):
+    """
+    It dumps the content of the loaded configuration (memory content) to 
+    a given file
+    """
     for project in self.__prjRelCFG:
       prjRels = self.__prjRelCFG[project]
       for release in prjRels:
@@ -634,7 +769,14 @@ class ReleaseConfig(object):
         fd.write(prjRels[release].toString())
         fd.close()
 
-  def __checkCircularDependencies(self, key, routePath=False):
+  def __checkCircularDependencies(self, key, routePath=None):
+    """
+    Check the dependencies 
+
+    :param str key: the name of the project and the release version
+    :param list routePath
+    """
+
     if not routePath:
       routePath = []
     if key not in self.__projectsLoadedBy:
@@ -651,13 +793,11 @@ class ReleaseConfig(object):
     routePath.pop(0)
     return S_OK()
 
-  def loadProjectRelease(
-          self,
-          releases,
-          project=False,
-          sourceURL=False,
-          releaseMode=False,
-          relLocation=False):
+  def loadProjectRelease(self, releases,
+                         project=None,
+                         sourceURL=None,
+                         releaseMode=None,
+                         relLocation=None):
     """
     This method loads all project configurations (*.cfg). If a project is an extension of DIRAC,
     it will load the extension and after will load the base DIRAC module.
@@ -765,6 +905,13 @@ class ReleaseConfig(object):
     return S_OK()
 
   def getReleaseOption(self, project, release, option):
+    """
+    Returns a given option
+    
+    :param str project: the name of the project
+    :param str release: the release version
+    :param str option: the option name
+    """
     try:
       return self.__prjRelCFG[project][release].get(option)
     except KeyError:
@@ -772,6 +919,12 @@ class ReleaseConfig(object):
       return False
 
   def getReleaseDependencies(self, project, release):
+    """
+    It return the dependencies for a certain project
+    
+    :param str project: the name of the project
+    :param str release: the release version
+    """
     try:
       data = self.__prjRelCFG[project][release].get("Releases/%s/Depends" % release)
     except KeyError:
@@ -789,7 +942,14 @@ class ReleaseConfig(object):
         deps[pv[0].strip()] = ":".join(pv[1:]).strip()
     return deps
 
-  def getModulesForRelease(self, release, project=False):
+  def getModulesForRelease(self, release, project=None):
+    """
+    Returns the modules for a given release for example: WebAppDIRAC, 
+    RESTDIRAC, LHCbWebAppDIRAC, etc
+    
+    :param str release: the release version
+    :param str project: the project name
+    """
     if not project:
       project = self.__projectName
     if project not in self.__prjRelCFG:
@@ -867,10 +1027,10 @@ class ReleaseConfig(object):
     """
     It returns the version of DIRAC Externals. If it is not provided,
     uses the default cfg 
-     
+
     :param str release: the release version
     """
-    
+
     if 'DIRAC' not in self.__prjRelCFG:
       return False
     if not release:
@@ -886,7 +1046,7 @@ class ReleaseConfig(object):
     It returns the DIRAC os version
     :param str diracOSVersion: the OS version
     """
-    
+
     if diracOSVersion:
       return diracOSVersion
     try:
@@ -994,6 +1154,9 @@ platformAlias = {}
 
 
 def logDEBUG(msg):
+  """
+  :param str msg: debug message
+  """
   if cliParams.debug:
     for line in msg.split("\n"):
       print "%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line)
@@ -1001,37 +1164,52 @@ def logDEBUG(msg):
 
 
 def logERROR(msg):
+  """
+  :param str msg: error message
+  """
   for line in msg.split("\n"):
     print "%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line)
   sys.stdout.flush()
 
 
 def logWARN(msg):
+  """
+  :param str msg: warning message
+  """
   for line in msg.split("\n"):
     print "%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line)
   sys.stdout.flush()
 
 
 def logNOTICE(msg):
+  """
+  :param str msg: notice message
+  """
   for line in msg.split("\n"):
     print "%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line)
   sys.stdout.flush()
 
 
 def alarmTimeoutHandler(*args):
+  """
+  When a connection time out then raise and exception
+  """
   raise Exception('Timeout')
 
 
 def urlretrieveTimeout(url, fileName='', timeout=0):
   """
    Retrieve remote url to local file, with timeout wrapper
+   
+   :param str fileName: file name 
+   :param int timeout: time out in second used for downloading the files.
   """
-  
+
   if fileName:
     # This can be a local file
     if os.path.exists(url):  # we do not download from web, use locally
       logDEBUG('Local file used: "%s"' % url)
-      shutil.copy(url, fileName) 
+      shutil.copy(url, fileName)
       return True
     localFD = open(fileName, "wb")
 
@@ -1109,7 +1287,7 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
 
   if timeout:
     signal.alarm(0)
-  
+
   if fileName:
     return True
   else:
@@ -1118,14 +1296,16 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
 
 def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=False):
   """
+  It downloads and extracts a given tarball from a given destination: file system,
+  web server or code repository.
+  
   :param str tarsURL:
   :param str pkgName:
   :param str pkgVer:
   :param bool checkHash:
   :param bool cache:
-  
+
   """
-  print 'downloadAndExtractTarball', tarsURL, pkgName, pkgVer, checkHash, cache
   tarName = "%s-%s.tar.gz" % (pkgName, pkgVer)
   tarPath = os.path.join(cliParams.targetPath, tarName)
   tarFileURL = "%s/%s" % (tarsURL, tarName)
@@ -1332,26 +1512,29 @@ def installExternalRequirements(extType):
                                                                              reqScript))
   return True
 
+
 def discoverModules(modules):
   """
-  Build the modules dictionary, which will be installed: {"DIRAC:{"sourceUrl":"https://github.com/zmathe/DIRAC.git","Vesrion:v6r20p11"}}
+  Created the dictionary which contains all modules, which can be installed
+  for example: {"DIRAC:{"sourceUrl":"https://github.com/zmathe/DIRAC.git","Vesrion:v6r20p11"}}
+  
   :param: str modules: it contains meta information for the module, which will be installed: https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch
   """
 
   projects = {}
 
   for module in modules.split(","):
-    s=m=v=None
+    s = m = v = None
     try:
       s, m, v = module.split("*")
     except ValueError:
-      m = module.split("*")[0] # the source and version is not provided
-          
-    projects[m]= {}
+      m = module.split("*")[0]  # the source and version is not provided
+
+    projects[m] = {}
     if s and v:
-      projects[m] = {"sourceUrl":s,"Version": v}
+      projects[m] = {"sourceUrl": s, "Version": v}
   return projects
-    
+
 ####
 # End of helper functions
 ####
@@ -1379,7 +1562,8 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('  ', 'dirac-os-version=', 'the version of the DIRAC OS'),
            ('  ', 'dirac-os', 'Enable installation of DIRAC OS'),
            ('  ', 'tag=', 'release version to install from git, http or local'),
-           ('m:', 'module=', 'Module to be installed. for example: -m DIRAC or -m git://github.com/DIRACGrid/DIRAC.git:DIRAC'),
+           ('m:', 'module=',
+            'Module to be installed. for example: -m DIRAC or -m git://github.com/DIRACGrid/DIRAC.git:DIRAC'),
            ('s:', 'source=', 'location of the modules to be installed'),
            ('x:', 'external', 'external version'),
            )
@@ -1409,7 +1593,9 @@ def usage():
 
 
 def loadConfiguration():
-
+  """
+  It loads the configuration file
+  """
   optList, args = getopt.getopt(sys.argv[1:],
                                 "".join([opt[0] for opt in cmdOpts]),
                                 [opt[1] for opt in cmdOpts])
@@ -1512,11 +1698,11 @@ def loadConfiguration():
       cliParams.diracOS = True
     elif o == '--tag':
       cliParams.tag = v
-    elif o in ('-s','--source'):
+    elif o in ('-s', '--source'):
       cliParams.source = v
-    elif o in ('-m','--module'):
-      cliParams.modules = discoverModules(v)    
-    elif o in ('-x','--external'):
+    elif o in ('-m', '--module'):
+      cliParams.modules = discoverModules(v)
+    elif o in ('-x', '--external'):
       cliParams.externalVersion = v
 
   if not cliParams.release and not cliParams.modules:
@@ -1549,6 +1735,11 @@ def loadConfiguration():
 
 
 def compileExternals(extVersion):
+  """
+  It is used to compile the external for a given platform
+  
+  :param str extVersion: the external version
+  """
   logNOTICE("Compiling externals %s" % extVersion)
   buildCmd = os.path.join(
       cliParams.targetPath,
@@ -1570,6 +1761,9 @@ def compileExternals(extVersion):
 
 
 def getPlatform():
+  """
+  It returns the platform, where this script is running using Platform.py
+  """
   platformPath = os.path.join(cliParams.targetPath, "DIRAC", "Core", "Utilities", "Platform.py")
   try:
     platFD = open(platformPath, "r")
@@ -1584,8 +1778,11 @@ def getPlatform():
 
 def installExternals(releaseConfig):
   """
+  It install the DIRAC external. The version of the external is provided by 
+  the cmd or in the configuration file.
+  
   :param object releaseConfig:
-  """ 
+  """
   if not releaseConfig:
     externalsVersion = cliParams.externalVersion
   else:
@@ -1621,7 +1818,10 @@ def installExternals(releaseConfig):
 
 
 def installLCGutils(releaseConfig):
-
+  """
+  DIRAC uses various tools from LCG area. This method install a given 
+  lcg version.
+  """
   if not cliParams.platform:
     cliParams.platform = getPlatform()
   if not cliParams.platform:
@@ -1922,6 +2122,10 @@ def createCshrc():
 
 
 def writeDefaultConfiguration():
+  """
+  After DIRAC is installed a default configuration file is created,
+  which contains a minimal setup.  
+  """
   if not releaseConfig:
     return
   instCFG = releaseConfig.getInstallationCFG()
@@ -1957,6 +2161,11 @@ def __getTerminfoLocations(defaultLocation=None):
 
 
 def installDiracOS(releaseConfig):
+  """
+  Install the DIRAC os. 
+  
+  :param str releaseConfig: the version of the DIRAC OS
+  """
   diracOSVersion = releaseConfig.getDiracOSVersion(cliParams.diracOSVersion)
   if not diracOSVersion:
     logERROR("No diracos defined")
@@ -2175,7 +2384,7 @@ def checkoutFromGit(moduleName=None, sourceURL=None, tagVersion=None):
   :param str tagVersion: the tag for example: v4r3p6
 
   """
-  
+
   if not moduleName:
     moduleName = self.params.name
 
@@ -2232,7 +2441,7 @@ if __name__ == "__main__":
       logNOTICE(str(cliParams.modules))
       for i in cliParams.modules:
         modsOrder.append(i)
-        modsToInstall[i] = ( cliParams.modules[i]['sourceUrl'], cliParams.modules[i]['Version'])
+        modsToInstall[i] = (cliParams.modules[i]['sourceUrl'], cliParams.modules[i]['Version'])
     else:
       # there is no module provided which can be deployed
       logERROR(result['Message'])
@@ -2241,7 +2450,7 @@ if __name__ == "__main__":
     releaseConfig = result['Value']
   if not createPermanentDirLinks():
     sys.exit(1)
-  
+
   if not cliParams.externalsOnly:
     logNOTICE("Discovering modules to install")
     if releaseConfig:
@@ -2252,9 +2461,9 @@ if __name__ == "__main__":
       modsOrder, modsToInstall = result['Value']
     if cliParams.debug and releaseConfig:
       logNOTICE("Writing down the releases files")
-      releaseConfig.dumpReleasesToPath(cliParams.targetPath)
+      releaseConfig.dumpReleasesToPath()
     logNOTICE("Installing modules...")
-    for modName in modsOrder: 
+    for modName in modsOrder:
       tarsURL, modVersion = modsToInstall[modName]
       if cliParams.installSource and not cliParams.modules:
         # we install not release version of DIRAC
@@ -2266,12 +2475,12 @@ if __name__ == "__main__":
         if not sourceURL:
           retVal = releaseConfig.getModSource(cliParams.release, modName)
           if retVal['OK']:
-            tarsURL = retVal['Value'][1] # this is the git repository url
+            tarsURL = retVal['Value'][1]  # this is the git repository url
             modVersion = cliParams.tag
         else:
           tarsURL = sourceURL
         retVal = checkoutFromGit(modName, tarsURL, modVersion)
-        if not retVal['OK']:          
+        if not retVal['OK']:
           logERROR("Cannot checkout %s" % retVal['Message'])
           sys.exit(1)
         continue
