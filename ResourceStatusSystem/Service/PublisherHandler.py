@@ -7,7 +7,7 @@ they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
 
 __RCSID__ = '$Id:$'
 
-# pylint: disable=no-self-use
+#  pylint: disable=no-self-use
 
 from datetime import datetime, timedelta
 from types import NoneType
@@ -379,8 +379,6 @@ class PublisherHandler(RequestHandler):
 
       if not res['Value'] in endpoint2Site:
         endpoint2Site[res['Value']] = seName.split('-', 1)[0]
-
-    #...........................................................................
 
     endpointSet = set()
 
