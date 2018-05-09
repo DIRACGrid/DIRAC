@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """
 The main DIRAC installer script. It can be used to install the main DIRAC software, its
-modules, web, rest etc. and DIRAC extensions. 
+modules, web, rest etc. and DIRAC extensions.
 
-In order to deploy DIRAC you have to provide: globalDefaultsURL, which is by default "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg", but it can be 
+In order to deploy DIRAC you have to provide: globalDefaultsURL, which is by default:
+"http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg", but it can be
 in the local file system in a separate directory. The content of this file is the following:
 
 Installations
@@ -19,7 +20,7 @@ Installations
   LHCb
   {
     DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/lhcb.cfg
-  } 
+  }
   }
 }
 Projects
@@ -32,11 +33,13 @@ Projects
   LHCb
   {
     DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/lhcb.cfg
-  } 
+  }
 }
 
-the DefaultsLocation for example: (DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/dirac.cfg)  
-must contain a minimal configuration. The following options must be in this file:Releases=,UploadCommand=,BaseURL= 
+the DefaultsLocation for example:
+DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/dirac.cfg
+must contain a minimal configuration. The following options must be in this
+file:Releases=,UploadCommand=,BaseURL=
 In case you want to overwrite the global configuration file, you have to use --defaultsURL
 
 After providing the default configuration files, DIRAC or your extension can be installed from:
@@ -47,32 +50,38 @@ After providing the default configuration files, DIRAC or your extension can be 
 
 1. in a directory you have to be present globalDefaults.cfg, dirac.cfg and all binaries. For example:
 zmathe@dzmathe zmathe]$ ls tars/
-dirac.cfg  diracos-0.1.md5  diracos-0.1.tar.gz  DIRAC-v6r20-pre16.md5  DIRAC-v6r20-pre16.tar.gz  globalDefaults.cfg  release-DIRAC-v6r20-pre16.cfg  release-DIRAC-v6r20-pre16.md5 
+dirac.cfg  diracos-0.1.md5  diracos-0.1.tar.gz  DIRAC-v6r20-pre16.md5  DIRAC-v6r20-pre16.tar.gz  globalDefaults.cfg \
+release-DIRAC-v6r20-pre16.cfg  release-DIRAC-v6r20-pre16.md5
 zmathe@dzmathe zmathe]$
 
 for example: ./dirac-install -r v6r20-pre16 -g v14r0  -O 0.1 -u /home/zmathe/tars
 
-this command will use  /home/zmathe/tars for the code repository. It will install DIRAC v6r20-pre16, LCG v14r0 and DIRAC OS 0.1 version
+this command will use  /home/zmathe/tars for the code repository.
+It will install DIRAC v6r20-pre16, LCG v14r0 and DIRAC OS 0.1 version
 
 2. You can use your dedicated web server or the official DIRAC web server
 
 for example: ./dirac-install -r v6r20-pre16 -g v14r0
-It will install DIRAC v6r20-pre16, LCG v14r0 
+It will install DIRAC v6r20-pre16, LCG v14r0
 
-3. You have possibility to install a non release DIRAC, module or extension using -m or --tag options. The non release version can be specified:
+3. You have possibility to install a non release DIRAC,
+module or extension using -m or --tag options. The non release version can be specified:
 
 for example:
 ./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m DIRAC --tag=integration
-it will install DIRAC v6r20-pre16 but using DIRAC integration. The external version and other packages will be the same what is specified in v6r20-pre16  
+it will install DIRAC v6r20-pre16 but using DIRAC integration.
+The external version and other packages will be the same what is specified in v6r20-pre16
 
 ./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m DIRAC --tag=v6r20-pre22
 It install a specific tag
 
 Note: If the source is not provided, DIRAC repository is used.
 We can provide the repository url:code repository*Project*branch. for example:
-./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch,https://github.com/zmathe/WebAppDIRAC.git*WebAppDIRAC*extjs6 -e WebAppDIRAC
+./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m \
+https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch, \
+https://github.com/zmathe/WebAppDIRAC.git*WebAppDIRAC*extjs6 -e WebAppDIRAC
 it will install DIRAC based on dev_main_branch and WebAppDIRAC based on extjs6
- 
+
 ./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m WebAppDIRAC --tag=integration -e WebAppDIRAC
 it will install DIRAC v6r20-pre16 and WebAppDIRAC integration branch
 
@@ -158,9 +167,9 @@ class ReleaseConfig(object):
 
     def parse(self, cfgData):
       """
-      It parse the configuration file and propagate the __data and __children 
+      It parse the configuration file and propagate the __data and __children
       with the content of the cfg file
-      :param str cfgData: 
+      :param str cfgData: configuration data
       """
       try:
         self.__parse(cfgData)
@@ -246,7 +255,7 @@ class ReleaseConfig(object):
 
     def createSection(self, name, cfg=None):
       """
-      It creates a subsection for an existing CS section. 
+      It creates a subsection for an existing CS section.
       :param str name: the name of the section
       :param object cfg: the ReleaseConfig.CFG object loaded into memory
       """
@@ -269,7 +278,7 @@ class ReleaseConfig(object):
 
     def isSection(self, obList):
       """
-      Checks if a given path is a section 
+      Checks if a given path is a section
       :param str objList: is a path: for example: Releases/v6r20-pre16
       """
       return self.__exists([ob.strip() for ob in obList.split("/") if ob.strip()]) == 2
@@ -293,8 +302,8 @@ class ReleaseConfig(object):
       """
       Check the existence of a certain element
 
-      :param list obList: the list of cfg element names. 
-      for example: [Releases,v6r20-pre16] 
+      :param list obList: the list of cfg element names.
+      for example: [Releases,v6r20-pre16]
       """
       if len(obList) == 1:
         if obList[0] in self.__children:
@@ -334,7 +343,7 @@ class ReleaseConfig(object):
       """
       It return a given section
 
-      :param list obList: the list of cfg element names. 
+      :param list obList: the list of cfg element names.
       """
       if len(obList) == 1:
         if obList[0] in self.__data:
@@ -393,7 +402,8 @@ class ReleaseConfig(object):
 
     def update(self, path, cfg):
       """
-      Used to change CS 
+      Used to change CS
+
       :param str path: path to the CS element
       :param object cfg: the CS object
       """
@@ -494,8 +504,8 @@ class ReleaseConfig(object):
     """
     It is used to load the configuration file
 
-    :param str urlcfg: the location of the binary. 
-    :param bool checkHash: check if the file is corrupted. 
+    :param str urlcfg: the location of the binary.
+    :param bool checkHash: check if the file is corrupted.
     """
 
     # This can be a local file
@@ -754,7 +764,7 @@ class ReleaseConfig(object):
 
   def dumpReleasesToPath(self):
     """
-    It dumps the content of the loaded configuration (memory content) to 
+    It dumps the content of the loaded configuration (memory content) to
     a given file
     """
     for project in self.__prjRelCFG:
@@ -770,7 +780,7 @@ class ReleaseConfig(object):
 
   def __checkCircularDependencies(self, key, routePath=None):
     """
-    Check the dependencies 
+    Check the dependencies
 
     :param str key: the name of the project and the release version
     :param list routePath
@@ -906,7 +916,7 @@ class ReleaseConfig(object):
   def getReleaseOption(self, project, release, option):
     """
     Returns a given option
-    
+
     :param str project: the name of the project
     :param str release: the release version
     :param str option: the option name
@@ -920,7 +930,7 @@ class ReleaseConfig(object):
   def getReleaseDependencies(self, project, release):
     """
     It return the dependencies for a certain project
-    
+
     :param str project: the name of the project
     :param str release: the release version
     """
@@ -943,9 +953,9 @@ class ReleaseConfig(object):
 
   def getModulesForRelease(self, release, project=None):
     """
-    Returns the modules for a given release for example: WebAppDIRAC, 
+    Returns the modules for a given release for example: WebAppDIRAC,
     RESTDIRAC, LHCbWebAppDIRAC, etc
-    
+
     :param str release: the release version
     :param str project: the project name
     """
@@ -1025,7 +1035,7 @@ class ReleaseConfig(object):
   def getExtenalsVersion(self, release=None):
     """
     It returns the version of DIRAC Externals. If it is not provided,
-    uses the default cfg 
+    uses the default cfg
 
     :param str release: the release version
     """
@@ -1199,8 +1209,8 @@ def alarmTimeoutHandler(*args):
 def urlretrieveTimeout(url, fileName='', timeout=0):
   """
    Retrieve remote url to local file, with timeout wrapper
-   
-   :param str fileName: file name 
+
+   :param str fileName: file name
    :param int timeout: time out in second used for downloading the files.
   """
 
@@ -1297,7 +1307,7 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
   """
   It downloads and extracts a given tarball from a given destination: file system,
   web server or code repository.
-  
+
   :param str tarsURL:
   :param str pkgName:
   :param str pkgVer:
@@ -1516,8 +1526,9 @@ def discoverModules(modules):
   """
   Created the dictionary which contains all modules, which can be installed
   for example: {"DIRAC:{"sourceUrl":"https://github.com/zmathe/DIRAC.git","Vesrion:v6r20p11"}}
-  
-  :param: str modules: it contains meta information for the module, which will be installed: https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch
+
+  :param: str modules: it contains meta information for the module,
+  which will be installed: https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch
   """
 
   projects = {}
@@ -1734,7 +1745,7 @@ def loadConfiguration():
 def compileExternals(extVersion):
   """
   It is used to compile the external for a given platform
-  
+
   :param str extVersion: the external version
   """
   logNOTICE("Compiling externals %s" % extVersion)
@@ -1775,9 +1786,9 @@ def getPlatform():
 
 def installExternals(releaseConfig):
   """
-  It install the DIRAC external. The version of the external is provided by 
+  It install the DIRAC external. The version of the external is provided by
   the cmd or in the configuration file.
-  
+
   :param object releaseConfig:
   """
   if not releaseConfig:
@@ -1816,7 +1827,7 @@ def installExternals(releaseConfig):
 
 def installLCGutils(releaseConfig):
   """
-  DIRAC uses various tools from LCG area. This method install a given 
+  DIRAC uses various tools from LCG area. This method install a given
   lcg version.
   """
   if not cliParams.platform:
@@ -2121,7 +2132,7 @@ def createCshrc():
 def writeDefaultConfiguration():
   """
   After DIRAC is installed a default configuration file is created,
-  which contains a minimal setup.  
+  which contains a minimal setup.
   """
   if not releaseConfig:
     return
@@ -2159,8 +2170,8 @@ def __getTerminfoLocations(defaultLocation=None):
 
 def installDiracOS(releaseConfig):
   """
-  Install the DIRAC os. 
-  
+  Install the DIRAC os.
+
   :param str releaseConfig: the version of the DIRAC OS
   """
   diracOSVersion = releaseConfig.getDiracOSVersion(cliParams.diracOSVersion)
@@ -2371,10 +2382,10 @@ def createCshrcForDiracOS():
   return True
 
 
-def checkoutFromGit(moduleName=None, sourceURL=None, tagVersion=None):
+def checkoutFromGit(moduleName, sourceURL, tagVersion):
   """
-  This method checkout a given tag from a git repository. 
-  Note: we can checkout any project form a git repository 
+  This method checkout a given tag from a git repository.
+  Note: we can checkout any project form a git repository.
 
   :param str moduleName: The name of the Module: for example: LHCbWebDIRAC
   :param str sourceURL: The code repository: ssh://git@gitlab.cern.ch:7999/lhcb-dirac/LHCbWebDIRAC.git
@@ -2382,23 +2393,8 @@ def checkoutFromGit(moduleName=None, sourceURL=None, tagVersion=None):
 
   """
 
-  if not moduleName:
-    moduleName = self.params.name
-
-  if not sourceURL:
-    sourceURL = self.params.sourceURL
-
-  if not tagVersion:
-    tagVersion = self.params.version
-
-  if False:
-    brCmr = "-b %s" % self.params.vcsBranch
-  else:
-    brCmr = ""
   fDirName = os.path.join(cliParams.targetPath, moduleName)
-  cmd = "git clone %s '%s' '%s'" % (brCmr,
-                                    sourceURL,
-                                    fDirName)
+  cmd = "git clone '%s' '%s'" % (sourceURL, fDirName)
 
   logNOTICE("Executing: %s" % cmd)
   if os.system(cmd):
