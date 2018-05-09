@@ -34,7 +34,7 @@ Configuration options are:
 * `UseCatalogURL`: default `False`. If `True`, use the url stored in the catalog instead of regenerating it
 * `ChecksumType`: default `ADLER32`. NOT ACTIVE !
 * `Alias`: when set to the name of another storage element, it instanciates the other SE instead.
-* `ReadAccess`: default `True`. Allowed for Read if no RSS enabled
+* `ReadAccess`: default `True`. Allowed for Read if no RSS enabled (:ref:`activateRSS`)
 * `WriteAccess`: default `True`. Allowed for Write if no RSS enabled
 * `CheckAccess`: default `True`. Allowed for Check if no RSS enabled
 * `RemoveAccess`: default `True`. Allowed for Remove if no RSS enabled
@@ -45,6 +45,7 @@ Configuration options are:
 StorageElementBases
 -------------------
 
+Installations tend to have several StorageElements, with very similar configurations (e.g., the same Host and Port). It could be useful to factorize the SEs configuration to avoid repeating it.
 In order to factorize the configuration, it is possible to use `BaseSE`, which acts just like inheritance in object programming. You define a SE just like any other but in the `StorageElementBases` section. This SE can then be refered to by another SE. This new SE will inherit all the configuration from its parents, and can override it.  For example::
 
     StorageElementBases
@@ -193,7 +194,7 @@ There are also a set of plugins based on the gfal2 libraries (https://dmc.web.ce
 
 Default plugin options:
 
-* `Access`: `Remote` or `local`.
+* `Access`: `Remote` or `Local`. If `Local`, then this protocol can be used only if we are running at the site to which the SE is associated. Typically, if a site mounts the storage as NFS, the `file` protocol can be used.
 
 
 Multi Protocol

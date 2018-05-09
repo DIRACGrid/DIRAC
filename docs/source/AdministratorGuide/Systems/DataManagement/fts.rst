@@ -23,7 +23,7 @@ Operations configuration
 ------------------------
 
   * DataManagement/FTSVersion: FTS2/FTS3. Set it to FTS3...
-  * DataManagement/FTSPlacement/FTS3/ServerPolicy: Policy to choose the FTS server see bellow
+  * DataManagement/FTSPlacement/FTS3/ServerPolicy: Policy to choose the FTS server see below
 
 
 FTS servers definition

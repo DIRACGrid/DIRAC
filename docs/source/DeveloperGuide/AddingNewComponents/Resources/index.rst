@@ -15,4 +15,6 @@ DIRAC applications
 .. toctree::
    :maxdepth: 2
 
+   Catalog
    MessageQueues/index
+   Storage
