@@ -34,7 +34,29 @@ used to load the plugin located in `Resources.Catalog.<catalogType>Client`
 
 * <anyOption>
 
-passed as keyed arguments to the constructor of your plugin
+passed as keyed arguments to the constructor of your plugin.
+
+For example::
+
+   Resources
+   {
+      FileCatalogs
+      {
+        FileCatalog
+        {
+          AccessType = Read-Write
+          Status = Active
+          Master = True
+        }
+        BookkeepingDB
+        {
+          AccessType = Write
+          Status = Active
+          CatalogURL = Bookkeeping/BookkeepingManager
+        }
+      }
+   }
+
 
 
 Operations

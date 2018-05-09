@@ -8,7 +8,7 @@ The DIRAC File Catalog (DFC) is a full replica and metadata catalog integrated t
 
 There are two main sets of managers:
 * the historical ones, offering the full range of functionalities and used by most VO
-* and the LHCb ones, where a subsets of the functionalities related to user defined metadata are not tested, but optimized for scalling and consistency.
+* and the LHCb ones, where a subsets of the functionalities related to user defined metadata are not tested, but optimized for scaling and consistency. Any VO could of course use it.
 
 
 Installation
