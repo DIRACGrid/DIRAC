@@ -339,8 +339,8 @@ class BaseClient(object):
     # If we have banned URLs, and several URLs at disposals, we make sure that the selected sURL
     # is not on a host which is banned. If it is, we take the next one in the list using __selectUrl
 
-    if len(self.__bannedUrls) > 0 and self.__nbOfUrls > 2:  # when we have multiple services then we can have a situation
-      # when two service are running on the same machine with different port...
+    if len(self.__bannedUrls) > 0 and self.__nbOfUrls > 2:  # when we have multiple services then we can
+      # have a situation when two services are running on the same machine with different ports...
       retVal = Network.splitURL(sURL)
       nexturl = None
       if retVal['OK']:
