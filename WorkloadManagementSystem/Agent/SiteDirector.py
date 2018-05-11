@@ -499,7 +499,7 @@ class SiteDirector(AgentModule):
         tqIDList = additionalInfo.keys()
         result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
                                             'Status': WAITING_PILOT_STATUS},
-                                           None, lastUpdateTime)
+                                           None)
         if not result['OK']:
           self.log.error('Failed to get Number of Waiting pilots', result['Message'])
           totalWaitingPilots = 0
