@@ -6,7 +6,8 @@ Accounting System
    :depth: 3
    
 
-The Accounting system responsible to collect and store data regarding to the activities: data transfers, pilot jobs, system behaviors. 
+The Accounting system responsible to collect and store data regarding to the activities: data transfers, pilot jobs. It is designed for store 
+historical data by creating time buckets. 
 The data stored with properties, which are used to classify the records: user, site and also properties which can be measured: memory, CPU.
 
 The data can be accessible through the DIRAC web framework using the Accounting application. The records are stored in the AccountingDB, 
@@ -18,7 +19,9 @@ The system consists of the following accounting types:
 	- Job:  for creating reports of the activity on the computing resources such as Grid, Cloud, etc. 
 	- Pilot: for creating reports for pilot jobs running on different computing elements such as ARC CE, CREAM, VAC, etc.
 	- Data operation: for creating reports about data activities: transfers, replication, removal, etc.
-	- WMS History: This it used for monitoring the DIRAC Workload Management system. 
+	- WMS History: This it used for monitoring the DIRAC Workload Management system. This type is replaced by the WMS monitoring which
+	is part of the Monitoring system. It is replaced, because the WMS History type is for real time monitoring and MySQL is not for storing time series with
+	high resolution.
  
 
 AccountingDB
@@ -97,7 +100,7 @@ running a service in a hardware which are having very good disk.
 Installation
 ==============
 In order to use the system, it requires to install the following components: AccountingDB, DataStore, ReportGenerato, for the WMSMonitoring the StatesAccountingAgent.
-The simplest is for using the SystemAdministrator CLI:
+The simplest is by using the SystemAdministrator CLI:
 
 install db AccountingDB
 install service Accounting DataStore
