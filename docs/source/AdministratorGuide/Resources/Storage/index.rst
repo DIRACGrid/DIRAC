@@ -1,8 +1,8 @@
 .. _resourcesStorageElement:
 
----------------
-StorageElements
----------------
+--------------
+StorageElement
+--------------
 
 
 

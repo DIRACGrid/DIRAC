@@ -1,18 +1,18 @@
 .. _resourcesCatalog:
 
---------
-Catalogs
---------
+-------
+Catalog
+-------
 
 Catalogs represent the namespace in DIRAC. They are queried based on the LFN. Even if one is used as a reference (see `Master catalog`), you can use several catalogs in parallel. Every catalog has read and write methods.
 
 The definition of catalogs is shared between two sections:
 
 * `/Resources/FileCatalogs`: this describes the catalog, how to access it, and all its options
-* `/Operations/<setup>/Services/Catalogs/`: this describes how we use the catalog.
+* `/Operations/<vo/setup>/Services/Catalogs/`: this describes how we use the catalog.
 
 Resources
-----------
+---------
 
 Every catalogs should be defined in the `/Resources/FileCatalogs` section. You define one section per catalog. This section is supposed to describe how to access the catalog::
 
@@ -62,9 +62,9 @@ For example::
 Operations
 ----------
 
-First of all, `/Operations/<setup>/Services/Catalogs/CatalogList` defines which catalogs are eligible for use. If this is not defined, we consider that all the catalogs defined under `/Operations/<setup>/Services/Catalogs/` are eligible.
+First of all, `/Operations/<vo/setup>/Services/Catalogs/CatalogList` defines which catalogs are eligible for use. If this is not defined, we consider that all the catalogs defined under `/Operations/<vo/setup>/Services/Catalogs/` are eligible.
 
-Then, each catalog should have a few options defined:
+Then, each catalog should have a few (case-sensitive) options defined:
 
 * `Status`: (default `Active`). If anything else than `Active`, the catalog will not be used
 * `AccessType`: `Read`/`Write`/`Read-Write`. No default, must be defined. This defines if the catalog is read-only, write only or both.
@@ -81,7 +81,7 @@ Of course, there should be only one master catalog
 Conditional FileCatalogs
 ------------------------
 
-The `Status` and `AccessType` flags are global and binary. However it is sometimes a desirable feature to activate a catalog under some conditions only. This is what the conditional FCs are about. Conditions are evaluated for every catalog at every call and for every file. Conditions are defined in a section `Operation/<Setup>/Services/Catalogs/<CatalogName>/Conditions/`. They are evaluated by plugins, so it is very modular.
+The `Status` and `AccessType` flags are global and binary. However it is sometimes a desirable feature to activate a catalog under some conditions only. This is what the conditional FCs are about. Conditions are evaluated for every catalog at every call and for every file. Conditions are defined in a section `Operation/<vo/setup>/Services/Catalogs/<CatalogName>/Conditions/`. They are evaluated by plugins, so it is very modular.
 
 In this section, you can create an CS option for every method of your catalog. The name of the option should be the method name, and the value should be the condition to evaluate. If there are no condition defined for a given method, we check the global `READ`/`WRITE` condition, which are used for all read/write methods. If this does not exist either, we check the global `ALL` condition. If there are no condition at all, everything is allowed.
 
