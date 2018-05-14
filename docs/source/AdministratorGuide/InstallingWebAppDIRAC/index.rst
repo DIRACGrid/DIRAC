@@ -5,14 +5,14 @@ Installing WebAppDIRAC
 =======================
 
 The first section describes the install procedure of the web framework. The configuration of the web will be presented in the next sections.
-While not mandatory, NGINX can be used to improve the performance of the web framework. 
+While not mandatory, NGINX (nginx.com) can be used to improve the performance of the web framework. 
 The installation and configuration of NGINX will be presented in the last section.
 
 
 Requirements
 ------------
 
-It is required CERN supported OS (slc5,slc6, CentOS 7, etc.) distribution. We recommend you to use the latest official OS version.
+It is required CERN supported OS (slc6, CentOS 7, etc.) distribution. We recommend you to use the latest official OS version.
 Please follow the :ref:`server_requirements` instructions
 to setup the machine. In principle there is no magic to install the web portal. It has to be installed as another DIRAC component...
 When the machine is ready you can start to install the web portal. But before that you need the install_site.sh script and a minimal configuration file.
