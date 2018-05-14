@@ -5,17 +5,17 @@ Installing WebAppDIRAC
 =======================
 
 The first section describes the install procedure of the web framework. The configuration of the web will be presented in the next sections.
-While not mandatory, Nginx can be used to improve the performance of the web framework. 
-The installation and configuration of NGinx will be presented in the last section.
+While not mandatory, NGINX (nginx.com) can be used to improve the performance of the web framework. 
+The installation and configuration of NGINX will be presented in the last section.
 
 
 Requirements
 ------------
 
-It is required CERN provided OS (slc5,slc6, etc.) distribution. We recommend you to use a supported Linux distribution.
+It is required CERN supported OS (slc6, CentOS 7, etc.) distribution. We recommend you to use the latest official OS version.
 Please follow the :ref:`server_requirements` instructions
 to setup the machine. In principle there is no magic to install the web portal. It has to be installed as another DIRAC component...
-When the machine is ready you can start to install the portal. But before that you need the install_site.sh script and a configuration file.
+When the machine is ready you can start to install the web portal. But before that you need the install_site.sh script and a minimal configuration file.
 
 Getting the install script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,7 +65,8 @@ $installCfg::
    }
 
 
-Before you start the installation please make sure that you have the host certificate in the /opt/dirac/etc directory... More info in the Server Certificates section in :ref:`server_requirements` .
+Before you start the installation please make sure that you have the host certificate in the /opt/dirac/etc directory. 
+More info in the Server Certificates section in :ref:`server_requirements` .
 
 Create the configuration file::
 
@@ -114,7 +115,7 @@ Make sure that the portal is listening in the correct port::
    2016-06-02 12:35:46 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
 
 
-If you are not using NGinx and the web server is listening on 8000, please open vim /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg and add Balancer=None.
+If you are not using NGINX and the web server is listening on 8000, please open vim /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg and add Balancer=None.
 Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. It contains Extensions = WebApp. For example::
 
    DIRAC
@@ -148,7 +149,8 @@ Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. I
 Web configuration file
 ----------------------
 
-We use **web.cfg** configuration file, which is used to configure the web framework. It also contains the schema of the menu under Schema section, which is used by the users. The structure of the web.cfg file is the following::
+We use **web.cfg** configuration file, which is used to configure the web framework. It also contains the schema of the menu under Schema section, which is used by the users. 
+The structure of the web.cfg file is the following::
 
       WebApp
       {
@@ -208,6 +210,39 @@ If the web.cfg file exists in /opt/dirac/etc directory, this file will be used.
 Note: The Web framework uses the Schema section for creating the menu. It shows the Schema content, without manipulating it for example: sorting the applications, or creating some structure. 
 Consequently, if you want to sort the menu, you have to create your own configuration file and place the directory where dirac.cfg exists.   
 
+Running multiple web instances
+------------------------------
+
+If you want to run more than one instance, you have to use NGIX. The configuration of the NGINX is described in the next section.
+You can define the number of processes in the configuration file:  /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg
+
+NumProcesses = x (by default the NumProcesses is 1), where x the number of instances, you want to run
+Balancer = nginx
+
+for example: NumProcesses = 4, the processes will listen on 8000, 8001, ... 800n
+You can check the number of instances in the log file (runit/Web/WebApp/log/current)
+2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8000
+2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8001
+2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8002
+2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8003
+2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8002/DIRAC/
+2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
+2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8001/DIRAC/
+2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8003/DIRAC/
+
+You have to configure NGINX to forward the requests to that ports:
+
+upstream tornadoserver {
+     #One for every tornado instance you're running that you want to balance
+     server 127.0.0.1:8000;
+     server 127.0.0.1:8001;
+     server 127.0.0.1:8002;
+     server 127.0.0.1:8003;
+}
+
+Note: you can run NGIN in a separate machine.
+
+
 Install and configure NGINX
 ---------------------------
 
@@ -219,7 +254,7 @@ The required NGINX version has to be grater than 1.4.
          yum install nginx
 
 
-If your version is not grater than 1.4 you have to install NGinx manually.
+If your version is not grater than 1.4 you have to install NGINX manually.
 
 * Manual install
 
@@ -412,19 +447,20 @@ If it is successful installed::
    }
 
 
-You can start NGinx now.
+You can start NGINX now.
 
 * Start, Stop and restart nginx::
 
    /etc/init.d/nginx start|stop|restart
 
 
-You have to add to the web.cfg the following lines in order to use NGinx::
+You have to add to the web.cfg the following lines in order to use NGINX::
 
        DevelopMode = False
        Balancer = nginx
        NumProcesses = 1
 
+In that case one process will be used and this process is listening on 8000 port.
  You can try to use the web portal. For example: http://dzmathe.cern.ch/DIRAC/
  If you get 502 Bad Gateway error, you need to generate rules for SE linus.
  You can see the error in tail -200f /var/log/nginx/error.log::
