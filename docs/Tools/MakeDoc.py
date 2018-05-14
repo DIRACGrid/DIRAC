@@ -127,6 +127,8 @@ def mkModuleRest( classname, fullclassname, buildtype="full"):
     if classname in FORCE_ADD_PRIVATE:
       lines.append( "   :special-members:" )
       lines.append( "   :private-members:" )
+    else:
+      lines.append( "   :special-members: __init__" )
     if classname.startswith("_"):
       lines.append( "   :private-members:" )
 
