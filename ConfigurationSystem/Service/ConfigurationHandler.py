@@ -6,7 +6,6 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 
 gServiceInterface = False
 
@@ -14,6 +13,10 @@ gServiceInterface = False
 def initializeConfigurationHandler(serviceInfo):
   global gServiceInterface
   gServiceInterface = ServiceInterface(serviceInfo['URL'])
+  # This import is only needed for the Master CS service, making it conditional avoids
+  # dependency on the git client preinstalled on all the servers running CS slaves
+  if gServiceInterface.isMaster():
+    from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
   return S_OK()
 
 
