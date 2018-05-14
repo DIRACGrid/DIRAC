@@ -5,6 +5,6 @@ Resources
 .. toctree::
    :maxdepth: 1
 
-   Catalogs/index
+   Catalog/index
    MQ/index
-   Storages/index
+   Storage/index

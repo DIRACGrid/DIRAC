@@ -4,7 +4,7 @@
 Dirac File Catalog
 ------------------
 
-The DIRAC File Catalog (DFC) is a full replica and metadata catalog integrated to DIRAC. It has a very modulare structure, allowing for several backends. The interaction with the backend is handled by `Managers` in such a way that the interface exposed to the users remains always the same.
+The DIRAC File Catalog (DFC) is a full replica and metadata catalog integrated to DIRAC. It has a very modular structure, allowing for several backends. The interaction with the backend is handled by `Managers` in such a way that the interface exposed to the users remains always the same.
 
 There are two main sets of managers:
 * the historical ones, offering the full range of functionalities and used by most VO
