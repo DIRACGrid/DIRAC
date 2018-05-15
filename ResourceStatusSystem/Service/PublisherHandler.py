@@ -5,7 +5,7 @@ they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
 
 """
 
-__RCSID__ = '$Id:$'
+__RCSID__ = '$Id$'
 
 #  pylint: disable=no-self-use
 
@@ -154,15 +154,15 @@ class PublisherHandler(RequestHandler):
 
   types_getTree = [str, str, str]
 
-  def export_getTree(self, element, elementType, elementName):
+  def export_getTree(self, elementType, elementName):
     """
-    Given an element, finds its parent site and returns all descendants of that
-    site.
+    Given an element type and name,
+    finds its parent site and returns all descendants of that site.
     """
 
     gLogger.info('getTree')
 
-    site = self.getSite(element, elementType, elementName)
+    site = self.getSite(elementType, elementName)
     if not site:
       return S_ERROR('No site')
 
@@ -243,9 +243,9 @@ class PublisherHandler(RequestHandler):
 
     return S_OK(reason)
 
-  def getSite(self, element, elementType, elementName):
+  def getSite(self, elementType, elementName):
     """
-    Given an element, return its site
+    Given an element name, return its site
     """
 
     if elementType == 'StorageElement':
@@ -358,8 +358,8 @@ class PublisherHandler(RequestHandler):
 
   types_getSpaceTokenOccupancy = [(basestring, NoneType, list), (basestring, NoneType, list)]
 
-  def export_getSpaceTokenOccupancy(self, site, token):
-    """ Quite ugly way of exporting to web
+  def export_getFreeDiskSpace(self, site, token):
+    """ Exporting to web the
     """
 
     endpoint2Site = {}
@@ -367,12 +367,9 @@ class PublisherHandler(RequestHandler):
     ses = CSHelpers.getStorageElements()
     if not ses['OK']:
       gLogger.error(ses['Message'])
+      return ses
 
     for seName in ses['Value']:
-      # Ugly, ugly, ugly..
-      if ('-' not in seName) or ('_' in seName):
-        continue
-
       res = CSHelpers.getStorageElementEndpoint(seName)
       if not res['OK']:
         continue
