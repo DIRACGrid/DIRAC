@@ -249,6 +249,7 @@ class FTS3Agent(AgentModule):
   @staticmethod
   def _treatOperationCallback(returnedValue):
     """ Callback when an operation has been treated
+
         :param returnedValue: value returned by the _treatOperation method
                               (ftsOperation, standard dirac return struct)
     """
@@ -454,7 +455,10 @@ class FTS3Agent(AgentModule):
 
   @staticmethod
   def __sendAccounting(ftsJob):
-    """ prepare and send DataOperation to AccouringDB """
+    """ prepare and send DataOperation to AccountingDB
+
+        :param ftsJob: the FTS3Job from which we send the accounting info
+    """
 
     dataOp = DataOperation()
     dataOp.setStartTime(fromString(ftsJob.submitTime))

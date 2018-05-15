@@ -19,11 +19,17 @@ class FTS3File(FTS3Serializable):
                 'Started',  # From FTS: File transfer has started
                 ]
 
+  # These are the states that we consider final.
+  # No new attempts will be done on our side for
+  # FTS3Files reaching one of these
   FINAL_STATES = ['Canceled', 'Finished', 'Defunct']
 
   FTS_SUCCESS_STATES = ['Finished']
   FTS_FAILED_STATES = ['Canceled', 'Failed']
 
+  # These are the states that the fts servers consider final.
+  # No new attempts will be done on their side, but we can
+  # still retry.
   FTS_FINAL_STATES = FTS_SUCCESS_STATES + FTS_FAILED_STATES
   INIT_STATE = 'New'
 

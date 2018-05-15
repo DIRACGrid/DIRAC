@@ -140,7 +140,9 @@ class FTS3Job(FTS3Serializable):
   @staticmethod
   def __fetchSpaceToken(seName):
     """ Fetch the space token of storage element
+
         :param seName name of the storageElement
+
         :returns space token
     """
     seToken = None
@@ -158,6 +160,7 @@ class FTS3Job(FTS3Serializable):
   @staticmethod
   def __isTapeSE(seName):
     """ Check whether a given SE is a tape storage
+
         :param seName name of the storageElement
 
         :returns True/False
@@ -502,6 +505,7 @@ class FTS3Job(FTS3Serializable):
   @staticmethod
   def generateContext(ftsServer, ucert):
     """ This method generates an fts3 context
+
         :param ftsServer: address of the fts3 server
         :param ucert: the path to the certificate to be used
 
@@ -526,7 +530,7 @@ class FTS3Job(FTS3Serializable):
 
         :param jobStatusDict: output of fts3.get_job_status
 
-        :returns: startTime, endTime, dict
+        :returns: None
     """
 
     accountingDict = dict()
@@ -551,11 +555,11 @@ class FTS3Job(FTS3Serializable):
         successfulFiles.append(fileDict)
 
     job_metadata = jobStatusDict['job_metadata']
-    # previous version of the code did not have dictionnary as
+    # previous version of the code did not have dictionary as
     # job_metadata
     if isinstance(job_metadata, dict):
-      sourceSE = jobStatusDict['job_metadata'].get('sourceSE')
-      targetSE = jobStatusDict['job_metadata'].get('targetSE')
+      sourceSE = job_metadata.get('sourceSE')
+      targetSE = job_metadata.get('targetSE')
 
     accountingDict["TransferOK"] = len(successfulFiles)
     accountingDict["TransferTotal"] = len(filesInfoList)
