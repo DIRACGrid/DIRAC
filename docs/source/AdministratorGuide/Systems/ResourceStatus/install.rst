@@ -118,6 +118,8 @@ If is there any SE to be modified, you can do it as follows::
     # This matches all StatusTypes
     $ dirac-rss-set-status --element Resource --name CERN-USER --status Active --reason "Why not?"
 
+.. _activateRSS:
+
 ------------
 Activate RSS
 ------------
