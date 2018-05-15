@@ -8,27 +8,26 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 
-Script.parseCommandLine( ignoreErrors = True )
+Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
 from DIRAC import exit as DIRACExit
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBannedSites( printOutput = False )
+result = diracAdmin.getBannedSites()
 if result['OK']:
-  banned_sites = result['Value']
+  bannedSites = result['Value']
 else:
   print result['Message']
-  DIRACExit( 2 )
+  DIRACExit(2)
 
-for site in banned_sites:
-  result = diracAdmin.getSiteMaskLogging( site )
+for site in bannedSites:
+  result = diracAdmin.getSiteMaskLogging(site)
   if result['OK']:
-    sites = result['Value']
-    print '%-30s %s %s %s' % ( site, sites[site][-1][1], sites[site][-1][2], sites[site][-1][3] )
+    for siteLog in result['Value']:
+      print '%-30s %s %s %s' % (site, siteLog[0], siteLog[1], siteLog[2])
   else:
-    print '%-30s %s' % ( site, result['Message'] )
+    print '%-30s %s' % (site, result['Message'])
 
-DIRACExit( 0 )
-
+DIRACExit(0)

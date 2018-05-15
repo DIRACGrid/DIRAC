@@ -932,7 +932,11 @@ class Dirac(API):
     os.chdir(curDir)
 
     if status:  # if it fails, copy content of execution dir in current directory
-      shutil.copytree(tmpdir, os.path.join(curDir, os.path.basename(os.path.dirname(tmpdir))))
+      destDir = os.path.join(curDir, os.path.basename(os.path.dirname(tmpdir)))
+      self.log.debug("Copying outputs from %s to %s" % (tmpdir, destDir))
+      if os.path.exists(destDir):
+        shutil.rmtree(destDir)
+      shutil.copytree(tmpdir, destDir)
 
     self.log.verbose('Cleaning up %s...' % tmpdir)
     self.__cleanTmp(tmpdir)
