@@ -13,10 +13,8 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   '  %s test directory' % Script.scriptName
                                   ]))
 
-from DIRAC.Core.Base.Script import parseCommandLine
-
 Script.registerSwitch("", "UseFilter=", "e.g. True/False")
-parseCommandLine()
+Script.parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.Interfaces.API.Job import Job
@@ -26,15 +24,15 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 # Parse the arguments
-args = Script.getPositionalArgs()
+args = Script.getUnprocessedSwitches()
 if len(args) != 1:
   Script.showHelp()
 directory = args[0]
-UseFilter = False
-for switch in Script.getUnprocessedSwitches():
-  if switch[0].lower() == "usefilter":
-    if switch[1] == 'True':
-      UseFilter = True
+
+UseFilter = None
+for switch, switchValue in Script.getUnprocessedSwitches():
+  if switch == "UseFilter":
+      UseFilter = True if switchValue.lower() == "true" else False
 
 # Let's first create the prodJobuction
 prodJobType = 'Merge'
