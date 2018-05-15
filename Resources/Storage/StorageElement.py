@@ -66,37 +66,38 @@ class StorageElementItem(object):
 
 
 
-  self.name is the resolved name of the StorageElement i.e CERN-tape
-  self.options is dictionary containing the general options defined in the CS e.g. self.options['Backend] = 'Castor2'
-  self.storages is a list of the stub objects created by StorageFactory for the protocols found in the CS.
-  self.localPlugins is a list of the local protocols that were created by StorageFactory
-  self.remotePlugins is a list of the remote protocols that were created by StorageFactory
-  self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
+    self.name is the resolved name of the StorageElement i.e CERN-tape
+    self.options is dictionary containing the general options defined in the CS e.g. self.options['Backend] = 'Castor2'
+    self.storages is a list of the stub objects created by StorageFactory for the protocols found in the CS.
+    self.localPlugins is a list of the local protocols that were created by StorageFactory
+    self.remotePlugins is a list of the remote protocols that were created by StorageFactory
+    self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
 
 
 
-  dynamic method :
-  retransferOnlineFile( lfn )
-  exists( lfn )
-  isFile( lfn )
-  getFile( lfn, localPath = False )
-  putFile( lfnLocal, sourceSize = 0 ) : {lfn:local}
-  replicateFile( lfn, sourceSize = 0 )
-  getFileMetadata( lfn )
-  getFileSize( lfn )
-  removeFile( lfn )
-  prestageFile( lfn, lifetime = 86400 )
-  prestageFileStatus( lfn )
-  pinFile( lfn, lifetime = 60 * 60 * 24 )
-  releaseFile( lfn )
-  isDirectory( lfn )
-  getDirectoryMetadata( lfn )
-  getDirectorySize( lfn )
-  listDirectory( lfn )
-  removeDirectory( lfn, recursive = False )
-  createDirectory( lfn )
-  putDirectory( lfn )
-  getDirectory( lfn, localPath = False )
+  dynamic method::
+
+    retransferOnlineFile( lfn )
+    exists( lfn )
+    isFile( lfn )
+    getFile( lfn, localPath = False )
+    putFile( lfnLocal, sourceSize = 0 ) : {lfn:local}
+    replicateFile( lfn, sourceSize = 0 )
+    getFileMetadata( lfn )
+    getFileSize( lfn )
+    removeFile( lfn )
+    prestageFile( lfn, lifetime = 86400 )
+    prestageFileStatus( lfn )
+    pinFile( lfn, lifetime = 60 * 60 * 24 )
+    releaseFile( lfn )
+    isDirectory( lfn )
+    getDirectoryMetadata( lfn )
+    getDirectorySize( lfn )
+    listDirectory( lfn )
+    removeDirectory( lfn, recursive = False )
+    createDirectory( lfn )
+    putDirectory( lfn )
+    getDirectory( lfn, localPath = False )
 
 
   """
@@ -142,7 +143,8 @@ class StorageElementItem(object):
 
     :param str name: SE name
     :param list plugins: requested storage plugins
-    :param: vo
+    :param vo: vo
+
     """
 
     self.methodName = None
@@ -517,6 +519,7 @@ class StorageElementItem(object):
 
   def getStorageParameters(self, plugin=None, protocol=None):
     """ Get plugin specific options
+
       :param plugin : plugin we are interested in
       :param protocol: protocol we are interested in
 
@@ -550,7 +553,9 @@ class StorageElementItem(object):
 
   def __getAllProtocols(self, protoType):
     """ Returns the list of all protocols for Input or Output
+
         :param proto = InputProtocols or OutputProtocols
+
     """
     return set(reduce(lambda x, y: x +
                       y, [plugin.protocolParameters[protoType] for plugin in self.storages]))
@@ -759,7 +764,9 @@ class StorageElementItem(object):
 
   def getLFNFromURL(self, urls):
     """ Get the LFN from the PFNS .
+
         :param lfn : input lfn or lfns (list/dict)
+
     """
     result = checkArgumentFormat(urls)
     if result['OK']:
@@ -785,9 +792,11 @@ class StorageElementItem(object):
 
   def getURL(self, lfn, protocol=False, replicaDict=None):
     """ execute 'getTransportURL' operation.
+
       :param str lfn: string, list or dictionary of lfns
       :param protocol: if no protocol is specified, we will request self.turlProtocols
       :param replicaDict: optional results from the File Catalog replica query
+
     """
 
     self.log.getSubLogger('getURL').verbose("Getting accessUrl %s for lfn in %s." %
@@ -828,7 +837,9 @@ class StorageElementItem(object):
   def __generateURLDict(self, lfns, storage, replicaDict=None):
     """ Generates a dictionary (url : lfn ), where the url are constructed
         from the lfn using the constructURLFromLFN method of the storage plugins.
+
         :param: lfns : dictionary {lfn:whatever}
+
         :returns dictionary {constructed url : lfn}
     """
     log = self.log.getSubLogger("__generateURLDict")
@@ -998,9 +1009,11 @@ class StorageElementItem(object):
   def __executeMethod(self, lfn, *args, **kwargs):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName
+
         :param lfn : string, list or dictionary
         :param *args : variable amount of non-keyword arguments. SHOULD BE EMPTY
         :param **kwargs : keyword arguments
+
         :returns S_OK( { 'Failed': {lfn : reason} , 'Successful': {lfn : value} } )
                 The Failed dict contains the lfn only if the operation failed on all the storages
                 The Successful dict contains the value returned by the successful storages.
