@@ -9,6 +9,11 @@ To know how to develop DIRAC pilots, please refer to the Developers documentatio
 
 The current version of pilots are sometimes dubbed as "Pilots 2.0", or "the pilots to fly in all the skies".
 
+It's in development a new generation of pilots, dubbed "Pilots 3". Pilots3 become, from this version, optional.
+Pilots3 development is done in the separate repository https://github.com/DIRACGrid/Pilot
+The definitions that follow in this page are still valid for Pilots3. 
+Some specific information about Pilots3 can be found in the next sections.
+
 
 
 What's a DIRAC Pilot

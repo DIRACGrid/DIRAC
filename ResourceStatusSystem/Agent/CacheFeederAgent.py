@@ -4,7 +4,7 @@
 
 '''
 
-__RCSID__ = '$Id:$'
+__RCSID__ = '$Id$'
 
 from DIRAC import S_OK
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
@@ -50,7 +50,6 @@ class CacheFeederAgent(AgentModule):
     self.rmClient = ResourceManagementClient()
 
     self.commands['Downtime'] = [{'Downtime': {}}]
-    self.commands['SpaceTokenOccupancy'] = [{'SpaceTokenOccupancy': {}}]
     self.commands['GOCDBSync'] = [{'GOCDBSync': {}}]
     self.commands['FreeDiskSpace'] = [{'FreeDiskSpace': {}}]
 

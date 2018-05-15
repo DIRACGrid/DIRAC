@@ -60,7 +60,7 @@ We will put the unit test in DIRAC.Core.Utilities.test. The unit test has been f
      def test_success( self ):
        self.gConfigMock.getValue.return_value = 'attendedValue'
        res = checkCAOfUser( 'aUser', 'attendedValue' )
-       self.assert_( res['OK'] )
+       self.assertTrue(res['OK'])
 
      def test_failure( self ):
        self.gConfigMock.getValue.return_value = 'unAttendedValue'

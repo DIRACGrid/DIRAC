@@ -47,7 +47,7 @@ from DIRAC.Workflow.Modules.<MODULE> import <MODULE>
 
     stepDef = getStepDefinition( 'App_Step', ['Script', 'FailoverRequest'] )
 
-    self.assert_( str( appDefn ) == str( stepDef ) )
+    self.assertTrue( str( appDefn ) == str( stepDef ) )
 
 
 
@@ -59,7 +59,7 @@ from DIRAC.Workflow.Modules.<MODULE> import <MODULE>
                                  parametersList = [[ 'name', 'type', 'value', 'desc' ],
                                                    [ 'name1', 'type1', 'value1', 'desc1' ]] )
 
-    self.assert_( str( appDefn ) == str( stepDef ) )
+    self.assertTrue( str( appDefn ) == str( stepDef ) )
 
   def test_getStepCPUTimes( self ):
     execT, cpuT = getStepCPUTimes( {} )

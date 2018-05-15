@@ -48,7 +48,7 @@ class AdlerTestCase(unittest.TestCase):
     """ stringAdler tests """
     # no arguments supplied - TypeError
     try:
-      Adler.stringAdler()
+      Adler.stringAdler() #pylint: disable=no-value-for-parameter
     except Exception, error:
       self.assertEqual( isinstance(error, TypeError), True )
     # wrong argument type
@@ -62,7 +62,7 @@ class AdlerTestCase(unittest.TestCase):
     """ intAdlerToHex and hexAdlerToInt tests """
     # no arguments
     try:
-      Adler.intAdlerToHex()
+      Adler.intAdlerToHex() #pylint: disable=no-value-for-parameter
     except Exception, error:
       self.assertEqual( isinstance(error, TypeError), True )
     # wrong type of arg (should it really print out to stdout)
@@ -77,7 +77,7 @@ class AdlerTestCase(unittest.TestCase):
     """ fileAdler tests """
     # no args
     try:
-      Adler.fileAdler()
+      Adler.fileAdler() #pylint: disable=no-value-for-parameter
     except Exception as error:
       self.assertEqual( isinstance(error,TypeError ), True )
     # read-protected file

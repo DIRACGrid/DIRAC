@@ -33,11 +33,11 @@ class PEPSuccess(PolicySystemTestCase):
     pep = PEP( {'ResourceStatusClient':self.RSMock, 'ResourceManagementClient': self.RMMock, 'SiteStatus': self.RMMock} )
     pep.pdp = self.mockPDP
     res = pep.enforce( None )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     decisionParams = {}
     res = pep.enforce( decisionParams )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     decisionParams = {'element':'Site', 'name': 'Site1'}
     decParamsPDP = dict(decisionParams)
@@ -56,11 +56,11 @@ class PEPSuccess(PolicySystemTestCase):
                                                                                 'EndDate': '2010-02-16 15:00:00'}],
                                                        'decisionParams':decParamsPDP}}
     res = pep.enforce( decisionParams )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
     decisionParams = {'element':'Resource', 'name': 'StorageElement', 'statusType': 'ReadAccess'}
     res = pep.enforce( decisionParams )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
 
 # class PDPSuccess(PolicySystemTestCase):
 #
@@ -77,15 +77,15 @@ class PEPSuccess(PolicySystemTestCase):
 #           pdp = PDP(self.VO, granularity, 'XX', oldStatus, None, 'XX')
 #           res = pdp.takeDecision(policyIn = self.mock_p)
 #           res = res['PolicyCombinedResult']
-#           self.assert_(res['Action'])
+#           self.assertTrue(res['Action'])
 #
 #           res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
 #           res = res['PolicyCombinedResult']
-#           self.assert_(res['Action'])
+#           self.assertTrue(res['Action'])
 #
 #           res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
 #           res = res['PolicyCombinedResult']
-#           self.assert_(res['Action'])
+#           self.assertTrue(res['Action'])
 #
 #   def test__policyCombination(self):
 #
@@ -153,8 +153,8 @@ class PEPSuccess(PolicySystemTestCase):
 #           if status == oldStatus:
 #             continue
 #           pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')
-#           self.failUnlessRaises(Exception, pdp.takeDecision, self.mock_pdp, self.mock_rsDB)
-#           self.failUnlessRaises(Exception, pdp.takeDecision, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'})
+#           self.assertRaises(Exception, pdp.takeDecision, self.mock_pdp, self.mock_rsDB)
+#           self.assertRaises(Exception, pdp.takeDecision, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'})
 #
 # #############################################################################
 #
@@ -264,7 +264,7 @@ class PEPSuccess(PolicySystemTestCase):
 #
 # #   def test_policyFail(self):
 # #     for granularity in ValidRes:
-# #       self.failUnlessRaises(Exception, self.pi.evaluatePolicy)
+# #       self.assertRaises(Exception, self.pi.evaluatePolicy)
 
 #############################################################################
 

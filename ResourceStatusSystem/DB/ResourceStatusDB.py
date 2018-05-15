@@ -299,7 +299,6 @@ class ResourceStatusDB( object ):
 
 
 
-
  # SQL Methods ###############################################################
 
   def insert( self, table, params ):

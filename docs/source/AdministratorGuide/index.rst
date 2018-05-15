@@ -15,7 +15,6 @@ This administration documentation refers to the "Core" DIRAC project.
 
    SetupStructure/index
    InstallingDIRACService/index
-   #GettingStarted/index
    InstallingWebAppDIRAC/index
    InstallingVMDIRAC/index
    SystemAdministratorInterface/index

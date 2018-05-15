@@ -76,16 +76,20 @@ GOOD LUCK !
 """
 # source /afs/cern.ch/project/oracle/script/setoraenv.sh  setoraenv -s 11203
 # source /afs/cern.ch/project/oracle/script/setoraenv.csh  setoraenv -s 11203
+
+import time
+import os
+import multiprocessing
+from datetime import datetime
+
+import MySQLdb as mdb
+import cx_Oracle  # pylint:disable=import-error
+
+
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-import cx_Oracle
-import time
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getGroupsWithVOMSAttribute
-import os
-from datetime import datetime
-import MySQLdb as mdb
-import multiprocessing
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getGroupsWithVOMSAttribute  # noqa
 
 
 

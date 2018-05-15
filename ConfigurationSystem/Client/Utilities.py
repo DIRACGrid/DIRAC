@@ -26,6 +26,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 __RCSID__ = "$Id$"
 
+
 def getGridVOs():
   """ Get all the VOMS VO names served by this DIRAC service
   """
@@ -36,65 +37,67 @@ def getGridVOs():
   else:
     vos = result['Value']
     for vo in vos:
-      vomsVO = getVOOption( vo, "VOMSName" )
+      vomsVO = getVOOption(vo, "VOMSName")
       if vomsVO:
-        voNames.append( vomsVO )
-  return S_OK( voNames )
+        voNames.append(vomsVO)
+  return S_OK(voNames)
+
 
 def getCEsFromCS():
   """ Get all the CEs defined in the CS
   """
 
   knownCEs = []
-  result = gConfig.getSections( '/Resources/Sites' )
+  result = gConfig.getSections('/Resources/Sites')
   if not result['OK']:
     return result
   grids = result['Value']
 
   for grid in grids:
-    result = gConfig.getSections( '/Resources/Sites/%s' % grid )
+    result = gConfig.getSections('/Resources/Sites/%s' % grid)
     if not result['OK']:
       return result
     sites = result['Value']
 
     for site in sites:
-      opt = gConfig.getOptionsDict( '/Resources/Sites/%s/%s' % ( grid, site ) )['Value']
-      ces = List.fromChar( opt.get( 'CE', '' ) )
+      opt = gConfig.getOptionsDict('/Resources/Sites/%s/%s' % (grid, site))['Value']
+      ces = List.fromChar(opt.get('CE', ''))
       knownCEs += ces
 
-  return S_OK( knownCEs )
+  return S_OK(knownCEs)
 
-def getSEsFromCS( protocol = 'srm' ):
+
+def getSEsFromCS(protocol='srm'):
   """ Get all the SEs defined in the CS
   """
   knownSEs = {}
-  result = gConfig.getSections( '/Resources/StorageElements' )
+  result = gConfig.getSections('/Resources/StorageElements')
   if not result['OK']:
     return result
   ses = result['Value']
   for se in ses:
     seSection = '/Resources/StorageElements/%s' % se
-    result = gConfig.getSections( seSection )
+    result = gConfig.getSections(seSection)
     if not result['OK']:
       continue
     accesses = result['Value']
     for access in accesses:
-      seProtocol = gConfig.getValue( cfgPath( seSection, access, 'Protocol' ), '' )
+      seProtocol = gConfig.getValue(cfgPath(seSection, access, 'Protocol'), '')
       if seProtocol.lower() == protocol.lower() or protocol == 'any':
-        host = gConfig.getValue( cfgPath( seSection, access, 'Host' ), '' )
-        knownSEs.setdefault( host, [] )
-        knownSEs[host].append( se )
+        host = gConfig.getValue(cfgPath(seSection, access, 'Host'), '')
+        knownSEs.setdefault(host, [])
+        knownSEs[host].append(se)
       else:
         continue
 
-  return S_OK( knownSEs )
+  return S_OK(knownSEs)
 
 def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
   """ Get all the CEs available for a given VO and having queues in Production state
   """
   knownCEs = set()
   if ceBlackList is not None:
-    knownCEs = knownCEs.union( set( ceBlackList ) )
+    knownCEs = knownCEs.union(set(ceBlackList))
 
   ceBdiiDict = bdiiInfo
   if bdiiInfo is None:
@@ -105,7 +108,7 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
 
   siteDict = {}
   for site in ceBdiiDict:
-    siteCEs = set( ceBdiiDict[site]['CEs'].keys() )
+    siteCEs = set(ceBdiiDict[site]['CEs'].keys())
     newCEs = siteCEs - knownCEs
     if not newCEs:
       continue
@@ -117,264 +120,266 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
       ceType = 'Unknown'
       ceDict['Queues'] = []
       for queue in ceInfo['Queues']:
-        queueStatus = ceInfo['Queues'][queue].get( 'GlueCEStateStatus', 'UnknownStatus' )
+        queueStatus = ceInfo['Queues'][queue].get('GlueCEStateStatus', 'UnknownStatus')
         if 'production' in queueStatus.lower():
-          ceType = ceInfo['Queues'][queue].get( 'GlueCEImplementationName', '' )
-          ceDict['Queues'].append( queue )
+          ceType = ceInfo['Queues'][queue].get('GlueCEImplementationName', '')
+          ceDict['Queues'].append(queue)
       if not ceDict['Queues']:
         continue
 
       ceDict['CEType'] = ceType
       ceDict['GOCSite'] = site
       ceDict['CEID'] = ce
-      systemName = ceInfo.get( 'GlueHostOperatingSystemName', 'Unknown' )
-      systemVersion = ceInfo.get( 'GlueHostOperatingSystemVersion', 'Unknown' )
-      systemRelease = ceInfo.get( 'GlueHostOperatingSystemRelease', 'Unknown' )
-      ceDict['System'] = ( systemName, systemVersion, systemRelease )
+      systemName = ceInfo.get('GlueHostOperatingSystemName', 'Unknown')
+      systemVersion = ceInfo.get('GlueHostOperatingSystemVersion', 'Unknown')
+      systemRelease = ceInfo.get('GlueHostOperatingSystemRelease', 'Unknown')
+      ceDict['System'] = (systemName, systemVersion, systemRelease)
 
       ceFullDict[ce] = ceDict
 
     siteDict[site] = ceFullDict
 
-  result = S_OK( siteDict )
+  result = S_OK(siteDict)
   result['BdiiInfo'] = ceBdiiDict
   return result
 
-def getSiteUpdates( vo, bdiiInfo = None, log = None ):
+
+def getSiteUpdates(vo, bdiiInfo=None, log=None):
   """ Get all the necessary updates for the already defined sites and CEs
   """
 
-  def addToChangeSet( entry, changeSet ):
+  def addToChangeSet(entry, changeSet):
     _section, _option, value, new_value = entry
     if new_value and new_value != value:
-      changeSet.add( entry )
+      changeSet.add(entry)
 
   if log is None:
     log = gLogger
 
   ceBdiiDict = bdiiInfo
   if bdiiInfo is None:
-    result = getBdiiCEInfo( vo )
+    result = getBdiiCEInfo(vo)
     if not result['OK']:
       return result
     ceBdiiDict = result['Value']
 
   changeSet = set()
   for site in ceBdiiDict:
-    result = getDIRACSiteName( site )
+    result = getDIRACSiteName(site)
     if not result['OK']:
       continue
     siteNames = result['Value']
     for siteName in siteNames:
-      siteSection = cfgPath( '/Resources', 'Sites', siteName.split('.')[0], siteName )
-      result = gConfig.getOptionsDict( siteSection )
+      siteSection = cfgPath('/Resources', 'Sites', siteName.split('.')[0], siteName)
+      result = gConfig.getOptionsDict(siteSection)
       if not result['OK']:
         continue
       siteDict = result['Value']
       # Current CS values
-      coor = siteDict.get( 'Coordinates', 'Unknown' )
-      mail = siteDict.get( 'Mail', 'Unknown' ).replace( ' ','' )
-      description = siteDict.get( 'Description', 'Unknown' )
-      description = description.replace( ' ,', ',')
+      coor = siteDict.get('Coordinates', 'Unknown')
+      mail = siteDict.get('Mail', 'Unknown').replace(' ', '')
+      description = siteDict.get('Description', 'Unknown')
+      description = description.replace(' ,', ',')
 
-      longitude = ceBdiiDict[site].get( 'GlueSiteLongitude', '' ).strip()
-      latitude = ceBdiiDict[site].get( 'GlueSiteLatitude', '' ).strip()
+      longitude = ceBdiiDict[site].get('GlueSiteLongitude', '').strip()
+      latitude = ceBdiiDict[site].get('GlueSiteLatitude', '').strip()
 
       # Current BDII value
       newcoor = ''
       if longitude and latitude:
-        newcoor = "%s:%s" % ( longitude, latitude )
-      newmail = ceBdiiDict[site].get( 'GlueSiteSysAdminContact', '' ).replace( 'mailto:', '' ).strip()
-      newdescription = ceBdiiDict[site].get( 'GlueSiteDescription', '' ).strip()
-      newdescription = ", ".join( [ line.strip() for line in newdescription.split( "," ) ] )
+        newcoor = "%s:%s" % (longitude, latitude)
+      newmail = ceBdiiDict[site].get('GlueSiteSysAdminContact', '').replace('mailto:', '').strip()
+      newdescription = ceBdiiDict[site].get('GlueSiteDescription', '').strip()
+      newdescription = ", ".join([line.strip() for line in newdescription.split(",")])
 
       # Adding site data to the changes list
-      addToChangeSet( ( siteSection, 'Coordinates', coor, newcoor ), changeSet )
-      addToChangeSet( ( siteSection, 'Mail', mail, newmail ), changeSet )
-      addToChangeSet( ( siteSection, 'Description', description, newdescription ), changeSet )
+      addToChangeSet((siteSection, 'Coordinates', coor, newcoor), changeSet)
+      addToChangeSet((siteSection, 'Mail', mail, newmail), changeSet)
+      addToChangeSet((siteSection, 'Description', description, newdescription), changeSet)
 
-      ces = gConfig.getValue( cfgPath( siteSection, 'CE' ), [] )
+      ces = gConfig.getValue(cfgPath(siteSection, 'CE'), [])
       for ce in ces:
-        ceSection = cfgPath( siteSection, 'CEs', ce )
+        ceSection = cfgPath(siteSection, 'CEs', ce)
         ceDict = {}
-        result = gConfig.getOptionsDict( ceSection )
+        result = gConfig.getOptionsDict(ceSection)
         if result['OK']:
           ceDict = result['Value']
         else:
-          if ceBdiiDict[site]['CEs'].get( ce, None ):
-            log.notice( "Adding new CE %s to site %s/%s" % (ce, siteName, site) )
-        ceInfo = ceBdiiDict[site]['CEs'].get( ce, None )
+          if ceBdiiDict[site]['CEs'].get(ce, None):
+            log.notice("Adding new CE %s to site %s/%s" % (ce, siteName, site))
+        ceInfo = ceBdiiDict[site]['CEs'].get(ce, None)
         if ceInfo is None:
-          ceType = ceDict.get( 'CEType', '')
+          ceType = ceDict.get('CEType', '')
           continue
 
         # Current CS CE info
-        arch = ceDict.get( 'architecture', 'Unknown' )
-        OS = ceDict.get( 'OS', 'Unknown' )
-        si00 = ceDict.get( 'SI00', 'Unknown' )
-        ceType = ceDict.get( 'CEType', 'Unknown' )
-        ram = ceDict.get( 'MaxRAM', 'Unknown' )
-        submissionMode = ceDict.get( 'SubmissionMode', 'Unknown' )
+        arch = ceDict.get('architecture', 'Unknown')
+        OS = ceDict.get('OS', 'Unknown')
+        si00 = ceDict.get('SI00', 'Unknown')
+        ceType = ceDict.get('CEType', 'Unknown')
+        ram = ceDict.get('MaxRAM', 'Unknown')
+        submissionMode = ceDict.get('SubmissionMode', 'Unknown')
 
         # Current BDII CE info
-        newarch = ceBdiiDict[site]['CEs'][ce].get( 'GlueHostArchitecturePlatformType', '' ).strip()
-        systemName = ceInfo.get( 'GlueHostOperatingSystemName', '' ).strip()
-        systemVersion = ceInfo.get( 'GlueHostOperatingSystemVersion', '' ).strip()
-        systemRelease = ceInfo.get( 'GlueHostOperatingSystemRelease', '' ).strip()
+        newarch = ceBdiiDict[site]['CEs'][ce].get('GlueHostArchitecturePlatformType', '').strip()
+        systemName = ceInfo.get('GlueHostOperatingSystemName', '').strip()
+        systemVersion = ceInfo.get('GlueHostOperatingSystemVersion', '').strip()
+        systemRelease = ceInfo.get('GlueHostOperatingSystemRelease', '').strip()
         newOS = ''
         if systemName and systemVersion and systemRelease:
-          newOS = '_'.join( ( systemName, systemVersion, systemRelease ) )
-        newsi00 = ceInfo.get( 'GlueHostBenchmarkSI00', '' ).strip()
+          newOS = '_'.join((systemName, systemVersion, systemRelease))
+        newsi00 = ceInfo.get('GlueHostBenchmarkSI00', '').strip()
         newCEType = 'Unknown'
         for queue in ceInfo['Queues']:
           queueDict = ceInfo['Queues'][queue]
-          newCEType = queueDict.get( 'GlueCEImplementationName', '' ).strip()
+          newCEType = queueDict.get('GlueCEImplementationName', '').strip()
           if newCEType:
             break
-        if newCEType=='ARC-CE':
+        if newCEType == 'ARC-CE':
           newCEType = 'ARC'
 
         newSubmissionMode = None
-        if newCEType in ['ARC','CREAM']:
+        if newCEType in ['ARC', 'CREAM']:
           newSubmissionMode = "Direct"
-        newRAM = ceInfo.get( 'GlueHostMainMemoryRAMSize', '' ).strip()
+        newRAM = ceInfo.get('GlueHostMainMemoryRAMSize', '').strip()
         # Protect from unreasonable values
-        if newRAM and int( newRAM ) > 150000:
+        if newRAM and int(newRAM) > 150000:
           newRAM = ''
 
         # Adding CE data to the change list
-        addToChangeSet( ( ceSection, 'architecture', arch, newarch ), changeSet )
-        addToChangeSet( ( ceSection, 'OS', OS, newOS ), changeSet )
-        addToChangeSet( ( ceSection, 'SI00', si00, newsi00 ), changeSet )
-        addToChangeSet( ( ceSection, 'CEType', ceType, newCEType ), changeSet )
-        addToChangeSet( ( ceSection, 'MaxRAM', ram, newRAM ), changeSet )
+        addToChangeSet((ceSection, 'architecture', arch, newarch), changeSet)
+        addToChangeSet((ceSection, 'OS', OS, newOS), changeSet)
+        addToChangeSet((ceSection, 'SI00', si00, newsi00), changeSet)
+        addToChangeSet((ceSection, 'CEType', ceType, newCEType), changeSet)
+        addToChangeSet((ceSection, 'MaxRAM', ram, newRAM), changeSet)
         if submissionMode == "Unknown" and newSubmissionMode:
-          addToChangeSet( ( ceSection, 'SubmissionMode', submissionMode, newSubmissionMode ), changeSet )
+          addToChangeSet((ceSection, 'SubmissionMode', submissionMode, newSubmissionMode), changeSet)
 
         queues = ceInfo['Queues'].keys()
         for queue in queues:
           queueInfo = ceInfo['Queues'][queue]
           queueStatus = queueInfo['GlueCEStateStatus']
-          queueSection = cfgPath( ceSection, 'Queues', queue )
+          queueSection = cfgPath(ceSection, 'Queues', queue)
           queueDict = {}
-          result = gConfig.getOptionsDict( queueSection )
+          result = gConfig.getOptionsDict(queueSection)
           if result['OK']:
             queueDict = result['Value']
           else:
             if queueStatus.lower() == "production":
-              log.notice( "Adding new queue %s to CE %s" % (queue, ce) )
+              log.notice("Adding new queue %s to CE %s" % (queue, ce))
             else:
               continue
 
           # Current CS queue info
-          maxCPUTime = queueDict.get( 'maxCPUTime', 'Unknown' )
-          si00 = queueDict.get( 'SI00', 'Unknown' )
-          maxTotalJobs = queueDict.get( 'MaxTotalJobs', 'Unknown' )
+          maxCPUTime = queueDict.get('maxCPUTime', 'Unknown')
+          si00 = queueDict.get('SI00', 'Unknown')
+          maxTotalJobs = queueDict.get('MaxTotalJobs', 'Unknown')
 
           # Current BDII queue info
-          newMaxCPUTime = queueInfo.get( 'GlueCEPolicyMaxCPUTime', '' )
-          if newMaxCPUTime == "4" * len( newMaxCPUTime ) or newMaxCPUTime == "9" * len( newMaxCPUTime ):
+          newMaxCPUTime = queueInfo.get('GlueCEPolicyMaxCPUTime', '')
+          if newMaxCPUTime == "4" * len(newMaxCPUTime) or newMaxCPUTime == "9" * len(newMaxCPUTime):
             newMaxCPUTime = ''
-          wallTime = queueInfo.get( 'GlueCEPolicyMaxWallClockTime', '' )
-          if wallTime == "4" * len( wallTime ) or wallTime == "9" * len( wallTime ):
-             wallTime = ''
-          if wallTime and int(wallTime)>0:
+          wallTime = queueInfo.get('GlueCEPolicyMaxWallClockTime', '')
+          if wallTime == "4" * len(wallTime) or wallTime == "9" * len(wallTime):
+            wallTime = ''
+          if wallTime and int(wallTime) > 0:
             if not newMaxCPUTime:
-              newMaxCPUTime = str(int(0.8*int(wallTime)))
+              newMaxCPUTime = str(int(0.8 * int(wallTime)))
             else:
               if int(wallTime) <= int(newMaxCPUTime):
-                newMaxCPUTime = str(int(0.8*int(wallTime)))
+                newMaxCPUTime = str(int(0.8 * int(wallTime)))
           newSI00 = ''
           caps = queueInfo['GlueCECapability']
-          if isinstance( caps, basestring ):
+          if isinstance(caps, basestring):
             caps = [caps]
           for cap in caps:
             if 'CPUScalingReferenceSI00' in cap:
-              newSI00 = cap.split( '=' )[-1]
+              newSI00 = cap.split('=')[-1]
 
           # Adding queue info to the CS
-          addToChangeSet( ( queueSection, 'maxCPUTime', maxCPUTime, newMaxCPUTime ), changeSet )
-          addToChangeSet( ( queueSection, 'SI00', si00, newSI00 ), changeSet )
+          addToChangeSet((queueSection, 'maxCPUTime', maxCPUTime, newMaxCPUTime), changeSet)
+          addToChangeSet((queueSection, 'SI00', si00, newSI00), changeSet)
           if maxTotalJobs == "Unknown":
-            newTotalJobs =  min( 1000, int( int( queueInfo.get( 'GlueCEInfoTotalCPUs', 0 ) )/2 ) )
-            newWaitingJobs =  max( 2, int( newTotalJobs * 0.1 ) )
-            newTotalJobs = str( newTotalJobs )
-            newWaitingJobs = str( newWaitingJobs )
-            addToChangeSet( ( queueSection, 'MaxTotalJobs', '', newTotalJobs ), changeSet )
-            addToChangeSet( ( queueSection, 'MaxWaitingJobs', '', newWaitingJobs ), changeSet )
+            newTotalJobs = min(1000, int(int(queueInfo.get('GlueCEInfoTotalCPUs', 0)) / 2))
+            newWaitingJobs = max(2, int(newTotalJobs * 0.1))
+            newTotalJobs = str(newTotalJobs)
+            newWaitingJobs = str(newWaitingJobs)
+            addToChangeSet((queueSection, 'MaxTotalJobs', '', newTotalJobs), changeSet)
+            addToChangeSet((queueSection, 'MaxWaitingJobs', '', newWaitingJobs), changeSet)
 
           # Updating eligible VO list
           VOs = set()
-          if queueDict.get( 'VO', '' ):
-            VOs = set( [ q.strip() for q in queueDict.get( 'VO', '' ).split( ',' ) if q ] )
-          if not vo in VOs:
-            VOs.add( vo )
-            VOs = list( VOs )
-            newVOs = ','.join( VOs )
-            addToChangeSet( ( queueSection, 'VO', '', newVOs ), changeSet )
+          if queueDict.get('VO', ''):
+            VOs = set([q.strip() for q in queueDict.get('VO', '').split(',') if q])
+          if vo not in VOs:
+            VOs.add(vo)
+            VOs = list(VOs)
+            newVOs = ','.join(VOs)
+            addToChangeSet((queueSection, 'VO', '', newVOs), changeSet)
 
-  return S_OK( changeSet )
+  return S_OK(changeSet)
 
-def getGridSEs( vo, bdiiInfo = None, seBlackList = None ):
+
+def getGridSEs(vo, bdiiInfo=None, seBlackList=None):
   """ Get all the SEs available for a given VO
   """
   seBdiiDict = bdiiInfo
   if bdiiInfo is None:
-    result = getBdiiSEInfo( vo )
+    result = getBdiiSEInfo(vo)
     if not result['OK']:
       return result
     seBdiiDict = result['Value']
 
   knownSEs = set()
   if seBlackList is not None:
-    knownSEs = knownSEs.union( set( seBlackList ) )
+    knownSEs = knownSEs.union(set(seBlackList))
 
   siteDict = {}
   for site in seBdiiDict:
     for gridSE in seBdiiDict[site]['SEs']:
       seDict = seBdiiDict[site]['SEs'][gridSE]
 
-      #if "lhcb" in seDict['GlueSAName']:
+      # if "lhcb" in seDict['GlueSAName']:
       #  print '+'*80
       #  print gridSE
       #  for k,v in seDict.items():
       #    print k,'\t',v
 
-
-      if not gridSE in knownSEs:
-        siteDict.setdefault( site, {} )
-        if type( seDict['GlueSAAccessControlBaseRule'] ) == types.ListType:
-          voList = [ re.sub( '^VO:', '', s ) for s in seDict['GlueSAAccessControlBaseRule'] ]
+      if gridSE not in knownSEs:
+        siteDict.setdefault(site, {})
+        if isinstance(seDict['GlueSAAccessControlBaseRule'], types.ListType):
+          voList = [re.sub('^VO:', '', s) for s in seDict['GlueSAAccessControlBaseRule']]
         else:
-          voList = [ re.sub( '^VO:', '', seDict['GlueSAAccessControlBaseRule'] ) ]
-        siteDict[site][gridSE] = { 'GridSite': seDict['GlueSiteUniqueID'],
-                                   'BackendType': seDict['GlueSEImplementationName'],
-                                   'Description': seDict.get( 'GlueSEName', '-' ),
-                                   'VOs': voList
-                                 }
+          voList = [re.sub('^VO:', '', seDict['GlueSAAccessControlBaseRule'])]
+        siteDict[site][gridSE] = {'GridSite': seDict['GlueSiteUniqueID'],
+                                  'BackendType': seDict['GlueSEImplementationName'],
+                                  'Description': seDict.get('GlueSEName', '-'),
+                                  'VOs': voList
+                                  }
 
-  result = S_OK( siteDict )
+  result = S_OK(siteDict)
   result['BdiiInfo'] = seBdiiDict
   return result
 
-def getGridSRMs( vo, bdiiInfo = None, srmBlackList = None, unUsed = False ):
 
-  result = ldapService( serviceType = 'SRM', vo = vo )
+def getGridSRMs(vo, bdiiInfo=None, srmBlackList=None, unUsed=False):
+
+  result = ldapService(serviceType='SRM', vo=vo)
   if not result['OK']:
     return result
   srmBdiiDict = result['Value']
 
   knownSRMs = set()
   if srmBlackList is not None:
-    knownSRMs = knownSRMs.union( set( srmBlackList ) )
+    knownSRMs = knownSRMs.union(set(srmBlackList))
 
   siteSRMDict = {}
   for srm in srmBdiiDict:
     srm = dict(srm)
-    endPoint = srm.get( 'GlueServiceEndpoint', '')
+    endPoint = srm.get('GlueServiceEndpoint', '')
     srmHost = ''
     if endPoint:
-      srmHost = urlparse( endPoint ).hostname
+      srmHost = urlparse(endPoint).hostname
     if not srmHost:
       continue
 
@@ -382,47 +387,48 @@ def getGridSRMs( vo, bdiiInfo = None, srmBlackList = None, unUsed = False ):
       continue
 
     if unUsed:
-      result = getDIRACSesForSRM( srmHost )
+      result = getDIRACSesForSRM(srmHost)
       if not result['OK']:
         return result
       diracSEs = result['Value']
       if diracSEs:
         # If it is a known SRM and only new SRMs are requested, continue
         continue
-    site = srm.get( 'GlueForeignKey', '' ).replace( 'GlueSiteUniqueID=', '' )
-    siteSRMDict.setdefault( site, {} )
+    site = srm.get('GlueForeignKey', '').replace('GlueSiteUniqueID=', '')
+    siteSRMDict.setdefault(site, {})
     siteSRMDict[site][srmHost] = srm
 
   if bdiiInfo is None:
-    result = getBdiiSEInfo( vo )
+    result = getBdiiSEInfo(vo)
     if not result['OK']:
       return result
-    seBdiiDict = dict( result['Value'] )
+    seBdiiDict = dict(result['Value'])
   else:
-    seBdiiDict = dict( bdiiInfo )
+    seBdiiDict = dict(bdiiInfo)
 
   srmSeDict = {}
   for site in siteSRMDict:
     srms = siteSRMDict[site].keys()
     for srm in srms:
-      if seBdiiDict.get( site, {} ).get( 'SEs', {} ).get( srm, {} ):
-        srmSeDict.setdefault( site, {} )
-        srmSeDict[site].setdefault( srm, {} )
+      if seBdiiDict.get(site, {}).get('SEs', {}).get(srm, {}):
+        srmSeDict.setdefault(site, {})
+        srmSeDict[site].setdefault(srm, {})
         srmSeDict[site][srm]['SRM'] = siteSRMDict[site][srm]
         srmSeDict[site][srm]['SE'] = seBdiiDict[site]['SEs'][srm]
 
-  return S_OK( srmSeDict )
+  return S_OK(srmSeDict)
 
-def getSRMUpdates( vo, bdiiInfo = None ):
+
+def getSRMUpdates(vo, bdiiInfo=None):
 
   changeSet = set()
 
-  def addToChangeSet( entry, changeSet ):
+  def addToChangeSet(entry, changeSet):
     _section, _option, value, new_value = entry
     if new_value and new_value != value:
-      changeSet.add( entry )
+      changeSet.add(entry)
 
-  result = getGridSRMs( vo, bdiiInfo = bdiiInfo )
+  result = getGridSRMs(vo, bdiiInfo=bdiiInfo)
   if not result['OK']:
     return result
   srmBdiiDict = result['Value']
@@ -434,17 +440,17 @@ def getSRMUpdates( vo, bdiiInfo = None ):
 
   result = getVOs()
   if result['OK']:
-    csVOs = set( result['Value'] )
+    csVOs = set(result['Value'])
   else:
-    csVOs = set( [vo] )
+    csVOs = set([vo])
 
   for seHost, diracSE in seDict.items():
     seSection = '/Resources/StorageElements/%s' % diracSE[0]
     # Look up existing values first
-    description = gConfig.getValue( cfgPath( seSection, 'Description'), 'Unknown' )
-    backend = gConfig.getValue( cfgPath( seSection, 'BackendType'), 'Unknown' )
-    vos = gConfig.getValue( cfgPath( seSection, 'VO'), 'Unknown' ).replace( ' ','' )
-    size = gConfig.getValue( cfgPath( seSection, 'TotalSize'), 'Unknown' )
+    description = gConfig.getValue(cfgPath(seSection, 'Description'), 'Unknown')
+    backend = gConfig.getValue(cfgPath(seSection, 'BackendType'), 'Unknown')
+    vos = gConfig.getValue(cfgPath(seSection, 'VO'), 'Unknown').replace(' ', '')
+    size = gConfig.getValue(cfgPath(seSection, 'TotalSize'), 'Unknown')
     # Look up current BDII values
     srmDict = {}
     seBdiiDict = {}
@@ -457,30 +463,31 @@ def getSRMUpdates( vo, bdiiInfo = None ):
     if not srmDict or not seBdiiDict:
       continue
 
-    newDescription = seBdiiDict.get( 'GlueSEName', 'Unknown' )
-    newBackend = seBdiiDict.get( 'GlueSEImplementationName', 'Unknown' )
-    newSize = seBdiiDict.get( 'GlueSESizeTotal', 'Unknown' )
-    addToChangeSet( ( seSection, 'Description', description, newDescription ), changeSet )
-    addToChangeSet( ( seSection, 'BackendType', backend, newBackend ), changeSet )
-    addToChangeSet( ( seSection, 'TotalSize', size, newSize ), changeSet )
+    newDescription = seBdiiDict.get('GlueSEName', 'Unknown')
+    newBackend = seBdiiDict.get('GlueSEImplementationName', 'Unknown')
+    newSize = seBdiiDict.get('GlueSESizeTotal', 'Unknown')
+    addToChangeSet((seSection, 'Description', description, newDescription), changeSet)
+    addToChangeSet((seSection, 'BackendType', backend, newBackend), changeSet)
+    addToChangeSet((seSection, 'TotalSize', size, newSize), changeSet)
 
     # Evaluate VOs if no space token defined, otherwise this is VO specific
     spaceToken = ''
-    for i in range( 1, 10 ):
-      protocol = gConfig.getValue( cfgPath( seSection, 'AccessProtocol.%d' % i, 'Protocol' ), '' )
+    for i in range(1, 10):
+      protocol = gConfig.getValue(cfgPath(seSection, 'AccessProtocol.%d' % i, 'Protocol'), '')
       if protocol.lower() == 'srm':
-        spaceToken = gConfig.getValue( cfgPath( seSection, 'AccessProtocol.%d' % i, 'SpaceToken' ), '' )
+        spaceToken = gConfig.getValue(cfgPath(seSection, 'AccessProtocol.%d' % i, 'SpaceToken'), '')
         break
     if not spaceToken:
-      bdiiVOs = srmDict.get( 'GlueServiceAccessControlBaseRule', [] )
-      bdiiVOs = set( [ re.sub( '^VO:', '', rule ) for rule in bdiiVOs ] )
-      seVOs = csVOs.intersection( bdiiVOs )
-      newVOs = ','.join( seVOs )
-      addToChangeSet( ( seSection, 'VO', vos, newVOs ), changeSet )
+      bdiiVOs = srmDict.get('GlueServiceAccessControlBaseRule', [])
+      bdiiVOs = set([re.sub('^VO:', '', rule) for rule in bdiiVOs])
+      seVOs = csVOs.intersection(bdiiVOs)
+      newVOs = ','.join(seVOs)
+      addToChangeSet((seSection, 'VO', vos, newVOs), changeSet)
 
-  return S_OK( changeSet )
+  return S_OK(changeSet)
 
-def getDBParameters( fullname ):
+
+def getDBParameters(fullname):
   """
   Retrieve Database parameters from CS
   fullname should be of the form <System>/<DBname>
@@ -500,15 +507,15 @@ def getDBParameters( fullname ):
   'db' and 'queueSize'
   """
 
-  cs_path = getDatabaseSection( fullname )
+  cs_path = getDatabaseSection(fullname)
   parameters = {}
 
-  result = gConfig.getOption( cs_path + '/Host' )
+  result = gConfig.getOption(cs_path + '/Host')
   if not result['OK']:
     # No host name found, try at the common place
-    result = gConfig.getOption( '/Systems/Databases/Host' )
+    result = gConfig.getOption('/Systems/Databases/Host')
     if not result['OK']:
-      return S_ERROR( 'Failed to get the configuration parameter: Host' )
+      return S_ERROR('Failed to get the configuration parameter: Host')
   dbHost = result['Value']
   # Check if the host is the local one and then set it to 'localhost' to use
   # a socket connection
@@ -516,99 +523,127 @@ def getDBParameters( fullname ):
     localHostName = socket.getfqdn()
     if localHostName == dbHost:
       dbHost = 'localhost'
-  parameters[ 'Host' ] = dbHost
+  parameters['Host'] = dbHost
 
   # Mysql standard
   dbPort = 3306
-  result = gConfig.getOption( cs_path + '/Port' )
+  result = gConfig.getOption(cs_path + '/Port')
   if not result['OK']:
     # No individual port number found, try at the common place
-    result = gConfig.getOption( '/Systems/Databases/Port' )
+    result = gConfig.getOption('/Systems/Databases/Port')
     if result['OK']:
-      dbPort = int( result['Value'] )
+      dbPort = int(result['Value'])
   else:
-    dbPort = int( result['Value'] )
-  parameters[ 'Port' ] = dbPort
+    dbPort = int(result['Value'])
+  parameters['Port'] = dbPort
 
-  result = gConfig.getOption( cs_path + '/User' )
+  result = gConfig.getOption(cs_path + '/User')
   if not result['OK']:
     # No individual user name found, try at the common place
-    result = gConfig.getOption( '/Systems/Databases/User' )
+    result = gConfig.getOption('/Systems/Databases/User')
     if not result['OK']:
-      return S_ERROR( 'Failed to get the configuration parameter: User' )
+      return S_ERROR('Failed to get the configuration parameter: User')
   dbUser = result['Value']
-  parameters[ 'User' ] = dbUser
+  parameters['User'] = dbUser
 
-  result = gConfig.getOption( cs_path + '/Password' )
+  result = gConfig.getOption(cs_path + '/Password')
   if not result['OK']:
     # No individual password found, try at the common place
-    result = gConfig.getOption( '/Systems/Databases/Password' )
+    result = gConfig.getOption('/Systems/Databases/Password')
     if not result['OK']:
-      return S_ERROR( 'Failed to get the configuration parameter: Password' )
+      return S_ERROR('Failed to get the configuration parameter: Password')
   dbPass = result['Value']
-  parameters[ 'Password' ] = dbPass
+  parameters['Password'] = dbPass
 
-  result = gConfig.getOption( cs_path + '/DBName' )
+  result = gConfig.getOption(cs_path + '/DBName')
   if not result['OK']:
-    return S_ERROR( 'Failed to get the configuration parameter: DBName' )
+    return S_ERROR('Failed to get the configuration parameter: DBName')
   dbName = result['Value']
-  parameters[ 'DBName' ] = dbName
+  parameters['DBName'] = dbName
 
-  return S_OK( parameters )
+  return S_OK(parameters)
 
-def getElasticDBParameters( fullname ):
+
+def getElasticDBParameters(fullname):
   """
   Retrieve Database parameters from CS
   fullname should be of the form <System>/<DBname>
 
   """
 
-  cs_path = getDatabaseSection( fullname )
+  cs_path = getDatabaseSection(fullname)
   parameters = {}
 
-  result = gConfig.getOption( cs_path + '/Host' )
+  result = gConfig.getOption(cs_path + '/Host')
   if not result['OK']:
     # No host name found, try at the common place
-    result = gConfig.getOption( '/Systems/NoSQLDatabases/Host' )
+    result = gConfig.getOption('/Systems/NoSQLDatabases/Host')
     if not result['OK']:
-      return S_ERROR( 'Failed to get the configuration parameter: Host' )
-  dbHost = result['Value']
+      gLogger.warn("Failed to get the configuration parameter: Host. Using localhost")
+      dbHost = 'localhost'
+    else:
+      dbHost = result['Value']
+  else:
+    dbHost = result['Value']
   # Check if the host is the local one and then set it to 'localhost' to use
   # a socket connection
   if dbHost != 'localhost':
     localHostName = socket.getfqdn()
     if localHostName == dbHost:
       dbHost = 'localhost'
-  parameters[ 'Host' ] = dbHost
+  parameters['Host'] = dbHost
 
   # Elasticsearch standard port
-  dbPort = 9200
-  result = gConfig.getOption( cs_path + '/Port' )
+  result = gConfig.getOption(cs_path + '/Port')
   if not result['OK']:
     # No individual port number found, try at the common place
-    result = gConfig.getOption( '/Systems/NoSQLDatabases/Port' )
-    if result['OK']:
-      dbPort = int( result['Value'] )
+    result = gConfig.getOption('/Systems/NoSQLDatabases/Port')
+    if not result['OK']:
+      gLogger.warn("Failed to get the configuration parameter: Port. Using 9200")
+      dbPort = 9200
+    else:
+      dbPort = int(result['Value'])
   else:
-    dbPort = int( result['Value'] )
-  parameters[ 'Port' ] = dbPort
+    dbPort = int(result['Value'])
+  parameters['Port'] = dbPort
 
-  result = gConfig.getOption( cs_path + '/User' )
+  result = gConfig.getOption(cs_path + '/User')
   if not result['OK']:
     # No individual user name found, try at the common place
-    result = gConfig.getOption( '/Systems/NoSQLDatabases/User' )
+    result = gConfig.getOption('/Systems/NoSQLDatabases/User')
     if not result['OK']:
-      return S_ERROR( 'Failed to get the configuration parameter: User' )
-  dbUser = result['Value']
-  parameters[ 'User' ] = dbUser
+      gLogger.warn("Failed to get the configuration parameter: User. Assuming no user/password is provided/needed")
+      dbUser = None
+    else:
+      dbUser = result['Value']
+  else:
+    dbUser = result['Value']
+  parameters['User'] = dbUser
 
-  result = gConfig.getOption( cs_path + '/Password' )
+  result = gConfig.getOption(cs_path + '/Password')
   if not result['OK']:
     # No individual password found, try at the common place
-    result = gConfig.getOption( '/Systems/NoSQLDatabases/Password' )
+    result = gConfig.getOption('/Systems/NoSQLDatabases/Password')
     if not result['OK']:
-      return S_ERROR( 'Failed to get the configuration parameter: Password' )
-  dbPass = result['Value']
-  parameters[ 'Password' ] = dbPass
+      gLogger.warn("Failed to get the configuration parameter: Password. Assuming no user/password is provided/needed")
+      dbPass = None
+    else:
+      dbPass = result['Value']
+  else:
+    dbPass = result['Value']
+  parameters['Password'] = dbPass
 
-  return S_OK( parameters )
+  result = gConfig.getOption(cs_path + '/SSL')
+  if not result['OK']:
+    # No SSL option found, try at the common place
+    result = gConfig.getOption('/Systems/NoSQLDatabases/SSL')
+    if not result['OK']:
+      gLogger.warn("Failed to get the configuration parameter: SSL. Assuming SSL is needed")
+      ssl = True
+    else:
+      ssl = False if result['Value'].lower() in ('false', 'no', 'n') else True
+  else:
+    ssl = False if result['Value'].lower() in ('false', 'no', 'n') else True
+  parameters['SSL'] = ssl
+
+  return S_OK(parameters)

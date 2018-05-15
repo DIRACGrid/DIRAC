@@ -78,9 +78,9 @@ class AccountingDB( DB ):
 
   def __loadTablesCreated( self ):
     result = self._query( "show tables" )
-    if not result[ 'OK' ]:
+    if not result['OK']:  # pylint: disable=invalid-sequence-index
       return result
-    return S_OK( [ f[0] for f in result[ 'Value' ] ] )
+    return S_OK([f[0] for f in result['Value']])  # pylint: disable=invalid-sequence-index
 
   def autoCompactDB( self ):
     self.autoCompact = True

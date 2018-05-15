@@ -4,75 +4,124 @@
 import os
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.DISET.TransferClient import TransferClient
+
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
-from DIRAC.Resources.Catalog.Utilities                 import checkCatalogArguments
-from DIRAC.Resources.Catalog.FileCatalogClientBase     import FileCatalogClientBase
+from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
+from DIRAC.Resources.Catalog.FileCatalogClientBase import FileCatalogClientBase
 
 __RCSID__ = "$Id$"
 
 
-class FileCatalogClient( FileCatalogClientBase ):
+class FileCatalogClient(FileCatalogClientBase):
   """ Client code to the DIRAC File Catalogue
   """
 
   # The list of methods below is defining the client interface
   READ_METHODS = FileCatalogClientBase.READ_METHODS + \
-                 [ 'isFile', 'getFileMetadata',
-                   'getReplicas', 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
-                   'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                   'getLFNForPFN', 'getLFNForGUID', 'findFilesByMetadata','getMetadataFields',
-                   'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
-                   'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet', 'getDatasets',
-                   'getFileDescendents', 'getFileAncestors', 'getDirectoryUserMetadata', 'getFileUserMetadata',
-                   'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
+      ['isFile', 'getFileMetadata',
+       'getReplicas', 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
+       'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
+       'getLFNForPFN', 'getLFNForGUID', 'findFilesByMetadata', 'getMetadataFields',
+       'findDirectoriesByMetadata', 'getReplicasByMetadata', 'findFilesByMetadataDetailed',
+       'findFilesByMetadataWeb', 'getCompatibleMetadata', 'getMetadataSet', 'getDatasets',
+       'getFileDescendents', 'getFileAncestors', 'getDirectoryUserMetadata', 'getFileUserMetadata',
+       'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
 
-  WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
-                   'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
-                   'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup',
-                   'addMetadataField','deleteMetadataField','setMetadata','setMetadataBulk','removeMetadata',
-                   'addMetadataSet', 'addDataset', 'addDatasetAnnotation', 'removeDataset', 'updateDataset',
-                   'freezeDataset', 'releaseDataset', 'addUser', 'deleteUser', 'addGroup', 'deleteGroup',
-                   'repairCatalog', 'rebuildDirectoryUsage' ]
+  WRITE_METHODS = [
+      'createLink',
+      'removeLink',
+      'addFile',
+      'setFileStatus',
+      'addReplica',
+      'removeReplica',
+      'removeFile',
+      'setReplicaStatus',
+      'setReplicaHost',
+      'setReplicaProblematic',
+      'createDirectory',
+      'setDirectoryStatus',
+      'removeDirectory',
+      'changePathMode',
+      'changePathOwner',
+      'changePathGroup',
+      'addMetadataField',
+      'deleteMetadataField',
+      'setMetadata',
+      'setMetadataBulk',
+      'removeMetadata',
+      'addMetadataSet',
+      'addDataset',
+      'addDatasetAnnotation',
+      'removeDataset',
+      'updateDataset',
+      'freezeDataset',
+      'releaseDataset',
+      'addUser',
+      'deleteUser',
+      'addGroup',
+      'deleteGroup',
+      'repairCatalog',
+      'rebuildDirectoryUsage']
 
-  NO_LFN_METHODS = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
-                    'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
-                    'getReplicasByMetadata','findFilesByMetadataDetailed','findFilesByMetadataWeb',
-                    'getCompatibleMetadata', 'addMetadataSet', 'getMetadataSet', 'getFileUserMetadata', 'getLFNForGUID',
-                    'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'repairCatalog', 'rebuildDirectoryUsage' ]
+  NO_LFN_METHODS = [
+      'findFilesByMetadata',
+      'addMetadataField',
+      'deleteMetadataField',
+      'getMetadataFields',
+      'setMetadata',
+      'setMetadataBulk',
+      'removeMetadata',
+      'getDirectoryUserMetadata',
+      'findDirectoriesByMetadata',
+      'getReplicasByMetadata',
+      'findFilesByMetadataDetailed',
+      'findFilesByMetadataWeb',
+      'getCompatibleMetadata',
+      'addMetadataSet',
+      'getMetadataSet',
+      'getFileUserMetadata',
+      'getLFNForGUID',
+      'addUser',
+      'deleteUser',
+      'addGroup',
+      'deleteGroup',
+      'repairCatalog',
+      'rebuildDirectoryUsage']
 
-  ADMIN_METHODS = [ 'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'getUsers', 'getGroups',
-                    'getCatalogCounters', 'repairCatalog', 'rebuildDirectoryUsage' ]
+  ADMIN_METHODS = ['addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'getUsers', 'getGroups',
+                   'getCatalogCounters', 'repairCatalog', 'rebuildDirectoryUsage']
 
-  def __init__( self, url = None, **kwargs ):
+  def __init__(self, url=None, **kwargs):
     """ Constructor function.
     """
     self.serverURL = 'DataManagement/FileCatalog' if not url else url
-    super( FileCatalogClient, self ).__init__( self.serverURL, **kwargs )
+    super(FileCatalogClient, self).__init__(self.serverURL, **kwargs)
 
 ##################################################################################
 #
 ##################################################################################
 
   @checkCatalogArguments
-  def getReplicas( self, lfns, allStatus = False, timeout = 120 ):
+  def getReplicas(self, lfns, allStatus=False, timeout=120):
     """ Get the replicas of the given files
     """
-    rpcClient = self._getRPC( timeout = timeout )
-    result = rpcClient.getReplicas( lfns, allStatus )
+    rpcClient = self._getRPC(timeout=timeout)
+    result = rpcClient.getReplicas(lfns, allStatus)
     if not result['OK']:
       return result
 
     lfnDict = result['Value']
-    seDict = result['Value'].get( 'SEPrefixes', {} )
+    seDict = result['Value'].get('SEPrefixes', {})
     for lfn in lfnDict['Successful']:
       for se in lfnDict['Successful'][lfn]:
         if not lfnDict['Successful'][lfn][se] and se in seDict:
           lfnDict['Successful'][lfn][se] = seDict[se] + lfn
 
-    return S_OK( lfnDict )
+    return S_OK(lfnDict)
 
   @checkCatalogArguments
-  def setReplicaProblematic( self, lfns, revert = False ):
+  def setReplicaProblematic(self, lfns, revert=False):
     """
       Set replicas to problematic.
 
@@ -103,14 +152,13 @@ class FileCatalogClient( FileCatalogClientBase ):
     # loop4: lfnSEs {'L3': []}
     # loop4 : batch {}
 
-
     successful = {}
     failed = {}
 
     status = 'AprioriGood' if revert else 'Trash'
 
     # { lfn : [ se1, se2, ...], ...}
-    lfnsSEs = dict( ( lfn, [se for se in lfns[lfn]] ) for lfn in lfns )
+    lfnsSEs = dict((lfn, [se for se in lfns[lfn]]) for lfn in lfns)
 
     while lfnsSEs:
 
@@ -122,7 +170,7 @@ class FileCatalogClient( FileCatalogClientBase ):
         # else we remove the entry from the lfnsSEs dict
         if lfnsSEs[lfn]:
           se = lfnsSEs[lfn].pop()
-          batch[lfn] = { 'SE' : se, 'PFN' : lfns[lfn][se], 'Status' : status }
+          batch[lfn] = {'SE': se, 'PFN': lfns[lfn][se], 'Status': status}
         else:
           del lfnsSEs[lfn]
 
@@ -130,26 +178,26 @@ class FileCatalogClient( FileCatalogClientBase ):
       if not batch:
         break
 
-      res = self.setReplicaStatus( batch )
+      res = self.setReplicaStatus(batch)
       if not res['OK']:
         for lfn in batch:
-          failed.setdefault( lfn, {} )[batch[lfn]['SE']] = res['Message']
+          failed.setdefault(lfn, {})[batch[lfn]['SE']] = res['Message']
         continue
 
       for lfn in res['Value']['Failed']:
-        failed.setdefault( lfn, {} )[batch[lfn]['SE']] = res['Value']['Failed'][lfn]
+        failed.setdefault(lfn, {})[batch[lfn]['SE']] = res['Value']['Failed'][lfn]
 
       for lfn in res['Value']['Successful']:
-        successful.setdefault( lfn, [] ).append( batch[lfn]['SE'] )
+        successful.setdefault(lfn, []).append(batch[lfn]['SE'])
 
-    return S_OK( {'Successful' : successful, 'Failed': failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
   @checkCatalogArguments
-  def listDirectory( self, lfn, verbose = False, timeout = 120 ):
+  def listDirectory(self, lfn, verbose=False, timeout=120):
     """ List the given directory's contents
     """
-    rpcClient = self._getRPC( timeout = timeout )
-    result = rpcClient.listDirectory( lfn, verbose )
+    rpcClient = self._getRPC(timeout=timeout)
+    result = rpcClient.listDirectory(lfn, verbose)
     if not result['OK']:
       return result
     # Force returned directory entries to be LFNs
@@ -157,90 +205,90 @@ class FileCatalogClient( FileCatalogClientBase ):
       for path in result['Value']['Successful']:
         entryDict = result['Value']['Successful'][path][entryType]
         for fname in entryDict.keys():
-          detailsDict = entryDict.pop( fname )
-          lfn = os.path.join( path, os.path.basename( fname ) )
+          detailsDict = entryDict.pop(fname)
+          lfn = os.path.join(path, os.path.basename(fname))
           entryDict[lfn] = detailsDict
     return result
 
   @checkCatalogArguments
-  def getDirectoryMetadata( self, lfns, timeout = 120 ):
+  def getDirectoryMetadata(self, lfns, timeout=120):
     ''' Get standard directory metadata
     '''
-    rpcClient = self._getRPC( timeout = timeout )
-    result = rpcClient.getDirectoryMetadata( lfns )
+    rpcClient = self._getRPC(timeout=timeout)
+    result = rpcClient.getDirectoryMetadata(lfns)
     if not result['OK']:
       return result
     # Add some useful fields
     for path in result['Value']['Successful']:
       owner = result['Value']['Successful'][path]['Owner']
       group = result['Value']['Successful'][path]['OwnerGroup']
-      res = getDNForUsername( owner )
+      res = getDNForUsername(owner)
       if res['OK']:
         result['Value']['Successful'][path]['OwnerDN'] = res['Value'][0]
       else:
         result['Value']['Successful'][path]['OwnerDN'] = ''
-      result['Value']['Successful'][path]['OwnerRole'] = getVOMSAttributeForGroup( group )
+      result['Value']['Successful'][path]['OwnerRole'] = getVOMSAttributeForGroup(group)
     return result
 
   @checkCatalogArguments
-  def removeDirectory( self, lfn, recursive = False, timeout = 120 ):
+  def removeDirectory(self, lfn, recursive=False, timeout=120):
     """ Remove the directory from the File Catalog. The recursive keyword is for the ineterface.
     """
-    rpcClient = self._getRPC( timeout = timeout )
-    return rpcClient.removeDirectory( lfn )
+    rpcClient = self._getRPC(timeout=timeout)
+    return rpcClient.removeDirectory(lfn)
 
   @checkCatalogArguments
-  def getDirectoryReplicas( self, lfns, allStatus = False, timeout = 120 ):
+  def getDirectoryReplicas(self, lfns, allStatus=False, timeout=120):
     """ Find all the given directories' replicas
     """
-    rpcClient = self._getRPC( timeout = timeout )
-    result = rpcClient.getDirectoryReplicas( lfns, allStatus )
+    rpcClient = self._getRPC(timeout=timeout)
+    result = rpcClient.getDirectoryReplicas(lfns, allStatus)
     if not result['OK']:
       return result
 
-    seDict = result['Value'].get( 'SEPrefixes', {} )
+    seDict = result['Value'].get('SEPrefixes', {})
     for path in result['Value']['Successful']:
       pathDict = result['Value']['Successful'][path]
       for fname in pathDict.keys():
-        detailsDict = pathDict.pop( fname )
-        lfn = '%s/%s' % ( path, os.path.basename( fname ) )
+        detailsDict = pathDict.pop(fname)
+        lfn = '%s/%s' % (path, os.path.basename(fname))
         for se in detailsDict:
           if not detailsDict[se] and se in seDict:
             detailsDict[se] = seDict[se] + lfn
         pathDict[lfn] = detailsDict
     return result
 
-  def findFilesByMetadata( self, metaDict, path = '/', timeout = 120 ):
+  def findFilesByMetadata(self, metaDict, path='/', timeout=120):
     """ Find files given the meta data query and the path
     """
-    rpcClient = self._getRPC( timeout = timeout )
-    result = rpcClient.findFilesByMetadata( metaDict, path )
+    rpcClient = self._getRPC(timeout=timeout)
+    result = rpcClient.findFilesByMetadata(metaDict, path)
     if not result['OK']:
       return result
-    if isinstance( result['Value'], list ):
+    if isinstance(result['Value'], list):
       return result
-    elif isinstance( result['Value'], dict ):
+    elif isinstance(result['Value'], dict):
       # Process into the lfn list
       fileList = []
       for dir_, fList in result['Value'].items():
         for fi in fList:
-          fileList.append( dir_ + '/' + fi )
+          fileList.append(dir_ + '/' + fi)
       result['Value'] = fileList
       return result
     else:
-      return S_ERROR( 'Illegal return value type %s' % type( result['Value'] ) )
+      return S_ERROR('Illegal return value type %s' % type(result['Value']))
 
-  def getFileUserMetadata( self, path, timeout = 120 ):
+  def getFileUserMetadata(self, path, timeout=120):
     """Get the meta data attached to a file, but also to
     the its corresponding directory
     """
-    directory = "/".join( path.split( "/" )[:-1] )
-    rpcClient = self._getRPC( timeout = timeout )
-    result = rpcClient.getFileUserMetadata( path )
+    directory = "/".join(path.split("/")[:-1])
+    rpcClient = self._getRPC(timeout=timeout)
+    result = rpcClient.getFileUserMetadata(path)
     if not result['OK']:
       return result
     fmeta = result['Value']
-    result = rpcClient.getDirectoryUserMetadata( directory )
+    result = rpcClient.getDirectoryUserMetadata(directory)
     if not result['OK']:
       return result
     fmeta.update(result['Value'])
@@ -252,79 +300,73 @@ class FileCatalogClient( FileCatalogClientBase ):
   #
 
   @checkCatalogArguments
-  def changePathOwner( self, lfns, recursive = False, timeout = 120 ):
+  def changePathOwner(self, lfns, recursive=False, timeout=120):
     """ Get replica info for the given list of LFNs
     """
-    return self._getRPC( timeout = timeout ).changePathOwner( lfns, recursive )
+    return self._getRPC(timeout=timeout).changePathOwner(lfns, recursive)
 
   @checkCatalogArguments
-  def changePathGroup( self, lfns, recursive = False, timeout = 120 ):
+  def changePathGroup(self, lfns, recursive=False, timeout=120):
     """ Get replica info for the given list of LFNs
     """
-    return self._getRPC( timeout = timeout ).changePathGroup( lfns, recursive )
+    return self._getRPC(timeout=timeout).changePathGroup(lfns, recursive)
 
   @checkCatalogArguments
-  def changePathMode( self, lfns, recursive = False, timeout = 120 ):
+  def changePathMode(self, lfns, recursive=False, timeout=120):
     """ Get replica info for the given list of LFNs
     """
-    return self._getRPC( timeout = timeout ).changePathMode( lfns, recursive )
+    return self._getRPC(timeout=timeout).changePathMode(lfns, recursive)
 
   ########################################################################
   # ACL Operations
   #
 
   @checkCatalogArguments
-  def getPathPermissions( self, lfns, timeout = 120 ):
+  def getPathPermissions(self, lfns, timeout=120):
     """ Determine the ACL information for a supplied path
     """
-    return self._getRPC( timeout = timeout ).getPathPermissions( lfns )
+    return self._getRPC(timeout=timeout).getPathPermissions(lfns)
 
   @checkCatalogArguments
-  def hasAccess( self, paths, opType, timeout = 120 ):
+  def hasAccess(self, paths, opType, timeout=120):
     """ Determine if the given op can be performed on the paths
         The OpType is all the operations exported
     """
-    return self._getRPC( timeout = timeout ).hasAccess( paths, opType )
-
+    return self._getRPC(timeout=timeout).hasAccess(paths, opType)
 
   ###################################################################
   #
   #  User/Group write operations
   #
 
-
-  def addUser( self, userName, timeout = 120 ):
+  def addUser(self, userName, timeout=120):
     """ Add a new user to the File Catalog """
-    return self._getRPC( timeout = timeout ).addUser( userName )
+    return self._getRPC(timeout=timeout).addUser(userName)
 
-
-  def deleteUser( self, userName, timeout = 120 ):
+  def deleteUser(self, userName, timeout=120):
     """ Delete user from the File Catalog """
-    return self._getRPC( timeout = timeout ).deleteUser( userName )
+    return self._getRPC(timeout=timeout).deleteUser(userName)
 
-
-  def addGroup( self, groupName, timeout = 120 ):
+  def addGroup(self, groupName, timeout=120):
     """ Add a new group to the File Catalog """
-    return self._getRPC( timeout = timeout ).addGroup( groupName )
+    return self._getRPC(timeout=timeout).addGroup(groupName)
 
-
-  def deleteGroup( self, groupName, timeout = 120 ):
+  def deleteGroup(self, groupName, timeout=120):
     """ Delete group from the File Catalog """
-    return self._getRPC( timeout = timeout ).deleteGroup( groupName )
+    return self._getRPC(timeout=timeout).deleteGroup(groupName)
 
   ###################################################################
   #
   #  User/Group read operations
   #
 
-
-  def getUsers( self, timeout = 120 ):
+  def getUsers(self, timeout=120):
     """ Get all the users defined in the File Catalog """
-    return self._getRPC( timeout = timeout ).getUsers()
+    return self._getRPC(timeout=timeout).getUsers()
 
-  def getGroups( self, timeout = 120 ):
+  def getGroups(self, timeout=120):
     """ Get all the groups defined in the File Catalog """
-    return self._getRPC( timeout = timeout ).getGroups()
+    return self._getRPC(timeout=timeout).getGroups()
 
   ########################################################################
   #
@@ -332,9 +374,9 @@ class FileCatalogClient( FileCatalogClientBase ):
   #
 
   @checkCatalogArguments
-  def exists( self, lfns, timeout = 120 ):
+  def exists(self, lfns, timeout=120):
     """ Check whether the supplied paths exists """
-    return self._getRPC( timeout = timeout ).exists( lfns )
+    return self._getRPC(timeout=timeout).exists(lfns)
 
   ########################################################################
   #
@@ -342,48 +384,45 @@ class FileCatalogClient( FileCatalogClientBase ):
   #
 
   @checkCatalogArguments
-  def addFile( self, lfns, timeout = 120 ):
+  def addFile(self, lfns, timeout=120):
     """ Register supplied files """
 
-    return self._getRPC( timeout = timeout ).addFile( lfns )
-
+    return self._getRPC(timeout=timeout).addFile(lfns)
 
   @checkCatalogArguments
-  def removeFile( self, lfns, timeout = 120 ):
+  def removeFile(self, lfns, timeout=120):
     """ Remove the supplied lfns """
-    return self._getRPC( timeout = timeout ).removeFile( lfns )
-
+    return self._getRPC(timeout=timeout).removeFile(lfns)
 
   @checkCatalogArguments
-  def setFileStatus( self, lfns, timeout = 120 ):
+  def setFileStatus(self, lfns, timeout=120):
     """ Remove the supplied lfns """
-    return self._getRPC( timeout = timeout ).setFileStatus( lfns )
+    return self._getRPC(timeout=timeout).setFileStatus(lfns)
 
   @checkCatalogArguments
-  def addReplica( self, lfns, timeout = 120 ):
+  def addReplica(self, lfns, timeout=120):
     """ Register supplied replicas """
-    return self._getRPC( timeout = timeout ).addReplica( lfns )
+    return self._getRPC(timeout=timeout).addReplica(lfns)
 
   @checkCatalogArguments
-  def removeReplica( self, lfns, timeout = 120 ):
+  def removeReplica(self, lfns, timeout=120):
     """ Remove the supplied replicas """
-    return self._getRPC( timeout = timeout ).removeReplica( lfns )
-
+    return self._getRPC(timeout=timeout).removeReplica(lfns)
 
   @checkCatalogArguments
-  def setReplicaStatus( self, lfns, timeout = 120 ):
+  def setReplicaStatus(self, lfns, timeout=120):
     """ Set the status for the supplied replicas """
-    return self._getRPC( timeout = timeout ).setReplicaStatus( lfns )
+    return self._getRPC(timeout=timeout).setReplicaStatus(lfns)
 
   @checkCatalogArguments
-  def setReplicaHost( self, lfns, timeout = 120 ):
+  def setReplicaHost(self, lfns, timeout=120):
     """ Change the registered SE for the supplied replicas """
-    return self._getRPC( timeout = timeout ).setReplicaHost( lfns )
+    return self._getRPC(timeout=timeout).setReplicaHost(lfns)
 
   @checkCatalogArguments
-  def addFileAncestors( self, lfns, timeout = 120 ):
+  def addFileAncestors(self, lfns, timeout=120):
     """ Add file ancestor information for the given list of LFNs """
-    return self._getRPC( timeout = timeout ).addFileAncestors( lfns )
+    return self._getRPC(timeout=timeout).addFileAncestors(lfns)
 
   ########################################################################
   #
@@ -391,40 +430,38 @@ class FileCatalogClient( FileCatalogClientBase ):
   #
 
   @checkCatalogArguments
-  def isFile( self, lfns, timeout = 120 ):
+  def isFile(self, lfns, timeout=120):
     """ Check whether the supplied lfns are files """
-    return self._getRPC( timeout = timeout ).isFile( lfns )
+    return self._getRPC(timeout=timeout).isFile(lfns)
 
   @checkCatalogArguments
-  def getFileSize( self, lfns, timeout = 120 ):
+  def getFileSize(self, lfns, timeout=120):
     """ Get the size associated to supplied lfns """
-    return self._getRPC( timeout = timeout ).getFileSize( lfns )
+    return self._getRPC(timeout=timeout).getFileSize(lfns)
 
   @checkCatalogArguments
-  def getFileMetadata( self, lfns, timeout = 120 ):
+  def getFileMetadata(self, lfns, timeout=120):
     """ Get the metadata associated to supplied lfns """
-    return self._getRPC( timeout = timeout ).getFileMetadata( lfns )
-
-
+    return self._getRPC(timeout=timeout).getFileMetadata(lfns)
 
   @checkCatalogArguments
-  def getReplicaStatus( self, lfns, timeout = 120 ):
+  def getReplicaStatus(self, lfns, timeout=120):
     """ Get the status for the supplied replicas """
-    return self._getRPC( timeout = timeout ).getReplicaStatus( lfns )
+    return self._getRPC(timeout=timeout).getReplicaStatus(lfns)
 
   @checkCatalogArguments
-  def getFileAncestors( self, lfns, depths, timeout = 120 ):
+  def getFileAncestors(self, lfns, depths, timeout=120):
     """ Get the status for the supplied replicas """
-    return self._getRPC( timeout = timeout ).getFileAncestors( lfns, depths )
+    return self._getRPC(timeout=timeout).getFileAncestors(lfns, depths)
 
   @checkCatalogArguments
-  def getFileDescendents( self, lfns, depths, timeout = 120 ):
+  def getFileDescendents(self, lfns, depths, timeout=120):
     """ Get the status for the supplied replicas """
-    return self._getRPC( timeout = timeout ).getFileDescendents( lfns, depths )
+    return self._getRPC(timeout=timeout).getFileDescendents(lfns, depths)
 
-  def getLFNForGUID( self, guids, timeout = 120 ):
+  def getLFNForGUID(self, guids, timeout=120):
     """Get the matching lfns for given guids"""
-    return self._getRPC( timeout = timeout ).getLFNForGUID( guids )
+    return self._getRPC(timeout=timeout).getLFNForGUID(guids)
 
   ########################################################################
   #
@@ -432,143 +469,115 @@ class FileCatalogClient( FileCatalogClientBase ):
   #
 
   @checkCatalogArguments
-  def createDirectory( self, lfns, timeout = 120 ):
+  def createDirectory(self, lfns, timeout=120):
     """ Create the supplied directories """
-    return self._getRPC( timeout = timeout ).createDirectory( lfns )
-
+    return self._getRPC(timeout=timeout).createDirectory(lfns)
 
   ########################################################################
   #
   # Directory read operations
   #
 
-
   @checkCatalogArguments
-  def isDirectory( self, lfns, timeout = 120 ):
+  def isDirectory(self, lfns, timeout=120):
     """ Determine whether supplied path is a directory """
-    return self._getRPC( timeout = timeout ).isDirectory( lfns )
-
+    return self._getRPC(timeout=timeout).isDirectory(lfns)
 
   @checkCatalogArguments
-  def getDirectorySize( self, lfns, longOut = False, fromFiles = False, timeout = 120 ):
+  def getDirectorySize(self, lfns, longOut=False, fromFiles=False, timeout=120):
     """ Get the size of the supplied directory """
-    return self._getRPC( timeout = timeout ).getDirectorySize( lfns, longOut, fromFiles )
-
-
+    return self._getRPC(timeout=timeout).getDirectorySize(lfns, longOut, fromFiles)
 
   ########################################################################
   #
   # Administrative database operations
   #
 
-
-  def getCatalogCounters( self, timeout = 120 ):
+  def getCatalogCounters(self, timeout=120):
     """ Get the number of registered directories, files and replicas in various tables """
-    return self._getRPC( timeout = timeout ).getCatalogCounters()
+    return self._getRPC(timeout=timeout).getCatalogCounters()
 
-
-  def rebuildDirectoryUsage( self, timeout = 120 ):
+  def rebuildDirectoryUsage(self, timeout=120):
     """ Rebuild DirectoryUsage table from scratch """
-    return self._getRPC( timeout = timeout ).rebuildDirectoryUsage()
+    return self._getRPC(timeout=timeout).rebuildDirectoryUsage()
 
-
-  def repairCatalog( self, timeout = 120 ):
+  def repairCatalog(self, timeout=120):
     """ Repair the catalog inconsistencies """
-    return self._getRPC( timeout = timeout ).repairCatalog()
+    return self._getRPC(timeout=timeout).repairCatalog()
 
   ########################################################################
   # Metadata Catalog Operations
   #
 
-
-  def addMetadataField( self, fieldName, fieldType, metaType = '-d', timeout = 120 ):
+  def addMetadataField(self, fieldName, fieldType, metaType='-d', timeout=120):
     """ Add a new metadata field of the given type
     """
-    return self._getRPC( timeout = timeout ).addMetadataField( fieldName, fieldType, metaType )
+    return self._getRPC(timeout=timeout).addMetadataField(fieldName, fieldType, metaType)
 
-
-  def deleteMetadataField( self, fieldName, timeout = 120 ):
+  def deleteMetadataField(self, fieldName, timeout=120):
     """ Delete the metadata field
     """
-    return self._getRPC( timeout = timeout ).deleteMetadataField( fieldName )
+    return self._getRPC(timeout=timeout).deleteMetadataField(fieldName)
 
-
-
-  def getMetadataFields( self, timeout = 120 ):
+  def getMetadataFields(self, timeout=120):
     """ Get all the metadata fields
     """
-    return self._getRPC( timeout = timeout ).getMetadataFields()
+    return self._getRPC(timeout=timeout).getMetadataFields()
 
-
-
-  def setMetadata( self, path, metadatadict, timeout = 120 ):
+  def setMetadata(self, path, metadatadict, timeout=120):
     """ Set metadata parameter for the given path
     """
-    return self._getRPC( timeout = timeout ).setMetadata( path, metadatadict )
+    return self._getRPC(timeout=timeout).setMetadata(path, metadatadict)
 
-
-  def setMetadataBulk( self, pathMetadataDict, timeout = 120 ):
+  def setMetadataBulk(self, pathMetadataDict, timeout=120):
     """ Set metadata parameter for the given path
     """
-    return self._getRPC( timeout = timeout ).setMetadataBulk( pathMetadataDict )
+    return self._getRPC(timeout=timeout).setMetadataBulk(pathMetadataDict)
 
-
-  def removeMetadata( self, pathMetadataDict, timeout = 120 ):
+  def removeMetadata(self, pathMetadataDict, timeout=120):
     """ Remove the specified metadata for the given path
     """
-    return self._getRPC( timeout = timeout ).removeMetadata( pathMetadataDict )
+    return self._getRPC(timeout=timeout).removeMetadata(pathMetadataDict)
 
-
-  def getDirectoryUserMetadata( self, path, timeout = 120 ):
+  def getDirectoryUserMetadata(self, path, timeout=120):
     """ Get all the metadata valid for the given directory path
     """
-    return self._getRPC( timeout = timeout ).getDirectoryUserMetadata( path )
+    return self._getRPC(timeout=timeout).getDirectoryUserMetadata(path)
 
-
-  def findDirectoriesByMetadata( self, metaDict, path = '/', timeout = 120 ):
+  def findDirectoriesByMetadata(self, metaDict, path='/', timeout=120):
     """ Find all the directories satisfying the given metadata set
     """
-    return self._getRPC( timeout = timeout ).findDirectoriesByMetadata ( metaDict, path )
+    return self._getRPC(timeout=timeout).findDirectoriesByMetadata(metaDict, path)
 
-
-
-
-  def getReplicasByMetadata( self, metaDict, path = '/', allStatus = False, timeout = 120 ):
+  def getReplicasByMetadata(self, metaDict, path='/', allStatus=False, timeout=120):
     """ Find all the files satisfying the given metadata set
     """
-    return self._getRPC( timeout = timeout ).getReplicasByMetadata( metaDict, path, allStatus )
+    return self._getRPC(timeout=timeout).getReplicasByMetadata(metaDict, path, allStatus)
 
-
-  def findFilesByMetadataDetailed( self, metaDict, path = '/', timeout = 120 ):
+  def findFilesByMetadataDetailed(self, metaDict, path='/', timeout=120):
     """ Find all the files satisfying the given metadata set
     """
-    return self._getRPC( timeout = timeout ).findFilesByMetadataDetailed( metaDict, path )
+    return self._getRPC(timeout=timeout).findFilesByMetadataDetailed(metaDict, path)
 
-
-
-  def findFilesByMetadataWeb( self, metaDict, path, startItem, maxItems, timeout = 120 ):
+  def findFilesByMetadataWeb(self, metaDict, path, startItem, maxItems, timeout=120):
     """ Find files satisfying the given metadata set
     """
-    return self._getRPC( timeout = timeout ).findFilesByMetadataWeb( metaDict, path, startItem, maxItems )
+    return self._getRPC(timeout=timeout).findFilesByMetadataWeb(metaDict, path, startItem, maxItems)
 
-
-
-  def getCompatibleMetadata( self, metaDict, path = '/', timeout = 120 ):
+  def getCompatibleMetadata(self, metaDict, path='/', timeout=120):
     """ Get metadata values compatible with the given metadata subset
     """
-    return self._getRPC( timeout = timeout ).getCompatibleMetadata( metaDict, path )
+    return self._getRPC(timeout=timeout).getCompatibleMetadata(metaDict, path)
 
-
-  def addMetadataSet( self, setName, setDict, timeout = 120 ):
+  def addMetadataSet(self, setName, setDict, timeout=120):
     """ Add a new metadata set
     """
-    return self._getRPC( timeout = timeout ).addMetadataSet( setName, setDict )
+    return self._getRPC(timeout=timeout).addMetadataSet(setName, setDict)
 
-
-  def getMetadataSet( self, setName, expandFlag, timeout = 120 ):
+  def getMetadataSet(self, setName, expandFlag, timeout=120):
     """ Add a new metadata set
     """
-    return self._getRPC( timeout = timeout ).getMetadataSet( setName, expandFlag )
+    return self._getRPC(timeout=timeout).getMetadataSet(setName, expandFlag)
 
 #########################################################################################
 #
@@ -576,68 +585,85 @@ class FileCatalogClient( FileCatalogClientBase ):
 #
 
   @checkCatalogArguments
-  def addDataset( self, datasets, timeout = 120 ):
+  def addDataset(self, datasets, timeout=120):
     """ Add a new dynamic dataset defined by its meta query
     """
-    return self._getRPC( timeout = timeout ).addDataset( datasets )
+    return self._getRPC(timeout=timeout).addDataset(datasets)
 
   @checkCatalogArguments
-  def addDatasetAnnotation( self, datasetDict, timeout = 120 ):
+  def addDatasetAnnotation(self, datasetDict, timeout=120):
     """ Add annotation to an already created dataset
     """
-    return self._getRPC( timeout = timeout ).addDatasetAnnotation( datasetDict )
+    return self._getRPC(timeout=timeout).addDatasetAnnotation(datasetDict)
 
   @checkCatalogArguments
-  def removeDataset( self, datasets, timeout = 120 ):
+  def removeDataset(self, datasets, timeout=120):
     """ Check the given dynamic dataset for changes since its definition
     """
-    return self._getRPC( timeout = timeout ).removeDataset( datasets )
+    return self._getRPC(timeout=timeout).removeDataset(datasets)
 
   @checkCatalogArguments
-  def checkDataset( self, datasets, timeout = 120 ):
+  def checkDataset(self, datasets, timeout=120):
     """ Check the given dynamic dataset for changes since its definition
     """
-    return self._getRPC( timeout = timeout ).checkDataset( datasets )
+    return self._getRPC(timeout=timeout).checkDataset(datasets)
 
   @checkCatalogArguments
-  def updateDataset( self, datasets, timeout = 120 ):
+  def updateDataset(self, datasets, timeout=120):
     """ Update the given dynamic dataset for changes since its definition
     """
-    return self._getRPC( timeout = timeout ).updateDataset( datasets )
+    return self._getRPC(timeout=timeout).updateDataset(datasets)
 
   @checkCatalogArguments
-  def getDatasets( self, datasets, timeout = 120 ):
+  def getDatasets(self, datasets, timeout=120):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
-    return self._getRPC( timeout = timeout ).getDatasets( datasets )
+    return self._getRPC(timeout=timeout).getDatasets(datasets)
 
   @checkCatalogArguments
-  def getDatasetParameters( self, datasets, timeout = 120 ):
+  def getDatasetParameters(self, datasets, timeout=120):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
-    return self._getRPC( timeout = timeout ).getDatasetParameters( datasets )
+    return self._getRPC(timeout=timeout).getDatasetParameters(datasets)
 
   @checkCatalogArguments
-  def getDatasetAnnotation( self, datasets, timeout = 120 ):
+  def getDatasetAnnotation(self, datasets, timeout=120):
     """ Get annotation of the given datasets
     """
-    return self._getRPC( timeout = timeout ).getDatasetAnnotation( datasets )
+    return self._getRPC(timeout=timeout).getDatasetAnnotation(datasets)
 
   @checkCatalogArguments
-  def freezeDataset( self, datasets, timeout = 120 ):
+  def freezeDataset(self, datasets, timeout=120):
     """ Freeze the contents of the dataset making it effectively static
     """
-    return self._getRPC( timeout = timeout ).freezeDataset( datasets )
+    return self._getRPC(timeout=timeout).freezeDataset(datasets)
 
   @checkCatalogArguments
-  def releaseDataset( self, datasets, timeout = 120 ):
+  def releaseDataset(self, datasets, timeout=120):
     """ Release the contents of the frozen dataset allowing changes in its contents
     """
-    return self._getRPC( timeout = timeout ).releaseDataset( datasets )
+    return self._getRPC(timeout=timeout).releaseDataset(datasets)
 
   @checkCatalogArguments
-  def getDatasetFiles( self, datasets, timeout = 120 ):
+  def getDatasetFiles(self, datasets, timeout=120):
     """ Get lfns in the given dataset
     two lines !
     """
-    return self._getRPC( timeout = timeout ).getDatasetFiles( datasets )
+    return self._getRPC(timeout=timeout).getDatasetFiles(datasets)
+
+  #############################################################################
+
+  def getSEDump(self, seName, outputFilename):
+    """
+        Dump the content of an SE in the given file.
+        The file contains a list of [lfn,checksum,size] dumped as csv,
+        separated by '|'
+
+        :param seName: name of the StorageElement
+        :param outputFilename: path to the file where to dump it
+
+        :returns: result from the TransferClient
+    """
+
+    dfc = TransferClient(self.serverURL)
+    return dfc.receiveFile(outputFilename, seName)

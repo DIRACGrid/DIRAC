@@ -104,9 +104,6 @@ function installSite(){
   sed -i s/VAR_DB_RootPwd/$DB_ROOTPWD/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_DB_Host/$DB_HOST/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/install.cfg
-
-  sed -i s/VAR_NoSQLDB_User/$NoSQLDB_USER/g $SERVERINSTALLDIR/install.cfg
-  sed -i s/VAR_NoSQLDB_Password/$NoSQLDB_PASSWORD/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_NoSQLDB_Host/$NoSQLDB_HOST/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
 
@@ -154,6 +151,9 @@ function fullInstallDIRAC(){
   echo '==> [fullInstallDIRAC]'
 
   finalCleanup
+
+  # install ElasticSearch locally
+  installES
 
   #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   installSite
@@ -302,6 +302,8 @@ function clean(){
   dropDBs
   mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS FileCatalogDB;"
   mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS InstalledComponentsDB;"
+
+  killES
 
   #clean all
   finalCleanup

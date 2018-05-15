@@ -3,7 +3,7 @@ How DIRAC works underneath
 ==================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    ../../AdministratorGuide/Systems/WorkloadManagement/JobPriorities/index
    Core/index

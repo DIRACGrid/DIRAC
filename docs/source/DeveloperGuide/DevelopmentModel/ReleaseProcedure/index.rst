@@ -17,12 +17,36 @@ The release manager needs to:
 
 The release manager of LHCbDIRAC has the triple role of:
 
-1. creating the release
-2. making basic verifications
-3. deploying DIRAC tarballs
+1. WebAppDIRAC release
+2. creating the release
+3. making basic verifications
+4. deploying DIRAC tarballs
 
+1. WebAppDIRAC release
+========================
 
-1. Creating the release(s)
+Before you start releasing DIRAC, you have to install sencha cmd and you have to download extjs sdk.
+
+Sencha Cmd
+````````````
+
+You can download from https://www.sencha.com/products/extjs/cmd-download/
+Note: you have to add sencha to the system path. Please make sure, if you type sencha in the terminal it will work. 
+
+ExtJs SDK
+`````````
+
+If you are using DIRAC v6r20 series or later, You can download from the following link: 
+
+curl -O http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
+
+otherwise:
+
+https://www.sencha.com/legal/GPL/ 
+
+Note: You have to provide a valid email address and you will receive a link where the sdk can be downloaded. 
+
+2. Creating the release(s)
 ==========================
 
 The procedure consists of several steps:
@@ -185,7 +209,7 @@ Merge all the PRs targeting integration that have been approved (if any), then s
   > git push release integration
 
 
-2. Making basic verifications
+3. Making basic verifications
 =============================
 
 There are a set of basic tests that can be done on releases.
@@ -200,7 +224,7 @@ A second test is represented by pylint, for which you may find some more info in
 Within Travis, we run also a "pylint --errors-only" test, which should be strictly equal to 0.
 
 
-3. Deploying DIRAC tarballs
+4. Deploying DIRAC tarballs
 =============================
 
 Once the release and integration branches are tagged and pushed, the new release and pre-release versions are
@@ -209,9 +233,12 @@ also pushed to the central repository, the tar archives containing the new
 codes can be created. To do this, just execute *dirac-distribution* command with the appropriate
 flags. For instance::
 
-  > dirac-distribution -r v6r19p7 -l DIRAC
-  > dirac-distribution -r v6r20p2 -l DIRAC
-  > dirac-distribution -r v6r21-pre3 -l DIRAC
+  > dirac-distribution -r v6r19p7 -l DIRAC --extjspath=<extjs library path> for example: /home/diracCertif/extjs/ext-4.2.1.883/
+  > dirac-distribution -r v6r20p2 -l DIRAC --extjspath=<extjs library path> for example: /home/diracCertif/extjs/ext-4.2.1.883/
+  > dirac-distribution -r v6r21-pre3 -l DIRAC --extjspath=<extjs library path> for example: /home/diracCertif/extjs/ext-4.2.1.883/
+
+
+Note: if the sencha or extjs library is missing, the web will be not compiled.
 
 You can also pass the releases.cfg to use via command line using the *-C* switch. *dirac-distribution*
 will generate a set of tarballs, release and md5 files. Please copy those to your installation source
@@ -222,3 +249,4 @@ In the end of its execution, the *dirac-distribution* will print out a command t
 used to upload generated release files to a predefined repository ( see :ref:`dirac_projects` ).
 
 It's now time to advertise that new releases have been created. Use the DIRAC google forum.
+

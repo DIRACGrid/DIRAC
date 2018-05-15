@@ -17,12 +17,9 @@
 
 """
 
-__RCSID__ = "$Id$"
-
-from types import IntType, LongType, ListType
 import threading
 
-from DIRAC  import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
@@ -31,32 +28,31 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 DEBUG = 1
 
+__RCSID__ = "$Id$"
+
 #############################################################################
-class PilotAgentsDB( DB ):
 
-  def __init__( self ):
 
-    DB.__init__( self, 'PilotAgentsDB', 'WorkloadManagement/PilotAgentsDB' )
+class PilotAgentsDB(DB):
+
+  def __init__(self):
+
+    DB.__init__(self, 'PilotAgentsDB', 'WorkloadManagement/PilotAgentsDB')
     self.lock = threading.Lock()
 
 ##########################################################################################
-  def addPilotTQReference( self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker = 'Unknown',
-                        gridType = 'DIRAC', requirements = 'Unknown', pilotStampDict = {} ):
+  def addPilotTQReference(self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
+                          gridType='DIRAC', pilotStampDict={}):
     """ Add a new pilot job reference """
 
     err = 'PilotAgentsDB.addPilotTQReference: Failed to retrieve a new Id.'
-
-    result = self._escapeString( requirements )
-    if not result['OK']:
-      gLogger.warn( 'Failed to escape requirements string' )
-    e_requirements = result['Value']
 
     for ref in pilotRef:
       stamp = ''
       if ref in pilotStampDict:
         stamp = pilotStampDict[ref]
 
-      res = self._escapeString( ownerDN )
+      res = self._escapeString(ownerDN)
       if not res['OK']:
         return res
       escapedOwnerDN = res['Value']
@@ -64,222 +60,222 @@ class PilotAgentsDB( DB ):
       req = "INSERT INTO PilotAgents( PilotJobReference, TaskQueueID, OwnerDN, " + \
             "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp ) " + \
             "VALUES ('%s',%d,%s,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')" % \
-            ( ref, int( taskQueueID ), escapedOwnerDN, ownerGroup, broker, gridType, stamp )
+            (ref, int(taskQueueID), escapedOwnerDN, ownerGroup, broker, gridType, stamp)
 
-      result = self._update( req )
+      result = self._update(req)
       if not result['OK']:
         return result
 
-      if not 'lastRowId' in result:
-        return S_ERROR( '%s' % err )
-
-      pilotID = int( result['lastRowId'] )
-
-      req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % ( pilotID, e_requirements )
-      res = self._update( req )
-      if not res['OK']:
-        return res
+      if 'lastRowId' not in result:
+        return S_ERROR('%s' % err)
 
     return S_OK()
 
 ##########################################################################################
-  def setPilotStatus( self, pilotRef, status, destination = None,
-                      statusReason = None, gridSite = None, queue = None,
-                      benchmark = None, currentJob = None,
-                      updateTime = None, conn = False ):
+  def setPilotStatus(self, pilotRef, status, destination=None,
+                     statusReason=None, gridSite=None, queue=None,
+                     benchmark=None, currentJob=None,
+                     updateTime=None, conn=False):
     """ Set pilot job LCG status """
 
     setList = []
-    setList.append( "Status='%s'" % status )
+    setList.append("Status='%s'" % status)
     if updateTime:
-      setList.append( "LastUpdateTime='%s'" % updateTime )
+      setList.append("LastUpdateTime='%s'" % updateTime)
     else:
-      setList.append( "LastUpdateTime=UTC_TIMESTAMP()" )
+      setList.append("LastUpdateTime=UTC_TIMESTAMP()")
     if not statusReason:
       statusReason = "Not given"
-    setList.append( "StatusReason='%s'" % statusReason )
+    setList.append("StatusReason='%s'" % statusReason)
     if gridSite:
-      setList.append( "GridSite='%s'" % gridSite )
+      setList.append("GridSite='%s'" % gridSite)
     if queue:
-      setList.append( "Queue='%s'" % queue )
+      setList.append("Queue='%s'" % queue)
     if benchmark:
-      setList.append( "BenchMark='%s'" % float( benchmark ) )
+      setList.append("BenchMark='%s'" % float(benchmark))
     if currentJob:
-      setList.append( "CurrentJobID='%s'" % int( currentJob ) )
+      setList.append("CurrentJobID='%s'" % int(currentJob))
     if destination:
-      setList.append( "DestinationSite='%s'" % destination )
+      setList.append("DestinationSite='%s'" % destination)
       if not gridSite:
-        result = getSiteForCE( destination )
+        result = getSiteForCE(destination)
         if result['OK']:
           gridSite = result['Value']
-          setList.append( "GridSite='%s'" % gridSite )
+          setList.append("GridSite='%s'" % gridSite)
 
-    set_string = ','.join( setList )
+    set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET " + set_string + " WHERE PilotJobReference='%s'" % pilotRef
-    result = self._update( req, conn = conn )
+    result = self._update(req, conn=conn)
     if not result['OK']:
       return result
 
     return S_OK()
 
 ##########################################################################################
-  def selectPilots( self, condDict, older = None, newer = None, timeStamp = 'SubmissionTime',
-                        orderAttribute = None, limit = None ):
+  def selectPilots(self, condDict, older=None, newer=None, timeStamp='SubmissionTime',
+                   orderAttribute=None, limit=None):
     """ Select pilot references according to the provided criteria. "newer" and "older"
         specify the time interval in minutes
     """
 
-    condition = self.buildCondition( condDict, older, newer, timeStamp )
+    condition = self.buildCondition(condDict, older, newer, timeStamp)
     if orderAttribute:
       orderType = None
       orderField = orderAttribute
-      if orderAttribute.find( ':' ) != -1:
-        orderType = orderAttribute.split( ':' )[1].upper()
-        orderField = orderAttribute.split( ':' )[0]
+      if orderAttribute.find(':') != -1:
+        orderType = orderAttribute.split(':')[1].upper()
+        orderField = orderAttribute.split(':')[0]
       condition = condition + ' ORDER BY ' + orderField
       if orderType:
         condition = condition + ' ' + orderType
 
     if limit:
-      condition = condition + ' LIMIT ' + str( limit )
+      condition = condition + ' LIMIT ' + str(limit)
 
     req = "SELECT PilotJobReference from PilotAgents"
     if condition:
       req += " %s " % condition
-    result = self._query( req )
+    result = self._query(req)
     if not result['OK']:
       return result
 
     pilotList = []
     if result['Value']:
-      pilotList = [ x[0] for x in result['Value']]
+      pilotList = [x[0] for x in result['Value']]
 
-    return S_OK( pilotList )
+    return S_OK(pilotList)
 
 
 ##########################################################################################
-  def countPilots( self, condDict, older = None, newer = None, timeStamp = 'SubmissionTime' ):
+  def countPilots(self, condDict, older=None, newer=None, timeStamp='SubmissionTime'):
     """ Select pilot references according to the provided criteria. "newer" and "older"
         specify the time interval in minutes
     """
 
-    condition = self.buildCondition( condDict, older, newer, timeStamp )
+    condition = self.buildCondition(condDict, older, newer, timeStamp)
 
     req = "SELECT COUNT(PilotID) from PilotAgents"
     if condition:
       req += " %s " % condition
-    result = self._query( req )
+    result = self._query(req)
     if not result['OK']:
       return result
 
-    return S_OK( result['Value'][0][0] )
+    return S_OK(result['Value'][0][0])
 
 
 ##########################################################################################
-  def getPilotGroups( self, groupList = ['Status', 'OwnerDN', 'OwnerGroup', 'GridType'], condDict = {} ):
+  def getPilotGroups(self, groupList=['Status', 'OwnerDN', 'OwnerGroup', 'GridType'], condDict={}):
     """
      Get all exisiting combinations of groupList Values
     """
 
-    cmd = 'SELECT %s from PilotAgents ' % ', '.join( groupList )
+    cmd = 'SELECT %s from PilotAgents ' % ', '.join(groupList)
 
     condList = []
     for cond in condDict:
-      condList.append( '%s in ( "%s" )' % ( cond, '", "'.join( [ str( y ) for y in condDict[cond]] ) ) )
+      condList.append('%s in ( "%s" )' % (cond, '", "'.join([str(y) for y in condDict[cond]])))
 
     # the conditions should be escaped before hand, so it is not really nice to expose it this way...
     if condList:
-      cmd += ' WHERE %s ' % ' AND '.join( condList )
+      cmd += ' WHERE %s ' % ' AND '.join(condList)
 
-    cmd += ' GROUP BY %s' % ', '.join( groupList )
+    cmd += ' GROUP BY %s' % ', '.join(groupList)
 
-    return self._query( cmd )
+    return self._query(cmd)
 
 ##########################################################################################
-  def deletePilots( self, pilotIDs, conn = False ):
+  def deletePilots(self, pilotIDs, conn=False):
     """ Delete Pilots with IDs in the given list from the PilotAgentsDB """
 
-    if type( pilotIDs ) != type( [] ):
-      return S_ERROR( 'Input argument is not a List' )
+    if not isinstance(pilotIDs, list):
+      return S_ERROR('Input argument is not a List')
 
     failed = []
-    for table in ['PilotOutput', 'PilotRequirements', 'JobToPilotMapping', 'PilotAgents']:
-      idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
-      req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
-      result = self._update( req, conn = conn )
+
+    for table in ['PilotOutput', 'JobToPilotMapping', 'PilotAgents']:
+      idString = ','.join([str(pid) for pid in pilotIDs])
+      req = "DELETE FROM %s WHERE PilotID in ( %s )" % (table, idString)
+      result = self._update(req, conn=conn)
       if not result['OK']:
-        failed.append( table )
+        failed.append(table)
 
     if failed:
-      return S_ERROR( 'Failed to remove pilot from %s tables' % ', '.join( failed ) )
-    else:
-      return S_OK()
+      return S_ERROR('Failed to remove pilot from %s tables' % ', '.join(failed))
+    return S_OK(pilotIDs)
 
 ##########################################################################################
-  def deletePilot( self, pilotRef, conn = False ):
+  def deletePilot(self, pilotRef, conn=False):
     """ Delete Pilot with the given reference from the PilotAgentsDB """
 
-    if isinstance( pilotRef, basestring ):
-      pilotID = self.__getPilotID( pilotRef )
+    if isinstance(pilotRef, basestring):
+      pilotID = self.__getPilotID(pilotRef)
     else:
       pilotID = pilotRef
 
-    return self.deletePilots( [pilotID], conn = conn )
+    return self.deletePilots([pilotID], conn=conn)
 
 ##########################################################################################
-  def clearPilots( self, interval = 30, aborted_interval = 7 ):
+  def clearPilots(self, interval=30, aborted_interval=7):
     """ Delete all the pilot references submitted before <interval> days """
 
     reqList = []
-    reqList.append( "SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % interval )
-    reqList.append( "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % aborted_interval )
+    reqList.append(
+        "SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
+        interval)
+    reqList.append(
+        "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' \
+AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
+        aborted_interval)
+
+    idList = None
 
     for req in reqList:
-      result = self._query( req )
+      result = self._query(req)
       if not result['OK']:
-        gLogger.warn( 'Error while clearing up pilots' )
+        gLogger.warn('Error while clearing up pilots')
       else:
         if result['Value']:
-          idList = [ x[0] for x in result['Value'] ]
-          result = self.deletePilots( idList )
+          idList = [x[0] for x in result['Value']]
+          result = self.deletePilots(idList)
           if not result['OK']:
-            gLogger.warn( 'Error while deleting pilots' )
+            gLogger.warn('Error while deleting pilots')
 
-    return S_OK()
+    return S_OK(idList)
 
 ##########################################################################################
-  def getPilotInfo( self, pilotRef = False, parentId = False, conn = False, paramNames = [], pilotID = False ):
+  def getPilotInfo(self, pilotRef=False, parentId=False, conn=False, paramNames=[], pilotID=False):
     """ Get all the information for the pilot job reference or reference list
     """
 
     parameters = ['PilotJobReference', 'OwnerDN', 'OwnerGroup', 'GridType', 'Broker',
                   'Status', 'DestinationSite', 'BenchMark', 'ParentID', 'OutputReady', 'AccountingSent',
                   'SubmissionTime', 'PilotID', 'LastUpdateTime', 'TaskQueueID', 'GridSite', 'PilotStamp',
-                  'Queue' ]
+                  'Queue']
     if paramNames:
       parameters = paramNames
 
-    cmd = "SELECT %s FROM PilotAgents" % ", ".join( parameters )
+    cmd = "SELECT %s FROM PilotAgents" % ", ".join(parameters)
     condSQL = []
     if pilotRef:
-      if type( pilotRef ) == ListType:
-        condSQL.append( "PilotJobReference IN (%s)" % ",".join( [ '"%s"' % x for x in pilotRef ] ) )
+      if isinstance(pilotRef, list):
+        condSQL.append("PilotJobReference IN (%s)" % ",".join(['"%s"' % x for x in pilotRef]))
       else:
-        condSQL.append( "PilotJobReference = '%s'" % pilotRef )
+        condSQL.append("PilotJobReference = '%s'" % pilotRef)
     if pilotID:
-      if type( pilotID ) == ListType:
-        condSQL.append( "PilotID IN (%s)" % ",".join( [ '%s' % x for x in pilotID ] ) )
+      if isinstance(pilotID, list):
+        condSQL.append("PilotID IN (%s)" % ",".join(['%s' % x for x in pilotID]))
       else:
-        condSQL.append( "PilotID = '%s'" % pilotID )
+        condSQL.append("PilotID = '%s'" % pilotID)
     if parentId:
-      if type( parentId ) == ListType:
-        condSQL.append( "ParentID IN (%s)" % ",".join( [ '%s' % x for x in parentId ] ) )
+      if isinstance(parentId, list):
+        condSQL.append("ParentID IN (%s)" % ",".join(['%s' % x for x in parentId]))
       else:
-        condSQL.append( "ParentID = %s" % parentId )
+        condSQL.append("ParentID = %s" % parentId)
     if condSQL:
-      cmd = "%s WHERE %s" % ( cmd, " AND ".join( condSQL ) )
+      cmd = "%s WHERE %s" % (cmd, " AND ".join(condSQL))
 
-    result = self._query( cmd, conn = conn )
+    result = self._query(cmd, conn=conn)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -288,38 +284,38 @@ class PilotAgentsDB( DB ):
         msg += " for PilotJobReference(s): %s" % pilotRef
       if parentId:
         msg += " with parent id: %s" % parentId
-      return S_ERROR( msg )
+      return S_ERROR(msg)
 
     resDict = {}
     pilotIDs = []
     for row in result['Value']:
       pilotDict = {}
-      for i in range( len( parameters ) ):
-        pilotDict[ parameters[i] ] = row[ i ]
+      for i in range(len(parameters)):
+        pilotDict[parameters[i]] = row[i]
         if parameters[i] == 'PilotID':
-          pilotIDs.append( row[i] )
-      resDict[ row[0] ] = pilotDict
+          pilotIDs.append(row[i])
+      resDict[row[0]] = pilotDict
 
-    result = self.getJobsForPilot( pilotIDs )
+    result = self.getJobsForPilot(pilotIDs)
     if not result['OK']:
-      return S_OK( resDict )
+      return S_OK(resDict)
 
-    jobsDict = result[ 'Value' ]
+    jobsDict = result['Value']
     for pilotRef in resDict:
-      pilotInfo = resDict[ pilotRef ]
-      pilotID = pilotInfo[ 'PilotID' ]
+      pilotInfo = resDict[pilotRef]
+      pilotID = pilotInfo['PilotID']
       if pilotID in jobsDict:
-        pilotInfo[ 'Jobs' ] = jobsDict[ pilotID ]
+        pilotInfo['Jobs'] = jobsDict[pilotID]
 
-    return S_OK( resDict )
+    return S_OK(resDict)
 
 ##########################################################################################
-  def setPilotDestinationSite( self, pilotRef, destination, conn = False ):
+  def setPilotDestinationSite(self, pilotRef, destination, conn=False):
     """ Set the pilot agent destination site
     """
 
     gridSite = 'Unknown'
-    result = getSiteForCE( destination )
+    result = getSiteForCE(destination)
     if result['OK']:
       gridSite = result['Value']
 
@@ -327,75 +323,58 @@ class PilotAgentsDB( DB ):
       gridSite = 'Unknown'
 
     req = "UPDATE PilotAgents SET DestinationSite='%s', GridSite='%s' WHERE PilotJobReference='%s'"
-    req = req % ( destination, gridSite, pilotRef )
-    result = self._update( req, conn = conn )
+    req = req % (destination, gridSite, pilotRef)
+    result = self._update(req, conn=conn)
     return result
 
 ##########################################################################################
-  def setPilotBenchmark( self, pilotRef, mark ):
+  def setPilotBenchmark(self, pilotRef, mark):
     """ Set the pilot agent benchmark
     """
 
-    req = "UPDATE PilotAgents SET BenchMark='%f' WHERE PilotJobReference='%s'" % ( mark, pilotRef )
-    result = self._update( req )
+    req = "UPDATE PilotAgents SET BenchMark='%f' WHERE PilotJobReference='%s'" % (mark, pilotRef)
+    result = self._update(req)
     return result
 
 ##########################################################################################
-  def setAccountingFlag( self, pilotRef, mark = 'True' ):
+  def setAccountingFlag(self, pilotRef, mark='True'):
     """ Set the pilot AccountingSent flag
     """
 
-    req = "UPDATE PilotAgents SET AccountingSent='%s' WHERE PilotJobReference='%s'" % ( mark, pilotRef )
-    result = self._update( req )
+    req = "UPDATE PilotAgents SET AccountingSent='%s' WHERE PilotJobReference='%s'" % (mark, pilotRef)
+    result = self._update(req)
     return result
 
 ##########################################################################################
-  def setPilotRequirements( self, pilotRef, requirements ):
-    """ Set the pilot agent grid requirements
-    """
-
-    pilotID = self.__getPilotID( pilotRef )
-    if not pilotID:
-      return S_ERROR( 'Pilot reference not found %s' % pilotRef )
-
-    result = self._escapeString( requirements )
-    if not result['OK']:
-      return S_ERROR( 'Failed to escape requirements string' )
-    e_requirements = result['Value']
-    req = "UPDATE PilotRequirements SET Requirements='%s' WHERE PilotID=%d" % ( e_requirements, pilotID )
-    result = self._update( req )
-    return result
-
-##########################################################################################
-  def storePilotOutput( self, pilotRef, output, error ):
+  def storePilotOutput(self, pilotRef, output, error):
     """ Store standard output and error for a pilot with pilotRef
     """
-    pilotID = self.__getPilotID( pilotRef )
+    pilotID = self.__getPilotID(pilotRef)
     if not pilotID:
-      return S_ERROR( 'Pilot reference not found %s' % pilotRef )
+      return S_ERROR('Pilot reference not found %s' % pilotRef)
 
-    result = self._escapeString( output )
+    result = self._escapeString(output)
     if not result['OK']:
-      return S_ERROR( 'Failed to escape output string' )
+      return S_ERROR('Failed to escape output string')
     e_output = result['Value']
-    result = self._escapeString( error )
+    result = self._escapeString(error)
     if not result['OK']:
-      return S_ERROR( 'Failed to escape error string' )
+      return S_ERROR('Failed to escape error string')
     e_error = result['Value']
-    req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%d,%s,%s)" % ( pilotID, e_output, e_error )
-    result = self._update( req )
+    req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%d,%s,%s)" % (pilotID, e_output, e_error)
+    result = self._update(req)
     req = "UPDATE PilotAgents SET OutputReady='True' where PilotID=%d" % pilotID
-    result = self._update( req )
+    result = self._update(req)
     return result
 
 ##########################################################################################
-  def getPilotOutput( self, pilotRef ):
+  def getPilotOutput(self, pilotRef):
     """ Retrieve standard output and error for pilot with pilotRef
     """
 
     req = "SELECT StdOutput, StdError FROM PilotOutput,PilotAgents WHERE "
     req += "PilotOutput.PilotID = PilotAgents.PilotID AND PilotAgents.PilotJobReference='%s'" % pilotRef
-    result = self._query( req )
+    result = self._query(req)
     if not result['OK']:
       return result
     else:
@@ -406,94 +385,92 @@ class PilotAgentsDB( DB ):
           stdout = ''
         if error == '""':
           error = ''
-        return S_OK( {'StdOut':stdout, 'StdErr':error} )
+        return S_OK({'StdOut': stdout, 'StdErr': error})
       else:
-        return S_ERROR( 'PilotJobReference ' + pilotRef + ' not found' )
+        return S_ERROR('PilotJobReference ' + pilotRef + ' not found')
 
 ##########################################################################################
-  def __getPilotID( self, pilotRef ):
+  def __getPilotID(self, pilotRef):
     """ Get Pilot ID for the given pilot reference or a list of references
     """
 
-    if isinstance( pilotRef, basestring ):
+    if isinstance(pilotRef, basestring):
       req = "SELECT PilotID from PilotAgents WHERE PilotJobReference='%s'" % pilotRef
-      result = self._query( req )
+      result = self._query(req)
       if not result['OK']:
         return 0
       else:
         if result['Value']:
-          return int( result['Value'][0][0] )
-        else:
-          return 0
+          return int(result['Value'][0][0])
+        return 0
     else:
-      refString = ','.join( ["'" + ref + "'" for ref in pilotRef] )
+      refString = ','.join(["'" + ref + "'" for ref in pilotRef])
       req = "SELECT PilotID from PilotAgents WHERE PilotJobReference in ( %s )" % refString
-      result = self._query( req )
+      result = self._query(req)
       if not result['OK']:
         return []
-      elif result['Value']:
-        return [ x[0] for x in result['Value'] ]
-      else:
-        return []
+      if result['Value']:
+        return [x[0] for x in result['Value']]
+      return []
 
 ##########################################################################################
-  def setJobForPilot( self, jobID, pilotRef, site = None, updateStatus = True ):
+  def setJobForPilot(self, jobID, pilotRef, site=None, updateStatus=True):
     """ Store the jobID of the job executed by the pilot with reference pilotRef
     """
 
-    pilotID = self.__getPilotID( pilotRef )
+    pilotID = self.__getPilotID(pilotRef)
     if pilotID:
       if updateStatus:
-        reason = 'Report from job %d' % int( jobID )
-        result = self.setPilotStatus( pilotRef, status = 'Running', statusReason = reason,
-                                     gridSite = site )
+        reason = 'Report from job %d' % int(jobID)
+        result = self.setPilotStatus(pilotRef, status='Running', statusReason=reason,
+                                     gridSite=site)
         if not result['OK']:
           return result
-      req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % ( pilotID, jobID )
-      result = self._update( req )
+      req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID, jobID)
+      result = self._update(req)
       return result
     else:
-      return S_ERROR( 'PilotJobReference ' + pilotRef + ' not found' )
+      return S_ERROR('PilotJobReference ' + pilotRef + ' not found')
 
 ##########################################################################################
-  def setCurrentJobID( self, pilotRef, jobID ):
+  def setCurrentJobID(self, pilotRef, jobID):
     """ Set the pilot agent current DIRAC job ID
     """
 
-    req = "UPDATE PilotAgents SET CurrentJobID=%d WHERE PilotJobReference='%s'" % ( jobID, pilotRef )
-    result = self._update( req )
+    req = "UPDATE PilotAgents SET CurrentJobID=%d WHERE PilotJobReference='%s'" % (jobID, pilotRef)
+    result = self._update(req)
     return result
 
 ##########################################################################################
-  def getJobsForPilot( self, pilotID ):
+  def getJobsForPilot(self, pilotID):
     """ Get IDs of Jobs that were executed by a pilot
     """
     cmd = "SELECT pilotID,JobID FROM JobToPilotMapping "
-    if type( pilotID ) == ListType:
-      cmd = cmd + " WHERE pilotID IN (%s)" % ",".join( [ '%s' % x for x in pilotID ] )
+    if isinstance(pilotID, list):
+      cmd = cmd + " WHERE pilotID IN (%s)" % ",".join(['%s' % x for x in pilotID])
     else:
       cmd = cmd + " WHERE pilotID = %s" % pilotID
 
-    result = self._query( cmd )
+    result = self._query(cmd)
     if not result['OK']:
       return result
 
     resDict = {}
     for row in result['Value']:
       if not row[0] in resDict:
-        resDict[ row[0] ] = []
-      resDict[ row[0] ].append( row[1] )
-    return S_OK( resDict )
+        resDict[row[0]] = []
+      resDict[row[0]].append(row[1])
+    return S_OK(resDict)
 
 ##########################################################################################
-  def getPilotsForTaskQueue( self, taskQueueID, gridType = None, limit = None ):
+  def getPilotsForTaskQueue(self, taskQueueID, gridType=None, limit=None):
     """ Get IDs of Pilot Agents that were submitted for the given taskQueue,
         specify optionally the grid type, results are sorted by Submission time
         an Optional limit can be set.
     """
 
     if gridType:
-      req = "SELECT PilotID FROM PilotAgents WHERE TaskQueueID=%s AND GridType='%s' " % ( taskQueueID, gridType )
+      req = "SELECT PilotID FROM PilotAgents WHERE TaskQueueID=%s AND GridType='%s' " % (taskQueueID, gridType)
     else:
       req = "SELECT PilotID FROM PilotAgents WHERE TaskQueueID=%s " % taskQueueID
 
@@ -502,51 +479,50 @@ class PilotAgentsDB( DB ):
     if limit:
       req += 'LIMIT %s' % limit
 
-    result = self._query( req )
+    result = self._query(req)
     if not result['OK']:
       return result
     else:
       if result['Value']:
-        pilotList = [ x[0] for x in result['Value'] ]
-        return S_OK( pilotList )
-      else:
-        return S_ERROR( 'PilotJobReferences for TaskQueueID %s not found' % taskQueueID )
+        pilotList = [x[0] for x in result['Value']]
+        return S_OK(pilotList)
+      return S_ERROR('PilotJobReferences for TaskQueueID %s not found' % taskQueueID)
 
 ##########################################################################################
-  def getPilotsForJobID( self, jobID ):
+  def getPilotsForJobID(self, jobID):
     """ Get ID of Pilot Agent that is running a given JobID
     """
 
-    result = self._query( 'SELECT PilotID FROM JobToPilotMapping WHERE JobID=%s' % jobID )
+    result = self._query('SELECT PilotID FROM JobToPilotMapping WHERE JobID=%s' % jobID)
 
     if not result['OK']:
+      gLogger.error("getPilotsForJobID failed", result['Message'])
       return result
 
     if result['Value']:
-      pilotList = [ x[0] for x in result['Value'] ]
-      return S_OK( pilotList )
-    else:
-      return S_ERROR( 'PilotID for job %d not found' % jobID )
+      pilotList = [x[0] for x in result['Value']]
+      return S_OK(pilotList)
+    gLogger.warn('PilotID for job %d not found: not matched yet?' % jobID)
+    return S_OK([])
 
 ##########################################################################################
-  def getPilotCurrentJob( self, pilotRef ):
-    """ The the job ID currently executed by the pilot
+  def getPilotCurrentJob(self, pilotRef):
+    """ The job ID currently executed by the pilot
     """
     req = "SELECT CurrentJobID FROM PilotAgents WHERE PilotJobReference='%s' " % pilotRef
 
-    result = self._query( req )
+    result = self._query(req)
     if not result['OK']:
       return result
-    else:
-      if result['Value']:
-        jobID = int( result['Value'][0][0] )
-        return S_OK( jobID )
-      else:
-        return S_ERROR( 'Current job ID for pilot %s is not known' % pilotRef )
+    if result['Value']:
+      jobID = int(result['Value'][0][0])
+      return S_OK(jobID)
+    gLogger.warn('Current job ID for pilot %s is not known: pilot did not match jobs yet?' % pilotRef)
+    return S_OK()
 
 ##########################################################################################
-  #FIXME: investigate it getPilotSummaryShort can replace this method
-  def getPilotSummary( self, startdate = '', enddate = '' ):
+  # FIXME: investigate it getPilotSummaryShort can replace this method
+  def getPilotSummary(self, startdate='', enddate=''):
     """ Get summary of the pilot jobs status by site
     """
     st_list = ['Aborted', 'Running', 'Done', 'Submitted', 'Ready', 'Scheduled', 'Waiting']
@@ -564,7 +540,7 @@ class PilotAgentsDB( DB ):
         req = req + " AND SubmissionTime <= '%s'" % enddate
 
       req = req + " GROUP BY DestinationSite"
-      result = self._query( req )
+      result = self._query(req)
       if not result['OK']:
         return result
       else:
@@ -573,10 +549,10 @@ class PilotAgentsDB( DB ):
             site = res[0]
             count = res[1]
             if site:
-              if not summary_dict.has_key( site ):
+              if site not in summary_dict:
                 summary_dict[site] = {}
-              summary_dict[site][st] = int( count )
-              summary_dict['Total'][st] += int( count )
+              summary_dict[site][st] = int(count)
+              summary_dict['Total'][st] += int(count)
 
     # Get aborted pilots in the last hour, day
     req = "SELECT DestinationSite,count(DestinationSite) FROM PilotAgents WHERE Status='Aborted' AND "
@@ -585,7 +561,7 @@ class PilotAgentsDB( DB ):
     reqDict['Aborted_Day'] = req + " LastUpdateTime >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY)"
 
     for key, req in reqDict.items():
-      result = self._query( req )
+      result = self._query(req)
       if not result['OK']:
         break
       if result['Value']:
@@ -593,10 +569,10 @@ class PilotAgentsDB( DB ):
           site = res[0]
           count = res[1]
           if site:
-            if summary_dict.has_key( site ):
-              summary_dict[site][key] = int( count )
+            if site in summary_dict:
+              summary_dict[site][key] = int(count)
 
-    return S_OK( summary_dict )
+    return S_OK(summary_dict)
 
 #   def getPilotSummaryShort( self, startTimeWindow = None, endTimeWindow = None, ce = '' ):
 #     """
@@ -639,67 +615,67 @@ class PilotAgentsDB( DB ):
 #       result[ 'Total' ][ statusName ] += int( statusCount )
 #
 #     return S_OK( result )
- 
+
 ##########################################################################################
-  def getPilotSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
+  def getPilotSummaryWeb(self, selectDict, sortList, startItem, maxItems):
     """ Get summary of the pilot jobs status by CE/site in a standard structure
     """
 
-    stateNames = ['Submitted', 'Ready', 'Scheduled', 'Waiting', 'Running', 'Done', 'Aborted']
+    stateNames = ['Submitted', 'Ready', 'Scheduled', 'Waiting', 'Running', 'Done', 'Aborted', 'Failed']
     allStateNames = stateNames + ['Done_Empty', 'Aborted_Hour']
     paramNames = ['Site', 'CE'] + allStateNames
 
     last_update = None
-    if selectDict.has_key( 'LastUpdateTime' ):
+    if 'LastUpdateTime' in selectDict:
       last_update = selectDict['LastUpdateTime']
       del selectDict['LastUpdateTime']
     site_select = []
-    if selectDict.has_key( 'GridSite' ):
+    if 'GridSite' in selectDict:
       site_select = selectDict['GridSite']
-      if type( site_select ) != type( [] ):
+      if not isinstance(site_select, type([])):
         site_select = [site_select]
       del selectDict['GridSite']
 
     status_select = []
-    if selectDict.has_key( 'Status' ):
+    if 'Status' in selectDict:
       status_select = selectDict['Status']
-      if type( status_select ) != type( [] ):
+      if not isinstance(status_select, type([])):
         status_select = [status_select]
       del selectDict['Status']
 
     expand_site = ''
-    if selectDict.has_key( 'ExpandSite' ):
+    if 'ExpandSite' in selectDict:
       expand_site = selectDict['ExpandSite']
       site_select = [expand_site]
       del selectDict['ExpandSite']
 
     # Get all the data from the database with various selections
-    result = self.getCounters( 'PilotAgents',
+    result = self.getCounters('PilotAgents',
                               ['GridSite', 'DestinationSite', 'Status'],
-                              selectDict, newer = last_update, timeStamp = 'LastUpdateTime' )
+                              selectDict, newer=last_update, timeStamp='LastUpdateTime')
     if not result['OK']:
       return result
 
     last_update = Time.dateTime() - Time.hour
     selectDict['Status'] = 'Aborted'
-    resultHour = self.getCounters( 'PilotAgents',
-                                 ['GridSite', 'DestinationSite', 'Status'],
-                                 selectDict, newer = last_update, timeStamp = 'LastUpdateTime' )
+    resultHour = self.getCounters('PilotAgents',
+                                  ['GridSite', 'DestinationSite', 'Status'],
+                                  selectDict, newer=last_update, timeStamp='LastUpdateTime')
     if not resultHour['OK']:
       return resultHour
 
     last_update = Time.dateTime() - Time.day
     selectDict['Status'] = ['Aborted', 'Done']
-    resultDay = self.getCounters( 'PilotAgents',
+    resultDay = self.getCounters('PilotAgents',
                                  ['GridSite', 'DestinationSite', 'Status'],
-                                 selectDict, newer = last_update, timeStamp = 'LastUpdateTime' )
+                                 selectDict, newer=last_update, timeStamp='LastUpdateTime')
     if not resultDay['OK']:
       return resultDay
     selectDict['CurrentJobID'] = 0
     selectDict['Status'] = 'Done'
-    resultDayEmpty = self.getCounters( 'PilotAgents',
-                                 ['GridSite', 'DestinationSite', 'Status'],
-                                 selectDict, newer = last_update, timeStamp = 'LastUpdateTime' )
+    resultDayEmpty = self.getCounters('PilotAgents',
+                                      ['GridSite', 'DestinationSite', 'Status'],
+                                      selectDict, newer=last_update, timeStamp='LastUpdateTime')
     if not resultDayEmpty['OK']:
       return resultDayEmpty
 
@@ -715,11 +691,11 @@ class PilotAgentsDB( DB ):
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
-      if site == 'Unknown' and ce != "Unknown" and ce != "Multiple" and ceMap.has_key( ce ):
+      if site == 'Unknown' and ce != "Unknown" and ce != "Multiple" and ce in ceMap:
         site = ceMap[ce]
-      if not resultDict.has_key( site ):
+      if site not in resultDict:
         resultDict[site] = {}
-      if not resultDict[site].has_key( ce ):
+      if ce not in resultDict[site]:
         resultDict[site][ce] = {}
         for p in allStateNames:
           resultDict[site][ce][p] = 0
@@ -730,7 +706,7 @@ class PilotAgentsDB( DB ):
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
-      if site == 'Unknown' and ce != "Unknown" and ceMap.has_key( ce ):
+      if site == 'Unknown' and ce != "Unknown" and ce in ceMap:
         site = ceMap[ce]
       if state == "Done":
         resultDict[site][ce]["Done"] = count
@@ -741,7 +717,7 @@ class PilotAgentsDB( DB ):
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
-      if site == 'Unknown' and ce != "Unknown" and ceMap.has_key( ce ):
+      if site == 'Unknown' and ce != "Unknown" and ce in ceMap:
         site = ceMap[ce]
       if state == "Done":
         resultDict[site][ce]["Done_Empty"] = count
@@ -750,7 +726,7 @@ class PilotAgentsDB( DB ):
       site = attDict['GridSite']
       ce = attDict['DestinationSite']
       state = attDict['Status']
-      if site == 'Unknown' and ce != "Unknown" and ceMap.has_key( ce ):
+      if site == 'Unknown' and ce != "Unknown" and ce in ceMap:
         site = ceMap[ce]
       if state == "Aborted":
         resultDict[site][ce]["Aborted_Hour"] = count
@@ -760,14 +736,14 @@ class PilotAgentsDB( DB ):
     for site in resultDict:
       sumDict = {}
       for state in allStateNames:
-        if not sumDict.has_key( state ):
+        if state not in sumDict:
           sumDict[state] = 0
       sumDict['Total'] = 0
       for ce in resultDict[site]:
         itemList = [site, ce]
         total = 0
         for state in allStateNames:
-          itemList.append( resultDict[site][ce][state] )
+          itemList.append(resultDict[site][ce][state])
           sumDict[state] += resultDict[site][ce][state]
           if state == "Done":
             done = resultDict[site][ce][state]
@@ -775,93 +751,90 @@ class PilotAgentsDB( DB ):
             empty = resultDict[site][ce][state]
           if state == "Aborted":
             aborted = resultDict[site][ce][state]
-          if state == "Aborted_Hour":
-            aborted_hour = resultDict[site][ce][state]
           if state != "Aborted_Hour" and state != "Done_Empty":
             total += resultDict[site][ce][state]
 
         sumDict['Total'] += total
         # Add the total number of pilots seen in the last day
-        itemList.append( total )
+        itemList.append(total)
         # Add pilot submission efficiency evaluation
-        if ( done - empty ) > 0:
-          eff = float( done ) / float( done - empty )
+        if (done - empty) > 0:
+          eff = float(done) / float(done - empty)
         elif done == 0:
           eff = 0.
         elif empty == done:
           eff = 99.
         else:
           eff = 0.
-        itemList.append( '%.2f' % eff )
+        itemList.append('%.2f' % eff)
         # Add pilot job efficiency evaluation
         if total > 0:
-          eff = float( total - aborted ) / float( total ) * 100.
+          eff = float(total - aborted) / float(total) * 100.
         else:
           eff = 100.
-        itemList.append( '%.2f' % eff )
+        itemList.append('%.2f' % eff)
 
         # Evaluate the quality status of the CE
         if total > 10:
           if eff < 25.:
-            itemList.append( 'Bad' )
+            itemList.append('Bad')
           elif eff < 60.:
-            itemList.append( 'Poor' )
+            itemList.append('Poor')
           elif eff < 85.:
-            itemList.append( 'Fair' )
+            itemList.append('Fair')
           else:
-            itemList.append( 'Good' )
+            itemList.append('Good')
         else:
-          itemList.append( 'Idle' )
+          itemList.append('Idle')
 
-        if len( resultDict[site] ) == 1 or expand_site:
-          records.append( itemList )
+        if len(resultDict[site]) == 1 or expand_site:
+          records.append(itemList)
 
-      if len( resultDict[site] ) > 1 and not expand_site:
+      if len(resultDict[site]) > 1 and not expand_site:
         itemList = [site, 'Multiple']
         for state in allStateNames + ['Total']:
-          if sumDict.has_key( state ):
-            itemList.append( sumDict[state] )
+          if state in sumDict:
+            itemList.append(sumDict[state])
           else:
-            itemList.append( 0 )
+            itemList.append(0)
         done = sumDict["Done"]
         empty = sumDict["Done_Empty"]
         aborted = sumDict["Aborted"]
-        aborted_hour = sumDict["Aborted_Hour"]
         total = sumDict["Total"]
 
         # Add pilot submission efficiency evaluation
-        if ( done - empty ) > 0:
-          eff = float( done ) / float( done - empty )
+        if (done - empty) > 0:
+          eff = float(done) / float(done - empty)
         elif done == 0:
           eff = 0.
         elif empty == done:
           eff = 99.
         else:
           eff = 0.
-        itemList.append( '%.2f' % eff )
+        itemList.append('%.2f' % eff)
         # Add pilot job efficiency evaluation
         if total > 0:
-          eff = float( total - aborted ) / float( total ) * 100.
+          eff = float(total - aborted) / float(total) * 100.
         else:
           eff = 100.
-        itemList.append( '%.2f' % eff )
+        itemList.append('%.2f' % eff)
 
         # Evaluate the quality status of the Site
         if total > 10:
           if eff < 25.:
-            itemList.append( 'Bad' )
+            itemList.append('Bad')
           elif eff < 60.:
-            itemList.append( 'Poor' )
+            itemList.append('Poor')
           elif eff < 85.:
-            itemList.append( 'Fair' )
+            itemList.append('Fair')
           else:
-            itemList.append( 'Good' )
+            itemList.append('Good')
         else:
-          itemList.append( 'Idle' )
-        records.append( itemList )
+          itemList.append('Idle')
+        records.append(itemList)
 
       for state in allStateNames + ['Total']:
-        if not siteSumDict.has_key( state ):
+        if state not in siteSumDict:
           siteSumDict[state] = sumDict[state]
         else:
           siteSumDict[state] += sumDict[state]
@@ -871,7 +844,7 @@ class PilotAgentsDB( DB ):
       new_records = []
       for r in records:
         if r[0] in site_select:
-          new_records.append( r )
+          new_records.append(r)
       records = new_records
 
     # Perform status selection
@@ -879,7 +852,7 @@ class PilotAgentsDB( DB ):
       new_records = []
       for r in records:
         if r[14] in status_select:
-          new_records.append( r )
+          new_records.append(r)
       records = new_records
 
     # Get the Site Mask data
@@ -888,17 +861,17 @@ class PilotAgentsDB( DB ):
       siteMask = result['Value']
       for r in records:
         if r[0] in siteMask:
-          r.append( 'Yes' )
+          r.append('Yes')
         else:
-          r.append( 'No' )
+          r.append('No')
     else:
       for r in records:
-        r.append( 'Unknown' )
+        r.append('Unknown')
 
     finalDict = {}
-    finalDict['TotalRecords'] = len( records )
+    finalDict['TotalRecords'] = len(records)
     finalDict['ParameterNames'] = paramNames + \
-                                 ['Total', 'PilotsPerJob', 'PilotJobEff', 'Status', 'InMask']
+        ['Total', 'PilotsPerJob', 'PilotJobEff', 'Status', 'InMask']
 
     # Return all the records if maxItems == 0 or the specified number otherwise
     if maxItems:
@@ -909,12 +882,11 @@ class PilotAgentsDB( DB ):
     done = siteSumDict["Done"]
     empty = siteSumDict["Done_Empty"]
     aborted = siteSumDict["Aborted"]
-    aborted_hour = siteSumDict["Aborted_Hour"]
     total = siteSumDict["Total"]
 
     # Add pilot submission efficiency evaluation
-    if ( done - empty ) > 0:
-      eff = float( done ) / float( done - empty )
+    if (done - empty) > 0:
+      eff = float(done) / float(done - empty)
     elif done == 0:
       eff = 0.
     elif empty == done:
@@ -924,7 +896,7 @@ class PilotAgentsDB( DB ):
     siteSumDict['PilotsPerJob'] = '%.2f' % eff
     # Add pilot job efficiency evaluation
     if total > 0:
-      eff = float( total - aborted ) / float( total ) * 100.
+      eff = float(total - aborted) / float(total) * 100.
     else:
       eff = 100.
     siteSumDict['PilotJobEff'] = '%.2f' % eff
@@ -943,10 +915,10 @@ class PilotAgentsDB( DB ):
       siteSumDict['Status'] = 'Idle'
     finalDict['Extras'] = siteSumDict
 
-    return S_OK( finalDict )
+    return S_OK(finalDict)
 
 ##########################################################################################
-  def getPilotMonitorSelectors( self ):
+  def getPilotMonitorSelectors(self):
     """ Get distinct values for the Pilot Monitor page selectors
     """
 
@@ -955,7 +927,7 @@ class PilotAgentsDB( DB ):
 
     resultDict = {}
     for param in paramNames:
-      result = self.getDistinctAttributeValues( 'PilotAgents', param )
+      result = self.getDistinctAttributeValues('PilotAgents', param)
       if result['OK']:
         resultDict[param] = result['Value']
       else:
@@ -964,40 +936,40 @@ class PilotAgentsDB( DB ):
       if param == "OwnerDN":
         userList = []
         for dn in result['Value']:
-          resultUser = getUsernameForDN( dn )
+          resultUser = getUsernameForDN(dn)
           if resultUser['OK']:
-            userList.append( resultUser['Value'] )
+            userList.append(resultUser['Value'])
         resultDict["Owner"] = userList
 
-    return S_OK( resultDict )
+    return S_OK(resultDict)
 
 ##########################################################################################
-  def getPilotMonitorWeb( self, selectDict, sortList, startItem, maxItems ):
+  def getPilotMonitorWeb(self, selectDict, sortList, startItem, maxItems):
     """ Get summary of the pilot job information in a standard structure
     """
 
     resultDict = {}
-    if selectDict.has_key( 'LastUpdateTime' ):
+    if 'LastUpdateTime' in selectDict:
       del selectDict['LastUpdateTime']
-    if selectDict.has_key( 'Owner' ):
+    if 'Owner' in selectDict:
       userList = selectDict['Owner']
-      if type( userList ) != type( [] ):
+      if not isinstance(userList, type([])):
         userList = [userList]
       dnList = []
       for uName in userList:
-        uList = getDNForUsername( uName )['Value']
+        uList = getDNForUsername(uName)['Value']
         dnList += uList
       selectDict['OwnerDN'] = dnList
       del selectDict['Owner']
-    startDate = selectDict.get( 'FromDate', None )
+    startDate = selectDict.get('FromDate', None)
     if startDate:
       del selectDict['FromDate']
     # For backward compatibility
     if startDate is None:
-      startDate = selectDict.get( 'LastUpdateTime', None )
+      startDate = selectDict.get('LastUpdateTime', None)
       if startDate:
         del selectDict['LastUpdateTime']
-    endDate = selectDict.get( 'ToDate', None )
+    endDate = selectDict.get('ToDate', None)
     if endDate:
       del selectDict['ToDate']
 
@@ -1008,20 +980,25 @@ class PilotAgentsDB( DB ):
       orderAttribute = None
 
     # Select pilots for the summary
-    result = self.selectPilots( selectDict, orderAttribute = orderAttribute, newer = startDate, older = endDate, timeStamp = 'LastUpdateTime' )
+    result = self.selectPilots(
+        selectDict,
+        orderAttribute=orderAttribute,
+        newer=startDate,
+        older=endDate,
+        timeStamp='LastUpdateTime')
     if not result['OK']:
-      return S_ERROR( 'Failed to select pilots: ' + result['Message'] )
+      return S_ERROR('Failed to select pilots: ' + result['Message'])
 
     pList = result['Value']
-    nPilots = len( pList )
+    nPilots = len(pList)
     resultDict['TotalRecords'] = nPilots
     if nPilots == 0:
-      return S_OK( resultDict )
+      return S_OK(resultDict)
 
     ini = startItem
     last = ini + maxItems
     if ini >= nPilots:
-      return S_ERROR( 'Item number out of range' )
+      return S_ERROR('Item number out of range')
     if last > nPilots:
       last = nPilots
     pilotList = pList[ini:last]
@@ -1031,34 +1008,33 @@ class PilotAgentsDB( DB ):
                   'SubmissionTime', 'PilotID', 'LastUpdateTime', 'CurrentJobID', 'TaskQueueID',
                   'GridSite']
 
-    result = self.getPilotInfo( pilotList, paramNames = paramNames )
+    result = self.getPilotInfo(pilotList, paramNames=paramNames)
     if not result['OK']:
-      return S_ERROR( 'Failed to get pilot info: ' + result['Message'] )
+      return S_ERROR('Failed to get pilot info: ' + result['Message'])
 
     pilotDict = result['Value']
     records = []
     for pilot in pilotList:
       parList = []
       for parameter in paramNames:
-        if type( pilotDict[pilot][parameter] ) not in [IntType, LongType]:
-          parList.append( str( pilotDict[pilot][parameter] ) )
+        if not isinstance(pilotDict[pilot][parameter], (int, long)):
+          parList.append(str(pilotDict[pilot][parameter]))
         else:
-          parList.append( pilotDict[pilot][parameter] )
+          parList.append(pilotDict[pilot][parameter])
         if parameter == 'GridSite':
           gridSite = pilotDict[pilot][parameter]
 
       # If the Grid Site is unknown try to recover it in the last moment
       if gridSite == "Unknown":
         ce = pilotDict[pilot]['DestinationSite']
-        result = getSiteForCE( ce )
+        result = getSiteForCE(ce)
         if result['OK']:
           gridSite = result['Value']
           del parList[-1]
-          parList.append( gridSite )
-      records.append( parList )
+          parList.append(gridSite)
+      records.append(parList)
 
     resultDict['ParameterNames'] = paramNames
     resultDict['Records'] = records
 
-    return S_OK( resultDict )
-
+    return S_OK(resultDict)

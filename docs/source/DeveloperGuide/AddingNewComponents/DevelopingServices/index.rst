@@ -47,8 +47,8 @@ A useful method is ''srv_getCSOption( csPath, defaultValue )'',
 which allows to extract options from the Service section in the Configuration Service directly
 without having to use the ''gConfig'' object.
 
-For each "exported" method the service can define an *auth_<method_name>* class variable being a list.
-This will restrict which clients can call this method.
+For each "exported" method the service CAN define an *auth_<method_name>* class variable being a list.
+This will restrict which clients can call this method, but please use this possibility only for doing local tests (see later).
 Only clients belonging to groups that have the properties defined in the list will be able to call this method.
 *all* is a special keyword that allows anyone to call this method.
 *authenticated* is also a special keyword that allows anyone with a valid certificate to call this method.
@@ -63,7 +63,7 @@ Default Service Configuration parameters
 
 The Hello Handler is written. There's not even the need to copy/paste, because you can do::
 
-  cp $DEVROOT/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/HelloHandler.py $DEVROOT/FrameworkSystem/Service/
+  cp $DEVROOT/DIRAC/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/HelloHandler.py $DEVROOT/DIRAC/FrameworkSystem/Service/
 
 Now, we'll need to put the new service in the DIRAC CS in order to see it running.
 Since we are running in an isolated installation, the service will need to be added to the local "dirac.cfg" file.
@@ -128,6 +128,29 @@ If you want to run your services using the "dip" protocol, use the following con
   }
 
 which is the same configuration used above with the difference of the "Protocol = dip" line.
+
+Now, going back for a second on the service calls authorizations: in the example above we have used
+*auth_<method_name>* to define the service authorization properties. What we have done above can be achieved using
+the following CS structure:
+
+  Services
+  {
+    Hello
+    {
+      Port = 3424
+      DefaultWhom = Universe
+      Authorization
+      {
+        sayHello = all
+      }
+    }
+  }
+
+and removing the *auth_<method_name>* from the code. This is a better "production" level coding.
+
+You can also specify which default authorizations a service call should have at deploy time by editing the "ConfigTemplate.cfg"
+file present in every system.
+An example can be found in https://github.com/DIRACGrid/DIRAC/blob/integration/WorkloadManagementSystem/ConfigTemplate.cfg
 
 
 Calling the Service from a Client

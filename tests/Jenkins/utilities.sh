@@ -452,11 +452,21 @@ function installDIRAC(){
   # now configuring
   source bashrc
   dirac-configure -S $DIRACSETUP -C $CSURL --UseServerCertificate -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-configure failed'
+    return
+  fi
 
   echo 'Content of etc/dirac.cfg:'
   more $CLIENTINSTALLDIR/etc/dirac.cfg
 
   source bashrc
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: source bashrc failed'
+    return
+  fi
 }
 
 ##############################################################################
@@ -599,37 +609,37 @@ function generateCertificates(){
 #.............................................................................
 
 function generateUserCredentials(){
-    echo '==> [generateUserCredentials]'
+  echo '==> [generateUserCredentials]'
 
-    # Generate directory where to store credentials
-    mkdir -p $SERVERINSTALLDIR/user
-    cd $SERVERINSTALLDIR/user
-    if [ $? -ne 0 ]
-    then
-      echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
-      return
-    fi
+  # Generate directory where to store credentials
+  mkdir -p $SERVERINSTALLDIR/user
+  cd $SERVERINSTALLDIR/user
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $SERVERINSTALLDIR/user
+    return
+  fi
 
   save=$-
   if [[ $save =~ e ]]
   then
     set +e
   fi
-    cp $CI_CONFIG/openssl_config openssl_config .
+  cp $CI_CONFIG/openssl_config openssl_config .
   if [[ $save =~ e ]]
   then
     set -e
   fi
 
-    sed -i 's/#hostname#/ciuser/g' openssl_config
-    openssl genrsa -out client.key 1024 2>&1 /dev/null
-    openssl req -key client.key -new -out client.req -config openssl_config
-    # This is a little hack to make OpenSSL happy...
-    echo 00 > file.srl
+  sed -i 's/#hostname#/ciuser/g' openssl_config
+  openssl genrsa -out client.key 1024 2>&1 /dev/null
+  openssl req -key client.key -new -out client.req -config openssl_config
+  # This is a little hack to make OpenSSL happy...
+  echo 00 > file.srl
 
-    CA=$SERVERINSTALLDIR/etc/grid-security/certificates
+  CA=$SERVERINSTALLDIR/etc/grid-security/certificates
 
-    openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out $SERVERINSTALLDIR/user/client.pem
+  openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out $SERVERINSTALLDIR/user/client.pem
 }
 
 
@@ -802,7 +812,7 @@ function diracAddSite(){
 diracServices(){
   echo '==> [diracServices]'
 
-  services=`cat services | cut -d '.' -f 1 | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
+  services=`cat services | cut -d '.' -f 1 | grep -v PilotsLogging | grep -v FTSManagerHandler | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -812,6 +822,11 @@ diracServices(){
   do
     echo '==> calling dirac-install-component' $serv $DEBUG
     dirac-install-component $serv $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-install-component failed'
+      return
+    fi
   done
 
 }
@@ -865,7 +880,7 @@ diracUninstallServices(){
 diracAgents(){
   echo '==> [diracAgents]'
 
-  agents=`cat agents | cut -d '.' -f 1 | grep -v LFC | grep -v MyProxy | grep -v CAUpdate | grep -v CE2CSAgent.py | grep -v GOCDB2CS | grep -v Bdii2CS | grep -v CacheFeeder | grep -v NetworkAgent | grep -v FrameworkSystem | grep -v DiracSiteAgent | grep -v StatesMonitoringAgent | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent  | grep -v GridSiteWMSMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g'`
+  agents=`cat agents | cut -d '.' -f 1 | grep -v MyProxy | grep -v CAUpdate | grep -v FTSAgent | grep -v CleanFTSDBAgent | grep -v CE2CSAgent | grep -v GOCDB2CS | grep -v Bdii2CS | grep -v CacheFeeder | grep -v NetworkAgent | grep -v FrameworkSystem | grep -v DiracSiteAgent | grep -v StatesMonitoringAgent | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent  | grep -v GridSiteWMSMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g'`
 
   for agent in $agents
   do
@@ -899,7 +914,7 @@ diracAgents(){
 diracDBs(){
   echo '==> [diracDBs]'
 
-  dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB | grep -v ^InstalledComponentsDB`
+  dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FTSDB | grep -v ^FileCatalogDB | grep -v ^InstalledComponentsDB`
   for db in $dbs
   do
     dirac-install-db $db $DEBUG
@@ -937,24 +952,24 @@ dropDBs(){
 #-------------------------------------------------------------------------------
 
 
-  #.............................................................................
-  #
-  # killRunsv:
-  #
-  #   it makes sure there are no runsv processes running. If it finds any, it
-  #   terminates it. This means, no more than one Job running this kind of test
-  #   on the same machine at the same time ( executors =< 1 ). Indeed, it cleans
-  #   two particular processes, 'runsvdir' and 'runsv'.
-  #
-  #.............................................................................
+#.............................................................................
+#
+# killRunsv:
+#
+#   it makes sure there are no runsv processes running. If it finds any, it
+#   terminates it. This means, no more than one Job running this kind of test
+#   on the same machine at the same time ( executors =< 1 ). Indeed, it cleans
+#   two particular processes, 'runsvdir' and 'runsv'.
+#
+#.............................................................................
 
 function killRunsv(){
   echo '==> [killRunsv]'
 
   # Bear in mind that we may run with 'errexit' mode. This call, if finds nothing
-    # will return an error, which will make the whole script exit. However, if
-    # finds nothing we are good, it means there are not leftover processes from
-    # other runs. So, we disable 'errexit' mode for this call.
+  # will return an error, which will make the whole script exit. However, if
+  # finds nothing we are good, it means there are not leftover processes from
+  # other runs. So, we disable 'errexit' mode for this call.
 
   # check if errexit mode is set
   save=$-
@@ -963,19 +978,19 @@ function killRunsv(){
     set +e
   fi
 
-    runsvdir=`ps aux | grep 'runsvdir ' | grep -v 'grep'`
+  runsvdir=`ps aux | grep 'runsvdir ' | grep -v 'grep'`
 
-    if [ ! -z "$runsvdir" ]
-    then
-      killall runsvdir
-    fi
+  if [ ! -z "$runsvdir" ]
+  then
+    killall runsvdir
+  fi
 
   runsv=`ps aux | grep 'runsv ' | grep -v 'grep'`
 
-    if [ ! -z "$runsv" ]
-    then
-      killall runsv
-    fi
+  if [ ! -z "$runsv" ]
+  then
+    killall runsv
+  fi
 
   if [[ $save =~ e ]]
   then
@@ -983,16 +998,35 @@ function killRunsv(){
   fi
 
 
-  }
+}
 
+#.............................................................................
+#
+# killES:
+#
+#   it makes sure there are no ElasticSearch processes running. If it finds any, it
+#   terminates it.
+#
+#.............................................................................
 
-  #.............................................................................
-  #
-  # stopRunsv:
-  #
-  #   if runsv is running, it stops it.
-  #
-  #.............................................................................
+function killES(){
+  echo '==> [killES]'
+
+    res=`ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 4 -d ' '`
+
+    if [ ! -z "$res" ]
+    then
+      kill -9 $res
+    fi
+}
+
+#.............................................................................
+#
+# stopRunsv:
+#
+#   if runsv is running, it stops it.
+#
+#.............................................................................
 
 function stopRunsv(){
   echo '==> [stopRunsv]'
@@ -1008,37 +1042,37 @@ function stopRunsv(){
 }
 
 
-  #.............................................................................
-  #
-  # startRunsv:
-  #
-  #   starts runsv processes
-  #
-  #.............................................................................
+#.............................................................................
+#
+# startRunsv:
+#
+#   starts runsv processes
+#
+#.............................................................................
 
 function startRunsv(){
-    echo '==> [startRunsv]'
+  echo '==> [startRunsv]'
 
-    # Let's try to be a bit more delicated than the function above
+  # Let's try to be a bit more delicated than the function above
 
-    source $SERVERINSTALLDIR/bashrc
-    runsvdir -P $SERVERINSTALLDIR/startup &
+  source $SERVERINSTALLDIR/bashrc
+  runsvdir -P $SERVERINSTALLDIR/startup &
 
-    # Gives some time to the components to start
-    sleep 10
-    # Just in case 10 secs are not enough, we disable exit on error for this call.
+  # Gives some time to the components to start
+  sleep 10
+  # Just in case 10 secs are not enough, we disable exit on error for this call.
   save=$-
   if [[ $save =~ e ]]
   then
     set +e
   fi
-    runsvctrl u $SERVERINSTALLDIR/startup/*
+  runsvctrl u $SERVERINSTALLDIR/startup/*
   if [[ $save =~ e ]]
   then
     set -e
   fi
 
-    runsvstat $SERVERINSTALLDIR/startup/*
+  runsvstat $SERVERINSTALLDIR/startup/*
 
 }
 
@@ -1114,4 +1148,24 @@ function downloadProxy(){
     echo 'ERROR: cannot download proxy'
     return
   fi
+}
+
+
+#.............................................................................
+#
+# installES:
+#
+#   install (and run) ElasticSearch in the current directory
+#
+#.............................................................................
+
+function installES(){
+  echo '==> [installES]'
+
+  curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.2.tar.gz
+  tar -xvf elasticsearch-6.1.2.tar.gz
+  cd elasticsearch-6.1.2/bin
+  ./elasticsearch -d -Ecluster.name=jenkins_cluster -Enode.name=jenkins_node &
+
+  cd ../..
 }

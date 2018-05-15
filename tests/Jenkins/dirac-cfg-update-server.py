@@ -6,9 +6,9 @@ import os
 
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s [option|cfgFile] ... DB ...' % Script.scriptName] ) )
+Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                  'Usage:',
+                                  '  %s [option|cfgFile] ... DB ...' % Script.scriptName]))
 
 Script.parseCommandLine()
 
@@ -16,22 +16,23 @@ args = Script.getPositionalArgs()
 setupName = args[0]
 
 # Where to store outputs
-if not os.path.isdir( '%s/sandboxes' % setupName ):
-  os.makedirs( '%s/sandboxes' % setupName )
+if not os.path.isdir('%s/sandboxes' % setupName):
+  os.makedirs('%s/sandboxes' % setupName)
 
 # now updating the CS
 
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 csAPI = CSAPI()
 
-csAPI.setOption( 'Systems/WorkloadManagement/Production/Services/SandboxStore/BasePath', '%s/sandboxes' % setupName )
-csAPI.setOption( 'Systems/WorkloadManagement/Production/Services/SandboxStore/LogLevel', 'DEBUG' )
+csAPI.setOption('Systems/WorkloadManagement/Production/Services/SandboxStore/BasePath', '%s/sandboxes' % setupName)
+csAPI.setOption('Systems/WorkloadManagement/Production/Services/SandboxStore/LogLevel', 'DEBUG')
 
 # Now setting a SandboxSE as the following:
 #     ProductionSandboxSE
 #     {
 #       BackendType = DISET
-#       AccessProtocol.1
+#       AccessProtocol = dips
+#       DIP
 #       {
 #         Host = localhost
 #         Port = 9196
@@ -39,30 +40,30 @@ csAPI.setOption( 'Systems/WorkloadManagement/Production/Services/SandboxStore/Lo
 #         Protocol = dips
 #         Path = /scratch/workspace/%s/sandboxes % setupName
 #         Access = remote
-#         SpaceToken =
-#         WSUrl =
 #       }
 #     }
-res = csAPI.createSection( 'Resources/StorageElements/' )
+res = csAPI.createSection('Resources/StorageElements/')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
+  exit(1)
 
-res = csAPI.createSection( 'Resources/StorageElements/ProductionSandboxSE' )
+res = csAPI.createSection('Resources/StorageElements/ProductionSandboxSE')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/BackendType', 'DISET' )
+  exit(1)
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/BackendType', 'DISET')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/AccessProtocol', 'dips')
 
-res = csAPI.createSection( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1' )
+res = csAPI.createSection('Resources/StorageElements/ProductionSandboxSE/DIP')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Host', 'localhost' )
-csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Port', '9196' )
-csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/ProtocolName', 'DIP' )
-csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Path', '%s/sandboxes' % setupName )
-csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1/Access', 'remote' )
+  exit(1)
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Host', 'localhost')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Port', '9196')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/ProtocolName', 'DIP')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Protocol', 'dips')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Access', 'remote')
+csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Path', '%s/sandboxes' % setupName)
 
 # Now setting a FileCatalogs section as the following:
 #     FileCatalogs
@@ -74,20 +75,20 @@ csAPI.setOption( 'Resources/StorageElements/ProductionSandboxSE/AccessProtocol.1
 #         Master = True
 #       }
 #     }
-res = csAPI.createSection( 'Resources/FileCatalogs/' )
+res = csAPI.createSection('Resources/FileCatalogs/')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-res = csAPI.createSection( 'Resources/FileCatalogs/FileCatalog' )
+  exit(1)
+res = csAPI.createSection('Resources/FileCatalogs/FileCatalog')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
+  exit(1)
 
-csAPI.setOption( 'Resources/FileCatalogs/FileCatalog/AccessType', 'Read-Write' )
-csAPI.setOption( 'Resources/FileCatalogs/FileCatalog/Status', 'Active' )
-csAPI.setOption( 'Resources/FileCatalogs/FileCatalog/Master', 'True' )
+csAPI.setOption('Resources/FileCatalogs/FileCatalog/AccessType', 'Read-Write')
+csAPI.setOption('Resources/FileCatalogs/FileCatalog/Status', 'Active')
+csAPI.setOption('Resources/FileCatalogs/FileCatalog/Master', 'True')
 
-# Now setting a the following option:
+# Now setting up the following option:
 #     Resources
 #     {
 #       Sites
@@ -120,15 +121,38 @@ for st in ['Resources/Sites/DIRAC/',
            'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/jenkins.cern.ch',
            'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/jenkins.cern.ch/Queues'
            'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/jenkins.cern.ch/Queues/jenkins-queue_not_important']:
-  res = csAPI.createSection( st )
+  res = csAPI.createSection(st)
 if not res['OK']:
   print res['Message']
-  exit( 1 )
+  exit(1)
+
+csAPI.setOption('Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/CEType', 'Test')
+csAPI.setOption(
+    'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/maxCPUTime',
+    '200000')
+csAPI.setOption('Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/SI00',
+                '2400')
 
 
-csAPI.setOption( 'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/CEType', 'Test' )
-csAPI.setOption( 'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/maxCPUTime', '200000' )
-csAPI.setOption( 'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/SI00', '2400' )
+# Now setting up the following option:
+#     Resources
+#     {
+#       FTSEndpoints
+#       {
+#         FTS3
+#         {
+#           JENKINS-FTS3 = https://jenkins-fts3.cern.ch:8446
+#         }
+#       }
+
+for st in ['Resources/FTSEndpoints/',
+           'Resources/FTSEndpoints/FTS3/']:
+  res = csAPI.createSection(st)
+if not res['OK']:
+  print res['Message']
+  exit(1)
+
+csAPI.setOption('Resources/FTSEndpoints/FTS3/JENKINS-FTS3', 'https://jenkins-fts3.cern.ch:8446')
 
 
 # Now setting a RSS section as the following inside /Operations/Defaults:
@@ -163,52 +187,52 @@ csAPI.setOption( 'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Que
 #         }
 #       }
 #     }
-res = csAPI.createSection( 'Operations/' )
+res = csAPI.createSection('Operations/')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-res = csAPI.createSection( 'Operations/Defaults' )
+  exit(1)
+res = csAPI.createSection('Operations/Defaults')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-res = csAPI.createSection( 'Operations/Defaults/ResourceStatus' )
+  exit(1)
+res = csAPI.createSection('Operations/Defaults/ResourceStatus')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies' )
+  exit(1)
+res = csAPI.createSection('Operations/Defaults/ResourceStatus/Policies')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
+  exit(1)
 
-res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource' )
+res = csAPI.createSection('Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/policyType', 'AlwaysActive' )
-res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/matchParams' )
+  exit(1)
+csAPI.setOption('Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/policyType', 'AlwaysActive')
+res = csAPI.createSection('Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/matchParams')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/matchParams/element', 'Resource' )
+  exit(1)
+csAPI.setOption('Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/matchParams/element', 'Resource')
 
-res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2' )
+res = csAPI.createSection('Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/policyType', 'AlwaysBanned' )
-res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams' )
+  exit(1)
+csAPI.setOption('Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/policyType', 'AlwaysBanned')
+res = csAPI.createSection('Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams/name', 'SE1,SE2' )
+  exit(1)
+csAPI.setOption('Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams/name', 'SE1,SE2')
 
-res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite' )
+res = csAPI.createSection('Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-res = csAPI.createSection( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams' )
-csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/policyType', 'AlwaysBanned' )
-csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element', 'Site' )
+  exit(1)
+res = csAPI.createSection('Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams')
+csAPI.setOption('Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/policyType', 'AlwaysBanned')
+csAPI.setOption('Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element', 'Site')
 
 
 # Now setting the catalog list in Operations/Defults/Services/Catalogs/CatalogList
@@ -221,18 +245,18 @@ csAPI.setOption( 'Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSit
 #       }
 #     }
 
-res = csAPI.createSection( 'Operations/Defaults/Services' )
+res = csAPI.createSection('Operations/Defaults/Services')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-res = csAPI.createSection( 'Operations/Defaults/Services/Catalogs' )
+  exit(1)
+res = csAPI.createSection('Operations/Defaults/Services/Catalogs')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
-res = csAPI.createSection( 'Operations/Defaults/Services/Catalogs/CatalogList' )
+  exit(1)
+res = csAPI.createSection('Operations/Defaults/Services/Catalogs/CatalogList')
 if not res['OK']:
   print res['Message']
-  exit( 1 )
+  exit(1)
 csAPI.setOption('Operations/Defaults/Services/Catalogs/CatalogList', 'FileCatalog')
 
 

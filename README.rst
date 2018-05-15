@@ -64,9 +64,9 @@ Code quality
 
 The contributions are subject to reviews.
 
-Pylint is run regularly on the source code. The .pylintrc file defines the expected coding rules and peculiarities (e.g.: tabs consists of 2 spaces instead of 4)
+Pylint, and pep8 style checker are run regularly on the source code. The .pylintrc file defines the expected coding rules and peculiarities (e.g.: tabs consists of 2 spaces instead of 4). Each Pull Request is checked for pylint and pep8 compliance.
 
 Testing
 ~~~~~~~
 
-Unit tests are provided within the source code. Integration, regression and system tests are instead in the tests directory. Run py.test to run all unit tests.
+Unit tests are provided within the source code. Integration, regression and system tests are instead in the tests directory. Run pytest to run all unit tests.

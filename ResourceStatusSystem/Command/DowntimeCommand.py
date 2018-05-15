@@ -74,7 +74,7 @@ class DowntimeCommand(Command):
 
       currentDate = datetime.utcnow()
 
-      if len(uniformResult) == 0:
+      if not uniformResult:
         continue
 
       # get the list of all ongoing DTs from GocDB

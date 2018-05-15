@@ -2,6 +2,9 @@
    Also, test of internal functions for mq connection storage.
 """
 
+## ignore use of __functions, _functions
+#pylint: disable=no-member, protected-access
+
 import unittest
 import mock
 from DIRAC import S_OK

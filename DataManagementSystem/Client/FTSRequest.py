@@ -959,7 +959,8 @@ class FTSRequest( object ):
       sourceURL = self.__getFileParameter( lfn, 'Source' )
       if not sourceURL['OK']:
         self.__setFileParameter( lfn, 'Source', ftsFile.SourceSURL )
-      self.transferTime += int( ftsFile._duration )
+      if ftsFile._duration:
+        self.transferTime += int( ftsFile._duration )
     return S_OK()
 
   ####################################################################

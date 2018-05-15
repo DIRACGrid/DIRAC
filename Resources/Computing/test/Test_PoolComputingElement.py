@@ -106,6 +106,8 @@ class PoolCETests( unittest.TestCase ):
     self.assertIn( "Can not take WholeNode job", result['Message'] )
 
     self.__stopJob( 0 )
+    time.sleep(1)
+
     jobParams = { 'wholeNode': True }
     result = self.ce.submitJob( 'testPoolCEJob_1.py', None, **jobParams )
     self.assertTrue( result['OK'] )
