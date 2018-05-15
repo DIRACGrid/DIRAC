@@ -67,7 +67,7 @@ class PublisherHandler(RequestHandler):
     gLogger.info('getSites')
     return CSHelpers.getSites()
 
-  types_getSitesResources = [(str, list, NoneType)]
+  types_getSitesResources = [(basestring, list, NoneType)]
 
   def export_getSitesResources(self, siteNames):
     """
@@ -85,7 +85,7 @@ class PublisherHandler(RequestHandler):
         return siteNames
       siteNames = siteNames['Value']
 
-    if isinstance(siteNames, str):
+    if isinstance(siteNames, basestring):
       siteNames = [siteNames]
 
     sitesRes = {}
@@ -106,9 +106,9 @@ class PublisherHandler(RequestHandler):
 
     return S_OK(sitesRes)
 
-  types_getElementStatuses = [str, (str, list, NoneType), (str, list, NoneType),
-                              (str, list, NoneType), (str, list, NoneType),
-                              (str, list, NoneType)]
+  types_getElementStatuses = [basestring, (basestring, list, NoneType), (basestring, list, NoneType),
+                              (basestring, list, NoneType), (basestring, list, NoneType),
+                              (basestring, list, NoneType)]
 
   def export_getElementStatuses(self, element, name, elementType, statusType, status, tokenOwner):
     """
@@ -120,8 +120,8 @@ class PublisherHandler(RequestHandler):
                                         statusType=statusType, status=status,
                                         tokenOwner=tokenOwner)
 
-  types_getElementHistory = [str, (str, list, NoneType), (str, list, NoneType),
-                             (str, list, NoneType)]
+  types_getElementHistory = [basestring, (basestring, list, NoneType), (basestring, list, NoneType),
+                             (basestring, list, NoneType)]
 
   def export_getElementHistory(self, element, name, elementType, statusType):
     """
@@ -134,7 +134,7 @@ class PublisherHandler(RequestHandler):
                                         statusType=statusType,
                                         meta={'columns': columns})
 
-  types_getElementPolicies = [str, (str, list, NoneType), (str, list, NoneType)]
+  types_getElementPolicies = [basestring, (basestring, list, NoneType), (basestring, list, NoneType)]
 
   def export_getElementPolicies(self, element, name, statusType):
     """
@@ -152,7 +152,7 @@ class PublisherHandler(RequestHandler):
   def export_getNodeStatuses(self):
     return rsClient.selectStatusElement('Node', 'Status')
 
-  types_getTree = [str, str, str]
+  types_getTree = [basestring, basestring]
 
   def export_getTree(self, elementType, elementName):
     """
@@ -203,7 +203,7 @@ class PublisherHandler(RequestHandler):
     return S_OK(tree)
 
   #-----------------------------------------------------------------------------
-  types_setToken = [str] * 7
+  types_setToken = [basestring] * 7
 
   def export_setToken(self, element, name, statusType, token, elementType, username, lastCheckTime):
 
@@ -272,7 +272,7 @@ class PublisherHandler(RequestHandler):
 
   # ResourceManagementClient ...................................................
 
-  types_getDowntimes = [str, str, str]
+  types_getDowntimes = [basestring, basestring, basestring]
 
   def export_getDowntimes(self, element, elementType, name):
 
@@ -287,8 +287,8 @@ class PublisherHandler(RequestHandler):
                                                           'Link', 'Description',
                                                           'Severity']})
 
-  types_getCachedDowntimes = [(str, NoneType, list), (str, NoneType, list), (str, NoneType, list),
-                              (str, NoneType, list), datetime, datetime]
+  types_getCachedDowntimes = [(basestring, NoneType, list), (basestring, NoneType, list), (basestring, NoneType, list),
+                              (basestring, NoneType, list), datetime, datetime]
 
   def export_getCachedDowntimes(self, element, elementType, name, severity, startDate, endDate):
 
@@ -322,7 +322,7 @@ class PublisherHandler(RequestHandler):
 
     return result
 
-  types_setStatus = [str] * 7
+  types_setStatus = [basestring] * 7
 
   def export_setStatus(self, element, name, statusType, status, elementType, username, lastCheckTime):
 
@@ -356,7 +356,7 @@ class PublisherHandler(RequestHandler):
 
     return S_OK(reason)
 
-  types_getSpaceTokenOccupancy = [(basestring, NoneType, list), (basestring, NoneType, list)]
+  types_getFreeDiskSpace = [(basestring, NoneType, list), (basestring, NoneType, list)]
 
   def export_getFreeDiskSpace(self, site, token):
     """ Exporting to web the
