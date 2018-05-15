@@ -247,7 +247,7 @@ To register the host, replace "/your/box/dn/goes/here"
 
    openssl x509 -noout -subject -in $DEVROOT/etc/grid-security/hostcert.pem | sed 's:^subject= ::g'
 
-Same process to register yourself, replace "/your/box/dn/goes/here"
+Same process to register yourself, replace "/your/dn/goes/here"
 (/Registry/Users/yourusername/DN option) with the result of::
 
    openssl x509 -noout -subject -in ~/.globus/usercert.pem | sed 's:^subject= ::g'
