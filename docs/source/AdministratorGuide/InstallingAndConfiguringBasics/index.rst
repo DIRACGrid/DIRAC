@@ -11,10 +11,13 @@ using the :ref:`system-admin-console`.
 The components don't need to be all resident on the same host, in fact it's common practice to have several hosts
 for large installations.
 
-As a general rul, services can be duplicated, 
+Normally, services are always exposed on the same port, which is defined in the configuration for each of them.
+
+As a general rule, services can be duplicated, 
 meaning you can have the same service running on multiple hosts, thus reducing the load.
 There are only 2 cases of DIRAC services that have a "master/slave" concept, and these are the Configuration Service 
 and the Accounting/DataStore service.
+The WorkloadManagement/Matcher service should also not be duplicated.
 
 Same can be said for executors: you can have many residing on different hosts.
 
