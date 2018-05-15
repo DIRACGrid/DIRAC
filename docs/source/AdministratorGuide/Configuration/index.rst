@@ -15,4 +15,3 @@ The procedure to add new configuration data and to update the existing settings 
    ConfigurationStructure/index
    ConfReference/index
    GeneralSetup/index
-   ManagingConfiguration/index
