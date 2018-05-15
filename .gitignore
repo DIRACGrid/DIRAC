@@ -60,3 +60,8 @@ nosetests.xml
 coverage.xml
 Local_*
 .hypothesis
+
+# docs
+# this is auto generated
+docs/source/CodeDocumentation/
+docs/_build
