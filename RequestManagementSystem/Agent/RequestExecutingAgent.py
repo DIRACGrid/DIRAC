@@ -24,8 +24,11 @@ __RCSID__ = '$Id$'
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/12 15:36:56
 # @brief Definition of RequestExecutingAgent class.
+
 # # imports
 import time
+import errno
+
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -36,7 +39,6 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
 from DIRAC.Core.Utilities.DErrno import cmpError
-import errno
 # # agent name
 AGENT_NAME = "RequestManagement/RequestExecutingAgent"
 
@@ -143,9 +145,9 @@ class RequestExecutingAgent( AgentModule ):
     self.log.info( "Operation handlers:" )
     for item in enumerate ( self.handlersDict.items() ):
       opHandler = item[1][0]
-      self.log.info( "[%s] %s: %s (timeout: %d s + %d s per file)" % ( item[0], item[1][0], item[1][1],
-                                                                   self.timeOuts[opHandler]['PerOperation'],
-                                                                   self.timeOuts[opHandler]['PerFile'] ) )
+      self.log.info("[%s] %s: %s (timeout: %d s + %d s per file)" % (item[0], item[1][0], item[1][1],
+                                                                     self.timeOuts[opHandler]['PerOperation'],
+                                                                     self.timeOuts[opHandler]['PerFile']))
 
     # # common monitor activity
     gMonitor.registerActivity( "Iteration", "Agent Loops",
@@ -378,11 +380,11 @@ class RequestExecutingAgent( AgentModule ):
     """
     # # clean cache
     res = self.putRequest( taskID, taskResult )
-    self.log.info( "callback: %s result is %s(%s), put %s(%s)" % ( taskID,
-                                                      "S_OK" if taskResult["OK"] else "S_ERROR",
-                                                      taskResult["Value"].Status if taskResult["OK"] else taskResult["Message"],
-                                                      "S_OK" if res['OK'] else 'S_ERROR',
-                                                      '' if res['OK'] else res['Message'] ) )
+    self.log.info("callback: %s result is %s(%s), put %s(%s)" % (taskID,
+                                                                 "S_OK" if taskResult["OK"] else "S_ERROR",
+                                                                 taskResult["Value"].Status if taskResult["OK"] else taskResult["Message"],
+                                                                 "S_OK" if res['OK'] else 'S_ERROR',
+                                                                 '' if res['OK'] else res['Message']))
 
 
   def exceptionCallback( self, taskID, taskException ):

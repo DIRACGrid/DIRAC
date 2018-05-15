@@ -162,7 +162,7 @@ def execute( arguments ):
 
   if 'OutputSandbox' in arguments['Job'] or 'OutputData' in arguments['Job']:
     try:
-      result = job.processJobOutputs( arguments )
+      result = job.processJobOutputs()
       if not result['OK']:
         gLogger.warn( result['Message'] )
         raise JobWrapperError( result['Message'] )
