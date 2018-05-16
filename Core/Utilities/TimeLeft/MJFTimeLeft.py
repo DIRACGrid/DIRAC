@@ -98,7 +98,7 @@ class MJFTimeLeft(object):
       except ValueError:
         self.log.warn("/shutdowntime is unreadable")
       except IOError as e:
-        self.log.exception("Issue with $MACHINEFEATURES/shutdowntime", lException=e)
+        self.log.warn("Issue with $MACHINEFEATURES/shutdowntime", repr(e))
         self.log.warn('Could not determine a shutdowntime value from $MACHINEFEATURES/shutdowntime')
 
     # Reporting

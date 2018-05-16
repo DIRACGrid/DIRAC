@@ -25,6 +25,16 @@ If *UpdatePilotCStoJSONFile* is True, then also the option *pilotFileServer* sho
 We suggest to use simply the DIRAC webserver.
 
 
+Starting Pilots3 via SiteDirectors
+==================================
+
+.. versionadded:: v6r20
+
+
+Since DIRAC v6r20, SiteDirectors can send "pilots2" or "pilots3". Pilots2 are the default, 
+but the "Pilots3" flag can be used for sending Pilots3 files instead, see :ref:`conf-SiteDirector`
+
+
 Pilot logging
 =============
 
