@@ -1,4 +1,6 @@
 """ Operation handler to set the status for transformation files
+
+TODO: Is there any good reason why this is just not using a forwardDISET instead?
 """
 
 from DIRAC import S_OK, S_ERROR
