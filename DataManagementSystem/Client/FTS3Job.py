@@ -570,4 +570,9 @@ class FTS3Job(FTS3Serializable):
     accountingDict['TransferTime'] = sum(int(fileDict['tx_duration'])
                                          for fileDict in successfulFiles)
 
+    # Registration values must be set anyway
+    accountingDict['RegistrationTime'] = 0.0
+    accountingDict['RegistrationOK'] = 0
+    accountingDict['RegistrationTotal'] = 0
+
     self.accountingDict = accountingDict
