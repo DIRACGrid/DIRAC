@@ -45,7 +45,7 @@ class PublisherGet(TestPublisherTestCase):
     res = self.publisher.getNodeStatuses()
     self.assertTrue(res['OK'])
 
-    res = self.publisher.getTree('Site', '', '')
+    res = self.publisher.getTree('', '')
     self.assertTrue(res['OK'])
 
 

@@ -929,12 +929,21 @@ class Dirac(API):
           else:
             return S_ERROR('Can not copy OutputSandbox file %s' % osFile)
 
+    os.chdir(curDir)
+
+    if status:  # if it fails, copy content of execution dir in current directory
+      destDir = os.path.join(curDir, os.path.basename(os.path.dirname(tmpdir)))
+      self.log.debug("Copying outputs from %s to %s" % (tmpdir, destDir))
+      if os.path.exists(destDir):
+        shutil.rmtree(destDir)
+      shutil.copytree(tmpdir, destDir)
+
     self.log.verbose('Cleaning up %s...' % tmpdir)
     self.__cleanTmp(tmpdir)
-    os.chdir(curDir)
 
     if status:
       return S_ERROR('Execution completed with non-zero status %s' % (status))
+
     return S_OK('Execution completed successfully')
 
   def _getLocalInputData(self, parameters):

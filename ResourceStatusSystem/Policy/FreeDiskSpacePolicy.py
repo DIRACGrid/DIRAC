@@ -50,10 +50,7 @@ class FreeDiskSpacePolicy(PolicyBase):
       result['Reason'] = 'No values to take a decision'
       return S_OK(result)
 
-    commandResult = commandResult[0]
-
     for key in ['Total', 'Free']:
-
       if key not in commandResult:
         result['Status'] = 'Error'
         result['Reason'] = 'Key %s missing' % key
@@ -76,4 +73,4 @@ class FreeDiskSpacePolicy(PolicyBase):
     return S_OK(result)
 
 #...............................................................................
-#EOF
+# EOF

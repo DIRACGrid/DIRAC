@@ -133,6 +133,14 @@ There are various configuration options for this system::
     MaxFilesPerJob = 100
     # Max number of attempt per file
     maxAttemptsPerFile = 256
+    # days before removing jobs
+    DeleteGraceDays = 180
+    # Max number of deletes per cycle
+    DeleteLimitPerCycle = 100
+    # hours before kicking jobs with old assignment tag
+    KickAssignedHours  = 1
+    # Max number of kicks per cycle
+    KickLimitPerCycle = 100
   }
 
 DataManagement/FTSPlacement/FTS3/ServerPolicy see :ref:`dirac-operations-dms`.

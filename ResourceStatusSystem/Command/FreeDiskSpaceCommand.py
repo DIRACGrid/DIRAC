@@ -142,7 +142,8 @@ class FreeDiskSpaceCommand(Command):
       # keeping TB as default
       diskSpace = self.doNew((name, 'MB'))
       if not diskSpace['OK']:
-        gLogger.error("Unable to calculate free/total disk space", "name: %s" % name)
+        gLogger.warn("Unable to calculate free/total disk space", "name: %s" % name)
+        gLogger.warn(diskSpace['Message'])
         continue
 
     return S_OK()

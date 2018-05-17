@@ -6,10 +6,10 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
+from DIRAC.Core.Utilities import DErrno
 
-gServiceInterface = False
-
+gServiceInterface = None
+gPilotSynchronizer = None
 
 def initializeConfigurationHandler(serviceInfo):
   global gServiceInterface
@@ -50,6 +50,7 @@ class ConfigurationHandler(RequestHandler):
   types_commitNewData = [basestring]
 
   def export_commitNewData(self, sData):
+    global gPilotSynchronizer
     credDict = self.getRemoteCredentials()
     if 'DN' not in credDict or 'username' not in credDict:
       return S_ERROR("You must be authenticated!")
@@ -58,8 +59,17 @@ class ConfigurationHandler(RequestHandler):
       return res
 
     # Check the flag for updating the pilot 3 JSON file
-    if self.srv_getCSOption('UpdatePilotCStoJSONFile', False):
-      return PilotCStoJSONSynchronizer().sync()
+    if self.srv_getCSOption('UpdatePilotCStoJSONFile', False) and gServiceInterface.isMaster():
+      if gPilotSynchronizer is None:
+        try:
+          # This import is only needed for the Master CS service, making it conditional avoids
+          # dependency on the git client preinstalled on all the servers running CS slaves
+          from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
+        except ImportError as exc:
+          self.log.exception("Failed to import PilotCStoJSONSynchronizer", repr(exc))
+          return S_ERROR(DErrno.EIMPERR, 'Failed to import PilotCStoJSONSynchronizer')
+        gPilotSynchronizer = PilotCStoJSONSynchronizer()
+      return gPilotSynchronizer.sync()
 
     return res
 

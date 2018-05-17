@@ -1,9 +1,9 @@
 ########################################################################
 # File :    SiteDirector.py
-# Author :  A.T.
+# Author :  A.T., F.S.
 ########################################################################
 
-"""  The Site Director is an agent performing pilot job submission to particular sites.
+"""  The Site Director is an agent performing pilot job submission to particular sites/Computing Elements.
 """
 
 __RCSID__ = "$Id$"
@@ -499,7 +499,7 @@ class SiteDirector(AgentModule):
         tqIDList = additionalInfo.keys()
         result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
                                             'Status': WAITING_PILOT_STATUS},
-                                           None, lastUpdateTime)
+                                           None)
         if not result['OK']:
           self.log.error('Failed to get Number of Waiting pilots', result['Message'])
           totalWaitingPilots = 0
@@ -770,10 +770,12 @@ class SiteDirector(AgentModule):
 
     bundleProxy = self.queueDict[queue].get('BundleProxy', False)
     jobExecDir = self.queueDict[queue]['ParametersDict'].get('JobExecDir', '')
+    envVariables = self.queueDict[queue]['ParametersDict'].get('EnvironmentVariables', None)
 
     executable, pilotSubmissionChunk = self.getExecutable(queue, pilotsToSubmit,
                                                           bundleProxy=bundleProxy,
-                                                          jobExecDir=jobExecDir)
+                                                          jobExecDir=jobExecDir,
+                                                          envVariables=envVariables)
 
     submitResult = ce.submitJob(executable, '', pilotSubmissionChunk)
     # FIXME: The condor thing only transfers the file with some
@@ -925,7 +927,7 @@ class SiteDirector(AgentModule):
               self.log.info("PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" %
                             (ceName, queueName, waitingJobs, runningJobs, maxTotalJobs))
           totalSlots = min((maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs))
-          self.queueSlots[queue]['AvailableSlots'] = totalSlots
+          self.queueSlots[queue]['AvailableSlots'] = max(totalSlots, 0)
 
     self.queueSlots[queue]['AvailableSlotsCount'] += 1
 
@@ -934,7 +936,8 @@ class SiteDirector(AgentModule):
     return totalSlots
 
 #####################################################################################
-  def getExecutable(self, queue, pilotsToSubmit, bundleProxy=True, jobExecDir='',
+  def getExecutable(self, queue, pilotsToSubmit,
+                    bundleProxy=True, jobExecDir='', envVariables=None,
                     **kwargs):
     """ Prepare the full executable for queue
 
@@ -962,7 +965,11 @@ class SiteDirector(AgentModule):
       pilotsSubmitted = pilotsToSubmit
     pilotOptions = ' '.join(pilotOptions)
     self.log.verbose('pilotOptions: %s' % pilotOptions)
-    executable = self._writePilotScript(self.workingDirectory, pilotOptions, proxy, jobExecDir)
+    executable = self._writePilotScript(workingDirectory=self.workingDirectory,
+                                        pilotOptions=pilotOptions,
+                                        proxy=proxy,
+                                        pilotExecDir=jobExecDir,
+                                        envVariables=envVariables)
     return executable, pilotsSubmitted
 
 #####################################################################################
@@ -1084,7 +1091,8 @@ class SiteDirector(AgentModule):
 
   def _writePilotScript(self, workingDirectory, pilotOptions,
                         proxy=None,
-                        pilotExecDir=''):
+                        pilotExecDir='',
+                        envVariables=None):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
 
      :param workingDirectory: pilot wrapper working directory
@@ -1106,9 +1114,10 @@ class SiteDirector(AgentModule):
     except BaseException as be:
       self.log.exception("Exception during pilot modules files compression", lException=be)
 
-    localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
-                                    pilotOptions,
-                                    pilotExecDir)
+    localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict=pilotFilesCompressedEncodedDict,
+                                    pilotOptions=pilotOptions,
+                                    pilotExecDir=pilotExecDir,
+                                    envVariables=envVariables)
 
     return _writePilotWrapperFile(workingDirectory=workingDirectory, localPilot=localPilot)
 

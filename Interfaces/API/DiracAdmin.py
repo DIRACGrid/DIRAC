@@ -136,7 +136,7 @@ class DiracAdmin(API):
     return result
 
   #############################################################################
-  def getBannedSites(self, gridType=[], printOutput=False):
+  def getBannedSites(self, printOutput=False):
     """Retrieve current list of banned  and probing sites.
 
        Example usage:
@@ -239,15 +239,10 @@ class DiracAdmin(API):
     if self.rssFlag:
       result = ResourceStatusClient().selectStatusElement('Site', 'History', name=site)
     else:
-      wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-      result = wmsAdmin.getSiteMaskLogging(site)
+      result = RPCClient('WorkloadManagement/WMSAdministrator').getSiteMaskLogging(site)
 
     if not result['OK']:
       return result
-
-    if site:
-      if site not in result['Value']:
-        return S_ERROR('Site mask information not available for %s' % (site))
 
     if printOutput:
       if site:
@@ -255,14 +250,18 @@ class DiracAdmin(API):
       else:
         print '\nAll Site Mask Logging Info\n'
 
-      siteDict = result['Value']
-      for site, tupleList in siteDict.iteritems():
-        if not site:
-          print '\n===> %s\n' % site
-        for tup in tupleList:
-          print str(tup[0]).ljust(8) + str(tup[1]).ljust(20) + \
-              '( ' + str(tup[2]).ljust(len(str(tup[2]))) + ' )  "' + str(tup[3]) + '"'
-        print ' '
+      sitesLogging = result['Value']
+      if isinstance(sitesLogging, dict):
+        for siteName, tupleList in sitesLogging.iteritems():
+          if not siteName:
+            print '\n===> %s\n' % siteName
+          for tup in tupleList:
+            print str(tup[0]).ljust(8) + str(tup[1]).ljust(20) + \
+                '( ' + str(tup[2]).ljust(len(str(tup[2]))) + ' )  "' + str(tup[3]) + '"'
+          print ' '
+      elif isinstance(sitesLogging, list):
+        result = [(sl[1], sl[3], sl[4]) for sl in sitesLogging]
+
     return result
 
   #############################################################################

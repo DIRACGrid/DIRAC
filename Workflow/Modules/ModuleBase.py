@@ -5,7 +5,7 @@
 
     These modules, inspired by the LHCb experience, give the possibility to define simple user and production jobs.
     Many VOs might want to extend this package. And actually, for some cases, it will be necessary. For example,
-    defining the LFN output at runtime (within the "UploadOutputs" module is a VO specific operation.
+    defining the LFN output at runtime (within the "UploadOutputs" module is a VO specific operation
 
     The DIRAC APIs are used to create Jobs that make use of these modules.
 """

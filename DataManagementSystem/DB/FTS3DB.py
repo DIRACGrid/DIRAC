@@ -1,9 +1,6 @@
 """ Frontend to FTS3 MySQL DB. Written using sqlalchemy
 """
 
-
-__RCSID__ = "$Id $"
-
 # We disable the no-member error because
 # they are constructed by SQLAlchemy for all
 # the objects mapped to a table.
@@ -16,9 +13,9 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql.expression import and_
 from sqlalchemy.orm import relationship, sessionmaker, mapper
-from sqlalchemy.sql import update
+from sqlalchemy.sql import update, delete
 from sqlalchemy import create_engine, Table, Column, MetaData, ForeignKey, \
-    Integer, String, DateTime, Enum, BigInteger, SmallInteger, Float
+    Integer, String, DateTime, Enum, BigInteger, SmallInteger, Float, func, text
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -26,6 +23,8 @@ from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3T
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
+
+__RCSID__ = "$Id$"
 
 
 metadata = MetaData()
@@ -37,7 +36,7 @@ fts3FileTable = Table('Files', metadata,
                              ForeignKey('Operations.operationID', ondelete='CASCADE'),
                              nullable=False),
                       Column('attempt', Integer, server_default='0'),
-                      Column('lastUpdate', DateTime),
+                      Column('lastUpdate', DateTime, onupdate=func.utc_timestamp()),
                       Column('rmsFileID', Integer, server_default='0'),
                       Column('lfn', String(1024)),
                       Column('checksum', String(255)),
@@ -59,7 +58,7 @@ fts3JobTable = Table('Jobs', metadata,
                             ForeignKey('Operations.operationID', ondelete='CASCADE'),
                             nullable=False),
                      Column('submitTime', DateTime),
-                     Column('lastUpdate', DateTime),
+                     Column('lastUpdate', DateTime, onupdate=func.utc_timestamp()),
                      Column('lastMonitor', DateTime),
                      Column('completeness', Float),
                      Column('username', String(255)),  # Could be fetched from Operation, but bad for perf
@@ -87,7 +86,7 @@ fts3OperationTable = Table('Operations', metadata,
                            Column('activity', String(255)),
                            Column('priority', SmallInteger),
                            Column('creationTime', DateTime),
-                           Column('lastUpdate', DateTime),
+                           Column('lastUpdate', DateTime, onupdate=func.utc_timestamp()),
                            Column('status', Enum(*FTS3Operation.ALL_STATES),
                                   server_default=FTS3Operation.INIT_STATE,
                                   index=True),
@@ -198,6 +197,8 @@ class FTS3DB(object):
     # set the assignment to NULL
     # so that another agent can work on the request
     operation.assignment = None
+    # because of the merge we have to explicitely set lastUpdate
+    operation.lastUpdate = func.utc_timestamp()
     try:
 
       # Merge it in case it already is in the DB
@@ -268,11 +269,12 @@ class FTS3DB(object):
 
     try:
       # the tild sign is for "not"
+
       ftsJobsQuery = session.query(FTS3Job)\
           .join(FTS3Operation)\
           .filter(~FTS3Job.status.in_(FTS3Job.FINAL_STATES))\
-          .filter(FTS3Job.assignment is None)\
-          .filter(FTS3Operation.assignment is None)\
+          .filter(FTS3Job.assignment.is_(None))\
+          .filter(FTS3Operation.assignment.is_(None))
 
       if lastMonitor:
         ftsJobsQuery = ftsJobsQuery.filter(FTS3Job.lastMonitor < lastMonitor)
@@ -376,6 +378,9 @@ class FTS3DB(object):
         if 'completeness' in valueDict:
           updateDict[FTS3Job.completeness] = valueDict['completeness']
 
+        if valueDict.get('lastMonitor'):
+          updateDict[FTS3Job.lastMonitor] = func.utc_timestamp()
+
         updateDict[FTS3Job.assignment] = None
 
         session.execute(update(FTS3Job)
@@ -416,9 +421,10 @@ class FTS3DB(object):
       operationIDsQuery = session.query(FTS3Operation.operationID)\
           .outerjoin(FTS3Job)\
           .filter(FTS3Operation.status.in_(['Active', 'Processed']))\
-          .filter(FTS3Operation.assignment is None)\
-          .filter(FTS3Job.assignment is None)\
-          .limit(limit)
+          .filter(FTS3Operation.assignment.is_(None))\
+          .filter(FTS3Job.assignment.is_(None))\
+          .limit(limit)\
+          .distinct()
 
       # Block the Operations for other requests
       if operationAssignmentTag:
@@ -451,5 +457,86 @@ class FTS3DB(object):
     except SQLAlchemyError as e:
       session.rollback()
       return S_ERROR("getAllProcessedOperations: unexpected exception : %s" % e)
+    finally:
+      session.close()
+
+  def kickStuckOperations(self, limit=20, kickDelay=2):
+    """finds operations that have not been updated for more than a given
+      time but are still assigned and resets the assignment
+
+    :param int limit: number of operations to treat
+    :param int kickDelay: age of the lastUpdate in hours
+    :returns: S_OK/S_ERROR with number of kicked operations
+
+    """
+
+    session = self.dbSession(expire_on_commit=False)
+
+    try:
+
+      ftsOps = session.query(FTS3Operation.operationID)\
+          .filter(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
+                                                            text('INTERVAL %d HOUR' % kickDelay
+                                                                 ))))\
+          .filter(~FTS3Operation.assignment.is_(None))\
+          .limit(limit)
+
+      opIDs = [opTuple[0] for opTuple in ftsOps]
+      rowCount = 0
+
+      if opIDs:
+        result = session.execute(update(FTS3Operation)
+                                 .where(FTS3Operation.operationID.in_(opIDs))
+                                 .where(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
+                                                                                  text('INTERVAL %d HOUR' % kickDelay
+                                                                                       ))))
+                                 .values({'assignment': None})
+                                 )
+        rowCount = result.rowcount
+
+      session.commit()
+      session.expunge_all()
+
+      return S_OK(rowCount)
+
+    except SQLAlchemyError as e:
+      session.rollback()
+      return S_ERROR("kickStuckOperations: unexpected exception : %s" % e)
+    finally:
+      session.close()
+
+  def deleteFinalOperations(self, limit=20, deleteDelay=180):
+    """deletes operation in final state that are older than given time
+
+    :param int limit: number of operations to treat
+    :param int deleteDelay: age of the lastUpdate in days
+    :returns: S_OK/S_ERROR with number of deleted operations
+    """
+
+    session = self.dbSession(expire_on_commit=False)
+
+    try:
+
+      ftsOps = session.query(FTS3Operation.operationID)\
+          .filter(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
+                                                            text('INTERVAL %d DAY' % deleteDelay))))\
+          .filter(FTS3Operation.status.in_(FTS3Operation.FINAL_STATES))\
+          .limit(limit)
+
+      opIDs = [opTuple[0] for opTuple in ftsOps]
+      rowCount = 0
+      if opIDs:
+        result = session.execute(delete(FTS3Operation)
+                                 .where(FTS3Operation.operationID.in_(opIDs)))
+        rowCount = result.rowcount
+
+      session.commit()
+      session.expunge_all()
+
+      return S_OK(rowCount)
+
+    except SQLAlchemyError as e:
+      session.rollback()
+      return S_ERROR("deleteFinalOperations: unexpected exception : %s" % e)
     finally:
       session.close()

@@ -51,23 +51,26 @@ def getGlue2CEInfo(vo, host):
     if shareID is None:  # policy not pointing to ComputingInformation
       gLogger.debug("Policy %s does not point to computing information" % (policyID,))
       continue
-    gLogger.notice("%s policy %s pointing to %s " % (siteName, policyID, shareID))
+    gLogger.verbose("%s policy %s pointing to %s " % (siteName, policyID, shareID))
     gLogger.debug("Policy values:\n%s" % pformat(policyValues))
-    filt = "(&(objectClass=GLUE2ComputingShare)(GLUE2ShareID=%s))" % shareID
+    filt = "(&(objectClass=GLUE2Share)(GLUE2ShareID=%s))" % shareID
     shareRes = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
     if not shareRes['OK']:
-      gLogger.error("Could not get computing share information for %s: %s" % (shareID, shareRes['Message']))
+      gLogger.error("Could not get share information for %s: %s" % (shareID, shareRes['Message']))
       continue
     if not shareRes['Value']:
-      gLogger.warn("Did not not find any computing share information for %s" % (shareID, ))
+      gLogger.warn("Did not not find any share information for %s" % (shareID, ))
       continue
     siteDict.setdefault(siteName, {'CEs': {}})
     for shareInfo in shareRes['Value']:
+      if 'GLUE2ComputingShare' not in shareInfo['objectClass']:
+        gLogger.debug('Share %r is not a ComputingShare: \n%s' % (shareID, pformat(shareInfo)))
+        continue
       gLogger.debug("Found computing share:\n%s" % pformat(shareInfo))
       shareEndpoints = shareInfo['attr'].get('GLUE2ShareEndpointForeignKey', [])
       ceInfo = __getGlue2ShareInfo(host, shareEndpoints, shareInfo['attr'], siteDict[siteName]['CEs'])
       if not ceInfo['OK']:
-        gLogger.error("Could not get CE info", ceInfo['Message'])
+        gLogger.error("Could not get CE info for %s:" % shareID, ceInfo['Message'])
         continue
       gLogger.debug("Found ceInfo:\n%s" % pformat(siteDict[siteName]['CEs']))
 
@@ -105,7 +108,7 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
   executionEnvironment = shareInfoDict['GLUE2ComputingShareExecutionEnvironmentForeignKey']
   resExeInfo = __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment)
   if not resExeInfo['OK']:
-    return S_ERROR("Cannot get execution environment info", resExeInfo['Message'])
+    return S_ERROR("Cannot get execution environment info for %r" % executionEnvironment, resExeInfo['Message'])
   ceInfo.update(resExeInfo['Value'])
   if isinstance(shareEndpoints, basestring):
     shareEndpoints = [shareEndpoints]

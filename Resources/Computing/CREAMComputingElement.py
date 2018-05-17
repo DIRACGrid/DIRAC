@@ -147,8 +147,10 @@ class CREAMComputingElement(ComputingElement):
         result = executeGridCommand(self.proxy, cmd, self.gridEnv)
         os.unlink(jdlName)
         if not result['OK']:
+          self.log.error("General error in execution of glite-ce-job-submit command")
           break
         if result['Value'][0] != 0:
+          self.log.error("Error in glite-ce-job-submit command", result['Value'][1] + result['Value'][2])
           break
         pilotJobReference = result['Value'][1].strip()
         if pilotJobReference and pilotJobReference.startswith('https'):

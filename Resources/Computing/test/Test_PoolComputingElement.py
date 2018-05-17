@@ -35,7 +35,7 @@ class PoolCETests( unittest.TestCase ):
   def setUp( self ):
     ceParameters = { 'WholeNode': True,
                      'NumberOfProcessors': 4 }
-    self.ce = PoolComputingElement( 'TestPoolCE', 4 )
+    self.ce = PoolComputingElement('TestPoolCE')
     self.ce.setParameters( ceParameters )
     for i in range(4):
       with open( 'testPoolCEJob_%s.py' % i, 'w' ) as execFile:
@@ -79,7 +79,7 @@ class PoolCETests( unittest.TestCase ):
 
     self.__stopJob( 0 )
     jobParams = { 'numberOfProcessors': 2 }
-    ce = PoolComputingElement( 'TestPoolCE', 4 )
+    ce = PoolComputingElement('TestPoolCE')
     ceParameters = { 'WholeNode': False,
                      'NumberOfProcessors': 4 }
     ce.setParameters( ceParameters )
