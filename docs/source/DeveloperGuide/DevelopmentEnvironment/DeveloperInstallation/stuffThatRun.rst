@@ -223,7 +223,16 @@ Developers can then persist this directory in the $PATH.
 Certificates
 ============
 
-DIRAC understands certificates in *pem* format. That means that a certificate set will consist of two files.
+By default, all connections to/from DIRAC services are secured, by with TLS/SSL security, so X.509 certificates need to be used.
+This sub-section explains how to create (with few openSSL commands) a Certification Authority (CA), and with that sign user and host certificates.
+This CA would be a in-house CA, so its certificates won't be trusted by anyone.
+
+Still, you CAN run DIRAC services without any certificate.
+The reason is that, while the use of TLS/SSL and certificates is the default, you can still go away without it,
+simply disabling TLS/SSL. You'll see how later. So, if you find difficulties with this subsection, the good news is that you don't strictly need it.
+
+
+Anyway: DIRAC understands certificates in *pem* format. That means that a certificate set will consist of two files.
 Files ending in *cert.pem* can be world readable but just user writable since it contains the certificate and public key.
 Files ending in *key.pem* should be only user readable since they contain
 the private key. You will need two different sets certificates and the CA certificate that signed the sets.
