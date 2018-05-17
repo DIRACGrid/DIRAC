@@ -177,7 +177,7 @@ Details: :py:mod:`~DIRAC.DataManagementSystem.Agent.RequestOperations.RemoveRepl
 ReplicateAndRegister
 ====================
 
-This Operation replicate a file to one or several SE. The source does not need to be specified, but can be. This is typically useful in case of failover: if a job tries to upload a file to its final destination and fails, it will upload it somewhere else, and creates a `ReplicateAndRegister` Operation as well as a `RemoveReplica` (from the temporary storage) Operation. The replication can be performed either locally, or delegating it to the FTS system (:ref:`fts3`)
+This Operation replicates a file to one or several SE. The source does not need to be specified, but can be. This is typically useful in case of failover: if a job tries to upload a file to its final destination and fails, it will upload it somewhere else, and creates a `ReplicateAndRegister` Operation as well as a `RemoveReplica` (from the temporary storage) Operation. The replication can be performed either locally, or delegating it to the FTS system (:ref:`fts3`)
 
 Details: :py:mod:`~DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister`
 

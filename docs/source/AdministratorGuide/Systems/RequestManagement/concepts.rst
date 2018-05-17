@@ -22,7 +22,7 @@ ReqManager & ReqProxy
 
 The `ReqManager` is the service that receives or distributes `Requests` to be excuted. Every operation is synchronous with the `ReqDB` database.
 
-In the ReqManager is unreachable when a client wants to send a `Request`, the client will automatically failover to a `ReqProxy`. This proxy will accept the `Request`, hold it in a local cache, and will periodically try to send it to the `ReqManager` until it succeeds. This system ensures that no Request is lost.
+If the ReqManager is unreachable when a client wants to send a `Request`, the client will automatically failover to a `ReqProxy`. This proxy will accept the `Request`, hold it in a local cache, and will periodically try to send it to the `ReqManager` until it succeeds. This system ensures that no Request is lost.
 
 RequestExecutingAgent
 ---------------------
