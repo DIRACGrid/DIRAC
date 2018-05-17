@@ -93,12 +93,12 @@ class BaseTransport( object ):
     return self.__lastServerRenewTimestamp
 
   def getConnectingCredentials( self ):
-    """ 
+    """
 
     :return: dictionnary with credentials
 
       Return empty dictionnary for plainTransport.
-      
+
       In SSLTransport it contains (after the handshake):
        - 'DN' : All identity name, e.g. ```/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch```
        - 'CN' : Only the user name e.g. ciuser

@@ -1,7 +1,7 @@
 """
   Service class implements the server side part of the DISET protocol
   There are 2 main parts in this class:
-  
+
   - All useful functions for initialization
   - All useful functions to handle the requests
 """
@@ -44,9 +44,9 @@ class Service( object ):
       Init the variables for the service
 
       :param serviceData: dict with modName, standalone, loadName, moduleObj, classObj. e.g.:
-        {'modName': 'Framework/serviceName', 
-        'standalone': True, 
-        'loadName': 'Framework/serviceName', 
+        {'modName': 'Framework/serviceName',
+        'standalone': True,
+        'loadName': 'Framework/serviceName',
         'moduleObj': <module 'serviceNameHandler' from '/home/DIRAC/FrameworkSystem/Service/serviceNameHandler.pyo'>,
         'classObj': <class 'serviceNameHandler.serviceHandler'>}
 
@@ -281,7 +281,7 @@ class Service( object ):
   def handleConnection( self, clientTransport ):
     """
       This method may be called by ServiceReactor.
-      The method stacks openened connection in a queue, another thread 
+      The method stacks openened connection in a queue, another thread
       read this queue and handle connection.
 
       :param clientTransport: Object wich describe opened connection (PlainTransport or SSLTransport)
@@ -304,16 +304,16 @@ class Service( object ):
       - If not, connection is closed
     - Instanciate the RequestHandler (RequestHandler contain all methods callable)
 
-    (Following is not directly in this method but it describe what happen at 
+    (Following is not directly in this method but it describe what happen at
     #Execute the action)
-    - Notify the client we're ready to execute the action (via _processProposal) 
-      and call RequestHandler._rh_executeAction() 
+    - Notify the client we're ready to execute the action (via _processProposal)
+      and call RequestHandler._rh_executeAction()
     - Receive arguments/file/something else (depending on action) in the RequestHandler
     - Executing the action asked by the client
 
     :param clientTransport: Object who describe the opened connection (SSLTransport or PlainTransport)
 
-    :return: S_OK with "closeTransport" a boolean to indicate if th connection have to be closed 
+    :return: S_OK with "closeTransport" a boolean to indicate if th connection have to be closed
             e.g. after RPC, closeTransport=True
 
     """

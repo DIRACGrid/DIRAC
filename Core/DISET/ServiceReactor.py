@@ -158,7 +158,7 @@ class ServiceReactor( object ):
       are made by Service._processInThread() (in another thread) so
       the service can accept other clients while another thread handling remote call
 
-      :param str svcName=False: Name of a service if you use multiple 
+      :param str svcName=False: Name of a service if you use multiple
                                 services at the same time
     """
     sockets = self.__getListeningSocketsList( svcName )

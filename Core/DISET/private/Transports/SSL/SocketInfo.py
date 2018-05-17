@@ -305,7 +305,7 @@ class SocketInfo:
   def __sslHandshake( self ):
     """
       Do the SSL Handshake
-      
+
       :return: S_ERROR / S_OK with dictionary of user credentials
     """
 

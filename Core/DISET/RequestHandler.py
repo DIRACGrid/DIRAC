@@ -241,7 +241,7 @@ class RequestHandler(object):
 
   def __RPCCallFunction(self, method, args):
     """
-      Check the arguments then call the RPC function 
+      Check the arguments then call the RPC function
 
       :type method: string
       :param method: arguments sended by remote client
