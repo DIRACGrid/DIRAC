@@ -465,4 +465,4 @@ class FTS3Agent(AgentModule):
     dataOp.setEndTime(fromString(ftsJob.lastUpdate))
 
     dataOp.setValuesFromDict(ftsJob.accountingDict)
-    dataOp.commit()
+    dataOp.delayedCommit()

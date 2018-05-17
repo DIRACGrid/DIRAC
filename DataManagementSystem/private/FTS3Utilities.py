@@ -111,7 +111,7 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
       :param allowedSources : list of allowed sources
       :param ftsFiles : list of FTS3File object
 
-      :return  S_OK({ sourceSE: [ FTS3Files] })
+      :return:  S_OK({ sourceSE: [ FTS3Files] })
 
   """
 
@@ -136,7 +136,7 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
 
     replicaDict = filteredReplicas['Successful'][ftsFile.lfn]
 
-    # pick a a random source
+    # pick a random source
 
     randSource = random.choice(list(replicaDict))  # one has to convert to list
 
@@ -150,7 +150,7 @@ def groupFilesByTarget(ftsFiles):
         For a list of FTS3files object, group the Files by target
 
         :param ftsFiles : list of FTS3File object
-        :return {targetSE : [ ftsFiles] } }
+        :return: {targetSE : [ ftsFiles] } }
 
     """
 
