@@ -168,6 +168,7 @@ def getStorageElementsHosts( seNames = None ):
 def _getSEParameters( seName ):
   se = StorageElement( seName, hideExceptions = True )
 
+  seParameters = S_ERROR('No SE parameters obtained')
   pluginsList = se.getPlugins()
   if not pluginsList['OK']:
     gLogger.warn( pluginsList['Message'], "SE: %s" % seName )
