@@ -4,6 +4,8 @@
   modules.
 """
 
+import errno
+
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Utilities import Utils
@@ -175,7 +177,7 @@ def getStorageElementsHosts(seNames=None):
 def _getSEParameters(seName):
   se = StorageElement(seName, hideExceptions=True)
 
-  seParameters = S_ERROR('No SE parameters obtained')
+  seParameters = S_ERROR(errno.ENODATA, 'No SE parameters obtained')
   pluginsList = se.getPlugins()
   if not pluginsList['OK']:
     gLogger.warn(pluginsList['Message'], "SE: %s" % seName)
