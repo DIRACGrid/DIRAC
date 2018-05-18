@@ -1,3 +1,5 @@
+.. _devRMS:
+
 -------------------------
 Request Management System
 -------------------------
@@ -9,6 +11,179 @@ The Request Management System (RMS) is designed for management of simple operati
 asynchronously on behalf of users - owners of the requests. The RMS is used for multiple purposes: failure
 recovery (failover system), data management tasks and some others. It is designed as an open system easily
 extendible for new types of operations.
+
+
+Architecture and functionality
+------------------------------
+
+The core of the Request Management System is a `ReqDB` database which holds requests records together with
+all related data: operations that have to be performed in the defined order and possibly a set of files
+attached. All avaiable and useful queries to the `ReqDB` are exposed to the request client (`ReqClient`)
+through `ReqManager` service.
+
+.. image:: ../../../_static/Systems/RMS/ReqDBSchema.png
+   :alt: ReqDB schema.
+   :align: center
+
+Each table in the `ReqDB` has a corresponding class in the new API fully supporting CRUD operations. Each table column
+is exposed as a property in the related class.
+
+.. image:: ../../../_static/Systems/RMS/RequestZoo.png
+   :alt: Request, Operation and File API.
+   :align: center
+
+The record class is instrumented with the internal observer for its children (a `Request` instance is observing
+states for all defined `Operations`, each `Operation` is observing
+states of all its `Files`) and built in state machine, which automatizes state propagation:
+
+ * state machine for `Request`
+
+   .. image:: ../../../_static/Systems/RMS/RequestSTM.png
+      :alt: State machine for Request.
+      :align: center
+
+ * state machine for `Operation`
+
+   .. image:: ../../../_static/Systems/RMS/OperationSTM.png
+      :alt: State machine for operation.
+      :align: center
+
+ * state machine for `File`
+
+   .. image:: ../../../_static/Systems/RMS/FileSTM.png
+      :alt: State machine for File.
+      :align: center
+
+User is allowed to change only `File` statuses and in case of specific `Operation`'s types - `Operation` statuses,
+as `Request` builtin observers will automatically propagate and update statues of parent objects.
+
+
+CRUD
+----
+
+Create
+^^^^^^
+
+Construction of a new request is quite simple, one has to create a new `Request` instance::
+
+  >>> from DIRAC.RequestManagementSystem.Client.Request import Request
+  >>> from DIRAC.RequestManagementSystem.Client.Operation import Operation
+  >>> from DIRAC.RequestManagementSystem.Client.File import File
+  >>> request = Request() # # create Request instance
+  >>> request.RequestName = "foobarbaz"
+  >>> operation = Operation() # # create new operation
+  >>> operation.Type = "ReplicateAndRegister"
+  >>> operation.TargetSE = [ "CERN-USER", "PIC-USER" ]
+  >>> opFile = File() # #  create File instance
+  >>> opFile.LFN = "/foo/bar/baz" # # and fill some bits
+  >>> opFile.Checksum = "123456"
+  >>> opFile.ChecksumType = "adler32"
+  >>> operation.addFile( opFile ) # # add File to Operation
+  >>> request.addOperation( operation ) # # add Operation to Request
+
+Invoking `Request.addOperation` method will enqueue operation to the end of operations list in the request. If you need
+to modify execution order, you can use `Request.insertBefore` or `Request.insertAfter` methods.
+Please notice there is no limit of `Operations` per `Request`, but it is not recommended to keep over there
+more than a few. In case of `Files` in a single `Operation` the limit is set to one hundred, which seems to
+be a reasonable number. In case you think this is not enough (or too much), please patch the code
+(look for `MAX_FILES` in `Operation` class).
+
+The `Request` and `Operation` classes are behaving as any iterable python object, i.e. you can loop over operations
+in the request using::
+
+  >>> for op in request: print op.Type
+  ReplicateAndRegister
+  >>> for opFile in operation: print opFile.LFN, opFile.Status, opFile.Checksum
+  /foo/bar/baz Waiting 123456
+  >>> len( request ) # # number of operations
+  1
+  >>> len( operation ) # # number of files in operation
+  1
+  >>> request[0].Type # # __getitem__, there is also __setitem__ and __delitem__ defined for Request and Operation
+  'ReplicateAndRegister'
+  >>> operation in request # # __contains__ in Request
+  True
+  >>> opFile in operation # # __contains__ in Operation
+  True
+
+Once the request is ready, you can insert it to the `ReqDB`::
+
+  >>> from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+  >>> rc = ReqClient() # # create client
+  >>> rc.putRequest( request ) # # put request to ReqDB
+
+Read
+^^^^
+
+Reading request back can be done using two methods defined in the `ReqClient`:
+
+  * for reading::
+
+      >>> from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+      >>> rc = ReqClient() # # create client
+      >>> rc.peekRequest( "foobarbaz" ) # # get request from ReqDB for reading
+
+  * for execution (request status on DB side will flip to 'Assigned')::
+
+      >>> from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+      >>> rc = ReqClient() # # create client
+      >>> rc.getRequest( "foobarbaz" ) # # get request from ReqDB for execution
+
+If you don't specify request name in `ReqClient.getRequest` or `ReqClient.peekRequest`, the one with "Waiting"
+status and the oldest `Request.LastUpdate` value will be chosen.
+
+
+Update
+^^^^^^
+
+Updating the request can be done by using methods that modify operation list::
+
+  >>> del request[0] # # remove 1st operation using __delitem__
+  >>> request[0] = Operation() # # overwrite 1st operation using __setitem__
+  >>> request.addOperation( Operation() ) # # add new operation
+  >>> request.insertBefore( Operation(), request[0] ) # # insert new operation at head
+  >>> request.insertAfter( Operation(), request[0] ) # # insert new opration after 1st
+
+To make those changes persistent you should of course put modified and say dirty request back
+to the `ReqDB` using `ReqClient.putRequest`.
+
+
+Delete
+^^^^^^
+
+Nothing special here, just execute `ReqClient.deleteRequest( requestName )` to remove whole request from `ReqDB`.
+
+
+Request validation
+------------------
+
+The validation of a new Request that is about to enter the system for execution is checked by the `RequestValidator`
+helper class - a gatekeeper checking if request is properly defined.
+The `validator` is blocking insertion of a new record to the `ReqDB` in case of missing or
+malformed attributes and returning `S_ERROR` describing the reason for rejection, i.e.::
+
+      >>> from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
+      >>> from DIRAC.RequestManagementSystem.Client.Request import Request
+      >>> invalid = Request()
+      >>> gRequestValidator.validate( invalid )
+      {'Message': 'RequestName not set', 'OK': False}
+      >>> invalid.RequestName = "foobarbaz"
+      >>> gRequestValidator.validate( invalid )
+      {'Message': "Operations not present in request 'foobarbaz'", 'OK': False}
+      >>> from DIRAC.RequestManagementSystem.Client.Operation import Operation
+      >>> invalid.addOperation( Operation() )
+      {'OK': True, 'Value': ''}
+      >>> gRequestValidator.validate( invalid )
+      {'Message': "Operation #0 in request 'foobarbaz' hasn't got Type set", 'OK': False}
+      >>> invalid[0].Type = "ForwardDISET"
+      >>> gRequestValidator.validate( invalid )
+      {'Message': "Operation #0 of type 'ForwardDISET' is missing Arguments attribute.", 'OK': False}
+
+
+A word of caution has to be clearly stated over here: the validation is not checking if
+actual value provided during `Request` definition makes sense, i.e. if you put to the `Operation.TargetSE` unknown
+name of target storage element from the validation point of view your request will be OK, but  it will
+miserably fail during execution.
 
 Request execution
 -----------------
@@ -33,27 +208,6 @@ designated to execute requests read from `ReqDB`. Each worker is processing requ
 
 Outside the main execution loop worker is checking request status and depending of its value finalizes request
 and puts it back to the ReqDB.
-
-Parameters
-^^^^^^^^^^
-
-The RequestExecutingAgent accepts the following configuration parameters:
-
-  * RequestsPerCycle (default 100): number of Requests to execute per cycle
-  * MinProcess (default 2): minimum number of workers process in the `ProcessPool`
-  * MaxProcess (default 4): maximum number of workers process in the `ProcessPool`
-  * ProcessPoolQueueSize (default 20): queue depth of the `ProcessPool`
-  * ProcessPoolTimeout (default 900 seconds): timeout for the `ProcessPool` finalization
-  * ProcessPoolSleep (default 5 seconds): sleep time before retrying to get a free slot in the `ProcessPool`
-  * BulkRequest (default 0): If a positive integer `n` is given, we fetch `n` requests at once from the DB. Otherwise, one by one
-  * OperationHandlers: There should be in this section one section per OperationHandler. The section name is the name of the Operation
-
- The OperationHandler sections share a few standard arguments:
-
-  * Location: Path (without .py) in the pythonpath to the handler
-  * LogLevel: self explanatory
-  * MaxAttempts (default 256): Maximum attempts to try an Operation, after what, it fails
-
 
 
 Extending

@@ -37,7 +37,10 @@ class PutAndRegister( DMSRequestOperationsBase ):
   """
   .. class:: PutAndRegister
 
-  PutAndRegister operation handler
+  PutAndRegister operation handler.
+
+  This takes a local file and put it on a StorageElement before registering it in a catalog
+
   """
 
   def __init__( self, operation = None, csPath = None ):
