@@ -91,6 +91,11 @@ class SSLTransport( BaseTransport ):
     return S_OK()
 
   def handshake( self ):
+    """
+      Initiate the client-server handshake and extract credentials
+
+      :return: S_OK (with credentialDict if new session)
+    """
     retVal = self.oSocketInfo.doServerHandshake()
     if not retVal[ 'OK' ]:
       return retVal

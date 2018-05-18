@@ -95,7 +95,7 @@ In the previous code, the code will be executed as whatever is set in the enviro
       rpc.ping()
 
 In that case, the call will still be performed using whatever is set in the environment, however the remote service will act as if the request was done by ``/Whatever/user`` (providing that the TrustedHost property is granted).
-And because of the ``threading.local`` inheritance, we can have separate users actions like bellow.
+And because of the ``threading.local`` inheritance, we can have separate users actions like below.
 
 .. code-block:: python
 
@@ -132,3 +132,57 @@ And because of the ``threading.local`` inheritance, we can have separate users a
      # Wait for all threads to complete
      for t in threads:
         t.join()
+
+*******
+Service
+*******
+Here a simplified sequence diagram of client-server communication.
+
+.. image:: simplified_client-server.png
+    :align: center
+    :alt: Simplified Client Server
+
+
+
+In most of the cases, a RPC call follows this diagram. Before starting anything, the service checks the IP. 
+Then the client sends his certificate during the handshake and right after he sends the remote procedure
+who need to be called. The service checks the authorization and sends a signal to client when ready. The client sends 
+all arguments that the service needs and finally the service execute its task. Below you can find
+a more complete diagram. Before calling the request handler, if the IP is banned, the service closes the connection. 
+For other steps if an error occurred the service sends S_ERROR before closing connection.
+
+
+
+
+.. image:: complete_client-server.png
+    :align: center
+    :alt: Complete Client Server
+
+
+Complete path of packages are not on the diagram for readability:
+
+ - serviceReactor: :py:class:`DIRAC.Core.DISET.ServiceReactor`
+ - service: :py:class:`DIRAC.Core.DISET.private.Service`
+ - requestHandler: :py:class:`DIRAC.Core.DISET.RequestHandler`
+
+
+You can see that the client sends a proposalTuple, proposalTuple contain (service, setup, ClientVO)
+
+then (typeOfCall, method) and finaly extra-credentials.
+e.g.::
+  (('Framework/serviceName', 'DeveloperSetup', 'unknown'), ('RPC', 'methodName'), '')
+
+
+
+You have to notice that the service can call __doFileTransfer() but functions relative to file transfer
+are not implemented and always return S_ERROR. If needed you can implement these functions by overwriting 
+methods from :py:class:`DIRAC.Core.DISET.RequestHandler` in your service. Here the methods you have to overwrite::
+  def transfer_fromClient(self, fileId, token, fileSize, fileHelper):
+  def transfer_toClient(self, fileId, token, fileHelper):
+  def transfer_bulkFromClient(self, bulkId, token, bulkSize, fileHelper):
+  def transfer_bulkToClient(self, bulkId, token, fileHelper):
+  def transfer_listBulk(self, bulkId, token, fileHelper):
+
+Client must send ('FileTransfer', direction) instead of ('RPC', method), direction can be "fromClient", 
+"toClient", "bulkFromClient", "bulkToClient" or "listBulk".
+

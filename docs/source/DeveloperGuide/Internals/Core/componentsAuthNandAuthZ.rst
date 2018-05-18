@@ -40,3 +40,39 @@ Two decorators are available for safely doing all that:
 
   * :py:func:`~DIRAC.Core.Utilities.Proxy.executeWithoutServerCertificate`
   * :py:func:`~DIRAC.Core.Utilities.Proxy.executeWithUserProxy`
+
+
+================================
+Authentication and authorization
+================================
+When a client calls a service, he needs to be identified. If a client opens a connection a :py:class:`~DIRAC.Core.DISET.private.Transports.BaseTransport` object is created then the service use the handshake to read certificates, extract informations and store them in a dictionary so you can use these informations easily. Here an example of possible dictionary::
+
+	{
+		'DN': '/C=ch/O=DIRAC/[...]',
+		'group': 'devGroup',
+		'CN': u'ciuser', 
+		'x509Chain': <X509Chain 2 certs [...][...]>, 
+		'isLimitedProxy': False, 
+		'isProxy': True
+	}
+
+
+When connection is opened and handshake is done, the service calls the :py:class:`~DIRAC.Core.DISET.AuthManager` and gave him this dictionary in argument to check the authorizations. More generally you can get this dictionary with :py:meth:`BaseTransport.getConnectingCredentials <DIRAC.Core.DISET.private.Transports.BaseTransport.BaseTransport.getConnectingCredentials>`.
+
+***********
+AuthManager
+***********
+AuthManager.authQuery() returns boolean so it is easy to use, you just have to provide a method you want to call, and credDic. It's easy to use but you have to instantiate correctly the AuthManager. For initialization you need the complete path of your service, to get it you may use the PathFinder::
+
+	from DIRAC.ConfigurationSystem.Client import PathFinder
+	from DIRAC.Core.DISET.AuthManager import AuthManager
+	authManager = AuthManager( "%s/Authorization" % PathFinder.getServiceSection("Framework/someService") )
+	authManager.authQuery( csAuthPath, credDict, hardcodedMethodAuth ) #return boolean
+	# csAuthPath is the name of method for RPC or 'typeOfCall/method'
+	# credDict came from BaseTransport.getConnectingCredentials()
+	# hardcodedMethodAuth is optional
+
+To determine if a query can be authorized or not the AuthManager extract valid properties for a given method. 
+First AuthManager try to get it from gConfig, then try to get it from hardcoded list (hardcodedMethodAuth) in your service and if nothing was found get default properties from gConfig.
+
+AuthManager also extract properties from user with credential dictionary and configuration system to check if properties matches. So you don't have to extract properties by yourself, but if needed you can use :py:class:`DIRAC.Core.Security.CS.getPropertiesForGroup()`
