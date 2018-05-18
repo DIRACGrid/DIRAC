@@ -152,8 +152,7 @@ class ServiceReactor( object ):
 
   def __acceptIncomingConnection( self, svcName = False ):
     """
-      This method gets incomming connections.
-      This method just gets the incomming connection, checks IP address
+      This method just gets the incoming connection, checks IP address
       and generates job. SSL/TLS handshake and execution of the remote call
       are made by Service._processInThread() (in another thread) so
       the service can accept other clients while another thread handling remote call

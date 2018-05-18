@@ -95,7 +95,7 @@ In the previous code, the code will be executed as whatever is set in the enviro
       rpc.ping()
 
 In that case, the call will still be performed using whatever is set in the environment, however the remote service will act as if the request was done by ``/Whatever/user`` (providing that the TrustedHost property is granted).
-And because of the ``threading.local`` inheritance, we can have separate users actions like bellow.
+And because of the ``threading.local`` inheritance, we can have separate users actions like below.
 
 .. code-block:: python
 

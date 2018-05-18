@@ -43,3 +43,7 @@ It is very easy to contribute to it, and you are welcome to do that. You don't
 even have to clone the repository: github lets you edit it online.
 This documentation is written in ``RST`` and it is compiled using
 `sphinx <http://sphinx-doc.org/>`_.
+
+Some parts of the documentation can use UML diagrams. They are generated from .uml files
+with `plantuml <http://plantuml.com/starting>`_. Sphinx support plantuml but ReadTheDocs
+didn't, so you have to convert .uml in .png with ``java -jar plantuml.jar file.uml``.
