@@ -160,6 +160,7 @@ class RequestExecutingAgent( AgentModule ):
     # # create request dict
     self.__requestCache = dict()
 
+    # ?? Probably should be removed
     self.FTSMode = self.am_getOption( "FTSMode", False )
 
 
