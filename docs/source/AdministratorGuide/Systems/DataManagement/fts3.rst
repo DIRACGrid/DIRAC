@@ -9,12 +9,82 @@ FTS3 support in DIRAC
 .. contents:: Table of contents
    :depth: 2
 
-DIRAC comes with a system optimized to interact with the FTS3 servers.
+
+DIRAC DMS can be configured to make use of FTS3 servers in order to schedule and monitor efficient transfer of large amounts of data between SEs. As of today, FTS servers are only able to handle transfers between SRM SEs.
+
+The transfers using FTS come from the RequestManagementSystem ( see :ref:`requestManagementSystem`). It will receive the files to transfer, as well as the list of destinations. If no source is defined, it will choose one. The files will then be grouped together and submited as jobs to the fts servers. These jobs will be monitored, retried if needed, the new replicas will be registered, and the status of the files will be reported back to the RMS.
+
+There are no direct submission possible to the FTS system, it has to go through the RMS.
 
 This system is independent from the previous FTS system, and is **totally incompatible with it. Both systems cannot run at the same time**.
 
 To go from the old one, you must wait until there are no more Scheduled requests in the RequestManagementSystem (RMS). For that, either you do not submit any transfer for a while (probably not possible), or you switch to transfers using the DataManager. Once you have processed all the Schedule request, you can enable the new FTS3 system.
 
+
+
+FTS3 Installation
+-----------------
+
+One needs to install an FTS3DB, the FTS3Manager, and the FTS3Agent. Install the
+FTS3DB with `dirac-install-db` or directly on your mysql server and add the
+Databse in the Configuration System.
+
+  dirac-admin-sysadmin-cli -H diracserver034.institute.tld
+  > install service DataManagement FTS3Manager
+  > install agent DataManagement FTS3Agent
+
+Then enable the *UseNewFTS3* flag for the ReplicateAndRegister operation as
+described in `FTS3TransferOperation`_.
+
+
+
+===============================
+Enable FTS transfers in the RMS
+===============================
+
+In order for the transfers to be submitted to the FTS system:
+
+   * `Systems/RequestManagementSystem/Agents/RequestExecutingAgent/OperationHandlers/ReplicateAndRegister/FTSMode` must be True
+   * `Systems/RequestManagementSystem/Agents/RequestExecutingAgent/OperationHandlers/ReplicateAndRegister/FTSBannedGroups` should contain the list of groups for which you'd rather do direct transfers.
+   * `Systems/RequestManagementSystem/Agents/RequestExecutingAgent/OperationHandlers/ReplicateAndRegister/UseNewFTS3` should be True in order to use this new FTS system (soon to be deprecated)
+
+========================
+Operations configuration
+========================
+
+  * DataManagement/FTSVersion: FTS2/FTS3. Set it to FTS3...
+  * DataManagement/FTSPlacement/FTS3/ServerPolicy: Policy to choose the FTS server see `FTSServer policy`_.
+
+
+======================
+FTS servers definition
+======================
+
+The servers to be used are defined in the `Resources/FTSEndpoints/FTS3` section. Example:
+
+.. code-block:: python
+
+    CERN-FTS3 = https://fts3.cern.ch:8446
+    RAL-FTS3 = https://lcgfts3.gridpp.rl.ac.uk:8446
+
+The option name is just the server name as used internaly. Note that the port number has to be specified, and should correspond to the REST interface
+
+
+FTS3Agent
+---------
+
+This agent is in charge of performing and monitoring all the transfers. Note that this agent can be duplicated as many time as you wish.
+
+There are various configuration options for this system:
+
+* `OperationBulkSize` (default 20): How many Operation we will treat in one loop
+* `JobBulkSize` (default 20): How many Job we will monitor in one loop
+* `MaxFilesPerJob` (default 100): Max number of files to go in a single job
+* `maxAttemptsPerFile` (default 256): Max number of attempt per file
+* `DeleteGraceDays` (default 180): days before removing jobs
+* `DeleteLimitPerCycle` (default 100): Max number of deletes per cycle
+* `KickAssignedHours ` (default 1): hours before kicking jobs with old assignment tag
+* `KickLimitPerCycle` (default 100):  Max number of kicks per cycle
 
 FTS3 system overview
 --------------------
@@ -49,6 +119,16 @@ FTS3StagingOperation
    Still in development, not meant to be used
 
 This operation is meant to perform BringOnline. The idea behind that is to replace, if deemed working, the whole StorageSystem of DIRAC.
+
+FTSServer policy
+----------------
+
+The FTS server to which the job is sent is chose based on the policy. There are 3 possible policy:
+
+  * Random: the default. makes a random choice
+  * Failover: pick one, and stay on that one until it fails
+  * Sequence: take them in turn, always change
+
 
 FTS3 state machines
 -------------------
@@ -102,47 +182,3 @@ States from the FTS3Job::
 The status of the FTS3Jobs and FTSFiles are updated every time we monitor the matching job.
 
 The FTS3Operation goes to Processed when all the files are in a final state, and to Finished when the callback has been called successfully
-
-FTS3 Installation
------------------
-
-One needs to install an FTS3DB, the FTS3Manager, and the FTS3Agent. Install the
-FTS3DB with `dirac-install-db` or directly on your mysql server and add the
-Databse in the Configuration System.
-
-  dirac-admin-sysadmin-cli -H diracserver034.institute.tld
-  > install service DataManagement FTS3Manager
-  > install agent DataManagement FTS3Agent
-
-Then enable the *UseNewFTS3* flag for the ReplicateAndRegister operation as
-described in `FTS3TransferOperation`_.
-
-FTS3 System Configuration
--------------------------
-
-There are various configuration options for this system::
-
-
-  FTS3Agent
-  {
-    PollingTime = 120
-    MaxThreads = 10
-    # How many Operation we will treat in one loop
-    OperationBulkSize = 20
-    # How many Job we will monitor in one loop
-    JobBulkSize = 20
-    # Max number of files to go in a single job
-    MaxFilesPerJob = 100
-    # Max number of attempt per file
-    maxAttemptsPerFile = 256
-    # days before removing jobs
-    DeleteGraceDays = 180
-    # Max number of deletes per cycle
-    DeleteLimitPerCycle = 100
-    # hours before kicking jobs with old assignment tag
-    KickAssignedHours  = 1
-    # Max number of kicks per cycle
-    KickLimitPerCycle = 100
-  }
-
-DataManagement/FTSPlacement/FTS3/ServerPolicy see :ref:`dirac-operations-dms`.
