@@ -26,7 +26,7 @@ from DIRAC.RequestManagementSystem.Client.File import File as rmsFile
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 
-class FTS3Operation( FTS3Serializable ):
+class FTS3Operation(FTS3Serializable):
   """ Abstract class to represent an operation to be executed by FTS. It is a
       container for FTSFiles, as well as for FTSJobs.
 
@@ -45,17 +45,16 @@ class FTS3Operation( FTS3Serializable ):
                 'Finished',  # Everything was done
                 'Canceled',  # Canceled by the user
                 'Failed',  # I don't know yet
-               ]
-  FINAL_STATES = ['Finished', 'Canceled', 'Failed' ]
+                ]
+  FINAL_STATES = ['Finished', 'Canceled', 'Failed']
   INIT_STATE = 'Active'
 
   _attrToSerialize = ['operationID', 'username', 'userGroup', 'rmsReqID', 'rmsOpID',
                       'sourceSEs', 'ftsFiles', 'activity', 'priority',
                       'ftsJobs', 'creationTime', 'lastUpdate', 'error', 'status']
 
-  def __init__( self, ftsFiles = None, username = None, userGroup = None, rmsReqID = -1,
-                rmsOpID = 0, sourceSEs = None, activity = None, priority = None ):
-
+  def __init__(self, ftsFiles=None, username=None, userGroup=None, rmsReqID=-1,
+               rmsOpID=0, sourceSEs=None, activity=None, priority=None):
     """
         :param ftsFiles: list of FTS3Files object that belongs to the operation
         :param username: username whose proxy should be used
@@ -77,7 +76,7 @@ class FTS3Operation( FTS3Serializable ):
     self.rmsOpID = rmsOpID
 
     if isinstance(sourceSEs, list):
-      sourceSEs = ','.join( sourceSEs )
+      sourceSEs = ','.join(sourceSEs)
 
     self.sourceSEs = sourceSEs
 
@@ -88,14 +87,12 @@ class FTS3Operation( FTS3Serializable ):
 
     self.ftsJobs = []
 
-    now = datetime.datetime.utcnow().replace( microsecond = 0 )
+    now = datetime.datetime.utcnow().replace(microsecond=0)
 
     self.creationTime = now
     self.lastUpdate = now
     self.error = None
     self.status = FTS3Operation.INIT_STATE
-
-
 
     ########################
 
@@ -104,9 +101,8 @@ class FTS3Operation( FTS3Serializable ):
     self._log = None
     self.init_on_load()
 
-
   @orm.reconstructor
-  def init_on_load( self ):
+  def init_on_load(self):
     """ This method initializes some attributes.
         It is called by sqlalchemy (which does not call __init__)
     """
@@ -115,11 +111,11 @@ class FTS3Operation( FTS3Serializable ):
     self.dManager = DataManager()
     self.rssClient = ResourceStatus()
 
-    opID = getattr( self, 'operationID', None )
+    opID = getattr(self, 'operationID', None)
     loggerName = '%s/' % opID if opID else ''
-    loggerName += 'req_%s/op_%s' % (self.rmsReqID, self.rmsOpID )
+    loggerName += 'req_%s/op_%s' % (self.rmsReqID, self.rmsOpID)
 
-    self._log = gLogger.getSubLogger( loggerName , True )
+    self._log = gLogger.getSubLogger(loggerName, True)
 
   @property
   def vo(self):
@@ -132,8 +128,7 @@ class FTS3Operation( FTS3Serializable ):
 
     return self._vo
 
-
-  def isTotallyProcessed( self ):
+  def isTotallyProcessed(self):
     """ Returns True if and only if there is nothing
         else to be done by FTS for this operation.
         All files are successful or definitely failed
@@ -142,17 +137,16 @@ class FTS3Operation( FTS3Serializable ):
     if self.status == 'Processed':
       return True
 
-    fileStatuses = set( [f.status for f in self.ftsFiles] )
+    fileStatuses = set([f.status for f in self.ftsFiles])
 
     # If all the files are in a final state
-    if fileStatuses <= set( FTS3File.FINAL_STATES ):
+    if fileStatuses <= set(FTS3File.FINAL_STATES):
       self.status = 'Processed'
       return True
 
     return False
 
-
-  def _getFilesToSubmit( self, maxAttemptsPerFile = 10 ):
+  def _getFilesToSubmit(self, maxAttemptsPerFile=10):
     """ Return the list of FTS3files that can be submitted
         Either because they never were submitted, or because
         we can make more attempts
@@ -171,10 +165,9 @@ class FTS3Operation( FTS3Serializable ):
       # The file failed from the point of view of FTS
       # but no more than the maxAttemptsPerFile
       elif ftsFile.status in ('New', 'Failed'):
-        toSubmit.append( ftsFile )
+        toSubmit.append(ftsFile)
 
     return toSubmit
-
 
   @staticmethod
   def _checkSEAccess(seName, accessType):
@@ -197,14 +190,13 @@ class FTS3Operation( FTS3Serializable ):
 
     status = status['Value']
 
-    accessType = accessType.replace( 'Access', '' )
+    accessType = accessType.replace('Access', '')
     if not status[accessType]:
-      return S_ERROR( "%s does not have %s in Active or Degraded" % ( seName, accessType ) )
-
+      return S_ERROR("%s does not have %s in Active or Degraded" % (seName, accessType))
 
     return S_OK()
 
-  def _createNewJob( self, jobType, ftsFiles, targetSE, sourceSE = None ):
+  def _createNewJob(self, jobType, ftsFiles, targetSE, sourceSE=None):
     """ Create a new FTS3Job object
         :param jobType: type of job to create (Transfer, Staging, Removal)
         :param ftsFiles: list of FTS3File objects the job has to work on
@@ -224,17 +216,16 @@ class FTS3Operation( FTS3Serializable ):
     newJob.userGroup = self.userGroup
     newJob.vo = self.vo
     newJob.filesToSubmit = ftsFiles
-    newJob.operationID = getattr( self, 'operationID' )
+    newJob.operationID = getattr(self, 'operationID')
 
     return newJob
 
-
-  def _callback( self ):
+  def _callback(self):
     """Actually performs the callback
     """
-    raise NotImplementedError( "You should not be using the base class" )
+    raise NotImplementedError("You should not be using the base class")
 
-  def callback( self ):
+  def callback(self):
     """ Trigger the callback once all the FTS interactions are done
         and update the status of the Operation to 'Finished' if successful
     """
@@ -247,7 +238,7 @@ class FTS3Operation( FTS3Serializable ):
 
     return res
 
-  def prepareNewJobs( self, maxFilesPerJob = 100, maxAttemptsPerFile = 10 ):
+  def prepareNewJobs(self, maxFilesPerJob=100, maxAttemptsPerFile=10):
     """ Prepare the new jobs that have to be submitted
 
         :param maxFilesPerJob: maximum number of files assigned to a job
@@ -255,22 +246,20 @@ class FTS3Operation( FTS3Serializable ):
 
         :return list of jobs
     """
-    raise NotImplementedError( "You should not be using the base class" )
+    raise NotImplementedError("You should not be using the base class")
 
-
-  def _updateRmsOperationStatus( self ):
+  def _updateRmsOperationStatus(self):
     """ Update the status of the Files in the rms operation
           :return: S_OK with a dict:
                         * request: rms Request object
                         * operation: rms Operation object
-                        * ftsFilesByTarget: dict where keys are the SE, and values the list of ftsFiles that were successful
+                        * ftsFilesByTarget: dict {SE: [ftsFiles that were successful]}
     """
 
-    log = self._log.getSubLogger( "_updateRmsOperationStatus/%s/%s" % ( getattr( self, 'operationID' ), self.rmsReqID ), child = True )
+    log = self._log.getSubLogger("_updateRmsOperationStatus/%s/%s" %
+                                 (getattr(self, 'operationID'), self.rmsReqID), child=True)
 
-
-
-    res = self.reqClient.getRequest( self.rmsReqID )
+    res = self.reqClient.getRequest(self.rmsReqID)
     if not res['OK']:
       return res
 
@@ -279,11 +268,11 @@ class FTS3Operation( FTS3Serializable ):
     res = request.getWaiting()
 
     if not res["OK"]:
-      log.error( "Unable to find 'Scheduled' operation in request" )
-      res = self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
+      log.error("Unable to find 'Scheduled' operation in request")
+      res = self.reqClient.putRequest(request, useFailoverProxy=False, retryMainService=3)
       if not res['OK']:
-        log.error( "Could not put back the request !", res['Message'] )
-      return S_ERROR( "Could not find scheduled operation" )
+        log.error("Could not put back the request !", res['Message'])
+      return S_ERROR("Could not find scheduled operation")
 
     operation = res['Value']
 
@@ -293,7 +282,6 @@ class FTS3Operation( FTS3Serializable ):
     for opFile in operation:
       rmsFileIDs[opFile.FileID] = opFile
 
-
     # Files that failed to transfer
     defunctRmsFileIDs = set()
 
@@ -302,26 +290,30 @@ class FTS3Operation( FTS3Serializable ):
     for ftsFile in self.ftsFiles:
 
       if ftsFile.status == 'Defunct':
-        log.info( "File failed to transfer, setting it to failed in RMS", "%s %s" % ( ftsFile.lfn, ftsFile.targetSE ) )
-        defunctRmsFileIDs.add( ftsFile.rmsFileID )
+        log.info(
+            "File failed to transfer, setting it to failed in RMS", "%s %s" %
+            (ftsFile.lfn, ftsFile.targetSE))
+        defunctRmsFileIDs.add(ftsFile.rmsFileID)
         continue
 
       if ftsFile.status == 'Canceled':
-        log.info( "File canceled, setting it Failed in RMS", "%s %s" % ( ftsFile.lfn, ftsFile.targetSE ) )
-        defunctRmsFileIDs.add( ftsFile.rmsFileID )
+        log.info(
+            "File canceled, setting it Failed in RMS", "%s %s" %
+            (ftsFile.lfn, ftsFile.targetSE))
+        defunctRmsFileIDs.add(ftsFile.rmsFileID)
         continue
 
       # SHOULD NEVER HAPPEN !
       if ftsFile.status != 'Finished':
-        log.error( "Callback called with file in non terminal state", "%s %s" % ( ftsFile.lfn, ftsFile.targetSE ) )
-        res = self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
+        log.error(
+            "Callback called with file in non terminal state", "%s %s" %
+            (ftsFile.lfn, ftsFile.targetSE))
+        res = self.reqClient.putRequest(request, useFailoverProxy=False, retryMainService=3)
         if not res['OK']:
-          log.error( "Could not put back the request !", res['Message'] )
-        return S_ERROR( "Callback called with file in non terminal state" )
+          log.error("Could not put back the request !", res['Message'])
+        return S_ERROR("Callback called with file in non terminal state")
 
-
-      ftsFilesByTarget.setdefault( ftsFile.targetSE, [] ).append( ftsFile )
-
+      ftsFilesByTarget.setdefault(ftsFile.targetSE, []).append(ftsFile)
 
     # Now, we set the rmsFile as done in the operation, providing
     # that they are not in the defunctFiles.
@@ -333,12 +325,10 @@ class FTS3Operation( FTS3Serializable ):
 
       opFile.Status = 'Failed' if ftsFile.rmsFileID in defunctRmsFileIDs else 'Done'
 
-
-    return S_OK( { 'request' : request, 'operation' : operation, 'ftsFilesByTarget' : ftsFilesByTarget} )
-
+    return S_OK({'request': request, 'operation': operation, 'ftsFilesByTarget': ftsFilesByTarget})
 
   @classmethod
-  def fromRMSObjects( cls, rmsReq, rmsOp, username ):
+  def fromRMSObjects(cls, rmsReq, rmsOp, username):
     """ Construct an FTS3Operation object from the RMS Request and Operation corresponding.
         The attributes taken are the OwnerGroup, Request and Operation IDS, sourceSE,
         and activity and priority if they are defined in the Argument field of the operation
@@ -359,7 +349,7 @@ class FTS3Operation( FTS3Serializable ):
     ftsOp.sourceSEs = rmsOp.SourceSE
 
     try:
-      argumentDic = json.loads( rmsOp.Arguments )
+      argumentDic = json.loads(rmsOp.Arguments)
 
       ftsOp.activity = argumentDic['activity']
       ftsOp.priority = argumentDic['priority']
@@ -369,50 +359,39 @@ class FTS3Operation( FTS3Serializable ):
     return ftsOp
 
 
-
 class FTS3TransferOperation(FTS3Operation):
   """ Class to be used for a Replication operation
   """
 
-  def prepareNewJobs( self, maxFilesPerJob = 100, maxAttemptsPerFile = 10 ):
+  def prepareNewJobs(self, maxFilesPerJob=100, maxAttemptsPerFile=10):
 
-    log = self._log.getSubLogger( "_prepareNewJobs", child = True )
+    log = self._log.getSubLogger("_prepareNewJobs", child=True)
 
-    filesToSubmit = self._getFilesToSubmit( maxAttemptsPerFile = maxAttemptsPerFile )
-    log.debug( "%s ftsFiles to submit" % len( filesToSubmit ) )
-
+    filesToSubmit = self._getFilesToSubmit(maxAttemptsPerFile=maxAttemptsPerFile)
+    log.debug("%s ftsFiles to submit" % len(filesToSubmit))
 
     newJobs = []
 
     # {targetSE : [FTS3Files] }
-    res = FTS3Utilities.groupFilesByTarget( filesToSubmit )
+    res = FTS3Utilities.groupFilesByTarget(filesToSubmit)
     if not res['OK']:
       return res
     filesGroupedByTarget = res['Value']
-
 
     for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
 
       res = self._checkSEAccess(targetSE, 'WriteAccess')
 
       if not res['OK']:
-        log.error( res )
+        log.error(res)
         for ftsFile in ftsFiles:
           ftsFile.attempt += 1
         continue
 
-
-      sourceSEs = self.sourceSEs.split( ',' ) if self.sourceSEs is not None else []
+      sourceSEs = self.sourceSEs.split(',') if self.sourceSEs is not None else []
       # { sourceSE : [FTSFiles] }
-      res = FTS3Utilities.generatePossibleTransfersBySources( ftsFiles, allowedSources = sourceSEs )
+      res = FTS3Utilities.selectUniqueRandomSource(ftsFiles, allowedSources=sourceSEs)
 
-      if not res['OK']:
-        return res
-
-      possibleTransfersBySource = res['Value']
-
-      # Pick a unique source for each transfer
-      res = FTS3Utilities.selectUniqueSourceforTransfers( possibleTransfersBySource )
       if not res['OK']:
         return res
 
@@ -421,42 +400,39 @@ class FTS3TransferOperation(FTS3Operation):
       # We don't need to check the source, since it is already filtered by the DataManager
       for sourceSE, ftsFiles in uniqueTransfersBySource.iteritems():
 
+        for ftsFilesChunk in breakListIntoChunks(ftsFiles, maxFilesPerJob):
 
-        for ftsFilesChunk in breakListIntoChunks( ftsFiles, maxFilesPerJob ):
+          newJob = self._createNewJob('Transfer', ftsFilesChunk, targetSE, sourceSE=sourceSE)
 
-          newJob = self._createNewJob( 'Transfer', ftsFilesChunk, targetSE, sourceSE = sourceSE )
+          newJobs.append(newJob)
 
-          newJobs.append( newJob )
+    return S_OK(newJobs)
 
-
-    return S_OK( newJobs )
-
-
-  def _callback( self ):
+  def _callback(self):
     """" After a Transfer operation, we have to update the matching Request in the
         RMS, and add the registration operation just before the ReplicateAndRegister one
 
         NOTE: we don't use ReqProxy when putting the request back to avoid operational hell
     """
 
-    log = self._log.getSubLogger( "callback", child = True )
+    log = self._log.getSubLogger("callback", child=True)
 
     # In case there is no Request associated to the Transfer
     # we do not do the callback. Not really advised, but there is a feature
     # request to use the FTS3 system without RMS
-    if self.rmsReqID == -1 :
+    if self.rmsReqID == -1:
       return S_OK()
 
     # Now we check the status of the Request.
     # If it is not scheduled, we do not perform the callback
 
-    res = self.reqClient.getRequestStatus( self.rmsReqID )
+    res = self.reqClient.getRequestStatus(self.rmsReqID)
     if not res['OK']:
       log.error("Could not get request status", res)
       return res
     status = res['Value']
     if status != 'Scheduled':
-      return S_ERROR( "Request with id %s is not Scheduled:%s" % ( self.rmsReqID, status ) )
+      return S_ERROR("Request with id %s is not Scheduled:%s" % (self.rmsReqID, status))
 
     res = self._updateRmsOperationStatus()
 
@@ -467,12 +443,12 @@ class FTS3TransferOperation(FTS3Operation):
     request = res['Value']['request']
     operation = res['Value']['operation']
 
-
-    log.info( "will create %s 'RegisterReplica' operations" % len( ftsFilesByTarget ) )
+    log.info("will create %s 'RegisterReplica' operations" % len(ftsFilesByTarget))
 
     for target, ftsFileList in ftsFilesByTarget.iteritems():
-      log.info( "creating 'RegisterReplica' operation for targetSE %s with %s files..." % ( target,
-                                                                                            len( ftsFileList ) ) )
+      log.info(
+          "creating 'RegisterReplica' operation for targetSE %s with %s files..." %
+          (target, len(ftsFileList)))
       registerOperation = rmsOperation()
       registerOperation.Type = "RegisterReplica"
       registerOperation.Status = "Waiting"
@@ -489,54 +465,51 @@ class FTS3TransferOperation(FTS3Operation):
         # TODO: are we really ever going to change type... ?
         opFile.ChecksumType = 'ADLER32'
         opFile.Size = ftsFile.size
-        res = returnSingleResult( targetSE.getURL( ftsFile.lfn, protocol = 'srm' ) )
+        res = returnSingleResult(targetSE.getURL(ftsFile.lfn, protocol='srm'))
 
         # This should never happen !
         if not res["OK"]:
-          log.error( "Could not get url", res['Message'] )
+          log.error("Could not get url", res['Message'])
           continue
         opFile.PFN = res["Value"]
-        registerOperation.addFile( opFile )
+        registerOperation.addFile(opFile)
 
-      request.insertBefore( registerOperation, operation )
+      request.insertBefore(registerOperation, operation)
 
-
-    return self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
-
+    return self.reqClient.putRequest(request, useFailoverProxy=False, retryMainService=3)
 
 
-class FTS3StagingOperation( FTS3Operation ):
+class FTS3StagingOperation(FTS3Operation):
   """ Class to be used for a Staging operation
   """
 
-  def prepareNewJobs( self, maxFilesPerJob = 100, maxAttemptsPerFile = 10 ):
+  def prepareNewJobs(self, maxFilesPerJob=100, maxAttemptsPerFile=10):
 
-    log = gLogger.getSubLogger( "_prepareNewJobs", child = True )
+    log = gLogger.getSubLogger("_prepareNewJobs", child=True)
 
-    filesToSubmit = self._getFilesToSubmit( maxAttemptsPerFile = maxAttemptsPerFile )
-    log.debug( "%s ftsFiles to submit" % len( filesToSubmit ) )
+    filesToSubmit = self._getFilesToSubmit(maxAttemptsPerFile=maxAttemptsPerFile)
+    log.debug("%s ftsFiles to submit" % len(filesToSubmit))
 
     newJobs = []
 
     # {targetSE : [FTS3Files] }
-    filesGroupedByTarget = FTS3Utilities.groupFilesByTarget( filesToSubmit )
+    filesGroupedByTarget = FTS3Utilities.groupFilesByTarget(filesToSubmit)
 
     for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
 
       res = self._checkSEAccess(targetSE, 'ReadAccess')
       if not res['OK']:
-        log.error( res )
+        log.error(res)
         continue
 
-      for ftsFilesChunk in breakListIntoChunks( ftsFiles, maxFilesPerJob ):
+      for ftsFilesChunk in breakListIntoChunks(ftsFiles, maxFilesPerJob):
 
-        newJob = self._createNewJob( 'Staging', ftsFilesChunk, targetSE, sourceSE = targetSE )
-        newJobs.append( newJob )
+        newJob = self._createNewJob('Staging', ftsFilesChunk, targetSE, sourceSE=targetSE)
+        newJobs.append(newJob)
 
-    return S_OK( newJobs )
+    return S_OK(newJobs)
 
-
-  def _callback( self ):
+  def _callback(self):
     """" After a Staging operation, we have to update the matching Request in the
         RMS, and nothing more. If a callback is to be performed, it will be the next
         operation in the request, and put by the caller
@@ -551,4 +524,4 @@ class FTS3StagingOperation( FTS3Operation ):
 
     request = res['Value']['request']
 
-    return self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
+    return self.reqClient.putRequest(request, useFailoverProxy=False, retryMainService=3)

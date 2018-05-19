@@ -13,8 +13,10 @@ from socket import gethostname
 
 from DIRAC import S_OK, S_ERROR
 
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
@@ -186,6 +188,9 @@ class FTS3Agent(AgentModule):
       }
       res = self.fts3db.updateJobStatus(upDict)
 
+      if ftsJob.status in ftsJob.FINAL_STATES:
+        self.__sendAccounting(ftsJob)
+
       return ftsJob, res
 
     except Exception as e:
@@ -244,6 +249,7 @@ class FTS3Agent(AgentModule):
   @staticmethod
   def _treatOperationCallback(returnedValue):
     """ Callback when an operation has been treated
+
         :param returnedValue: value returned by the _treatOperation method
                               (ftsOperation, standard dirac return struct)
     """
@@ -445,5 +451,18 @@ class FTS3Agent(AgentModule):
       log.error("Error deleting operations", res)
       return res
 
-
     return S_OK()
+
+  @staticmethod
+  def __sendAccounting(ftsJob):
+    """ prepare and send DataOperation to AccountingDB
+
+        :param ftsJob: the FTS3Job from which we send the accounting info
+    """
+
+    dataOp = DataOperation()
+    dataOp.setStartTime(fromString(ftsJob.submitTime))
+    dataOp.setEndTime(fromString(ftsJob.lastUpdate))
+
+    dataOp.setValuesFromDict(ftsJob.accountingDict)
+    dataOp.delayedCommit()
