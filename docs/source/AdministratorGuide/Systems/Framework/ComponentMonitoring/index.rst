@@ -6,6 +6,8 @@
 Static Component Monitoring
 ===========================
 
+.. versionadded:: v6r13
+
 As of v6r13, DIRAC includes a Component Monitoring system that logs information about what components are being installed
 and uninstalled on which machines, when and by whom. Running this service is mandatory!
 

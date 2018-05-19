@@ -625,15 +625,15 @@ function generateUserCredentials(){
   then
     set +e
   fi
-  cp $CI_CONFIG/openssl_config openssl_config .
+  cp $CI_CONFIG/openssl_config openssl_config_usr .
   if [[ $save =~ e ]]
   then
     set -e
   fi
 
-  sed -i 's/#hostname#/ciuser/g' openssl_config
+  sed -i 's/#hostname#/ciuser/g' openssl_config_usr
   openssl genrsa -out client.key 1024 2>&1 /dev/null
-  openssl req -key client.key -new -out client.req -config openssl_config
+  openssl req -key client.key -new -out client.req -config openssl_config_usr
   # This is a little hack to make OpenSSL happy...
   echo 00 > file.srl
 

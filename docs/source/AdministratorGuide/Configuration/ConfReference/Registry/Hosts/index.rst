@@ -1,7 +1,9 @@
 Registry / Hosts - Subsections
 ==============================
 
-In this section each trusted hosts (DIRAC secondary servers) are described using simple attributes. An subsection called as DIRAC host name must be created and inside of this the following attributes
+In this section each trusted hosts (DIRAC secondary servers) are described using simple attributes.
+
+A subsection called as DIRAC host name must be created and inside of this the following attributes
 must be included:
 
 +--------------------------------+------------------------------------------+-----------------------------------------------------------+
@@ -13,7 +15,6 @@ must be included:
 |                                | certificate                              |                                                           |
 +--------------------------------+------------------------------------------+-----------------------------------------------------------+
 | *<DIRAC_HOST_NAME>/Properties* | Properties associated with the host      | Properties = JobAdministrator                             |
-|                                |                                          | Properties += FullDelegation                              |
 |                                |                                          | Properties += FullDelegation                              |
 |                                |                                          | Properties += Operator                                    |
 |                                |                                          | Properties += CSAdministrator                             |

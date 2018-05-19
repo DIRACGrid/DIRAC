@@ -1,4 +1,4 @@
-  ########################################################################
+########################################################################
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -713,7 +713,7 @@ class JobWrapper(object):
     return catResult
 
   #############################################################################
-  def processJobOutputs(self, arguments):
+  def processJobOutputs(self):
     """Outputs for a job may be treated here.
     """
 
@@ -1088,7 +1088,7 @@ class JobWrapper(object):
           with tarfile.open(possibleTarFile, 'r') as tarFile:
             for member in tarFile.getmembers():
               tarFile.extract(member, os.getcwd())
-      except Exception as x:
+      except BaseException as x:
         return S_ERROR('Could not untar %s with exception %s' % (possibleTarFile, str(x)))
 
     if userFiles:
@@ -1125,8 +1125,7 @@ class JobWrapper(object):
     self.__cleanUp()
     if self.failedFlag:
       return 1
-    else:
-      return 0
+    return 0
 
   #############################################################################
   def sendJobAccounting(self, status='', minorStatus=''):
@@ -1141,7 +1140,7 @@ class JobWrapper(object):
 
     self.accountingReport.setEndTime()
     # CPUTime and ExecTime
-    if not 'CPU' in EXECUTION_RESULT:
+    if 'CPU' not in EXECUTION_RESULT:
       # If the payload has not started execution (error with input data, SW, SB,...)
       # Execution result is not filled use self.initialTiming
       self.log.info('EXECUTION_RESULT[CPU] missing in sendJobAccounting')
