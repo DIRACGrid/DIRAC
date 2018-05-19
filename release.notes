@@ -1,4 +1,4 @@
-[v6r20-pre24]
+[v6r20]
 
 *Core
 NEW: MJF utility added, providing a general interface to Machine/Job Features values.
@@ -21,7 +21,7 @@ FIX: dirac-install default behaviour preserved even with diracos options
 New: Add additional check in MJF utility to look for a shutdown file located at '/var/run/shutdown_time'
 FIX: The hardcoded rule was not taken into account when the query was coming from the web server
 CHANGE: VOMSService - reimplemented using VOMS REST interface
-FIX: MJF utility won't theow exceptions when MJF is not fully deployed at a site
+FIX: MJF utility won't throw exceptions when MJF is not fully deployed at a site
 
 *Framework
 NEW: WebAppCompiler methods is implemented, which is used to compile the web framework
@@ -78,6 +78,7 @@ CHANGE: Fixing rss to fetch fts3 server status
 NEW: Add a feature to the DFC LHCbManager to dump the content of an SE as a CSV file
 FIX: FTS3DB: sqlalchemy filter statements with "is None" do not work and result in no lines being selected
 NEW: FTS3Agent and FTS3DB: add functionality to kick stuck requests and delete old requests
+NEW: FTS3Agent - add accounting report
 
 *RMS
 FIX: Really exit the RequestExecutingAgent when the result queue is buggy
@@ -99,7 +100,7 @@ CHANGE: Dirac.py - saving output of jobs run with 'runLocal' when they fail (for
 
 *Docs
 CHANGE: WebApp release procedure
-FIX: Drop some old stuff, add link for FTS3 page
+FIX: Update of the FTS3 docs
 
 *Tests
 FIX: add MonitoringDB to the configuration
