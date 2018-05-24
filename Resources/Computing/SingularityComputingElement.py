@@ -17,9 +17,9 @@ import shutil
 import tempfile
 
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -57,22 +57,6 @@ class SingularityComputingElement(ComputingElement):
   """ A Computing Element for running a job within a Singularity container.
   """
 
-  @staticmethod
-  def hasSingularity():
-    """ Search the current PATH for an exectuable named singularity.
-        Returns True if it is found, False otherwise.
-    """
-    if "PATH" not in os.environ:
-      return False  # Hmm, PATH not set? How unusual...
-    for searchPath in os.environ["PATH"].split(os.pathsep):
-      binPath = os.path.join(searchPath, 'singularity')
-      if os.path.isfile(binPath):
-        # File found, check it's exectuable to be certain:
-        if os.access(binPath, os.X_OK):
-          return True
-    # No suitablable binaries found
-    return False
-
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
@@ -84,6 +68,31 @@ class SingularityComputingElement(ComputingElement):
       self.__root = self.ceParameters['ContainerRoot']
     self.__workdir = CONTAINER_WORKDIR
     self.__innerdir = CONTAINER_INNERDIR
+    self.__singularityBin = 'singularity'
+
+    self.log = gLogger.getSubLogger('Singularity')
+
+  def __hasSingularity(self):
+    """ Search the current PATH for an exectuable named singularity.
+        Returns True if it is found, False otherwise.
+    """
+    if self.ceParameters.get('ContainerBin'):
+      binPath = self.ceParameters['ContainerBin']
+      if os.path.isfile(binPath) and os.access(binPath, os.X_OK):
+        self.__singularityBin = binPath
+        self.log.debug('Use singularity from "%s"' % self.__singularityBin)
+        return True
+    if "PATH" not in os.environ:
+      return False  # Hmm, PATH not set? How unusual...
+    for searchPath in os.environ["PATH"].split(os.pathsep):
+      binPath = os.path.join(searchPath, 'singularity')
+      if os.path.isfile(binPath):
+        # File found, check it's exectuable to be certain:
+        if os.access(binPath, os.X_OK):
+          self.log.debug('Find singularity from PATH "%s"' % binPath)
+          return True
+    # No suitablable binaries found
+    return False
 
   def __getInstallFlags(self):
     """ Get the flags to pass to dirac-install.py inside the container.
@@ -149,6 +158,8 @@ class SingularityComputingElement(ComputingElement):
       result = S_ERROR("Failed to create container work directory in '%s'" % self.__workdir)
       result['ReschedulePayload'] = True
       return result
+
+    self.log.debug('Use singularity workarea: %s' % baseDir)
     for subdir in ["home", "tmp", "var_tmp"]:
       os.mkdir(os.path.join(baseDir, subdir))
     tmpDir = os.path.join(baseDir, "tmp")
@@ -234,7 +245,7 @@ class SingularityComputingElement(ComputingElement):
     rootImage = self.__root
 
     # Check that singularity is available
-    if not self.hasSingularity():
+    if not self.__hasSingularity():
       self.log.error('Singularity is not installed on PATH.')
       result = S_ERROR("Failed to find singularity ")
       result['ReschedulePayload'] = True
@@ -274,11 +285,29 @@ class SingularityComputingElement(ComputingElement):
     # Mount /cvmfs in if it exists on the host
     withCVMFS = os.path.isdir("/cvmfs")
     innerCmd = os.path.join(self.__innerdir, "dirac_container.sh")
-    cmd = ["singularity", "exec", "-C"]
+
+    singularityOpts = []
+    singularityOpts.append('exec')
+    singularityOpts.append('-c')
+    singularityOpts.append('-i')
+    singularityOpts.append('-p')
+    singularityOpts.append('-W "%s"' % baseDir)
     if withCVMFS:
-      cmd.extend(["-B", "/cvmfs"])
-    cmd.extend(["-W", baseDir, rootImage, innerCmd])
-    result = systemCall(0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv())
+      singularityOpts.append('-B /cvmfs')
+    if 'ContainerBind' in self.ceParameters:
+      bindPaths = self.ceParameters['ContainerBind'].split(',')
+      for bindPath in bindPaths:
+        singularityOpts.append('-B "%s"' % bindPath.strip())
+    if 'ContainerOptions' in self.ceParameters:
+      singularityOpts.append(self.ceParameters['ContainerOptions'])
+    singularityOpts.append('"%s"' % rootImage)
+    singularityOpts.append('"%s"' % innerCmd)
+
+    cmd = '"%s" %s' % (self.__singularityBin, ' '.join(singularityOpts))
+    self.log.debug('Execute singularity command: %s' % cmd)
+    env = self.__getEnv()
+    self.log.debug('Execute singularity env: %s' % env)
+    result = shellCall(0, cmd, callbackFunction=self.sendOutput, env=env)
     self.__runningJobs -= 1
 
     if not result["OK"]:
