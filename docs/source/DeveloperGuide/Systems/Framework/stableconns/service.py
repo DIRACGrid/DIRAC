@@ -1,12 +1,14 @@
-import types
-from DIRAC import S_OK, S_ERROR
+""" example
+"""
+
+from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
 
 class PingPongHandler( RequestHandler ):
 
-  MSG_DEFINITIONS = { 'Ping' : { 'id' : ( types.IntType, types.LongType ) },
-                      'Pong' : { 'id' : ( types.IntType, types.LongType ) } }
+  MSG_DEFINITIONS = { 'Ping' : { 'id' : ( int, long ) },
+                      'Pong' : { 'id' : ( int, long ) } }
 
   auth_conn_connected = [ 'all' ]
   def conn_connected( self, trid, identity, kwargs ):
