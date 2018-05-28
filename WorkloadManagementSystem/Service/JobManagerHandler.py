@@ -196,6 +196,9 @@ class JobManagerHandler(RequestHandler):
 
     result['JobID'] = result['Value']
     result['requireProxyUpload'] = self.__checkIfProxyUploadIsRequired()
+    # Ensure non-parametric jobs (i.e. non-bulk) get sent to optimizer immediately
+    if not parametricJob:
+      self.__sendJobsToOptimizationMind(jobIDList)
     return result
 
 ###########################################################################
