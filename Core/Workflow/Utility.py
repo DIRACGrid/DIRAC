@@ -62,7 +62,7 @@ def dataFromOption(parameter):
     fields = parameter.value.split(',')
 
     for f in fields:
-      if re.search('FILE\s*=', f):
+      if re.search(r'FILE\s*=', f):
         # print f
         fname = re.search(r"FILE\s*=\s*'([][;\/\w.:\s@{}-]+)'", f).group(1)
         res = re.search(r"TYP\w*\s*=\s*'(\w+)'", f)
