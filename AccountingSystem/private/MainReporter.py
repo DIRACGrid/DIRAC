@@ -5,65 +5,67 @@ import hashlib
 import re
 
 from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter as myBaseReporter
-from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
 
-class PlottersList( object ):
 
-  def __init__( self ):
-    objectsLoaded = loadObjects( 'AccountingSystem/private/Plotters',
-                                 re.compile( r".*[a-z1-9]Plotter\.py$" ),
-                                 myBaseReporter )
+class PlottersList(object):
+
+  def __init__(self):
+    objectsLoaded = loadObjects('AccountingSystem/private/Plotters',
+                                re.compile(r".*[a-z1-9]Plotter\.py$"),
+                                myBaseReporter)
     self.__plotters = {}
     for objName in objectsLoaded:
-      self.__plotters[ objName[:-7] ] = objectsLoaded[ objName ]
+      self.__plotters[objName[:-7]] = objectsLoaded[objName]
 
-  def getPlotterClass( self, typeName ):
+  def getPlotterClass(self, typeName):
     try:
-      return self.__plotters[ typeName ]
+      return self.__plotters[typeName]
     except KeyError:
       return None
 
-class MainReporter( object ):
 
-  def __init__( self, db, setup ):
+class MainReporter(object):
+
+  def __init__(self, db, setup):
     self._db = db
     self.setup = setup
-    self.csSection = getServiceSection( "Accounting/ReportGenerator", setup = setup )
+    self.csSection = getServiceSection("Accounting/ReportGenerator", setup=setup)
     self.plotterList = PlottersList()
 
-  def __calculateReportHash( self, reportRequest ):
-    requestToHash = dict( reportRequest )
-    granularity = gConfig.getValue( "%s/CacheTimeGranularity" % self.csSection, 300 )
-    for key in ( 'startTime', 'endTime' ):
-      epoch = requestToHash[ key ]
-      requestToHash[ key ] = epoch - epoch % granularity
+  def __calculateReportHash(self, reportRequest):
+    requestToHash = dict(reportRequest)
+    granularity = gConfig.getValue("%s/CacheTimeGranularity" % self.csSection, 300)
+    for key in ('startTime', 'endTime'):
+      epoch = requestToHash[key]
+      requestToHash[key] = epoch - epoch % granularity
     md5Hash = hashlib.md5()
-    md5Hash.update( repr( requestToHash ) )
-    md5Hash.update( self.setup )
+    md5Hash.update(repr(requestToHash))
+    md5Hash.update(self.setup)
     return md5Hash.hexdigest()
 
-  def generate( self, reportRequest, credDict ):
-    typeName = reportRequest[ 'typeName' ]
-    plotterClass = self.plotterList.getPlotterClass( typeName )
+  def generate(self, reportRequest, credDict):
+    typeName = reportRequest['typeName']
+    plotterClass = self.plotterList.getPlotterClass(typeName)
     if not plotterClass:
-      return S_ERROR( "There's no reporter registered for type %s" % typeName )
+      return S_ERROR("There's no reporter registered for type %s" % typeName)
     if typeName in gPoliciesList:
-      retVal = gPoliciesList[ typeName ].checkRequest( reportRequest[ 'reportName' ],
-                                                       credDict,
-                                                       reportRequest[ 'condDict' ],
-                                                       reportRequest[ 'grouping' ] )
-      if not retVal[ 'OK' ]:
+      retVal = gPoliciesList[typeName].checkRequest(reportRequest['reportName'],
+                                                    credDict,
+                                                    reportRequest['condDict'],
+                                                    reportRequest['grouping'])
+      if not retVal['OK']:
         return retVal
-    reportRequest[ 'hash' ] = self.__calculateReportHash( reportRequest )
-    plotter = plotterClass( self._db, self.setup, reportRequest[ 'extraArgs' ] )
-    return plotter.generate( reportRequest )
+    reportRequest['hash'] = self.__calculateReportHash(reportRequest)
+    plotter = plotterClass(self._db, self.setup, reportRequest['extraArgs'])
+    return plotter.generate(reportRequest)
 
-  def list( self, typeName ):
-    plotterClass = self.plotterList.getPlotterClass( typeName )
+  def list(self, typeName):
+    plotterClass = self.plotterList.getPlotterClass(typeName)
     if not plotterClass:
-      return S_ERROR( "There's no plotter registered for type %s" % typeName )
-    plotter = plotterClass( self._db, self.setup )
-    return S_OK( plotter.plotsList() )
+      return S_ERROR("There's no plotter registered for type %s" % typeName)
+    plotter = plotterClass(self._db, self.setup)
+    return S_OK(plotter.plotsList())
