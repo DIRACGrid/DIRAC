@@ -14,7 +14,7 @@ def loadObjects(path, reFilter=None, parentClass=None):
   :param str path: the path to the syetem for example: DIRAC/AccountingSystem
   :param object reFilter: regular expression used to found the class
   :param object parentClass: class instance
-  :return: dict it return the name of the clase and the instance of the class.
+  :return: dictionary containing the name of the class and its instance
   """
   if not reFilter:
     reFilter = re.compile(".*[a-z1-9]\.py$")

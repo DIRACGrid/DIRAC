@@ -1,18 +1,21 @@
+""" Utility for loading plotting types.
+    Works both for Accounting and Monitoring.
 """
-It is used to load the monitoring types.
 
-"""
 import re
 
 from DIRAC.Core.Utilities import DIRACSingleton
 from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
 
+from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 __RCSID__ = "$Id$"
 
 ########################################################################
-class TypeLoader( object ):
+
+
+class TypeLoader(object):
 
   """
   .. class:: BaseType
@@ -30,19 +33,23 @@ class TypeLoader( object ):
   __reFilter = None
 
   ########################################################################
-  def __init__( self ):
+  def __init__(self, plottingFamily='Accounting'):
     """c'tor
     """
     self.__loaded = {}
-    self.__path = "MonitoringSystem/Client/Types"
-    self.__parentCls = BaseType
-    self.__reFilter = re.compile( r".*[a-z1-9]\.py$" )
+    if plottingFamily == 'Accounting':
+      self.__path = "AccountingSystem/Client/Types"
+      self.__parentCls = BaseAccountingType
+    elif plottingFamily == 'Monitoring':
+      self.__path = "MonitoringSystem/Client/Types"
+      self.__parentCls = BaseType
+    self.__reFilter = re.compile(r".*[a-z1-9]\.py$")
 
   ########################################################################
-  def getTypes( self ):
+  def getTypes(self):
     """
     It returns all monitoring classes
     """
     if not self.__loaded:
-      self.__loaded = loadObjects( self.__path, self.__reFilter, self.__parentCls )
+      self.__loaded = loadObjects(self.__path, self.__reFilter, self.__parentCls)
     return self.__loaded
