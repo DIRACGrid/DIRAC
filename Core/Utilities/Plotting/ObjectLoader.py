@@ -17,7 +17,7 @@ def loadObjects(path, reFilter=None, parentClass=None):
   :return: dictionary containing the name of the class and its instance
   """
   if not reFilter:
-    reFilter = re.compile(".*[a-z1-9]\.py$")
+    reFilter = re.compile(r".*[a-z1-9]\.py$")
   pathList = List.fromChar(path, "/")
 
   parentModuleList = ["%sDIRAC" % ext for ext in CSGlobals.getCSExtensions()] + ['DIRAC']

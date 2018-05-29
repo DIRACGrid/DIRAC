@@ -12,7 +12,7 @@ def getSubstitute(param, skip_list=[]):
   """ Get the variable name to which the given parameter is referring
   """
   result = []
-  resList = re.findall("@{([][\w,.:$()]+)}", str(param))
+  resList = re.findall(r"@{([][\w,.:$()]+)}", str(param))
   if resList:
     for match in resList:
       if match not in skip_list:
@@ -64,8 +64,8 @@ def dataFromOption(parameter):
     for f in fields:
       if re.search('FILE\s*=', f):
         # print f
-        fname = re.search("FILE\s*=\s*'([][;\/\w.:\s@{}-]+)'", f).group(1)
-        res = re.search("TYP\w*\s*=\s*'(\w+)'", f)
+        fname = re.search(r"FILE\s*=\s*'([][;\/\w.:\s@{}-]+)'", f).group(1)
+        res = re.search(r"TYP\w*\s*=\s*'(\w+)'", f)
         if res:
           ftype = res.group(1)
         else:

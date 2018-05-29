@@ -50,8 +50,9 @@ class MultiAccountingDB(object):
                        'deleteType', 'insertRecordThroughQueue',
                        'deleteRecord', 'getKeyValues', 'retrieveBucketedData',
                        'calculateBuckets', 'calculateBucketLengthForTime'):
-      (lambda closure: setattr(self, closure, lambda *x: self.__mimeTypeMethod(closure, *x))
-       )(methodName)  # pylint: disable=no-value-for-parameter
+      (lambda closure: setattr(self, closure,
+                               lambda *x: self.__mimeTypeMethod(closure, *x))  # pylint: disable=no-value-for-parameter
+       )(methodName)
     for methodName in ('autoCompactDB', 'compactBuckets', 'markAllPendingRecordsAsNotTaken',
                        'loadPendingRecords', 'getRegisteredTypes'):
       (lambda closure: setattr(self, closure, lambda *x: self.__mimeMethod(closure, *x)))(methodName)
