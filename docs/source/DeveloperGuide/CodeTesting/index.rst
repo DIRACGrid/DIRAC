@@ -635,8 +635,8 @@ How do I do that?
 This test is VERY complete, as you can see. If you are only testing locally, it may be too much,
 but as it is it's perfect for a job running in Jenkins.
 
-At the same time, out if you are a developer you should be able to extrapolated from the above those parts that you need,
-in case you are testing one specifc service.
+At the same time, if you are a developer you should be able to extrapolate from the above those parts that you need,
+in case you are testing only one specific service.
 
 
 

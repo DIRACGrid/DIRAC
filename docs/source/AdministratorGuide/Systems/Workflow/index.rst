@@ -4,7 +4,7 @@ Workflow
 
 [Please see this `presentation <https://indico.in2p3.fr/event/5271/contributions/33942/attachments/27190/33434/20110512_Ching_Bon_Lam.pdf>`_ for originals of the figures reported here.]
 
-The DIRAC Workflow is not properly a DIRAC system, in the sense that it doesn't implement any DB, nor service, not agent.
+The DIRAC Workflow is not properly a DIRAC system, in the sense that it doesn't implement any DB, nor service, nor agent.
 
 The DIRAC Workflow is instead a way to describe DIRAC jobs. Every job created with DIRAC APIs is, in fact, a DIRAC workflow.
 
@@ -29,7 +29,7 @@ One more picture looking inside the contect of a workflow:
 So, a workflow is made of steps, modules, and each of them may have parameters. A workflow is a container of steps. A step is a container for modules.
 Steps, and modules, are ordered. There's only a linear order possible (no DAGs). Workflows are not limited in the number of steps or modules that they can execute.
 
-The following figure contains a graphycal representation of the content of a workflow.
+The following figure contains a graphical representation of the content of a workflow.
 
 .. image:: WorkflowJob.png
    :alt: Workflow job.

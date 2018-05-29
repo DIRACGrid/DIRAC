@@ -1,4 +1,6 @@
-""" example
+""" This is a simple example of implementation of a Ping/Pong service for executors.
+
+    This service does not any specific configuration to run.
 """
 
 from DIRAC import S_OK
