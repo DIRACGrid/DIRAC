@@ -35,14 +35,13 @@ def writeVersionToInit(rootPath, version):
   if not os.path.isfile(initFile):
     return S_OK()
   try:
-    fd = open(initFile, "r")
-    fileData = fd.read()
-    fd.close()
+    with open(initFile, "r") as fd:
+      fileData = fd.read()
   except Exception as e:
     return S_ERROR("Could not open %s: %s" % (initFile, str(e)))
   versionStrings = ("majorVersion", "minorVersion", "patchLevel", "preVersion")
   reList = []
-  for iP in range(len(versionStrings)):
+  for iP in enumerate(versionStrings):
     if verTup[iP]:
       replStr = "%s = %s" % (versionStrings[iP], verTup[iP])
     else:
@@ -74,7 +73,7 @@ def createTarball(tarballPath, directoryToTar, additionalDirectoriesToTar=None):
   md5FilePath = False
   for suffix in (".tar.gz", ".gz"):
     sLen = len(suffix)
-    if tarballPath[len(tarballPath) - sLen:] == suffix:
+    if tarballPath.endswith(suffix):
       md5FilePath = "%s.md5" % tarballPath[:-sLen]
       break
   if not md5FilePath:
