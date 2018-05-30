@@ -72,6 +72,9 @@ class TransformationClient( Client ):
     return rpcClient. getCounters( table, attrList, condDict, older, newer, timeStamp )
 
   def addTransformation( self, transName, description, longDescription, transType, plugin, agentType, fileMask,
+                         inputMetaQuery = '',
+                         outputMetaQuery = '',
+                         outputMetaData = '',
                          transformationGroup = 'General',
                          groupSize = 1,
                          inheritedFrom = 0,
@@ -84,7 +87,7 @@ class TransformationClient( Client ):
     """
     rpcClient = self._getRPC( timeout = timeout )
     return rpcClient.addTransformation( transName, description, longDescription, transType, plugin,
-                                        agentType, fileMask, transformationGroup, groupSize, inheritedFrom,
+                                        agentType, fileMask, inputMetaQuery, outputMetaQuery, outputMetaData, transformationGroup, groupSize, inheritedFrom,
                                         body, maxTasks, eventsPerTask, addFiles )
 
   def getTransformations( self, condDict = None, older = None, newer = None, timeStamp = None,
@@ -202,6 +205,36 @@ class TransformationClient( Client ):
       return res
     # Setting the status
     return self.setTransformationParameter( transID, 'Status', 'TransformationCleaned' )
+
+  ### Add methods to handle transformation status
+
+  def startTransformation( self, transID ):
+    """ Start the transformation
+    """
+    res = self.setTransformationParameter( transID, 'Status', 'Active' )
+    if not res['OK']:
+      gLogger.error( "Failed to start transformation %s: %s" % ( transID, res['Message'] ))
+      return res
+    else:
+      res = self.setTransformationParameter( transID, 'AgentType', 'Automatic' )
+      if not res['OK']:
+        gLogger.error( "Failed to set AgentType to transformation %s: %s" % ( transID, res['Message'] ))
+
+    return res
+
+  def stopTransformation( self, transID ):
+    """ Stop the transformation
+    """
+    res = self.setTransformationParameter( transID, 'Status', 'Stopped' )
+    if not res['OK']:
+      gLogger.error( "Failed to stop transformation %s: %s" % ( transID, res['Message'] ))
+      return res
+    else:
+      res = self.setTransformationParameter( transID, 'AgentType', 'Manual' )
+      if not res['OK']:
+        gLogger.error( "Failed to set AgentType to transformation %s: %s" % ( transID, res['Message'] ))
+
+    return res
 
   def moveFilesToDerivedTransformation( self, transDict, resetUnused = True ):
     """ move files input to a transformation, to the derived one
