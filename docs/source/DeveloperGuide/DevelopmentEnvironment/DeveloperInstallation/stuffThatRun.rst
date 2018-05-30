@@ -301,15 +301,16 @@ Let's do one more check, still from the host:
 
 Was this good? If it wasn't, again, then you should probably hit the "previous" button of this guide.
 
-The next test, also executed from the host,
-will verify if you will be able to produce a proxy starting from the user certificates that you have created above:
+The next test, also executed from the host, 
+will verify if you will be able to produce a proxy starting from the user certificates that you have created above::
 
-  X509_CERT_DIR=$DEVROOT/etc/grid-security/certificates ./FrameworkSystem/scripts/dirac-proxy-init.py --rfc -ddd
+   X509_CERT_DIR=$DEVROOT/etc/grid-security/certificates ./FrameworkSystem/scripts/dirac-proxy-init.py -ddd
 
-Should return you a user proxy.
+Should return you a user proxy. You can verify the content and location of the proxy with::
 
+   X509_CERT_DIR=$DEVROOT/etc/grid-security/certificates ./FrameworkSystem/scripts/dirac-proxy-info.py
 
-Then, you can login on your running image and try running a service. [to expand]
+Then, you can login on your running image (or your local installation) and try running a service, using the dips protocol.
 
 Do not think about you just typed right now. It will become more clear later. 
 Please, look into :ref:`check_your_installation` section for further checks. 
