@@ -70,42 +70,29 @@ class TransformationClient(Client):
 
   def getCounters(self, table, attrList, condDict, older=None, newer=None, timeStamp=None):
     rpcClient = self._getRPC()
-    return rpcClient. getCounters(table, attrList, condDict, older, newer, timeStamp)
+    return rpcClient. getCounters( table, attrList, condDict, older, newer, timeStamp )
 
-  def addTransformation(self, transName, description, longDescription, transType, plugin, agentType, fileMask,
-                        transformationGroup='General',
-                        groupSize=1,
-                        inheritedFrom=0,
-                        body='',
-                        maxTasks=0,
-                        eventsPerTask=0,
-                        addFiles=True,
-                        inputMetaQuery='',
-                        outputMetaQuery='',
-                        timeout=1800):
+  def addTransformation( self, transName, description, longDescription, transType, plugin, agentType, fileMask,
+                         inputMetaQuery = '',
+                         outputMetaQuery = '',
+                         outputMetaData = '',
+                         transformationGroup = 'General',
+                         groupSize = 1,
+                         inheritedFrom = 0,
+                         body = '',
+                         maxTasks = 0,
+                         eventsPerTask = 0,
+                         addFiles = True,
+                         timeout = 1800 ):
     """ add a new transformation
     """
-    rpcClient = self._getRPC(timeout=timeout)
-    return rpcClient.addTransformation(
-        transName,
-        description,
-        longDescription,
-        transType,
-        plugin,
-        agentType,
-        fileMask,
-        transformationGroup,
-        groupSize,
-        inheritedFrom,
-        body,
-        maxTasks,
-        eventsPerTask,
-        addFiles,
-        inputMetaQuery,
-        outputMetaQuery)
+    rpcClient = self._getRPC( timeout = timeout )
+    return rpcClient.addTransformation( transName, description, longDescription, transType, plugin,
+                                        agentType, fileMask, inputMetaQuery, outputMetaQuery, outputMetaData, transformationGroup, groupSize, inheritedFrom,
+                                        body, maxTasks, eventsPerTask, addFiles )
 
-  def getTransformations(self, condDict=None, older=None, newer=None, timeStamp=None,
-                         orderAttribute=None, limit=100, extraParams=False):
+  def getTransformations( self, condDict = None, older = None, newer = None, timeStamp = None,
+                          orderAttribute = None, limit = 100, extraParams = False ):
     """ gets all the transformations in the system, incrementally. "limit" here is just used to determine the offset.
     """
     rpcClient = self._getRPC()
@@ -233,23 +220,37 @@ class TransformationClient(Client):
       if not res['OK']:
         gLogger.error("Failed to set AgentType to transformation %s: %s" % (transID, res['Message']))
 
-    return res
+  ### Add methods to handle transformation status
 
-  def stopTransformation(self, transID):
-    """ Stop the transformation
+  def startTransformation( self, transID ):
+    """ Start the transformation
     """
-    res = self.setTransformationParameter(transID, 'Status', 'Stopped')
+    res = self.setTransformationParameter( transID, 'Status', 'Active' )
     if not res['OK']:
-      gLogger.error("Failed to stop transformation %s: %s" % (transID, res['Message']))
+      gLogger.error( "Failed to start transformation %s: %s" % ( transID, res['Message'] ))
       return res
     else:
-      res = self.setTransformationParameter(transID, 'AgentType', 'Manual')
+      res = self.setTransformationParameter( transID, 'AgentType', 'Automatic' )
       if not res['OK']:
-        gLogger.error("Failed to set AgentType to transformation %s: %s" % (transID, res['Message']))
+        gLogger.error( "Failed to set AgentType to transformation %s: %s" % ( transID, res['Message'] ))
 
     return res
 
-  def moveFilesToDerivedTransformation(self, transDict, resetUnused=True):
+  def stopTransformation( self, transID ):
+    """ Stop the transformation
+    """
+    res = self.setTransformationParameter( transID, 'Status', 'Stopped' )
+    if not res['OK']:
+      gLogger.error( "Failed to stop transformation %s: %s" % ( transID, res['Message'] ))
+      return res
+    else:
+      res = self.setTransformationParameter( transID, 'AgentType', 'Manual' )
+      if not res['OK']:
+        gLogger.error( "Failed to set AgentType to transformation %s: %s" % ( transID, res['Message'] ))
+
+    return res
+
+  def moveFilesToDerivedTransformation( self, transDict, resetUnused = True ):
     """ move files input to a transformation, to the derived one
     """
     prod = transDict['TransformationID']
