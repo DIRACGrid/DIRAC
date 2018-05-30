@@ -987,7 +987,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       return result
     return self.retrieveTaskQueues([tqTuple[0] for tqTuple in result['Value']])
 
-  def retrieveTaskQueues(self, tqIdList=False):
+  def retrieveTaskQueues(self, tqIdList=None):
     """
     Get all the task queues
     """
@@ -998,8 +998,9 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       sqlGroupEntries.append("`tq_TaskQueues`.%s" % field)
     sqlCmd = "SELECT %s FROM `tq_TaskQueues`, `tq_Jobs`" % ", ".join(sqlSelectEntries)
     sqlTQCond = ""
-    if tqIdList:
+    if tqIdList is not None:
       if not tqIdList:
+        # Empty list => Fast-track no matches
         return S_OK({})
       else:
         sqlTQCond += " AND `tq_TaskQueues`.TQId in ( %s )" % ", ".join([str(id_) for id_ in tqIdList])
