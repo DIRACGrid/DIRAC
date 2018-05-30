@@ -41,6 +41,9 @@ class TransformationManagerHandlerBase(RequestHandler):
   types_addTransformation = [basestring, basestring, basestring, basestring, basestring, basestring, basestring]
 
   def export_addTransformation(self, transName, description, longDescription, transType, plugin, agentType, fileMask,
+                               inputMetaQuery='',
+                               outputMetaQuery='',
+                               outputMetaData='',
                                transformationGroup='General',
                                groupSize=1,
                                inheritedFrom=0,
@@ -55,6 +58,9 @@ class TransformationManagerHandlerBase(RequestHandler):
     authorGroup = credDict['group']
     res = database.addTransformation(transName, description, longDescription, authorDN, authorGroup, transType, plugin,
                                      agentType, fileMask,
+                                     inputMetaQuery=inputMetaQuery,
+                                     outputMetaQuery=outputMetaQuery,
+                                     outputMetaData=outputMetaData,
                                      transformationGroup=transformationGroup,
                                      groupSize=groupSize,
                                      inheritedFrom=inheritedFrom,
