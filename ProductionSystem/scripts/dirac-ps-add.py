@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-  Delete the production
+  Create a production
 """
 
 __RCSID__ = "$Id$"
@@ -11,9 +11,9 @@ from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
-                                     '  %s prodID' % Script.scriptName,
+                                     '  %s prodName' % Script.scriptName,
                                      'Arguments:',
-                                     '  prodID: Production ID'
+                                     '  prodName: Production Name'
                                      ] ) )
 
 
@@ -21,21 +21,25 @@ Script.parseCommandLine()
 
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
+prodClient = ProductionClient()
+
+# get arguments
 args = Script.getPositionalArgs()
 if ( len( args ) != 1 ):
   Script.showHelp()
 
-# get arguments
-prodID = args[0]
+prodName = args[0]
 
-prodClient = ProductionClient()
+### Create a production
+res = prodClient.addProduction( prodName )
 
-res = prodClient.deleteProduction( prodID )
-if res['OK']:
-  DIRAC.gLogger.notice ( 'Production %s successully deleted' % prodID )
-else:
-  DIRAC.gLogger.error ( res['Message'] )
+if not res['OK']:
+  DIRAC.gLogger.error( res['Message'] )
   DIRAC.exit( -1 )
+
+prodID = res['Value']
+
+DIRAC.gLogger.notice( 'Production %s successfully created' % prodID )
 
 DIRAC.exit( 0 )
 
