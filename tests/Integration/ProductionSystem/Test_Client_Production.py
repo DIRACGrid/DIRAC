@@ -8,51 +8,39 @@ from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 import unittest
-import json
 
-from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
-from DIRAC.ProductionSystem.Client.ProductionStep import ProductionStep
+from DIRAC.ProductionSystem.Client.ProductionClient   import ProductionClient
 
+class TestClientProductionTestCase( unittest.TestCase ):
 
-class TestClientProductionTestCase(unittest.TestCase):
-
-  def setUp(self):
+  def setUp( self ):
     self.prodClient = ProductionClient()
 
-  def tearDown(self):
+  def tearDown( self ):
     pass
 
 
-class ProductionClientChain(TestClientProductionTestCase):
+class ProductionClientChain( TestClientProductionTestCase ):
 
-  def test_addAndRemove(self):
+  def test_addAndRemove( self ):
     # add
-    prodStep = ProductionStep()
-    res = self.prodClient.addStep(prodStep)
-    self.assertTrue(res['OK'])
-
-    # Get the production description
-    prodDescription = self.prodClient.getDescription()
-
-    # Create the production
-    res = self.prodClient.addProduction('prodName', json.dumps(prodDescription))
-    self.assertTrue(res['OK'])
+    res = self.prodClient.addProduction( 'MyprodName' )
+    self.assertTrue( res['OK'] )
     prodID = res['Value']
 
     # try to add again (this should fail)
-    res = self.prodClient.addProduction('prodName', json.dumps(prodDescription))
-    self.assertFalse(res['OK'])
+    res = self.prodClient.addProduction( 'MyprodName' )
+    self.assertFalse( res['OK'] )
 
-    # delete the production
-    res = self.prodClient.deleteProduction(prodID)
-    self.assertTrue(res['OK'])
+    # really delete
+    res = self.prodClient.deleteProduction( prodID )
+    self.assertTrue( res['OK'] )
 
     # delete non existing one (fails)
-    res = self.prodClient.deleteProduction(prodID)
-    self.assertFalse(res['OK'])
-
+    res = self.prodClient.deleteProduction( prodID )
+    self.assertFalse( res['OK'] )
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestClientProductionTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ProductionClientChain))
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestClientProductionTestCase )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ProductionClientChain ) )
+  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
