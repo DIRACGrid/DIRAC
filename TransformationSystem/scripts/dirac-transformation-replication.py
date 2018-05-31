@@ -21,20 +21,20 @@ Options:
 """
 from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as dexit
+from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
+from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
 
 __RCSID__ = "$Id$"
 
 
 def _createTrafo():
   """reads command line parameters, makes check and creates replication transformation"""
-  from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
   clip = Params()
   clip.registerSwitches(Script)
   Script.parseCommandLine()
   if not clip.checkSettings(Script)['OK']:
     gLogger.error("ERROR: Missing settings")
     return 1
-  from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
   for metaValue in clip.metaValues:
     resCreate = createDataTransformation(flavour=clip.flavour,
                                          targetSE=clip.targetSE,
