@@ -11,11 +11,16 @@ from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
 
 __RCSID__ = "$Id$"
 
+GET_VOMS = "DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getVOMSVOForGroup"
+GET_PROXY = "DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getProxyInfo"
+
 
 def getProxyMock(success=True):
   """ return value for getProxy """
   if success:
-    return Mock(return_value=S_OK({'groupProperties': ['ProductionManagement']}))
+    return Mock(return_value=S_OK({'groupProperties': ['ProductionManagement'],
+                                   'group': 'clic_prod',
+                                   }))
   return Mock(return_value=S_ERROR("Failed"))
 
 
@@ -155,7 +160,8 @@ class TestParams(unittest.TestCase):
   def tearDown(self):
     pass
 
-  @patch("DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getProxyInfo", new=getProxyMock())
+  @patch(GET_PROXY, new=getProxyMock())
+  @patch(GET_VOMS, new=Mock(return_value='clic'))
   def test_checkSettings(self):
     self.arguments = ['12345', "TargetSE"]
     self.sMock.getPositionalArgs.return_value = self.arguments
@@ -165,14 +171,16 @@ class TestParams(unittest.TestCase):
     self.assertEqual(self.params.sourceSE, '')
     self.assertEqual(self.params.targetSE, ["TargetSE"])
 
-  @patch("DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getProxyInfo", new=getProxyMock())
+  @patch(GET_PROXY, new=getProxyMock())
+  @patch(GET_VOMS, new=Mock(return_value='clic'))
   def test_setMetadata(self):
     ret = self.params.setMetadata("Datatype:GEN, Energy: 124")
     self.assertTrue(ret['OK'], ret.get("Message", ''))
     self.assertEqual(self.params.extraData, {'Datatype': 'GEN',
                                              'Energy': '124'})
 
-  @patch("DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getProxyInfo", new=getProxyMock())
+  @patch(GET_PROXY, new=getProxyMock())
+  @patch(GET_VOMS, new=Mock(return_value='clic'))
   def test_checkSettings_FailArgumentSize(self):
     self.arguments = ['12345', "TargetSE", 'Foo']
     self.sMock.getPositionalArgs.return_value = self.arguments
@@ -180,13 +188,24 @@ class TestParams(unittest.TestCase):
     self.assertFalse(ret['OK'], str(ret))
     self.assertTrue(any("ERROR: Not enough arguments" in msg for msg in self.params.errorMessages))
 
-  @patch("DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getProxyInfo", new=getProxyMock(False))
+  @patch(GET_PROXY, new=getProxyMock(False))
+  @patch(GET_VOMS, new=Mock(return_value='clic'))
   def test_FailProxy(self):
     self.arguments = ['12345', "TargetSE"]
     self.sMock.getPositionalArgs.return_value = self.arguments
     ret = self.params.checkSettings(self.sMock)
     self.assertFalse(ret['OK'], str(ret))
     self.assertTrue(any("ERROR: No Proxy" in msg for msg in self.params.errorMessages), str(self.params.errorMessages))
+
+  @patch(GET_PROXY, new=getProxyMock(True))
+  @patch(GET_VOMS, new=Mock(return_value=''))
+  def test_FailProxy2(self):
+    self.arguments = ['12345', "TargetSE"]
+    self.sMock.getPositionalArgs.return_value = self.arguments
+    ret = self.params.checkSettings(self.sMock)
+    self.assertFalse(ret['OK'], str(ret))
+    self.assertTrue(any("ERROR: ProxyGroup" in msg for msg in self.params.errorMessages),
+                    str(self.params.errorMessages))
 
   def test_setExtraName(self):
     ret = self.params.setExtraname("extraName")

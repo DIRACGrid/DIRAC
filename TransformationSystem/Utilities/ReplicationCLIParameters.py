@@ -4,6 +4,7 @@ Command Line Parameters for creating the Replication transformations Script
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSVOForGroup
 
 
 class Params(object):
@@ -117,13 +118,19 @@ class Params(object):
     return S_ERROR()
 
   def checkProxy(self):
-    """checks if the proxy has the ProductionManagement property"""
+    """checks if the proxy has the ProductionManagement property and belongs to a VO"""
     proxyInfo = getProxyInfo()
     if not proxyInfo['OK']:
       self.errorMessages.append("ERROR: No Proxy present")
       return False
     proxyValues = proxyInfo.get('Value', {})
-    groupProperties = proxyValues.get('groupProperties')
+    group = proxyValues.get('group', '')
+    vomsvo = getVOMSVOForGroup(group)
+    if not vomsvo:
+      self.errorMessages.append("ERROR: ProxyGroup not associated to VOMS VO, get a different proxy")
+      return False
+
+    groupProperties = proxyValues.get('groupProperties', [])
 
     if groupProperties:
       if 'ProductionManagement' not in groupProperties:
