@@ -238,7 +238,8 @@ class TaskManagerAgentBaseSuccess( AgentsTestCase ):
   def test_submitTasks( self ):
     clients = {'TransformationClient':self.tc_mock, 'TaskManager':self.tm_mock}
 
-    transIDOPBody = {1:{'Operations':['op1', 'op2'], 'Body':'veryBigBody'}}
+    transIDOPBody = {1: {'Operations': ['op1', 'op2'], 'Body': 'veryBigBody',
+                         'Owner': 'prodMan', 'OwnerDN': '/ca=man/user=prodMan', 'OwnerGroup': 'prodMans'}}
 
     # errors getting
     self.tc_mock.getTasksToSubmit.return_value = {'OK': False, 'Message': 'a mess'}

@@ -14,6 +14,8 @@ from Queue import Queue
 
 from DIRAC import S_OK
 
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getUsernameForDN
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
@@ -47,10 +49,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
     self.tasksPerLoop = 50
 
-    self.owner = ''
-    self.ownerGroup = ''
-    self.ownerDN = ''
-
     self.pluginLocation = ''
     self.bulkSubmissionFlag = False
 
@@ -81,6 +79,9 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     # Bulk submission flag
     self.bulkSubmissionFlag = self.am_getOption('BulkSubmission', False)
 
+    # Shifter credentials to use, could replace the use of shifterProxy eventually
+    self.credentials = self.am_getOption('ShifterCredentials', self.am_getOption('shifterProxy', None))
+
     # setting up the threading
     maxNumberOfThreads = self.am_getOption('maxNumberOfThreads', 15)
     threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
@@ -110,6 +111,27 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     """
 
     operationsOnTransformationDict = {}
+    owner, ownerGroup, ownerDN = None, None, None
+    # getting the credentials for submission
+    if getProxyInfo(False, False)['OK']:  # there is a shifterProxy
+      res = getProxyInfo(False, False)
+      proxyInfo = res['Value']  # must be there
+      owner = proxyInfo['username']
+      ownerGroup = proxyInfo['group']
+      ownerDN = proxyInfo['identity']
+      self.log.info("ShifterProxy: Tasks will be submitted with the credentials %s:%s" % (owner, ownerGroup))
+    elif self.credentials:
+      resCred = Operations().getOptionsDict("/Shifter/%s" % self.credentials)
+      if resCred['OK']:
+        owner = resCred['Value']['User']
+        ownerGroup = resCred['Value']['Group']
+        ownerDN = getDNForUsername(owner)['Value']
+        self.log.info("Cred: Tasks will be submitted with the credentials %s:%s" % (owner, ownerGroup))
+      else:
+        self.log.error("Cred: Failed to find shifter credentials", self.credentials)
+        return resCred
+    else:
+      self.log.info("Using per Transformation Credentials!")
 
     # Determine whether the task status is to be monitored and updated
     enableTaskMonitor = self.am_getOption('MonitorTasks', '')
@@ -123,10 +145,8 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
       if not transformations['OK']:
         self.log.warn("Could not select transformations:", transformations['Message'])
       else:
-        transformationIDsAndBodies = dict((transformation['TransformationID'],
-                                           transformation['Body']) for transformation in transformations['Value'])
-        for transID, body in transformationIDsAndBodies.iteritems():
-          operationsOnTransformationDict[transID] = {'Body': body, 'Operations': ['updateTaskStatus']}
+        self._addOperationForTransformations(operationsOnTransformationDict, 'updateTaskStatus', transformations,
+                                             owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
 
     # Determine whether the task files status is to be monitored and updated
     enableFileMonitor = self.am_getOption('MonitorFiles', '')
@@ -140,13 +160,8 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
       if not transformations['OK']:
         self.log.warn("Could not select transformations:", transformations['Message'])
       else:
-        transformationIDsAndBodies = dict((transformation['TransformationID'],
-                                           transformation['Body']) for transformation in transformations['Value'])
-        for transID, body in transformationIDsAndBodies.iteritems():
-          if transID in operationsOnTransformationDict:
-            operationsOnTransformationDict[transID]['Operations'].append('updateFileStatus')
-          else:
-            operationsOnTransformationDict[transID] = {'Body': body, 'Operations': ['updateFileStatus']}
+        self._addOperationForTransformations(operationsOnTransformationDict, 'updateFileStatus', transformations,
+                                             owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
 
     # Determine whether the checking of reserved tasks is to be performed
     enableCheckReserved = self.am_getOption('CheckReserved', '')
@@ -160,29 +175,14 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
       if not transformations['OK']:
         self.log.warn("Could not select transformations:", transformations['Message'])
       else:
-        transformationIDsAndBodies = dict((transformation['TransformationID'],
-                                           transformation['Body']) for transformation in transformations['Value'])
-        for transID, body in transformationIDsAndBodies.iteritems():
-          if transID in operationsOnTransformationDict:
-            operationsOnTransformationDict[transID]['Operations'].append('checkReservedTasks')
-          else:
-            operationsOnTransformationDict[transID] = {'Body': body, 'Operations': ['checkReservedTasks']}
+        self._addOperationForTransformations(operationsOnTransformationDict, 'checkReservedTasks', transformations,
+                                             owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
 
     # Determine whether the submission of tasks is to be performed
     enableSubmission = self.am_getOption('SubmitTasks', '')
     if not enableSubmission:
       self.log.verbose("Submission of tasks is disabled. To enable it, create the 'SubmitTasks' option")
     else:
-      # getting the credentials for submission
-      res = getProxyInfo(False, False)
-      if not res['OK']:
-        self.log.error("Failed to determine credentials for submission", res['Message'])
-        return res
-      proxyInfo = res['Value']
-      self.owner = proxyInfo['username']
-      self.ownerGroup = proxyInfo['group']
-      self.ownerDN = proxyInfo['identity']
-      self.log.info("Tasks will be submitted with the credentials %s:%s" % (self.owner, self.ownerGroup))
       # Get the transformations for which the check of reserved tasks have to be performed
       status = self.am_getOption('SubmitTransformationStatus',
                                  self.am_getOption('SubmitStatus', ['Active', 'Completing']))
@@ -192,13 +192,10 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
       else:
         # Get the transformations which should be submitted
         self.tasksPerLoop = self.am_getOption('TasksPerLoop', self.tasksPerLoop)
-        transformationIDsAndBodies = dict((transformation['TransformationID'],
-                                           transformation['Body']) for transformation in transformations['Value'])
-        for transID, body in transformationIDsAndBodies.iteritems():
-          if transID in operationsOnTransformationDict:
-            operationsOnTransformationDict[transID]['Operations'].append('submitTasks')
-          else:
-            operationsOnTransformationDict[transID] = {'Body': body, 'Operations': ['submitTasks']}
+        self._addOperationForTransformations(operationsOnTransformationDict, 'submitTasks', transformations,
+                                             owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
+
+
 
     self._fillTheQueue(operationsOnTransformationDict)
 
@@ -254,11 +251,24 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     return {'TransformationClient': threadTransformationClient,
             'TaskManager': threadTaskManager}
 
+  def _getPerTransformationClients(self, ownerDN=None, ownerGroup=None):
+    """Set the clients for per transformation credentials.
+
+    Returns the clients used in the threads - this is another function that should be extended.
+    The clients provided here are defaults, and should be adapted
+    """
+    threadTransformationClient = TransformationClient()
+    threadTaskManager = WorkflowTasks(ownerDN=ownerDN, ownerGroup=ownerGroup)
+    threadTaskManager.pluginLocation = self.pluginLocation
+
+    return {'TransformationClient': threadTransformationClient,
+            'TaskManager': threadTaskManager}
+
   def _execute(self, threadID):
     """ This is what runs inside the threads, in practice this is the function that does the real stuff
     """
-    # Each thread will have its own clients
-    clients = self._getClients()
+    # Each thread will have its own clients if we use credentials/shifterProxy
+    clients = self._getClients() if self.credentials else None
     method = '_execute'
     operation = 'None'
 
@@ -275,6 +285,9 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
           self._logWarn("Got a transf not in transInQueue...?",
                         method=method, transID=transID)
           break
+        if not self.credentials:
+          ownerDN, group = transIDOPBody[transID]['OwnerDN'], transIDOPBody[transID]['OwnerGroup']
+          clients = self._getPerTransformationClients(ownerDN=ownerDN, ownerGroup=group)
         self.transInThread[transID] = ' [Thread%d] [%s] ' % (threadID, str(transID))
         self._logInfo("Start processing transformation", method=method, transID=transID)
         clients['TaskManager'].transInThread = self.transInThread
@@ -512,6 +525,9 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     """
     transID = transIDOPBody.keys()[0]
     transBody = transIDOPBody[transID]['Body']
+    owner = transIDOPBody[transID]['Owner']
+    ownerGroup = transIDOPBody[transID]['OwnerGroup']
+    ownerDN = transIDOPBody[transID]['OwnerDN']
     method = 'submitTasks'
 
     # Get all tasks to submit
@@ -533,9 +549,9 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     # Prepare tasks
     preparedTransformationTasks = clients['TaskManager'].prepareTransformationTasks(transBody,
                                                                                     tasks,
-                                                                                    self.owner,
-                                                                                    self.ownerGroup,
-                                                                                    self.ownerDN,
+                                                                                    owner,
+                                                                                    ownerGroup,
+                                                                                    ownerDN,
                                                                                     self.bulkSubmissionFlag)
     self._logDebug("prepareTransformationTasks return value:", preparedTransformationTasks,
                    method=method, transID=transID)
@@ -563,3 +579,22 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
       return res
 
     return S_OK()
+
+  @staticmethod
+  def _addOperationForTransformations(operationsOnTransformationDict, operation, transformations,
+                                      owner=None, ownerGroup=None, ownerDN=None):
+    """Fill the operationsOnTransformationDict"""
+    transformationIDsAndBodies = [(transformation['TransformationID'],
+                                   transformation['Body'],
+                                   transformation['AuthorDN'],
+                                   transformation['AuthorGroup'],
+                                   ) for transformation in transformations['Value']]
+    for transID, body, t_ownerDN, t_ownerGroup in transformationIDsAndBodies:
+      if transID in operationsOnTransformationDict:
+        operationsOnTransformationDict[transID]['Operations'].append(operation)
+      else:
+        operationsOnTransformationDict[transID] = {'Body': body, 'Operations': [operation],
+                                                   'Owner': owner if owner else getUsernameForDN(t_ownerDN)['Value'],
+                                                   'OwnerGroup': ownerGroup if owner else t_ownerGroup,
+                                                   'OwnerDN': ownerDN if owner else t_ownerDN
+                                                   }

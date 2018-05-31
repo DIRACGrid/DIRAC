@@ -50,3 +50,10 @@ class RequestTaskAgent(TaskManagerAgentBase):
     threadTaskManager = RequestTasks()
     res.update({'TaskManager': threadTaskManager})
     return res
+
+  def _getPerTransformationClients(self, ownerDN=None, ownerGroup=None):
+    """Set the clients for per transformation credentials."""
+    res = super(RequestTaskAgent, self)._getPerTransformationClients(ownerDN=ownerDN, ownerGroup=ownerGroup)
+    threadTaskManager = RequestTasks(ownerDN=ownerDN, ownerGroup=ownerGroup)
+    res.update({'TaskManager': threadTaskManager})
+    return res
