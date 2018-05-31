@@ -13,7 +13,7 @@ class Params(object):
     self.sourceSE = ''
     self.groupSize = 1
     self.extraname = ''
-    self.transformationType = 'Replication'
+    self.flavour = 'Replication'
     self.plugin = 'Broadcast'
     self.metaValues = []
     self.metaKey = None
@@ -43,8 +43,8 @@ class Params(object):
     self.sourceSE = [sSE.strip() for sSE in sourceSE.split(",")]
     return S_OK()
 
-  def setTransType(self, trans):
-    self.transformationType = trans
+  def setTransFlavour(self, flavour):
+    self.flavour = flavour
     return S_OK()
 
   def setTargetSE(self, targetSE):
@@ -77,10 +77,10 @@ class Params(object):
     """
 
     script.registerSwitch("G:", "GroupSize=", "Number of Files per transformation task", self.setGroupSize)
-    script.registerSwitch("S:", "SourceSEs=", "SourceSE(s) to use", self.setSourceSE)
+    script.registerSwitch("S:", "SourceSEs=", "SourceSE(s) to use, comma separated list", self.setSourceSE)
     script.registerSwitch("N:", "Extraname=", "String to append to transformation name", self.setExtraname)
     script.registerSwitch("P:", "Plugin=", "Plugin to use for transformation", self.setPlugin)
-    script.registerSwitch("T:", "TransformationType=", "TransformationType to create", self.setTransType)
+    script.registerSwitch("T:", "Flavour=", "Flavour to create: Replication or Moving", self.setTransFlavour)
     script.registerSwitch("K:", "MetaKey=", "Meta Key to use: TransformationID", self.setMetaKey)
     script.registerSwitch("M:", "MetaData=", "MetaData to use Key/Value Pairs: 'DataType:REC,'", self.setMetadata)
     script.registerSwitch("x", "Enable", "Enable the transformation creation, otherwise dry-run", self.setEnable)

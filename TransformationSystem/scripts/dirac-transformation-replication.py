@@ -36,7 +36,7 @@ def _createTrafo():
     return 1
   from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
   for metaValue in clip.metaValues:
-    resCreate = createDataTransformation(transformationType=clip.transformationType,
+    resCreate = createDataTransformation(flavour=clip.flavour,
                                          targetSE=clip.targetSE,
                                          sourceSE=clip.sourceSE,
                                          metaKey=clip.metaKey,

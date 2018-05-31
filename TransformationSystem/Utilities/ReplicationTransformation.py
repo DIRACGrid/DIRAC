@@ -7,7 +7,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 from DIRAC import gLogger, S_OK, S_ERROR
 
 
-def createDataTransformation(transformationType, targetSE, sourceSE,
+def createDataTransformation(flavour, targetSE, sourceSE,
                              metaKey, metaValue,
                              extraData=None, extraname='',
                              groupSize=1,
@@ -16,7 +16,7 @@ def createDataTransformation(transformationType, targetSE, sourceSE,
                              ):
   """Creates the replication transformation based on the given parameters
 
-  :param str transformationType: Type of replication to create
+  :param str flavour: Flavour of replication to create
   :param targetSE: Destination for files
   :type targetSE: python:list or str
   :param str sourceSE: Origin of files.
@@ -39,11 +39,11 @@ def createDataTransformation(transformationType, targetSE, sourceSE,
   if isinstance(targetSE, basestring):
     targetSE = [targetSE]
 
-  if transformationType not in ('Replication', 'Moving'):
-    return S_ERROR('Unsupported transformationType %s' % transformationType)
+  if flavour not in ('Replication', 'Moving'):
+    return S_ERROR('Unsupported flavour %s' % flavour)
 
-  transType = {'Replication': 'Replicate', 'Moving': 'Move'}[transformationType]
-  transGroup = {'Replication': 'Replication', 'Moving': 'Moving'}[transformationType]
+  transType = {'Replication': 'Replicate', 'Moving': 'Move'}[flavour]
+  transGroup = {'Replication': 'Replication', 'Moving': 'Moving'}[flavour]
 
   trans = Transformation()
   transName = '%s_%s_%s' % (transType, str(metaValue), ",".join(targetSE))
@@ -62,7 +62,7 @@ def createDataTransformation(transformationType, targetSE, sourceSE,
   transBody = {'Moving': [("ReplicateAndRegister", {"SourceSE": sourceSE, "TargetSE": targetSE}),
                           ("RemoveReplica", {"TargetSE": sourceSE})],
                'Replication': ''  # empty body
-               }[transformationType]
+               }[flavour]
 
   trans.setBody(transBody)
 
