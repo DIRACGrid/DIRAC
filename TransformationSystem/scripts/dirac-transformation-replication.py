@@ -1,10 +1,11 @@
 #!/bin/env python
 """
-Create a production to replicate files from some storage elments to others
+Create a production to replicate files from some storage elements to others
 
 Example::
 
-  dirac-ilc-replication-transformation <MetaValue> <TargetSEs> -S<SourceSEs> -G<GroupSize> -NExtraName
+  dirac-transformation-replication <MetaValue1,MetaValue2> <TargetSEs> [-G<Files>] [-S<SourceSEs>][-N<ExtraName>] \
+        [-T<Type>] [-M<Key>] [-K...]
 
 Options:
    -G, --GroupSize <value>     Number of Files per transformation task

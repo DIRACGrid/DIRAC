@@ -86,8 +86,11 @@ class Params(object):
     script.registerSwitch("x", "Enable", "Enable the transformation creation, otherwise dry-run", self.setEnable)
 
     useMessage = []
-    useMessage.append("%s <MetaValue> <TargetSEs> [-G<Files>] [-S<SourceSEs>]"
-                      "[-N<ExtraName>] [-T<Type>] [-M<Key>] [-K...]" % script.scriptName)
+    useMessage.append("Create one replication transformation for each MetaValue given")
+    useMessage.append("Is running in dry-run mode, unless enabled with -x")
+    useMessage.append("MetaValue and TargetSEs can be comma separated lists")
+    useMessage.append("  %s <MetaValue1[,val2,val3]> <TargetSEs> [-G<Files>] [-S<SourceSEs>]"
+                      "[-N<ExtraName>] [-T<Type>] [-M<Key>] [-K...] -x" % script.scriptName)
     script.setUsageMessage('\n'.join(useMessage))
 
   def checkSettings(self, script):
