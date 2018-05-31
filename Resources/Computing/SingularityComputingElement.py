@@ -19,7 +19,7 @@ import tempfile
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -285,29 +285,25 @@ class SingularityComputingElement(ComputingElement):
     # Mount /cvmfs in if it exists on the host
     withCVMFS = os.path.isdir("/cvmfs")
     innerCmd = os.path.join(self.__innerdir, "dirac_container.sh")
-
-    singularityOpts = []
-    singularityOpts.append('exec')
-    singularityOpts.append('-c')
-    singularityOpts.append('-i')
-    singularityOpts.append('-p')
-    singularityOpts.append('-W "%s"' % baseDir)
+    cmd = [self.__singularityBin, "exec"]
+    cmd.extend(["-c", "-i", "-p"])
+    cmd.extend(["-W", baseDir])
     if withCVMFS:
-      singularityOpts.append('-B /cvmfs')
+      cmd.extend(["-B", "/cvmfs"])
     if 'ContainerBind' in self.ceParameters:
       bindPaths = self.ceParameters['ContainerBind'].split(',')
       for bindPath in bindPaths:
-        singularityOpts.append('-B "%s"' % bindPath.strip())
+        cmd.extend(["-B", bindPath.strip()])
     if 'ContainerOptions' in self.ceParameters:
-      singularityOpts.append(self.ceParameters['ContainerOptions'])
-    singularityOpts.append('"%s"' % rootImage)
-    singularityOpts.append('"%s"' % innerCmd)
+      containerOpts = self.ceParameters['ContainerOptions'].split(',')
+      for opt in containerOpts:
+        cmd.extend([opt.strip()])
+    cmd.extend([rootImage, innerCmd])
 
-    cmd = '"%s" %s' % (self.__singularityBin, ' '.join(singularityOpts))
     self.log.debug('Execute singularity command: %s' % cmd)
-    env = self.__getEnv()
-    self.log.debug('Execute singularity env: %s' % env)
-    result = shellCall(0, cmd, callbackFunction=self.sendOutput, env=env)
+    self.log.debug('Execute singularity env: %s' % self.__getEnv())
+    result = systemCall(0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv())
+
     self.__runningJobs -= 1
 
     if not result["OK"]:
