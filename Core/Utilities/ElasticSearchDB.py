@@ -103,6 +103,30 @@ class ElasticSearchDB(object):
     except RequestError as re:
       return S_ERROR(re)
 
+  def update(self, index, doctype, query, update_by_query=True):
+    """ Executes a query and returns its result (uses ES DSL language).
+
+    :param self: self reference
+    :param basestring index: index name
+    :param dict query: It is the query in ElasticSearch DSL language
+
+    """
+    if update_by_query:
+
+      try:
+        esDSLQueryResult = self.__client.update_by_query(index=index, doc_type=doctype, body=query)
+        return S_OK(esDSLQueryResult)
+      except RequestError as re:
+        return S_ERROR(re)
+
+    else:
+
+      try:
+        esDSLQueryResult = self.__client.index(index=index, doc_type=doctype, body=query, id=query['JobID'])
+        return S_OK(esDSLQueryResult)
+      except RequestError as re:
+        return S_ERROR(re)
+
   def _Search(self, indexname):
     """
     it returns the object which can be used for reatriving ceratin value from the DB
@@ -199,7 +223,7 @@ class ElasticSearchDB(object):
                        Currently only daily and monthly indexes are supported.
 
     """
-    fullIndex = generateFullIndexName(indexPrefix, period)  # we have to create an index each day...
+    fullIndex = self.generateFullIndexName(indexPrefix, period)  # we have to create an index each day...
     if self.exists(fullIndex):
       return S_OK(fullIndex)
 
@@ -365,28 +389,28 @@ class ElasticSearchDB(object):
       gLogger.error("Cannot connect to the db", repr(e))
     return S_OK(connected)
 
+  @staticmethod
+  def generateFullIndexName(indexName, period=None):
+    """
+    Given an index prefix we create the actual index name. Each day an index is created.
+    :param str indexName: it is the name of the index
+    :param str period: We can specify, which kind of indexes will be created.
+                      Currently only daily and monthly indexes are supported.
+    """
 
-def generateFullIndexName(indexName, period=None):
-  """
-  Given an index prefix we create the actual index name. Each day an index is created.
-  :param str indexName: it is the name of the index
-  :param str period: We can specify, which kind of indexes will be created.
-                     Currently only daily and monthly indexes are supported.
-  """
+    if period is None:
+      gLogger.warn("Daily indexes are used, because the period is not provided!")
+      period = 'day'
 
-  if period is None:
-    gLogger.warn("Daily indexes are used, because the period is not provided!")
-    period = 'day'
+    today = datetime.today().strftime("%Y-%m-%d")
+    index = ''
+    if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
+      gLogger.warn("Period is not correct daily indexes are used instead:", period)
+      index = "%s-%s" % (indexName, today)
+    elif period.lower() == 'day':
+      index = "%s-%s" % (indexName, today)
+    elif period.lower() == 'month':
+      month = datetime.today().strftime("%Y-%m")
+      index = "%s-%s" % (indexName, month)
 
-  today = datetime.today().strftime("%Y-%m-%d")
-  index = ''
-  if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
-    gLogger.warn("Period is not correct daily indexes are used instead:", period)
-    index = "%s-%s" % (indexName, today)
-  elif period.lower() == 'day':
-    index = "%s-%s" % (indexName, today)
-  elif period.lower() == 'month':
-    month = datetime.today().strftime("%Y-%m")
-    index = "%s-%s" % (indexName, month)
-
-  return index
+    return index
