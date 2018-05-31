@@ -140,7 +140,7 @@ class TestMoving(unittest.TestCase):
             patch("%s.TransformationClient" % module_name, new=self.tMock):
       ret = createDataTransformation('Moving', tSE, sSE, 'prodID', prodID, enable=True)
     self.assertFalse(ret['OK'], str(ret))
-    self.assertIn("Failed to create transformation:Failed to create IDQ", ret['Message'])
+    self.assertIn("Failed to create IDQ", ret['Message'])
 
 
 class TestParams(unittest.TestCase):

@@ -47,7 +47,7 @@ def _createTrafo():
                                          enable=clip.enable,
                                          )
     if not resCreate['OK']:
-      gLogger.error("Failed to create transformation", resCreate['Message'])
+      gLogger.error("Failed to create Transformation", resCreate['Message'])
       return 1
 
   return 0

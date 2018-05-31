@@ -80,7 +80,6 @@ def createDataTransformation(transformationType, targetSE, sourceSE,
 
   res = trans.addTransformation()
   if not res['OK']:
-    gLogger.error("Failed to create Transformation", res['Message'])
     return res
   gLogger.verbose(res)
   trans.setStatus('Active')
@@ -88,9 +87,8 @@ def createDataTransformation(transformationType, targetSE, sourceSE,
   currtrans = trans.getTransformationID()['Value']
   client = TransformationClient()
   res = client.createTransformationInputDataQuery(currtrans, metadata)
-  if res['OK']:
-    gLogger.always("Successfully created replication transformation")
-    return S_OK()
+  if not res['OK']:
+    return res
 
-  gLogger.error("Failure during replication creation", res['Message'])
-  return S_ERROR("Failed to create transformation:%s " % res['Message'])
+  gLogger.always("Successfully created replication transformation")
+  return S_OK()

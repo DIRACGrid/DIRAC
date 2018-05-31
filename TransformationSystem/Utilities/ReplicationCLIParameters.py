@@ -111,7 +111,7 @@ class Params(object):
       return S_OK()
     gLogger.error("\n".join(self.errorMessages))
     script.showHelp()
-    return S_ERROR(self.errorMessages)
+    return S_ERROR()
 
   def checkProxy(self):
     """checks if the proxy has the ProductionManagement property"""
