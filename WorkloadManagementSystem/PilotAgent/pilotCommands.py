@@ -442,7 +442,7 @@ class CheckCECapabilities(CommandBase):
     if resourceDict.get('Container') in ["Singularity", "singularity"]:
       self.cfg.append('-o "/LocalSite/LocalCE=Singularity"')
 
-    # LocalCE for Container options 
+    # LocalCE for Container options
     if resourceDict.get('ContainerBin'):
       self.cfg.append('-o "/LocalSite/ContainerBin=%s"' % resourceDict['ContainerBin'])
     if resourceDict.get('ContainerRoot'):
