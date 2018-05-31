@@ -2,20 +2,6 @@
 """
 Create a production to replicate files from some storage elements to others
 
-Example::
-
-  dirac-transformation-replication <MetaValue1,MetaValue2> <TargetSEs> [-G<Files>] [-S<SourceSEs>][-N<ExtraName>] \
-        [-T<Type>] [-M<Key>] [-K...]
-
-Options:
-   -G, --GroupSize <value>     Number of Files per transformation task
-   -S, --SourceSEs <value>     SourceSE(s) to use
-   -N, --Extraname <value>    String to append to transformation name in case one already exists with that name
-   -T, --TransformationType <value>  Which transformation type to use, default 'Replication'
-   -K, --MetaKey <value>       Which MetaKey to use
-   -M, --MetaData <value>      Key-Value Pair to use in addition to the default MetaKey and Value
-
-
 :since:  May 31, 2018
 :author: A. Sailer
 """
