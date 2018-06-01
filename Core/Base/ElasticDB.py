@@ -42,7 +42,6 @@ class ElasticDB(ElasticSearchDB):
     self.__user = dbParameters.get('User', '')
     self.__dbPassword = dbParameters.get('Password', '')
     self.__useSSL = dbParameters.get('SSL', True)
-    # self.__useSSL = False
 
     super(ElasticDB, self).__init__(self.__dbHost,
                                     self.__dbPort,

@@ -11,26 +11,12 @@
 
 __RCSID__ = "$Id$"
 
-import sys
-import operator
-
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities.DErrno import EWMSSUBM
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.ElasticDB import ElasticDB as DB
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC import gLogger
 
 #############################################################################
-
-JOB_STATES = ['Submitting', 'Received', 'Checking', 'Staging', 'Waiting', 'Matched',
-              'Running', 'Stalled', 'Done', 'Completed', 'Failed']
-JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 
 
 class JobDB(DB):
@@ -52,6 +38,10 @@ class JobDB(DB):
     """ Get Job Parameters defined for jobID.
       Returns a dictionary with the Job Parameters.
       If parameterList is empty - all the parameters are returned.
+
+    :param self: self reference
+    :param int jobID: Job ID
+    :param list paramList: list of parameters to be returned
     """
 
     self.log.debug('JobDB.getParameters: Getting Parameters for job %s' % jobID)
@@ -74,31 +64,35 @@ class JobDB(DB):
     else:
       query = {"query": {"match": {"JobID": jobID}}, "_source": ["Name", "Value"]}
 
+    gLogger.debug("Getting results for ", jobID)
     result = self.query('jobelasticdb*', query)
 
-    if result['OK']:
-      if result['Value']:
+    if not result['OK']:
+      return S_ERROR(result)
 
-        sources = result['Value']['hits']['hits']
+    sources = result['Value']['hits']['hits']
 
-        for i in range(0, len(sources)):
+    for source in sources:
 
-          name = sources[i]['_source']['Name']
-          value = sources[i]['_source']['Value']
+      name = source['_source']['Name']
+      value = source['_source']['Value']
 
-          try:
-            resultDict[name] = value.tostring()
-          except BaseException:
-            resultDict[name] = value
+      try:
+        resultDict[name] = value.tostring()
+      except BaseException:
+        resultDict[name] = value
 
-        return S_OK(resultDict)
-
-    else:
-      return S_ERROR('JobDB.getJobParameters: failed to retrieve parameters')
+    return S_OK(resultDict)
 
 #############################################################################
   def setJobParameter(self, jobID, key, value):
+
     """ Set a parameter specified by name,value pair for the job JobID
+
+    :param self: self reference
+    :param int jobID: Job ID
+    :param basestring key: Name
+    :param blob value: value
     """
 
     query = {
@@ -110,21 +104,20 @@ class JobDB(DB):
     indexName = self.generateFullIndexName('jobelasticdb')
     result = self.exists(indexName)
 
-    if result:
-      pass
-
-    else:
+    if not result:
       mapping = {
           "JobParameters": {
               "properties": {
                   "JobID": {
                       "type": "long"}, "Name": {
                       "type": "text"}, "Value": {
-                      "type": "binary"}}}}
+                      "type": "keyword"}}}}
+
+      gLogger.debug("Creating index ", indexName)
       result = self.createIndex('jobelasticdb', mapping)
 
       if not result['OK']:
-        return(result)
+        return result
 
     result = self.update('jobelasticdb*', 'JobParameters', query)
 
@@ -133,8 +126,11 @@ class JobDB(DB):
 
     if result['Value']['updated'] == 0:
 
+      gLogger.debug("Updated values: ", 0)
       query = {"JobID": jobID, "Name": key, "Value": value}
-      result = self.update(indexName, 'JobParameters', query, update_by_query=False)
+
+      gLogger.debug("Inserting values in index ", indexName)
+      result = self.update(indexName, 'JobParameters', query, updateByQuery=False, id=jobID)
 
     if not result['OK']:
       result = S_ERROR('JobDB.setJobParameter: operation failed.')

@@ -47,8 +47,8 @@ class JobMonitoringHandler(RequestHandler):
 
     global gJobElasticDB
 
-    self.gESFlag = self.srv_getCSOption('useES', False)
-    if self.gESFlag:
+    gESFlag = self.srv_getCSOption('useES', False)
+    if gESFlag:
       gJobElasticDB = JobElasticDB()
 
     credDict = self.getRemoteCredentials()

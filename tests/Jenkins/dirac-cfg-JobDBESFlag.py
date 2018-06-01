@@ -2,8 +2,6 @@
 """ update local cfg
 """
 
-import os
-
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
@@ -20,6 +18,6 @@ useESBackend = args[0]
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 csAPI = CSAPI()
 
-csAPI.setOption('Systems/WorkloadManagement/DevInstance/Services/JobMonitoring/useES', '%s' % useESBackend)
+csAPI.setOption('Systems/WorkloadManagement/dirac-JenkinsSetup/Services/JobMonitoring/useES', '%s' % useESBackend)
 
 csAPI.commit()

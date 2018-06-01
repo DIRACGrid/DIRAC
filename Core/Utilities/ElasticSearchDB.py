@@ -103,29 +103,26 @@ class ElasticSearchDB(object):
     except RequestError as re:
       return S_ERROR(re)
 
-  def update(self, index, doctype, query, update_by_query=True):
+  def update(self, index, doctype, query, updateByQuery=True, id=None):
     """ Executes a query and returns its result (uses ES DSL language).
 
     :param self: self reference
     :param basestring index: index name
+    :param basestring doctype: type of document
     :param dict query: It is the query in ElasticSearch DSL language
+    :param bool updateByQuery: A bool to determine updation by update by query or index values using index function.
+    :param int id: ID for the document to be created.
 
     """
-    if update_by_query:
 
-      try:
+    try:
+      if updateByQuery:
         esDSLQueryResult = self.__client.update_by_query(index=index, doc_type=doctype, body=query)
-        return S_OK(esDSLQueryResult)
-      except RequestError as re:
-        return S_ERROR(re)
-
-    else:
-
-      try:
-        esDSLQueryResult = self.__client.index(index=index, doc_type=doctype, body=query, id=query['JobID'])
-        return S_OK(esDSLQueryResult)
-      except RequestError as re:
-        return S_ERROR(re)
+      else:
+        esDSLQueryResult = self.__client.index(index=index, doc_type=doctype, body=query, id=id)
+      return S_OK(esDSLQueryResult)
+    except RequestError as re:
+      return S_ERROR(re)
 
   def _Search(self, indexname):
     """
@@ -285,7 +282,7 @@ class ElasticSearchDB(object):
     if mapping is None:
       mapping = {}
 
-    indexName = generateFullIndexName(indexprefix, period)
+    indexName = self.generateFullIndexName(indexprefix, period)
     gLogger.debug("inserting datat to %s index" % indexName)
     if not self.exists(indexName):
       retVal = self.createIndex(indexprefix, mapping, period)
