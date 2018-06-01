@@ -9,6 +9,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSVOForGroup
 
 class Params(object):
   """Parameter Object"""
+
   def __init__(self):
     self.targetSE = []
     self.sourceSE = ''
@@ -75,6 +76,7 @@ class Params(object):
     """ register command line arguments
 
     :param script: Dirac.Core.Base Script Class
+    :type script: DIRAC.Core.Base.Script
     """
 
     script.registerSwitch("G:", "GroupSize=", "Number of Files per transformation task", self.setGroupSize)
@@ -94,17 +96,24 @@ class Params(object):
                       "[-N<ExtraName>] [-T<Type>] [-M<Key>] [-K...] -x" % script.scriptName)
     script.setUsageMessage('\n'.join(useMessage))
 
-  def checkSettings(self, script):
-    """check if all required parameters are set, print error message and return S_ERROR if not"""
+  def checkSettings(self, script, checkArguments=True):
+    """check if all required parameters are set, print error message and return S_ERROR if not
 
-    args = script.getPositionalArgs()
-    if len(args) == 2:
-      self.setMetaValues(args[0])
-      self.setTargetSE(args[1])
-    else:
-      self.errorMessages.append("ERROR: Not enough arguments")
+    :param script: The script object
+    :type script: DIRAC.Core.Base.Script
+    :param bool checkArguments: if false do not check for the correct number of arguments, should only be
+        changed if using derived class
+    """
 
-    self.checkProxy()
+    if checkArguments:
+      args = script.getPositionalArgs()
+      if len(args) == 2:
+        self.setMetaValues(args[0])
+        self.setTargetSE(args[1])
+      else:
+        self.errorMessages.append("ERROR: Wrong number of arguments")
+
+    self._checkProxy()
 
     # get default metadata key:
     from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -117,7 +126,7 @@ class Params(object):
     script.showHelp()
     return S_ERROR()
 
-  def checkProxy(self):
+  def _checkProxy(self):
     """checks if the proxy has the ProductionManagement property and belongs to a VO"""
     proxyInfo = getProxyInfo()
     if not proxyInfo['OK']:

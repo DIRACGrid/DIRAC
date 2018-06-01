@@ -14,7 +14,7 @@ def createDataTransformation(flavour, targetSE, sourceSE,
                              plugin='Broadcast',
                              enable=False,
                              ):
-  """Creates the replication transformation based on the given parameters
+  """Creates the replication transformation based on the given parameters.
 
   :param str flavour: Flavour of replication to create
   :param targetSE: Destination for files
@@ -29,7 +29,6 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   :param bool enable: if true submit the transformation, otherwise dry run
   :returns: S_OK, S_ERROR
   """
-
   metadata = {metaKey: metaValue}
   if isinstance(extraData, dict):
     metadata.update(extraData)

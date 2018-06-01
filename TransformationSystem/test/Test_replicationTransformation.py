@@ -186,7 +186,7 @@ class TestParams(unittest.TestCase):
     self.sMock.getPositionalArgs.return_value = self.arguments
     ret = self.params.checkSettings(self.sMock)
     self.assertFalse(ret['OK'], str(ret))
-    self.assertTrue(any("ERROR: Not enough arguments" in msg for msg in self.params.errorMessages))
+    self.assertTrue(any("ERROR: Wrong number of arguments" in msg for msg in self.params.errorMessages))
 
   @patch(GET_PROXY, new=getProxyMock(False))
   @patch(GET_VOMS, new=Mock(return_value='clic'))
