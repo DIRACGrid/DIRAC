@@ -539,7 +539,7 @@ class WorkflowTasks(TaskBase):
         self._logVerbose('Setting Site: ', str(sites), transID=transID)
         seqDict['Site'] = sites
 
-      seqDict['JobName'] = transGroup
+      seqDict['JobName'] = self._transTaskName(transID, taskID)
       seqDict['JOB_ID'] = str(taskID).zfill(8)
 
       self._logDebug('TransID: %s, TaskID: %s, paramsDict: %s' % (transID, taskID, str(paramsDict)),
