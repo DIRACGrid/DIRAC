@@ -1033,7 +1033,7 @@ class Job(API):
               paramsDict[pName]['value'] += ';%%(%s)s' % pName
             else:
               paramsDict[pName]['value'] = '%%(%s)s' % pName
-        else:
+        elif "jdl" in paramsDict[pName]['type'].lower():
           if isinstance(paramsDict[pName]['value'], list):
             currentParams = paramsDict[pName]['value']
           elif isinstance(paramsDict[pName]['value'], basestring):
