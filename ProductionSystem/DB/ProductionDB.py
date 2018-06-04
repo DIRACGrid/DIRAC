@@ -59,9 +59,6 @@ class ProductionDB( DB ):
 
     self.statusActionDict = {'New':None, 'Active':'startTransformation', 'Stopped':'stopTransformation', 'Cleaned':'cleanTransformation'}
 
-    # This is here to ensure full compatibility between different versions of the MySQL DB schema
-    self.isProductionTransformationsInnoDB = True
-
   def addProduction( self, prodName, authorDN, authorGroup, connection = False ):
     """ Add new production definition including its input streams
     """
