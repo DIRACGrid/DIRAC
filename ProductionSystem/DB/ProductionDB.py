@@ -61,13 +61,6 @@ class ProductionDB( DB ):
 
     # This is here to ensure full compatibility between different versions of the MySQL DB schema
     self.isProductionTransformationsInnoDB = True
-    res = self._query( "SELECT Engine FROM INFORMATION_SCHEMA.TABLES WHERE table_name = 'ProductionTransformations'" )
-    if not res['OK']:
-      raise RuntimeError( res['Message'] )
-    else:
-      engine = res['Value'][0][0]
-      if engine.lower() != 'innodb':
-        self.isProductionTransformationsInnoDB = False
 
   def addProduction( self, prodName, authorDN, authorGroup, connection = False ):
     """ Add new production definition including its input streams
