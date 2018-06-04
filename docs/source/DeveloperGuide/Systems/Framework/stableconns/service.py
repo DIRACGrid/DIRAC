@@ -1,6 +1,16 @@
 """ This is a simple example of implementation of a Ping/Pong service for executors.
 
-    This service does not any specific configuration to run.
+    This service does not any specific configuration to run, only the Port number, and authz e.g.:
+    
+    {
+      Port = 9145
+      {
+        Authorization
+        {
+          Default = all
+        }
+      }
+    }
 """
 
 from DIRAC import S_OK
