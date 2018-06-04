@@ -1,3 +1,10 @@
+[v6r20p1]
+
+*WorkloadManagementSystem
+
+FIX: (#3697) Ensure retrieveTaskQueues doesn't return anything when given an empty list of TQ IDs.
+FIX: (#3698) Call optimizer fast-path for non-bulk jobs
+
 [v6r20]
 
 *Core
