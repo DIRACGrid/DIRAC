@@ -514,7 +514,14 @@ class WorkflowTasks(TaskBase):
     jobType = oJob.workflow.findParameter('JobType').getValue()
     transGroup = str(transID).zfill(8)
 
-    oJob._setParamValue('PRODUCTION_ID', str(transID).zfill(8))  # pylint: disable=protected-access
+    # Verify that the JOB_ID parameter is added to the workflow
+    if not oJob.workflow.findParameter('JOB_ID'):
+      oJob._addParameter(oJob.workflow, 'JOB_ID', 'string', '00000000', "Initial JOB_ID")
+
+    if oJob.workflow.findParameter('PRODUCTION_ID'):
+      oJob._setParamValue('PRODUCTION_ID', str(transID).zfill(8))  # pylint: disable=protected-access
+    else:
+      oJob._addParameter(oJob.workflow, 'PRODUCTION_ID', 'string', str(transID).zfill(8), "Production ID")  # pylint: disable=protected-access
     oJob.setType(jobType)
     self._logVerbose('Adding default transformation group of %s' % (transGroup),
                      transID=transID, method=method)
@@ -608,7 +615,21 @@ class WorkflowTasks(TaskBase):
         self._logVerbose('Adding default transformation group of %s' % (transGroup),
                          transID=transID, method=method)
         oJobTemplate.setJobGroup(transGroup)
-        oJobTemplate._setParamValue('PRODUCTION_ID', str(transID).zfill(8))
+        if oJobTemplate.workflow.findParameter('PRODUCTION_ID'):
+          oJobTemplate._setParamValue('PRODUCTION_ID', str(transID).zfill(8))
+        else:
+          oJobTemplate._addParameter(oJobTemplate.workflow,
+                                     'PRODUCTION_ID',
+                                     'string',
+                                     str(transID).zfill(8),
+                                     "Production ID")
+        if not oJobTemplate.workflow.findParameter('JOB_ID'):
+          oJobTemplate._addParameter(oJobTemplate.workflow,
+                                     'JOB_ID',
+                                     'string',
+                                     '00000000',
+                                     "Initial JOB_ID")
+
 
       paramsDict['Site'] = site
       paramsDict['JobType'] = jobType
