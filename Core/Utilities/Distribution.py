@@ -41,7 +41,7 @@ def writeVersionToInit(rootPath, version):
     return S_ERROR("Could not open %s: %s" % (initFile, str(e)))
   versionStrings = ("majorVersion", "minorVersion", "patchLevel", "preVersion")
   reList = []
-  for iP in enumerate(versionStrings):
+  for iP, version in enumerate(versionStrings):
     if verTup[iP]:
       replStr = "%s = %s" % (versionStrings[iP], verTup[iP])
     else:
