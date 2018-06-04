@@ -27,12 +27,6 @@ class ProductionClient( Client ):
     """
     pass
 
-  def addTransformation( self, transformation ):
-    """
-          add a transformation to the production
-    """
-    pass
-
   def addProduction( self, prodName, timeout = 1800 ):
     """ add a new production
     """
