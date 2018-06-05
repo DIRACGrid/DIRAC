@@ -221,10 +221,10 @@ class ProductionClientChain( TestClientProductionTestCase ):
     res = self.prodClient.deleteProduction( prodName)
     self.assertTrue( res['OK'] )
 
-  def test_HatProduction(self):
+  def test_SplitProduction(self):
 
     ### Create a production
-    prodName = 'HatProd'
+    prodName = 'SplitProd'
     res = self.prodClient.addProduction( prodName )
     self.assertTrue( res['OK'] )
     prodID = res['Value']
@@ -295,10 +295,10 @@ class ProductionClientChain( TestClientProductionTestCase ):
     res = self.prodClient.deleteProduction( prodName )
     self.assertTrue( res['OK'] )
 
-  def test_VProduction(self):
+  def test_MergeProduction(self):
 
     ### Create a production
-    prodName = 'VProd'
+    prodName = 'MergeProd'
     res = self.prodClient.addProduction( prodName )
     self.assertTrue( res['OK'] )
     prodID = res['Value']
