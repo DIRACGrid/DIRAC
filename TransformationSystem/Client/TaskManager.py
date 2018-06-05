@@ -521,7 +521,11 @@ class WorkflowTasks(TaskBase):
     if oJob.workflow.findParameter('PRODUCTION_ID'):
       oJob._setParamValue('PRODUCTION_ID', str(transID).zfill(8))  # pylint: disable=protected-access
     else:
-      oJob._addParameter(oJob.workflow, 'PRODUCTION_ID', 'string', str(transID).zfill(8), "Production ID")  # pylint: disable=protected-access
+      oJob._addParameter(oJob.workflow,  # pylint: disable=protected-access
+                         'PRODUCTION_ID',
+                         'string',
+                         str(transID).zfill(8),
+                         "Production ID")
     oJob.setType(jobType)
     self._logVerbose('Adding default transformation group of %s' % (transGroup),
                      transID=transID, method=method)
