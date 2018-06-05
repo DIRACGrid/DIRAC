@@ -568,6 +568,7 @@ class WorkflowTasks(TaskBase):
                              transID=transID, method=method)
             seqDict[paramName] = paramValue
 
+      outputParameterList = []
       if self.outputDataModule:
         res = self.getOutputData({'Job': oJob._toXML(), 'TransformationID': transID,  # pylint: disable=protected-access
                                   'TaskID': taskID, 'InputData': inputData})
@@ -577,12 +578,13 @@ class WorkflowTasks(TaskBase):
           continue
         for name, output in res['Value'].iteritems():
           seqDict[name] = ';'.join(output)
+          outputParameterList.append(name)
 
       for pName, seq in seqDict.iteritems():
         paramSeqDict.setdefault(pName, []).append(seq)
 
     for paramName, paramSeq in paramSeqDict.iteritems():
-      if paramName in ('JOB_ID', 'PRODUCTION_ID', 'InputData'):
+      if paramName in ['JOB_ID', 'PRODUCTION_ID', 'InputData'] + outputParameterList:
         oJob.setParameterSequence(paramName, paramSeq, addToWorkflow=paramName)
       else:
         oJob.setParameterSequence(paramName, paramSeq)
