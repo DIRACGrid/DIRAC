@@ -583,6 +583,15 @@ class WorkflowTasks(TaskBase):
         for name, output in res['Value'].iteritems():
           seqDict[name] = ';'.join(output)
           outputParameterList.append(name)
+          if oJob.workflow.findParameter(name):
+            oJob._setParamValue(name, "%%(%s)s" % name)  # pylint: disable=protected-access
+          else:
+            oJob._addParameter(oJob.workflow,  # pylint: disable=protected-access
+                               name,
+                               'JDL',
+                               "%%(%s)s" % name,
+                               name)
+
 
       for pName, seq in seqDict.iteritems():
         paramSeqDict.setdefault(pName, []).append(seq)
