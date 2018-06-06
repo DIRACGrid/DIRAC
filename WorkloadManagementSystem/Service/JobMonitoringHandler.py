@@ -45,11 +45,15 @@ class JobMonitoringHandler(RequestHandler):
 
   def initialize(self):
 
-    global gJobElasticDB
+    global gJobElasticDB, gJobDB
 
     gESFlag = self.srv_getCSOption('useES', False)
     if gESFlag:
       gJobElasticDB = JobElasticDB()
+
+    gMySQLFlag = self.srv_getCSOption('useMySQL', True)
+    if not gMySQLFlag:
+      gJobDB = False
 
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
