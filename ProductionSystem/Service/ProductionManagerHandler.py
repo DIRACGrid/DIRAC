@@ -26,6 +26,7 @@ class ProductionManagerHandlerBase( RequestHandler ):
   # These are the methods to manipulate the Productions table
   #
 
+  ### Obsolete: To be replaced by createProduction and startProduction
   types_addProduction = [basestring]
 
   def export_addProduction(self, prodName):
@@ -35,6 +36,18 @@ class ProductionManagerHandlerBase( RequestHandler ):
     res = database.addProduction(prodName,authorDN, authorGroup)
     if res['OK']:
       gLogger.info("Added production %d" % res['Value'])
+    return self._parseRes(res)
+
+  ## Replace addProduction
+  types_createProduction = [basestring, basestring]
+
+  def export_createProduction(self, prodName, prodDescription):
+    credDict = self.getRemoteCredentials()
+    authorDN = credDict['DN']
+    authorGroup = credDict['group']
+    res = database.createProduction(prodName, prodDescription, authorDN, authorGroup)
+    if res['OK']:
+      gLogger.info("Created production %d" % res['Value'])
     return self._parseRes(res)
 
   types_deleteProduction = [prodTypes]
@@ -64,7 +77,13 @@ class ProductionManagerHandlerBase( RequestHandler ):
   types_getProduction = [prodTypes]
 
   def export_getProduction( self, prodName ):
-    res = database.getProduction( prodName)
+    res = database.getProduction( prodName )
+    return self._parseRes(res)
+
+  types_getProductionParameters = [prodTypes, [basestring, list, tuple]]
+
+  def export_getProductionParameters(self, prodName, parameters):
+    res = database.getProductionParameters(prodName, parameters)
     return self._parseRes(res)
 
   types_setProductionStatus = [prodTypes,basestring]
@@ -72,6 +91,14 @@ class ProductionManagerHandlerBase( RequestHandler ):
   def export_setProductionStatus(self, prodName, status):
     res = database.setProductionStatus(prodName, status)
     return self._parseRes(res)
+
+  types_startProduction = [prodTypes]
+
+  def export_startProduction( self, prodName ):
+    res = database.startProduction( prodName )
+    return self._parseRes(res)
+
+
 
   ####################################################################
   #
