@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS Productions;
 CREATE TABLE Productions (
     ProductionID INTEGER NOT NULL AUTO_INCREMENT,
     ProductionName VARCHAR(255) NOT NULL,
+    Description LONGBLOB,
     CreationDate DATETIME,
     LastUpdate DATETIME,
     AuthorDN VARCHAR(255) NOT NULL,

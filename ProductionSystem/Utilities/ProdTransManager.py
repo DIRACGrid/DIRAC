@@ -5,6 +5,7 @@
 
 __RCSID__ = "$Id $"
 
+import json
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -35,6 +36,32 @@ class ProdTransManager( object ):
         return res
 
     return S_OK()
+
+
+  def addStep( self, prodStep, prodID ):
+
+    gLogger.notice( "Add step %s to production %s" % (prodStep['name'], prodID) )
+
+    description = prodStep['description']
+    longDescription = prodStep['longDescription']
+    type = prodStep['type']
+    plugin = prodStep['plugin']
+    agentType = prodStep['agentType']
+    fileMask = prodStep['fileMask']
+    inputquery = json.dumps( prodStep['inputquery'] )
+    outputquery = json.dumps(prodStep['outputquery'] )
+    groupsize = prodStep['groupsize']
+    body = prodStep['body']
+
+    name = '%08d' % prodID + '_Step_' + prodStep['name']
+
+    res = self.transClient.addTransformation( name, description, longDescription, type, plugin,
+                                              agentType, fileMask, inputMetaQuery=inputquery, outputMetaQuery=outputquery, groupSize = groupsize, body=body )
+
+    if not res['OK']:
+      return S_ERROR(res['Message'])
+
+    return S_OK( res['Value'] )
 
 
   def executeActionOnTransformations( self, prodID, action, transID=None ):
