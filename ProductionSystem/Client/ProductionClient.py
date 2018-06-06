@@ -2,9 +2,8 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                                         import S_OK, gLogger
+from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.Client                                        import Client
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations           import Operations
 
 class ProductionClient( Client ):
 
@@ -18,20 +17,87 @@ class ProductionClient( Client ):
     Client.__init__( self, **kwargs )
     self.setServer( 'Production/ProductionManager' )
 
+    self.prodDescription =  {}
+    self.stepCounter = 1
+    ##### Default values for transformation step parameters
+    self.stepDescription = 'description'
+    self.stepLongDescription = 'longDescription'
+    self.stepType = 'MCSimulation'
+    self.stepPlugin = 'Standard'
+    self.stepAgentType = 'Manual'
+    self.stepFileMask = ''
+    #########################################
+    self.stepInputquery = {}
+    self.stepOutputquery = {}
+    self.stepGroupSize = 1
+    self.stepBody = 'body'
+
   def setServer( self, url ):
     self.serverURL = url
 
-  def setName ( self, prodName ):
+  ### Methods working on the client to prepare the production description
+  def getDescription( self ):
+    """ get the production description
     """
-          set the name of the production
-    """
-    pass
+    return self.prodDescription
 
+  def setDescription( self, prodDescription ):
+    """ set the production description
+    """
+    self.prodDescription = prodDescription
+
+  def addStep( self, prodStep ):
+    """ add a step to the production description
+    """
+    ### Mandatory fields ###################
+    stepName = 'Step' + str(self.stepCounter)
+    self.stepCounter+=1
+    prodStep['name'] = stepName
+
+    if 'description' not in prodStep:
+      prodStep['description'] = self.stepDescription
+    if 'longDescription' not in prodStep:
+      prodStep['longDescription'] = self.stepLongDescription
+    if 'type' not in prodStep:
+      prodStep['type'] = self.stepType
+    if 'plugin' not in prodStep:
+      prodStep['plugin'] = self.stepPlugin
+    if 'agentType' not in prodStep:
+      prodStep['agentType'] = self.stepAgentType
+    if 'fileMask' not in prodStep:
+      prodStep['fileMask'] = self.stepFileMask
+    ### Optional fields ###################
+    if 'inputquery' not in prodStep:
+      prodStep['inputquery'] = self.stepInputquery
+    if 'outputquery' not in prodStep:
+      prodStep['outputquery'] = self.stepOutputquery
+    if 'groupsize' not in prodStep:
+      prodStep['groupsize'] = self.stepGroupSize
+    if 'body' not in prodStep:
+      prodStep['body'] = self.stepBody
+
+    self.prodDescription[stepName] = prodStep
+
+  ### Methods to contact the ProductionManager Service
+
+  ### Obsolete: to be replaced by createProduction
   def addProduction( self, prodName, timeout = 1800 ):
     """ add a new production
     """
     rpcClient = self._getRPC( timeout = timeout )
     return rpcClient.addProduction( prodName )
+
+  def createProduction( self, prodName, prodDescription, timeout = 1800 ):
+    """ create a new production starting from its description
+    """
+    rpcClient = self._getRPC( timeout = timeout )
+    return rpcClient.createProduction( prodName, prodDescription )
+
+  def startProduction( self, prodID ):
+    """ Instantiate the transformations of the production and start the production
+    """
+    rpcClient = self._getRPC()
+    return rpcClient.startProduction( prodID )
 
   def setProductionStatus( self, prodID, status ):
     """ Sets the production status
