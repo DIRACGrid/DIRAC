@@ -13,7 +13,6 @@ __RCSID__ = "$Id$"
 import json
 import datetime
 import math
-from types import DictType, IntType, LongType, ListType, StringTypes, BooleanType
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
@@ -58,26 +57,26 @@ class ReqManagerHandler(RequestHandler):
       cls.__validator = RequestValidator()
     return cls.__validator.validate(request)
 
-  types_getRequestIDForName = [StringTypes]
+  types_getRequestIDForName = [basestring]
 
   @classmethod
   def export_getRequestIDForName(cls, requestName):
     """ get requestID for given :requestName: """
-    if type(requestName) in StringTypes:
+    if isinstance(requestName, basestring):
       result = cls.__requestDB.getRequestIDForName(requestName)
       if not result["OK"]:
         return result
       requestID = result["Value"]
     return S_OK(requestID)
 
-  types_cancelRequest = [(IntType, LongType)]
+  types_cancelRequest = [(int, long)]
 
   @classmethod
   def export_cancelRequest(cls, requestID):
     """ Cancel a request """
     return cls.__requestDB.cancelRequest(requestID)
 
-  types_putRequest = [StringTypes]
+  types_putRequest = [basestring]
 
   def export_putRequest(self, requestJSON):
     """ put a new request into RequestDB
@@ -143,7 +142,7 @@ class ReqManagerHandler(RequestHandler):
     gLogger.info("putRequest: Attempting to set request '%s'" % requestName)
     return self.__requestDB.putRequest(request)
 
-  types_getScheduledRequest = [(IntType, LongType)]
+  types_getScheduledRequest = [(int, long)]
 
   @classmethod
   def export_getScheduledRequest(cls, operationID):
@@ -166,7 +165,7 @@ class ReqManagerHandler(RequestHandler):
     """ Get the summary of requests in the Request DB """
     return cls.__requestDB.getDBSummary()
 
-  types_getRequest = [(LongType, IntType)]
+  types_getRequest = [(long, int)]
 
   @classmethod
   def export_getRequest(cls, requestID=0):
@@ -183,7 +182,7 @@ class ReqManagerHandler(RequestHandler):
       return toJSON
     return S_OK()
 
-  types_getBulkRequests = [IntType, BooleanType]
+  types_getBulkRequests = [int, bool]
 
   @classmethod
   def export_getBulkRequests(cls, numberOfRequest, assigned):
@@ -211,7 +210,7 @@ class ReqManagerHandler(RequestHandler):
       return S_OK(toJSONDict)
     return S_OK()
 
-  types_peekRequest = [(LongType, IntType)]
+  types_peekRequest = [(long, int)]
 
   @classmethod
   def export_peekRequest(cls, requestID=0):
@@ -226,7 +225,7 @@ class ReqManagerHandler(RequestHandler):
         gLogger.error(peekRequest["Message"])
     return peekRequest
 
-  types_getRequestSummaryWeb = [DictType, ListType, IntType, IntType]
+  types_getRequestSummaryWeb = [dict, list, int, int]
 
   @classmethod
   def export_getRequestSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
@@ -242,7 +241,7 @@ class ReqManagerHandler(RequestHandler):
     """
     return cls.__requestDB.getRequestSummaryWeb(selectDict, sortList, startItem, maxItems)
 
-  types_getDistinctValuesWeb = [StringTypes]
+  types_getDistinctValuesWeb = [basestring]
 
   @classmethod
   def export_getDistinctValuesWeb(cls, attribute):
@@ -254,7 +253,7 @@ class ReqManagerHandler(RequestHandler):
       tableName = 'Operation'
     return cls.__requestDB.getDistinctValues(tableName, attribute)
 
-  types_getRequestCountersWeb = [StringTypes, DictType]
+  types_getRequestCountersWeb = [basestring, dict]
 
   @classmethod
   def export_getRequestCountersWeb(cls, groupingAttribute, selectDict):
@@ -269,14 +268,14 @@ class ReqManagerHandler(RequestHandler):
 
     return cls.__requestDB.getRequestCountersWeb(groupingAttribute, selectDict)
 
-  types_deleteRequest = [(IntType, LongType)]
+  types_deleteRequest = [(int, long)]
 
   @classmethod
   def export_deleteRequest(cls, requestID):
     """ Delete the request with the supplied ID"""
     return cls.__requestDB.deleteRequest(requestID)
 
-  types_getRequestIDsList = [ListType, IntType, StringTypes]
+  types_getRequestIDsList = [list, int, basestring]
 
   @classmethod
   def export_getRequestIDsList(
@@ -297,14 +296,14 @@ class ReqManagerHandler(RequestHandler):
       gLogger.error("getRequestIDsList: %s" % reqIDsList["Message"])
     return reqIDsList
 
-  types_getRequestIDsForJobs = [ListType]
+  types_getRequestIDsForJobs = [list]
 
   @classmethod
   def export_getRequestIDsForJobs(cls, jobIDs):
     """ Select the request IDs for supplied jobIDs """
     return cls.__requestDB.getRequestIDsForJobs(jobIDs)
 
-  types_readRequestsForJobs = [ListType]
+  types_readRequestsForJobs = [list]
 
   @classmethod
   def export_readRequestsForJobs(cls, jobIDs):
@@ -317,7 +316,7 @@ class ReqManagerHandler(RequestHandler):
       requests["Value"]["Successful"][jobID] = request.toJSON()["Value"]
     return requests
 
-  types_getDigest = [(IntType, LongType)]
+  types_getDigest = [(int, long)]
 
   @classmethod
   def export_getDigest(cls, requestID):
@@ -328,7 +327,7 @@ class ReqManagerHandler(RequestHandler):
     """
     return cls.__requestDB.getDigest(requestID)
 
-  types_getRequestStatus = [(IntType, LongType)]
+  types_getRequestStatus = [(int, long)]
 
   @classmethod
   def export_getRequestStatus(cls, requestID):
@@ -338,28 +337,19 @@ class ReqManagerHandler(RequestHandler):
       gLogger.error("getRequestStatus: %s" % status["Message"])
     return status
 
-  types_getRequestFileStatus = [[IntType, LongType], list(StringTypes) + [ListType]]
+  types_getRequestFileStatus = [[int, long], [basestring, list]]
 
   @classmethod
   def export_getRequestFileStatus(cls, requestID, lfnList):
     """ get request file status for a given LFNs list and requestID """
-    if isinstance(lfnList, str):
+    if isinstance(lfnList, basestring):
       lfnList = [lfnList]
     res = cls.__requestDB.getRequestFileStatus(requestID, lfnList)
     if not res["OK"]:
       gLogger.error("getRequestFileStatus: %s" % res["Message"])
     return res
 
-#   types_getRequestName = [ ( IntType, LongType ) ]
-#   @classmethod
-#   def export_getRequestName( cls, requestID ):
-#     """ get request name for a given requestID """
-#     requestName = cls.__requestDB.getRequestName( requestID )
-#     if not requestName["OK"]:
-#       gLogger.error( "getRequestName: %s" % requestName["Message"] )
-#     return requestName
-
-  types_getRequestInfo = [[IntType, LongType]]
+  types_getRequestInfo = [[int, long]]
 
   @classmethod
   def export_getRequestInfo(cls, requestID):
