@@ -7,7 +7,7 @@ from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 from DIRAC import gLogger
-from DIRAC.WorkloadManagementSystem.DB.JobElasticDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 
 
 class JobDBTestCase(unittest.TestCase):
@@ -16,7 +16,7 @@ class JobDBTestCase(unittest.TestCase):
 
   def setUp(self):
     gLogger.setLevel('DEBUG')
-    self.jobDB = JobDB()
+    self.jobDB = ElasticJobDB()
 
   def tearDown(self):
     self.jobDB = False

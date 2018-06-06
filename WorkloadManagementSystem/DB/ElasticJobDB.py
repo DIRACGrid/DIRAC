@@ -11,25 +11,19 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.ElasticDB import ElasticDB as DB
-from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC import gLogger
 
 #############################################################################
 
 
-class JobDB(DB):
+class ElasticJobDB(DB):
 
   def __init__(self):
     """ Standard Constructor
     """
 
-    DB.__init__(self, 'jobelasticdb', 'WorkloadManagement/JobElasticDB')
-
-    self.jobAttributeNames = []
-
-    self.siteClient = SiteStatus()
+    DB.__init__(self, 'jobelasticdb', 'WorkloadManagement/ElasticJobDB')
 
     self.log.info("==================================================")
 
@@ -37,7 +31,7 @@ class JobDB(DB):
   def getJobParameters(self, jobID, paramList=None):
     """ Get Job Parameters defined for jobID.
       Returns a dictionary with the Job Parameters.
-      If parameterList is empty - all the parameters are returned.
+      If paramList is empty - all the parameters are returned.
 
     :param self: self reference
     :param int jobID: Job ID
@@ -92,7 +86,7 @@ class JobDB(DB):
     :param self: self reference
     :param int jobID: Job ID
     :param basestring key: Name
-    :param blob value: value
+    :param keyword value: value
     """
 
     query = {
@@ -122,7 +116,8 @@ class JobDB(DB):
     result = self.update('jobelasticdb*', 'JobParameters', query)
 
     if not result['OK']:
-      return S_ERROR('JobDB.setJobParameter: operation failed.')
+      gLogger.error("JobDB.setJobParameter: operation failed.")
+      return result
 
     if result['Value']['updated'] == 0:
 
@@ -133,6 +128,7 @@ class JobDB(DB):
       result = self.update(indexName, 'JobParameters', query, updateByQuery=False, id=jobID)
 
     if not result['OK']:
-      result = S_ERROR('JobDB.setJobParameter: operation failed.')
+      gLogger.error("JobDB.setJobParameter: operation failed.")
+      return result
 
     return result

@@ -12,14 +12,14 @@ import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobElasticDB import JobDB as JobElasticDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
 # These are global instances of the DB classes
 gJobDB = False
-gJobElasticDB = False
+gElasticJobDB = False
 gJobLoggingDB = False
 gTaskQueueDB = False
 
@@ -44,12 +44,17 @@ def initializeJobMonitoringHandler(serviceInfo):
 class JobMonitoringHandler(RequestHandler):
 
   def initialize(self):
+    """
+    Flags gESFlag and gMySQLFlag have bool values (True/False)
+    derived from dirac.cfg configuration file
 
-    global gJobElasticDB, gJobDB
+    Determines the switching of ElasticSearch and MySQL backends
+    """
+    global gElasticJobDB, gJobDB
 
     gESFlag = self.srv_getCSOption('useES', False)
     if gESFlag:
-      gJobElasticDB = JobElasticDB()
+      gElasticJobDB = ElasticJobDB()
 
     gMySQLFlag = self.srv_getCSOption('useMySQL', True)
     if not gMySQLFlag:
@@ -501,8 +506,8 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobParameter(jobID, parName):
 
-    if gJobElasticDB:
-      return gJobElasticDB.getJobParameters(jobID, [parName])
+    if gElasticJobDB:
+      return gElasticJobDB.getJobParameters(jobID, [parName])
     else:
       return gJobDB.getJobParameters(jobID, [parName])
 
@@ -512,8 +517,8 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobParameters(jobID):
 
-    if gJobElasticDB:
-      return gJobElasticDB.getJobParameters(jobID)
+    if gElasticJobDB:
+      return gElasticJobDB.getJobParameters(jobID)
     else:
       return gJobDB.getJobParameters(jobID)
 
