@@ -4,6 +4,8 @@
     in order to automate the task of transformation preparation for high level productions.
 """
 
+# # imports
+import json
 import threading
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
@@ -40,9 +42,9 @@ class ProductionDB( DB ):
     self.prodValidator = ProdValidator()
     self.ProdTransManager = ProdTransManager()
 
-
     self.PRODPARAMS = [ 'ProductionID',
                         'ProductionName',
+                        'Description',
                         'CreationDate',
                         'LastUpdate',
                         'AuthorDN',
@@ -59,8 +61,35 @@ class ProductionDB( DB ):
 
     self.statusActionDict = {'New':None, 'Active':'startTransformation', 'Stopped':'stopTransformation', 'Cleaned':'cleanTransformation'}
 
+
+  def createProduction( self, prodName, prodDescription, authorDN, authorGroup, connection = False ):
+    """ Create new production starting from its description
+    """
+    connection = self.__getConnection( connection )
+    res = self._getProductionID( prodName, connection = connection )
+    if res['OK']:
+      return S_ERROR( "Production with name %s already exists with ProductionID = %d" % ( prodName,
+                                                                                                  res['Value'] ) )
+    elif res['Message'] != "Production does not exist":
+      return res
+    self.lock.acquire()
+
+    req = "INSERT INTO Productions (ProductionName, Description, CreationDate,LastUpdate, \
+                                    AuthorDN,AuthorGroup,Status)\
+                                VALUES ('%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','New');" % \
+                                    ( prodName, prodDescription, authorDN, authorGroup )
+    res = self._update( req, connection )
+    if not res['OK']:
+      self.lock.release()
+      return res
+    prodID = res['lastRowId']
+    self.lock.release()
+
+    return S_OK( prodID )
+
+  ### Obsolete: This is replaced by createProduction and startProduction
   def addProduction( self, prodName, authorDN, authorGroup, connection = False ):
-    """ Add new production definition including its input streams
+    """ Add new production to the system
     """
     connection = self.__getConnection( connection )
     res = self._getProductionID( prodName, connection = connection )
@@ -129,6 +158,23 @@ class ProductionDB( DB ):
       return S_ERROR( "Production %s did not exist" % prodName )
     return S_OK( res['Value'][0] )
 
+  def getProductionParameters( self, prodName, parameters, connection = False ):
+    """ Get the requested parameters for a supplied production """
+    if isinstance( parameters, basestring ):
+      parameters = [parameters]
+    res = self.getProduction( prodName, connection = connection )
+    if not res['OK']:
+      return res
+    prodParams = res['Value']
+    paramDict = {}
+    for reqParam in parameters:
+      if reqParam not in prodParams:
+        return S_ERROR( "Parameter %s not defined for production" % reqParam )
+      paramDict[reqParam] = prodParams[reqParam]
+    if len( paramDict ) == 1:
+      return S_OK( paramDict[reqParam] )
+    return S_OK( paramDict )
+
 
     ###########################################################################
   #
@@ -171,6 +217,7 @@ class ProductionDB( DB ):
     req = "UPDATE Productions SET Status='%s', LastUpdate=UTC_TIMESTAMP() WHERE ProductionID=%d" % ( status, prodID )
     return self._update( req, connection )
 
+## This is to be replaced by startProduction, stopProduction etc.
   def setProductionStatus( self, prodName, status, connection = False ):
     """ Set the status to the production specified by name or id and to all the associated transformations"""
     res = self._getConnectionProdID( connection, prodName )
@@ -185,6 +232,50 @@ class ProductionDB( DB ):
       return res
 
     res = self.ProdTransManager.executeActionOnTransformations( prodID, self.statusActionDict[status] )
+    if not res['OK']:
+      gLogger.error( res['Message'] )
+
+    return S_OK()
+
+  def startProduction( self, prodName, connection = False ):
+    """ Instantiate and start the transformations"""
+    res = self._getConnectionProdID( connection, prodName )
+    gLogger.error(res)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    prodID = res['Value']['ProductionID']
+
+    #### Instantiate the transformations according to the description
+    res = self.getProductionParameters( prodName, 'Description' )
+    if not res['OK']:
+      return res
+    prodDescription = json.loads(res['Value'])
+
+    for step in prodDescription:
+      res = self.ProdTransManager.addStep( prodDescription[step], prodID )
+      if not res['OK']:
+        return S_ERROR( res['Message'] )
+      transID = res['Value']
+      prodDescription[step]['transID'] = transID
+
+
+    for step in prodDescription:
+      transID = prodDescription[step]['transID']
+      if 'parentStep' in prodDescription[step]:
+        parentStepName = prodDescription[step]['parentStep']['name']
+        parentTransID = prodDescription[parentStepName]['transID']
+      else:
+        parentTransID = -1
+      res = self.addTransformationsToProduction( prodID, transID, parentTransID )
+      if not res['OK']:
+        return S_ERROR( res['Message'] )
+
+    res = self.__setProductionStatus( prodID, 'Active', connection = connection )
+    if not res['OK']:
+      return res
+
+    res = self.ProdTransManager.executeActionOnTransformations( prodID, self.statusActionDict['Active'] )
     if not res['OK']:
       gLogger.error( res['Message'] )
 
