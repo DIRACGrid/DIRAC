@@ -150,9 +150,8 @@ class ReqProxyHandler(RequestHandler):
     """
     try:
       requestFile = os.path.join(self.cacheDir(), md5(requestJSON).hexdigest())
-      request = open(requestFile, "w+")
-      request.write(requestJSON)
-      request.close()
+      with open(requestFile, "w+") as request:
+        request.write(requestJSON)
       return S_OK(requestFile)
     except OSError as error:
       err = "unable to dump %s to cache file: %s" % (requestName, str(error))
