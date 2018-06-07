@@ -1033,23 +1033,21 @@ class Job(API):
               paramsDict[pName]['value'] += ';%%(%s)s' % pName
             else:
               paramsDict[pName]['value'] = '%%(%s)s' % pName
-        else:
+        elif "jdl" in paramsDict[pName]['type'].lower():
+          # If a parameter with the same name as the sequence name already exists
+          # and is a list, then extend it by the sequence value. If it is not a
+          # list, then replace it by the sequence value
           if isinstance(paramsDict[pName]['value'], list):
             currentParams = paramsDict[pName]['value']
-          elif isinstance(paramsDict[pName]['value'], basestring):
-            if paramsDict[pName]['value']:
-              currentParams = paramsDict[pName]['value'].split(';')
+            tmpList = []
+            pData = self.parameterSeqs[pName]
+            if isinstance(pData[0], list):
+              for pElement in pData:
+                tmpList.append(currentParams + pElement)
             else:
-              currentParams = []
-          tmpList = []
-          pData = self.parameterSeqs[pName]
-          if isinstance(pData[0], list):
-            for pElement in pData:
-              tmpList.append(currentParams + pElement)
-          else:
-            for pElement in pData:
-              tmpList.append(currentParams + [pElement])
-          self.parameterSeqs[pName] = tmpList
+              for pElement in pData:
+                tmpList.append(currentParams + [pElement])
+            self.parameterSeqs[pName] = tmpList
           paramsDict[pName]['value'] = '%%(%s)s' % pName
       else:
         paramsDict[pName] = {}
