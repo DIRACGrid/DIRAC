@@ -131,7 +131,7 @@ which is the same configuration used above with the difference of the "Protocol 
 
 Now, going back for a second on the service calls authorizations: in the example above we have used
 *auth_<method_name>* to define the service authorization properties. What we have done above can be achieved using
-the following CS structure:
+the following CS structure::
 
   Services
   {
@@ -180,9 +180,11 @@ When should a service be developed?
 Write a service every time you need to expose some information, that is usually stored in a database.
 
 There are anyway cases for which it is not strictly needed to write a service, specifically when all the following are true:
-- when you never need to expose the data written in the DB (i.e. the DB is, for the DIRAC point of view, Read-Only)
-- when the components writing in it have local access.
+
+* when you never need to expose the data written in the DB (i.e. the DB is, for the DIRAC point of view, Read-Only)
+* when the components writing in it have local access.
 
 The advise is anyway to always write the service, because:
-- if later on you'll need it, you won't need to change anything but the service itself
-- db-independent logic should stay out of the database class itself.
+
+* if later on you'll need it, you won't need to change anything but the service itself
+* db-independent logic should stay out of the database class itself.

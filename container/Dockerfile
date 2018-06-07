@@ -26,7 +26,7 @@ RUN \
     cd /opt/dirac && \
     curl -L -o dirac-install https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py && \
     chmod +x dirac-install && \
-    ./dirac-install -r v6r17 -t server -i 27 -g 2017-01-27 && \
+    ./dirac-install -r v6r20 -t server -i 27 -g v14r1 && \
     rm -rf /opt/dirac/.installCache && \
     rm dirac-install
 

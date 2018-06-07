@@ -514,7 +514,18 @@ class WorkflowTasks(TaskBase):
     jobType = oJob.workflow.findParameter('JobType').getValue()
     transGroup = str(transID).zfill(8)
 
-    oJob._setParamValue('PRODUCTION_ID', str(transID).zfill(8))  # pylint: disable=protected-access
+    # Verify that the JOB_ID parameter is added to the workflow
+    if not oJob.workflow.findParameter('JOB_ID'):
+      oJob._addParameter(oJob.workflow, 'JOB_ID', 'string', '00000000', "Initial JOB_ID")
+
+    if oJob.workflow.findParameter('PRODUCTION_ID'):
+      oJob._setParamValue('PRODUCTION_ID', str(transID).zfill(8))  # pylint: disable=protected-access
+    else:
+      oJob._addParameter(oJob.workflow,  # pylint: disable=protected-access
+                         'PRODUCTION_ID',
+                         'string',
+                         str(transID).zfill(8),
+                         "Production ID")
     oJob.setType(jobType)
     self._logVerbose('Adding default transformation group of %s' % (transGroup),
                      transID=transID, method=method)
@@ -539,7 +550,7 @@ class WorkflowTasks(TaskBase):
         self._logVerbose('Setting Site: ', str(sites), transID=transID)
         seqDict['Site'] = sites
 
-      seqDict['JobName'] = transGroup
+      seqDict['JobName'] = self._transTaskName(transID, taskID)
       seqDict['JOB_ID'] = str(taskID).zfill(8)
 
       self._logDebug('TransID: %s, TaskID: %s, paramsDict: %s' % (transID, taskID, str(paramsDict)),
@@ -561,6 +572,7 @@ class WorkflowTasks(TaskBase):
                              transID=transID, method=method)
             seqDict[paramName] = paramValue
 
+      outputParameterList = []
       if self.outputDataModule:
         res = self.getOutputData({'Job': oJob._toXML(), 'TransformationID': transID,  # pylint: disable=protected-access
                                   'TaskID': taskID, 'InputData': inputData})
@@ -570,12 +582,22 @@ class WorkflowTasks(TaskBase):
           continue
         for name, output in res['Value'].iteritems():
           seqDict[name] = ';'.join(output)
+          outputParameterList.append(name)
+          if oJob.workflow.findParameter(name):
+            oJob._setParamValue(name, "%%(%s)s" % name)  # pylint: disable=protected-access
+          else:
+            oJob._addParameter(oJob.workflow,  # pylint: disable=protected-access
+                               name,
+                               'JDL',
+                               "%%(%s)s" % name,
+                               name)
+
 
       for pName, seq in seqDict.iteritems():
         paramSeqDict.setdefault(pName, []).append(seq)
 
     for paramName, paramSeq in paramSeqDict.iteritems():
-      if paramName in ('JOB_ID', 'PRODUCTION_ID', 'InputData'):
+      if paramName in ['JOB_ID', 'PRODUCTION_ID', 'InputData'] + outputParameterList:
         oJob.setParameterSequence(paramName, paramSeq, addToWorkflow=paramName)
       else:
         oJob.setParameterSequence(paramName, paramSeq)
@@ -608,7 +630,21 @@ class WorkflowTasks(TaskBase):
         self._logVerbose('Adding default transformation group of %s' % (transGroup),
                          transID=transID, method=method)
         oJobTemplate.setJobGroup(transGroup)
-        oJobTemplate._setParamValue('PRODUCTION_ID', str(transID).zfill(8))
+        if oJobTemplate.workflow.findParameter('PRODUCTION_ID'):
+          oJobTemplate._setParamValue('PRODUCTION_ID', str(transID).zfill(8))
+        else:
+          oJobTemplate._addParameter(oJobTemplate.workflow,
+                                     'PRODUCTION_ID',
+                                     'string',
+                                     str(transID).zfill(8),
+                                     "Production ID")
+        if not oJobTemplate.workflow.findParameter('JOB_ID'):
+          oJobTemplate._addParameter(oJobTemplate.workflow,
+                                     'JOB_ID',
+                                     'string',
+                                     '00000000',
+                                     "Initial JOB_ID")
+
 
       paramsDict['Site'] = site
       paramsDict['JobType'] = jobType
@@ -780,8 +816,10 @@ class WorkflowTasks(TaskBase):
     if not taskDict:
       return S_OK(taskDict)
     startTime = time.time()
-    transID = taskDict.values()[0]['TransformationID']
+
     oJob = taskDict.pop('BulkJobObject')
+    # we can only do this, once the job has been popped, or we _might_ crash
+    transID = taskDict.values()[0]['TransformationID']
     if oJob is None:
       self._logError('no bulk Job object found', transID=transID, method='submitTransformationTasksBulk')
       return S_ERROR(ETSUKN, 'No bulk job object provided for submission')
