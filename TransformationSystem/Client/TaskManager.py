@@ -780,8 +780,10 @@ class WorkflowTasks(TaskBase):
     if not taskDict:
       return S_OK(taskDict)
     startTime = time.time()
-    transID = taskDict.values()[0]['TransformationID']
+
     oJob = taskDict.pop('BulkJobObject')
+    # we can only do this, once the job has been popped, or we _might_ crash
+    transID = taskDict.values()[0]['TransformationID']
     if oJob is None:
       self._logError('no bulk Job object found', transID=transID, method='submitTransformationTasksBulk')
       return S_ERROR(ETSUKN, 'No bulk job object provided for submission')
