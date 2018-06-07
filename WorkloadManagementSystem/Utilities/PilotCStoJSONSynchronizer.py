@@ -253,7 +253,7 @@ class PilotCStoJSONSynchronizer(object):
       upstream.fetch()
       upstream.pull(upstream.refs[0].remote_head)
       if repo_VO.tags:
-        repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotScripts')
+        repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotVOScripts')
       else:
         repo_VO.git.checkout('upstream/master', b='pilotVOScripts')
       scriptDir = (os.path.join('pilotVOLocalRepo', self.projectDir, self.pilotVOScriptPath, "*.py"))
@@ -284,7 +284,7 @@ class PilotCStoJSONSynchronizer(object):
           self.pilotVersion = lines[(lines.index(self.pilotVOVersion)) + 3].split(':')[1]
       repo.git.checkout(repo.tags[self.pilotVersion], b='pilotScripts')
     else:
-      repo.git.checkout('master', b='pilotVOScripts')
+      repo.git.checkout('upstream/master', b='pilotScripts')
     try:
       scriptDir = os.path.join('pilotLocalRepo', self.pilotScriptPath, "*.py")
       for filename in glob.glob(scriptDir):
