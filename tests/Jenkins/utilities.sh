@@ -625,7 +625,7 @@ function generateUserCredentials(){
   then
     set +e
   fi
-  cp $CI_CONFIG/openssl_config openssl_config_usr .
+  cp $CI_CONFIG/openssl_config_usr openssl_config_usr .
   if [[ $save =~ e ]]
   then
     set -e

@@ -585,39 +585,13 @@ and this is thread %s
         self._destinationSrv is what was given as first parameter of the init serviceName
 
         newKwargs is an updated copy of kwargs:
-          * kwargs has already been updated by all the initialization functions
-          * if a delegated DN is not set, but is found in __threadConfig or in the info returned by the protocol
-            sanitiy check, then we replace it (KW_DELEGATED_DN)
-          * Same goes for the delegated group KW_DELEGATED_GROUP. In the case of a host,
-            the value is the same as for VAL_EXTRA_CREDENTIALS_HOST
-          * if set, we remove the useCertificates (KW_USE_CERTIFICATES) in newKwargs (not sure to know why)
+          * if set, we remove the useCertificates (KW_USE_CERTIFICATES) in newKwargs
 
         This method is just used to return information in case of error in the InnerRPCClient
     """
     newKwargs = dict(self.kwargs)
-    # Set DN
-    tDN, tGroup = self.__threadConfig.getID()
-    if self.KW_DELEGATED_DN not in newKwargs:
-      if tDN:
-        newKwargs[self.KW_DELEGATED_DN] = tDN
-      elif 'DN' in self.__idDict:
-        newKwargs[self.KW_DELEGATED_DN] = self.__idDict['DN']
-    # Discover group
-    if self.KW_DELEGATED_GROUP not in newKwargs:
-      if 'group' in self.__idDict:
-        newKwargs[self.KW_DELEGATED_GROUP] = self.__idDict['group']
-      elif tGroup:
-        newKwargs[self.KW_DELEGATED_GROUP] = tGroup
-      else:
-        if self.KW_DELEGATED_DN in newKwargs:
-          if CS.getUsernameForDN(newKwargs[self.KW_DELEGATED_DN])['OK']:
-            result = CS.findDefaultGroupForDN(newKwargs[self.KW_DELEGATED_DN])
-            if result['OK']:
-              newKwargs[self.KW_DELEGATED_GROUP] = result['Value']
-          if CS.getHostnameForDN(newKwargs[self.KW_DELEGATED_DN])['OK']:
-            newKwargs[self.KW_DELEGATED_GROUP] = self.VAL_EXTRA_CREDENTIALS_HOST
-
-    # Not sure why one would want to remove that...
+    # Remove useCertificates as the forwarder of the call will have to
+    # independently decide whether to use their cert or not anyway.
     if 'useCertificates' in newKwargs:
       del newKwargs['useCertificates']
     return (self._destinationSrv, newKwargs)

@@ -4,7 +4,7 @@
 Developing "stuff that run"
 ===========================
 
-Which means developing for databases, services, and agents. But also for the configuration service.
+Which means developing for databases, services, agents, and executors. But also for the configuration service.
 
 We'll guide you through using what we made in section :ref:`editing_code`
 for developing and testing for databases, services, and agents. To do that, we'll create a "developer installation".
@@ -35,7 +35,7 @@ Notes before continuing, on top of what is in section :ref:`editing_code`
 *OS*: a DIRAC server can be installed, as of today, only on SLC6 (Scientific Linux Cern 6) or CC7 (Cern CentOS 7).
 
 The reason is that some binaries are proved to work only there (and TBH, support for CC7 is still partial),
-and this includes several WMS (Workload Management) and DMS (Data Management) libraries.
+and this includes several WMS (Workload Management) and DMS (Data Management), like *arc* or *gfal2*.
 If you have to do many DMS (and partly WMS) developments, you should consider using SLC6 or CC7.
 Or, using a Virtual Machine, or a docker instance. We'll go through this.
 
@@ -51,10 +51,14 @@ If your development machine is a CentOS 6 or a RedHat "equivalent", maybe nothin
 
 If you are not in any of the above cases, you still have a chance:
 that, while developing for services or agents, none of them will need any "externals" library.
-If this is your case, then you can still run locally on your development machine.
+If this is your case, then you can still run locally on your development machine, which can be for example Ubuntu, or Debian, or also macOS.
 
-Still, you probably need a SLC6 or CC7 image. You are presented with the alternatives of either using Virtual Machines, or Containers,
-so in this case you'll need to install something:
+Do you need to develop using external, compiled libraries like *arc*, *cream*, *gfal2*, *fts3*?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Then you probably need a SLC6 or CC7 image. If your development box is not one of them,
+then you are presented with the alternatives of either using Virtual Machines, or Containers,
+and so in this case you'll need to install something:
 
 *docker*: `docker <https://docs.docker.com/>`_ is as of today a "standard" for applications' containerization.
 The following examples use a DIRAC's base docker image for running DIRAC components.
@@ -65,8 +69,8 @@ Whatever you need/decide, we will keep referring to your desktop as ''the host''
 (which, as just explained, may coincide with the host).
 
 
-General principles
-===================
+General principles while using a virtual machine or a container
+===============================================================
 
 * You keep editing the code on your host
 * $DEVROOT should be mounted from the host to the running image
@@ -83,10 +87,14 @@ You can implement all the principles above in more than one way.
 Using a Docker container [to expand]
 ====================================
 
-The following steps will try to guide
+The following steps will try to guide 
 you on setting up a development environment for DIRAC (or its extensions)
 that combines what you have learned in :ref:`editing_code`
 with a docker image with which you will run code that you develop.
+
+Please see the Dockerfile that DIRAC provides at https://github.com/DIRACGrid/DIRAC/tree/integration/container
+and Docker hub []
+
 
 [to expand]
 
@@ -94,7 +102,7 @@ with a docker image with which you will run code that you develop.
 What's in this image?
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Please see the Dockerfile [] and Docker hub []
+An dirac-install installed version of DIRAC (server).
 
 [to expand]
 
@@ -293,15 +301,16 @@ Let's do one more check, still from the host:
 
 Was this good? If it wasn't, again, then you should probably hit the "previous" button of this guide.
 
-The next test, also executed from the host,
-will verify if you will be able to produce a proxy starting from the user certificates that you have created above:
+The next test, also executed from the host, 
+will verify if you will be able to produce a proxy starting from the user certificates that you have created above::
 
-  X509_CERT_DIR=$DEVROOT/etc/grid-security/certificates ./FrameworkSystem/scripts/dirac-proxy-init.py --rfc -ddd
+   X509_CERT_DIR=$DEVROOT/etc/grid-security/certificates ./FrameworkSystem/scripts/dirac-proxy-init.py -ddd
 
-Should return you a user proxy.
+Should return you a user proxy. You can verify the content and location of the proxy with::
 
+   X509_CERT_DIR=$DEVROOT/etc/grid-security/certificates ./FrameworkSystem/scripts/dirac-proxy-info.py
 
-Then, you can login on your running image and try running a service. [to expand]
+Then, you can login on your running image (or your local installation) and try running a service, using the dips protocol.
 
 Do not think about you just typed right now. It will become more clear later. 
 Please, look into :ref:`check_your_installation` section for further checks. 
