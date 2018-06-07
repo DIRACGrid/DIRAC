@@ -191,7 +191,7 @@ class ReqProxyHandler(RequestHandler):
     isAuthorized = RequestValidator.setAndCheckRequestOwner(request, self.getRemoteCredentials())
 
     if not isAuthorized:
-      return S_ERROR("Credentials in the requests are not allowed")
+      return S_ERROR(DErrno.ENOAUTH, "Credentials in the requests are not allowed")
 
     forwardable = self.__forwardable(requestDict)
     if not forwardable["OK"]:

@@ -16,6 +16,7 @@ import math
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+from DIRAC.Core.Utilities import DErrno
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
@@ -92,7 +93,7 @@ class ReqManagerHandler(RequestHandler):
     isAuthorized = RequestValidator.setAndCheckRequestOwner(request, self.getRemoteCredentials())
 
     if not isAuthorized:
-      return S_ERROR("Credentials in the requests are not allowed")
+      return S_ERROR(DErrno.ENOAUTH, "Credentials in the requests are not allowed")
 
     optimized = request.optimize()
     if optimized.get("Value", False):
