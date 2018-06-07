@@ -3,7 +3,8 @@
 *Core
 
 CHANGE: (#3713) Fixes the infamous "invalid action proposal" by speeding up the handshake and not looking up the user/group in the baseStub
-RMS: (#3713)
+
+*RequestManagementSystem
 CHANGE: (#3713) FowardDISET uses the owner/group of Request to execute the stub
 CHANGE: (#3713) owner/group of the Requests are evaluated/authorized on the server side
 CHANGE: (#3713) LimitedDelegation or FullDelegation are required to set requests on behalf of others -> pilot user and hosts should must them (which should already be the case)
