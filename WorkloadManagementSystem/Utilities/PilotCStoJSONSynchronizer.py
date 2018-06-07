@@ -62,8 +62,7 @@ class PilotCStoJSONSynchronizer(object):
 
     self.pilotFileServer = ops.getValue("Pilot/PilotFileServer", self.pilotFileServer)
     if not self.pilotFileServer:
-      gLogger.info("Pilot file server not defined, so won't sync")
-      return S_OK()
+      gLogger.warn("Pilot file server not defined, so won't sync but only display")
 
     gLogger.notice('-- Synchronizing the content of the JSON file %s with the content of the CS --' % self.jsonFile)
 
@@ -254,7 +253,7 @@ class PilotCStoJSONSynchronizer(object):
       upstream.fetch()
       upstream.pull(upstream.refs[0].remote_head)
       if repo_VO.tags:
-        repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotScripts')
+        repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotVOScripts')
       else:
         repo_VO.git.checkout('upstream/master', b='pilotVOScripts')
       scriptDir = (os.path.join('pilotVOLocalRepo', self.projectDir, self.pilotVOScriptPath, "*.py"))
@@ -285,7 +284,7 @@ class PilotCStoJSONSynchronizer(object):
           self.pilotVersion = lines[(lines.index(self.pilotVOVersion)) + 3].split(':')[1]
       repo.git.checkout(repo.tags[self.pilotVersion], b='pilotScripts')
     else:
-      repo.git.checkout('master', b='pilotVOScripts')
+      repo.git.checkout('upstream/master', b='pilotScripts')
     try:
       scriptDir = os.path.join('pilotLocalRepo', self.pilotScriptPath, "*.py")
       for filename in glob.glob(scriptDir):
@@ -317,18 +316,29 @@ class PilotCStoJSONSynchronizer(object):
     """ Method to upload the pilot json file and the pilot scripts to the server.
     """
 
-    if pilotDict:
+    if pilotDict:  # this is for the pilot.json file
+      if not self.pilotFileServer:
+        print json.dumps(pilotDict, indent=4, sort_keys=True)  # just print here as formatting is important
+        return S_OK()
       params = urllib.urlencode({'filename': self.jsonFile, 'data': json.dumps(pilotDict)})
-    else:
+
+    else:  # we assume the method is asked to upload the pilots scripts
+      if not self.pilotFileServer:
+        gLogger.info("NOT uploading %s" % filename)
+        return S_OK()
       with open(pilotScript, "rb") as psf:
         script = psf.read()
       params = urllib.urlencode({'filename': filename, 'data': script})
-    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+
     if ':' in self.pilotFileServer:
       con = HTTPDISETConnection(self.pilotFileServer.split(':')[0], self.pilotFileServer.split(':')[1])
     else:
       con = HTTPDISETConnection(self.pilotFileServer, '443')
-    con.request("POST", "/DIRAC/upload", params, headers)
+
+    con.request("POST",
+                "/DIRAC/upload",
+                params,
+                {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"})
     resp = con.getresponse()
     if resp.status != 200:
       return S_ERROR(resp.status)
