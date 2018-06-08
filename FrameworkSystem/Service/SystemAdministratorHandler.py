@@ -31,6 +31,8 @@ from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 gMonitoringReporter = None
 
+gProfilers = {}
+
 # pylint: disable=no-self-use
 
 
@@ -756,7 +758,9 @@ class SystemAdministratorHandler(RequestHandler):
             gLogger.error("Wrongly configured component: %s" % instance)
             continue
           pid = startupComps[instance]['PID']
-          profiler = Profiler.Profiler(pid)
+          if pid not in gProfilers:
+            gProfilers[pid] = Profiler.Profiler(pid)
+          profiler = gProfilers[pid]
           result = profiler.getAllProcessData()
           if result['OK']:
             log = result['Value']['stats']
