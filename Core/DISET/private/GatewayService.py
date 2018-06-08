@@ -15,7 +15,7 @@
 
 """
 
-__RCSID__ = "$id:"
+__RCSID__ = "$Id$"
 
 import sys
 import cStringIO
@@ -76,7 +76,6 @@ class GatewayService(Service):
       return result
     self._handler = result[ 'Value' ]
     # Discover Handler
-    self._initMonitoring()
     self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
     
     self._msgBroker = MessageBroker("%sMSB" % GatewayService.GATEWAY_NAME, threadPool=self._threadPool)
@@ -323,7 +322,7 @@ class TransferRelay(TransferClient):
       self.errMsg("Could not send header", result['Message'])
       return result
     self.infoMsg("Starting to send data to service")
-    trid, srvTransport = result['Value']
+    _, srvTransport = result['Value']
     srvFileHelper = FileHelper(srvTransport)
     srvFileHelper.setDirection("send")
     result = srvFileHelper.BufferToNetwork(data)
@@ -343,7 +342,7 @@ class TransferRelay(TransferClient):
       self.errMsg("Could not send header", result['Message'])
       return result
     self.infoMsg("Starting to receive data from service")
-    trid, srvTransport = result['Value']
+    _, srvTransport = result['Value']
     srvFileHelper = FileHelper(srvTransport)
     srvFileHelper.setDirection("receive")
     sIO = cStringIO.StringIO()
@@ -415,7 +414,7 @@ class TransferRelay(TransferClient):
     if not result['OK']:
       self.errMsg("Could not send header", result['Message'])
       return result
-    trid, srvTransport = result['Value']
+    _, srvTransport = result['Value']
     response = srvTransport.receiveData(1048576)
     srvTransport.close()
     self.infoMsg("Sending data back to client")
@@ -476,7 +475,7 @@ class MessageForwarder(object):
         self.__byClient.pop(cliTrid)
         self.__srvToCliTrid.pop(srvTrid)
       except Exception as e:
-        gLogger.exception("This shouldn't happen!")
+        gLogger.exception("This shouldn't happen!", e)
     finally:
       self.__inOutLock.release()
 
