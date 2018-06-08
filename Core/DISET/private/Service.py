@@ -5,6 +5,12 @@
   - All useful functions for initialization
   - All useful functions to handle the requests
 """
+<<<<<<< HEAD
+=======
+
+__RCSID__ = "$Id$"
+
+>>>>>>> autopep8
 # pylint: skip-file
 # __searchInitFunctions gives RuntimeError: maximum recursion depth exceeded
 
@@ -84,10 +90,9 @@ class Service(object):
     if referedAction in Service.SVC_VALID_ACTIONS:
       return referedAction
     return False
-  
-  def initialize( self ):
-    #Build the URLs
 
+  def initialize(self):
+    # Build the URLs
     self._url = self._cfg.getURL()
     if not self._url:
       return S_ERROR("Could not build service URL for %s" % self._name)
@@ -96,7 +101,6 @@ class Service(object):
     result = self._loadHandlerInit()
     if not result['OK']:
       return result
-
     self._handler = result['Value']
     # Initialize lock manager
     self._lockManager = LockManager(self._cfg.getMaxWaitingPetitions())
@@ -476,7 +480,7 @@ class Service(object):
     result = self._authorizeProposal(proposalTuple[1], trid, credDict)
     if not result['OK']:
       return result
-    #Proposal is OK
+    # Proposal is OK
     return S_OK(proposalTuple)
 
   def _authorizeProposal(self, actionTuple, trid, credDict):

@@ -15,17 +15,15 @@
 
 """
 
+__RCSID__ = "$Id$"
+
 import select
 import time
 import socket
 import sys
 import signal
 import os
-
-try:
-  import multiprocessing
-except:
-  multiprocessing = False
+import multiprocessing
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Service import Service
@@ -156,9 +154,9 @@ class ServiceReactor(object):
     for svcName in self.__listeningConnections:
       gLogger.always("Listening at %s" % self.__services[svcName].getConfig().getURL())
 
-    isMultiProcessingAllowed = False 
+    isMultiProcessingAllowed = False
     for svcName in self.__listeningConnections:
-      if self.__services[ svcName ].getConfig().getCloneProcesses() > 0:
+      if self.__services[svcName].getConfig().getCloneProcesses() > 0:
         isMultiProcessingAllowed = True
         break
 
@@ -178,13 +176,6 @@ class ServiceReactor(object):
     while self.__alive:
       self.__acceptIncomingConnection()
 
-  # This function runs in a different process
-  def __startCloneProcess(self, svcName, i):
-    self.__services[svcName].setCloneProcessId(i)
-    self.__alive = i
-    while self.__alive:
-      self.__acceptIncomingConnection(svcName)
-
   def stopAllProcess(self):
     gLogger.info("Stopping: PID=%d, name=%s, parentPid=%d" %
                  (self.__processes.pid, self.__processes.name, self.__processes._parent_pid))
@@ -199,6 +190,13 @@ class ServiceReactor(object):
       gLogger.info("Stopping: PID=%d, name=%s" % (process.pid, process.name))
       if process.is_alive():
         process.terminate()
+
+  # This function runs in a different process
+  def __startCloneProcess(self, svcName, i):
+    self.__services[svcName].setCloneProcessId(i)
+    self.__alive = i
+    while self.__alive:
+      self.__acceptIncomingConnection(svcName)
 
   def __getListeningSocketsList(self, svcName=False):
     if svcName:
