@@ -13,11 +13,14 @@ import unittest
 
 from DIRAC import gLogger
 
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION
+
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+
 
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
@@ -331,7 +334,9 @@ class ReqClientMix(ReqClientTestCase):
     self.assertEqual(delete["OK"], True, delete['Message'] if 'Message' in delete else 'OK')
 
   def test07Authorization(self):
-    """ Test whether request sets on behalf of others are rejected"""
+    """ Test whether request sets on behalf of others are rejected, unless done with Delegation properties
+        This test is kind of stupid though, since we do the same thing than the server... not a real test !
+    """
 
     request = Request({"RequestName": "unauthorized"})
     request.OwnerDN = 'NotMe'
@@ -340,9 +345,15 @@ class ReqClientMix(ReqClientTestCase):
     op += File({"LFN": "/lhcb/user/c/cibak/foo"})
     request += op
     res = self.requestClient.putRequest(request)
+    credProperties = getProxyInfo()['Value']['groupProperties']
 
-    self.assertFalse(res['OK'], res)
-
+    # If the proxy with which we test has delegation, it should work
+    if FULL_DELEGATION in credProperties or LIMITED_DELEGATION in credProperties:
+      self.assertTrue(res['OK'], res)
+      self.requestClient.deleteRequest(res['Value'])
+    # otherwise no
+    else:
+      self.assertFalse(res['OK'], res)
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ReqClientTestCase)
