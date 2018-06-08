@@ -12,11 +12,13 @@ def createDataTransformation(flavour, targetSE, sourceSE,
                              extraData=None, extraname='',
                              groupSize=1,
                              plugin='Broadcast',
+                             tGroup=None,
+                             tBody=None,
                              enable=False,
                              ):
   """Creates the replication transformation based on the given parameters.
 
-  :param str flavour: Flavour of replication to create
+  :param str flavour: Flavour of replication to create: Replication or Moving
   :param targetSE: Destination for files
   :type targetSE: python:list or str
   :param str sourceSE: Origin of files.
@@ -26,6 +28,8 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   :param str extraname: addition to the transformation name, only needed if the same transformation was already created
   :param int groupSize: number of files per transformation taks
   :param str plugin: plugin to use
+  :param str tGroup: transformation group to set
+  :param tBody: transformation body to set
   :param bool enable: if true submit the transformation, otherwise dry run
   :returns: S_OK, S_ERROR
   """
@@ -41,16 +45,16 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   if flavour not in ('Replication', 'Moving'):
     return S_ERROR('Unsupported flavour %s' % flavour)
 
-  transType = {'Replication': 'Replicate', 'Moving': 'Move'}[flavour]
-  transGroup = {'Replication': 'Replication', 'Moving': 'Moving'}[flavour]
+  transVerb = {'Replication': 'Replicate', 'Moving': 'Move'}[flavour]
+  transGroup = {'Replication': 'Replication', 'Moving': 'Moving'}[flavour] if not tGroup else tGroup
 
   trans = Transformation()
-  transName = '%s_%s_%s' % (transType, str(metaValue), ",".join(targetSE))
+  transName = '%s_%s_%s' % (transVerb, str(metaValue), ",".join(targetSE))
   if extraname:
     transName += "_%s" % extraname
 
   trans.setTransformationName(transName)
-  description = '%s files for %s %s to %s' % (transType, metaKey, str(metaValue), ",".join(targetSE))
+  description = '%s files for %s %s to %s' % (transVerb, metaKey, str(metaValue), ",".join(targetSE))
   trans.setDescription(description)
   trans.setLongDescription(description)
   trans.setType('Replication')
@@ -60,8 +64,8 @@ def createDataTransformation(flavour, targetSE, sourceSE,
 
   transBody = {'Moving': [("ReplicateAndRegister", {"SourceSE": sourceSE, "TargetSE": targetSE}),
                           ("RemoveReplica", {"TargetSE": sourceSE})],
-               'Replication': ''  # empty body
-               }[flavour]
+               'Replication': '',  # empty body
+               }[flavour] if tBody is None else tBody
 
   trans.setBody(transBody)
 
