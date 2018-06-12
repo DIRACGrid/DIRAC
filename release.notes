@@ -1,3 +1,17 @@
+[v6r20p3]
+
+*Framework
+FIX: SystemAdministrator - Get the correct cpu usage data for each component
+
+*TS
+NEW: new command dirac-transformation-replication to create replication transformation to copy files from some SEs to other SEs, resolves #3700
+
+*RMS
+FIX: fix integration tests to work with privileged and non privileged proxies
+
+*RSS
+FIX: Fix for downtime publisher: wrong column names. Avoiding dates (not reflected in web app)
+
 [v6r20p2]
 
 *Core
@@ -20,7 +34,7 @@ CHANGE: (#3699) for pilotCS2JSONSynchronizer: if pilotFileServer is not set, sti
 
 *WorkloadManagementSystem
 
-CHANGE: (#3693) introduce options for sites to choose usage of sinularity
+CHANGE: (#3693) introduce options for sites to choose usage of Singularity
 
 *TransformationSystem
 
