@@ -12,6 +12,7 @@ import unittest
 import json
 
 from DIRAC.ProductionSystem.Client.ProductionClient   import ProductionClient
+from DIRAC.ProductionSystem.Client.ProductionStep   import ProductionStep
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
@@ -42,44 +43,116 @@ class ProductionClientChain( TestClientProductionTestCase ):
     ### Define the production
 
     ### Define the first step of the production
-    prodStep1 = {}
-    prodStep1['type'] = 'MCSimulation'
+    prodStep1 = ProductionStep()
+    prodStep1.Type = 'MCSimulation'
     outputquery = {'zenith':{'in': [20, 40]},'particle':'gamma', 'tel_sim_prog':'simtel', 'outputType':{'in': ['Data', 'Log']}}
-    prodStep1['outputquery'] = outputquery
+    prodStep1.Outputquery = outputquery
+
+    ## Add the step to the production
+    res = self.prodClient.addStep(prodStep1)
+    self.assertTrue( res['OK'] )
 
     ### Define the second step of the production
-    prodStep2 = {}
-    prodStep2['type'] = 'DataProcessing'
-    prodStep2['parentStep'] = prodStep1
+    prodStep2 = ProductionStep()
+    prodStep2.Type = 'DataProcessing'
+    prodStep2.ParentStep = prodStep1
 
     inputquery = {'zenith': 20, 'particle':'gamma', 'tel_sim_prog':'simtel', 'outputType':'Data'}
     outputquery = {'zenith': 20, 'particle':'gamma', 'analysis_prog': 'evndisp', 'data_level': 1, 'outputType':{'in': ['Data', 'Log']}}
 
-    prodStep2['inputquery'] = inputquery
-    prodStep2['outputquery'] = outputquery
+    prodStep2.Inputquery = inputquery
+    prodStep2.Outputquery = outputquery
+
+    ## Add the step to the production
+    res = self.prodClient.addStep(prodStep2)
+    self.assertTrue( res['OK'] )
 
     ### Define the third step of the production
-    prodStep3 = {}
-    prodStep3['type'] = 'DataProcessing'
-    prodStep3['parentStep'] = prodStep2
+    prodStep3 = ProductionStep()
+    prodStep3.Type = 'DataProcessing'
+    prodStep3.ParentStep = prodStep2
 
     inputquery = {'zenith': 20, 'particle':'gamma', 'analysis_prog':'evndisp', 'data_level': 1, 'outputType':'Data'}
     outputquery = {'zenith': 20, 'particle':'gamma', 'analysis_prog': 'evndisp', 'data_level': 2, 'outputType':{'in': ['Data', 'Log']}}
 
-    prodStep3['inputquery'] = inputquery
-    prodStep3['outputquery'] = outputquery
+    prodStep3.Inputquery = inputquery
+    prodStep3.Outputquery = outputquery
 
-    ## Add the steps to the prod description
-    self.prodClient.addStep(prodStep1)
-    self.prodClient.addStep(prodStep2)
-    self.prodClient.addStep(prodStep3)
+    ## Add the step to the production
+    res = self.prodClient.addStep(prodStep3)
+    self.assertTrue( res['OK'] )
 
     ## Get the production description
     prodDescription = self.prodClient.getDescription()
 
     ## Create the production
     prodName = 'SeqProd'
-    res = self.prodClient.createProduction( prodName, json.dumps(prodDescription) )
+    res = self.prodClient.addProduction( prodName, json.dumps(prodDescription) )
+    self.assertTrue( res['OK'] )
+
+    ## Start the production, i.e. instatiate the transformation steps
+    res = self.prodClient.startProduction( prodName )
+    self.assertTrue( res['OK'] )
+
+    ### Get the transformations of the production
+    res = self.prodClient.getProduction( prodName )
+    self.assertTrue( res['OK'] )
+    prodID = res['Value']['ProductionID']
+
+    res = self.prodClient.getProductionTransformations( prodID )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( len( res['Value'] ) , 3 )
+
+    ### Delete the production
+    res = self.prodClient.deleteProduction( prodName)
+    self.assertTrue( res['OK'] )
+
+
+  def test_MergeProduction(self):
+
+    ### Define the production
+
+    ### Define the first step of the production
+    prodStep1 = ProductionStep()
+    prodStep1.Type = 'MCSimulation'
+    outputquery = {'zenith':20, 'particle':'gamma', 'tel_sim_prog':'simtel', 'outputType':{'in': ['Data', 'Log']}}
+    prodStep1.Outputquery = outputquery
+
+    ## Add the step to the production
+    res = self.prodClient.addStep(prodStep1)
+    self.assertTrue( res['OK'] )
+
+    ### Define the second step of the production
+    prodStep2 = ProductionStep()
+    prodStep2.Type = 'MCSimulation'
+    outputquery = {'zenith':40, 'particle':'gamma', 'tel_sim_prog':'simtel', 'outputType':{'in': ['Data', 'Log']}}
+    prodStep2.Outputquery = outputquery
+
+    ## Add the step to the production
+    res = self.prodClient.addStep(prodStep2)
+    self.assertTrue( res['OK'] )
+
+    ### Define the third step of the production
+    prodStep3 = ProductionStep()
+    prodStep3.Type = 'DataProcessing'
+    prodStep3.ParentStep = [prodStep1,prodStep2]
+
+    inputquery = {'zenith': {'in': [20, 40]}, 'particle':'gamma', 'tel_sim_prog':'simtel', 'outputType':'Data'}
+    outputquery = {'zenith': {'in': [20, 40]}, 'particle':'gamma', 'analysis_prog': 'evndisp', 'data_level': 1, 'outputType':{'in': ['Data', 'Log']}}
+
+    prodStep3.Inputquery = inputquery
+    prodStep3.Outputquery = outputquery
+
+    ## Add the steps to the production
+    res = self.prodClient.addStep(prodStep3)
+    self.assertTrue( res['OK'] )
+
+    ## Get the production description
+    prodDescription = self.prodClient.getDescription()
+
+    ## Create the production
+    prodName = 'MergeProd'
+    res = self.prodClient.addProduction( prodName, json.dumps(prodDescription) )
     self.assertTrue( res['OK'] )
 
     ## Start the production, i.e. instatiate the transformation steps
