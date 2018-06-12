@@ -60,6 +60,10 @@ class ForwardDISET( OperationHandlerBase ):
       self.operation.Status = "Failed"
       return S_ERROR( str( error ) )
 
+    # Ensure the forwarded request is done on behalf of the request owner
+    decode[0][1]['delegatedDN'] = self.request.OwnerDN
+    decode[0][1]['delegatedGroup'] = self.request.OwnerGroup
+
     # ForwardDiset is supposed to be used with a host certificate
     useServerCertificate = gConfig.useServerCertificate()
     gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
