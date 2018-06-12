@@ -161,6 +161,25 @@ FIX: Update of the FTS3 docs
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
 
+[v6r19p22]
+
+*Core
+CHANGE: Backport from v6r20 - fixes the infamous "invalid action proposal" by speeding up 
+        the handshake and not looking up the user/group in the baseStub
+
+RMS:
+CHANGE: Backport from v6r20 - FowardDISET uses the owner/group of Request to execute the stub
+CHANGE: Backport from v6r20 - owner/group of the Requests are evaluated/authorized on the server side
+CHANGE: Backport from v6r20 - LimitedDelegation or FullDelegation are required to set requests on behalf 
+        of others -> pilot user and hosts should must them (which should already be the case)
+
+*API
+NEW: Dirac.py - running jobs locally now also works for parametric jobs. Only the first sequence will be run
+FIX: Dirac.py - running jobs locally will now properly work with LFNs in the inputSanbdox
+
+*DMS
+FIX: DMSHelpers - in getLocalSiteForSE() return None as LocalSite if an SE is at no site
+
 [v6r19p21]
 
 *Configuration
