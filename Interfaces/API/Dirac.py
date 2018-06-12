@@ -815,7 +815,7 @@ class Dirac(API):
         if os.path.exists(os.path.join(os.getcwd(), os.path.basename(isFile))):
           self.log.debug("Input Sandbox %s found in the job directory, no need to copy it" % isFile)
         else:
-          if os.path.isabs(isFile):
+          if os.path.isabs(isFile) and os.path.exists(isFile):
             self.log.debug("Input Sandbox %s is a file with absolute path, copying it" % isFile)
             shutil.copy(isFile, os.getcwd())
           elif os.path.isdir(isFile):
@@ -854,8 +854,16 @@ class Dirac(API):
 
     arguments = parameters.get('Arguments', '')
 
-    command = '%s %s' % (executable, arguments)
+    # Replace argument placeholders for parametric jobs
+    # if we have Parameters then we have a parametric job
+    if 'Parameters' in parameters:
+      for par, value in parameters.iteritems():
+        if par.startswith('Parameters.'):
+          # we just use the first entry in all lists to run one job
+          parameters[par[len('Parameters.'):]] = value[0]
+      arguments = arguments % parameters
 
+    command = '%s %s' % (executable, arguments)
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue('/LocalSite/Root', DIRAC.rootPath)
 
