@@ -62,7 +62,7 @@ class ProductionDB( DB ):
     self.statusActionDict = {'New':None, 'Active':'startTransformation', 'Stopped':'stopTransformation', 'Cleaned':'cleanTransformation'}
 
 
-  def createProduction( self, prodName, prodDescription, authorDN, authorGroup, connection = False ):
+  def addProduction( self, prodName, prodDescription, authorDN, authorGroup, connection = False ):
     """ Create new production starting from its description
     """
     connection = self.__getConnection( connection )
@@ -78,32 +78,6 @@ class ProductionDB( DB ):
                                     AuthorDN,AuthorGroup,Status)\
                                 VALUES ('%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','New');" % \
                                     ( prodName, prodDescription, authorDN, authorGroup )
-    res = self._update( req, connection )
-    if not res['OK']:
-      self.lock.release()
-      return res
-    prodID = res['lastRowId']
-    self.lock.release()
-
-    return S_OK( prodID )
-
-  ### Obsolete: This is replaced by createProduction and startProduction
-  def addProduction( self, prodName, authorDN, authorGroup, connection = False ):
-    """ Add new production to the system
-    """
-    connection = self.__getConnection( connection )
-    res = self._getProductionID( prodName, connection = connection )
-    if res['OK']:
-      return S_ERROR( "Production with name %s already exists with ProductionID = %d" % ( prodName,
-                                                                                                  res['Value'] ) )
-    elif res['Message'] != "Production does not exist":
-      return res
-    self.lock.acquire()
-
-    req = "INSERT INTO Productions (ProductionName,CreationDate,LastUpdate, \
-                                    AuthorDN,AuthorGroup,Status)\
-                                VALUES ('%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','New');" % \
-                                    ( prodName, authorDN, authorGroup )
     res = self._update( req, connection )
     if not res['OK']:
       self.lock.release()
@@ -253,21 +227,23 @@ class ProductionDB( DB ):
     prodDescription = json.loads(res['Value'])
 
     for step in prodDescription:
-      res = self.ProdTransManager.addStep( prodDescription[step], prodID )
+      res = self.ProdTransManager.addTransformationStep( prodDescription[step], prodID )
       if not res['OK']:
         return S_ERROR( res['Message'] )
       transID = res['Value']
       prodDescription[step]['transID'] = transID
 
-
     for step in prodDescription:
       transID = prodDescription[step]['transID']
+      parentTransIDs = []
       if 'parentStep' in prodDescription[step]:
-        parentStepName = prodDescription[step]['parentStep']['name']
-        parentTransID = prodDescription[parentStepName]['transID']
+        for parentStep in prodDescription[step]['parentStep']:
+          parentTransID = prodDescription[parentStep]['transID']
+          parentTransIDs.append(parentTransID)
       else:
-        parentTransID = -1
-      res = self.addTransformationsToProduction( prodID, transID, parentTransID )
+        parentTransIDs = [-1]
+
+      res = self.addTransformationsToProduction( prodID, transID, parentTransIDs )
       if not res['OK']:
         return S_ERROR( res['Message'] )
 
@@ -335,7 +311,7 @@ class ProductionDB( DB ):
 
   def addTransformationsToProduction( self, prodName, transIDs, parentTransIDs, connection = False ):
     """ Add a list of transformations to the production directly. The parentTrans must be set (use -1 to set no parentTrans). """
-    gLogger.info( "ProductionDB.addTransformationsToProduction: Attempting to add %s transformations to production: %s" % ( transIDs , prodName ) )
+    gLogger.info( "ProductionDB.addTransformationsToProduction: Attempting to add %s transformations with parentTransIDs %s to production: %s" % ( transIDs , parentTransIDs, prodName ) )
     if not transIDs:
       return S_ERROR( 'Zero length transformation list' )
     res = self._getConnectionProdID( connection, prodName )
