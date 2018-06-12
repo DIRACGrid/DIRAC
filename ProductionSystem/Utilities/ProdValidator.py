@@ -84,34 +84,12 @@ class ProdValidator( object ):
     MetaTypeDict = res['Value']['FileMetaFields']
     MetaTypeDict.update( res['Value']['DirectoryMetaFields'] )
 
-    def checkformatQuery( MetaQueryDict ):
-      '''Check format query and transform all dict values in dict for uniform treatement'''
-      for meta, value in MetaQueryDict.items():
-        values = []
-        if isinstance( value, dict ):
-          operation = value.keys()[0]
-          if operation not in ['=','in']:
-            msg = 'Operation %s is not supported' % operation
-            return S_ERROR( msg )
-        else:
-          values.append( value )
-          MetaQueryDict[meta] = {"in":values}
-
-      return S_OK( MetaQueryDict )
-
-
-    def compareValues( value, parentvalue ):
-      if set(value.values()[0]).issubset(set(parentvalue.values()[0])) or set(parentvalue.values()[0]).issubset(set(value.values()[0])):
-        return True
-      else:
-        return False
-
-    res = checkformatQuery( MetaQueryDict )
+    res = self.checkformatQuery( MetaQueryDict )
     if not res['OK']:
       return res
     MetaQueryDict = res['Value']
 
-    res = checkformatQuery( ParentMetaQueryDict )
+    res = self.checkformatQuery( ParentMetaQueryDict )
     if not res['OK']:
       return res
     ParentMetaQueryDict = res['Value']
@@ -124,7 +102,7 @@ class ProdValidator( object ):
       if meta not in ParentMetaQueryDict:
         msg = 'Metadata %s not in parent transformation query' % meta
         return S_ERROR( msg )
-      if compareValues(value,ParentMetaQueryDict[meta]):
+      if self.compareValues(value,ParentMetaQueryDict[meta]):
         continue
       else:
         msg = "Metadata values %s do not match with %s" % (value,ParentMetaQueryDict[meta])
@@ -132,6 +110,28 @@ class ProdValidator( object ):
         return S_OK( False )
 
     return S_OK( True )
+
+
+  def checkformatQuery( self, MetaQueryDict ):
+    '''Check format query and transform all dict values in dict for uniform treatement'''
+    for meta, value in MetaQueryDict.items():
+      values = []
+      if isinstance( value, dict ):
+        operation = value.keys()[0]
+        if operation not in ['=','in']:
+          msg = 'Operation %s is not supported' % operation
+          return S_ERROR( msg )
+      else:
+        values.append( value )
+        MetaQueryDict[meta] = {"in":values}
+
+    return S_OK( MetaQueryDict )
+
+  def compareValues( self, value, parentvalue ):
+    if set(value.values()[0]).issubset(set(parentvalue.values()[0])) or set(parentvalue.values()[0]).issubset(set(value.values()[0])):
+      return True
+    else:
+      return False
 
 
 
