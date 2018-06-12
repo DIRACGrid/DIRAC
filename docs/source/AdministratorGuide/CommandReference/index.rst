@@ -95,6 +95,7 @@ Transformation management commands:
     dirac-transformation-remove-output
     dirac-transformation-resolve-problematics
     dirac-transformation-verify-outputdata
+    dirac-transformation-replication
     
 Managing DIRAC installation:
 
