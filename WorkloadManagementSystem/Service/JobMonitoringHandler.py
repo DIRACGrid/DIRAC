@@ -12,12 +12,14 @@ import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
 # These are global instances of the DB classes
 gJobDB = False
+gElasticJobDB = False
 gJobLoggingDB = False
 gTaskQueueDB = False
 
@@ -31,15 +33,32 @@ FINAL_STATES = ['Done', 'Completed', 'Stalled', 'Failed', 'Killed']
 def initializeJobMonitoringHandler(serviceInfo):
 
   global gJobDB, gJobLoggingDB, gTaskQueueDB
+
   gJobDB = JobDB()
   gJobLoggingDB = JobLoggingDB()
   gTaskQueueDB = TaskQueueDB()
+
   return S_OK()
 
 
 class JobMonitoringHandler(RequestHandler):
 
   def initialize(self):
+    """
+    Flags gESFlag and gMySQLFlag have bool values (True/False)
+    derived from dirac.cfg configuration file
+
+    Determines the switching of ElasticSearch and MySQL backends
+    """
+    global gElasticJobDB, gJobDB
+
+    gESFlag = self.srv_getCSOption('useES', False)
+    if gESFlag:
+      gElasticJobDB = ElasticJobDB()
+
+    gMySQLFlag = self.srv_getCSOption('useMySQL', True)
+    if not gMySQLFlag:
+      gJobDB = False
 
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
@@ -486,14 +505,22 @@ class JobMonitoringHandler(RequestHandler):
 
   @staticmethod
   def export_getJobParameter(jobID, parName):
-    return gJobDB.getJobParameters(jobID, [parName])
+
+    if gElasticJobDB:
+      return gElasticJobDB.getJobParameters(jobID, [parName])
+    else:
+      return gJobDB.getJobParameters(jobID, [parName])
 
 ##############################################################################
   types_getJobParameters = [[int, long]]
 
   @staticmethod
   def export_getJobParameters(jobID):
-    return gJobDB.getJobParameters(jobID)
+
+    if gElasticJobDB:
+      return gElasticJobDB.getJobParameters(jobID)
+    else:
+      return gJobDB.getJobParameters(jobID)
 
 ##############################################################################
   types_traceJobParameter = [basestring, [basestring, int, long, list],
